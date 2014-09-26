@@ -1,7 +1,7 @@
 class AddUsersToEntries < ActiveRecord::Migration
   def change
 
-   create_table :products do |t|
+   create_table :entries do |t|
       t.datetime :date, :null => false, :default => Time.now
       t.text :body
       t.text :image_url

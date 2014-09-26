@@ -12,13 +12,14 @@
       %ul.nav.navbar-nav
         - if user_signed_in?
           %li{:class=>"#{'active' if current_page?(entries_path)}"}
-            %a{:href => entries_path} Entries
+            =link_to "Entries", entries_path
 
           %li{:class=>"#{'active' if current_page?(new_entry_path)}"}
-            %a{:href => new_entry_path} New Entry                  
+            =link_to "New Entry", new_entry_path
+
         - else  
           %li{:class=>"#{'active' if current_page?(root_path)}"}
-            %a{:href => root_path} About        
+            =link_to "About", root_path
 
       %ul.nav.navbar-nav.navbar-right
 

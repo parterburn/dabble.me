@@ -4,7 +4,8 @@
 
   - if @entries.count > 0
     .col-md-8.col-md-offset-2
-      %h1 All entries
+      %h1 
+        =pluralize(current_user.entries.count,"total entry")
       
   - else
     .col-md-8.col-md-offset-2
