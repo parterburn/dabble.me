@@ -19,7 +19,6 @@ gem 'pg'
 # gem 'kaminari'
 
 # App monitoring
-# gem 'airbrake'
 gem 'newrelic_rpm'
 
 # Security
