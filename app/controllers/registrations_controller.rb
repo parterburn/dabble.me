@@ -4,8 +4,10 @@ class RegistrationsController < Devise::RegistrationsController
     @user = current_user
     
     @user.frequency = []
-    params[:frequency].each do |freq|
-      @user.frequency << freq[0]
+    if params[:frequency].present?
+      params[:frequency].each do |freq|
+        @user.frequency << freq[0]
+      end
     end
 
     successfully_updated = if needs_password?(@user, params)

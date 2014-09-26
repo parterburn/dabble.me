@@ -56,22 +56,7 @@ class EntriesController < ApplicationController
   end
 
   def process_import
-    split_at_date_regex = /[201]{3}[0-4]{1}-[0-1]{1}[0-9]{1}-[0-3]{1}[0-9]{1}/
-    dates = params[:entry][:text].scan(split_at_date_regex)
-    bodies  = params[:entry][:text].split(split_at_date_regex)
-    bodies.shift
-
-    p "*"*100
-    p bodies
-    p "*"*100
-
-    p "*"*100
-    p dates
-    p "*"*100
-
-    import_ohlife_entries(bodies, dates)
-    how_many = ActionController::Base.helpers.pluralize(bodies.count,"entry")
-    flash[:notice] = "Done importing #{how_many}!"
+    flash = import_ohlife_entries(params[:entry][:text])
     redirect_to entries_path
   end
 
@@ -85,15 +70,37 @@ class EntriesController < ApplicationController
         flash[:alert] = "Not authorized"
         redirect_to entries_path
       end
-    end  
+    end
 
-    def import_ohlife_entries(bodies, dates)
-      @user = current_user
+    def import_ohlife_entries(data)
+      errors = []
+      user = current_user #protect users from importing into someone else's entries
+
+      split_at_date_regex = /[201]{3}[0-4]{1}-[0-1]{1}[0-9]{1}-[0-3]{1}[0-9]{1}/
+      dates = data.scan(split_at_date_regex)
+      bodies  = data.split(split_at_date_regex)
+      bodies.shift
+
       dates.each_with_index do |date,i|
-        body = ""
         body = bodies[i].gsub(/[\r\n]+/, "<br><br>") if bodies[i].present?
-        @entry = @user.entries.create(:date => date, :body => body, :inspiration_id => 1)
-        @entry.save
+        #clean up extra <br> at beginning and end
+        body.gsub!(/\A(\<br\>)/,"")
+        body.gsub!(/\A(\<br\>)/,"")
+        body.gsub!(/(\<br\>)\z/,"")
+        body.gsub!(/(\<br\>)\z/,"")
+        entry = user.entries.create(:date => date, :body => body, :inspiration_id => 1)
+        unless entry.save
+          errors << date
+        end
       end
-    end      
+
+      flash[:notice] = "Finished importing " + ActionController::Base.helpers.pluralize(dates.count,"entry")
+      if errors.present?
+        flash[:alert] = "<strong>"+ActionController::Base.helpers.pluralize(errors.count,"error") + " while importing:</strong>"
+        errors.each do |error|
+          flash[:alert] << "<br>"+error
+        end
+      end
+    end   
+     
 end

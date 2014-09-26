@@ -19,40 +19,41 @@
       %br
       .clearfix
 
-    .col-md-8.col-md-offset-2
-      %br
-      - %w(Sunday Monday Tuesday Wednesday Thursday Friday Saturday).each do |day|
-        - if current_user.frequency.include?(day[0..2])
-          = check_box_tag "frequency[#{day[0..2]}]", 1, {:checked => "checked"}
-        - else
-          = check_box_tag "frequency[#{day[0..2]}]"
-        = label_tag "frequency_#{day[0..2]}", day
-        &nbsp;&nbsp;
-      .clearfix
+    -#
+      .col-md-8.col-md-offset-2
+        %br
+        - %w(Sunday Monday Tuesday Wednesday Thursday Friday Saturday).each do |day|
+          - if current_user.frequency.include?(day[0..2])
+            = check_box_tag "frequency[#{day[0..2]}]", 1, {:checked => "checked"}
+          - else
+            = check_box_tag "frequency[#{day[0..2]}]"
+          = label_tag "frequency_#{day[0..2]}", day
+          &nbsp;&nbsp;
+        .clearfix
 
-    .col-md-8.col-md-offset-2
-      %br
-      = f.check_box :send_past_entry
-      = f.label :send_past_entry
-      %br
-      %br
-      .clearfix
-    
-    .col-md-4.col-md-offset-2
-      = f.label :send_time
-      = f.text_field :send_time, :class => "form-control"
-      %br
+      .col-md-8.col-md-offset-2
+        %br
+        = f.check_box :send_past_entry
+        = f.label :send_past_entry
+        %br
+        %br
+        .clearfix
+      
+      .col-md-4.col-md-offset-2
+        = f.label :send_time
+        = f.text_field :send_time, :class => "form-control"
+        %br
 
-    .col-md-4
-      = f.label :send_timezone
-      = f.text_field :send_timezone, :class => "form-control"
-      %br
+      .col-md-4
+        = f.label :send_timezone
+        = f.text_field :send_timezone, :class => "form-control"
+        %br
 
-    .col-md-8.col-md-offset-2
-      = f.submit "Update", :class=>"btn btn-primary form-control"
+      .col-md-8.col-md-offset-2
+        = f.submit "Update", :class=>"btn btn-primary form-control"
 
-    .col-md-8.col-md-offset-2
-      %hr
+      .col-md-8.col-md-offset-2
+        %hr
 
     .col-md-8.col-md-offset-2
       = f.label :email

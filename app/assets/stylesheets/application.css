@@ -17,6 +17,8 @@
  *= require_tree .
  */
 
+body { padding-top: 70px; }
+
 #error_explanation h2 {
   font-size: 18px;
   margin: 10px;

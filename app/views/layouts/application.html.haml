@@ -22,9 +22,9 @@
 
     #main-container.container
       - if notice
-        .alert.alert-success= notice
+        .alert.alert-success= notice.html_safe
       - if alert
-        .alert.alert-danger= alert    
+        .alert.alert-danger= alert.html_safe
       = yield
 
     = render 'shared/footer'

@@ -5,8 +5,7 @@
   - if @entry.image_url
     .col-md-8.col-md-offset-2.s-show-url
       .row
-        %br
-        =image_tag @entry.image_url, :class => "col-xs-12"
+        =image_code(@entry)
       %br
     .clearfix
 
