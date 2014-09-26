@@ -1,0 +1,27 @@
+- title "Entry on #{@entry.date.strftime("%B %-d, %Y")}"
+
+.row
+
+  - if @entry.image_url
+    .col-md-8.col-md-offset-2.s-show-url
+      .row
+        %br
+        =image_tag @entry.image_url, :class => "col-xs-12"
+      %br
+    .clearfix
+
+  .col-md-8.col-md-offset-2
+    %h4= @entry.date.strftime("%B %-d, %Y")
+    %br
+  .col-md-8.col-md-offset-2
+    = @entry.body.html_safe
+    %br
+    %br
+  .clearfix
+  .col-md-8.col-md-offset-2
+    %br
+    = link_to 'All Entries', entries_path
+    &nbsp;&middot;&nbsp;
+    = link_to 'Edit', edit_entry_path(@entry)
+    &nbsp;&middot;&nbsp;
+    = link_to 'Delete', entry_path(@entry), method: :delete, data: { confirm: 'Are you sure?' }    

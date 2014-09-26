@@ -1,0 +1,92 @@
+.row
+  .col-md-8.col-md-offset-2
+    %h2
+      Edit #{resource_name.to_s.humanize}
+    %br
+
+  = form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f|
+    .col-md-8.col-md-offset-2
+      = devise_error_messages!
+
+    .col-md-4.col-md-offset-2
+      = f.label :first_name
+      = f.text_field :first_name, :class => "form-control"
+      %br
+
+    .col-md-4
+      = f.label :last_name
+      = f.text_field :last_name, :class => "form-control"
+      %br
+      .clearfix
+
+    .col-md-8.col-md-offset-2
+      %br
+      - %w(Sunday Monday Tuesday Wednesday Thursday Friday Saturday).each do |day|
+        - if current_user.frequency.include?(day[0..2])
+          = check_box_tag "frequency[#{day[0..2]}]", 1, {:checked => "checked"}
+        - else
+          = check_box_tag "frequency[#{day[0..2]}]"
+        = label_tag "frequency_#{day[0..2]}", day
+        &nbsp;&nbsp;
+      .clearfix
+
+    .col-md-8.col-md-offset-2
+      %br
+      = f.check_box :send_past_entry
+      = f.label :send_past_entry
+      %br
+      %br
+      .clearfix
+    
+    .col-md-4.col-md-offset-2
+      = f.label :send_time
+      = f.text_field :send_time, :class => "form-control"
+      %br
+
+    .col-md-4
+      = f.label :send_timezone
+      = f.text_field :send_timezone, :class => "form-control"
+      %br
+
+    .col-md-8.col-md-offset-2
+      = f.submit "Update", :class=>"btn btn-primary form-control"
+
+    .col-md-8.col-md-offset-2
+      %hr
+
+    .col-md-8.col-md-offset-2
+      = f.label :email
+      = f.email_field :email, autofocus: true, :class => "form-control"
+      %br
+
+    - if devise_mapping.confirmable? && resource.pending_reconfirmation?
+      .col-md-8.col-md-offset-2
+        Currently waiting confirmation for: #{resource.unconfirmed_email}
+    
+    .col-md-4.col-md-offset-2
+      = f.label :password
+      %i (leave blank if you don't want to change it)
+      = f.password_field :password, autocomplete: "off", :class => "form-control"
+      %br
+    
+    .col-md-4
+      = f.label :password_confirmation
+      = f.password_field :password_confirmation, autocomplete: "off", :class => "form-control"
+      %br
+
+    .col-md-8.col-md-offset-2
+      = f.label :current_password
+      %i (we need your current password to confirm your changes)
+      = f.password_field :current_password, autocomplete: "off", :class => "form-control"
+      %br
+      .clearfix 
+
+    .col-md-8.col-md-offset-2
+      = f.submit "Update", :class=>"btn btn-primary form-control"
+
+    .col-md-8.col-md-offset-2
+      %hr
+
+    .col-md-8.col-md-offset-2
+      =link_to registration_path(resource_name), data: { confirm: "Are you sure?" }, method: :delete do 
+        %h5 Cancel your account & delete all entries

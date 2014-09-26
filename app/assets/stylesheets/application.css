@@ -15,3 +15,8 @@
  *= require twbs
  *= require_tree .
  */
+
+#error_explanation h2 {
+  font-size: 18px;
+  margin: 10px;
+}

@@ -1,0 +1,19 @@
+.row
+  .col-md-8.col-md-offset-2
+    %h2 Resend unlock instructions
+    %br
+  = form_for(resource, as: resource_name, url: unlock_path(resource_name), html: { method: :post }) do |f|
+    .col-md-8.col-md-offset-2
+      = devise_error_messages!
+
+    .col-md-8.col-md-offset-2
+      = f.label :email
+      = f.email_field :email, autofocus: true, :class => "form-control"
+      %br
+
+    .col-md-8.col-md-offset-2
+      = f.submit "Resend unlock instructions", :class => "btn btn-primary form-control"
+      
+      .clearfix
+      %br
+      = render "devise/shared/links"

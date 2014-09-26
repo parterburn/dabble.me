@@ -1,0 +1,30 @@
+- title "Edit Entry"
+
+.row
+
+  = form_for :entry, url: entry_path(@entry), method: :patch do |f|
+
+    -if @entry.errors.any?
+      #error_explanation.col-md-8.col-md-offset-2
+        .alert.alert-danger
+          - @entry.errors.full_messages.each do |msg|
+            %p= msg
+
+    .col-md-8.col-md-offset-2
+      = f.label :date
+      = f.text_field :date, :value =>  @entry.date.strftime("%Y-%m-%d"), :class => "form-control"
+      %br
+
+    .col-md-8.col-md-offset-2
+      = f.label :image_url
+      = f.text_field :image_url, :class => "form-control"
+      %br
+
+    .col-md-8.col-md-offset-2
+      = f.label :body
+      = f.text_area :body, :class => "form-control", :rows => 20
+      %br
+
+    .col-md-8.col-md-offset-2
+      = f.submit "Edit Entry", :class => "form-control btn btn-primary"
+      %br

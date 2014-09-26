@@ -15,6 +15,10 @@ gem 'puma'
 # ORM
 gem 'pg'
 
+gem 'devise' # User Authentication
+
+gem 'sendgrid', '~> 1.2.0' # Emails
+
 # Pagination
 # gem 'kaminari'
 
@@ -54,7 +58,7 @@ group :development, :test do
 end
 
 group :development do
-  gem 'better_errors'
+  #gem 'better_errors'
   gem 'binding_of_caller'
   gem 'bullet'
   gem 'meta_request'

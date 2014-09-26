@@ -5,4 +5,4 @@ before_install:
   - "export DISPLAY=:99.0"
   - "sh -e /etc/init.d/xvfb start"
 before_script:
-  - psql -c 'create database dabbleme_test;' -U postgres
+  - psql -c 'create database dabbleme_test;' -U dabbleme

@@ -1,0 +1,33 @@
+.row
+  .col-md-8.col-md-offset-2
+    %h2 Log in
+    %br
+  = form_for(resource, as: resource_name, url: session_path(resource_name)) do |f|
+    
+    .col-md-8.col-md-offset-2
+      = devise_error_messages!
+    
+    .col-md-8.col-md-offset-2
+      = f.label :email
+      = f.email_field :email, autofocus: true, :class => "form-control"
+      %br
+    
+    .col-md-8.col-md-offset-2
+      = f.label :password
+      = f.password_field :password, autocomplete: "off", :class => "form-control"
+      %br
+
+    - if devise_mapping.rememberable?
+      .col-md-8.col-md-offset-2
+        = f.check_box :remember_me, {:checked => "checked"}
+        = f.label :remember_me
+
+      .clearfix
+
+    .col-md-8.col-md-offset-2
+      %br
+      = f.submit "Log in", :class => "btn btn-primary"
+
+      .clearfix
+      %br
+      = render "devise/shared/links"

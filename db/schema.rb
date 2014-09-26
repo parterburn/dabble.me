@@ -11,6 +11,48 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 0) do
+ActiveRecord::Schema.define(version: 20140926080006) do
+
+  # These are extensions that must be enabled in order to support this database
+  enable_extension "plpgsql"
+
+  create_table "entries", force: true do |t|
+    t.datetime "date",                default: '2014-09-26 07:25:29', null: false
+    t.text     "body"
+    t.text     "image_url"
+    t.text     "original_email_body"
+    t.integer  "inspiration_id"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.integer  "user_id"
+  end
+
+  add_index "entries", ["user_id"], name: "index_entries_on_user_id", using: :btree
+
+  create_table "users", force: true do |t|
+    t.string   "email",                  default: "",                            null: false
+    t.string   "encrypted_password",     default: "",                            null: false
+    t.string   "reset_password_token"
+    t.datetime "reset_password_sent_at"
+    t.datetime "remember_created_at"
+    t.integer  "sign_in_count",          default: 0,                             null: false
+    t.datetime "current_sign_in_at"
+    t.datetime "last_sign_in_at"
+    t.inet     "current_sign_in_ip"
+    t.inet     "last_sign_in_ip"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+    t.string   "first_name"
+    t.string   "last_name"
+    t.text     "frequency",              default: "---\n- Mon\n- Fri\n"
+    t.integer  "send_time",              default: 8
+    t.string   "send_timezone",          default: "Mountain Time (US & Canada)"
+    t.boolean  "send_past_entry",        default: true
+    t.integer  "emails_sent",            default: 0
+    t.integer  "emails_received",        default: 0
+  end
+
+  add_index "users", ["email"], name: "index_users_on_email", unique: true, using: :btree
+  add_index "users", ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true, using: :btree
 
 end

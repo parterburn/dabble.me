@@ -23,7 +23,11 @@
   %body
     = render 'shared/navbar'
 
-    #main-container.container= yield
+    #main-container.container
+      - if notice
+        .alert.alert-success= notice
+      - if alert
+        .alert.alert-danger= alert    
+      = yield
 
     = render 'shared/footer'
-    = render 'shared/turbolinks_spinner'
