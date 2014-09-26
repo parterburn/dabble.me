@@ -6,7 +6,7 @@ class AddDetailsToUsers < ActiveRecord::Migration
     add_column :users, :send_time, :integer, :default => 8
     add_column :users, :send_timezone, :string, :default => "Mountain Time (US & Canada)"
     add_column :users, :send_past_entry, :boolean, :default => true
-    add_column :users, :emails_sent, :integer
-    add_column :users, :emails_received, :integer
+    add_column :users, :emails_sent, :integer, :default => 0
+    add_column :users, :emails_received, :integer, :default => 0
   end
 end

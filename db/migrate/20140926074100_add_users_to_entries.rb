@@ -1,12 +1,16 @@
 class AddUsersToEntries < ActiveRecord::Migration
   def change
-    change_table :entries do |t|
+
+   create_table :products do |t|
+      t.datetime :date, :null => false, :default => Time.now
+      t.text :body
+      t.text :image_url
+      t.text :original_email_body
+      t.integer :inspiration_id
       t.references :user, index: true
+      t.timestamps
     end
-  end
-  def down
-    change_table :entries do |t|
-      t.remove :user_id
-    end
+
+
   end
 end
