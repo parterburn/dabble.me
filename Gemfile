@@ -16,8 +16,10 @@ gem 'puma'
 gem 'pg'
 
 gem 'devise' # User Authentication
-
 gem 'sendgrid', '~> 1.2.0' # Emails
+
+gem 'simple_form'
+gem 'summernote-rails'
 
 # Pagination
 # gem 'kaminari'

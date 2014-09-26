@@ -12,10 +12,14 @@
       %ul.nav.navbar-nav
         - if user_signed_in?
           %li{:class=>"#{'active' if current_page?(entries_path)}"}
-            =link_to "Entries", entries_path
+            =link_to entries_path do
+              =pluralize(current_user.entries.count,"entry")
 
           %li{:class=>"#{'active' if current_page?(new_entry_path)}"}
             =link_to "New Entry", new_entry_path
+
+          %li{:class=>"#{'active' if current_page?(import_entries_path)}"}
+            =link_to "Import OhLife", import_entries_path            
 
         - else  
           %li{:class=>"#{'active' if current_page?(root_path)}"}

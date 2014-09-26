@@ -1,0 +1,12 @@
+.row
+  = form_for :entry, url: import_process_entry_path, method: :put do |f|
+    
+    .col-md-8.col-md-offset-2
+      = f.label :text
+      = f.text_area :text, :class => "form-control", :rows => 20  
+      %br
+
+    .col-md-8.col-md-offset-2
+      = f.submit "Import Entries", :class => "form-control btn btn-primary"
+      %br
+      %br

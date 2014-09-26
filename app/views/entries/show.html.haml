@@ -11,7 +11,10 @@
     .clearfix
 
   .col-md-8.col-md-offset-2
-    %h4= @entry.date.strftime("%B %-d, %Y")
+    %h4
+      = @entry.date.strftime("%B %-d, %Y")
+      = link_to edit_entry_path(@entry) do
+        %i.fa.fa-pencil-square-o
     %br
   .col-md-8.col-md-offset-2
     = @entry.body.html_safe

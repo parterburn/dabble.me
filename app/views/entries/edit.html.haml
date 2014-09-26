@@ -22,9 +22,13 @@
 
     .col-md-8.col-md-offset-2
       = f.label :body
-      = f.text_area :body, :class => "form-control", :rows => 20
+      = f.text_area :body, :class => "form-control summernote", :rows => 20
       %br
 
     .col-md-8.col-md-offset-2
       = f.submit "Edit Entry", :class => "form-control btn btn-primary"
       %br
+      %br
+      = link_to 'Delete Entry', entry_path(@entry), method: :delete, data: { confirm: 'Are you sure?' }
+      %br
+      %br      
