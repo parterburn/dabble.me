@@ -18,13 +18,15 @@
       = javascript_include_tag '//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js', 'respond.js'
 
   %body
-    = render 'shared/navbar'
+    #wrap
 
-    #main-container.container
-      - if notice
-        .alert.alert-success= notice.html_safe
-      - if alert
-        .alert.alert-danger= alert.html_safe
-      = yield
+      = render 'shared/navbar'
+
+      #main-container.container.clear-top
+        - if notice
+          .alert.alert-success= notice.html_safe
+        - if alert
+          .alert.alert-danger= alert.html_safe
+        = yield
 
     = render 'shared/footer'

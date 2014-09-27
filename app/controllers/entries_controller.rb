@@ -22,12 +22,24 @@ class EntriesController < ApplicationController
 
   def create
     @user = current_user
-    @entry = @user.entries.create(entry_params)
-   
-    if @entry.save
-      redirect_to @entry
+
+    selected_date = Date.parse(params[:entry][:date])
+    @existing_entry = Entry.where(:user_id => @user.id, :date => selected_date.beginning_of_day..selected_date.end_of_day).first
+    
+    if @existing_entry.present?
+      #existing entry exists, so add to it
+      @existing_entry.body += "<br><br>--------------------------------<br><br>#{params[:entry][:entry]}"
+      @existing_entry.save
+      redirect_to entry_path(@existing_entry)
     else
-      render 'new'
+      @entry = @user.entries.create(entry_params)
+      if @entry.save
+        #save new entry & view it
+        redirect_to @entry
+      else
+        #errors
+        render 'new'
+      end
     end
   end
 
@@ -62,7 +74,7 @@ class EntriesController < ApplicationController
 
   private
     def entry_params
-      params.require(:entry).permit(:date, :body, :image_url)
+      params.require(:entry).permit(:date, :entry, :image_url)
     end  
 
     def require_permission
@@ -82,12 +94,10 @@ class EntriesController < ApplicationController
       bodies.shift
 
       dates.each_with_index do |date,i|
-        body = bodies[i].gsub(/[\r\n]+/, "<br><br>") if bodies[i].present?
-        #clean up extra <br> at beginning and end
-        body.gsub!(/\A(\<br\>)/,"")
-        body.gsub!(/\A(\<br\>)/,"")
-        body.gsub!(/(\<br\>)\z/,"")
-        body.gsub!(/(\<br\>)\z/,"")
+        #remove line breaks at begininng and end          
+        body = ActionController::Base.helpers.simple_format(bodies[i])
+        body.gsub!(/\A(\<p\>\<\/p\>)/,"")
+        body.gsub!(/(\<p\>\<\/p\>)\z/,"")
         entry = user.entries.create(:date => date, :body => body, :inspiration_id => 1)
         unless entry.save
           errors << date

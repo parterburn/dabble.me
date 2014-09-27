@@ -4,27 +4,22 @@
 
   - if @entries.count > 0
     .col-md-8.col-md-offset-2
-      %h1 
-        =pluralize(current_user.entries.count,"total entry")
+      %h3 Your entries
       
   - else
     .col-md-8.col-md-offset-2
       %br
-      =link_to "Write your first entry", new_entry_path, :class => "btn btn-primary form-control"
       %br
-      %br
+      .center
+        %h4 So lonely...get to writing!
+        %br
+        %br
+        =link_to "Write your first entry", new_entry_path, :class => "btn btn-primary btn-lg"
+        =link_to "Import from OhLife", import_entries_path, :class => "btn btn-primary btn-lg"
 
   - @entries.each do |entry|
     .col-md-8.col-md-offset-2
       %hr
-
-    - if entry.image_url
-      .col-md-8.col-md-offset-2.s-show-url
-        .row
-          %br
-          =image_tag entry.image_url, :class => "col-xs-12"
-        %br
-      .clearfix
 
     .col-md-8.col-md-offset-2
       %h4
@@ -32,7 +27,11 @@
         = link_to edit_entry_path(entry) do
           %i.fa.fa-pencil-square-o
       %br
-    .col-md-8.col-md-offset-2
+    - if entry.image_url.present?
+      .col-md-8.col-md-offset-2.s-show-url
+        .row
+          =image_code(entry)
+        %br
+      .clearfix
+    .col-md-8.col-md-offset-2.well
       = entry.body.html_safe
-      %br
-      %br

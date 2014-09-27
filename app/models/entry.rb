@@ -1,12 +1,15 @@
 class Entry < ActiveRecord::Base
-  validates :date, presence: true
-  validates :body, presence: true             
 
   belongs_to :user
   belongs_to :inspiration
 
   before_validation :ensure_protocol
-  validates :image_url, :valid_url => true
+
+  validates :date, :presence => true, :valid_date => true
+  validates :image_url, :valid_url => true  
+  validates :entry, presence: true
+
+  alias_attribute :entry, :body
 
   private
 

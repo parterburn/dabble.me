@@ -23,3 +23,48 @@ body { padding-top: 70px; }
   font-size: 18px;
   margin: 10px;
 }
+
+.center {
+  text-align:center;
+  margin:0 auto;
+}
+
+html, body {
+  height: 100%;
+}
+
+#wrap {
+  min-height: 100%;
+}
+
+#main-container {
+  overflow:auto;
+  padding-bottom:150px; /* this needs to be bigger than footer height*/
+}
+
+.footer {
+  position: relative;
+  margin-top: -150px; /* negative value of footer height */
+  height: 150px;
+  clear:both;
+  padding-top:20px;
+} 
+
+.s-inspiration {
+  font-style: italic;
+  color:#AAA;
+  margin-bottom:20px;
+}
+
+.muted {
+  color:#777;
+}
+
+.muted a {
+  color:#777;
+}
+
+.muted a:hover {
+  color:#333;
+  text-decoration: none;
+}

@@ -2,12 +2,13 @@ $ ->
 
   # to set summernote object
   # You should change '#post_content' to your textarea input id
-  summer_note = $('#entry_body')
+  summer_note = $('#entry_entry')
 
   # to call summernote editor
   summer_note.summernote
+    mode: 'text/html'
     height:300
-    lang: 'en-US'
+    theme: 'flatly'
     toolbar: [
                 ["fontsize", ["fontsize"]],
                 ["style", ["bold", "italic", "underline", "clear"]],

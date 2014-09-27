@@ -1,6 +1,6 @@
 .row
   .col-md-8.col-md-offset-2
-    %h2 Resend unlock instructions
+    %h3 Resend unlock instructions
     %br
   = form_for(resource, as: resource_name, url: unlock_path(resource_name), html: { method: :post }) do |f|
     .col-md-8.col-md-offset-2

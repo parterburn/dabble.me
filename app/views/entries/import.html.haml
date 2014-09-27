@@ -1,12 +1,24 @@
 .row
+
+  .col-md-8.col-md-offset-2
+    %h3 Import OhLife
+    %br
+    .alert.alert-warning
+      Export your
+      =link_to "OhLife", "http://ohlife.com/export", :target => "_blank", :class => "alert-link"
+      entries and paste the contents of the text file in the textarea below.
+    %br
+
   = form_for :entry, url: import_process_entry_path, method: :put do |f|
     
     .col-md-8.col-md-offset-2
-      = f.label :text
-      = f.text_area :text, :class => "form-control", :rows => 20  
+      = f.label :text, "Contents of export_2014-09-XX.txt"
+      = f.text_area :text, :class => "form-control", :rows => 15  
       %br
 
     .col-md-8.col-md-offset-2
       = f.submit "Import Entries", :class => "form-control btn btn-primary"
       %br
       %br
+
+    .clearfix

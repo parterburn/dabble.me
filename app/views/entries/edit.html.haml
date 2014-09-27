@@ -1,7 +1,9 @@
-- title "Edit Entry"
+- title "Edit Entry on #{date_formatted(@entry)}"
 
 .row
-
+  .col-md-8.col-md-offset-2
+    %h3 Edit entry on #{date_formatted(@entry)}
+    %br
   = form_for :entry, url: entry_path(@entry), method: :patch do |f|
 
     -if @entry.errors.any?
@@ -12,17 +14,20 @@
 
     .col-md-8.col-md-offset-2
       = f.label :date
-      = f.text_field :date, :value =>  @entry.date.strftime("%Y-%m-%d"), :class => "form-control"
+      .input-group.date
+        %span.input-group-addon
+          %i.fa.fa-calendar
+        = f.text_field :date, :value =>  date_formatted(@entry), :placeholder=>"YYYY-MM-DD", :class => "form-control"
       %br
 
     .col-md-8.col-md-offset-2
       = f.label :image_url
-      = f.text_field :image_url, :class => "form-control"
+      = f.text_field :image_url, :class => "form-control", :placeholder => "http://url-to-your-image"
       %br
 
     .col-md-8.col-md-offset-2
-      = f.label :body
-      = f.text_area :body, :class => "form-control summernote", :rows => 20
+      = f.label :entry
+      = f.text_area :entry, :class => "form-control summernote", :rows => 20, :autofocus => true
       %br
 
     .col-md-8.col-md-offset-2

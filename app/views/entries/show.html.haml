@@ -2,23 +2,20 @@
 
 .row
 
-  - if @entry.image_url
-    .col-md-8.col-md-offset-2.s-show-url
-      .row
-        =image_code(@entry)
-      %br
-    .clearfix
-
   .col-md-8.col-md-offset-2
     %h4
       = @entry.date.strftime("%B %-d, %Y")
       = link_to edit_entry_path(@entry) do
         %i.fa.fa-pencil-square-o
     %br
-  .col-md-8.col-md-offset-2
+  - if @entry.image_url.present?
+    .col-md-8.col-md-offset-2.s-show-url
+      .row
+        =image_code(@entry)
+      %br
+    .clearfix    
+  .col-md-8.col-md-offset-2.well
     = @entry.body.html_safe
-    %br
-    %br
   .clearfix
   .col-md-8.col-md-offset-2
     %br

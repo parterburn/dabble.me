@@ -1,16 +1,17 @@
-%footer
-  %br
-  %br
-  %br  
-  .container
+%footer.footer
+
+
+%footer.footer
+  .container.center
     %hr
-    %p
+    %p.s-inspiration
+      =random_inspiration
+    %p.muted
       Built by
       = link_to 'http://twitter.com/parterburn' do
         %span.fa.fa-twitter
-        parterburn
-      -#
-        &nbsp;&nbsp;
-        = link_to 'http://github.com/parterburn' do
-          %span.fa.fa-github
-          parterburn
+        Parterburn
+      &nbsp;&middot;&nbsp;
+      = mail_to "paularterburn+dabble@gmail.com", :encode => "hex" do
+        %span.fa.fa-envelope
+        Contact & FAQ's
