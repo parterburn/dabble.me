@@ -20,6 +20,7 @@ gem 'sendgrid', '~> 1.2.0' # Emails
 
 gem 'simple_form'
 gem 'summernote-rails'
+gem 'addressable' # better URI checking
 
 # Pagination
 # gem 'kaminari'
