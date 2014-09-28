@@ -1,0 +1,13 @@
+.background {
+  background-color:#252c2f;
+}
+
+.logo {
+  background-image: url(https://dabble.me/cast/imagefiles/bf_logo_giant_png.png);
+  background-size: 650px 188px;
+  background-repeat:no-repeat;  
+}
+
+.progressBar {
+  background-color: #eff056;
+}
