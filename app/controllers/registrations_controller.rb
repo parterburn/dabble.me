@@ -1,5 +1,15 @@
 class RegistrationsController < Devise::RegistrationsController
 
+  def new
+    flash[:notice] = 'Registrations are not yet open; enter your email below to be alerted!'
+    redirect_to root_path
+  end
+
+  def create
+    flash[:notice] = 'Registrations are not yet open; enter your email below to be alerted!'
+    redirect_to root_path
+  end
+
   def update
     @user = current_user
     
