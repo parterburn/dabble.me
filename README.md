@@ -4,13 +4,26 @@ I recommend forking and setting up a free server at [Ninefold](https://ninefold.
 
 It also uses [SendGrid](http://sendgrid.com) for processing emails. You can sign up for a free account that will allow 200 emails per day.
 
-Your environment variables at ```config/local_env.yml``` will need to be:
+Your local environment variables at ```config/local_env.yml``` will need to be something like this:
 
 ```
-SECRET_KEY_BASE=1234..1234
+SENDGRID_USERNAME: your_sendgrid_username
+SENDGRID_PASSWORD: your_sendgrid_password
+SECRET_KEY_BASE: 1234..1234
+DEVISE_SECRET_KEY: 1234..1234
+```
+
+Your environment variables on Ninefold will need to be something like this:
+
+```
 SENDGRID_USERNAME=your_sendgrid_username
 SENDGRID_PASSWORD=your_sendgrid_password
+SECRET_KEY_BASE=1234..1234
 DEVISE_SECRETE_KEY=1234..1234
+NEW_RELIC_LICENSE_KEY=k3333..2222
+NEW_RELIC_APP_NAME=DABBLE.ME
+PROD_HOST=dabble.me
+GOOGLE_ANALYTICS_ID=UA-12345-67
 ```
 
 If you want random bits of inspiration, you can load up different quotes in the Inspiration table to be shown above the New Posts page:

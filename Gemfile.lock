@@ -95,6 +95,7 @@ GEM
     faker (1.4.3)
       i18n (~> 0.5)
     ffi (1.9.3)
+    google-analytics-rails (0.0.6)
     haml (4.0.5)
       tilt
     haml_assets (0.2.2)
@@ -268,6 +269,7 @@ DEPENDENCIES
   email_spec
   factory_girl_rails
   faker
+  google-analytics-rails
   haml
   haml_assets
   i18n-js

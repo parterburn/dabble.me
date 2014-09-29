@@ -82,5 +82,7 @@ Rails.application.configure do
   config.active_record.dump_schema_after_migration = false
 
   # Devise
-  config.action_mailer.default_url_options = { :host => 'dabble.me' }
+  config.action_mailer.default_url_options = { :host => ENV['PROD_HOST'] }
+
+  GA.tracker = ENV['GOOGLE_ANALYTICS_ID']
 end
