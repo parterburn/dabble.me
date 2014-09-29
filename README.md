@@ -32,4 +32,21 @@ If you want random bits of inspiration, you can load up different quotes in the 
 
 =====
 
+**Current features:**
+
+* Read past entries by month/year
+* Create new entries with simple formatting
+* OhLife Importer
+
+**Features coming soon:**
+
+* Email: Reply-to-post new entries on days of the week you choose (with random past entries embedded)
+* Associate 1 image to a specific entry
+
+**Features coming later:**
+
+* Analytics around posting: when do you post, what do you post about mostly (tag cloud-esque)?
+
+=====
+
 Note: their is a directory at ```/public/cast``` that is not necessary for the Dabble Me site, but rather part of an existing Chromecast site (https://dabble.me/cast) that is running on Dabble.me and needs to be there for the site to still function. Feel free to remove if you setup Dabble Me on your own servers.
