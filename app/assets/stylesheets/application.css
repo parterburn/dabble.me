@@ -86,3 +86,24 @@ html, body {
   -webkit-filter: grayscale(0%);
   opacity:1.0;
 }
+
+.float-right {
+  float:right !important;
+}
+
+.s-back-to-top {
+  position:fixed;
+  right:25px;
+  bottom:15px;
+  display:none;
+}
+
+.s-back-to-top a {
+  color:#CCC;
+  text-decoration: none;
+}
+
+.s-back-to-top a:hover {
+  color:#777;
+  text-decoration: none;
+}

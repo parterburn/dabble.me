@@ -13,4 +13,12 @@ $( document ).ready(function() {
     $(this).find('input[type=submit]').addClass('disabled');
   });
 
+  window.onscroll = function(ev) {
+    if ((window.innerHeight + window.scrollY) >= 1600) {
+      $(".j-back-to-top").fadeIn();
+    } else {
+      $(".j-back-to-top").fadeOut();
+    }
+  };
+
 });

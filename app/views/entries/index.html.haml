@@ -1,11 +1,31 @@
-- title "All Entries on Dabble Me"
+- title "#{@title} on Dabble Me"
 
 .row
 
   - if @entries.count > 0
-    .col-md-8.col-md-offset-2
-      %h3 Your entries
+    .col-md-8.col-md-offset-1
+      %h3 #{@title}
+
+    .col-md-2.float-right
+      %h3.s-date-year
+        =link_to entries_path do
+          All
+          (#{current_user.entries.count})
+      - @entries.group_by{|c| c.date.strftime "%Y" }.each do |year_str,year_entries|
+        =link_to entries_path+'/'+year_str do
+          %h4.s-date-year
+            = year_str
+            (#{year_entries.count})
+
+        - year_entries.group_by{|c| c.date.strftime "%b" }.each do |month_str,date_entries|
+          =link_to entries_path+'/'+year_str+'/'+month_str.to_date.strftime('%m') do
+            .s-date-month
+              = month_str
+              (#{date_entries.count})
       
+    .col-md-8.col-md-offset-1
+      %hr
+
   - else
     .col-md-8.col-md-offset-2
       %br
@@ -17,21 +37,19 @@
         =link_to "Write your first entry", new_entry_path, :class => "btn btn-primary btn-lg"
         =link_to "Import from OhLife", import_entries_path, :class => "btn btn-primary btn-lg"
 
-  - @entries.each do |entry|
-    .col-md-8.col-md-offset-2
-      %hr
 
-    .col-md-8.col-md-offset-2
+  - @entries.each do |entry|
+    .col-md-8.col-md-offset-1
       %h4
         = entry.date.strftime("%B %-d, %Y")
         = link_to edit_entry_path(entry) do
           %i.fa.fa-pencil-square-o
       %br
     - if entry.image_url.present?
-      .col-md-8.col-md-offset-2.s-show-url
+      .col-md-8.col-md-offset-1.s-show-url
         .row
           =image_code(entry)
         %br
       .clearfix
-    .col-md-8.col-md-offset-2.well
+    .col-md-8.col-md-offset-1.well
       = entry.body.html_safe
