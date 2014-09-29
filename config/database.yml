@@ -85,5 +85,5 @@ test:
 production:
   <<: *default
   database: dabbleme_production
-  username: postgres
+  username: dabbleme
   password:
