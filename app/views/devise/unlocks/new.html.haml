@@ -1,17 +1,17 @@
 .row
-  .col-md-8.col-md-offset-2
+  .col-md-4.col-md-offset-4
     %h3 Resend unlock instructions
     %br
   = form_for(resource, as: resource_name, url: unlock_path(resource_name), html: { method: :post }) do |f|
-    .col-md-8.col-md-offset-2
+    .col-md-4.col-md-offset-4
       = devise_error_messages!
 
-    .col-md-8.col-md-offset-2
+    .col-md-4.col-md-offset-4
       = f.label :email
       = f.email_field :email, autofocus: true, :class => "form-control"
       %br
 
-    .col-md-8.col-md-offset-2
+    .col-md-4.col-md-offset-4
       = f.submit "Resend unlock instructions", :class => "btn btn-primary form-control"
       
       .clearfix

@@ -1,17 +1,17 @@
 %footer.footer
-
-
-%footer.footer
   .container.center
     %hr
-    %p.s-inspiration
-      =random_inspiration
+    %p
+      =link_to "Powered by donations","https://gratipay.com/parterburn/",:target=>"_blank"
     %p.muted
-      Built by
       = link_to 'http://twitter.com/parterburn' do
         %span.fa.fa-twitter
-        Parterburn
+        Built by @parterburn
       &nbsp;&middot;&nbsp;
-      = mail_to "paularterburn+dabble@gmail.com", :encode => "hex" do
-        %span.fa.fa-envelope
-        Contact & FAQ's
+      = mail_to "pleasereply@dabble.me", :encode => "hex" do
+        %span.fa.fa-envelope-o
+        Contact
+      &nbsp;&middot;&nbsp;
+      = link_to 'http://github.com/parterburn/dabble.me' do
+        %span.fa.fa-github
+        View code on GitHub

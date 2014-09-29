@@ -8,8 +8,12 @@ module ApplicationHelper
   end
 
   def random_inspiration
-    offset = rand(Inspiration.count)
-    @inspiration = Inspiration.offset(offset).first
-    @inspiration.body
+    if (count = Inspiration.without_ohlife.count) > 0
+      offset = rand(count)
+      @inspiration = Inspiration.without_ohlife.offset(offset).first
+      tag("p", :class=>"center s-inspiration") + @inspiration.body
+    else
+      ""
+    end
   end  
 end

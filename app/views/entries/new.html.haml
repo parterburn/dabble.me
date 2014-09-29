@@ -1,6 +1,9 @@
-- title "New Entry"
+- title "New Entry on Dabble Me"
 
 .row
+
+  .col-md-8.col-md-offset-2
+    =random_inspiration
 
   = form_for :entry, url: entries_path do |f|
 
@@ -18,10 +21,11 @@
         = f.text_field :date, :value =>  date_formatted(@entry), :placeholder=>"YYYY-MM-DD", :class => "form-control"
       %br
 
-    .col-md-8.col-md-offset-2
-      = f.label :image_url
-      = f.text_field :image_url, :class => "form-control", :placeholder => "http://url-to-your-image"
-      %br
+    -#
+      .col-md-8.col-md-offset-2
+        = f.label :image_url
+        = f.text_field :image_url, :class => "form-control", :placeholder => "http://url-to-your-image"
+        %br
 
     .col-md-8.col-md-offset-2
       = f.label :entry
