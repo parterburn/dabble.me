@@ -28,7 +28,9 @@ GOOGLE_ANALYTICS_ID=UA-12345-67
 
 If you want random bits of inspiration, you can load up different quotes in the Inspiration table to be shown above the New Posts page:
 
-```Inspiration.create(:category => "question", :body => "Are you holding onto something you need to let go of?")
+```
+Inspiration.create(:category => "question", :body => "Are you holding onto something you need to let go of?")
+```
 
 =====
 
