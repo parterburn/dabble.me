@@ -1,16 +1,22 @@
 class RegistrationsController < Devise::RegistrationsController
 
   def new
-    #super
-    flash[:notice] = 'Registrations are not yet open; enter your email below to be alerted!'
-    redirect_to root_path
+    if ENV['CLOSE_REGISTRATIONS'].present?
+      flash[:notice] = 'Registrations are not yet open; enter your email below to be alerted!'
+      redirect_to root_path      
+    else
+      super      
+    end
   end
 
   def create
-    #super
-    #UserMailer.welcome_email(@user).deliver unless @user.invalid?
-    flash[:notice] = 'Registrations are not yet open; enter your email below to be alerted!'
-    redirect_to root_path
+    if ENV['CLOSE_REGISTRATIONS'].present?
+      flash[:notice] = 'Registrations are not yet open; enter your email below to be alerted!'
+      redirect_to root_path      
+    else
+      super
+      UserMailer.welcome_email(@user).deliver unless @user.invalid?      
+    end
   end
 
   def update

@@ -10,4 +10,6 @@ Rails.application.routes.draw do
 
   root 'welcome#index'
 
+  get '/privacy' => 'welcome#privacy'
+
 end
