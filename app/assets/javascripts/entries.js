@@ -6,7 +6,7 @@ $( document ).ready(function() {
     todayHighlight: true,
     autoclose: true,
     todayBtn: "linked"
-  }).datepicker("setDate", new Date());
+  });
 
   $('form').submit(function(){
     $(this).find('input[type=submit]').prop('disabled', true);

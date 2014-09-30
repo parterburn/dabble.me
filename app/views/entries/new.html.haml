@@ -19,6 +19,15 @@
         %span.input-group-addon
           %i.fa.fa-calendar
         = f.text_field :date, :value =>  date_formatted(@entry), :placeholder=>"YYYY-MM-DD", :class => "form-control"
+        -if @entry.date.blank?
+          :javascript
+              $('.input-group.date').datepicker({
+                  format: "yyyy-mm-dd",
+                  todayHighlight: true,
+                  autoclose: true,
+                  todayBtn: "linked"
+                }).datepicker("setDate", new Date());
+
       %br
 
     -#
