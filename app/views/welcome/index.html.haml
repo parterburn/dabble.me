@@ -3,39 +3,13 @@
 -if current_user
   - if @last_entry.present?
     .row
-      .col-md-8.col-md-offset-1
+      .col-md-8.col-md-offset-2
         %h3 Welcome to Dabble Me
 
-      .col-md-2.float-right.hidden-sm
-        %h3
-          =link_to entries_path do
-            .s-date-left
-              All            
-            .s-date-right
-              #{current_user.entries.count}
-            .clearfix
-
-        - @entries.group_by{|c| c.date.strftime "%Y" }.each do |year_str,year_entries|
-          =link_to entries_path(year: year_str) do
-            %h4.s-date-year
-              .s-date-left
-                = year_str
-              .s-date-right
-                #{year_entries.count}
-            .clearfix
-
-          - year_entries.group_by{|c| c.date.strftime "%b" }.each do |month_str,date_entries|
-            =link_to entries_path(year: year_str, month: month_str.to_date.strftime('%m')) do
-              .s-date-left
-                = month_str
-              .s-date-right
-                #{date_entries.count}
-              .clearfix
-
-      .col-md-8.col-md-offset-1
+      .col-md-8.col-md-offset-2
         %hr
 
-      .col-md-8.col-md-offset-1
+      .col-md-8.col-md-offset-2
         %h4
           Your latest entry on 
           = @last_entry.date.strftime("%B %-d, %Y")
@@ -43,12 +17,12 @@
             %i.fa.fa-pencil-square-o
         %br
       - if @last_entry.image_url.present?
-        .col-md-8.col-md-offset-1.s-show-url
+        .col-md-8.col-md-offset-2.s-show-url
           .row
             =image_code(@last_entry)
           %br
         .clearfix    
-      .col-md-8.col-md-offset-1.well
+      .col-md-8.col-md-offset-2.well
         = @last_entry.body.html_safe
       .clearfix
   - else
