@@ -12,7 +12,7 @@
       %ul.nav.navbar-nav
         - if user_signed_in?
           %li{:class=>"#{'active' if current_page?(entries_path)}"}
-            =link_to "All entries", entries_path
+            =link_to "All Entries", entries_path
 
           %li{:class=>"#{'active' if current_page?(new_entry_path)}"}
             =link_to "New Entry", new_entry_path
