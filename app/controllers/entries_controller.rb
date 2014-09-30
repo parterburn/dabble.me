@@ -47,21 +47,33 @@ class EntriesController < ApplicationController
   def create
     @user = current_user
 
+    #check for existing entry
     begin
       selected_date = Date.parse(params[:entry][:date])
-      @existing_entry = Entry.where(:user_id => @user.id, :date => selected_date.beginning_of_day.selected_date.end_of_day).first
+      @existing_entry = Entry.where(:user_id => @user.id, :date => selected_date.beginning_of_day..selected_date.end_of_day).first
     rescue
     end
       
-    if @existing_entry.present?
+    if @existing_entry.present? && params[:entry][:body].present?
       #existing entry exists, so add to it
       @existing_entry.body += "<br><br>--------------------------------<br><br>#{params[:entry][:entry]}"
-      @existing_entry.save
-      redirect_to entry_path(@existing_entry)
+      if params[:entry][:image_url].present? && @existing_entry.image_url.present?
+        @existing_entry.body += "<br>Image: #{params[:entry][:image_url]}"
+      elsif params[:entry][:image_url].present?
+        @existing_entry.image_url = params[:entry][:image_url]
+      end
+      if @existing_entry.save
+        flash[:notice] = "Merged with existing entry on #{selected_date}."
+        redirect_to @existing_entry
+      else
+        #errors
+        render 'new'
+      end
     else
       @entry = @user.entries.create(entry_params)
       if @entry.save
         #save new entry & view it
+        flash[:notice] = "Entry created successfully!"
         redirect_to @entry
       else
         #errors
@@ -94,11 +106,37 @@ end
   def update
     @entry = Entry.find(params[:id])
    
-    if @entry.update(entry_params)
-      redirect_to @entry
-    else
-      render 'edit'
+    #check for existing entry
+    begin
+      selected_date = Date.parse(params[:entry][:date])
+      @existing_entry = Entry.where(:user_id => current_user.id, :date => selected_date.beginning_of_day..selected_date.end_of_day).first
+    rescue
     end
+
+    if @existing_entry.present? && @entry != @existing_entry && params[:entry][:body].present?
+      #existing entry exists, so add to it
+      @existing_entry.body += "<br>--------------------------------<br>#{params[:entry][:entry]}"
+      if params[:entry][:image_url].present? && @existing_entry.image_url.present?
+        @existing_entry.body += "<br>Image: #{params[:entry][:image_url]}"
+      elsif params[:entry][:image_url].present?
+        @existing_entry.image_url = params[:entry][:image_url]
+      end
+      if @existing_entry.save
+        @entry.delete
+        flash[:notice] = "Merged with existing entry on #{selected_date}."
+        redirect_to @existing_entry
+      else
+        render 'edit'        
+      end
+    else
+      if @entry.update(entry_params)
+        flash[:notice] = "Entry successfully updated!"
+        redirect_to @entry
+      else
+        render 'edit'
+      end
+    end
+
   end
 
   def destroy
