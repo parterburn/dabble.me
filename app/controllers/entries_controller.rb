@@ -92,7 +92,7 @@ def incoming
   p "*"*100
   p "ENVELOPE PARAMS: #{params["envelope"]}"
   p "FROM: #{JSON.parse(params["envelope"])["from"]}"
-  p "TO: #{params['to']}"
+  p "TO: #{JSON.parse(params["envelope"])["to"][0]}"
   p "SUBJECT: #{params['subject']}"
   p "TEXT: #{params['text']}"
   p "HTML: #{params['html']}"
@@ -100,21 +100,22 @@ def incoming
   begin 
     from_email = JSON.parse(params["envelope"])["from"]
     user = User.find_by_email(from_email)
+    to_email = JSON.parse(params["envelope"])["to"][0]
   rescue JSON::ParserError => e
   end
 
   if user.present?
-    date_regex = /[201]{3}[0-4]{1}-[0-1]{1}[0-9]{1}-[0-3]{1}[0-9]{1}/
-    date = params['to'].scan(date_regex)
     p "*"*100
     p "DATE: #{date}"
     p "*"*100
+    date_regex = /[201]{3}[0-4]{1}-[0-1]{1}[0-9]{1}-[0-3]{1}[0-9]{1}/
+    date = to_email.scan(date_regex)    
     entry = user.entries.create(:date => date, :body => params['text'], :inspiration_id => 2)
     if entry.save
       render :json => { "message" => "RIGHT" }, :status => 200
     else
       render :json => { "message" => "ERROR" }, :status => 200
-    end 
+    end
   else
     render :json => { "message" => "NO USER" }, :status => 200
   end
