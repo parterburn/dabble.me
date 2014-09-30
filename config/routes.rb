@@ -10,7 +10,7 @@ Rails.application.routes.draw do
   resources :entries
 
   get   '/post' => 'welcome#index'
-  match '/post' => 'entries#incoming', via: [:put]
+  match '/post' => 'entries#incoming', via: [:post]
 
   root 'welcome#index'
 
