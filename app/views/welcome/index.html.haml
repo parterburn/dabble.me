@@ -1,29 +1,91 @@
-- title "Dabble Me - the open-source OhLife replacement"
+- title "Dabble Me - the open source replacement for OhLife"
 
-.center
-  %h1 Welcome to Dabble Me
-  %h4.muted The open source replacement for OhLife
-  %br
-  %br
+-if current_user
+  - if @last_entry.present?
+    .row
+      .col-md-8.col-md-offset-1
+        %h3 Welcome to Dabble Me
 
-/ Begin MailChimp Signup Form
-.row
-  #mc_embed_signup.col-md-4.col-md-offset-4.well
-    %form#mc-embedded-subscribe-form.validate{:action => "//sixteenseven.us2.list-manage.com/subscribe/post?u=63fff2dd7620976b42e437195&id=762e28b552", :method => "post", :name => "mc-embedded-subscribe-form", :novalidate => "", :target => "_blank"}
-      #mc_embed_signup_scroll
-        .mc-field-group
-          %input#mce-EMAIL.required.email.form-control{:name => "EMAIL", :type => "email", :value => "#{current_user.email if current_user}", :placeholder=>"email@domain.com"}
+      .col-md-2.float-right.hidden-sm
+        %h3
+          =link_to entries_path do
+            .s-date-left
+              All            
+            .s-date-right
+              #{current_user.entries.count}
+            .clearfix
+
+        - @entries.group_by{|c| c.date.strftime "%Y" }.each do |year_str,year_entries|
+          =link_to entries_path(year: year_str) do
+            %h4.s-date-year
+              .s-date-left
+                = year_str
+              .s-date-right
+                #{year_entries.count}
+            .clearfix
+
+          - year_entries.group_by{|c| c.date.strftime "%b" }.each do |month_str,date_entries|
+            =link_to entries_path(year: year_str, month: month_str.to_date.strftime('%m')) do
+              .s-date-left
+                = month_str
+              .s-date-right
+                #{date_entries.count}
+              .clearfix
+
+      .col-md-8.col-md-offset-1
+        %hr
+
+      .col-md-8.col-md-offset-1
+        %h4
+          Your latest entry on 
+          = @last_entry.date.strftime("%B %-d, %Y")
+          = link_to edit_entry_path(@last_entry) do
+            %i.fa.fa-pencil-square-o
+        %br
+      - if @last_entry.image_url.present?
+        .col-md-8.col-md-offset-1.s-show-url
+          .row
+            =image_code(@last_entry)
           %br
-        #mce-responses.clear
-          #mce-error-response.response{:style => "display:none"}
-          #mce-success-response.response{:style => "display:none"}
-        / real people should not fill this in and expect good things - do not remove this or risk form bot signups
-        %div{:style => "position: absolute; left: -5000px;"}
-          %input{:name => "b_63fff2dd7620976b42e437195_762e28b552", :tabindex => "-1", :type => "text", :value => ""}/
-        .clear
-          %input#mc-embedded-subscribe.button{:name => "subscribe", :type => "submit", :value => "Subscribe to updates", :class => "btn btn-primary form-control"}
+        .clearfix    
+      .col-md-8.col-md-offset-1.well
+        = @last_entry.body.html_safe
+      .clearfix
+  - else
+    .col-md-8.col-md-offset-2
+      %br
+      %br
+      .center
+        %h4 So lonely...get to writing!
+        %br
+        %br
+        =link_to "Write your first entry", new_entry_path, :class => "btn btn-primary btn-lg"
+        =link_to "Import from OhLife", import_entries_path, :class => "btn btn-primary btn-lg"
 
--if !current_user
+-else
+  .center
+    %h1 Welcome to Dabble Me
+    %h4.muted The open source replacement for OhLife
+    %br
+    %br
+
+  / Begin MailChimp Signup Form
+  .row
+    #mc_embed_signup.col-md-4.col-md-offset-4.well
+      %form#mc-embedded-subscribe-form.validate{:action => "//sixteenseven.us2.list-manage.com/subscribe/post?u=63fff2dd7620976b42e437195&id=762e28b552", :method => "post", :name => "mc-embedded-subscribe-form", :novalidate => "", :target => "_blank"}
+        #mc_embed_signup_scroll
+          .mc-field-group
+            %input#mce-EMAIL.required.email.form-control{:name => "EMAIL", :type => "email", :value => "#{current_user.email if current_user}", :placeholder=>"email@domain.com"}
+            %br
+          #mce-responses.clear
+            #mce-error-response.response{:style => "display:none"}
+            #mce-success-response.response{:style => "display:none"}
+          / real people should not fill this in and expect good things - do not remove this or risk form bot signups
+          %div{:style => "position: absolute; left: -5000px;"}
+            %input{:name => "b_63fff2dd7620976b42e437195_762e28b552", :tabindex => "-1", :type => "text", :value => ""}/
+          .clear
+            %input#mc-embedded-subscribe.button{:name => "subscribe", :type => "submit", :value => "Subscribe to updates", :class => "btn btn-primary form-control"}
+
   .row.s-screenshots.center
     %br
     %br
@@ -33,40 +95,3 @@
       =link_to (image_tag "new_entry.png"), image_url("new_entry.png"), :target=>"_blank"  
     .col-md-4
       =link_to (image_tag "import_ohlife.png"), image_url("import_ohlife.png"), :target=>"_blank"
-
-
--#
-  -if user_signed_in?
-    %hr
-    %h3 User Details for #{current_user.full_name_or_email}
-    .well
-      %strong Frequency:
-      #{pluralize(current_user.frequency.count, "day")}
-      =current_user.frequency
-      %br
-      %strong Send Time:
-      =current_user.send_time
-      %br
-      %strong Send Timezone:
-      =current_user.send_timezone
-      %br
-      %strong Send Past Entry:
-      =current_user.send_past_entry
-      %br
-      %strong Emails Sent:
-      =current_user.emails_sent
-      %br
-      %strong Emails Received:
-      =current_user.emails_received
-      %br
-      %strong Sign In Count:
-      =current_user.sign_in_count
-
-  %hr
-
-  %h3 Admin Dashboard
-  .well
-    - %w(Sunday Monday Tueday Wednesday Thursday Friday Saturday).each do |day|
-      %strong #{User.where('frequency ~ ?', day[0..2]).count} #{day} Users
-      %br
-

@@ -22,6 +22,8 @@ gem 'simple_form'
 gem 'summernote-rails'
 gem 'addressable' # better URI checking
 
+gem 'gibbon'
+
 # Pagination
 # gem 'kaminari'
 

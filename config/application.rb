@@ -30,6 +30,10 @@ module Dabbleme
         ENV[key.to_s] = value
       end if File.exists?(env_file)
     end
+
+    Gibbon::Export.api_key = ENV['MAILCHIMP_API_KEY']
+    Gibbon::Export.timeout = 10
+    Gibbon::Export.throws_exceptions = false
         
   end
 end

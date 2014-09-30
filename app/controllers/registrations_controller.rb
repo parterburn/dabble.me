@@ -15,7 +15,6 @@ class RegistrationsController < Devise::RegistrationsController
       redirect_to root_path      
     else
       super
-      UserMailer.welcome_email(@user).deliver unless @user.invalid?      
     end
   end
 
@@ -58,5 +57,5 @@ class RegistrationsController < Devise::RegistrationsController
       params[:user][:password].present? ||
       params[:user][:password_confirmation].present?
   end
- 
+
 end

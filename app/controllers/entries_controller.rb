@@ -1,23 +1,22 @@
 class EntriesController < ApplicationController
   before_action :authenticate_user!
-  
-  before_filter :require_permission, except: [:index, :new, :create, :import, :process_import]
+  before_filter :require_permission, except: [:index, :new, :create, :import, :process_import, :random]
 
   def index
     begin
       if params[:year].present? && params[:month].present?
         @entries = Entry.where(:user_id => current_user).where("date >= to_date('#{params[:year]}-#{params[:month]}','YYYY-MM') AND date < to_date('#{params[:year]}-#{params[:month].to_i+1}','YYYY-MM')").sort_by(&:date).reverse
         date = Date.parse(params[:month]+'/'+params[:year])
-        @title = "#{ActionController::Base.helpers.pluralize(@entries.count,'entry')} from #{date.strftime('%b %Y')}"      
+        @title = "#{date.strftime('%b %Y')}"      
       elsif params[:year].present?
         @entries = Entry.where(:user_id => current_user).where("date >= '#{params[:year]}-01-01'::DATE AND date <= '#{params[:year]}-12-31'::DATE").sort_by(&:date).reverse
-        @title = "#{ActionController::Base.helpers.pluralize(@entries.count,'entry')} from #{params[:year]}"
+        @title = "#{params[:year]}"
       else
         ActionController::ShowAllEntries
       end
     rescue
       @entries = Entry.where(:user_id => current_user).sort_by(&:date).reverse
-      @title = "All #{ActionController::Base.helpers.pluralize(@entries.count,'entry')}"      
+      @title = "All Time"
     end
   end
 
@@ -29,6 +28,16 @@ class EntriesController < ApplicationController
       redirect_to entries_path
     end
   end
+
+  def random
+    if (count = Entry.where(:user_id => current_user).count) > 0
+      offset = rand(count)
+      @entry = Entry.where(:user_id => current_user).offset(offset).first
+      render "show"
+    else
+      redirect_to entries_path
+    end
+  end  
 
   def new
     @entry = Entry.new

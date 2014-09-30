@@ -12,6 +12,8 @@ SENDGRID_USERNAME: your_sendgrid_username
 SENDGRID_PASSWORD: your_sendgrid_password
 SECRET_KEY_BASE: 1234..1234
 DEVISE_SECRET_KEY: 1234..1234
+MAILCHIMP_API_KEY: f....3333-ek3
+MAILCHIMP_LIST_ID: 9982...112
 ```
 
 Your environment variables on Ninefold will need to be something like this:
@@ -25,6 +27,8 @@ NEW_RELIC_LICENSE_KEY=k3333..2222
 NEW_RELIC_APP_NAME=DABBLE.ME
 PROD_HOST=dabble.me
 GOOGLE_ANALYTICS_ID=UA-12345-67
+MAILCHIMP_API_KEY: f....3333-ek3
+MAILCHIMP_LIST_ID: 9982...112
 ```
 
 If you want random bits of inspiration, you can load up different quotes in the Inspiration table to be shown above the New Posts page:
