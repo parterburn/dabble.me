@@ -42,6 +42,10 @@
     %h1 Welcome to Dabble Me
     %h4.muted The open source replacement for OhLife
     %br
+    .col-md-6.col-md-offset-3
+      %p.muted Dabble Me helps people remember what's happened in their life. Use it as a light-weight journal on a daily, weekly, or even monthly basis...it's up to you!
+      %br
+    %br
     %br
 
   / Begin MailChimp Signup Form
@@ -62,7 +66,6 @@
             %input#mc-embedded-subscribe.button{:name => "subscribe", :type => "submit", :value => "Subscribe to updates", :class => "btn btn-primary form-control"}
 
   .row.s-screenshots.center
-    %br
     %br
     .col-md-4
       =link_to (image_tag "all_entries.png"), image_url("all_entries.png"), :target=>"_blank"  
