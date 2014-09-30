@@ -16,6 +16,6 @@ class Entry < ActiveRecord::Base
     def ensure_protocol # For urls
       self.image_url = self.image_url.strip.gsub(' ', "%20") unless image_url.blank?
       self.image_url = "http://#{image_url}" unless (/\Ahttp/ === image_url || image_url.blank?)
-    end  
+    end
 
 end

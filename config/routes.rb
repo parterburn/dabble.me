@@ -6,6 +6,9 @@ Rails.application.routes.draw do
   match '/entries/import_process' => 'entries#process_import', via: [:put], :as => "import_process_entry"
 
   get '/entries/random' => 'entries#random', :as => "random_entry"
+  
+  match '/post' => 'entries#incoming', via: [:put]
+
   resources :entries
 
   root 'welcome#index'

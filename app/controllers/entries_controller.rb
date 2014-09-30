@@ -1,6 +1,7 @@
 class EntriesController < ApplicationController
+  skip_before_action :verify_authenticity_token, only: [:incoming]  
   before_action :authenticate_user!
-  before_filter :require_permission, except: [:index, :new, :create, :import, :process_import, :random]
+  before_filter :require_permission, except: [:incoming, :index, :new, :create, :import, :process_import, :random]
 
   def index
     begin
@@ -68,6 +69,22 @@ class EntriesController < ApplicationController
       end
     end
   end
+
+def incoming
+  user = User.find_by_email(params['from'])
+  if user.present?
+    date_regex = /[201]{3}[0-4]{1}-[0-1]{1}[0-9]{1}-[0-3]{1}[0-9]{1}/
+    date = params['to'].scan(date_regex)
+    entry = user.entries.create(:date => date, :body => body, :inspiration_id => 2)
+    if entry.save
+      render :json => { "message" => "RIGHT" }, :status => 200
+    else
+      render :json => { "message" => "ERROR" }, :status => 200
+    end 
+  else
+    render :json => { "message" => "NO USER" }, :status => 200
+  end
+end  
 
   def edit
     @entry = Entry.find(params[:id])
