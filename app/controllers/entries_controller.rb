@@ -91,13 +91,18 @@ def incoming
   #https://sendgrid.com/blog/two-hacking-santas-present-rails-the-inbound-parse-webhook/
   p "*"*100
   p "ENVELOPE PARAMS: #{params["envelope"]}"
-  p "FROM: #{params["envelope"]["from"]}"
+  p "FROM: #{JSON.parse(params["envelope"])["from"]}"
   p "TO: #{params['to']}"
   p "SUBJECT: #{params['subject']}"
   p "TEXT: #{params['text']}"
   p "HTML: #{params['html']}"
   p "*"*100
-  user = User.find_by_email(params["envelope"]["from"])
+  begin 
+    from_email = JSON.parse(params["envelope"])["from"]
+    user = User.find_by_email(from_email)
+  rescue JSON::ParserError => e
+  end
+
   if user.present?
     date_regex = /[201]{3}[0-4]{1}-[0-1]{1}[0-9]{1}-[0-3]{1}[0-9]{1}/
     date = params['to'].scan(date_regex)
@@ -113,7 +118,7 @@ def incoming
   else
     render :json => { "message" => "NO USER" }, :status => 200
   end
-end  
+end
 
   def edit
     @entry = Entry.find(params[:id])
