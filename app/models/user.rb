@@ -9,7 +9,7 @@ class User < ActiveRecord::Base
   serialize :frequency, Array
 
   after_create do
-    send_welcome_email    
+    send_welcome_email
     subscribe_to_mailchimp
   end
 

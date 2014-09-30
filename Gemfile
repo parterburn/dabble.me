@@ -22,6 +22,7 @@ gem 'simple_form'
 gem 'summernote-rails'
 gem 'addressable' # better URI checking
 
+gem "combined_time_select", "~> 1.0.1"
 gem 'gibbon'
 
 # Pagination

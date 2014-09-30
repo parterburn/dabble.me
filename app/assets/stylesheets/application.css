@@ -136,3 +136,7 @@ html, body {
 .s-show-date {
   margin-top:30px;
 }
+
+.s-day-email label {
+  font-weight: normal;
+}

@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140930005209) do
+ActiveRecord::Schema.define(version: 20140930182547) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -52,11 +52,11 @@ ActiveRecord::Schema.define(version: 20140930005209) do
     t.string   "first_name"
     t.string   "last_name"
     t.text     "frequency",              default: "---\n- Mon\n- Fri\n"
-    t.integer  "send_time",              default: 8
     t.string   "send_timezone",          default: "Mountain Time (US & Canada)"
     t.boolean  "send_past_entry",        default: true
     t.integer  "emails_sent",            default: 0
     t.integer  "emails_received",        default: 0
+    t.time     "send_time",              default: '2000-01-01 08:00:00',         null: false
   end
 
   add_index "users", ["email"], name: "index_users_on_email", unique: true, using: :btree

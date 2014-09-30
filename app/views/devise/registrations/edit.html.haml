@@ -6,8 +6,9 @@
     %br
 
   = form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f|
-    .col-md-6.col-md-offset-3
-      = devise_error_messages!
+    - if @user.errors.present?
+      .col-md-6.col-md-offset-3
+        .alert.alert-danger= devise_error_messages!
 
     .col-md-3.col-md-offset-3
       = f.label :first_name
@@ -20,41 +21,47 @@
       %br
       .clearfix
 
-    -#
-      .col-md-6.col-md-offset-3
+    .alert.alert-warning.col-md-6.col-md-offset-3
+      .col-md-12
+        %h4 Post by email is not turned on yet, but you can change your settings here:
+      .col-md-12
         %br
-        - %w(Sunday Monday Tuesday Wednesday Thursday Friday Saturday).each do |day|
+        = label_tag "Days to send emails"
+        %i (uncheck all to unsubcribe)
+        %br
+        - %w(Sun Mon Tue Wed Thu Fri Sat).each do |day|
           - if current_user.frequency.include?(day[0..2])
-            = check_box_tag "frequency[#{day[0..2]}]", 1, {:checked => "checked"}
+            = check_box_tag "frequency[#{day}]", 1, {:checked => "checked"}
           - else
-            = check_box_tag "frequency[#{day[0..2]}]"
-          = label_tag "frequency_#{day[0..2]}", day
+            = check_box_tag "frequency[#{day}]"
+          %span.s-day-email= label_tag "frequency_#{day}", day
           &nbsp;&nbsp;
         .clearfix
-
-      .col-md-6.col-md-offset-3
         %br
+      
+      .col-md-6
+        = f.label :send_time
+        = f.time_select :send_time, {:combined => true, :minute_interval => 60, :ampm => true, :include_seconds => false }, :class => "form-control"
+        %br
+
+      .col-md-6
+        = f.label :send_timezone
+        = f.time_zone_select :send_timezone, ActiveSupport::TimeZone.us_zones, {}, {:class => 'form-control'}
+        %br
+
+      .col-md-12
         = f.check_box :send_past_entry
         = f.label :send_past_entry
-        %br
-        %br
         .clearfix
-      
-      .col-md-3.col-md-offset-3
-        = f.label :send_time
-        = f.text_field :send_time, :class => "form-control"
-        %br
+      .clearfix
 
-      .col-md-3
-        = f.label :send_timezone
-        = f.text_field :send_timezone, :class => "form-control"
-        %br
+    .col-md-6.col-md-offset-3
+      = f.submit "Update", :class=>"btn btn-primary form-control"
 
-      .col-md-6.col-md-offset-3
-        = f.submit "Update", :class=>"btn btn-primary form-control"
-
-      .col-md-6.col-md-offset-3
-        %hr
+    .col-md-6.col-md-offset-3
+      %br
+      %hr
+      %br
 
     .col-md-6.col-md-offset-3
       = f.label :email
@@ -86,7 +93,9 @@
       = f.submit "Update", :class=>"btn btn-primary form-control"
 
     .col-md-6.col-md-offset-3
+      %br
       %hr
+      %br
 
     .col-md-6.col-md-offset-3
       =link_to registration_path(resource_name), data: { confirm: "Are you sure?" }, method: :delete do 
