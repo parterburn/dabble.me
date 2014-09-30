@@ -1,7 +1,7 @@
 class EntriesController < ApplicationController
   skip_before_action :verify_authenticity_token, only: [:incoming]  
-  before_action :authenticate_user!
-  before_filter :require_permission, except: [:incoming, :index, :new, :create, :import, :process_import, :random]
+  before_action :authenticate_user!, except: [:incoming]
+  before_filter :require_permission, only: [:show, :edit, :update, :destroy]
 
   def index
     begin

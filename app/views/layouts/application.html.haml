@@ -8,10 +8,10 @@
     = csrf_meta_tags
     = yield :head
 
-    = stylesheet_link_tag 'application', media: 'all'
+    = stylesheet_link_tag 'application', media: 'all', data: { turbolinks_track: true }
 
     / Turbolinks require javascript tags inside the head
-    = javascript_include_tag 'application'
+    = javascript_include_tag 'application', data: { turbolinks_track: true }
 
     / HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries
     /[if lt IE 9]
@@ -32,3 +32,4 @@
         = yield
 
     = render 'shared/footer'
+    = render 'shared/turbolinks_spinner'
