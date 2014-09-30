@@ -11,7 +11,7 @@ module ApplicationHelper
     if (count = Inspiration.without_ohlife.count) > 0
       offset = rand(count)
       @inspiration = Inspiration.without_ohlife.offset(offset).first
-      tag("p", :class=>"center s-inspiration") + @inspiration.body
+      tag("div", :class=>"center s-inspiration") + @inspiration.body + "</div>".html_safe + hidden_field_tag("entry[inspiration_id]",@inspiration.id)
     else
       ""
     end

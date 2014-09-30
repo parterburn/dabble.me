@@ -3,9 +3,14 @@
 .row
 
   .col-md-8.col-md-offset-2
-    =random_inspiration
+    %h4.s-show-date
+      New Entry
+    %br
 
   = form_for :entry, url: entries_path do |f|
+
+    .col-md-8.col-md-offset-2
+      =random_inspiration  
 
     -if @entry.errors.any?
       #error_explanation.col-md-8.col-md-offset-2

@@ -10,11 +10,11 @@
  * defined in the other CSS/SCSS files in this directory. It is generally better to create a new
  * file per style scope.
  *
- *= require_self
  *= stub twbs-variables
  *= require twbs
  *= require summernote
  *= require_tree .
+ *= require_self
  */
 
 body { padding-top: 70px; }
@@ -53,8 +53,7 @@ html, body {
 .s-inspiration {
   font-style: italic;
   color:#AAA;
-  margin-bottom:20px;
-  margin-top:20px;
+  margin-bottom:25px;
 }
 
 .muted {
@@ -123,4 +122,16 @@ html, body {
 .navbar-brand {
   font-weight: bold !important;
   letter-spacing: -1px;
+}
+
+.s-edit-entry a {
+  color:#CCC;
+}
+
+.s-edit-entry a:hover {
+  color:#777;
+}
+
+.s-show-date {
+  margin-top:30px;
 }

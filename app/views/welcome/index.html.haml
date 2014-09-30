@@ -13,8 +13,9 @@
         %h4
           Your latest entry on 
           = @last_entry.date.strftime("%B %-d, %Y")
-          = link_to edit_entry_path(@last_entry) do
-            %i.fa.fa-pencil-square-o
+          .float-right.s-edit-entry
+            = link_to edit_entry_path(@last_entry) do
+              %i.fa.fa-pencil-square-o
         %br
       - if @last_entry.image_url.present?
         .col-md-8.col-md-offset-2.s-show-url

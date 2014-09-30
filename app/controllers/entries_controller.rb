@@ -118,7 +118,7 @@ end
 
   private
     def entry_params
-      params.require(:entry).permit(:date, :entry, :image_url)
+      params.require(:entry).permit(:date, :entry, :image_url, :inspiration_id)
     end  
 
     def require_permission
