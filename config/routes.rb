@@ -12,6 +12,8 @@ Rails.application.routes.draw do
   get   '/post' => 'welcome#index'
   match '/post' => 'entries#incoming', via: [:post]
 
+  get   '/export' => 'entries#export', :as => "export_entries"
+
   root 'welcome#index'
 
   get '/privacy' => 'welcome#privacy'

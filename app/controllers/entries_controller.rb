@@ -154,6 +154,13 @@ end
     redirect_to entries_path
   end
 
+  def export
+    entries = Entry.where(:user_id => current_user).sort_by(&:date).reverse
+     respond_to do |format|
+       format.json { send_data JSON.pretty_generate(JSON.parse(entries.to_json(:only => [:date, :body, :image_url]))) }
+     end
+  end
+
   private
     def entry_params
       params.require(:entry).permit(:date, :entry, :image_url, :inspiration_id)

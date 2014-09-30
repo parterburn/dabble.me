@@ -31,7 +31,10 @@
             .s-date-right
               #{date_entries.count}
             .clearfix
-      
+      %br
+      =link_to export_entries_path(:json) do
+        Export #{pluralize(@entries.count,"entry")}
+
     .col-md-8.col-md-offset-1
       %hr
 
