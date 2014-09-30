@@ -11,13 +11,13 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20140926161138) do
+ActiveRecord::Schema.define(version: 20140930005209) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
   create_table "entries", force: true do |t|
-    t.datetime "date",                default: '2014-09-26 07:25:29', null: false
+    t.datetime "date",                null: false
     t.text     "body"
     t.text     "image_url"
     t.text     "original_email_body"

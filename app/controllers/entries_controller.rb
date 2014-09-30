@@ -46,9 +46,12 @@ class EntriesController < ApplicationController
   def create
     @user = current_user
 
-    selected_date = Date.parse(params[:entry][:date])
-    @existing_entry = Entry.where(:user_id => @user.id, :date => selected_date.beginning_of_day..selected_date.end_of_day).first
-    
+    begin
+      selected_date = Date.parse(params[:entry][:date])
+      @existing_entry = Entry.where(:user_id => @user.id, :date => selected_date.beginning_of_day.selected_date.end_of_day).first
+    rescue
+    end
+      
     if @existing_entry.present?
       #existing entry exists, so add to it
       @existing_entry.body += "<br><br>--------------------------------<br><br>#{params[:entry][:entry]}"
