@@ -71,6 +71,7 @@ class EntriesController < ApplicationController
   end
 
 def incoming
+  #https://sendgrid.com/blog/two-hacking-santas-present-rails-the-inbound-parse-webhook/
   user = User.find_by_email(params['from'])
   if user.present?
     date_regex = /[201]{3}[0-4]{1}-[0-1]{1}[0-9]{1}-[0-3]{1}[0-9]{1}/
