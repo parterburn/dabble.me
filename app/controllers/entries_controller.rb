@@ -85,7 +85,8 @@ class EntriesController < ApplicationController
 def incoming
   #https://sendgrid.com/blog/two-hacking-santas-present-rails-the-inbound-parse-webhook/
   p "*"*100
-  p "FROM: #{params['envelope']['from']}"
+  p "FROM: #{params['envelope'].from}"
+  p "FROM: #{params['envelope'][0]['from']}"
   p "TO: #{params['to']}"
   p "SUBJECT: #{params['subject']}"
   p "TEXT: #{params['text']}"
