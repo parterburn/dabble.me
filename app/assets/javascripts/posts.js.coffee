@@ -9,6 +9,7 @@ $ ->
     mode: 'text/html'
     height:300
     theme: 'flatly'
+    focus: true
     toolbar: [
                 ["fontsize", ["fontsize"]],
                 ["style", ["bold", "italic", "underline", "clear"]],
@@ -22,6 +23,5 @@ $ ->
 
   # to get code for summernote
   summer_note.closest('form').submit ->
-    # alert $('#post_content').code()
     summer_note.val summer_note.code()
     true

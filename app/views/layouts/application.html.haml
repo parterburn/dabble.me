@@ -8,6 +8,8 @@
     = csrf_meta_tags
     = yield :head
 
+    = render 'shared/favicons'
+
     = stylesheet_link_tag 'application', media: 'all', data: { turbolinks_track: true }
 
     / Turbolinks require javascript tags inside the head

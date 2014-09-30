@@ -19,14 +19,6 @@
         %span.input-group-addon
           %i.fa.fa-calendar
         = f.text_field :date, :value =>  date_formatted(@entry), :placeholder=>"YYYY-MM-DD", :class => "form-control"
-        -if @entry.date.blank?
-          :javascript
-              $('.input-group.date').datepicker({
-                  format: "yyyy-mm-dd",
-                  todayHighlight: true,
-                  autoclose: true,
-                  todayBtn: "linked"
-                }).datepicker("setDate", new Date());
 
       %br
 
@@ -38,9 +30,18 @@
 
     .col-md-8.col-md-offset-2
       = f.label :entry
-      = f.text_area :entry, :class => "form-control summernote", :rows => 20, :autofocus => true
+      = f.text_area :entry, :class => "form-control summernote", :rows => 20
       %br
 
     .col-md-8.col-md-offset-2
       = f.submit "Create Entry", :class => "form-control btn btn-primary"
       %br
+
+-if @entry.date.blank?
+  :javascript
+    $('.input-group.date').datepicker({
+        format: "yyyy-mm-dd",
+        todayHighlight: true,
+        autoclose: true,
+        todayBtn: "linked"
+      }).datepicker("setDate", new Date());

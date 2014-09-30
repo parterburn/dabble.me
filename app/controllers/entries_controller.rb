@@ -53,8 +53,13 @@ class EntriesController < ApplicationController
       @existing_entry = Entry.where(:user_id => @user.id, :date => selected_date.beginning_of_day..selected_date.end_of_day).first
     rescue
     end
+
+    p "*"*100
+    p @existing_entry
+    p params[:entry][:entry]
+    p "*"*100
       
-    if @existing_entry.present? && params[:entry][:body].present?
+    if @existing_entry.present? && params[:entry][:entry].present?
       #existing entry exists, so add to it
       @existing_entry.body += "<br><br>--------------------------------<br><br>#{params[:entry][:entry]}"
       if params[:entry][:image_url].present? && @existing_entry.image_url.present?
@@ -85,13 +90,14 @@ class EntriesController < ApplicationController
 def incoming
   #https://sendgrid.com/blog/two-hacking-santas-present-rails-the-inbound-parse-webhook/
   p "*"*100
-  p "FROM: #{params['envelope'][0]['from']}"
+  p "ENVELOPE PARAMS: #{params["envelope"]}"
+  p "FROM: #{params["envelope"]["from"]}"
   p "TO: #{params['to']}"
   p "SUBJECT: #{params['subject']}"
   p "TEXT: #{params['text']}"
   p "HTML: #{params['html']}"
   p "*"*100
-  user = User.find_by_email(params['envelope'][0]['from'])
+  user = User.find_by_email(params["envelope"]["from"])
   if user.present?
     date_regex = /[201]{3}[0-4]{1}-[0-1]{1}[0-9]{1}-[0-3]{1}[0-9]{1}/
     date = params['to'].scan(date_regex)
@@ -123,7 +129,7 @@ end
     rescue
     end
 
-    if @existing_entry.present? && @entry != @existing_entry && params[:entry][:body].present?
+    if @existing_entry.present? && @entry != @existing_entry && params[:entry][:entry].present?
       #existing entry exists, so add to it
       @existing_entry.body += "<br>--------------------------------<br>#{params[:entry][:entry]}"
       if params[:entry][:image_url].present? && @existing_entry.image_url.present?
