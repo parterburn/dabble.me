@@ -109,7 +109,7 @@ def incoming
     p "DATE: #{date}"
     p "*"*100
     date_regex = /[201]{3}[0-4]{1}-[0-1]{1}[0-9]{1}-[0-3]{1}[0-9]{1}/
-    date = to_email.scan(date_regex)    
+    date = to_email.scan(date_regex)
     entry = user.entries.create(:date => date, :body => params['text'], :inspiration_id => 2)
     if entry.save
       render :json => { "message" => "RIGHT" }, :status => 200
