@@ -88,7 +88,7 @@ def incoming
   if user.present?
     date_regex = /[201]{3}[0-4]{1}-[0-1]{1}[0-9]{1}-[0-3]{1}[0-9]{1}/
     date = params['to'].scan(date_regex)
-    entry = user.entries.create(:date => date, :body => body, :inspiration_id => 2)
+    entry = user.entries.create(:date => date, :body => params['text'], :inspiration_id => 2)
     if entry.save
       render :json => { "message" => "RIGHT" }, :status => 200
     else
@@ -105,7 +105,7 @@ end
 
   def update
     @entry = Entry.find(params[:id])
-   
+
     #check for existing entry
     begin
       selected_date = Date.parse(params[:entry][:date])
@@ -164,7 +164,7 @@ end
   private
     def entry_params
       params.require(:entry).permit(:date, :entry, :image_url, :inspiration_id)
-    end  
+    end
 
     def require_permission
       if current_user != Entry.find(params[:id]).user
