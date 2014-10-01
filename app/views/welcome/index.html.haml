@@ -58,22 +58,23 @@
 
   .clearfix
   .center
-    = link_to "Start Writing for Free", new_user_registration_path, :class => 'btn btn-info btn-lg'
+    = link_to "Start Writing for Free", new_user_registration_path, :class => 'btn btn-info btn-lg col-md-4 col-md-offset-4'
     .clearfix
     %br
   .clearfix
 
-  .s-screenshots.center.j-screenshots
-    %br
-    .col-md-3
-      =link_to image_tag("all_entries.png"), image_url("all_entries.png"), :target=>"_blank"
-    .col-md-3
-      =link_to image_tag("new_entry.png"), image_url("new_entry.png"), :target=>"_blank"
-    .col-md-3
-      =link_to image_tag("import_ohlife.png"), image_url("import_ohlife.png"), :target=>"_blank"
-    .col-md-3
-      =link_to image_tag("settings.png"), image_url("settings.png"), :target=>"_blank"
-  .clearfix
+  -#
+    .s-screenshots.center.j-screenshots
+      %br
+      .col-md-3
+        =link_to image_tag("all_entries.png"), image_url("all_entries.png"), :target=>"_blank"
+      .col-md-3
+        =link_to image_tag("new_entry.png"), image_url("new_entry.png"), :target=>"_blank"
+      .col-md-3
+        =link_to image_tag("import_ohlife.png"), image_url("import_ohlife.png"), :target=>"_blank"
+      .col-md-3
+        =link_to image_tag("settings.png"), image_url("settings.png"), :target=>"_blank"
+    .clearfix
 
   .row
     %br
