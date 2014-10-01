@@ -87,9 +87,15 @@ def incoming
   begin
     to_email = JSON.parse(params["envelope"])["to"][0]
     user_regex = /(u[0-9a-zA-Z]{10})/
-    user_key = to_email.scan(date_regex)[0]
+    user_key = to_email.scan(user_regex)[0]
     user = User.find_by_user_key(user_key)
   rescue JSON::ParserError => e
+  end
+
+  if user.blank?
+    #user wasn't found by user_key, try by the from email
+    from_email = JSON.parse(params["envelope"])["from"]
+    user = User.find_by_email(from_email)
   end
 
   if user.present?
