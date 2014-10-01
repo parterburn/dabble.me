@@ -8,7 +8,7 @@ class EntriesController < ApplicationController
       if params[:year].present? && params[:month].present?
         @entries = Entry.where(:user_id => current_user).where("date >= to_date('#{params[:year]}-#{params[:month]}','YYYY-MM') AND date < to_date('#{params[:year]}-#{params[:month].to_i+1}','YYYY-MM')").sort_by(&:date).reverse
         date = Date.parse(params[:month]+'/'+params[:year])
-        @title = "#{date.strftime('%b %Y')}"      
+        @title = "#{date.strftime('%b %Y')}"
       elsif params[:year].present?
         @entries = Entry.where(:user_id => current_user).where("date >= '#{params[:year]}-01-01'::DATE AND date <= '#{params[:year]}-12-31'::DATE").sort_by(&:date).reverse
         @title = "#{params[:year]}"

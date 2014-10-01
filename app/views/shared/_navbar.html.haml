@@ -19,7 +19,7 @@
 
           -if current_user.entries.count > 0
             %li{:class=>"#{'active' if current_page?(random_entry_path)}"}
-              =link_to "Random Entry", random_entry_path      
+              =link_to "Random", random_entry_path      
 
           %li{:class=>"#{'active' if current_page?(import_entries_path)}"}
             =link_to "Import OhLife", import_entries_path

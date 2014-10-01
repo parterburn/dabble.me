@@ -1,6 +1,16 @@
 - title "Dabble Me - the open source replacement for OhLife"
 
 -if current_user
+  - if current_user.sign_in_count < 3
+    .alert.alert-info
+      Email reminders are coming soon...please&nbsp;
+      %span>= link_to "update your settings", edit_user_registration_path, :class=>"alert-link"
+      \. Your current settings: 
+      =current_user.send_time.strftime('%l %p')
+      =current_user.send_timezone
+      on
+      -current_user.frequency.each do |freq|
+        =freq
   - if @last_entry.present?
     .row
       .col-md-8.col-md-offset-2
