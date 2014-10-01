@@ -10,10 +10,9 @@
 
     = render 'shared/favicons'
 
-    = stylesheet_link_tag 'application', media: 'all', data: { turbolinks_track: true }
+    = stylesheet_link_tag 'application', media: 'all'
 
-    / Turbolinks require javascript tags inside the head
-    = javascript_include_tag 'application', data: { turbolinks_track: true }
+    = javascript_include_tag 'application'
 
     :javascript
       window.action = '#{@js_action}';
@@ -37,4 +36,3 @@
         = yield
 
     = render 'shared/footer'
-    = render 'shared/turbolinks_spinner'
