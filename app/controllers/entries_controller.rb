@@ -1,6 +1,6 @@
 class EntriesController < ApplicationController
-  skip_before_action :verify_authenticity_token, only: [:incoming]  
-  before_action :authenticate_user!, except: [:incoming]
+  skip_before_action :verify_authenticity_token, only: [:incoming_mandrill, :incoming_sendgrid]  
+  before_action :authenticate_user!, except: [:incoming_mandrill, :incoming_sendgrid]
   before_filter :require_permission, only: [:show, :edit, :update, :destroy]
 
   def index
