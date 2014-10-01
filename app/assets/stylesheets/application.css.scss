@@ -66,7 +66,6 @@ hr {
   border-radius:10px;
   border: 2px solid #f7f7f7;
   box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.25);
-  overflow-x: scroll;
 }
 
 #error_explanation h2 {
@@ -97,7 +96,7 @@ html, body {
   margin-top: -150px; /* negative value of footer height */
   height: 150px;
   clear:both;
-  padding-top:20px;
+  padding-top:0px;
 } 
 
 .s-inspiration {
@@ -105,6 +104,8 @@ html, body {
   color:#AAA;
   margin-top:15px;
   margin-bottom:25px;
+  margin-left: 20px;
+  margin-right: 20px;  
 }
 
 .muted {
@@ -118,25 +119,12 @@ html, body {
   }
 }
 
-.s-screenshots {
-  img {
-    width:80%;
-    filter: url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><filter id=\'grayscale\'><feColorMatrix type=\'matrix\' values=\'0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0 0 0 1 0\'/></filter></svg>#grayscale"); /* Firefox 10+, Firefox on Android */
-    filter: gray;
-    -webkit-filter: grayscale(30%);
-    -webkit-transition: all .2s ease;
-    -webkit-backface-visibility: hidden;
-    opacity:0.6;
-    &:hover{
-      filter: url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><filter id=\'grayscale\'><feColorMatrix type=\'matrix\' values=\'1 0 0 0 0, 0 1 0 0 0, 0 0 1 0 0, 0 0 0 1 0\'/></filter></svg>#grayscale");
-      -webkit-filter: grayscale(0%);
-      opacity:1.0;
-    }
-  }
-}
-
 .float-right {
   float:right;
+}
+
+.float-left {
+  float:left;
 }
 
 .s-back-to-top {

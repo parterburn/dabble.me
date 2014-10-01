@@ -3,18 +3,4 @@
 .row
   %br
   .col-md-8.col-md-offset-2.well
-    .center
-      .s-entry-date
-        %h2
-          = @entry.date.strftime("%B %-d, %Y")
-          .float-right.s-edit-entry
-            = link_to edit_entry_path(@entry) do
-              %i.fa.fa-pencil-square-o
-        %h3
-          %span
-            = @entry.date.strftime("%A")
-    = @entry.body.html_safe
-    - if @entry.image_url.present?
-      =link_to @entry.image_url, :target=>"_blank" do
-        =image_code(@entry)
-  .clearfix
+    = render :partial => 'entry', :locals => {:entry => @entry}

@@ -18,6 +18,15 @@
       $(this).find('input[type=submit]').addClass('disabled');
     });
 
+    $("[rel='popover']").popover({
+      trigger: "hover",
+      container: "body"
+    });
+
+    $("[rel='tooltip']").tooltip({
+      container: "body"
+    });
+
   };
 
 })();

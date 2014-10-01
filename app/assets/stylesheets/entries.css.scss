@@ -7,15 +7,23 @@
   max-height:450px;
 }
 
-.s-edit-entry a {
-  font-size:20px;
+.s-edit-entry {
   color:#CCC;
+  font-size:20px;
   &:hover{
+    cursor:pointer;
     color:#777;
+  }
+  a {
+    font-size:20px;
+    color:#CCC;
+    &:hover{
+      color:#777;
+    }    
   }
 }
 
-.s-edit-entry a.s-delete {
+a.s-delete {
   color:#a41100;
   opacity:0.5;
   &:hover{
@@ -34,20 +42,22 @@
 .s-entry-date {
   margin-top:10px;
   padding-bottom: 5px;
-  h2{
+  > h2{
     font-family: georgia;
     color: #a41100;
     font-size: 25px;
     border: none;
     padding: 0 0 9px 0;
     text-align: center;
-    margin: 0;    
+    margin: 0;
+    margin-left:20px;
+    margin-right:20px;
   }
-  h3 {
+  > h3 {
     margin-top: 10px;
     margin-bottom: 20px;
     font-size:20px;
-    font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
+    font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
     padding: 0 10px;
     background: url(image_path("bg_h3.gif")) repeat-x 0 11px;
     color: #999;
@@ -55,6 +65,34 @@
     span {
       padding: 0 15px;
       background-color: #fff;
+    }    
+  }
+  &.s-new-entry {
+    .s-edit-entry {
+      margin-top:-6px;
+    }
+    > h3 {
+      color: #a41100;
     }
   }
+}
+
+.s-scrollable {
+  overflow-x:scroll;
+}
+
+.popover-title {
+  background-color:whiteSmoke;
+  padding:10px 14px 0px 14px;
+  font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
+  color:#777;
+  border:0px;
+}
+
+.popover, .popover-content {
+  background-color: whiteSmoke;
+}
+
+.popover.right > .arrow:after {
+  border-right-color:whiteSmoke;
 }

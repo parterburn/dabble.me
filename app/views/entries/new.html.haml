@@ -1,41 +1,48 @@
 - title "New Entry on Dabble Me"
 
 .row
+  %br
+  .col-md-8.col-md-offset-2.well
 
-  = form_for :entry, url: entries_path do |f|
+    = form_for :entry, url: entries_path do |f|
 
-    .col-md-8.col-md-offset-2
-      =random_inspiration  
+      .s-entry-date.s-new-entry
+        .float-left.s-edit-entry{:rel=>"popover", :title=>"Inspiration", :"data-content"=>"If you need ideas to get started just glance up here for quotes & questions!"}
+          %i.fa.fa-lightbulb-o      
+        =random_inspiration
+        %h3
+          %span
+            New Entry
 
-    -if @entry.errors.any?
-      #error_explanation.col-md-8.col-md-offset-2
-        .alert.alert-danger
-          - @entry.errors.full_messages.each do |msg|
-            %p= msg
+      -if @entry.errors.any?
+        #error_explanation
+          .alert.alert-danger
+            - @entry.errors.full_messages.each do |msg|
+              %p= msg
 
-    .col-md-8.col-md-offset-2
-      = f.label :date    
-      .input-group.date
-        %span.input-group-addon
-          %i.fa.fa-calendar
-        = f.text_field :date, :value =>  date_formatted(@entry), :placeholder=>"YYYY-MM-DD", :class => "form-control"
+      %div
+        = f.label :date    
+        .input-group.date
+          %span.input-group-addon
+            %i.fa.fa-calendar
+          = f.text_field :date, :value =>  date_formatted(@entry), :placeholder=>"YYYY-MM-DD", :class => "form-control"
 
-      %br
-
-    -#
-      .col-md-8.col-md-offset-2
-        = f.label :image_url
-        = f.text_field :image_url, :class => "form-control", :placeholder => "http://url-to-your-image"
         %br
 
-    .col-md-8.col-md-offset-2
-      = f.label :entry
-      = f.text_area :entry, :class => "form-control summernote", :rows => 20
-      %br
+      -#
+        %div
+          = f.label :image_url
+          = f.text_field :image_url, :class => "form-control", :placeholder => "http://url-to-your-image"
+          %br
 
-    .col-md-8.col-md-offset-2
-      = f.submit "Create Entry", :class => "form-control btn btn-primary"
-      %br
+      %div
+        = f.label :entry
+        = f.text_area :entry, :class => "form-control summernote", :rows => 20
+        %br
+
+      %div
+        = f.submit "Create Entry", :class => "form-control btn btn-primary"
+
 
 -if @entry.date.blank?
   :javascript

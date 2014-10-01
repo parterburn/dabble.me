@@ -97,6 +97,7 @@
       %hr
       %br
 
-    .col-md-6.col-md-offset-3
-      =link_to registration_path(resource_name), data: { confirm: "Are you sure?" }, method: :delete do 
+    .col-md-12.center
+      =link_to registration_path(resource_name), class: "s-delete", data: { confirm: "Are you sure? There is no undo." }, method: :delete do 
         %h5 Cancel your account & delete all entries
+      %br

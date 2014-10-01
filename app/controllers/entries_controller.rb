@@ -56,7 +56,8 @@ class EntriesController < ApplicationController
       
     if @existing_entry.present? && params[:entry][:entry].present?
       #existing entry exists, so add to it
-      @existing_entry.body += "<br><br>--------------------------------<br><br>#{params[:entry][:entry]}"
+      @existing_entry.body += "<hr>#{params[:entry][:entry]}"
+      @existing_entry.inspiration_id = params[:entry][:inspiration_id] if params[:entry][:inspiration_id].present?
       if params[:entry][:image_url].present? && @existing_entry.image_url.present?
         @existing_entry.body += "<br>Image: #{params[:entry][:image_url]}"
       elsif params[:entry][:image_url].present?
@@ -119,7 +120,7 @@ class EntriesController < ApplicationController
 
       if existing_entry.present?
         #existing entry exists, so add to it
-        existing_entry.body += "<br>--------------------------------<br>#{params['text']}"
+        existing_entry.body += "<hr>#{params['text']}"
         existing_entry.inspiration_id = 2
         if existing_entry.save
           render :json => { "message" => "Existing entry could not save" }, :status => 200
@@ -156,7 +157,8 @@ class EntriesController < ApplicationController
 
     if @existing_entry.present? && @entry != @existing_entry && params[:entry][:entry].present?
       #existing entry exists, so add to it
-      @existing_entry.body += "<br>--------------------------------<br>#{params[:entry][:entry]}"
+      @existing_entry.body += "<hr>#{params[:entry][:entry]}"
+      @existing_entry.inspiration_id = params[:entry][:inspiration_id] if params[:entry][:inspiration_id].present?
       if params[:entry][:image_url].present? && @existing_entry.image_url.present?
         @existing_entry.body += "<br>Image: #{params[:entry][:image_url]}"
       elsif params[:entry][:image_url].present?

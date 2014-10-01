@@ -4,17 +4,17 @@
     %p
       =link_to "Powered by donations","https://gratipay.com/parterburn/",:target=>"_blank"
     %p.muted
-      = link_to privacy_path do
-        %span.fa.fa-lock
-        Privacy Policy
-      &nbsp;&middot;&nbsp;        
       = link_to 'http://twitter.com/parterburn' do
         %span.fa.fa-twitter
         Built by @parterburn
-      &nbsp;&middot;&nbsp;
+      &nbsp;&middot;&nbsp;        
       = mail_to "hello@dabble.me", :encode => "hex" do
         %span.fa.fa-envelope-o
-        Contact
+        Contact        
+    %p.muted
+      = link_to privacy_path do
+        %span.fa.fa-lock
+        Privacy Policy
       &nbsp;&middot;&nbsp;
       = link_to 'http://github.com/parterburn/dabble.me' do
         %span.fa.fa-github

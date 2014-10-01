@@ -19,21 +19,7 @@
           Welcome back! Here's your latest entry...
         %br
       .col-md-8.col-md-offset-2.well
-        .center
-          .s-entry-date
-            %h2
-              = @last_entry.date.strftime("%B %-d, %Y")
-              .float-right.s-edit-entry
-                = link_to edit_entry_path(@last_entry) do
-                  %i.fa.fa-pencil-square-o
-            %h3
-              %span
-                = @last_entry.date.strftime("%A")
-        = @last_entry.body.html_safe
-        - if @last_entry.image_url.present?
-          =link_to @last_entry.image_url, :target=>"_blank" do
-            =image_code(@last_entry)
-      .clearfix
+        = render :partial => 'entries/entry', :locals => {:entry => @last_entry}
   - else
     .col-md-8.col-md-offset-2
       %br
