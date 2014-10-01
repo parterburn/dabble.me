@@ -2,7 +2,11 @@
 
 .row
   .col-md-8.col-md-offset-2
-    %h3 Edit entry on #{date_formatted(@entry)}
+    %h4
+      Edit entry on #{date_formatted(@entry)}
+      .float-right.s-edit-entry
+        = link_to entry_path(@entry), title: "Delete this entry", class: "s-delete", method: :delete, data: { confirm: 'Are you sure you want to delete this entry? There is no undo.' } do
+          %i.fa.fa-trash
     %br
   = form_for :entry, url: entry_path(@entry), method: :patch do |f|
 
@@ -33,8 +37,3 @@
 
     .col-md-8.col-md-offset-2
       = f.submit "Edit Entry", :class => "form-control btn btn-primary"
-      %br
-      %br
-      = link_to 'Delete Entry', entry_path(@entry), method: :delete, data: { confirm: 'Are you sure?' }
-      %br
-      %br      

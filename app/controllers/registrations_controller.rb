@@ -2,17 +2,17 @@ class RegistrationsController < Devise::RegistrationsController
 
   def new
     if ENV['CLOSE_REGISTRATIONS'].present?
-      flash[:notice] = 'Registrations are not yet open; enter your email below to be alerted!'
-      redirect_to root_path      
+      flash[:notice] = 'Registrations are not open; enter your email below to be alerted!'
+      redirect_to root_path
     else
-      super      
+      super
     end
   end
 
   def create
     if ENV['CLOSE_REGISTRATIONS'].present?
-      flash[:notice] = 'Registrations are not yet open; enter your email below to be alerted!'
-      redirect_to root_path      
+      flash[:notice] = 'Registrations are not open; enter your email below to be alerted!'
+      redirect_to root_path
     else
       super
     end

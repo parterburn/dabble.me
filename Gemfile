@@ -25,6 +25,8 @@ gem 'addressable' # better URI checking
 gem "combined_time_select", "~> 1.0.1"
 gem 'gibbon'
 
+gem 'randomized_field', '~> 0.1.0' # Asset keys
+
 # Pagination
 # gem 'kaminari'
 
@@ -37,6 +39,7 @@ gem 'newrelic_rpm'
 # Miscellanea
 gem 'google-analytics-rails'
 gem 'haml'
+
 # gem 'http_accept_language'
 # gem 'resque', require: 'resque/server' # Resque web interface
 

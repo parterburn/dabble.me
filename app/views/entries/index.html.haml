@@ -32,8 +32,9 @@
               #{date_entries.count}
             .clearfix
       %br
-      =link_to export_entries_path(:json) do
-        Export #{pluralize(@entries.count,"entry")}
+      %h4
+        =link_to export_entries_path(:json) do
+          Export all entries
 
     .col-md-8.col-md-offset-1
       %hr
@@ -51,18 +52,19 @@
 
 
   - @entries.each do |entry|
-    .col-md-8.col-md-offset-1
-      %h4.s-show-date
-        = entry.date.strftime("%B %-d, %Y")
-        .float-right.s-edit-entry
-          = link_to edit_entry_path(entry) do
-            %i.fa.fa-pencil-square-o
-      %br
-    - if entry.image_url.present?
-      .col-md-8.col-md-offset-1.s-show-url
-        .row
-          =image_code(entry)
-        %br
-      .clearfix
+    %br
     .col-md-8.col-md-offset-1.well
+      .center
+        .s-entry-date
+          %h2
+            = entry.date.strftime("%B %-d, %Y")
+            .float-right.s-edit-entry
+              = link_to edit_entry_path(entry) do
+                %i.fa.fa-pencil-square-o
+          %h3
+            %span
+              = entry.date.strftime("%A")    
       = entry.body.html_safe
+      - if entry.image_url.present?
+        =link_to entry.image_url, :target=>"_blank" do
+          =image_code(entry)      

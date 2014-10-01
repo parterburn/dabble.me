@@ -53,11 +53,6 @@ class EntriesController < ApplicationController
       @existing_entry = Entry.where(:user_id => @user.id, :date => selected_date.beginning_of_day..selected_date.end_of_day).first
     rescue
     end
-
-    p "*"*100
-    p @existing_entry
-    p params[:entry][:entry]
-    p "*"*100
       
     if @existing_entry.present? && params[:entry][:entry].present?
       #existing entry exists, so add to it
@@ -89,18 +84,11 @@ class EntriesController < ApplicationController
 
 def incoming
   #https://sendgrid.com/blog/two-hacking-santas-present-rails-the-inbound-parse-webhook/
-  p "*"*100
-  p "ENVELOPE PARAMS: #{params["envelope"]}"
-  p "FROM: #{JSON.parse(params["envelope"])["from"]}"
-  p "TO: #{JSON.parse(params["envelope"])["to"][0]}"
-  p "SUBJECT: #{params['subject']}"
-  p "TEXT: #{params['text']}"
-  p "HTML: #{params['html']}"
-  p "*"*100
-  begin 
-    from_email = JSON.parse(params["envelope"])["from"]
-    user = User.find_by_email(from_email)
+  begin
     to_email = JSON.parse(params["envelope"])["to"][0]
+    user_regex = /(u[0-9a-zA-Z]{10})/
+    user_key = to_email.scan(date_regex)[0]
+    user = User.find_by_user_key(user_key)
   rescue JSON::ParserError => e
   end
 
@@ -108,9 +96,7 @@ def incoming
     date_regex = /[201]{3}[0-4]{1}-[0-1]{1}[0-9]{1}-[0-3]{1}[0-9]{1}/
     date = to_email.scan(date_regex)[0]
     date = Time.now.in_time_zone(user.send_timezone).strftime("%Y-%m-%d") if date.blank?
-    p "*"*100
-    p "DATE: #{date}"
-    p "*"*100    
+
     entry = user.entries.create(:date => date, :body => params['text'], :inspiration_id => 2)
     if entry.save
       render :json => { "message" => "RIGHT" }, :status => 200

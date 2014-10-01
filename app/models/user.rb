@@ -4,7 +4,11 @@ class User < ActiveRecord::Base
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :trackable, :validatable
 
+  randomized_field :user_key, :length => 10, :prefix => 'u'
+
   has_many :entries, dependent: :destroy
+
+  before_save { email.downcase! }
 
   serialize :frequency, Array
 
@@ -15,6 +19,10 @@ class User < ActiveRecord::Base
 
   def full_name_or_email
     first_name.present? ? "#{first_name} #{last_name}" : email
+  end
+
+  def first_name_or_settings
+    first_name.present? ? "#{first_name}" : "Settings"
   end
   
   private

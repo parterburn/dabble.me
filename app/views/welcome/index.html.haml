@@ -4,27 +4,25 @@
   - if @last_entry.present?
     .row
       .col-md-8.col-md-offset-2
-        %h3 Welcome to Dabble Me
-
-      .col-md-8.col-md-offset-2
-        %hr
-
-      .col-md-8.col-md-offset-2
-        %h4
-          Your latest entry on 
-          = @last_entry.date.strftime("%B %-d, %Y")
-          .float-right.s-edit-entry
-            = link_to edit_entry_path(@last_entry) do
-              %i.fa.fa-pencil-square-o
         %br
-      - if @last_entry.image_url.present?
-        .col-md-8.col-md-offset-2.s-show-url
-          .row
-            =image_code(@last_entry)
-          %br
-        .clearfix    
+        %h4
+          Welcome back! Here's your latest entry...
+        %br
       .col-md-8.col-md-offset-2.well
+        .center
+          .s-entry-date
+            %h2
+              = @last_entry.date.strftime("%B %-d, %Y")
+              .float-right.s-edit-entry
+                = link_to edit_entry_path(@last_entry) do
+                  %i.fa.fa-pencil-square-o
+            %h3
+              %span
+                = @last_entry.date.strftime("%A")
         = @last_entry.body.html_safe
+        - if @last_entry.image_url.present?
+          =link_to @last_entry.image_url, :target=>"_blank" do
+            =image_code(@last_entry)
       .clearfix
   - else
     .col-md-8.col-md-offset-2
@@ -48,8 +46,28 @@
     %br
     %br
 
-  / Begin MailChimp Signup Form
+  .clearfix
+  .center
+    = link_to "Start Writing for Free", new_user_registration_path, :class => 'btn btn-info btn-lg'
+    .clearfix
+    %br
+  .clearfix
+
+  .s-screenshots.center.j-screenshots
+    %br
+    .col-md-3
+      =link_to image_tag("all_entries.png"), image_url("all_entries.png"), :target=>"_blank"
+    .col-md-3
+      =link_to image_tag("new_entry.png"), image_url("new_entry.png"), :target=>"_blank"
+    .col-md-3
+      =link_to image_tag("import_ohlife.png"), image_url("import_ohlife.png"), :target=>"_blank"
+    .col-md-3
+      =link_to image_tag("settings.png"), image_url("settings.png"), :target=>"_blank"
+  .clearfix
+
   .row
+    %br
+    %br
     #mc_embed_signup.col-md-4.col-md-offset-4.well
       %form#mc-embedded-subscribe-form.validate{:action => "//sixteenseven.us2.list-manage.com/subscribe/post?u=63fff2dd7620976b42e437195&id=762e28b552", :method => "post", :name => "mc-embedded-subscribe-form", :novalidate => "", :target => "_blank"}
         #mc_embed_signup_scroll
@@ -59,17 +77,16 @@
           #mce-responses.clear
             #mce-error-response.response{:style => "display:none"}
             #mce-success-response.response{:style => "display:none"}
-          / real people should not fill this in and expect good things - do not remove this or risk form bot signups
           %div{:style => "position: absolute; left: -5000px;"}
-            %input{:name => "b_63fff2dd7620976b42e437195_762e28b552", :tabindex => "-1", :type => "text", :value => ""}/
+            %input{:name => "b_63fff2dd7620976b42e437195_762e28b552", :tabindex => "-1", :type => "text", :value => ""}
           .clear
             %input#mc-embedded-subscribe.button{:name => "subscribe", :type => "submit", :value => "Subscribe to updates", :class => "btn btn-primary form-control"}
 
-  .row.s-screenshots.center
-    %br
-    .col-md-4
-      =link_to (image_tag "all_entries.png"), image_url("all_entries.png"), :target=>"_blank"  
-    .col-md-4
-      =link_to (image_tag "new_entry.png"), image_url("new_entry.png"), :target=>"_blank"  
-    .col-md-4
-      =link_to (image_tag "import_ohlife.png"), image_url("import_ohlife.png"), :target=>"_blank"
+#myModal.modal.fade{"aria-hidden" => "true", "aria-labelledby" => "myModalLabel", :role => "dialog", :tabindex => "-1"}
+  .modal-dialog.modal-lg
+    .modal-content
+      .modal-header
+        %button.close{"aria-hidden" => "true", "data-dismiss" => "modal", :type => "button"} &#215;
+        %h4.modal-title Features of Dabble Me
+      .modal-body
+        =image_tag "all_entries.png"

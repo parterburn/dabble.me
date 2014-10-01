@@ -1,26 +1,20 @@
 - title "Entry on #{@entry.date.strftime("%B %-d, %Y")}"
 
 .row
-  .col-md-8.col-md-offset-2
-    %h4.s-show-date
-      = @entry.date.strftime("%B %-d, %Y")
-      .float-right.s-edit-entry
-        = link_to edit_entry_path(@entry) do
-          %i.fa.fa-pencil-square-o
-    %br
-  - if @entry.image_url.present?
-    .col-md-8.col-md-offset-2.s-show-url
-      .row
-        =image_code(@entry)
-      %br
-    .clearfix    
+  %br
   .col-md-8.col-md-offset-2.well
+    .center
+      .s-entry-date
+        %h2
+          = @entry.date.strftime("%B %-d, %Y")
+          .float-right.s-edit-entry
+            = link_to edit_entry_path(@entry) do
+              %i.fa.fa-pencil-square-o
+        %h3
+          %span
+            = @entry.date.strftime("%A")
     = @entry.body.html_safe
+    - if @entry.image_url.present?
+      =link_to @entry.image_url, :target=>"_blank" do
+        =image_code(@entry)
   .clearfix
-  .col-md-8.col-md-offset-2
-    %br
-    = link_to 'All Entries', entries_path
-    &nbsp;&middot;&nbsp;
-    = link_to 'Edit', edit_entry_path(@entry)
-    &nbsp;&middot;&nbsp;
-    = link_to 'Delete', entry_path(@entry), method: :delete, data: { confirm: 'Are you sure?' }    

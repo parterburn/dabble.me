@@ -1,0 +1,20 @@
+//= require jquery
+//= require jquery_ujs
+//= require jquery.turbolinks
+//= require turbolinks
+//= require twbs/bootstrap
+//= require i18n
+//= require i18n/translations
+//= require summernote.min
+//= require_tree .
+
+I18n.defaultLocale = '<%= I18n.default_locale.to_s %>';
+I18n.locale = document.getElementsByTagName('html')[0].getAttribute('lang');
+
+$(document).ready(function(){
+
+  DABBLE.init();
+  var page = DABBLE.pages[window.action] || $.noop;
+  page.call();
+
+});

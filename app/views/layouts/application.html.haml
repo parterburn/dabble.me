@@ -15,6 +15,9 @@
     / Turbolinks require javascript tags inside the head
     = javascript_include_tag 'application', data: { turbolinks_track: true }
 
+    :javascript
+      window.action = '#{@js_action}';
+
     / HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries
     /[if lt IE 9]
       = javascript_include_tag '//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js', 'respond.js'
