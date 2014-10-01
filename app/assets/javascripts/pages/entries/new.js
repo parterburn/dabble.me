@@ -1,5 +1,5 @@
 (function(){
-  window.DABBLE.pages.Entries_new = window.DABBLE.pages.Entries_edit = function(){
+  window.DABBLE.pages.Entries_new = function(){
 
     $('.input-group.date').datepicker({
       format: "yyyy-mm-dd",
