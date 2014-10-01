@@ -4,7 +4,7 @@ class User < ActiveRecord::Base
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :trackable, :validatable
 
-  randomized_field :user_key, :length => 10, :prefix => 'u'
+  randomized_field :user_key, :length => 18, :prefix => 'u'
 
   has_many :entries, dependent: :destroy
 
