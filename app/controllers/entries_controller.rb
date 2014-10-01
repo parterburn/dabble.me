@@ -98,17 +98,36 @@ def incoming
     user = User.find_by_email(from_email)
   end
 
-  if user.present?
+  if user.present? && params['text'].present?
     date_regex = /[201]{3}[0-4]{1}-[0-1]{1}[0-9]{1}-[0-3]{1}[0-9]{1}/
     date = to_email.scan(date_regex)[0]
     date = Time.now.in_time_zone(user.send_timezone).strftime("%Y-%m-%d") if date.blank?
 
-    entry = user.entries.create(:date => date, :body => params['text'], :inspiration_id => 2)
-    if entry.save
-      render :json => { "message" => "RIGHT" }, :status => 200
-    else
-      render :json => { "message" => "ERROR" }, :status => 200
+    #check for existing entry
+    begin
+      selected_date = Date.parse(date)
+      existing_entry = Entry.where(:user_id => user.id, :date => selected_date.beginning_of_day..selected_date.end_of_day).first
+    rescue
     end
+
+    if existing_entry.present?
+      #existing entry exists, so add to it
+      existing_entry.body += "<br>--------------------------------<br>#{params['text']}"
+      existing_entry.inspiration_id = 2
+      if existing_entry.save
+        render :json => { "message" => "Existing entry could not save" }, :status => 200
+      else
+        render :json => { "message" => "Existing entry could not save" }, :status => 200
+      end
+    else
+      entry = user.entries.create(:date => date, :body => params['text'], :inspiration_id => 2)
+      if entry.save
+        render :json => { "message" => "Created new entry" }, :status => 200
+      else
+        render :json => { "message" => "Could not create new entry" }, :status => 200
+      end      
+    end
+
   else
     render :json => { "message" => "NO USER" }, :status => 200
   end
