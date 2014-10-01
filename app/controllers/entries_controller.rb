@@ -82,56 +82,63 @@ class EntriesController < ApplicationController
     end
   end
 
-def incoming
-  #https://sendgrid.com/blog/two-hacking-santas-present-rails-the-inbound-parse-webhook/
-  begin
-    to_email = JSON.parse(params["envelope"])["to"][0]
-    user_regex = /(u[0-9a-zA-Z]{10})/
-    user_key = to_email.scan(user_regex)[0]
-    user = User.find_by_user_key(user_key)
-  rescue JSON::ParserError => e
+  def incoming_mandrill
+    p "*"*100
+    p params
+    p "*"*100
+    render :json => { "message" => "Ok" }, :status => 200
   end
 
-  if user.blank?
-    #user wasn't found by user_key, try by the from email
-    from_email = JSON.parse(params["envelope"])["from"]
-    user = User.find_by_email(from_email)
-  end
-
-  if user.present? && params['text'].present?
-    date_regex = /[201]{3}[0-4]{1}-[0-1]{1}[0-9]{1}-[0-3]{1}[0-9]{1}/
-    date = to_email.scan(date_regex)[0]
-    date = Time.now.in_time_zone(user.send_timezone).strftime("%Y-%m-%d") if date.blank?
-
-    #check for existing entry
+  def incoming_sendgrid
+    #https://sendgrid.com/blog/two-hacking-santas-present-rails-the-inbound-parse-webhook/
     begin
-      selected_date = Date.parse(date)
-      existing_entry = Entry.where(:user_id => user.id, :date => selected_date.beginning_of_day..selected_date.end_of_day).first
-    rescue
+      to_email = JSON.parse(params["envelope"])["to"][0]
+      user_regex = /(u[0-9a-zA-Z]{10})/
+      user_key = to_email.scan(user_regex)[0]
+      user = User.find_by_user_key(user_key)
+    rescue JSON::ParserError => e
     end
 
-    if existing_entry.present?
-      #existing entry exists, so add to it
-      existing_entry.body += "<br>--------------------------------<br>#{params['text']}"
-      existing_entry.inspiration_id = 2
-      if existing_entry.save
-        render :json => { "message" => "Existing entry could not save" }, :status => 200
-      else
-        render :json => { "message" => "Existing entry could not save" }, :status => 200
+    if user.blank?
+      #user wasn't found by user_key, try by the from email
+      from_email = JSON.parse(params["envelope"])["from"]
+      user = User.find_by_email(from_email)
+    end
+
+    if user.present? && params['text'].present?
+      date_regex = /[201]{3}[0-4]{1}-[0-1]{1}[0-9]{1}-[0-3]{1}[0-9]{1}/
+      date = to_email.scan(date_regex)[0]
+      date = Time.now.in_time_zone(user.send_timezone).strftime("%Y-%m-%d") if date.blank?
+
+      #check for existing entry
+      begin
+        selected_date = Date.parse(date)
+        existing_entry = Entry.where(:user_id => user.id, :date => selected_date.beginning_of_day..selected_date.end_of_day).first
+      rescue
       end
-    else
-      entry = user.entries.create(:date => date, :body => params['text'], :inspiration_id => 2)
-      if entry.save
-        render :json => { "message" => "Created new entry" }, :status => 200
-      else
-        render :json => { "message" => "Could not create new entry" }, :status => 200
-      end      
-    end
 
-  else
-    render :json => { "message" => "NO USER" }, :status => 200
+      if existing_entry.present?
+        #existing entry exists, so add to it
+        existing_entry.body += "<br>--------------------------------<br>#{params['text']}"
+        existing_entry.inspiration_id = 2
+        if existing_entry.save
+          render :json => { "message" => "Existing entry could not save" }, :status => 200
+        else
+          render :json => { "message" => "Existing entry could not save" }, :status => 200
+        end
+      else
+        entry = user.entries.create(:date => date, :body => params['text'], :inspiration_id => 2)
+        if entry.save
+          render :json => { "message" => "Created new entry" }, :status => 200
+        else
+          render :json => { "message" => "Could not create new entry" }, :status => 200
+        end      
+      end
+
+    else
+      render :json => { "message" => "NO USER" }, :status => 200
+    end
   end
-end
 
   def edit
     @entry = Entry.find(params[:id])

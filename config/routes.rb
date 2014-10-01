@@ -9,8 +9,11 @@ Rails.application.routes.draw do
 
   resources :entries
 
-  get   '/post' => 'welcome#index'
-  match '/post' => 'entries#incoming', via: [:post]
+  get   '/post_sendgrid' => 'welcome#index'
+  match '/post_sendgrid' => 'entries#incoming_sendgrid', via: [:post]
+
+  get   '/post_mandrill' => 'welcome#index'
+  match '/post_mandrill' => 'entries#incoming_mandrill', via: [:post]  
 
   get   '/export' => 'entries#export', :as => "export_entries"
 
