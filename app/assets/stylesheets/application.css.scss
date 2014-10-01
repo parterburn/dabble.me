@@ -187,3 +187,7 @@ p {
 .bf-image-head {
   display:none;
 }
+
+.flash.alert:empty {
+  display: none;
+}

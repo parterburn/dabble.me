@@ -5,8 +5,9 @@
   .col-md-8.col-md-offset-2.well
 
     .s-entry-date
-      .float-left.s-edit-entry{:rel=>"popover", :title=>"#{@entry.inspiration.inspired_by}", :"data-content"=>"#{@entry.inspiration.body}"}
-        %i.fa.fa-lightbulb-o
+      -if @entry.inspiration.present?
+        .float-left.s-edit-entry{:rel=>"popover", :title=>"#{@entry.inspiration.inspired_by}", :"data-content"=>"#{@entry.inspiration.body}"}
+          %i.fa.fa-lightbulb-o
       .float-right.s-edit-entry{:rel=>"tooltip", :title=>"Delete this Entry"}
         = link_to entry_path(@entry), class: "s-delete", method: :delete, data: { confirm: 'Are you sure you want to delete this entry? There is no undo.' } do
           %i.fa.fa-trash

@@ -1,7 +1,8 @@
 .center
   .s-entry-date
-    .float-left.s-edit-entry{:rel=>"popover", :title=>"#{entry.inspiration.inspired_by}", :"data-content"=>"#{entry.inspiration.body}"}
-      %i.fa.fa-lightbulb-o
+    -if entry.inspiration.present?
+      .float-left.s-edit-entry{:rel=>"popover", :title=>"#{entry.inspiration.inspired_by}", :"data-content"=>"#{entry.inspiration.body}"}
+        %i.fa.fa-lightbulb-o
     .float-right.s-edit-entry{:rel=>"tooltip", :title=>"Edit Entry"}
       = link_to edit_entry_path(entry) do
         %i.fa.fa-pencil-square-o
