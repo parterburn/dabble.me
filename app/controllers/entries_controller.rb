@@ -167,7 +167,7 @@ class EntriesController < ApplicationController
       errors = []
       user = current_user #protect users from importing into someone else's entries
 
-      split_at_date_regex = /[201]{3}[0-4]{1}-[0-1]{1}[0-9]{1}-[0-3]{1}[0-9]{1}/
+      split_at_date_regex = /[1-2]{1}[0-9]{1}[0-9]{2}\-[0-1]{1}[0-9]{1}\-[0-3]{1}[0-9]{1}/
       dates = data.scan(split_at_date_regex)
       bodies  = data.split(split_at_date_regex)
       bodies.shift
