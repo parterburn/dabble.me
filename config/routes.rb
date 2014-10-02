@@ -15,12 +15,12 @@ Rails.application.routes.draw do
 
   resources :entries
 
-  mount_griddler
-
   get   '/export' => 'entries#export', :as => "export_entries"
 
   root 'welcome#index'
 
   get '/privacy' => 'welcome#privacy'
+  
+  post '/email_processor' => 'griddler/emails#create'
 
 end

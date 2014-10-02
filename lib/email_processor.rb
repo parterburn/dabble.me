@@ -1,7 +1,13 @@
 class EmailProcessor
-  #skip_before_action :verify_authenticity_token, only: [:process]
-
   def self.process(email)
+    p "*"*100
+    p "TO: #{email.to}"
+    p "FROM: #{email.from}"
+    p "SUBJECT: #{email.subject}"
+    p "BODY: #{email.body}"
+    p "RAW BODY: #{email.raw_body}"    
+    p "HEADERS: #{email.headers}"    
+    p "*"*100
     user = find_user_from_user_key(email.to, email.from)
 
     if user.present? && email.body.present?
