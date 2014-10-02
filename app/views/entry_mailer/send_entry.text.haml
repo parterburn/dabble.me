@@ -1,0 +1,10 @@
+Just reply to this email with your entry for #{Time.now.in_time_zone(@user.send_timezone).strftime("%B %-d")}.
+\ 
+- if @user.send_past_entry? && @random_entry
+  Oh snap, remember this? #{distance_of_time_in_words_to_now(@random_entry.date).titleize} you wrote...
+  \ 
+  #{strip_tags(@random_entry.body)}
+  \ 
+Past entries: https://dabble.me/entries
+\ 
+Unsubscribe: https://dabble.me/users/edit

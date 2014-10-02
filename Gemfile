@@ -19,13 +19,21 @@ gem 'devise' # User Authentication
 gem 'sendgrid', '~> 1.2.0' # Emails
 
 gem 'simple_form'
-gem 'summernote-rails'
+gem 'summernote-rails' #wysiwyg
 gem 'addressable' # better URI checking
 
-gem "combined_time_select", "~> 1.0.1"
-gem 'gibbon'
+gem 'sidekiq', '~> 3.1.3' # Async queue
+gem 'sinatra', '>= 1.3.0', :require => nil
 
-gem 'randomized_field', '~> 0.1.0' # Asset keys
+gem "combined_time_select", "~> 1.0.1"
+gem 'gibbon' #mailchimp connector
+
+gem 'griddler'
+gem 'griddler-sendgrid'
+
+gem 'randomized_field', '~> 0.1.0' # builds user_keys
+
+gem 'whenever', :require => false #schedule rake tasks
 
 # Pagination
 # gem 'kaminari'

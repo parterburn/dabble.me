@@ -1,6 +1,5 @@
 class EntriesController < ApplicationController
-  skip_before_action :verify_authenticity_token, only: [:incoming_mandrill, :incoming_sendgrid]  
-  before_action :authenticate_user!, except: [:incoming_mandrill, :incoming_sendgrid]
+  before_action :authenticate_user!
   before_filter :require_permission, only: [:show, :edit, :update, :destroy]
 
   def index
@@ -31,9 +30,8 @@ class EntriesController < ApplicationController
   end
 
   def random
-    if (count = Entry.where(:user_id => current_user).count) > 0
-      offset = rand(count)
-      @entry = Entry.where(:user_id => current_user).offset(offset).first
+    @entry = current_user.random_entry
+    if @entry
       render "show"
     else
       redirect_to entries_path
@@ -42,18 +40,13 @@ class EntriesController < ApplicationController
 
   def new
     @entry = Entry.new
+    @random_inspiration = random_inspiration
   end
 
   def create
     @user = current_user
+    @existing_entry = @user.existing_entry(params[:entry][:date])
 
-    #check for existing entry
-    begin
-      selected_date = Date.parse(params[:entry][:date])
-      @existing_entry = Entry.where(:user_id => @user.id, :date => selected_date.beginning_of_day..selected_date.end_of_day).first
-    rescue
-    end
-      
     if @existing_entry.present? && params[:entry][:entry].present?
       #existing entry exists, so add to it
       @existing_entry.body += "<hr>#{params[:entry][:entry]}"
@@ -64,7 +57,7 @@ class EntriesController < ApplicationController
         @existing_entry.image_url = params[:entry][:image_url]
       end
       if @existing_entry.save
-        flash[:notice] = "Merged with existing entry on #{selected_date}."
+        flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime("%B %-d")}."
         redirect_to @existing_entry
       else
         #errors
@@ -83,77 +76,13 @@ class EntriesController < ApplicationController
     end
   end
 
-  def incoming_mandrill
-    p "*"*100
-    p params
-    p "*"*100
-    render :json => { "message" => "Ok" }, :status => 200
-  end
-
-  def incoming_sendgrid
-    #https://sendgrid.com/blog/two-hacking-santas-present-rails-the-inbound-parse-webhook/
-    begin
-      to_email = JSON.parse(params["envelope"])["to"][0]
-      user_regex = /(u[0-9a-zA-Z]{10})/
-      user_key = to_email.scan(user_regex)[0]
-      user = User.find_by_user_key(user_key)
-    rescue JSON::ParserError => e
-    end
-
-    if user.blank?
-      #user wasn't found by user_key, try by the from email
-      from_email = JSON.parse(params["envelope"])["from"]
-      user = User.find_by_email(from_email)
-    end
-
-    if user.present? && params['text'].present?
-      date_regex = /[201]{3}[0-4]{1}-[0-1]{1}[0-9]{1}-[0-3]{1}[0-9]{1}/
-      date = to_email.scan(date_regex)[0]
-      date = Time.now.in_time_zone(user.send_timezone).strftime("%Y-%m-%d") if date.blank?
-
-      #check for existing entry
-      begin
-        selected_date = Date.parse(date)
-        existing_entry = Entry.where(:user_id => user.id, :date => selected_date.beginning_of_day..selected_date.end_of_day).first
-      rescue
-      end
-
-      if existing_entry.present?
-        #existing entry exists, so add to it
-        existing_entry.body += "<hr>#{params['text']}"
-        existing_entry.inspiration_id = 2
-        if existing_entry.save
-          render :json => { "message" => "Existing entry could not save" }, :status => 200
-        else
-          render :json => { "message" => "Existing entry could not save" }, :status => 200
-        end
-      else
-        entry = user.entries.create(:date => date, :body => params['text'], :inspiration_id => 2)
-        if entry.save
-          render :json => { "message" => "Created new entry" }, :status => 200
-        else
-          render :json => { "message" => "Could not create new entry" }, :status => 200
-        end      
-      end
-
-    else
-      render :json => { "message" => "NO USER" }, :status => 200
-    end
-  end
-
   def edit
     @entry = Entry.find(params[:id])
   end
 
   def update
     @entry = Entry.find(params[:id])
-
-    #check for existing entry
-    begin
-      selected_date = Date.parse(params[:entry][:date])
-      @existing_entry = Entry.where(:user_id => current_user.id, :date => selected_date.beginning_of_day..selected_date.end_of_day).first
-    rescue
-    end
+    @existing_entry = current_user.existing_entry(params[:entry][:date])
 
     if @existing_entry.present? && @entry != @existing_entry && params[:entry][:entry].present?
       #existing entry exists, so add to it
@@ -166,7 +95,7 @@ class EntriesController < ApplicationController
       end
       if @existing_entry.save
         @entry.delete
-        flash[:notice] = "Merged with existing entry on #{selected_date}."
+        flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime("%B %-d")}."
         redirect_to @existing_entry
       else
         render 'edit'        
@@ -215,6 +144,14 @@ class EntriesController < ApplicationController
         redirect_to entries_path
       end
     end
+
+    def random_inspiration
+      if (count = Inspiration.without_ohlife_or_email.count) > 0
+        Inspiration.without_ohlife_or_email.offset(rand(count)).first
+      else
+        nil
+      end
+    end    
 
     def import_ohlife_entries(data)
       errors = []

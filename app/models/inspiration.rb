@@ -9,4 +9,5 @@ class Inspiration < ActiveRecord::Base
       "Inspiration: #{category}"
     end
   end
+
 end

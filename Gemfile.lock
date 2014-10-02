@@ -49,6 +49,8 @@ GEM
       rack (>= 1.0.0)
       rack-test (>= 0.5.4)
       xpath (~> 2.0)
+    celluloid (0.16.0)
+      timers (~> 4.0.0)
     childprocess (0.5.3)
       ffi (~> 1.0, >= 1.0.11)
     chronic (0.10.2)
@@ -62,6 +64,7 @@ GEM
     coffee-script-source (1.8.0)
     columnize (0.8.9)
     combined_time_select (1.0.1)
+    connection_pool (2.0.0)
     coveralls (0.7.1)
       multi_json (~> 1.3)
       rest-client
@@ -100,12 +103,19 @@ GEM
       httparty
       multi_json (>= 1.3.4)
     google-analytics-rails (0.0.6)
+    griddler (1.0.0)
+      htmlentities
+      rails (>= 3.2.0)
+    griddler-sendgrid (0.0.1)
+      griddler
     haml (4.0.5)
       tilt
     haml_assets (0.2.2)
       haml
       tilt
     hike (1.2.3)
+    hitimes (1.2.2)
+    htmlentities (4.3.2)
     httparty (0.13.1)
       json (~> 1.8)
       multi_xml (>= 0.5.2)
@@ -150,6 +160,8 @@ GEM
     rack (1.5.2)
     rack-contrib (1.1.0)
       rack (>= 0.9.1)
+    rack-protection (1.5.3)
+      rack
     rack-test (0.6.2)
       rack (>= 1.0)
     rack-timeout (0.0.4)
@@ -170,6 +182,9 @@ GEM
       thor (>= 0.18.1, < 2.0)
     rake (10.3.2)
     randomized_field (0.1.0)
+    redis (3.1.0)
+    redis-namespace (1.5.1)
+      redis (~> 3.0, >= 3.0.4)
     rest-client (1.7.2)
       mime-types (>= 1.16, < 3.0)
       netrc (~> 0.7)
@@ -208,6 +223,12 @@ GEM
       websocket (~> 1.0)
     sendgrid (1.2.0)
       json
+    sidekiq (3.1.4)
+      celluloid (>= 0.15.2)
+      connection_pool (>= 2.0.0)
+      json
+      redis (>= 3.0.6)
+      redis-namespace (>= 1.3.1)
     simple_form (3.0.2)
       actionpack (~> 4.0)
       activemodel (~> 4.0)
@@ -216,6 +237,10 @@ GEM
       multi_json
       simplecov-html (~> 0.8.0)
     simplecov-html (0.8.0)
+    sinatra (1.4.5)
+      rack (~> 1.4)
+      rack-protection (~> 1.4)
+      tilt (~> 1.3, >= 1.3.4)
     slop (3.6.0)
     spring (1.1.3)
     spring-commands-rspec (1.0.2)
@@ -236,6 +261,8 @@ GEM
     thor (0.19.1)
     thread_safe (0.3.4)
     tilt (1.4.1)
+    timers (4.0.1)
+      hitimes
     tins (1.3.3)
     twbs_sass_rails (0.9.2)
       rails (>= 3.2.19, < 5.0.0)
@@ -252,6 +279,9 @@ GEM
       addressable (>= 2.3.6)
       crack (>= 0.3.2)
     websocket (1.2.1)
+    whenever (0.9.2)
+      activesupport (>= 2.3.4)
+      chronic (>= 0.6.3)
     xpath (2.0.0)
       nokogiri (~> 1.3)
 
@@ -276,6 +306,8 @@ DEPENDENCIES
   faker
   gibbon
   google-analytics-rails
+  griddler
+  griddler-sendgrid
   haml
   haml_assets
   i18n-js
@@ -295,11 +327,14 @@ DEPENDENCIES
   sass-rails (~> 4.0.3)
   selenium-webdriver
   sendgrid (~> 1.2.0)
+  sidekiq (~> 3.1.3)
   simple_form
   simplecov
+  sinatra (>= 1.3.0)
   spring
   spring-commands-rspec
   summernote-rails
   twbs_sass_rails
   uglifier (>= 1.3.0)
   webmock
+  whenever

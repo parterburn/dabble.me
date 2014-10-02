@@ -1,4 +1,10 @@
+require 'sidekiq/web'
+
 Rails.application.routes.draw do
+
+  constraints(:host => /localhost/) do
+    mount Sidekiq::Web => '/sidekiq'
+  end
 
   devise_for :users, :controllers => { registrations: 'registrations' }
 
@@ -8,12 +14,6 @@ Rails.application.routes.draw do
   get '/entries/random' => 'entries#random', :as => "random_entry"
 
   resources :entries
-
-  get   '/post_sendgrid' => 'welcome#index'
-  match '/post_sendgrid' => 'entries#incoming_sendgrid', via: [:post]
-
-  get   '/post_mandrill' => 'welcome#index'
-  match '/post_mandrill' => 'entries#incoming_mandrill', via: [:post]  
 
   get   '/export' => 'entries#export', :as => "export_entries"
 

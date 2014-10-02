@@ -6,7 +6,7 @@
       Email reminders are coming soon...please&nbsp;
       %span>= link_to "update your settings", edit_user_registration_path, :class=>"alert-link"
       \. Your current settings: 
-      =current_user.send_time.strftime('%l %p')
+      =current_user.send_time.strftime('%-l %p')
       =current_user.send_timezone
       on
       -current_user.frequency.each do |freq|

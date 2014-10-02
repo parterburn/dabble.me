@@ -17,6 +17,10 @@ class User < ActiveRecord::Base
     subscribe_to_mailchimp
   end
 
+  def full_name
+    "#{first_name} #{last_name}" if first_name.present? || last_name.present?
+  end
+
   def full_name_or_email
     first_name.present? ? "#{first_name} #{last_name}" : email
   end
@@ -25,6 +29,23 @@ class User < ActiveRecord::Base
     first_name.present? ? "#{first_name}" : "Settings"
   end
   
+  def random_entry
+    if (count = Entry.where(:user_id => id).count) > 0
+      Entry.where(:user_id => id).offset(rand(count)).first
+    else
+      nil
+    end
+  end
+
+  def existing_entry(date)
+    begin
+      selected_date = Date.parse(date)
+      Entry.where(:user_id => self.id, :date => selected_date.beginning_of_day..selected_date.end_of_day).first
+    rescue
+      nil
+    end
+  end  
+
   private
 
     def subscribe_to_mailchimp

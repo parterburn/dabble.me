@@ -1,15 +1,17 @@
-workers Integer(ENV['PUMA_WORKERS'] || 3)
-threads Integer(ENV['MIN_THREADS']  || 0), Integer(ENV['MAX_THREADS'] || 16)
+rails_env = ENV['RAILS_ENV'] || 'development'
 
+threads Integer(ENV["PUMA_THREADS_MIN"] || 1), Integer(ENV["PUMA_THREADS"] || 6)
+
+workers Integer(ENV["PUMA_WORKERS"] || 1)
 preload_app!
 
-rackup      DefaultRackup
-port        ENV['PORT']     || 3000
-environment ENV['RACK_ENV'] || 'development'
-
 on_worker_boot do
-  # worker specific setup
+  ActiveRecord::Base.connection_pool.disconnect!
+
   ActiveSupport.on_load(:active_record) do
-    ActiveRecord::Base.establish_connection
+    config = ActiveRecord::Base.configurations[Rails.env]
+    config['reaping_frequency'] = ENV['DB_REAP_FREQ'] || 10 # seconds
+    config['pool']              = ENV['DB_POOL'] || 5
+    ActiveRecord::Base.establish_connection(config)
   end
 end

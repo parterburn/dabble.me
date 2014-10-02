@@ -8,8 +8,10 @@
 
       .s-entry-date.s-new-entry
         .float-left.s-edit-entry{:rel=>"popover", :title=>"Inspiration", :"data-content"=>"If you need ideas to get started just glance up here for quotes & questions!"}
-          %i.fa.fa-lightbulb-o      
-        =random_inspiration
+          %i.fa.fa-lightbulb-o
+        .center.s-inspiration
+          =@random_inspiration.body
+          =f.hidden_field :inspiration_id, :value => @random_inspiration.id
         %h3
           %span
             New Entry
