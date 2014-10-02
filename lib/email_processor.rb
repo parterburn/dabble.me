@@ -1,22 +1,31 @@
 class EmailProcessor
-  def self.process(email)
-    p "*"*100
-    p "TO: #{email.to}"
-    p "FROM: #{email.from}"
-    p "SUBJECT: #{email.subject}"
-    p "BODY: #{email.body}"
-    p "RAW BODY: #{email.raw_body}"    
-    p "HEADERS: #{email.headers}"    
-    p "*"*100
-    user = find_user_from_user_key(email.to, email.from)
+  def initialize(email)
+    @to = pick_meaningful_recipient(email.to)
+    @from = email.from
+    @subject = email.subject
+    @body = email.body
+    @raw_body = email.raw_body
+    @headers = email.headers
+  end
 
-    if user.present? && email.body.present?
-      date = parse_subject_for_date(email.subject, user)
+  def process
+    p "*"*100
+    p "TO: #{@to}"
+    p "FROM: #{@from}"
+    p "SUBJECT: #{@subject}"
+    p "BODY: #{@body}"
+    p "RAW BODY: #{@raw_body}"
+    p "HEADERS: #{@headers}"
+    p "*"*100
+    user = find_user_from_user_key(@to, @from)
+
+    if user.present? && @body.present?
+      date = parse_subject_for_date(@subject, user)
       existing_entry = user.existing_entry(date)
 
       if existing_entry.present?
         #existing entry exists, so add to it
-        existing_entry.body += "<hr>#{params['text']}"
+        existing_entry.body += "<hr>#{@body}"
         existing_entry.inspiration_id = 2
         if existing_entry.save
           render :json => { "message" => "Existing entry could not save" }, :status => 200
@@ -27,8 +36,8 @@ class EmailProcessor
         #create new entry
         entry = user.entries.create!(
           date: date,
-          body: email.body,
-          original_email_body: email.raw_body,
+          body: @body,
+          original_email_body: @raw_body,
           inspiration_id: 2
         )
 
@@ -46,6 +55,10 @@ class EmailProcessor
   end
 
   private
+
+    def pick_meaningful_recipient(recipients)
+      recipients.find { |address| address =~ /@dabble.me$/ }
+    end
 
     def find_user_from_user_key(to_email, from_email)
       begin
