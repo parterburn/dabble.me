@@ -15,6 +15,8 @@ Rails.application.routes.draw do
 
   resources :entries
 
+  mount_griddler
+
   get   '/export' => 'entries#export', :as => "export_entries"
 
   root 'welcome#index'
