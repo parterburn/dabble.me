@@ -325,6 +325,7 @@ DEPENDENCIES
   rack-timeout
   rails (= 4.1.6)
   randomized_field (~> 0.1.0)
+  rest-client
   rspec
   rspec-rails
   sass-rails (~> 4.0.3)

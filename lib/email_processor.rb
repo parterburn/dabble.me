@@ -22,7 +22,13 @@ class EmailProcessor
 
       #format the email body coming in to basic HTML
       @body = ActionController::Base.helpers.simple_format(@body)
-      @body.gsub!(/\*([a-zA-Z0-9]+[a-zA-Z0-9 ]*[a-zA-Z0-9]+)\*/i, "<b>#{$1}</b>")
+      @body.gsub!(/\*([a-zA-Z0-9]+[a-zA-Z0-9 ]*[a-zA-Z0-9]+)\*/i, '<b>\1</b>')
+
+      #Handle images:
+      # asset_url = CGI.escape public_url_to_image
+      # response = MultiJson.load RestClient.post("https://www.filepicker.io/api/store/S3?key=AGYS8ZHehQOySBfmpxJMKz&url=#{asset_url}", nil), :symbolize_keys => true
+      # entry.image_url = response[:url]
+      # entry.save
 
       if existing_entry.present?
         #existing entry exists, so add to it

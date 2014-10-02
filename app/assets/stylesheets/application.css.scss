@@ -14,6 +14,7 @@
  *= require twbs
  *= require summernote
  *= require_self 
+ *= require_tree ./lib 
  *= require_tree .
  */
 

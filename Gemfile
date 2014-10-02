@@ -37,6 +37,8 @@ gem 'whenever', :require => false #schedule rake tasks
 
 gem 'filepicker-rails' # image uploads
 
+gem "rest-client" #RESTClient
+
 # Pagination
 # gem 'kaminari'
 
