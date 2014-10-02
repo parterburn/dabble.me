@@ -39,6 +39,5 @@ module Dabbleme
 
     config.filepicker_rails.api_key = ENV['FILEPICKER_API_KEY']
     config.filepicker_rails.cdn_host = ENV['FILEPICKER_CDN_HOST']
-    config.filepicker_rails.secret_key = ENV['FILEPICKER_APP_SECRET'] 
   end
 end
