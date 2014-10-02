@@ -1,4 +1,6 @@
 class Entry < ActiveRecord::Base
+  include ActionView::Helpers::DateHelper
+  include ActionView::Helpers::NumberHelper
 
   belongs_to :user
   belongs_to :inspiration
@@ -14,31 +16,24 @@ class Entry < ActiveRecord::Base
   scope :only_images, -> { where("image_url IS NOT null") }
 
   def date_format_long
-    if self.date.present?
-      #Friday, Feb 3, 2014
-      self.date.strftime("%A, %b %-d, %Y")
-    else
-      ""
-    end
+    #Friday, Feb 3, 2014
+    self.date.present? ? self.date.strftime("%A, %b %-d, %Y") : ""
   end
 
   def date_format_short
-    if self.date.present?
-      #February 3, 2014
-      self.date.strftime("%B %-d, %Y")
-    else
-      "July 3, 1985"
-    end
+    #February 3, 2014
+    self.date.present? ? self.date.strftime("%B %-d, %Y") : "July 3, 1985"
   end
 
   def date_day
-    if self.date.present?
-      #February 3, 2014
-      self.date.strftime("%A")
-    else
-      "Noday?"
-    end
-  end  
+    #February 3, 2014
+    self.date.present? ? self.date.strftime("%A") : "Noday?"
+  end
+
+  def time_ago_in_words_or_numbers
+    in_words = time_ago_in_words(self.date).capitalize
+    in_words.to_s.include?("Over") ? "Exactly #{number_with_delimiter((Time.zone.now - self.date).to_i / 1.day)} days" : in_words
+  end
 
   private
 

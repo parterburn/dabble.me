@@ -16,7 +16,7 @@ class EmailProcessor
     p @attachments
     p "*"*100
 
-    if user.present? && @body.present?
+    if user.present? && @body.present?  
       date = parse_subject_for_date(@subject, user)
       existing_entry = user.existing_entry(date)
 
@@ -39,6 +39,8 @@ class EmailProcessor
         )
         entry.save
       end
+
+      user.increment!(:emails_received)
     end
 
   end

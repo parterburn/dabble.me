@@ -24,6 +24,9 @@ class EntryMailer < ActionMailer::Base
     mail from: "Dabble Me <post+#{user.user_key}@dabble.me>",
          to: "#{user.full_name} <#{user.email}>",
          subject: "It's #{Time.now.in_time_zone(user.send_timezone).strftime("%A, %B %-d")} - How did your day go?"
+
+    user.increment!(:emails_sent)
+
   end
 
   private
