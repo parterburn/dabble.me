@@ -21,7 +21,7 @@ class EntriesController < ApplicationController
       @entries = current_user.entries
       @title = "All Time"
     ensure
-      @entries = @entries.sort_by(&:date).reverse      
+      @entries = @entries.sort_by(&:date).reverse
     end
   end
 

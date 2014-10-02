@@ -6,10 +6,15 @@ class EmailProcessor
     @body = email.body
     @raw_body = email.raw_body
     @raw_html = email.raw_body
+    @attachments = email.attachments
   end
 
   def process
     user = find_user_from_user_key(@token, @from)
+
+    p "*"*100
+    p @attachments
+    p "*"*100
 
     if user.present? && @body.present?
       date = parse_subject_for_date(@subject, user)
