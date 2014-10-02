@@ -11,6 +11,33 @@ class Entry < ActiveRecord::Base
 
   alias_attribute :entry, :body
 
+  def date_format_long
+    if self.date.present?
+      #Friday, Feb 3, 2014
+      self.date.strftime("%A, %b %-d, %Y")
+    else
+      ""
+    end
+  end
+
+  def date_format_short
+    if self.date.present?
+      #February 3, 2014
+      self.date.strftime("%B %-d, %Y")
+    else
+      "July 3, 1985"
+    end
+  end
+
+  def date_day
+    if self.date.present?
+      #February 3, 2014
+      self.date.strftime("%A")
+    else
+      "Noday?"
+    end
+  end  
+
   private
 
     def ensure_protocol # For urls

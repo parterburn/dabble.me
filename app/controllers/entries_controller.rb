@@ -100,6 +100,11 @@ class EntriesController < ApplicationController
       else
         render 'edit'        
       end
+    elsif params[:entry][:entry].blank?
+      #empty body, so delete the entry
+      @entry.destroy
+      flash[:notice] = "Entry deleted!"
+      redirect_to entries_path
     else
       if @entry.update(entry_params)
         flash[:notice] = "Entry successfully updated!"

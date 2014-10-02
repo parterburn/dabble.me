@@ -10,8 +10,12 @@
         .float-left.s-edit-entry{:rel=>"popover", :title=>"Inspiration", :"data-content"=>"If you need ideas to get started just glance up here for quotes & questions!"}
           %i.fa.fa-lightbulb-o
         .center.s-inspiration
-          =@random_inspiration.body
-          =f.hidden_field :inspiration_id, :value => @random_inspiration.id
+          - if @random_inspiration.present?
+            =@random_inspiration.body
+            =f.hidden_field :inspiration_id, :value => @random_inspiration.id
+          -elsif @entry.inspiration.present?
+            =@entry.inspiration.body
+            =f.hidden_field :inspiration_id, :value => @entry.inspiration.id
         %h3
           %span
             New Entry
@@ -27,7 +31,7 @@
         .input-group.date
           %span.input-group-addon
             %i.fa.fa-calendar
-          = f.text_field :date, :value =>  date_formatted(@entry), :placeholder=>"YYYY-MM-DD", :class => "form-control"
+          = f.text_field :date, :value =>  @entry.date_format_long, :placeholder=>"Friday, Feb 13, 2015", :class => "form-control"
 
         %br
 
@@ -49,7 +53,7 @@
 -if @entry.date.blank?
   :javascript
     $('.input-group.date').datepicker({
-        format: "yyyy-mm-dd",
+        format: "DD, M d, yyyy",
         todayHighlight: true,
         autoclose: true,
         todayBtn: "linked"

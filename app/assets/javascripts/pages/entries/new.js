@@ -1,8 +1,8 @@
 (function(){
-  window.DABBLE.pages.Entries_new = function(){
+  window.DABBLE.pages.Entries_new = window.DABBLE.pages.Entries_create = function(){
 
     $('.input-group.date').datepicker({
-      format: "yyyy-mm-dd",
+      format: "DD, M d, yyyy",
       todayHighlight: true,
       autoclose: true,
       todayBtn: "linked"

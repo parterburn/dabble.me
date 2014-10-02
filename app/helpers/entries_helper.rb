@@ -13,8 +13,4 @@ module EntriesHelper
     end
   end
 
-  def date_formatted(entry)
-    entry.date.strftime("%Y-%m-%d") if entry.date.present?
-  end
-
 end

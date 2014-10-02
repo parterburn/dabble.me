@@ -38,6 +38,19 @@ a.s-delete {
 
 .note-editable {
   background:white;
+  font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
+  font-size:17px;
+  color:#333;
+  p {
+    font-size:17px;
+    color:#333;    
+  }
+}
+
+#entry_date{
+  font-family: georgia;
+  font-size:15px;
+  color: #a41100;
 }
 
 .s-entry-date {
@@ -73,13 +86,22 @@ a.s-delete {
       margin-top:-6px;
     }
     > h3 {
-      color: #a41100;
+      color: #333;
     }
   }
 }
 
+label {
+  color: #444;
+}
+
 .s-scrollable {
   overflow-x:scroll;
+  p {
+    font-size: 18px;
+    color: #333333;
+    font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;  
+  }
 }
 
 .popover-title {
