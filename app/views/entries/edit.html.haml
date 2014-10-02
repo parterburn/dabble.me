@@ -19,12 +19,12 @@
     = form_for :entry, url: entry_path(@entry), method: :patch do |f|
 
       -if @entry.errors.any?
-        #error_explanation.col-md-12
+        #error_explanation
           .alert.alert-danger
             - @entry.errors.full_messages.each do |msg|
               %p= msg
 
-      .col-md-12
+      %div
         = f.label :date
         .input-group.date
           %span.input-group-addon
@@ -33,15 +33,15 @@
         %br
 
       -#
-        .col-md-12
+        %div
           = f.label :image_url
           = f.text_field :image_url, :class => "form-control", :placeholder => "http://url-to-your-image"
           %br
 
-      .col-md-12
+      %div
         = f.label :entry
         = f.text_area :entry, :class => "form-control summernote", :rows => 20
         %br
 
-      .col-md-12
+      %div
         = f.submit "Edit Entry", :class => "form-control btn btn-primary"

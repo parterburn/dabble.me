@@ -90,32 +90,3 @@ a.s-delete {
     }
   }
 }
-
-label {
-  color: #444;
-}
-
-.s-scrollable {
-  overflow-x:scroll;
-  p {
-    font-size: 18px;
-    color: #333333;
-    font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;  
-  }
-}
-
-.popover-title {
-  background-color:whiteSmoke;
-  padding:10px 14px 0px 14px;
-  font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
-  color:#777;
-  border:0px;
-}
-
-.popover, .popover-content {
-  background-color: whiteSmoke;
-}
-
-.popover.right > .arrow:after {
-  border-right-color:whiteSmoke;
-}
