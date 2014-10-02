@@ -1,7 +1,7 @@
 class EmailProcessor
   def initialize(email)
-    @to = pick_meaningful_recipient(email.to)
-    @from = email.from
+    @token = pick_meaningful_recipient(email.to)
+    @from = email.from[:email]
     @subject = email.subject
     @body = email.body
     @raw_body = email.raw_body
@@ -10,14 +10,14 @@ class EmailProcessor
 
   def process
     p "*"*100
-    p "TO: #{@to}"
+    p "TO: #{@token}"
     p "FROM: #{@from}"
     p "SUBJECT: #{@subject}"
     p "BODY: #{@body}"
     p "RAW BODY: #{@raw_body}"
     p "HEADERS: #{@headers}"
     p "*"*100
-    user = find_user_from_user_key(@to, @from)
+    user = find_user_from_user_key(@token, @from)
 
     if user.present? && @body.present?
       date = parse_subject_for_date(@subject, user)
@@ -57,13 +57,13 @@ class EmailProcessor
   private
 
     def pick_meaningful_recipient(recipients)
-      recipients.find { |address| address =~ /@dabble.me$/ }
+      recipients.select {|k| k[:host] =~ /^dabble\.me$/i }.first[:token]
     end
 
-    def find_user_from_user_key(to_email, from_email)
+    def find_user_from_user_key(to_token, from_email)
       begin
-        user_regex = /(u[0-9a-zA-Z]{10})/
-        user_key = to_email.scan(user_regex)[0]
+        user_regex = /post\+(u[0-9a-zA-Z]{18})/
+        user_key = to_token.scan(user_regex)[0]
         user = User.find_by_user_key(user_key)
       rescue JSON::ParserError => e
       end
