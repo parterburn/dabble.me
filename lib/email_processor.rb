@@ -5,33 +5,25 @@ class EmailProcessor
     @subject = email.subject
     @body = email.body
     @raw_body = email.raw_body
-    @headers = email.headers
+    @raw_html = email.raw_body
   end
 
   def process
-    p "*"*100
-    p "TO: #{@token}"
-    p "FROM: #{@from}"
-    p "SUBJECT: #{@subject}"
-    p "BODY: #{@body}"
-    p "RAW BODY: #{@raw_body}"
-    p "HEADERS: #{@headers}"
-    p "*"*100
     user = find_user_from_user_key(@token, @from)
 
     if user.present? && @body.present?
       date = parse_subject_for_date(@subject, user)
       existing_entry = user.existing_entry(date)
 
+      #format the email body coming in to basic HTML
+      @body = ActionController::Base.helpers.simple_format(@body)
+      @body.gsub!(/\*([a-zA-Z0-9]+[a-zA-Z0-9 ]*[a-zA-Z0-9]+)\*/i, "<b>#{$1}</b>")
+
       if existing_entry.present?
         #existing entry exists, so add to it
         existing_entry.body += "<hr>#{@body}"
         existing_entry.inspiration_id = 2
-        if existing_entry.save
-          render :json => { "message" => "Existing entry could not save" }, :status => 200
-        else
-          render :json => { "message" => "Existing entry could not save" }, :status => 200
-        end
+        existing_entry.save
       else
         #create new entry
         entry = user.entries.create!(
@@ -40,16 +32,8 @@ class EmailProcessor
           original_email_body: @raw_body,
           inspiration_id: 2
         )
-
-        if entry.save
-          render :json => { "message" => "Created new entry" }, :status => 200
-        else
-          render :json => { "message" => "Could not create new entry" }, :status => 200
-        end      
+        entry.save
       end
-
-    else
-      render :json => { "message" => "NO USER" }, :status => 200
     end
 
   end
@@ -71,6 +55,7 @@ class EmailProcessor
     end
 
     def parse_subject_for_date(subject,user)
+      #Find the date from the subject "It's Sept 2 - How was your day?" and figure out the best year
       parse_day_regex = /((Jan|Feb|Marc?h?|Apri?l?|May|June?|July?|Aug|Sept?|Oct|Nov|Dec)\s([0-9]{1,2}))/i
       if subject.scan(parse_day_regex).present?
         date_stripped = subject.scan(parse_day_regex)[0][0]

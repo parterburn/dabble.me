@@ -156,8 +156,8 @@ class EntriesController < ApplicationController
       else
         nil
       end
-    end    
-
+    end
+  
     def import_ohlife_entries(data)
       errors = []
       user = current_user #protect users from importing into someone else's entries

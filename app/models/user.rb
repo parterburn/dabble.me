@@ -14,7 +14,7 @@ class User < ActiveRecord::Base
 
   after_create do
     send_welcome_email
-    subscribe_to_mailchimp
+    subscribe_to_mailchimp if Rails.env.production?
   end
 
   def full_name
