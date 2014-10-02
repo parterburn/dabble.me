@@ -36,6 +36,9 @@ module Dabbleme
     Gibbon::Export.api_key = ENV['MAILCHIMP_API_KEY']
     Gibbon::Export.timeout = 10
     Gibbon::Export.throws_exceptions = false
+
+    config.filepicker_rails.api_key = ENV['FILEPICKER_API_KEY']
+    config.filepicker_rails.cdn_host = ENV['FILEPICKER_CDN_HOST']    
         
   end
 end

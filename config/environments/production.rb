@@ -85,4 +85,5 @@ Rails.application.configure do
   config.action_mailer.default_url_options = { :host => ENV['PROD_HOST'] }
 
   GA.tracker = ENV['GOOGLE_ANALYTICS_ID']
+
 end

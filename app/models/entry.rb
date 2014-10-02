@@ -11,6 +11,8 @@ class Entry < ActiveRecord::Base
 
   alias_attribute :entry, :body
 
+  scope :only_images, -> { where("image_url IS NOT null") }
+
   def date_format_long
     if self.date.present?
       #Friday, Feb 3, 2014

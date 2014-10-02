@@ -7,7 +7,9 @@
     - if @user.send_past_entry? && @random_entry
       %p
         %b Oh snap, remember this? #{distance_of_time_in_words_to_now(@random_entry.date).titleize} you wrote...
-      %p= @random_entry.body.html_safe
+      %p
+        %div{:style=>"font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;font-size: 15px;"}
+          = @random_entry.body.html_safe
     - elsif @user.send_past_entry?
       %p
         %b Send your first entry and you'll see a blast from the past show up here!
@@ -19,4 +21,4 @@
       %p{style: "color:#CCC"}
         %i=@random_inspiration.body
     %p{style: "color:#CCC"}
-      Send at #{@user.send_time.strftime('%-l %p')} #{@user.send_timezone} on #{@user.frequency}
+      Send at #{@user.send_time.strftime('%-l %p')} #{@user.send_timezone} (#{@should_send_time}) on #{@user.frequency} (#{@should_send_date})

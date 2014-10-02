@@ -4,19 +4,24 @@ class EntriesController < ApplicationController
 
   def index
     begin
-      if params[:year].present? && params[:month].present?
-        @entries = Entry.where(:user_id => current_user).where("date >= to_date('#{params[:year]}-#{params[:month]}','YYYY-MM') AND date < to_date('#{params[:year]}-#{params[:month].to_i+1}','YYYY-MM')").sort_by(&:date).reverse
+      if params[:images].present?
+        @entries = current_user.entries.only_images
+        @title = "Photos"
+      elsif params[:year].present? && params[:month].present?
+        @entries = current_user.entries.where("date >= to_date('#{params[:year]}-#{params[:month]}','YYYY-MM') AND date < to_date('#{params[:year]}-#{params[:month].to_i+1}','YYYY-MM')")
         date = Date.parse(params[:month]+'/'+params[:year])
         @title = "#{date.strftime('%b %Y')}"
       elsif params[:year].present?
-        @entries = Entry.where(:user_id => current_user).where("date >= '#{params[:year]}-01-01'::DATE AND date <= '#{params[:year]}-12-31'::DATE").sort_by(&:date).reverse
+        @entries = current_user.entries.where("date >= '#{params[:year]}-01-01'::DATE AND date <= '#{params[:year]}-12-31'::DATE")
         @title = "#{params[:year]}"
       else
         ActionController::ShowAllEntries
       end
     rescue
-      @entries = Entry.where(:user_id => current_user).sort_by(&:date).reverse
+      @entries = current_user.entries
       @title = "All Time"
+    ensure
+      @entries = @entries.sort_by(&:date).reverse      
     end
   end
 
@@ -132,7 +137,7 @@ class EntriesController < ApplicationController
   end
 
   def export
-    entries = Entry.where(:user_id => current_user).sort_by(&:date).reverse
+    entries = current_user.entries.sort_by(&:date).reverse
      respond_to do |format|
        format.json { send_data JSON.pretty_generate(JSON.parse(entries.to_json(:only => [:date, :body, :image_url]))) }
      end

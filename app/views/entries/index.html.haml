@@ -2,9 +2,9 @@
 
 .row
 
-  - if @entries.count > 0
+  - if @entries.length > 0
     .col-md-8.col-md-offset-1
-      %h3 #{pluralize(@entries.count,'entry')} from #{@title}
+      %h3 #{pluralize(@entries.length,'entry')} from #{@title}
 
     .col-md-2.float-right.hidden-sm.hidden-xs
       %h3
@@ -12,7 +12,7 @@
           .s-date-left
             All            
           .s-date-right
-            #{current_user.entries.count}
+            #{current_user.entries.length}
           .clearfix
 
       - @entries.group_by{|c| c.date.strftime "%Y" }.each do |year_str,year_entries|
@@ -21,7 +21,7 @@
             .s-date-left
               = year_str
             .s-date-right
-              #{year_entries.count}
+              #{year_entries.length}
           .clearfix
 
         - year_entries.group_by{|c| c.date.strftime "%b" }.each do |month_str,date_entries|
@@ -29,9 +29,18 @@
             .s-date-left
               = month_str
             .s-date-right
-              #{date_entries.count}
+              #{date_entries.length}
             .clearfix
       %br
+      - if (only_imgages = current_user.entries.only_images.length) > 0
+        =link_to entries_path(images: true) do
+          %h4
+            .s-date-left
+              Photos
+            .s-date-right
+              #{only_imgages}
+          .clearfix        
+        %br
       %h4
         =link_to export_entries_path(:json) do
           Export all entries

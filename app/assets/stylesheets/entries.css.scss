@@ -90,3 +90,30 @@ a.s-delete {
     }
   }
 }
+
+.pictureFrame {
+  text-align:center;
+  img {
+    border-width: 2px;
+    border-style: solid;
+    border-color: #f7f7f7 #c3c3c3 #c3c3c3 #f7f7f7;
+    box-shadow: 0 2px #e3e3e3;
+    padding: 2px;
+
+    //border: 3px solid #f7f7f7;
+    border-radius: 5px;
+  }
+
+}
+
+.s-filepicker-drag {
+  min-width:185px;
+  span {
+    margin:0px 2px 0px 5px;
+  }
+}
+
+.s-filepicker-remove {
+  margin-top:-31px;
+  float:right;
+}

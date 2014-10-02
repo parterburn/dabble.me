@@ -35,6 +35,8 @@ gem 'randomized_field', '~> 0.1.0' # builds user_keys
 
 gem 'whenever', :require => false #schedule rake tasks
 
+gem 'filepicker-rails' # image uploads
+
 # Pagination
 # gem 'kaminari'
 

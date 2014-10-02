@@ -8,6 +8,12 @@
       todayBtn: "linked"
     });
 
+    $(".j-filepicker-remove").click(function( event ) {
+      event.preventDefault();
+      $("#entry_image_url").val("");
+      $(".j-filepicker-preview").slideUp();
+    });
+
     var summer_note = $('#entry_entry');
     summer_note.summernote({
       mode: 'text/html',
@@ -26,3 +32,8 @@
   };
 
 }());
+
+function onPhotoUpload(event) {
+  console.log(event);
+  $(".j-filepicker-preview").slideUp();
+}

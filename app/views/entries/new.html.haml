@@ -35,11 +35,16 @@
 
         %br
 
-      -#
-        %div
-          = f.label :image_url
-          = f.text_field :image_url, :class => "form-control", :placeholder => "http://url-to-your-image"
+      %div
+        = f.label :image_url, "Photo"
+        = f.filepicker_field :image_url, :multiple=>false, :dragdrop=>true, :services=>"COMPUTER,INSTAGRAM,FACEBOOK,FLICKR,PICASA,WEBCAM,DROPBOX,BOX,GOOGLE_DRIVE,URL", :mimetypes=>"image/*", :maxsize=>"20000000", :button_class=>"btn btn-info btn-sm", :drag_text=>"Or drop image here", :drag_class=>"s-filepicker-drag hidden-xs", :onchange=>"onPhotoUpload(event)"
+        - if @entry.image_url.present?
+          %button.btn.btn-danger.btn-sm.s-filepicker-remove.j-filepicker-remove Remove Photo
           %br
+          .pictureFrame.j-filepicker-preview
+            =link_to @entry.image_url, :target=>"_blank" do
+              =image_code(@entry,200)
+        %br
 
       %div
         = f.label :entry
