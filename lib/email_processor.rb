@@ -16,6 +16,16 @@ class EmailProcessor
       date = parse_subject_for_date(@subject, user)
       existing_entry = user.existing_entry(date)
 
+      if @attachments.present?
+        if @attachments.first
+          p "*"*100
+          p "PATH: #{@attachments.first.tempfile.to_path.to_s}"
+          p "FILE NAME: #{@attachments.first.filename}"
+          p "TYPE: #{@attachments.first.type}"
+          p "*"*100
+        end
+      end
+
       #format the email body coming in to basic HTML
       @body = ActionController::Base.helpers.simple_format(@body)
       @body.gsub!(/\*([a-zA-Z0-9]+[a-zA-Z0-9 ]*[a-zA-Z0-9]+)\*/i, '<b>\1</b>')
