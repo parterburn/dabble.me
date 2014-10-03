@@ -1,3 +1,5 @@
+require 'fileutils'
+
 class EmailProcessor
   def initialize(email)
     @token = pick_meaningful_recipient(email.to)
