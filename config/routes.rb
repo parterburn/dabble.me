@@ -2,9 +2,9 @@ require 'sidekiq/web'
 
 Rails.application.routes.draw do
 
-  constraints(:host => /localhost/) do
+  #constraints(:host => /localhost/) do
     mount Sidekiq::Web => '/sidekiq'
-  end
+  #end
 
   devise_for :users, :controllers => { registrations: 'registrations' }
 
