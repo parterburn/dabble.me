@@ -28,7 +28,7 @@ class EmailProcessor
             file = File.join(dir, tmp.original_filename)
             FileUtils.mv tmp.tempfile.path, file
 
-            img_url = CGI.escape "https://dabble.me/#{f_path.gsub("public/","")}"
+            img_url = CGI.escape "https://dabble.me/#{file.gsub("public/","")}"
             begin
               response = MultiJson.load RestClient.post("https://www.filepicker.io/api/store/S3?key=#{ENV['FILEPICKER_API_KEY']}&url=#{img_url}", nil), :symbolize_keys => true
               filepicker_url = response[:url]
