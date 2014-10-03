@@ -26,7 +26,7 @@ class EmailProcessor
             dir = FileUtils.mkdir_p("public/email_attachments/#{user.user_key}")
             file = File.join(dir, tmp.original_filename)
             FileUtils.mv tmp.tempfile.path, file
-
+            FileUtils.chmod 0644, file
             img_url = CGI.escape "https://dabble.me/#{file.gsub("public/","")}"
             begin
               response = MultiJson.load RestClient.post("https://www.filepicker.io/api/store/S3?key=#{ENV['FILEPICKER_API_KEY']}&url=#{img_url}", nil), :symbolize_keys => true
@@ -34,7 +34,7 @@ class EmailProcessor
             rescue
             end            
             
-            #FileUtils.rm_r dir, :force => true
+            FileUtils.rm_r dir, :force => true
           end
         end
       end

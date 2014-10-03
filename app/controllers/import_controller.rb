@@ -30,19 +30,19 @@ class ImportController < ApplicationController
           zip_file.extract(f, f_path) unless File.exist?(f_path)
           if f.name =~ /^img_[12]{1}[90]{1}[0-9]{2}-[0-9]{2}-[0-9]{2}-0\.(jpe?g|gif|png)$/i
             date = f.name.scan(SPLIT_AT_DATE_REGEX)[0]
-            @existing_entry = current_user.existing_entry(date)
-            if @existing_entry.present?
+            existing_entry = current_user.existing_entry(date)
+            if existing_entry.present?
               #existing entry exists, process through filepicker and save
               img_url = CGI.escape "https://dabble.me/#{f_path.gsub("public/","")}"
               begin
                 response = MultiJson.load RestClient.post("https://www.filepicker.io/api/store/S3?key=#{ENV['FILEPICKER_API_KEY']}&url=#{img_url}", nil), :symbolize_keys => true
                 if response[:url].present?
                   if existing_entry.image_url.present?
-                    existing_entry.body += "<hr>IMAGE: <a href='#{@response[:url]}' target='_blank'>#{@response[:url]}</a>"
+                    existing_entry.body += "<hr>IMAGE: <a href='#{response[:url]}' target='_blank'>#{response[:url]}</a>"
                   else
-                    @existing_entry.image_url = response[:url]
+                    existing_entry.image_url = response[:url]
                   end
-                  @existing_entry.save
+                  existing_entry.save
                   count+=1
                 else
                   error_count+=1
@@ -58,7 +58,7 @@ class ImportController < ApplicationController
       }
 
       #delete folder:
-      #FileUtils.rm_r dir, :force => true
+      FileUtils.rm_r dir, :force => true
       
       flash[:notice] = "Finished importing #{ActionController::Base.helpers.pluralize(count,'photo')}" if count > 0
       flash[:alert] = "Error importing #{ActionController::Base.helpers.pluralize(error_count,'photo')}" if error_count > 0
