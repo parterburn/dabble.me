@@ -1,5 +1,8 @@
+require 'fileutils'
+
 class ImportController < ApplicationController
   before_action :authenticate_user!
+  SPLIT_AT_DATE_REGEX = /[12]{1}[90]{1}[0-9]{2}\-[0-1]{1}[0-9]{1}\-[0-3]{1}[0-9]{1}/
 
   def import_ohlife
   end
@@ -9,15 +12,76 @@ class ImportController < ApplicationController
     redirect_to entries_path
   end
 
+  def process_ohlife_images
+    tmp = params[:zip_file]
+    if tmp.content_type == "application/zip"
+
+      #mv uploaded ZIP file to /tmp/ohlife_zips
+      dir = FileUtils.mkdir_p("public/ohlife_zips/#{current_user.user_key}")
+      file = File.join(dir, tmp.original_filename)
+      FileUtils.mv tmp.tempfile.path, file
+      count = 0
+      error_count = 0
+      errors = []
+      Zip::File.open(file) { |zip_file|
+        zip_file.each { |f|
+          f_path=File.join(dir, "unzipped", f.name)
+          FileUtils.mkdir_p(File.dirname(f_path))
+          zip_file.extract(f, f_path) unless File.exist?(f_path)
+          if f.name =~ /^img_[12]{1}[90]{1}[0-9]{2}-[0-9]{2}-[0-9]{2}-0\.(jpe?g|gif|png)$/i
+            date = f.name.scan(SPLIT_AT_DATE_REGEX)[0]
+            @existing_entry = current_user.existing_entry(date)
+            if @existing_entry.present?
+              #existing entry exists, process through filepicker and save
+              img_url = CGI.escape "https://dabble.me/#{f_path.gsub("public/","")}"
+              begin
+                response = MultiJson.load RestClient.post("https://www.filepicker.io/api/store/S3?key=#{ENV['FILEPICKER_API_KEY']}&url=#{img_url}", nil), :symbolize_keys => true
+                if response[:url].present?
+                  if existing_entry.image_url.present?
+                    existing_entry.body += "<hr>IMAGE: <a href='#{@response[:url]}' target='_blank'>#{@response[:url]}</a>"
+                  else
+                    @existing_entry.image_url = response[:url]
+                  end
+                  @existing_entry.save
+                  count+=1
+                else
+                  error_count+=1
+                  errors << date
+                end
+              rescue
+                error_count+=1
+                errors << date
+              end
+            end
+          end
+        }
+      }
+
+      #delete folder:
+      FileUtils.rm_r dir, :force => true
+      
+      flash[:notice] = "Finished importing #{ActionController::Base.helpers.pluralize(count,'photo')}" if count > 0
+      flash[:alert] = "Error importing #{ActionController::Base.helpers.pluralize(error_count,'photo')}" if error_count > 0
+      errors.each do |error|
+        flash[:alert] << "<br>"+error
+      end      
+      redirect_to import_ohlife_path
+    else
+      FileUtils.rm tmp.tempfile.path
+      flash[:alert] = "Only ZIP files are allowed here."
+      redirect_to import_ohlife_path
+    end
+
+  end
+
   private
 
     def import_ohlife_entries(data)
       errors = []
       user = current_user #protect users from importing into someone else's entries
 
-      split_at_date_regex = /[1-2]{1}[0-9]{1}[0-9]{2}\-[0-1]{1}[0-9]{1}\-[0-3]{1}[0-9]{1}/
-      dates = data.scan(split_at_date_regex)
-      bodies  = data.split(split_at_date_regex)
+      dates = data.scan(SPLIT_AT_DATE_REGEX)
+      bodies  = data.split(SPLIT_AT_DATE_REGEX)
       bodies.shift
 
       dates.each_with_index do |date,i|

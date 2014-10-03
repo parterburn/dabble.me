@@ -17,11 +17,26 @@ class EmailProcessor
       existing_entry = user.existing_entry(date)
 
       if @attachments.present?
-        if @attachments.first
+        tmp = @attachments.first
+        if tmp.present?
           p "*"*100
-          p "PATH: #{@attachments.first.tempfile.to_path.to_s}"
-          p "Attachment.first: #{@attachments.first}"
-          p "*"*100
+          p "Type: #{tmp.content_type}"
+          p "*"*100          
+          if tmp.content_type =~ /^image\/png|jpe?g|gif$/i
+            #it's an image, allow it
+            dir = FileUtils.mkdir_p("public/email_attachments/#{user.user_key}")
+            file = File.join(dir, tmp.original_filename)
+            FileUtils.mv tmp.tempfile.path, file
+
+            img_url = CGI.escape "https://dabble.me/#{f_path.gsub("public/","")}"
+            begin
+              response = MultiJson.load RestClient.post("https://www.filepicker.io/api/store/S3?key=#{ENV['FILEPICKER_API_KEY']}&url=#{img_url}", nil), :symbolize_keys => true
+              filepicker_url = response[:url]
+            rescue
+            end            
+            
+            FileUtils.rm_r dir, :force => true
+          end
         end
       end
 
@@ -29,22 +44,22 @@ class EmailProcessor
       @body = ActionController::Base.helpers.simple_format(@body)
       @body.gsub!(/\*([a-zA-Z0-9]+[a-zA-Z0-9 ]*[a-zA-Z0-9]+)\*/i, '<b>\1</b>')
 
-      #Handle images:
-      # asset_url = CGI.escape public_url_to_image
-      # response = MultiJson.load RestClient.post("https://www.filepicker.io/api/store/S3?key=AGYS8ZHehQOySBfmpxJMKz&url=#{asset_url}", nil), :symbolize_keys => true
-      # entry.image_url = response[:url]
-      # entry.save
-
       if existing_entry.present?
         #existing entry exists, so add to it
         existing_entry.body += "<hr>#{@body}"
         existing_entry.inspiration_id = 2
+        if existing_entry.image_url.present?
+          existing_entry.body += "<hr>IMAGE: <a href='#{filepicker_url}' target='_blank'>#{filepicker_url}</a>"
+        else
+          @existing_entry.image_url = filepicker_url
+        end
         existing_entry.save
       else
         #create new entry
         entry = user.entries.create!(
           date: date,
           body: @body,
+          image_url: filepicker_url,
           original_email_body: @raw_body,
           inspiration_id: 2
         )
