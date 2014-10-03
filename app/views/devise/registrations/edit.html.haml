@@ -87,17 +87,13 @@
       %i (to confirm your changes)
       = f.password_field :current_password, autocomplete: "off", :class => "form-control"
       %br
-      .clearfix 
+      .clearfix
 
     .col-md-6.col-md-offset-3
       = f.submit "Update", :class=>"btn btn-primary form-control"
 
-    .col-md-6.col-md-offset-3
-      %br
-      %hr
-      %br
-
     .col-md-12.center
-      =link_to registration_path(resource_name), class: "s-delete", data: { confirm: "Are you sure? There is no undo." }, method: :delete do 
+      %br
+      =link_to registration_path(resource_name), class: "s-delete j-delete-user", data: { confirm: "Are you sure? There is no undo." }, method: :delete do
         %h5 Delete your account & all associated entries
       %br

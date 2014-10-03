@@ -6,20 +6,6 @@ class EntryMailer < ActionMailer::Base
     @random_entry = user.random_entry
     @random_inspiration = random_inspiration
 
-
-    #TODO: MOVE THIS LOGIC INTO ACTION
-    if Time.now.in_time_zone(user.send_timezone).hour == user.send_time.hour
-      @should_send_time = true
-    else
-      @should_send_time = false
-    end
-
-    if user.frequency.include? Time.now.in_time_zone(user.send_timezone).strftime('%a')
-      @should_send_date = true
-    else
-      @should_send_date = false
-    end
-
     headers['x-smtpapi'] = { :category => [ "Entry" ] }.to_json
     mail from: "Dabble Me <post+#{user.user_key}@dabble.me>",
          to: "#{user.full_name} <#{user.email}>",

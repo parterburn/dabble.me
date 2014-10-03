@@ -9,9 +9,7 @@
 #
 
 every 1.hour do
-  #command "/usr/bin/some_great_command"
-  #runner "MyModel.some_method"
-  rake "entry:send_entries"
+  rake "entry:send_hourly_entries"
 end
 
 # Learn more: http://github.com/javan/whenever

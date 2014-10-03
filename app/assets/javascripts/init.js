@@ -27,7 +27,7 @@
       container: "body"
     });
 
-    $.rails.confirm = function(message) { return swal({title: "Are you sure?", text: message, type: "error", confirmButtonText: "Delete", showCancelButton: true }) };
+    //$.rails.confirm = function(message) { var here = swal({title: "Are you sure?", text: message, type: "error", confirmButtonText: "Delete", showCancelButton: true, cancelButtonText: "No!" }); console.log(here); return here; };
 
   };
 

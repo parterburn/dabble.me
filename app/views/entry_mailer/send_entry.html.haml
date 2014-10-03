@@ -6,9 +6,9 @@
     %p Just reply to this email with your entry for #{Time.now.strftime("%B %-d")}.
     - if @user.send_past_entry? && @random_entry
       %p
-        %b Oh snap, remember this? #{time_ago_in_words(@random_entry.date).capitalize} ago you wrote...
+        %b Oh snap, remember this? #{@random_entry.time_ago_in_words_or_numbers} ago you wrote...
       %p
-        %div{:style=>"font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;font-size: 15px;"}
+        %div
           = @random_entry.body.html_safe
     - elsif @user.send_past_entry?
       %p
@@ -17,8 +17,6 @@
       =link_to "Past entries", "https://dabble.me/entries"
       &middot;
       =link_to "Unsubscribe", "https://dabble.me/users/edit"
-    -#
-      %p{style: "color:#CCC"}
-        %i=@random_inspiration.body
+    %hr{:style=>"margin-top: 20px;margin-bottom: 20px;border: 0;border-top: 2px solid whiteSmoke;"}
     %p{style: "color:#CCC"}
-      Send at #{@user.send_time.strftime('%-l %p')} #{@user.send_timezone} (#{@should_send_time}) on #{@user.frequency} (#{@should_send_date})
+      %i=@random_inspiration.body
