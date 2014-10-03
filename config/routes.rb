@@ -8,8 +8,8 @@ Rails.application.routes.draw do
 
   devise_for :users, :controllers => { registrations: 'registrations' }
 
-  get   '/entries/import' => 'entries#import', :as => "import_entries"
-  match '/entries/import_process' => 'entries#process_import', via: [:put], :as => "import_process_entry"
+  get   '/entries/import/ohlife' => 'import#import_ohlife', :as => "import_ohlife"
+  match '/entries/import/ohlife/process' => 'import#process_ohlife', via: [:put], :as => "import_ohlife_process"
 
   get '/entries/random' => 'entries#random', :as => "random_entry"
 
