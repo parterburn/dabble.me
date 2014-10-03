@@ -21,9 +21,6 @@ class EmailProcessor
       if @attachments.present?
         tmp = @attachments.first
         if tmp.present?
-          p "*"*100
-          p "Type: #{tmp.content_type}"
-          p "*"*100          
           if tmp.content_type =~ /^image\/png|jpe?g|gif$/i
             #it's an image, allow it
             dir = FileUtils.mkdir_p("public/email_attachments/#{user.user_key}")
