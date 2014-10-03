@@ -12,11 +12,7 @@ class EmailProcessor
   def process
     user = find_user_from_user_key(@token, @from)
 
-    p "*"*100
-    p @attachments
-    p "*"*100
-
-    if user.present? && @body.present?  
+    if user.present? && @body.present?
       date = parse_subject_for_date(@subject, user)
       existing_entry = user.existing_entry(date)
 
