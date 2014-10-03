@@ -15,9 +15,8 @@ class EmailProcessor
     user = find_user_from_user_key(@token, @from)
 
     if user.present? && @body.present?
-      date = parse_subject_for_date(@subject, user)
-      existing_entry = user.existing_entry(date)
 
+      #parse attachments
       if @attachments.present?
         tmp = @attachments.first
         if tmp.present?
@@ -45,6 +44,9 @@ class EmailProcessor
       @body.gsub!(/\*([a-zA-Z0-9]+[a-zA-Z0-9 ]*[a-zA-Z0-9]+)\*/i, '<b>\1</b>')
       #remove "inline image" text
       @body.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "")
+
+      date = parse_subject_for_date(@subject, user)
+      existing_entry = user.existing_entry(date)
 
       if existing_entry.present?
         #existing entry exists, so add to it

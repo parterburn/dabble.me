@@ -46,7 +46,7 @@ class User < ActiveRecord::Base
     rescue
       nil
     end
-  end  
+  end
 
   private
 
