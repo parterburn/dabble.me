@@ -39,6 +39,9 @@ gem 'filepicker-rails' # image uploads
 
 gem "rest-client" #RESTClient
 
+gem 'rubyzip', '~> 1.1.6'
+gem 'zip-zip'
+
 # Pagination
 # gem 'kaminari'
 
