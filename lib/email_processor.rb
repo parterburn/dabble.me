@@ -34,7 +34,7 @@ class EmailProcessor
             rescue
             end            
             
-            FileUtils.rm_r dir, :force => true
+            #FileUtils.rm_r dir, :force => true
           end
         end
       end

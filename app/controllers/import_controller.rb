@@ -58,7 +58,7 @@ class ImportController < ApplicationController
       }
 
       #delete folder:
-      FileUtils.rm_r dir, :force => true
+      #FileUtils.rm_r dir, :force => true
       
       flash[:notice] = "Finished importing #{ActionController::Base.helpers.pluralize(count,'photo')}" if count > 0
       flash[:alert] = "Error importing #{ActionController::Base.helpers.pluralize(error_count,'photo')}" if error_count > 0
