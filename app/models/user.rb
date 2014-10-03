@@ -12,6 +12,8 @@ class User < ActiveRecord::Base
 
   serialize :frequency, Array
 
+  scope :subscribed_to_emails, -> { where("frequency NOT LIKE '%[]%'") }
+
   after_create do
     send_welcome_email
     subscribe_to_mailchimp if Rails.env.production?

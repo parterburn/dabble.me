@@ -57,7 +57,8 @@ class EntriesController < ApplicationController
       @existing_entry.body += "<hr>#{params[:entry][:entry]}"
       @existing_entry.inspiration_id = params[:entry][:inspiration_id] if params[:entry][:inspiration_id].present?
       if params[:entry][:image_url].present? && @existing_entry.image_url.present?
-        @existing_entry.body += "<br>Image: #{params[:entry][:image_url]}"
+        img_url_cdn = params[:entry][:image_url].gsub("https://www.filepicker.io", ENV['FILEPICKER_CDN_HOST'])
+        @existing_entry.body += "<br><div class='pictureFrame'><a href='#{img_url_cdn}' target='_blank'><img src='#{img_url_cdn}/convert?fit=max&w=300&h=300&cache=true&rotate=:exif' alt='#{@existing_entry.date.strftime("%b %-d")}'></a></div>"
       elsif params[:entry][:image_url].present?
         @existing_entry.image_url = params[:entry][:image_url]
       end
@@ -94,7 +95,8 @@ class EntriesController < ApplicationController
       @existing_entry.body += "<hr>#{params[:entry][:entry]}"
       @existing_entry.inspiration_id = params[:entry][:inspiration_id] if params[:entry][:inspiration_id].present?
       if params[:entry][:image_url].present? && @existing_entry.image_url.present?
-        @existing_entry.body += "<br>Image: #{params[:entry][:image_url]}"
+        img_url_cdn = params[:entry][:image_url].gsub("https://www.filepicker.io", ENV['FILEPICKER_CDN_HOST'])
+        @existing_entry.body += "<br><div class='pictureFrame'><a href='#{img_url_cdn}' target='_blank'><img src='#{img_url_cdn}/convert?fit=max&w=300&h=300&cache=true&rotate=:exif' alt='#{@existing_entry.date.strftime("%b %-d")}'></a></div>"        
       elsif params[:entry][:image_url].present?
         @existing_entry.image_url = params[:entry][:image_url]
       end

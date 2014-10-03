@@ -51,7 +51,8 @@ class EmailProcessor
         existing_entry.body += "<hr>#{@body}"
         existing_entry.inspiration_id = 2
         if existing_entry.image_url.present?
-          existing_entry.body += "<hr>IMAGE: <a href='#{filepicker_url}' target='_blank'>#{filepicker_url}</a>"
+          img_url_cdn = filepicker_url.gsub("https://www.filepicker.io", ENV['FILEPICKER_CDN_HOST'])
+          existing_entry.body += "<br><div class='pictureFrame'><a href='#{img_url_cdn}' target='_blank'><img src='#{img_url_cdn}/convert?fit=max&w=300&h=300&cache=true&rotate=:exif' alt='#{existing_entry.date.strftime("%b %-d")}'></a></div>"
         else
           @existing_entry.image_url = filepicker_url
         end
