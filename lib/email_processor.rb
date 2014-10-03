@@ -20,8 +20,7 @@ class EmailProcessor
         if @attachments.first
           p "*"*100
           p "PATH: #{@attachments.first.tempfile.to_path.to_s}"
-          p "FILE NAME: #{@attachments.first.filename}"
-          p "TYPE: #{@attachments.first.type}"
+          p "Attachment.first: #{@attachments.first}"
           p "*"*100
         end
       end
