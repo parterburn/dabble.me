@@ -13,7 +13,7 @@ class Entry < ActiveRecord::Base
 
   alias_attribute :entry, :body
 
-  scope :only_images, -> { where("image_url IS NOT null") }
+  scope :only_images, -> { where("image_url IS NOT null").where("image_url != ''") }
 
   def date_format_long
     #Friday, Feb 3, 2014
