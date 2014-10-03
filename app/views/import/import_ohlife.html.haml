@@ -3,7 +3,7 @@
 .row
 
   .col-md-8.col-md-offset-2
-    %h3 Import OhLife
+    %h3 Step 1: Import OhLife Entries
     %p
       Export your
       =link_to "OhLife", "http://ohlife.com/export", :target => "_blank", :class => "alert-link"
@@ -23,17 +23,20 @@
       %br
     .clearfix
   %hr
-  .col-md-3.col-md-offset-2
-    %h4 Import OhLife Photos
-    %br
-  = form_tag(import_ohlife_images_path, :multipart => true) do
-    .col-md-3
-      = label_tag 'zip_file', "Choose ZIP file of photos"
-      = file_field_tag 'zip_file'
+  .well.col-md-8.col-md-offset-2
+    .col-md-4.center
+      %div
+        %h3 Step 2:
+        %h4 Import OhLife Photos
       %br
-    .col-md-3
-      = submit_tag "Upload ZIP File", :class => "btn btn-primary"
-      %br
-      %br
+    = form_tag(import_ohlife_images_path, :multipart => true) do
+      .col-md-4.center
+        %br
+        = label_tag 'zip_file', "Choose ZIP file of photos"
+        = file_field_tag 'zip_file', :class=>"center"
+        %br
+      .col-md-4.center
+        %br
+        = submit_tag "Upload ZIP File", :class => "btn btn-primary"
+        .clearfix
       .clearfix
-    .clearfix

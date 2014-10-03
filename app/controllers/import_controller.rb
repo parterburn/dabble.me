@@ -14,7 +14,7 @@ class ImportController < ApplicationController
 
   def process_ohlife_images
     tmp = params[:zip_file]
-    if tmp.content_type == "application/zip"
+    if tmp && tmp.content_type == "application/zip"
 
       #mv uploaded ZIP file to /tmp/ohlife_zips
       dir = FileUtils.mkdir_p("public/ohlife_zips/#{current_user.user_key}")
@@ -67,7 +67,7 @@ class ImportController < ApplicationController
       end      
       redirect_to import_ohlife_path
     else
-      FileUtils.rm tmp.tempfile.path
+      FileUtils.rm tmp.tempfile.path if tmp
       flash[:alert] = "Only ZIP files are allowed here."
       redirect_to import_ohlife_path
     end

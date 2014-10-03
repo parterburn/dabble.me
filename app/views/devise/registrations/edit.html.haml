@@ -21,11 +21,8 @@
       %br
       .clearfix
 
-    .alert.alert-warning.col-md-6.col-md-offset-3
-      .col-md-12
-        %h4 Post by email is coming soon!
-      .col-md-12
-        %br
+    .col-md-6.col-md-offset-3
+      %div
         = label_tag "Days to send emails"
         %i (uncheck all to unsubcribe)
         %br
@@ -39,21 +36,22 @@
         .clearfix
         %br
       
-      .col-md-6
-        = f.label :send_time
-        = f.time_select :send_time, {:combined => true, :minute_interval => 60, :ampm => true, :include_seconds => false }, :class => "form-control"
-        %br
+    .col-md-3.col-md-offset-3
+      = f.label :send_time
+      = f.time_select :send_time, {:combined => true, :minute_interval => 60, :ampm => true, :include_seconds => false }, :class => "form-control"
+      %br
 
-      .col-md-6
-        = f.label :send_timezone
-        = f.time_zone_select :send_timezone, ActiveSupport::TimeZone.us_zones, {}, {:class => 'form-control'}
-        %br
+    .col-md-3
+      = f.label :send_timezone, "Timezone"
+      = f.time_zone_select :send_timezone, ActiveSupport::TimeZone.us_zones, {}, {:class => 'form-control'}
+      %br
 
-      .col-md-12
-        = f.check_box :send_past_entry
-        = f.label :send_past_entry
-        .clearfix
-      .clearfix
+    .col-md-6.col-md-offset-3
+      = f.check_box :send_past_entry
+      = f.label :send_past_entry
+      %br
+      %br
+    .clearfix
 
     .col-md-6.col-md-offset-3
       = f.submit "Update", :class=>"btn btn-primary form-control"
