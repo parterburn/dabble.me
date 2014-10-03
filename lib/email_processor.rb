@@ -44,7 +44,10 @@ class EmailProcessor
 
       #format the email body coming in to basic HTML
       @body = ActionController::Base.helpers.simple_format(@body)
+      #bold when bold needed
       @body.gsub!(/\*([a-zA-Z0-9]+[a-zA-Z0-9 ]*[a-zA-Z0-9]+)\*/i, '<b>\1</b>')
+      #remove "inline image" text
+      @body.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "")
 
       if existing_entry.present?
         #existing entry exists, so add to it
