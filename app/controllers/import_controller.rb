@@ -65,8 +65,8 @@ class ImportController < ApplicationController
       flash[:alert] = "Error importing #{ActionController::Base.helpers.pluralize(error_count,'photo')}" if error_count > 0
       errors.each do |error|
         flash[:alert] << "<br>"+error
-      end      
-      redirect_to import_ohlife_path
+      end
+      redirect_to entries_path
     else
       FileUtils.rm tmp.tempfile.path if tmp
       flash[:alert] = "Only ZIP files are allowed here."

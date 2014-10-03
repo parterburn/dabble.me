@@ -1,5 +1,6 @@
 (function(){
-  window.DABBLE.pages.Registrations_edit = function(){
+  window.DABBLE.pages.Registrations_edit = window.DABBLE.pages.Registrations_update = function(){
+    
     $(".j-delete-user").on({
       click: function(e){
         if ($('#user_current_password').val().length === 0) {
@@ -8,5 +9,12 @@
         }
       }
     });
+
+    $('form').submit(function(){
+      $(this).find('input[type=submit]').prop('disabled', true);
+      $(this).find('input[type=submit]').addClass('disabled');
+      $(".navbar-brand i.fa-spinner").addClass("fa-spin");
+    });
+
   };
 }());

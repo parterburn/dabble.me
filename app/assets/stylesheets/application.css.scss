@@ -37,7 +37,7 @@ hr {
     letter-spacing: 0.5px;
     &:hover {
       color:white;
-      text-shadow: 0px 0px 1px #CCC;
+      text-shadow: 0px 0px 2px darken(#649cc7,40);
     }
   }
   .navbar-nav > .active >a {
@@ -45,21 +45,20 @@ hr {
     background-color: darken(#649cc7,10);
     &:hover {
       color: white;
-      text-shadow: 0px 0px 1px #CCC;
       background-color: darken(#649cc7,20);
+      text-shadow: 0px 0px 3px darken(#649cc7,40);
     }
   }
   .navbar-brand {
     font-weight: bold !important;
     -webkit-font-smoothing:antialiased;
-    font-smooth:never;
     letter-spacing: -1px;
     color:whiteSmoke;
     font-size:20px;
-    color:darken(#649cc7,20);
+    text-shadow: 0px 0px 3px darken(#649cc7,30);
     &:hover {
-      color:darken(#649cc7,20);
-      text-shadow: 0px 0px 1px white;
+      color:white;
+      text-shadow: 0px 0px 3px darken(#649cc7,30);
     }
   }  
 }
@@ -221,4 +220,26 @@ label {
 
 .popover.right > .arrow:after {
   border-right-color:whiteSmoke;
+}
+
+.s-landing-page {
+  h2 {
+    font-size:20px;
+  }
+}
+
+.s-features {
+  margin-top:40px;
+  margin-bottom:70px;
+  font-size:17px;
+  font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;  
+  i {
+    color:#CCC;
+  }
+  ul {
+    list-style: none;
+    li {
+      margin:10px auto;
+    }
+  }
 }

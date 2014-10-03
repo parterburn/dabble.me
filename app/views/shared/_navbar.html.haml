@@ -6,7 +6,10 @@
         %span.icon-bar
         %span.icon-bar
         %span.icon-bar
-      = link_to "Dabble Me", root_path, class: 'navbar-brand'
+      = link_to root_path, class: 'navbar-brand', title: "Dabble Me" do
+        %i.fa.fa-pencil-square.fa-spinner
+        - if !current_user
+          &nbsp;Dabble Me
     .collapse.navbar-collapse
     
       %ul.nav.navbar-nav
