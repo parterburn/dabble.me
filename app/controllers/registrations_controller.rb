@@ -18,6 +18,11 @@ class RegistrationsController < Devise::RegistrationsController
     end
   end
 
+  def edit
+    cookies.permanent[:viewed_settings] = true
+    super
+  end
+
   def update
     @user = current_user
     

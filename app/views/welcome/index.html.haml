@@ -1,11 +1,7 @@
 - title "Dabble Me - the open source replacement for OhLife"
 
 -if current_user
-  - if current_user.sign_in_count < 3
-    .alert.alert-info
-      Email reminders are now LIVE!
-      = link_to "Update your settings", edit_user_registration_path, :class=>"alert-link"
-      for delivery time & days.
+
   - if @last_entry.present?
     .row
       .col-md-8.col-md-offset-2

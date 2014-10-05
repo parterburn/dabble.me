@@ -27,10 +27,25 @@
           %li{:class=>"#{'active' if current_page?(import_ohlife_path)}"}
             =link_to "Import OhLife", import_ohlife_path
 
+          - if current_user.is_admin?
+            %li.vertical-divider
+            %li{:class=>"#{'active' if current_page?(inspirations_path)}"}
+              =link_to inspirations_path, title: "Inspirations" do
+                %i.fa.fa-lightbulb-o
+            %li{:class=>"#{'active' if current_page?(admin_path)}"}
+              =link_to admin_path, title: "Admin Dashboard" do
+                %i.fa.fa-dashboard                
+
       %ul.nav.navbar-nav.navbar-right
 
         - if user_signed_in?
-          %li{:class=>"#{'active' if current_page?(edit_user_registration_path)}"}
+          - if current_user.sign_in_count < 10 && !cookies[:viewed_settings]
+            - add_popover = "popover_settings"
+            - if current_user.frequency.count > 0
+              - current_settings = "You will be emailed at <strong>#{current_user.send_time.strftime("%-I %P")} #{current_user.send_timezone}</strong> on <strong>#{current_user.frequencies}</strong>."
+            - else
+              - current_settings = "Email reminders are currently <strong>disabled</strong>."
+          %li{:class=>"#{'active' if current_page?(edit_user_registration_path)}", :rel=>"#{add_popover}", :title=>"", :"data-content"=>"#{current_settings}", :"data-placement"=>"bottom"}
             = link_to edit_user_registration_path do
               %i.fa.fa-gear
               Settings

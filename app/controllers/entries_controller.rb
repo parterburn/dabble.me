@@ -50,7 +50,7 @@ class EntriesController < ApplicationController
 
   def create
     @user = current_user
-    @existing_entry = @user.existing_entry(params[:entry][:date])
+    @existing_entry = @user.existing_entry(params[:entry][:date].to_s)
 
     if @existing_entry.present? && params[:entry][:entry].present?
       #existing entry exists, so add to it
@@ -88,7 +88,7 @@ class EntriesController < ApplicationController
 
   def update
     @entry = Entry.find(params[:id])
-    @existing_entry = current_user.existing_entry(params[:entry][:date])
+    @existing_entry = current_user.existing_entry(params[:entry][:date].to_s)
 
     if @existing_entry.present? && @entry != @existing_entry && params[:entry][:entry].present?
       #existing entry exists, so add to it

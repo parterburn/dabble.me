@@ -3,7 +3,7 @@ class EntryMailer < ActionMailer::Base
 
   def send_entry(user)
     @user = user
-    @random_entry = user.random_entry
+    @random_entry = user.random_entry(Time.now.strftime("%Y-%m-%d"))
     @random_inspiration = random_inspiration
 
     headers['x-smtpapi'] = { :category => [ "Entry" ] }.to_json

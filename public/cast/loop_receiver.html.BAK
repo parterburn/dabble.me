@@ -410,11 +410,6 @@ limitations under the License.
             window.mediaManager.onLoad = function(event) {
                 console.log("### Media Manager - LOAD: " + JSON.stringify(event));
 
-                // TODO - setup for load here
-                // TODO - if there is an error during load: call mediaManager.sendLoadError to notify sender
-                // TODO - if there is no error call mediaManager.sendLoadCompleteComplete
-                // TODO - call mediaManager.setMediaInformation(MediaInformation)
-
                 if(window.mediaPlayer !== null) {
                     window.mediaPlayer.unload(); // Ensure unload before loading again
                 }
@@ -436,7 +431,6 @@ limitations under the License.
                     }
 
                     var initialTimeIndexSeconds = event.data['media']['currentTime'] || 0;
-                    // TODO: real code would know what content it was going to access and this would not be here.
                     var protocol = null;
 
                     var parser = document.createElement('a');

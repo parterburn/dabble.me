@@ -222,6 +222,10 @@ label {
   border-right-color:whiteSmoke;
 }
 
+.popover.bottom > .arrow:after {
+ border-bottom-color:whiteSmoke; 
+}
+
 .s-landing-page {
   h2 {
     font-size:20px;
@@ -242,4 +246,19 @@ label {
       margin:10px auto;
     }
   }
+}
+
+.noline {
+  text-decoration: none;
+  &:hover {
+    text-decoration: none;
+  }
+}
+
+.s-hide {
+  display:none;
+}
+
+.alert .float-left {
+  margin-right:10px;
 }

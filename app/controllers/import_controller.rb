@@ -30,7 +30,7 @@ class ImportController < ApplicationController
           zip_file.extract(f, f_path) unless File.exist?(f_path)
           if f.name =~ /^img_[12]{1}[90]{1}[0-9]{2}-[0-9]{2}-[0-9]{2}-0\.(jpe?g|gif|png)$/i
             date = f.name.scan(SPLIT_AT_DATE_REGEX)[0]
-            existing_entry = current_user.existing_entry(date)
+            existing_entry = current_user.existing_entry(date.to_s)
             if existing_entry.present?
               #existing entry exists, process through filepicker and save
               img_url = CGI.escape "https://dabble.me/#{f_path.gsub("public/","")}"

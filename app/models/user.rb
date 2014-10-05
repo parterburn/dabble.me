@@ -30,19 +30,60 @@ class User < ActiveRecord::Base
   def first_name_or_settings
     first_name.present? ? "#{first_name}" : "Settings"
   end
+
+  def is_admin?
+    email == ENV["ADMIN1"] || email == ENV["ADMIN2"]
+  end
   
-  def random_entry
-    if (count = Entry.where(:user_id => id).count) > 0
-      Entry.where(:user_id => id).offset(rand(count)).first
-    else
-      nil
+  def frequencies
+    frequencies = ""
+    self.frequency.each do |freq|
+      if self.frequency.count == 1
+        frequencies = "#{freq}"
+      elsif self.frequency.count == 2
+        if freq == self.frequency.last
+          frequencies += " and #{freq}"
+        else
+          frequencies += "#{freq}"
+        end
+      else
+        if freq == self.frequency.last
+          frequencies += "and #{freq}"
+        else
+          frequencies += "#{freq}, "
+        end
+      end
     end
+    frequencies
   end
 
-  def existing_entry(date)
+  def random_entry(entry_date=nil)
+    if entry_date.present?
+      entry_date = Date.parse(entry_date.to_s)
+      if exactly_last_year_entry = Entry.where(:user_id => id).where(:date => entry_date.last_year).first
+        exactly_last_year_entry
+      elsif exactly_30_days_ago = Entry.where(:user_id => id).where(:date => entry_date - 30.days).first
+        exactly_30_days_ago
+      elsif exactly_7_days_ago = Entry.where(:user_id => id).where(:date => entry_date - 7.days).first
+        exactly_7_days_ago
+      elsif (count = Entry.where(:user_id => id).where("date < (?)", entry_date - 365.days).count) > 0
+        Entry.where(:user_id => id).where("date < (?)", entry_date - 365.days).offset(rand(count)).first #grab entry way back
+      else
+        self.random_entry
+      end
+    else
+      if (count = Entry.where(:user_id => id).count) > 0
+        Entry.where(:user_id => id).offset(rand(count)).first
+      else
+        nil
+      end
+    end
+  end 
+
+  def existing_entry(selected_date)
     begin
-      selected_date = Date.parse(date)
-      Entry.where(:user_id => self.id, :date => selected_date.beginning_of_day..selected_date.end_of_day).first
+      selected_date = Date.parse(selected_date.to_s)
+      Entry.where(:user_id => self.id, :date => selected_date).first
     rescue
       nil
     end
@@ -51,15 +92,17 @@ class User < ActiveRecord::Base
   private
 
     def subscribe_to_mailchimp
-      gb = Gibbon::API.new
-      gb.lists.subscribe({
-        :id => ENV['MAILCHIMP_LIST_ID'],
-        :email => {:email => self.email},
-        :merge_vars => {
-          :FNAME => self.first_name,
-          :LNAME => self.last_name,
-          :GROUP => "Signed Up" },
-        :double_optin => false})
+      if ENV['MAILCHIMP_API_KEY'].present?
+        gb = Gibbon::API.new
+        gb.lists.subscribe({
+          :id => ENV['MAILCHIMP_LIST_ID'],
+          :email => {:email => self.email},
+          :merge_vars => {
+            :FNAME => self.first_name,
+            :LNAME => self.last_name,
+            :GROUP => "Signed Up" },
+          :double_optin => false})
+      end
     end
 
     def send_welcome_email

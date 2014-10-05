@@ -18,6 +18,22 @@
       container: "body"
     });
 
+    if ($(window).width() > 768) {
+      $("[rel='popover_settings']").popover({
+        trigger: "hover",
+        container: "body",
+        html: true
+      }).popover('show');
+    }
+
+    setTimeout(function(){
+      $("[rel='popover_settings']").popover('hide');
+    }, 10000);
+
+    $(".j-paid").click(function(e) {
+      $.cookie('donated', true, { expires: 30, path: '/' });
+    });
+
     $("[rel='tooltip']").tooltip({
       container: "body"
     });

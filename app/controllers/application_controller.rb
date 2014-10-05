@@ -6,6 +6,18 @@ class ApplicationController < ActionController::Base
 
   before_filter :configure_permitted_parameters, if: :devise_controller?
 
+
+  def admin
+    if current_user && current_user.is_admin?
+      @users = User.all
+      @entries = Entry.all
+      render "admin/index"
+    else
+      flash[:alert] = "Not authorized"
+      redirect_to root_path      
+    end
+  end
+
   protected
 
   def configure_permitted_parameters

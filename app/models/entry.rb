@@ -14,6 +14,8 @@ class Entry < ActiveRecord::Base
   alias_attribute :entry, :body
 
   scope :only_images, -> { where("image_url IS NOT null").where("image_url != ''") }
+  scope :only_ohlife, -> { includes(:inspiration).where("inspirations.category = 'OhLife'").references(:inspiration) }
+  scope :only_email, -> { where("original_email_body IS NOT null") }
 
   def date_format_long
     #Friday, Feb 3, 2014

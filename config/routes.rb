@@ -15,10 +15,13 @@ Rails.application.routes.draw do
   get '/entries/random' => 'entries#random', :as => "random_entry"
 
   resources :entries
+  resources :inspirations
 
   get   '/export' => 'entries#export', :as => "export_entries"
 
   root 'welcome#index'
+
+  get '/admin' => 'application#admin', :as => "admin"
 
   get '/privacy' => 'welcome#privacy'
   

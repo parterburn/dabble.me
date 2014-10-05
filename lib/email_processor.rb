@@ -16,12 +16,10 @@ class EmailProcessor
 
     if user.present? && @body.present?
 
-      #parse attachments
       if @attachments.present?
         tmp = @attachments.first
         if tmp.present?
           if tmp.content_type =~ /^image\/png|jpe?g|gif$/i
-            #it's an image, allow it
             dir = FileUtils.mkdir_p("public/email_attachments/#{user.user_key}")
             file = File.join(dir, tmp.original_filename)
             FileUtils.mv tmp.tempfile.path, file
@@ -38,20 +36,18 @@ class EmailProcessor
         end
       end
 
-      #format the email body coming in to basic HTML
-      @body = ActionController::Base.helpers.simple_format(@body)
-      #bold when bold needed
-      @body.gsub!(/\*([a-zA-Z0-9]+[a-zA-Z0-9 ]*[a-zA-Z0-9]+)\*/i, '<b>\1</b>')
-      #remove "inline image" text
-      @body.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "")
+      @body = ActionController::Base.helpers.simple_format(@body) #format the email body coming in to basic HTML
+      @body.gsub!(/\*([a-zA-Z0-9]+[a-zA-Z0-9 ]*[a-zA-Z0-9]+)\*/i, '<b>\1</b>') #bold when bold needed
+      @body.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "") #remove "inline image" text
 
       date = parse_subject_for_date(@subject, user)
-      existing_entry = user.existing_entry(date)
+      existing_entry = user.existing_entry(date.to_s)
+
+      inspiration_id = parse_body_for_inspiration_id(@raw_body)
 
       if existing_entry.present?
-        #existing entry exists, so add to it
         existing_entry.body += "<hr>#{@body}"
-        existing_entry.inspiration_id = 2
+        existing_entry.inspiration_id = inspiration_id if inspiration_id.present?
         if existing_entry.image_url.present?
           img_url_cdn = filepicker_url.gsub("https://www.filepicker.io", ENV['FILEPICKER_CDN_HOST'])
           existing_entry.body += "<br><div class='pictureFrame'><a href='#{img_url_cdn}' target='_blank'><img src='#{img_url_cdn}/convert?fit=max&w=300&h=300&cache=true&rotate=:exif' alt='#{existing_entry.date.strftime("%b %-d")}'></a></div>"
@@ -60,13 +56,12 @@ class EmailProcessor
         end
         existing_entry.save
       else
-        #create new entry
         entry = user.entries.create!(
           date: date,
           body: @body,
           image_url: filepicker_url,
           original_email_body: @raw_body,
-          inspiration_id: 2
+          inspiration_id: inspiration_id
         )
         entry.save
       end
@@ -110,6 +105,17 @@ class EmailProcessor
       else
         Time.now.in_time_zone(user.send_timezone).strftime("%Y-%m-%d")
       end
+    end
+
+    def parse_body_for_inspiration_id(raw_body)
+      inspiration_id = nil
+      Inspiration.all.each do |inspiration|
+        if raw_body.include? inspiration.body
+          inspiration_id = inspiration.id
+          break
+        end
+      end
+      inspiration_id
     end
 
 end

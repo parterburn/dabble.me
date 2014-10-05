@@ -1,0 +1,26 @@
+- title "Edit Inspirations on Dabble Me"
+
+.row
+  %br
+  .col-md-8.col-md-offset-2.well
+
+    = form_for :inspiration, url: inspiration_path(@inspiration), method: :patch do |f|
+
+      -if @inspiration.errors.any?
+        #error_explanation
+          .alert.alert-danger
+            - @inspiration.errors.full_messages.each do |msg|
+              %p= msg
+
+      %div
+        = f.label :category
+        = f.select(:category, Inspiration.order(:category).all.pluck(:category).uniq, {}, { :class => 'form-control' })
+        %br
+
+      %div
+        = f.label :body
+        = f.text_area :body, :class => "form-control", :rows => 2
+        %br
+
+      %div
+        = f.submit "Edit Inspiration", :class => "form-control btn btn-primary"
