@@ -69,9 +69,9 @@
                 %td=user.id
                 %td=mail_to user.email
                 %td=user.full_name
-                %td=number_with_delimiter(user.entries.count)
-                %td=number_with_delimiter(user.emails_sent)
-                %td=number_with_delimiter(user.emails_received)
+                %td{:"data-value"=>"#{user.entries.count}"}=number_with_delimiter(user.entries.count)
+                %td{:"data-value"=>"#{user.emails_sent}"}=number_with_delimiter(user.emails_sent)
+                %td{:"data-value"=>"#{user.emails_received}"}=number_with_delimiter(user.emails_received)
 
 
   .clearfix
@@ -87,7 +87,7 @@
         .col-md-2
           %strong #{number_with_delimiter(users.length)}
         .col-md-2
-          %strong #{number_to_percentage(users.length.to_f/all_count.to_f*100, precision: 0)}
+          %strong #{number_to_percentage(users.length.to_f/all_users_count.to_f*100, precision: 0)}
         - if users.length > 0
           .col-md-12.s-hide.j-admin-emails.well
             .row
@@ -113,7 +113,7 @@
       .col-md-2
         %strong #{number_with_delimiter(unsubscribed_users.length)}
       .col-md-2
-        %strong #{number_to_percentage(unsubscribed_users.length.to_f/all_count.to_f*100, precision: 0)}
+        %strong #{number_to_percentage(unsubscribed_users.length.to_f/all_users_count.to_f*100, precision: 0)}
       - if unsubscribed_users.length > 0
         .col-md-12.s-hide.j-admin-emails.well
           .row
@@ -127,6 +127,67 @@
               .col-md-6=user.full_name
 
     .row
+      .col-md-3
+        %strong=link_to "Daily Users", "#", class: "j-admin-days"
+      - daily_users = User.daily_emails
+      .col-md-2
+        %strong #{number_with_delimiter(daily_users.length)}
+      .col-md-2
+        %strong #{number_to_percentage(daily_users.length.to_f/all_users_count.to_f*100, precision: 0)}
+      - if daily_users.length > 0
+        .col-md-12.s-hide.j-admin-emails.well
+          .row
+            .col-md-4
+              %strong Email
+            .col-md-6
+              %strong Name              
+          -daily_users.each do |user|
+            .row
+              .col-md-4=mail_to user.email
+              .col-md-6=user.full_name
+
+    .row
+      %br
+      .col-md-3
+        %strong=link_to "Users with Entries", "#", class: "j-admin-days"
+      - users_with_entries = User.with_entries
+      .col-md-2
+        %strong #{number_with_delimiter(users_with_entries.length)}
+      .col-md-2
+        %strong #{number_to_percentage(users_with_entries.length.to_f/all_users_count.to_f*100, precision: 0)}
+      - if users_with_entries.length > 0
+        .col-md-12.s-hide.j-admin-emails.well
+          .row
+            .col-md-4
+              %strong Email
+            .col-md-6
+              %strong Name              
+          -users_with_entries.each do |user|
+            .row
+              .col-md-4=mail_to user.email
+              .col-md-6=user.full_name       
+
+    .row
+      .col-md-3
+        %strong=link_to "Users without Entries", "#", class: "j-admin-days"
+      - users_without_entries = User.without_entries
+      .col-md-2
+        %strong #{number_with_delimiter(users_without_entries.length)}
+      .col-md-2
+        %strong #{number_to_percentage(users_without_entries.length.to_f/all_users_count.to_f*100, precision: 0)}
+      - if users_without_entries.length > 0
+        .col-md-12.s-hide.j-admin-emails.well
+          .row
+            .col-md-4
+              %strong Email
+            .col-md-6
+              %strong Name              
+          -users_without_entries.each do |user|
+            .row
+              .col-md-4=mail_to user.email
+              .col-md-6=user.full_name                                      
+
+    .row
       %br
       .col-md-3
         %strong=link_to "Send Past Entry", "#", class: "j-admin-days"
@@ -134,7 +195,7 @@
       .col-md-2
         %strong #{number_with_delimiter(send_past_users.length)}
       .col-md-2
-        %strong #{number_to_percentage(send_past_users.length.to_f/all_count.to_f*100, precision: 0)}
+        %strong #{number_to_percentage(send_past_users.length.to_f/all_users_count.to_f*100, precision: 0)}
       - if send_past_users.length > 0
         .col-md-12.s-hide.j-admin-emails.well
           .row

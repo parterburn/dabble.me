@@ -15,8 +15,47 @@ class ImportController < ApplicationController
   def process_ohlife_images
     tmp = params[:zip_file]
     if tmp && tmp.content_type == "application/zip"
+      flash = import_ohlife_images(tmp)
+      redirect_to entries_path
+    else
+      FileUtils.rm tmp.tempfile.path if tmp
+      flash[:alert] = "Only ZIP files are allowed here."
+      redirect_to import_ohlife_path
+    end
 
-      #mv uploaded ZIP file to /tmp/ohlife_zips
+  end
+
+  private
+
+    def import_ohlife_entries(data)
+      errors = []
+      user = current_user
+
+      dates = data.scan(SPLIT_AT_DATE_REGEX)
+      bodies  = data.split(SPLIT_AT_DATE_REGEX)
+      bodies.shift
+
+      dates.each_with_index do |date,i|
+        body = ActionController::Base.helpers.simple_format(bodies[i])
+        body.gsub!(/\A(\<p\>\<\/p\>)/,"")
+        body.gsub!(/(\<p\>\<\/p\>)\z/,"")
+        entry = user.entries.create(:date => date, :body => body, :inspiration_id => 1)
+        unless entry.save
+          errors << date
+        end
+      end
+
+      flash[:notice] = "Finished importing " + ActionController::Base.helpers.pluralize(dates.count,"entry")
+      if errors.present?
+        flash[:alert] = "<strong>"+ActionController::Base.helpers.pluralize(errors.count,"error") + " while importing:</strong>"
+        errors.each do |error|
+          flash[:alert] << "<br>"+error
+        end
+      end
+    end
+
+    def import_ohlife_images(tmp)
+      #move uploaded ZIP file to /tmp/ohlife_zips
       dir = FileUtils.mkdir_p("public/ohlife_zips/#{current_user.user_key}")
       file = File.join(dir, tmp.original_filename)
       FileUtils.mv tmp.tempfile.path, file
@@ -32,7 +71,6 @@ class ImportController < ApplicationController
             date = f.name.scan(SPLIT_AT_DATE_REGEX)[0]
             existing_entry = current_user.existing_entry(date.to_s)
             if existing_entry.present?
-              #existing entry exists, process through filepicker and save
               img_url = CGI.escape "https://dabble.me/#{f_path.gsub("public/","")}"
               begin
                 response = MultiJson.load RestClient.post("https://www.filepicker.io/api/store/S3?key=#{ENV['FILEPICKER_API_KEY']}&url=#{img_url}", nil), :symbolize_keys => true
@@ -58,7 +96,6 @@ class ImportController < ApplicationController
         }
       }
 
-      #delete folder:
       FileUtils.rm_r dir, :force => true
       
       flash[:notice] = "Finished importing #{ActionController::Base.helpers.pluralize(count,'photo')}" if count > 0
@@ -66,53 +103,6 @@ class ImportController < ApplicationController
       errors.each do |error|
         flash[:alert] << "<br>"+error
       end
-      redirect_to entries_path
-    else
-      FileUtils.rm tmp.tempfile.path if tmp
-      flash[:alert] = "Only ZIP files are allowed here."
-      redirect_to import_ohlife_path
     end
-
-  end
-
-  private
-
-    def import_ohlife_entries(data)
-      errors = []
-      user = current_user #protect users from importing into someone else's entries
-
-      dates = data.scan(SPLIT_AT_DATE_REGEX)
-      bodies  = data.split(SPLIT_AT_DATE_REGEX)
-      bodies.shift
-
-      dates.each_with_index do |date,i|
-        #remove line breaks at begininng and end          
-        body = ActionController::Base.helpers.simple_format(bodies[i])
-        body.gsub!(/\A(\<p\>\<\/p\>)/,"")
-        body.gsub!(/(\<p\>\<\/p\>)\z/,"")
-        entry = user.entries.create(:date => date, :body => body, :inspiration_id => 1)
-        unless entry.save
-          errors << date
-        end
-      end
-
-      flash[:notice] = "Finished importing " + ActionController::Base.helpers.pluralize(dates.count,"entry")
-      if errors.present?
-        flash[:alert] = "<strong>"+ActionController::Base.helpers.pluralize(errors.count,"error") + " while importing:</strong>"
-        errors.each do |error|
-          flash[:alert] << "<br>"+error
-        end
-      end
-    end   
-
-    def import_ohlife_images(data)
-      require 'zip'
-
-      Zip::File.open("my.zip") do |zipfile|
-        zipfile.each do |file|
-          # do something with file
-        end
-      end      
-    end    
 
 end

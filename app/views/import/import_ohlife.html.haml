@@ -15,7 +15,6 @@
   = form_for :entry, url: import_ohlife_process_path, method: :put do |f|
     
     .col-md-8.col-md-offset-2
-      /= f.label :text, "Contents of export_2014-09-XX.txt"
       = f.text_area :text, :class => "form-control", :rows => 10  
       %br
 
@@ -24,7 +23,7 @@
       %br
       %br
     .clearfix
-  -if current_user.email == "paularterburn@gmail.com"
+  -if current_user.is_admin?
     %hr
     .well.col-md-8.col-md-offset-2
       .col-md-4.center

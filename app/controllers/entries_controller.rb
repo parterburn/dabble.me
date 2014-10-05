@@ -53,7 +53,6 @@ class EntriesController < ApplicationController
     @existing_entry = @user.existing_entry(params[:entry][:date].to_s)
 
     if @existing_entry.present? && params[:entry][:entry].present?
-      #existing entry exists, so add to it
       @existing_entry.body += "<hr>#{params[:entry][:entry]}"
       @existing_entry.inspiration_id = params[:entry][:inspiration_id] if params[:entry][:inspiration_id].present?
       if params[:entry][:image_url].present? && @existing_entry.image_url.present?
@@ -66,17 +65,14 @@ class EntriesController < ApplicationController
         flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime("%B %-d")}."
         redirect_to @existing_entry
       else
-        #errors
         render 'new'
       end
     else
       @entry = @user.entries.create(entry_params)
       if @entry.save
-        #save new entry & view it
         flash[:notice] = "Entry created successfully!"
         redirect_to @entry
       else
-        #errors
         render 'new'
       end
     end
@@ -108,7 +104,6 @@ class EntriesController < ApplicationController
         render 'edit'        
       end
     elsif params[:entry][:entry].blank?
-      #empty body, so delete the entry
       @entry.destroy
       flash[:notice] = "Entry deleted!"
       redirect_to entries_path
