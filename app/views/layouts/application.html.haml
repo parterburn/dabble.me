@@ -30,10 +30,10 @@
 
       #main-container.container.clear-top
         - if user_signed_in? && current_user.sign_in_count > 0 && !cookies[:donated]
-          .alert.alert-success.alert-dismissible.hidden-xs
+          .alert.alert-info.alert-dismissible.hidden-xs
             %button.close.j-paid{"data-dismiss" => "alert", :type => "button"}
               %span{"aria-hidden" => "true"} &#215;
-              %span.sr-only Close    
+              %span.sr-only Close
             =link_to "https://gratipay.com/parterburn/",:target=>"_blank", :class=>"j-paid float-left" do
               %button.btn.btn-success Pay Now
             %strong Dabble Me is a "pay what you can" service.
