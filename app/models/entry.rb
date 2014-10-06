@@ -37,6 +37,13 @@ class Entry < ActiveRecord::Base
     in_words.to_s.include?("Over") ? "Exactly #{number_with_delimiter((Time.zone.now - self.date).to_i / 1.day)} days" : in_words
   end
 
+  def sanitized_body
+    body_sanitized = ActionView::Base.full_sanitizer.sanitize(self.body)
+    body_sanitized.gsub!(/\A(\n\n)/,"") if body_sanitized
+    body_sanitized.gsub!(/(\<\n\n>)\z/,"") if body_sanitized
+    body_sanitized
+  end
+
   private
 
     def ensure_protocol # For urls

@@ -42,8 +42,10 @@
           .clearfix        
         %br
       %h4
-        =link_to export_entries_path(:json) do
-          Export all entries
+        Export all entries as
+        =link_to "TXT", export_entries_path(:txt)
+        or
+        =link_to "JSON", export_entries_path(:json)
 
     .col-md-8.col-md-offset-1
       %br

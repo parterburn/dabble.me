@@ -126,9 +126,14 @@ class EntriesController < ApplicationController
   end
 
   def export
-    entries = current_user.entries.sort_by(&:date).reverse
+    @entries = current_user.entries.sort_by(&:date)
      respond_to do |format|
-       format.json { send_data JSON.pretty_generate(JSON.parse(entries.to_json(:only => [:date, :body, :image_url]))) }
+       format.json { send_data JSON.pretty_generate(JSON.parse(@entries.to_json(:only => [:date, :body, :image_url]))) }
+       format.txt do
+          response.headers['Content-Type'] = 'text/txt'
+          response.headers['Content-Disposition'] = "attachment; filename=export_#{Time.now.strftime("%Y-%m-%d")}.txt"
+          render 'text_export'
+        end
      end
   end
 
