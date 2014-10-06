@@ -14,9 +14,9 @@
       %p
         %b Send your first entry and you'll see a blast from the past show up here!
     %p
-      =link_to "Past entries", "https://dabble.me/entries"
+      =link_to "Past entries", "https://#{ENV['MAIN_DOMAIN']}/entries"
       &middot;
-      =link_to "Unsubscribe", "https://dabble.me/users/edit"
+      =link_to "Unsubscribe", "https://#{ENV['MAIN_DOMAIN']}/users/edit"
     %hr{:style=>"margin-top: 20px;margin-bottom: 20px;border: 0;border-top: 2px solid whiteSmoke;"}
     %p{style: "color:#CCC"}
       %i=@random_inspiration.body

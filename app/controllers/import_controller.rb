@@ -71,7 +71,7 @@ class ImportController < ApplicationController
             date = f.name.scan(SPLIT_AT_DATE_REGEX)[0]
             existing_entry = current_user.existing_entry(date.to_s)
             if existing_entry.present?
-              img_url = CGI.escape "https://dabble.me/#{f_path.gsub("public/","")}"
+              img_url = CGI.escape "https://#{ENV['MAIN_DOMAIN']}/#{f_path.gsub("public/","")}"
               begin
                 response = MultiJson.load RestClient.post("https://www.filepicker.io/api/store/S3?key=#{ENV['FILEPICKER_API_KEY']}&url=#{img_url}", nil), :symbolize_keys => true
                 if response[:url].present?

@@ -8,7 +8,7 @@
         %span.fa.fa-twitter
         Built by @parterburn
       &nbsp;&middot;&nbsp;        
-      = mail_to "hello@dabble.me", :encode => "hex" do
+      = mail_to "hello@#{ENV['MAIN_DOMAIN']}", :encode => "hex" do
         %span.fa.fa-envelope-o
         Contact        
     %p.muted

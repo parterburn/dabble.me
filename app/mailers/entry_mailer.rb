@@ -7,7 +7,7 @@ class EntryMailer < ActionMailer::Base
     @random_inspiration = random_inspiration
 
     headers['x-smtpapi'] = { :category => [ "Entry" ] }.to_json
-    mail from: "Dabble Me <post+#{user.user_key}@dabble.me>",
+    mail from: "Dabble Me <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
          to: "#{user.full_name} <#{user.email}>",
          subject: "It's #{Time.now.in_time_zone(user.send_timezone).strftime("%A, %b %-d")} - How did your day go?"
 

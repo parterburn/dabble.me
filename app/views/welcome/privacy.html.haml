@@ -33,5 +33,5 @@
     %h4 Questions?
     %p
       Please send us an email at&nbsp;
-      %span>=mail_to "hello@dabble.me", "hello@dabble.me", :encode=>"hex"
+      %span>=mail_to "hello@#{ENV['MAIN_DOMAIN']}", "hello@#{ENV['MAIN_DOMAIN']}", :encode=>"hex"
       \. We're happy to help out and answer any of your questions.

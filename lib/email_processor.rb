@@ -24,7 +24,7 @@ class EmailProcessor
             file = File.join(dir, tmp.original_filename)
             FileUtils.mv tmp.tempfile.path, file
             FileUtils.chmod 0644, file
-            img_url = CGI.escape "https://dabble.me/#{file.gsub("public/","")}"
+            img_url = CGI.escape "https://#{ENV['MAIN_DOMAIN']}/#{file.gsub("public/","")}"
             begin
               response = MultiJson.load RestClient.post("https://www.filepicker.io/api/store/S3?key=#{ENV['FILEPICKER_API_KEY']}&url=#{img_url}", nil), :symbolize_keys => true
               filepicker_url = response[:url]
@@ -80,9 +80,7 @@ class EmailProcessor
 
     def find_user_from_user_key(to_token, from_email)
       begin
-        user_regex = /post\+(u[0-9a-zA-Z]{18})/
-        user_key = to_token.scan(user_regex)[0]
-        user = User.find_by_user_key(user_key)
+        user = User.find_by_user_key(to_token)
       rescue JSON::ParserError => e
       end
       user.blank? ? User.find_by_email(from_email) : user

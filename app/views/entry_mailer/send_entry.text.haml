@@ -5,9 +5,9 @@ Just reply to this email with your entry for #{Time.now.in_time_zone(@user.send_
   \ 
   #{strip_tags(@random_entry.body)}
   \ 
-Past entries: https://dabble.me/entries
+Past entries: https://#{ENV['MAIN_DOMAIN']}/entries
 \ 
-Unsubscribe: https://dabble.me/users/edit
+Unsubscribe: https://#{ENV['MAIN_DOMAIN']}/users/edit
 \ 
 \=======================================
 \ 

@@ -2,13 +2,13 @@
 
 %p
   You can check out your entry here:
-  =link_to "https://dabble.me/entries", "https://dabble.me/entries"
+  =link_to "https://#{ENV['MAIN_DOMAIN']}/entries", "https://#{ENV['MAIN_DOMAIN']}/entries"
 
 - if @user.frequnecies.present?
   %p
     P.S. You'll receive emails every #{@user.frequnecies} at #{current_user.send_time.strftime("%-I %P")} #{current_user.send_timezone}.
-    =link_to "Change this?", "https://dabble.me/users/edit"
+    =link_to "Change this?", "https://#{ENV['MAIN_DOMAIN']}/users/edit"
 - else
   %p
     P.S. You have email reminders turned off, so you won't receive prompts in the future.
-    =link_to "Change this?", "https://dabble.me/users/edit"
+    =link_to "Change this?", "https://#{ENV['MAIN_DOMAIN']}/users/edit"

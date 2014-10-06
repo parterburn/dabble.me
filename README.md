@@ -11,13 +11,15 @@ This app utilizes the following 3rd party services:
 * [Google Analytics](http://google.com/analytis) for traffic stats (free for standard analytics)
 * [New Relic](http://newrelic.com) for server monitoring (free for basic monitoring)
 
-I recommend forking and setting up a free server at [Ninefold](https://ninefold.com/).
+I recommend forking and setting up a free server at [Ninefold](https://ninefold.com/). You can generate a free SSL certificate at (StartSSL)[https://www.startssl.com/].
 
 Your local environment variables at ```config/local_env.yml``` will need to be something like this:
 
 ```
+MAIN_DOMAIN: dabble.me
 SECRET_KEY_BASE: 1234..1234
 DEVISE_SECRET_KEY: 1234..1234
+SMTP_DOMAIN: post.dabble.me
 SENDGRID_USERNAME: your_sendgrid_username
 SENDGRID_PASSWORD: your_sendgrid_password
 MAILCHIMP_API_KEY: f....3333-ek3
@@ -30,19 +32,21 @@ ADMIN_EMAILS: user1@domain.com,user2@domain.com
 Your environment variables on Ninefold will need to be something like this:
 
 ```
+MAIN_DOMAIN=dabble.me
 SECRET_KEY_BASE=1234..1234
 DEVISE_SECRETE_KEY=1234..1234
+SMTP_DOMAIN=post.dabble.me
 SENDGRID_USERNAME=your_sendgrid_username
 SENDGRID_PASSWORD=your_sendgrid_password
 NEW_RELIC_LICENSE_KEY=k3333..2222
 NEW_RELIC_APP_NAME=DABBLE.ME
 PROD_HOST=dabble.me
 GOOGLE_ANALYTICS_ID=UA-12345-67
-MAILCHIMP_API_KEY: f....3333-ek3
-MAILCHIMP_LIST_ID: 9982...112
-FILEPICKER_API_KEY: A....z
-FILEPICKER_CDN_HOST: https://123abc.cloudfront.net
-ADMIN_EMAILS: user1@domain.com,user2@domain.com
+MAILCHIMP_API_KEY=f....3333-ek3
+MAILCHIMP_LIST_ID=9982...112
+FILEPICKER_API_KEY=A....z
+FILEPICKER_CDN_HOST=https://123abc.cloudfront.net
+ADMIN_EMAILS=user1@domain.com,user2@domain.com
 ```
 
 The Admin emails are accounts that have access to the Admin Dashboard at ```/admin``` that give you details into the number of entries and users in the system. It will estimate the usage of the 3rd party services so you can understand what price points running the app will fall in.

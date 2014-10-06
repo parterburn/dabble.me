@@ -1,10 +1,10 @@
 We're here to help you remember what's happened in your life - now that you've written your first entry, you're well on your way. That's something to feel good about!
 \ 
-You can check out your entry here: https://dabble.me/entries
+You can check out your entry here: https://#{ENV['MAIN_DOMAIN']}/entries
 \ 
 - if @user.frequnecies.present?
   \ 
-  P.S. You'll receive emails every #{@user.frequnecies} at #{current_user.send_time.strftime("%-I %P")} #{current_user.send_timezone}. Change your settings here: https://dabble.me/users/edit
+  P.S. You'll receive emails every #{@user.frequnecies} at #{current_user.send_time.strftime("%-I %P")} #{current_user.send_timezone}. Change your settings here: https://#{ENV['MAIN_DOMAIN']}/users/edit
 - else
   \ 
-  P.S. You have email reminders turned off, so you won't receive prompts in the future. Change your settings here: https://dabble.me/users/edit
+  P.S. You have email reminders turned off, so you won't receive prompts in the future. Change your settings here: https://#{ENV['MAIN_DOMAIN']}/users/edit

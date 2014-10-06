@@ -1,6 +1,6 @@
 Welcome to Dabble Me - the simple journal that you'll actually use! Since you're new here, we're going to make it easy for you to write your first entry.
 \ 
-How's your day going? Just reply to this email with your answer, and it's instantly saved in your Dabble Me account at https://dabble.me/entries. Try it!
+How's your day going? Just reply to this email with your answer, and it's instantly saved in your Dabble Me account at https://#{ENV['MAIN_DOMAIN']}/entries. Try it!
 \ 
 Helpful tips:
 \ 
@@ -12,6 +12,6 @@ Helpful tips:
 \ 
 \----------------------------
 \ 
-You can always email post+#{@user.user_key}@dabble.me to post new entries (hint: add this to your contacts).
+You can always email #{@user.user_key}@#{ENV['SMTP_DOMAIN']} to post new entries (hint: add this to your contacts).
 \ 
 For reference, your username is: #{@user.email}
