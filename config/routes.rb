@@ -24,6 +24,7 @@ Rails.application.routes.draw do
   get '/admin' => 'application#admin', :as => "admin"
 
   get '/privacy' => 'welcome#privacy'
+  get '/donate' => 'welcome#donate'
   
   post '/email_processor' => 'griddler/emails#create'
 

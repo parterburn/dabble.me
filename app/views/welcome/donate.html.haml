@@ -1,0 +1,32 @@
+- title "Donate to Dabble Me"
+
+%script{:src => "https://platform.venmo.com/sdk.js"}
+
+.row
+  %br
+  .col-md-8.col-md-offset-2
+    %h4 
+      %strong Dabble Me is a "pay what you can" service.
+    %p 
+      I've donated my time and servers to keep it running and free for all. The shut down of
+      =link_to "OhLife", "http://ohlife.com/shutdown", target: "_blank", class: "alert-link"
+      (the inspiration for this site) proves that the longevity of even smaller apps like this take real costs to run. If you enjoy the service, any amount you can afford is greatly appreciated!
+    %br
+    %br
+    .center
+      %h4 PayPal
+      %form{:action => "https://www.paypal.com/cgi-bin/webscr", :method => "post", :target => "_top"}
+        %input{:name => "cmd", :type => "hidden", :value => "_s-xclick"}
+        %input{:name => "hosted_button_id", :type => "hidden", :value => "74DTWFU5WL3MA"}/
+        %input{:alt => "PayPal - The safer, easier way to pay online!", :border => "0", :name => "submit", :src => "https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif", :type => "image"}
+        %img{:alt => "", :border => "0", :height => "1", :src => "https://www.paypalobjects.com/en_US/i/scr/pixel.gif", :width => "1"}
+      %br
+      %br
+      %br
+      .col-md-6
+        %h4 Venmo
+        %a.venmo-pay-button{"data-recipient-id" => "1397129314566144218"}
+
+      .col-md-6
+        %h4 Gratipay
+        %script{"data-gratipay-username" => "parterburn", "data-gratipay-widget" => "button", :src => "//gttp.co/v1.js"}

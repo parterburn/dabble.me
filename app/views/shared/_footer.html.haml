@@ -1,24 +1,24 @@
 %footer.footer
   .container.center
     %hr
-    %p
-      =link_to "Powered by donations","https://gratipay.com/parterburn/",:target=>"_blank"
     %p.muted
-      = link_to 'http://twitter.com/parterburn' do
-        %span.fa.fa-twitter
-        Built by @parterburn
-      &nbsp;&middot;&nbsp;        
-      = mail_to "hello@#{ENV['MAIN_DOMAIN']}", :encode => "hex" do
-        %span.fa.fa-envelope-o
-        Contact        
-    %p.muted
-      = link_to privacy_path do
+      = link_to privacy_path, title: "Privacy Policy" do
         %span.fa.fa-lock
-        Privacy Policy
+        %span.hidden-xs Privacy
+      &nbsp;&middot;&nbsp;        
+      =link_to "Powered by donations",donate_path, title: "Donate Now"
+      &nbsp;&middot;&nbsp;        
+      = mail_to "hello@#{ENV['MAIN_DOMAIN']}", :encode => "hex", title: "Contact Support" do
+        %span.fa.fa-envelope-o
+        %span.hidden-xs Contact
+    %p.muted
+      = link_to 'http://twitter.com/parterburn', title: "Built by Paul Arterburn" do
+        %span.fa.fa-twitter
+        %span.hidden-xs Built by @parterburn
       &nbsp;&middot;&nbsp;
-      = link_to 'http://github.com/parterburn/dabble.me' do
+      = link_to 'http://github.com/parterburn/dabble.me', title: "View code on GitHub" do
         %span.fa.fa-github
-        View code on GitHub
+        %span.hidden-xs Open sourced
 
 .j-back-to-top.s-back-to-top
   =link_to "#" do
