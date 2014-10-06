@@ -2,8 +2,13 @@
 
 .row
   .col-md-6.col-md-offset-3
-    %h3 Edit #{resource_name.to_s.humanize}
+    %h3 User Settings
     %br
+
+  .col-md-6.col-md-offset-3
+    Post new entries by emailing
+    =mail_to "post+#{@user.user_key}@dabble.me", "post+#{@user.user_key}@dabble.me", :encode=>"hex"
+    %hr
 
   = form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f|
     - if @user.errors.present?
