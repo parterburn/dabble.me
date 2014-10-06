@@ -4,9 +4,9 @@
   You can check out your entry here:
   =link_to "https://#{ENV['MAIN_DOMAIN']}/entries", "https://#{ENV['MAIN_DOMAIN']}/entries"
 
-- if @user.frequnecies.present?
+- if @user.frequencies.present?
   %p
-    P.S. You'll receive emails every #{@user.frequnecies} at #{current_user.send_time.strftime("%-I %P")} #{current_user.send_timezone}.
+    P.S. You'll receive emails every #{@user.frequencies} at #{current_user.send_time.strftime("%-I %P")} #{current_user.send_timezone}.
     =link_to "Change this?", "https://#{ENV['MAIN_DOMAIN']}/users/edit"
 - else
   %p
