@@ -1,117 +1,21 @@
-Copyright (c) 2014, @parterburn
-All rights reserved.
+The MIT License (MIT)
 
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
+Copyright (c) 2014 @Parterburn
 
-1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer.
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
-SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-
-airbrake is licensed by Airbrake
-
-Autoprefixer Rails is licensed under the MIT License
-
-better_errors is licensed under the MIT License
-
-binding_of_caller is licensed under the MIT License
-
-bullet is licensed under the MIT License
-
-byebug is licensed under the MIT License
-
-Bootstrap for Sass is licensed under the MIT License
-
-Capybara is licensed under the MIT License
-
-Database Cleaner is licensed under the MIT License
-
-Email Spec is licensed under the MIT License
-
-factory_girl_rails is licensed under the MIT License
-
-faker is licensed under the MIT License
-
-figaro is licensed under the MIT License
-
-FontAwesome font is licensed under the SIL Open Font License
-
-FontAwesome is licensed under the MIT License
-
-FontAwesome pictograms are licensed under the CC BY 3.0 License
-
-google-analytics-rails is licensed under the MIT license
-
-haml is licensed under the MIT License
-
-haml_assets is licensed under the MIT License
-
-http_accept_language is licensed under the MIT License
-
-i18n-js is licensed under the MIT License
-
-jquery is licensed under the MIT License
-
-kaminari is licensed under the MIT License
-
-meta_request is licensed under the MIT License
-
-newrelic_rpm is licensed by New Relic
-
-nokogiri is licensed under the MIT License
-
-pg is licensed under the 2-clause BSD License
-
-pry is licensed under the MIT License
-
-pry-byebug is licensed under the MIT License
-
-pry-rails is licensed under the MIT License
-
-puma is licensed under the BSD License
-
-puma_auto_tune is licensed under the MIT License
-
-rabl is licensed under the MIT License
-
-Rack::Timeout is licensed under the MIT License
-
-rails_12factor is licensed under the 2-clause BSD License
-
-resque is licensed under the MIT License
-
-rest-client is licensed under the MIT License
-
-rspec is licensed under the MIT License
-
-rspec-rails is licensed under the MIT License
-
-secure_headers is licensed under the Apache License
-
-selenium-webdriver is licensed under the Apache License
-
-simplecov is licensed under the MIT License
-
-spring_commands_rspec is licensed under the MIT License
-
-twbs_sass_rails is licensed under the 2-clause BSD License
-
-uglifier is licensed under the MIT License
-
-validates_timeliness is licensed under the MIT License
-
-webmock is licensed under the MIT License
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
