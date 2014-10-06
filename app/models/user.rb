@@ -36,6 +36,16 @@ class User < ActiveRecord::Base
   def is_admin?
     admin_emails.include?(self.email)
   end
+
+  def throwback_msg
+    if Time.now.in_time_zone(self.send_timezone).monday?
+      "This is your life:"
+    elsif Time.now.in_time_zone(self.send_timezone).thursday?
+      "Throwback Thursday!"
+    else
+      "Oh snap, remember this?"
+    end
+  end
   
   def frequencies
     frequencies = ""

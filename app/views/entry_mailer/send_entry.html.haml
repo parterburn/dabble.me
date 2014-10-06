@@ -6,7 +6,7 @@
     %p Just reply to this email with your entry for #{Time.now.strftime("%B %-d")}.
     - if @user.send_past_entry? && @user.entries.count > 5 && @random_entry
       %p
-        %b Oh snap, remember this? #{@random_entry.time_ago_in_words_or_numbers} ago you wrote...
+        %b #{@user.throwback_msg} #{@random_entry.time_ago_in_words_or_numbers} ago you wrote...
       %p
         %div
           = @random_entry.body.html_safe

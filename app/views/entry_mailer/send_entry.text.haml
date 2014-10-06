@@ -1,7 +1,7 @@
 Just reply to this email with your entry for #{Time.now.in_time_zone(@user.send_timezone).strftime("%B %-d")}.
 \ 
 - if @user.send_past_entry? && @user.entries.count > 5 && @random_entry
-  Oh snap, remember this? #{@random_entry.time_ago_in_words_or_numbers} ago you wrote...
+  #{@user.throwback_msg} #{@random_entry.time_ago_in_words_or_numbers} ago you wrote...
   \ 
   #{@random_entry.sanitized_body}
   \ 
