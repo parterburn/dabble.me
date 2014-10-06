@@ -1,4 +1,5 @@
 - title ("Admin Dashboard")
+= javascript_include_tag "//www.google.com/jsapi", "chartkick"
 
 .row.s-admin-container
   .col-md-12
@@ -41,6 +42,15 @@
         %strong #{number_with_delimiter(email_count)}
       .col-md-2
         %strong #{number_to_percentage(email_count.to_f/all_count.to_f*100, precision: 0)}
+
+  .col-md-12
+    %hr
+
+  .col-md-12
+    %h4 Users created
+    = line_chart @dashboard.users_by_day_since(30.days.ago)
+    %h4 Entries created
+    = line_chart @dashboard.entries_by_day_since(30.days.ago)
 
   .col-md-12
     %hr
@@ -235,3 +245,24 @@
     %strong= emails_received_total
   .col-md-2
     %strong #{number_to_percentage(emails_received_total.to_f/emails_sent_total.to_f*100, precision: 0)}
+
+
+  .col-md-12
+    %hr
+
+  -#
+    .col-md-12
+      %h4 Trialing Users 14 days ago
+      .col-md-4
+        %strong Email
+      .col-md-3
+        %strong Signed up
+      .col-md-3
+        %strong Entry count
+      .col-md-2
+        %strong Entries per day
+      - @dashboard.users_created_since(14.days.ago).order(:created_at).each do |user|
+        .col-md-4= user.email
+        .col-md-3= user.created_at.to_date
+        .col-md-3= user.entries.where("created_at >= ?", 14.days.ago).count
+        .col-md-2= @dashboard.entries_per_day_for(user)

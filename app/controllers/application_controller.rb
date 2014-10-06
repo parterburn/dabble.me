@@ -11,6 +11,7 @@ class ApplicationController < ActionController::Base
     if current_user && current_user.is_admin?
       @users = User.all
       @entries = Entry.all
+      @dashboard = AdminDashboard.new
       render "admin/index"
     else
       flash[:alert] = "Not authorized"

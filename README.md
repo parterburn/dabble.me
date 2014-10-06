@@ -24,8 +24,7 @@ MAILCHIMP_API_KEY: f....3333-ek3
 MAILCHIMP_LIST_ID: 9982...112
 FILEPICKER_API_KEY: A....z
 FILEPICKER_CDN_HOST: https://123abc.cloudfront.net
-ADMIN1: user1@domain.com
-ADMIN2: user2@domain.com
+ADMIN_EMAILS: user1@domain.com,user2@domain.com
 ```
 
 Your environment variables on Ninefold will need to be something like this:
@@ -43,8 +42,7 @@ MAILCHIMP_API_KEY: f....3333-ek3
 MAILCHIMP_LIST_ID: 9982...112
 FILEPICKER_API_KEY: A....z
 FILEPICKER_CDN_HOST: https://123abc.cloudfront.net
-ADMIN1: user1@domain.com
-ADMIN2: user2@domain.com
+ADMIN_EMAILS: user1@domain.com,user2@domain.com
 ```
 
 The Admin emails are accounts that have access to the Admin Dashboard at ```/admin``` that give you details into the number of entries and users in the system. It will estimate the usage of the 3rd party services so you can understand what price points running the app will fall in.

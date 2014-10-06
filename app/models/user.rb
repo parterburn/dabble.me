@@ -34,7 +34,7 @@ class User < ActiveRecord::Base
   end
 
   def is_admin?
-    email == ENV["ADMIN1"] || email == ENV["ADMIN2"]
+    admin_emails.include?(self.email)
   end
   
   def frequencies
@@ -113,6 +113,10 @@ class User < ActiveRecord::Base
 
     def send_welcome_email
       UserMailer.welcome_email(self).deliver
+    end
+
+    def admin_emails
+      ENV.fetch("ADMIN_EMAILS").split(",")
     end
 
 end
