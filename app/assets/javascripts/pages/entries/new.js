@@ -20,7 +20,7 @@
       height: 300,
       theme: 'flatly',
       focus: true,
-      toolbar: [["fontsize", ["fontsize"]], ["style", ["bold", "italic", "underline", "clear"]], ["layout", ["ul", "ol"]], ['insert', ['link']], ['misc', ['fullscreen', 'codeview']]]
+      toolbar: [["style", ["bold", "italic", "underline", "clear"]], ["layout", ["ul", "ol"]], ['insert', ['link']], ['misc', ['fullscreen', 'codeview']]]
     });
 
     summer_note.code(summer_note.val());
