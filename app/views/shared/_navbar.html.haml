@@ -39,7 +39,7 @@
       %ul.nav.navbar-nav.navbar-right
 
         - if user_signed_in?
-          - if current_user.sign_in_count < 10 && !cookies[:viewed_settings] && (current_page?(entris_path) || current_page?(root_path))
+          - if current_user.sign_in_count < 10 && !cookies[:viewed_settings] && (current_page?(entries_path) || current_page?(root_path))
             - add_popover = "popover_settings"
             - if current_user.frequency.count > 0
               - current_settings = "You will be emailed at <strong>#{current_user.send_time.strftime("%-I %P")} #{current_user.send_timezone}</strong> on <strong>#{current_user.frequencies}</strong>."
