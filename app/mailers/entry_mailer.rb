@@ -12,7 +12,13 @@ class EntryMailer < ActionMailer::Base
          subject: "It's #{Time.now.in_time_zone(user.send_timezone).strftime("%A, %b %-d")} - How did your day go?"
 
     user.increment!(:emails_sent)
+  end
 
+  def import_finished(user, messages)
+    @messages = messages
+    mail from: "Dabble Me <hello@#{ENV['SMTP_DOMAIN']}>",
+         to: "#{user.full_name} <#{user.email}>",
+         subject: "OhLife Photo Import Complete"
   end
 
   private

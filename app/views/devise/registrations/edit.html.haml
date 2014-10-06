@@ -97,6 +97,6 @@
 
     .col-md-12.center
       %br
-      =link_to registration_path(resource_name), class: "s-delete j-delete-user", data: { confirm: "Are you sure? There is no undo." }, method: :delete do
+      =link_to registration_path(resource_name), class: "s-delete j-delete-user", data: { confirm: "Are you sure? This will delete your account and #{pluralize(@user.entries.count,'entry')}. There is no undo." }, method: :delete do
         %h5 Delete your account & all associated entries
       %br

@@ -4,5 +4,6 @@
 ---
 :concurrency: 4
 :queues:
-  - [default, 6]
+  - [default, 3]
+  - [import, 6]
   - [entry, 9]
