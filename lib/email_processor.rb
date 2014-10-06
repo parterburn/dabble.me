@@ -67,6 +67,7 @@ class EmailProcessor
       end
 
       user.increment!(:emails_received)
+      UserMailer.second_welcome_email(self).deliver if user.emails_received == 1 && user.entries.count == 1
     end
 
   end

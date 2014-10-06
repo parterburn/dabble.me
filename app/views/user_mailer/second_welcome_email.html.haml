@@ -1,0 +1,14 @@
+%p We're here to help you remember what's happened in your life - now that you've written your first entry, you're well on your way. That's something to feel good about!
+
+%p
+  You can check out your entry here:
+  =link_to "https://dabble.me/entries", "https://dabble.me/entries"
+
+- if @user.frequnecies.present?
+  %p
+    P.S. You'll receive emails every #{@user.frequnecies} at #{current_user.send_time.strftime("%-I %P")} #{current_user.send_timezone}.
+    =link_to "Change this?", "https://dabble.me/users/edit"
+- else
+  %p
+    P.S. You have email reminders turned off, so you won't receive prompts in the future.
+    =link_to "Change this?", "https://dabble.me/users/edit"
