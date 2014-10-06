@@ -22,7 +22,7 @@ class ImportController < ApplicationController
       FileUtils.mv tmp.tempfile.path, file
 
       ImportWorker.perform_async(current_user.id, tmp.original_filename)
-      flash[:notice] = "Importing has started - you will be emailed completion details."
+      flash[:notice] = "Photo Import has started. You will be emailed upon completion."
       redirect_to entries_path
     else
       FileUtils.rm tmp.tempfile.path if tmp

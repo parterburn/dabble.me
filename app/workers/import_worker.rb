@@ -46,7 +46,7 @@ class ImportWorker
 
     FileUtils.rm_r dir, :force => true
     
-    messages << "Finished importing #{ActionController::Base.helpers.pluralize(count,'photo')}" if count > 0
+    messages << "Finished importing #{ActionController::Base.helpers.pluralize(count,'photo')}." if count > 0
     messages << "\rError importing #{ActionController::Base.helpers.pluralize(error_count,'photo')}:" if error_count > 0
     errors.each do |error|
       messages << error

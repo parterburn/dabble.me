@@ -24,29 +24,23 @@
       %br
       %br
     .clearfix
-  -if current_user.is_admin?
-    %hr
-    .well.col-md-8.col-md-offset-2
+  %hr
+  .well.col-md-8.col-md-offset-2
+    .col-md-4.center
+      %div
+        %h3 Step 2 (beta):
+        %h4 Import OhLife Photos
+      %br
+    = form_tag(import_ohlife_images_path, :multipart => true) do
       .col-md-4.center
-        %div
-          %h3 Step 2 (beta):
-          %h4 Import OhLife Photos
         %br
-      = form_tag(import_ohlife_images_path, :multipart => true) do
-        .col-md-4.center
-          %br
-          = label_tag 'zip_file', "Choose ZIP file of photos"
-          = file_field_tag 'zip_file', :class=>"center"
-          %br
-        .col-md-4.center
-          %br
-          = submit_tag "Upload ZIP File", :class => "btn btn-primary"
-          .clearfix
+        = label_tag 'zip_file', "Choose ZIP file of photos"
+        = file_field_tag 'zip_file', :class=>"center"
+        %br
+      .col-md-4.center
+        %br
+        = submit_tag "Upload ZIP File", :class => "btn btn-primary"
         .clearfix
-      .alert.alert-warning.center
-        You may need to split up the ZIP file that you downloaded from OhLife into smaller ZIP files.
-        %br
-        %strong This importer works best with ZIP files less than 20 MB and less than 20 files.
-  -else
-    %br
-    %br
+      .clearfix
+    .alert.alert-warning.center
+      %strong Results may be best if split into ZIP files less than 30 MB.

@@ -16,7 +16,7 @@ class EntryMailer < ActionMailer::Base
 
   def import_finished(user, messages)
     @messages = messages
-    mail from: "Dabble Me <hello@#{ENV['SMTP_DOMAIN']}>",
+    mail from: "Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>",
          to: "#{user.full_name} <#{user.email}>",
          subject: "OhLife Photo Import Complete"
   end

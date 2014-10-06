@@ -100,3 +100,11 @@
       =link_to registration_path(resource_name), class: "s-delete j-delete-user", data: { confirm: "Are you sure? This will delete your account and #{pluralize(@user.entries.count,'entry')}. There is no undo." }, method: :delete do
         %h5 Delete your account & all associated entries
       %br
+      %h4
+        Export all entries as
+        =link_to "TXT", export_entries_path(:txt)
+        (plain text)
+        or
+        =link_to "JSON", export_entries_path(:json)
+        (rich formatting)
+      %br
