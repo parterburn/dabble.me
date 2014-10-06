@@ -1,11 +1,12 @@
 - title ("Admin Dashboard")
-= javascript_include_tag "//www.google.com/jsapi", "chartkick"
+/= javascript_include_tag "//www.google.com/jsapi", "chartkick"
 
 .row.s-admin-container
   .col-md-12
     %h3
-      =link_to "#", class: "j-admin-toggle-all s-toggle-all noline", title: "Toggle All" do
-        %i.fa.fa-plus
+      -#
+        =link_to "#", class: "j-admin-toggle-all s-toggle-all noline", title: "Toggle All" do
+          %i.fa.fa-plus
       Admin Dashboard
 
   .col-md-12
@@ -46,14 +47,31 @@
   .col-md-12
     %hr
 
-  .col-md-12
-    %h4 Users created
-    = line_chart @dashboard.users_by_day_since(30.days.ago)
-    %h4 Entries created
-    = line_chart @dashboard.entries_by_day_since(30.days.ago)
+  .col-md-3
+    %strong Total Emails Sent
+  .col-md-3
+    - emails_sent_total = User.all.sum(:emails_sent)
+    %strong= emails_sent_total
+  .clearfix
+  .col-md-3
+    %strong Total Emails Received
+  .col-md-2
+    - emails_received_total = User.all.sum(:emails_received)
+    %strong= emails_received_total
+  .col-md-2
+    %strong #{number_to_percentage(emails_received_total.to_f/emails_sent_total.to_f*100, precision: 0)}
+
+  -#
+    .col-md-12
+      %hr  
+    .col-md-12
+      %h4 Users created
+      = line_chart @dashboard.users_by_day_since(30.days.ago)
+      %h4 Entries created
+      = line_chart @dashboard.entries_by_day_since(30.days.ago)
 
   .col-md-12
-    %hr
+    %hr      
 
   .col-md-12
     .row
@@ -64,7 +82,9 @@
         %strong #{number_with_delimiter(all_users_count)}
 
       - if all_users_count > 0
-        %table.table.table-bordered.table-striped.sortable.s-hide.col-md-12.j-admin-emails.well
+        %br
+        %br
+        %table.table.table-bordered.table-striped.sortable.j-admin-emails.well
           %thead
             %tr
               %th{"data-mainsort" => "true", "data-defaultsort" => "asc", :style => "width: 5%"} ID
@@ -85,36 +105,37 @@
 
 
   .clearfix
-  %br
-  .col-md-12
-    - total_daily_emails = 0
-    - %w(Sunday Monday Tueday Wednesday Thursday Friday Saturday).each do |day|
-      .row
-        .col-md-3
-          %strong=link_to "#{day}", "#", class: "j-admin-days"
-        -users = User.where('frequency ~ ?', day[0..2]).order(:send_time)
-        -total_daily_emails += users.length
-        .col-md-2
-          %strong #{number_with_delimiter(users.length)}
-        .col-md-2
-          %strong #{number_to_percentage(users.length.to_f/all_users_count.to_f*100, precision: 0)}
-        - if users.length > 0
-          .col-md-12.s-hide.j-admin-emails.well
-            .row
-              .col-md-4
-                %strong Email
-              .col-md-2
-                %strong Name                
-              .col-md-1
-                %strong Time
-              .col-md-5
-                %strong Timezone   
-            -users.each do |user|
+  -#
+    %br
+    .col-md-12
+      - total_daily_emails = 0
+      - %w(Sunday Monday Tueday Wednesday Thursday Friday Saturday).each do |day|
+        .row
+          .col-md-3
+            %strong=link_to "#{day}", "#", class: "j-admin-days"
+          -users = User.where('frequency ~ ?', day[0..2]).order(:send_time)
+          -total_daily_emails += users.length
+          .col-md-2
+            %strong #{number_with_delimiter(users.length)}
+          .col-md-2
+            %strong #{number_to_percentage(users.length.to_f/all_users_count.to_f*100, precision: 0)}
+          - if users.length > 0
+            .col-md-12.s-hide.j-admin-emails.well
               .row
-                .col-md-4=mail_to user.email
-                .col-md-2=user.full_name
-                .col-md-1=user.send_time.hour
-                .col-md-5=user.send_timezone
+                .col-md-4
+                  %strong Email
+                .col-md-2
+                  %strong Name                
+                .col-md-1
+                  %strong Time
+                .col-md-5
+                  %strong Timezone   
+              -users.each do |user|
+                .row
+                  .col-md-4=mail_to user.email
+                  .col-md-2=user.full_name
+                  .col-md-1=user.send_time.hour
+                  .col-md-5=user.send_timezone
     .row
       %br
       .col-md-3
@@ -156,101 +177,83 @@
               .col-md-4=mail_to user.email
               .col-md-6=user.full_name
 
-    .row
-      %br
-      .col-md-3
-        %strong=link_to "Users with Entries", "#", class: "j-admin-days"
-      - users_with_entries = User.with_entries
-      .col-md-2
-        %strong #{number_with_delimiter(users_with_entries.length)}
-      .col-md-2
-        %strong #{number_to_percentage(users_with_entries.length.to_f/all_users_count.to_f*100, precision: 0)}
-      - if users_with_entries.length > 0
-        .col-md-12.s-hide.j-admin-emails.well
-          .row
-            .col-md-4
-              %strong Email
-            .col-md-6
-              %strong Name              
-          -users_with_entries.each do |user|
+    -#
+      .row
+        %br
+        .col-md-3
+          %strong=link_to "Users with Entries", "#", class: "j-admin-days"
+        - users_with_entries = User.with_entries
+        .col-md-2
+          %strong #{number_with_delimiter(users_with_entries.length)}
+        .col-md-2
+          %strong #{number_to_percentage(users_with_entries.length.to_f/all_users_count.to_f*100, precision: 0)}
+        - if users_with_entries.length > 0
+          .col-md-12.s-hide.j-admin-emails.well
             .row
-              .col-md-4=mail_to user.email
-              .col-md-6=user.full_name       
+              .col-md-4
+                %strong Email
+              .col-md-6
+                %strong Name              
+            -users_with_entries.each do |user|
+              .row
+                .col-md-4=mail_to user.email
+                .col-md-6=user.full_name       
 
-    .row
-      .col-md-3
-        %strong=link_to "Users without Entries", "#", class: "j-admin-days"
-      - users_without_entries = User.without_entries
-      .col-md-2
-        %strong #{number_with_delimiter(users_without_entries.length)}
-      .col-md-2
-        %strong #{number_to_percentage(users_without_entries.length.to_f/all_users_count.to_f*100, precision: 0)}
-      - if users_without_entries.length > 0
-        .col-md-12.s-hide.j-admin-emails.well
-          .row
-            .col-md-4
-              %strong Email
-            .col-md-6
-              %strong Name              
-          -users_without_entries.each do |user|
+      .row
+        .col-md-3
+          %strong=link_to "Users without Entries", "#", class: "j-admin-days"
+        - users_without_entries = User.without_entries
+        .col-md-2
+          %strong #{number_with_delimiter(users_without_entries.length)}
+        .col-md-2
+          %strong #{number_to_percentage(users_without_entries.length.to_f/all_users_count.to_f*100, precision: 0)}
+        - if users_without_entries.length > 0
+          .col-md-12.s-hide.j-admin-emails.well
             .row
-              .col-md-4=mail_to user.email
-              .col-md-6=user.full_name                                      
+              .col-md-4
+                %strong Email
+              .col-md-6
+                %strong Name              
+            -users_without_entries.each do |user|
+              .row
+                .col-md-4=mail_to user.email
+                .col-md-6=user.full_name                                      
 
-    .row
-      %br
-      .col-md-3
-        %strong=link_to "Send Past Entry", "#", class: "j-admin-days"
-      - send_past_users = User.where('send_past_entry = true')
-      .col-md-2
-        %strong #{number_with_delimiter(send_past_users.length)}
-      .col-md-2
-        %strong #{number_to_percentage(send_past_users.length.to_f/all_users_count.to_f*100, precision: 0)}
-      - if send_past_users.length > 0
-        .col-md-12.s-hide.j-admin-emails.well
-          .row
-            .col-md-4
-              %strong Email
-            .col-md-6
-              %strong Name
-          -send_past_users.each do |user|
+    -#
+      .row
+        %br
+        .col-md-3
+          %strong=link_to "Send Past Entry", "#", class: "j-admin-days"
+        - send_past_users = User.where('send_past_entry = true')
+        .col-md-2
+          %strong #{number_with_delimiter(send_past_users.length)}
+        .col-md-2
+          %strong #{number_to_percentage(send_past_users.length.to_f/all_users_count.to_f*100, precision: 0)}
+        - if send_past_users.length > 0
+          .col-md-12.s-hide.j-admin-emails.well
             .row
-              .col-md-4=mail_to user.email
-              .col-md-6=user.full_name
+              .col-md-4
+                %strong Email
+              .col-md-6
+                %strong Name
+            -send_past_users.each do |user|
+              .row
+                .col-md-4=mail_to user.email
+                .col-md-6=user.full_name
 
-    .row
-      %br
-      .col-md-3
-        %strong Est Monthly Emails Sent
-      .col-md-2
-        %strong=total_daily_emails * 4
-  
-  .col-md-12
-    %hr
+    -#
+      .row
+        %br
+        .col-md-3
+          %strong Est Monthly Emails Sent
+        .col-md-2
+          %strong=total_daily_emails * 4
 
-  .col-md-3
-    %strong Emails Sent
-  .col-md-3
-    - emails_sent_total = 0
-    - @users.each do |user|
-      - emails_sent_total += user.emails_sent
-    %strong= emails_sent_total
-  .clearfix
-  .col-md-3
-    %strong Emails Received
-  .col-md-2
-    - emails_received_total = 0
-    - @users.each do |u|
-      - emails_received_total += u.emails_received
-    %strong= emails_received_total
-  .col-md-2
-    %strong #{number_to_percentage(emails_received_total.to_f/emails_sent_total.to_f*100, precision: 0)}
-
-
-  .col-md-12
-    %hr
 
   -#
+    .col-md-12
+      %hr
+
     .col-md-12
       %h4 Trialing Users 14 days ago
       .col-md-4
