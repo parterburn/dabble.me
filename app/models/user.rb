@@ -8,8 +8,6 @@ class User < ActiveRecord::Base
 
   has_many :entries, dependent: :destroy
 
-  before_save { email.downcase! }
-
   serialize :frequency, Array
 
   scope :subscribed_to_emails, -> { where("frequency NOT LIKE '%[]%'") }
@@ -17,6 +15,7 @@ class User < ActiveRecord::Base
   scope :with_entries, -> { includes(:entries).where("entries.id > 0").references(:entries) }
   scope :without_entries, -> { includes(:entries).where("entries.id IS null").references(:entries) }
 
+  before_save { email.downcase! }
   after_create do
     send_welcome_email
     subscribe_to_mailchimp if Rails.env.production?
@@ -97,14 +96,18 @@ class User < ActiveRecord::Base
     def subscribe_to_mailchimp
       if ENV['MAILCHIMP_API_KEY'].present?
         gb = Gibbon::API.new
-        gb.lists.subscribe({
-          :id => ENV['MAILCHIMP_LIST_ID'],
-          :email => {:email => self.email},
-          :merge_vars => {
-            :FNAME => self.first_name,
-            :LNAME => self.last_name,
-            :GROUP => "Signed Up" },
-          :double_optin => false})
+        begin
+          gb.lists.subscribe({
+            :id => ENV['MAILCHIMP_LIST_ID'],
+            :email => {:email => self.email},
+            :merge_vars => {
+              :FNAME => self.first_name,
+              :LNAME => self.last_name,
+              :GROUP => "Signed Up" },
+            :double_optin => false})
+        rescue Gibbon::MailChimpError => e
+          # already subscribed
+        end
       end
     end
 
