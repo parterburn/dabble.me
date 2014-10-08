@@ -1,24 +1,19 @@
 %footer.footer
-  .container.center
+  .container
     %hr
-    %p.muted
-      = link_to privacy_path, title: "Privacy Policy" do
-        %span.fa.fa-lock
-        %span.hidden-xs Privacy
-      &nbsp;&middot;&nbsp;        
-      =link_to "Powered by donations",donate_path, title: "Donate Now"
-      &nbsp;&middot;&nbsp;        
-      = mail_to "hello@#{ENV['MAIN_DOMAIN']}", :encode => "hex", title: "Contact Support" do
-        %span.fa.fa-envelope-o
-        %span.hidden-xs Contact
-    %p.muted
-      = link_to 'http://twitter.com/parterburn', title: "Built by Paul Arterburn" do
-        %span.fa.fa-twitter
-        %span.hidden-xs Built by @parterburn
+    %p.muted.float-left
+      =link_to "Contact & FAQs", faqs_path, title: "Contact & FAQs"
       &nbsp;&middot;&nbsp;
-      = link_to 'http://github.com/parterburn/dabble.me', title: "View code on GitHub" do
-        %span.fa.fa-github
-        %span.hidden-xs Open sourced
+      =link_to "Donate", donate_path, title: "Donate Now"
+      &nbsp;&middot;&nbsp;
+      = link_to "Privacy", privacy_path, title: "Privacy Policy"
+    %p.muted.float-right
+      = link_to 'http://twitter.com/parterburn', title: "Built by Paul Arterburn" do
+        %i.fa.fa-code
+        with
+        %i.fa.fa-heart
+        by
+        %strong Paul Arterburn
 
 .j-back-to-top.s-back-to-top
   =link_to "#" do

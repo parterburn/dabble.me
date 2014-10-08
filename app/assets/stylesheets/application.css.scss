@@ -99,6 +99,14 @@ html, body {
   height: 150px;
   clear:both;
   padding-top:0px;
+  @media screen and (max-width: 678px) {
+    text-align:center;
+    p {
+      float:none !important;
+      width:100%;
+      text-align:center;
+    }
+  }  
 } 
 
 .s-inspiration {
@@ -234,7 +242,6 @@ label {
 
 .s-features {
   margin-top:40px;
-  margin-bottom:70px;
   font-size:17px;
   font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;  
   i {
@@ -245,6 +252,9 @@ label {
     li {
       margin:10px auto;
     }
+  }
+  .s-more-info {
+    margin-bottom:70px;
   }
 }
 

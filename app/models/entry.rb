@@ -11,8 +11,6 @@ class Entry < ActiveRecord::Base
   validates :image_url, :valid_url => true
   validates :entry, presence: true
 
-  #before_save :format_body
-
   alias_attribute :entry, :body
 
   scope :only_images, -> { where("image_url IS NOT null").where("image_url != ''") }
@@ -48,10 +46,6 @@ class Entry < ActiveRecord::Base
   end
 
   private
-
-    def format_body
-      #self.body = ActionController::Base.helpers.simple_format(self.body) if self.body
-    end
 
     def ensure_protocol # For urls
       self.image_url = self.image_url.strip.gsub(' ', "%20") unless image_url.blank?
