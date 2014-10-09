@@ -48,9 +48,6 @@ gem 'zip-zip'
 # Pagination
 # gem 'kaminari'
 
-# App monitoring
-gem 'newrelic_rpm'
-
 # Security
 # gem 'secure_headers'
 
@@ -106,4 +103,8 @@ group :staging, :production do
   #gem 'puma_auto_tune'
   gem 'rack-timeout'
   #gem 'rails_12factor'
+end
+
+group :production do
+  gem "skylight"  
 end
