@@ -18,7 +18,7 @@ class EntriesController < ApplicationController
         @entries = current_user.entries
         @title = ActionController::Base.helpers.pluralize(@entries.length,"entry")+ " from All Time"
       else
-        @entries = current_user.entries.last(30)
+        @entries = current_user.entries.reverse.last(30).reverse
         if @entries.length == 30
           @title = "Your latest " + ActionController::Base.helpers.pluralize(@entries.length,"entry")
         else
