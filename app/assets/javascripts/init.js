@@ -24,18 +24,19 @@
         container: "body",
         html: true
       }).popover('show');
+
+      $("[rel='tooltip']").tooltip({
+        container: "body"
+      });
     }
 
-    setTimeout(function(){
-      $("[rel='popover_settings']").popover('hide');
-    }, 10000);
+    $("[rel='popover']").click(function (e) {
+        //e.stopPropagation();
+        $(this).popover('hide');
+    });
 
     $(".j-paid").click(function(e) {
       $.cookie('donated', true, { expires: 30, path: '/' });
-    });
-
-    $("[rel='tooltip']").tooltip({
-      container: "body"
     });
 
     //$.rails.confirm = function(message) { var here = swal({title: "Are you sure?", text: message, type: "error", confirmButtonText: "Delete", showCancelButton: true, cancelButtonText: "No!" }); };
