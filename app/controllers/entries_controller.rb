@@ -4,24 +4,27 @@ class EntriesController < ApplicationController
 
   def index
     begin
-      if params[:images].present?
+      if params[:photos].present?
         @entries = current_user.entries.only_images
-        @title = "Photos"
+        @title = ActionController::Base.helpers.pluralize(@entries.length,"entry")+ " with photos"
       elsif params[:year].present? && params[:month].present?
         @entries = current_user.entries.where("date >= to_date('#{params[:year]}-#{params[:month]}','YYYY-MM') AND date < to_date('#{params[:year]}-#{params[:month].to_i+1}','YYYY-MM')")
         date = Date.parse(params[:month]+'/'+params[:year])
-        @title = "#{date.strftime('%b %Y')}"
+        @title = ActionController::Base.helpers.pluralize(@entries.length,"entry")+ " from #{date.strftime('%b %Y')}"
       elsif params[:year].present?
         @entries = current_user.entries.where("date >= '#{params[:year]}-01-01'::DATE AND date <= '#{params[:year]}-12-31'::DATE")
-        @title = "#{params[:year]}"
+        @title = ActionController::Base.helpers.pluralize(@entries.length,"entry")+ " from #{params[:year]}"
+      elsif params[:all].present?
+        @entries = current_user.entries
+        @title = ActionController::Base.helpers.pluralize(@entries.length,"entry")+ " from All Time"
       else
-        ActionController::ShowAllEntries
+        @entries = current_user.entries.last(30)
+        if @entries.length == 30
+          @title = "Your latest " + ActionController::Base.helpers.pluralize(@entries.length,"entry")
+        else
+          @title = "Your latest entries"
+        end
       end
-    rescue
-      @entries = current_user.entries
-      @title = "All Time"
-    ensure
-      @entries = @entries.sort_by(&:date).reverse
     end
   end
 
@@ -79,6 +82,7 @@ class EntriesController < ApplicationController
   end
 
   def edit
+    store_location
     @entry = Entry.find(params[:id])
   end
 
@@ -98,19 +102,19 @@ class EntriesController < ApplicationController
       end
       if @existing_entry.save
         @entry.delete
-        flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime("%B %-d")}."
-        redirect_to @existing_entry
+        flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime("%B %-d")}. <a href='#entry-#{@existing_entry.id}' class='alert-link'>View merged entry</a>.".html_safe
+        redirect_back_or_to entries_path
       else
         render 'edit'        
       end
     elsif params[:entry][:entry].blank?
       @entry.destroy
       flash[:notice] = "Entry deleted!"
-      redirect_to entries_path
+      redirect_back_or_to entries_path
     else
       if @entry.update(entry_params)
-        flash[:notice] = "Entry successfully updated!"
-        redirect_to @entry
+        flash[:notice] = "Entry successfully updated! <a href='#entry-#{@entry.id}' class='alert-link'>View entry</a>.".html_safe
+        redirect_back_or_to entries_path
       else
         render 'edit'
       end

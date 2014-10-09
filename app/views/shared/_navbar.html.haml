@@ -15,7 +15,7 @@
       %ul.nav.navbar-nav
         - if user_signed_in?
           %li{:class=>"#{'active' if current_page?(entries_path)}"}
-            =link_to "All Entries", entries_path
+            =link_to "View Entries", entries_path
 
           %li{:class=>"#{'active' if current_page?(new_entry_path)}"}
             =link_to "New Entry", new_entry_path
@@ -34,7 +34,10 @@
                 %i.fa.fa-lightbulb-o
             %li{:class=>"#{'active' if current_page?(admin_path)}"}
               =link_to admin_path, title: "Admin Dashboard" do
-                %i.fa.fa-dashboard                
+                %i.fa.fa-dashboard      
+        - else
+          %li{:class=>"#{'active' if current_page?(ohlife_alternative_path)}"}
+            =link_to "Import OhLife Entries & Images", ohlife_alternative_path, title: "OhLife Alternative"
 
       %ul.nav.navbar-nav.navbar-right
 

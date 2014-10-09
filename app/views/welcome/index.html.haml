@@ -31,15 +31,18 @@
 -else
   .center.s-landing-page
     %h1 Welcome to Dabble Me
-    %h2.muted The free & open source replacement to OhLife (a private place to write)
+    %h2.muted The free & open source replacement to OhLife
     %br
     .col-md-6.col-md-offset-3
-      %p.muted Dabble Me helps people remember what's happened in their life. Use it as a light-weight journal on a daily, weekly, or even monthly basis...it's up to you!
+      %p.muted
+        What were you doing last month? How about last week?
+        %br
+        Dabble Me helps you remember what's happened in your life.
       %br
 
   .clearfix
   .center
-    = link_to "Get Started", new_user_registration_path, :class => 'btn btn-info btn-lg col-md-4 col-md-offset-4'
+    = link_to "Get Started (it's free)", new_user_registration_path, :class => 'btn btn-info btn-lg col-md-4 col-md-offset-4'
     .clearfix
   %br
   .clearfix

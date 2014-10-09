@@ -4,20 +4,20 @@
 
   - if @entries.length > 0
     .col-md-8.col-md-offset-1
-      %h3 #{pluralize(@entries.length,'entry')} from #{@title}
+      %h3 #{@title}
 
-    .col-md-2.float-right.hidden-sm.hidden-xs
-      %h3
-        =link_to entries_path do
+    .col-md-2.float-right.hidden-sm.hidden-xs.s-date-groups
+      %h3{:class => "#{'active' if current_page?(all_entries_path)}"}
+        =link_to all_entries_path do
           .s-date-left
-            All            
+            All
           .s-date-right
             #{current_user.entries.length}
           .clearfix
 
-      - @entries.group_by{|c| c.date.strftime "%Y" }.each do |year_str,year_entries|
+      - current_user.entries.reverse.group_by{|c| c.date.strftime "%Y" }.each do |year_str,year_entries|
         =link_to entries_path(year: year_str) do
-          %h4.s-date-year
+          %h4.s-date-year{:class => "#{'active' if params[:year] == year_str}"}
             .s-date-left
               = year_str
             .s-date-right
@@ -25,7 +25,7 @@
           .clearfix
 
         - year_entries.group_by{|c| c.date.strftime "%b" }.each do |month_str,date_entries|
-          =link_to entries_path(year: year_str, month: month_str.to_date.strftime('%m')) do
+          =link_to entries_path(year: year_str, month: month_str.to_date.strftime('%m')), :class => "#{'active' if params[:year] == year_str && params[:month] == month_str.to_date.strftime('%m')}" do
             .s-date-left
               = month_str
             .s-date-right
@@ -33,8 +33,8 @@
             .clearfix
       %br
       - if (only_imgages = current_user.entries.only_images.length) > 0
-        =link_to entries_path(images: true) do
-          %h4
+        =link_to entries_path(photos: true) do
+          %h4{:class => "#{'active' if params[:photos] == "true"}"}
             .s-date-left
               Photos
             .s-date-right
@@ -62,7 +62,7 @@
         =link_to "Import from OhLife", import_ohlife_path, :class => "btn btn-primary btn-lg"
 
 
-  - @entries.each do |entry|
+  - @entries.reverse.each do |entry|
     %br
-    .col-md-8.col-md-offset-1.well
+    .col-md-8.col-md-offset-1.well{:id => "entry-#{entry.id}"}
       = render :partial => 'entries/entry', :locals => {:entry => entry}

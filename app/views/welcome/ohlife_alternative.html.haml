@@ -1,0 +1,39 @@
+- title "Dabble Me - the free aternative to OhLife"
+
+.center.s-landing-page
+  %h1 The Free OhLife Alternative
+  %h2.muted Looking to replace OhLife? You're at the right place.
+  %br
+  .clearfix
+  =image_tag "ohlifelogo.gif"  
+  .clearfix
+  %br
+  .col-md-6.col-md-offset-3
+    %h4.muted Dabble Me was built as a near-replica of OhLife that gives you the same private place to write.
+    %br
+
+  = link_to "Import OhLife", new_user_registration_path, :class => 'btn btn-info btn-lg col-md-4 col-md-offset-4'
+
+.col-md-6.col-lg-4.col-lg-offset-2.s-features
+  %ul
+    %li
+      %i.fa.fa-check
+      Import OhLife Entries and Photos
+    %li
+      %i.fa.fa-check
+      Daily or Weekly Email Reminders
+    %li
+      %i.fa.fa-check
+      Reply-to-post entries
+
+.col-md-6.col-lg-5.s-features
+  %ul
+    %li
+      %i.fa.fa-check
+      \#ThrowbackThursday everyday in your inbox
+    %li
+      %i.fa.fa-check
+      Attach an image to save it with the entry
+    %li
+      %i.fa.fa-check
+      =link_to "Pay what you can",donate_path

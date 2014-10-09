@@ -15,17 +15,20 @@ Rails.application.routes.draw do
   
   get '/entries/random' => 'entries#random', :as => "random_entry"
 
+  get '/entries/all' => 'entries#index', :as => "all_entries"
   resources :entries
   resources :inspirations
-
 
   root 'welcome#index'
 
   get '/admin' => 'application#admin', :as => "admin"
-
+  
+  get '/write', to: redirect('/entries/new')
+  get '/past', to: redirect('/entries')
   get '/privacy' => 'welcome#privacy'
   get '/faqs'     => 'welcome#faqs'
   get '/donate'  => 'welcome#donate'
+  get '/ohlife-alternative'  => 'welcome#ohlife_alternative'
   
   post '/email_processor' => 'griddler/emails#create'
 

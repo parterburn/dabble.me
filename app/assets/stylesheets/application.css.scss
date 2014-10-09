@@ -164,6 +164,13 @@ html, body {
   padding-bottom:15px;
 }
 
+.s-date-groups {
+  .active {
+    font-weight: bold;
+    color:#3b76a3;
+  }
+}
+
 .s-day-email label {
   font-weight: normal;
 }

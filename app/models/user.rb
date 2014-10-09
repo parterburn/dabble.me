@@ -70,14 +70,17 @@ class User < ActiveRecord::Base
   def random_entry(entry_date=nil)
     if entry_date.present?
       entry_date = Date.parse(entry_date.to_s)
-      if exactly_last_year_entry = Entry.where(:user_id => id).where(:date => entry_date.last_year).first
+
+      if Date.leap?(Time.now.in_time_zone(self.send_timezone).year) && leap_year_entry = Entry.where(:user_id => id).where(:date => entry_date.in_time_zone(self.send_timezone) - 4.years).first
+        leap_year_entry
+      elsif exactly_last_year_entry = Entry.where(:user_id => id).where(:date => entry_date.in_time_zone(self.send_timezone).last_year).first
         exactly_last_year_entry
-      elsif exactly_30_days_ago = Entry.where(:user_id => id).where(:date => entry_date - 30.days).first
+      elsif exactly_30_days_ago = Entry.where(:user_id => id).where(:date => entry_date.in_time_zone(self.send_timezone).last_month).first
         exactly_30_days_ago
-      elsif exactly_7_days_ago = Entry.where(:user_id => id).where(:date => entry_date - 7.days).first
+      elsif exactly_7_days_ago = Entry.where(:user_id => id).where(:date => entry_date.in_time_zone(self.send_timezone).last_week).first
         exactly_7_days_ago
-      elsif (count = Entry.where(:user_id => id).where("date < (?)", entry_date - 365.days).count) > 0
-        Entry.where(:user_id => id).where("date < (?)", entry_date - 365.days).offset(rand(count)).first #grab entry way back
+      elsif (count = Entry.where(:user_id => id).where("date < (?)", entry_date.in_time_zone(self.send_timezone).last_year).count) > 0
+        Entry.where(:user_id => id).where("date < (?)", entry_date.in_time_zone(self.send_timezone).last_year).offset(rand(count)).first #grab entry way back
       else
         self.random_entry
       end

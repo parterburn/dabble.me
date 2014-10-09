@@ -19,6 +19,14 @@ class ApplicationController < ActionController::Base
     end
   end
 
+  def redirect_back_or_to(default, id=0)
+    redirect_to session.delete(:return_to) || default
+  end
+
+  def store_location
+    session[:return_to] = request.referrer
+  end
+
   protected
 
   def configure_permitted_parameters
