@@ -43,7 +43,6 @@
 
     $(window).on('hashchange', function() {
       var $entry = $(window.location.hash);
-      window.location.hash = "";
       if ($entry.length > 0) {
         $('body,html').animate({scrollTop: $entry.offset().top - 70}, 600);
       }
