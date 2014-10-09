@@ -65,8 +65,8 @@ class EntriesController < ApplicationController
         @existing_entry.image_url = params[:entry][:image_url]
       end
       if @existing_entry.save
-        flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime("%B %-d")}."
-        redirect_to @existing_entry
+        flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime("%B %-d")}. <a href='/entries/all#entry-#{@existing_entry.id}' class='alert-link'>View merged entry</a>.".html_safe
+        redirect_to entries_path
       else
         render 'new'
       end
@@ -74,7 +74,7 @@ class EntriesController < ApplicationController
       @entry = @user.entries.create(entry_params)
       if @entry.save
         flash[:notice] = "Entry created successfully!"
-        redirect_to @entry
+        redirect_to entries_path
       else
         render 'new'
       end
