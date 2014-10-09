@@ -11,6 +11,7 @@ class User < ActiveRecord::Base
   serialize :frequency, Array
 
   scope :subscribed_to_emails, -> { where("frequency NOT LIKE '%[]%'") }
+  scope :not_just_signed_up, -> { where("created_at < (?)", DateTime.now - 18.hours) }
   scope :daily_emails, -> { where(:frequency => "---\n- Sun\n- Mon\n- Tue\n- Wed\n- Thu\n- Fri\n- Sat\n") }
   scope :with_entries, -> { includes(:entries).where("entries.id > 0").references(:entries) }
   scope :without_entries, -> { includes(:entries).where("entries.id IS null").references(:entries) }

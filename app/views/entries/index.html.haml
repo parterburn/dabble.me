@@ -15,7 +15,7 @@
             #{current_user.entries.length}
           .clearfix
 
-      - current_user.entries.reverse.group_by{|c| c.date.strftime "%Y" }.each do |year_str,year_entries|
+      - current_user.entries.group_by{|c| c.date.strftime "%Y" }.each do |year_str,year_entries|
         =link_to entries_path(year: year_str) do
           %h4.s-date-year{:class => "#{'active' if params[:year] == year_str}"}
             .s-date-left
@@ -62,7 +62,7 @@
         =link_to "Import from OhLife", import_ohlife_path, :class => "btn btn-primary btn-lg"
 
 
-  - @entries.reverse.each do |entry|
+  - @entries.each do |entry|
     %br
     .col-md-8.col-md-offset-1.well{:id => "entry-#{entry.id}"}
       = render :partial => 'entries/entry', :locals => {:entry => entry}

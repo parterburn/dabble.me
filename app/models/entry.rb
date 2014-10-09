@@ -12,10 +12,11 @@ class Entry < ActiveRecord::Base
   validates :entry, presence: true
 
   alias_attribute :entry, :body
-
-  scope :only_images, -> { where("image_url IS NOT null").where("image_url != ''") }
-  scope :only_ohlife, -> { includes(:inspiration).where("inspirations.category = 'OhLife'").references(:inspiration) }
-  scope :only_email, -> { where("original_email_body IS NOT null") }
+  
+  default_scope { order('date DESC') }
+  scope :only_images, -> { where("image_url IS NOT null").where("image_url != ''").order('date DESC') }
+  scope :only_ohlife, -> { includes(:inspiration).where("inspirations.category = 'OhLife'").references(:inspiration).order('date DESC') }
+  scope :only_email, -> { where("original_email_body IS NOT null").order('date DESC') }
 
   def date_format_long
     #Friday, Feb 3, 2014
