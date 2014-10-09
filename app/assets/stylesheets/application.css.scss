@@ -99,7 +99,7 @@ html, body {
   height: 150px;
   clear:both;
   padding-top:0px;
-  @media screen and (max-width: 678px) {
+  @media screen and (max-width: 767px) {
     text-align:center;
     p {
       float:none !important;
@@ -218,6 +218,10 @@ label {
     font-size: 18px;
     color: #333333;
     font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;  
+    @media screen and (max-width: 767px) {
+      font-size:16px;
+      font-weight:400;
+    }
   }
 }
 
