@@ -5,8 +5,8 @@ class EmailProcessor
     @token = pick_meaningful_recipient(email.to)
     @from = email.from[:email]
     @subject = email.subject
-    @body = email.body
-    @raw_body = email.raw_body
+    @body = email.body.force_encoding('iso-8859-1').encode('utf-8')
+    @raw_body = email.raw_body.force_encoding('iso-8859-1').encode('utf-8')
     @attachments = email.attachments
   end
 
