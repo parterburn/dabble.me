@@ -42,6 +42,8 @@ gem "rest-client" #RESTClient
 gem 'rubyzip', '~> 1.1.6'
 gem 'zip-zip'
 
+gem 'rack-utf8_sanitizer'
+
 #gem "chartkick" #admin dashboard
 #gem "groupdate" #admin dashboard
 

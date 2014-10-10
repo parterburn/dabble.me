@@ -166,6 +166,8 @@ GEM
     rack-test (0.6.2)
       rack (>= 1.0)
     rack-timeout (0.0.4)
+    rack-utf8_sanitizer (1.2.3)
+      rack (~> 1.0)
     rails (4.1.6)
       actionmailer (= 4.1.6)
       actionpack (= 4.1.6)
@@ -325,6 +327,7 @@ DEPENDENCIES
   pry-rails
   puma
   rack-timeout
+  rack-utf8_sanitizer
   rails (= 4.1.6)
   randomized_field (~> 0.1.0)
   rest-client
