@@ -36,14 +36,13 @@ class EmailProcessor
       end
 
       @body = ActionController::Base.helpers.simple_format(@body) #format the email body coming in to basic HTML
-      @body.gsub!("\r\n", " ") #remove word wrap breaks      
       @body.gsub!(/\*([a-zA-Z0-9]+[a-zA-Z0-9 ]*[a-zA-Z0-9]+)\*/i, '<b>\1</b>') #bold when bold needed
       @body.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "") #remove "inline image" text
 
       date = parse_subject_for_date(@subject, user)
       existing_entry = user.existing_entry(date.to_s)
 
-      inspiration_id = parse_body_for_inspiration_id(@raw_body.gsub("\n>",""))
+      inspiration_id = parse_body_for_inspiration_id(@raw_body)
 
       if existing_entry.present?
         existing_entry.body += "<hr>#{@body}"
@@ -102,11 +101,14 @@ class EmailProcessor
 
     def parse_body_for_inspiration_id(raw_body)
       inspiration_id = nil
-      Inspiration.all.each do |inspiration|
-        if raw_body.include? inspiration.body
-          inspiration_id = inspiration.id
-          break
+      begin
+        Inspiration.all.each do |inspiration|
+          if raw_body.include? inspiration.body
+            inspiration_id = inspiration.id
+            break
+          end
         end
+      rescue
       end
       inspiration_id
     end
