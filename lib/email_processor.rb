@@ -88,22 +88,16 @@ class EmailProcessor
 
     def parse_subject_for_date(subject,user)
       #Find the date from the subject "It's Sept 2 - How was your day?" and figure out the best year
-      parse_day_regex = /((Jan|Feb|Marc?h?|Apri?l?|May|June?|July?|Aug|Sept?|Oct|Nov|Dec)\s([0-9]{1,2}))/i
-      if subject.scan(parse_day_regex).present?
-        date_stripped = subject.scan(parse_day_regex)[0][0]
-        parsed_date = Time.parse(date_stripped)
-        now = Time.now.in_time_zone(user.send_timezone)
-        dates = [ parsed_date, parsed_date.prev_year ]
-        dates_to_use = []
-        dates.each do |d|
-          if now - d> 0
-           dates_to_use << d
-           end
-        end
-        dates_to_use.min_by { | d | ( d - now ).abs }
-      else
-        Time.now.in_time_zone(user.send_timezone).strftime("%Y-%m-%d")
+      now = Time.now
+      parsed_date = Time.parse(subject) rescue now
+      dates = [ parsed_date, parsed_date.prev_year ]
+      dates_to_use = []
+      dates.each do |d|
+        if now - d> 0
+         dates_to_use << d
+         end
       end
+      dates_to_use.min_by { | d | ( d - now ).abs }.strftime("%Y-%m-%d")
     end
 
     def parse_body_for_inspiration_id(raw_body)
