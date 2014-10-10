@@ -4,21 +4,21 @@ class EntriesController < ApplicationController
 
   def index
     begin
-      if params[:photos].present?
+      if params[:group] == "photos"
         @entries = current_user.entries.only_images
         @title = ActionController::Base.helpers.pluralize(@entries.length,"entry")+ " with photos"
-      elsif params[:year].present? && params[:month].present?
-        @entries = current_user.entries.where("date >= to_date('#{params[:year]}-#{params[:month]}','YYYY-MM') AND date < to_date('#{params[:year]}-#{params[:month].to_i+1}','YYYY-MM')")
-        date = Date.parse(params[:month]+'/'+params[:year])
+      elsif params[:group] =~ /[0-9]{4}/ && params[:subgroup] =~ /[0-9]{2}/
+        @entries = current_user.entries.where("date >= to_date('#{params[:group]}-#{params[:subgroup]}','YYYY-MM') AND date < to_date('#{params[:group]}-#{params[:subgroup].to_i+1}','YYYY-MM')")
+        date = Date.parse(params[:subgroup]+'/'+params[:group])
         @title = ActionController::Base.helpers.pluralize(@entries.length,"entry")+ " from #{date.strftime('%b %Y')}"
-      elsif params[:year].present?
-        @entries = current_user.entries.where("date >= '#{params[:year]}-01-01'::DATE AND date <= '#{params[:year]}-12-31'::DATE")
-        @title = ActionController::Base.helpers.pluralize(@entries.length,"entry")+ " from #{params[:year]}"
-      elsif params[:all].present?
+      elsif params[:group] =~ /[0-9]{4}/
+        @entries = current_user.entries.where("date >= '#{params[:group]}-01-01'::DATE AND date <= '#{params[:group]}-12-31'::DATE")
+        @title = ActionController::Base.helpers.pluralize(@entries.length,"entry")+ " from #{params[:group]}"
+      elsif params[:group] == "all"
         @entries = current_user.entries
         @title = ActionController::Base.helpers.pluralize(@entries.length,"entry")+ " from All Time"
       else
-        @entries = current_user.entries.reverse.last(30).reverse
+        @entries = current_user.entries.first(30)
         if @entries.length == 30
           @title = "Your latest " + ActionController::Base.helpers.pluralize(@entries.length,"entry")
         else

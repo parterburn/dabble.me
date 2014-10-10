@@ -15,7 +15,7 @@ Rails.application.routes.draw do
   
   get '/entries/random' => 'entries#random', :as => "random_entry"
 
-  get '/entries/all' => 'entries#index', :as => "all_entries"
+  get '/entries/(:group)(/:subgroup)' => 'entries#index', :as => "group_entries"
   resources :entries
   resources :inspirations
 
@@ -23,6 +23,7 @@ Rails.application.routes.draw do
 
   get '/admin' => 'application#admin', :as => "admin"
   
+  get '/settings', to: redirect('/users/edit')
   get '/write', to: redirect('/entries/new')
   get '/past', to: redirect('/entries')
   get '/privacy' => 'welcome#privacy'
