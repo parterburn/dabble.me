@@ -31,7 +31,7 @@
         .input-group.date
           %span.input-group-addon
             %i.fa.fa-calendar
-          = f.text_field :date, :value =>  @entry.date_format_long, :placeholder=>"2014-10-31", :class => "form-control"
+          = f.text_field :date, :value =>  @entry.date_format_short(""), :placeholder=>"October 11 2014", :class => "form-control"
 
         %br
 
@@ -57,9 +57,13 @@
 
 -if @entry.date.blank?
   :javascript
+    var tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);  
     $('.input-group.date').datepicker({
-        format: "DD, M d, yyyy",
+        format: "MM d yyyy",
         todayHighlight: true,
+        keyboardNavigation: false,
+        endDate: tomorrow,
         autoclose: true,
         todayBtn: "linked"
       }).datepicker("setDate", new Date());

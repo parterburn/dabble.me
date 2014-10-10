@@ -39,14 +39,12 @@
       $.cookie('donated', true, { expires: 30, path: '/' });
     });
 
-    //$.rails.confirm = function(message) { var here = swal({title: "Are you sure?", text: message, type: "error", confirmButtonText: "Delete", showCancelButton: true, cancelButtonText: "No!" }); };
+    $(".j-entry-link").click(function(e) {
+      var $entry = $("#entry-"+$(this).attr('data-id'));
+      $('body,html').animate({scrollTop: $entry.offset().top - 70}, 600);
+    });
 
-    $(window).on('hashchange', function() {
-      var $entry = $(window.location.hash);
-      if ($entry.length > 0) {
-        $('body,html').animate({scrollTop: $entry.offset().top - 70}, 600);
-      }
-    }).trigger('hashchange');    
+    //$.rails.confirm = function(message) { var here = swal({title: "Are you sure?", text: message, type: "error", confirmButtonText: "Delete", showCancelButton: true, cancelButtonText: "No!" }); };
 
   };
 

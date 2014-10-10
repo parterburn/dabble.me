@@ -15,6 +15,8 @@ Rails.application.routes.draw do
   
   get '/entries/random' => 'entries#random', :as => "random_entry"
 
+  get '/entries/new' => 'entries#new', :as => "new_entry"
+  get '/entries/edit(/:id)' => 'entries#edit', :as => "edit_entry"
   get '/entries/(:group)(/:subgroup)' => 'entries#index', :as => "group_entries"
   resources :entries
   resources :inspirations

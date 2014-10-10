@@ -1,13 +1,6 @@
 (function(){
   window.DABBLE.pages.Entries_new = window.DABBLE.pages.Entries_create = function(){
 
-    $('.input-group.date').datepicker({
-      format: "DD, M d, yyyy",
-      todayHighlight: true,
-      autoclose: true,
-      todayBtn: "linked"
-    });
-
     $(".j-filepicker-remove").click(function( event ) {
       event.preventDefault();
       $("#entry_image_url").val("");
