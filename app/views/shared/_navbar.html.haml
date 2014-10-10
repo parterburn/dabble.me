@@ -14,8 +14,8 @@
     
       %ul.nav.navbar-nav
         - if user_signed_in?
-          %li{:class=>"#{'active' if current_page?(entries_path)}"}
-            =link_to "View Entries", entries_path
+          %li{:class=>"#{'active' if current_page?(past_entries_path)}"}
+            =link_to "View Entries", past_entries_path
 
           %li{:class=>"#{'active' if current_page?(new_entry_path)}"}
             =link_to "New Entry", new_entry_path
@@ -42,7 +42,7 @@
       %ul.nav.navbar-nav.navbar-right
 
         - if user_signed_in?
-          - if current_user.sign_in_count < 10 && !cookies[:viewed_settings] && (current_page?(entries_path) || current_page?(root_path))
+          - if current_user.sign_in_count < 10 && !cookies[:viewed_settings] && (current_page?(past_entries_path) || current_page?(root_path))
             - add_popover = "popover_settings"
             - if current_user.frequency.count > 0
               - current_settings = "You will be emailed at <strong>#{current_user.send_time.strftime("%-I %P")} #{current_user.send_timezone}</strong> on <strong>#{current_user.frequencies}</strong>."

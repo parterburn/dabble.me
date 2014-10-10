@@ -33,7 +33,7 @@ class EntriesController < ApplicationController
     if @entry
       render "show"
     else
-      redirect_to entries_path
+      redirect_to past_entries_path
     end
   end
 
@@ -42,7 +42,7 @@ class EntriesController < ApplicationController
     if @entry
       render "show"
     else
-      redirect_to entries_path
+      redirect_to past_entries_path
     end
   end  
 
@@ -103,23 +103,20 @@ class EntriesController < ApplicationController
       if @existing_entry.save
         @entry.delete
         flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime("%B %-d")}. <a href='#entry-#{@existing_entry.id}' data-id='#{@existing_entry.id}' class='alert-link j-entry-link'>View merged entry</a>.".html_safe
-        group_entries_path(@existing_entry.date.strftime("%Y"),@existing_entry.date.strftime("%m"))
+        redirect_to group_entries_path(@existing_entry.date.strftime("%Y"),@existing_entry.date.strftime("%m")) and return
       else
-        render 'edit'
+        render "edit"
       end
     elsif params[:entry][:entry].blank?
       @entry.destroy
       flash[:notice] = "Entry deleted!"
-      redirect_back_or_to entries_path
+      redirect_back_or_to past_entries_path
     else
       if @entry.update(entry_params)
         flash[:notice] = "Entry successfully updated! <a href='#entry-#{@entry.id}' data-id='#{@entry.id}' class='alert-link j-entry-link'>View entry</a>.".html_safe
-        p "*"*100
-        p @entry.date.strftime("%Y")
-        p "*"*100
-        group_entries_path(@entry.date.strftime("%Y"),@entry.date.strftime("%m"))
+        redirect_to group_entries_path(@entry.date.strftime("%Y"),@entry.date.strftime("%m"))
       else
-        render 'edit'
+        render "edit"
       end
     end
 
@@ -129,7 +126,7 @@ class EntriesController < ApplicationController
     @entry = Entry.find(params[:id])
     @entry.destroy
     flash[:notice] = "Entry deleted successfully."
-    redirect_to entries_path
+    redirect_to past_entries_path
   end
 
   def export
@@ -152,7 +149,7 @@ class EntriesController < ApplicationController
     def require_permission
       if current_user != Entry.find(params[:id]).user
         flash[:alert] = "Not authorized"
-        redirect_to entries_path
+        redirect_to past_entries_path
       end
     end
 

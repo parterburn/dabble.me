@@ -57,7 +57,7 @@ class InspirationsController < ApplicationController
     def require_permission
       unless current_user.is_admin?
         flash[:alert] = "Not authorized"
-        redirect_to entries_path
+        redirect_to past_entries_path
       end
     end
 end
