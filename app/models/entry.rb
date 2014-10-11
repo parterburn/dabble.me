@@ -33,10 +33,13 @@ class Entry < ActiveRecord::Base
     self.date.present? ? self.date.strftime("%A") : "Noday?"
   end
 
-  def time_ago_in_words_or_numbers
-    #Almost 1 year ago
-    in_words = time_ago_in_words(self.date).capitalize
-    in_words.to_s.include?("Over") ? "Exactly #{number_with_delimiter((Time.zone.now - self.date).to_i / 1.day)} days" : in_words
+  def time_ago_in_words_or_numbers(user)
+    if (!Date.leap?(Time.now.in_time_zone(user.send_timezone).year) && (DateTime.now.in_time_zone(user.send_timezone) - self.date).to_i / 1.day == 365) || (Date.leap?(Time.now.in_time_zone(user.send_timezone).year) && (DateTime.now.in_time_zone(user.send_timezone) - self.date).to_i / 1.day == 366)
+      "Exactly 1 year ago"
+    else
+      in_words = distance_of_time_in_words(self.date,Time.now.in_time_zone(user.send_timezone)).capitalize
+      in_words.to_s.include?("Over") ? "Exactly #{number_with_delimiter((Time.now.in_time_zone(user.send_timezone) - self.date).to_i / 1.day)} days" : in_words
+    end
   end
 
   def sanitized_body
