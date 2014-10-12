@@ -3,10 +3,10 @@ require 'fileutils'
 class EmailProcessor
   def initialize(email)
     @token = pick_meaningful_recipient(email.to)
-    @from = email.from[:email]
+    @from = email.from[:email].downcase
     @subject = email.subject
-    @body = email.body.force_encoding('iso-8859-1').encode('utf-8')
-    @raw_body = email.raw_body.force_encoding('iso-8859-1').encode('utf-8')
+    @body = EmailReplyParser.parse_reply(email.body)
+    @raw_body = email.raw_body
     @attachments = email.attachments
   end
 

@@ -44,6 +44,9 @@
       $('body,html').animate({scrollTop: $entry.offset().top - 70}, 600);
     });
 
+    
+    $(".pictureFrame img").unveil(300);
+
     //$.rails.confirm = function(message) { var here = swal({title: "Are you sure?", text: message, type: "error", confirmButtonText: "Delete", showCancelButton: true, cancelButtonText: "No!" }); };
 
   };

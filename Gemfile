@@ -42,6 +42,8 @@ gem "rest-client" #RESTClient
 gem 'rubyzip', '~> 1.1.6'
 gem 'zip-zip'
 
+gem "email_reply_parser"
+
 gem 'rack-utf8_sanitizer'
 
 #gem "chartkick" #admin dashboard
@@ -82,7 +84,7 @@ group :development, :test do
 end
 
 group :development do
-  #gem 'better_errors'
+  gem 'better_errors'
   gem 'binding_of_caller'
   gem 'bullet'
   gem 'meta_request'
