@@ -53,15 +53,33 @@ class EmailProcessor
         elsif filepicker_url.present?
           existing_entry.image_url = filepicker_url
         end
-        existing_entry.save
+        begin
+          existing_entry.save
+        rescue
+          existing_entry.body = existing_entry.body.force_encoding('iso-8859-1').encode('utf-8')
+          existing_entry.save
+        end
       else
-        entry = user.entries.create!(
-          date: date,
-          body: @body,
-          image_url: filepicker_url,
-          original_email_body: @raw_body,
-          inspiration_id: inspiration_id
-        )
+
+        begin
+          entry = user.entries.create!(
+            date: date,
+            body: @body,
+            image_url: filepicker_url,
+            original_email_body: @raw_body,
+            inspiration_id: inspiration_id
+          )
+        rescue
+          body = body.force_encoding('iso-8859-1').encode('utf-8')
+          entry = user.entries.create!(
+            date: date,
+            body: @body,
+            image_url: filepicker_url,
+            original_email_body: @raw_body,
+            inspiration_id: inspiration_id
+          )
+        end
+
         entry.save
       end
 
