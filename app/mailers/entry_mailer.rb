@@ -1,9 +1,11 @@
 class EntryMailer < ActionMailer::Base
   helper.extend(ApplicationHelper)
+  include FilepickerRails::ApplicationHelper
 
   def send_entry(user)
     @user = user
     @random_entry = user.random_entry(Time.now.in_time_zone(user.send_timezone).strftime("%Y-%m-%d"))
+    @random_entry_filepicker_url = filepicker_image_url(@random_entry.image_url, w: 300, h: 300, fit: 'max', cache: true, rotate: :exif) if @random_entry.image_url.present?
     @random_inspiration = random_inspiration
 
     headers['x-smtpapi'] = { :category => [ "Entry" ] }.to_json
