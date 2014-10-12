@@ -5,7 +5,11 @@ class EmailProcessor
     @token = pick_meaningful_recipient(email.to)
     @from = email.from[:email].downcase
     @subject = email.subject
-    @body = EmailReplyParser.parse_reply(email.body)
+    if email.body.ascii_only?
+      @body = EmailReplyParser.parse_reply(email.body)
+    else
+      @body = email.body
+    end
     @raw_body = email.raw_body
     @attachments = email.attachments
   end
