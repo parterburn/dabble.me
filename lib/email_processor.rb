@@ -39,7 +39,8 @@ class EmailProcessor
         end
       end
 
-      @body = unfold_paragraphs(@body)
+      @body = unfold_paragraphs(@body) #fix wrapped plain text
+      @body.gsub!(/\n\n\n/, "\n\n \n\n") #allow double line breaks
       @body = ActionController::Base.helpers.simple_format(@body) #format the email body coming in to basic HTML
       @body.gsub!(/\*([a-zA-Z0-9]+[a-zA-Z0-9 ]*[a-zA-Z0-9]+)\*/i, '<b>\1</b>') #bold when bold needed
       @body.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "") #remove "inline image" text
