@@ -46,6 +46,7 @@ class EmailProcessor
 
       if existing_entry.present?
         existing_entry.body += "<hr>#{@body}"
+        existing_entry.original_email_body = @raw_body
         existing_entry.inspiration_id = inspiration_id if inspiration_id.present?
         if existing_entry.image_url.present?
           img_url_cdn = filepicker_url.gsub("https://www.filepicker.io", ENV['FILEPICKER_CDN_HOST'])
@@ -57,6 +58,7 @@ class EmailProcessor
           existing_entry.save
         rescue
           existing_entry.body = existing_entry.body.force_encoding('iso-8859-1').encode('utf-8')
+          existing_entry.original_email_body = existing_entry.original_email_body.force_encoding('iso-8859-1').encode('utf-8')
           existing_entry.save
         end
       else
@@ -70,7 +72,8 @@ class EmailProcessor
             inspiration_id: inspiration_id
           )
         rescue
-          body = body.force_encoding('iso-8859-1').encode('utf-8')
+          @body = @body.force_encoding('iso-8859-1').encode('utf-8')
+          @raw_body = @raw_body.force_encoding('iso-8859-1').encode('utf-8')
           entry = user.entries.create!(
             date: date,
             body: @body,
