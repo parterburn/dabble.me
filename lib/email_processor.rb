@@ -35,6 +35,7 @@ class EmailProcessor
         end
       end
 
+      @body = unfold_paragraphs(@body)
       @body = ActionController::Base.helpers.simple_format(@body) #format the email body coming in to basic HTML
       @body.gsub!(/\*([a-zA-Z0-9]+[a-zA-Z0-9 ]*[a-zA-Z0-9]+)\*/i, '<b>\1</b>') #bold when bold needed
       @body.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "") #remove "inline image" text
@@ -118,6 +119,26 @@ class EmailProcessor
          end
       end
       dates_to_use.min_by { | d | ( d - now ).abs }.strftime("%Y-%m-%d")
+    end
+
+    def unfold_paragraphs(body)
+      blank = false
+      text  = ''
+      body.split(/\n/).each do |line|
+        if /\S/ !~ line
+          text << "\n\n"
+          blank = true
+        else
+          if /^(\s+|[*])/ =~ line
+            text << (line.rstrip + "\n")
+          else
+            text << (line.rstrip + " ")
+          end
+          blank = false
+        end
+      end
+      text = text.gsub("\n\n\n","\n\n")
+      return text
     end
 
     def parse_body_for_inspiration_id(raw_body)
