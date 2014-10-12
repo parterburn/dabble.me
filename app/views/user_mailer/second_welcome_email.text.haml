@@ -1,12 +1,17 @@
 We're here to help you remember what's happened in your life - now that you've written your first entry, you're well on your way. That's something to feel good about!
 \ 
-You can check out your entry here: https://#{ENV['MAIN_DOMAIN']}/entries
+- if @user.send_past_entry? && @first_entry.present?
+  Here's what you wrote...
+  \ 
+  #{@first_entry.sanitized_body}
+  \ 
+You can check out your entry here: https://#{ENV['MAIN_DOMAIN']}/past
 \ 
 - if @user.frequencies.present?
   \ 
   \ 
-  P.S. You'll receive emails every #{@user.frequencies} at #{@user.send_time.strftime("%-I %P")} #{@user.send_timezone}. Change your settings here: https://#{ENV['MAIN_DOMAIN']}/users/edit
+  P.S. You'll receive emails every #{@user.frequencies} at #{@user.send_time.strftime("%-I %P")} #{@user.send_timezone}. Change your settings here: https://#{ENV['MAIN_DOMAIN']}/settings
 - else
   \ 
   \ 
-  P.S. You have email reminders turned off, so you won't receive prompts in the future. Change your settings here: https://#{ENV['MAIN_DOMAIN']}/users/edit
+  P.S. You have email reminders turned off, so you won't receive prompts in the future. Change your settings here: https://#{ENV['MAIN_DOMAIN']}/settings
