@@ -14,7 +14,7 @@ class ImportController < ApplicationController
 
   def process_ohlife_images
     tmp = params[:zip_file]
-    if tmp && tmp.content_type == "application/zip" || tmp.content_type == "application/x-7z-compressed" || tmp.content_type == "application/x-zip-compressed"
+    if tmp && File.extname(tmp.original_filename).downcase == ".zip"
 
       #move uploaded ZIP file to /tmp/ohlife_zips
       dir = FileUtils.mkdir_p("public/ohlife_zips/#{current_user.user_key}")
