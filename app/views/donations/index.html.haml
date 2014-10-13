@@ -1,9 +1,14 @@
 - title "Donations on Dabble Me"
 
 .row
-  .col-md-12
+  .col-md-2
     %p
       =link_to "Add new donation", new_donation_path, class: "btn btn-info"
+  .col-md-6
+    %p
+      %strong
+        Total Donations:
+        =number_to_currency(@donations.sum(:amount))
 
 .row
   .col-md-1
@@ -28,7 +33,7 @@
     .col-md-2
       =i.date.strftime("%Y-%m-%d")
     .col-md-1
-      =number_with_delimiter(i.amount)
+      =number_to_currency(number_with_delimiter(i.amount))
     .col-md-3
       - if i.user
         =i.user.email
