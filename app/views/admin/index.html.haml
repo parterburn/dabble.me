@@ -1,12 +1,8 @@
 - title ("Admin Dashboard")
-/= javascript_include_tag "//www.google.com/jsapi", "chartkick"
 
 .row.s-admin-container
   .col-md-12
     %h3
-      -#
-        =link_to "#", class: "j-admin-toggle-all s-toggle-all noline", title: "Toggle All" do
-          %i.fa.fa-plus
       Admin Dashboard
 
   .col-md-12
@@ -27,14 +23,15 @@
         %strong #{number_with_delimiter(photos_count)}
       .col-md-2
         %strong #{number_to_percentage(photos_count.to_f/all_count.to_f*100, precision: 0)}
-    .row
-      .col-md-3
-        %strong All Entries from OhLife
-      - ohlife_count = @entries.only_ohlife.length
-      .col-md-2
-        %strong #{number_with_delimiter(ohlife_count)}
-      .col-md-2
-        %strong #{number_to_percentage(ohlife_count.to_f/all_count.to_f*100, precision: 0)}
+    -#
+      .row
+        .col-md-3
+          %strong All Entries from OhLife
+        - ohlife_count = @entries.only_ohlife.length
+        .col-md-2
+          %strong #{number_with_delimiter(ohlife_count)}
+        .col-md-2
+          %strong #{number_to_percentage(ohlife_count.to_f/all_count.to_f*100, precision: 0)}
     .row
       .col-md-3
         %strong All Entries from Email
@@ -50,25 +47,16 @@
   .col-md-3
     %strong Total Emails Sent
   .col-md-3
-    - emails_sent_total = User.all.sum(:emails_sent)
+    - emails_sent_total = @users.sum(:emails_sent)
     %strong= emails_sent_total
   .clearfix
   .col-md-3
     %strong Total Emails Received
   .col-md-2
-    - emails_received_total = User.all.sum(:emails_received)
+    - emails_received_total = @users.sum(:emails_received)
     %strong= emails_received_total
   .col-md-2
     %strong #{number_to_percentage(emails_received_total.to_f/emails_sent_total.to_f*100, precision: 0)}
-
-  -#
-    .col-md-12
-      %hr  
-    .col-md-12
-      %h4 Users created
-      = line_chart @dashboard.users_by_day_since(30.days.ago)
-      %h4 Entries created
-      = line_chart @dashboard.entries_by_day_since(30.days.ago)
 
   .col-md-12
     %hr      
@@ -103,171 +91,6 @@
                 %td{:"data-value"=>"#{user.entries.count}"}=number_with_delimiter(user.entries.count)
                 %td{:"data-value"=>"#{user.emails_sent}"}=number_with_delimiter(user.emails_sent)
                 %td{:"data-value"=>"#{user.emails_received}"}=number_with_delimiter(user.emails_received)
-                %td=user.donations.all.sum(:amount)
+                %td=user.donations.sum(:amount)
 
-
-  .clearfix
-  -#
-    %br
-    .col-md-12
-      - total_daily_emails = 0
-      - %w(Sunday Monday Tueday Wednesday Thursday Friday Saturday).each do |day|
-        .row
-          .col-md-3
-            %strong=link_to "#{day}", "#", class: "j-admin-days"
-          -users = User.where('frequency ~ ?', day[0..2]).order(:send_time)
-          -total_daily_emails += users.length
-          .col-md-2
-            %strong #{number_with_delimiter(users.length)}
-          .col-md-2
-            %strong #{number_to_percentage(users.length.to_f/all_users_count.to_f*100, precision: 0)}
-          - if users.length > 0
-            .col-md-12.s-hide.j-admin-emails.well
-              .row
-                .col-md-4
-                  %strong Email
-                .col-md-2
-                  %strong Name                
-                .col-md-1
-                  %strong Time
-                .col-md-5
-                  %strong Timezone   
-              -users.each do |user|
-                .row
-                  .col-md-4=mail_to user.email
-                  .col-md-2=user.full_name
-                  .col-md-1=user.send_time.hour
-                  .col-md-5=user.send_timezone
-    .row
-      %br
-      .col-md-3
-        %strong=link_to "Unsubscribed", "#", class: "j-admin-days"
-      - unsubscribed_users = User.where('frequency LIKE ?', '%[]%')
-      .col-md-2
-        %strong #{number_with_delimiter(unsubscribed_users.length)}
-      .col-md-2
-        %strong #{number_to_percentage(unsubscribed_users.length.to_f/all_users_count.to_f*100, precision: 0)}
-      - if unsubscribed_users.length > 0
-        .col-md-12.s-hide.j-admin-emails.well
-          .row
-            .col-md-4
-              %strong Email
-            .col-md-6
-              %strong Name              
-          -unsubscribed_users.each do |user|
-            .row
-              .col-md-4=mail_to user.email
-              .col-md-6=user.full_name
-
-    .row
-      .col-md-3
-        %strong=link_to "Daily Users", "#", class: "j-admin-days"
-      - daily_users = User.daily_emails
-      .col-md-2
-        %strong #{number_with_delimiter(daily_users.length)}
-      .col-md-2
-        %strong #{number_to_percentage(daily_users.length.to_f/all_users_count.to_f*100, precision: 0)}
-      - if daily_users.length > 0
-        .col-md-12.s-hide.j-admin-emails.well
-          .row
-            .col-md-4
-              %strong Email
-            .col-md-6
-              %strong Name              
-          -daily_users.each do |user|
-            .row
-              .col-md-4=mail_to user.email
-              .col-md-6=user.full_name
-
-    -#
-      .row
-        %br
-        .col-md-3
-          %strong=link_to "Users with Entries", "#", class: "j-admin-days"
-        - users_with_entries = User.with_entries
-        .col-md-2
-          %strong #{number_with_delimiter(users_with_entries.length)}
-        .col-md-2
-          %strong #{number_to_percentage(users_with_entries.length.to_f/all_users_count.to_f*100, precision: 0)}
-        - if users_with_entries.length > 0
-          .col-md-12.s-hide.j-admin-emails.well
-            .row
-              .col-md-4
-                %strong Email
-              .col-md-6
-                %strong Name              
-            -users_with_entries.each do |user|
-              .row
-                .col-md-4=mail_to user.email
-                .col-md-6=user.full_name       
-
-      .row
-        .col-md-3
-          %strong=link_to "Users without Entries", "#", class: "j-admin-days"
-        - users_without_entries = User.without_entries
-        .col-md-2
-          %strong #{number_with_delimiter(users_without_entries.length)}
-        .col-md-2
-          %strong #{number_to_percentage(users_without_entries.length.to_f/all_users_count.to_f*100, precision: 0)}
-        - if users_without_entries.length > 0
-          .col-md-12.s-hide.j-admin-emails.well
-            .row
-              .col-md-4
-                %strong Email
-              .col-md-6
-                %strong Name              
-            -users_without_entries.each do |user|
-              .row
-                .col-md-4=mail_to user.email
-                .col-md-6=user.full_name                                      
-
-    -#
-      .row
-        %br
-        .col-md-3
-          %strong=link_to "Send Past Entry", "#", class: "j-admin-days"
-        - send_past_users = User.where('send_past_entry = true')
-        .col-md-2
-          %strong #{number_with_delimiter(send_past_users.length)}
-        .col-md-2
-          %strong #{number_to_percentage(send_past_users.length.to_f/all_users_count.to_f*100, precision: 0)}
-        - if send_past_users.length > 0
-          .col-md-12.s-hide.j-admin-emails.well
-            .row
-              .col-md-4
-                %strong Email
-              .col-md-6
-                %strong Name
-            -send_past_users.each do |user|
-              .row
-                .col-md-4=mail_to user.email
-                .col-md-6=user.full_name
-
-    -#
-      .row
-        %br
-        .col-md-3
-          %strong Est Monthly Emails Sent
-        .col-md-2
-          %strong=total_daily_emails * 4
-
-
-  -#
-    .col-md-12
-      %hr
-
-    .col-md-12
-      %h4 Trialing Users 14 days ago
-      .col-md-4
-        %strong Email
-      .col-md-3
-        %strong Signed up
-      .col-md-3
-        %strong Entry count
-      .col-md-2
-        %strong Entries per day
-      - @dashboard.users_created_since(14.days.ago).order(:created_at).each do |user|
-        .col-md-4= user.email
-        .col-md-3= user.created_at.to_date
-        .col-md-3= user.entries.where("created_at >= ?", 14.days.ago).count
-        .col-md-2= @dashboard.entries_per_day_for(user)
+.clearfix
