@@ -71,7 +71,7 @@ class User < ActiveRecord::Base
   def random_entry(entry_date=nil)
     if entry_date.present?
       entry_date = Date.parse(entry_date.to_s)
-      if Date.leap?(Time.now.in_time_zone(self.send_timezone).year) && leap_year_entry = Entry.where(:user_id => id).where(:date => entry_date - 4.years).first
+      if Date.leap?(entry_date.year) && entry_date.month == 2 && entry_date.day == 29 && leap_year_entry = Entry.where(:user_id => id).where(:date => entry_date - 4.years).first
         leap_year_entry
       elsif exactly_last_year_entry = Entry.where(:user_id => id).where(:date => entry_date.last_year).first
         exactly_last_year_entry
