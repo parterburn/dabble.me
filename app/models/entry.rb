@@ -38,6 +38,10 @@ class Entry < ActiveRecord::Base
       "Last leap day (4 years ago)"
     elsif Time.now.in_time_zone(user.send_timezone).month == self.date.month && Time.now.in_time_zone(user.send_timezone).day == self.date.day && Time.now.in_time_zone(user.send_timezone).year - 1 == self.date.year
       "Exactly 1 year ago"
+    elsif Time.now.in_time_zone(user.send_timezone).month - 1 == self.date.month && Time.now.in_time_zone(user.send_timezone).day == self.date.day && Time.now.in_time_zone(user.send_timezone).year == self.date.year
+      "Exactly 1 month ago"
+    elsif Time.now.in_time_zone(user.send_timezone).month == self.date.month && Time.now.in_time_zone(user.send_timezone).day - 7 == self.date.day && Time.now.in_time_zone(user.send_timezone).year == self.date.year
+      "Exactly 1 week ago"
     else
       in_words = distance_of_time_in_words(self.date,Time.now.in_time_zone(user.send_timezone)).capitalize
       in_words.to_s.include?("Over") ? "Exactly #{number_with_delimiter((Time.now.in_time_zone(user.send_timezone) - self.date).to_i / 1.day)} days" : in_words
