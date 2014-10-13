@@ -34,7 +34,7 @@ class Entry < ActiveRecord::Base
   end
 
   def time_ago_in_words_or_numbers(user)
-    if self.date.month == 2 && self.date.day == 29 && Time.now.year - 4 == self.date.year
+    if self.date.day == 29 && self.date.month == 2 && Time.now.year - 4 == self.date.year
       "Last leap day (4 years ago)"
     elsif Time.now.in_time_zone(user.send_timezone).month == self.date.month && Time.now.in_time_zone(user.send_timezone).day == self.date.day && Time.now.in_time_zone(user.send_timezone).year - 1 == self.date.year
       "Exactly 1 year ago"
