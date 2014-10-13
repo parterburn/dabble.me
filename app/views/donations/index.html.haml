@@ -8,6 +8,8 @@
     %p
       %strong
         Total Donations:
+        =@donations.length
+        for
         =number_to_currency(@donations.sum(:amount))
 
 .row
