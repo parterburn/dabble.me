@@ -1,0 +1,57 @@
+- title "New Donation on Dabble Me"
+
+.row
+  %br
+  .col-md-8.col-md-offset-2.well
+
+    = form_for :donation, url: donations_path do |f|
+
+      -if @donation.errors.any?
+        #error_explanation
+          .alert.alert-danger
+            - @donation.errors.full_messages.each do |msg|
+              %p= msg
+
+      %div
+        = f.label :date
+        .input-group.date
+          %span.input-group-addon
+            %i.fa.fa-calendar
+          = f.text_field :date, :value =>  "#{@donation.date.strftime("%Y-%m-%d") if @donation.date.present?}", :placeholder=>"2014-10-31", :class => "form-control"
+        %br
+
+      %div
+        = f.label :amount
+        = f.text_field :amount, :class => "form-control"
+        %br
+
+      %div
+        = f.label :user_id
+        = f.text_field :user_id, :class => "form-control"
+        %br
+
+      %div
+        = label_tag :user_email
+        = text_field_tag :user_email, "#{@donation.user.email if @donation.user}", :class => "form-control"
+        %br
+
+      %div
+        = f.label :comments
+        = f.text_area :comments, :class => "form-control", :rows => 2
+        %br
+
+      %div
+        = f.submit "Add Donation", :class => "form-control btn btn-primary"
+
+-if @donation.date.blank?
+  :javascript
+    var tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);  
+    $('.input-group.date').datepicker({
+        format: "yyyy-mm-dd",
+        todayHighlight: true,
+        keyboardNavigation: false,
+        endDate: tomorrow,
+        autoclose: true,
+        todayBtn: "linked"
+      }).datepicker("setDate", new Date());

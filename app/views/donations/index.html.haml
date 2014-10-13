@@ -1,0 +1,38 @@
+- title "Donations on Dabble Me"
+
+.row
+  .col-md-12
+    %p
+      =link_to "Add new donation", new_donation_path, class: "btn btn-info"
+
+.row
+  .col-md-1
+    %h4 Actions
+  .col-md-2
+    %h4 Date
+  .col-md-1
+    %h4 Amount
+  .col-md-3
+    %h4 User
+  .col-md-5
+    %h4 Comments
+
+-@donations.each do |i|
+  .row.s-inspiration-admin
+    .col-md-1
+      =link_to edit_donation_path(i), :class=>"noline", title: "Edit Donation" do
+        %i.fa.fa-pencil
+      &nbsp;
+      = link_to donation_path(i), title: "Delete Donation", class: "s-delete", method: :delete, data: { confirm: 'Are you sure you want to delete this donation? There is no undo.' } do
+        %i.fa.fa-trash
+    .col-md-2
+      =i.date.strftime("%Y-%m-%d")
+    .col-md-1
+      =number_with_delimiter(i.amount)
+    .col-md-3
+      - if i.user
+        =i.user.email
+      - else
+        =i.user_id
+    .col-md-5
+      =i.comments

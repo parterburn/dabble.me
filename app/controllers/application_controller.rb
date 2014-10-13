@@ -6,12 +6,10 @@ class ApplicationController < ActionController::Base
 
   before_filter :configure_permitted_parameters, if: :devise_controller?
 
-
   def admin
     if current_user && current_user.is_admin?
       @users = User.all
       @entries = Entry.all
-      @dashboard = AdminDashboard.new
       render "admin/index"
     else
       flash[:alert] = "Not authorized"

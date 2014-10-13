@@ -11,10 +11,21 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20141009060129) do
+ActiveRecord::Schema.define(version: 20141013050441) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "donations", force: true do |t|
+    t.integer  "user_id"
+    t.decimal  "amount",     precision: 8, scale: 2, default: 0.0
+    t.text     "comments"
+    t.datetime "date"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "donations", ["user_id"], name: "index_donations_on_user_id", using: :btree
 
   create_table "entries", force: true do |t|
     t.datetime "date",                null: false

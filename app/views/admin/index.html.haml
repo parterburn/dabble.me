@@ -91,8 +91,9 @@
               %th{"data-firstsort" => "asc", :style => "width: 30%"} Email
               %th{"data-firstsort" => "asc", :style => "width: 20%"} Name
               %th{"data-firstsort" => "asc", :style => "width: 15%"} Entries
-              %th{"data-firstsort" => "asc", :style => "width: 15%"} Emails Sent
-              %th{"data-firstsort" => "asc", :style => "width: 15%"} Emails Received
+              %th{"data-firstsort" => "asc", :style => "width: 10%"} Sent
+              %th{"data-firstsort" => "asc", :style => "width: 10%"} Received
+              %th{"data-firstsort" => "asc", :style => "width: 10%"} Donations
           %tbody
             -@users.each do |user|
               %tr
@@ -102,6 +103,7 @@
                 %td{:"data-value"=>"#{user.entries.count}"}=number_with_delimiter(user.entries.count)
                 %td{:"data-value"=>"#{user.emails_sent}"}=number_with_delimiter(user.emails_sent)
                 %td{:"data-value"=>"#{user.emails_received}"}=number_with_delimiter(user.emails_received)
+                %td=user.donations.all.sum(:amount)
 
 
   .clearfix

@@ -15,6 +15,7 @@ Rails.application.routes.draw do
 
   resources :entries
   resources :inspirations
+  resources :donations
 
   get '/past/random'               => 'entries#random', :as => "random_entry"
   get '/past'                      => "entries#index",  :as => "past_entries"  

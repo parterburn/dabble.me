@@ -27,7 +27,7 @@
       - if i.category == "OhLife"
         %i.fa.fa-lock{title: "Required by system"}
       - else
-        = link_to inspiration_path(i), title: "Delete Inspiration", class: "s-delete", method: :delete, data: { confirm: 'Are you sure you want to delete this entry? There is no undo.' } do
+        = link_to inspiration_path(i), title: "Delete Inspiration", class: "s-delete", method: :delete, data: { confirm: 'Are you sure you want to delete this inspiration? There is no undo.' } do
           %i.fa.fa-trash
     .col-md-1
       =number_with_delimiter(i.entries.count)

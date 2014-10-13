@@ -7,6 +7,7 @@ class User < ActiveRecord::Base
   randomized_field :user_key, :length => 18, :prefix => 'u'
 
   has_many :entries, dependent: :destroy
+  has_many :donations
 
   serialize :frequency, Array
 
