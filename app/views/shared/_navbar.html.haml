@@ -27,6 +27,10 @@
           %li{:class=>"#{'active' if current_page?(import_ohlife_path)}"}
             =link_to "Import OhLife", import_ohlife_path
 
+          %li
+            = link_to search_path, title: "Search", data: { toggle: "tooltip", placement: "bottom" } do
+              %i.fa.fa-search
+
           - if current_user.is_admin?
             %li.vertical-divider
             %li{:class=>"#{'active' if current_page?(inspirations_path)}"}

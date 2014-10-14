@@ -1,0 +1,24 @@
+- title "Search Your Entries on Dabble Me"
+
+.row
+  .col-md-8.col-md-offset-2
+    = form_for @search, url: search_path, method: :get, html: { class: "form-horizontal" } do |f|
+      .form-group
+        .col-xs-8.col-sm-10
+          = f.text_field :term, class: "form-control input-lg", autofocus: true, placeholder: "What are you looking for?"
+        .col-xs-4.col-sm-1
+          = f.submit "Search", class: "btn btn-primary btn-lg"
+    - if @search.entries.present?
+      %p
+        #{pluralize(@search.entries.count, "entry")} found.
+        %br
+        %br
+      - @search.entries.each do |entry|
+        %br
+        .col-md-12.well{:id => "entry-#{entry.id}"}
+          = render :partial => 'entries/entry', :locals => {:entry => entry}      
+    - elsif @search.term.present?
+      %p
+        Sorry, no entries include
+        = succeed "." do
+          %mark= @search.term

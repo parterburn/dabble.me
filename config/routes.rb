@@ -20,7 +20,8 @@ Rails.application.routes.draw do
   get '/past/random'               => 'entries#random', :as => "random_entry"
   get '/past'                      => "entries#index",  :as => "past_entries"  
   get '/past/(:group)(/:subgroup)' => 'entries#index',  :as => "group_entries"  
-
+  get "/search", to: "searches#show"
+  
   root 'welcome#index'
 
   get '/admin' => 'application#admin', :as => "admin"

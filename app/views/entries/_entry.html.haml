@@ -16,5 +16,8 @@
       =link_to entry.image_url, :target=>"_blank" do
         =image_code(entry,600)
     %br
-  = entry.body.html_safe
+  - if @search.present?
+    = highlight(entry.body.html_safe, @search.term)
+  - else
+    = entry.body.html_safe
 .clearfix
