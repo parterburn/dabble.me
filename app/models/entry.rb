@@ -35,13 +35,13 @@ class Entry < ActiveRecord::Base
 
   def time_ago_in_words_or_numbers(user)
     if self.date.day == 29 && self.date.month == 2 && Time.now.year - 4 == self.date.year
-      "Last leap day (4 years ago)"
+      "Last Leap Day - exactly 4 years"
     elsif Time.now.in_time_zone(user.send_timezone).month == self.date.month && Time.now.in_time_zone(user.send_timezone).day == self.date.day && Time.now.in_time_zone(user.send_timezone).year - 1 == self.date.year
-      "Exactly 1 year ago"
+      "Exactly 1 year"
     elsif Time.now.in_time_zone(user.send_timezone).month - 1 == self.date.month && Time.now.in_time_zone(user.send_timezone).day == self.date.day && Time.now.in_time_zone(user.send_timezone).year == self.date.year
-      "Exactly 1 month ago"
+      "Exactly 1 month"
     elsif Time.now.in_time_zone(user.send_timezone).month == self.date.month && Time.now.in_time_zone(user.send_timezone).day - 7 == self.date.day && Time.now.in_time_zone(user.send_timezone).year == self.date.year
-      "Exactly 1 week ago"
+      "Exactly 1 week"
     else
       in_words = distance_of_time_in_words(self.date,Time.now.in_time_zone(user.send_timezone)).capitalize
       in_words.to_s.include?("Over") ? "Exactly #{number_with_delimiter((Time.now.in_time_zone(user.send_timezone) - self.date).to_i / 1.day)} days" : in_words

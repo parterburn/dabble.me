@@ -5,6 +5,7 @@
   %body
     %p Just reply to this email with your entry for #{Time.now.in_time_zone(@user.send_timezone).strftime("%B %-d")}.
     - if @user.send_past_entry? && @user.entries.count > 5 && @random_entry
+      - show_entry = true
       %p
         %b
           #{@user.throwback_msg} #{@random_entry.time_ago_in_words_or_numbers(@user)} ago you wrote...
@@ -17,9 +18,9 @@
       %p
         %b Once you have a few entries you'll see a blast from the past show up here!
     %p
-      - if @random_entry.present?
+      - if show_entry
         =link_to "View entry", entry_url(@random_entry)
-        &middot;    
+        &middot;
       =link_to "Past entries", "https://#{ENV['MAIN_DOMAIN']}/entries"
       &middot;
       =link_to "Unsubscribe", "https://#{ENV['MAIN_DOMAIN']}/users/edit"
