@@ -6,8 +6,20 @@
     %br
 
   .col-md-6.col-md-offset-3
-    Post new entries by emailing
-    =mail_to "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", :encode=>"hex"
+    %p
+      Post new entries by emailing
+      =mail_to "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", :encode=>"hex"
+    .alert.alert-warning
+      -if current_user.donations.sum(:amount) > 0
+        Thanks for donating&nbsp;
+        %strong>#{number_to_currency(current_user.donations.sum(:amount))}
+        =link_to "Donate more?", donate_path, class: "float-right"
+      - else
+        %strong Amount donated: $0
+        %br
+        Unlock premium features like adding photos, rich formatting, and searching your entries by donating any amount.
+        =link_to "Donate now?", donate_path
+
     %hr
 
   = form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f|

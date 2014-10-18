@@ -10,7 +10,10 @@
   %ol
     %li It's okay to keep it simple! Even one sentence about how your day is going is just fine.
     %li Only you can read what you write. That means there's no wrong way to do this.
-    %li Attach a photo to your reply and it saves right alongside your entry.
+    %li
+      Unlock premium features like attaching photos to your reply by
+      =link_to "donating", "https://#{ENV['MAIN_DOMAIN']}/donate"
+      any amount.
 %hr{:style=>"margin-top: 20px;margin-bottom: 20px;border: 0;border-top: 2px solid whiteSmoke;"}
 %p
   You can always email #{@user.user_key}@#{ENV['SMTP_DOMAIN']} to post new entries&nbsp;
