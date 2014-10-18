@@ -76,11 +76,11 @@ class User < ActiveRecord::Base
         leap_year_entry
       elsif exactly_last_year_entry = Entry.where(:user_id => id).where(:date => entry_date.last_year).first
         exactly_last_year_entry
-      elsif exactly_30_days_ago = Entry.where(:user_id => id).where(:date => entry_date.last_month).first
+      elsif (emails_sent % 3 == 0) && (exactly_30_days_ago = Entry.where(:user_id => id).where(:date => entry_date.last_month).first)
         exactly_30_days_ago
-      elsif exactly_7_days_ago = Entry.where(:user_id => id).where(:date => entry_date.last_week).first
+      elsif (emails_sent % 5 == 0) && (exactly_7_days_ago = Entry.where(:user_id => id).where(:date => entry_date - 7.days).first)
         exactly_7_days_ago
-      elsif (count = Entry.where(:user_id => id).where("date < (?)", entry_date.last_year).count) > 0
+      elsif (count = Entry.where(:user_id => id).where("date < (?)", entry_date.last_year).count) > 30
         Entry.where(:user_id => id).where("date < (?)", entry_date.last_year).offset(rand(count)).first #grab entry way back
       else
         self.random_entry
