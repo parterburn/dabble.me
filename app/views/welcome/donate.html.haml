@@ -1,7 +1,5 @@
 - title "Donate to Dabble Me"
 
-%script{:src => "https://platform.venmo.com/sdk.js"}
-
 .row
   %br
   .col-md-8.col-md-offset-2
@@ -31,9 +29,7 @@
       %br
       %br
       .col-md-6
-        %h4 Venmo
-        %a.venmo-pay-button{"data-recipient-id" => "1397129314566144218"}
+        =link_to image_tag("venmo.png", width: 130, height: 41), "https://venmo.com/parterburn", title: "Donate with Venmo", target: "_blank"
 
       .col-md-6
-        %h4 Gratipay
         %script{"data-gratipay-username" => "parterburn", "data-gratipay-widget" => "button", :src => "//gttp.co/v1.js"}
