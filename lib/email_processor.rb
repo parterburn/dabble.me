@@ -16,10 +16,11 @@ class EmailProcessor
 
   def process
     user = find_user_from_user_key(@token, @from)
+    donation = user.donations.sum(:amount).to_i
 
     if user.present? && @body.present?
 
-      if @attachments.present?
+      if donation > 0 && @attachments.present?
         tmp = @attachments.first
         if tmp.present?
           if tmp.content_type =~ /^image\/png|jpe?g|gif$/i
@@ -32,8 +33,7 @@ class EmailProcessor
               response = MultiJson.load RestClient.post("https://www.filepicker.io/api/store/S3?key=#{ENV['FILEPICKER_API_KEY']}&url=#{img_url}", nil), :symbolize_keys => true
               filepicker_url = response[:url]
             rescue
-            end            
-            
+            end
             FileUtils.rm_r dir, :force => true
           end
         end
@@ -52,6 +52,9 @@ class EmailProcessor
 
       if existing_entry.present?
         existing_entry.body += "<hr>#{@body}"
+        if donation == 0
+          existing_entry.body = existing_entry.sanitized_body
+        end
         existing_entry.original_email_body = @raw_body
         existing_entry.inspiration_id = inspiration_id if inspiration_id.present?
         if existing_entry.image_url.present?
@@ -89,6 +92,9 @@ class EmailProcessor
           )
         end
 
+        if donation == 0
+          entry.body = entry.sanitized_body
+        end
         entry.save
       end
 

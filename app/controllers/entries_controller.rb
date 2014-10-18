@@ -84,6 +84,9 @@ class EntriesController < ApplicationController
   def edit
     store_location
     @entry = Entry.find(params[:id])
+    if current_user.donations.sum(:amount) == 0
+      @entry.entry = @entry.sanitized_body
+    end
   end
 
   def update

@@ -2,23 +2,33 @@
 
 .row
   .col-md-8.col-md-offset-2
-    = form_for @search, url: search_path, method: :get, html: { class: "form-horizontal" } do |f|
+    -if current_user.donations.sum(:amount) > 0
+      = form_for @search, url: search_path, method: :get, html: { class: "form-horizontal" } do |f|
+        .form-group
+          .col-xs-8.col-sm-10
+            = f.text_field :term, class: "form-control input-lg", autofocus: true, placeholder: "What are you looking for?"
+          .col-xs-4.col-sm-1
+            = f.submit "Search", class: "btn btn-primary btn-lg"
+      - if @search.entries.present?
+        %p
+          #{pluralize(@search.entries.count, "entry")} found.
+          %br
+          %br
+        - @search.entries.each do |entry|
+          %br
+          .col-md-12.well{:id => "entry-#{entry.id}"}
+            = render :partial => 'entries/entry', :locals => {:entry => entry}      
+      - elsif @search.term.present?
+        %p
+          Sorry, no entries include
+          = succeed "." do
+            %mark= @search.term
+    - else
+      .alert.alert-warning.well-sm
+        =link_to "Donate now", donate_path, class: "alert-link"
+        to unlock the ability to search your entries.    
       .form-group
         .col-xs-8.col-sm-10
-          = f.text_field :term, class: "form-control input-lg", autofocus: true, placeholder: "What are you looking for?"
+          = text_field_tag "term", "", class: "form-control input-lg disabled", autofocus: true, placeholder: "What are you looking for?", disabled: "true"
         .col-xs-4.col-sm-1
-          = f.submit "Search", class: "btn btn-primary btn-lg"
-    - if @search.entries.present?
-      %p
-        #{pluralize(@search.entries.count, "entry")} found.
-        %br
-        %br
-      - @search.entries.each do |entry|
-        %br
-        .col-md-12.well{:id => "entry-#{entry.id}"}
-          = render :partial => 'entries/entry', :locals => {:entry => entry}      
-    - elsif @search.term.present?
-      %p
-        Sorry, no entries include
-        = succeed "." do
-          %mark= @search.term
+          = submit_tag "Search", disabled: true, class: "btn btn-primary btn-lg disabled"    
