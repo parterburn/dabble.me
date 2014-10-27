@@ -16,7 +16,7 @@
           =link_to image_tag(@random_entry_filepicker_url), @random_entry.image_url
     - elsif @user.send_past_entry?
       %p
-        %b Once you have a few entries you'll see a blast from the past show up here!
+        %b Keep writing...once you have a few entries you'll see a blast from the past show up here!
     %p
       - if show_entry
         =link_to "View entry", entry_url(@random_entry)
