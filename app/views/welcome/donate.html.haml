@@ -19,14 +19,16 @@
     %br
     %br
     .center
-      .col-md-6
+      .col-md-8.well
         %p
+          %form{:action => "https://www.paypal.com/cgi-bin/webscr", :method => "post", :target => "_top"}
+            %input{:name => "cmd", :type => "hidden", :value => "_s-xclick"}
+            %input{:name => "hosted_button_id", :type => "hidden", :value => "74DTWFU5WL3MA"}/
+            %input{:alt => "PayPal - The safer, easier way to pay online!", :border => "0", :name => "submit", :src => "https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif", :type => "image"}
+            %img{:alt => "", :border => "0", :height => "1", :src => "https://www.paypalobjects.com/en_US/i/scr/pixel.gif", :width => "1"}
+        %p{:style=>"text-align:justify"}
+          A
           %strong PayPal
-        %form{:action => "https://www.paypal.com/cgi-bin/webscr", :method => "post", :target => "_top"}
-          %input{:name => "cmd", :type => "hidden", :value => "_s-xclick"}
-          %input{:name => "hosted_button_id", :type => "hidden", :value => "74DTWFU5WL3MA"}/
-          %input{:alt => "PayPal - The safer, easier way to pay online!", :border => "0", :name => "submit", :src => "https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif", :type => "image"}
-          %img{:alt => "", :border => "0", :height => "1", :src => "https://www.paypalobjects.com/en_US/i/scr/pixel.gif", :width => "1"}
-      .col-md-6
-        %br
+          account is not required to contribute this way, you can just use a credit card without creating an account if you like.
+      .col-md-3.col-md-offset-1.well.well-sm{:style=>"margin-top:45px;"}
         =link_to image_tag("venmo.png", width: 130, height: 41), "https://venmo.com/parterburn", title: "Donate with Venmo", target: "_blank"
