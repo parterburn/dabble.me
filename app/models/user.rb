@@ -116,7 +116,8 @@ class User < ActiveRecord::Base
               :FNAME => self.first_name,
               :LNAME => self.last_name,
               :GROUP => "Signed Up" },
-            :double_optin => false})
+            :double_optin => false,
+            :update_existing => true})
         rescue Gibbon::MailChimpError => e
           # already subscribed
         end

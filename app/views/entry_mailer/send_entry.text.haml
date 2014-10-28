@@ -18,4 +18,7 @@ Unsubscribe: https://#{ENV['MAIN_DOMAIN']}/users/edit
 \ 
 \=======================================
 \ 
-=@random_inspiration.body
+- if @user.donations.sum(:amount) == 0 && @user.emails_sent % 7 == 0
+  Keep Dabble Me going strong &amp; unlock premium features: https://#{ENV['MAIN_DOMAIN']}/donate
+- else
+  =@random_inspiration.body

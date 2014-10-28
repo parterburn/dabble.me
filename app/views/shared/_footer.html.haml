@@ -4,12 +4,12 @@
     %p.muted.float-left
       =link_to "Contact & FAQs", faqs_path, title: "Contact & FAQs"
       &nbsp;&middot;&nbsp;
+      = link_to "Privacy", privacy_path, title: "Privacy Policy"      
+      &nbsp;&middot;&nbsp;
       -if current_user && current_user.donations.sum(:amount) > 0
         =link_to "Thanks for donating!", donate_path, title: "Donate Now"
       -else
         =link_to "Donate", donate_path, title: "Donate Now"
-      &nbsp;&middot;&nbsp;
-      = link_to "Privacy", privacy_path, title: "Privacy Policy"
     %p.muted.float-right
       = link_to 'http://twitter.com/parterburn', title: "Built by Paul Arterburn" do
         %i.fa.fa-code

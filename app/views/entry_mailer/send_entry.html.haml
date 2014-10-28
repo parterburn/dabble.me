@@ -26,4 +26,8 @@
       =link_to "Unsubscribe", "https://#{ENV['MAIN_DOMAIN']}/users/edit"
     %hr{:style=>"margin-top: 20px;margin-bottom: 20px;border: 0;border-top: 2px solid whiteSmoke;"}
     %p{style: "color:#CCC"}
-      %i=@random_inspiration.body
+      - if @user.donations.sum(:amount) == 0 && @user.emails_sent % 7 == 0
+        Keep Dabble Me going strong &amp; unlock premium features:
+        =link_to "Donate now!", "https://#{ENV['MAIN_DOMAIN']}/donate"
+      - else
+        %i=@random_inspiration.body
