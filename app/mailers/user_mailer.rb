@@ -12,7 +12,7 @@ class UserMailer < ActionMailer::Base
  def second_welcome_email(user)
     @user = user
     @first_entry = user.entries.first
-    @first_entry_filepicker_url = filepicker_image_url(@first_entry.image_url, w: 300, h: 300, fit: 'max', cache: true, rotate: :exif) if @first_entry.image_url.present?
+    @first_entry_filepicker_url = filepicker_image_url(@first_entry.image_url, w: 300, h: 300, fit: 'max', cache: true, rotate: :exif) if @first_entry.present? && @first_entry.image_url.present?
     mail(from: "Dabble Me <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.email, subject: "Congrats on writing your first entry!")
   end
 end
