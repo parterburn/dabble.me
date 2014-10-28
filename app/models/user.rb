@@ -118,8 +118,8 @@ class User < ActiveRecord::Base
               :GROUP => "Signed Up" },
             :double_optin => false,
             :update_existing => true})
-        rescue Gibbon::MailChimpError => e
-          # already subscribed
+        rescue
+          # already subscribed or issues with Mailchimp's API
         end
       end
     end
