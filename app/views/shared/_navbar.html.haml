@@ -32,16 +32,23 @@
               %i.fa.fa-search
 
           - if current_user.is_admin?
-            %li.vertical-divider
-            %li{:class=>"#{'active' if current_page?(inspirations_path)}"}
-              =link_to inspirations_path, title: "Inspirations" do
-                %i.fa.fa-lightbulb-o
-            %li{:class=>"#{'active' if current_page?(donations_path)}"}
-              =link_to donations_path, title: "Donations" do
-                %i.fa.fa-usd              
-            %li{:class=>"#{'active' if current_page?(admin_path)}"}
-              =link_to admin_path, title: "Admin Dashboard" do
-                %i.fa.fa-dashboard
+            %li.dropdown
+              %a.dropdown-toggle{"data-toggle" => "dropdown", :href => "#"}
+                %i.fa.fa-lock
+              %ul.dropdown-menu{:role => "menu"}
+                %li{:class=>"#{'active' if current_page?(inspirations_path)}"}
+                  =link_to inspirations_path, title: "Inspirations" do
+                    %i.fa.fa-lightbulb-o
+                    &nbsp;Inspirations
+                %li{:class=>"#{'active' if current_page?(donations_path)}"}
+                  =link_to donations_path, title: "Donations" do
+                    %i.fa.fa-usd
+                    &nbsp;Donations              
+                %li{:class=>"#{'active' if current_page?(admin_path)}"}
+                  =link_to admin_path, title: "Admin Dashboard" do
+                    %i.fa.fa-dashboard
+                    &nbsp;Dashboard
+
         - else
           %li{:class=>"#{'active' if current_page?(ohlife_alternative_path)}"}
             =link_to "Import OhLife Entries & Images", ohlife_alternative_path, title: "OhLife Alternative"
