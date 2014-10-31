@@ -178,6 +178,18 @@ html, body {
   }
 }
 
+.s-toggle-calendar {
+  display: none;
+  float:right;
+  i {
+    font-size:80%;
+    margin-top:5px;
+  }
+  @media (max-width: 991px) {
+    display: inline-block;
+  }
+}
+
 .s-day-email label {
   font-weight: normal;
 }

@@ -6,8 +6,8 @@
     .col-md-8.col-md-offset-1
       %h3
         #{@title}
-        =link_to "javascript:void(0);", onclick: "$('.j-calendar').fadeToggle();" do
-          %i.fa.fa-calendar.float-right{:style=>"font-size:80%;margin-top:5px;"}
+        =link_to "javascript:void(0);", onclick: "$('.j-calendar').fadeToggle();", class: "s-toggle-calendar" do
+          %i.fa.fa-calendar
     
     .col-xs-11.col-sm-5.col-md-2.s-date-groups.j-calendar
       %h3{:class => "#{'active' if current_page?(group_entries_path('all'))}"}
