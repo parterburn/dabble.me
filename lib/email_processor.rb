@@ -16,7 +16,7 @@ class EmailProcessor
 
   def process
     user = find_user_from_user_key(@token, @from)
-    donation = user.donations.sum(:amount).to_i
+    donation = user.donations.sum(:amount).to_f
     filepicker_url = ""
     
     p "*"*100
