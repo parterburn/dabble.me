@@ -17,7 +17,8 @@ class EmailProcessor
   def process
     user = find_user_from_user_key(@token, @from)
     donation = user.donations.sum(:amount).to_i
-
+    filepicker_url = ""
+    
     if user.present? && @body.present?
 
       if donation > 0 && @attachments.present?
