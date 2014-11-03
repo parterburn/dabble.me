@@ -18,20 +18,10 @@ class EmailProcessor
     user = find_user_from_user_key(@token, @from)
     donation = user.donations.sum(:amount).to_f
     filepicker_url = ""
-    
-    p "*"*100
-    p @attachments
-    p "Donation: #{donation}"
-    p "*"*100
 
-    if user.present? && @body.present?
+    if user.present?
       if donation > 0 && @attachments.present?
         @attachments.each do |attachment|
-          
-          p "/"*100
-          attachment.content_type
-          p "/"*100
-
           if attachment.content_type =~ /^image\/(png|jpe?g|gif)$/i
             dir = FileUtils.mkdir_p("public/email_attachments/#{user.user_key}")
             file = File.join(dir, attachment.original_filename)
