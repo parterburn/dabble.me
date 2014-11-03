@@ -30,8 +30,8 @@ class EmailProcessor
           p "/"*100
           attachment.content_type
           p "/"*100
-          
-          if attachment.content_type =~ /^image\/png|jpe?g|gif$/i
+
+          if attachment.content_type =~ /^image\/(png|jpe?g|gif)$/i
             dir = FileUtils.mkdir_p("public/email_attachments/#{user.user_key}")
             file = File.join(dir, attachment.original_filename)
             FileUtils.mv attachment.tempfile.path, file
@@ -53,6 +53,10 @@ class EmailProcessor
       @body = ActionController::Base.helpers.simple_format(@body) #format the email body coming in to basic HTML
       @body.gsub!(/\*([a-zA-Z0-9]+[a-zA-Z0-9 ]*[a-zA-Z0-9]+)\*/i, '<b>\1</b>') #bold when bold needed
       @body.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "") #remove "inline image" text
+
+      if filepicker_url.present? && @body.blank?
+        @body = "Photo entry"
+      end
 
       date = parse_subject_for_date(@subject, user)
       existing_entry = user.existing_entry(date.to_s)
