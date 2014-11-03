@@ -45,10 +45,6 @@ class EmailProcessor
       @body.gsub!(/\*([a-zA-Z0-9]+[a-zA-Z0-9 ]*[a-zA-Z0-9]+)\*/i, '<b>\1</b>') #bold when bold needed
       @body.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "") #remove "inline image" text
 
-      if filepicker_url.present? && @body.blank?
-        @body = "Photo entry"
-      end
-
       date = parse_subject_for_date(@subject, user)
       existing_entry = user.existing_entry(date.to_s)
 
