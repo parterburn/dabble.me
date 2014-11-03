@@ -19,14 +19,15 @@ class EmailProcessor
     donation = user.donations.sum(:amount).to_i
     filepicker_url = ""
     
-    if user.present? && @body.present?
+    p "*"*100
+    p @attachments
+    p "Donation: #{donation}"
+    p "*"*100
 
-      p "*"*100
-      p @attachments
-      p "Donation: #{donation}"
-      p "*"*100
+    if user.present? && @body.present?
       if donation > 0 && @attachments.present?
         @attachments.each do |attachment|
+          
           p "/"*100
           attachment.content_type
           p "/"*100
