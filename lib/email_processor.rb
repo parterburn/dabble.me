@@ -21,12 +21,11 @@ class EmailProcessor
     if user.present? && @body.present?
 
       if donation > 0 && @attachments.present?
-        tmp = @attachments.first
-        if tmp.present?
-          if tmp.content_type =~ /^image\/png|jpe?g|gif$/i
+        @attachments.each do |attachment|
+          if attachment.content_type =~ /^image\/png|jpe?g|gif$/i
             dir = FileUtils.mkdir_p("public/email_attachments/#{user.user_key}")
-            file = File.join(dir, tmp.original_filename)
-            FileUtils.mv tmp.tempfile.path, file
+            file = File.join(dir, attachment.original_filename)
+            FileUtils.mv attachment.tempfile.path, file
             FileUtils.chmod 0644, file
             img_url = CGI.escape "https://#{ENV['MAIN_DOMAIN']}/#{file.gsub("public/","")}"
             begin
@@ -35,6 +34,7 @@ class EmailProcessor
             rescue
             end
             FileUtils.rm_r dir, :force => true
+            break
           end
         end
       end
