@@ -14,7 +14,8 @@ class Entry < ActiveRecord::Base
   alias_attribute :entry, :body
   
   default_scope { order('date DESC') }
-  scope :only_images, -> { where("image_url IS NOT null").where("image_url != ''").order('date DESC') }
+
+  scope :only_images, -> { where("(image_url IS NOT null AND image_url != '') OR body LIKE '%https://d3bcnng5dpbnbb.cloudfront.net/api/file/%'").order('date DESC') }
   scope :only_ohlife, -> { includes(:inspiration).where("inspirations.category = 'OhLife'").references(:inspiration).order('date DESC') }
   scope :only_email, -> { where("original_email_body IS NOT null").order('date DESC') }
 

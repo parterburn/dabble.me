@@ -141,6 +141,10 @@ class EntriesController < ApplicationController
           response.headers['Content-Disposition'] = "attachment; filename=export_#{Time.now.strftime("%Y-%m-%d")}.txt"
           render 'text_export'
         end
+        format.zip do 
+          download_manifest = photo_files
+          zip_up(download_manifest)
+        end
      end
   end
 
@@ -163,5 +167,48 @@ class EntriesController < ApplicationController
         nil
       end
     end
-     
+
+    def photo_files
+      photo_entries = current_user.entries.only_images
+      files_to_zip = []
+
+      photo_entries.each do |entry|
+        if entry.image_url.present?
+          ext = fetch_extension(entry.image_url.scan(/\/api\/file\/([A-Za-z0-9]*)/).first.first)
+          files_to_zip << { :path => "Dabble Me Photos/img_#{entry.date.strftime("%Y-%m-%d")}-0.#{ext}", :url => "#{URI.encode(entry.image_url)}" }
+        end
+        entry.body.scan(/"https\:\/\/d3bcnng5dpbnbb.cloudfront.net\/api\/file\/[A-Za-z0-9]*"/).each_with_index do |img_url, index|
+          img_url.gsub!("\"","")
+          ext = fetch_extension(img_url.scan(/\/api\/file\/([A-Za-z0-9]*)/).first.first)
+          files_to_zip << { :path => "Dabble Me Photos/img_#{entry.date.strftime("%Y-%m-%d")}-#{index+1}.#{ext}", :url => "#{URI.encode(img_url)}" }
+        end
+      end
+      { name: "export_#{Time.now.strftime("%Y-%m-%d")}", files: files_to_zip.compact }
+    end
+
+    def zip_up(download_manifest)
+      begin
+        response = HTTParty.post "http://#{ENV['DOWNLOADER_URL']}/downloads",
+          headers: { 'Content-Type' => 'application/json' },
+          basic_auth: {
+            username: ENV['DOWNLOADER_ID'],
+            password: ENV['DOWNLOADER_SECRET']
+          },
+          body: download_manifest.to_json
+        redirect_to response['url']
+      rescue
+        flash[:alert] = "Could not download ZIP file."
+        redirect_to edit_user_path
+      end
+    end
+
+    def fetch_extension(filepicker_id)
+      response = Net::HTTP.start(ENV['FILEPICKER_CDN_HOST'].gsub("https://","")) { |http| 
+        http.open_timeout = 2
+        http.read_timeout = 2
+        http.head("/api/file/#{filepicker_id}")
+       }
+       response['content-type'].gsub("image/","")
+    end
+
 end

@@ -35,20 +35,17 @@
               #{date_entries.length}
             .clearfix
       %br
-      - if (only_imgages = current_user.entries.only_images.length) > 0
+      - if (only_images = current_user.entries.only_images.length) > 0
         =link_to group_entries_path('photos') do
           %h4{:class => "#{'active' if current_page?(group_entries_path('photos'))}"}
             .s-date-left
               Photos
             .s-date-right
-              #{only_imgages}
+              #{only_images}
           .clearfix        
         %br
       %h4
-        Export all entries as
-        =link_to "TXT", export_entries_path(:txt)
-        or
-        =link_to "JSON", export_entries_path(:json)
+        =link_to "Export Entries", settings_path+"#export"
 
     .col-md-8.col-md-offset-1
       %br
