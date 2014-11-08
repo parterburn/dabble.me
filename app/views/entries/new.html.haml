@@ -12,10 +12,12 @@
         .center.s-inspiration
           - if @random_inspiration.present?
             =@random_inspiration.body
-            =f.hidden_field :inspiration_id, :value => @random_inspiration.id
+            - if @random_inspiration.category != "Tip"
+              =f.hidden_field :inspiration_id, :value => @random_inspiration.id
           -elsif @entry.inspiration.present?
             =@entry.inspiration.body
-            =f.hidden_field :inspiration_id, :value => @entry.inspiration.id
+            - if @entry.inspiration.category != "Tip"
+              =f.hidden_field :inspiration_id, :value => @entry.inspiration.id
         %h3
           %span
             New Entry
