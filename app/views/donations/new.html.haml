@@ -36,6 +36,12 @@
         %br
 
       %div
+        = f.label :send_thanks, "Send thanks: "
+        = f.check_box :send_thanks, :checked => true
+        %br
+        %br
+
+      %div
         = f.label :comments
         = f.text_area :comments, :class => "form-control", :rows => 2
         %br

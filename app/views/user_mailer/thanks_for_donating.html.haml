@@ -1,0 +1,24 @@
+%p Hey #{@user.first_name_or_fallback},
+
+%p
+  Thanks for donating to
+  =link_to("Dabble Me", past_entries_url)+"."
+  The premium features have now been unlocked for your account at #{@user.email}.
+
+%p
+  You'll now have access to:
+  %ul
+    %li Attach photos to your entries
+    %li Rich text formatting through the web interface
+    %li
+      =link_to "Search", search_url
+      all of your past entries with support for hashtags
+%p
+  %br
+  Thanks,
+  %br
+  Paul Arterburn
+  %br
+  Creator of Dabble Me
+  %br
+  =link_to "@parterburn","https://twitter.com/parterburn"

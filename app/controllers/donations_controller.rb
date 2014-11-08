@@ -21,6 +21,9 @@ class DonationsController < ApplicationController
 
     if @donation.save
       flash[:notice] = "Donation added successfully!"
+      if user.present && params[:donation][:send_thanks] == 1
+        UserMailer.thanks_for_donating(user).deliver
+      end
       redirect_to donations_path
     else
       render 'new'

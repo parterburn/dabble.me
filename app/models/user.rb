@@ -31,8 +31,8 @@ class User < ActiveRecord::Base
     first_name.present? ? "#{first_name} #{last_name}" : email
   end
 
-  def first_name_or_settings
-    first_name.present? ? "#{first_name}" : "Settings"
+  def first_name_or_fallback(fallback="there")
+    first_name.present? ? "#{first_name}" : fallback
   end
 
   def is_admin?
