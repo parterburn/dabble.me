@@ -8,8 +8,9 @@
         .form-group
           .col-xs-8.col-sm-10
             = f.text_field :term, class: "form-control input-lg s-search-with-clear", autofocus: true, placeholder: "What are you looking for?"
-            =link_to search_path, class: "s-clear-search", rel: "tooltip", title: "Clear search" do
-              %i.fa.fa-times-circle
+            - if @search.term.present?
+              =link_to search_path, class: "s-clear-search", rel: "tooltip", title: "Clear search" do
+                %i.fa.fa-times-circle
           .col-xs-4.col-sm-1
             = f.submit "Search", class: "btn btn-primary btn-lg"
       - if @search.entries.present?
@@ -27,9 +28,14 @@
           = succeed "." do
             %mark= @search.term
       - else
-        - @hashtags.each do |hashtag|
-          - class_size = (hashtag[1].size.to_f / @hashtags.size * (4 - 1)).round
-          =link_to hashtag[0], search_path(search: {term: hashtag[0]}), class: "s-hashtag s-hashtag-size-#{class_size}"
+        - if @hashtags.length > 0
+          - @hashtags.each do |hashtag|
+            - class_size = (hashtag[1].size.to_f / @hashtags.size * (4 - 1)).round
+            =link_to hashtag[0], search_path(search: {term: hashtag[0]}), class: "s-hashtag s-hashtag-size-#{class_size}"
+        - else
+          .alert.alert-info
+            %i Tip:
+            Use hashtags throughout your entries and you'll see a tag cloud appear here making it easy to search for posts containing those hashtags.
     - else
       .form-horizontal
         .alert.alert-warning
@@ -47,6 +53,11 @@
             %br
             %br
         - else
-          - @hashtags.each do |hashtag|
-            - class_size = (hashtag[1].size.to_f / @hashtags.size * (4 - 1)).round
-            =link_to hashtag[0], search_path(search: {term: hashtag[0]}), class: "s-hashtag s-hashtag-size-#{class_size}"        
+          - if @hashtags.length > 0
+            - @hashtags.each do |hashtag|
+              - class_size = (hashtag[1].size.to_f / @hashtags.size * (4 - 1)).round
+              =link_to hashtag[0], search_path(search: {term: hashtag[0]}), class: "s-hashtag s-hashtag-size-#{class_size}"
+          - else
+            .alert.alert-info
+              %i Tip:
+              Use hashtags throughout your entries and you'll see a tag cloud appear here making it easy to search for posts containing those hashtags.
