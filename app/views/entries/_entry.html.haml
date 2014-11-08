@@ -17,7 +17,12 @@
         =image_code(entry,600)
     %br
   - if @search.present?
-    = highlight(simple_format(entry.body, {}, :sanitize => false).html_safe, @search.term)
+    = highlight(simple_format(entry.hashtag_body, {}, :sanitize => false).html_safe, @search.term)
   - else
-    = simple_format(entry.body, {}, :sanitize => false).html_safe
+    = simple_format(entry.hashtag_body, {}, :sanitize => false).html_safe
 .clearfix
+
+:javascript
+  imagesLoaded( document.querySelector("#entry-#{entry.id}"), function( instance ) {
+    $(this.elements[0]).find('.pictureFrame img').css("background-image","none");
+  });

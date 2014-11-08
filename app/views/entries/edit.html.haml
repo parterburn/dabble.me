@@ -2,7 +2,7 @@
 
 .row
   %br
-  .col-md-8.col-md-offset-2.well
+  .col-md-8.col-md-offset-2.well{:id => "entry-#{@entry.id}"}
 
     .s-entry-date
       -if @entry.inspiration.present?
@@ -72,3 +72,9 @@
       summer_note.val(summer_note.code());
       return true;
     });
+
+:javascript
+  imagesLoaded( document.querySelector("#entry-#{@entry.id}"), function( instance ) {
+    console.log(this.elements[0]);
+    $(this.elements[0]).find('.pictureFrame img').css("background-image","none");
+  });

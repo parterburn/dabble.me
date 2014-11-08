@@ -65,7 +65,7 @@ class EntriesController < ApplicationController
         @existing_entry.image_url = params[:entry][:image_url]
       end
       if @existing_entry.save
-        flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime("%B %-d")}. <a href='/entries/all#entry-#{@existing_entry.id}' data-id='#{@existing_entry.id}' class='alert-link j-entry-link'>View merged entry</a>.".html_safe
+        flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime("%B %-d")}. <a href='#entry-#{@existing_entry.id}' data-id='#{@existing_entry.id}' class='alert-link j-entry-link'>View merged entry</a>.".html_safe
         redirect_to group_entries_path(@existing_entry.date.strftime("%Y"),@existing_entry.date.strftime("%m"))
       else
         render 'new'
@@ -85,7 +85,7 @@ class EntriesController < ApplicationController
     store_location
     @entry = Entry.find(params[:id])
     if current_user.donations.sum(:amount) == 0
-      @entry.entry = @entry.sanitized_body
+      @entry.body = @entry.sanitized_body
     end
   end
 

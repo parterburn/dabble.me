@@ -2,7 +2,7 @@
 
 .row
   %br
-  .col-md-8.col-md-offset-2.well
+  .col-md-8.col-md-offset-2.well{:id => "entry-#{@entry.id}"}
 
     = form_for :entry, url: entries_path do |f|
 
@@ -88,3 +88,8 @@
         autoclose: true,
         todayBtn: "linked"
       }).datepicker("setDate", new Date());
+
+:javascript
+  imagesLoaded( document.querySelector("#entry-#{@entry.id}"), function( instance ) {
+    $(this.elements[0]).find('.pictureFrame img').css("background-image","none");
+  });

@@ -18,6 +18,5 @@
 }());
 
 function onPhotoUpload(event) {
-  console.log(event);
   $(".j-filepicker-preview").slideUp();
 }

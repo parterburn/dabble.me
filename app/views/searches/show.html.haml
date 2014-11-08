@@ -17,18 +17,25 @@
         - @search.entries.each do |entry|
           %br
           .col-md-12.well{:id => "entry-#{entry.id}"}
-            = render :partial => 'entries/entry', :locals => {:entry => entry}      
+            = render :partial => 'entries/entry', :locals => {:entry => entry}
       - elsif @search.term.present?
         %p
           Sorry, no entries include
           = succeed "." do
             %mark= @search.term
     - else
-      .alert.alert-warning.well-sm
-        =link_to "Donate now", donate_path, class: "alert-link"
-        to unlock the ability to search your entries.    
-      .form-group
-        .col-xs-8.col-sm-10
-          = text_field_tag "term", "", class: "form-control input-lg disabled", autofocus: true, placeholder: "What are you looking for?", disabled: "true"
-        .col-xs-4.col-sm-1
-          = submit_tag "Search", disabled: true, class: "btn btn-primary btn-lg disabled"    
+      .form-horizontal
+        .alert.alert-warning
+          =link_to "Donate now", donate_path, class: "alert-link"
+          to unlock the ability to search your entries.      
+        .form-group
+          .col-xs-8.col-sm-10
+            = text_field_tag "term", "#{params[:search][:term] if params[:search]}", class: "form-control input-lg disabled", autofocus: true, placeholder: "What are you looking for?", disabled: "true"
+          .col-xs-4.col-sm-1
+            = submit_tag "Search", disabled: true, class: "btn btn-primary btn-lg disabled"    
+          .clearfix
+        - if @search.entries.present?
+          %p
+            #{pluralize(@search.entries.count, "entry")} found.
+            %br
+            %br            

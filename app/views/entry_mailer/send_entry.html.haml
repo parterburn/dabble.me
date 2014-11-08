@@ -10,7 +10,7 @@
         %b
           #{@user.throwback_msg} #{@random_entry.time_ago_in_words_or_numbers(@user)} ago you wrote...
       %p
-        = simple_format(@random_entry.body)
+        = simple_format(@random_entry.hashtag_body)
       - if @random_entry_filepicker_url.present?
         %p
           =link_to image_tag(@random_entry_filepicker_url), @random_entry.image_url

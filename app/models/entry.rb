@@ -34,6 +34,10 @@ class Entry < ActiveRecord::Base
     self.date.present? ? self.date.strftime("%A") : "Noday?"
   end
 
+  def hashtag_body
+    self.body.gsub(/(<a[^>]*>.*?< ?\/a ?>)|(#[a-zA-Z0-9_]+)/, '\1<a href="https://'+ENV['MAIN_DOMAIN']+'/search?search%5Bterm%5D=\2">\2</a>').gsub("search%5Bterm%5D=#","search%5Bterm%5D=%23") if self.body.present?
+  end
+
   def time_ago_in_words_or_numbers(user)
     now_for_user = Time.now.in_time_zone(user.send_timezone)
     if self.date.day == 29 && self.date.month == 2 && now_for_user.year - 4 == self.date.year && now_for_user.day == 29 && now_for_user.month == 2
