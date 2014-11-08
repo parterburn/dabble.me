@@ -2,11 +2,14 @@
 
 .row
   .col-md-8.col-md-offset-2
+    %br
     -if current_user.donations.sum(:amount) > 0
       = form_for @search, url: search_path, method: :get, html: { class: "form-horizontal" } do |f|
         .form-group
           .col-xs-8.col-sm-10
-            = f.text_field :term, class: "form-control input-lg", autofocus: true, placeholder: "What are you looking for?"
+            = f.text_field :term, class: "form-control input-lg s-search-with-clear", autofocus: true, placeholder: "What are you looking for?"
+            =link_to search_path, class: "s-clear-search", rel: "tooltip", title: "Clear search" do
+              %i.fa.fa-times-circle
           .col-xs-4.col-sm-1
             = f.submit "Search", class: "btn btn-primary btn-lg"
       - if @search.entries.present?
@@ -23,6 +26,10 @@
           Sorry, no entries include
           = succeed "." do
             %mark= @search.term
+      - else
+        - @hashtags.each do |hashtag|
+          - class_size = (hashtag[1].size.to_f / @hashtags.size * (4 - 1)).round
+          =link_to hashtag[0], search_path(search: {term: hashtag[0]}), class: "s-hashtag s-hashtag-size-#{class_size}"
     - else
       .form-horizontal
         .alert.alert-warning
@@ -38,4 +45,8 @@
           %p
             #{pluralize(@search.entries.count, "entry")} found.
             %br
-            %br            
+            %br
+        - else
+          - @hashtags.each do |hashtag|
+            - class_size = (hashtag[1].size.to_f / @hashtags.size * (4 - 1)).round
+            =link_to hashtag[0], search_path(search: {term: hashtag[0]}), class: "s-hashtag s-hashtag-size-#{class_size}"        

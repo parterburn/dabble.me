@@ -148,3 +148,34 @@ mark {
   color: darken(#649cc7,20);
   background: lighten(#649cc7,30);
 }
+
+.s-hashtag {
+  margin: 5px;
+  &.s-hashtag-size-0 {
+    font-size:14px;
+  }
+  &.s-hashtag-size-1 {
+    font-size:20px;
+  }
+  &.s-hashtag-size-2 {
+    font-size:30px;
+  }
+  &.s-hashtag-size-3 {
+    font-size:50px;
+  }
+}
+
+.s-search-with-clear {
+  padding-right:40px;
+}
+
+.s-clear-search {
+  color:#CCC;
+  position: absolute;
+  right: 25px;
+  top: 6px;
+  font-size: 25px;
+  &:hover {
+    color:#777;
+  }
+}
