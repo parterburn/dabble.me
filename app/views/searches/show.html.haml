@@ -30,7 +30,7 @@
       - else
         - if @hashtags.length > 0
           - @hashtags.each do |hashtag|
-            - class_size = (hashtag[1].size.to_f / @hashtags.size * (4 - 1)).round
+            - class_size = (hashtag[1].size.to_f / @hashtags.size * (3 - 1)).round
             =link_to hashtag[0], search_path(search: {term: hashtag[0]}), class: "s-hashtag s-hashtag-size-#{class_size}"
         - else
           .alert.alert-info

@@ -3,10 +3,10 @@ class SearchesController < ApplicationController
 
   def show
     @search = Search.new(search_params)
-    hashtagged_entries = current_user.entries.where("entries.body ~ '(<a[^>]*>.*?< ?\/a ?>)|(#[a-zA-Z0-9_]+)'")
+    hashtagged_entries = current_user.entries.where("entries.body ~ '(#[a-zA-Z0-9_]+)'")
     @hashtags = []
     hashtagged_entries.each do |entry|
-      entry.body.scan(/(<a[^>]*>.*?< ?\/a ?>)|(#[a-zA-Z0-9_]+)/) { |m| @hashtags << m[1] }
+      entry.body.scan(/(<a[^>]*>.*?< ?\/a ?>)|(#[0-9]+\W)|(#[a-zA-Z0-9_]+)/) { |m| @hashtags << m[2] }
     end
     @hashtags.compact!
     @hashtags = @hashtags.map{|i| i.downcase}.uniq.sort_by!{ |m| m.downcase }.inject({}) {|accu, uni| accu.merge({ uni => @hashtags.select{|i| i.downcase == uni.downcase } })}
