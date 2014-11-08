@@ -40,7 +40,7 @@
       .form-horizontal
         .alert.alert-warning
           =link_to "Donate now", donate_path, class: "alert-link"
-          to unlock the ability to search your entries.      
+          to unlock the ability to search your entries, and see which tags are used most.
         .form-group
           .col-xs-8.col-sm-10
             = text_field_tag "term", "#{params[:search][:term] if params[:search]}", class: "form-control input-lg disabled", autofocus: true, placeholder: "What are you looking for?", disabled: "true"
@@ -55,8 +55,7 @@
         - else
           - if @hashtags.length > 0
             - @hashtags.each do |hashtag|
-              - class_size = (hashtag[1].size.to_f / @hashtags.size * (4 - 1)).round
-              =link_to hashtag[0], search_path(search: {term: hashtag[0]}), class: "s-hashtag s-hashtag-size-#{class_size}"
+              =link_to hashtag[0], search_path(search: {term: hashtag[0]}), class: "s-hashtag"
           - else
             .alert.alert-info
               %i Tip:
