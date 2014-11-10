@@ -15,7 +15,11 @@
             = f.submit "Search", class: "btn btn-primary btn-lg"
       - if @search.entries.present?
         %p
-          #{pluralize(@search.entries.count, "entry")} found.
+          - all_entries_count = current_user.entries.count
+          - found_entries_count = @search.entries.count
+          #{number_to_percentage(found_entries_count.to_f/all_entries_count.to_f*100, precision: 0)} of your entries mention
+          %mark= @search.term
+          (#{pluralize(found_entries_count, "entry")})
           %br
           %br
         - @search.entries.each do |entry|
