@@ -12,34 +12,17 @@
     .row
       .col-md-3
         %strong All Entries
-      - all_count = @entries.length
+      - all_count = @entries.count
       .col-md-2
         %strong #{number_with_delimiter(all_count)}
     .row
       .col-md-3
         %strong All Entries with Photos
-      - photos_count = @entries.only_images.length
+      - photos_count = @entries.only_images.count
       .col-md-2
         %strong #{number_with_delimiter(photos_count)}
       .col-md-2
         %strong #{number_to_percentage(photos_count.to_f/all_count.to_f*100, precision: 0)}
-    -#
-      .row
-        .col-md-3
-          %strong All Entries from OhLife
-        - ohlife_count = @entries.only_ohlife.length
-        .col-md-2
-          %strong #{number_with_delimiter(ohlife_count)}
-        .col-md-2
-          %strong #{number_to_percentage(ohlife_count.to_f/all_count.to_f*100, precision: 0)}
-    .row
-      .col-md-3
-        %strong All Entries from Email
-      - email_count = @entries.only_email.length
-      .col-md-2
-        %strong #{number_with_delimiter(email_count)}
-      .col-md-2
-        %strong #{number_to_percentage(email_count.to_f/all_count.to_f*100, precision: 0)}
 
   .col-md-12
     %hr
@@ -65,7 +48,7 @@
     .row
       .col-md-3
         %strong=link_to "All Users", "#", class: "j-admin-days"
-      - all_users_count = @users.length
+      - all_users_count = @users.count
       .col-md-2
         %strong #{number_with_delimiter(all_users_count)}
 
@@ -83,14 +66,17 @@
               %th{"data-firstsort" => "asc", :style => "width: 10%"} Received
               %th{"data-firstsort" => "asc", :style => "width: 10%"} Donations
           %tbody
+            - connection = ActiveRecord::Base.connection
             -@users.each do |user|
               %tr
                 %td=user.id
                 %td=mail_to user.email
                 %td=user.full_name
-                %td{:"data-value"=>"#{user.entries.count}"}=number_with_delimiter(user.entries.count)
+                - user_entries_count = connection.execute "SELECT COUNT(*) FROM entries  WHERE entries.user_id = #{user.id}"
+                - user_donations = connection.execute "SELECT SUM(donations.amount) AS sum_id FROM donations  WHERE donations.user_id = #{user.id}"
+                %td{:"data-value"=>"#{user.entries.count}"}=number_with_delimiter(user_entries_count.getvalue(0,0))
                 %td{:"data-value"=>"#{user.emails_sent}"}=number_with_delimiter(user.emails_sent)
                 %td{:"data-value"=>"#{user.emails_received}"}=number_with_delimiter(user.emails_received)
-                %td=user.donations.sum(:amount)
+                %td=user_donations.getvalue(0,0)
 
 .clearfix

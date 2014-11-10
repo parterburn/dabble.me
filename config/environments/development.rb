@@ -37,4 +37,8 @@ Rails.application.configure do
 
   # Devise
   config.action_mailer.default_url_options = { :host => 'localhost:3000' }
+
+  Bullet.enable = true
+  Bullet.add_footer = true
+
 end

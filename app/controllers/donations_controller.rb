@@ -3,7 +3,7 @@ class DonationsController < ApplicationController
   before_filter :require_permission
 
   def index
-    @donations = Donation.all.order("date DESC, id DESC")
+    @donations = Donation.includes(:user).all.order("date DESC, id DESC")
   end
 
   def new

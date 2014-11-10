@@ -5,22 +5,22 @@ class EntriesController < ApplicationController
   def index
     begin
       if params[:group] == "photos"
-        @entries = current_user.entries.only_images
-        @title = ActionController::Base.helpers.pluralize(@entries.length,"entry")+ " with photos"
+        @entries = current_user.includes(:inspiration).entries.only_images
+        @title = ActionController::Base.helpers.pluralize(@entries.count,"entry")+ " with photos"
       elsif params[:group] =~ /[0-9]{4}/ && params[:subgroup] =~ /[0-9]{2}/
-        @entries = current_user.entries.where("date >= to_date('#{params[:group]}-#{params[:subgroup]}','YYYY-MM') AND date < to_date('#{params[:group]}-#{params[:subgroup].to_i+1}','YYYY-MM')")
+        @entries = current_user.entries.includes(:inspiration).where("date >= to_date('#{params[:group]}-#{params[:subgroup]}','YYYY-MM') AND date < to_date('#{params[:group]}-#{params[:subgroup].to_i+1}','YYYY-MM')")
         date = Date.parse(params[:subgroup]+'/'+params[:group])
-        @title = ActionController::Base.helpers.pluralize(@entries.length,"entry")+ " from #{date.strftime('%b %Y')}"
+        @title = ActionController::Base.helpers.pluralize(@entries.count,"entry")+ " from #{date.strftime('%b %Y')}"
       elsif params[:group] =~ /[0-9]{4}/
-        @entries = current_user.entries.where("date >= '#{params[:group]}-01-01'::DATE AND date <= '#{params[:group]}-12-31'::DATE")
-        @title = ActionController::Base.helpers.pluralize(@entries.length,"entry")+ " from #{params[:group]}"
+        @entries = current_user.entries.includes(:inspiration).where("date >= '#{params[:group]}-01-01'::DATE AND date <= '#{params[:group]}-12-31'::DATE")
+        @title = ActionController::Base.helpers.pluralize(@entries.count,"entry")+ " from #{params[:group]}"
       elsif params[:group] == "all"
-        @entries = current_user.entries
-        @title = ActionController::Base.helpers.pluralize(@entries.length,"entry")+ " from All Time"
+        @entries = current_user.entries.includes(:inspiration)
+        @title = ActionController::Base.helpers.pluralize(@entries.count,"entry")+ " from All Time"
       else
-        @entries = current_user.entries.first(30)
-        if @entries.length == 30
-          @title = "Your latest " + ActionController::Base.helpers.pluralize(@entries.length,"entry")
+        @entries = current_user.entries.includes(:inspiration).first(30)
+        if @entries.count == 30
+          @title = "Your latest " + ActionController::Base.helpers.pluralize(@entries.count,"entry")
         else
           @title = "Your latest entries"
         end
@@ -29,7 +29,7 @@ class EntriesController < ApplicationController
   end
 
   def show
-    @entry = Entry.find(params[:id])
+    @entry = Entry.includes(:inspiration).find(params[:id])
     if @entry
       render "show"
     else
