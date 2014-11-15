@@ -63,7 +63,7 @@ DOWNLOADER_URL=us.downloader.io
 
 Filepicker has an option to use Cloudfront to serve up the photos you upload. This will make loading your images a bit faster, so I recommend it if you already have AWS setup. However, you can skip this if you don't want to mess with all that by simply setting ```FILEPICKER_CDN_HOST=https://www.filepicker.io```.
 
-If you want to bypass using Mailchimp to collect email addresses, simply don't put a value in for MAILCHIMP_API_KEY. I use Mailchimp to email out new features to the users at Dabble.me, so if you're the only on using your app it doesn't make sense to have Mailchimp.
+If you want to bypass using Mailchimp to collect email addresses, simply don't put a value in for MAILCHIMP_API_KEY. I use Mailchimp to email out new features to the users at Dabble.me, so if you're the only one using your app it doesn't make sense to have Mailchimp.
 
 Skylight is a server monitoring service I use to make sure the queries are optimized appropriately. You can remove the gem, and delete the file ```config/skylight.yml``` if you don't want to use this service.
 

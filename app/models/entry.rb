@@ -61,6 +61,10 @@ class Entry < ActiveRecord::Base
     body_sanitized
   end
 
+  def image_url_cdn
+    image_url.gsub("https://www.filepicker.io", ENV['FILEPICKER_CDN_HOST'])
+  end
+
   private
 
     def ensure_protocol # For urls

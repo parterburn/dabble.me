@@ -9,7 +9,7 @@
     = simple_format(@first_entry.body)
   - if @first_entry_filepicker_url.present?
     %p
-      =link_to image_tag(@first_entry_filepicker_url), @first_entry.image_url
+      =link_to image_tag(@first_entry_filepicker_url), @first_entry.image_url_cdn
 
 %p
   You can check out your entry here:
