@@ -14,7 +14,7 @@ This app utilizes the following 3rd party services:
 
 I recommend forking and setting up a free server at [Ninefold](https://ninefold.com/). You can generate a free SSL certificate at [StartSSL](https://www.startssl.com/).
 
-You will need to setup SendGrid to receive incoming emails and point them to your app to parse. Visit this [Settings Page](https://sendgrid.com/developer/reply); add your hostname of ```post.yourdomain.com``` and point the URL to ```https://yourdomain.com/email_processor```. I have spam check turned off, since that hasn't been an issue yet.
+You will need to setup SendGrid to receive incoming emails and point them to your app to parse. Visit this [Settings Page](https://sendgrid.com/developer/reply); add your hostname of ```post.yourdomain.com``` and point the URL to ```https://yourdomain.com/email_processor```. I have spam check turned off, since that hasn't been an issue yet. Make sure you setup an MX record for the ```post.yourdomain.com``` subdomain to point to ```mx.sendgrid.net```.
 
 Your local environment variables at ```config/local_env.yml``` will need to be something like this:
 
