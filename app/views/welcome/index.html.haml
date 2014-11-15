@@ -30,11 +30,12 @@
 
 -else
   .center.s-landing-page
-    %h1 Welcome to Dabble Me
-    %h2.muted The free replacement to OhLife
+    %h1{title: "Dabble Me"}
+      =image_tag("dabble_me_pencil_400.png", alt: "Dabble Me Logo")
+    %h2 A free private journal.
     %br
     .col-md-6.col-md-offset-3
-      %p.muted
+      %p
         What were you doing last month? How about last week?
         %br
         Dabble Me helps you remember what's happened in your life.
@@ -42,12 +43,12 @@
 
   .clearfix
   .center
-    = link_to "Get Started (it's free)", new_user_registration_path, :class => 'btn btn-info btn-lg col-md-4 col-md-offset-4'
+    = link_to "Sign Up", new_user_registration_path, :class => 'btn btn-info btn-lg col-md-4 col-md-offset-4'
     .clearfix
   %br
   .clearfix
 
-  .col-md-6.col-lg-4.col-lg-offset-2.s-features
+  .col-md-6.col-lg-4.col-lg-offset-2.s-features.top40
     %ul
       %li
         %i.fa.fa-check
@@ -62,7 +63,7 @@
         %i.fa.fa-check
         Search entries
 
-  .col-md-6.col-lg-5.s-features
+  .col-md-6.col-lg-5.s-features.top40
     %ul
       %li
         %i.fa.fa-check
@@ -76,21 +77,27 @@
       %li
         %i.fa.fa-check
         =link_to "Pay what you can",donate_path
-  
+
+  .col-md-10.col-lg-offset-2.s-features
+    %ul
+      %li
+        %i.fa.fa-check
+        Easily
+        =link_to("import your entries & photos from OhLife", ohlife_alternative_path, title: "OhLife Alternative") + ","
+        and other OhLife alternatives.
+      
   .clearfix
-  .col-md-6.col-md-offset-3.s-features
+  .col-md-6.col-md-offset-3.s-features.top40
     .center.s-more-info
       =link_to "http://www.ilovefreesoftware.com/06/webware/open-source-free-online-journal-alternative-ohlife-dabble.html", title:"Open Source Free Online Journal Alternative To OhLife: Dabble Me", rel: "nofollow", target: "_blank" do
         =image_tag "ilovefreesoftware_reviewed_5Star.png", border: 0, width:130, height:81
-
-
 
   .row
     #mc_embed_signup.col-md-4.col-md-offset-4
       %form#mc-embedded-subscribe-form.validate{:action => "//sixteenseven.us2.list-manage.com/subscribe/post?u=63fff2dd7620976b42e437195&id=762e28b552", :method => "post", :name => "mc-embedded-subscribe-form", :novalidate => "", :target => "_blank"}
         #mc_embed_signup_scroll{:style=>"width: 280px;margin: 0 auto;"}
           .mc-field-group{:style=>"margin-bottom:-10px"}
-            %input#mce-EMAIL.required.email.form-control{:name => "EMAIL", :type => "email", :value => "#{current_user.email if current_user}", :placeholder=>"email@domain.com"}
+            %input#mce-EMAIL.required.email.form-control{:name => "EMAIL", :type => "email", :value => "#{current_user.email if current_user}", :placeholder=>"email@domain.com", style:"background-color: transparent;border-radius: 0px;box-shadow: none;-webkit-box-shadow:none;"}
             %br
           #mce-responses.clear
             #mce-error-response.response{:style => "display:none"}

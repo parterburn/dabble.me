@@ -29,6 +29,17 @@ hr {
   border-top: 2px solid whiteSmoke;
 }
 
+.s-landing-page {
+  h1 {
+    img {
+      width:290px;
+    }
+  }
+  h2 {
+    color:#a41100;
+  }
+}
+
 .navbar-default {
   background-color: #649cc7;
   color:whiteSmoke;
@@ -55,10 +66,13 @@ hr {
     letter-spacing: -1px;
     color:whiteSmoke;
     font-size:20px;
-    text-shadow: 0px 0px 3px darken(#649cc7,30);
+    text-shadow: 0px 0px 1px darken(#649cc7,20);
+    img {
+      width:130px;
+    } 
     &:hover {
       color:white;
-      text-shadow: 0px 0px 3px darken(#649cc7,30);
+      text-shadow: 0px 0px 2px darken(#649cc7,40);
     }
   }  
 }
@@ -275,7 +289,9 @@ label {
 }
 
 .s-features {
-  margin-top:40px;
+  &.top40 {
+    margin-top:40px;
+  }
   font-size:17px;
   font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;  
   i {

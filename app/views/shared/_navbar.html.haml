@@ -7,9 +7,11 @@
         %span.icon-bar
         %span.icon-bar
       = link_to root_path, class: 'navbar-brand', title: "Dabble Me" do
-        %i.fa.fa-pencil-square.fa-spinner
-        - if !current_user
-          &nbsp;Dabble Me
+        - if current_user
+          %i.fa.fa-pencil-square.fa-spinner
+        - else
+          =image_tag("dabble_me_pencil_logo.png")
+
     .collapse.navbar-collapse
     
       %ul.nav.navbar-nav
@@ -48,10 +50,6 @@
                   =link_to admin_path, title: "Admin Dashboard" do
                     %i.fa.fa-dashboard
                     &nbsp;Dashboard
-
-        - else
-          %li{:class=>"#{'active' if current_page?(ohlife_alternative_path)}"}
-            =link_to "Import OhLife Entries & Images", ohlife_alternative_path, title: "OhLife Alternative"
 
       %ul.nav.navbar-nav.navbar-right
 
