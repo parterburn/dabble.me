@@ -5,7 +5,7 @@ class EntriesController < ApplicationController
   def index
     begin
       if params[:group] == "photos"
-        @entries = current_user.includes(:inspiration).entries.only_images
+        @entries = current_user.entries.includes(:inspiration).only_images
         @title = ActionController::Base.helpers.pluralize(@entries.count,"entry")+ " with photos"
       elsif params[:group] =~ /[0-9]{4}/ && params[:subgroup] =~ /[0-9]{2}/
         @entries = current_user.entries.includes(:inspiration).where("date >= to_date('#{params[:group]}-#{params[:subgroup]}','YYYY-MM') AND date < to_date('#{params[:group]}-#{params[:subgroup].to_i+1}','YYYY-MM')")

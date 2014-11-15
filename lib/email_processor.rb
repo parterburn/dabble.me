@@ -16,92 +16,93 @@ class EmailProcessor
 
   def process
     user = find_user_from_user_key(@token, @from)
-    donation = user.donations.sum(:amount).to_f
-    filepicker_url = ""
-
     if user.present?
-      if donation > 0 && @attachments.present?
-        @attachments.each do |attachment|
-          if attachment.content_type =~ /^image\/(png|jpe?g|gif)$/i
-            dir = FileUtils.mkdir_p("public/email_attachments/#{user.user_key}")
-            file = File.join(dir, attachment.original_filename)
-            FileUtils.mv attachment.tempfile.path, file
-            FileUtils.chmod 0644, file
-            img_url = CGI.escape "https://#{ENV['MAIN_DOMAIN']}/#{file.gsub("public/","")}"
-            begin
-              response = MultiJson.load RestClient.post("https://www.filepicker.io/api/store/S3?key=#{ENV['FILEPICKER_API_KEY']}&url=#{img_url}", nil), :symbolize_keys => true
-              filepicker_url = response[:url]
-            rescue
+      donation = user.donations.sum(:amount).to_f
+      filepicker_url = ""
+
+      if user.present?
+        if donation > 0 && @attachments.present?
+          @attachments.each do |attachment|
+            if attachment.content_type =~ /^image\/(png|jpe?g|gif)$/i
+              dir = FileUtils.mkdir_p("public/email_attachments/#{user.user_key}")
+              file = File.join(dir, attachment.original_filename)
+              FileUtils.mv attachment.tempfile.path, file
+              FileUtils.chmod 0644, file
+              img_url = CGI.escape "https://#{ENV['MAIN_DOMAIN']}/#{file.gsub("public/","")}"
+              begin
+                response = MultiJson.load RestClient.post("https://www.filepicker.io/api/store/S3?key=#{ENV['FILEPICKER_API_KEY']}&url=#{img_url}", nil), :symbolize_keys => true
+                filepicker_url = response[:url]
+              rescue
+              end
+              FileUtils.rm_r dir, :force => true
+              break
             end
-            FileUtils.rm_r dir, :force => true
-            break
           end
         end
+
+        @body = unfold_paragraphs(@body) #fix wrapped plain text
+        @body.gsub!(/\n\n\n/, "\n\n \n\n") #allow double line breaks
+        @body = ActionController::Base.helpers.simple_format(@body) #format the email body coming in to basic HTML
+        @body.gsub!(/\*([a-zA-Z0-9]+[a-zA-Z0-9 ]*[a-zA-Z0-9]+)\*/i, '<b>\1</b>') #bold when bold needed
+        @body.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "") #remove "inline image" text
+
+        date = parse_subject_for_date(@subject, user)
+        existing_entry = user.existing_entry(date.to_s)
+
+        inspiration_id = parse_body_for_inspiration_id(@raw_body)
+
+        if existing_entry.present?
+          existing_entry.body += "<hr>#{@body}"
+          if donation == 0
+            existing_entry.body = existing_entry.sanitized_body
+          end
+          existing_entry.original_email_body = @raw_body
+          existing_entry.inspiration_id = inspiration_id if inspiration_id.present?
+          if existing_entry.image_url.present?
+            img_url_cdn = filepicker_url.gsub("https://www.filepicker.io", ENV['FILEPICKER_CDN_HOST'])
+            existing_entry.body += "<br><div class='pictureFrame'><a href='#{img_url_cdn}' target='_blank'><img src='#{img_url_cdn}/convert?fit=max&w=300&h=300&cache=true&rotate=:exif' alt='#{existing_entry.date.strftime("%b %-d")}'></a></div>"
+          elsif filepicker_url.present?
+            existing_entry.image_url = filepicker_url
+          end
+          begin
+            existing_entry.save
+          rescue
+            existing_entry.body = existing_entry.body.force_encoding('iso-8859-1').encode('utf-8')
+            existing_entry.original_email_body = existing_entry.original_email_body.force_encoding('iso-8859-1').encode('utf-8')
+            existing_entry.save
+          end
+        else
+
+          begin
+            entry = user.entries.create!(
+              date: date,
+              body: @body,
+              image_url: filepicker_url,
+              original_email_body: @raw_body,
+              inspiration_id: inspiration_id
+            )
+          rescue
+            @body = @body.force_encoding('iso-8859-1').encode('utf-8')
+            @raw_body = @raw_body.force_encoding('iso-8859-1').encode('utf-8')
+            entry = user.entries.create!(
+              date: date,
+              body: @body,
+              image_url: filepicker_url,
+              original_email_body: @raw_body,
+              inspiration_id: inspiration_id
+            )
+          end
+
+          if donation == 0
+            entry.body = entry.sanitized_body
+          end
+          entry.save
+        end
+
+        user.increment!(:emails_received)
+        UserMailer.second_welcome_email(user).deliver if user.emails_received == 1 && user.entries.count == 1
       end
-
-      @body = unfold_paragraphs(@body) #fix wrapped plain text
-      @body.gsub!(/\n\n\n/, "\n\n \n\n") #allow double line breaks
-      @body = ActionController::Base.helpers.simple_format(@body) #format the email body coming in to basic HTML
-      @body.gsub!(/\*([a-zA-Z0-9]+[a-zA-Z0-9 ]*[a-zA-Z0-9]+)\*/i, '<b>\1</b>') #bold when bold needed
-      @body.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "") #remove "inline image" text
-
-      date = parse_subject_for_date(@subject, user)
-      existing_entry = user.existing_entry(date.to_s)
-
-      inspiration_id = parse_body_for_inspiration_id(@raw_body)
-
-      if existing_entry.present?
-        existing_entry.body += "<hr>#{@body}"
-        if donation == 0
-          existing_entry.body = existing_entry.sanitized_body
-        end
-        existing_entry.original_email_body = @raw_body
-        existing_entry.inspiration_id = inspiration_id if inspiration_id.present?
-        if existing_entry.image_url.present?
-          img_url_cdn = filepicker_url.gsub("https://www.filepicker.io", ENV['FILEPICKER_CDN_HOST'])
-          existing_entry.body += "<br><div class='pictureFrame'><a href='#{img_url_cdn}' target='_blank'><img src='#{img_url_cdn}/convert?fit=max&w=300&h=300&cache=true&rotate=:exif' alt='#{existing_entry.date.strftime("%b %-d")}'></a></div>"
-        elsif filepicker_url.present?
-          existing_entry.image_url = filepicker_url
-        end
-        begin
-          existing_entry.save
-        rescue
-          existing_entry.body = existing_entry.body.force_encoding('iso-8859-1').encode('utf-8')
-          existing_entry.original_email_body = existing_entry.original_email_body.force_encoding('iso-8859-1').encode('utf-8')
-          existing_entry.save
-        end
-      else
-
-        begin
-          entry = user.entries.create!(
-            date: date,
-            body: @body,
-            image_url: filepicker_url,
-            original_email_body: @raw_body,
-            inspiration_id: inspiration_id
-          )
-        rescue
-          @body = @body.force_encoding('iso-8859-1').encode('utf-8')
-          @raw_body = @raw_body.force_encoding('iso-8859-1').encode('utf-8')
-          entry = user.entries.create!(
-            date: date,
-            body: @body,
-            image_url: filepicker_url,
-            original_email_body: @raw_body,
-            inspiration_id: inspiration_id
-          )
-        end
-
-        if donation == 0
-          entry.body = entry.sanitized_body
-        end
-        entry.save
-      end
-
-      user.increment!(:emails_received)
-      UserMailer.second_welcome_email(user).deliver if user.emails_received == 1 && user.entries.count == 1
     end
-
   end
 
   private

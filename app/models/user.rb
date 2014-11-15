@@ -106,6 +106,7 @@ class User < ActiveRecord::Base
   private
 
     def subscribe_to_mailchimp
+      #TODO PUT THIS IN DELAY
       if ENV['MAILCHIMP_API_KEY'].present?
         gb = Gibbon::API.new
         begin
