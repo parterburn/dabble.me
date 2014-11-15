@@ -3,9 +3,9 @@
 }
 
 .logo {
-  background-image: url(https://dabble.me/cast/imagefiles/bf_logo_giant_png.png);
-  background-size: 650px 188px;
-  background-repeat:no-repeat;  
+  background-image: url(https://dabble.me/cast/imagefiles/dabble_loading.png);
+  background-size: 750px 398px;
+  background-repeat:no-repeat;
 }
 
 .progressBar {

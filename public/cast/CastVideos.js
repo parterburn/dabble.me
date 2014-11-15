@@ -262,7 +262,7 @@ CastPlayer.prototype.loadMedia = function(mediaIndex) {
   mediaInfo.metadata.images = [{'url': 'https://dabble.me/cast/imagefiles/video_image_art.png'}];
   mediaInfo.metadata.metadataType = 0;
   mediaInfo.metadata.subtitle = video_link;
-  mediaInfo.metadata.title = 'Sponsored by Brandfolder.com';
+  mediaInfo.metadata.title = 'Sponsored by Dabble.Me - your private journal';
   var request = new chrome.cast.media.LoadRequest(mediaInfo);
   request.autoplay = this.autoplay;
   if( this.localPlayerState == PLAYER_STATE.PLAYING ) {
