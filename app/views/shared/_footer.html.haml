@@ -11,15 +11,15 @@
       -else
         =link_to "Donate", donate_path, title: "Donate Now"
 
-    .fb-like.float-right{data: { action: "like", href: "https://dabble.me", layout: "button", share: "false", show: { faces: "false" } } }
     %p.muted.float-right
+      &nbsp;&nbsp;
       = link_to 'http://twitter.com/parterburn', title: "Built by Paul Arterburn" do
         %i.fa.fa-code
         with
         %i.fa.fa-heart
         by
         %strong Paul Arterburn
-      &nbsp;&nbsp;
+    .fb-like.float-right{data: { action: "like", href: "https://dabble.me", layout: "button", share: "false", show: { faces: "false" } } }      
 
 .j-back-to-top.s-back-to-top
   =link_to "#" do
