@@ -38,6 +38,7 @@ ADMIN_EMAILS: user1@domain.com,user2@domain.com
 DOWNLOADER_ID: 1234..1234
 DOWNLOADER_SECRET: 1234..1234
 DOWNLOADER_URL: us.downloader.io
+SEND_REPORT: "yes"
 ```
 
 Your environment variables on Ninefold will need to be something like this:
@@ -62,6 +63,7 @@ SKYLIGHT_AUTHENTICATION=def456
 DOWNLOADER_ID=1234..1234
 DOWNLOADER_SECRET=1234..1234
 DOWNLOADER_URL=us.downloader.io
+SEND_REPORT="yes"
 ```
 
 ###Things you may want to rip out

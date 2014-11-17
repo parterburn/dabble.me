@@ -23,6 +23,16 @@ class EntryMailer < ActionMailer::Base
          subject: "OhLife Photo Import Complete"
   end
 
+  def sent_report(total_sent_before, sent_this_session, sent_at)
+    @total_sent_before = total_sent_before
+    @sent_this_session = sent_this_session
+    @total_sent_after = User.subscribed_to_emails.not_just_signed_up.sum(:emails_sent)
+    headers['x-smtpapi'] = { :category => [ "Report" ] }.to_json
+    mail from: "Dabble Me <hello+report@#{ENV['MAIN_DOMAIN']}>",
+         to: "Dabble Me <hello+report@#{ENV['MAIN_DOMAIN']}>",
+         subject: "Sent report for #{sent_at}"
+  end
+
   private
     def random_inspiration
       if (count = Inspiration.without_ohlife_or_email.count) > 0

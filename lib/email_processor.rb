@@ -108,7 +108,7 @@ class EmailProcessor
   private
 
     def pick_meaningful_recipient(recipients)
-      recipients.select {|k| k[:host] =~ /^(email|post)?\.?dabble\.me$/i }.first[:token]
+      recipients.select {|k| k[:host] =~ /^(email|post)?\.?#{ENV['MAIN_DOMAIN'].gsub(".","\.")}$/i }.first[:token]
     end
 
     def find_user_from_user_key(to_token, from_email)
