@@ -22,7 +22,8 @@
       .col-md-2
         %strong #{number_with_delimiter(photos_count)}
       .col-md-2
-        %strong #{number_to_percentage(photos_count.to_f/all_count.to_f*100, precision: 0)}
+        - if all_count > 0
+          %strong #{number_to_percentage(photos_count.to_f/all_count.to_f*100, precision: 0)}
 
   .col-md-12
     %hr
@@ -39,7 +40,8 @@
     - emails_received_total = @users.sum(:emails_received)
     %strong= emails_received_total
   .col-md-2
-    %strong #{number_to_percentage(emails_received_total.to_f/emails_sent_total.to_f*100, precision: 0)}
+    - if emails_sent_total > 0
+      %strong #{number_to_percentage(emails_received_total.to_f/emails_sent_total.to_f*100, precision: 0)}
 
   .col-md-12
     %hr      

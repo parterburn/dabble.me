@@ -60,6 +60,15 @@ class DonationsController < ApplicationController
     redirect_to donations_path
   end
 
+  def payment_notify
+    if params[:email].present?
+      user = User.find_by_email(params[:email])
+      paid = params[:price] / 100
+      donation = Donation.create(user_id: user.id, comments: "Gumroad monthly from #{user.email}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )      
+    end
+    render status: 200
+  end
+
   private
     def entry_params
       params.require(:donation).permit(:amount, :date, :user_id,  :comments)

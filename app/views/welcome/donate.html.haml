@@ -19,6 +19,12 @@
     %br
     %br
     .center
+      .col-md-12.well
+        .gumroad-product-embed{"data-gumroad-product-id" => "dabbleme"}
+          %a{href: "https://gum.co/dabbleme"} Donate with Gumroad
+        %script{src: "https://gumroad.com/js/gumroad-embed.js", type: "text/javascript"}
+        %script{src: "https://gumroad.com/js/gumroad.js", type: "text/javascript"}
+        
       .col-md-8.well
         %p
           %form{:action => "https://www.paypal.com/cgi-bin/webscr", :method => "post", :target => "_top"}
@@ -29,6 +35,6 @@
         %p{:style=>"text-align:justify"}
           A
           %strong PayPal
-          account is not required to contribute this way, you can just use a credit card without creating an account if you like.
+          account is not required to contribute this way, you can use a credit card without creating an account if you like.
       .col-md-3.col-md-offset-1.well.well-sm{:style=>"margin-top:45px;"}
         =link_to image_tag("venmo.png", width: 130, height: 41), "https://venmo.com/?txn=pay&recipients=parterburn&amount=30.00&note=for%20development%20maintenance%20of%20https://dabble.me&audience=public", title: "Donate with Venmo", target: "_blank"

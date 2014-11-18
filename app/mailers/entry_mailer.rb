@@ -27,10 +27,11 @@ class EntryMailer < ActionMailer::Base
     @total_sent_before = total_sent_before
     @sent_this_session = sent_this_session
     @total_sent_after = User.subscribed_to_emails.not_just_signed_up.sum(:emails_sent)
+    first_admin = User.find_by_email(ENV['ADMIN_EMAILS'].split(",").first)
     headers['x-smtpapi'] = { :category => [ "Report" ] }.to_json
     mail from: "Dabble Me <hello+report@#{ENV['MAIN_DOMAIN']}>",
          to: "Dabble Me <hello+report@#{ENV['MAIN_DOMAIN']}>",
-         subject: "Sent report for #{sent_at}"
+         subject: "Sent report for #{sent_at} / Hour #{sent_at.in_time_zone(first_admin.send_timezone).hour}"
   end
 
   private
