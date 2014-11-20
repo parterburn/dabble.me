@@ -19,7 +19,7 @@ namespace :entry do
     end
 
     if ENV['SEND_REPORT'] && ENV['SEND_REPORT'] == "yes"
-      EntryMailer.delay_until(10.minutes.from_now, retry: 3, queue: "entry").sent_report(total_sent_before, sent_this_session, Time.now)
+      ReportWorker.delay_for(10.minutes, retry: 3).perform_async(total_sent_before, sent_this_session, Time.now)
     end
 
   end
