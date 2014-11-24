@@ -29,5 +29,5 @@
       - if @user.donations.sum(:amount) == 0 && @user.emails_sent % 7 == 0
         Keep Dabble Me going strong &amp; unlock premium features:
         =link_to "Donate now!", "https://#{ENV['MAIN_DOMAIN']}/donate"
-      - else
+      - elsif @random_inspiration.present?
         %i=@random_inspiration.body

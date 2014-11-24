@@ -20,5 +20,5 @@ Unsubscribe: https://#{ENV['MAIN_DOMAIN']}/users/edit
 \ 
 - if @user.donations.sum(:amount) == 0 && @user.emails_sent % 7 == 0
   Keep Dabble Me going strong &amp; unlock premium features: https://#{ENV['MAIN_DOMAIN']}/donate
-- else
+- elsif @random_inspiration.present?
   =@random_inspiration.body
