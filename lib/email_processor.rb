@@ -141,7 +141,7 @@ class EmailProcessor
           text << "\n\n"
           blank = true
         else
-          if line.length < 80 || /^(\s+|[*])/ =~ line
+          if line.length < 60 || /^(\s+|[*])/ =~ line
             text << (line.rstrip + "\n")
           else
             text << (line.rstrip + " ")
