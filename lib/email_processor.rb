@@ -113,7 +113,7 @@ class EmailProcessor
         host_to[:token]
       else
         #try CC's
-        host_cc = c_recipients.select {|k| k[:host] =~ /^(email|post)?\.?#{ENV['MAIN_DOMAIN'].gsub(".","\.")}$/i }.first
+        host_cc = cc_recipients.select {|k| k[:host] =~ /^(email|post)?\.?#{ENV['MAIN_DOMAIN'].gsub(".","\.")}$/i }.first
         if host_cc.present?
           host_cc[:token]
         end
