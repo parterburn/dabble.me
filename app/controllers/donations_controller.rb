@@ -13,7 +13,7 @@ class DonationsController < ApplicationController
   def create
 
     if params[:user_email].present?
-      user = User.find_by_email(params[:user_email])
+      user = User.find_by_email(params[:user_email].downcase)
       params[:donation][:user_id] = user.id if user.present?
     end
 
