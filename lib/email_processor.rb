@@ -2,7 +2,7 @@ require 'fileutils'
 
 class EmailProcessor
   def initialize(email)
-    @token = pick_meaningful_recipient(email.to)
+    @token = pick_meaningful_recipient(email.to, email.cc)
     @from = email.from[:email].downcase
     @subject = email.subject
     if email.body.ascii_only?
@@ -107,8 +107,17 @@ class EmailProcessor
 
   private
 
-    def pick_meaningful_recipient(recipients)
-      recipients.select {|k| k[:host] =~ /^(email|post)?\.?#{ENV['MAIN_DOMAIN'].gsub(".","\.")}$/i }.first[:token]
+    def pick_meaningful_recipient(to_recipients, cc_recipients)
+      host_to = to_recipients.select {|k| k[:host] =~ /^(email|post)?\.?#{ENV['MAIN_DOMAIN'].gsub(".","\.")}$/i }.first
+      if host_to.present?
+        host_to[:token]
+      else
+        #try CC's
+        host_cc = c_recipients.select {|k| k[:host] =~ /^(email|post)?\.?#{ENV['MAIN_DOMAIN'].gsub(".","\.")}$/i }.first
+        if host_cc.present?
+          host_cc[:token]
+        end
+      end
     end
 
     def find_user_from_user_key(to_token, from_email)
