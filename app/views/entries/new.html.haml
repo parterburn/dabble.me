@@ -79,6 +79,18 @@
       return true;
     });
 
+:javascript
+  var tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  $('.input-group.date').datepicker({
+      format: "MM d yyyy",
+      todayHighlight: true,
+      keyboardNavigation: false,
+      endDate: tomorrow,
+      autoclose: true,
+      todayBtn: "linked"
+    });   
+
 -if params[:day].blank? && @entry.date.blank?
   :javascript
     var tomorrow = new Date();
@@ -90,7 +102,7 @@
         endDate: tomorrow,
         autoclose: true,
         todayBtn: "linked"
-      }).datepicker("setDate", new Date());
+      }).datepicker("setDate", new Date());   
 
 :javascript
   imagesLoaded( document.querySelector("#entry-#{@entry.id}"), function( instance ) {
