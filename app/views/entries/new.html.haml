@@ -33,7 +33,8 @@
         .input-group.date
           %span.input-group-addon
             %i.fa.fa-calendar
-          = f.text_field :date, :value =>  @entry.date_format_short(""), :placeholder=>"October 11 2014", :class => "form-control"
+          - entry_date = params[:day].present? ? Date.parse(params[:day]).strftime("%B %-d %Y") : @entry.date_format_short("")
+          = f.text_field :date, :value => entry_date, :placeholder=>"October 11 2014", :class => "form-control"
 
         %br
 
@@ -78,7 +79,7 @@
       return true;
     });
 
--if @entry.date.blank?
+-if params[:day].blank? && @entry.date.blank?
   :javascript
     var tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);  

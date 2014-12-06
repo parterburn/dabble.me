@@ -168,6 +168,12 @@ html, body {
 
 .s-date-left {
   float:left;
+  .fa.fa-calendar {
+    color:#CCC;
+    &:hover{
+      color:#999;
+    }
+  }
 }
 
 .s-date-right {

@@ -27,16 +27,23 @@
               =link_to "Random", random_entry_path      
 
           %li{:class=>"#{'active' if current_page?(import_ohlife_path)}"}
-            =link_to "Import OhLife", import_ohlife_path
+            =link_to "Import", import_ohlife_path
+
+          %li
+            = link_to entries_calendar_path, title: "Calendar View", data: { toggle: "tooltip", placement: "bottom" } do
+              %i.fa.fa-calendar
+              %span.visible-xs-inline-block Calendar              
 
           %li
             = link_to search_path, title: "Search", data: { toggle: "tooltip", placement: "bottom" } do
               %i.fa.fa-search
+              %span.visible-xs-inline-block Search
 
           - if current_user.is_admin?
             %li.dropdown
               %a.dropdown-toggle{"data-toggle" => "dropdown", :href => "#"}
                 %i.fa.fa-lock
+                %span.visible-xs-inline-block Admin                
               %ul.dropdown-menu{:role => "menu"}
                 %li{:class=>"#{'active' if current_page?(inspirations_path)}"}
                   =link_to inspirations_path, title: "Inspirations" do
@@ -63,11 +70,11 @@
           %li{:class=>"#{'active' if current_page?(edit_user_registration_path)}", :rel=>"#{add_popover}", :title=>"", :"data-content"=>"#{current_settings}", :"data-placement"=>"bottom"}
             = link_to edit_user_registration_path do
               %i.fa.fa-gear
-              Settings
+              %span.hidden-sm Settings
           %li
             = link_to destroy_user_session_path, method: :delete do
               %i.fa.fa-sign-out
-              Logout
+              %span.hidden-sm Logout
 
         - else
           %li

@@ -1,0 +1,55 @@
+- title "Calendar View"
+= javascript_include_tag "//cdnjs.cloudflare.com/ajax/libs/moment.js/2.8.4/moment.min.js"
+= javascript_include_tag "//cdnjs.cloudflare.com/ajax/libs/fullcalendar/2.2.3/fullcalendar.min.js"
+= stylesheet_link_tag "//cdnjs.cloudflare.com/ajax/libs/fullcalendar/2.2.3/fullcalendar.min.css"
+
+- if current_user.donations.sum(:amount) <= 0
+  .form-horizontal
+  .alert.alert-warning
+    =link_to "Donate now", donate_path, class: "alert-link"
+    to unlock the ability to see your existing entries on the calendar.
+
+#calendar
+
+:css
+  #calendar {
+    margin-top:25px;
+  }
+  .fc-widget-content {
+    cursor:pointer;
+  }
+
+:javascript
+  $(document).ready(function() {
+      $('#calendar').fullCalendar({
+        header: {
+          right: 'prev,next today',
+          center: '',
+          left: 'title'
+        },
+        height: 450,
+        selectable: true,
+        selectHelper: true,
+        select: function(start, end, allDay) {
+          $(".navbar-brand i.fa-spinner").addClass("fa-spin");
+          var converted_date = timeConverter(end);
+          window.location.href = "#{new_entry_url}?day="+converted_date;
+        },
+        events: "#{entries_path(format:'json')}"
+      })
+  });
+
+  function timeConverter(UNIX_timestamp){
+    var a = new Date(UNIX_timestamp);
+    var year = a.getFullYear();
+    var month = a.getMonth()+1;
+    var date = a.getDate();
+    var time = year + '-' + month + '-' + date;
+    return time;
+  }
+
+- if params[:day].present?
+  :javascript
+    $(document).ready(function() {
+      $('#calendar').fullCalendar('gotoDate', "#{params[:day]}");
+    });

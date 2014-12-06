@@ -25,8 +25,14 @@ class EntriesController < ApplicationController
           @title = "Your latest entries"
         end
       end
+
+      respond_to do |format|
+        format.json { render json: calendar_json(current_user.entries) }
+        format.html
+      end
+
     end
-  end
+  end  
 
   def show
     @entry = Entry.includes(:inspiration).find(params[:id])
@@ -49,6 +55,9 @@ class EntriesController < ApplicationController
   def new
     @entry = Entry.new
     @random_inspiration = random_inspiration
+  end
+
+  def calendar
   end
 
   def create
@@ -210,5 +219,21 @@ class EntriesController < ApplicationController
        }
        response['content-type'].gsub("image/","")
     end
+
+    def calendar_json(entries)
+      if current_user.donations.sum(:amount) > 0
+        json_hash = Array.new
+        entries.each do |entry|
+          json_hash <<  {
+            id: entry.id,
+            title: entry.sanitized_body.gsub(/\n/,"").truncate(100, separator: " "),
+            url: entry_path(entry),
+            start: entry.date.strftime("%Y-%m-%d"),
+            allDay: "true"
+          }
+        end
+        json_hash.to_json
+      end
+    end    
 
 end

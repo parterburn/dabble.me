@@ -12,6 +12,7 @@ Rails.application.routes.draw do
   match '/entries/import/ohlife/process' => 'import#process_ohlife', via: [:put], :as => "import_ohlife_process"
   match '/entries/import/ohlife/upload'  => 'import#process_ohlife_images', via: [:post], :as => "import_ohlife_images"  
   get   '/entries/export'                => 'entries#export', :as => "export_entries"
+  get   '/entries/calendar'              => 'entries#calendar', :as => "entries_calendar"
 
   resources :entries
   resources :inspirations
