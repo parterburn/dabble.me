@@ -1,6 +1,7 @@
 class DonationsController < ApplicationController
   before_action :authenticate_user!
   before_filter :require_permission
+  skip_before_filter :verify_authenticity_token, :only => [:payment_notify]
 
   def index
     @donations = Donation.includes(:user).all.order("date DESC, id DESC")
@@ -65,6 +66,7 @@ class DonationsController < ApplicationController
       user = User.find_by_email(params[:email])
       paid = params[:price] / 100
       donation = Donation.create(user_id: user.id, comments: "Gumroad monthly from #{user.email}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )      
+      UserMailer.thanks_for_donating(user).deliver
     end
     render status: 200
   end
