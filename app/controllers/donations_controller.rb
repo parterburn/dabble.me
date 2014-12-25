@@ -1,6 +1,9 @@
 class DonationsController < ApplicationController
   before_action :authenticate_user!
   before_filter :require_permission
+  
+  skip_before_filter :authenticate_user!, :only => [:payment_notify]
+  skip_before_filter :require_permission, :only => [:payment_notify]
   skip_before_filter :verify_authenticity_token, :only => [:payment_notify]
 
   def index
@@ -62,11 +65,11 @@ class DonationsController < ApplicationController
   end
 
   def payment_notify
-    if params[:email].present?
+    if params[:email].present? && params[:seller_id] == ENV['GUMROAD_SELLER_ID'] && params[:product_id] == ENV['GUMROAD_PRODUCT_ID']
       user = User.find_by_email(params[:email])
       paid = params[:price] / 100
-      donation = Donation.create(user_id: user.id, comments: "Gumroad monthly from #{user.email}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )      
-      UserMailer.thanks_for_donating(user).deliver
+      donation = Donation.create(user_id: user.id, comments: "Gumroad monthly from #{user.email}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
+      UserMailer.thanks_for_donating(user).deliver if user.donations.count == 1
     end
     render status: 200
   end
