@@ -71,7 +71,7 @@ class DonationsController < ApplicationController
       donation = Donation.create(user_id: user.id, comments: "Gumroad monthly from #{user.email}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
       UserMailer.thanks_for_donating(user).deliver if user.donations.count == 1
     end
-    render status: 200
+    head :ok, content_type: "text/html"
   end
 
   private
