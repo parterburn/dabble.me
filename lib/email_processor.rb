@@ -139,7 +139,11 @@ class EmailProcessor
          dates_to_use << d
          end
       end
-      dates_to_use.min_by { | d | ( d - now ).abs }.strftime("%Y-%m-%d")
+      if dates_to_use.blank?
+        now.strftime("%Y-%m-%d")
+      else
+        dates_to_use.min_by { | d | ( d - now ).abs }.strftime("%Y-%m-%d")
+      end
     end
 
     def unfold_paragraphs(body)
