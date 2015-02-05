@@ -53,13 +53,16 @@ class RegistrationsController < Devise::RegistrationsController
     end
   end
 
-  def unsubscribe
-    cookies.permanent[:viewed_settings] = true
-    @user = User.find_by(user_key: params[:user_key])
+  def settings
+    if user_signed_in?
+      redirect_to edit_user_registration_path
+    else
+      cookies.permanent[:viewed_settings] = true
+      @user = User.find_by(user_key: params[:user_key])      
+    end
   end
 
-  def unsubscribe_user
-    p params
+  def unsubscribe
     @user = User.find_by(user_key: params[:user_key])
     
     @user.frequency = []
@@ -76,7 +79,7 @@ class RegistrationsController < Devise::RegistrationsController
       set_flash_message :error, "Could not update."
     end
 
-    redirect_to unsubscribe_path(@user.user_key)
+    redirect_to settings_path(@user.user_key)
 
   end
 

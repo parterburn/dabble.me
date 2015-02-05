@@ -10,7 +10,7 @@ You can check out your entry here: https://#{ENV['MAIN_DOMAIN']}/past
 - if @user.frequencies.present?
   \ 
   \ 
-  P.S. You'll receive emails every #{@user.frequencies} at #{@user.send_time.strftime("%-I %P")} #{@user.send_timezone}. Change your settings here: https://#{ENV['MAIN_DOMAIN']}/settings
+  P.S. You'll receive emails every #{@user.frequencies} at #{@user.send_time.strftime("%-I %P")} #{@user.send_timezone}. Change your settings here: https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}
 - else
   \ 
-  P.S. You have email reminders turned off, so you won't receive prompts in the future. Change your settings here: https://#{ENV['MAIN_DOMAIN']}/settings
+  P.S. You have email reminders turned off, so you won't receive prompts in the future. Change your settings here: https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}

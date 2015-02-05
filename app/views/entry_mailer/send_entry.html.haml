@@ -23,7 +23,7 @@
         &middot;
       =link_to "Past entries", "https://#{ENV['MAIN_DOMAIN']}/entries"
       &middot;
-      =link_to "Unsubscribe", "https://#{ENV['MAIN_DOMAIN']}/users/edit"
+      =link_to "Unsubscribe", "https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}"
     %hr{:style=>"margin-top: 20px;margin-bottom: 20px;border: 0;border-top: 2px solid whiteSmoke;"}
     %p{style: "color:#CCC"}
       - if @user.donations.sum(:amount) == 0 && @user.emails_sent % 7 == 0

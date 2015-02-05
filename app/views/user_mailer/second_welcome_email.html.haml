@@ -20,9 +20,9 @@
   %p
     %i
       P.S. You'll receive emails every #{@user.frequencies} at #{@user.send_time.strftime("%-I %P")} #{@user.send_timezone}.
-      =link_to "Change this?", "https://#{ENV['MAIN_DOMAIN']}/users/edit"
+      =link_to "Change this?", "https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}"
 - else
   %p
     %i
       P.S. You have email reminders turned off, so you won't receive prompts in the future.
-      =link_to "Change this?", "https://#{ENV['MAIN_DOMAIN']}/users/edit"
+      =link_to "Change this?", "https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}"

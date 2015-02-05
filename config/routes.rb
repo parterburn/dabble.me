@@ -9,8 +9,8 @@ Rails.application.routes.draw do
   devise_for :users, :controllers => { registrations: 'registrations' }
 
   devise_scope :user do
-    get '/unsubscribe/:user_key'  => 'registrations#unsubscribe', :as => "unsubscribe"
-    match '/unsubscribe/:user_key'  => 'registrations#unsubscribe_user', :as => "unsubscribe_user", via: [:put]
+    get '/settings/:user_key'       => 'registrations#settings', :as => "settings"
+    match '/unsubscribe/:user_key'  => 'registrations#unsubscribe', :as => "unsubscribe", via: [:put]
   end
 
   get   '/entries/import/ohlife'         => 'import#import_ohlife', :as => "import_ohlife"
@@ -32,7 +32,7 @@ Rails.application.routes.draw do
 
   get '/admin'                  => 'application#admin', :as => "admin"
   
-  get '/settings',              to: redirect('/users/edit')
+  
   get '/write',                 to: redirect('/entries/new')
   get '/privacy'                => 'welcome#privacy'
   get '/faqs'                   => 'welcome#faqs'
