@@ -1,0 +1,52 @@
+- title 'Edit account on Dabble Me'
+
+.row
+  .col-md-6.col-md-offset-3
+    %h3 Email Settings for #{@user.full_name_or_email}
+    %br
+
+  = form_for(resource, as: resource_name, url: "/unsubscribe/#{@user.user_key}", html: { method: :put }) do |f|
+    - if @user.errors.present?
+      .col-md-6.col-md-offset-3
+        .alert.alert-danger= devise_error_messages!
+
+    .col-md-6.col-md-offset-3
+      %div
+        = label_tag "Days to send emails"
+        %i (uncheck all to unsubcribe)
+        %br
+        - %w(Sun Mon Tue Wed Thu Fri Sat).each do |day|
+          - if @user.frequency.include?(day[0..2])
+            = check_box_tag "frequency[#{day}]", 1, {:checked => "checked"}
+          - else
+            = check_box_tag "frequency[#{day}]"
+          %span.s-day-email= label_tag "frequency_#{day}", day
+          &nbsp;&nbsp;
+        .clearfix
+        %br
+      
+    .col-md-3.col-md-offset-3
+      = f.label :send_time
+      = f.time_select :send_time, {:combined => true, :minute_interval => 60, :ampm => true, :include_seconds => false }, :class => "form-control"
+      %br
+
+    .col-md-3
+      = f.label :send_timezone, "Timezone"
+      = f.time_zone_select :send_timezone, ActiveSupport::TimeZone.us_zones, {}, {:class => 'form-control'}
+      %br
+
+    .col-md-6.col-md-offset-3
+      = f.check_box :send_past_entry
+      = f.label :send_past_entry
+      %br
+      %br
+    .clearfix
+
+    .col-md-6.col-md-offset-3
+      = f.submit "Update", :class=>"btn btn-primary form-control"
+    
+    .clearfix
+    %br
+
+    .col-md-6.col-md-offset-3
+      = f.submit "Unsubscribe From All Emails", :name => "unsub_all", :class=>"btn btn-warning form-control"

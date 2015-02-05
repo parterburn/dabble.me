@@ -52,7 +52,33 @@ class RegistrationsController < Devise::RegistrationsController
       redirect_to edit_user_registration_path
     end
   end
-  
+
+  def unsubscribe
+    cookies.permanent[:viewed_settings] = true
+    @user = User.find_by(user_key: params[:user_key])
+  end
+
+  def unsubscribe_user
+    p params
+    @user = User.find_by(user_key: params[:user_key])
+    
+    @user.frequency = []
+    if params[:frequency].present? && params[:unsub_all].blank?
+      params[:frequency].each do |freq|
+        @user.frequency << freq[0]
+      end
+    end
+    params[:user].parse_time_select! :send_time
+
+    if @user.update_without_password(devise_parameter_sanitizer.sanitize(:account_update))
+      set_flash_message :notice, :updated
+    else
+      set_flash_message :error, "Could not update."
+    end
+
+    redirect_to unsubscribe_path(@user.user_key)
+
+  end
 
   private
 

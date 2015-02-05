@@ -8,6 +8,11 @@ Rails.application.routes.draw do
 
   devise_for :users, :controllers => { registrations: 'registrations' }
 
+  devise_scope :user do
+    get '/unsubscribe/:user_key'  => 'registrations#unsubscribe', :as => "unsubscribe"
+    match '/unsubscribe/:user_key'  => 'registrations#unsubscribe_user', :as => "unsubscribe_user", via: [:put]
+  end
+
   get   '/entries/import/ohlife'         => 'import#import_ohlife', :as => "import_ohlife"
   match '/entries/import/ohlife/process' => 'import#process_ohlife', via: [:put], :as => "import_ohlife_process"
   match '/entries/import/ohlife/upload'  => 'import#process_ohlife_images', via: [:post], :as => "import_ohlife_images"  
@@ -25,16 +30,16 @@ Rails.application.routes.draw do
   
   root 'welcome#index'
 
-  get '/admin'               => 'application#admin', :as => "admin"
+  get '/admin'                  => 'application#admin', :as => "admin"
   
-  get '/settings',           to: redirect('/users/edit')
-  get '/write',              to: redirect('/entries/new')
-  get '/privacy'             => 'welcome#privacy'
-  get '/faqs'                => 'welcome#faqs'
-  get '/donate'              => 'welcome#donate'
-  match '/payment_notify'    => 'donations#payment_notify', via: [:post]
-  get '/ohlife-alternative'  => 'welcome#ohlife_alternative'
+  get '/settings',              to: redirect('/users/edit')
+  get '/write',                 to: redirect('/entries/new')
+  get '/privacy'                => 'welcome#privacy'
+  get '/faqs'                   => 'welcome#faqs'
+  get '/donate'                 => 'welcome#donate'
+  match '/payment_notify'       => 'donations#payment_notify', via: [:post]
+  get '/ohlife-alternative'     => 'welcome#ohlife_alternative'
   
-  post '/email_processor'    => 'griddler/emails#create'
+  post '/email_processor'       => 'griddler/emails#create'
 
 end
