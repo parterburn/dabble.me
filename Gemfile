@@ -80,6 +80,7 @@ group :development, :test do
   gem 'pry'
   gem 'pry-byebug'
   gem 'pry-rails'
+  gem 'pry-nav'
   gem 'rspec-rails'
 end
 

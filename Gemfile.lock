@@ -159,6 +159,8 @@ GEM
     pry-byebug (2.0.0)
       byebug (~> 3.4)
       pry (~> 0.10)
+    pry-nav (0.2.4)
+      pry (>= 0.9.10, < 0.11.0)
     pry-rails (0.3.2)
       pry (>= 0.9.10)
     puma (2.9.1)
@@ -331,6 +333,7 @@ DEPENDENCIES
   pg
   pry
   pry-byebug
+  pry-nav
   pry-rails
   puma
   rack-timeout

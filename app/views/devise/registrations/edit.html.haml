@@ -119,7 +119,7 @@
         or
         =link_to "JSON", export_entries_path(:json)
         (rich formatting).
-        -if current_user.entries.only_images.length > 0
+        -if current_user.entries.only_images.length > 0 && ENV['DOWNLOADER_URL'].present?
           %br
           %br
           Export all Photos as a single
