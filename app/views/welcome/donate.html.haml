@@ -2,6 +2,12 @@
 
 .row
   %br
+  - if params[:thank].present?
+    .col-md-8.col-md-offset-2.alert.alert-success
+      %h5
+        %strong Thanks for donating via Paypal!
+      %br
+      Premium features may take up to 24 hours before becoming active, and you'll receive an email when they do.
   .col-md-8.col-md-offset-2
     %h4 
       %strong Dabble Me is a "pay what you can" service.
@@ -10,7 +16,7 @@
       =link_to "OhLife", "http://ohlife.com/shutdown", target: "_blank", class: "alert-link"
       (the inspiration for this site) proves that the longevity of even smaller apps like this take real costs to run. If you enjoy the service, any amount you can afford is greatly appreciated!
     %p
-      %strong While recurring donations are encouraged, even donating just one-time will unlock the premium features of Dabble Me:
+      %strong Donating will keep the site up, and unlock premium features on your account:
       %ul
         %li Attach a photo to your entry
         %li Rich text formatting
@@ -20,26 +26,33 @@
     %br
     %br
     .center
-      .col-md-12.well
-        .gumroad-product-embed{"data-gumroad-product-id" => "dabbleme", "data-email" => "#{current_user.email if current_user}"}
-        :javascript
-          function receiveMessage(e){var t=e.data.split(" ")[0],d=e.data.split(" ")[1],r=document.getElementById("gumroad_link_"+t);void 0!=r&&"0"==r.getAttribute("src").indexOf(e.origin)&&(GumroadEmbed.embeds[t].reallyShow(),"scrollToTop"==d&&(navigator.userAgent.match(/Android/i)||navigator.userAgent.match(/BlackBerry/i)||navigator.userAgent.match(/iPhone|iPad|iPod/i)||navigator.userAgent.match(/Opera Mini/i)||navigator.userAgent.match(/IEMobile/i))?window.scrollTo(0,r.offsetTop):"scrollToTop"!=d&&r.setAttribute("height",d))}var GumroadEmbed=GumroadEmbed||{init:function(){GumroadEmbed.body=document.body,GumroadEmbed.development=document.getElementById("embed-p")&&"true"==document.getElementById("embed-p").getAttribute("data-gumroad-development"),GumroadEmbed.staging=document.getElementById("embed-p")&&"true"==document.getElementById("embed-p").getAttribute("data-gumroad-staging"),GumroadEmbed.domain=GumroadEmbed.development?"http://local.host:3333":"https://gumroad.com",GumroadEmbed.domain=GumroadEmbed.staging?"http://staging.gumroad.com":GumroadEmbed.domain,GumroadEmbed.embeds={};for(var e=document.getElementsByClassName("gumroad-product-embed"),t=0;t<e.length;t++){var d=e[t],r=d.getAttribute("data-gumroad-product-id");if(void 0!=r){var a=new GumroadEmbedEmbed(d);GumroadEmbed.embeds[r]=a}}},create:function(e){var t=document.createDocumentFragment(),d=document.createElement("div");for(d.innerHTML="hack"+e;d.firstChild;)1===d.firstChild.nodeType?t.appendChild(d.firstChild):d.removeChild(d.firstChild);GumroadEmbed.body.insertBefore(t,GumroadEmbed.body.childNodes[0])},newEvent:function(e,t,d,r){var a=r?function(e){d.apply(r,[e])}:d;document.addEventListener?e.addEventListener(t,a,!1):document.attachEvent&&e.attachEvent("on"+t,a)},cancelEvent:function(e){e&&e.preventDefault?e.preventDefault():window.event.returnValue=!1}};GumroadEmbedEmbed=function(e){this.el=e,this.id=e.getAttribute("data-gumroad-product-id"),this.outboundEmbed=e.getAttribute("data-outbound-embed"),this.email=e.getAttribute("data-email"),this.iframeId="gumroad_link_"+this.id,this.show()},GumroadEmbedEmbed.prototype={show:function(e){if(e&&GumroadEmbed.cancelEvent(e),1!=GumroadEmbed.embeds[this.iframeId]){GumroadEmbed.create('<iframe class="gumroad_iframe" id="'+this.iframeId+'" src="'+GumroadEmbed.domain+"/l/"+this.id+"?as_embed=true&outbound_embed="+this.outboundEmbed+"&email="+this.email+"&referrer="+document.referrer+'" allowtransparency="true" scrolling="no" width="100%" height="0" style="display: block !important; border: none !important; margin: 0 auto !important; padding: 0 !important; max-width: 100% !important;"></iframe>'),GumroadEmbed.embeds[this.iframeId]=!0;var t=document.getElementById(this.iframeId);this.el.parentNode.insertBefore(t,this.el)}return!1},reallyShow:function(){return this.el.remove(),!1}},GumroadEmbed.newEvent(window,"load",GumroadEmbed.init),window.addEventListener?window.addEventListener("message",receiveMessage,!1):window.attachEvent("message",receiveMessage);        
-        
+      .col-md-12.alert.alert-success{style: "text-align:center;"}
+        %script{:src => "https://gumroad.com/js/gumroad.js", :type => "text/javascript"}
+        %h4
+          Donating via
+          %strong Gumroad
+          will activate the Pro features instantly on your account.        
+        %p{style: "margin-top:20px;"}
+          %a.gumroad-button{:href => "https://gumroad.com/l/dabbleme?wanted=true"} Donate Now & Activate Pro Features
+
       .clearfix
-      %hr
-      .clearfix
-      %h4 Other ways to donate:
       %br
-      .col-md-8.well
+      .col-md-12
         %p
           %form{:action => "https://www.paypal.com/cgi-bin/webscr", :method => "post", :target => "_top"}
+            %span{style: "display: inline-block;height: 35px;vertical-align: middle;margin-right: 5px;"}
+              You can also use
+              %strong Paypal
+              to donate:
             %input{:name => "cmd", :type => "hidden", :value => "_s-xclick"}
-            %input{:name => "hosted_button_id", :type => "hidden", :value => "74DTWFU5WL3MA"}/
-            %input{:alt => "PayPal - The safer, easier way to pay online!", :border => "0", :name => "submit", :src => "https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif", :type => "image"}
+            %input{:name => "item_name", :type => "hidden", :value => "Dabble Me Pro for #{current_user.email if current_user.present?}"}
+            %input{:name => "first_name", :type => "hidden", :value => "#{current_user.first_name if current_user.present?}"}
+            %input{:name => "last_name", :type => "hidden", :value => "#{current_user.last_name if current_user.present?}"}
+            %input{:name => "email", :type => "hidden", :value => "#{current_user.email if current_user.present?}"}
+            %input{:name => "night_phone_a", :type => "hidden", :value => "555"}
+            %input{:name => "night_phone_b", :type => "hidden", :value => "555"}
+            %input{:name => "night_phone_c", :type => "hidden", :value => "5555"}
+            %input{:name => "dabble_me_email", :type => "hidden", :value => "#{current_user.email if current_user.present?}"}
+            %input{:name => "hosted_button_id", :type => "hidden", :value => "JH22LC48DY8GU"}
+            %input{:alt => "PayPal - The safer, easier way to pay online!", :border => "0", :name => "submit", :src => "https://www.paypalobjects.com/en_US/i/btn/btn_subscribe_SM.gif", :type => "image"}
             %img{:alt => "", :border => "0", :height => "1", :src => "https://www.paypalobjects.com/en_US/i/scr/pixel.gif", :width => "1"}
-        %p{:style=>"text-align:justify"}
-          A
-          %strong PayPal
-          account is not required to contribute this way, you can use a credit card without creating an account if you like.
-      .col-md-3.col-md-offset-1.well.well-sm{:style=>"margin-top:45px;"}
-        =link_to image_tag("venmo.png", width: 130, height: 41), "https://venmo.com/?txn=pay&recipients=parterburn&amount=30.00&note=for%20development%20maintenance%20of%20https://dabble.me&audience=public", title: "Donate with Venmo", target: "_blank"
