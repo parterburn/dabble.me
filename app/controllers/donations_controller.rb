@@ -70,7 +70,7 @@ class DonationsController < ApplicationController
       paid = params[:price].to_f / 100
       if user.present? && user.donations.count > 0 && Donation.where(user_id: user.id).last.created_at.to_date === Time.now.to_date
         #duplicate, don't send
-      else
+      elsif user.present?
         donation = Donation.create(user_id: user.id, comments: "Gumroad monthly from #{user.email}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
         UserMailer.thanks_for_donating(user).deliver if user.donations.count == 1
       end
