@@ -52,6 +52,7 @@
             %input{:name => "night_phone_a", :type => "hidden", :value => "555"}
             %input{:name => "night_phone_b", :type => "hidden", :value => "555"}
             %input{:name => "night_phone_c", :type => "hidden", :value => "5555"}
+            %input{:name => "notify_url", :type => "hidden", :value => "https://dabble.me/payment_notify"}
             %input{:name => "dabble_me_email", :type => "hidden", :value => "#{current_user.email if current_user.present?}"}
             %input{:name => "hosted_button_id", :type => "hidden", :value => "JH22LC48DY8GU"}
             %input{:alt => "PayPal - The safer, easier way to pay online!", :border => "0", :name => "submit", :src => "https://www.paypalobjects.com/en_US/i/btn/btn_subscribe_SM.gif", :type => "image"}
