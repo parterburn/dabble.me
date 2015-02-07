@@ -32,6 +32,21 @@ a.s-delete {
   }
 }
 
+.s-unsubscribe {
+  -webkit-appearance: none;
+  background: none;
+  border: none;
+  color:#a41100;
+  opacity:0.8;
+  outline: none;
+  padding: 0px;
+  font-size:14px;
+  &:hover{
+    opacity:1.0;
+    text-decoration: underline;
+  }  
+}
+
 .s-show-date {
   margin-top:30px;
 }

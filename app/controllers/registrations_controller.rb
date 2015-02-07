@@ -74,7 +74,11 @@ class RegistrationsController < Devise::RegistrationsController
     params[:user].parse_time_select! :send_time
 
     if @user.update_without_password(devise_parameter_sanitizer.sanitize(:account_update))
-      set_flash_message :notice, :updated
+      if @user.frequency.present?
+        set_flash_message :notice, :updated
+      else
+        flash[:notice] = "You are now unsubscribed from all emails."
+      end
     else
       set_flash_message :error, "Could not update."
     end
