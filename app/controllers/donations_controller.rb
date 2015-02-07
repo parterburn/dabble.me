@@ -65,16 +65,29 @@ class DonationsController < ApplicationController
   end
 
   def payment_notify
+    # check for GUMROAD
     if params[:email].present? && params[:seller_id].gsub("==","") == ENV['GUMROAD_SELLER_ID'] && params[:product_id].gsub("==","") == ENV['GUMROAD_PRODUCT_ID']
       user = User.find_by_email(params[:email])
-      paid = params[:price].to_f / 100
       if user.present? && user.donations.count > 0 && Donation.where(user_id: user.id).last.created_at.to_date === Time.now.to_date
         #duplicate, don't send
       elsif user.present?
+        paid = params[:price].to_f / 100
         donation = Donation.create(user_id: user.id, comments: "Gumroad monthly from #{user.email}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
         UserMailer.thanks_for_donating(user).deliver if user.donations.count == 1
       end
+    elsif params[:item_name].present? && params[:item_name].include?("Dabble Me Pro for ") && params[:payment_status].present? && params[:payment_status] == "Completed" && ENV['AUTO_EMAIL_PAYPAL'] == "yes"
+      # check for Paypal
+      email = params[:item_name].gsub("Dabble Me Pro for ","") if params[:item_name].present?
+      user = User.find_by_email(email)
+      if user.present? && user.donations.count > 0 && Donation.where(user_id: user.id).last.created_at.to_date === Time.now.to_date
+        #duplicate, don't send
+      elsif user.present?
+        paid = params[:mc_gross]
+        donation = Donation.create(user_id: user.id, comments: "Paypal monthly from #{params[:payer_email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
+        UserMailer.thanks_for_donating(user).deliver if user.donations.count == 1
+      end
     end
+
     head :ok, content_type: "text/html"
   end
 
