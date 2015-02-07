@@ -9,7 +9,7 @@ Rails.application.routes.draw do
   devise_for :users, :controllers => { registrations: 'registrations' }
 
   devise_scope :user do
-    get '/settings/:user_key'       => 'registrations#settings', :as => "settings"
+    get '/settings/(:user_key)'       => 'registrations#settings', :as => "settings"
     match '/unsubscribe/:user_key'  => 'registrations#unsubscribe', :as => "unsubscribe", via: [:put]
   end
 

@@ -207,7 +207,7 @@ class EntriesController < ApplicationController
         redirect_to response['url']
       rescue
         flash[:alert] = "Could not download ZIP file."
-        redirect_to edit_user_path
+        redirect_to edit_user_registration_path
       end
     end
 
