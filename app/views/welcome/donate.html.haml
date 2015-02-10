@@ -31,9 +31,9 @@
         %h4
           Donating via
           %strong Gumroad
-          will activate the Pro features instantly on your account.        
+          will activate the Pro features instantly on your account.
         %p{style: "margin-top:20px;"}
-          %a.gumroad-button{:href => "https://gumroad.com/l/dabbleme?wanted=true"} Donate Now & Activate Pro Features
+          %a.gumroad-button{:href => "https://gumroad.com/l/dabbleme?wanted=true&email=#{current_user.email if current_user}"} Donate Now & Activate Pro Features
 
       .clearfix
       %br
