@@ -52,6 +52,6 @@ class ImportWorker
       messages << error
     end
 
-    EntryMailer.import_finished(user, messages).deliver_now
+    EntryMailer.import_finished(user, messages).deliver_later
   end
 end
