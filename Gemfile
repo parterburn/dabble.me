@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 ruby '2.2.0'
-gem 'rails', '4.1.9'
+gem 'rails', '4.2.0'
 
 # Servers
 gem 'puma'
@@ -15,10 +15,10 @@ gem 'puma'
 # ORM
 gem 'pg'
 
-gem 'devise' # User Authentication
+gem "devise", "~> 3.4.0"
 gem 'sendgrid', '~> 1.2.0' # Emails
 
-gem 'simple_form'
+gem 'simple_form', "~> 3.1.0"
 gem 'summernote-rails' #wysiwyg
 gem 'addressable' # better URI checking
 
@@ -28,7 +28,7 @@ gem 'sinatra', '>= 1.3.0', :require => nil
 gem "combined_time_select", "~> 1.0.1"
 gem 'gibbon' #mailchimp connector
 
-gem 'griddler' #email parsing
+gem 'griddler', '~> 1.1.0'
 gem 'griddler-sendgrid' #email parsing
 
 gem 'randomized_field', '~> 0.1.0' # builds user_keys
@@ -91,6 +91,7 @@ group :development do
   gem 'meta_request'
   gem 'spring'
   gem 'spring-commands-rspec'
+  gem "web-console", "~> 2.0"
 end
 
 group :test do

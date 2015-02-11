@@ -1,37 +1,46 @@
 GEM
   remote: https://rubygems.org/
   specs:
-    actionmailer (4.1.9)
-      actionpack (= 4.1.9)
-      actionview (= 4.1.9)
+    actionmailer (4.2.0)
+      actionpack (= 4.2.0)
+      actionview (= 4.2.0)
+      activejob (= 4.2.0)
       mail (~> 2.5, >= 2.5.4)
-    actionpack (4.1.9)
-      actionview (= 4.1.9)
-      activesupport (= 4.1.9)
-      rack (~> 1.5.2)
+      rails-dom-testing (~> 1.0, >= 1.0.5)
+    actionpack (4.2.0)
+      actionview (= 4.2.0)
+      activesupport (= 4.2.0)
+      rack (~> 1.6.0)
       rack-test (~> 0.6.2)
-    actionview (4.1.9)
-      activesupport (= 4.1.9)
+      rails-dom-testing (~> 1.0, >= 1.0.5)
+      rails-html-sanitizer (~> 1.0, >= 1.0.1)
+    actionview (4.2.0)
+      activesupport (= 4.2.0)
       builder (~> 3.1)
       erubis (~> 2.7.0)
-    activemodel (4.1.9)
-      activesupport (= 4.1.9)
+      rails-dom-testing (~> 1.0, >= 1.0.5)
+      rails-html-sanitizer (~> 1.0, >= 1.0.1)
+    activejob (4.2.0)
+      activesupport (= 4.2.0)
+      globalid (>= 0.3.0)
+    activemodel (4.2.0)
+      activesupport (= 4.2.0)
       builder (~> 3.1)
-    activerecord (4.1.9)
-      activemodel (= 4.1.9)
-      activesupport (= 4.1.9)
-      arel (~> 5.0.0)
-    activesupport (4.1.9)
-      i18n (~> 0.6, >= 0.6.9)
+    activerecord (4.2.0)
+      activemodel (= 4.2.0)
+      activesupport (= 4.2.0)
+      arel (~> 6.0)
+    activesupport (4.2.0)
+      i18n (~> 0.7)
       json (~> 1.7, >= 1.7.7)
       minitest (~> 5.1)
-      thread_safe (~> 0.1)
+      thread_safe (~> 0.3, >= 0.3.4)
       tzinfo (~> 1.1)
     addressable (2.3.6)
-    arel (5.0.1.20140414130214)
+    arel (6.0.0)
     autoprefixer-rails (3.1.0.20140911)
       execjs
-    bcrypt (3.1.7)
+    bcrypt (3.1.10)
     better_errors (2.0.0)
       coderay (>= 1.0.0)
       erubis (>= 2.6.6)
@@ -82,10 +91,11 @@ GEM
     debugger-linecache (1.2.0)
     delorean (2.1.0)
       chronic
-    devise (3.3.0)
+    devise (3.4.1)
       bcrypt (~> 3.0)
       orm_adapter (~> 0.1)
       railties (>= 3.2.6, < 5)
+      responders
       thread_safe (~> 0.1)
       warden (~> 1.2.3)
     diff-lcs (1.2.5)
@@ -109,8 +119,10 @@ GEM
     gibbon (1.1.3)
       httparty
       multi_json (>= 1.3.4)
+    globalid (0.3.2)
+      activesupport (>= 4.1.0)
     google-analytics-rails (0.0.6)
-    griddler (1.0.0)
+    griddler (1.1.0)
       htmlentities
       rails (>= 3.2.0)
     griddler-sendgrid (0.0.1)
@@ -122,7 +134,7 @@ GEM
       tilt
     hike (1.2.3)
     hitimes (1.2.2)
-    htmlentities (4.3.2)
+    htmlentities (4.3.3)
     httparty (0.13.1)
       json (~> 1.8)
       multi_xml (>= 0.5.2)
@@ -135,6 +147,8 @@ GEM
     json (1.8.2)
     launchy (2.4.3)
       addressable (~> 2.3)
+    loofah (2.0.1)
+      nokogiri (>= 1.5.9)
     mail (2.6.3)
       mime-types (>= 1.16, < 3)
     meta_request (0.3.4)
@@ -143,13 +157,13 @@ GEM
       railties (>= 3.0.0, < 5.0.0)
     method_source (0.8.2)
     mime-types (2.4.3)
-    mini_portile (0.6.0)
+    mini_portile (0.6.2)
     minitest (5.5.1)
     multi_json (1.10.1)
     multi_xml (0.5.5)
     netrc (0.7.7)
-    nokogiri (1.6.3.1)
-      mini_portile (= 0.6.0)
+    nokogiri (1.6.6.2)
+      mini_portile (~> 0.6.0)
     orm_adapter (0.5.0)
     pg (0.17.1)
     pry (0.10.1)
@@ -165,7 +179,7 @@ GEM
       pry (>= 0.9.10)
     puma (2.9.1)
       rack (>= 1.1, < 2.0)
-    rack (1.5.2)
+    rack (1.6.0)
     rack-contrib (1.1.0)
       rack (>= 0.9.1)
     rack-protection (1.5.3)
@@ -175,19 +189,28 @@ GEM
     rack-timeout (0.0.4)
     rack-utf8_sanitizer (1.2.3)
       rack (~> 1.0)
-    rails (4.1.9)
-      actionmailer (= 4.1.9)
-      actionpack (= 4.1.9)
-      actionview (= 4.1.9)
-      activemodel (= 4.1.9)
-      activerecord (= 4.1.9)
-      activesupport (= 4.1.9)
+    rails (4.2.0)
+      actionmailer (= 4.2.0)
+      actionpack (= 4.2.0)
+      actionview (= 4.2.0)
+      activejob (= 4.2.0)
+      activemodel (= 4.2.0)
+      activerecord (= 4.2.0)
+      activesupport (= 4.2.0)
       bundler (>= 1.3.0, < 2.0)
-      railties (= 4.1.9)
-      sprockets-rails (~> 2.0)
-    railties (4.1.9)
-      actionpack (= 4.1.9)
-      activesupport (= 4.1.9)
+      railties (= 4.2.0)
+      sprockets-rails
+    rails-deprecated_sanitizer (1.0.3)
+      activesupport (>= 4.2.0.alpha)
+    rails-dom-testing (1.0.5)
+      activesupport (>= 4.2.0.beta, < 5.0)
+      nokogiri (~> 1.6.0)
+      rails-deprecated_sanitizer (>= 1.0.1)
+    rails-html-sanitizer (1.0.1)
+      loofah (~> 2.0)
+    railties (4.2.0)
+      actionpack (= 4.2.0)
+      activesupport (= 4.2.0)
       rake (>= 0.8.7)
       thor (>= 0.18.1, < 2.0)
     rake (10.4.2)
@@ -195,6 +218,8 @@ GEM
     redis (3.1.0)
     redis-namespace (1.5.1)
       redis (~> 3.0, >= 3.0.4)
+    responders (2.1.0)
+      railties (>= 4.2.0, < 5)
     rest-client (1.7.2)
       mime-types (>= 1.16, < 3.0)
       netrc (~> 0.7)
@@ -239,7 +264,7 @@ GEM
       json
       redis (>= 3.0.6)
       redis-namespace (>= 1.3.1)
-    simple_form (3.0.2)
+    simple_form (3.1.0)
       actionpack (~> 4.0)
       activemodel (~> 4.0)
     simplecov (0.9.0)
@@ -287,6 +312,11 @@ GEM
     uniform_notifier (1.6.2)
     warden (1.2.3)
       rack (>= 1.0)
+    web-console (2.0.0)
+      activemodel (~> 4.0)
+      binding_of_caller (>= 0.7.2)
+      railties (~> 4.0)
+      sprockets-rails (>= 2.0, < 4.0)
     webmock (1.18.0)
       addressable (>= 2.3.6)
       crack (>= 0.3.2)
@@ -315,7 +345,7 @@ DEPENDENCIES
   coveralls
   database_cleaner
   delorean
-  devise
+  devise (~> 3.4.0)
   email_reply_parser
   email_spec
   factory_girl_rails
@@ -323,7 +353,7 @@ DEPENDENCIES
   filepicker-rails
   gibbon
   google-analytics-rails
-  griddler
+  griddler (~> 1.1.0)
   griddler-sendgrid
   haml
   haml_assets
@@ -338,7 +368,7 @@ DEPENDENCIES
   puma
   rack-timeout
   rack-utf8_sanitizer
-  rails (= 4.1.9)
+  rails (= 4.2.0)
   randomized_field (~> 0.1.0)
   rest-client
   rspec
@@ -348,7 +378,7 @@ DEPENDENCIES
   selenium-webdriver
   sendgrid (~> 1.2.0)
   sidekiq (~> 3.1.3)
-  simple_form
+  simple_form (~> 3.1.0)
   simplecov
   sinatra (>= 1.3.0)
   skylight (~> 0.4.3)
@@ -357,6 +387,7 @@ DEPENDENCIES
   summernote-rails
   twbs_sass_rails
   uglifier (>= 1.3.0)
+  web-console (~> 2.0)
   webmock
   whenever
   zip-zip

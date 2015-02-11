@@ -26,7 +26,7 @@ class DonationsController < ApplicationController
     if @donation.save
       flash[:notice] = "Donation added successfully!"
       if user.present? && params[:donation][:send_thanks] == 1
-        UserMailer.thanks_for_donating(user).deliver
+        UserMailer.thanks_for_donating(user).deliver_now
       end
       redirect_to donations_path
     else
@@ -73,7 +73,7 @@ class DonationsController < ApplicationController
       elsif user.present?
         paid = params[:price].to_f / 100
         donation = Donation.create(user_id: user.id, comments: "Gumroad monthly from #{user.email}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
-        UserMailer.thanks_for_donating(user).deliver if user.donations.count == 1
+        UserMailer.thanks_for_donating(user).deliver_now if user.donations.count == 1
       end
     elsif params[:item_name].present? && params[:item_name].include?("Dabble Me Pro for ") && params[:payment_status].present? && params[:payment_status] == "Completed" && ENV['AUTO_EMAIL_PAYPAL'] == "yes"
       # check for Paypal
@@ -84,7 +84,7 @@ class DonationsController < ApplicationController
       elsif user.present?
         paid = params[:mc_gross]
         donation = Donation.create(user_id: user.id, comments: "Paypal monthly from #{params[:payer_email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
-        UserMailer.thanks_for_donating(user).deliver if user.donations.count == 1
+        UserMailer.thanks_for_donating(user).deliver_now if user.donations.count == 1
       end
     end
 
