@@ -72,6 +72,8 @@ gem 'sass-rails', '~> 4.0.3'
 gem 'twbs_sass_rails'
 gem 'uglifier', '>= 1.3.0'
 
+gem 'le' # logentries
+
 group :development, :test do
   gem 'byebug'
   gem 'delorean'

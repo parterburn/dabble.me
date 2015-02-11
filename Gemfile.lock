@@ -147,6 +147,7 @@ GEM
     json (1.8.2)
     launchy (2.4.3)
       addressable (~> 2.3)
+    le (2.6.2)
     loofah (2.0.1)
       nokogiri (>= 1.5.9)
     mail (2.6.3)
@@ -359,6 +360,7 @@ DEPENDENCIES
   haml_assets
   i18n-js
   jquery-rails
+  le
   meta_request
   pg
   pry
