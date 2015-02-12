@@ -86,6 +86,4 @@ Rails.application.configure do
 
   GA.tracker = ENV['GOOGLE_ANALYTICS_ID']
 
-  Rails.logger = Le.new(ENV['LOGENTRIES_KEY'], true)
-
 end

@@ -26,6 +26,8 @@ class EntriesController < ApplicationController
         end
       end
 
+      Rails.logger.info("#{current_user.email} showing index page with #{@entries.count} entries.")
+
       respond_to do |format|
         format.json { render json: calendar_json(current_user.entries) }
         format.html
