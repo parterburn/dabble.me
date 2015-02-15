@@ -1,4 +1,7 @@
 .center
+  - if entry.exactly_past_years(current_user)
+    - year_back = Time.now.in_time_zone(current_user.send_timezone).year - entry.date.year
+    .label.label-past-years #{pluralize(year_back,"year").upcase} AGO
   .s-entry-date
     -if entry.inspiration.present?
       .float-left.s-edit-entry{:rel=>"popover", :title=>"#{entry.inspiration.inspired_by}", :"data-content"=>"#{entry.inspiration.body}"}

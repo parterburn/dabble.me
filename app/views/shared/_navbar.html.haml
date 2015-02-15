@@ -24,10 +24,7 @@
 
           -if current_user.entries.count > 0
             %li{:class=>"#{'active' if current_page?(random_entry_path)}"}
-              =link_to "Random", random_entry_path      
-
-          %li{:class=>"#{'active' if current_page?(import_ohlife_path)}"}
-            =link_to "Import", import_ohlife_path
+              =link_to "Random", random_entry_path
 
           %li
             = link_to entries_calendar_path, title: "Calendar View", data: { toggle: "tooltip", placement: "bottom" } do

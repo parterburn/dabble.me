@@ -32,11 +32,18 @@
         &nbsp;
         in case you'd like to delete your entry.
       
+      %h4 Can I import from OhLife?
+
+      %p          
+        Yes! Simply visit this page: 
+        =link_to("Import from OhLife", import_ohlife_path) + "."
+
+
       %h4 How do I save a copy of my entries?
 
       %p          
         You can download a copy of your entries #{"and photos " if ENV['DOWNLOADER_URL'].present?}at any time at the bottom of the
-        =link_to("settings page", edit_user_registration_path+"#export") + "."   
+        =link_to("settings page", edit_user_registration_path+"#export") + "."
       
       %h4 I'm new and didn't get my scheduled email. How come?
 

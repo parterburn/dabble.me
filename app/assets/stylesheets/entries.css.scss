@@ -194,3 +194,23 @@ mark {
     color:#777;
   }
 }
+
+@keyframes border-pulsate {
+  0%   { border-color: rgba(100, 156, 199, 0); }
+  50%  { border-color: rgba(100, 156, 199, 1); }
+  100% { border-color: rgba(100, 156, 199, 0); }
+}
+
+.pulse {
+  animation: border-pulsate 1s infinite;
+}
+
+.label-past-years {
+  display:block;
+  background-color: #EEE;
+  letter-spacing: 1px;
+  font-size: 10px;
+  color: #555;
+  margin-bottom: 20px;
+  padding: 7px;  
+}

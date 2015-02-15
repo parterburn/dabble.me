@@ -65,6 +65,15 @@ class Entry < ActiveRecord::Base
     image_url.gsub("https://www.filepicker.io", ENV['FILEPICKER_CDN_HOST'])
   end
 
+  def exactly_past_years(user)
+    if user.present? && self.date.present?
+      now_with_timezone = Time.now.in_time_zone(user.send_timezone)
+      now_with_timezone.month == self.date.month &&
+        now_with_timezone.day == self.date.day &&
+        now_with_timezone.year != self.date.year
+    end
+  end
+
   private
 
     def ensure_protocol # For urls

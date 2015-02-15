@@ -4,6 +4,10 @@
   %br
   .col-md-8.col-md-offset-2.well{:id => "entry-#{@entry.id}"}
 
+    - if @entry.exactly_past_years(current_user)
+      - year_back = Time.now.in_time_zone(current_user.send_timezone).year - @entry.date.year
+      .label.label-past-years #{pluralize(year_back,"year").upcase} AGO
+
     = form_for :entry, url: entries_path do |f|
 
       .s-entry-date.s-new-entry

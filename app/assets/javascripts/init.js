@@ -42,12 +42,14 @@
     $(".j-entry-link").click(function(e) {
       var $entry = $("#entry-"+$(this).attr('data-id'));
       $('body,html').animate({scrollTop: $entry.offset().top - 70}, 600);
+      $entry.addClass("pulse");
+      setTimeout( function() {
+        $entry.removeClass("pulse");
+      }, 2000);
     });
 
     
     $(".pictureFrame img").unveil(300);
-
-    //$.rails.confirm = function(message) { var here = swal({title: "Are you sure?", text: message, type: "error", confirmButtonText: "Delete", showCancelButton: true, cancelButtonText: "No!" }); };
 
   };
 
