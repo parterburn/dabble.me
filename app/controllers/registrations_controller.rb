@@ -57,8 +57,13 @@ class RegistrationsController < Devise::RegistrationsController
     if user_signed_in?
       redirect_to edit_user_registration_path
     else
-      cookies.permanent[:viewed_settings] = true
-      @user = User.find_by(user_key: params[:user_key])      
+      @user = User.find_by(user_key: params[:user_key])
+      if @user.present?
+        cookies.permanent[:viewed_settings] = true
+        render "devise/registrations/settings"
+      else
+        redirect_to root_path
+      end
     end
   end
 
