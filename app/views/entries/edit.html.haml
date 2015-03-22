@@ -20,23 +20,33 @@
         %span
           = @entry.date_day
 
-    = form_for :entry, url: entry_path(@entry), method: :patch do |f|
-
-      -if @entry.errors.any?
-        #error_explanation
-          .alert.alert-danger
-            - @entry.errors.full_messages.each do |msg|
-              %p= msg
-
+    -if current_user.donations.sum(:amount) == 0
+      .alert.alert-warning.well-sm
+        =link_to "Donate now", donate_path, class: "alert-link"
+        to unlock the ability to edit this entry.
+      = text_area_tag :entry, @entry.body, :class => "form-control summernote disabled", :disabled => "disabled", :rows => 15
       %div
-        = f.label :date
-        .input-group.date
-          %span.input-group-addon
-            %i.fa.fa-calendar
-          = f.text_field :date, :value =>  @entry.date_format_short(""), :placeholder=>"October 11 2014", :class => "form-control"
         %br
+        = submit_tag "Update Entry", :class => "form-control btn btn-primary disabled", :disabled => "disabled"
 
-      -if current_user.donations.sum(:amount) > 0
+    -else
+
+      = form_for :entry, url: entry_path(@entry), method: :patch do |f|
+
+        -if @entry.errors.any?
+          #error_explanation
+            .alert.alert-danger
+              - @entry.errors.full_messages.each do |msg|
+                %p= msg
+
+        %div
+          = f.label :date
+          .input-group.date
+            %span.input-group-addon
+              %i.fa.fa-calendar
+            = f.text_field :date, :value =>  @entry.date_format_short(""), :placeholder=>"October 11 2014", :class => "form-control"
+          %br
+
         %div
           = f.label :image_url, "Photo"
           = f.filepicker_field :image_url, :multiple=>false, :dragdrop=>true, :services=>"COMPUTER,INSTAGRAM,FACEBOOK,FLICKR,PICASA,WEBCAM,DROPBOX,BOX,GOOGLE_DRIVE,URL", :mimetypes=>"image/*", :maxsize=>"20000000", :button_class=>"btn btn-info btn-sm", :drag_text=>"Or drop image here", :drag_class=>"s-filepicker-drag hidden-xs", :onchange=>"onPhotoUpload(event)"
@@ -47,18 +57,14 @@
               =link_to @entry.image_url_cdn, :target=>"_blank" do
                 =image_code(@entry,200)
           %br
-      -else
-        .alert.alert-warning.well-sm
-          =link_to "Donate now", donate_path, class: "alert-link"
-          to unlock the ability to attach a photo to this entry and allow for rich text editing.      
 
-      %div
-        = f.label :entry
-        = f.text_area :entry, :class => "form-control summernote", :rows => 15
-        %br
+        %div
+          = f.label :entry
+          = f.text_area :entry, :class => "form-control summernote", :rows => 15
+          %br
 
-      %div
-        = f.submit "Update Entry", :class => "form-control btn btn-primary"
+        %div
+          = f.submit "Update Entry", :class => "form-control btn btn-primary"
 
 -if current_user.donations.sum(:amount) > 0
   :javascript

@@ -17,7 +17,7 @@
       - else
         %strong Amount donated: $0
         %br
-        Unlock premium features like adding photos, rich formatting, and searching your entries by donating any amount.
+        Unlock premium features like adding photos, rich formatting, and searching your entries by donating a monthly amount.
         =link_to "Donate now?", donate_path
 
     %hr
@@ -43,14 +43,23 @@
         = label_tag "Days to send emails"
         %i (uncheck all to unsubcribe)
         %br
+        -if current_user.donations.sum(:amount) == 0
+          - add_class = "disabled"
         - %w(Sun Mon Tue Wed Thu Fri Sat).each do |day|
-          - if current_user.frequency.include?(day[0..2])
+          - if @user.frequency.include?(day[0..2])
             = check_box_tag "frequency[#{day}]", 1, {:checked => "checked"}
           - else
-            = check_box_tag "frequency[#{day}]"
+            - if add_class == "disabled"
+              = check_box_tag "frequency[#{day}]", 0, false, :disabled => "true", :title => "Donation required"
+            - else
+              = check_box_tag "frequency[#{day}]"
           %span.s-day-email= label_tag "frequency_#{day}", day
           &nbsp;&nbsp;
         .clearfix
+        - if add_class == "disabled"
+          =link_to "Donate now", donate_path, class: "alert-link"
+          to unlock the ability to change delivery days.
+        %br
         %br
       
     .col-md-3.col-md-offset-3
@@ -112,6 +121,7 @@
       =link_to registration_path(resource_name), class: "s-delete j-delete-user", data: { confirm: "Are you sure? This will delete your account and #{pluralize(@user.entries.count,'entry')}. There is no undo." }, method: :delete do
         %h5 Delete your account & all associated entries
       %br
+
       %h4#export.col-md-6.col-md-offset-3.alert.alert-warning
         Export all entries as
         =link_to "TXT", export_entries_path(:txt)

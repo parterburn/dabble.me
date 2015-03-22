@@ -11,12 +11,12 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20141013050441) do
+ActiveRecord::Schema.define(version: 20150322224522) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
-  create_table "donations", force: true do |t|
+  create_table "donations", force: :cascade do |t|
     t.integer  "user_id"
     t.decimal  "amount",     precision: 8, scale: 2, default: 0.0
     t.text     "comments"
@@ -27,7 +27,7 @@ ActiveRecord::Schema.define(version: 20141013050441) do
 
   add_index "donations", ["user_id"], name: "index_donations_on_user_id", using: :btree
 
-  create_table "entries", force: true do |t|
+  create_table "entries", force: :cascade do |t|
     t.datetime "date",                null: false
     t.text     "body"
     t.text     "image_url"
@@ -40,35 +40,35 @@ ActiveRecord::Schema.define(version: 20141013050441) do
 
   add_index "entries", ["user_id"], name: "index_entries_on_user_id", using: :btree
 
-  create_table "inspirations", force: true do |t|
-    t.string   "category"
+  create_table "inspirations", force: :cascade do |t|
+    t.string   "category",   limit: 255
     t.text     "body"
     t.datetime "created_at"
     t.datetime "updated_at"
   end
 
-  create_table "users", force: true do |t|
-    t.string   "email",                  default: "",                            null: false
-    t.string   "encrypted_password",     default: "",                            null: false
-    t.string   "reset_password_token"
+  create_table "users", force: :cascade do |t|
+    t.string   "email",                  limit: 255, default: "",                            null: false
+    t.string   "encrypted_password",     limit: 255, default: "",                            null: false
+    t.string   "reset_password_token",   limit: 255
     t.datetime "reset_password_sent_at"
     t.datetime "remember_created_at"
-    t.integer  "sign_in_count",          default: 0,                             null: false
+    t.integer  "sign_in_count",                      default: 0,                             null: false
     t.datetime "current_sign_in_at"
     t.datetime "last_sign_in_at"
     t.inet     "current_sign_in_ip"
     t.inet     "last_sign_in_ip"
     t.datetime "created_at"
     t.datetime "updated_at"
-    t.string   "first_name"
-    t.string   "last_name"
-    t.text     "frequency",              default: "---\n- Mon\n- Wed\n- Fri\n"
-    t.string   "send_timezone",          default: "Mountain Time (US & Canada)"
-    t.boolean  "send_past_entry",        default: true
-    t.integer  "emails_sent",            default: 0
-    t.integer  "emails_received",        default: 0
-    t.time     "send_time",              default: '2000-01-01 20:00:00',         null: false
-    t.string   "user_key"
+    t.string   "first_name",             limit: 255
+    t.string   "last_name",              limit: 255
+    t.text     "frequency",                          default: "---\n- Sun\n"
+    t.string   "send_timezone",          limit: 255, default: "Mountain Time (US & Canada)"
+    t.boolean  "send_past_entry",                    default: true
+    t.integer  "emails_sent",                        default: 0
+    t.integer  "emails_received",                    default: 0
+    t.time     "send_time",                          default: '2000-01-01 20:00:00',         null: false
+    t.string   "user_key",               limit: 255
   end
 
   add_index "users", ["email"], name: "index_users_on_email", unique: true, using: :btree

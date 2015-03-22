@@ -5,22 +5,23 @@
   - if @last_entry.present?
     .row
 
-      .col-md-2.s-date-groups.j-date-groups.hidden-xs.hidden-sm.s-hide{style:"position:fixed; top:80px; right:60px;"}
-        %h3= Time.now.in_time_zone(current_user.send_timezone).strftime("%b %-d")
-        - has_past_entries = false
-        - 5.times do |year_back| 
-          - year_back += 1
-          - back_year_entry = current_user.entries.where(:date => (Time.now.in_time_zone(current_user.send_timezone) - year_back.years).strftime("%Y-%m-%d")).first
-          - if back_year_entry.present?
-            - has_past_entries = true
-            %h4
-              =link_to "#entry-#{back_year_entry.id}", "data-id": "#{back_year_entry.id}",  class: "j-entry-link" do
-                .s-date-left
-                  #{pluralize(year_back, "year")} ago
-                .clearfix
-        - if has_past_entries
-          :javascript
-            $(".j-date-groups").show();
+      - has_past_entries = false
+      -if current_user.donations.sum(:amount) > 0
+        .col-md-2.s-date-groups.j-date-groups.hidden-xs.hidden-sm.s-hide{style:"position:fixed; top:80px; right:60px;"}
+          %h3= Time.now.in_time_zone(current_user.send_timezone).strftime("%b %-d")
+          - 5.times do |year_back| 
+            - year_back += 1
+            - back_year_entry = current_user.entries.where(:date => (Time.now.in_time_zone(current_user.send_timezone) - year_back.years).strftime("%Y-%m-%d")).first
+            - if back_year_entry.present?
+              - has_past_entries = true
+              %h4
+                =link_to "#entry-#{back_year_entry.id}", "data-id": "#{back_year_entry.id}",  class: "j-entry-link" do
+                  .s-date-left
+                    #{pluralize(year_back, "year")} ago
+                  .clearfix
+          - if has_past_entries
+            :javascript
+              $(".j-date-groups").show();        
 
       - add_class = has_past_entries ? "col-md-offset-1" : "col-md-offset-2"
       .col-md-8{:class=>"#{add_class}"}
@@ -31,17 +32,19 @@
           -else
             Welcome back! Here's your latest entry...
         %br
-      .col-md-8.col-md-offset-1.well{:id => "entry-#{@last_entry.id}"}
+      .col-md-8.well{:id => "entry-#{@last_entry.id}", :class=>"#{add_class}"}
         = render :partial => 'entries/entry', :locals => {:entry => @last_entry}
 
-      - 5.times do |year_back|
-        - year_back += 1
-        - back_year_entry = current_user.entries.where(:date => (Time.now.in_time_zone(current_user.send_timezone) - year_back.years).strftime("%Y-%m-%d")).first
-        - if back_year_entry.present?
-          .col-md-8.col-md-offset-1
-            %br      
-          .col-md-8.col-md-offset-1.well{:id => "entry-#{back_year_entry.id}"}
-            = render :partial => 'entries/entry', :locals => {:entry => back_year_entry}
+
+      -if current_user.donations.sum(:amount) > 0
+        - 5.times do |year_back|
+          - year_back += 1
+          - back_year_entry = current_user.entries.where(:date => (Time.now.in_time_zone(current_user.send_timezone) - year_back.years).strftime("%Y-%m-%d")).first
+          - if back_year_entry.present?
+            .col-md-8.col-md-offset-1
+              %br      
+            .col-md-8.col-md-offset-1.well{:id => "entry-#{back_year_entry.id}"}
+              = render :partial => 'entries/entry', :locals => {:entry => back_year_entry}
 
   - else
     .col-md-8.col-md-offset-2

@@ -52,7 +52,7 @@ class EntriesController < ApplicationController
     else
       redirect_to past_entries_path
     end
-  end  
+  end
 
   def new
     @entry = Entry.new

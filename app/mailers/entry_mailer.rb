@@ -18,7 +18,6 @@ class EntryMailer < ActionMailer::Base
 
       user.increment!(:emails_sent)
     end
-
   end
 
   def import_finished(user, messages)

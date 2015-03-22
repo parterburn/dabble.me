@@ -8,63 +8,73 @@
       - year_back = Time.now.in_time_zone(current_user.send_timezone).year - @entry.date.year
       .label.label-past-years #{pluralize(year_back,"year").upcase} AGO
 
-    = form_for :entry, url: entries_path do |f|
-
-      .s-entry-date.s-new-entry
-        .float-left.s-edit-entry{:rel=>"popover", :title=>"Inspiration", :"data-content"=>"If you need ideas to get started just glance up here for quotes & questions!"}
-          %i.fa.fa-lightbulb-o
-        .center.s-inspiration
-          - if @random_inspiration.present?
-            =@random_inspiration.body
-            - if @random_inspiration.category != "Tip"
-              =f.hidden_field :inspiration_id, :value => @random_inspiration.id
-          -elsif @entry.inspiration.present?
-            =@entry.inspiration.body
-            - if @entry.inspiration.category != "Tip"
-              =f.hidden_field :inspiration_id, :value => @entry.inspiration.id
-        %h3
-          %span
-            New Entry
-
-      -if @entry.errors.any?
-        #error_explanation
-          .alert.alert-danger
-            - @entry.errors.full_messages.each do |msg|
-              %p= msg
-
+    -if current_user.donations.sum(:amount) == 0
+      .alert.alert-warning.well-sm
+        =link_to "Donate now", donate_path, class: "alert-link"
+        to unlock the ability to add new entries via the web form.
+      = text_area_tag :entry, @entry.body, :class => "form-control summernote disabled", :disabled => "disabled", :rows => 15
       %div
-        = f.label :date
-        .input-group.date
-          %span.input-group-addon
-            %i.fa.fa-calendar
-          - entry_date = params[:day].present? ? Date.parse(params[:day]).strftime("%B %-d %Y") : @entry.date_format_short("")
-          = f.text_field :date, :value => entry_date, :placeholder=>"October 11 2014", :class => "form-control"
-
         %br
+        = submit_tag "Create Entry", :class => "form-control btn btn-primary disabled", :disabled => "disabled"
+    - else
 
-        -if current_user.donations.sum(:amount) > 0
-          %div
-            = f.label :image_url, "Photo"
-            = f.filepicker_field :image_url, :multiple=>false, :dragdrop=>true, :services=>"COMPUTER,INSTAGRAM,FACEBOOK,FLICKR,PICASA,WEBCAM,DROPBOX,BOX,GOOGLE_DRIVE,URL", :mimetypes=>"image/*", :maxsize=>"20000000", :button_class=>"btn btn-info btn-sm", :drag_text=>"Or drop image here", :drag_class=>"s-filepicker-drag hidden-xs", :onchange=>"onPhotoUpload(event)"
-            - if @entry.image_url.present?
-              %button.btn.btn-danger.btn-sm.s-filepicker-remove.j-filepicker-remove Remove Photo
-              %br
-              .pictureFrame.j-filepicker-preview
-                =link_to @entry.image_url_cdn, :target=>"_blank" do
-                  =image_code(@entry,200)
+      = form_for :entry, url: entries_path do |f|
+
+        .s-entry-date.s-new-entry
+          .float-left.s-edit-entry{:rel=>"popover", :title=>"Inspiration", :"data-content"=>"If you need ideas to get started just glance up here for quotes & questions!"}
+            %i.fa.fa-lightbulb-o
+          .center.s-inspiration
+            - if @random_inspiration.present?
+              =@random_inspiration.body
+              - if @random_inspiration.category != "Tip"
+                =f.hidden_field :inspiration_id, :value => @random_inspiration.id
+            -elsif @entry.inspiration.present?
+              =@entry.inspiration.body
+              - if @entry.inspiration.category != "Tip"
+                =f.hidden_field :inspiration_id, :value => @entry.inspiration.id
+          %h3
+            %span
+              New Entry
+
+        -if @entry.errors.any?
+          #error_explanation
+            .alert.alert-danger
+              - @entry.errors.full_messages.each do |msg|
+                %p= msg
+
+        %div
+          = f.label :date
+          .input-group.date
+            %span.input-group-addon
+              %i.fa.fa-calendar
+            - entry_date = params[:day].present? ? Date.parse(params[:day]).strftime("%B %-d %Y") : @entry.date_format_short("")
+            = f.text_field :date, :value => entry_date, :placeholder=>"October 11 2014", :class => "form-control"
+
           %br
-        -else
-          .alert.alert-warning.well-sm
-            =link_to "Donate now", donate_path, class: "alert-link"
-            to unlock the ability to attach a photo to this entry and allow for rich text editing.
 
-      %div
-        = f.label :entry
-        = f.text_area :entry, :class => "form-control summernote", :rows => 15
-        %br
+          -if current_user.donations.sum(:amount) > 0
+            %div
+              = f.label :image_url, "Photo"
+              = f.filepicker_field :image_url, :multiple=>false, :dragdrop=>true, :services=>"COMPUTER,INSTAGRAM,FACEBOOK,FLICKR,PICASA,WEBCAM,DROPBOX,BOX,GOOGLE_DRIVE,URL", :mimetypes=>"image/*", :maxsize=>"20000000", :button_class=>"btn btn-info btn-sm", :drag_text=>"Or drop image here", :drag_class=>"s-filepicker-drag hidden-xs", :onchange=>"onPhotoUpload(event)"
+              - if @entry.image_url.present?
+                %button.btn.btn-danger.btn-sm.s-filepicker-remove.j-filepicker-remove Remove Photo
+                %br
+                .pictureFrame.j-filepicker-preview
+                  =link_to @entry.image_url_cdn, :target=>"_blank" do
+                    =image_code(@entry,200)
+            %br
+          -else
+            .alert.alert-warning.well-sm
+              =link_to "Donate now", donate_path, class: "alert-link"
+              to unlock the ability to attach a photo to this entry and allow for rich text editing.
 
-      %div
-        = f.submit "Create Entry", :class => "form-control btn btn-primary"
+        %div
+          = f.label :entry
+          = f.text_area :entry, :class => "form-control summernote", :rows => 15
+          %br
+
+        %div
+          = f.submit "Create Entry", :class => "form-control btn btn-primary"
 
 -if current_user.donations.sum(:amount) > 0
   :javascript
