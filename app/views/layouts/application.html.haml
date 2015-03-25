@@ -30,21 +30,22 @@
 
       #main-container.container.clear-top
         - if user_signed_in? && current_user.donations.sum(:amount) == 0 && current_user.sign_in_count > 1 && !cookies[:donated] && ( current_page?(root_path) || @js_action == "Entries_index")
-          .alert.alert-info.alert-dismissible.hidden-xs
+          .col-md-8.col-md-offset-2.alert.alert-info.alert-dismissible.hidden-xs
             %button.close.j-paid{"data-dismiss" => "alert", :type => "button"}
               %span{"aria-hidden" => "true"} &#215;
               %span.sr-only Close
-            =link_to donate_path,:class=>"j-paid float-left" do
-              %button.btn.btn-success Pay Now
-            %strong Dabble Me is a "pay what you can" service. The shut down of
-            =link_to "OhLife", "http://ohlife.com/shutdown", target: "_blank", class: "alert-link"
-            (the inspiration for this site) proves that the longevity of even smaller apps like this take real costs to run. If you enjoy the service and want it to continue, a minimum donation of $3/mo is requested and much appreciated!
+            =link_to subscribe_path,:class=>"j-paid float-left" do
+              %button.btn.btn-success Subscribe Now
+            %strong Dabble Me PRO
+            for $3/mo unlocks changing frequency of emails, adding/editing entries via the web, adding photos to entires, and plenty more.
             .clearfix
 
         - if notice
-          .alert.alert-success= notice.html_safe
+          .col-md-8.col-md-offset-2.alert.alert-success= notice.html_safe
+          .clearfix
         - if alert
-          .alert.alert-danger= alert.html_safe
+          .col-md-8.col-md-offset-2.alert.alert-danger= alert.html_safe
+          .clearfix
           
         = yield
 

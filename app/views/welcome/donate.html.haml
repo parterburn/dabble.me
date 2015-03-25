@@ -1,22 +1,18 @@
-- title "Donate to Dabble Me"
+- title "Subscribe to Dabble Me PRO"
 
 .row
   %br
   - if params[:thank].present?
     .col-md-8.col-md-offset-2.alert.alert-success
       %h5
-        %strong Thanks for donating via Paypal!
+        %strong Thanks for subscribing via Paypal!
       %br
       Premium features may take up to 24 hours before becoming active, and you'll receive an email when they do.
   .col-md-8.col-md-offset-2
     %h4 
-      %strong Dabble Me is a "pay what you can" service.
-    %p 
-      I've donated my time and servers to keep it running and free for all. The shut down of
-      =link_to "OhLife", "http://ohlife.com/shutdown", target: "_blank", class: "alert-link"
-      (the inspiration for this site) proves that the longevity of even smaller apps like this take real costs to run. If you enjoy the service, a minimum donation of $3/mo is requested and much appreciated!
+      %strong Dabble Me PRO is just $3 per month.
     %p
-      %strong Donating will keep the site up, and unlock premium features on your account:
+      %strong Subscribing will keep the site up, and unlock premium features on your account:
       %ul
         %li Change the days that emails are sent
         %li Add new entries via the web
@@ -29,14 +25,14 @@
     %br
     %br
     .center
-      .col-md-12.alert.alert-success.hide{style: "text-align:center;"}
+      .col-md-12.alert.alert-success{style: "text-align:center;"}
         %script{:src => "https://gumroad.com/js/gumroad.js", :type => "text/javascript"}
         %h4
-          Donating via
+          Subscribing via
           %strong Gumroad
-          will activate the Pro features instantly on your account.
+          will activate the PRO features instantly on your account.
         %p{style: "margin-top:20px;"}
-          %a.gumroad-button{:href => "https://gumroad.com/l/dabbleme?wanted=true&email=#{current_user.email if current_user}"} Donate Now & Activate Pro Features
+          %a.gumroad-button{:href => "https://gumroad.com/l/dabbleme?wanted=true&email=#{current_user.email if current_user}"} Subscribe Now & Activate PRO Features
 
       .clearfix
       %br
@@ -44,9 +40,9 @@
         %p
           %form{:action => "https://www.paypal.com/cgi-bin/webscr", :method => "post", :target => "_top"}
             %span{style: "display: inline-block;height: 35px;vertical-align: middle;margin-right: 5px;"}
-              You can use
+              Or you can use
               %strong Paypal
-              to donate:
+              to subscribe:
             %input{:name => "cmd", :type => "hidden", :value => "_s-xclick"}
             %input{:name => "item_name", :type => "hidden", :value => "Dabble Me Pro for #{current_user.email if current_user.present?}"}
             %input{:name => "first_name", :type => "hidden", :value => "#{current_user.first_name if current_user.present?}"}

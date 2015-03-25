@@ -22,7 +22,7 @@
 
     -if current_user.donations.sum(:amount) == 0
       .alert.alert-warning.well-sm
-        =link_to "Donate now", donate_path, class: "alert-link"
+        =link_to "Subscribe to PRO", subscribe_path, class: "alert-link"
         to unlock the ability to edit this entry.
       = text_area_tag :entry, @entry.body, :class => "form-control summernote disabled", :disabled => "disabled", :rows => 15
       %div

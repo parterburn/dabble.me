@@ -2,7 +2,7 @@ class UserMailer < ActionMailer::Base
   helper.extend(ApplicationHelper)
   include FilepickerRails::ApplicationHelper
     
-  default from: "Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>"
+  default from: "Dabble Me Support <hello@#{ENV['MAIN_DOMAIN']}>"
  
   def welcome_email(user)
     @user = user
@@ -18,6 +18,6 @@ class UserMailer < ActionMailer::Base
 
  def thanks_for_donating(user)
     @user = user
-    mail(to: user.email, subject: "Thanks for donating!")
+    mail(to: user.email, subject: "Thanks for subscribing to Dabble Me PRO!")
   end  
 end

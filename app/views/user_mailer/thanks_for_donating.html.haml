@@ -1,13 +1,17 @@
 %p Hey #{@user.first_name_or_fallback},
 
 %p
-  Thanks for donating to
-  =link_to("Dabble Me", past_entries_url)+"."
+  Thanks for subscribing to
+  =link_to("Dabble Me PRO", past_entries_url)+"."
   The premium features have now been unlocked for your account at #{@user.email}.
 
 %p
   You'll now have access to:
   %ul
+    %li
+      =link_to "Change the frequency", "https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}"
+      of your emails
+    %li Add/edit entries via the web
     %li Attach photos to your entries
     %li Rich text formatting through the web interface
     %li

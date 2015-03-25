@@ -5,11 +5,9 @@
       =link_to "Contact & FAQs", faqs_path, title: "Contact & FAQs"
       &nbsp;&middot;&nbsp;
       = link_to "Privacy", privacy_path, title: "Privacy Policy"      
-      &nbsp;&middot;&nbsp;
-      -if current_user && current_user.donations.sum(:amount) > 0
-        =link_to "Thanks for donating!", donate_path, title: "Donate Now"
-      -else
-        =link_to "Donate", donate_path, title: "Donate Now"
+      -if current_user && current_user.donations.sum(:amount) == 0
+        &nbsp;&middot;&nbsp;
+        =link_to "Subscribe to PRO", subscribe_path, title: "Subscribe Now"
 
     %p.muted.float-right
       &nbsp;&nbsp;
@@ -20,7 +18,7 @@
         by
         %strong Paul Arterburn
     .fb-like.float-right{data: { action: "like", href: "https://dabble.me", layout: "button", share: "false", show: { faces: "false" } } }      
-
+onate
 .j-back-to-top.s-back-to-top
   =link_to "#" do
     %span.fa-stack.fa-sm

@@ -11,14 +11,13 @@
       =mail_to "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", :encode=>"hex"
     .alert.alert-warning
       -if current_user.donations.sum(:amount) > 0
-        Thanks for donating&nbsp;
-        %strong>#{number_to_currency(current_user.donations.sum(:amount))}
-        =link_to "Donate more?", donate_path, class: "float-right"
+        Thanks for subscribing to Dabble Me PRO!&nbsp;
+        -if current_user.donations.sum(:amount) < 10
+          If you're not already, I strongly encourage you to keep a monthly subscription going so the site is fully sustainable.
+          =link_to "Subscribe Now", subscribe_path, class: "float-right"
       - else
-        %strong Amount donated: $0
-        %br
-        Unlock premium features like adding photos, rich formatting, and searching your entries by donating a monthly amount.
-        =link_to "Donate now?", donate_path
+        Unlock premium features like changing the frequency of emails, adding/editing entries via the web, adding photos, rich formatting, and searching your entries by
+        =link_to("subscribing to Dabble Me PRO", subscribe_path)+"."
 
     %hr
 
@@ -57,7 +56,7 @@
           &nbsp;&nbsp;
         .clearfix
         - if add_class == "disabled"
-          =link_to "Donate now", donate_path, class: "alert-link"
+          =link_to "Subscribe to PRO", subscribe_path, class: "alert-link"
           to unlock the ability to change delivery days.
         %br
         %br

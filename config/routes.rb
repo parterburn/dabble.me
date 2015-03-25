@@ -32,11 +32,11 @@ Rails.application.routes.draw do
 
   get '/admin'                  => 'application#admin', :as => "admin"
   
-  
   get '/write',                 to: redirect('/entries/new')
   get '/privacy'                => 'welcome#privacy'
   get '/faqs'                   => 'welcome#faqs'
-  get '/donate'                 => 'welcome#donate'
+  get '/subscribe'              => 'welcome#donate'
+  get '/donate',                to: redirect('/subscribe')
   match '/payment_notify'       => 'donations#payment_notify', via: [:post]
   get '/ohlife-alternative'     => 'welcome#ohlife_alternative'
   
