@@ -79,8 +79,15 @@ class DonationsController < ApplicationController
       # check for Paypal
       email = params[:item_name].gsub("Dabble Me Pro for ","") if params[:item_name].present?
       user = User.find_by_email(email)
+
+      if user.blank?
+        # try finding user based on payer_email instead of item_name
+        email = params[:payer_email] if params[:payer_email].present?
+        user = User.find_by_email(email)
+      end        
+
       if user.present? && user.donations.count > 0 && Donation.where(user_id: user.id).last.created_at.to_date === Time.now.to_date
-        #duplicate, don't send
+        # duplicate, don't send
       elsif user.present?
         paid = params[:mc_gross]
         donation = Donation.create(user_id: user.id, comments: "Paypal monthly from #{params[:payer_email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
