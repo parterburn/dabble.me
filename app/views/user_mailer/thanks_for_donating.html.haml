@@ -6,6 +6,12 @@
   The premium features have now been unlocked for your account at #{@user.email}.
 
 %p
+  %strong FYI:
+  If you subscribed to increase the frequency of emails being sent, please make sure you go in to your
+  =link_to("User Settings", "https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}")
+  and check the boxes on the days you want to receive emails.
+
+%p
   You'll now have access to:
   %ul
     %li
