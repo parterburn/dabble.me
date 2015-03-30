@@ -25,34 +25,40 @@
     %br
     %br
     .center
-      .col-md-12.alert.alert-success{style: "text-align:center;"}
-        %script{:src => "https://gumroad.com/js/gumroad.js", :type => "text/javascript"}
-        %h4
-          Subscribing via
-          %strong Gumroad
-          will activate the PRO features instantly on your account.
-        %p{style: "margin-top:20px;"}
-          %a.gumroad-button{:href => "https://gumroad.com/l/dabbleme?wanted=true&email=#{current_user.email if current_user}"} Subscribe Now & Activate PRO Features
+      - if user_signed_in?
+        .col-md-12.alert.alert-success{style: "text-align:center;"}
+          %script{:src => "https://gumroad.com/js/gumroad.js", :type => "text/javascript"}
+          %h4
+            Subscribing via
+            %strong Gumroad
+            will activate the PRO features instantly on your account.
+          %p{style: "margin-top:20px;"}
+            %a.gumroad-button{:href => "https://gumroad.com/l/dabbleme?wanted=true&email=#{current_user.email}"} Subscribe Now & Activate PRO Features
 
-      .clearfix
-      %br
-      .col-md-12
-        %p
-          %form{:action => "https://www.paypal.com/cgi-bin/webscr", :method => "post", :target => "_top"}
-            %span{style: "display: inline-block;height: 35px;vertical-align: middle;margin-right: 5px;"}
-              Or you can use
-              %strong Paypal
-              to subscribe:
-            %input{:name => "cmd", :type => "hidden", :value => "_s-xclick"}
-            %input{:name => "item_name", :type => "hidden", :value => "Dabble Me Pro for #{current_user.email if current_user.present?}"}
-            %input{:name => "first_name", :type => "hidden", :value => "#{current_user.first_name if current_user.present?}"}
-            %input{:name => "last_name", :type => "hidden", :value => "#{current_user.last_name if current_user.present?}"}
-            %input{:name => "email", :type => "hidden", :value => "#{current_user.email if current_user.present?}"}
-            %input{:name => "night_phone_a", :type => "hidden", :value => "555"}
-            %input{:name => "night_phone_b", :type => "hidden", :value => "555"}
-            %input{:name => "night_phone_c", :type => "hidden", :value => "5555"}
-            %input{:name => "notify_url", :type => "hidden", :value => "https://dabble.me/payment_notify"}
-            %input{:name => "dabble_me_email", :type => "hidden", :value => "#{current_user.email if current_user.present?}"}
-            %input{:name => "hosted_button_id", :type => "hidden", :value => "JH22LC48DY8GU"}
-            %input{:alt => "PayPal - The safer, easier way to pay online!", :border => "0", :name => "submit", :src => "https://www.paypalobjects.com/en_US/i/btn/btn_subscribe_SM.gif", :type => "image"}
-            %img{:alt => "", :border => "0", :height => "1", :src => "https://www.paypalobjects.com/en_US/i/scr/pixel.gif", :width => "1"}
+        .clearfix
+        %br
+        .col-md-12
+          %p
+            %form{:action => "https://www.paypal.com/cgi-bin/webscr", :method => "post", :target => "_top"}
+              %span{style: "display: inline-block;height: 35px;vertical-align: middle;margin-right: 5px;"}
+                Or you can use
+                %strong Paypal
+                to subscribe:
+              %input{:name => "cmd", :type => "hidden", :value => "_s-xclick"}
+              %input{:name => "item_name", :type => "hidden", :value => "Dabble Me Pro for #{current_user.email if current_user.present?}"}
+              %input{:name => "first_name", :type => "hidden", :value => "#{current_user.first_name if current_user.present?}"}
+              %input{:name => "last_name", :type => "hidden", :value => "#{current_user.last_name if current_user.present?}"}
+              %input{:name => "email", :type => "hidden", :value => "#{current_user.email if current_user.present?}"}
+              %input{:name => "night_phone_a", :type => "hidden", :value => "555"}
+              %input{:name => "night_phone_b", :type => "hidden", :value => "555"}
+              %input{:name => "night_phone_c", :type => "hidden", :value => "5555"}
+              %input{:name => "notify_url", :type => "hidden", :value => "https://dabble.me/payment_notify"}
+              %input{:name => "dabble_me_email", :type => "hidden", :value => "#{current_user.email if current_user.present?}"}
+              %input{:name => "hosted_button_id", :type => "hidden", :value => "JH22LC48DY8GU"}
+              %input{:alt => "PayPal - The safer, easier way to pay online!", :border => "0", :name => "submit", :src => "https://www.paypalobjects.com/en_US/i/btn/btn_subscribe_SM.gif", :type => "image"}
+              %img{:alt => "", :border => "0", :height => "1", :src => "https://www.paypalobjects.com/en_US/i/scr/pixel.gif", :width => "1"}
+      - else
+        .col-md-12{style: "text-align:center;"}
+          =link_to "Sign in to subscribe", new_user_session_path, class: "btn btn-primary"
+        .clearfix
+        %br

@@ -75,7 +75,7 @@ class DonationsController < ApplicationController
         donation = Donation.create(user_id: user.id, comments: "Gumroad monthly from #{user.email}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
         UserMailer.thanks_for_donating(user).deliver_later if user.donations.count == 1
       end
-    elsif params[:item_name].present? && params[:item_name].include?("Dabble Me Pro for ") && params[:payment_status].present? && params[:payment_status] == "Completed" && ENV['AUTO_EMAIL_PAYPAL'] == "yes"
+    elsif params[:item_name].present? && params[:item_name].include?("Dabble Me Pro for") && params[:payment_status].present? && params[:payment_status] == "Completed" && ENV['AUTO_EMAIL_PAYPAL'] == "yes"
       # check for Paypal
       email = params[:item_name].gsub("Dabble Me Pro for ","") if params[:item_name].present?
       user = User.find_by_email(email)
@@ -84,7 +84,7 @@ class DonationsController < ApplicationController
         # try finding user based on payer_email instead of item_name
         email = params[:payer_email] if params[:payer_email].present?
         user = User.find_by_email(email)
-      end        
+      end
 
       if user.present? && user.donations.count > 0 && Donation.where(user_id: user.id).last.created_at.to_date === Time.now.to_date
         # duplicate, don't send
