@@ -31,7 +31,9 @@ class EmailProcessor
               img_url = CGI.escape "https://#{ENV['MAIN_DOMAIN']}/#{file.gsub("public/","")}"
               begin
                 response = MultiJson.load RestClient.post("https://www.filepicker.io/api/store/S3?key=#{ENV['FILEPICKER_API_KEY']}&url=#{img_url}", nil), :symbolize_keys => true
-                filepicker_url = response[:url]
+                if response[:size].to_i > 1500
+                  filepicker_url = response[:url]
+                end
               rescue
               end
               FileUtils.rm_r dir, :force => true
