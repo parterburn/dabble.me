@@ -18,9 +18,9 @@ class ApplicationController < ActionController::Base
         end
 
         if params[:photos].present?
-          @entries = Kaminari.paginate_array(@entries.only_images.order('id DESC')).page(params[:page]).per(10)
+          @entries = Kaminari.paginate_array(@entries.only_images.order('id DESC')).page(params[:page]).per(params[:per])
         else
-          @entries = Kaminari.paginate_array(@entries.order('id DESC')).page(params[:page]).per(10)
+          @entries = Kaminari.paginate_array(@entries.order('id DESC')).page(params[:page]).per(params[:per])
         end
 
         if user.present?
@@ -32,10 +32,10 @@ class ApplicationController < ActionController::Base
       else
         if params[:email].present?
           @users = User.where("email LIKE '%#{params[:email]}%'")
-          @user_list = @users.order("id DESC").page(params[:page]).per(10)
+          @user_list = @users.order("id DESC").page(params[:page]).per(params[:per])
         else
           @users = User.all
-          @user_list = @users.order("id DESC").page(params[:page]).per(10)
+          @user_list = @users.order("id DESC").page(params[:page]).per(params[:per])
         end
         @entries = Entry.all
         render "admin/index"
