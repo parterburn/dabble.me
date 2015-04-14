@@ -1,13 +1,13 @@
-- title "Donations on Dabble Me"
+- title "Payments on Dabble Me"
 
 .row
   .col-md-2
     %p
-      =link_to "Add new donation", new_donation_path, class: "btn btn-info"
+      =link_to "Add new payment", new_donation_path, class: "btn btn-info"
   .col-md-6
     %p
       %strong
-        Total Donations:
+        Total Payments:
         =@donations.length
         for
         =number_to_currency(@donations.sum(:amount))

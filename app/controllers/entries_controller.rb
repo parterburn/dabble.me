@@ -14,19 +14,14 @@ class EntriesController < ApplicationController
       elsif params[:group] =~ /[0-9]{4}/
         @entries = current_user.entries.includes(:inspiration).where("date >= '#{params[:group]}-01-01'::DATE AND date <= '#{params[:group]}-12-31'::DATE")
         @title = ActionController::Base.helpers.pluralize(@entries.count,"entry")+ " from #{params[:group]}"
-      elsif params[:group] == "all"
+      else
         @entries = current_user.entries.includes(:inspiration)
         @title = ActionController::Base.helpers.pluralize(@entries.count,"entry")+ " from All Time"
-      else
-        @entries = current_user.entries.includes(:inspiration).first(30)
-        if @entries.count == 30
-          @title = "Your latest " + ActionController::Base.helpers.pluralize(@entries.count,"entry")
-        else
-          @title = "Your latest entries"
-        end
       end
 
       Rails.logger.info("#{current_user.email} showing index page with #{@entries.count} entries.")
+
+      @entries = Kaminari.paginate_array(@entries).page(params[:page]).per(params[:per])
 
       respond_to do |format|
         format.json { render json: calendar_json(current_user.entries) }

@@ -13,19 +13,28 @@
                 %i.fa.fa-times-circle
           .col-xs-4.col-sm-1
             = f.submit "Search", class: "btn btn-primary btn-lg"
-      - if @search.entries.present?
+      - if @entries.present?
+        - search_entries = Kaminari.paginate_array(@entries).page(params[:page]).per(params[:per])
         %p
           - all_entries_count = current_user.entries.count
-          - found_entries_count = @search.entries.count
-          #{number_to_percentage(found_entries_count.to_f/all_entries_count.to_f*100, precision: 0)} of your entries mention
+          - found_entries_count = @entries.count
+          #{number_to_percentage(found_entries_count.to_f/all_entries_count.to_f*100, precision: 0)} of #{params[:admin].present? ? "ALL" : "your"} entries mention
           %mark= @search.term
           (#{pluralize(found_entries_count, "entry")})
           %br
-          %br
-        - @search.entries.each do |entry|
+        .col-md-12
+          .center
+            = paginate search_entries
+
+        - search_entries.each do |entry|
           %br
           .col-md-12.well{:id => "entry-#{entry.id}"}
             = render :partial => 'entries/entry', :locals => {:entry => entry}
+
+        .col-md-12
+          .center
+            = paginate search_entries
+
       - elsif @search.term.present?
         %p
           Sorry, no entries include
@@ -51,9 +60,9 @@
           .col-xs-4.col-sm-1
             = submit_tag "Search", disabled: true, class: "btn btn-primary btn-lg disabled"    
           .clearfix
-        - if @search.entries.present?
+        - if @entries.present?
           %p
-            #{pluralize(@search.entries.count, "entry")} found.
+            #{pluralize(@entries.count, "entry")} found.
             %br
             %br
         - else

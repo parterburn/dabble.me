@@ -50,7 +50,7 @@ gem 'rack-utf8_sanitizer'
 #gem "groupdate" #admin dashboard
 
 # Pagination
-# gem 'kaminari'
+gem 'kaminari'
 
 # Security
 # gem 'secure_headers'

@@ -8,12 +8,41 @@ class ApplicationController < ActionController::Base
 
   def admin
     if current_user && current_user.is_admin?
-      @users = User.all
-      @entries = Entry.all
-      render "admin/index"
+      if params[:entries] == "all"
+        show = params[:show] || 100
+        if params[:user_id].present?
+          user = User.find(params[:user_id])
+          @entries = user.entries.includes(:inspiration)
+        else
+          @entries = Entry.includes(:inspiration).all
+        end
+
+        if params[:photos].present?
+          @entries = Kaminari.paginate_array(@entries.only_images).page(params[:page]).per(10)
+        else
+          @entries = Kaminari.paginate_array(@entries).page(params[:page]).per(10)
+        end
+
+        if user.present?
+          @title = "ADMIN ENTRIES for <a href='/admin?email=#{user.email}'>#{user.email}</a>"
+        else
+          @title = "ADMIN ENTRIES for ALL USERS"
+        end
+        render "entries/index"
+      else
+        if params[:email].present?
+          @users = User.where("email LIKE '%#{params[:email]}%'")
+          @user_list = @users.order("id DESC").page(params[:page]).per(10)
+        else
+          @users = User.all
+          @user_list = @users.order("id DESC").page(params[:page]).per(10)
+        end
+        @entries = Entry.all
+        render "admin/index"
+      end
     else
       flash[:alert] = "Not authorized"
-      redirect_to root_path      
+      redirect_to root_path
     end
   end
 

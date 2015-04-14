@@ -5,7 +5,7 @@
   - if @entries.length > 0
     .col-md-8.col-md-offset-1
       %h3
-        #{@title}
+        #{@title.html_safe}
         =link_to "javascript:void(0);", onclick: "$('.j-calendar').fadeToggle();", class: "s-toggle-calendar" do
           %i.fa.fa-calendar
     
@@ -66,7 +66,15 @@
         =link_to "Import from OhLife", import_ohlife_path, :class => "btn btn-primary btn-lg"
 
 
+  .col-md-8.col-md-offset-1
+    .center
+      = paginate @entries
+
   - @entries.each do |entry|
     %br
     .col-md-8.col-md-offset-1.well{:id => "entry-#{entry.id}"}
       = render :partial => 'entries/entry', :locals => {:entry => entry}
+
+  .col-md-8.col-md-offset-1
+    .center
+      = paginate @entries      
