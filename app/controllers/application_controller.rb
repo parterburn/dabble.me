@@ -12,15 +12,15 @@ class ApplicationController < ActionController::Base
         show = params[:show] || 100
         if params[:user_id].present?
           user = User.find(params[:user_id])
-          @entries = user.entries.includes(:inspiration)
+          @entries = user.entries.includes(:inspiration).order('id DESC')
         else
-          @entries = Entry.includes(:inspiration).all
+          @entries = Entry.includes(:inspiration).order('id DESC').all
         end
 
         if params[:photos].present?
-          @entries = Kaminari.paginate_array(@entries.only_images).page(params[:page]).per(10)
+          @entries = Kaminari.paginate_array(@entries.only_images.order('id DESC')).page(params[:page]).per(10)
         else
-          @entries = Kaminari.paginate_array(@entries).page(params[:page]).per(10)
+          @entries = Kaminari.paginate_array(@entries.order('id DESC')).page(params[:page]).per(10)
         end
 
         if user.present?
