@@ -20,7 +20,7 @@
           - if @user.frequency.include?(day[0..2])
             = check_box_tag "frequency[#{day}]", 1, {:checked => "checked"}
           - else
-            - if add_class == "disabled"
+            - if add_class == "disabled" && day != "Sun"
               = check_box_tag "frequency[#{day}]", 0, false, :disabled => "true", :title => "Donation required"
             - else
               = check_box_tag "frequency[#{day}]"

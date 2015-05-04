@@ -103,6 +103,10 @@ class User < ActiveRecord::Base
     end
   end
 
+  def is_pro?
+    plan.in?("paypal-pro","gumroad-pro")
+  end  
+
   private
 
     def subscribe_to_mailchimp

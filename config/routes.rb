@@ -37,6 +37,7 @@ Rails.application.routes.draw do
   get '/faqs'                   => 'welcome#faqs'
   get '/subscribe'              => 'welcome#donate'
   get '/donate',                to: redirect('/subscribe')
+  get '/pro',                   to: redirect('/subscribe')
   match '/payment_notify'       => 'donations#payment_notify', via: [:post]
   get '/ohlife-alternative'     => 'welcome#ohlife_alternative'
   
