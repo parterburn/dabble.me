@@ -20,13 +20,6 @@ class EntryMailer < ActionMailer::Base
     end
   end
 
-  def import_finished(user, messages)
-    @messages = messages
-    mail from: "Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>",
-         to: "#{user.full_name} <#{user.email}>",
-         subject: "OhLife Photo Import Complete"
-  end
-
   private
     def random_inspiration
       if (count = Inspiration.without_ohlife_or_email.count) > 0

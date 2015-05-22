@@ -1,5 +1,11 @@
 namespace :entry do
 
+  # rake entry:send_entries_test
+  task :send_entries_test => :environment do
+    user = User.where(:email=>"paularterburn@gmail.com").first
+    EntryMailer.send_entry(user).deliver_now
+  end
+
   task :send_hourly_entries => :environment do
     users = User.subscribed_to_emails.not_just_signed_up
     users.each do |user|
