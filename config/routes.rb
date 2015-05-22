@@ -1,9 +1,9 @@
-require 'sidekiq/web'
-
 Rails.application.routes.draw do
 
   authenticate :user, lambda { |u| u.is_admin? } do
-    mount Sidekiq::Web => '/sidekiq'
+    resources :inspirations
+    resources :donations
+    get '/admin'                  => 'application#admin', :as => "admin"    
   end  
 
   devise_for :users, :controllers => { registrations: 'registrations' }
@@ -15,13 +15,10 @@ Rails.application.routes.draw do
 
   get   '/entries/import/ohlife'         => 'import#import_ohlife', :as => "import_ohlife"
   match '/entries/import/ohlife/process' => 'import#process_ohlife', via: [:put], :as => "import_ohlife_process"
-  match '/entries/import/ohlife/upload'  => 'import#process_ohlife_images', via: [:post], :as => "import_ohlife_images"  
   get   '/entries/export'                => 'entries#export', :as => "export_entries"
   get   '/entries/calendar'              => 'entries#calendar', :as => "entries_calendar"
 
   resources :entries
-  resources :inspirations
-  resources :donations
 
   get '/past/random'               => 'entries#random', :as => "random_entry"
   get '/past'                      => "entries#index",  :as => "past_entries"  
@@ -29,8 +26,6 @@ Rails.application.routes.draw do
   get "/search", to: "searches#show"
   
   root 'welcome#index'
-
-  get '/admin'                  => 'application#admin', :as => "admin"
   
   get '/write',                 to: redirect('/entries/new')
   get '/privacy'                => 'welcome#privacy'

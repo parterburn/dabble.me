@@ -23,31 +23,3 @@
       %br
       %br
     .clearfix
-  %hr
-  .well.col-md-8.col-md-offset-2
-    .col-md-4.center
-      %div
-        %h3 Step 2:
-        %h4 Import OhLife Photos
-      %br
-    - if current_user.donations.sum(:amount) > 0
-      = form_tag(import_ohlife_images_path, :multipart => true) do
-        .col-md-4.center
-          %br
-          = label_tag 'zip_file', "Choose ZIP file of photos"
-          = file_field_tag 'zip_file', :class=>"center"
-          %br
-        .col-md-4.center
-          %br
-          = submit_tag "Upload ZIP File", :class => "btn btn-primary"
-          .clearfix
-        .clearfix
-      .alert.alert-warning.center
-        %strong Results may be best if split into ZIP files less than 30 MB.
-        %br
-        Filenames of photos must match: 
-        %strong img_2013-10-31-0.jpg
-    - else
-      .col-md-8.center.alert.alert-warning.center
-        OhLife Photo Import is only available to users who subscribe to PRO.&nbsp;
-        =link_to "Subscribe Now", subscribe_path, :class=>"btn btn-warning btn-sm"
