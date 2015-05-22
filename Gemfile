@@ -111,6 +111,5 @@ group :staging, :production do
 end
 
 group :production do
-  #gem "skylight", "~> 0.4.3"
   gem 'rails_12factor'
 end

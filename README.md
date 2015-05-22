@@ -9,7 +9,6 @@ This app utilizes the following 3rd party services:
 * [Filepicker](http://filepicker.io) for Photo Uploads & Storage (free for 500 uploads per month)
 * [MailChimp](http://mailchimp.com) for sending updates to all users (free for 2000 subscribers)
 * [Google Analytics](http://google.com/analytics) for traffic stats (free for standard analytics)
-* [Skylight](http://skylight.io) for server monitoring (free for basic monitoring)
 * [Downloader.io](http://downloader.io) for zipping up photos to download (not currently available to the public)
 
 I recommend forking and setting up a server at [Heroku](https://heroku.com/). You can generate a free SSL certificate at [StartSSL](https://www.startssl.com/).
@@ -58,11 +57,6 @@ ADMIN_EMAILS=user1@domain.com,user2@domain.com
 
 MAILCHIMP_API_KEY=f....3333-ek3
 MAILCHIMP_LIST_ID=9982...112
-SKYLIGHT_APPLICATION=abc123
-SKYLIGHT_AUTHENTICATION=def456
-DOWNLOADER_ID=1234..1234
-DOWNLOADER_SECRET=1234..1234
-DOWNLOADER_URL=us.downloader.io
 SEND_REPORT="yes"
 ```
 
@@ -71,10 +65,6 @@ SEND_REPORT="yes"
 Filepicker has an option to use Cloudfront to serve up the photos you upload. This will make loading your images a bit faster, so I recommend it if you already have AWS setup. However, you can skip this if you don't want to mess with all that by simply setting ```FILEPICKER_CDN_HOST=https://www.filepicker.io```.
 
 If you want to bypass using Mailchimp to collect email addresses, simply don't put a value in for MAILCHIMP_API_KEY. I use Mailchimp to email out new features to the users at Dabble.me, so if you're the only one using your app it doesn't make sense to have Mailchimp.
-
-Skylight is a server monitoring service I use to make sure the queries are optimized appropriately. You can remove the gem, and delete the file ```config/skylight.yml``` if you don't want to use this service.
-
-Downloader.io is a service I was grandfathered into with a Heroku app I had. It's a fast qay to generate ZIP files so I used it here. Unfortunately they don't allow any more sign ups on the service, so you'll need to code up your own way of zipping up photos if you want that option. That's under ```entries#zip_up```.
 
 
 ###Administration Portal
