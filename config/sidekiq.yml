@@ -1,9 +1,0 @@
-# Sample configuration file for Sidekiq.
-# Options here can still be overridden by cmd line args.
-#   sidekiq -C config.yml
----
-:concurrency: 4
-:queues:
-  - [default, 3]
-  - [import, 6]
-  - [entry, 9]

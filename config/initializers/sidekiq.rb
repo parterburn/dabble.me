@@ -1,8 +1,19 @@
-# config/initializers/sidekiq.rb
+Sidekiq.configure_client do |config|
+  config.redis = { :size => 2, :namespace => 'foo' }
+end
 Sidekiq.configure_server do |config|
-  database_url = ENV['DATABASE_URL']
-  if database_url
-    ENV['DATABASE_URL'] = "#{database_url}?pool=25"
-    ActiveRecord::Base.establish_connection
+  config.redis = { :size => 25, :namespace => 'foo' }
+  config.on(:startup) { puts "Hello!" }
+  config.on(:quiet) { puts "Quiet down!" }
+  config.on(:shutdown) { puts "Goodbye!" }
+end
+
+require 'sidekiq/web'
+Sidekiq::Web.app_url = '/'
+
+class EmptyWorker
+  include Sidekiq::Worker
+
+  def perform
   end
 end
