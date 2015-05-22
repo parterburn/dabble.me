@@ -18,7 +18,6 @@ gem 'pg'
 gem "devise", "~> 3.4.0"
 gem 'sendgrid', '~> 1.2.0' # Emails
 
-gem 'simple_form', "~> 3.1.0"
 gem 'summernote-rails' #wysiwyg
 gem 'addressable' # better URI checking
 
