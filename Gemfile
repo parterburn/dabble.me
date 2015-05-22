@@ -21,7 +21,7 @@ gem 'sendgrid', '~> 1.2.0' # Emails
 gem 'summernote-rails' #wysiwyg
 gem 'addressable' # better URI checking
 
-gem 'sidekiq', '~> 3.1.3' # Async queue
+gem 'sidekiq', '~> 3.3.4'
 gem 'sinatra', '>= 1.3.0', :require => nil
 
 gem "combined_time_select", "~> 1.0.1"
