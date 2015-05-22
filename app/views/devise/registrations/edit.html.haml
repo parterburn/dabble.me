@@ -14,7 +14,7 @@
         Thanks for subscribing to Dabble Me PRO!&nbsp;
         -if current_user.donations.sum(:amount) < 10
           If you're not already, I strongly encourage you to keep a monthly subscription going so the site is fully sustainable.
-          =link_to "Subscribe Now", subscribe_path, class: "float-right"
+          =link_to "Subscribe Now", subscribe_path
       - else
         Unlock premium features like changing the frequency of emails, adding/editing entries via the web, adding photos, rich formatting, and searching your entries by
         =link_to("subscribing to Dabble Me PRO", subscribe_path)+"."
