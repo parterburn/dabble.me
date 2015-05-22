@@ -12,13 +12,13 @@ This app utilizes the following 3rd party services:
 * [Skylight](http://skylight.io) for server monitoring (free for basic monitoring)
 * [Downloader.io](http://downloader.io) for zipping up photos to download (not currently available to the public)
 
-I recommend forking and setting up a free server at [Ninefold](https://ninefold.com/). You can generate a free SSL certificate at [StartSSL](https://www.startssl.com/).
+I recommend forking and setting up a server at [Heroku](https://heroku.com/). You can generate a free SSL certificate at [StartSSL](https://www.startssl.com/).
 
-You will need to setup SendGrid to receive incoming emails and point them to your app to parse. Visit this [Settings Page](https://sendgrid.com/developer/reply); add your hostname of ```post.yourdomain.com``` and point the URL to ```https://yourdomain.com/email_processor```. I have spam check turned off, since that hasn't been an issue yet. Make sure you setup an MX record for the ```post.yourdomain.com``` subdomain that points to ```mx.sendgrid.net```, and setup an A Record for ```yourdomain.com``` that points to the Public IP address of your Ninefold server (found under Infrastructure/Show Details). You'll also need to add ```yourdomain.com``` as a domain under the Overview tab.
+You will need to setup SendGrid to receive incoming emails and point them to your app to parse. Visit this [Settings Page](https://sendgrid.com/developer/reply); add your hostname of ```post.yourdomain.com``` and point the URL to ```https://yourdomain.com/email_processor```. I have spam check turned off, since that hasn't been an issue yet. Make sure you setup an MX record for the ```post.yourdomain.com``` subdomain that points to ```mx.sendgrid.net```, and setup an A Record for ```yourdomain.com``` that points to the Public IP address of your Heroku server (found under Infrastructure/Show Details). You'll also need to add ```yourdomain.com``` as a domain under the Overview tab.
 
-In order to turn on scheduled emails in Ninefold, you'll need to add the following line to the "After Migrations" section in the [Ninefold Portal/Configuration](https://portal.ninefold.com):
+In order to turn on scheduled emails in Heroku, you'll need to add an hourly job using the Heroku Scheduler.
 ```
-bundle exec whenever --update-crontab dabble_me
+rake entry:send_hourly_entries
 ```
 
 Your local environment variables at ```config/local_env.yml``` will need to be something like this:
@@ -41,7 +41,7 @@ DOWNLOADER_URL: us.downloader.io
 SEND_REPORT: "yes"
 ```
 
-Your environment variables on Ninefold will need to be something like this:
+Your environment variables on Heroku will need to be something like this:
 
 ```
 MAIN_DOMAIN=yourdomain.com
