@@ -150,7 +150,6 @@ GEM
       activesupport (>= 3.0.0)
     launchy (2.4.3)
       addressable (~> 2.3)
-    le (2.6.2)
     loofah (2.0.1)
       nokogiri (>= 1.5.9)
     mail (2.6.3)
@@ -367,7 +366,6 @@ DEPENDENCIES
   i18n-js
   jquery-rails
   kaminari
-  le
   meta_request
   pg
   pry
