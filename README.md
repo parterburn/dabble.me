@@ -37,7 +37,6 @@ ADMIN_EMAILS: user1@domain.com,user2@domain.com
 DOWNLOADER_ID: 1234..1234
 DOWNLOADER_SECRET: 1234..1234
 DOWNLOADER_URL: us.downloader.io
-SEND_REPORT: "yes"
 ```
 
 Your environment variables on Heroku will need to be something like this:
@@ -57,7 +56,6 @@ ADMIN_EMAILS=user1@domain.com,user2@domain.com
 
 MAILCHIMP_API_KEY=f....3333-ek3
 MAILCHIMP_LIST_ID=9982...112
-SEND_REPORT="yes"
 ```
 
 ###Things you may want to rip out

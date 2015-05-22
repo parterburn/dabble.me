@@ -13,13 +13,9 @@ namespace :entry do
     users.each do |user|
       if Time.now.in_time_zone(user.send_timezone).hour == user.send_time.hour && user.frequency.include?(Time.now.in_time_zone(user.send_timezone).strftime('%a'))
         #It's the hour they want where they live AND the day where they live that they want it sent: send it.
-        EntryWorker.perform_async(user.id)
+        EntryMailer.send_entry(user).deliver_now
         sent_this_session += 1
       end
-    end
-
-    if ENV['SEND_REPORT'] && ENV['SEND_REPORT'] == "yes"
-      EntryMailer.delay_for(10.minutes, retry: 3, queue: "entry").sent_report(total_sent_before, sent_this_session, Time.now)
     end
 
   end
