@@ -1,3 +1,7 @@
 Sidekiq.configure_client do |config|
-  config.redis = { :size => 2, :namespace => 'dabbleme' }
+  if ENV["REDISCLOUD_URL"]
+    config.redis = { url: ENV["REDISCLOUD_URL"], namespace: 'dabbleme' }
+  else
+    config.redis = { namespace: 'dabbleme' }    
+  end
 end
