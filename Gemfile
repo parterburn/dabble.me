@@ -110,9 +110,9 @@ end
 group :staging, :production do
   #gem 'puma_auto_tune'
   gem 'rack-timeout'
-  #gem 'rails_12factor'
 end
 
 group :production do
-  gem "skylight", "~> 0.4.3"
+  #gem "skylight", "~> 0.4.3"
+  gem 'rails_12factor'
 end
