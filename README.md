@@ -5,11 +5,11 @@ Dabble Me helps people remember what's happened in their life. Use it as a light
 
 This app utilizes the following 3rd party services:
 
+* [CloudFlare](http://cloudflare.com) manages DNS + free SSL support (free for basic service)
 * [SendGrid](http://sendgrid.com) for Sending & Receiving Email (free for 200 emails per day)
 * [Filepicker](http://filepicker.io) for Photo Uploads & Storage (free for 500 uploads per month)
 * [MailChimp](http://mailchimp.com) for sending updates to all users (free for 2000 subscribers)
 * [Google Analytics](http://google.com/analytics) for traffic stats (free for standard analytics)
-* [Downloader.io](http://downloader.io) for zipping up photos to download (not currently available to the public)
 
 I recommend forking and setting up a server at [Heroku](https://heroku.com/). You can generate a free SSL certificate at [StartSSL](https://www.startssl.com/).
 
