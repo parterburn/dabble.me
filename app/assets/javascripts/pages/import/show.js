@@ -1,5 +1,5 @@
 (function(){
-  window.DABBLE.pages.Import_import_ohlife = function(){
+  window.DABBLE.pages.Import_show = function(){
 
     $('form').submit(function(){
       $(this).find('input[type=submit]').prop('disabled', true);

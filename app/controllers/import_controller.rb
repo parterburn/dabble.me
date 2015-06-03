@@ -4,17 +4,14 @@ class ImportController < ApplicationController
   before_action :authenticate_user!
   SPLIT_AT_DATE_REGEX = /[12]{1}[90]{1}[0-9]{2}\-[0-1]{1}[0-9]{1}\-[0-3]{1}[0-9]{1}/
 
-  def import_ohlife
-  end
-
-  def process_ohlife
-    flash = import_ohlife_entries(params[:entry][:text])
+  def update
+    flash = import_entries(params[:entry][:text])
     redirect_to past_entries_path
   end
 
   private
 
-    def import_ohlife_entries(data)
+    def import_entries(data)
       errors = []
       user = current_user
 

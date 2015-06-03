@@ -1,0 +1,19 @@
+- title "Import OhLife to Dabble Me"
+
+.row
+  .col-md-8.col-md-offset-2.s-import
+    %h3 Import Entries (OhLife format)
+  .clearfix
+
+  = form_for :entry, url: import_process_path, method: :put do |f|
+    
+    .col-md-8.col-md-offset-2
+      = f.text_area :text, :class => "form-control", :rows => 10, :placeholder => "2014-10-02\n\nHere's my first entry!\n\nYYYY-MM-DD\n\nEntry text exactly 2 line-breaks after date."
+
+      %br
+
+    .col-md-8.col-md-offset-2
+      = f.submit "Import Entries", :class => "form-control btn btn-primary"
+      %br
+      %br
+    .clearfix
