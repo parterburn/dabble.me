@@ -11,21 +11,10 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150428064212) do
+ActiveRecord::Schema.define(version: 20150604001044) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
-
-  create_table "donations", force: :cascade do |t|
-    t.integer  "user_id"
-    t.decimal  "amount",     precision: 8, scale: 2, default: 0.0
-    t.text     "comments"
-    t.datetime "date"
-    t.datetime "created_at"
-    t.datetime "updated_at"
-  end
-
-  add_index "donations", ["user_id"], name: "index_donations_on_user_id", using: :btree
 
   create_table "entries", force: :cascade do |t|
     t.datetime "date",                null: false
@@ -46,6 +35,17 @@ ActiveRecord::Schema.define(version: 20150428064212) do
     t.datetime "created_at"
     t.datetime "updated_at"
   end
+
+  create_table "payments", force: :cascade do |t|
+    t.integer  "user_id"
+    t.decimal  "amount",     precision: 8, scale: 2, default: 0.0
+    t.text     "comments"
+    t.datetime "date"
+    t.datetime "created_at"
+    t.datetime "updated_at"
+  end
+
+  add_index "payments", ["user_id"], name: "index_payments_on_user_id", using: :btree
 
   create_table "users", force: :cascade do |t|
     t.string   "email",                  default: "",                            null: false

@@ -3,7 +3,7 @@
 = javascript_include_tag "//cdnjs.cloudflare.com/ajax/libs/fullcalendar/2.2.3/fullcalendar.min.js"
 = stylesheet_link_tag "//cdnjs.cloudflare.com/ajax/libs/fullcalendar/2.2.3/fullcalendar.min.css"
 
-- if current_user.donations.sum(:amount) <= 0
+- if current_user.payments.sum(:amount) <= 0
   .form-horizontal
   .alert.alert-warning
     =link_to "Subscribe to PRO", subscribe_path, class: "alert-link"

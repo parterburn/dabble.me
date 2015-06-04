@@ -20,7 +20,7 @@
         %span
           = @entry.date_day
 
-    -if current_user.donations.sum(:amount) == 0
+    -if current_user.payments.sum(:amount) == 0
       .alert.alert-warning.well-sm
         =link_to "Subscribe to PRO", subscribe_path, class: "alert-link"
         to unlock the ability to edit this entry.
@@ -66,7 +66,7 @@
         %div
           = f.submit "Update Entry", :class => "form-control btn btn-primary"
 
--if current_user.donations.sum(:amount) > 0
+-if current_user.payments.sum(:amount) > 0
   :javascript
     var summer_note = $('#entry_entry');
     summer_note.summernote({

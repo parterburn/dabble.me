@@ -85,12 +85,12 @@
                 %td=link_to user.email, admin_path(entries: "all", user_id: user.id)
                 %td=user.full_name
                 - user_entries_count = connection.execute "SELECT COUNT(*) FROM entries  WHERE entries.user_id = #{user.id}"
-                - user_donations = connection.execute "SELECT SUM(donations.amount) AS sum_id FROM donations  WHERE donations.user_id = #{user.id}"
+                - user_payments = connection.execute "SELECT SUM(payments.amount) AS sum_id FROM payments  WHERE payments.user_id = #{user.id}"
                 %td{:"data-value"=>"#{user.entries.count}"}=number_with_delimiter(user_entries_count.getvalue(0,0))
                 %td{:"data-value"=>"#{user.entries.only_images.count}"}=number_with_delimiter(user_entries_count.getvalue(0,0))
                 %td{:"data-value"=>"#{user.emails_sent}"}=number_with_delimiter(user.emails_sent)
                 %td{:"data-value"=>"#{user.emails_received}"}=number_with_delimiter(user.emails_received)
-                %td=user_donations.getvalue(0,0)
+                %td=user_payments.getvalue(0,0)
         .center
           = paginate @user_list
 

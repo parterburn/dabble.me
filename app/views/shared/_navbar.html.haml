@@ -13,7 +13,6 @@
           =image_tag("dabble_me_pencil_logo.png")
 
     .collapse.navbar-collapse
-    
       %ul.nav.navbar-nav
         - if user_signed_in?
           %li{:class=>"#{'active' if current_page?(past_entries_path)}"}
@@ -46,8 +45,8 @@
                   =link_to inspirations_path, title: "Inspirations" do
                     %i.fa.fa-lightbulb-o
                     &nbsp;Inspirations
-                %li{:class=>"#{'active' if current_page?(donations_path)}"}
-                  =link_to donations_path, title: "Payments" do
+                %li{:class=>"#{'active' if current_page?(payments_path)}"}
+                  =link_to payments_path, title: "Payments" do
                     %i.fa.fa-usd
                     &nbsp;Payments              
                 %li{:class=>"#{'active' if current_page?(admin_path)}"}
@@ -56,7 +55,6 @@
                     &nbsp;Dashboard
 
       %ul.nav.navbar-nav.navbar-right
-
         - if user_signed_in?
           - if current_user.sign_in_count < 10 && !cookies[:viewed_settings] && (current_page?(past_entries_path) || current_page?(root_path))
             - add_popover = "popover_settings"

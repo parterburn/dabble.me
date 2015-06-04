@@ -6,7 +6,7 @@
     .row
 
       - has_past_entries = false
-      -if current_user.donations.sum(:amount) > 0
+      -if current_user.payments.sum(:amount) > 0
         .col-md-2.s-date-groups.j-date-groups.hidden-xs.hidden-sm.s-hide{style:"position:fixed; top:80px; right:60px;"}
           %h3= Time.now.in_time_zone(current_user.send_timezone).strftime("%b %-d")
           - 5.times do |year_back| 
@@ -36,7 +36,7 @@
         = render :partial => 'entries/entry', :locals => {:entry => @last_entry}
 
 
-      -if current_user.donations.sum(:amount) > 0
+      -if current_user.payments.sum(:amount) > 0
         - 5.times do |year_back|
           - year_back += 1
           - back_year_entry = current_user.entries.where(:date => (Time.now.in_time_zone(current_user.send_timezone) - year_back.years).strftime("%Y-%m-%d")).first

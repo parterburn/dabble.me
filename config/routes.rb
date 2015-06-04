@@ -2,7 +2,7 @@ Rails.application.routes.draw do
 
   authenticate :user, lambda { |u| u.is_admin? } do
     resources :inspirations
-    resources :donations
+    resources :payments
     get '/admin'                  => 'application#admin', :as => "admin"    
   end  
 
@@ -30,10 +30,10 @@ Rails.application.routes.draw do
   get '/write',                 to: redirect('/entries/new')
   get '/privacy'                => 'welcome#privacy'
   get '/faqs'                   => 'welcome#faqs'
-  get '/subscribe'              => 'welcome#donate'
+  get '/subscribe'              => 'welcome#subscribe'
   get '/donate',                to: redirect('/subscribe')
   get '/pro',                   to: redirect('/subscribe')
-  match '/payment_notify'       => 'donations#payment_notify', via: [:post]
+  match '/payment_notify'       => 'payments#payment_notify', via: [:post]
   get '/ohlife-alternative'     => 'welcome#ohlife_alternative'
   
   post '/email_processor'       => 'griddler/emails#create'

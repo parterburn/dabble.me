@@ -10,9 +10,9 @@
       Post new entries by emailing
       =mail_to "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", :encode=>"hex"
     .alert.alert-warning
-      -if current_user.donations.sum(:amount) > 0
+      -if current_user.payments.sum(:amount) > 0
         Thanks for subscribing to Dabble Me PRO!&nbsp;
-        -if current_user.donations.sum(:amount) < 10
+        -if current_user.payments.sum(:amount) < 10
           If you're not already, I strongly encourage you to keep a monthly subscription going so the site is fully sustainable.
           =link_to "Subscribe Now", subscribe_path
       - else
@@ -41,14 +41,14 @@
       %div
         = label_tag "Days to send emails"
         %br
-        -if current_user.donations.sum(:amount) == 0
+        -if current_user.payments.sum(:amount) == 0
           - add_class = "disabled"
         - %w(Sun Mon Tue Wed Thu Fri Sat).each do |day|
           - if @user.frequency.include?(day[0..2])
             = check_box_tag "frequency[#{day}]", 1, {:checked => "checked"}
           - else
             - if add_class == "disabled" && day != "Sun"
-              = check_box_tag "frequency[#{day}]", 0, false, :disabled => "true", :title => "Donation required"
+              = check_box_tag "frequency[#{day}]", 0, false, :disabled => "true", :title => "Payment required"
             - else
               = check_box_tag "frequency[#{day}]"
           %span.s-day-email= label_tag "frequency_#{day}", day

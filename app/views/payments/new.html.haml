@@ -1,15 +1,15 @@
-- title "New Donation on Dabble Me"
+- title "New Payment on Dabble Me"
 
 .row
   %br
   .col-md-8.col-md-offset-2.well
 
-    = form_for :donation, url: donations_path do |f|
+    = form_for :payment, url: payments_path do |f|
 
-      -if @donation.errors.any?
+      -if @payment.errors.any?
         #error_explanation
           .alert.alert-danger
-            - @donation.errors.full_messages.each do |msg|
+            - @payment.errors.full_messages.each do |msg|
               %p= msg
 
       %div
@@ -17,7 +17,7 @@
         .input-group.date
           %span.input-group-addon
             %i.fa.fa-calendar
-          = f.text_field :date, :value =>  "#{@donation.date.strftime("%Y-%m-%d") if @donation.date.present?}", :placeholder=>"2014-10-31", :class => "form-control"
+          = f.text_field :date, :value =>  "#{@payment.date.strftime("%Y-%m-%d") if @payment.date.present?}", :placeholder=>"2014-10-31", :class => "form-control"
         %br
 
       %div
@@ -32,7 +32,7 @@
 
       %div
         = label_tag :user_email
-        = text_field_tag :user_email, "#{@donation.user.email if @donation.user}", :class => "form-control"
+        = text_field_tag :user_email, "#{@payment.user.email if @payment.user}", :class => "form-control"
         %br
 
       %div
@@ -47,9 +47,9 @@
         %br
 
       %div
-        = f.submit "Add Donation", :class => "form-control btn btn-primary"
+        = f.submit "Add Payment", :class => "form-control btn btn-primary"
 
--if @donation.date.blank?
+-if @payment.date.blank?
   :javascript
     var tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);  

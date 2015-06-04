@@ -17,11 +17,11 @@ class EmailProcessor
   def process
     user = find_user_from_user_key(@token, @from)
     if user.present?
-      donation = user.donations.sum(:amount).to_f
+      payment = user.payments.sum(:amount).to_f
       filepicker_url = ""
 
       if user.present?
-        if donation > 0 && @attachments.present?
+        if payment > 0 && @attachments.present?
           @attachments.each do |attachment|
             if attachment.content_type =~ /^image\/(png|jpe?g|gif)$/i
               dir = FileUtils.mkdir_p("public/email_attachments/#{user.user_key}")
@@ -55,7 +55,7 @@ class EmailProcessor
 
         if existing_entry.present?
           existing_entry.body += "<hr>#{@body}"
-          if donation == 0
+          if payment == 0
             existing_entry.body = existing_entry.sanitized_body
           end
           existing_entry.original_email_body = @raw_body
@@ -95,7 +95,7 @@ class EmailProcessor
             )
           end
 
-          if donation == 0
+          if payment == 0
             entry.body = entry.sanitized_body
           end
           entry.save
