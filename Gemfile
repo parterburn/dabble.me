@@ -70,6 +70,8 @@ gem 'uglifier', '>= 1.3.0'
 
 gem 'le' # logentries
 
+gem 'github-linguist' # language detection
+
 group :development, :test do
   gem 'byebug'
   gem 'delorean'

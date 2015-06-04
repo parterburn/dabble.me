@@ -86,7 +86,3 @@ Inspiration.create(:category => "OhLife", :body => "Imported from OhLife")
 * Associate 1 image to a specific entry, additional images emailed in will add to the bottom of posts
 * Search with basic analytics around posting
 * Hashtag support for tagging your entries
-
-=====
-
-Note: there is a directory at ```/public/cast``` that is not necessary for the journaling site, but rather part of an existing Chromecast site (https://dabble.me/cast) that is running on Dabble.me and needs to be there for the site to still function. Feel free to remove if you setup Dabble Me on your own servers.
