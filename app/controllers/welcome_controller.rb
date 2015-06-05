@@ -11,7 +11,9 @@ class WelcomeController < ApplicationController
 
   def generate_url(url, params = {})
     uri = URI(url)
-    uri.query = uri.query + "&" + params.to_query
+    if uri.query.present?
+      uri.query = uri.query.to_s + "&" + params.to_query
+    end
     uri.to_s
   end  
 end
