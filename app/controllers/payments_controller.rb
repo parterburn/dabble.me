@@ -21,12 +21,14 @@ class PaymentsController < ApplicationController
       params[:payment][:user_id] = user.id if user.present?
     end
 
-    @payment = Payment.create(entry_params)
+    @payment = Payment.create(payment_params)
 
     if @payment.save
-      flash[:notice] = "Payment added successfully!"
-      if user.present? && params[:payment][:send_thanks] == 1
-        UserMailer.thanks_for_donating(user).deliver_later
+      if user.present? && payment_params["send_thanks"] == 1
+        UserMailer.thanks_for_paying(user).deliver_later
+        flash[:notice] = "Payment added successfully & thanks was sent!"
+      else
+        flash[:notice] = "Payment added successfully!"
       end
       redirect_to payments_path
     else
@@ -45,7 +47,7 @@ class PaymentsController < ApplicationController
       params[:payment][:user_id] = user.id if user.present?
     end
 
-    if @payment.update(entry_params)
+    if @payment.update(payment_params)
       flash[:notice] = "Payment successfully updated!"
       redirect_to payments_path
     else
@@ -61,7 +63,7 @@ class PaymentsController < ApplicationController
     @payment = Payment.find(params[:id])
     @payment.destroy
     flash[:notice] = "Payment deleted successfully."
-    redirect_to payment_path
+    redirect_to payments_path
   end
 
   def payment_notify
@@ -73,7 +75,7 @@ class PaymentsController < ApplicationController
       elsif user.present?
         paid = params[:price].to_f / 100
         payment = Payment.create(user_id: user.id, comments: "Gumroad monthly from #{user.email}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
-        UserMailer.thanks_for_donating(user).deliver_later if user.payments.count == 1
+        UserMailer.thanks_for_paying(user).deliver_later if user.payments.count == 1
       end
     elsif params[:item_name].present? && params[:item_name].include?("Dabble Me Pro for") && params[:payment_status].present? && params[:payment_status] == "Completed" && ENV['AUTO_EMAIL_PAYPAL'] == "yes"
       # check for Paypal
@@ -91,7 +93,7 @@ class PaymentsController < ApplicationController
       elsif user.present?
         paid = params[:mc_gross]
         payment = Payment.create(user_id: user.id, comments: "Paypal monthly from #{params[:payer_email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
-        UserMailer.thanks_for_donating(user).deliver_later if user.payments.count == 1
+        UserMailer.thanks_for_paying(user).deliver_later if user.payments.count == 1
       end
     end
 
@@ -99,8 +101,8 @@ class PaymentsController < ApplicationController
   end
 
   private
-    def entry_params
-      params.require(:payment).permit(:amount, :date, :user_id,  :comments)
+    def payment_params
+      params.require(:payment).permit(:amount, :date, :user_id,  :comments, :send_thanks)
     end
 
     def require_permission

@@ -16,7 +16,7 @@ class UserMailer < ActionMailer::Base
     mail(from: "Dabble Me <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.email, subject: "Congrats on writing your first entry!")
   end
 
- def thanks_for_donating(user)
+ def thanks_for_paying(user)
     @user = user
     mail(to: user.email, subject: "Thanks for subscribing to Dabble Me PRO!")
   end  
