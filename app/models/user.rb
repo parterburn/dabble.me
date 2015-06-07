@@ -115,7 +115,7 @@ class User < ActiveRecord::Base
   end
 
   def plan_name
-    if plan && plan.include?("PRO")
+    if plan && plan.match(/pro/i)
       "Dabble Me PRO"
     else
       "Dabble Me Free"
@@ -123,18 +123,18 @@ class User < ActiveRecord::Base
   end
 
   def plan_frequency
-    if plan && plan.include?("Monthly")
+    if plan && plan.match(/monthly/i)
       "Monthly"
-    elsif plan && plan.include?("Yearly")
+    elsif plan && plan.match(/yearly/i)
       "Yearly"
     end
   end
 
   def plan_type
-    if plan && plan.include?("Gumroad")
+    if plan && plan.match(/gumroad/i)
       "Gumroad"
-    elsif plan && plan.include?("Paypal")
-      "Paypal"
+    elsif plan && plan.match(/paypal/i)
+      "PayPal"
     end
   end
 

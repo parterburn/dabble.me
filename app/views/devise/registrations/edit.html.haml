@@ -116,8 +116,14 @@
 
     .col-md-12.center
       %br
-      =link_to registration_path(resource_name), class: "s-delete j-delete-user", data: { confirm: "Are you sure? This will delete your account and #{pluralize(@user.entries.count,'entry')}. There is no undo." }, method: :delete do
-        %h5 Delete your account & all associated entries
+      - if current_user.is_pro? && current_user.plan_type.present?
+        - add_text = "\r\rNOTE: YOU WILL NEED TO CANCEL YOUR SUBSCRIPTION AT #{current_user.plan_type.upcase} SEPARATELY!"
+      =link_to registration_path(resource_name), class: "s-delete j-delete-user", data: { confirm: "Are you sure? This will delete your account and #{pluralize(@user.entries.count,'entry')}. There is no undo.#{add_text}" }, method: :delete do
+        %h5
+          Delete your account & all associated entries
+      - if add_text.present?
+        To downgrade or cancel your paid subscription, you'll need to do so at #{current_user.plan_type} separately!
+        %br
       %br
 
       %h4#export.col-md-6.col-md-offset-3.alert.alert-warning

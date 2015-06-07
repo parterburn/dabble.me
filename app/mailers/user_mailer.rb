@@ -18,9 +18,15 @@ class UserMailer < ActionMailer::Base
     mail(from: "Dabble Me <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.email, subject: "Congrats on writing your first entry!")
   end
 
- def thanks_for_paying(user)
+  def thanks_for_paying(user)
     @user = user
     headers['x-smtpapi'] = { :category => [ "DB_Thanks" ] }.to_json
     mail(to: user.email, subject: "Thanks for subscribing to Dabble Me PRO!")
-  end  
+  end
+
+  def no_user_here(email)
+    headers['x-smtpapi'] = { :category => [ "DB_Thanks" ] }.to_json
+    mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: "[REFUND REQUIRED] Payment Without a User", body: "#{email} does not exist as a user at #{ENV['MAIN_DOMAIN']}")
+  end
+
 end
