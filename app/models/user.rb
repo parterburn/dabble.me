@@ -16,6 +16,8 @@ class User < ActiveRecord::Base
   scope :daily_emails, -> { where(:frequency => "---\n- Sun\n- Mon\n- Tue\n- Wed\n- Thu\n- Fri\n- Sat\n") }
   scope :with_entries, -> { includes(:entries).where("entries.id > 0").references(:entries) }
   scope :without_entries, -> { includes(:entries).where("entries.id IS null").references(:entries) }
+  scope :pro_only, -> { where("plan LIKE '%PRO%'") }
+  scope :free_only, -> { where("plan LIKE '%Free%' OR plan IS null") }
 
   before_save { email.downcase! }
   after_create do
@@ -104,7 +106,7 @@ class User < ActiveRecord::Base
   end
 
   def is_pro?
-    plan_name == "Dabble Me PRO" || payments.sum(:amount) > 0
+    plan_name == "Dabble Me PRO"
   end
 
   def is_free?
