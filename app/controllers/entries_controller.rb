@@ -90,7 +90,7 @@ class EntriesController < ApplicationController
   def edit
     store_location
     @entry = Entry.find(params[:id])
-    if current_user.payments.sum(:amount) == 0
+    if current_user.is_free?
       @entry.body = @entry.sanitized_body
     end
   end
@@ -218,7 +218,7 @@ class EntriesController < ApplicationController
     end
 
     def calendar_json(entries)
-      if current_user.payments.sum(:amount) > 0
+      if current_user.is_pro?
         json_hash = Array.new
         entries.each do |entry|
           json_hash <<  {

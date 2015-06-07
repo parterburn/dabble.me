@@ -3,7 +3,7 @@
 .row
   .col-md-8.col-md-offset-2
     %br
-    -if current_user.payments.sum(:amount) > 0
+    -if current_user.is_pro?
       = form_for @search, url: search_path, method: :get, html: { class: "form-horizontal" } do |f|
         .form-group
           .col-xs-8.col-sm-10

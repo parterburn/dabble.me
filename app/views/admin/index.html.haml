@@ -65,18 +65,17 @@
 
       - if all_users_count > 0
         %br
-        %br                    
+        %br
         %table.table.table-bordered.table-striped.well
           %thead
             %tr
-              %th{"data-mainsort" => "true", "data-defaultsort" => "asc", :style => "width: 5%"} ID
-              %th{"data-firstsort" => "asc", :style => "width: 30%"} Email
+              %th{"data-mainsort" => "true", "data-defaultsort" => "asc", :style => "width: 3%"} ID
+              %th{"data-firstsort" => "asc", :style => "width: 25%"} Email
               %th{"data-firstsort" => "asc", :style => "width: 20%"} Name
-              %th{"data-firstsort" => "asc", :style => "width: 15%"} Entries
-              %th{"data-firstsort" => "asc", :style => "width: 15%"} Images
-              %th{"data-firstsort" => "asc", :style => "width: 10%"} Sent
-              %th{"data-firstsort" => "asc", :style => "width: 10%"} Received
+              %th{"data-firstsort" => "asc", :style => "width: 10%"} Entries
+              %th{"data-firstsort" => "asc", :style => "width: 10%"} Images
               %th{"data-firstsort" => "asc", :style => "width: 10%"} Paid
+              %th{"data-firstsort" => "asc", :style => "width: 20%"} Plan
           %tbody
             - connection = ActiveRecord::Base.connection
             -@user_list.each do |user|
@@ -88,9 +87,8 @@
                 - user_payments = connection.execute "SELECT SUM(payments.amount) AS sum_id FROM payments  WHERE payments.user_id = #{user.id}"
                 %td{:"data-value"=>"#{user.entries.count}"}=number_with_delimiter(user_entries_count.getvalue(0,0))
                 %td{:"data-value"=>"#{user.entries.only_images.count}"}=number_with_delimiter(user_entries_count.getvalue(0,0))
-                %td{:"data-value"=>"#{user.emails_sent}"}=number_with_delimiter(user.emails_sent)
-                %td{:"data-value"=>"#{user.emails_received}"}=number_with_delimiter(user.emails_received)
                 %td=user_payments.getvalue(0,0)
+                %td=user.plan
         .center
           = paginate @user_list
 

@@ -18,7 +18,7 @@ Unsubscribe: https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}
 \ 
 \=======================================
 \ 
-- if @user.payments.sum(:amount) == 0 && @user.emails_sent % 7 == 0
-  Keep Dabble Me going strong &amp; unlock premium features, subscribe to PRO: https://#{ENV['MAIN_DOMAIN']}/subscribe
+- if @user.is_free? && @user.emails_sent % 7 == 0
+  Change the frequency of these emails &amp; unlock premium features, subscribe to PRO: https://#{ENV['MAIN_DOMAIN']}/subscribe
 - elsif @random_inspiration.present?
   =@random_inspiration.body

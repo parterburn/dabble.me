@@ -36,6 +36,11 @@
         %br
 
       %div
+        = label_tag :plan
+        = text_field_tag :plan, "#{@payment.user.plan if @payment.user}", :class => "form-control"
+        %br
+
+      %div
         = f.label :comments
         = f.text_area :comments, :class => "form-control", :rows => 2
         %br

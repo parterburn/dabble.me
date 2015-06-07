@@ -10,10 +10,10 @@
       Post new entries by emailing
       =mail_to "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", :encode=>"hex"
     .alert.alert-warning
-      -if current_user.payments.sum(:amount) > 0
-        Thanks for subscribing to Dabble Me PRO!&nbsp;
+      -if current_user.is_pro?
+        Thanks for subscribing to #{current_user.plan_name}!&nbsp;
         -if current_user.payments.sum(:amount) < 10
-          If you're not already, I strongly encourage you to keep a monthly subscription going so the site is fully sustainable.
+          If you're not already, I strongly encourage you to keep a paid subscription going so the site is fully sustainable.
           =link_to "Subscribe Now", subscribe_path
       - else
         Unlock premium features like changing the frequency of emails, adding/editing entries via the web, adding photos, rich formatting, and searching your entries by
@@ -41,7 +41,7 @@
       %div
         = label_tag "Days to send emails"
         %br
-        -if current_user.payments.sum(:amount) == 0
+        -if current_user.is_free?
           - add_class = "disabled"
         - %w(Sun Mon Tue Wed Thu Fri Sat).each do |day|
           - if @user.frequency.include?(day[0..2])

@@ -36,6 +36,11 @@
         %br
 
       %div
+        = label_tag :plan
+        = text_field_tag :plan, "#{@payment.user.plan if @payment.user}", :class => "form-control"
+        %br
+
+      %div
         = f.label :send_thanks, "Send thanks: "
         = f.check_box :send_thanks, :checked => true
         %br

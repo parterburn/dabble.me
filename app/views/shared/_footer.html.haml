@@ -5,7 +5,7 @@
       =link_to "Contact & FAQs", faqs_path, title: "Contact & FAQs"
       &nbsp;&middot;&nbsp;
       = link_to "Privacy", privacy_path, title: "Privacy Policy"      
-      -if current_user && current_user.payments.sum(:amount) == 0
+      -if current_user && current_user.is_free?
         &nbsp;&middot;&nbsp;
         =link_to "Subscribe to PRO", subscribe_path, title: "Subscribe Now"
 

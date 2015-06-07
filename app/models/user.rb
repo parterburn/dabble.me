@@ -104,8 +104,36 @@ class User < ActiveRecord::Base
   end
 
   def is_pro?
-    plan.in?("paypal-pro","gumroad-pro")
-  end  
+    plan_name == "Dabble Me PRO" || payments.sum(:amount) > 0
+  end
+
+  def is_free?
+    !is_pro?
+  end
+
+  def plan_name
+    if plan && plan.include?("PRO")
+      "Dabble Me PRO"
+    else
+      "Dabble Me Free"
+    end
+  end
+
+  def plan_frequency
+    if plan && plan.include?("Monthly")
+      "Monthly"
+    elsif plan && plan.include?("Yearly")
+      "Yearly"
+    end
+  end
+
+  def plan_type
+    if plan && plan.include?("Gumroad")
+      "Gumroad"
+    elsif plan && plan.include?("Paypal")
+      "Paypal"
+    end
+  end
 
   private
 

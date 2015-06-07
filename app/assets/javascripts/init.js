@@ -36,7 +36,7 @@
     });
 
     $(".j-paid").click(function(e) {
-      $.cookie('donated', true, { expires: 30, path: '/' });
+      $.cookie('badger_go_away', true, { expires: 30, path: '/' });
     });
 
     $(".j-entry-link").click(function(e) {
