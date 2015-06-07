@@ -20,6 +20,7 @@ class User < ActiveRecord::Base
   scope :free_only, -> { where("plan LIKE '%Free%' OR plan IS null") }
 
   before_save { email.downcase! }
+  after_commit :check_account_status, on: [:create, :update]
   after_create do
     send_welcome_email
     subscribe_to_mailchimp if Rails.env.production?
@@ -138,6 +139,13 @@ class User < ActiveRecord::Base
   end
 
   private
+
+    def check_account_status
+      # Force frequency to 1 day if free
+      if self.is_free? && self.frequency.present?
+        self.update_column(:frequency, [self.frequency.first])
+      end
+    end
 
     def subscribe_to_mailchimp
       #TODO PUT THIS IN DELAY
