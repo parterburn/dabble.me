@@ -16,11 +16,11 @@ class User < ActiveRecord::Base
   scope :daily_emails, -> { where(:frequency => "---\n- Sun\n- Mon\n- Tue\n- Wed\n- Thu\n- Fri\n- Sat\n") }
   scope :with_entries, -> { includes(:entries).where("entries.id > 0").references(:entries) }
   scope :without_entries, -> { includes(:entries).where("entries.id IS null").references(:entries) }
+  scope :free_only, -> { where("plan ILIKE '%free%' OR plan IS null") }
   scope :pro_only, -> { where("plan ILIKE '%pro%'") }
   scope :monthly, -> { where("plan ILIKE '%monthly%'") }
   scope :yearly, -> { where("plan ILIKE '%yearly%'") }
   scope :forever, -> { where("plan ILIKE '%forever%'") }
-  scope :free_only, -> { where("plan ILIKE '%free%' OR plan IS null") }
   scope :not_forever, -> { where("plan NOT ILIKE '%forever%'") }
 
   before_save { email.downcase! }
