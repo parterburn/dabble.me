@@ -30,7 +30,7 @@ class PaymentsController < ApplicationController
       else
         flash[:notice] = "Payment added successfully!"
       end
-      user.update(user_params) if user.present?
+      user.update(user_params) if user.present? && user_params[:plan].present?
       redirect_to payments_path
     else
       render 'new'
@@ -49,7 +49,7 @@ class PaymentsController < ApplicationController
     end
 
     if @payment.update(payment_params)
-      user.update(user_params) if user.present?
+      user.update(user_params) if user.present? && user_params[:plan].present?
       flash[:notice] = "Payment successfully updated!"
       redirect_to payments_path
     else
