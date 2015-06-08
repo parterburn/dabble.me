@@ -24,7 +24,7 @@ class PaymentsController < ApplicationController
     @payment = Payment.create(payment_params)
 
     if @payment.save
-      if user.present? && payment_params["send_thanks"] == 1
+      if user.present? && params["send_thanks"] == 1
         UserMailer.thanks_for_paying(user).deliver_later
         flash[:notice] = "Payment added successfully & thanks was sent!"
       else
@@ -114,7 +114,7 @@ class PaymentsController < ApplicationController
 
   private
     def payment_params
-      params.require(:payment).permit(:amount, :date, :user_id,  :comments, :send_thanks)
+      params.require(:payment).permit(:amount, :date, :user_id,  :comments)
     end
 
     def user_params
