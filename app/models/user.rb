@@ -16,8 +16,9 @@ class User < ActiveRecord::Base
   scope :daily_emails, -> { where(:frequency => "---\n- Sun\n- Mon\n- Tue\n- Wed\n- Thu\n- Fri\n- Sat\n") }
   scope :with_entries, -> { includes(:entries).where("entries.id > 0").references(:entries) }
   scope :without_entries, -> { includes(:entries).where("entries.id IS null").references(:entries) }
-  scope :pro_only, -> { where("plan LIKE '%PRO%'") }
-  scope :free_only, -> { where("plan LIKE '%Free%' OR plan IS null") }
+  scope :pro_only, -> { where("plan ILIKE '%pro%'") }
+  scope :free_only, -> { where("plan ILIKE '%free%' OR plan IS null") }
+  scope :not_forever, -> { where("plan NOT ILIKE '%forever%'") }
 
   before_save { email.downcase! }
   after_commit :check_account_status, on: [:create, :update]

@@ -108,7 +108,7 @@ class PaymentsController < ApplicationController
       UserMailer.no_user_here(email).deliver_later if user.blank?
     end
 
-    user.update_column(:plan, plan) if user.present?
+    user.update(plan: plan) if user.present?
     head :ok, content_type: "text/html"
   end
 
@@ -119,7 +119,7 @@ class PaymentsController < ApplicationController
 
     def user_params
       params.permit(:plan)
-    end    
+    end 
 
     def require_permission
       unless current_user.is_admin?
