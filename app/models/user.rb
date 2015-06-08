@@ -142,6 +142,13 @@ class User < ActiveRecord::Base
     end
   end
 
+  def plan_details
+    p = plan_name
+    p = p + " " + plan_frequency if plan_frequency.present?
+    p = p + " on " + plan_type if plan_type.present?
+    p
+  end
+
   private
 
     def check_account_status
