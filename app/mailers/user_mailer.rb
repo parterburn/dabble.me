@@ -30,9 +30,9 @@ class UserMailer < ActionMailer::Base
     mail(to: user.email, subject: "[ACTION REQUIRED] Account Downgraded")
   end
 
-  def no_user_here(email)
+  def no_user_here(email, source)
     headers['x-smtpapi'] = { :category => [ "DB_NoUser" ] }.to_json
-    mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: "[REFUND REQUIRED] Payment Without a User", body: "#{email} does not exist as a user at #{ENV['MAIN_DOMAIN']}")
+    mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: "[REFUND REQUIRED] Payment Without a User", body: "#{email} does not exist as a user at #{ENV['MAIN_DOMAIN']}. Payment via #{source}.")
   end
 
 end

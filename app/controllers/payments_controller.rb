@@ -84,7 +84,7 @@ class PaymentsController < ApplicationController
       end
       plan = "PRO #{frequency} Gumroad"
 
-      UserMailer.no_user_here(params[:email]).deliver_later if user.blank?
+      UserMailer.no_user_here(params[:email], "Gumroad").deliver_later if user.blank?
 
     # check for Paypal
     elsif params[:item_name].present? && params[:item_name].include?("Dabble Me Pro for") && params[:payment_status].present? && params[:payment_status] == "Completed" && ENV['AUTO_EMAIL_PAYPAL'] == "yes"
@@ -104,8 +104,8 @@ class PaymentsController < ApplicationController
         payment = Payment.create(user_id: user.id, comments: "Paypal monthly from #{params[:payer_email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
         UserMailer.thanks_for_paying(user).deliver_later if user.payments.count == 1
       end
-      plan = "PRO #{frequency} Paypal"
-      UserMailer.no_user_here(email).deliver_later if user.blank?
+      plan = "PRO #{frequency} PayPal"
+      UserMailer.no_user_here(email, "PayPal").deliver_later if user.blank?
     end
 
     user.update(plan: plan) if user.present?
