@@ -33,6 +33,35 @@
 
   .col-md-12
     %hr
+  .col-md-12
+    .row
+      .col-md-3
+        %strong Free
+      .col-md-2
+        %strong #{number_with_delimiter(User.free_only.count)}
+    .row
+      .col-md-3
+        %strong Pro
+      .col-md-2
+        %strong #{number_with_delimiter(User.pro_only.count)}
+    .row
+      .col-md-3
+        %strong Monthly
+      .col-md-2
+        %strong #{number_with_delimiter(User.monthly.count)}
+    .row
+      .col-md-3
+        %strong Yearly
+      .col-md-2
+        %strong #{number_with_delimiter(User.yearly.count)}
+    .row
+      .col-md-3
+        %strong Forever
+      .col-md-2
+        %strong #{number_with_delimiter(User.forever.count)}        
+
+  .col-md-12
+    %hr
 
   .col-md-3
     %strong Total Emails Sent
