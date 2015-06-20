@@ -75,7 +75,11 @@ class PaymentsController < ApplicationController
     if params[:email].present? && params[:seller_id].gsub("==","") == ENV['GUMROAD_SELLER_ID'] && params[:product_id].gsub("==","") == ENV['GUMROAD_PRODUCT_ID']
       user = User.find_by_email(params[:email])
       paid = params[:price].to_f / 100
-      frequency = paid.to_i > 10 ? "Yearly" : "Monthly"
+      if params[:recurrence].present?
+        frequency = params[:recurrence].titleize
+      else
+        frequency = paid.to_i > 10 ? "Yearly" : "Monthly"
+      end
       if user.present? && user.payments.count > 0 && Payment.where(user_id: user.id).last.created_at.to_date === Time.now.to_date
         #duplicate, don't send
       elsif user.present?

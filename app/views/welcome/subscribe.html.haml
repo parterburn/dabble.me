@@ -30,14 +30,17 @@
           .col-md-12.alert.alert-info{style: "text-align:center;"}
             Currently subscribed to: 
             %strong #{current_user.plan_details}
-        .col-md-12.alert.alert-success{style: "text-align:center;"}
-          %script{:src => "https://gumroad.com/js/gumroad.js", :type => "text/javascript"}
-          %h4
-            Subscribe now using any major credit card or&nbsp;
-            %strong> Paypal
-            \.
-          %p{style: "margin-top:20px;"}
-            %a.gumroad-button{:href => "https://gumroad.com/l/dabbleme?email=#{current_user.email}"} Subscribe Now & Activate PRO Features
+            %span{style: "font-size:12px;display:block;margin-top:10px;"} Modify or cancel your subscription at #{current_user.plan_type}.
+
+        - else
+          .col-md-12.alert.alert-success{style: "text-align:center;"}
+            %script{:src => "https://gumroad.com/js/gumroad.js", :type => "text/javascript"}
+            %h4
+              Subscribe now using any major credit card or&nbsp;
+              %strong> Paypal
+              \.
+            %p{style: "margin-top:20px;"}
+              %a.gumroad-button{:href => "https://gumroad.com/l/dabbleme?email=#{current_user.email}"} Subscribe Now & Activate PRO Features
 
         .clearfix
 
