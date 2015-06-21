@@ -91,7 +91,7 @@ class PaymentsController < ApplicationController
       UserMailer.no_user_here(params[:email], "Gumroad").deliver_later if user.blank?
 
     # check for Paypal
-    elsif params[:item_name].present? && params[:item_name].include?("Dabble Me PRO for") && params[:payment_status].present? && params[:payment_status] == "Completed" && ENV['AUTO_EMAIL_PAYPAL'] == "yes"
+    elsif params[:item_name].present? && params[:item_name].include?("Dabble Me") && params[:payment_status].present? && params[:payment_status] == "Completed" && ENV['AUTO_EMAIL_PAYPAL'] == "yes"
 
       user_key = params[:item_name].gsub("Dabble Me PRO for ","") if params[:item_name].present?
       user = User.find_by(user_key: user_key)
@@ -102,11 +102,17 @@ class PaymentsController < ApplicationController
         user = User.find_by(email: email)
       end
 
+      # TEMPORARY UNTIL REST ARE FIXED
+      if user.blank?
+        email = params[:item_name].gsub("Dabble Me Pro for ","") if params[:item_name].present?
+        user = User.find_by(email: email)        
+      end
+
       paid = params[:mc_gross]
       frequency = paid.to_i > 10 ? "Yearly" : "Monthly"
 
       if user.present? && user.payments.count > 0 && Payment.where(user_id: user.id).last.created_at.to_date === Time.now.to_date
-        # duplicate, don't send
+        # duplicate, don't
       elsif user.present?
         payment = Payment.create(user_id: user.id, comments: "Paypal #{frequency} from #{params[:payer_email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
         UserMailer.thanks_for_paying(user).deliver_later if user.payments.count == 1
