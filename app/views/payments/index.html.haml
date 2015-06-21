@@ -4,13 +4,30 @@
   .col-md-2
     %p
       =link_to "Add new payment", new_payment_path, class: "btn btn-info"
-  .col-md-6
+  .col-md-5
     %p
       %strong
         Total Payments:
         =@payments.length
         for
         =number_to_currency(@payments.sum(:amount))
+  .col-md-5
+    %p
+      %strong
+        MRR:
+        =number_to_currency(@mrr)
+    %p
+      %strong
+        Monthly Subs:
+        =@monthlys.count
+        for
+        =number_to_currency(@monthly_recurring.to_i)
+    %p
+      %strong
+        Annual Subs:
+        =@yearlys.count
+        for
+        =number_to_currency(@annual_recurring.to_i)        
 
 .row
   .col-md-1

@@ -7,6 +7,22 @@ class PaymentsController < ApplicationController
   skip_before_filter :verify_authenticity_token, :only => [:payment_notify]
 
   def index
+
+    @monthlys = User.pro_only.monthly
+    @yearlys =  User.pro_only.yearly
+
+    @monthly_recurring = 0
+    @monthlys.each do |user|
+      @monthly_recurring += user.payments.last.amount
+    end
+
+    @annual_recurring = 0
+    @yearlys.each do |user|
+      @annual_recurring += user.payments.last.amount
+    end
+
+    @mrr = @monthly_recurring.to_i + (@annual_recurring.to_i/12)
+
     @payments = Payment.includes(:user).all.order("date DESC, id DESC")
   end
 
