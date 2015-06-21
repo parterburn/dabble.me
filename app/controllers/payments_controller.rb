@@ -17,7 +17,7 @@ class PaymentsController < ApplicationController
   def create
 
     if params[:user_email].present?
-      user = User.find_by_email(params[:user_email].downcase)
+      user = User.find_by(email: params[:user_email].downcase)
       params[:payment][:user_id] = user.id if user.present?
     end
 
@@ -44,7 +44,7 @@ class PaymentsController < ApplicationController
   def update
     @payment = Payment.find(params[:id])
     if params[:user_email].present?
-      user = User.find_by_email(params[:user_email])
+      user = User.find_by(email: params[:user_email])
       params[:payment][:user_id] = user.id if user.present?
     end
 
@@ -73,7 +73,7 @@ class PaymentsController < ApplicationController
 
     # check for GUMROAD
     if params[:email].present? && params[:seller_id].gsub("==","") == ENV['GUMROAD_SELLER_ID'] && params[:product_id].gsub("==","") == ENV['GUMROAD_PRODUCT_ID']
-      user = User.find_by_email(params[:email])
+      user = User.find_by(email: params[:email])
       paid = params[:price].to_f / 100
       if params[:recurrence].present?
         frequency = params[:recurrence].titleize
@@ -91,16 +91,19 @@ class PaymentsController < ApplicationController
       UserMailer.no_user_here(params[:email], "Gumroad").deliver_later if user.blank?
 
     # check for Paypal
-    elsif params[:item_name].present? && params[:item_name].include?("Dabble Me Pro for") && params[:payment_status].present? && params[:payment_status] == "Completed" && ENV['AUTO_EMAIL_PAYPAL'] == "yes"
-      email = params[:item_name].gsub("Dabble Me Pro for ","") if params[:item_name].present?
-      user = User.find_by_email(email)
-      paid = params[:mc_gross]
-      frequency = paid.to_i > 10 ? "Yearly" : "Monthly"
+    elsif params[:item_name].present? && params[:item_name].include?("Dabble Me PRO for") && params[:payment_status].present? && params[:payment_status] == "Completed" && ENV['AUTO_EMAIL_PAYPAL'] == "yes"
+
+      user_key = params[:item_name].gsub("Dabble Me PRO for ","") if params[:item_name].present?
+      user = User.find_by(user_key: user_key)
+
       if user.blank?
         # try finding user based on payer_email instead of item_name
         email = params[:payer_email] if params[:payer_email].present?
-        user = User.find_by_email(email)
+        user = User.find_by(email: email)
       end
+
+      paid = params[:mc_gross]
+      frequency = paid.to_i > 10 ? "Yearly" : "Monthly"
 
       if user.present? && user.payments.count > 0 && Payment.where(user_id: user.id).last.created_at.to_date === Time.now.to_date
         # duplicate, don't send

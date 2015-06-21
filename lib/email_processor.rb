@@ -123,10 +123,10 @@ class EmailProcessor
 
     def find_user_from_user_key(to_token, from_email)
       begin
-        user = User.find_by_user_key(to_token)
+        user = User.find_by user_key: to_token
       rescue JSON::ParserError => e
       end
-      user.blank? ? User.find_by_email(from_email) : user
+      user.blank? ? User.find_by(email: from_email) : user
     end
 
     def parse_subject_for_date(subject,user)
