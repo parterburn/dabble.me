@@ -22,12 +22,14 @@
         =@monthlys.count
         for
         =number_to_currency(@monthly_recurring.to_i)
+        per month
     %p
       %strong
         Annual Subs:
         =@yearlys.count
         for
-        =number_to_currency(@annual_recurring.to_i)        
+        =number_to_currency(@annual_recurring.to_i)      
+        per year  
 
 .row
   .col-md-1
