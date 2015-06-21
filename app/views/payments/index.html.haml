@@ -11,11 +11,11 @@
         =@payments.length
         for
         =number_to_currency(@payments.sum(:amount))
-  .col-md-5
     %p
       %strong
         MRR:
-        =number_to_currency(@mrr)
+        =number_to_currency(@mrr)        
+  .col-md-5
     %p
       %strong
         Monthly Subs:
