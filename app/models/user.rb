@@ -21,6 +21,8 @@ class User < ActiveRecord::Base
   scope :monthly, -> { where("plan ILIKE '%monthly%'") }
   scope :yearly, -> { where("plan ILIKE '%yearly%'") }
   scope :forever, -> { where("plan ILIKE '%forever%'") }
+  scope :paypal_only, -> { where("plan ILIKE '%paypal%'") }
+  scope :gumroad_only, -> { where("plan ILIKE '%gumroad%'") }
   scope :not_forever, -> { where("plan NOT ILIKE '%forever%'") }
 
   before_save { email.downcase! }

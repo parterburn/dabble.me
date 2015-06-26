@@ -112,18 +112,6 @@ class PaymentsController < ApplicationController
       user_key = params[:item_name].gsub("Dabble Me PRO for ","") if params[:item_name].present?
       user = User.find_by(user_key: user_key)
 
-      if user.blank?
-        # try finding user based on payer_email instead of item_name
-        email = params[:payer_email] if params[:payer_email].present?
-        user = User.find_by(email: email)
-      end
-
-      # TEMPORARY UNTIL REST ARE FIXED
-      if user.blank?
-        email = params[:item_name].gsub("Dabble Me Pro for ","") if params[:item_name].present?
-        user = User.find_by(email: email)        
-      end
-
       paid = params[:mc_gross]
       frequency = paid.to_i > 10 ? "Yearly" : "Monthly"
 
