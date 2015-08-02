@@ -39,6 +39,7 @@ Rails.application.routes.draw do
   post '/email_processor'       => 'griddler/emails#create'
 
   # Redirects for previous site on this domain
-  get '/cast/(*path)' => 'welcome#redirect_vidcast'
+  get '/cast', to: redirect('https://vidcast.dabble.me?old_link=true')
+  get '/cast/(*path)', to: redirect('https://dabble.me/404-vidcast.html')
 
 end
