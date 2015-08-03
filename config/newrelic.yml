@@ -22,7 +22,7 @@ common: &default_settings
   # agent_enabled: false
 
   # Logging level for log/newrelic_agent.log
-  log_level: info
+  log_level: <%= ENV['NEW_RELIC_LOG'] %>
 
 
 # Environment-specific settings are in this section.
