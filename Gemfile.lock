@@ -162,6 +162,7 @@ GEM
     multi_json (1.11.0)
     multi_xml (0.5.5)
     netrc (0.7.7)
+    newrelic_rpm (3.12.1.298)
     nokogiri (1.6.6.2)
       mini_portile (~> 0.6.0)
     orm_adapter (0.5.0)
@@ -348,6 +349,7 @@ DEPENDENCIES
   kaminari
   le
   meta_request
+  newrelic_rpm
   pg
   pry
   pry-byebug
@@ -376,3 +378,6 @@ DEPENDENCIES
   web-console (~> 2.0)
   webmock
   zip-zip
+
+BUNDLED WITH
+   1.10.5

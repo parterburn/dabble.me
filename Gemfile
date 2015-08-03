@@ -69,6 +69,7 @@ gem 'twbs_sass_rails'
 gem 'uglifier', '>= 1.3.0'
 
 gem 'le' # logentries
+gem 'newrelic_rpm'
 
 group :development, :test do
   gem 'byebug'
