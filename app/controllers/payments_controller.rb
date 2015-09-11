@@ -89,7 +89,8 @@ class PaymentsController < ApplicationController
 
     # check for GUMROAD
     if params[:email].present? && params[:seller_id].gsub("==","") == ENV['GUMROAD_SELLER_ID'] && params[:product_id].gsub("==","") == ENV['GUMROAD_PRODUCT_ID']
-      user = User.find_by(email: params[:email])
+      user = User.find_by(gumroad_id: params[:purchaser_id])
+      user = User.find_by(email: params[:email]) if user.blank?
       paid = params[:price].to_f / 100
       if params[:recurrence].present?
         frequency = params[:recurrence].titleize
@@ -103,6 +104,7 @@ class PaymentsController < ApplicationController
         UserMailer.thanks_for_paying(user).deliver_later if user.payments.count == 1
       end
       plan = "PRO #{frequency} Gumroad"
+      gumroad_id = params[:purchaser_id]
 
       UserMailer.no_user_here(params[:email], "Gumroad").deliver_later if user.blank?
 
@@ -122,10 +124,11 @@ class PaymentsController < ApplicationController
         UserMailer.thanks_for_paying(user).deliver_later if user.payments.count == 1
       end
       plan = "PRO #{frequency} PayPal"
+      gumroad_id = user.gumroad_id if user.present?
       UserMailer.no_user_here(email, "PayPal").deliver_later if user.blank?
     end
 
-    user.update(plan: plan) if user.present?
+    user.update(plan: plan, gumroad_id: gumroad_id) if user.present?
     head :ok, content_type: "text/html"
   end
 
