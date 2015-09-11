@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20150607201716) do
+ActiveRecord::Schema.define(version: 20150911044508) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -70,6 +70,7 @@ ActiveRecord::Schema.define(version: 20150607201716) do
     t.time     "send_time",              default: '2000-01-01 20:00:00',         null: false
     t.string   "user_key"
     t.text     "plan",                   default: "Free"
+    t.string   "gumroad_id"
   end
 
   add_index "users", ["email"], name: "index_users_on_email", unique: true, using: :btree
