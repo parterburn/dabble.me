@@ -24,7 +24,7 @@ class EntriesController < ApplicationController
       @entries = Kaminari.paginate_array(@entries).page(params[:page]).per(params[:per])
 
       respond_to do |format|
-        format.json { render json: calendar_json(current_user.entries) }
+        format.json { render json: calendar_json(current_user.entries.where("date >= '#{params[:start]}'::DATE AND date <= '#{params[:end]}'::DATE")) }
         format.html
       end
 
