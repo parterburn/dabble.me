@@ -43,6 +43,7 @@ hr {
 .navbar-default {
   background-color: #649cc7;
   color:whiteSmoke;
+  z-index: 1000;
   .navbar-nav > li > a {
     color:whiteSmoke;
     letter-spacing: 0.5px;
