@@ -90,7 +90,8 @@
         %strong #{number_with_delimiter(all_users_count)}
       .col-md-3
         %form
-          %input{type: "text", name: "email", placeholder: "Search by Email", value: "#{params[:email]}", style: "padding: 3px 8px; margin-top:-10px; margin-bottom: 5px;"}
+          %input{type: "text", name: "email", placeholder: "Filter by Email", value: "#{params[:email]}", style: "padding: 3px 8px; margin-top:-10px; margin-bottom: 5px;"}
+          %input{type: "text", name: "user_key", placeholder: "Filter by User Key", value: "#{params[:user_key]}", style: "padding: 3px 8px; margin-top:-10px; margin-bottom: 5px;"}
 
       - if all_users_count > 0
         %br
@@ -101,15 +102,17 @@
               %th{"data-mainsort" => "true", "data-defaultsort" => "asc", :style => "width: 3%"} ID
               %th{"data-firstsort" => "asc", :style => "width: 25%"} Email
               %th{"data-firstsort" => "asc", :style => "width: 20%"} Name
-              %th{"data-firstsort" => "asc", :style => "width: 10%"} Entries
-              %th{"data-firstsort" => "asc", :style => "width: 10%"} Images
-              %th{"data-firstsort" => "asc", :style => "width: 10%"} Paid
-              %th{"data-firstsort" => "asc", :style => "width: 20%"} Plan
+              %th{"data-firstsort" => "asc", :style => "width: 12%"} Key
+              %th{"data-firstsort" => "asc", :style => "width: 8%"} Entries
+              %th{"data-firstsort" => "asc", :style => "width: 8%"} Images
+              %th{"data-firstsort" => "asc", :style => "width: 8%"} Paid
+              %th{"data-firstsort" => "asc", :style => "width: 19%"} Plan
           %tbody
             - connection = ActiveRecord::Base.connection
             -@user_list.each do |user|
               %tr
                 %td=user.id
+                %td=user.user_key
                 %td=link_to user.email, admin_path(entries: "all", user_id: user.id)
                 %td=user.full_name
                 - user_entries_count = connection.execute "SELECT COUNT(*) FROM entries  WHERE entries.user_id = #{user.id}"

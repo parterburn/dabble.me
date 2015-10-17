@@ -8,8 +8,7 @@ class ApplicationController < ActionController::Base
 
   def admin
     if current_user && current_user.is_admin?
-      if params[:entries] == "all"
-        show = params[:show] || 100
+      if params[:entries] == 'all'
         if params[:user_id].present?
           user = User.find(params[:user_id])
           @entries = user.entries.includes(:inspiration).order('id DESC')
@@ -26,27 +25,28 @@ class ApplicationController < ActionController::Base
         if user.present?
           @title = "ADMIN ENTRIES for <a href='/admin?email=#{user.email}'>#{user.email}</a>"
         else
-          @title = "ADMIN ENTRIES for ALL USERS"
+          @title = 'ADMIN ENTRIES for ALL USERS'
         end
-        render "entries/index"
+        render 'entries/index'
       else
         if params[:email].present?
           @users = User.where("email LIKE '%#{params[:email]}%'")
-          @user_list = @users.order("id DESC").page(params[:page]).per(params[:per])
+        elsif params[:user_key].present?
+          @users = User.where("user_key LIKE '%#{params[:user_key]}%'")
         else
           @users = User.all
-          @user_list = @users.order("id DESC").page(params[:page]).per(params[:per])
         end
+        @user_list = @users.order('id DESC').page(params[:page]).per(params[:per])
         @entries = Entry.all
-        render "admin/index"
+        render 'admin/index'
       end
     else
-      flash[:alert] = "Not authorized"
+      flash[:alert] = 'Not authorized'
       redirect_to root_path
     end
   end
 
-  def redirect_back_or_to(default, id=0)
+  def redirect_back_or_to(default)
     redirect_to session.delete(:return_to) || default
   end
 
@@ -61,12 +61,11 @@ class ApplicationController < ActionController::Base
       u.permit(:first_name, :last_name, :email, :password, :password_confirmation)
     end
     devise_parameter_sanitizer.for(:account_update) do |u|
-      u.permit(:first_name, :last_name, :email, :password, :password_confirmation,  {:frequency => []}, :send_past_entry, :send_time, :send_timezone, :current_password)
+      u.permit(:first_name, :last_name, :email, :password, :password_confirmation,  { frequency: [] }, :send_past_entry, :send_time, :send_timezone, :current_password)
     end
   end
 
   def js_action
-    @js_action = [controller_path.camelize.gsub("::","_"),action_name].join('_')
-  end  
-  
+    @js_action = [controller_path.camelize.gsub('::', '_'), action_name].join('_')
+  end
 end
