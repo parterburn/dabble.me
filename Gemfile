@@ -1,62 +1,41 @@
 source 'https://rubygems.org'
 
-ruby '2.2.2'
-gem 'rails', '4.2.1'
+ruby '2.2.3'
+gem 'rails', '4.2.4'
 
 # Servers
 gem 'puma'
 
-# Multi-environment configuration
-# gem 'figaro'
-
-# API
-# gem 'rabl'
-
 # ORM
 gem 'pg'
 
-gem "devise", "~> 3.4.0"
-gem 'sendgrid', '~> 1.2.0' # Emails
+# users
+gem 'devise', '~> 3.4.0'
+gem 'gibbon' # mailchimp connector
 
-gem 'summernote-rails' #wysiwyg
 gem 'addressable' # better URI checking
+gem 'sinatra', '>= 1.3.0', require: nil
+gem 'combined_time_select', '~> 1.0.1'
 
-gem 'sinatra', '>= 1.3.0', :require => nil
-
-gem "combined_time_select", "~> 1.0.1"
-gem 'gibbon' #mailchimp connector
-
+# email parsing
+gem 'sendgrid', '~> 1.2.0' # Emails
 gem 'griddler', '~> 1.1.0'
-gem 'griddler-sendgrid' #email parsing
+gem 'griddler-sendgrid'
+gem 'email_reply_parser'
 
 gem 'randomized_field', '~> 0.1.0' # builds user_keys
-
 gem 'filepicker-rails' # image uploads
-
-gem "rest-client" #RESTClient
-
+gem 'summernote-rails' # wysiwyg
+gem 'rest-client' # RESTClient
 gem 'rubyzip', '~> 1.1.6'
 gem 'zip-zip'
-
-gem "email_reply_parser"
-
 gem 'rack-utf8_sanitizer'
 
-#gem "chartkick" #admin dashboard
-#gem "groupdate" #admin dashboard
-
-# Pagination
-gem 'kaminari'
-
-# Security
-# gem 'secure_headers'
+gem 'kaminari' # Pagination
 
 # Miscellanea
 gem 'google-analytics-rails'
 gem 'haml'
-
-# gem 'http_accept_language'
-# gem 'resque', require: 'resque/server' # Resque web interface
 
 # Assets
 gem 'autoprefixer-rails'
@@ -76,10 +55,6 @@ group :development, :test do
   gem 'delorean'
   gem 'factory_girl_rails'
   gem 'faker'
-  gem 'pry'
-  gem 'pry-byebug'
-  gem 'pry-rails'
-  gem 'pry-nav'
   gem 'rspec-rails'
 end
 
@@ -90,7 +65,10 @@ group :development do
   gem 'meta_request'
   gem 'spring'
   gem 'spring-commands-rspec'
-  gem "web-console", "~> 2.0"
+  gem 'web-console'
+  gem 'pry'
+  gem 'pry-remote'
+  gem 'pry-stack_explorer'
 end
 
 group :test do
@@ -105,7 +83,6 @@ group :test do
 end
 
 group :staging, :production do
-  #gem 'puma_auto_tune'
   gem 'rack-timeout'
 end
 

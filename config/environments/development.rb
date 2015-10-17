@@ -36,9 +36,13 @@ Rails.application.configure do
   # config.action_view.raise_on_missing_translations = true
 
   # Devise
-  config.action_mailer.default_url_options = { :host => 'localhost:3000' }
+  config.action_mailer.default_url_options = { host: 'localhost:3000' }
 
-  Bullet.enable = true
-  Bullet.add_footer = true
+  config.log_level = :info
 
+  config.after_initialize do
+    Bullet.enable = true
+    Bullet.add_footer = true
+    Bullet.rails_logger = true
+  end
 end
