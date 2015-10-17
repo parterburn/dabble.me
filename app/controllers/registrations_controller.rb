@@ -1,5 +1,7 @@
 class RegistrationsController < Devise::RegistrationsController
 
+  after_action :track_ga_event, only: :create
+
   def new
     if ENV['CLOSE_REGISTRATIONS'].present?
       flash[:notice] = 'Registrations are not open; enter your email below to be alerted!'
@@ -82,10 +84,10 @@ class RegistrationsController < Devise::RegistrationsController
       if @user.frequency.present?
         set_flash_message :notice, :updated
       else
-        flash[:notice] = "You are now unsubscribed from all emails."
+        flash[:notice] = 'You are now unsubscribed from all emails.'
       end
     else
-      set_flash_message :error, "Could not update."
+      set_flash_message :error, 'Could not update.'
     end
 
     redirect_to settings_path(@user.user_key)
@@ -93,6 +95,12 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   private
+
+  def track_ga_event
+    if @user.id.present?
+      Gabba::Gabba.new(ENV['GOOGLE_ANALYTICS_ID'], ENV['MAIN_DOMAIN']).event('User', 'Create', 'User_key', @user.user_key) if ENV['GOOGLE_ANALYTICS_ID'].present?
+    end
+  end
 
   # check if we need password to update user data
   # ie if password or email was changed

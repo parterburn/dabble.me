@@ -72,6 +72,7 @@ class EmailProcessor
             existing_entry.original_email_body = existing_entry.original_email_body.force_encoding('iso-8859-1').encode('utf-8')
             existing_entry.save
           end
+          Gabba::Gabba.new(ENV['GOOGLE_ANALYTICS_ID'], ENV['MAIN_DOMAIN']).event('Email Entry', 'Merged', 'ID', existing_entry.id) if ENV['GOOGLE_ANALYTICS_ID'].present?
         else
 
           begin
@@ -98,6 +99,7 @@ class EmailProcessor
             entry.body = entry.sanitized_body
           end
           entry.save
+          Gabba::Gabba.new(ENV['GOOGLE_ANALYTICS_ID'], ENV['MAIN_DOMAIN']).event('Email Entry', 'New', 'ID', entry.id) if ENV['GOOGLE_ANALYTICS_ID'].present?
         end
 
         user.increment!(:emails_received)

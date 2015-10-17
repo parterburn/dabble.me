@@ -35,6 +35,7 @@ gem 'kaminari' # Pagination
 
 # Miscellanea
 gem 'google-analytics-rails'
+gem 'gabba', '~> 1.0.1' # server side tracking for Google Analytics
 gem 'haml'
 
 # Assets
