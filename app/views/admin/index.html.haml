@@ -88,10 +88,11 @@
       - all_users_count = @users.count
       .col-md-2
         %strong #{number_with_delimiter(all_users_count)}
-      .col-md-3
+      .col-md-7
         %form
-          %input{type: "text", name: "email", placeholder: "Filter by Email", value: "#{params[:email]}", style: "padding: 3px 8px; margin-top:-10px; margin-bottom: 5px;"}
-          %input{type: "text", name: "user_key", placeholder: "Filter by User Key", value: "#{params[:user_key]}", style: "padding: 3px 8px; margin-top:-10px; margin-bottom: 5px;"}
+          %input{type: 'text', name: 'email', placeholder: 'Filter by Email', value: "#{params[:email]}", style: 'padding: 3px 8px; margin-top:-10px; margin-bottom: 5px;'}
+          %input{type: 'text', name: 'user_key', placeholder: 'Filter by User Key', value: "#{params[:user_key]}", style: 'padding: 3px 8px; margin-top:-10px; margin-bottom: 5px;'}
+          %input{type: 'submit', name: 'submit', value: 'Search'}
 
       - if all_users_count > 0
         %br
