@@ -208,7 +208,7 @@ class EntriesController < ApplicationController
   end
 
   def calendar_json(entries)
-    return false if current_user.is_pro?
+    return false unless current_user.is_pro?
     json_hash = []
     entries.each do |entry|
       json_hash <<  {
