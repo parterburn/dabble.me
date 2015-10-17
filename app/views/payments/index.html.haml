@@ -40,6 +40,8 @@
     %h4 Amount
   .col-md-3
     %h4 User
+  .col-md-2
+    %h4 Plan    
   .col-md-3
     %h4 Comments
 
@@ -60,5 +62,8 @@
         =payment.user.email
       - else
         =payment.user_id
-    .col-md-5
+    .col-md-2
+      - if payment.user
+        =payment.user.plan      
+    .col-md-3
       =payment.comments
