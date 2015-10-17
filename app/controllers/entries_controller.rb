@@ -1,3 +1,4 @@
+# Handle Web Entries
 class EntriesController < ApplicationController
   before_action :authenticate_user!
   before_filter :require_permission, only: [:show, :edit, :update, :destroy]
@@ -29,7 +30,7 @@ class EntriesController < ApplicationController
   def show
     @entry = Entry.includes(:inspiration).find(params[:id])
     if @entry
-      track_ga_event(@entry, 'Show')
+      track_ga_event('Show')
       render 'show'
     else
       redirect_to past_entries_path
@@ -39,7 +40,7 @@ class EntriesController < ApplicationController
   def random
     @entry = current_user.random_entry
     if @entry
-      track_ga_event(@entry, 'Random')
+      track_ga_event('Random')
       render 'show'
     else
       redirect_to past_entries_path
@@ -69,7 +70,7 @@ class EntriesController < ApplicationController
       end
       if @existing_entry.save
         flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime("%B %-d")}. <a href='#entry-#{@existing_entry.id}' data-id='#{@existing_entry.id}' class='alert-link j-entry-link'>View merged entry</a>.".html_safe
-        track_ga_event(@existing_entry, 'Merged')
+        track_ga_event('Merged')
         redirect_to group_entries_path(@existing_entry.date.strftime('%Y'), @existing_entry.date.strftime('%m'))
       else
         render 'new'
@@ -77,7 +78,7 @@ class EntriesController < ApplicationController
     else
       @entry = @user.entries.create(entry_params)
       if @entry.save
-        track_ga_event(@entry, 'New')
+        track_ga_event('New')
         flash[:notice] = "Entry created successfully! <a href='#entry-#{@entry.id}' data-id='#{@entry.id}' class='alert-link j-entry-link'>View entry</a>.".html_safe
         redirect_to group_entries_path(@entry.date.strftime('%Y'), @entry.date.strftime('%m'))
       else
@@ -92,7 +93,7 @@ class EntriesController < ApplicationController
     if current_user.is_free?
       @entry.body = @entry.sanitized_body
     end
-    track_ga_event(@entry, 'Edit')
+    track_ga_event('Edit')
   end
 
   def update
@@ -112,7 +113,7 @@ class EntriesController < ApplicationController
       if @existing_entry.save
         @entry.delete
         flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime('%B %-d')}. <a href='#entry-#{@existing_entry.id}' data-id='#{@existing_entry.id}' class='alert-link j-entry-link'>View merged entry</a>.".html_safe
-        track_ga_event(@entry, 'Update')
+        track_ga_event('Update')
         redirect_to group_entries_path(@existing_entry.date.strftime('%Y'), @existing_entry.date.strftime('%m')) and return
       else
         render 'edit'
@@ -123,7 +124,7 @@ class EntriesController < ApplicationController
       redirect_back_or_to past_entries_path
     else
       if @entry.update(entry_params)
-        track_ga_event(@entry, 'Update')
+        track_ga_event('Update')
         flash[:notice] = "Entry successfully updated! <a href='#entry-#{@entry.id}' data-id='#{@entry.id}' class='alert-link j-entry-link'>View entry</a>.".html_safe
         redirect_to group_entries_path(@entry.date.strftime('%Y'), @entry.date.strftime('%m'))
       else
@@ -134,15 +135,15 @@ class EntriesController < ApplicationController
 
   def destroy
     @entry = Entry.find(params[:id])
-    track_ga_event(@entry, 'Delete')
     @entry.destroy
+    track_ga_event('Delete')
     flash[:notice] = 'Entry deleted successfully.'
     redirect_to past_entries_path
   end
 
   def export
     @entries = current_user.entries.sort_by(&:date)
-    Gabba::Gabba.new(ENV['GOOGLE_ANALYTICS_ID'], ENV['MAIN_DOMAIN']).event('Entries', 'Export', 'User_key', current_user.user_key) if ENV['GOOGLE_ANALYTICS_ID'].present?
+    track_ga_event('Export')
     respond_to do |format|
       format.json { send_data JSON.pretty_generate(JSON.parse(@entries.to_json(only: [:date, :body, :image_url]))), filename: "export_#{Time.now.strftime('%Y-%m-%d')}.json" }
       format.txt do
@@ -159,8 +160,8 @@ class EntriesController < ApplicationController
 
   private
 
-  def track_ga_event(entry, type)
-    Gabba::Gabba.new(ENV['GOOGLE_ANALYTICS_ID'], ENV['MAIN_DOMAIN']).event('Web Entry', type, 'ID', entry.id) if ENV['GOOGLE_ANALYTICS_ID'].present?
+  def track_ga_event(action)
+    Gabba::Gabba.new(ENV['GOOGLE_ANALYTICS_ID'], ENV['MAIN_DOMAIN']).event('Web Entry', action, current_user.user_key) if ENV['GOOGLE_ANALYTICS_ID'].present?
   end
 
   def entry_params

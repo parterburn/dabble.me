@@ -1,5 +1,5 @@
+# Devise Override Controller
 class RegistrationsController < Devise::RegistrationsController
-
   after_action :track_ga_event, only: :create
 
   def new
@@ -27,7 +27,7 @@ class RegistrationsController < Devise::RegistrationsController
 
   def update
     @user = current_user
-    
+
     @user.frequency = []
     if params[:frequency].present?
       params[:frequency].each do |freq|
@@ -36,19 +36,19 @@ class RegistrationsController < Devise::RegistrationsController
     end
     params[:user].parse_time_select! :send_time
 
-    successfully_updated = if needs_password?(@user, params)
-      @user.update_with_password(devise_parameter_sanitizer.sanitize(:account_update))
-    else
-      # remove the virtual current_password attribute
-      # update_without_password doesn't know how to ignore it
-      params[:user].delete(:current_password)
-      @user.update_without_password(devise_parameter_sanitizer.sanitize(:account_update))
-    end
+    successfully_updated =  if needs_password?(@user, params)
+                              @user.update_with_password(devise_parameter_sanitizer.sanitize(:account_update))
+                            else
+                              # remove the virtual current_password attribute
+                              # update_without_password doesn't know how to ignore it
+                              params[:user].delete(:current_password)
+                              @user.update_without_password(devise_parameter_sanitizer.sanitize(:account_update))
+                            end
 
     if successfully_updated
       set_flash_message :notice, :updated
       # Sign in the user bypassing validation in case their password changed
-      sign_in @user, :bypass => true
+      sign_in @user, bypass: true
       redirect_to edit_user_registration_path
     else
       redirect_to edit_user_registration_path
@@ -62,7 +62,7 @@ class RegistrationsController < Devise::RegistrationsController
       @user = User.find_by(user_key: params[:user_key])
       if @user.present?
         cookies.permanent[:viewed_settings] = true
-        render "devise/registrations/settings"
+        render 'devise/registrations/settings'
       else
         redirect_to root_path
       end
@@ -71,7 +71,7 @@ class RegistrationsController < Devise::RegistrationsController
 
   def unsubscribe
     @user = User.find_by(user_key: params[:user_key])
-    
+
     @user.frequency = []
     if params[:frequency].present? && params[:unsub_all].blank?
       params[:frequency].each do |freq|
@@ -91,15 +91,13 @@ class RegistrationsController < Devise::RegistrationsController
     end
 
     redirect_to settings_path(@user.user_key)
-
   end
 
   private
 
   def track_ga_event
-    if @user.id.present?
-      Gabba::Gabba.new(ENV['GOOGLE_ANALYTICS_ID'], ENV['MAIN_DOMAIN']).event('User', 'Create', 'User_key', @user.user_key) if ENV['GOOGLE_ANALYTICS_ID'].present?
-    end
+    return nil unless @user.id.present?
+    Gabba::Gabba.new(ENV['GOOGLE_ANALYTICS_ID'], ENV['MAIN_DOMAIN']).event('User', 'Create', @user.user_key) if ENV['GOOGLE_ANALYTICS_ID'].present?
   end
 
   # check if we need password to update user data
@@ -110,5 +108,4 @@ class RegistrationsController < Devise::RegistrationsController
       params[:user][:password].present? ||
       params[:user][:password_confirmation].present?
   end
-
 end
