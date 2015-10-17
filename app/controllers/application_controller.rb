@@ -11,9 +11,9 @@ class ApplicationController < ActionController::Base
       if params[:entries] == 'all'
         if params[:user_id].present?
           user = User.find(params[:user_id])
-          @entries = user.entries.includes(:inspiration).order('id DESC')
+          @entries = user.entries.includes(:inspiration)
         else
-          @entries = Entry.includes(:inspiration).order('id DESC').all
+          @entries = Entry.includes(:inspiration).all
         end
 
         if params[:photos].present?
