@@ -38,7 +38,7 @@ Rails.application.configure do
   # Devise
   config.action_mailer.default_url_options = { host: 'localhost:3000' }
 
-  config.log_level = :info
+  config.log_level = :warn
 
   config.after_initialize do
     Bullet.enable = true
