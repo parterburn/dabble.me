@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/parterburn/dabble.me.svg?branch=master)](https://travis-ci.org/parterburn/dabble.me)
+
 # Dabble Me
 ### The open-source replacement for OhLife
 
