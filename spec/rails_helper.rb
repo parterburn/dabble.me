@@ -47,6 +47,11 @@ RSpec.configure do |config|
 
   config.include Devise::TestHelpers, type: :controller
 
+  # Fail Focused Specs on CI
+  config.before focus: true do
+    fail "Don't commit focused specs!" if ENV['CI'] == true
+  end
+
   # Hooks
   config.before(:all) do
     Rails.application.eager_load!
