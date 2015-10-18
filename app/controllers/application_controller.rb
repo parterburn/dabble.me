@@ -4,6 +4,7 @@ class ApplicationController < ActionController::Base
   protect_from_forgery with: :exception
   before_filter :js_action
 
+  before_action :authenticate_user!, only: :admin
   before_filter :configure_permitted_parameters, if: :devise_controller?
 
   def admin
@@ -42,7 +43,7 @@ class ApplicationController < ActionController::Base
       end
     else
       flash[:alert] = 'Not authorized'
-      redirect_to root_path
+      redirect_to past_entries_path
     end
   end
 

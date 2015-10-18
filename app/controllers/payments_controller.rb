@@ -73,19 +73,15 @@ class PaymentsController < ApplicationController
     end
   end
 
-  def show
-    @payment = Payment.find(params[:id])
-  end
-
   def destroy
     @payment = Payment.find(params[:id])
     @payment.destroy
-    flash[:notice] = "Payment deleted successfully."
+    flash[:notice] = 'Payment deleted successfully.'
     redirect_to payments_path
   end
 
   def payment_notify
-    plan = "Free"
+    plan = 'Free'
 
     # check for GUMROAD
     if params[:email].present? && params[:seller_id].gsub("==","") == ENV['GUMROAD_SELLER_ID'] && params[:product_id].gsub("==","") == ENV['GUMROAD_PRODUCT_ID']
@@ -95,9 +91,9 @@ class PaymentsController < ApplicationController
       if params[:recurrence].present?
         frequency = params[:recurrence].titleize
       else
-        frequency = paid.to_i > 10 ? "Yearly" : "Monthly"
+        frequency = paid.to_i > 10 ? 'Yearly' : 'Monthly'
       end
-      if user.present? && user.payments.count > 0 && Payment.where(user_id: user.id).last.created_at.to_date === Time.now.to_date
+      if user.present? && user.payments.count > 0 && Payment.where(user_id: user.id).last.date.to_date === Time.now.to_date
         #duplicate, don't send
       elsif user.present?
         payment = Payment.create(user_id: user.id, comments: "Gumroad #{frequency} from #{user.email}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
@@ -106,18 +102,18 @@ class PaymentsController < ApplicationController
       plan = "PRO #{frequency} Gumroad"
       gumroad_id = params[:purchaser_id]
 
-      UserMailer.no_user_here(params[:email], "Gumroad").deliver_later if user.blank?
+      UserMailer.no_user_here(params[:email], 'Gumroad').deliver_later if user.blank?
 
     # check for Paypal
-    elsif params[:item_name].present? && params[:item_name].include?("Dabble Me") && params[:payment_status].present? && params[:payment_status] == "Completed" && ENV['AUTO_EMAIL_PAYPAL'] == "yes"
+    elsif params[:item_name].present? && params[:item_name].include?('Dabble Me') && params[:payment_status].present? && params[:payment_status] == "Completed" && params[:receiver_id] == ENV['PAYPAL_SELLER_ID']
 
-      user_key = params[:item_name].gsub("Dabble Me PRO for ","") if params[:item_name].present?
+      user_key = params[:item_name].gsub('Dabble Me PRO for ','') if params[:item_name].present?
       user = User.find_by(user_key: user_key)
 
       paid = params[:mc_gross]
-      frequency = paid.to_i > 10 ? "Yearly" : "Monthly"
+      frequency = paid.to_i > 10 ? 'Yearly' : 'Monthly'
 
-      if user.present? && user.payments.count > 0 && Payment.where(user_id: user.id).last.created_at.to_date === Time.now.to_date
+      if user.present? && user.payments.count > 0 && Payment.where(user_id: user.id).last.date.to_date === Time.now.to_date
         # duplicate, don't
       elsif user.present?
         payment = Payment.create(user_id: user.id, comments: "Paypal #{frequency} from #{params[:payer_email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
@@ -125,11 +121,11 @@ class PaymentsController < ApplicationController
       end
       plan = "PRO #{frequency} PayPal"
       gumroad_id = user.gumroad_id if user.present?
-      UserMailer.no_user_here(email, "PayPal").deliver_later if user.blank?
+      UserMailer.no_user_here(params[:payer_email], 'PayPal').deliver_later if user.blank?
     end
 
     user.update(plan: plan, gumroad_id: gumroad_id) if user.present?
-    head :ok, content_type: "text/html"
+    head :ok, content_type: 'text/html'
   end
 
   private
@@ -143,7 +139,7 @@ class PaymentsController < ApplicationController
 
     def require_permission
       unless current_user.is_admin?
-        flash[:alert] = "Not authorized"
+        flash[:alert] = 'Not authorized'
         redirect_to past_entries_path
       end
     end

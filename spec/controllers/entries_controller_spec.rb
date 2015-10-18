@@ -1,31 +1,9 @@
 require 'rails_helper'
 
 RSpec.describe EntriesController, type: :controller do
-  let(:user) do
-    User.create(email: 'test@dabble.me', password: 'password')
-  end
+  include_context 'has all objects'
 
-  let(:inspiration) do
-    Inspiration.create(category: 'Email', body: 'Test Inspiration')
-  end
-
-  let(:entry) do
-    user.entries.create(
-      date: Time.now,
-      body: 'Test body for an entry that is mine',
-      image_url: 'https://dabble.me/favicon-32x32.png',
-      inspiration_id: inspiration.id)
-  end
-
-  let(:not_my_entry) do
-    Entry.create(
-      date: Time.now,
-      body: "Test body for an entry that isn't mine",
-      image_url: 'https://dabble.me/favicon-32x32.png',
-      inspiration_id: inspiration.id)
-  end
-
-  # Save objects to DB
+  # Initiate objects
   before :each do
     user
     entry
