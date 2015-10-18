@@ -5,6 +5,7 @@
 !.rspec
 !.slugignore
 !.travis.yml
+!.ruby-version
 *~
 
 
