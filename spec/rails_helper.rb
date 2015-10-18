@@ -49,7 +49,7 @@ RSpec.configure do |config|
 
   # Fail Focused Specs on CI
   config.before focus: true do
-    fail "Don't commit focused specs!" if ENV['CI'] == true
+    fail "Don't commit focused specs!" if ENV['CI'] == "true"
   end
 
   # Hooks
