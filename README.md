@@ -72,7 +72,7 @@ The Admin emails are accounts that have access to the Admin Dropdown in the navb
 If you want random bits of inspiration, you can load up different quotes in the Inspiration table to be shown above the New Posts page and at the bottom of emails. If you plan on using OhLife, the system will tag imported posts with ```inspiration_id``` of 1 - so create the first Inspiration with a category name of "OhLife".
 
 ```
-Inspiration.create(:category => "OhLife", :body => "Imported from OhLife")
+Inspiration.create(category: 'OhLife', body: 'Imported from OhLife')
 ```
 
 =====

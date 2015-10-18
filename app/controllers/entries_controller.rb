@@ -1,34 +1,42 @@
 # Handle Web Entries
 class EntriesController < ApplicationController
   before_action :authenticate_user!
-  before_filter :require_permission, only: [:show, :edit, :update, :destroy]
+  before_filter :require_entry_permission, only: [:show, :edit, :update, :destroy]
 
   def index
     if params[:group] == 'photos'
       @entries = current_user.entries.includes(:inspiration).only_images
-      @title = ActionController::Base.helpers.pluralize(@entries.count, 'entry') + ' with photos'
+      @title = ' with photos'
     elsif params[:group] =~ /[0-9]{4}/ && params[:subgroup] =~ /[0-9]{2}/
-      @entries = current_user.entries.includes(:inspiration).where("date >= to_date('#{params[:group]}-#{params[:subgroup]}','YYYY-MM') AND date < to_date('#{params[:group]}-#{params[:subgroup].to_i + 1}','YYYY-MM')")
+      from_date = "#{params[:group]}-#{params[:subgroup]}"
+      to_date = "#{params[:group]}-#{params[:subgroup].to_i + 1}"
+      @entries = current_user.entries.includes(:inspiration).where("date >= to_date('#{from_date}','YYYY-MM') AND date < to_date('#{to_date}','YYYY-MM')")
       date = Date.parse(params[:subgroup] + '/' + params[:group])
-      @title = ActionController::Base.helpers.pluralize(@entries.count, 'entry') + " from #{date.strftime('%b %Y')}"
+      @title = " from #{date.strftime('%b %Y')}"
     elsif params[:group] =~ /[0-9]{4}/
       @entries = current_user.entries.includes(:inspiration).where("date >= '#{params[:group]}-01-01'::DATE AND date <= '#{params[:group]}-12-31'::DATE")
-      @title = ActionController::Base.helpers.pluralize(@entries.count, 'entry') + " from #{params[:group]}"
+      @title = " from #{params[:group]}"
     else
       @entries = current_user.entries.includes(:inspiration)
-      @title = ActionController::Base.helpers.pluralize(@entries.count, 'entry') + ' from All Time'
+      @title = ' from All Time'
     end
+
+    pre = ActionController::Base.helpers.pluralize(@entries.count, 'entry')
+    @title = pre + @title
 
     @entries = Kaminari.paginate_array(@entries).page(params[:page]).per(params[:per])
 
     respond_to do |format|
-      format.json { render json: calendar_json(current_user.entries.where("date >= '#{params[:start]}'::DATE AND date < '#{params[:end]}'::DATE")) }
+      format.json {
+        render json: calendar_json(current_user.entries
+          .where("date >= '#{params[:start]}'::DATE AND date < '#{params[:end]}'::DATE")) }
       format.html
     end
   end
 
   def show
-    @entry = Entry.includes(:inspiration).find(params[:id])
+    @entry = current_user.entries.includes(:inspiration).where(id: params[:id]).first
+    @entry = Entry.includes(:inspiration).find(params[:id]) if current_user.is_admin?
     if @entry
       track_ga_event('Show')
       render 'show'
@@ -56,8 +64,7 @@ class EntriesController < ApplicationController
   end
 
   def create
-    @user = current_user
-    @existing_entry = @user.existing_entry(params[:entry][:date].to_s)
+    @existing_entry = current_user.existing_entry(params[:entry][:date].to_s)
 
     if @existing_entry.present? && params[:entry][:entry].present?
       @existing_entry.body += "<hr>#{params[:entry][:entry]}"
@@ -76,7 +83,7 @@ class EntriesController < ApplicationController
         render 'new'
       end
     else
-      @entry = @user.entries.create(entry_params)
+      @entry = current_user.entries.create(entry_params)
       if @entry.save
         track_ga_event('New')
         flash[:notice] = "Entry created successfully! <a href='#entry-#{@entry.id}' data-id='#{@entry.id}' class='alert-link j-entry-link'>View entry</a>.".html_safe
@@ -89,7 +96,8 @@ class EntriesController < ApplicationController
 
   def edit
     store_location
-    @entry = Entry.find(params[:id])
+    @entry = current_user.entries.where(id: params[:id]).first
+    @entry = Entry.find(params[:id]) if current_user.is_admin?
     if current_user.is_free?
       @entry.body = @entry.sanitized_body
     end
@@ -97,7 +105,8 @@ class EntriesController < ApplicationController
   end
 
   def update
-    @entry = Entry.find(params[:id])
+    @entry = current_user.entries.where(id: params[:id]).first
+    @entry = Entry.find(params[:id]) if current_user.is_admin?
     @existing_entry = current_user.existing_entry(params[:entry][:date].to_s)
 
     if @existing_entry.present? && @entry != @existing_entry && params[:entry][:entry].present?
@@ -134,7 +143,8 @@ class EntriesController < ApplicationController
   end
 
   def destroy
-    @entry = Entry.find(params[:id])
+    @entry = current_user.entries.where(id: params[:id]).first
+    @entry = Entry.find(params[:id]) if current_user.is_admin?
     @entry.destroy
     track_ga_event('Delete')
     flash[:notice] = 'Entry deleted successfully.'
@@ -168,7 +178,8 @@ class EntriesController < ApplicationController
     params.require(:entry).permit(:date, :entry, :image_url, :inspiration_id)
   end
 
-  def require_permission
+  def require_entry_permission
+    return false if current_user.is_admin?
     return false if current_user == Entry.find(params[:id]).user
     flash[:alert] = 'Not authorized'
     redirect_to past_entries_path

@@ -1,6 +1,6 @@
 source 'https://rubygems.org'
 
-ruby '2.2.3'
+ruby File.read(File.expand_path '../.ruby-version', __FILE__).strip.sub /\-p[0-9]+$/, '' # Read the rbenv version file
 gem 'rails', '4.2.4'
 
 # Servers
@@ -67,9 +67,9 @@ group :development do
   gem 'spring'
   gem 'spring-commands-rspec'
   gem 'web-console'
-  gem 'pry'
+  gem 'pry-rails'
+  gem 'pry-nav'
   gem 'pry-remote'
-  gem 'pry-stack_explorer'
 end
 
 group :test do

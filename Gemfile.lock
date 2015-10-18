@@ -166,12 +166,13 @@ GEM
       coderay (~> 1.1.0)
       method_source (~> 0.8.1)
       slop (~> 3.4)
+    pry-nav (0.2.4)
+      pry (>= 0.9.10, < 0.11.0)
+    pry-rails (0.3.2)
+      pry (>= 0.9.10)
     pry-remote (0.1.8)
       pry (~> 0.9)
       slop (~> 3.0)
-    pry-stack_explorer (0.4.9.2)
-      binding_of_caller (>= 0.7)
-      pry (>= 0.9.11)
     puma (2.9.1)
       rack (>= 1.1, < 2.0)
     rack (1.6.4)
@@ -342,9 +343,9 @@ DEPENDENCIES
   meta_request
   newrelic_rpm
   pg
-  pry
+  pry-nav
+  pry-rails
   pry-remote
-  pry-stack_explorer
   puma
   rack-timeout
   rack-utf8_sanitizer
