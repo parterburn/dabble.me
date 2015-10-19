@@ -16,7 +16,7 @@ RSpec.describe ApplicationController, type: :controller do
       expect(response).to redirect_to(new_user_session_url)
     end
 
-    it 'should redirect to root url if not superuser' do
+    it 'should redirect to past entries if not superuser' do
       sign_in user
       get :admin
       expect(response.status).to eq 302
