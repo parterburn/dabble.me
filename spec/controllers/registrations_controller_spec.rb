@@ -149,7 +149,7 @@ RSpec.describe RegistrationsController, type: :controller do
       # Check that sending two emails on the same day merge into 1 Entry
       expect{ EmailProcessor.new(email).process }.to change{ new_free_user.entries.count }.by(0)
       expect(new_free_user.entries.last.body).to eq "#{new_entry_email_body} #{new_entry_email_body} "
-      expect(new_free_user.entries.last.date.strftime('%Y-%m-%d')).to eq DateTime.now.strftime('%Y-%m-%d')
+      expect(new_free_user.entries.last.date.strftime('%Y-%m-%d')).to eq DateTime.now.in_time_zone(new_free_user.send_timezone).strftime('%Y-%m-%d')
     end
 
     it 'should be able to create paid user and send that user an email with formatting' do
@@ -182,7 +182,7 @@ RSpec.describe RegistrationsController, type: :controller do
       # Check that sending two emails on the same day merge into 1 Entry
       expect{ EmailProcessor.new(email).process }.to change{ new_paid_user.entries.count }.by(0)
       expect(new_paid_user.entries.last.body).to eq "<p>#{new_entry_email_body} </p><hr><p>#{new_entry_email_body} </p>"
-      expect(new_paid_user.entries.last.date.strftime('%Y-%m-%d')).to eq DateTime.now.strftime('%Y-%m-%d')
+      expect(new_paid_user.entries.last.date.strftime('%Y-%m-%d')).to eq DateTime.now.in_time_zone(new_paid_user.send_timezone).strftime('%Y-%m-%d')
     end    
   end
 end
