@@ -152,7 +152,7 @@ RSpec.describe PaymentsController, type: :controller do
       expect { post :payment_notify, gumroad_params }.to change { Payment.count }.by(1)
       expect(paid_user.reload.plan).to eq 'PRO Yearly Gumroad'
       expect(paid_user.reload.gumroad_id).to eq gumroad_params[:purchaser_id]
-      expect(ActionMailer::Base.deliveries.last.subject).to_not eq 'Thanks for subscribing to Dabble Me PRO!'      
+      expect(ActionMailer::Base.deliveries.last.subject).to_not eq 'Thanks for subscribing to Dabble Me PRO!'
     end
 
     it 'should create a payment for an existing user with Gumroad ID match, but not email' do

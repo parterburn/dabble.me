@@ -116,10 +116,31 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(response.status).to eq 200
     end
 
-    it 'should be able to create user' do
+    it 'should be able to create user and send that user an email' do
       post :create, { user: { email: 'new@dabble.me', password: 'blueblue', password_confirmation: 'blueblue' } }
       expect(response.status).to eq 302
       expect(response).to redirect_to(root_url)
+      expect(ActionMailer::Base.deliveries.last.to).to eq ['new@dabble.me']
+      expect(ActionMailer::Base.deliveries.last.subject).to eq "Let's write your first Dabble Me entry"
+
+      # Check that EmailProcessor will take email and create an entry for it
+      params = { to: [{
+                    full: "#{user.user_key}@#{ENV['SMTP_DOMAIN']}",
+                    email: "#{user.user_key}@#{ENV['SMTP_DOMAIN']}",
+                    token: "#{user.user_key}",
+                    host: "#{ENV['SMTP_DOMAIN']}",
+                    name: nil
+                  }]}
+
+      email = FactoryGirl.build(:email, params)
+      expect{ EmailProcessor.new(email).process }.to change{ user.entries.count }.by(1)
+      expect(user.entries.last.body).to eq "Test email entry!\n"
+      expect(user.entries.last.date.strftime('%Y-%m-%d')).to eq DateTime.now.strftime('%Y-%m-%d')
+
+      # Check that sending two emails on the same day merge into 1 Entry
+      expect{ EmailProcessor.new(email).process }.to change{ user.entries.count }.by(0)
+      expect(user.entries.last.body).to eq "Test email entry!\nTest email entry!\n"
+      expect(user.entries.last.date.strftime('%Y-%m-%d')).to eq DateTime.now.strftime('%Y-%m-%d')      
     end
   end
 end
