@@ -1,9 +1,14 @@
 FactoryGirl.define do
+  factory :entry, class: Entry do
+    date Time.now
+    image_url 'https://dabble.me/favicon-32x32.png'
+  end
+
   factory :email, class: OpenStruct do
-    to [{ full: 'to_user@email.com', email: 'to_user@email.com', token: 'to_user', host: 'email.com', name: nil }]
-    from({ token: 'from_user', host: 'email.com', email: 'from_email@email.com', full: 'From User <from_user@email.com>', name: 'From User' })
-    subject 'Test Subject'
-    body 'Test email entry!'
+    to [{ full: Faker::Internet.email, email: Faker::Internet.email, token: 'to_user', host: 'email.com', name: Faker::Name.name }]
+    from({ token: 'from_user', host: 'email.com', email: Faker::Internet.email, full: "#{Faker::Name.name} <#{Faker::Internet.email}>", name: Faker::Name.name })
+    subject Faker::Company.catch_phrase
+    body Faker::Lorem.paragraph
     attachments {[]}
   end
 end

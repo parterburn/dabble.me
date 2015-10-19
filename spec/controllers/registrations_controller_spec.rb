@@ -85,7 +85,7 @@ RSpec.describe RegistrationsController, type: :controller do
       old_email = user.email
       old_full_name = user.full_name
       expect(user.frequency.count).to eq 1
-      post :update, params.deep_merge(user: { email: 'changer@dabble.me', current_password: 'wrong' })
+      post :update, params.deep_merge(user: { email: Faker::Internet.email, current_password: 'wrong' })
       expect(response.status).to eq 302
       expect(response).to redirect_to(edit_user_registration_url)
       expect(user.reload.frequency.count).to eq 1
@@ -97,11 +97,12 @@ RSpec.describe RegistrationsController, type: :controller do
       sign_in user
       expect(user.frequency.count).to eq 1
       old_password = user.encrypted_password
-      post :update, params.deep_merge(user: { email: 'changer@dabble.me', password: 'blueblue', password_confirmation: 'blueblue', current_password: user.password })
+      email = Faker::Internet.email
+      post :update, params.deep_merge(user: { email: email, password: 'blueblue', password_confirmation: 'blueblue', current_password: user.password })
       expect(response.status).to eq 302
       expect(response).to redirect_to(edit_user_registration_url)
       expect(user.reload.frequency.count).to eq 3
-      expect(user.email).to eq 'changer@dabble.me'
+      expect(user.email).to eq email
       expect(user.full_name).to eq "Testy O'tester"
       expect(user.encrypted_password).to_not eq old_password
     end
@@ -116,31 +117,72 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(response.status).to eq 200
     end
 
-    it 'should be able to create user and send that user an email' do
-      post :create, { user: { email: 'new@dabble.me', password: 'blueblue', password_confirmation: 'blueblue' } }
+    it 'should be able to create free user and send that user an email' do
+      email = Faker::Internet.email
+      new_password = Faker::Internet.password(8)
+      post :create, { user: { email: email, password: new_password, password_confirmation: new_password } }
       expect(response.status).to eq 302
       expect(response).to redirect_to(root_url)
-      expect(ActionMailer::Base.deliveries.last.to).to eq ['new@dabble.me']
+
+      new_free_user = User.last
+
+      expect(ActionMailer::Base.deliveries.last.to).to eq [email]
       expect(ActionMailer::Base.deliveries.last.subject).to eq "Let's write your first Dabble Me entry"
+
+      new_entry_email_body = Faker::Lorem.paragraph
 
       # Check that EmailProcessor will take email and create an entry for it
       params = { to: [{
-                    full: "#{user.user_key}@#{ENV['SMTP_DOMAIN']}",
-                    email: "#{user.user_key}@#{ENV['SMTP_DOMAIN']}",
-                    token: "#{user.user_key}",
+                    full: "#{new_free_user.user_key}@#{ENV['SMTP_DOMAIN']}",
+                    email: "#{new_free_user.user_key}@#{ENV['SMTP_DOMAIN']}",
+                    token: "#{new_free_user.user_key}",
                     host: "#{ENV['SMTP_DOMAIN']}",
                     name: nil
-                  }]}
+                  }],
+                  body: new_entry_email_body }
 
       email = FactoryGirl.build(:email, params)
-      expect{ EmailProcessor.new(email).process }.to change{ user.entries.count }.by(1)
-      expect(user.entries.last.body).to eq "Test email entry!\n"
-      expect(user.entries.last.date.strftime('%Y-%m-%d')).to eq DateTime.now.strftime('%Y-%m-%d')
+      expect{ EmailProcessor.new(email).process }.to change{ new_free_user.entries.count }.by(1)
+      expect(new_free_user.entries.last.body).to eq "#{new_entry_email_body} "
+      expect(new_free_user.entries.last.date.strftime('%Y-%m-%d')).to eq DateTime.now.strftime('%Y-%m-%d')
 
       # Check that sending two emails on the same day merge into 1 Entry
-      expect{ EmailProcessor.new(email).process }.to change{ user.entries.count }.by(0)
-      expect(user.entries.last.body).to eq "Test email entry!\nTest email entry!\n"
-      expect(user.entries.last.date.strftime('%Y-%m-%d')).to eq DateTime.now.strftime('%Y-%m-%d')      
+      expect{ EmailProcessor.new(email).process }.to change{ new_free_user.entries.count }.by(0)
+      expect(new_free_user.entries.last.body).to eq "#{new_entry_email_body} #{new_entry_email_body} "
+      expect(new_free_user.entries.last.date.strftime('%Y-%m-%d')).to eq DateTime.now.strftime('%Y-%m-%d')
     end
+
+    it 'should be able to create paid user and send that user an email with formatting' do
+      email = Faker::Internet.email
+      new_password = Faker::Internet.password(8)
+      post :create, { user: { email: email, password: new_password, password_confirmation: new_password } }
+      new_paid_user = User.last
+      new_paid_user.plan = 'PRO Monthly Gumroad'
+      new_paid_user.save
+      expect(ActionMailer::Base.deliveries.last.to).to eq [email]
+      expect(ActionMailer::Base.deliveries.last.subject).to eq "Let's write your first Dabble Me entry"
+
+      new_entry_email_body = Faker::Lorem.paragraph
+
+      # Check that EmailProcessor will take email and create an entry for it
+      params = { to: [{
+                    full: "#{new_paid_user.user_key}@#{ENV['SMTP_DOMAIN']}",
+                    email: "#{new_paid_user.user_key}@#{ENV['SMTP_DOMAIN']}",
+                    token: "#{new_paid_user.user_key}",
+                    host: "#{ENV['SMTP_DOMAIN']}",
+                    name: nil
+                  }],
+                  body: new_entry_email_body }
+
+      email = FactoryGirl.build(:email, params)
+      expect{ EmailProcessor.new(email).process }.to change{ new_paid_user.entries.count }.by(1)
+      expect(new_paid_user.entries.last.body).to eq "<p>#{new_entry_email_body} </p>"
+      expect(new_paid_user.entries.last.date.strftime('%Y-%m-%d')).to eq DateTime.now.strftime('%Y-%m-%d')
+
+      # Check that sending two emails on the same day merge into 1 Entry
+      expect{ EmailProcessor.new(email).process }.to change{ new_paid_user.entries.count }.by(0)
+      expect(new_paid_user.entries.last.body).to eq "<p>#{new_entry_email_body} </p><hr><p>#{new_entry_email_body} </p>"
+      expect(new_paid_user.entries.last.date.strftime('%Y-%m-%d')).to eq DateTime.now.strftime('%Y-%m-%d')
+    end    
   end
 end

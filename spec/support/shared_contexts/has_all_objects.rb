@@ -1,37 +1,24 @@
 shared_context 'has all objects' do
   let(:user) do
-    User.create(email: 'test@dabble.me', password: 'password')
+    User.create(email: Faker::Internet.email, password: Faker::Internet.password(8), first_name: Faker::Name.first_name, last_name: Faker::Name.last_name)
   end
 
   let(:paid_user) do
-    User.create(email: 'paid@dabble.me', password: 'password', plan: 'PRO Monthly Gumroad', gumroad_id: '7777777777')
+    User.create(email: Faker::Internet.email, password: Faker::Internet.password(8), plan: 'PRO Monthly Gumroad', gumroad_id: Faker::Number.number(12), first_name: Faker::Name.first_name, last_name: Faker::Name.last_name)
   end
 
   let(:superuser) do
-    User.create(email: 'paularterburn+env@gmail.com', password: 'password')
+    User.create(email: ENV.fetch('ADMIN_EMAILS').split(',').first, password: Faker::Internet.password(8))
   end
 
   let(:inspiration) do
-    Inspiration.create(category: 'Email', body: 'Test Inspiration')
+    Inspiration.create(category: Faker::Lorem.word, body: Faker::Lorem.sentence)
   end
 
   let(:payment) do
     Payment.create(user_id: paid_user.id, amount: 3.0, comments: 'Monthly', date: Time.now - 800000)
   end
 
-  let(:entry) do
-    user.entries.create(
-      date: Time.now,
-      body: 'Test body for an entry that is mine',
-      image_url: 'https://dabble.me/favicon-32x32.png',
-      inspiration_id: inspiration.id)
-  end
-
-  let(:not_my_entry) do
-    Entry.create(
-      date: Time.now,
-      body: "Test body for an entry that isn't mine",
-      image_url: 'https://dabble.me/favicon-32x32.png',
-      inspiration_id: inspiration.id)
-  end
+  let(:entry) { FactoryGirl.create(:entry, body: Faker::Lorem.paragraph, user_id: user.id) }
+  let(:not_my_entry) { FactoryGirl.create(:entry, body: Faker::Lorem.paragraph) }
 end
