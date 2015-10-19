@@ -43,7 +43,11 @@
         - if notice
           .col-md-8.col-md-offset-2.alert.alert-success= notice.html_safe
           .clearfix
-        - if alert
+        - if alert && alert.class == Array
+          - alert.each do |message|
+            .col-md-8.col-md-offset-2
+              .alert.alert-danger= message        
+        - elsif alert
           .col-md-8.col-md-offset-2.alert.alert-danger= alert.html_safe
           .clearfix
           

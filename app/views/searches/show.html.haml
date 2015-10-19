@@ -29,7 +29,7 @@
         - search_entries.each do |entry|
           %br
           .col-md-12.well{:id => "entry-#{entry.id}"}
-            = render :partial => 'entries/entry', :locals => {:entry => entry}
+            = render partial: 'entries/entry', locals: { entry: entry }
 
         .col-md-12
           .center
@@ -44,7 +44,7 @@
         - if @hashtags.length > 0
           - @hashtags.each do |hashtag|
             - class_size = (hashtag[1].size.to_f / @hashtags.size * (3 - 1)).round
-            =link_to hashtag[0], search_path(search: {term: hashtag[0]}), class: "s-hashtag s-hashtag-size-#{class_size}"
+            =link_to hashtag[0], search_path(search: { term: hashtag[0] }), class: "s-hashtag s-hashtag-size-#{class_size}"
         - else
           .alert.alert-info
             %i Tip:
@@ -68,7 +68,7 @@
         - else
           - if @hashtags.length > 0
             - @hashtags.each do |hashtag|
-              =link_to hashtag[0], search_path(search: {term: hashtag[0]}), class: "s-hashtag"
+              =link_to hashtag[0], search_path(search: { term: hashtag[0] }), class: "s-hashtag"
           - else
             .alert.alert-info
               %i Tip:

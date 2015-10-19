@@ -10,14 +10,14 @@
     = f.hidden_field :reset_password_token
     .col-md-3.col-md-offset-3
       = f.label :password, "New password"
-      = f.password_field :password, autofocus: true, autocomplete: "off", :class => "form-control"
+      = f.password_field :password, autofocus: true, autocomplete: "off", class: "form-control"
       %br
     .col-md-3
       = f.label :password_confirmation, "Confirm new password"
-      = f.password_field :password_confirmation, autocomplete: "off", :class => "form-control"
+      = f.password_field :password_confirmation, autocomplete: "off", class: "form-control"
       %br
       .clearfix
     .col-md-6.col-md-offset-3
-      = f.submit "Change my password", :class => "btn btn-primary form-control"
+      = f.submit "Change my password", class: "btn btn-primary form-control"
       %br
       = render "devise/shared/links"

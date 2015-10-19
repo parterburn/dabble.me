@@ -2,9 +2,9 @@ class PaymentsController < ApplicationController
   before_action :authenticate_user!
   before_filter :require_permission
   
-  skip_before_filter :authenticate_user!, :only => [:payment_notify]
-  skip_before_filter :require_permission, :only => [:payment_notify]
-  skip_before_filter :verify_authenticity_token, :only => [:payment_notify]
+  skip_before_filter :authenticate_user!, only: [:payment_notify]
+  skip_before_filter :require_permission, only: [:payment_notify]
+  skip_before_filter :verify_authenticity_token, only: [:payment_notify]
 
   def index
 

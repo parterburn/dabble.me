@@ -7,8 +7,8 @@ class Entry < ActiveRecord::Base
 
   before_validation :ensure_protocol
 
-  validates :date, :presence => true, :valid_date => true
-  validates :image_url, :valid_url => true
+  validates :date, presence: true, valid_date: true
+  validates :image_url, valid_url: true
   validates :entry, presence: true
 
   alias_attribute :entry, :body

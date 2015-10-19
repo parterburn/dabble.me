@@ -34,9 +34,9 @@ class RegistrationsController < Devise::RegistrationsController
         @user.frequency << freq[0]
       end
     end
-    params[:user].parse_time_select! :send_time
+    user_params.parse_time_select! :send_time
 
-    successfully_updated =  if needs_password?(@user, params)
+    successfully_updated =  if needs_password?(@user, user_params)
                               @user.update_with_password(devise_parameter_sanitizer.sanitize(:account_update))
                             else
                               # remove the virtual current_password attribute
@@ -51,6 +51,7 @@ class RegistrationsController < Devise::RegistrationsController
       sign_in @user, bypass: true
       redirect_to edit_user_registration_path
     else
+      flash[:alert] = flash[:alert].to_a.concat resource.errors.full_messages
       redirect_to edit_user_registration_path
     end
   end
@@ -78,7 +79,7 @@ class RegistrationsController < Devise::RegistrationsController
         @user.frequency << freq[0]
       end
     end
-    params[:user].parse_time_select! :send_time
+    user_params.parse_time_select! :send_time
 
     if @user.update_without_password(devise_parameter_sanitizer.sanitize(:account_update))
       if @user.frequency.present?
@@ -104,8 +105,12 @@ class RegistrationsController < Devise::RegistrationsController
   # ie if password or email was changed
   # extend this as needed
   def needs_password?(user, params)
-    user.email != params[:user][:email] ||
-      params[:user][:password].present? ||
-      params[:user][:password_confirmation].present?
+    user.email != user_params[:email] ||
+      user_params[:password].present? ||
+      user_params[:password_confirmation].present?
+  end
+
+  def user_params
+    params.require(:user).permit(:first_name, :last_name, :send_time, :send_timezone, :send_past_entry, :email, :password, :password_confirmation)
   end
 end

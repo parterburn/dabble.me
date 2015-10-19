@@ -1,0 +1,103 @@
+= form_for(resource, as: resource_name, url: form_path, html: { method: :put }) do |f|
+  - unless form_path.include?('unsubscribe')
+    .col-md-3.col-md-offset-3
+      = f.label :first_name
+      = f.text_field :first_name, class: "form-control"
+      %br
+
+    .col-md-3
+      = f.label :last_name
+      = f.text_field :last_name, class: "form-control"
+      %br
+      .clearfix
+  - else
+    .col-md-6.col-md-offset-3
+      = f.label :email
+      %i (login to change email)
+      = f.email_field :email, class: "form-control disabled", disabled: 'disabled'
+      %br
+      %br
+
+  .col-md-6.col-md-offset-3
+    %div
+      = label_tag "Days to send emails"
+      %br
+      -if @user.is_free?
+        - add_class = "disabled"
+      - %w(Sun Mon Tue Wed Thu Fri Sat).each do |day|
+        - if @user.frequency.include?(day[0..2])
+          = check_box_tag "frequency[#{day}]", 1, {checked: "checked"}
+        - else
+          - if add_class == "disabled" && day != "Sun"
+            = check_box_tag "frequency[#{day}]", 0, false, disabled: "true", title: "Payment required"
+          - else
+            = check_box_tag "frequency[#{day}]"
+        %span.s-day-email= label_tag "frequency_#{day}", day
+        &nbsp;&nbsp;
+      .clearfix
+      - if add_class == "disabled"
+        =link_to "Subscribe to PRO", subscribe_path, class: "alert-link"
+        to unlock the ability to change delivery days.
+      %br
+      %br
+    
+  .col-md-3.col-md-offset-3
+    = f.label :send_time
+    = f.time_select :send_time, {combined: true, minute_interval: 60, ampm: true, include_seconds: false }, class: "form-control"
+    %br
+
+  .col-md-3
+    = f.label :send_timezone, "Timezone"
+    = f.time_zone_select :send_timezone, ActiveSupport::TimeZone.us_zones, {}, {class: 'form-control'}
+    %br
+
+  .col-md-6.col-md-offset-3
+    = f.check_box :send_past_entry
+    = f.label :send_past_entry
+    %br
+    %br
+  .clearfix
+
+  .col-md-6.col-md-offset-3
+    = f.submit "Update Settings", class: "btn btn-primary form-control"  
+
+  - if form_path.include?('unsubscribe')
+    .col-md-12.center
+      %br
+      %button{name: "unsub_all", type: "submit", value: "yes", class: "s-unsubscribe"}
+        Unsubscribe from all emails
+
+  - else  
+    .col-md-6.col-md-offset-3
+      %hr
+      %br
+
+    .col-md-6.col-md-offset-3
+      = f.label :email
+      = f.email_field :email, class: "form-control"
+      %br
+
+    - if devise_mapping.confirmable? && resource.pending_reconfirmation?
+      .col-md-6.col-md-offset-3
+        Currently waiting confirmation for: #{resource.unconfirmed_email}
+    
+    .col-md-3.col-md-offset-3
+      = f.label :password, "New Password"
+      = f.password_field :password, autocomplete: "off", class: "form-control"
+      %br
+    
+    .col-md-3
+      = f.label :password_confirmation, "New Password Confirmation"
+      = f.password_field :password_confirmation, autocomplete: "off", class: "form-control"
+      %br
+
+    .col-md-6.col-md-offset-3
+      = f.label :current_password
+      %i (to confirm your changes)
+      = f.password_field :current_password, autocomplete: "off", class: "form-control"
+      %br
+
+    .col-md-6.col-md-offset-3
+      = f.submit "Update Settings", class: "btn btn-primary form-control"
+
+  .clearfix

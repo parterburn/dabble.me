@@ -8,7 +8,7 @@
   .col-md-6.col-md-offset-3
     %p
       Post new entries by emailing
-      =mail_to "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", :encode=>"hex"
+      =mail_to "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", encode: "hex"
     .alert.alert-warning
       -if current_user.is_pro?
         Thanks for subscribing to #{current_user.plan_name}!&nbsp;
@@ -21,120 +21,25 @@
 
     %hr
 
-  = form_for(resource, as: resource_name, url: registration_path(resource_name), html: { method: :put }) do |f|
-    - if @user.errors.present?
-      .col-md-6.col-md-offset-3
-        .alert.alert-danger= devise_error_messages!
+  = render partial: 'user_settings', locals: { form_path: registration_path(resource_name) }
 
-    .col-md-3.col-md-offset-3
-      = f.label :first_name
-      = f.text_field :first_name, :class => "form-control"
+  .col-md-12.center
+    %br
+    - if current_user.is_pro? && current_user.plan_type.present?
+      - add_text = "\r\rNOTE: YOU WILL NEED TO CANCEL YOUR SUBSCRIPTION AT #{current_user.plan_type.upcase} SEPARATELY!"
+    =link_to registration_path(resource_name), class: "s-delete j-delete-user", data: { confirm: "Are you sure? This will delete your account and #{pluralize(@user.entries.count,'entry')}. There is no undo.#{add_text}" }, method: :delete do
+      %h5
+        Delete your account & all associated entries
+    - if add_text.present?
+      To downgrade or cancel your paid subscription, you'll need to do so at #{current_user.plan_type} separately!
       %br
+    %br
 
-    .col-md-3
-      = f.label :last_name
-      = f.text_field :last_name, :class => "form-control"
-      %br
-      .clearfix
-
-    .col-md-6.col-md-offset-3
-      %div
-        = label_tag "Days to send emails"
-        %br
-        -if current_user.is_free?
-          - add_class = "disabled"
-        - %w(Sun Mon Tue Wed Thu Fri Sat).each do |day|
-          - if @user.frequency.include?(day[0..2])
-            = check_box_tag "frequency[#{day}]", 1, {:checked => "checked"}
-          - else
-            - if add_class == "disabled" && day != "Sun"
-              = check_box_tag "frequency[#{day}]", 0, false, :disabled => "true", :title => "Payment required"
-            - else
-              = check_box_tag "frequency[#{day}]"
-          %span.s-day-email= label_tag "frequency_#{day}", day
-          &nbsp;&nbsp;
-        .clearfix
-        - if add_class == "disabled"
-          =link_to "Subscribe to PRO", subscribe_path, class: "alert-link"
-          to unlock the ability to change delivery days.
-        %br
-      
-    .col-md-3.col-md-offset-3
-      = f.label :send_time
-      = f.time_select :send_time, {:combined => true, :minute_interval => 60, :ampm => true, :include_seconds => false }, :class => "form-control"
-      %br
-
-    .col-md-3
-      = f.label :send_timezone, "Timezone"
-      = f.time_zone_select :send_timezone, ActiveSupport::TimeZone.us_zones, {}, {:class => 'form-control'}
-      %br
-
-    .col-md-6.col-md-offset-3
-      = f.check_box :send_past_entry
-      = f.label :send_past_entry
-      %br
-      %br
-    .clearfix
-
-    .col-md-6.col-md-offset-3
-      = f.submit "Update", :class=>"btn btn-primary form-control"
-
-    .col-md-6.col-md-offset-3
-      %br
-      %hr
-      %br
-
-    .col-md-6.col-md-offset-3
-      = f.label :email
-      = f.email_field :email, :class => "form-control"
-      %br
-
-    - if devise_mapping.confirmable? && resource.pending_reconfirmation?
-      .col-md-6.col-md-offset-3
-        Currently waiting confirmation for: #{resource.unconfirmed_email}
-    
-    .col-md-3.col-md-offset-3
-      = f.label :password, "New Password"
-      = f.password_field :password, autocomplete: "off", :class => "form-control"
-      %br
-    
-    .col-md-3
-      = f.label :password_confirmation, "New Password Confirmation"
-      = f.password_field :password_confirmation, autocomplete: "off", :class => "form-control"
-      %br
-
-    .col-md-6.col-md-offset-3
-      = f.label :current_password
-      %i (to confirm your changes)
-      = f.password_field :current_password, autocomplete: "off", :class => "form-control"
-      %br
-      .clearfix
-
-    .col-md-6.col-md-offset-3
-      = f.submit "Update", :class=>"btn btn-primary form-control"
-
-    .col-md-12.center
-      %br
-      - if current_user.is_pro? && current_user.plan_type.present?
-        - add_text = "\r\rNOTE: YOU WILL NEED TO CANCEL YOUR SUBSCRIPTION AT #{current_user.plan_type.upcase} SEPARATELY!"
-      =link_to registration_path(resource_name), class: "s-delete j-delete-user", data: { confirm: "Are you sure? This will delete your account and #{pluralize(@user.entries.count,'entry')}. There is no undo.#{add_text}" }, method: :delete do
-        %h5
-          Delete your account & all associated entries
-      - if add_text.present?
-        To downgrade or cancel your paid subscription, you'll need to do so at #{current_user.plan_type} separately!
-        %br
-      %br
-
-      %h4#export.col-md-6.col-md-offset-3
-        Export all entries as
-        =link_to "TXT", export_entries_path(:txt)
-        (plain text)
-        or
-        =link_to "JSON", export_entries_path(:json)
-        (rich formatting).
-        -if current_user.entries.only_images.length > 0 && ENV['DOWNLOADER_URL'].present?
-          %br
-          %br
-          Export all Photos as a single
-          =link_to("ZIP", export_entries_path(:zip))+"."
-      %br
+    #export.col-md-6.col-md-offset-3.alert.alert-info
+      Export all entries as
+      =link_to "TXT", export_entries_path(:txt)
+      (plain text)
+      or
+      =link_to "JSON", export_entries_path(:json)
+      (rich formatting).
+    %br
