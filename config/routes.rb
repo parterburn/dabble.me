@@ -32,4 +32,6 @@ Rails.application.routes.draw do
   match 'payment_notify'       => 'payments#payment_notify', via: [:post]
   get 'ohlife-alternative'     => 'welcome#ohlife_alternative'
   post 'email_processor'       => 'griddler/emails#create'
+
+  get '/cast(/*path)', to: redirect('https://vidcast.dabble.me')
 end
