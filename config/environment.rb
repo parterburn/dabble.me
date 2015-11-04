@@ -6,4 +6,4 @@ Rails.application.initialize!
 
 Mime::Type.register 'text/txt', :txt
 
-Rails.logger = Le.new(ENV['LOGENTRIES_KEY'], debug: true, local: true)
+Rails.logger = Le.new(ENV['LOGENTRIES_KEY']) if Rails.env.production
