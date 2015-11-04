@@ -97,30 +97,29 @@
       - if all_users_count > 0
         %br
         %br
-        %table.table.table-bordered.table-striped.well
+        %table.table.table-bordered.table-striped.well.sortable
           %thead
             %tr
-              %th{data: { mainsort: 'true', defaultsort: 'asc' }, style: 'width: 3%'} ID
-              %th{data: { firstsort: 'asc' }, style: 'width: 25%'} Email
-              %th{data: { firstsort: 'asc' }, style: 'width: 20%'} Name
-              %th{data: { firstsort: 'asc' }, style: 'width: 12%'} Key
-              %th{data: { firstsort: 'asc' }, style: 'width: 8%'} Entries
-              %th{data: { firstsort: 'asc' }, style: 'width: 8%'} Images
-              %th{data: { firstsort: 'asc' }, style: 'width: 8%'} Paid
-              %th{data: { firstsort: 'asc' }, style: 'width: 19%'} Plan
+              %th{style: 'width: 3%', data: { mainsort: 'true', defaultsort: 'desc' }} ID
+              %th{style: 'width: 10%', data: { firstsort: 'asc' }} Key
+              %th{style: 'width: 25%', data: { firstsort: 'asc' }} Email
+              %th{style: 'width: 20%', data: { firstsort: 'asc' }} Name
+              %th{style: 'width: 8%', data: { firstsort: 'asc' }} Entries
+              %th{style: 'width: 8%', data: { firstsort: 'asc' }} Images
+              %th{style: 'width: 8%', data: { firstsort: 'asc' }} Paid
+              %th{style: 'width: 18%', data: { firstsort: 'asc' }} Plan
           %tbody
-            - connection = ActiveRecord::Base.connection
             -@user_list.each do |user|
               %tr
                 %td=user.id
                 %td=user.user_key
                 %td=link_to user.email, admin_path(entries: "all", user_id: user.id)
                 %td=user.full_name
-                - user_entries_count = connection.execute "SELECT COUNT(*) FROM entries  WHERE entries.user_id = #{user.id}"
-                - user_payments = connection.execute "SELECT SUM(payments.amount) AS sum_id FROM payments  WHERE payments.user_id = #{user.id}"
-                %td{data: { value: "#{user.entries.count}" }}=number_with_delimiter(user_entries_count.getvalue(0,0))
-                %td{data: { value: "#{user.entries.only_images.count}"}}=number_with_delimiter(user_entries_count.getvalue(0,0))
-                %td=user_payments.getvalue(0,0)
+                - user_entries_count = user.entries.count
+                - user_images_count = user.entries.only_images.count
+                %td{data: { value: "#{user_entries_count}" }}=number_with_delimiter(user_entries_count)
+                %td{data: { value: "#{user_images_count}"}}=number_with_delimiter(user_images_count)
+                %td=user.payments.sum(:amount)
                 %td=user.plan
         .center
           = paginate @user_list
