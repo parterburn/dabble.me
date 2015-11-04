@@ -85,5 +85,4 @@ Rails.application.configure do
   config.action_mailer.default_url_options = { host: ENV['MAIN_DOMAIN'] }
 
   GA.tracker = ENV['GOOGLE_ANALYTICS_ID']
-  Rails.logger = Le.new(ENV['LOGENTRIES_KEY'], local: true)
 end
