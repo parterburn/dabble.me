@@ -36,7 +36,16 @@ RSpec.describe RegistrationsController, type: :controller do
     end
 
     it 'should let user easily unsubscribe' do
-      post :unsubscribe, { user_key: user.user_key, unsub_all: 'yes', user: { email: user.email } }
+      params = {
+        user_key: user.user_key,
+        unsub_all: 'yes',
+        user: {
+          'send_time(5i)': '16:00:00',
+          send_timezone: 'Pacific Time (US & Canada)',
+          send_past_entry: '1'
+        }
+      }      
+      post :unsubscribe, params
       expect(response.status).to eq 302
       expect(response).to redirect_to(settings_url(user.user_key))
       expect(user.reload.frequency.count).to eq 0

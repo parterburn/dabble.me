@@ -79,6 +79,7 @@ class RegistrationsController < Devise::RegistrationsController
         @user.frequency << freq[0]
       end
     end
+
     params[:user].parse_time_select! :send_time
     if @user.update_without_password(devise_parameter_sanitizer.sanitize(:account_update))
       if @user.frequency.present?
