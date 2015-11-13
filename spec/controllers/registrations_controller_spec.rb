@@ -41,6 +41,25 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(response).to redirect_to(settings_url(user.user_key))
       expect(user.reload.frequency.count).to eq 0
     end
+
+    it 'should let user easily update settings' do
+      params = {
+        user_key: user.user_key,
+        frequency: { 'Mon' => '1', 'Wed'=>'1', 'Fri'=>'1'},
+        user: {
+          'send_time(5i)': '16:00:00',
+          send_timezone: 'Pacific Time (US & Canada)',
+          send_past_entry: '1'
+        }
+      }
+      post :unsubscribe, params
+      expect(response.status).to eq 302
+      expect(response).to redirect_to(settings_url(user.user_key))
+      expect(user.reload.frequency).to eq ['Mon', 'Wed', 'Fri']
+      expect(user.send_timezone).to eq 'Pacific Time (US & Canada)'
+      expect(user.send_time).to eq '2000-01-01 16:00:00 UTC'
+      expect(user.send_past_entry).to eq true
+    end
   end
 
   describe 'update' do
@@ -50,8 +69,8 @@ RSpec.describe RegistrationsController, type: :controller do
         user: {
           first_name: 'Testy',
           last_name: "O'tester",
-          send_time: '11:00:00',
-          send_timezone: 'Alaska',
+          'send_time(5i)': '20:00:00',
+          send_timezone: 'Central Time (US & Canada)',
           send_past_entry: '0',
           email: user.email,
           password: '',
@@ -75,8 +94,8 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(response).to redirect_to(edit_user_registration_url)
       expect(user.reload.frequency.count).to eq 3
       expect(user.full_name).to eq "Testy O'tester"
-      expect(user.send_timezone).to eq 'Alaska'
-      expect(user.send_time).to eq '2000-01-01 11:00:00.000000000 +0000'
+      expect(user.send_timezone).to eq 'Central Time (US & Canada)'
+      expect(user.send_time).to eq '2000-01-01 20:00:00 UTC'
       expect(user.send_past_entry).to eq false
     end
 
@@ -88,7 +107,7 @@ RSpec.describe RegistrationsController, type: :controller do
       post :update, params.deep_merge(user: { email: Faker::Internet.email, current_password: 'wrong' })
       expect(response.status).to eq 302
       expect(response).to redirect_to(edit_user_registration_url)
-      expect(user.reload.frequency.count).to eq 1
+      expect(user.reload.frequency).to eq ['Sun']
       expect(user.email).to eq old_email
       expect(user.full_name).to eq old_full_name
     end
@@ -101,7 +120,7 @@ RSpec.describe RegistrationsController, type: :controller do
       post :update, params.deep_merge(user: { email: email, password: 'blueblue', password_confirmation: 'blueblue', current_password: user.password })
       expect(response.status).to eq 302
       expect(response).to redirect_to(edit_user_registration_url)
-      expect(user.reload.frequency.count).to eq 3
+      expect(user.reload.frequency).to eq ['Sun', 'Mon', 'Tue']
       expect(user.email).to eq email
       expect(user.full_name).to eq "Testy O'tester"
       expect(user.encrypted_password).to_not eq old_password
