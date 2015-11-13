@@ -34,8 +34,8 @@ class RegistrationsController < Devise::RegistrationsController
         @user.frequency << freq[0]
       end
     end
-    user_params.parse_time_select! :send_time
 
+    params[:user].parse_time_select! :send_time
     successfully_updated =  if needs_password?(@user, user_params)
                               @user.update_with_password(devise_parameter_sanitizer.sanitize(:account_update))
                             else
@@ -79,8 +79,7 @@ class RegistrationsController < Devise::RegistrationsController
         @user.frequency << freq[0]
       end
     end
-    user_params.parse_time_select! :send_time
-
+    params[:user].parse_time_select! :send_time
     if @user.update_without_password(devise_parameter_sanitizer.sanitize(:account_update))
       if @user.frequency.present?
         set_flash_message :notice, :updated
