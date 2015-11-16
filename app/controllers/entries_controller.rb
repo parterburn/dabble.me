@@ -106,10 +106,9 @@ class EntriesController < ApplicationController
 
   def update
     @entry = current_user.entries.where(id: params[:id]).first
-    @entry = Entry.find(params[:id]) if current_user.is_admin?
     @existing_entry = current_user.existing_entry(params[:entry][:date].to_s)
 
-    if @existing_entry.present? && @entry != @existing_entry && params[:entry][:entry].present?
+    if @entry.present? && @existing_entry.present? && @entry != @existing_entry && params[:entry][:entry].present?
       # existing entry exists, so add to it
       @existing_entry.body += "<hr>#{params[:entry][:entry]}"
       @existing_entry.inspiration_id = params[:entry][:inspiration_id] if params[:entry][:inspiration_id].present?
@@ -132,6 +131,7 @@ class EntriesController < ApplicationController
       flash[:notice] = 'Entry deleted!'
       redirect_back_or_to past_entries_path
     else
+      @entry = Entry.find(params[:id]) if current_user.is_admin?
       if @entry.update(entry_params)
         track_ga_event('Update')
         flash[:notice] = "Entry successfully updated! <a href='#entry-#{@entry.id}' data-id='#{@entry.id}' class='alert-link j-entry-link'>View entry</a>.".html_safe
