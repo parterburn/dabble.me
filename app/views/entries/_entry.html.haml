@@ -3,6 +3,9 @@
     - year_back = Time.now.in_time_zone(current_user.send_timezone).year - entry.date.year
     .label.label-past-years #{pluralize(year_back,"year").upcase} AGO
   .s-entry-date
+    -if current_user.is_admin? && current_user != entry.user
+      .float-left.s-edit-entry{:rel=>"popover", :title=>"#{entry.user.full_name}", :"data-content"=>"#{entry.user.email}"}
+        %i.fa.fa-user
     -if entry.inspiration.present?
       .float-left.s-edit-entry{:rel=>"popover", :title=>"#{entry.inspiration.inspired_by}", :"data-content"=>"#{entry.inspiration.body}"}
         %i.fa.fa-lightbulb-o
