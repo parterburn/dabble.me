@@ -22,7 +22,12 @@ class EmailProcessor
 
     if @user.is_pro? && @attachments.present?
       @attachments.each do |attachment|
-        if attachment.content_type =~ /^image\/(png|jpe?g|gif)$/i
+        if attachment.content_type =~ /^image\/(png|jpe?g|gif)$/i && !footer_image?(attachment.original_filename.downcase)
+          file_size = File.size(attachment.tempfile)
+          p "*"*100
+          p "FILE SIZE OF ATTACHMENT: #{file_size}"
+          p "*"*100
+
           dir = FileUtils.mkdir_p("public/email_attachments/#{@user.user_key}")
           file = File.join(dir, attachment.original_filename)
           FileUtils.mv attachment.tempfile.path, file
@@ -103,6 +108,11 @@ class EmailProcessor
   end
 
   private
+
+  def footer_image?(filename)
+    filename.include?('footer') ||
+      filename.include?('signature')
+  end
 
   def track_ga_event(action)
     Gabba::Gabba.new(ENV['GOOGLE_ANALYTICS_ID'], ENV['MAIN_DOMAIN']).event('Email Entry', action, @user.user_key) if ENV['GOOGLE_ANALYTICS_ID'].present?

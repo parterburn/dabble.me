@@ -114,7 +114,7 @@ GEM
     globalid (0.3.6)
       activesupport (>= 4.1.0)
     google-analytics-rails (0.0.6)
-    griddler (1.1.0)
+    griddler (1.2.1)
       htmlentities
       rails (>= 3.2.0)
     griddler-sendgrid (0.0.1)
@@ -125,7 +125,7 @@ GEM
       haml
       tilt
     hike (1.2.3)
-    htmlentities (4.3.3)
+    htmlentities (4.3.4)
     httparty (0.13.1)
       json (~> 1.8)
       multi_xml (>= 0.5.2)
@@ -153,7 +153,7 @@ GEM
     method_source (0.8.2)
     mime-types (2.6.2)
     mini_portile (0.6.2)
-    minitest (5.8.1)
+    minitest (5.8.2)
     multi_json (1.11.2)
     multi_xml (0.5.5)
     netrc (0.7.7)
@@ -332,7 +332,7 @@ DEPENDENCIES
   gabba (~> 1.0.1)
   gibbon
   google-analytics-rails
-  griddler (~> 1.1.0)
+  griddler (~> 1.2.1)
   griddler-sendgrid
   haml
   haml_assets
