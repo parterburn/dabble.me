@@ -22,8 +22,9 @@ class EmailProcessor
 
     if @user.is_pro? && @attachments.present?
       @attachments.each do |attachment|
-        # Make sure attachments are at least 30Kb so we're not saving a bunch of signuture/footer images
-        if attachment.content_type =~ /^image\/(png|jpe?g|gif)$/i && File.size(attachment.tempfile).to_i > 30000
+        # Make sure attachments are at least 10Kb so we're not saving a bunch of signuture/footer images
+        file_size = File.size?(attachment.tempfile).to_i
+        if attachment.content_type =~ /^image\/(png|jpe?g|gif)$/i && (file_size <= 0 || file_size > 10000)
           dir = FileUtils.mkdir_p("public/email_attachments/#{@user.user_key}")
           file = File.join(dir, attachment.original_filename)
           FileUtils.mv attachment.tempfile.path, file
