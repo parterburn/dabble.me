@@ -28,9 +28,9 @@ class AdminStats
   def paid_status_for(user)
     entries_per_day = entries_per_day_for(user)
 
-    if entries_per_day <= 0.1
+    if entries_per_day <= 0.02
       "danger"
-    elsif entries_per_day <= 0.3
+    elsif entries_per_day <= 0.2
       "warning"
     else
       "great"
