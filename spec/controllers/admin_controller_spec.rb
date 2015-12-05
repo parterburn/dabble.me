@@ -1,6 +1,6 @@
 require 'rails_helper'
 
-RSpec.describe AdminController, type: :controller, focus: true do
+RSpec.describe AdminController, type: :controller do
   include_context 'has all objects'
 
   # Initiate objects
