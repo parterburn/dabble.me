@@ -8,7 +8,11 @@ class AdminStats
   end
 
   def entries_by_day_since(date)
-    Entry.unscoped.where("date >= ?", date).group_by_day(:date).count
+    Entry.unscoped.where("date >= ?", date).where("date < ?", Time.now).group_by_day(:date).count
+  end
+
+  def payments_by_day_since(date)
+    Payment.where("date >= ?", date).group_by_day(:date).sum(:amount)
   end
 
   def users_created_since(date)
