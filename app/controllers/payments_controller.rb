@@ -1,13 +1,12 @@
 class PaymentsController < ApplicationController
   before_action :authenticate_user!
-  before_filter :require_permission
+  before_filter :authenticate_admin!
   
   skip_before_filter :authenticate_user!, only: [:payment_notify]
-  skip_before_filter :require_permission, only: [:payment_notify]
+  skip_before_filter :require_admin_permission, only: [:payment_notify]
   skip_before_filter :verify_authenticity_token, only: [:payment_notify]
 
   def index
-
     @monthlys = User.pro_only.monthly
     @yearlys =  User.pro_only.yearly
 
@@ -129,18 +128,12 @@ class PaymentsController < ApplicationController
   end
 
   private
-    def payment_params
-      params.require(:payment).permit(:amount, :date, :user_id,  :comments)
-    end
 
-    def user_params
-      params.permit(:plan)
-    end 
+  def payment_params
+    params.require(:payment).permit(:amount, :date, :user_id,  :comments)
+  end
 
-    def require_permission
-      unless current_user.is_admin?
-        flash[:alert] = 'Not authorized'
-        redirect_to past_entries_path
-      end
-    end
+  def user_params
+    params.permit(:plan)
+  end 
 end

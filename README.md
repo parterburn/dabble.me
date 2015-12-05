@@ -22,7 +22,7 @@ In order to turn on scheduled emails in Heroku, you'll need to add an hourly job
 rake entry:send_hourly_entries
 ```
 
-Your local environment variables at ```config/local_env.yml``` will need to be something like this:
+Your local environment variables at ```config/local_env.yml``` will need to be something like this (```rake db:seed``` will create the admin@dabble.ex account for you):
 
 ```
 MAIN_DOMAIN: yourdomain.com
@@ -35,7 +35,7 @@ MAILCHIMP_API_KEY: f....3333-ek3
 MAILCHIMP_LIST_ID: 9982...112
 FILEPICKER_API_KEY: A....z
 FILEPICKER_CDN_HOST: https://123abc.cloudfront.net
-ADMIN_EMAILS: user1@domain.com,user2@domain.com
+ADMIN_EMAILS: admin@dabble.ex,user2@domain.com
 DOWNLOADER_ID: 1234..1234
 DOWNLOADER_SECRET: 1234..1234
 DOWNLOADER_URL: us.downloader.io

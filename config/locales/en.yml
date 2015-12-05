@@ -25,3 +25,27 @@ en:
   shared:
     navbar:
       toggle_navigation: Toggle Navigation
+
+  date:
+    formats:
+      default:
+        "%m/%d/%Y"
+      day_of_week:
+        "%A"
+      for_prompt:
+        "%A, %b %-d" # Thursday, Sept 17
+      month_day_year:
+        "%B %-d, %Y"
+      month_day:
+        "%b %-d"
+      with_weekday:
+        "%a %m/%d/%y"
+
+  time:
+    formats:
+      default:
+        "%a, %b %-d, %Y at %r"
+      date:
+        "%b %-d, %Y"
+      short:
+        "%B %d"

@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 ruby File.read(File.expand_path '../.ruby-version', __FILE__).strip.sub /\-p[0-9]+$/, '' # Read the rbenv version file
-gem 'rails', '4.2.4'
+gem 'rails', '4.2.5'
 
 # Servers
 gem 'puma'
@@ -30,6 +30,8 @@ gem 'rest-client' # RESTClient
 gem 'rubyzip', '~> 1.1.6'
 gem 'zip-zip'
 gem 'rack-utf8_sanitizer'
+gem 'chartkick' # Admin Stats
+gem 'groupdate' # Admin Stats
 
 gem 'kaminari' # Pagination
 
@@ -55,7 +57,7 @@ group :development, :test do
   gem 'byebug'
   gem 'delorean'
   gem 'factory_girl_rails'
-  gem 'faker'
+  gem 'faker', '~> 1.6', '>= 1.6.1'
   gem 'rspec-rails'
 end
 

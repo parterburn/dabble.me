@@ -1,6 +1,6 @@
 class InspirationsController < ApplicationController
   before_action :authenticate_user!
-  before_filter :require_permission
+  before_filter :authenticate_admin!
 
   def index
     @inspirations = Inspiration.all.order(:category, :id)
@@ -50,14 +50,8 @@ class InspirationsController < ApplicationController
   end
 
   private
-    def entry_params
-      params.require(:inspiration).permit(:category, :body)
-    end
 
-    def require_permission
-      unless current_user.is_admin?
-        flash[:alert] = "Not authorized"
-        redirect_to past_entries_path
-      end
-    end
+  def entry_params
+    params.require(:inspiration).permit(:category, :body)
+  end
 end

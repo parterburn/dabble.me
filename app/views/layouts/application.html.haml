@@ -28,7 +28,7 @@
     #wrap
       = render 'shared/navbar'
 
-      #main-container.container.clear-top
+      #main-container.clear-top{class: "#{params[:controller].in?(['admin', 'payments', 'inspirations']) ? 'container-fluid' : 'container'}"}
         - if user_signed_in? && current_user.is_free? && current_user.sign_in_count > 1 && !cookies[:badger_go_away] && ( current_page?(root_path) || @js_action == "Entries_index")
           .col-md-8.col-md-offset-2.alert.alert-info.alert-dismissible.hidden-xs
             %button.close.j-paid{"data-dismiss" => "alert", :type => "button"}

@@ -2,7 +2,9 @@ Rails.application.routes.draw do
   authenticate :user, ->(u) { u.is_admin? } do
     resources :inspirations
     resources :payments
-    get 'admin' => 'application#admin', as: 'admin'
+    get 'admin' => 'admin#metrics', as: 'admin'
+    get 'admin/users' => 'admin#users', as: 'admin_users'
+    get 'admin/stats' => 'admin#stats', as: 'stats'
   end
 
   devise_for :users, controllers: { registrations: 'registrations' }
