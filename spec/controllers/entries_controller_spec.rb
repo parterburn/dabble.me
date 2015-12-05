@@ -106,12 +106,21 @@ RSpec.describe EntriesController, type: :controller do
       expect(response).to redirect_to(new_user_session_url)
     end
 
-    it 'should let me create an entry' do
+    it 'should not let me create an entry if free user' do
       sign_in user
+      expect { post :create, params }.to_not change { Entry.count }
+      expect(response.status).to eq 302
+      expect(response).to redirect_to(root_path)
+    end
+
+    it 'should let me create an entry if paid user' do
+      sign_in user
+      user.plan = 'PRO Gumroad Monthly'
+      user.save
       expect { post :create, params }.to change { Entry.count }.by(1)
       expect(response.status).to eq 302
       expect(response).to redirect_to(group_entries_url(group: Entry.last.date.year, subgroup: Entry.last.date.month))
-    end
+    end    
   end
 
   describe 'destroy' do
