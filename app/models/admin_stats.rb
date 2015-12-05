@@ -8,7 +8,7 @@ class AdminStats
   end
 
   def entries_by_day_since(date)
-    Entry.where("date >= ?", date).unscoped.group_by_day(:date).count
+    Entry.unscoped.where("date >= ?", date).group_by_day(:date).count
   end
 
   def users_created_since(date)
