@@ -1,0 +1,28 @@
+- title ("Admin Photos")
+
+:css
+  .col-md-3 img {
+    width: 100%;
+  }
+
+.row.s-admin-container
+  .col-md-12
+    %h3
+      Admin Photos
+
+  .col-md-12
+    %hr
+
+  .col-md-12
+    .row
+      .center
+        = paginate @entries  
+    .row
+      - @entries.each do |entry|
+        .col-md-3{style: 'margin: 15px auto;'}
+          =link_to entry_path(entry) do
+            =image_code(entry,100)
+
+    .row
+      .center
+        = paginate @entries

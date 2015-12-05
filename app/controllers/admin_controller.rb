@@ -5,25 +5,23 @@ class AdminController < ApplicationController
   def users
     if current_user && current_user.is_admin?
       if params[:entries] == 'all'
+        @title = 'ADMIN ENTRIES for ALL USERS'
         if params[:user_id].present?
           user = User.find(params[:user_id])
           @entries = user.entries.includes(:inspiration)
+          @title = "ADMIN ENTRIES for <a href='/admin?email=#{user.email}'>#{user.email}</a>" if user.present?
         else
           @entries = Entry.includes(:inspiration).all
         end
 
         if params[:photos].present?
           @entries = Kaminari.paginate_array(@entries.only_images.order('id DESC')).page(params[:page]).per(params[:per])
+          render 'photo_grid'
         else
           @entries = Kaminari.paginate_array(@entries.order('id DESC')).page(params[:page]).per(params[:per])
+          render 'entries/index'
         end
-
-        if user.present?
-          @title = "ADMIN ENTRIES for <a href='/admin?email=#{user.email}'>#{user.email}</a>"
-        else
-          @title = 'ADMIN ENTRIES for ALL USERS'
-        end
-        render 'entries/index'
+        
       else
         if params[:email].present?
           @users = User.includes(:payments).where("email LIKE '%#{params[:email]}%'")
