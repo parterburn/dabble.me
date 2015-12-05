@@ -21,8 +21,7 @@
       - @entries.each do |entry|
         .col-md-3{style: 'margin: 15px auto;'}
           =link_to entry_path(entry) do
-            =image_code(entry,100)
-
+            =image_code(entry,600)
     .row
       .center
         = paginate @entries
