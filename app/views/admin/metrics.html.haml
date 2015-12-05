@@ -12,14 +12,14 @@
     .row
       .col-md-3
         %strong All Entries
-      - all_count = @entries.count
+      - all_count = Entry.count
       .col-md-2
         =link_to admin_users_path(entries: "all") do
           %strong #{number_with_delimiter(all_count)}
     .row
       .col-md-3
         %strong All Entries with Photos
-      - photos_count = @entries.only_images.count
+      - photos_count = Entry.only_images.count
       .col-md-2
         =link_to admin_users_path(entries: "all", photos: true) do
           %strong #{number_with_delimiter(photos_count)}
@@ -70,13 +70,13 @@
   .col-md-3
     %strong Total Emails Sent
   .col-md-3
-    - emails_sent_total = @users.sum(:emails_sent)
+    - emails_sent_total = User.sum(:emails_sent)
     %strong= number_with_delimiter(emails_sent_total)
   .clearfix
   .col-md-3
     %strong Total Emails Received
   .col-md-2
-    - emails_received_total = @users.sum(:emails_received)
+    - emails_received_total = User.sum(:emails_received)
     %strong= number_with_delimiter(emails_received_total)
   .col-md-2
     - if emails_sent_total > 0
