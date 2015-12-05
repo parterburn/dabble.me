@@ -82,7 +82,10 @@ Rails.application.configure do
   config.active_record.dump_schema_after_migration = false
 
   # Devise
-  config.action_mailer.default_url_options = { host: ENV['MAIN_DOMAIN'] }
+  config.action_mailer.default_url_options = { 
+    protocol: 'https',
+    host: ENV['MAIN_DOMAIN']
+  }
 
   GA.tracker = ENV['GOOGLE_ANALYTICS_ID']
 end
