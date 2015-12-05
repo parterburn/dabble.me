@@ -36,21 +36,11 @@
         selectHelper: true,
         select: function(start, end, allDay) {
           $(".navbar-brand i.fa-spinner").addClass("fa-spin");
-          var converted_date = timeConverter(end);
-          window.location.href = "#{new_entry_url}?day="+converted_date;
+          window.location.href = "#{new_entry_url}?day="+start.format('YYYY-MM-DD');
         },
         events: "#{entries_path(format:'json')}"
       })
   });
-
-  function timeConverter(UNIX_timestamp){
-    var a = new Date(UNIX_timestamp);
-    var year = a.getFullYear();
-    var month = a.getMonth()+1;
-    var date = a.getDate();
-    var time = year + '-' + month + '-' + date;
-    return time;
-  }
 
 - if params[:day].present?
   :javascript
