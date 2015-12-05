@@ -11,7 +11,7 @@ class AdminController < ApplicationController
           @entries = user.entries.includes(:inspiration)
           @title = "ADMIN ENTRIES for <a href='/admin?email=#{user.email}'>#{user.email}</a>" if user.present?
         else
-          @entries = Entry.includes(:inspiration).all
+          @entries = Entry.includes(:user, :inspiration).all
         end
 
         if params[:photos].present?

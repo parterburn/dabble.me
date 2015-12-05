@@ -6,6 +6,7 @@
     -if current_user.is_admin? && current_user != entry.user
       .float-left.s-edit-entry{:rel=>"popover", :title=>"#{entry.user.full_name}", :"data-content"=>"#{entry.user.email}"}
         %i.fa.fa-user
+        &nbsp;
     -if entry.inspiration.present?
       .float-left.s-edit-entry{:rel=>"popover", :title=>"#{entry.inspiration.inspired_by}", :"data-content"=>"#{entry.inspiration.body}"}
         %i.fa.fa-lightbulb-o

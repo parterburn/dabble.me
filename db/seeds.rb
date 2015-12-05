@@ -20,7 +20,7 @@ end
     date: Faker::Date.backward(1095),
     body: ActionController::Base.helpers.simple_format(Faker::Hipster.paragraphs(3).join("\n\n")),
     image_url: image_url,
-    inspiration_id: 0
+    inspiration_id: 1
   )
 end
 
@@ -34,7 +34,7 @@ free_user.save
     date: Faker::Date.backward(1095),
     body: ActionController::Base.helpers.simple_format(Faker::Hipster.paragraphs(3).join("\n\n")),
     image_url: nil,
-    inspiration_id: 0
+    inspiration_id: 1
   )
 end
 
@@ -49,7 +49,7 @@ admin_user.save
     date: Faker::Date.backward(1095),
     body: ActionController::Base.helpers.simple_format(Faker::Hipster.paragraphs(3).join("\n\n")),
     image_url: image_url,
-    inspiration_id: 0
+    inspiration_id: 1
   )
 end
 
