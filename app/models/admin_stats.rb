@@ -86,7 +86,7 @@ class AdminStats
   end
 
   def entries_per_day_for(user)
-    (entry_count_for(user) / account_age_for(user)).to_f.round(1)
+    (entry_count_for(user) / account_age_for(user).to_f).to_f.round(1)
   rescue ZeroDivisionError
     0
   end
