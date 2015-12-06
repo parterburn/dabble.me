@@ -30,7 +30,7 @@
 
   .col-md-12
     %h3.text-center Payments by month over the last year
-    = column_chart @dashboard.payments_by_month(1.year.ago)
+    = column_chart @dashboard.payments_by_month(1.year.ago), discrete: true
     %br
 
   .col-md-12

@@ -7,11 +7,10 @@ class AdminStats
     upgrade_dates = []
     User.pro_only.includes(:payments).each do |user|
       if user.payments.present? && user.payments.first.date > date
-        upgrade_dates << user.payments.first.date.beginning_of_week(:sunday).strftime('%b %d')
+        upgrade_dates << user.payments.first.date.beginning_of_week(:sunday).strftime('%Y-%m-%d')
       end
     end
-    counts = upgrade_dates.group_by{|i| i}.map{|k,v| [k, v.count] }
-    Hash[*counts.flatten]
+    Hash[upgrade_dates.group_by_week{ |u| u }.map { |k, v| [k.strftime('%b %d'), v.size] }]
   end
 
   def entries_by_week_since(date)
