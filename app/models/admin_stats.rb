@@ -11,28 +11,30 @@ class AdminStats
   end
 
   def emails_sent_by_month_since(date)
-    uri = URI("https://api.sendgrid.com/v3/stats?aggregated_by=month&start_date=#{date.strftime('%Y-%m-%d')}&end_date=#{Time.now.strftime('%Y-%m-%d')}")
-    req = Net::HTTP::Get.new(uri)
-    req['Authorization'] = "Bearer #{ENV['SENDGRID_API_KEY']}"
+    if ENV['SENDGRID_API_KEY'].present?
+      uri = URI("https://api.sendgrid.com/v3/stats?aggregated_by=month&start_date=#{date.strftime('%Y-%m-%d')}&end_date=#{Time.now.strftime('%Y-%m-%d')}")
+      req = Net::HTTP::Get.new(uri)
+      req['Authorization'] = "Bearer #{ENV['SENDGRID_API_KEY']}"
 
-    res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) {|http|
-      http.request(req)
-    }
-    stats = JSON.parse(res.body)
-    requests_hash = Hash.new
-    unique_opens_hash = Hash.new
-    failed_hash = Hash.new
-    stats.each do |stat|
-      requests_hash[stat['date']] = stat['stats'].first['metrics']['requests']
-      failed_hash[stat['date']] = stat['stats'].first['metrics']['requests'] - stat['stats'].first['metrics']['delivered']
-      unique_opens_hash[stat['date']] = stat['stats'].first['metrics']['unique_opens']
+      res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) {|http|
+        http.request(req)
+      }
+      stats = JSON.parse(res.body)
+      requests_hash = Hash.new
+      unique_opens_hash = Hash.new
+      failed_hash = Hash.new
+      stats.each do |stat|
+        requests_hash[stat['date']] = stat['stats'].first['metrics']['requests']
+        failed_hash[stat['date']] = stat['stats'].first['metrics']['requests'] - stat['stats'].first['metrics']['delivered']
+        unique_opens_hash[stat['date']] = stat['stats'].first['metrics']['unique_opens']
+      end
+      [ 
+        { name: "requests sent", data: requests_hash },
+        { name: "failed sent", data: failed_hash },
+        { name: "unique_opens", data: unique_opens_hash },
+        { name: "received", data: received_emails(date) }
+      ]
     end
-    [ 
-      { name: "requests sent", data: requests_hash },
-      { name: "failed sent", data: failed_hash },
-      { name: "unique_opens", data: unique_opens_hash },
-      { name: "received", data: received_emails(date) }
-    ]
   end
 
   def received_emails(date)
