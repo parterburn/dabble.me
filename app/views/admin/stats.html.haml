@@ -9,24 +9,27 @@
     %hr
 
   .col-md-12
-    %h3.text-center All Sign ups in the last 90 days
+    %h3.text-center Sign ups over the last 90 days
     = line_chart @dashboard.users_by_day_since(90.days.ago)
     %br
 
-    %h3.text-center Pro Sign ups in the last 90 days
-    = line_chart @dashboard.pro_users_by_day_since(90.days.ago)
-    %br
-
-    %h3.text-center Entries in the last 90 days
-    %p.lead.text-center Are customers using the service?
+  .col-md-12
+    %h3.text-center Entries over the last 90 days
     = line_chart @dashboard.entries_by_day_since(90.days.ago)
     %br
 
-    %h3.text-center Payments in the last 90 days
-    = line_chart @dashboard.payments_by_day_since(90.days.ago)
-    %br    
+  .col-md-12
+    %h3.text-center Emails over the last 90 days
+    = line_chart @dashboard.emails_sent_by_month_since(90.days.ago)
+    %br
 
-    %h3.text-center Paid Users in the last 30 days
+  .col-md-12
+    %h3.text-center Payments over the last 90 days   
+    = line_chart @dashboard.payments_by_day_since(90.days.ago)
+    %br
+
+  .col-md-12
+    %h3.text-center Paid Users from the last 30 days
     %p
       %table.table.table-striped.table-hover
         %tr
@@ -43,7 +46,10 @@
             %td= user.entries.count
             %td= @dashboard.entries_per_day_for(user)
 
-    %h3.text-center Free Users in the last 30 days
+  .col-md-12
+    %hr
+  .col-md-12    
+    %h3.text-center Free Users from the last 30 days
     %p
       %table.table.table-striped.table-hover
         %tr
