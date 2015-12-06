@@ -108,6 +108,6 @@ class AdminStats
   end
 
   def account_age_for(user)
-    [30, (Time.zone.now.to_date - user.created_at.to_date).to_i].min
+    [30, Time.zone.now.to_date - user.created_at.to_date].min
   end
 end
