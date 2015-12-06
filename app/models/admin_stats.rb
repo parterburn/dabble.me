@@ -73,6 +73,16 @@ class AdminStats
     User.where("created_at >= ?", date)
   end
 
+  def upgraded_users_since(date)
+    pro_users = []
+    User.pro_only.includes(:payments).each do |user|
+      if user.payments.present? && user.payments.first.date > date
+        pro_users << user
+      end
+    end
+    pro_users
+  end
+
   def entries_per_day_for(user)
     (entry_count_for(user) / account_age_for(user)).to_f.round(1)
   rescue ZeroDivisionError

@@ -34,7 +34,7 @@
     %br
 
   .col-md-12
-    %h3.text-center Paid Users from the last 30 days
+    %h3.text-center Upgrades from the last 30 days
     %p
       %table.table.table-striped.table-hover
         %tr
@@ -43,10 +43,10 @@
           %th Paid
           %th Entries
           %th Per day
-        - @dashboard.users_created_since(30.days.ago).pro_only.order(:created_at).each do |user|
+        - @dashboard.upgraded_users_since(30.days.ago).each do |user|
           %tr{:class => @dashboard.paid_status_for(user)}
             %td= link_to user.email, "mailto:#{user.email}"
-            %td= l(user.created_at.to_date, format: :month_day)
+            %td= l(user.payments.first.date.to_date, format: :month_day)
             %td= user.payments.sum(:amount)
             %td= user.entries.count
             %td= @dashboard.entries_per_day_for(user)
@@ -62,7 +62,7 @@
           %th Signed up
           %th Entries
           %th Per day
-        - @dashboard.users_created_since(30.days.ago).order(:created_at).each do |user|
+        - @dashboard.users_created_since(30.days.ago).each do |user|
           %tr{:class => @dashboard.paid_status_for(user)}
             %td= link_to user.email, "mailto:#{user.email}"
             %td= l(user.created_at.to_date, format: :month_day)
