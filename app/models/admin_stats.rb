@@ -28,12 +28,14 @@ class AdminStats
         failed_hash[stat['date']] = stat['stats'].first['metrics']['requests'] - stat['stats'].first['metrics']['delivered']
         unique_opens_hash[stat['date']] = stat['stats'].first['metrics']['unique_opens']
       end
-      [ 
-        { name: "requests sent", data: requests_hash },
-        { name: "failed sent", data: failed_hash },
-        { name: "unique_opens", data: unique_opens_hash },
-        { name: "received", data: received_emails(date) }
-      ]
+      if stats.present?
+        [ 
+          { name: "requests sent", data: requests_hash },
+          { name: "failed sent", data: failed_hash },
+          { name: "unique_opens", data: unique_opens_hash },
+          { name: "received", data: received_emails(date) }
+        ]
+      end
     end
   end
 
