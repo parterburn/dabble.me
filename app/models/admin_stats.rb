@@ -104,7 +104,7 @@ class AdminStats
   private
 
   def entry_count_for(user)
-    user.entries.where("created_at >= ?", user.created_at.to_date).count
+    user.entries.where("created_at >= ?", 30.days.ago).count
   end
 
   def account_age_for(user)
