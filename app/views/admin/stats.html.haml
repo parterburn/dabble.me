@@ -10,22 +10,27 @@
 
   .col-md-12
     %h3.text-center Sign ups over the last 90 days
-    = line_chart @dashboard.users_by_week_since(90.days.ago)
+    = line_chart @dashboard.users_by_week_since(90.days.ago), discrete: true
+    %br
+
+  .col-md-12
+    %h3.text-center Pro Sign ups over the last 90 days
+    = line_chart @dashboard.pro_users_by_week_since(90.days.ago), discrete: true
     %br
 
   .col-md-12
     %h3.text-center Entries over the last 90 days
-    = line_chart @dashboard.entries_by_week_since(90.days.ago)
+    = line_chart @dashboard.entries_by_week_since(90.days.ago), discrete: true
     %br
 
   .col-md-12
     %h3.text-center Emails over the last 90 days
-    = line_chart @dashboard.emails_sent_by_month_since(90.days.ago, current_user)
+    = line_chart @dashboard.emails_sent_by_month_since(90.days.ago), discrete: true
     %br
 
   .col-md-12
     %h3.text-center Payments by month
-    = line_chart @dashboard.payments_by_month
+    = column_chart @dashboard.payments_by_month
     %br
 
   .col-md-12

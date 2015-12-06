@@ -1,18 +1,19 @@
 class AdminStats
   def users_by_week_since(date)
-    [
-      { name: 'All Users', data: users_created_since(date).group_by_week(:created_at).count },
-      { name: 'Pro Users', data: users_created_since(date).pro_only.group_by_week(:created_at).count }
-    ]
+    users_created_since(date).group_by_week(:created_at, format: "%b %d").count
   end
+
+  def pro_users_by_week_since(date)
+    users_created_since(date).pro_only.group_by_week(:created_at, format: "%b %d").count
+  end  
 
   def entries_by_week_since(date)
-    Entry.unscoped.where("date >= ?", date).where("date < ?", Time.now).group_by_week(:date).count
+    Entry.unscoped.where("date >= ?", date).where("date < ?", (Time.now + 1.day)).group_by_week(:date, format: "%b %d").count
   end
 
-  def emails_sent_by_month_since(date, user)
+  def emails_sent_by_month_since(date)
     if ENV['SENDGRID_API_KEY'].present?
-      uri = URI("https://api.sendgrid.com/v3/stats?aggregated_by=month&start_date=#{date.strftime('%Y-%m-%d')}&end_date=#{Time.now.in_time_zone(user.send_timezone).strftime('%Y-%m-%d')}")
+      uri = URI("https://api.sendgrid.com/v3/stats?aggregated_by=month&start_date=#{date.strftime('%Y-%m-%d')}&end_date=#{(Time.now - 1.day).strftime('%Y-%m-%d')}")
       req = Net::HTTP::Get.new(uri)
       req['Authorization'] = "Bearer #{ENV['SENDGRID_API_KEY']}"
 
@@ -24,11 +25,12 @@ class AdminStats
       unique_opens_hash = Hash.new
       failed_hash = Hash.new
       stats.each do |stat|
-        requests_hash[stat['date']] = stat['stats'].first['metrics']['requests']
-        failed_hash[stat['date']] = stat['stats'].first['metrics']['requests'] - stat['stats'].first['metrics']['delivered']
-        unique_opens_hash[stat['date']] = stat['stats'].first['metrics']['unique_opens']
+        formatted_date = Date.parse(stat['date']).strftime('%b %Y')
+        requests_hash[formatted_date] = stat['stats'].first['metrics']['requests']
+        failed_hash[formatted_date] = stat['stats'].first['metrics']['requests'] - stat['stats'].first['metrics']['delivered']
+        unique_opens_hash[formatted_date] = stat['stats'].first['metrics']['unique_opens']
       end
-      received_emails_hash = received_emails(date, user)
+      received_emails_hash = received_emails(date)
       [ 
         { name: "requests sent", data: requests_hash },
         { name: "failed sent", data: failed_hash },
@@ -38,9 +40,9 @@ class AdminStats
     end
   end
 
-  def received_emails(date, user)
+  def received_emails(date)
     if ENV['SENDGRID_API_KEY'].present?
-      uri = URI("https://api.sendgrid.com/v3/user/webhooks/parse/stats?aggregated_by=month&start_date=#{date.strftime('%Y-%m-%d')}&end_date=#{Time.now.in_time_zone(user.send_timezone).strftime('%Y-%m-%d')}")
+      uri = URI("https://api.sendgrid.com/v3/user/webhooks/parse/stats?aggregated_by=month&start_date=#{date.strftime('%Y-%m-%d')}&end_date=#{(Time.now - 1.day).strftime('%Y-%m-%d')}")
       req = Net::HTTP::Get.new(uri)
       req['Authorization'] = "Bearer #{ENV['SENDGRID_API_KEY']}"
 
@@ -50,14 +52,15 @@ class AdminStats
       stats = JSON.parse(res.body)
       received_hash = Hash.new
       stats.each do |stat|
-        received_hash[stat['date']] = stat['stats'].first['metrics']['received']
+        formatted_date = Date.parse(stat['date']).strftime('%b %Y')
+        received_hash[formatted_date] = stat['stats'].first['metrics']['received']
       end
       received_hash
     end
   end  
 
   def payments_by_month
-    Payment.group_by_month(:date).sum(:amount)
+    Payment.group_by_month(:date, format: "%b %Y").sum(:amount)
   end
 
   def users_created_since(date)

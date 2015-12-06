@@ -1,7 +1,7 @@
 Chartkick.options = {
   library: {
     backgroundColor: "#FCFCFC",
-    chartArea: { width: "70%", height: "80%" },
+    chartArea: { height: "300px" },
     hAxis: { format: "MMM d" }
   }
 }
