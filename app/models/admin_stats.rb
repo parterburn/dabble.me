@@ -7,12 +7,12 @@ class AdminStats
   end
 
   def entries_by_week_since(date)
-    Entry.unscoped.where("date >= ?", date).where("date < ?", Time.now).group_by_week(:date).count
+    Entry.unscoped.where("date >= ?", date).where("date < ?", Time.now.in_time_zone(current_user.send_timezone)).group_by_week(:date).count
   end
 
   def emails_sent_by_month_since(date)
     if ENV['SENDGRID_API_KEY'].present?
-      uri = URI("https://api.sendgrid.com/v3/stats?aggregated_by=month&start_date=#{date.strftime('%Y-%m-%d')}&end_date=#{Time.now.strftime('%Y-%m-%d')}")
+      uri = URI("https://api.sendgrid.com/v3/stats?aggregated_by=month&start_date=#{date.strftime('%Y-%m-%d')}&end_date=#{Time.now.in_time_zone(current_user.send_timezone).strftime('%Y-%m-%d')}")
       req = Net::HTTP::Get.new(uri)
       req['Authorization'] = "Bearer #{ENV['SENDGRID_API_KEY']}"
 
@@ -29,20 +29,18 @@ class AdminStats
         unique_opens_hash[stat['date']] = stat['stats'].first['metrics']['unique_opens']
       end
       received_emails_hash = received_emails(date)
-      if stats.present? && received_emails_hash.present?
-        [ 
-          { name: "requests sent", data: requests_hash },
-          { name: "failed sent", data: failed_hash },
-          { name: "unique_opens", data: unique_opens_hash },
-          { name: "received", data: received_emails_hash }
-        ]
-      end
+      [ 
+        { name: "requests sent", data: requests_hash },
+        { name: "failed sent", data: failed_hash },
+        { name: "unique_opens", data: unique_opens_hash },
+        { name: "received", data: received_emails_hash }
+      ]
     end
   end
 
   def received_emails(date)
     if ENV['SENDGRID_API_KEY'].present?
-      uri = URI("https://api.sendgrid.com/v3/user/webhooks/parse/stats?aggregated_by=month&start_date=#{date.strftime('%Y-%m-%d')}&end_date=#{Time.now.strftime('%Y-%m-%d')}")
+      uri = URI("https://api.sendgrid.com/v3/user/webhooks/parse/stats?aggregated_by=month&start_date=#{date.strftime('%Y-%m-%d')}&end_date=#{Time.now.in_time_zone(current_user.send_timezone).strftime('%Y-%m-%d')}")
       req = Net::HTTP::Get.new(uri)
       req['Authorization'] = "Bearer #{ENV['SENDGRID_API_KEY']}"
 
