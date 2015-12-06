@@ -8,9 +8,6 @@ class EntryMailer < ActionMailer::Base
     @random_entry_filepicker_url = filepicker_image_url(@random_entry.image_url, w: 300, h: 300, fit: 'max', cache: true, rotate: :exif) if @random_entry.present? && @random_entry.image_url.present?
     @random_inspiration = random_inspiration
 
-    # don't keep emailing if we've already sent 5 and the user is not using the service (should decrease spam reports)
-    return if @user.emails_sent > 4 && @user.entries.count == 0
-
     headers['x-smtpapi'] = { category: ['DB_Entry'] }.to_json
     mail from: "Dabble Me <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
          to: "#{user.full_name} <#{user.email}>",
