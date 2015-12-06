@@ -1,12 +1,12 @@
 class AdminStats
-  def users_by_day_since(date)
+  def users_by_week_since(date)
     [
       { name: 'All Users', data: users_created_since(date).group_by_week(:created_at).count },
       { name: 'Pro Users', data: users_created_since(date).pro_only.group_by_week(:created_at).count }
     ]
   end
 
-  def entries_by_day_since(date)
+  def entries_by_week_since(date)
     Entry.unscoped.where("date >= ?", date).where("date < ?", Time.now).group_by_week(:date).count
   end
 
@@ -53,8 +53,8 @@ class AdminStats
     received_hash
   end  
 
-  def payments_by_day_since(date)
-    Payment.where("date >= ?", date).group_by_month(:date).sum(:amount)
+  def payments_by_month
+    Payment.group_by_month(:date).sum(:amount)
   end
 
   def users_created_since(date)

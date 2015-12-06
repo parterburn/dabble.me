@@ -10,12 +10,12 @@
 
   .col-md-12
     %h3.text-center Sign ups over the last 90 days
-    = line_chart @dashboard.users_by_day_since(90.days.ago)
+    = line_chart @dashboard.users_by_week_since(90.days.ago)
     %br
 
   .col-md-12
     %h3.text-center Entries over the last 90 days
-    = line_chart @dashboard.entries_by_day_since(90.days.ago)
+    = line_chart @dashboard.entries_by_week_since(90.days.ago)
     %br
 
   .col-md-12
@@ -24,8 +24,8 @@
     %br
 
   .col-md-12
-    %h3.text-center Payments over the last 90 days   
-    = line_chart @dashboard.payments_by_day_since(90.days.ago)
+    %h3.text-center Payments by month
+    = line_chart @dashboard.payments_by_month
     %br
 
   .col-md-12
