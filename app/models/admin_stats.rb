@@ -6,8 +6,9 @@ class AdminStats
   def pro_users_by_week_since(date)
     upgrade_dates = []
     User.pro_only.includes(:payments).each do |user|
-      if user.payments.present? && user.payments.first.date > date
-        upgrade_dates << user.payments.order('payments.date').first.date.beginning_of_week(:sunday).strftime('%Y-%m-%d')
+      first_payment = user.payments.order('payments.date').try(:first).try(:date)
+      if first_payment.present? && first_payment > date
+        upgrade_dates << first_payment.beginning_of_week(:sunday).strftime('%Y-%m-%d')
       end
     end
     Hash[upgrade_dates.group_by_week{ |u| u }.map { |k, v| [k.strftime('%b %d'), v.size] }]
@@ -76,7 +77,8 @@ class AdminStats
   def upgraded_users_since(date)
     pro_users = []
     User.pro_only.includes(:payments).each do |user|
-      if user.payments.present? && user.payments.order('payments.date').first.date > date
+      first_payment = user.payments.order('payments.date').try(:first).try(:date)
+      if first_payment.present? && first_payment > date
         pro_users << user
       end
     end
