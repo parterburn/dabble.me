@@ -14,7 +14,7 @@
     %br
 
   .col-md-12
-    %h3.text-center Pro Sign ups over the last 90 days
+    %h3.text-center Pro Upgrades over the last 90 days
     = line_chart @dashboard.pro_users_by_week_since(90.days.ago), discrete: true
     %br
 
@@ -29,8 +29,8 @@
     %br
 
   .col-md-12
-    %h3.text-center Payments by month
-    = column_chart @dashboard.payments_by_month
+    %h3.text-center Payments by month over the last year
+    = column_chart @dashboard.payments_by_month(1.year.ago)
     %br
 
   .col-md-12

@@ -4,8 +4,15 @@ class AdminStats
   end
 
   def pro_users_by_week_since(date)
-    users_created_since(date).pro_only.group_by_week(:created_at, format: "%b %d").count
-  end  
+    upgrade_dates = []
+    User.pro_only.includes(:payments).each do |user|
+      if user.payments.present? && user.payments.first.date > date
+        upgrade_dates << user.payments.first.date.beginning_of_week(:sunday).strftime('%b %d')
+      end
+    end
+    counts = upgrade_dates.group_by{|i| i}.map{|k,v| [k, v.count] }
+    Hash[*counts.flatten]
+  end
 
   def entries_by_week_since(date)
     Entry.unscoped.where("date >= ?", date).where("date < ?", (Time.now + 1.day)).group_by_week(:date, format: "%b %d").count
@@ -59,8 +66,8 @@ class AdminStats
     end
   end  
 
-  def payments_by_month
-    Payment.group_by_month(:date, format: "%b %Y").sum(:amount)
+  def payments_by_month(date)
+    Payment.where('date > ?', date).group_by_month(:date, format: "%b").sum(:amount)
   end
 
   def users_created_since(date)
