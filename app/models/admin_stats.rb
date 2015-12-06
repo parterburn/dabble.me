@@ -7,12 +7,12 @@ class AdminStats
   end
 
   def entries_by_week_since(date)
-    Entry.unscoped.where("date >= ?", date).where("date < ?", Time.now.in_time_zone(current_user.send_timezone)).group_by_week(:date).count
+    Entry.unscoped.where("date >= ?", date).where("date < ?", Time.now).group_by_week(:date).count
   end
 
-  def emails_sent_by_month_since(date)
+  def emails_sent_by_month_since(date, user)
     if ENV['SENDGRID_API_KEY'].present?
-      uri = URI("https://api.sendgrid.com/v3/stats?aggregated_by=month&start_date=#{date.strftime('%Y-%m-%d')}&end_date=#{Time.now.in_time_zone(current_user.send_timezone).strftime('%Y-%m-%d')}")
+      uri = URI("https://api.sendgrid.com/v3/stats?aggregated_by=month&start_date=#{date.strftime('%Y-%m-%d')}&end_date=#{Time.now.in_time_zone(user.send_timezone).strftime('%Y-%m-%d')}")
       req = Net::HTTP::Get.new(uri)
       req['Authorization'] = "Bearer #{ENV['SENDGRID_API_KEY']}"
 
@@ -28,7 +28,7 @@ class AdminStats
         failed_hash[stat['date']] = stat['stats'].first['metrics']['requests'] - stat['stats'].first['metrics']['delivered']
         unique_opens_hash[stat['date']] = stat['stats'].first['metrics']['unique_opens']
       end
-      received_emails_hash = received_emails(date)
+      received_emails_hash = received_emails(date, user)
       [ 
         { name: "requests sent", data: requests_hash },
         { name: "failed sent", data: failed_hash },
@@ -38,9 +38,9 @@ class AdminStats
     end
   end
 
-  def received_emails(date)
+  def received_emails(date, user)
     if ENV['SENDGRID_API_KEY'].present?
-      uri = URI("https://api.sendgrid.com/v3/user/webhooks/parse/stats?aggregated_by=month&start_date=#{date.strftime('%Y-%m-%d')}&end_date=#{Time.now.in_time_zone(current_user.send_timezone).strftime('%Y-%m-%d')}")
+      uri = URI("https://api.sendgrid.com/v3/user/webhooks/parse/stats?aggregated_by=month&start_date=#{date.strftime('%Y-%m-%d')}&end_date=#{Time.now.in_time_zone(user.send_timezone).strftime('%Y-%m-%d')}")
       req = Net::HTTP::Get.new(uri)
       req['Authorization'] = "Bearer #{ENV['SENDGRID_API_KEY']}"
 

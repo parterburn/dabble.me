@@ -20,7 +20,7 @@
 
   .col-md-12
     %h3.text-center Emails over the last 90 days
-    = line_chart @dashboard.emails_sent_by_month_since(90.days.ago)
+    = line_chart @dashboard.emails_sent_by_month_since(90.days.ago, current_user)
     %br
 
   .col-md-12
