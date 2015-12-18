@@ -22,3 +22,8 @@
   \.
 %P
   For reference, your username is: #{@user.email}
+%p
+  %i 
+    P.S. If you received this email by error, you can
+    =link_to "Unsubscribe", "https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}"
+    to stop all future emails.

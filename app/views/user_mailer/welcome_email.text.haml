@@ -17,3 +17,5 @@ Helpful tips:
 You can always email #{@user.user_key}@#{ENV['SMTP_DOMAIN']} to post new entries (hint: add this to your contacts).
 \ 
 For reference, your username is: #{@user.email}
+\
+Unsubscribe: https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}
