@@ -17,3 +17,28 @@
       %br
       %br
     .clearfix
+
+- if current_user.is_pro? && params[:photos].present?
+  %br
+  .well.col-md-8.col-md-offset-2
+    .col-md-4.center
+      %div
+        %br
+        %h4 Import OhLife Photos
+    = form_tag(import_ohlife_images_path, :multipart => true) do
+      .col-md-4.center
+        %br
+        = label_tag 'zip_file', "Choose ZIP file of photos"
+        = file_field_tag 'zip_file', :class=>"center"
+        %br
+      .col-md-4.center
+        %br
+        = submit_tag "Upload ZIP File", :class => "btn btn-primary"
+        .clearfix
+      .clearfix
+    .alert.alert-warning.center
+      You may need to split up the ZIP file that you downloaded from OhLife into smaller ZIP files.
+      %br
+      %strong This importer works best with ZIP files less than 20 MB and less than 20 files.    
+      %br
+      %i Filenames are expected to be in the format of: img_2014-10-22-0.jpg

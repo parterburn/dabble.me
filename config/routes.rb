@@ -16,6 +16,7 @@ Rails.application.routes.draw do
 
   get 'entries/import'   => 'import#show', as: 'import'
   match 'entries/import' => 'import#update', via: [:put], as: 'import_process'
+  match '/entries/import/ohlife/upload'  => 'import#process_ohlife_images', via: [:post], :as => 'import_ohlife_images'
   get 'entries/export'   => 'entries#export', as: 'export_entries'
   get 'entries/calendar' => 'entries#calendar', as: 'entries_calendar'
 
