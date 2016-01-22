@@ -119,7 +119,7 @@ RSpec.describe EntriesController, type: :controller do
       user.save
       expect { post :create, params }.to change { Entry.count }.by(1)
       expect(response.status).to eq 302
-      expect(response).to redirect_to(group_entries_url(group: Entry.last.date.year, subgroup: Entry.last.date.month))
+      expect(response).to redirect_to(group_entries_url(group: Entry.last.date.year, subgroup: Entry.last.date.strftime('%m')))
     end    
   end
 
