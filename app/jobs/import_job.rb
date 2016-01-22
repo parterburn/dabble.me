@@ -51,9 +51,9 @@ class ImportJob < ActiveJob::Base
       messages << error
     end
 
-    ActionMailer::Base.mail(from: "Dabble Me <hello@#{ENV['SMTP_DOMAIN']}>",
-                            to: "Dabble Me <hello@#{ENV['SMTP_DOMAIN']}>",
-                            subject: "OhLife Image Import is complete for #{user.email}",
+    ActionMailer::Base.mail(from: "Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>",
+                            to: user.email,
+                            subject: "OhLife Image Import is complete",
                             body: messages)
   end
 
