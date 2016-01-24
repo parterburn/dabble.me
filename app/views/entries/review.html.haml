@@ -1,0 +1,47 @@
+- title ("Year In Review")
+
+.row.s-year-in-review
+  .col-md-12
+    %h2= "#{params[:year]} Year In Review"
+  .col-md-12
+    %strong Days with Entries:
+    = "#{number_with_delimiter(@total_count)} (#{((@total_count.to_f/365) * 100).round(1)}% of the year)"
+  .col-md-12
+    %strong Total Words:
+    = number_with_delimiter(@words_counter.token_count)
+    = "(#{((@words_counter.token_count.to_f/587287).to_f * 100).round(3)}% of <i>War and Peace</i>)".html_safe
+  .col-md-12  
+    %strong Average Words per Post:
+    - your_avg_words = @words_counter.token_count / @total_count
+    - all_dabble_words = @all_words_counter.token_count / Entry.all.count
+    = number_with_delimiter(@words_counter.token_count / @total_count)
+    - if your_avg_words > all_dabble_words
+      = " (more than the avg of Dabble Me entries!)"
+  .col-md-12
+    %strong Average Characters per Post:
+    - avg_chars = @body_text.length / @total_count
+    = "#{number_with_delimiter(avg_chars)} (about #{((avg_chars).to_f / 140).round(1)} tweets)"    
+  .col-md-12
+    %strong Most Frequent Words:
+    - @words_counter.most_frequent_tokens.each do |freq|
+      %br
+      = "#{freq.first} (#{number_with_delimiter(freq.second)} occurances)"
+  .col-md-12
+    - days = @entries.pluck("to_char(date, 'Day')")
+    - counts = Hash.new(0)
+    - days.each { |name| counts[name.strip] += 1 }
+    %strong Days of Posts:
+    %br
+    Sunday: #{counts["Sunday"]}
+    %br
+    Monday: #{counts['Monday']}
+    %br
+    Tuesday: #{counts["Tuesday"]}
+    %br
+    Wednesday: #{counts["Wednesday"]}
+    %br
+    Thursday: #{counts["Thursday"]}
+    %br
+    Friday: #{counts["Friday"]}
+    %br
+    Saturday: #{counts["Saturday"]}

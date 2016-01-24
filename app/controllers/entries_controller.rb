@@ -170,6 +170,15 @@ class EntriesController < ApplicationController
     end
   end
 
+  def review
+    @entries = current_user.entries.where("date >= '#{params[:year]}-01-01'::DATE AND date <= '#{params[:year]}-12-31'::DATE")
+    @total_count = @entries.count
+    @body_text = @entries.pluck(:body).join()
+    @words_counter = WordsCounted.count(@body_text, exclude: ['p', 'br'])
+
+    @all_words_counter = WordsCounted.count(Entry.all.pluck(:body).join(), exclude: ['p', 'br'])    
+  end
+
   private
 
   def track_ga_event(action)

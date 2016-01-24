@@ -32,6 +32,7 @@ gem 'zip-zip'
 gem 'rack-utf8_sanitizer'
 gem 'chartkick' # Admin Stats
 gem 'groupdate' # Admin Stats
+gem 'words_counted'
 
 gem 'kaminari' # Pagination
 
