@@ -8,10 +8,8 @@
       - show_entry = true
       %p
         %b
-          #{@user.throwback_msg}
           - format_date  = @random_entry.date.in_time_zone(@user.send_timezone).strftime('%a, %b %-d, %Y')
-          %a{href: entry_url(@random_entry), style: 'text-decoration: none; border-bottom:1px dashed #CCCCCC; color: black;', title: format_date} #{@random_entry.time_ago_in_words_or_numbers(@user)} ago
-          you wrote...
+          Remember this? On #{format_date} (#{@random_entry.time_ago_in_words_or_numbers(@user)} ago) you wrote...
       %p
         = simple_format(@random_entry.hashtag_body)
       - if @random_entry_filepicker_url.present?

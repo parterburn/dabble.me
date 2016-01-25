@@ -48,14 +48,6 @@ class User < ActiveRecord::Base
     admin_emails.include?(self.email)
   end
 
-  def throwback_msg
-    if Time.now.in_time_zone(self.send_timezone).thursday?
-      'Throwback Thursday!'
-    else
-      'Oh snap, remember this?'
-    end
-  end
-
   def frequencies
     frequencies = ''
     self.frequency.each do |freq|
