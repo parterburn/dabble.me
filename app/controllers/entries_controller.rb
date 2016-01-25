@@ -174,8 +174,13 @@ class EntriesController < ApplicationController
     @year = 2015
     @entries = current_user.entries.where("date >= '#{@year}-01-01'::DATE AND date <= '#{@year}-12-31'::DATE")
     @total_count = @entries.count
-    @body_text = @entries.pluck(:body).join()
-    @words_counter = WordsCounted.count(@body_text, exclude: ['p', 'br', 'div', 'img'])
+    if @total_count > 0
+      @body_text = @entries.pluck(:body).join()
+      @words_counter = WordsCounted.count(@body_text, exclude: ['p', 'br', 'div', 'img'])
+    else
+      flash[:notice] = 'No entries in 2015 - nothing to review :('
+      redirect_to past_entries_path
+    end
 
     # Stats for 2015
     # 1,703 users
