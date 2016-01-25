@@ -24,17 +24,6 @@
               $(".j-date-groups").show();        
 
       - add_class = has_past_entries ? "col-md-offset-1" : "col-md-offset-2"
-
-      .col-md-8.col-md-offset-2.alert.alert-info.alert-dismissible.hidden-xs
-        %button.close.j-paid{"data-dismiss" => "alert", :type => "button"}
-          %span{"aria-hidden" => "true"} &#215;
-          %span.sr-only Close
-        See what you've been up to! Visit your&nbsp;
-        %strong<>=link_to "2015 Year In Review", review_path(2015)
-        \.
-        .clearfix
-
-
       .col-md-8{:class=>"#{add_class}"}
         %br
         %h4
