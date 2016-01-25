@@ -1,44 +1,107 @@
 - title ("Year In Review")
-
+= javascript_include_tag "//www.google.com/jsapi", "chartkick"
 .row.s-year-in-review
-  .col-md-12
-    %h2= "#{params[:year]} Year In Review"
-  .col-md-12
-    %strong Days with Entries:
-    = "#{number_with_delimiter(@total_count)} (#{((@total_count.to_f/365) * 100).round(1)}% of the year)"
-  .col-md-12
-    %strong Total Words:
-    = number_with_delimiter(@words_counter.token_count)
-    = "(#{((@words_counter.token_count.to_f/587287).to_f * 100).round(3)}% of <i>War and Peace</i>)".html_safe
-  .col-md-12
-    %strong Average Words per Post:
-    - your_avg_words = @words_counter.token_count / @total_count
-    = number_with_delimiter(@words_counter.token_count / @total_count)
-  .col-md-12
-    %strong Average Characters per Post:
-    - avg_chars = @body_text.length / @total_count
-    = "#{number_with_delimiter(avg_chars)} (about #{((avg_chars).to_f / 140).round(1)} tweets)"    
-  .col-md-12
-    %strong Most Frequent Words:
-    - @words_counter.most_frequent_tokens.each do |freq|
-      %br
-      = "#{freq.first} (#{number_with_delimiter(freq.second)} occurances)"
-  .col-md-12
-    - days = @entries.pluck("to_char(date, 'Day')")
-    - counts = Hash.new(0)
-    - days.each { |name| counts[name.strip] += 1 }
-    %strong Days of Posts:
+  .col-md-8.col-md-offset-2
+    %h3= "#{@year} Year In Review"
     %br
-    Sunday: #{counts["Sunday"]}
     %br
-    Monday: #{counts['Monday']}
-    %br
-    Tuesday: #{counts["Tuesday"]}
-    %br
-    Wednesday: #{counts["Wednesday"]}
-    %br
-    Thursday: #{counts["Thursday"]}
-    %br
-    Friday: #{counts["Friday"]}
-    %br
-    Saturday: #{counts["Saturday"]}
+
+  .col-md-8.col-md-offset-2.well
+    .center
+      .s-entry-date
+        %h2 Days with Entries
+        %h3
+          %span= "#{@total_count} entries in 2015"
+      .s-review-details
+        = pie_chart({"Days With Entries": @total_count, "Days Without Entires": (365 - @total_count)},  height: "230px", library: {backgroundColor: "#ffffff"})
+        .clearfix
+
+  .col-md-8.col-md-offset-2.well
+    .center
+      .s-entry-date
+        %h2 Days of Entries
+        - days = @entries.pluck("to_char(date, 'Dy')")
+        - counts = Hash.new(0)
+        - days.each { |name| counts[name.strip] += 1 }        
+        %h3
+          %span= "#{pluralize(counts.length, 'day')} a week"
+      .s-review-details
+        - sorted_counts = Hash.new
+        - Date::ABBR_DAYNAMES.each_with_index { |x, i| sorted_counts[x] = counts[x] }
+        = column_chart sorted_counts, discrete: true, library: { backgroundColor: "#ffffff" }
+        .clearfix
+
+  .col-md-8.col-md-offset-2.well
+    .center
+      .s-entry-date
+        %h2 Months of Entries
+        - months = @entries.pluck("to_char(date, 'Mon')")
+        - counts = Hash.new(0)
+        - months.each { |name| counts[name.strip] += 1 }        
+        %h3
+          %span= "#{pluralize(counts.length, 'month')} covered"
+      .s-review-details
+        - sorted_counts = Hash.new
+        - Date::ABBR_MONTHNAMES.each_with_index { |x, i| sorted_counts[x] = counts[x] }
+        = column_chart sorted_counts, discrete: true, library: { backgroundColor: "#ffffff" }
+        .clearfix        
+
+  .col-md-8.col-md-offset-2.well
+    .center
+      .s-entry-date
+        %h2 Total Words
+        %h3
+          - percent_martian = ((@words_counter.token_count.to_f/119970).to_f * 100).round        
+          %span= "#{number_with_delimiter(@words_counter.token_count)} - #{percent_martian}% of The Martian".html_safe
+      .s-review-details
+        %div{style: 'position: relative;'}
+          =link_to 'http://www.amazon.com/The-Martian-Novel-Andy-Weir-ebook/dp/B00EMXBDMA', target: '_blank' do
+            .s-martian-cover{style: "height: #{300-((percent_martian.to_f / 100) * 300)}px"}
+            = image_tag 'the-martian-cover.jpg'
+        .clearfix
+
+  .col-md-8.col-md-offset-2.well
+    .center
+      .s-entry-date
+        %h2 Average Words per Post
+        %h3
+          - your_avg_words = @words_counter.token_count / @total_count
+          %span= number_with_delimiter(your_avg_words)
+      .s-review-details
+        - if your_avg_words > 300
+          - compared = 'way more'
+        - elsif your_avg_words > 150
+          - compared = 'more'
+        - elsif your_avg_words < 75
+          - compared = 'way less'
+        - else
+          - compared = 'less'
+        %p= "That's #{compared} than the average of all Dabble Me users (150)."
+        %p Collectively, all Dabble Me users could have wrote 41.8 novels equivalent to The Martian - then we might actually have that movie made about our lives!
+        .clearfix  
+
+  .col-md-8.col-md-offset-2.well
+    .center
+      .s-entry-date
+        %h2 Average Characters per Post
+        %h3
+          - avg_chars = @body_text.length / @total_count
+          - tweets = ((avg_chars).to_f / 140).ceil            
+          - your_avg_words = @words_counter.token_count / @total_count
+          %span= "#{number_with_delimiter(avg_chars)} - about #{tweets} tweets"
+      .s-review-details
+        .s-twitter-comparison
+          - (1..tweets).each do |i|
+            %i.fa.fa-twitter
+        .clearfix
+
+  .col-md-8.col-md-offset-2.well
+    .center
+      .s-entry-date
+        %h2 Most Frequent Word
+        %h3
+          %span= "#{number_with_delimiter(@words_counter.most_frequent_tokens.first.second)} occurrences"
+      .s-review-details
+        - @words_counter.most_frequent_tokens.each do |word|
+          %h3=word.first          
+        .clearfix

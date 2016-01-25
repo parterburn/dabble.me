@@ -171,10 +171,20 @@ class EntriesController < ApplicationController
   end
 
   def review
-    @entries = current_user.entries.where("date >= '#{params[:year]}-01-01'::DATE AND date <= '#{params[:year]}-12-31'::DATE")
+    @year = 2015
+    @entries = current_user.entries.where("date >= '#{@year}-01-01'::DATE AND date <= '#{@year}-12-31'::DATE")
     @total_count = @entries.count
     @body_text = @entries.pluck(:body).join()
-    @words_counter = WordsCounted.count(@body_text, exclude: ['p', 'br'])
+    @words_counter = WordsCounted.count(@body_text, exclude: ['p', 'br', 'div', 'img'])
+
+    # Stats for 2015
+    # 1,703 users
+    # 33,364 entries
+    # 5,017,056 total words
+    # 150.4 avg words
+    # 28,602,926 characters
+    # 857.30 avg characters per post (6.1 tweets)
+    # 171,919 were the word "I"
   end
 
   private

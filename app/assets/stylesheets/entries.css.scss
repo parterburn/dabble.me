@@ -226,4 +226,22 @@ mark {
   .col-md-12 {
     margin-bottom: 20px;
   }
+  .s-twitter-comparison {
+    font-size: 40px;
+    color: #55acee;
+  }
+  .s-martian-cover {
+    height: 300px;
+    position: absolute;
+    bottom: 0px;    
+    display: inline-block;
+    z-index: 1;
+    width: 197px;
+    background-color: rgba(252, 251, 249, 0.7);    
+  }
+  .s-review-details, .s-review-details p {
+    font-size: 18px;
+    color: #333333;
+    font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;    
+  }
 }
