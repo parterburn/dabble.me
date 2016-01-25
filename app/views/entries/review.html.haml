@@ -10,13 +10,10 @@
     %strong Total Words:
     = number_with_delimiter(@words_counter.token_count)
     = "(#{((@words_counter.token_count.to_f/587287).to_f * 100).round(3)}% of <i>War and Peace</i>)".html_safe
-  .col-md-12  
+  .col-md-12
     %strong Average Words per Post:
     - your_avg_words = @words_counter.token_count / @total_count
-    - all_dabble_words = @all_words_counter.token_count / Entry.all.count
     = number_with_delimiter(@words_counter.token_count / @total_count)
-    - if your_avg_words > all_dabble_words
-      = " (more than the avg of Dabble Me entries!)"
   .col-md-12
     %strong Average Characters per Post:
     - avg_chars = @body_text.length / @total_count

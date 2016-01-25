@@ -175,8 +175,6 @@ class EntriesController < ApplicationController
     @total_count = @entries.count
     @body_text = @entries.pluck(:body).join()
     @words_counter = WordsCounted.count(@body_text, exclude: ['p', 'br'])
-
-    @all_words_counter = WordsCounted.count(Entry.all.pluck(:body).join(), exclude: ['p', 'br'])    
   end
 
   private
