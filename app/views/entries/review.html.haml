@@ -51,12 +51,13 @@
       .s-entry-date
         %h2 Total Words
         %h3
-          - percent_martian = ((@words_counter.token_count.to_f/119970).to_f * 100).round        
+          - percent_martian = ((@words_counter.token_count.to_f/119970).to_f * 100).round
+          - martian_height = 300-((percent_martian.to_f / 100) * 300)
           %span= "#{number_with_delimiter(@words_counter.token_count)} - #{percent_martian}% of The Martian".html_safe
       .s-review-details
         %div{style: 'position: relative;'}
           =link_to 'http://www.amazon.com/The-Martian-Novel-Andy-Weir-ebook/dp/B00EMXBDMA', target: '_blank' do
-            .s-martian-cover{style: "height: #{300-((percent_martian.to_f / 100) * 300)}px"}
+            .s-martian-cover{style: "height: #{martian_height < 0 ? 0 : martian_height}px"}
             = image_tag 'the-martian-cover.jpg'
         .clearfix
 
