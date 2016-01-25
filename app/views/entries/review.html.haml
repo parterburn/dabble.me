@@ -22,7 +22,7 @@
         %h2 Days of Entries
         - days = @entries.pluck("to_char(date, 'Dy')")
         - counts = Hash.new(0)
-        - days.each { |name| counts[name.strip] += 1 }        
+        - days.each { |name| counts[name.strip] += 1 }
         %h3
           %span= "#{pluralize(counts.length, 'day')} a week"
       .s-review-details
@@ -86,7 +86,7 @@
         %h2 Average Characters per Post
         %h3
           - avg_chars = @body_text.length / @total_count
-          - tweets = ((avg_chars).to_f / 140).ceil            
+          - tweets = ((avg_chars).to_f / 140).ceil
           - your_avg_words = @words_counter.token_count / @total_count
           %span= "#{number_with_delimiter(avg_chars)} - about #{tweets} tweets"
       .s-review-details
@@ -98,10 +98,12 @@
   .col-md-8.col-md-offset-2.well
     .center
       .s-entry-date
-        %h2 Most Frequent Word
+        %h2 Most Frequent Words
         %h3
-          %span= "#{number_with_delimiter(@words_counter.most_frequent_tokens.first.second)} occurrences"
+          %span= "The <i>I's</i> had it - we all wrote it 171,919 times!".html_safe
       .s-review-details
-        - @words_counter.most_frequent_tokens.each do |word|
-          %h3=word.first          
+        - @words_counter.token_frequency.first(10).each do |word|
+          %h3
+            =word.first
+            %span{style: 'color: #CCCCCC;'}= "&middot; #{word.second}".html_safe
         .clearfix
