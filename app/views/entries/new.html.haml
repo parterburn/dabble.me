@@ -8,7 +8,7 @@
       - year_back = Time.now.in_time_zone(current_user.send_timezone).year - @entry.date.year
       .label.label-past-years #{pluralize(year_back,"year").upcase} AGO
 
-    -if current_user.is_free?
+    -if current_user.is_free? && !current_user.free_trial?
       .alert.alert-warning.well-sm
         =link_to "Subscribe to PRO", subscribe_path, class: "alert-link"
         to unlock the ability to add new entries via the web form.
@@ -52,16 +52,17 @@
 
           %br
 
-          %div
-            = f.label :image_url, "Photo"
-            = f.filepicker_field :image_url, :multiple=>false, :dragdrop=>true, :services=>"COMPUTER,INSTAGRAM,FACEBOOK,FLICKR,PICASA,WEBCAM,DROPBOX,BOX,GOOGLE_DRIVE,URL", :mimetypes=>"image/*", :maxsize=>"20000000", :button_class=>"btn btn-info btn-sm", :drag_text=>"Or drop image here", :drag_class=>"s-filepicker-drag hidden-xs", :onchange=>"onPhotoUpload(event)"
-            - if @entry.image_url.present?
-              %button.btn.btn-danger.btn-sm.s-filepicker-remove.j-filepicker-remove Remove Photo
-              %br
-              .pictureFrame.j-filepicker-preview
-                =link_to @entry.image_url_cdn, :target=>"_blank" do
-                  =image_code(@entry,200)
-          %br
+          -if current_user.is_pro?
+            %div
+              = f.label :image_url, "Photo"
+              = f.filepicker_field :image_url, :multiple=>false, :dragdrop=>true, :services=>"COMPUTER,INSTAGRAM,FACEBOOK,FLICKR,PICASA,WEBCAM,DROPBOX,BOX,GOOGLE_DRIVE,URL", :mimetypes=>"image/*", :maxsize=>"20000000", :button_class=>"btn btn-info btn-sm", :drag_text=>"Or drop image here", :drag_class=>"s-filepicker-drag hidden-xs", :onchange=>"onPhotoUpload(event)"
+              - if @entry.image_url.present?
+                %button.btn.btn-danger.btn-sm.s-filepicker-remove.j-filepicker-remove Remove Photo
+                %br
+                .pictureFrame.j-filepicker-preview
+                  =link_to @entry.image_url_cdn, :target=>"_blank" do
+                    =image_code(@entry,200)
+            %br
 
         %div
           = f.label :entry

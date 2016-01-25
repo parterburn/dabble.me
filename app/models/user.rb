@@ -147,6 +147,10 @@ class User < ActiveRecord::Base
     p
   end
 
+  def free_trial?
+    ENV['FREE_TRIAL'].present? && ENV['FREE_TRIAL'] == 'true'
+  end
+
   private
 
   def check_account_status

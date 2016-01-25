@@ -64,7 +64,7 @@ class EntriesController < ApplicationController
   end
 
   def create
-    redirect_to root_path and return if current_user.is_free?
+    redirect_to root_path and return if current_user.is_free? && !current_user.free_trial?
 
     @existing_entry = current_user.existing_entry(params[:entry][:date].to_s)
 
