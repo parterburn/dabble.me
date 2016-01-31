@@ -114,6 +114,9 @@ html, body {
   height: 150px;
   clear:both;
   padding-top:0px;
+  p {
+    font-size: 0.9em;
+  }
   @media screen and (max-width: 767px) {
     text-align:center;
     p {
@@ -121,7 +124,7 @@ html, body {
       width:100%;
       text-align:center;
     }
-  }  
+  }
 } 
 
 .s-inspiration {
