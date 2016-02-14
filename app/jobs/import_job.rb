@@ -39,11 +39,11 @@ class ImportJob < ActiveJob::Base
               count+=1
             else
               error_count+=1
-              errors << date
+              errors << file
             end
           rescue
             error_count+=1
-            errors << date
+            errors << file
           end
         end
       end
