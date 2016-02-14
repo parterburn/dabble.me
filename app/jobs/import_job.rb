@@ -20,7 +20,6 @@ class ImportJob < ActiveJob::Base
     end
 
     Dir.foreach("#{dir}/unzipped") do |file|
-      next if file == '.' or file == '..'
       if file =~ /^img_[12]{1}[90]{1}[0-9]{2}-[0-9]{2}-[0-9]{2}-0\.(jpe?g|gif|png)$/i
         date = file.scan(ImportController::SPLIT_AT_DATE_REGEX)[0]
         existing_entry = user.existing_entry(date.to_s)
@@ -38,14 +37,24 @@ class ImportJob < ActiveJob::Base
               existing_entry.save
               count+=1
             else
+              # bad response from filepicker
               error_count+=1
               errors << file
             end
           rescue
+            # could not upload to filepicker
             error_count+=1
             errors << file
           end
+        else
+          # no existing_entry
+          error_count+=1
+          errors << file          
         end
+      else
+        # not the right type of file
+        error_count+=1
+        errors << file
       end
     end
 
