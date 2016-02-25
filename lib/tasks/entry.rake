@@ -15,7 +15,10 @@ namespace :entry do
         if user.emails_sent > 3 && user.entries.count == 0
           user.update_columns(frequency: nil)
         else
+          # Every other week for free users
+          #if user.is_pro? || (user.is_free? && Time.now.strftime("%U").to_i % 2 == 0)
           EntryMailer.send_entry(user).deliver_now
+          #end
         end
       end
     end
