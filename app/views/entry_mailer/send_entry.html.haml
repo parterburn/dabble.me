@@ -8,7 +8,7 @@
       - show_entry = true
       %p
         %b
-          - format_date  = @random_entry.date.in_time_zone(@user.send_timezone).strftime('%a, %b %-d, %Y')
+          - format_date  = @random_entry.date.strftime('%a, %b %-d, %Y')
           Remember this? On #{format_date} (#{@random_entry.time_ago_in_words_or_numbers(@user)} ago) you wrote...
       %p
         = simple_format(@random_entry.hashtag_body)
