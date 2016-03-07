@@ -19,10 +19,10 @@ class AdminStats
   end
 
   def emails_sent_by_month_since(date)
-    if ENV['SENDGRID_API_KEY'].present?
-      uri = URI("https://api.sendgrid.com/v3/stats?aggregated_by=month&start_date=#{date.strftime('%Y-%m-%d')}&end_date=#{(Time.now - 1.day).strftime('%Y-%m-%d')}")
+    if ENV['MAILGUN_API_KEY'].present?
+      uri = URI("https://api.mailgun.net/v3/dabble.me/stats/total?event[]=accepted&event[]=failed&event[]=opened&resolution=month&start=#{date.to_i}")
       req = Net::HTTP::Get.new(uri)
-      req['Authorization'] = "Bearer #{ENV['SENDGRID_API_KEY']}"
+      req.basic_auth 'api', "#{ENV['MAILGUN_API_KEY']}"
 
       res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) {|http|
         http.request(req)
@@ -31,11 +31,11 @@ class AdminStats
       requests_hash = Hash.new
       unique_opens_hash = Hash.new
       failed_hash = Hash.new
-      stats.each do |stat|
-        formatted_date = Date.parse(stat['date']).strftime('%b %Y')
-        requests_hash[formatted_date] = stat['stats'].first['metrics']['requests']
-        failed_hash[formatted_date] = stat['stats'].first['metrics']['requests'] - stat['stats'].first['metrics']['delivered']
-        unique_opens_hash[formatted_date] = stat['stats'].first['metrics']['unique_opens']
+      stats['stats'].each do |stat|
+        formatted_date = Date.parse(stat['time']).strftime('%b %Y')
+        requests_hash[formatted_date] = stat['accepted']['total']
+        failed_hash[formatted_date] = stat['failed']['total']
+        unique_opens_hash[formatted_date] = stat['opened']['total']
       end
       received_emails_hash = received_emails(date)
       [ 
@@ -48,19 +48,19 @@ class AdminStats
   end
 
   def received_emails(date)
-    if ENV['SENDGRID_API_KEY'].present?
-      uri = URI("https://api.sendgrid.com/v3/user/webhooks/parse/stats?aggregated_by=month&start_date=#{date.strftime('%Y-%m-%d')}&end_date=#{(Time.now - 1.day).strftime('%Y-%m-%d')}")
+    if ENV['MAILGUN_API_KEY'].present?
+      uri = URI("https://api.mailgun.net/v3/post.dabble.me/stats/total?event=delivered&resolution=month&start=#{date.to_i}")
       req = Net::HTTP::Get.new(uri)
-      req['Authorization'] = "Bearer #{ENV['SENDGRID_API_KEY']}"
+      req.basic_auth 'api', "#{ENV['MAILGUN_API_KEY']}"
 
       res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) {|http|
         http.request(req)
       }
       stats = JSON.parse(res.body)
       received_hash = Hash.new
-      stats.each do |stat|
-        formatted_date = Date.parse(stat['date']).strftime('%b %Y')
-        received_hash[formatted_date] = stat['stats'].first['metrics']['received']
+      stats['stats'].each do |stat|
+        formatted_date = Date.parse(stat['time']).strftime('%b %Y')
+        received_hash[formatted_date] = stat['delivered']['total']
       end
       received_hash
     end

@@ -50,13 +50,13 @@
                     %i.fa.fa-usd
                     &nbsp;Payments              
                 %li{:class=>"#{'active' if current_page?(admin_path)}"}
-                  =link_to admin_path, title: "Admin Metrics" do
+                  =link_to admin_path, title: "Admin Numbers" do
                     %i.fa.fa-dashboard
-                    &nbsp;Metrics
+                    &nbsp;Numbers
                 %li{:class=>"#{'active' if current_page?(stats_path)}"}
-                  =link_to stats_path, title: "Admin Stats" do
+                  =link_to stats_path, title: "Admin Charts" do
                     %i.fa.fa-bar-chart
-                    &nbsp;Stats
+                    &nbsp;Charts
                 %li{:class=>"#{'active' if current_page?(admin_users_path)}"}
                   =link_to admin_users_path, title: "Admin Users" do
                     %i.fa.fa-users
