@@ -18,9 +18,8 @@ gem 'sinatra', '>= 1.3.0', require: nil
 gem 'combined_time_select', '~> 1.0.1'
 
 # email parsing
-gem 'sendgrid', '~> 1.2.0' # Emails
 gem 'griddler', '~> 1.2.1'
-gem 'griddler-sendgrid'
+gem 'griddler-mailgun'
 gem 'email_reply_parser'
 
 gem 'randomized_field', '~> 0.1.0' # builds user_keys

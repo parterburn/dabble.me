@@ -1,8 +1,8 @@
 ActionMailer::Base.smtp_settings = {
-  :user_name => ENV['SENDGRID_USERNAME'],
-  :password => ENV['SENDGRID_PASSWORD'],
+  :user_name => ENV['MAILGUN_USERNAME'],
+  :password => ENV['MAILGUN_PASSWORD'],
   :domain => ENV['MAIN_DOMAIN'],
-  :address => 'smtp.sendgrid.net',
+  :address => 'smtp.mailgun.org',
   :port => 587,
   :authentication => :plain,
   :enable_starttls_auto => true

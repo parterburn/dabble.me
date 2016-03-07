@@ -8,16 +8,14 @@ Dabble Me helps people remember what's happened in their life. Use it as a light
 This app utilizes the following 3rd party services:
 
 * [CloudFlare](http://cloudflare.com) manages DNS + free SSL support (free for basic service)
-* [SendGrid](http://sendgrid.com) for Sending & Receiving Email (free for 200 emails per day)
+* [Mailgun](http://www.mailgun.com/rackspace) for Sending & Receiving Email (free for 50k emails per month)
 * [Filepicker](http://filepicker.io) for Photo Uploads & Storage (free for 500 uploads per month)
 * [MailChimp](http://mailchimp.com) for sending updates to all users (free for 2000 subscribers)
 * [Google Analytics](http://google.com/analytics) for traffic stats (free for standard analytics)
 
 I recommend forking and setting up a server at [Heroku](https://heroku.com/). You can generate a free SSL certificate at [StartSSL](https://www.startssl.com/).
 
-You will need to setup SendGrid to receive incoming emails and point them to your app to parse. Visit this [Settings Page](https://sendgrid.com/developer/reply); add your hostname of ```post.yourdomain.com``` and point the URL to ```https://yourdomain.com/email_processor```. I have spam check turned off, since that hasn't been an issue yet. Make sure you setup an MX record for the ```post.yourdomain.com``` subdomain that points to ```mx.sendgrid.net```.
-
-In order to turn on scheduled emails in Heroku, you'll need to add an hourly job using the Heroku Scheduler.
+You will need to setup Mailgun to receive incoming emails and point them to your app to parse.
 ```
 rake entry:send_hourly_entries
 ```
@@ -29,8 +27,8 @@ MAIN_DOMAIN: yourdomain.com
 SECRET_KEY_BASE: 1234..1234
 DEVISE_SECRET_KEY: 1234..1234
 SMTP_DOMAIN: post.yourdomain.com
-SENDGRID_USERNAME: your_sendgrid_username
-SENDGRID_PASSWORD: your_sendgrid_password
+MAILGUN_USERNAME: your_mailgun_username
+MAILGUN_PASSWORD: your_mailgun_password
 MAILCHIMP_API_KEY: f....3333-ek3
 MAILCHIMP_LIST_ID: 9982...112
 FILEPICKER_API_KEY: A....z
@@ -49,8 +47,8 @@ SMTP_DOMAIN=post.yourdomain.me
 RAILS_ENV=production
 SECRET_KEY_BASE=1234..1234
 DEVISE_SECRET_KEY=1234..1234
-SENDGRID_USERNAME=username
-SENDGRID_PASSWORD=password
+MAILGUN_USERNAME=username
+MAILGUN_PASSWORD=password
 GOOGLE_ANALYTICS_ID=UA-12345-67
 FILEPICKER_API_KEY=A....z
 FILEPICKER_CDN_HOST=https://123abc.cloudfront.net
