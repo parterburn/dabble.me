@@ -8,9 +8,18 @@
 %p
   Helpful tips:
   %ol
-    %li It's okay to keep it simple! Even one sentence about how your day is going is just fine.
-    %li Only you can read what you write. That means there's no wrong way to do this.
-    %li Tag your entries with #hashtags to make it easy to find related posts.
+    %li
+      It's okay to keep it simple! Even one sentence about how your day is going is just fine.
+      %br
+      %br
+    %li
+      Only you can read what you write. That means there's no wrong way to do this.
+      %br
+      %br
+    %li
+      Tag your entries with #hashtags to make it easy to find related posts.
+      %br
+      %br
     %li
       Unlock premium features like changing email frequency, editing entries & attaching photos to your reply by
       =link_to "subscribing", "https://#{ENV['MAIN_DOMAIN']}/subscribe"
@@ -25,5 +34,5 @@
 %p
   %i 
     P.S. If you received this email by error, you can
-    =link_to "Unsubscribe", "https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}"
+    =link_to "unsubscribe", "https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}"
     to stop all future emails.
