@@ -16,6 +16,8 @@ This app utilizes the following 3rd party services:
 I recommend forking and setting up a server at [Heroku](https://heroku.com/). You can generate a free SSL certificate at [StartSSL](https://www.startssl.com/).
 
 You will need to setup Mailgun to receive incoming emails and point them to your app to parse.
+
+In order to turn on scheduled emails in Heroku, you'll need to add an hourly job using the Heroku Scheduler.
 ```
 rake entry:send_hourly_entries
 ```
