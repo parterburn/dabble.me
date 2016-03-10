@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 ruby File.read(File.expand_path '../.ruby-version', __FILE__).strip.sub /\-p[0-9]+$/, '' # Read the rbenv version file
-gem 'rails', '4.2.5'
+gem 'rails', '4.2.6'
 
 # Servers
 gem 'puma'
@@ -21,6 +21,7 @@ gem 'combined_time_select', '~> 1.0.1'
 gem 'griddler', '~> 1.2.1'
 gem 'griddler-mailgun'
 gem 'email_reply_parser'
+gem 'mailgun_webhooks', '~> 1.0'
 
 gem 'randomized_field', '~> 0.1.0' # builds user_keys
 gem 'filepicker-rails', '~> 2.1.0' # image uploads
