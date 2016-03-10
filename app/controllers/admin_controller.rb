@@ -1,6 +1,7 @@
 class AdminController < ApplicationController
-  before_action :authenticate_user!
-  before_action :authenticate_admin!
+  before_action :authenticate_user!, except: [:mailgun]
+  before_action :authenticate_admin!, except: [:mailgun]
+  skip_before_filter :verify_authenticity_token, only: [:mailgun]
 
   def users
     if params[:entries] == 'all'
@@ -35,6 +36,13 @@ class AdminController < ApplicationController
 
   def stats
     @dashboard = AdminStats.new
+  end
+
+  def mailgun
+    if params['domain'] == ENV['MAIN_DOMAIN'] || params['domain'] == ENV['SMTP_DOMAIN']
+      ActionMailer::Base.mail(from: "hello@#{ENV['MAIN_DOMAIN']}", to: "hello@#{ENV['MAIN_DOMAIN']}", subject: "[DABBLE.ME] #{params['event']}", body: "#{params['recipient']}\n\n-----------\n\n#{params['body-plain']}").deliver
+    end
+    render json: note, status: :ok
   end
 
   private
