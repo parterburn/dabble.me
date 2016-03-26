@@ -71,7 +71,9 @@ class EntriesController < ApplicationController
     if @existing_entry.present? && params[:entry][:entry].present?
       @existing_entry.body += "<hr>#{params[:entry][:entry]}"
       @existing_entry.inspiration_id = params[:entry][:inspiration_id] if params[:entry][:inspiration_id].present?
-      @existing_entry.image = params[:entry][:image] if params[:entry][:image].present?
+      if @existing_entry.image_url_cdn.blank? && params[:entry][:image].present?
+        @existing_entry.image = params[:entry][:image]
+      end
       if @existing_entry.save
         flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime("%B %-d")}. <a href='#entry-#{@existing_entry.id}' data-id='#{@existing_entry.id}' class='alert-link j-entry-link'>View merged entry</a>.".html_safe
         track_ga_event('Merged')
@@ -109,7 +111,9 @@ class EntriesController < ApplicationController
       # existing entry exists, so add to it
       @existing_entry.body += "<hr>#{params[:entry][:entry]}"
       @existing_entry.inspiration_id = params[:entry][:inspiration_id] if params[:entry][:inspiration_id].present?
-      @existing_entry.image = params[:entry][:image] if params[:entry][:image].present?
+      if @existing_entry.image_url_cdn.blank? && params[:entry][:image].present?
+        @existing_entry.image = params[:entry][:image]
+      end
       if @existing_entry.save
         @entry.delete
         flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime('%B %-d')}. <a href='#entry-#{@existing_entry.id}' data-id='#{@existing_entry.id}' class='alert-link j-entry-link'>View merged entry</a>.".html_safe

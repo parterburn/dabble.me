@@ -24,7 +24,7 @@ class ImageUploader < CarrierWave::Uploader::Base
   private
 
   def hash
-    Digest::SHA1.hexdigest file_contents
+    Digest::SHA1.hexdigest file_contents.to_s
   end
 
   def file_contents
