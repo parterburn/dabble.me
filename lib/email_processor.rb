@@ -50,7 +50,9 @@ class EmailProcessor
       existing_entry.body = existing_entry.sanitized_body if @user.is_free?
       existing_entry.original_email_body = @raw_body
       existing_entry.inspiration_id = inspiration_id if inspiration_id.present?
-      @existing_entry.remote_image_url = img_url if img_url.present?
+      if img_url.present?
+        @existing_entry.remote_image_url = img_url
+      end
       begin
         existing_entry.save
       rescue
@@ -78,7 +80,9 @@ class EmailProcessor
           inspiration_id: inspiration_id
         )
       end
-      entry.remote_image_url = img_url if img_url.present?
+      if img_url.present?
+        entry.remote_image_url = img_url
+      end
       entry.body = entry.sanitized_body if @user.is_free?
       entry.save
       FileUtils.rm_r dir, force: true # remove temp folder after uploaded
