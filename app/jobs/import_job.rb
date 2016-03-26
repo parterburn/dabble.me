@@ -26,7 +26,7 @@ class ImportJob < ActiveJob::Base
         if existing_entry.present?
           img_url = CGI.escape "https://#{ENV['MAIN_DOMAIN']}/#{file_path.gsub("public/","")}/#{file}"
           begin
-            existing_entry.remote_image_url = img_url if existing_entry.image.present? && img_url.present?
+            existing_entry.remote_image_url = img_url if existing_entry.image.blank? && img_url.present?
             if existing_entry.save
               count+=1
             else
