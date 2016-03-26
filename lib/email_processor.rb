@@ -18,18 +18,13 @@ class EmailProcessor
 
   def process
     return false unless @user.present?
-    img_url = ""
-    dir = ""
+    best_attachment = nil
     if @user.is_pro? && @attachments.present?
       @attachments.each do |attachment|
         # Make sure attachments are at least 10Kb so we're not saving a bunch of signuture/footer images
         file_size = File.size?(attachment.tempfile).to_i
         if attachment.content_type =~ /^image\/(png|jpe?g|gif)$/i && (file_size <= 0 || file_size > 10000)
-          dir = FileUtils.mkdir_p("public/email_attachments/#{@user.user_key}")
-          file = File.join(dir, attachment.original_filename)
-          FileUtils.mv attachment.tempfile.path, file
-          FileUtils.chmod 0644, file
-          img_url = CGI.escape "https://#{ENV['MAIN_DOMAIN']}/#{file.gsub('public/','')}"
+          best_attachment = attachment
           break
         end
       end
@@ -51,6 +46,9 @@ class EmailProcessor
       existing_entry.body = existing_entry.sanitized_body if @user.is_free?
       existing_entry.original_email_body = @raw_body
       existing_entry.inspiration_id = inspiration_id if inspiration_id.present?
+      if existing_entry.image_url_cdn.blank? && best_attachment.present?
+        existing_entry.image = best_attachment
+      end
       begin
         existing_entry.save
       rescue
@@ -58,17 +56,13 @@ class EmailProcessor
         existing_entry.original_email_body = existing_entry.original_email_body.force_encoding('iso-8859-1').encode('utf-8')
         existing_entry.save
       end
-      if existing_entry.image_url_cdn.blank? && img_url.present?
-        existing_entry.remote_image_url = img_url
-        existing_entry.save
-      end      
       track_ga_event('Merged')
     else
-
       begin
         entry = @user.entries.create!(
           date: date,
           body: @body,
+          image: best_attachment,
           original_email_body: @raw_body,
           inspiration_id: inspiration_id
         )
@@ -78,19 +72,13 @@ class EmailProcessor
         entry = @user.entries.create!(
           date: date,
           body: @body,
+          image: best_attachment,
           original_email_body: @raw_body,
           inspiration_id: inspiration_id
         )
       end
       entry.body = entry.sanitized_body if @user.is_free?
       entry.save
-      if img_url.present?
-        entry.remote_image_url = img_url
-        entry.save
-      end
-      if dir.present?
-        FileUtils.rm_r dir, force: true # remove temp folder after uploaded
-      end
       track_ga_event('New')
     end
 
