@@ -19,6 +19,7 @@ class EmailProcessor
   def process
     return false unless @user.present?
     img_url = ""
+    dir = ""
     if @user.is_pro? && @attachments.present?
       @attachments.each do |attachment|
         # Make sure attachments are at least 10Kb so we're not saving a bunch of signuture/footer images
@@ -81,7 +82,9 @@ class EmailProcessor
       entry.remote_image_url = img_url if img_url.present?
       entry.body = entry.sanitized_body if @user.is_free?
       entry.save
-      FileUtils.rm_r dir, force: true # remove temp folder after uploaded
+      if dir.present?
+        FileUtils.rm_r dir, force: true # remove temp folder after uploaded
+      end
       track_ga_event('New')
     end
 
