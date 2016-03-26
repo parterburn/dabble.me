@@ -36,6 +36,12 @@ gem 'words_counted'
 
 gem 'kaminari' # Pagination
 
+ # Image Uploads
+gem 'fog'
+gem 'carrierwave'
+gem 'mini_magick'
+gem 'file_validators'
+
 # Miscellanea
 gem 'google-analytics-rails'
 gem 'gabba', '~> 1.0.1' # server side tracking for Google Analytics
@@ -55,7 +61,7 @@ gem 'le' # logentries
 gem 'newrelic_rpm'
 
 group :development, :test do
-  gem 'byebug'
+  gem 'byebug', '~> 8.2', '>= 8.2.2'
   gem 'delorean'
   gem 'factory_girl_rails'
   gem 'faker', '~> 1.6', '>= 1.6.1'
@@ -70,9 +76,6 @@ group :development do
   gem 'spring'
   gem 'spring-commands-rspec'
   gem 'web-console'
-  gem 'pry-rails'
-  gem 'pry-nav'
-  gem 'pry-remote'
 end
 
 group :test do

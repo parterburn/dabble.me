@@ -9,7 +9,7 @@ This app utilizes the following 3rd party services:
 
 * [CloudFlare](http://cloudflare.com) manages DNS + free SSL support (free for basic service)
 * [Mailgun](http://www.mailgun.com/rackspace) for Sending & Receiving Email (free for 50k emails per month)
-* [Filepicker](http://filepicker.io) for Photo Uploads & Storage (free for 500 uploads per month)
+* [Amazon S3](http://aws.amazon.com) for Photo Uploads & Storage (free for 1 year)
 * [MailChimp](http://mailchimp.com) for sending updates to all users (free for 2000 subscribers)
 * [Google Analytics](http://google.com/analytics) for traffic stats (free for standard analytics)
 
@@ -33,12 +33,7 @@ MAILGUN_USERNAME: your_mailgun_username
 MAILGUN_PASSWORD: your_mailgun_password
 MAILCHIMP_API_KEY: f....3333-ek3
 MAILCHIMP_LIST_ID: 9982...112
-FILEPICKER_API_KEY: A....z
-FILEPICKER_CDN_HOST: https://123abc.cloudfront.net
 ADMIN_EMAILS: admin@dabble.ex,user2@domain.com
-DOWNLOADER_ID: 1234..1234
-DOWNLOADER_SECRET: 1234..1234
-DOWNLOADER_URL: us.downloader.io
 ```
 
 Your environment variables on Heroku will need to be something like this:
@@ -52,8 +47,6 @@ DEVISE_SECRET_KEY=1234..1234
 MAILGUN_USERNAME=username
 MAILGUN_PASSWORD=password
 GOOGLE_ANALYTICS_ID=UA-12345-67
-FILEPICKER_API_KEY=A....z
-FILEPICKER_CDN_HOST=https://123abc.cloudfront.net
 ADMIN_EMAILS=user1@domain.com,user2@domain.com
 
 MAILCHIMP_API_KEY=f....3333-ek3
@@ -61,8 +54,6 @@ MAILCHIMP_LIST_ID=9982...112
 ```
 
 ###Things you may want to rip out
-
-Filepicker has an option to use Cloudfront to serve up the photos you upload. This will make loading your images a bit faster, so I recommend it if you already have AWS setup. However, you can skip this if you don't want to mess with all that by simply setting ```FILEPICKER_CDN_HOST=https://www.filepicker.io```.
 
 If you want to bypass using Mailchimp to collect email addresses, simply don't put a value in for MAILCHIMP_API_KEY. I use Mailchimp to email out new features to the users at Dabble.me, so if you're the only one using your app it doesn't make sense to have Mailchimp.
 

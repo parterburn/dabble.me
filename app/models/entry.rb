@@ -1,36 +1,38 @@
 class Entry < ActiveRecord::Base
   include ActionView::Helpers::DateHelper
   include ActionView::Helpers::NumberHelper
+  include ActiveModel::Validations
+  mount_uploader :image, ImageUploader
 
   belongs_to :user
   belongs_to :inspiration
-
   before_validation :ensure_protocol
 
   validates :date, presence: true, valid_date: true
-  validates :image_url, valid_url: true
   validates :entry, presence: true
+  validates :filepicker_url, valid_url: true
+  validates :image, file_size: { less_than: 10.megabytes }
 
   alias_attribute :entry, :body
-  
+
   default_scope { order('date DESC') }
 
-  scope :only_images, -> { where("(image_url IS NOT null AND image_url != '') OR body LIKE '%#{ENV['FILEPICKER_CDN_HOST']}/api/file/%'").order('date DESC') }
+  scope :only_images, -> { where("(filepicker_url IS NOT null AND filepicker_url != '') OR (image IS NOT null AND image != '')").order('date DESC') }
   scope :only_ohlife, -> { includes(:inspiration).where("inspirations.category = 'OhLife'").references(:inspiration).order('date DESC') }
   scope :only_email, -> { where("original_email_body IS NOT null").order('date DESC') }
 
   def date_format_long
-    #Friday, Feb 3, 2014
+    # Friday, Feb 3, 2014
     self.date.present? ? self.date.strftime("%A, %b %-d, %Y") : ""
   end
 
   def date_format_short(comma=",")
-    #February 3, 2014
+    # February 3, 2014
     self.date.present? ? self.date.strftime("%B %-d#{comma} %Y") : "July 3, 1985"
   end
 
   def date_day
-    #Saturday
+    # Saturday
     self.date.present? ? self.date.strftime("%A") : "Noday?"
   end
 
@@ -62,7 +64,11 @@ class Entry < ActiveRecord::Base
   end
 
   def image_url_cdn
-    image_url.gsub("https://www.filepicker.io", ENV['FILEPICKER_CDN_HOST'])
+    if image.present?
+      image.url
+    else
+      filepicker_url
+    end
   end
 
   def exactly_past_years(user)
@@ -76,9 +82,11 @@ class Entry < ActiveRecord::Base
 
   private
 
-    def ensure_protocol # For urls
-      self.image_url = self.image_url.strip.gsub(' ', "%20") unless image_url.blank?
-      self.image_url = "http://#{image_url}" unless (/\Ahttp/ === image_url || image_url.blank?)
+  def ensure_protocol # For urls
+    if self.filepicker_url.present?
+      self.filepicker_url = self.filepicker_url.strip.gsub(' ', "%20") unless filepicker_url.blank?
+      self.filepicker_url = "http://#{filepicker_url}" unless (/\Ahttp/ === filepicker_url || filepicker_url.blank?)
     end
+  end
 
 end

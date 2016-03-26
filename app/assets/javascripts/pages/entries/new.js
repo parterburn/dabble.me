@@ -1,10 +1,9 @@
 (function(){
   window.DABBLE.pages.Entries_new = window.DABBLE.pages.Entries_create = function(){
 
-    $(".j-filepicker-remove").click(function( event ) {
-      event.preventDefault();
-      $("#entry_image_url").val("");
-      $(".j-filepicker-preview").slideUp();
+    $(".j-image-remove").click(function( event ) {
+      $("#entry_filepicker_url").val("");
+      $(".j-image-preview").slideUp();
     });
 
     $('form').submit(function(){
@@ -16,7 +15,3 @@
   };
 
 }());
-
-function onPhotoUpload(event) {
-  $(".j-filepicker-preview").slideUp();
-}

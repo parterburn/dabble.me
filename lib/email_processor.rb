@@ -18,7 +18,6 @@ class EmailProcessor
 
   def process
     return false unless @user.present?
-    filepicker_url = ''
 
     if @user.is_pro? && @attachments.present?
       @attachments.each do |attachment|
@@ -30,12 +29,6 @@ class EmailProcessor
           FileUtils.mv attachment.tempfile.path, file
           FileUtils.chmod 0644, file
           img_url = CGI.escape "https://#{ENV['MAIN_DOMAIN']}/#{file.gsub('public/','')}"
-          begin
-            response = MultiJson.load RestClient.post("https://www.filepicker.io/api/store/S3?key=#{ENV['FILEPICKER_API_KEY']}&url=#{img_url}", nil), :symbolize_keys => true
-            filepicker_url = response[:url]
-          rescue
-          end
-          FileUtils.rm_r dir, force: true
           break
         end
       end
@@ -57,12 +50,7 @@ class EmailProcessor
       existing_entry.body = existing_entry.sanitized_body if @user.is_free?
       existing_entry.original_email_body = @raw_body
       existing_entry.inspiration_id = inspiration_id if inspiration_id.present?
-      if existing_entry.image_url.present?
-        img_url_cdn = filepicker_url.gsub("https://www.filepicker.io", ENV['FILEPICKER_CDN_HOST'])
-        existing_entry.body += "<br><div class='pictureFrame'><a href='#{img_url_cdn}' target='_blank'><img src='#{img_url_cdn}/convert?fit=max&w=300&h=300&cache=true&rotate=:exif' alt='#{existing_entry.date.strftime("%b %-d")}'></a></div>"
-      elsif filepicker_url.present?
-        existing_entry.image_url = filepicker_url
-      end
+      @existing_entry.remote_image_url = img_url if img_url.present?
       begin
         existing_entry.save
       rescue
@@ -77,7 +65,6 @@ class EmailProcessor
         entry = @user.entries.create!(
           date: date,
           body: @body,
-          image_url: filepicker_url,
           original_email_body: @raw_body,
           inspiration_id: inspiration_id
         )
@@ -87,14 +74,14 @@ class EmailProcessor
         entry = @user.entries.create!(
           date: date,
           body: @body,
-          image_url: filepicker_url,
           original_email_body: @raw_body,
           inspiration_id: inspiration_id
         )
       end
-
+      entry.remote_image_url = img_url if img_url.present?
       entry.body = entry.sanitized_body if @user.is_free?
       entry.save
+      FileUtils.rm_r dir, force: true # remove temp folder after uploaded
       track_ga_event('New')
     end
 

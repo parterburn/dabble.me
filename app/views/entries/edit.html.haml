@@ -48,14 +48,26 @@
           %br
 
         %div
-          = f.label :image_url, "Photo"
-          = f.filepicker_field :image_url, multiple: false, dragdrop: true, services: 'COMPUTER,DROPBOX,BOX,GOOGLE_DRIVE,FACEBOOK,FLICKR,PICASA,INSTAGRAM,CONVERT,URL', mimetypes: "image/*", maxsize: "20000000", button_class: "btn btn-info btn-sm", drag_text: "Or drop image here", drag_class: "s-filepicker-drag hidden-xs", onchange: "onPhotoUpload(event)"
-          - if @entry.image_url.present?
-            %button.btn.btn-danger.btn-sm.s-filepicker-remove.j-filepicker-remove Remove Photo
+
+          - if @entry.filepicker_url.present?
+            = f.hidden_field :filepicker_url
+            %button.btn.btn-danger.btn-sm.j-image-remove Remove Photo
             %br
-            .pictureFrame.j-filepicker-preview
+            .pictureFrame.j-image-preview
               =link_to @entry.image_url_cdn, target: "_blank" do
                 =image_code(@entry,200)
+
+          - elsif @entry.image.present?
+            %label
+              = f.check_box :remove_image, class: 'j-image-remove'
+              Remove Photo
+            %br
+            .pictureFrame.j-image-preview
+              =link_to @entry.image_url_cdn, target: "_blank" do
+                =image_code(@entry, 200)
+          - else
+            = f.label :image, "Photo"
+            = f.file_field :image
           %br
 
         %div

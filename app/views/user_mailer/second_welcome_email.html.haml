@@ -7,9 +7,9 @@
     %b Here's what you wrote...
   %p
     = simple_format(@first_entry.body)
-  - if @first_entry_filepicker_url.present?
+  - if @first_entry_image_url.present?
     %p
-      =link_to image_tag(@first_entry_filepicker_url), @first_entry.image_url_cdn
+      =link_to image_tag(@first_entry_image_url), @first_entry.image_url_cdn
 
 %p
   You can check out your entry here:

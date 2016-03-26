@@ -1,6 +1,5 @@
 class UserMailer < ActionMailer::Base
   helper.extend(ApplicationHelper)
-  include FilepickerRails::ApplicationHelper
 
   default from: "Dabble Me Support <hello@#{ENV['MAIN_DOMAIN']}>"
 
@@ -15,7 +14,9 @@ class UserMailer < ActionMailer::Base
     @user = user
     @user.increment!(:emails_sent)
     @first_entry = user.entries.first
-    @first_entry_filepicker_url = filepicker_image_url(@first_entry.image_url, w: 300, h: 300, fit: 'max', cache: true, rotate: :exif) if @first_entry.present? && @first_entry.image_url.present?
+    if @first_entry.present?
+      @first_entry_image_url = @first_entry.image.url || @first_entry.filepicker_url
+    end    
     headers['X-Mailgun-Tag'] = 'Welcome'
     mail(from: "Dabble Me <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.email, subject: 'Congrats on writing your first entry!')
   end

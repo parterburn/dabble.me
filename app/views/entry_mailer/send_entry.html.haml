@@ -12,9 +12,9 @@
           Remember this? On #{format_date} (#{@random_entry.time_ago_in_words_or_numbers(@user)} ago) you wrote...
       %p
         = simple_format(@random_entry.hashtag_body)
-      - if @random_entry_filepicker_url.present?
+      - if @random_entry_image_url.present?
         %p
-          =link_to image_tag(@random_entry_filepicker_url), @random_entry.image_url_cdn
+          =link_to image_tag(@random_entry_image_url), @random_entry.image_url_cdn
     - elsif @user.send_past_entry?
       %p
         %b Keep writing...once you have a few entries you'll see a blast from the past show up here!

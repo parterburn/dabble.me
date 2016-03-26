@@ -26,23 +26,16 @@ class ImportJob < ActiveJob::Base
         if existing_entry.present?
           img_url = CGI.escape "https://#{ENV['MAIN_DOMAIN']}/#{file_path.gsub("public/","")}/#{file}"
           begin
-            response = MultiJson.load RestClient.post("https://www.filepicker.io/api/store/S3?key=#{ENV['FILEPICKER_API_KEY']}&url=#{img_url}", nil), :symbolize_keys => true
-            if response[:url].present?
-              if existing_entry.image_url.present?
-                img_url_cdn = response[:url].gsub("https://www.filepicker.io", ENV['FILEPICKER_CDN_HOST'])
-                existing_entry.body += "<hr><div class='pictureFrame'><a href='#{img_url_cdn}' target='_blank'><img src='#{img_url_cdn}/convert?fit=max&w=300&h=300&cache=true&rotate=:exif' alt='#{existing_entry.date.strftime("%b %-d")}'></a></div>"
-              else
-                existing_entry.image_url = response[:url]
-              end
-              existing_entry.save
+            existing_entry.remote_image_url = img_url if existing_entry.image.present?
+            if existing_entry.save
               count+=1
             else
-              # bad response from filepicker
+              # bad response from s3
               error_count+=1
               errors << file
             end
           rescue
-            # could not upload to filepicker
+            # could not upload to s3
             error_count+=1
             errors << file
           end

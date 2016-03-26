@@ -18,7 +18,7 @@
       %span
         = entry.date_day
 .s-scrollable
-  - if entry.image_url.present?
+  - if entry.image_url_cdn.present?
     .pictureFrame
       =link_to entry.image_url_cdn, :target=>"_blank" do
         =image_code(entry,600)

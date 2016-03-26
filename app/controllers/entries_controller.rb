@@ -71,12 +71,7 @@ class EntriesController < ApplicationController
     if @existing_entry.present? && params[:entry][:entry].present?
       @existing_entry.body += "<hr>#{params[:entry][:entry]}"
       @existing_entry.inspiration_id = params[:entry][:inspiration_id] if params[:entry][:inspiration_id].present?
-      if params[:entry][:image_url].present? && @existing_entry.image_url.present?
-        img_url_cdn = params[:entry][:image_url].gsub('https://www.filepicker.io', ENV['FILEPICKER_CDN_HOST'])
-        @existing_entry.body += "<br><div class='pictureFrame'><a href='#{img_url_cdn}' target='_blank'><img src='#{img_url_cdn}/convert?fit=max&w=300&h=300&cache=true&rotate=:exif' alt='#{@existing_entry.date.strftime('%b %-d')}'></a></div>"
-      elsif params[:entry][:image_url].present?
-        @existing_entry.image_url = params[:entry][:image_url]
-      end
+      @existing_entry.image = params[:entry][:image] if params[:entry][:image].present?
       if @existing_entry.save
         flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime("%B %-d")}. <a href='#entry-#{@existing_entry.id}' data-id='#{@existing_entry.id}' class='alert-link j-entry-link'>View merged entry</a>.".html_safe
         track_ga_event('Merged')
@@ -114,12 +109,7 @@ class EntriesController < ApplicationController
       # existing entry exists, so add to it
       @existing_entry.body += "<hr>#{params[:entry][:entry]}"
       @existing_entry.inspiration_id = params[:entry][:inspiration_id] if params[:entry][:inspiration_id].present?
-      if params[:entry][:image_url].present? && @existing_entry.image_url.present?
-        img_url_cdn = params[:entry][:image_url].gsub('https://www.filepicker.io', ENV['FILEPICKER_CDN_HOST'])
-        @existing_entry.body += "<br><div class='pictureFrame'><a href='#{img_url_cdn}' target='_blank'><img src='#{img_url_cdn}/convert?fit=max&w=300&h=300&cache=true&rotate=:exif' alt='#{@existing_entry.date.strftime('%b %-d')}'></a></div>"        
-      elsif params[:entry][:image_url].present?
-        @existing_entry.image_url = params[:entry][:image_url]
-      end
+      @existing_entry.image = params[:entry][:image] if params[:entry][:image].present?
       if @existing_entry.save
         @entry.delete
         flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime('%B %-d')}. <a href='#entry-#{@existing_entry.id}' data-id='#{@existing_entry.id}' class='alert-link j-entry-link'>View merged entry</a>.".html_safe
@@ -157,16 +147,12 @@ class EntriesController < ApplicationController
     @entries = current_user.entries.sort_by(&:date)
     track_ga_event('Export')
     respond_to do |format|
-      format.json { send_data JSON.pretty_generate(JSON.parse(@entries.to_json(only: [:date, :body, :image_url]))), filename: "export_#{Time.now.strftime('%Y-%m-%d')}.json" }
+      format.json { send_data JSON.pretty_generate(JSON.parse(@entries.to_json(only: [:date, :body, :image_url_cdn]))), filename: "export_#{Time.now.strftime('%Y-%m-%d')}.json" }
       format.txt do
         response.headers['Content-Type'] = 'text/txt'
         response.headers['Content-Disposition'] = "attachment; filename=export_#{Time.now.strftime('%Y-%m-%d')}.txt"
         render 'text_export'
       end
-      # format.zip do
-      #   download_manifest = photo_files
-      #   zip_up(download_manifest)
-      # end
     end
   end
 
@@ -199,7 +185,7 @@ class EntriesController < ApplicationController
   end
 
   def entry_params
-    params.require(:entry).permit(:date, :entry, :image_url, :inspiration_id)
+    params.require(:entry).permit(:date, :entry, :image, :filepicker_url, :inspiration_id, :remove_image)
   end
 
   def require_entry_permission
@@ -213,47 +199,6 @@ class EntriesController < ApplicationController
     count = Inspiration.without_ohlife_or_email.count
     return nil if count == 0
     Inspiration.without_ohlife_or_email.offset(rand(count)).first
-  end
-
-  def photo_files
-    photo_entries = current_user.entries.only_images
-    files_to_zip = []
-
-    photo_entries.each do |entry|
-      if entry.image_url.present?
-        ext = fetch_extension(entry.image_url.scan(/\/api\/file\/([A-Za-z0-9]*)/).first.first)
-        files_to_zip << { path: "Dabble Me Photos/img_#{entry.date.strftime('%Y-%m-%d')}-0.#{ext}", url: "#{URI.encode(entry.image_url)}" }
-      end
-      entry.body.scan(/"https\:\/\/d3bcnng5dpbnbb.cloudfront.net\/api\/file\/[A-Za-z0-9]*"/).each_with_index do |img_url, index|
-        img_url.gsub!('"', '')
-        ext = fetch_extension(img_url.scan(/\/api\/file\/([A-Za-z0-9]*)/).first.first)
-        files_to_zip << { path: "Dabble Me Photos/img_#{entry.date.strftime('%Y-%m-%d')}-#{index + 1}.#{ext}", url: "#{URI.encode(img_url)}" }
-      end
-    end
-    { name: "export_#{Time.now.strftime('%Y-%m-%d')}", files: files_to_zip.compact }
-  end
-
-  def zip_up(download_manifest)
-    response =  HTTParty.post "http://#{ENV['DOWNLOADER_URL']}/downloads",
-                              headers: { 'Content-Type' => 'application/json' },
-                              basic_auth: {
-                                username: ENV['DOWNLOADER_ID'],
-                                password: ENV['DOWNLOADER_SECRET']
-                              },
-                              body: download_manifest.to_json
-    redirect_to response['url']
-    rescue
-      flash[:alert] = 'Could not download ZIP file.'
-      redirect_to edit_user_registration_path
-  end
-
-  def fetch_extension(filepicker_id)
-    response = Net::HTTP.start(ENV['FILEPICKER_CDN_HOST'].gsub('https://', '')) do |http|
-      http.open_timeout = 2
-      http.read_timeout = 2
-      http.head("/api/file/#{filepicker_id}")
-    end
-    response['content-type'].gsub('image/', '')
   end
 
   def calendar_json(entries)
