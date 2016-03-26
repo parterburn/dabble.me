@@ -18,7 +18,7 @@ class EmailProcessor
 
   def process
     return false unless @user.present?
-
+    img_url = ""
     if @user.is_pro? && @attachments.present?
       @attachments.each do |attachment|
         # Make sure attachments are at least 10Kb so we're not saving a bunch of signuture/footer images
@@ -50,9 +50,7 @@ class EmailProcessor
       existing_entry.body = existing_entry.sanitized_body if @user.is_free?
       existing_entry.original_email_body = @raw_body
       existing_entry.inspiration_id = inspiration_id if inspiration_id.present?
-      if img_url.present?
-        @existing_entry.remote_image_url = img_url
-      end
+      existing_entry.remote_image_url = img_url if img_url.present?
       begin
         existing_entry.save
       rescue
@@ -80,9 +78,7 @@ class EmailProcessor
           inspiration_id: inspiration_id
         )
       end
-      if img_url.present?
-        entry.remote_image_url = img_url
-      end
+      entry.remote_image_url = img_url if img_url.present?
       entry.body = entry.sanitized_body if @user.is_free?
       entry.save
       FileUtils.rm_r dir, force: true # remove temp folder after uploaded
