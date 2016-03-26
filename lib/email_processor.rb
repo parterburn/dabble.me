@@ -51,7 +51,6 @@ class EmailProcessor
       existing_entry.body = existing_entry.sanitized_body if @user.is_free?
       existing_entry.original_email_body = @raw_body
       existing_entry.inspiration_id = inspiration_id if inspiration_id.present?
-      existing_entry.remote_image_url = img_url if img_url.present?
       begin
         existing_entry.save
       rescue
@@ -59,6 +58,10 @@ class EmailProcessor
         existing_entry.original_email_body = existing_entry.original_email_body.force_encoding('iso-8859-1').encode('utf-8')
         existing_entry.save
       end
+      if existing_entry.image_url_cdn.blank? && img_url.present?
+        existing_entry.remote_image_url = img_url
+        existing_entry.save
+      end      
       track_ga_event('Merged')
     else
 
@@ -79,9 +82,12 @@ class EmailProcessor
           inspiration_id: inspiration_id
         )
       end
-      entry.remote_image_url = img_url if img_url.present?
       entry.body = entry.sanitized_body if @user.is_free?
       entry.save
+      if img_url.present?
+        entry.remote_image_url = img_url
+        entry.save
+      end
       if dir.present?
         FileUtils.rm_r dir, force: true # remove temp folder after uploaded
       end
