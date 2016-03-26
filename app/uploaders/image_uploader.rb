@@ -8,26 +8,12 @@ class ImageUploader < CarrierWave::Uploader::Base
     %w(jpg jpeg gif png)
   end
 
-  def filename
-    "#{hash}.#{file.extension}" if original_filename.present?
-  end
-
   def store_dir
     add_dev = "/development" unless Rails.env.production?
-    "uploads#{add_dev}/#{model.user.user_key}"
-  end  
+    "uploads#{add_dev}/#{model.user.user_key}/#{model.date.strftime("%Y-%m-%d")}"
+  end
 
   def fog_public
     true
-  end
-
-  private
-
-  def hash
-    Digest::SHA1.hexdigest file_contents.to_s
-  end
-
-  def file_contents
-    read
   end
 end
