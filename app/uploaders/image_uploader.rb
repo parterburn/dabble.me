@@ -13,7 +13,8 @@ class ImageUploader < CarrierWave::Uploader::Base
   end
 
   def store_dir
-    "uploads/#{model.user.user_key}"
+    add_dev = "/development" unless Rails.env.production?
+    "uploads#{add_dev}/#{model.user.user_key}"
   end  
 
   def fog_public
