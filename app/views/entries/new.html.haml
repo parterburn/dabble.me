@@ -54,18 +54,17 @@
           -if current_user.is_pro?
             %div
 
-              - if @entry.filepicker_url.present?
-                = f.hidden_field :filepicker_url
-                %button.btn.btn-danger.btn-sm.j-image-remove Remove Photo
+              - if @entry.image.present?
+                %label
+                  = f.check_box :remove_image, class: 'j-image-remove'
+                  Remove Photo
                 %br
                 .pictureFrame.j-image-preview
                   =link_to @entry.image_url_cdn, target: "_blank" do
                     =image_code(@entry,200)
-
-              - elsif @entry.image.present?
-                %label
-                  = f.check_box :remove_image, class: 'j-image-remove'
-                  Remove Photo
+              - elsif @entry.filepicker_url.present?
+                = f.hidden_field :filepicker_url
+                %button.btn.btn-danger.btn-sm.j-image-remove Remove Photo
                 %br
                 .pictureFrame.j-image-preview
                   =link_to @entry.image_url_cdn, target: "_blank" do
