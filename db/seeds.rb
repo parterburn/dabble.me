@@ -15,11 +15,9 @@ paid_user.save
 end
 
 (1..30).each do |i|
-  filepicker_url = i % 3 == 0 ? Faker::Placeholdit.image : nil
   paid_user.entries.create!(
     date: Faker::Date.backward(1095),
     body: ActionController::Base.helpers.simple_format(Faker::Hipster.paragraphs(3).join("\n\n")),
-    filepicker_url: filepicker_url,
     inspiration_id: 1
   )
 end
@@ -33,7 +31,6 @@ free_user.save
   free_user.entries.create!(
     date: Faker::Date.backward(1095),
     body: ActionController::Base.helpers.simple_format(Faker::Hipster.paragraphs(3).join("\n\n")),
-    filepicker_url: nil,
     inspiration_id: 1
   )
 end
@@ -44,11 +41,9 @@ admin_user = User.new(email: 'admin@dabble.ex', first_name: Faker::Name.first_na
 admin_user.save
 
 (1..100).each do |i|
-  filepicker_url = i % 3 == 0 ? Faker::Placeholdit.image : nil
   admin_user.entries.create!(
     date: Faker::Date.backward(1095),
     body: ActionController::Base.helpers.simple_format(Faker::Hipster.paragraphs(3).join("\n\n")),
-    filepicker_url: filepicker_url,
     inspiration_id: 1
   )
 end

@@ -189,7 +189,7 @@ class EntriesController < ApplicationController
   end
 
   def entry_params
-    params.require(:entry).permit(:date, :entry, :image, :filepicker_url, :inspiration_id, :remove_image)
+    params.require(:entry).permit(:date, :entry, :image, :inspiration_id, :remove_image)
   end
 
   def require_entry_permission

@@ -1,7 +1,6 @@
 FactoryGirl.define do
   factory :entry, class: Entry do
     date Time.now
-    filepicker_url 'https://dabble.me/favicon-32x32.png'
   end
 
   factory :email, class: OpenStruct do

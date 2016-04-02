@@ -56,14 +56,7 @@
             %br
             .pictureFrame.j-image-preview
               =link_to @entry.image_url_cdn, target: "_blank" do
-                =image_code(@entry, 200)
-          - elsif @entry.filepicker_url.present?
-            = f.hidden_field :filepicker_url
-            %button.btn.btn-danger.btn-sm.j-image-remove Remove Photo
-            %br
-            .pictureFrame.j-image-preview
-              =link_to @entry.image_url_cdn, target: "_blank" do
-                =image_code(@entry,200)
+                =image_code(@entry)
           - else
             = f.label :image, "Photo"
             = f.file_field :image

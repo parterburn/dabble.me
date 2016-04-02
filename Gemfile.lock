@@ -111,8 +111,6 @@ GEM
     file_validators (2.0.2)
       activemodel (>= 3.0)
       mime-types (>= 1.0)
-    filepicker-rails (2.1.0)
-      rails (>= 3.2)
     fission (0.5.0)
       CFPropertyList (~> 2.2)
     fog (1.37.0)
@@ -447,7 +445,6 @@ DEPENDENCIES
   factory_girl_rails
   faker (~> 1.6, >= 1.6.1)
   file_validators
-  filepicker-rails (~> 2.1.0)
   fog
   gabba (~> 1.0.1)
   gibbon

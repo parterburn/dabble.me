@@ -24,7 +24,6 @@ gem 'email_reply_parser'
 gem 'mailgun_webhooks', '~> 1.0'
 
 gem 'randomized_field', '~> 0.1.0' # builds user_keys
-gem 'filepicker-rails', '~> 2.1.0' # image uploads
 gem 'summernote-rails' # wysiwyg
 gem 'rest-client' # RESTClient
 gem 'rubyzip', '~> 1.1.6'

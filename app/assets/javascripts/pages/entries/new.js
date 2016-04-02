@@ -2,7 +2,6 @@
   window.DABBLE.pages.Entries_new = window.DABBLE.pages.Entries_create = function(){
 
     $(".j-image-remove").click(function( event ) {
-      $("#entry_filepicker_url").val("");
       $(".j-image-preview").slideUp();
     });
 

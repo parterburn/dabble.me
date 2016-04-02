@@ -6,18 +6,16 @@ class Entry < ActiveRecord::Base
 
   belongs_to :user
   belongs_to :inspiration
-  before_validation :ensure_protocol
 
   validates :date, presence: true, valid_date: true
   validates :entry, presence: true
-  validates :filepicker_url, valid_url: true
   validates :image, file_size: { less_than: 10.megabytes }
 
   alias_attribute :entry, :body
 
   default_scope { order('date DESC') }
 
-  scope :only_images, -> { where("(filepicker_url IS NOT null AND filepicker_url != '') OR (image IS NOT null AND image != '')").order('date DESC') }
+  scope :only_images, -> { where("image IS NOT null AND image != ''").order('date DESC') }
   scope :only_ohlife, -> { includes(:inspiration).where("inspirations.category = 'OhLife'").references(:inspiration).order('date DESC') }
   scope :only_email, -> { where("original_email_body IS NOT null").order('date DESC') }
 
@@ -66,8 +64,6 @@ class Entry < ActiveRecord::Base
   def image_url_cdn
     if image.present?
       image.url
-    else
-      filepicker_url
     end
   end
 
@@ -77,15 +73,6 @@ class Entry < ActiveRecord::Base
       now_with_timezone.month == self.date.month &&
         now_with_timezone.day == self.date.day &&
         now_with_timezone.year != self.date.year
-    end
-  end
-
-  private
-
-  def ensure_protocol # For urls
-    if self.filepicker_url.present?
-      self.filepicker_url = self.filepicker_url.strip.gsub(' ', "%20") unless filepicker_url.blank?
-      self.filepicker_url = "http://#{filepicker_url}" unless (/\Ahttp/ === filepicker_url || filepicker_url.blank?)
     end
   end
 
