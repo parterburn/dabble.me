@@ -143,6 +143,14 @@ class User < ActiveRecord::Base
     ENV['FREE_TRIAL'].present? && ENV['FREE_TRIAL'] == 'true'
   end
 
+  def days_since_last_post
+    if last_post = self.entries.where("date < ?", Time.now).first
+      ActionController::Base.helpers.number_with_delimiter((Time.now.to_date - last_post.date.to_date).to_i)
+    else
+      ''
+    end
+  end
+
   private
 
   def check_account_status
