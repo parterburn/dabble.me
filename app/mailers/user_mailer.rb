@@ -15,7 +15,7 @@ class UserMailer < ActionMailer::Base
     @user.increment!(:emails_sent)
     @first_entry = user.entries.first
     if @first_entry.present?
-      @first_entry_image_url = @first_entry.image.url
+      @first_entry_image_url = @first_entry.image_url_cdn
     end    
     headers['X-Mailgun-Tag'] = 'Welcome'
     mail(from: "Dabble Me <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.email, subject: 'Congrats on writing your first entry!')

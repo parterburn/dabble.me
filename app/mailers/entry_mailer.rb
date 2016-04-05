@@ -5,7 +5,7 @@ class EntryMailer < ActionMailer::Base
     @user = user
     @random_entry = user.random_entry(Time.now.in_time_zone(user.send_timezone).strftime('%Y-%m-%d'))
     if @random_entry.present?
-      @random_entry_image_url = @random_entry.image.url
+      @random_entry_image_url = @random_entry.image_url_cdn
     end
     @random_inspiration = random_inspiration
 
