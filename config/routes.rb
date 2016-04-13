@@ -37,5 +37,7 @@ Rails.application.routes.draw do
   get 'ohlife-alternative'     => 'welcome#ohlife_alternative'
   post 'email_processor'       => 'griddler/emails#create'
 
+  get 'bot/webhook'            => 'bot#webhook'
+
   get '/cast(/*path)', to: redirect('https://vidcast.dabble.me')
 end
