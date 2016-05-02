@@ -30,7 +30,10 @@
           .col-md-12.alert.alert-info{style: "text-align:center;"}
             Currently subscribed to: 
             %strong #{current_user.plan_details}
-            %span{style: "font-size:12px;display:block;margin-top:10px;"} Modify or cancel your subscription at #{current_user.plan_type}.
+            - if current_user.plan_type.present?
+              %span{style: "font-size:12px;display:block;margin-top:10px;"} Modify or cancel your subscription at #{current_user.plan_type}.
+            - else
+              %span{style: "font-size:12px;display:block;margin-top:10px;"} Your PRO account is being provided free of charge.
 
         - elsif params[:paypal] === 'true'
           %form{:action => "https://www.paypal.com/cgi-bin/webscr", :method => "post", :target => "_top"}
