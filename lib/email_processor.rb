@@ -112,7 +112,7 @@ class EmailProcessor
   end
 
   def parse_subject_for_date(subject)
-    # Find the date from the subject "It's Sept 2 - How was your day?" and figure out the best year
+    # Find the date from the subject "It's Sept 2. How was your day?" and figure out the best year
     now = Time.now.in_time_zone(@user.send_timezone)
     parsed_date = Time.parse(subject) rescue now
     dates = [parsed_date, parsed_date.prev_year]

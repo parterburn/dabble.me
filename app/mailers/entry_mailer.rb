@@ -12,7 +12,7 @@ class EntryMailer < ActionMailer::Base
     headers['X-Mailgun-Tag'] = 'Entry'
     mail from: "Dabble Me <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
          to: "#{user.full_name} <#{user.email}>",
-         subject: "It's #{Time.now.in_time_zone(user.send_timezone).strftime('%A, %b %-d')} - How did your day go?"
+         subject: "It's #{Time.now.in_time_zone(user.send_timezone).strftime('%A, %b %-d')}. How was your day? ✏"
 
     user.increment!(:emails_sent)
   end
