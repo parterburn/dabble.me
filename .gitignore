@@ -6,6 +6,7 @@
 !.slugignore
 !.travis.yml
 !.ruby-version
+!.magick
 *~
 
 
