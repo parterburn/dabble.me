@@ -18,11 +18,13 @@
  *= require_tree .
  */
 
+@import url(https://fonts.googleapis.com/css?family=Raleway:400,700,200);
+
 body { 
   background: #fcfbf9;
   padding-top: 70px; 
-  font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif; 
-  font-weight: 500;
+  font-family: "Raleway", sans-serif; 
+  font-weight: 400;
 }
 
 hr {
@@ -40,6 +42,11 @@ hr {
   }
 }
 
+@-ms-keyframes wiggle{0%{-ms-transform:rotate(6deg);}50%{-ms-transform:rotate(-6deg);}100%{-ms-transform:rotate(6deg);}}
+@-moz-keyframes wiggle{0%{-moz-transform:rotate(6deg);}50%{-moz-transform:rotate(-6deg);}100%{-moz-transform:rotate(6deg);}}
+@-webkit-keyframes wiggle{0%{-webkit-transform:rotate(6deg);}50%{-webkit-transform:rotate(-6deg);}100%{-webkit-transform:rotate(6deg);}}
+@keyframes wiggle{0%{transform:rotate(6deg);}50%{transform:rotate(-6deg);}100%{transform:rotate(6deg);}}
+
 .navbar-default {
   background-color: #649cc7;
   color:whiteSmoke;
@@ -49,7 +56,8 @@ hr {
     letter-spacing: 0.5px;
     &:hover {
       color:white;
-      text-shadow: 0px 0px 2px darken(#649cc7,40);
+      border-top: 2px solid white;
+      margin-bottom: -2px;
     }
   }
   .navbar-nav > .active >a {
@@ -66,23 +74,30 @@ hr {
     -webkit-font-smoothing:antialiased;
     letter-spacing: -1px;
     color:whiteSmoke;
-    font-size:20px;
+    font-size: 20px;
     text-shadow: 0px 0px 1px darken(#649cc7,20);
-    img {
-      width:130px;
-    } 
+    display: inline-block;
     &:hover {
       color:white;
-      text-shadow: 0px 0px 2px darken(#649cc7,40);
+      i {
+        -ms-animation:wiggle .3s 2;
+        -moz-animation:wiggle .3s 2;
+        -webkit-animation:wiggle .3s 2;
+        animation:wiggle .3s 2;
+      }
     }
-  }  
+    span {
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      font-size: 24px;
+    }
+  }
 }
 
 .well {
   background-color: white;
-  border-radius:10px;
-  border: 2px solid #f7f7f7;
-  box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.25);
+  border-radius: 4px;
+  border: 1px solid rgba(224, 224, 224, 0.6);
 }
 
 #error_explanation h2 {
@@ -256,11 +271,9 @@ label {
   overflow-x:auto;
   font-size: 18px;
   color: #333333;
-  font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;
   p {
-    font-size: 18px;
+    font-size: 17px;
     color: #333333;
-    font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;  
     @media screen and (max-width: 767px) {
       font-size:16px;
       font-weight:400;
@@ -275,7 +288,6 @@ label {
 .popover-title {
   background-color:whiteSmoke;
   padding:10px 14px 0px 14px;
-  font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
   color:#777;
   border:0px;
 }
@@ -303,7 +315,6 @@ label {
     margin-top:40px;
   }
   font-size:17px;
-  font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;  
   i {
     color:#CCC;
   }

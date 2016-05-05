@@ -87,7 +87,7 @@ RSpec.describe EntriesController, type: :controller do
       sign_in user
       get :new
       expect(response.status).to eq 200
-      expect(response.body).to have_content('New Entry')
+      expect(response.body).to have_content('NEW ENTRY')
     end
   end
 

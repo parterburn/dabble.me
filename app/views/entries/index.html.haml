@@ -5,7 +5,7 @@
   - if @entries.length > 0
     .col-md-8.col-md-offset-1
       %h3
-        #{@title.html_safe}
+        #{@title.html_safe.upcase}
         =link_to "javascript:void(0);", onclick: "$('.j-calendar').fadeToggle();", class: "s-toggle-calendar" do
           %i.fa.fa-calendar
     
@@ -13,7 +13,7 @@
       %h3{:class => "#{'active' if current_page?(group_entries_path('all'))}"}
         =link_to group_entries_path('all') do
           .s-date-left
-            All
+            ALL
           .s-date-right
             #{current_user.entries.length}
           .clearfix
@@ -22,7 +22,7 @@
         =link_to group_entries_path(year_str) do
           %h4.s-date-year{:class => "#{'active' if params[:group] == year_str}"}
             .s-date-left
-              = year_str
+              = year_str.upcase
             .s-date-right
               #{year_entries.length}
           .clearfix
@@ -34,7 +34,7 @@
             &nbsp;        
           =link_to group_entries_path(year_str, month_str.to_date.strftime('%m')), :class => "#{'active' if params[:group] == year_str && params[:subgroup] == month_str.to_date.strftime('%m')}" do
             .s-date-left
-              = month_str
+              = month_str.upcase
             .s-date-right
               #{date_entries.length}
             .clearfix

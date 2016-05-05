@@ -10,36 +10,37 @@
         - if current_user
           %i.fa.fa-pencil-square.fa-spinner
         - else
-          =image_tag("dabble_me_pencil_logo.png")
+          %span
+            DABBLE ME
 
     .collapse.navbar-collapse
       %ul.nav.navbar-nav
         - if user_signed_in?
           %li{:class=>"#{'active' if current_page?(past_entries_path)}"}
-            =link_to "View Entries", past_entries_path
+            =link_to "ENTRIES", past_entries_path
 
           %li{:class=>"#{'active' if current_page?(new_entry_path)}"}
-            =link_to "New Entry", new_entry_path
+            =link_to "WRITE", new_entry_path
 
           -if current_user.entries.count > 0
             %li{:class=>"#{'active' if current_page?(random_entry_path)}"}
-              =link_to "Random", random_entry_path
+              =link_to "RANDOM", random_entry_path
 
           %li
             = link_to entries_calendar_path, title: "Calendar View", data: { toggle: "tooltip", placement: "bottom" } do
               %i.fa.fa-calendar
-              %span.visible-xs-inline-block Calendar              
+              %span.visible-xs-inline-block CALENDAR              
 
           %li
             = link_to search_path, title: "Search", data: { toggle: "tooltip", placement: "bottom" } do
               %i.fa.fa-search
-              %span.visible-xs-inline-block Search
+              %span.visible-xs-inline-block SEARCH
 
           - if current_user.is_admin?
             %li.dropdown
               %a.dropdown-toggle{"data-toggle" => "dropdown", :href => "#"}
                 %i.fa.fa-lock
-                %span.visible-xs-inline-block Admin                
+                %span.visible-xs-inline-block ADMIN                
               %ul.dropdown-menu{:role => "menu"}
                 %li{:class=>"#{'active' if current_page?(inspirations_path)}"}
                   =link_to inspirations_path, title: "Inspirations" do
@@ -73,16 +74,16 @@
           %li{:class=>"#{'active' if current_page?(edit_user_registration_path)}", :rel=>"#{add_popover}", :title=>"", :"data-content"=>"#{current_settings}", :"data-placement"=>"bottom"}
             = link_to edit_user_registration_path do
               %i.fa.fa-gear
-              %span.hidden-sm Settings
+              %span.hidden-sm SETTINGS
           %li
             = link_to destroy_user_session_path, method: :delete do
               %i.fa.fa-sign-out
-              %span.hidden-sm Logout
+              %span.hidden-sm LOGOUT
 
         - else
           %li
-            = link_to "Sign Up", new_user_registration_path, :class => 'navbar-link'
+            = link_to "SIGN UP", new_user_registration_path, :class => 'navbar-link'
           %li
             = link_to new_user_session_path, :class => 'navbar-link' do
               %i.fa.fa-sign-in
-              Sign In
+              SIGN IN

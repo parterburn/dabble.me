@@ -1,11 +1,11 @@
 - title 'Edit account on Dabble Me'
 
 .row
-  .col-md-6.col-md-offset-3
-    %h3 User Settings
+  .col-md-8.col-md-offset-2
+    %h3 SETTINGS
     %br
 
-  .col-md-6.col-md-offset-3
+  .col-md-8.col-md-offset-2
     %p
       Post new entries by emailing
       =mail_to "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", encode: "hex"
@@ -35,7 +35,7 @@
       %br
     %br
 
-    #export.col-md-6.col-md-offset-3.alert.alert-info
+    #export.col-md-8.col-md-offset-2.alert.alert-info
       Export all entries as
       =link_to "TXT", export_entries_path(:txt)
       (plain text)

@@ -60,7 +60,6 @@ a.s-delete {
 
 .note-editable, .summernote {
   background:white;
-  font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
   font-size:17px;
   color:#333;
   p {
@@ -78,7 +77,6 @@ a.s-delete {
 }
 
 #entry_date{
-  font-family: georgia;
   font-size:15px;
   color: #a41100;
 }
@@ -87,7 +85,6 @@ a.s-delete {
   margin-top:10px;
   padding-bottom: 5px;
   > h2{
-    font-family: georgia;
     color: #a41100;
     font-size: 25px;
     border: none;
@@ -101,7 +98,6 @@ a.s-delete {
     margin-top: 10px;
     margin-bottom: 20px;
     font-size:20px;
-    font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
     padding: 0 10px;
     background: url(image_path("bg_h3.gif")) repeat-x 0 11px;
     color: #999;
@@ -231,6 +227,5 @@ mark {
   .s-review-details, .s-review-details p {
     font-size: 18px;
     color: #333333;
-    font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;    
   }
 }

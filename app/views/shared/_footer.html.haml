@@ -2,17 +2,17 @@
   .container
     %hr
     %p.muted.float-left
-      =link_to "Contact & FAQs", faqs_path, title: "Contact & FAQs"
+      =link_to "CONTACT & FAQS", faqs_path, title: "Contact & FAQs"
       &nbsp;&middot;&nbsp;
-      = link_to "Privacy", privacy_path, title: "Privacy Policy"      
+      = link_to "PRIVACY", privacy_path, title: "Privacy Policy"      
       -if current_user && current_user.is_free?
         &nbsp;&middot;&nbsp;
-        =link_to "Subscribe to PRO", subscribe_path, title: "Subscribe Now"
+        =link_to "SUBSCRIBE TO PRO", subscribe_path, title: "Subscribe Now"
 
     %p.muted.float-right
       &nbsp;&nbsp;
       = link_to 'http://twitter.com/parterburn', title: "Built by Paul Arterburn" do
-        Built in Denver, Colorado
+        BUILT IN COLORADO
 .j-back-to-top.s-back-to-top
   =link_to "#" do
     %span.fa-stack.fa-sm

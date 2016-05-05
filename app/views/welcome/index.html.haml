@@ -4,7 +4,6 @@
 
   - if @last_entry.present?
     .row
-
       - has_past_entries = false
       -if current_user.is_pro?
         .col-md-2.s-date-groups.j-date-groups.hidden-xs.hidden-sm.s-hide{style:"position:fixed; top:80px; right:60px;"}
@@ -17,7 +16,7 @@
               %h4
                 =link_to "#entry-#{back_year_entry.id}", "data-id": "#{back_year_entry.id}",  class: "j-entry-link" do
                   .s-date-left
-                    #{pluralize(year_back, "year")} ago
+                    #{pluralize(year_back, "year").upcase} AGO
                   .clearfix
           - if has_past_entries
             :javascript
@@ -79,6 +78,13 @@
     .clearfix
   %br
   .clearfix
+
+  .center
+    %h4
+      %p
+        Read about Dabble Me in...
+      %p
+        =link_to "INCREASE YOUR HAPPINESS WITH DAILY JOURNALING", "https://medium.com/startup-lesson-learned/increase-your-happiness-with-daily-journaling-8109b0700506", target: "_blank"
 
   .col-md-6.col-lg-4.col-lg-offset-2.s-features.top40
     %ul
