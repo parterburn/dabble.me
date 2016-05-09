@@ -156,6 +156,23 @@ RSpec.describe EntriesController, type: :controller do
     end
   end
 
+  describe 'latest' do
+    it 'should show the latest entry' do
+      get :latest
+      expect(response.status).to eq 200
+      expect(response.body).to have_content(entry.body)
+      expect(response.body).to_not have_content(not_my_entry.body)
+    end
+
+    it 'should show a CTA to logged in users without entries' do
+      sign_in user
+      expect { delete :destroy, id: entry.id }.to change { Entry.count }.by(-1)
+      get :latest
+      expect(response.status).to eq 200
+      expect(response.body).to have_content("Check your email - simply reply to that email and you'll see it here.")
+    end
+  end
+
   describe 'export' do
     it 'should redirect to sign in if not logged in' do
       get :export, format: 'txt'
