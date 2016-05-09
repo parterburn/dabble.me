@@ -108,6 +108,11 @@ class EntriesController < ApplicationController
   end
 
   def update
+    if current_user.is_free?
+      flash[:alert] = "<a href='#{subscribe_url}'' class='alert-link'>Subscribe to PRO</a> to edit entries.".html_safe
+      redirect_to root_path and return
+    end
+
     @entry = current_user.entries.where(id: params[:id]).first
     @existing_entry = current_user.existing_entry(params[:entry][:date].to_s)
 
@@ -143,6 +148,11 @@ class EntriesController < ApplicationController
   end
 
   def destroy
+    if current_user.is_free?
+      flash[:alert] = "<a href='#{subscribe_url}'' class='alert-link'>Subscribe to PRO</a> to edit entries.".html_safe
+      redirect_to root_path and return
+    end
+
     @entry = current_user.entries.where(id: params[:id]).first
     @entry = Entry.find(params[:id]) if current_user.is_admin?
     @entry.destroy

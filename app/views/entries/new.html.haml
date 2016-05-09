@@ -52,7 +52,7 @@
             - if @entry.image.present?
               %label
                 = f.check_box :remove_image, class: 'j-image-remove'
-                Remove Photo
+                &nbsp;Remove Photo
               %br
               .pictureFrame.j-image-preview
                 =link_to @entry.image_url_cdn, target: "_blank" do
