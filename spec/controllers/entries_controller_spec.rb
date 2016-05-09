@@ -21,7 +21,7 @@ RSpec.describe EntriesController, type: :controller do
       expect(response).to redirect_to(new_user_session_url)
     end
 
-    it 'should show entries to logged in users' do
+    it 'should show an entry to logged in users' do
       sign_in user
       get :show, id: entry.id
       expect(response.status).to eq 200

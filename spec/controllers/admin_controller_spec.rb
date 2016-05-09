@@ -9,28 +9,6 @@ RSpec.describe AdminController, type: :controller do
     superuser
   end
 
-  describe 'numbers' do
-    it 'should redirect to root url if not logged in' do
-      get :numbers
-      expect(response.status).to eq 302
-      expect(response).to redirect_to(new_user_session_url)
-    end
-
-    it 'should redirect to past entries if not superuser' do
-      sign_in user
-      get :numbers
-      expect(response.status).to eq 302
-      expect(response).to redirect_to(past_entries_path)
-    end
-
-    it 'should show Admin Metrics to superusers' do
-      sign_in superuser
-      get :numbers
-      expect(response.status).to eq 200
-      expect(response.body).to have_content('Admin Metrics')
-    end
-  end
-
   describe 'users' do
     it 'should redirect to root url if not logged in' do
       get :users
