@@ -5,7 +5,7 @@
   - if @entries.length > 0
     .col-md-8.col-md-offset-1
       %h3
-        #{@title.html_safe.upcase}
+        #{@title.html_safe}
         =link_to "javascript:void(0);", onclick: "$('.j-calendar').fadeToggle();", class: "s-toggle-calendar" do
           %i.fa.fa-calendar
     
@@ -43,7 +43,7 @@
         =link_to group_entries_path('photos') do
           %h4{:class => "#{'active' if current_page?(group_entries_path('photos'))}"}
             .s-date-left
-              Photos
+              PHOTOS
             .s-date-right
               #{only_images}
           .clearfix

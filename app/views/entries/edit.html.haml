@@ -15,7 +15,7 @@
       .float-right.s-edit-entry{:rel=>"tooltip", title: "Delete this Entry"}
         = link_to entry_path(@entry), class: "s-delete", method: :delete, data: { confirm: 'Are you sure you want to delete this entry? There is no undo.' } do
           %i.fa.fa-trash
-      %h2= @entry.date_format_short.upcase
+      %h2= @entry.date_format_short
       %h3
         %span
           = @entry.date_day.upcase

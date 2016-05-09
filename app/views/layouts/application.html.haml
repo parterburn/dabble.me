@@ -7,11 +7,8 @@
     %meta{ content: 'IE=edge', 'http-equiv' => 'X-UA-Compatible' }
     = csrf_meta_tags
     = yield :head
-
-    = render 'shared/favicons'
-
+    = render 'shared/favicons_and_metatags'
     = stylesheet_link_tag 'application', media: 'all'
-
     = javascript_include_tag 'application'
 
     :javascript

@@ -42,11 +42,6 @@ hr {
   }
 }
 
-@-ms-keyframes wiggle{0%{-ms-transform:rotate(6deg);}50%{-ms-transform:rotate(-6deg);}100%{-ms-transform:rotate(6deg);}}
-@-moz-keyframes wiggle{0%{-moz-transform:rotate(6deg);}50%{-moz-transform:rotate(-6deg);}100%{-moz-transform:rotate(6deg);}}
-@-webkit-keyframes wiggle{0%{-webkit-transform:rotate(6deg);}50%{-webkit-transform:rotate(-6deg);}100%{-webkit-transform:rotate(6deg);}}
-@keyframes wiggle{0%{transform:rotate(6deg);}50%{transform:rotate(-6deg);}100%{transform:rotate(6deg);}}
-
 .navbar-default {
   background-color: #649cc7;
   color:whiteSmoke;
@@ -79,12 +74,8 @@ hr {
     display: inline-block;
     &:hover {
       color:white;
-      i {
-        -ms-animation:wiggle .3s 2;
-        -moz-animation:wiggle .3s 2;
-        -webkit-animation:wiggle .3s 2;
-        animation:wiggle .3s 2;
-      }
+      border-top: 2px solid white;
+      margin-bottom: -2px;
     }
     span {
       font-weight: 700;
@@ -98,6 +89,16 @@ hr {
   background-color: white;
   border-radius: 4px;
   border: 1px solid rgba(224, 224, 224, 0.6);
+  >.blur {
+    -webkit-filter: blur(2px);
+    filter: blur(2px);
+    pointer-events: none;
+  }
+  >.really-blur {
+    -webkit-filter: blur(15px);
+    filter: blur(15px);
+    pointer-events: none;
+  }  
 }
 
 #error_explanation h2 {
@@ -269,14 +270,28 @@ label {
 
 .s-scrollable {
   overflow-x:auto;
-  font-size: 18px;
-  color: #333333;
+  font-size: 18.5px;
+  font-family: Georgia,Cambria,"Times New Roman",Times,serif;
+  letter-spacing: 0;
+  font-weight: 400;
+  font-style: normal;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -moz-font-feature-settings: "liga" on;
+  color: rgba(0,0,0,.8);
+  line-height: 1.4;
   p {
-    font-size: 17px;
-    color: #333333;
+    font-family: Georgia,Cambria,"Times New Roman",Times,serif;
+    letter-spacing: .01rem;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 18.5px;
+    line-height: 1.58;
+    letter-spacing: -.003em;
     @media screen and (max-width: 767px) {
-      font-size:16px;
-      font-weight:400;
+      font-size: 17px;
+      font-weight: 400;
     }    
   }
   @media screen and (max-width: 767px) {
@@ -311,20 +326,25 @@ label {
 }
 
 .s-features {
-  &.top40 {
-    margin-top:40px;
-  }
-  font-size:17px;
+  font-size:16px;
   i {
     color:#CCC;
   }
   ul {
+    padding-left: 0px;
     @media screen and (max-width: 767px) {
       -webkit-padding-start: 0px;
+      padding: 0px;
     }
     list-style: none;
     li {
       margin:10px auto;
+    }
+  }
+  &.top40 {
+    margin-top: 40px;
+    ul {
+      padding-left: 40px;
     }
   }
   .s-more-info {
@@ -349,4 +369,24 @@ label {
 
 #gumroad_link_dabbleme {
   height: 575px !important;
+}
+
+.form-control {
+  height: 45px;
+  border-radius: 2px;
+  font-size: 16px;
+  border: 2px solid #CCCCCC;
+  box-shadow: none;
+  outline: none;
+  &:hover {
+    border-color: #999999;
+    box-shadow: none;
+  }
+  &:focus {
+    border-color: #649cc7;
+    box-shadow: none;
+  }
+}
+input[type="submit"].form-control {
+  border: 0px;
 }

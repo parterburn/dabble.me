@@ -2,13 +2,8 @@ class SearchesController < ApplicationController
   before_filter :authenticate_user!
 
   def show
-    if current_user.is_admin? && params[:admin] == "yes"
-      @search = Search.new(search_params)
-      @entries = Entry.where("LOWER(body) LIKE ?", "%#{search_params[:term].downcase}%")
-    else
-      @search = Search.new(search_params)
-      @entries = @search.entries
-    end
+    @search = Search.new(search_params)
+    @entries = @search.entries
     hashtagged_entries = current_user.entries.where("entries.body ~ '(#[a-zA-Z0-9_]+)'")
     @hashtags = []
     hashtagged_entries.each do |entry|

@@ -2,24 +2,6 @@
 class RegistrationsController < Devise::RegistrationsController
   after_action :track_ga_event, only: :create
 
-  def new
-    if ENV['CLOSE_REGISTRATIONS'].present?
-      flash[:notice] = 'Registrations are not open; enter your email below to be alerted!'
-      redirect_to root_path
-    else
-      super
-    end
-  end
-
-  def create
-    if ENV['CLOSE_REGISTRATIONS'].present?
-      flash[:notice] = 'Registrations are not open; enter your email below to be alerted!'
-      redirect_to root_path
-    else
-      super
-    end
-  end
-
   def edit
     cookies.permanent[:viewed_settings] = true
     super

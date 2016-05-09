@@ -5,7 +5,7 @@ describe 'Pages' do
 
   it 'has corect title for Root page' do
     visit root_path
-    expect(page).to have_title 'Dabble Me - A free private journal.'
+    expect(page).to have_title 'Dabble Me — your private journal.'
   end
 
   it 'has correct title for FAQs page' do

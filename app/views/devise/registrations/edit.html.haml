@@ -11,10 +11,7 @@
       =mail_to "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", encode: "hex"
     .alert.alert-warning
       -if current_user.is_pro?
-        Thanks for subscribing to #{current_user.plan_name}!&nbsp;
-        -if current_user.payments.sum(:amount) < 10
-          If you're not already, I strongly encourage you to keep a paid subscription going so the site is fully sustainable.
-          =link_to "Subscribe Now", subscribe_path
+        Thanks for subscribing to #{current_user.plan_name}!
       - else
         Unlock premium features like changing the frequency of emails, adding/editing entries via the web, adding a photo, rich formatting, and searching your entries by
         =link_to("subscribing to Dabble Me PRO", subscribe_path)+"."

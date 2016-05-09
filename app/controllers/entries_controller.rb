@@ -6,23 +6,20 @@ class EntriesController < ApplicationController
   def index
     if params[:group] == 'photos'
       @entries = current_user.entries.includes(:inspiration).only_images
-      @title = ' with photos'
+      @title = 'PHOTO ENTRIES'
     elsif params[:group] =~ /[0-9]{4}/ && params[:subgroup] =~ /[0-9]{2}/
       from_date = "#{params[:group]}-#{params[:subgroup]}"
       to_date = "#{params[:group]}-#{params[:subgroup].to_i + 1}"
       @entries = current_user.entries.includes(:inspiration).where("date >= to_date('#{from_date}','YYYY-MM') AND date < to_date('#{to_date}','YYYY-MM')")
       date = Date.parse(params[:subgroup] + '/' + params[:group])
-      @title = " from #{date.strftime('%b %Y')}"
+      @title = "ENTRIES FROM #{date.strftime('%b %Y').upcase}"
     elsif params[:group] =~ /[0-9]{4}/
       @entries = current_user.entries.includes(:inspiration).where("date >= '#{params[:group]}-01-01'::DATE AND date <= '#{params[:group]}-12-31'::DATE")
-      @title = " from #{params[:group]}"
+      @title = "ENTRIES FROM #{params[:group].upcase}"
     else
       @entries = current_user.entries.includes(:inspiration)
-      @title = ' from All Time'
+      @title = 'ALL ENTRIES'
     end
-
-    pre = ActionController::Base.helpers.pluralize(@entries.count, 'entry')
-    @title = pre + @title
 
     @entries = Kaminari.paginate_array(@entries).page(params[:page]).per(params[:per])
 
@@ -45,6 +42,10 @@ class EntriesController < ApplicationController
     end
   end
 
+  def latest
+    @lastest_entry = current_user.entries.includes(:inspiration).sort_by(&:date).last
+  end
+
   def random
     @entry = current_user.random_entry
     if @entry
@@ -64,7 +65,10 @@ class EntriesController < ApplicationController
   end
 
   def create
-    redirect_to root_path and return if current_user.is_free? && !current_user.free_trial?
+    if current_user.is_free?
+      flash[:alert] = "<a href='#{subscribe_url}'' class='alert-link'>Subscribe to PRO</a> to write new entries.".html_safe
+      redirect_to root_path and return
+    end
 
     @existing_entry = current_user.existing_entry(params[:entry][:date].to_s)
 

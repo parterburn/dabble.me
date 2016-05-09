@@ -13,7 +13,7 @@
     .float-right.s-edit-entry{:rel=>"tooltip", :title=>"Edit Entry"}
       = link_to edit_entry_path(entry) do
         %i.fa.fa-pencil-square-o
-    %h2= entry.date_format_short.upcase
+    %h2= entry.date_format_short
     %h3
       %span
         = entry.date_day.upcase
