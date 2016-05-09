@@ -1,8 +1,8 @@
-- title 'Sign in to Dabble Me'
+- title 'Login to Dabble Me'
 
 .row
   .col-md-4.col-md-offset-4
-    %h3 SIGN IN
+    %h3 Login
     %br
   = form_for(resource, as: resource_name, url: session_path(resource_name)) do |f|
     
@@ -28,7 +28,7 @@
 
     .col-md-4.col-md-offset-4
       %br
-      = f.submit "Sign in", :class => "btn btn-primary form-control"
+      = f.submit "Login", :class => "btn btn-primary form-control"
 
       .clearfix
       %br

@@ -193,7 +193,7 @@ RSpec.describe EntriesController, type: :controller do
     it 'should redirect to sign in if not logged in' do
       get :export, format: 'txt'
       expect(response.status).to eq 401
-      expect(response.body).to eq 'You need to sign in or sign up before continuing.'
+      expect(response.body).to eq 'You need to login or sign up before continuing.'
     end
 
     it 'should show me the page' do
