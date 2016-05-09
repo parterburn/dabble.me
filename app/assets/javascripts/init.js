@@ -51,6 +51,10 @@
     
     $(".pictureFrame img").unveil(300);
 
+    $(".navbar-toggle").on("click", function () {
+        $(this).toggleClass("active");
+    });
+
   };
 
 })();
