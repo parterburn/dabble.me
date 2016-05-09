@@ -393,3 +393,29 @@ input[type="submit"].form-control {
 .btn-lg, .btn-group-lg>.btn {
   border-radius: 4px;
 }
+
+.navbar-toggle {
+  margin-top: 6px;
+  border: 3px solid transparent;
+  padding: 8px 5px;
+  border-radius: 6px;
+}
+
+.s-write-icon {
+  float: right;
+  margin-right: 10px;
+  font-size: 17px;
+  margin-top: 4px;
+  color: white;
+  .fa-square {
+    color: transparent;
+  }
+  .fa-square-o {
+    color: #dddddd;
+  }
+  &:hover {
+    .fa-square {
+      color: #dddddd;   
+    }
+  }
+}

@@ -6,6 +6,12 @@
         %span.icon-bar
         %span.icon-bar
         %span.icon-bar
+      - if user_signed_in? && current_user.is_pro?
+        =link_to new_entry_path, class: 's-write-icon visible-xs' do
+          %span.fa-stack.fa-lg
+            %i.fa.fa-square-o.fa-stack-2x
+            %i.fa.fa-square.fa-stack-2x
+            %i.fa.fa-pencil.fa-stack-1x.fa-inverse
       = link_to root_path, class: 'navbar-brand', title: "Dabble Me" do
         %span
           DABBLE ME
