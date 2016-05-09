@@ -2,7 +2,7 @@
   window.DABBLE.pages.Entries_new = window.DABBLE.pages.Entries_create = function(){
 
     $(".j-image-remove").click(function( event ) {
-      $(".j-image-preview").slideUp();
+      $(".j-image-preview").slideToggle();
     });
 
     $('form').submit(function(){
