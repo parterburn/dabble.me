@@ -130,10 +130,17 @@ RSpec.describe EntriesController, type: :controller do
       expect(response).to redirect_to(new_user_session_url)
     end
 
-    it 'should delete user entries' do
+    it "should not delete entries unless user is pro" do
       sign_in user
-      expect { delete :destroy, id: entry.id }.to change { Entry.count }.by(-1)
+      expect { delete :destroy, id: not_my_entry.id }.to_not change { Entry.count }
     end
+
+    it 'should delete pro user entries' do
+      sign_in user
+      user.plan = 'PRO Gumroad Monthly'
+      user.save      
+      expect { delete :destroy, id: entry.id }.to change { Entry.count }.by(-1)
+    end    
 
     it "should not delete entries that are not the user's" do
       sign_in user
@@ -173,10 +180,12 @@ RSpec.describe EntriesController, type: :controller do
 
     it 'should show a CTA to logged in users without entries' do
       sign_in user
+      user.plan = 'PRO Gumroad Monthly'
+      user.save      
       expect { delete :destroy, id: entry.id }.to change { Entry.count }.by(-1)
       get :latest
       expect(response.status).to eq 200
-      expect(response.body).to have_content("Check your email - simply reply to that email and you'll see it here.")
+      expect(response.body).to have_content("You're all signed up, but don't have any entries!")
     end
   end
 
