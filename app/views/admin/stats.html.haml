@@ -20,7 +20,7 @@
         %strong All Entries with Photos
       - photos_count = Entry.only_images.count
       .col-md-2
-        =link_to admin_photos do
+        =link_to admin_photos_path do
           %strong #{number_with_delimiter(photos_count)}
       .col-md-2
         - if all_count > 0
