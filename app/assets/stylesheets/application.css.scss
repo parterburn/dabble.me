@@ -372,7 +372,7 @@ label {
 
 .form-control {
   height: 45px;
-  border-radius: 2px;
+  border-radius: 4px;
   font-size: 16px;
   border: 2px solid #CCCCCC;
   box-shadow: none;
@@ -388,4 +388,8 @@ label {
 }
 input[type="submit"].form-control {
   border: 0px;
+}
+
+.btn-lg, .btn-group-lg>.btn {
+  border-radius: 4px;
 }
