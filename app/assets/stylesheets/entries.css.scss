@@ -60,15 +60,27 @@ a.s-delete {
 
 .note-editable, .summernote {
   background:white;
-  font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
-  font-size:17px;
-  color:#333;
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+  font-size: 18.5px;
+  font-style: normal;
+  font-weight: 400;  
+  letter-spacing: 0;
+  line-height: 1.4;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  -moz-font-feature-settings: "liga" on;
+  color: rgba(0,0,0,0.8);
   p {
-    font-size:17px;
-    color:#333;    
+    font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+    font-weight: 400;
+    font-style: normal;
+    font-size: 18.5px;
+    line-height: 1.58;
+    letter-spacing: -.003em;
     @media screen and (max-width: 767px) {
-      font-size:16px;
-      font-weight:400;
+      font-size: 17px;
+      font-weight: 400;
     }
   }
   @media screen and (max-width: 767px) {
@@ -78,7 +90,6 @@ a.s-delete {
 }
 
 #entry_date{
-  font-family: georgia;
   font-size:15px;
   color: #a41100;
 }
@@ -87,7 +98,6 @@ a.s-delete {
   margin-top:10px;
   padding-bottom: 5px;
   > h2{
-    font-family: georgia;
     color: #a41100;
     font-size: 25px;
     border: none;
@@ -101,7 +111,6 @@ a.s-delete {
     margin-top: 10px;
     margin-bottom: 20px;
     font-size:20px;
-    font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, Georgia, serif;
     padding: 0 10px;
     background: url(image_path("bg_h3.gif")) repeat-x 0 11px;
     color: #999;
@@ -231,6 +240,5 @@ mark {
   .s-review-details, .s-review-details p {
     font-size: 18px;
     color: #333333;
-    font-family: 'Palatino Linotype', 'Book Antiqua', Palatino, serif;    
   }
 }

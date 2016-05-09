@@ -2,25 +2,38 @@
 
 .row
   %br
-  - if params[:thank].present?
-    .col-md-8.col-md-offset-2.alert.alert-success
-      %h5
-        %strong Thanks for subscribing via Paypal!
-      %br
-      Premium features may take up to 24 hours before becoming active, and you'll receive an email when they do.
   .col-md-8.col-md-offset-2
     %h4 
       %strong Dabble Me PRO is just $3 per month.
-    %p
-      %strong Subscribing will help keep the site up, and unlock premium features on your account:
+    %p.s-features
+      %strong Subscribing will unlock all premium features on your account:
+
+    .s-features
       %ul
-        %li Change the days that emails are sent
-        %li Add new entries via the web
-        %li Edit entries
-        %li Attach a photo to your entry
-        %li Rich text formatting
-        %li Calendar view of all your entries (to make sure you've written every day)
-        %li Search all of your past entries with support for hashtags
+        %li
+          %i.fa.fa-check
+          Change the frequency & days that emails are sent
+        %li
+          %i.fa.fa-check
+          Attach a photo to your entry (email or web)
+        %li
+          %i.fa.fa-check
+          Add new entries via the web
+        %li
+          %i.fa.fa-check
+          Edit entries
+        %li
+          %i.fa.fa-check
+          Rich text formatting
+        %li
+          %i.fa.fa-check
+          Calendar view of all your entries
+        %li
+          %i.fa.fa-check
+          Search all of your past entries with support for hashtags
+        %li
+          %i.fa.fa-check
+          =link_to 'Year in Review', review_path
 
     %br
     %br
@@ -63,6 +76,6 @@
       - else
         - session["user_return_to"] = subscribe_path
         .col-md-12{style: "text-align:center;"}
-          =link_to "Sign in to subscribe", new_user_session_path, class: "btn btn-primary"
+          =link_to "Sign in to Subscribe", new_user_session_path, class: "btn btn-primary"
         .clearfix
         %br

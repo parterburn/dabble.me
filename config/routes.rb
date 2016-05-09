@@ -2,9 +2,9 @@ Rails.application.routes.draw do
   authenticate :user, ->(u) { u.is_admin? } do
     resources :inspirations
     resources :payments
-    get 'admin' => 'admin#metrics', as: 'admin'
     get 'admin/users' => 'admin#users', as: 'admin_users'
-    get 'admin/stats' => 'admin#stats', as: 'stats'
+    get 'admin/stats' => 'admin#stats', as: 'admin_stats'
+    get 'admin/photos' => 'admin#photos', as: 'admin_photos'
   end
 
   devise_for :users, controllers: { registrations: 'registrations' }
@@ -21,23 +21,23 @@ Rails.application.routes.draw do
   get 'entries/calendar' => 'entries#calendar', as: 'entries_calendar'
 
   resources :entries
-  get 'past/random'               => 'entries#random', as: 'random_entry'
-  get 'past'                      => 'entries#index',  as: 'past_entries'
-  get 'past/(:group)(/:subgroup)' => 'entries#index',  as: 'group_entries'
-  get 'review'                    => 'entries#review', as: 'review'
-  get 'search', to: 'searches#show'
-  root 'welcome#index'
-  get 'write',                 to: redirect('/entries/new')
-  get 'privacy'                => 'welcome#privacy'
-  get 'faqs'                   => 'welcome#faqs'
-  get 'subscribe'              => 'welcome#subscribe'
-  get 'donate',                to: redirect('/subscribe')
-  get 'pro',                   to: redirect('/subscribe')
-  match 'payment_notify'       => 'payments#payment_notify', via: [:post]
-  get 'ohlife-alternative'     => 'welcome#ohlife_alternative'
-  post 'email_processor'       => 'griddler/emails#create'
+  get 'past/random',               to: 'entries#random', as: 'random_entry'
+  get 'past',                      to: 'entries#index',  as: 'past_entries'
+  get 'past/(:group)(/:subgroup)', to: 'entries#index',  as: 'group_entries'
+  get 'latest',                    to: 'entries#latest', as: 'latest_entry'  
+  get 'review',                    to: 'entries#review', as: 'review'
+  get 'search',                    to: 'searches#show'
+  get 'write',                     to: redirect('/entries/new')
+  get 'privacy',                   to: 'welcome#privacy'
+  get 'faqs',                      to: 'welcome#faqs'
+  get 'subscribe',                 to: 'welcome#subscribe'
+  get 'donate',                    to: redirect('/subscribe')
+  get 'pro',                       to: redirect('/subscribe')
+  match 'payment_notify',          to: 'payments#payment_notify', via: [:post]
+  get 'ohlife-alternative',        to: 'welcome#ohlife_alternative'
+  post 'email_processor',          to: 'griddler/emails#create'
 
-  get 'bot/webhook'            => 'bot#webhook'
+  get '/cast(/*path)', to: redirect('https://vidcast.dabble.me') # temporary for old content
 
-  get '/cast(/*path)', to: redirect('https://vidcast.dabble.me')
+  root 'welcome#index'  
 end

@@ -16,7 +16,7 @@
     %h2= entry.date_format_short
     %h3
       %span
-        = entry.date_day
+        = entry.date_day.upcase
 .s-scrollable
   - if entry.image_url_cdn.present?
     .pictureFrame

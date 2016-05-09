@@ -5,7 +5,7 @@ class AdminStats
 
   def pro_users_by_week_since(date)
     upgrade_dates = []
-    User.pro_only.includes(:payments).each do |user|
+    User.pro_only.each do |user|
       first_payment = user.payments.order('payments.date').try(:first).try(:date)
       if first_payment.present? && first_payment > date
         upgrade_dates << first_payment.beginning_of_week(:sunday).strftime('%Y-%m-%d')
@@ -76,7 +76,7 @@ class AdminStats
 
   def upgraded_users_since(date)
     pro_users = []
-    User.pro_only.includes(:payments).each do |user|
+    User.pro_only.each do |user|
       first_payment = user.payments.order('payments.date').try(:first).try(:date)
       if first_payment.present? && first_payment > date
         pro_users << user

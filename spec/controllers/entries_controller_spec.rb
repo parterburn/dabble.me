@@ -21,7 +21,7 @@ RSpec.describe EntriesController, type: :controller do
       expect(response).to redirect_to(new_user_session_url)
     end
 
-    it 'should show entries to logged in users' do
+    it 'should show an entry to logged in users' do
       sign_in user
       get :show, id: entry.id
       expect(response.status).to eq 200
@@ -87,7 +87,7 @@ RSpec.describe EntriesController, type: :controller do
       sign_in user
       get :new
       expect(response.status).to eq 200
-      expect(response.body).to have_content('New Entry')
+      expect(response.body).to have_content('NEW ENTRY')
     end
   end
 
@@ -153,6 +153,30 @@ RSpec.describe EntriesController, type: :controller do
       get :calendar
       expect(response.status).to eq 200
       expect(response.body).to have_content('Calendar View')
+    end
+  end
+
+  describe 'latest' do
+    it 'should redirect to sign in if not logged in' do
+      get :latest
+      expect(response.status).to eq 302
+      expect(response).to redirect_to(new_user_session_url)
+    end
+
+    it 'should show the latest entry' do
+      sign_in user
+      get :latest
+      expect(response.status).to eq 200
+      expect(response.body).to have_content(entry.body)
+      expect(response.body).to_not have_content(not_my_entry.body)
+    end
+
+    it 'should show a CTA to logged in users without entries' do
+      sign_in user
+      expect { delete :destroy, id: entry.id }.to change { Entry.count }.by(-1)
+      get :latest
+      expect(response.status).to eq 200
+      expect(response.body).to have_content("Check your email - simply reply to that email and you'll see it here.")
     end
   end
 

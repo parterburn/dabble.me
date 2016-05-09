@@ -2,7 +2,7 @@
 
 .row
   .col-md-6.col-md-offset-3
-    %h3 Sign up
+    %h3 SIGN UP
     %br
 = form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f|
   - if @user.errors.present?
@@ -41,7 +41,7 @@
     .clearfix
 
   .col-md-6.col-md-offset-3
-    = f.submit "Sign up", class: "btn btn-primary"
+    = f.submit "Sign up", class: "btn btn-primary form-control"
     .clearfix
     %br
     = render "devise/shared/links"

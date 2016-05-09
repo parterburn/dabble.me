@@ -1,40 +1,36 @@
 - title "New Entry on Dabble Me"
+- add_class = 'blur' if current_user.is_free?
 
 .row
   %br
-  .col-md-8.col-md-offset-2.well{:id => "entry-#{@entry.id}"}
-
-    - if @entry.exactly_past_years(current_user)
-      - year_back = Time.now.in_time_zone(current_user.send_timezone).year - @entry.date.year
-      .label.label-past-years #{pluralize(year_back,"year").upcase} AGO
-
-    -if current_user.is_free? && !current_user.free_trial?
-      .alert.alert-warning.well-sm
+  -if current_user.is_free?
+    .col-md-8.col-md-offset-2
+      .alert.alert-warning
         =link_to "Subscribe to PRO", subscribe_path, class: "alert-link"
-        to unlock the ability to add new entries via the web form.
-      = text_area_tag :entry, @entry.body, :class => "form-control summernote disabled", :disabled => "disabled", :rows => 15
-      %div
-        %br
-        = submit_tag "Create Entry", :class => "form-control btn btn-primary disabled", :disabled => "disabled"
-    - else
+        to unlock the ability to add new entries via the web.
+
+  .col-md-8.col-md-offset-2.well{:id => "entry-#{@entry.id}"}
+    %div{class: add_class}
+      - if @entry.exactly_past_years(current_user)
+        - year_back = Time.now.in_time_zone(current_user.send_timezone).year - @entry.date.year
+        .label.label-past-years #{pluralize(year_back,"year").upcase} AGO
 
       = form_for :entry, url: entries_path do |f|
-
         .s-entry-date.s-new-entry
           .float-left.s-edit-entry{:rel=>"popover", :title=>"Inspiration", :"data-content"=>"If you need ideas to get started just glance up here for quotes & questions!"}
             %i.fa.fa-lightbulb-o
           .center.s-inspiration
-            - if @random_inspiration.present?
+            -if @entry.inspiration.present?
+              =@entry.inspiration.body
+              - if @entry.inspiration.category != "Tip"
+                =f.hidden_field :inspiration_id, :value => @entry.inspiration.id          
+            -elsif @random_inspiration.present?
               =@random_inspiration.body
               - if @random_inspiration.category != "Tip"
                 =f.hidden_field :inspiration_id, :value => @random_inspiration.id
-            -elsif @entry.inspiration.present?
-              =@entry.inspiration.body
-              - if @entry.inspiration.category != "Tip"
-                =f.hidden_field :inspiration_id, :value => @entry.inspiration.id
           %h3
             %span
-              New Entry
+              NEW ENTRY
 
         -if @entry.errors.any?
           #error_explanation
@@ -51,21 +47,20 @@
             = f.text_field :date, :value => entry_date, :placeholder=>"October 11 2014", :class => "form-control"
           %br
 
-          -if current_user.is_pro?
-            %div
+          %div
 
-              - if @entry.image.present?
-                %label
-                  = f.check_box :remove_image, class: 'j-image-remove'
-                  Remove Photo
-                %br
-                .pictureFrame.j-image-preview
-                  =link_to @entry.image_url_cdn, target: "_blank" do
-                    =image_code(@entry)
-              - else
-                = f.label :image, "Photo"
-                = f.file_field :image
+            - if @entry.image.present?
+              %label
+                = f.check_box :remove_image, class: 'j-image-remove'
+                Remove Photo
               %br
+              .pictureFrame.j-image-preview
+                =link_to @entry.image_url_cdn, target: "_blank" do
+                  =image_code(@entry)
+            - else
+              = f.label :image, "Photo"
+              = f.file_field :image
+            %br
 
         %div
           = f.label :entry
@@ -75,22 +70,21 @@
         %div
           = f.submit "Create Entry", :class => "form-control btn btn-primary"
 
--if current_user.is_pro?
-  :javascript
-    var summer_note = $('#entry_entry');
-    summer_note.summernote({
-      mode: 'text/html',
-      height: 300,
-      theme: 'flatly',
-      focus: true,
-      toolbar: [["style", ["bold", "italic", "underline", "clear"]], ["layout", ["ul", "ol"]], ['insert', ['link']], ['misc', ['fullscreen', 'codeview']]]
-    });
+:javascript
+  var summer_note = $('#entry_entry');
+  summer_note.summernote({
+    mode: 'text/html',
+    height: 300,
+    theme: 'flatly',
+    focus: true,
+    toolbar: [["style", ["bold", "italic", "underline", "clear"]], ["layout", ["ul", "ol"]], ['insert', ['link']], ['misc', ['fullscreen', 'codeview']]]
+  });
 
-    summer_note.code(summer_note.val());
-    summer_note.closest('form').submit(function() {
-      summer_note.val(summer_note.code());
-      return true;
-    });
+  summer_note.code(summer_note.val());
+  summer_note.closest('form').submit(function() {
+    summer_note.val(summer_note.code());
+    return true;
+  });
 
 :javascript
   var tomorrow = new Date();

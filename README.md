@@ -58,6 +58,14 @@ MAILCHIMP_LIST_ID=9982...112
 If you want to bypass using Mailchimp to collect email addresses, simply don't put a value in for MAILCHIMP_API_KEY. I use Mailchimp to email out new features to the users at Dabble.me, so if you're the only one using your app it doesn't make sense to have Mailchimp.
 
 
+###Tests
+
+There is healthy coverage of the app, which you can run with:
+
+```
+rake
+```
+
 ###Administration Portal
 
 The Admin emails are accounts that have access to the Admin Dropdown in the navbar (lock icon) that give you details into the number of entries and users in the system.
@@ -78,6 +86,7 @@ Inspiration.create(category: 'OhLife', body: 'Imported from OhLife')
 * Create new entries with simple formatting
 * OhLife Importer
 * Email: Reply-to-post new entries on days of the week you choose (with random past entries embedded)
-* Associate 1 image to a specific entry, additional images emailed in will add to the bottom of posts
+* Associate 1 image to a specific entry
 * Search with basic analytics around posting
 * Hashtag support for tagging your entries
+* Year in Review

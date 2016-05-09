@@ -105,7 +105,7 @@ class User < ActiveRecord::Base
   end
 
   def is_free?
-    !is_pro?
+    !is_pro? && !free_trial?
   end
 
   def plan_name

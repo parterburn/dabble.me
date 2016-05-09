@@ -1,20 +1,17 @@
 - title 'Edit account on Dabble Me'
 
 .row
-  .col-md-6.col-md-offset-3
-    %h3 User Settings
+  .col-md-8.col-md-offset-2
+    %h3 SETTINGS
     %br
 
-  .col-md-6.col-md-offset-3
+  .col-md-8.col-md-offset-2
     %p
       Post new entries by emailing
       =mail_to "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", encode: "hex"
     .alert.alert-warning
       -if current_user.is_pro?
-        Thanks for subscribing to #{current_user.plan_name}!&nbsp;
-        -if current_user.payments.sum(:amount) < 10
-          If you're not already, I strongly encourage you to keep a paid subscription going so the site is fully sustainable.
-          =link_to "Subscribe Now", subscribe_path
+        Thanks for subscribing to #{current_user.plan_name}!
       - else
         Unlock premium features like changing the frequency of emails, adding/editing entries via the web, adding a photo, rich formatting, and searching your entries by
         =link_to("subscribing to Dabble Me PRO", subscribe_path)+"."
@@ -35,7 +32,7 @@
       %br
     %br
 
-    #export.col-md-6.col-md-offset-3.alert.alert-info
+    #export.col-md-8.col-md-offset-2.alert.alert-info
       Export all entries as
       =link_to "TXT", export_entries_path(:txt)
       (plain text)

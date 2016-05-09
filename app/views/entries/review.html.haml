@@ -1,5 +1,6 @@
 - title ("Year In Review")
 = javascript_include_tag "//www.google.com/jsapi", "chartkick"
+- add_class = 'really-blur' if current_user.is_free?
 .row.s-year-in-review
   .col-md-8.col-md-offset-2
     %h3= "#{@year} Year In Review"
@@ -16,8 +17,14 @@
         = pie_chart({"Days With Entries": @total_count, "Days Without Entires": (365 - @total_count)},  height: "230px", library: {backgroundColor: "#ffffff"})
         .clearfix
 
+  - if current_user.is_free?
+    .col-md-8.col-md-offset-2
+      .alert.alert-warning
+        =link_to "Subscribe to PRO", subscribe_path, class: "alert-link"
+        to see the rest of your Year in Review.
+
   .col-md-8.col-md-offset-2.well
-    .center
+    .center{class: add_class}
       .s-entry-date
         %h2 Days of Entries
         - days = @entries.pluck("to_char(date, 'Dy')")
@@ -32,7 +39,7 @@
         .clearfix
 
   .col-md-8.col-md-offset-2.well
-    .center
+    .center{class: add_class}
       .s-entry-date
         %h2 Months of Entries
         - months = @entries.pluck("to_char(date, 'Mon')")
@@ -44,10 +51,10 @@
         - sorted_counts = Hash.new
         - Date::ABBR_MONTHNAMES.each_with_index { |x, i| sorted_counts[x] = counts[x] }
         = column_chart sorted_counts, discrete: true, library: { backgroundColor: "#ffffff" }
-        .clearfix        
+        .clearfix
 
   .col-md-8.col-md-offset-2.well
-    .center
+    .center{class: add_class}
       .s-entry-date
         %h2 Total Words
         %h3
@@ -62,7 +69,7 @@
         .clearfix
 
   .col-md-8.col-md-offset-2.well
-    .center
+    .center{class: add_class}
       .s-entry-date
         %h2 Average Words per Post
         %h3
@@ -82,7 +89,7 @@
         .clearfix  
 
   .col-md-8.col-md-offset-2.well
-    .center
+    .center{class: add_class}
       .s-entry-date
         %h2 Average Characters per Post
         %h3
@@ -97,7 +104,7 @@
         .clearfix
 
   .col-md-8.col-md-offset-2.well
-    .center
+    .center{class: add_class}
       .s-entry-date
         %h2 Most Frequent Words
         %h3
