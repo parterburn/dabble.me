@@ -1,68 +1,54 @@
 - title "#{@title} on Dabble Me"
 
 .row
+  .col-md-8.col-md-offset-1
+    %h3
+      #{@title.html_safe}
+      =link_to "javascript:void(0);", onclick: "$('.j-calendar').fadeToggle();", class: "s-toggle-calendar" do
+        %i.fa.fa-calendar
+  
+  .col-xs-11.col-sm-5.col-md-2.s-date-groups.j-calendar
+    %h3{:class => "#{'active' if current_page?(group_entries_path('all'))}"}
+      =link_to group_entries_path('all') do
+        .s-date-left
+          ALL
+        .s-date-right
+          #{current_user.entries.length}
+        .clearfix
 
-  - if @entries.length > 0
-    .col-md-8.col-md-offset-1
-      %h3
-        #{@title.html_safe}
-        =link_to "javascript:void(0);", onclick: "$('.j-calendar').fadeToggle();", class: "s-toggle-calendar" do
-          %i.fa.fa-calendar
-    
-    .col-xs-11.col-sm-5.col-md-2.s-date-groups.j-calendar
-      %h3{:class => "#{'active' if current_page?(group_entries_path('all'))}"}
-        =link_to group_entries_path('all') do
+    - current_user.entries.group_by{|c| c.date.strftime "%Y" }.each do |year_str,year_entries|
+      =link_to group_entries_path(year_str) do
+        %h4.s-date-year{:class => "#{'active' if params[:group] == year_str}"}
           .s-date-left
-            ALL
+            = year_str.upcase
           .s-date-right
-            #{current_user.entries.length}
-          .clearfix
+            #{year_entries.length}
+        .clearfix
 
-      - current_user.entries.group_by{|c| c.date.strftime "%Y" }.each do |year_str,year_entries|
-        =link_to group_entries_path(year_str) do
-          %h4.s-date-year{:class => "#{'active' if params[:group] == year_str}"}
-            .s-date-left
-              = year_str.upcase
-            .s-date-right
-              #{year_entries.length}
-          .clearfix
-
-        - year_entries.group_by{|c| c.date.strftime "%b" }.each do |month_str,date_entries|
+      - year_entries.group_by{|c| c.date.strftime "%b" }.each do |month_str,date_entries|
+        .s-date-left
+          =link_to entries_calendar_path(day: year_str+"-"+month_str.to_date.strftime('%m')), class: "noline" do
+            %i.fa.fa-calendar
+          &nbsp;        
+        =link_to group_entries_path(year_str, month_str.to_date.strftime('%m')), :class => "#{'active' if params[:group] == year_str && params[:subgroup] == month_str.to_date.strftime('%m')}" do
           .s-date-left
-            =link_to entries_calendar_path(day: year_str+"-"+month_str.to_date.strftime('%m')), class: "noline" do
-              %i.fa.fa-calendar
-            &nbsp;        
-          =link_to group_entries_path(year_str, month_str.to_date.strftime('%m')), :class => "#{'active' if params[:group] == year_str && params[:subgroup] == month_str.to_date.strftime('%m')}" do
-            .s-date-left
-              = month_str.upcase
-            .s-date-right
-              #{date_entries.length}
-            .clearfix
-      %br
-      - if (only_images = current_user.entries.only_images.length) > 0
-        =link_to group_entries_path('photos') do
-          %h4{:class => "#{'active' if current_page?(group_entries_path('photos'))}"}
-            .s-date-left
-              PHOTOS
-            .s-date-right
-              #{only_images}
+            = month_str.upcase
+          .s-date-right
+            #{date_entries.length}
           .clearfix
-        %br
-
-    .col-md-8.col-md-offset-1
+    %br
+    - if (only_images = current_user.entries.only_images.length) > 0
+      =link_to group_entries_path('photos') do
+        %h4{:class => "#{'active' if current_page?(group_entries_path('photos'))}"}
+          .s-date-left
+            PHOTOS
+          .s-date-right
+            #{only_images}
+        .clearfix
       %br
 
-  - else
-    .col-md-8.col-md-offset-2
-      %br
-      %br
-      .center
-        %h4 So lonely...get to writing!
-        %br
-        %br
-        =link_to "Write your first entry", new_entry_path, :class => "btn btn-primary btn-lg"
-        =link_to "Import from OhLife", import_path, :class => "btn btn-primary btn-lg"
-
+  .col-md-8.col-md-offset-1
+    %br
 
   .col-md-8.col-md-offset-1
     .center

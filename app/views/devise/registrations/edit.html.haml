@@ -8,7 +8,7 @@
   .col-md-8.col-md-offset-2
     %p
       Post new entries by emailing
-      =mail_to "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", encode: "hex"
+      =mail_to "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", encode: "hex", target: "_blank"
     .alert.alert-warning
       -if current_user.is_pro?
         Thanks for subscribing to #{current_user.plan_name}!

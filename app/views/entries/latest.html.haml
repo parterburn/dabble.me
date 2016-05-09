@@ -1,4 +1,5 @@
 - if @lastest_entry.present?
+  - title "Latest Entry"
   .row
     - has_past_entries = false
     -if current_user.is_pro?
@@ -42,15 +43,4 @@
             = render :partial => 'entries/entry', :locals => {:entry => back_year_entry}
 
 - else
-  .col-md-8.col-md-offset-2
-    %br
-    %br
-    .center
-      %p
-        %h4 You're all signed up, but don't have any entries!
-      %p
-        %h4 Check your email - simply reply to that email and you'll see it here.
-      %br
-      %br
-      =link_to "Write your first entry", new_entry_path, :class => "btn btn-primary btn-lg"
-      =link_to "Import from OhLife", import_path, :class => "btn btn-primary btn-lg"
+  = render partial: 'no_entries'

@@ -238,3 +238,14 @@ mark {
     color: #333333;
   }
 }
+
+.s-no-entries {
+  ul {
+    font-size: 18px;
+    padding-left: 10px !important;
+    padding-right: 10px;
+    li {
+      margin-bottom: 10px;
+    }
+  }
+}

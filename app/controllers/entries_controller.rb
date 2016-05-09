@@ -23,6 +23,8 @@ class EntriesController < ApplicationController
 
     @entries = Kaminari.paginate_array(@entries).page(params[:page]).per(params[:per])
 
+    redirect_to latest_entry_path and return if @entries.blank?
+
     respond_to do |format|
       format.json {
         render json: calendar_json(current_user.entries
@@ -33,7 +35,6 @@ class EntriesController < ApplicationController
 
   def show
     @entry = current_user.entries.includes(:inspiration).where(id: params[:id]).first
-    @entry = Entry.includes(:inspiration).find(params[:id]) if current_user.is_admin?
     if @entry
       track_ga_event('Show')
       render 'show'
@@ -100,7 +101,6 @@ class EntriesController < ApplicationController
   def edit
     store_location
     @entry = current_user.entries.where(id: params[:id]).first
-    @entry = Entry.find(params[:id]) if current_user.is_admin?
     if current_user.is_free?
       @entry.body = @entry.sanitized_body
     end
@@ -136,7 +136,6 @@ class EntriesController < ApplicationController
       flash[:notice] = 'Entry deleted!'
       redirect_back_or_to past_entries_path
     else
-      @entry = Entry.find(params[:id]) if current_user.is_admin?
       if @entry.update(entry_params)
         track_ga_event('Update')
         flash[:notice] = "Entry successfully updated! <a href='#entry-#{@entry.id}' data-id='#{@entry.id}' class='alert-link j-entry-link'>View entry</a>.".html_safe
@@ -154,7 +153,6 @@ class EntriesController < ApplicationController
     end
 
     @entry = current_user.entries.where(id: params[:id]).first
-    @entry = Entry.find(params[:id]) if current_user.is_admin?
     @entry.destroy
     track_ga_event('Delete')
     flash[:notice] = 'Entry deleted successfully.'
@@ -207,7 +205,6 @@ class EntriesController < ApplicationController
   end
 
   def require_entry_permission
-    return false if current_user.is_admin?
     return false if current_user == Entry.find(params[:id]).user
     flash[:alert] = 'Not authorized'
     redirect_to past_entries_path
