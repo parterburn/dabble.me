@@ -60,28 +60,27 @@ a.s-delete {
 
 .note-editable, .summernote {
   background:white;
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif;
   font-size: 18.5px;
-  font-family: Georgia,Cambria,"Times New Roman",Times,serif;
-  letter-spacing: 0;
-  font-weight: 400;
   font-style: normal;
+  font-weight: 400;  
+  letter-spacing: 0;
+  line-height: 1.4;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   -moz-font-feature-settings: "liga" on;
-  color: rgba(0,0,0,.8);
-  line-height: 1.4;
+  color: rgba(0,0,0,0.8);
   p {
-    font-family: Georgia,Cambria,"Times New Roman",Times,serif;
-    letter-spacing: .01rem;
+    font-family: Georgia, Cambria, "Times New Roman", Times, serif;
     font-weight: 400;
     font-style: normal;
     font-size: 18.5px;
     line-height: 1.58;
     letter-spacing: -.003em;
     @media screen and (max-width: 767px) {
-      font-size:17px;
-      font-weight:400;
+      font-size: 17px;
+      font-weight: 400;
     }
   }
   @media screen and (max-width: 767px) {

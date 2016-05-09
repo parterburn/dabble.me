@@ -157,7 +157,14 @@ RSpec.describe EntriesController, type: :controller do
   end
 
   describe 'latest' do
+    it 'should redirect to sign in if not logged in' do
+      get :latest
+      expect(response.status).to eq 302
+      expect(response).to redirect_to(new_user_session_url)
+    end
+
     it 'should show the latest entry' do
+      sign_in user
       get :latest
       expect(response.status).to eq 200
       expect(response.body).to have_content(entry.body)
