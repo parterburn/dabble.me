@@ -38,7 +38,7 @@
               -@user_list.each do |user|
                 %tr
                   %td=user.created_at.strftime('%Y-%m-%d')
-                  %td=link_to user.email, admin_users_path(entries: "all", user_id: user.id)
+                  %td=user.email
                   %td=user.full_name
                   - user_entries_count = user.entries.count
                   - user_images_count = user.entries.only_images.count
