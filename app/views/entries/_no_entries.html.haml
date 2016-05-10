@@ -16,11 +16,14 @@
       %i 
         You can also post entries by emailing
         =mail_to("#{current_user.user_key}@#{ENV['SMTP_DOMAIN']}", "#{current_user.user_key}@#{ENV['SMTP_DOMAIN']}", encode: "hex", target: "_blank", subject: "#{Time.now.in_time_zone(current_user.send_timezone).strftime('%A, %b %-d')}", body: "My first Dabble Me entry!")+'.'
+    %br
     - if current_user.is_pro?
-      %br
       =link_to "Write your first entry", new_entry_path, :class => "btn btn-primary btn-lg"
       =link_to "Import Entries", import_path, :class => "btn btn-primary btn-lg"
-      %br
+    - else
+      =link_to "Subscribe to PRO ($3/mo)", subscribe_path, :class => "btn btn-primary btn-lg"
+    %br
+
 .col-md-8.col-md-offset-2.s-no-entries.well.s-features.top40
   .center
     .s-entry-date
