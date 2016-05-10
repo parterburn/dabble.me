@@ -83,7 +83,7 @@ class PaymentsController < ApplicationController
     plan = 'Free'
 
     # check for GUMROAD
-    if params[:email].present? && params[:seller_id].gsub("==","") == ENV['GUMROAD_SELLER_ID'] && params[:product_id].gsub("==","") == ENV['GUMROAD_PRODUCT_ID']
+    if params[:email].present? && params[:seller_id] == ENV['GUMROAD_SELLER_ID'] && params[:product_id] == ENV['GUMROAD_PRODUCT_ID']
       user = User.find_by(gumroad_id: params[:purchaser_id])
       user = User.find_by(email: params[:email]) if user.blank?
       paid = params[:price].to_f / 100
@@ -93,7 +93,7 @@ class PaymentsController < ApplicationController
         frequency = paid.to_i > 10 ? 'Yearly' : 'Monthly'
       end
       if user.present? && user.payments.count > 0 && Payment.where(user_id: user.id).last.date.to_date === Time.now.to_date
-        #duplicate, don't send
+        # duplicate, don't send
       elsif user.present?
         payment = Payment.create(user_id: user.id, comments: "Gumroad #{frequency} from #{user.email}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
         UserMailer.thanks_for_paying(user).deliver_later if user.payments.count == 1
