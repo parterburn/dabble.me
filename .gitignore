@@ -7,9 +7,9 @@
 !.travis.yml
 !.ruby-version
 !.magick
+!.hound.yml
+!.ruby-style.yml
 *~
-
-
 
 # OSX.gitignore
 .DS_Store
