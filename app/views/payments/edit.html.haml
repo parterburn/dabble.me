@@ -7,7 +7,7 @@
     = form_for :payment, url: payment_path(@payment), method: :patch do |f|
 
       -if @payment.errors.any?
-        .error_explanation
+        #error_explanation
           .alert.alert-danger
             - @payment.errors.full_messages.each do |msg|
               %p= msg

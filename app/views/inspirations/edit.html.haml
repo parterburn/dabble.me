@@ -7,7 +7,7 @@
     = form_for :inspiration, url: inspiration_path(@inspiration), method: :patch do |f|
 
       -if @inspiration.errors.any?
-        .error_explanation
+        #error_explanation
           .alert.alert-danger
             - @inspiration.errors.full_messages.each do |msg|
               %p= msg

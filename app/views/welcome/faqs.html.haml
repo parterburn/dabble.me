@@ -9,15 +9,20 @@
         =mail_to("hello@#{ENV['MAIN_DOMAIN']}", "contact us", encode: "hex")
         and I'll be happy to help!
   .col-md-8.col-md-offset-1.well.s-faqs
-    %h2.center Frequenty Asked Questions
-    %hr
+    .s-entry-date
+      %h2.center Frequenty Asked Questions
+      %h3
+        %span PRO FEATURES ONLY
     %div
+      - if !signed_in? || current_user.is_free?
+        %p
+          The following features are only available to users subscribed to
+          =link_to("Dabble Me PRO", subscribe_path)+"."
+          You can subscribe for $3/month or $30/year.
       %h4 How do I add a photo to my entry?
-
       %p When you reply to your Dabble Me email, just attach a photo to the email and it'll get saved with your entry. You can also add a photo on the website when you edit an entry. You can add 1 photo per entry, and we support jpeg, gif, and png photos.
       
       %h4 How do I edit or delete an entry?
-
       %p
         When visiting the
         =link_to("entries page", past_entries_path) + ","
@@ -31,44 +36,41 @@
         &nbsp;
         in case you'd like to delete your entry.
       
-      %h4 Can I import from OhLife or any other services?
+      %h4 Can I write entries on the website?
+      %p You can write entries on the website for any date. Simply click "WRITE" at the top.      
 
+      %h4 Can I import from OhLife or any other services?
       %p
         Yes! Simply visit the
         =link_to("Importer", import_path) + "."
 
-      %h4 How do I save a copy of my entries?
+    .s-entry-date
+      %h3
+        %span GENERAL
 
+    %div
+      %h4 How do I save a copy of my entries?
       %p          
         You can download a copy of your entries at any time at the bottom of the
         =link_to("settings page", edit_user_registration_path + '#export') + "."
       
       %h4 I'm new and didn't get my scheduled email. How come?
-
       %p
         Things work differently on your first day. Instead of sending the email at your scheduled time, we send your first email right when you sign up. After your first day though, you'll always get your email according to
         =link_to("your settings", edit_user_registration_path) + "."
       
       %h4 Is there a mobile app?
-
-      %p The site is built using a responsive design, so it will look great and function with ease simply visiting it in any mobile browser. Also, the primary action in Dabble Me is writing an entry, which can be done with a phone's email client.
+      %p The site is built using a responsive design, so it will look great and function with ease when viewing it in any mobile browser. Also, the primary action in Dabble Me is writing an entry, which can be done with a phone's email client.
       
       %h4 Are my entries private?
-
       %p
         We're trying to keep Dabble Me as similar to a real journal as possible, so there's no way to share your entries (no way to email them, no way to post them to Twitter, no way to post them to Facebook, etc.) and they aren't searchable by search engines. Here's a link to our 
         =link_to("privacy policy", privacy_path) + "."
       
-      %h4 Can I write entries on the website?
-
-      %p You can write entries on the website for any date. Simply click "WRITE" at the top.
-      
       %h4 Can I reply to an email more than once?
-
       %p Yes - each reply just gets added to that day's entry.
 
       %h4 What are "Inspirations"
-
       %p
         Ignore them if you want; they're just little quotes or questions that might inspire you to write. Entries will be tagged with a
         &nbsp;
@@ -78,18 +80,16 @@
 
 
       %h4 Who created this?
-
       %p
         Hi, I'm
-        =link_to("Paul Arterburn", "https://twitter.com/parterburn") + "."
-        I'm the cofounder of a company called
+        =link_to("Paul Arterburn", "https://paularterburn.com/") + "."
+        I'm the technical cofounder of a company called
         =link_to "Brandfolder","https://brandfolder.com"
-        which is a brand management platform that gives you the power to organize, manage and share brand assets from a single location. Some of the biggest brands in the world trust me with their brand assets, so you can trust me with your journal entries.
+        which is a digital asset management platform that gives you the power to organize, manage and share brand assets from a single location. Some of the biggest brands in the world trust Brandfolder with their brand assets.
       
       %h4 Is this really free?
-
       %p
-        The basic service is, but you're limited to receiving email prompts every other Sunday. If you want premium features like changing email frequency, adding/editing features from the web, adding photos, rich text entry, calendar view, and search you'll need to
+        The basic service is, but you're limited to receiving email prompts every other Sunday. If you want premium features like changing email frequency, adding/editing entries from the web, adding photos, rich text entry, calendar view, and search you'll need to
         =link_to "subcribe", subscribe_path
         to Dabble Me PRO.
         %br
@@ -99,5 +99,5 @@
 
       %h4 If my question wasn't answered here, how can I contact you?
       %p
-        Through email:
+        Email is best:
         =mail_to("hello@#{ENV['MAIN_DOMAIN']}", "hello@#{ENV['MAIN_DOMAIN']}", encode: "hex")

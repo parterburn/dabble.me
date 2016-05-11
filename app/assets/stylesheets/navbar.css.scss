@@ -4,18 +4,24 @@
   background-color: $blue;
   color:whiteSmoke;
   z-index: 1000;
+  li.dropdown.open > .dropdown-toggle {
+    color: white;
+    padding-top: 17px;
+    padding-bottom: 13px;
+    background-color: darken($blue,20);
+    text-shadow: 0px 0px 3px darken($blue,40);
+  }  
   .navbar-nav > li > a {
     color:whiteSmoke;
     letter-spacing: 0.5px;
-    border-top: 3px solid transparent;
     -webkit-transition: all 0.3s;
     transition: all 0.3s;
-    padding-top: 13px;
     &:hover, &:active, &:focus {
       color:white;
-      border-color: white;
-      padding-top: 15px;
+      padding-top: 17px;
       padding-bottom: 13px;
+      background-color: darken($blue,20);
+      text-shadow: 0px 0px 3px darken($blue,40);
     }
   }
   .navbar-nav > .active >a {
@@ -23,7 +29,6 @@
     background-color: darken($blue,10);
     &:hover, &:active, &:focus {
       color: white;
-      border-color: transparent;
       background-color: darken($blue,20);
       text-shadow: 0px 0px 3px darken($blue,40);
     }
@@ -38,13 +43,12 @@
     display: inline-block;
     -webkit-transition: all 0.3s;
     transition: all 0.3s; 
-    border-top: 3px solid transparent;
-    padding-top: 13px;
     &:hover, &:active, &:focus {
       color: white;
-      border-color: white;
-      padding-top: 15px;
+      padding-top: 17px;
       padding-bottom: 13px;
+      background-color: darken($blue,20);
+      text-shadow: 0px 0px 3px darken($blue,40);
     }
     span {
       font-weight: 700;
@@ -56,18 +60,35 @@
 
 .s-write-icon {
   float: right;
-  margin-right: 15px;
   font-size: 24px;
-  margin-top: 8px;
   color: whiteSmoke;
-  &:hover {
-    color: white;
+  padding: 8px 15px;
+  height: 50px;
+  -webkit-transition: all 0.3s;
+  transition: all 0.3s;
+  &.active {
+    background-color: darken($blue,10);
+  }  
+  &:hover, &:active, &:focus {
+    color:white;
+    padding-top: 10px;
+    padding-bottom: 13px;
+    background-color: darken($blue,20);
+    text-shadow: 0px 0px 3px darken($blue,40);
   }
 }
 
 .navbar-toggle {
   border-color: transparent !important;
   background: transparent !important;
+  height: 50px;
+  padding: 15px;
+  margin: 0px;
+  border-radius: 0px;  
+  &:hover, &.active {
+    color:white;
+    background-color: darken($blue,20) !important;
+  }  
 }
 
 .navbar-default .navbar-toggle .icon-bar {
@@ -75,6 +96,10 @@
   &:active {
     background-color: white;
   }
+}
+
+.navbar-collapse {
+  border-top: none;
 }
 
 .navbar-toggle .icon-bar:nth-of-type(2) {
@@ -113,4 +138,14 @@
     position: absolute;
     top:0;
   }  
+
+  .navbar-default {
+    .navbar-nav > li > a {
+      &:hover, &:active, &:focus {
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+    }  
+  }
+
 }

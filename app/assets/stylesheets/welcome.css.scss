@@ -19,19 +19,24 @@
   }
   ul {
     padding-left: 0px;
-    @media screen and (max-width: 767px) {
-      -webkit-padding-start: 0px;
-      padding: 0px;
-    }
     list-style: none;
     li {
       margin:10px auto;
     }
+    @media screen and (max-width: 767px) {
+      padding-left: 0px;
+    }    
   }
   &.top40 {
     margin-top: 40px;
+    @media screen and (max-width: 767px) {
+      margin-top: 0px;
+    }    
     ul {
       padding-left: 40px;
+      @media screen and (max-width: 767px) {
+        padding-left: 0px;
+      }
     }
   }
   .s-more-info {

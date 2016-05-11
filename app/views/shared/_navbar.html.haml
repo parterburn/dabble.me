@@ -6,7 +6,7 @@
         %span.icon-bar
         %span.icon-bar
       - if user_signed_in? && current_user.is_pro?
-        =link_to new_entry_path, class: 's-write-icon visible-xs' do
+        =link_to new_entry_path, class: "s-write-icon visible-xs #{'active' if params[:controller] == 'entries' && params[:action].in?(['new', 'create'])}" do
           %i.fa.fa-pencil
       = link_to root_path, class: 'navbar-brand', title: "Dabble Me" do
         %span
@@ -15,55 +15,55 @@
     .collapse.navbar-collapse
       %ul.nav.navbar-nav
         - if user_signed_in?
-          %li{:class=>"#{'active' if params[:controller] == 'entries' && params[:action] == 'index'}"}
+          %li{class: "#{'active' if params[:controller] == 'entries' && params[:action] == 'index'}"}
             =link_to past_entries_path do
               %i.fa.fa-book.visible-xs-inline-block
               %span ENTRIES            
 
-          %li{:class=>"#{'active' if params[:controller] == 'entries' && params[:action].in?(['new', 'create'])}"}
+          %li{class: "#{'active' if params[:controller] == 'entries' && params[:action].in?(['new', 'create'])}"}
             =link_to new_entry_path do
               %i.fa.fa-pencil.visible-xs-inline-block
               %span WRITE
 
           -if current_user.entries.count > 0
-            %li{:class=>"#{'active' if current_page?(random_entry_path)}"}
+            %li{class: "#{'active' if current_page?(random_entry_path)}"}
               =link_to random_entry_path, title: "Random Entry" do
                 %i.fa.fa-random
                 %span.visible-xs-inline-block RANDOM
 
-          %li{:class=>"#{'active' if current_page?(entries_calendar_path)}"}
+          %li{class: "#{'active' if current_page?(entries_calendar_path)}"}
             = link_to entries_calendar_path, title: "Calendar View" do
               %i.fa.fa-calendar
               %span.visible-xs-inline-block CALENDAR
 
-          %li{:class=>"#{'active' if current_page?(search_path)}"}
+          %li{class: "#{'active' if current_page?(search_path)}"}
             = link_to search_path, title: "Search" do
               %i.fa.fa-search
               %span.visible-xs-inline-block SEARCH
 
           - if current_user.is_admin?
-            %li.dropdown{:class=>"#{'active' if params[:controller].in?(['admin', 'inspirations', 'payments'])}"}
-              %a.dropdown-toggle{"data-toggle" => "dropdown", :href => "#"}
+            %li.dropdown{class: "#{'active' if params[:controller].in?(['admin', 'inspirations', 'payments'])}"}
+              %a.dropdown-toggle{data: { toggle: "dropdown"}, href: "#"}
                 %i.fa.fa-lock
                 %span.visible-xs-inline-block ADMIN                
-              %ul.dropdown-menu{:role => "menu"}
-                %li{:class=>"#{'active' if current_page?(inspirations_path)}"}
+              %ul.dropdown-menu{role: "menu"}
+                %li{class: "#{'active' if current_page?(inspirations_path)}"}
                   =link_to inspirations_path, title: "Inspirations" do
                     %i.fa.fa-lightbulb-o
                     &nbsp;Inspirations
-                %li{:class=>"#{'active' if current_page?(payments_path)}"}
+                %li{class: "#{'active' if current_page?(payments_path)}"}
                   =link_to payments_path, title: "Payments" do
                     %i.fa.fa-usd
                     &nbsp;Payments              
-                %li{:class=>"#{'active' if current_page?(admin_stats_path)}"}
+                %li{class: "#{'active' if current_page?(admin_stats_path)}"}
                   =link_to admin_stats_path, title: "Admin Stats" do
                     %i.fa.fa-bar-chart
                     &nbsp;Stats
-                %li{:class=>"#{'active' if current_page?(admin_photos_path)}"}
+                %li{class: "#{'active' if current_page?(admin_photos_path)}"}
                   =link_to admin_photos_path, title: "Admin Photos" do
                     %i.fa.fa-picture-o
                     &nbsp;Photos
-                %li{:class=>"#{'active' if current_page?(admin_users_path)}"}
+                %li{class: "#{'active' if current_page?(admin_users_path)}"}
                   =link_to admin_users_path, title: "Admin Users" do
                     %i.fa.fa-users
                     &nbsp;Users
@@ -76,7 +76,7 @@
               - current_settings = "You will be emailed at <strong>#{current_user.send_time.strftime("%-I %P")} #{current_user.send_timezone}</strong> on <strong>#{current_user.frequencies}</strong>."
             - else
               - current_settings = "Email reminders are currently <strong>disabled</strong>."
-          %li{:class=>"#{'active' if current_page?(edit_user_registration_path)}", :rel=>"#{add_popover}", :title=>"", :"data-content"=>"#{current_settings}", :"data-placement"=>"bottom"}
+          %li{class: "#{'active' if current_page?(edit_user_registration_path)}", rel: "#{add_popover}", title: "", data: { content: "#{current_settings}", placement: "bottom"}}
             = link_to edit_user_registration_path do
               %i.fa.fa-gear.visible-xs-inline-block
               %span SETTINGS
@@ -86,7 +86,7 @@
               %span.visible-xs-inline-block LOGOUT
 
         - else
-          %li
-            = link_to "SIGN UP", new_user_registration_path, :class => 'navbar-link'
-          %li
-            = link_to "LOGIN", new_user_session_path, :class => 'navbar-link'
+          %li{class: "#{'active' if params[:controller] == 'registrations'}"}
+            = link_to "SIGN UP", new_user_registration_path, class: 'navbar-link'
+          %li{class: "#{'active' if params[:controller] == 'devise/sessions'}"}
+            = link_to "LOGIN", new_user_session_path, class: 'navbar-link'
