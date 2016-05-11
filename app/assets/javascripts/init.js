@@ -35,10 +35,6 @@
         $(this).popover('hide');
     });
 
-    $(".j-paid").click(function(e) {
-      $.cookie('badger_go_away', true, { expires: 30, path: '/' });
-    });
-
     $(".j-entry-link").click(function(e) {
       var $entry = $("#entry-"+$(this).attr('data-id'));
       $('body,html').animate({scrollTop: $entry.offset().top - 70}, 600);

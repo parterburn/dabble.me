@@ -1,7 +1,9 @@
+@import 'vars';
+
 .s-faqs {
   h2 {
     margin-top:10px;
-    color: #a41100;    
+    color: $red;    
   }
   h4 {
     font-weight:bold;

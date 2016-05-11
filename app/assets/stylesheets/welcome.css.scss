@@ -1,0 +1,40 @@
+@import 'vars';
+
+.s-landing-page {
+  h1 {
+    img {
+      width:290px;
+    }
+  }
+  h2 {
+    color: $red;
+    font-size:20px;
+  }
+}
+
+.s-features {
+  font-size:16px;
+  i {
+    color:$light-gray;
+  }
+  ul {
+    padding-left: 0px;
+    @media screen and (max-width: 767px) {
+      -webkit-padding-start: 0px;
+      padding: 0px;
+    }
+    list-style: none;
+    li {
+      margin:10px auto;
+    }
+  }
+  &.top40 {
+    margin-top: 40px;
+    ul {
+      padding-left: 40px;
+    }
+  }
+  .s-more-info {
+    margin-bottom:70px;
+  }
+}

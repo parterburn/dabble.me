@@ -1,0 +1,116 @@
+@import 'vars';
+
+.navbar-default {
+  background-color: $blue;
+  color:whiteSmoke;
+  z-index: 1000;
+  .navbar-nav > li > a {
+    color:whiteSmoke;
+    letter-spacing: 0.5px;
+    border-top: 3px solid transparent;
+    -webkit-transition: all 0.3s;
+    transition: all 0.3s;
+    padding-top: 13px;
+    &:hover, &:active, &:focus {
+      color:white;
+      border-color: white;
+      padding-top: 15px;
+      padding-bottom: 13px;
+    }
+  }
+  .navbar-nav > .active >a {
+    color: whiteSmoke;
+    background-color: darken($blue,10);
+    &:hover, &:active, &:focus {
+      color: white;
+      border-color: transparent;
+      background-color: darken($blue,20);
+      text-shadow: 0px 0px 3px darken($blue,40);
+    }
+  }
+  .navbar-brand {
+    font-weight: bold !important;
+    -webkit-font-smoothing:antialiased;
+    letter-spacing: -1px;
+    color:whiteSmoke;
+    font-size: 20px;
+    text-shadow: 0px 0px 1px darken($blue,20);
+    display: inline-block;
+    -webkit-transition: all 0.3s;
+    transition: all 0.3s; 
+    border-top: 3px solid transparent;
+    padding-top: 13px;
+    &:hover, &:active, &:focus {
+      color: white;
+      border-color: white;
+      padding-top: 15px;
+      padding-bottom: 13px;
+    }
+    span {
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      font-size: 24px;
+    }
+  }
+}
+
+.s-write-icon {
+  float: right;
+  margin-right: 15px;
+  font-size: 24px;
+  margin-top: 8px;
+  color: whiteSmoke;
+  &:hover {
+    color: white;
+  }
+}
+
+.navbar-toggle {
+  border-color: transparent !important;
+  background: transparent !important;
+}
+
+.navbar-default .navbar-toggle .icon-bar {
+  background-color: whiteSmoke;
+  &:active {
+    background-color: white;
+  }
+}
+
+.navbar-toggle .icon-bar:nth-of-type(2) {
+  top: 1px;
+}
+
+.navbar-toggle .icon-bar:nth-of-type(3) {
+  top: 2px;
+}
+
+.navbar-toggle .icon-bar {
+  position: relative;
+  transition: all 500ms ease-in-out;
+}
+
+.navbar-toggle.active .icon-bar:nth-of-type(1) {
+  top: 6px;
+  transform: rotate(45deg);
+}
+
+.navbar-toggle.active .icon-bar:nth-of-type(2) {
+  background-color: transparent;
+}
+
+.navbar-toggle.active .icon-bar:nth-of-type(3) {
+  top: -6px;
+  transform: rotate(-45deg);
+}
+
+@media (max-width: 767px) {
+  .navbar-default .navbar-nav .open .dropdown-menu > li > a {
+    color: white;
+  }
+
+  .navbar-fixed-top {
+    position: absolute;
+    top:0;
+  }  
+}

@@ -1,29 +1,45 @@
 - title "#{@title} on Dabble Me"
-
 .row
   .col-md-8.col-md-offset-1
-    %h3
-      #{@title.html_safe}
-      =link_to "javascript:void(0);", onclick: "$('.j-calendar').fadeToggle();", class: "s-toggle-calendar" do
+    - if current_user.is_free?
+      .alert.alert-info.hidden-xs
+        =link_to subscribe_path,:class=>"float-left" do
+          %button.btn.btn-success Subscribe Now
+        %strong Dabble Me PRO
+        for $3/mo unlocks changing frequency of emails, adding/editing entries via the web, adding a photo to entries, and plenty more.
+      .clearfix
+
+    %h3.visible-sm.visible-xs
+      #{@title.upcase.html_safe}
+      =link_to "javascript:void(0);", onclick: "$('.j-calendar').slideToggle('fast');", class: "s-toggle-calendar" do
         %i.fa.fa-calendar
   
   .col-xs-11.col-sm-5.col-md-2.s-date-groups.j-calendar
-    %h3{:class => "#{'active' if current_page?(group_entries_path('all'))}"}
-      =link_to group_entries_path('all') do
+    %h3
+      =link_to group_entries_path('all'), class: "#{'active' if current_page?(group_entries_path('all'))}" do
         .s-date-left
           ALL
         .s-date-right
           #{current_user.entries.length}
         .clearfix
 
+    - if (only_images = current_user.entries.only_images.length) > 0
+      %h4
+        =link_to group_entries_path('photos'), class: "#{'active' if current_page?(group_entries_path('photos'))}" do
+          .s-date-left
+            PHOTOS
+          .s-date-right
+            #{only_images}
+          .clearfix
+
     - current_user.entries.group_by{|c| c.date.strftime "%Y" }.each do |year_str,year_entries|
-      =link_to group_entries_path(year_str) do
-        %h4.s-date-year{:class => "#{'active' if params[:group] == year_str}"}
+      %h4.s-date-year
+        =link_to group_entries_path(year_str), class: "#{'active' if params[:group] == year_str}" do
           .s-date-left
             = year_str.upcase
           .s-date-right
             #{year_entries.length}
-        .clearfix
+          .clearfix
 
       - year_entries.group_by{|c| c.date.strftime "%b" }.each do |month_str,date_entries|
         .s-date-left
@@ -36,19 +52,6 @@
           .s-date-right
             #{date_entries.length}
           .clearfix
-    %br
-    - if (only_images = current_user.entries.only_images.length) > 0
-      =link_to group_entries_path('photos') do
-        %h4{:class => "#{'active' if current_page?(group_entries_path('photos'))}"}
-          .s-date-left
-            PHOTOS
-          .s-date-right
-            #{only_images}
-        .clearfix
-      %br
-
-  .col-md-8.col-md-offset-1
-    %br
 
   .col-md-8.col-md-offset-1
     .center

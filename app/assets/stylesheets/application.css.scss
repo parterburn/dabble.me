@@ -13,87 +13,27 @@
  *= stub twbs-variables
  *= require twbs
  *= require summernote
- *= require_self 
+ *= require_self
  *= require_tree ./lib 
  *= require_tree .
  */
 
 @import url(https://fonts.googleapis.com/css?family=Raleway:400,700,200);
+@import 'vars';
+
+html, body {
+  height: 100%;
+}
 
 body { 
-  background: #fcfbf9;
-  padding-top: 70px; 
+  background: $cream;
+  padding-top: 70px;
   font-family: "Raleway", sans-serif; 
   font-weight: 400;
 }
 
 hr {
   border-top: 2px solid whiteSmoke;
-}
-
-.s-landing-page {
-  h1 {
-    img {
-      width:290px;
-    }
-  }
-  h2 {
-    color:#a41100;
-  }
-}
-
-.navbar-default {
-  background-color: #649cc7;
-  color:whiteSmoke;
-  z-index: 1000;
-  .navbar-nav > li > a {
-    color:whiteSmoke;
-    letter-spacing: 0.5px;
-    border-top: 3px solid transparent;
-    -webkit-transition: all 0.3s;
-    transition: all 0.3s;
-    padding-top: 13px;
-    &:hover {
-      color:white;
-      border-color: white;
-      padding-top: 15px;
-      padding-bottom: 13px;
-    }
-  }
-  .navbar-nav > .active >a {
-    color: whiteSmoke;
-    background-color: darken(#649cc7,10);
-    &:hover {
-      color: white;
-      border-color: transparent;
-      background-color: darken(#649cc7,20);
-      text-shadow: 0px 0px 3px darken(#649cc7,40);
-    }
-  }
-  .navbar-brand {
-    font-weight: bold !important;
-    -webkit-font-smoothing:antialiased;
-    letter-spacing: -1px;
-    color:whiteSmoke;
-    font-size: 20px;
-    text-shadow: 0px 0px 1px darken(#649cc7,20);
-    display: inline-block;
-    -webkit-transition: all 0.3s;
-    transition: all 0.3s; 
-    border-top: 3px solid transparent;
-    padding-top: 13px;
-    &:hover {
-      color: white;
-      border-color: white;
-      padding-top: 15px;
-      padding-bottom: 13px;
-    }
-    span {
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      font-size: 24px;
-    }
-  }
 }
 
 .well {
@@ -114,7 +54,7 @@ hr {
   pointer-events: none;
 }
 
-#error_explanation h2 {
+.error_explanation h2 {
   font-size: 18px;
   margin: 10px;
 }
@@ -122,10 +62,6 @@ hr {
 .center {
   text-align:center;
   margin:0 auto;
-}
-
-html, body {
-  height: 100%;
 }
 
 #wrap {
@@ -166,11 +102,11 @@ html, body {
 }
 
 .muted {
-  color:#777;
+  color: $mid-gray;
   a {
-    color:#777;
+    color: $mid-gray;
     &:hover {
-      color:#333;
+      color: #333;
       text-decoration: none;
     }
   }
@@ -190,83 +126,18 @@ html, body {
   bottom:15px;
   display:none;
   a {
-    color:#CCC;
+    color: $light-gray;
     text-decoration: none;
     &:hover {
-      color:#777;
+      color: $mid-gray;
       text-decoration: none;
     }
   }
 }
 
-.s-date-left {
-  float:left;
-  .fa.fa-calendar {
-    color:#CCC;
-    &:hover{
-      color:#999;
-    }
-  }
-}
-
-.s-date-right {
-  float:right;
-}
-
-.s-date-year {
-  padding-bottom:15px;
-}
-
-.s-date-groups {
-  float:right;
-  .active {
-    font-weight: bold;
-    color:#3b76a3;
-  }
-  @media (max-width: 991px) {
-    display: none;
-    float: none;
-    margin:0 auto;
-    text-align:center;
-  }
-}
-
-.s-toggle-calendar {
-  display: none;
-  float:right;
-  i {
-    font-size:80%;
-    margin-top:5px;
-  }
-  @media (max-width: 991px) {
-    display: inline-block;
-  }
-}
-
-.s-day-email label {
-  font-weight: normal;
-}
-
 p {
   font-size: 15px;
   color:#444;
-}
-
-@media (max-width: 767px) /* @grid-float-breakpoint -1 */
-{
-  .navbar-fixed-top
-  {
-    position: absolute;
-    top:0;
-  }
-}
-
-.modal-body img {
-  width:100%;
-}
-
-.bf-image-head {
-  display:none;
 }
 
 .flash.alert:empty {
@@ -277,41 +148,10 @@ label {
   color: #444;
 }
 
-.s-scrollable {
-  overflow-x:auto;
-  font-family: Georgia,Cambria,"Times New Roman",Times,serif;  
-  font-size: 18.5px;
-  font-style: normal;  
-  font-weight: 400;
-  letter-spacing: 0;
-  line-height: 1.4;  
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -moz-font-feature-settings: "liga" on;
-  color: rgba(0,0,0,0.8);
-  p {
-    font-family: Georgia,Cambria,"Times New Roman",Times,serif;
-    font-weight: 400;
-    font-style: normal;
-    font-size: 18.5px;
-    line-height: 1.58;
-    letter-spacing: -.003em;
-    @media screen and (max-width: 767px) {
-      font-size: 17px;
-      font-weight: 400;
-    }    
-  }
-  @media screen and (max-width: 767px) {
-    font-size:16px;
-    font-weight:400;
-  }  
-}
-
 .popover-title {
   background-color:whiteSmoke;
   padding:10px 14px 0px 14px;
-  color:#777;
+  color:$mid-gray;
   border:0px;
 }
 
@@ -325,39 +165,6 @@ label {
 
 .popover.bottom > .arrow:after {
  border-bottom-color:whiteSmoke; 
-}
-
-.s-landing-page {
-  h2 {
-    font-size:20px;
-  }
-}
-
-.s-features {
-  font-size:16px;
-  i {
-    color:#CCC;
-  }
-  ul {
-    padding-left: 0px;
-    @media screen and (max-width: 767px) {
-      -webkit-padding-start: 0px;
-      padding: 0px;
-    }
-    list-style: none;
-    li {
-      margin:10px auto;
-    }
-  }
-  &.top40 {
-    margin-top: 40px;
-    ul {
-      padding-left: 40px;
-    }
-  }
-  .s-more-info {
-    margin-bottom:70px;
-  }
 }
 
 .noline {
@@ -383,7 +190,7 @@ label {
   height: 45px;
   border-radius: 4px;
   font-size: 16px;
-  border: 2px solid #CCCCCC;
+  border: 2px solid $light-gray;
   box-shadow: none;
   outline: none;
   -webkit-transition: all 0.3s;
@@ -393,7 +200,7 @@ label {
     box-shadow: none;
   }
   &:focus {
-    border-color: #649cc7;
+    border-color: $blue;
     box-shadow: none;
   }
 }
@@ -403,60 +210,4 @@ input[type="submit"].form-control {
 
 .btn-lg, .btn-group-lg>.btn {
   border-radius: 4px;
-}
-
-.s-write-icon {
-  float: right;
-  margin-right: 15px;
-  font-size: 24px;
-  margin-top: 8px;
-  color: whiteSmoke;
-  &:hover {
-    color: white;
-  }
-}
-
-.navbar-toggle {
-  border-color: transparent !important;
-  background: transparent !important;
-}
-
-.navbar-default .navbar-toggle .icon-bar {
-  background-color: whiteSmoke;
-  &:active {
-    background-color: white;
-  }
-}
-
-@media (max-width: 767px) {
-  .navbar-default .navbar-nav .open .dropdown-menu > li > a {
-    color: white;
-  }
-}
-
-.navbar-toggle .icon-bar:nth-of-type(2) {
-  top: 1px;
-}
-
-.navbar-toggle .icon-bar:nth-of-type(3) {
-  top: 2px;
-}
-
-.navbar-toggle .icon-bar {
-  position: relative;
-  transition: all 500ms ease-in-out;
-}
-
-.navbar-toggle.active .icon-bar:nth-of-type(1) {
-  top: 6px;
-  transform: rotate(45deg);
-}
-
-.navbar-toggle.active .icon-bar:nth-of-type(2) {
-  background-color: transparent;
-}
-
-.navbar-toggle.active .icon-bar:nth-of-type(3) {
-  top: -6px;
-  transform: rotate(-45deg);
 }

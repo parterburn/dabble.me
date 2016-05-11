@@ -22,7 +22,7 @@ Rails.application.routes.draw do
 
   resources :entries
   get 'past/random',               to: 'entries#random', as: 'random_entry'
-  get 'past',                      to: 'entries#index',  as: 'past_entries'
+  get 'past',                      to: redirect('/past/all'), as: 'past_entries'
   get 'past/(:group)(/:subgroup)', to: 'entries#index',  as: 'group_entries'
   get 'latest',                    to: 'entries#latest', as: 'latest_entry'  
   get 'review',                    to: 'entries#review', as: 'review'

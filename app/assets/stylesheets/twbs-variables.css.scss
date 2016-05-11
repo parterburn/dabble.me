@@ -1,9 +1,6 @@
-/* Override Bootstrap variables here
- * Example: $brand-primary: navy;
- */
+@import 'vars';
 
-//PURPLE: $brand-primary: #b163a3;
-$brand-primary: #649cc7;
+$brand-primary: $blue;
 
 /* Do not edit below this line */
 @import "twbs/bootstrap/variables";

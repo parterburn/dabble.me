@@ -113,5 +113,5 @@
         - @words_counter.token_frequency.first(10).each do |word|
           %h3
             =word.first
-            %span{style: 'color: #CCCCCC;'}= "&middot; #{word.second}".html_safe
+            %span.middot= "&middot; #{word.second}".html_safe
         .clearfix

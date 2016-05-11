@@ -6,19 +6,19 @@ class EntriesController < ApplicationController
   def index
     if params[:group] == 'photos'
       @entries = current_user.entries.includes(:inspiration).only_images
-      @title = 'PHOTO ENTRIES'
+      @title = 'Photo Entries'
     elsif params[:group] =~ /[0-9]{4}/ && params[:subgroup] =~ /[0-9]{2}/
       from_date = "#{params[:group]}-#{params[:subgroup]}"
       to_date = "#{params[:group]}-#{params[:subgroup].to_i + 1}"
       @entries = current_user.entries.includes(:inspiration).where("date >= to_date('#{from_date}','YYYY-MM') AND date < to_date('#{to_date}','YYYY-MM')")
       date = Date.parse(params[:subgroup] + '/' + params[:group])
-      @title = "ENTRIES FROM #{date.strftime('%b %Y').upcase}"
+      @title = "Entries from #{date.strftime('%b %Y')}"
     elsif params[:group] =~ /[0-9]{4}/
       @entries = current_user.entries.includes(:inspiration).where("date >= '#{params[:group]}-01-01'::DATE AND date <= '#{params[:group]}-12-31'::DATE")
-      @title = "ENTRIES FROM #{params[:group].upcase}"
+      @title = "Entries from #{params[:group]}"
     else
       @entries = current_user.entries.includes(:inspiration)
-      @title = 'ALL ENTRIES'
+      @title = 'All Entries'
     end
 
     @entries = Kaminari.paginate_array(@entries).page(params[:page]).per(params[:per])

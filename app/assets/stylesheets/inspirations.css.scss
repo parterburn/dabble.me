@@ -1,6 +1,8 @@
+@import 'vars';
+
 .s-inspiration-admin {
   margin-top: 5px;
-  border-top: 1px dotted #ccc;
+  border-top: 1px dotted $light-gray;
   padding-top: 5px;
   &.s-highlight {
     background-color: #dff0d8;
