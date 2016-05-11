@@ -1,9 +1,9 @@
 [![Build Status](https://travis-ci.org/parterburn/dabble.me.svg?branch=master)](https://travis-ci.org/parterburn/dabble.me)
 
 # Dabble Me
-### The open-source replacement for OhLife
+### A private journal over email service.
 
-Dabble Me helps people remember what's happened in their life. Use it as a light-weight journal on a daily, weekly, or even monthly basis...it's up to you! Dabble Me will email you on a time & days you choose - you simply reply to the email to post entries. The app is live at [https://dabble.me](https://dabble.me).
+Dabble Me helps people remember what's happened in their life. Use it as a light-weight journal on a daily, weekly, or even monthly basis...it's up to you! Dabble Me will email you on a time & days you choose - you simply reply to the email to post entries. The app is live at [https://dabble.me](https://dabble.me). This is a great replacement if you had ever used [OhLife](http://ohlife.com).
 
 This app utilizes the following 3rd party services:
 
