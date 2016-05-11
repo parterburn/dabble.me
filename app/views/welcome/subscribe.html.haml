@@ -3,6 +3,9 @@
 .row
   %br
   .col-md-8.col-md-offset-2
+    %h3 Dabble Me is free with limitations.
+    %p Email prompts are only sent every other Sunday.
+    %hr
     %h3{style: "color: #a41100"} Dabble Me PRO is just $3 per month.
     %p.s-features
       %strong Subscribing will unlock all premium features on your account:
@@ -73,6 +76,7 @@
       - else
         - session["user_return_to"] = subscribe_path
         .col-md-12{style: "text-align:center;"}
+          =link_to "Sign Up for PRO", new_user_registration_path, class: "btn btn-primary"
           =link_to "Login to Subscribe", new_user_session_path, class: "btn btn-primary"
         .clearfix
         %br

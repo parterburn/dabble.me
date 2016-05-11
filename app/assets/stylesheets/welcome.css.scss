@@ -22,6 +22,14 @@
     list-style: none;
     li {
       margin:10px auto;
+      .s-good {
+        color: $blue;
+        margin-right: 5px;
+      }
+      .s-bad {
+        color: $red;
+        margin-right: 5px;
+      }
     }
     @media screen and (max-width: 767px) {
       padding-left: 0px;
