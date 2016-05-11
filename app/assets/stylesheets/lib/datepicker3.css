@@ -754,7 +754,7 @@ fieldset[disabled] .datepicker table tr td span.active.disabled:hover.active {
   vertical-align: middle;
   background-color: #eeeeee;
   border: solid #cccccc;
-  border-width: 1px 0;
+  border-width: 2px 0;
   margin-left: -5px;
   margin-right: -5px;
 }
