@@ -70,13 +70,13 @@ class AdminStats
     Payment.where('date > ?', date).group_by_month(:date, format: "%b").sum(:amount)
   end
 
-  def users_created_since(date)
-    User.where("created_at >= ?", date)
+  def free_users_created_since(date)
+    User.free_only.where("created_at >= ?", date)
   end
 
   def upgraded_users_since(date)
     pro_users = []
-    User.pro_only.each do |user|
+    User.pro_only.joins(:payments).order("payments.created_at ASC").group_by(&:id).each do |user|
       first_payment = user.payments.order('payments.date').try(:first).try(:date)
       if first_payment.present? && first_payment > date
         pro_users << user
@@ -94,7 +94,7 @@ class AdminStats
   def paid_status_for(user)
     entries_per_day = entries_per_day_for(user)
 
-    if entries_per_day <= 0.02
+    if entry_count_for(user) == 0
       "danger"
     elsif entries_per_day <= 0.2
       "warning"
