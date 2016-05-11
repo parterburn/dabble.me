@@ -5,16 +5,16 @@ describe 'Pages' do
 
   it 'has corect title for Root page' do
     visit root_path
-    expect(page).to have_title 'Dabble Me — your private journal.'
+    expect(page).to have_title 'Dabble Me — Your private journal.'
   end
 
   it 'has correct title for FAQs page' do
     visit faqs_path
-    expect(page).to have_title 'Dabble Me FAQs'
+    expect(page).to have_title 'Dabble Me — Frequently Asked Questions'
   end
 
   it 'has correct title for Subscribe page' do
     visit subscribe_path
-    expect(page).to have_title 'Subscribe to Dabble Me PRO'
+    expect(page).to have_title 'Dabble Me — Pricing'
   end
 end
