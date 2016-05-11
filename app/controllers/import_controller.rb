@@ -5,7 +5,11 @@ class ImportController < ApplicationController
   SPLIT_AT_DATE_REGEX = /[12]{1}[90]{1}[0-9]{2}\-[0-1]{1}[0-9]{1}\-[0-3]{1}[0-9]{1}/
 
   def update
-    flash = import_entries(params[:entry][:text])
+    if current_user.is_free?
+      flash[:alert] = "<a href='#{subscribe_url}'' class='alert-link'>Subscribe to PRO</a> to import entries.".html_safe
+    else
+      flash = import_entries(params[:entry][:text])
+    end
     redirect_to past_entries_path
   end
 

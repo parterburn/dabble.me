@@ -26,7 +26,7 @@ class User < ActiveRecord::Base
   scope :not_forever, -> { where("plan NOT ILIKE '%forever%'") }
 
   before_save { email.downcase! }
-  after_commit :check_account_status, on: [:create, :update]
+  after_commit :restrict_free_frequency, on: [:create, :update]
   after_create do
     send_welcome_email
     subscribe_to_mailchimp if Rails.env.production?
@@ -44,30 +44,8 @@ class User < ActiveRecord::Base
     first_name.present? ? "#{first_name}" : fallback
   end
 
-  def is_admin?
-    admin_emails.include?(self.email)
-  end
-
   def frequencies
-    frequencies = ''
-    self.frequency.each do |freq|
-      if self.frequency.count == 1
-        frequencies = "#{freq}"
-      elsif self.frequency.count == 2
-        if freq == self.frequency.last
-          frequencies += " and #{freq}"
-        else
-          frequencies += "#{freq}"
-        end
-      else
-        if freq == self.frequency.last
-          frequencies += "and #{freq}"
-        else
-          frequencies += "#{freq}, "
-        end
-      end
-    end
-    frequencies
+    frequency.to_sentence
   end
 
   def random_entry(entry_date=nil)
@@ -98,6 +76,10 @@ class User < ActiveRecord::Base
     entries.where(date: selected_date).first
     rescue
       nil
+  end
+
+  def is_admin?
+    admin_emails.include?(self.email)
   end
 
   def is_pro?
@@ -153,8 +135,7 @@ class User < ActiveRecord::Base
 
   private
 
-  def check_account_status
-    # Force frequency to 1 day if free
+  def restrict_free_frequency
     if self.is_free? && self.frequency.present?
       self.update_column(:frequency, [self.frequency.first])
     end

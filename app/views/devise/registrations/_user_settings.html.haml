@@ -35,9 +35,9 @@
         %span.s-day-email= label_tag "frequency_#{day}", day
         &nbsp;&nbsp;
       .clearfix
-      - if add_class == "disabled"
-        =link_to "Subscribe to PRO", subscribe_path, class: "alert-link"
-        to unlock the ability to change delivery days.
+      -if @user.is_free?
+        %strong= link_to "Subscribe to PRO to change frequency.", subscribe_path, class: "alert-link"
+        Free accounts are limited to 1 email every other week.
       %br
       %br
     

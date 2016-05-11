@@ -7,7 +7,7 @@ class UserMailer < ActionMailer::Base
     @user = user
     @user.increment!(:emails_sent)
     headers['X-Mailgun-Tag'] = 'Welcome'
-    mail(from: "Dabble Me <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.email, subject: "Let's write your first Dabble Me entry")
+    mail(from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.email, subject: "Let's write your first Dabble Me entry")
   end
 
   def second_welcome_email(user)
@@ -18,7 +18,7 @@ class UserMailer < ActionMailer::Base
       @first_entry_image_url = @first_entry.image_url_cdn
     end    
     headers['X-Mailgun-Tag'] = 'Welcome'
-    mail(from: "Dabble Me <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.email, subject: 'Congrats on writing your first entry!')
+    mail(from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.email, subject: 'Congrats on writing your first entry!')
   end
 
   def thanks_for_paying(user)

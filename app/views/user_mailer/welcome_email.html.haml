@@ -1,7 +1,7 @@
 %p
   Welcome to
   =link_to "Dabble Me", "https://#{ENV['MAIN_DOMAIN']}"
-  \- the simple journal that you'll actually use! Since you're new here, we're going to make it easy for you to write your first entry.
+  \- the simple & private journal that you'll actually use! Since you're new here, we're going to make it easy for you to write your first entry.
 %p
   %b How's your day going?
   Just reply to this email with your answer, and it's instantly saved in your Dabble Me account.
@@ -20,10 +20,14 @@
       Tag your entries with #hashtags to make it easy to find related posts.
       %br
       %br
-    %li
-      Unlock premium features like changing email frequency, editing entries & attaching photos to your reply by
-      =link_to "subscribing", "https://#{ENV['MAIN_DOMAIN']}/subscribe"
-      to Dabble Me PRO.
+    - if @user.is_free?
+      %li
+        As a free user, you'll receive an email every other week on Sunday.
+        %br
+        %br
+      %li
+        Unlock premium features like changing email frequency, editing entries, and attaching a photo to your reply by subscribing to
+        =link_to("Dabble Me PRO", "https://#{ENV['MAIN_DOMAIN']}/subscribe")+"."
 %hr{:style=>"margin-top: 20px;margin-bottom: 20px;border: 0;border-top: 2px solid whiteSmoke;"}
 %p
   You can always email #{@user.user_key}@#{ENV['SMTP_DOMAIN']} to post new entries&nbsp;

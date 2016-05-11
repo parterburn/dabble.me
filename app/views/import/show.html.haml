@@ -5,40 +5,48 @@
     %h3 Import Entries (OhLife format)
   .clearfix
 
-  = form_for :entry, url: import_process_path, method: :put do |f|
-    
+  - if current_user.is_free?
+    - add_class = "blur"
     .col-md-8.col-md-offset-2
-      = f.text_area :text, :class => "form-control", :rows => 10, :placeholder => "2014-10-02\n\nHere's my first entry!\n\nYYYY-MM-DD\n\nEntry text exactly 2 line-breaks after date."
+      .alert.alert-warning
+        =link_to "Subscribe now", subscribe_path, class: "alert-link"
+        to import entries.
 
-      %br
+  %div{class: add_class}
+    = form_for :entry, url: import_process_path, method: :put do |f|
+      
+      .col-md-8.col-md-offset-2
+        = f.text_area :text, :class => "form-control", :rows => 10, :placeholder => "2014-10-02\n\nHere's my first entry!\n\nYYYY-MM-DD\n\nEntry text exactly 2 line-breaks after date."
 
-    .col-md-8.col-md-offset-2
-      = f.submit "Import Entries", :class => "form-control btn btn-primary"
-      %br
-      %br
-    .clearfix
+        %br
 
-- if current_user.is_pro? && params[:photos].present?
-  %br
-  .well.col-md-8.col-md-offset-2
-    .col-md-4.center
-      %div
+      .col-md-8.col-md-offset-2
+        = f.submit "Import Entries", :class => "form-control btn btn-primary"
         %br
-        %h4 Import OhLife Photos
-    = form_tag(import_ohlife_images_path, :multipart => true) do
-      .col-md-4.center
         %br
-        = label_tag 'zip_file', "Choose ZIP file of photos"
-        = file_field_tag 'zip_file', :class=>"center"
-        %br
-      .col-md-4.center
-        %br
-        = submit_tag "Upload ZIP File", :class => "btn btn-primary"
-        .clearfix
       .clearfix
-    .alert.alert-warning.center
-      You may need to split up the ZIP file that you downloaded from OhLife into smaller ZIP files.
+
+    - if params[:photos].present?
       %br
-      %strong This importer works best with ZIP files less than 20 MB and less than 20 files.    
-      %br
-      %i Filenames are expected to be in the format of: img_2014-10-22-0.jpg
+      .well.col-md-8.col-md-offset-2
+        .col-md-4.center
+          %div
+            %br
+            %h4 Import OhLife Photos
+        = form_tag(import_ohlife_images_path, :multipart => true) do
+          .col-md-4.center
+            %br
+            = label_tag 'zip_file', "Choose ZIP file of photos"
+            = file_field_tag 'zip_file', :class=>"center"
+            %br
+          .col-md-4.center
+            %br
+            = submit_tag "Upload ZIP File", :class => "btn btn-primary"
+            .clearfix
+          .clearfix
+        .alert.alert-warning.center
+          You may need to split up the ZIP file that you downloaded from OhLife into smaller ZIP files.
+          %br
+          %strong This importer works best with ZIP files less than 20 MB and less than 20 files.    
+          %br
+          %i Filenames are expected to be in the format of: img_2014-10-22-0.jpg

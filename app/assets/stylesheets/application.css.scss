@@ -49,10 +49,15 @@ hr {
   .navbar-nav > li > a {
     color:whiteSmoke;
     letter-spacing: 0.5px;
+    border-top: 3px solid transparent;
+    -webkit-transition: all 0.3s;
+    transition: all 0.3s;
+    padding-top: 13px;
     &:hover {
       color:white;
-      border-top: 2px solid white;
-      margin-bottom: -2px;
+      border-color: white;
+      padding-top: 15px;
+      padding-bottom: 13px;
     }
   }
   .navbar-nav > .active >a {
@@ -60,6 +65,7 @@ hr {
     background-color: darken(#649cc7,10);
     &:hover {
       color: white;
+      border-color: transparent;
       background-color: darken(#649cc7,20);
       text-shadow: 0px 0px 3px darken(#649cc7,40);
     }
@@ -72,10 +78,15 @@ hr {
     font-size: 20px;
     text-shadow: 0px 0px 1px darken(#649cc7,20);
     display: inline-block;
+    -webkit-transition: all 0.3s;
+    transition: all 0.3s; 
+    border-top: 3px solid transparent;
+    padding-top: 13px;
     &:hover {
-      color:white;
-      border-top: 2px solid white;
-      margin-bottom: -2px;
+      color: white;
+      border-color: white;
+      padding-top: 15px;
+      padding-bottom: 13px;
     }
     span {
       font-weight: 700;
@@ -89,16 +100,18 @@ hr {
   background-color: white;
   border-radius: 4px;
   border: 1px solid rgba(224, 224, 224, 0.6);
-  >.blur {
-    -webkit-filter: blur(2px);
-    filter: blur(2px);
-    pointer-events: none;
-  }
-  >.really-blur {
-    -webkit-filter: blur(15px);
-    filter: blur(15px);
-    pointer-events: none;
-  }  
+}
+
+.blur {
+  -webkit-filter: blur(2px);
+  filter: blur(2px);
+  pointer-events: none;
+}
+
+.really-blur {
+  -webkit-filter: blur(15px);
+  filter: blur(15px);
+  pointer-events: none;
 }
 
 #error_explanation h2 {
@@ -373,6 +386,8 @@ label {
   border: 2px solid #CCCCCC;
   box-shadow: none;
   outline: none;
+  -webkit-transition: all 0.3s;
+  transition: all 0.3s;
   &:hover {
     border-color: #999999;
     box-shadow: none;
@@ -420,28 +435,28 @@ input[type="submit"].form-control {
 }
 
 .navbar-toggle .icon-bar:nth-of-type(2) {
-    top: 1px;
+  top: 1px;
 }
 
 .navbar-toggle .icon-bar:nth-of-type(3) {
-    top: 2px;
+  top: 2px;
 }
 
 .navbar-toggle .icon-bar {
-    position: relative;
-    transition: all 500ms ease-in-out;
+  position: relative;
+  transition: all 500ms ease-in-out;
 }
 
 .navbar-toggle.active .icon-bar:nth-of-type(1) {
-    top: 6px;
-    transform: rotate(45deg);
+  top: 6px;
+  transform: rotate(45deg);
 }
 
 .navbar-toggle.active .icon-bar:nth-of-type(2) {
-    background-color: transparent;
+  background-color: transparent;
 }
 
 .navbar-toggle.active .icon-bar:nth-of-type(3) {
-    top: -6px;
-    transform: rotate(-45deg);
+  top: -6px;
+  transform: rotate(-45deg);
 }

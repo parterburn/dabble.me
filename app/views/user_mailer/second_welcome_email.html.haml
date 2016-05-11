@@ -18,10 +18,10 @@
 - if @user.frequencies.present?
   %p
     %i
-      P.S. You'll receive emails every #{@user.frequencies} at #{@user.send_time.strftime("%-I %P")} #{@user.send_timezone}.
+      P.S. You'll receive emails every#{" other" if @user.is_free?} #{@user.frequencies} at #{@user.send_time.strftime("%-I%P")} #{@user.send_timezone}.
       =link_to "Unsubscribe or Change Settings", "https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}"
 - else
   %p
     %i
-      P.S. You have email reminders turned off, so you won't receive any further emails.
+      P.S. You have email reminders turned off, so you won't receive any further prompts to journal like this.
       =link_to "Change Settings", "https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}"

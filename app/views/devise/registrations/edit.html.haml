@@ -13,9 +13,8 @@
       -if current_user.is_pro?
         Thanks for subscribing to #{current_user.plan_name}!
       - else
-        Unlock premium features like changing the frequency of emails, adding/editing entries via the web, adding a photo, rich formatting, and searching your entries by
-        =link_to("subscribing to Dabble Me PRO", subscribe_path)+"."
-
+        Unlock premium features like changing the frequency of emails, adding/editing entries via the web, adding a photo, rich formatting, and searching your entries by subscribing to
+        =link_to("Dabble Me PRO", subscribe_path, class: 'alert-link')+"."
     %hr
 
   = render partial: 'user_settings', locals: { form_path: registration_path(resource_name) }

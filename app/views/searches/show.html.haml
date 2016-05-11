@@ -3,10 +3,12 @@
 
 .row
   - if current_user.is_free?
+    - add_class = 'blur'
     .col-md-8.col-md-offset-2
       .alert.alert-warning
         =link_to "Subscribe now", subscribe_path, class: "alert-link"
-        to unlock the ability to search your entries, and see which tags are used most.
+        to search your entries and see which tags are used most.
+
   .col-md-8.col-md-offset-2
     %br
     = form_for @search, url: search_path, method: :get, html: { class: "form-horizontal" } do |f|

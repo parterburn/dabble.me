@@ -1,16 +1,19 @@
-Welcome to Dabble Me - the simple journal that you'll actually use! Since you're new here, we're going to make it easy for you to write your first entry.
+Welcome to Dabble Me - the simple & private journal that you'll actually use! Since you're new here, we're going to make it easy for you to write your first entry.
 \ 
 How's your day going? Just reply to this email with your answer, and it's instantly saved in your Dabble Me account at https://#{ENV['MAIN_DOMAIN']}/entries. Try it!
 \ 
 Helpful tips:
 \ 
 1. It's okay to keep it simple! Even one sentence about how your day is going is just fine.
+\
+2. Only you can read what you write. That means there's no wrong way to do this.
 \ 
-2. Tag your entries with #hashtags to make it easy to find related posts.
-\ 
-3. Only you can read what you write. That means there's no wrong way to do this.
-\ 
-4. Attach a photo to your reply and it saves right alongside your entry. (Subscription required: https://dabble.me/subscribe)
+3. Tag your entries with #hashtags to make it easy to find related posts.
+- if @user.is_free?
+  \
+  4. As a free user, you'll receive an email every other week on Sunday.
+  \ 
+  5. Unlock premium features like changing email frequency, editing entries, and attaching a photo to your reply by subscribing to Dabble Me PRO: https://dabble.me/subscribe
 \ 
 \----------------------------
 \ 

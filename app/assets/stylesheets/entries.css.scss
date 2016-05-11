@@ -239,7 +239,14 @@ mark {
   }
 }
 
-.s-no-entries {
+.s-no-entries-cta {
+  margin: 20px auto 40px auto;
+  .btn {
+    margin-top: 10px;
+  }
+}
+
+.s-no-entries-ideas {
   ul {
     font-size: 18px;
     padding-left: 10px !important;

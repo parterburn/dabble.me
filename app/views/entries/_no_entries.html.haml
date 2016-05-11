@@ -1,35 +1,34 @@
 - title "No Entries"
 
 .col-md-8.col-md-offset-2
-  %br
-  %br
   .center
-    %p
-      %h4 You're all signed up, but don't have any entries!
-    %p
-      %h3
-        %strong You've got mail!
-      %h4
-        %strong Reply to the email and you'll see it here.
-    %p.small
-      %br
-      %i 
-        You can also post entries by emailing
-        =mail_to("#{current_user.user_key}@#{ENV['SMTP_DOMAIN']}", "#{current_user.user_key}@#{ENV['SMTP_DOMAIN']}", encode: "hex", target: "_blank", subject: "#{Time.now.in_time_zone(current_user.send_timezone).strftime('%A, %b %-d')}", body: "My first Dabble Me entry!")+'.'
-    %br
-    - if current_user.is_pro?
-      =link_to "Write your first entry", new_entry_path, :class => "btn btn-primary btn-lg"
-      =link_to "Import Entries", import_path, :class => "btn btn-primary btn-lg"
+    - if current_user.created_at > 2.day.ago
+      %p
+        %h3 You've got mail!
+        %iframe{src: "//giphy.com/embed/WZ4M8M2VbauEo?html5=true&hideSocial=true", width: "480", height: "273", frameborder: "0", class: "giphy-embed", allowfullscreen: "", style: "max-width: 100%;"}
+        %h4 Reply to the email from Dabble Me and you'll see it here.
     - else
-      =link_to "Subscribe to PRO ($3/mo)", subscribe_path, :class => "btn btn-primary btn-lg"
-    %br
+      %br
+      %br
+      %p
+        %h3 You're all signed up, but don't have any entries!
+      %p
+        You can post entries by emailing
+        = mail_to("#{current_user.user_key}@#{ENV['SMTP_DOMAIN']}", "#{current_user.user_key}@#{ENV['SMTP_DOMAIN']}", encode: "hex", target: "_blank", subject: "#{Time.now.in_time_zone(current_user.send_timezone).strftime('%A, %b %-d')}", body: "My first Dabble Me entry!")+'.'
+    .clearfix
+    .s-no-entries-cta
+      - if current_user.is_pro?
+        = link_to "Write your first entry", new_entry_path, :class => "btn btn-primary btn-lg"
+        = link_to "Import Entries", import_path, :class => "btn btn-primary btn-lg"
+      - else
+        = link_to "Subscribe to PRO — $3/mo", subscribe_path, :class => "btn btn-primary btn-lg"
+        = mail_to "#{current_user.user_key}@#{ENV['SMTP_DOMAIN']}", "No Email?", encode: "hex", target: "_blank", subject: "#{Time.now.in_time_zone(current_user.send_timezone).strftime('%A, %b %-d')}", body: "My first Dabble Me entry!", class: "btn btn-primary btn-lg", rel: "tooltip", title: "Click to show your unique email address for sending new entries."
 
-.col-md-8.col-md-offset-2.s-no-entries.well.s-features.top40
+.col-md-8.col-md-offset-2.s-no-entries-ideas.well
   .center
     .s-entry-date
       %h2 Looking for ideas?
-      %h3
-        %span A few use cases of journaling
+      %hr
   .s-scrollable
     %ul
       %li
@@ -39,8 +38,8 @@
         %strong Memory keeper for major events/milestones
         — we easily forget. Write it down now and the daily emails will bring you smiles when it reminds you of all your favorite moments. I started journaling when I first met my wife almost 5 years ago — I took 5 minutes to write about all of the dates we went on. Reading those past entries to each other has become a routine that deepens our relationship now.
       %li
-        %strong Goal Tracking
-        — use #hashtags in your posts for easily tagging entries with your different goals.
+        %strong Goals/Health Tracking
+        — use #hashtags in your posts for easily tagging entries with your different goals or visits to different doctors.
       %li
         %strong Learning Aid
         — especially for learning to code or different college courses. The concept of past entries in your inbox is a way of reminding you what you learned that day. It makes the subject matter much more sticky so you actually remember it.

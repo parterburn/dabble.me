@@ -10,9 +10,9 @@ class EntryMailer < ActionMailer::Base
     @random_inspiration = random_inspiration
 
     headers['X-Mailgun-Tag'] = 'Entry'
-    mail from: "Dabble Me <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
+    mail from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
          to: "#{user.full_name} <#{user.email}>",
-         subject: "It's #{Time.now.in_time_zone(user.send_timezone).strftime('%A, %b %-d')}. How was your day? ✏"
+         subject: "It's #{Time.now.in_time_zone(user.send_timezone).strftime('%A, %b %-d')}. How was your day?"
 
     user.increment!(:emails_sent)
   end
