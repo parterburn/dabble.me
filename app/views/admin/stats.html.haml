@@ -99,7 +99,7 @@
 
   .col-md-12
     - upgrades = @dashboard.upgraded_users_since(30.days.ago)
-    %h3 #{pluralize(upgrades.count, "Upgrade"} from the last 30 days
+    %h3 #{pluralize(upgrades.count, "Upgrade")} from the last 30 days
     %p
       %table.table.table-striped.table-hover
         %tr
