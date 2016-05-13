@@ -89,4 +89,15 @@ Rails.application.configure do
   }
 
   GA.tracker = ENV['GOOGLE_ANALYTICS_ID']
+
+  if ENV['NOTIFY_ERRORS']
+    config.middleware.use ExceptionNotification::Rack,
+      ignore_if: lambda { |env, exception| !env.nil? },
+      email: {
+        sender_address: %{"Dabble Me Errors" <noreply@ENV['MAIN_DOMAIN']>},
+        exception_recipients: %w{ENV['ADMIN_EMAILS'].gsub(',',' ')}
+      }
+
+    ExceptionNotifier::Rake.configure
+  end
 end

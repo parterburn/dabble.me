@@ -45,6 +45,7 @@ gem 'file_validators'
 gem 'google-analytics-rails'
 gem 'gabba', '~> 1.0.1' # server side tracking for Google Analytics
 gem 'haml'
+gem 'exception_notification-rake', '~> 0.2.1'
 
 # Assets
 gem 'autoprefixer-rails'
