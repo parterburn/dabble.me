@@ -17,11 +17,7 @@ namespace :entry do
         else
           # Every other week for free users
           if user.is_pro? || (user.is_free? && Time.now.strftime("%U").to_i % 2 == 0)
-            begin
-              EntryMailer.send_entry(user).deliver_now
-            rescue Net::ReadTimeout => e
-              retry
-            end
+            EntryMailer.send_entry(user).deliver_now
           end
         end
       end
