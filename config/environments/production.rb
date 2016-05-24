@@ -94,8 +94,8 @@ Rails.application.configure do
     config.middleware.use ExceptionNotification::Rack,
       ignore_if: lambda { |env, exception| !env.nil? },
       email: {
-        sender_address: %{"Dabble Me Errors" <noreply@ENV['MAIN_DOMAIN']>},
-        exception_recipients: %w{ENV['ADMIN_EMAILS'].gsub(',',' ')}
+        sender_address: %{"Dabble Me Errors" <noreply@#{ENV['MAIN_DOMAIN']}>},
+        exception_recipients: ENV.fetch('ADMIN_EMAILS').split(',')
       }
 
     ExceptionNotifier::Rake.configure
