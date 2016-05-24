@@ -272,6 +272,10 @@ GEM
       nokogiri (>= 1.5.9)
     mail (2.6.3)
       mime-types (>= 1.16, < 3)
+    mailgun_rails (0.8.0)
+      actionmailer (>= 3.2.13)
+      json (>= 1.7.7)
+      rest-client (>= 1.6.7)
     mailgun_webhooks (1.0.0)
     meta_request (0.3.4)
       callsite (~> 0.0, >= 0.0.11)
@@ -465,6 +469,7 @@ DEPENDENCIES
   jquery-rails
   kaminari
   le
+  mailgun_rails
   mailgun_webhooks (~> 1.0)
   meta_request
   mini_magick

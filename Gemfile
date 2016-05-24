@@ -22,6 +22,7 @@ gem 'griddler', '~> 1.2.1'
 gem 'griddler-mailgun'
 gem 'email_reply_parser'
 gem 'mailgun_webhooks', '~> 1.0'
+gem 'mailgun_rails'
 
 gem 'randomized_field', '~> 0.1.0' # builds user_keys
 gem 'summernote-rails' # wysiwyg
@@ -31,7 +32,7 @@ gem 'zip-zip'
 gem 'rack-utf8_sanitizer'
 gem 'chartkick' # Admin Stats
 gem 'groupdate' # Admin Stats
-gem 'words_counted'
+gem 'words_counted' # Year in Review
 
 gem 'kaminari' # Pagination
 

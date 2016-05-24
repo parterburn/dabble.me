@@ -3,18 +3,18 @@ class EntryMailer < ActionMailer::Base
 
   def send_entry(user)
     @user = user
+    @user.increment!(:emails_sent)
     @random_entry = user.random_entry(Time.now.in_time_zone(user.send_timezone).strftime('%Y-%m-%d'))
     if @random_entry.present?
       @random_entry_image_url = @random_entry.image_url_cdn
     end
     @random_inspiration = random_inspiration
 
-    headers['X-Mailgun-Tag'] = 'Entry'
-    mail from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
-         to: "#{user.full_name} <#{user.email}>",
-         subject: "It's #{Time.now.in_time_zone(user.send_timezone).strftime('%A, %b %-d')}. How was your day?"
+    email = mail  from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
+                  to: "#{user.full_name} <#{user.email}>",
+                  subject: "It's #{Time.now.in_time_zone(user.send_timezone).strftime('%A, %b %-d')}. How was your day?"
 
-    user.increment!(:emails_sent)
+    email.mailgun_options = {tag: 'Entry'}
   end
 
   private

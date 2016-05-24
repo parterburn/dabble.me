@@ -29,8 +29,7 @@ MAIN_DOMAIN: yourdomain.com
 SECRET_KEY_BASE: 1234..1234
 DEVISE_SECRET_KEY: 1234..1234
 SMTP_DOMAIN: post.yourdomain.com
-MAILGUN_USERNAME: your_mailgun_username
-MAILGUN_PASSWORD: your_mailgun_password
+MAILGUN_API_KEY=api-key
 MAILCHIMP_API_KEY: f....3333-ek3
 MAILCHIMP_LIST_ID: 9982...112
 ADMIN_EMAILS: admin@dabble.ex,user2@domain.com
@@ -44,8 +43,7 @@ SMTP_DOMAIN=post.yourdomain.me
 RAILS_ENV=production
 SECRET_KEY_BASE=1234..1234
 DEVISE_SECRET_KEY=1234..1234
-MAILGUN_USERNAME=username
-MAILGUN_PASSWORD=password
+MAILGUN_API_KEY=api-key
 GOOGLE_ANALYTICS_ID=UA-12345-67
 ADMIN_EMAILS=user1@domain.com,user2@domain.com
 
