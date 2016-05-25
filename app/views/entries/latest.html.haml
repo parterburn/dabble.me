@@ -37,8 +37,6 @@
         - year_back += 1
         - back_year_entry = current_user.entries.where(:date => (Time.now.in_time_zone(current_user.send_timezone) - year_back.years).strftime("%Y-%m-%d")).first
         - if back_year_entry.present?
-          .col-md-8.col-md-offset-1
-            %br
           .col-md-8.col-md-offset-1.well.entry{:id => "entry-#{back_year_entry.id}"}
             = render :partial => 'entries/entry', :locals => {:entry => back_year_entry}
 
