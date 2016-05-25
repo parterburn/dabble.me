@@ -31,7 +31,6 @@
     .col-md-8.well.entry{:id => "entry-#{@lastest_entry.id}", :class=>"#{add_class}"}
       = render :partial => 'entries/entry', :locals => {:entry => @lastest_entry}
 
-
     -if current_user.is_pro?
       - 5.times do |year_back|
         - year_back += 1
