@@ -9,7 +9,7 @@
         =link_to "Subscribe to PRO", subscribe_path, class: "alert-link"
         to unlock the ability to add new entries via the web.
 
-  .col-md-8.col-md-offset-2.well{:id => "entry-#{@entry.id}"}
+  .col-md-8.col-md-offset-2.well.s-new-edit-entry{:id => "entry-#{@entry.id}"}
     %div{class: add_class}
       - if @entry.exactly_past_years(current_user)
         - year_back = Time.now.in_time_zone(current_user.send_timezone).year - @entry.date.year
@@ -28,7 +28,7 @@
               =@random_inspiration.body
               - if @random_inspiration.category != "Tip"
                 =f.hidden_field :inspiration_id, :value => @random_inspiration.id
-          %h3
+          %h3{style: 'color: #333333;'}
             %span
               NEW ENTRY
 

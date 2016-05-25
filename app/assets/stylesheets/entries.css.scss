@@ -167,14 +167,29 @@ a.s-delete {
     span {
       padding: 0 15px;
       background-color: #fff;
-    }    
+    }
   }
   &.s-new-entry {
     .s-edit-entry {
-      margin-top:-6px;
+      padding: 0px;
+      &.float-left {
+        margin-left: 15px;
+      }
+      &.float-right {
+        margin-right: 15px;  
+      }
+      margin-top: 6px;
+      @media screen and (max-width: 767px) {
+        &.float-left {
+          margin-left: 0px;
+        }
+        &.float-right {
+          margin-right: 0px;
+        }
+      }      
     }
     > h3 {
-      color: #333;
+      color: #999;
     }
   }
 }
@@ -346,4 +361,8 @@ mark {
     border-left: 0px;
     border-right: 0px;
   }
+}
+
+.s-new-edit-entry.well {
+  padding-top: 0px;
 }
