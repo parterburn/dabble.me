@@ -1,7 +1,8 @@
 !!!
 %html
   %head
-    %meta{:content => "text/html; charset=UTF-8", "http-equiv" => "Content-Type"}/
+    %meta{:content => "text/html; charset=UTF-8", "http-equiv" => "Content-Type"}
+    %meta{name: "viewport", content: "width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=no;"}
   %body
     - if @user.entries.count == 0
       %p Just reply to this email with your first post for #{Time.now.in_time_zone(@user.send_timezone).strftime("%B %-d")}.
@@ -19,7 +20,7 @@
         = simple_format(@random_entry.hashtag_body)
       - if @random_entry_image_url.present?
         %p
-          =link_to image_tag(@random_entry_image_url, style: 'max-width: 550px;'), @random_entry_image_url
+          =link_to image_tag(@random_entry_image_url, style: 'max-width: 100%;'), @random_entry_image_url
     - elsif @user.send_past_entry?
       %p
         %b Keep writing...once you have a few entries you'll see a blast from the past show up here!

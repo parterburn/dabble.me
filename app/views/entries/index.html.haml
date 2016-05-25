@@ -58,8 +58,7 @@
       = paginate @entries
 
   - @entries.each do |entry|
-    %br
-    .col-md-8.col-md-offset-1.well{:id => "entry-#{entry.id}"}
+    .col-md-8.col-md-offset-1.well.entry{:id => "entry-#{entry.id}"}
       = render partial: 'entries/entry', locals: { entry: entry }
 
   .col-md-8.col-md-offset-1

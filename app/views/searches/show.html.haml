@@ -39,9 +39,9 @@
           = paginate search_entries
 
       - search_entries.each do |entry|
-        %br
-        .col-md-12.well{:id => "entry-#{entry.id}"}
-          = render partial: 'entries/entry', locals: { entry: entry }
+        .row
+          .col-md-12.well.entry{:id => "entry-#{entry.id}"}
+            = render partial: 'entries/entry', locals: { entry: entry }
 
       .col-md-12
         .center
