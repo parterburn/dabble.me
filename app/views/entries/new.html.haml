@@ -50,7 +50,7 @@
                 = f.check_box :remove_image, class: 'j-image-remove'
                 &nbsp;Remove Photo
               %br
-              .pictureFrame.j-image-preview
+              .pictureFrame.editable.j-image-preview
                 =link_to @entry.image_url_cdn, target: "_blank" do
                   =image_code(@entry)
             - else

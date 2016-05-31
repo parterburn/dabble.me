@@ -13,15 +13,15 @@
     %h3
       %span
         = entry.date_day.upcase
-- if entry.image_url_cdn.present?
-  .pictureFrame
-    =link_to entry.image_url_cdn, :target=>"_blank" do
-      =image_code(entry)
 .s-scrollable
   - if @search.present?
     = highlight(entry.hashtag_body, @search.term)
   - else
     = entry.hashtag_body
+- if entry.image_url_cdn.present?
+  .pictureFrame
+    =link_to entry.image_url_cdn, :target=>"_blank" do
+      =image_code(entry)    
 .clearfix
 
 :javascript

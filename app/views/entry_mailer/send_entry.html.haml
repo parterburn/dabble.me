@@ -20,7 +20,7 @@
         = @random_entry.hashtag_body
       - if @random_entry_image_url.present?
         %p
-          =link_to image_tag(@random_entry_image_url, style: 'max-width: 100%;'), @random_entry_image_url
+          =link_to image_tag(@random_entry_image_url, style: 'max-width: 100%; border-radius: 4px;'), @random_entry_image_url
     - elsif @user.send_past_entry?
       %p
         %b Keep writing...once you have a few entries you'll see a blast from the past show up here!
