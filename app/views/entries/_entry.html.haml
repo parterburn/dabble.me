@@ -19,9 +19,9 @@
       =image_code(entry)
 .s-scrollable
   - if @search.present?
-    = highlight(simple_format(entry.hashtag_body, {}, :sanitize => false).html_safe, @search.term)
+    = highlight(entry.hashtag_body, @search.term)
   - else
-    = simple_format(entry.hashtag_body, {}, :sanitize => false).html_safe
+    = entry.hashtag_body
 .clearfix
 
 :javascript

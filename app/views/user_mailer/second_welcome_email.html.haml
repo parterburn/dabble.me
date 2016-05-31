@@ -12,7 +12,7 @@
       %p
         %b Here's what you wrote...
       %p
-        = simple_format(@first_entry.hashtag_body)
+        = @first_entry.hashtag_body
       - if @first_entry_image_url.present?
         %p
           =link_to image_tag(@first_entry_image_url, style: 'max-width: 100%;'), first_entry_image_url

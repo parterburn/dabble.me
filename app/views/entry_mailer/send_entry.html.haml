@@ -17,7 +17,7 @@
           - format_date  = @random_entry.date.strftime('%a, %b %-d, %Y')
           Remember this? On #{format_date} (#{@random_entry.time_ago_in_words_or_numbers(@user)} ago) you wrote...
       %p
-        = simple_format(@random_entry.hashtag_body)
+        = @random_entry.hashtag_body
       - if @random_entry_image_url.present?
         %p
           =link_to image_tag(@random_entry_image_url, style: 'max-width: 100%;'), @random_entry_image_url

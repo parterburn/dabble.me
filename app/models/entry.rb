@@ -35,7 +35,8 @@ class Entry < ActiveRecord::Base
   end
 
   def hashtag_body
-    self.body.gsub(/(<a[^>]*>.*?< ?\/a ?>)|(#[0-9]+\W)|(#[a-zA-Z0-9_]+)/) { "#{$1}#{$2}<a href='#{Rails.application.routes.url_helpers.search_url(host: ENV['MAIN_DOMAIN'], search: {term: $3})}'>#{$3}</a>" } if self.body.present?
+    h_body = self.body.gsub(/(<a[^>]*>.*?< ?\/a ?>)|(#[0-9]+\W)|(#[a-zA-Z0-9_]+)/) { "#{$1}#{$2}<a href='#{Rails.application.routes.url_helpers.search_url(host: ENV['MAIN_DOMAIN'], search: {term: $3})}'>#{$3}</a>" } if self.body.present?
+    sanitize h_body, tags: %w(strong em a div span ul li b i img), attributes: %w(href style src)
   end
 
   def time_ago_in_words_or_numbers(user)
