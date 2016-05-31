@@ -32,6 +32,7 @@ class EmailProcessor
 
     @body.gsub!(/\n\n\n/, "\n\n \n\n") # allow double line breaks
     @body = unfold_paragraphs(@body) unless @from.include?('yahoo.com') # fix wrapped plain text, but yahoo messes this up
+    @body = "<p>#{@body}</p>" # basic formatting
     @body.gsub!(/\*(.+?)\*/i, '<b>\1</b>') # bold when bold needed
     @body.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, '') # remove "inline image" text
 
