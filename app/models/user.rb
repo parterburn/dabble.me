@@ -37,7 +37,7 @@ class User < ActiveRecord::Base
   end
 
   def cleaned_to_address
-    "#{full_name.gsub(/[^\w\s-]/i, '')} <#{email}>"
+    "#{full_name.gsub(/[^\w\s-]/i, '') if full_name.present?} <#{email}>"
   end  
 
   def full_name_or_email
