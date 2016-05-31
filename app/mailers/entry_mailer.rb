@@ -11,7 +11,7 @@ class EntryMailer < ActionMailer::Base
     @random_inspiration = random_inspiration
 
     email = mail  from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
-                  to: "#{user.full_name} <#{user.email}>",
+                  to: "#{user.cleaned_to_address}",
                   subject: "It's #{Time.now.in_time_zone(user.send_timezone).strftime('%A, %b %-d')}. How was your day?"
 
     email.mailgun_options = {tag: 'Entry'}

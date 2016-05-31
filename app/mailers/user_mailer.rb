@@ -6,7 +6,7 @@ class UserMailer < ActionMailer::Base
   def welcome_email(user)
     @user = user
     @user.increment!(:emails_sent)
-    email = mail(from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.email, subject: "Let's write your first Dabble Me entry")
+    email = mail(from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.cleaned_to_address, subject: "Let's write your first Dabble Me entry")
     email.mailgun_options = {tag: 'Welcome'}
   end
 
@@ -17,21 +17,21 @@ class UserMailer < ActionMailer::Base
     if @first_entry.present?
       @first_entry_image_url = @first_entry.image_url_cdn
     end
-    email = mail(from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.email, subject: 'Congrats on writing your first entry!')
+    email = mail(from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.cleaned_to_address, subject: 'Congrats on writing your first entry!')
     email.mailgun_options = {tag: 'Welcome'}
   end
 
   def thanks_for_paying(user)
     @user = user
     @user.increment!(:emails_sent)
-    email = mail(to: user.email, subject: 'Thanks for subscribing to Dabble Me PRO!')
+    email = mail(to: user.cleaned_to_address, subject: 'Thanks for subscribing to Dabble Me PRO!')
     email.mailgun_options = {tag: 'Thanks'}
   end
 
   def downgraded(user)
     @user = user
     @user.increment!(:emails_sent)
-    email = mail(to: user.email, subject: '[ACTION REQUIRED] Account Downgraded')
+    email = mail(to: user.cleaned_to_address, subject: '[ACTION REQUIRED] Account Downgraded')
     email.mailgun_options = {tag: 'Downgraded'}
   end
 
