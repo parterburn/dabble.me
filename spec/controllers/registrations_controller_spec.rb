@@ -26,13 +26,13 @@ RSpec.describe RegistrationsController, type: :controller do
     it 'should let user edit if visiting /settings/user_key without signing in' do
       get :settings, user_key: user.user_key
       expect(response.status).to eq 200
-      expect(response.body.should have_css('input[type=checkbox][disabled]', count: 6))
+      expect(response.body).to have_css('input[type=checkbox][disabled]', count: 6)
     end
 
     it 'should let paid user edit all settings' do
       get :settings, user_key: paid_user.user_key
       expect(response.status).to eq 200
-      expect(response.body.should have_css('input[type=checkbox][disabled]', count: 0))
+      expect(response.body).to have_css('input[type=checkbox][disabled]', count: 0)
     end
 
     it 'should let user easily unsubscribe' do

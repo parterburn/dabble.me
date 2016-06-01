@@ -5,4 +5,4 @@ before_script:
   - psql -c 'create database dabbleme_test;' -U postgres
 notifications:
   email:
-    - <%= ENV.fetch('ADMIN_EMAILS').split(',').first %>
+    - <%= ENV['NOTIFY_EMAIL'] %>
