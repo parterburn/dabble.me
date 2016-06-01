@@ -257,6 +257,8 @@ GEM
     i18n-js (2.1.2)
       i18n
     inflecto (0.0.2)
+    intercom-rails (0.2.34)
+      activesupport (> 3.0)
     ipaddress (0.8.3)
     jquery-rails (3.1.2)
       railties (>= 3.0, < 5.0)
@@ -466,6 +468,7 @@ DEPENDENCIES
   haml
   haml_assets
   i18n-js
+  intercom-rails
   jquery-rails
   kaminari
   le
