@@ -30,6 +30,8 @@ IntercomRails.config do |config|
   # user object, or a Proc which will be passed the current user.
   #
   config.user.custom_data = {
+    :user_id => Proc.new { |current_user| current_user.id },
+    :user_key => Proc.new { |current_user| current_user.user_key },
     :name => Proc.new { |current_user| current_user.full_name },
     :entries => Proc.new { |current_user| current_user.entries.count },
     :plan => Proc.new { |current_user| current_user.plan },
