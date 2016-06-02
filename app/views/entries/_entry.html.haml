@@ -4,7 +4,7 @@
     .label.label-past-years #{pluralize(year_back,"year").upcase} AGO
   .s-entry-date
     -if entry.inspiration.present?
-      .float-left.s-edit-entry{:rel=>"popover", :title=>"#{entry.inspiration.inspired_by}", :"data-content"=>"#{entry.inspiration.body}"}
+      .float-left.s-edit-entry{rel: "popover", title: "#{entry.inspiration.inspired_by}", data: { content: "#{entry.inspiration.body.html_safe}" } }
         %i.fa.fa-lightbulb-o
     .float-right.s-edit-entry{rel: "tooltip", title: "Edit Entry"}
       = link_to edit_entry_path(entry) do
@@ -21,7 +21,7 @@
 - if entry.image_url_cdn.present?
   .pictureFrame
     =link_to entry.image_url_cdn, :target=>"_blank" do
-      =image_code(entry)    
+      =image_code(entry)
 .clearfix
 
 :javascript

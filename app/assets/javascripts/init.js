@@ -15,7 +15,8 @@
 
     $("[rel='popover']").popover({
       trigger: "hover",
-      container: "body"
+      container: "body",
+      html: true
     });
 
     if ($(window).width() > 768) {

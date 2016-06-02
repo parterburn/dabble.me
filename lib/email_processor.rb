@@ -151,7 +151,7 @@ class EmailProcessor
     inspiration_id = nil
     begin
       Inspiration.without_ohlife_or_email_or_tips.each do |inspiration|
-        if raw_body.include? inspiration.body
+        if raw_body.include? inspiration.body.first(71)
           inspiration_id = inspiration.id
           break
         end

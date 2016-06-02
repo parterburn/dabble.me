@@ -22,7 +22,7 @@
         = link_to "Import Entries", import_path, :class => "btn btn-primary btn-lg"
       - else
         = link_to "Subscribe to PRO — $3/mo", subscribe_path, :class => "btn btn-primary btn-lg"
-        = mail_to "#{current_user.user_key}@#{ENV['SMTP_DOMAIN']}", "No Email?", encode: "hex", target: "_blank", subject: "#{Time.now.in_time_zone(current_user.send_timezone).strftime('%A, %b %-d')}", body: "My first Dabble Me entry!", class: "btn btn-primary btn-lg", rel: "tooltip", title: "Click to show your unique email address for sending new entries."
+        = mail_to "#{current_user.user_key}@#{ENV['SMTP_DOMAIN']}", "No Email?", encode: "hex", target: "_blank", subject: "#{Time.now.in_time_zone(current_user.send_timezone).strftime('%A, %b %-d')}", body: "My first Dabble Me entry!", class: "btn btn-primary btn-lg", rel: "tooltip", title: "Click to email your unique address for sending new entries."
 
 .col-md-8.col-md-offset-2.s-no-entries-ideas.well
   .center
@@ -32,8 +32,8 @@
   .s-scrollable
     %ul
       %li
-        %strong Daily Reflections
-        — the most popular one. This can be a scary one to get started with. If these two words are overwhelming to even think about, keep reading.
+        %strong Daily Dabble
+        — reflections from your day is the most popular use case of any journal. This can be a scary one to get started with. If self-reflection is overwhelming to even think about, keep reading.
       %li
         %strong Memory keeper for major events/milestones
         — we easily forget. Write it down now and the daily emails will bring you smiles when it reminds you of all your favorite moments. I started journaling when I first met my wife almost 5 years ago — I took 5 minutes to write about all of the dates we went on. Reading those past entries to each other has become a routine that deepens our relationship now.

@@ -19,6 +19,8 @@ class Entry < ActiveRecord::Base
   scope :only_ohlife, -> { includes(:inspiration).where("inspirations.category = 'OhLife'").references(:inspiration).order('date DESC') }
   scope :only_email, -> { where("original_email_body IS NOT null").order('date DESC') }
 
+  before_save :associate_inspiration
+
   def date_format_long
     # Friday, Feb 3, 2014
     self.date.present? ? self.date.strftime("%A, %b %-d, %Y") : ""
@@ -75,6 +77,12 @@ class Entry < ActiveRecord::Base
         now_with_timezone.day == self.date.day &&
         now_with_timezone.year != self.date.year
     end
+  end
+
+  private
+
+  def associate_inspiration
+    self.inspiration = nil unless self.inspiration.in? Inspiration.without_ohlife_or_email_or_tips
   end
 
 end

@@ -37,4 +37,4 @@
         Change the frequency of these emails &amp; unlock premium features:
         =link_to "Subscribe to PRO", "https://#{ENV['MAIN_DOMAIN']}/subscribe"
       - elsif @random_inspiration.present?
-        %i=@random_inspiration.body
+        %i=@random_inspiration.body.html_safe

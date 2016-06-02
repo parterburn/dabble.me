@@ -1,6 +1,7 @@
 # Devise Override Controller
 class RegistrationsController < Devise::RegistrationsController
   after_action :track_ga_event, only: :create
+  prepend_before_action :check_captcha, only: [:create]
 
   def edit
     cookies.permanent[:viewed_settings] = true
@@ -77,6 +78,16 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   private
+
+  def check_captcha
+    if verify_recaptcha
+      true
+    else
+      self.resource = resource_class.new sign_up_params
+      flash[:alert] = 'Bad recaptcha.'
+      respond_with_navigational(resource) { render :new }
+    end 
+  end
 
   def track_ga_event
     return nil unless @user.id.present?

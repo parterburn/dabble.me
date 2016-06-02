@@ -27,4 +27,4 @@ Unsubscribe: https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}
 - if @user.is_free? && @user.emails_sent % 2 == 0
   Change the frequency of these emails &amp; unlock premium features, subscribe to PRO: https://#{ENV['MAIN_DOMAIN']}/subscribe
 - elsif @random_inspiration.present?
-  =@random_inspiration.body
+  =strip_tags(@random_inspiration.body.html_safe)
