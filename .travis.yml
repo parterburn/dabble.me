@@ -3,6 +3,3 @@ addons:
   postgresql: "9.3"
 before_script:
   - psql -c 'create database dabbleme_test;' -U postgres
-notifications:
-  email:
-    - <%= ENV['NOTIFY_EMAIL'] %>
