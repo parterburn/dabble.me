@@ -35,6 +35,18 @@ namespace :user do
       user.update(plan: "Free")
       UserMailer.downgraded(user).deliver_later
     end
-  end  
+  end
+
+   task :handle_free_week => :environment do
+    if ENV['FREE_WEEK'].present?
+        User.free_only.each do |user|
+          if ENV['FREE_WEEK'] == 'true'
+            user.update_column(:frequency, ['Sun', 'Wed', 'Fri'])
+          elsif ENV['FREE_WEEK'] == 'false'
+            user.update_column(:frequency, ['Sun'])
+          end
+        end
+    end
+  end 
 
 end

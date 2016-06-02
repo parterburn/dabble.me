@@ -91,7 +91,7 @@ class User < ActiveRecord::Base
   end
 
   def is_free?
-    !is_pro? && !free_trial?
+    !is_pro?
   end
 
   def plan_name
@@ -125,10 +125,6 @@ class User < ActiveRecord::Base
     p
   end
 
-  def free_trial?
-    ENV['FREE_TRIAL'].present? && ENV['FREE_TRIAL'] == 'true'
-  end
-
   def days_since_last_post
     if last_post = self.entries.where("date < ?", Time.now).first
       ActionController::Base.helpers.number_with_delimiter((Time.now.to_date - last_post.date.to_date).to_i)
@@ -140,7 +136,7 @@ class User < ActiveRecord::Base
   private
 
   def restrict_free_frequency
-    if self.is_free? && self.frequency.present?
+    if self.is_free? && self.frequency.present? && ENV['FREE_WEEK'] != 'true'
       self.update_column(:frequency, [self.frequency.first])
     end
   end

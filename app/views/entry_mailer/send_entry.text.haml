@@ -24,7 +24,9 @@ Unsubscribe: https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}
 \ 
 \=======================================
 \ 
-- if @user.is_free? && @user.emails_sent % 2 == 0
+- if @user.is_free? && ENV['FREE_WEEK'] == 'true'
+  This email is part of Dabble Me FREE WEEK. You'll receive emails this week only on Sun, Wed, and Fri. Like the new frequency? Subscribe to PRO: https://#{ENV['MAIN_DOMAIN']}/subscribe
+- elsif @user.is_free? && @user.emails_sent % 2 == 0
   Change the frequency of these emails &amp; unlock premium features, subscribe to PRO: https://#{ENV['MAIN_DOMAIN']}/subscribe
 - elsif @random_inspiration.present?
   =strip_tags(@random_inspiration.body.html_safe)
