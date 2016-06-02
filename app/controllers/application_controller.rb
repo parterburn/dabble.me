@@ -5,7 +5,6 @@ class ApplicationController < ActionController::Base
   before_filter :js_action
 
   before_filter :configure_permitted_parameters, if: :devise_controller?
-  before_filter :set_format
 
   def redirect_back_or_to(default)
     redirect_to session.delete(:return_to) || default
@@ -23,10 +22,6 @@ class ApplicationController < ActionController::Base
   end
 
   protected
-
-  def set_format
-    request.format = 'html' if request.format != 'html'
-  end
 
   def configure_permitted_parameters
     devise_parameter_sanitizer.for(:sign_up) do |u|
