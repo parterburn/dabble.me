@@ -100,6 +100,13 @@ hr {
   margin-left: 45px;
   margin-right: 45px;
   margin-top: 0px;
+  a {
+    color: #AAAAAA !important;
+    text-decoration: underline !important;
+    &:hover {
+      color: #333333 !important;
+    }
+  }
 }
 
 .muted {
