@@ -4,6 +4,12 @@
   background-color: $blue;
   color:whiteSmoke;
   z-index: 1000;
+  top: 0px;
+  -webkit-transition: all 0.2s ease-out;
+  transition: all 0.2s ease-out;
+  &.nav-up {
+    top: -51px;
+  }  
   li.dropdown.open > .dropdown-toggle {
     color: white;
     padding-top: 17px;
@@ -112,6 +118,7 @@
 
 .navbar-toggle .icon-bar {
   position: relative;
+  -webkit-transition: all 500ms ease-in-out;
   transition: all 500ms ease-in-out;
 }
 
