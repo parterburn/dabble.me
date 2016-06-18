@@ -13,7 +13,7 @@ describe EmailProcessor do
       )
 
       EmailProcessor.new(email).process
-      expect(user.entries.first.body).to eq("I am great\n")
+      expect(user.entries.first.body).to eq("I am great")
     end
 
     it "creates an entry from email if the token is wrong" do
@@ -25,7 +25,7 @@ describe EmailProcessor do
       )      
 
       EmailProcessor.new(email).process
-      expect(user.entries.first.body).to eq("I am great\n")
+      expect(user.entries.first.body).to eq("I am great")
     end
   end
 end
