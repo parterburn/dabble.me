@@ -38,7 +38,7 @@ Rails.application.routes.draw do
   get 'ohlife-alternative',        to: 'welcome#ohlife_alternative'
   post 'email_processor',          to: 'griddler/emails#create'
 
-  get '/cast(/*path)', to: redirect('https://vidcast.dabble.me') # temporary for old content
+  # get '/cast(/*path)', to: redirect('https://vidcast.dabble.me') # temporary for old content
 
   root 'welcome#index'  
 end
