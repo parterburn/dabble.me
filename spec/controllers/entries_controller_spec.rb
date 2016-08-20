@@ -10,41 +10,6 @@ RSpec.describe EntriesController, type: :controller do
     not_my_entry
   end
 
-  describe 'show' do
-    it 'should redirect to sign in if not logged in' do
-      get :show, id: entry.id
-      expect(response.status).to eq 302
-      expect(response).to redirect_to(new_user_session_url)
-
-      get :random
-      expect(response.status).to eq 302
-      expect(response).to redirect_to(new_user_session_url)
-    end
-
-    it 'should show an entry to logged in users' do
-      sign_in user
-      get :show, id: entry.id
-      expect(response.status).to eq 200
-      expect(response.body).to have_content(entry.body)
-
-      get :random
-      expect(response.status).to eq 200
-      expect(response.body).to have_content(entry.body)
-
-      sign_out user
-      get :show, id: entry.id
-      expect(response.status).to eq 302
-      expect(response).to redirect_to(new_user_session_url)
-    end
-
-    it 'should not show me other users entries' do
-      sign_in user
-      get :show, id: not_my_entry.id
-      expect(response.status).to eq 302
-      expect(response).to redirect_to(past_entries_url)
-    end
-  end
-
   describe 'index' do
     it 'should redirect to sign in if not logged in' do
       get :index

@@ -16,7 +16,7 @@
   
   .col-xs-11.col-sm-5.col-md-2.s-date-groups.j-calendar
     %h3
-      =link_to group_entries_path('all'), class: "#{'active' if current_page?(group_entries_path('all'))}" do
+      =link_to entries_path, class: "#{'active' if current_page?(entries_path)}" do
         .s-date-left
           ALL
         .s-date-right

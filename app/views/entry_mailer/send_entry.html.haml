@@ -26,7 +26,7 @@
         %b Keep writing...once you have a few entries you'll see a blast from the past show up here!
     %p
       - if show_entry
-        =link_to "View entry", entry_url(@random_entry)
+        =link_to "View entry", day_entry_url(year: @random_entry.date.year, month: @random_entry.date.month, day: @random_entry.date.day)
         &middot;
       =link_to "Past entries", "https://#{ENV['MAIN_DOMAIN']}/entries"
       &middot;

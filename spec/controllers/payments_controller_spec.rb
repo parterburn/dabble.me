@@ -21,7 +21,7 @@ RSpec.describe PaymentsController, type: :controller do
       sign_in user
       get :index
       expect(response.status).to eq 302
-      expect(response).to redirect_to(past_entries_path)
+      expect(response).to redirect_to(entries_path)
     end
 
     it 'should show Admin Dashboard to superusers' do
@@ -43,7 +43,7 @@ RSpec.describe PaymentsController, type: :controller do
       sign_in user
       get :edit, id: payment.id
       expect(response.status).to eq 302
-      expect(response).to redirect_to(past_entries_path)
+      expect(response).to redirect_to(entries_path)
     end
 
     it 'should show Payment to superusers' do
@@ -67,7 +67,7 @@ RSpec.describe PaymentsController, type: :controller do
       sign_in user
       get :new
       expect(response.status).to eq 302
-      expect(response).to redirect_to(past_entries_path)
+      expect(response).to redirect_to(entries_path)
     end
 
     it 'should show new Payment to superusers' do
@@ -102,7 +102,7 @@ RSpec.describe PaymentsController, type: :controller do
       sign_in user
       expect { post :create, params }.to_not change { Payment.count }
       expect(response.status).to eq 302
-      expect(response).to redirect_to(past_entries_path)
+      expect(response).to redirect_to(entries_path)
     end
 
     it 'should show create new Payment for superusers' do
@@ -125,7 +125,7 @@ RSpec.describe PaymentsController, type: :controller do
       sign_in user
       expect { delete :destroy, id: payment.id }.to_not change { Payment.count }
       expect(response.status).to eq 302
-      expect(response).to redirect_to(past_entries_path)
+      expect(response).to redirect_to(entries_path)
     end
 
     it 'should show create new Payment for superusers' do

@@ -20,7 +20,7 @@ RSpec.describe AdminController, type: :controller do
       sign_in user
       get :users
       expect(response.status).to eq 302
-      expect(response).to redirect_to(past_entries_path)
+      expect(response).to redirect_to(entries_path)
     end
 
     it 'should show Admin Users to superusers' do
@@ -42,7 +42,7 @@ RSpec.describe AdminController, type: :controller do
       sign_in user
       get :stats
       expect(response.status).to eq 302
-      expect(response).to redirect_to(past_entries_path)
+      expect(response).to redirect_to(entries_path)
     end
 
     it 'should show Admin Stats to superusers' do

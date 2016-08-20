@@ -21,7 +21,7 @@ RSpec.describe InspirationsController, type: :controller do
       sign_in user
       get :index
       expect(response.status).to eq 302
-      expect(response).to redirect_to(past_entries_path)
+      expect(response).to redirect_to(entries_path)
     end
 
     it 'should show Inspirations to superusers' do

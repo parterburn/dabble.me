@@ -20,25 +20,24 @@ Rails.application.routes.draw do
   get 'entries/export'   => 'entries#export', as: 'export_entries'
   get 'entries/calendar' => 'entries#calendar', as: 'entries_calendar'
 
-  resources :entries
-  get 'past/random',               to: 'entries#random', as: 'random_entry'
-  get 'past',                      to: redirect('/past/all'), as: 'past_entries'
-  get 'past/(:group)(/:subgroup)', to: 'entries#index',  as: 'group_entries'
-  get 'latest',                    to: 'entries#latest', as: 'latest_entry'  
-  get 'review',                    to: 'entries#review', as: 'review'
-  get 'search',                    to: 'searches#show'
-  get 'write',                     to: redirect('/entries/new')
-  get 'privacy',                   to: 'welcome#privacy'
-  get 'features',                  to: 'welcome#features'
-  get 'faqs',                      to: 'welcome#faqs'
-  get 'subscribe',                 to: 'welcome#subscribe'
-  get 'donate',                    to: redirect('/subscribe')
-  get 'pro',                       to: redirect('/subscribe')
-  match 'payment_notify',          to: 'payments#payment_notify', via: [:post]
-  get 'ohlife-alternative',        to: 'welcome#ohlife_alternative'
-  post 'email_processor',          to: 'griddler/emails#create'
-
-  # get '/cast(/*path)', to: redirect('https://vidcast.dabble.me') # temporary for old content
+  get 'past(/:anything)',               to: redirect('/entries')
+  get 'entries/random',                 to: 'entries#random', as: 'random_entry'
+  get 'entries/:year/:month/:day',      to: 'entries#show',  as: 'day_entry'
+  resources :entries, except: [:show]
+  get 'entries/(:group)(/:subgroup)',   to: 'entries#index',  as: 'group_entries'  
+  get 'latest',                         to: 'entries#latest', as: 'latest_entry'  
+  get 'review',                         to: 'entries#review', as: 'review'  
+  get 'search',                         to: 'searches#show'
+  get 'write',                          to: redirect('/entries/new')
+  get 'privacy',                        to: 'welcome#privacy'
+  get 'features',                       to: 'welcome#features'
+  get 'faqs',                           to: 'welcome#faqs'
+  get 'subscribe',                      to: 'welcome#subscribe'
+  get 'donate',                         to: redirect('/subscribe')
+  get 'pro',                            to: redirect('/subscribe')
+  match 'payment_notify',               to: 'payments#payment_notify', via: [:post]
+  get 'ohlife-alternative',             to: 'welcome#ohlife_alternative'
+  post 'email_processor',               to: 'griddler/emails#create'
 
   root 'welcome#index'  
 end

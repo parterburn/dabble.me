@@ -10,7 +10,7 @@ class ImportController < ApplicationController
     else
       flash = import_entries(params[:entry][:text])
     end
-    redirect_to past_entries_path
+    redirect_to entries_path
   end
 
   def process_ohlife_images
@@ -24,7 +24,7 @@ class ImportController < ApplicationController
 
       ImportJob.perform_later(current_user.id, tmp.original_filename)
       flash[:notice] = "Photo Import has started."
-      redirect_to past_entries_path
+      redirect_to entries_path
     else
       FileUtils.rm tmp.tempfile.path if tmp
       flash[:alert] = "Only ZIP files are allowed here."

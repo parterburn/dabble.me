@@ -1,20 +1,26 @@
 # Handle Web Entries
 class EntriesController < ApplicationController
   before_action :authenticate_user!
-  before_filter :require_entry_permission, only: [:show, :edit, :update, :destroy]
+  before_filter :set_entry, :require_entry_permission, only: [:show, :edit, :update, :destroy]
 
   def index
     if params[:group] == 'photos'
       @entries = current_user.entries.includes(:inspiration).only_images
       @title = 'Photo Entries'
-    elsif params[:group] =~ /[0-9]{4}/ && params[:subgroup] =~ /[0-9]{2}/
+    elsif params[:subgroup].present?
       from_date = "#{params[:group]}-#{params[:subgroup]}"
       to_date = "#{params[:group]}-#{params[:subgroup].to_i + 1}"
-      @entries = current_user.entries.includes(:inspiration).where("date >= to_date('#{from_date}','YYYY-MM') AND date < to_date('#{to_date}','YYYY-MM')")
+      @entries = current_user.entries.includes(:inspiration).where("date >= to_date('#{from_date}','YYYY-MM') AND date < to_date('#{to_date}','YYYY-MM')").sort_by(&:date)
       date = Date.parse(params[:subgroup] + '/' + params[:group])
       @title = "Entries from #{date.strftime('%b %Y')}"
-    elsif params[:group] =~ /[0-9]{4}/
-      @entries = current_user.entries.includes(:inspiration).where("date >= '#{params[:group]}-01-01'::DATE AND date <= '#{params[:group]}-12-31'::DATE")
+    elsif params[:group].present?
+      begin
+        raise 'not a year' unless params[:group] =~ /(19|20)[0-9]{2}/
+        @entries = current_user.entries.includes(:inspiration).where("date >= '#{params[:group]}-01-01'::DATE AND date <= '#{params[:group]}-12-31'::DATE").sort_by(&:date)
+      rescue
+        entry = current_user.entries.find(params[:group])
+        return redirect_to day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day)
+      end
       @title = "Entries from #{params[:group]}"
     else
       @entries = current_user.entries.includes(:inspiration)
@@ -34,12 +40,11 @@ class EntriesController < ApplicationController
   end
 
   def show
-    @entry = current_user.entries.includes(:inspiration).where(id: params[:id]).first
     if @entry
       track_ga_event('Show')
       render 'show'
     else
-      redirect_to past_entries_path
+      redirect_to entries_path
     end
   end
 
@@ -53,7 +58,7 @@ class EntriesController < ApplicationController
       track_ga_event('Random')
       render 'show'
     else
-      redirect_to past_entries_path
+      redirect_to entries_path
     end
   end
 
@@ -100,7 +105,6 @@ class EntriesController < ApplicationController
 
   def edit
     store_location
-    @entry = current_user.entries.where(id: params[:id]).first
     if current_user.is_free?
       @entry.body = @entry.sanitized_body
     end
@@ -113,7 +117,6 @@ class EntriesController < ApplicationController
       redirect_to root_path and return
     end
 
-    @entry = current_user.entries.where(id: params[:id]).first
     @existing_entry = current_user.existing_entry(params[:entry][:date].to_s)
 
     if @entry.present? && @existing_entry.present? && @entry != @existing_entry && params[:entry][:entry].present?
@@ -134,7 +137,7 @@ class EntriesController < ApplicationController
     elsif params[:entry][:entry].blank?
       @entry.destroy
       flash[:notice] = 'Entry deleted!'
-      redirect_back_or_to past_entries_path
+      redirect_back_or_to entries_path
     else
       if @entry.update(entry_params)
         track_ga_event('Update')
@@ -152,11 +155,10 @@ class EntriesController < ApplicationController
       redirect_to root_path and return
     end
 
-    @entry = current_user.entries.where(id: params[:id]).first
     @entry.destroy
     track_ga_event('Delete')
     flash[:notice] = 'Entry deleted successfully.'
-    redirect_to past_entries_path
+    redirect_to entries_path
   end
 
   def export
@@ -181,7 +183,7 @@ class EntriesController < ApplicationController
       @words_counter = WordsCounted.count(@body_text, exclude: ['p', 'br', 'div', 'img'])
     else
       flash[:notice] = 'No entries in 2015 - nothing to review :('
-      redirect_to past_entries_path
+      redirect_to entries_path
     end
 
     # Stats for 2015
@@ -204,10 +206,19 @@ class EntriesController < ApplicationController
     params.require(:entry).permit(:date, :entry, :image, :inspiration_id, :remove_image)
   end
 
+  def set_entry
+    if params[:day].present?
+      date = Date.parse("#{params[:year]}-#{params[:month]}-#{params[:day]}")
+      @entry = current_user.entries.includes(:inspiration).where(date: date).first
+    else
+      @entry = current_user.entries.includes(:inspiration).where(id: params[:id]).first
+    end
+  end
+
   def require_entry_permission
-    return false if current_user == Entry.find(params[:id]).user
+    return false if @entry.present? && current_user == @entry.user
     flash[:alert] = 'Not authorized'
-    redirect_to past_entries_path
+    redirect_to entries_path
   end
 
   def random_inspiration
@@ -223,7 +234,7 @@ class EntriesController < ApplicationController
       json_hash <<  {
         id: entry.id,
         title: entry.sanitized_body.gsub(/\n/, '').truncate(100, separator: ' '),
-        url: entry_path(entry),
+        url: day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day),
         start: entry.date.strftime('%Y-%m-%d'),
         allDay: 'true'
       }

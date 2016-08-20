@@ -17,20 +17,17 @@ class ApplicationController < ActionController::Base
   def authenticate_admin!
     unless current_user.is_admin?
       flash[:alert] = "Not authorized"
-      redirect_to past_entries_path
+      redirect_to entries_path
     end
   end
 
   protected
 
   def configure_permitted_parameters
-    devise_parameter_sanitizer.for(:sign_up) do |u|
-      u.permit(:first_name, :last_name, :email, :password, :password_confirmation)
-    end
-    devise_parameter_sanitizer.for(:account_update) do |u|
-      u.permit(:first_name, :last_name, :email, :password, :password_confirmation,  { frequency: [] }, :send_past_entry, :send_time, :send_timezone, :current_password)
-    end
-  end
+    added_attrs = [:first_name, :last_name, :email, :password, :password_confirmation]
+    devise_parameter_sanitizer.permit :sign_up, keys: added_attrs
+    devise_parameter_sanitizer.permit :account_update, keys: added_attrs + [{ frequency: [] }, :send_past_entry, :send_time, :send_timezone, :current_password]
+  end  
 
   def js_action
     @js_action = [controller_path.camelize.gsub('::', '_'), action_name].join('_')
