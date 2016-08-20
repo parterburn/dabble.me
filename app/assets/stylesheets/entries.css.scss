@@ -146,7 +146,7 @@ a.s-delete {
 .s-entry-date {
   margin-top:20px;
   padding-bottom: 5px;
-  > h2{
+  > h2 {
     color: $red;
     font-size: 25px;
     border: none;
@@ -155,6 +155,13 @@ a.s-delete {
     margin: 0;
     margin-left:20px;
     margin-right:20px;
+    a {
+      color: $red;
+      &:hover {
+        color: darken($red, 5);
+        text-decoration: none;
+      }
+    }
   }
   > h3 {
     margin-top: 20px;

@@ -9,7 +9,8 @@
     .float-right.s-edit-entry{rel: "tooltip", title: "Edit Entry"}
       = link_to edit_entry_path(entry) do
         %i.fa.fa-pencil-square-o
-    %h2= entry.date_format_short
+    %h2
+      = link_to entry.date_format_short, day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day)
     %h3
       %span
         = entry.date_day.upcase
