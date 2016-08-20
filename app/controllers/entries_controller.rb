@@ -85,9 +85,9 @@ class EntriesController < ApplicationController
         @existing_entry.image = params[:entry][:image]
       end
       if @existing_entry.save
-        flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime("%B %-d")}. <a href='#entry-#{@existing_entry.id}' data-id='#{@existing_entry.id}' class='alert-link j-entry-link'>View merged entry</a>.".html_safe
+        flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime("%B %-d")}."
         track_ga_event('Merged')
-        redirect_to group_entries_path(@existing_entry.date.strftime('%Y'), @existing_entry.date.strftime('%m'))
+        redirect_to day_entry_path(year: @existing_entry.date.year, month: @existing_entry.date.month, day: @existing_entry.date.day)
       else
         render 'new'
       end
@@ -95,8 +95,8 @@ class EntriesController < ApplicationController
       @entry = current_user.entries.create(entry_params)
       if @entry.save
         track_ga_event('New')
-        flash[:notice] = "Entry created successfully! <a href='#entry-#{@entry.id}' data-id='#{@entry.id}' class='alert-link j-entry-link'>View entry</a>.".html_safe
-        redirect_to group_entries_path(@entry.date.strftime('%Y'), @entry.date.strftime('%m'))
+        flash[:notice] = "Entry created successfully!"
+        redirect_to day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day)
       else
         render 'new'
       end
@@ -128,9 +128,9 @@ class EntriesController < ApplicationController
       end
       if @existing_entry.save
         @entry.delete
-        flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime('%B %-d')}. <a href='#entry-#{@existing_entry.id}' data-id='#{@existing_entry.id}' class='alert-link j-entry-link'>View merged entry</a>.".html_safe
+        flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime('%B %-d')}."
         track_ga_event('Update')
-        redirect_to group_entries_path(@existing_entry.date.strftime('%Y'), @existing_entry.date.strftime('%m')) and return
+        redirect_to day_entry_path(year: @existing_entry.date.year, month: @existing_entry.date.month, day: @existing_entry.date.day) and return
       else
         render 'edit'
       end
@@ -141,8 +141,8 @@ class EntriesController < ApplicationController
     else
       if @entry.update(entry_params)
         track_ga_event('Update')
-        flash[:notice] = "Entry successfully updated! <a href='#entry-#{@entry.id}' data-id='#{@entry.id}' class='alert-link j-entry-link'>View entry</a>.".html_safe
-        redirect_to group_entries_path(@entry.date.strftime('%Y'), @entry.date.strftime('%m'))
+        flash[:notice] = "Entry successfully updated!"
+        redirect_to day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day)
       else
         render 'edit'
       end
