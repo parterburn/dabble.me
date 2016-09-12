@@ -59,7 +59,7 @@ class PaymentsController < ApplicationController
   def update
     @payment = Payment.find(params[:id])
     if params[:user_email].present?
-      user = User.find_by(email: params[:user_email])
+      user = User.find_by(email: params[:user_email].downcase)
       params[:payment][:user_id] = user.id if user.present?
     end
 
@@ -85,7 +85,7 @@ class PaymentsController < ApplicationController
     # check for GUMROAD
     if params[:email].present? && params[:seller_id] == ENV['GUMROAD_SELLER_ID'] && params[:product_id] == ENV['GUMROAD_PRODUCT_ID']
       user = User.find_by(gumroad_id: params[:purchaser_id])
-      user = User.find_by(email: params[:email]) if user.blank?
+      user = User.find_by(email: params[:email].downcase) if user.blank?
       paid = params[:price].to_f / 100
       if params[:recurrence].present?
         frequency = params[:recurrence].titleize
