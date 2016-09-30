@@ -88,9 +88,9 @@ class Entry < ActiveRecord::Base
 
   def check_image
     if image.present? && image_changed?
-      image = Clarifai::Rails::Detector.new(image_url_cdn).image
-      if image.tags_with_percent[:nsfw] > 0.15
-        Rails.logger.warn("NSFW Flagged — USER: #{user.email} ENTRY: #{id} URL: #{image_url_cdn}")
+      c_image = Clarifai::Rails::Detector.new(image_url_cdn).image
+      if c_image.tags_with_percent[:nsfw] > 0.15
+        Rails.logger.warn("NSFW Flagged (#{(c_image.tags_with_percent[:nsfw]*100).round}%) — USER: #{entry.user.email} ENTRY: #{entry.id} URL: #{entry.image_url_cdn}")
       end
     end
   end
