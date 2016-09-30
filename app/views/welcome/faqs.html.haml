@@ -81,21 +81,30 @@
 
       %h4 Who created this?
       %p
-        Hi, I'm
-        =link_to("Paul Arterburn", "https://paularterburn.com/") + "."
-        I'm the technical cofounder of a company called
-        =link_to "Brandfolder","https://brandfolder.com"
-        which is a digital asset management platform that gives you the power to organize, manage and share brand assets from a single location. Some of the biggest brands in the world trust Brandfolder with their brand assets.
+        Howdy, I'm
+        =link_to("Paul Arterburn", "https://paularterburn.com/", target: "_blank") + "."
+        I'm currently the Director of Engineering at
+        =link_to "Unreasonable Group", "https://brandfolder.com", target: "_blank"
+        helping entrepreneurs bend history in the right direction. I'm also the technical co-founder of
+        =link_to("Brandfolder", "https://brandfolder.com", target: "_blank") + ","
+        a digital asset management platform that some of the biggest brands in the world trust with their brand assets.
+        %span{style: "display: block; margin-top: 10px;"}
+          I created Dabble Me as a way to remember and reflect on my days in a format that would actually trigger me to write — email. If you're curious, I described
+          %i why
+          and
+          %i how
+          I built Dabble Me in a blog post:
+          =link_to("Increase Your Happiness with Daily Journaling", "https://medium.com/startup-lesson-learned/increase-your-happiness-with-daily-journaling-8109b0700506", target: "_blank") + "."
+
       
       %h4 Is this really free?
       %p
         The basic service is, but you're limited to receiving email prompts every other Sunday. If you want premium features like changing email frequency, adding/editing entries from the web, adding photos, rich text entry, calendar view, and search you'll need to
         =link_to "subscribe", subscribe_path
         to Dabble Me PRO.
-        %br
-        %br
-        I've also open-sourced the code on GitHub, so if you're a Ruby on Rails developer and want to contribute head over to
-        = link_to "http://github.com/parterburn/dabble.me", "http://github.com/parterburn/dabble.me", title: "View code on GitHub"
+        %span{style: "display: block; margin-top: 10px;"}
+          I've also open-sourced the code on GitHub, so if you're a Ruby on Rails developer and want to contribute head over to the
+          = link_to("GitHub repo", "http://github.com/parterburn/dabble.me", title: "View code on GitHub", target: "_blank") + "."
 
       %h4 If my question wasn't answered here, how can I contact you?
       %p
