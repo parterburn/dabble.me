@@ -91,7 +91,7 @@ class Entry < ActiveRecord::Base
       begin
         c_image = Clarifai::Rails::Detector.new(image_url_cdn).image
         if c_image.tags_with_percent[:nsfw] > 0.15
-          Rails.logger.warn("NSFW Flagged (#{(c_image.tags_with_percent[:nsfw]*100).round}%) — USER: #{user.email} ENTRY: #{id} URL: #{image_url_cdn}")
+          Rails.logger.warn("NSFW Flagged (#{(c_image.tags_with_percent[:nsfw]*100).round}%) — USER: #{user.email} ENTRY: #{id} IMAGE: #{image_url_cdn}")
         end
       rescue => e
         Rails.logger.warn("Clarifai Error: #{e}")

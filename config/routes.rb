@@ -40,4 +40,6 @@ Rails.application.routes.draw do
   post 'email_processor',               to: 'griddler/emails#create'
 
   root 'welcome#index'  
+
+  get "*any", via: :all, to: "errors#not_found"
 end
