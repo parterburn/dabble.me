@@ -87,7 +87,7 @@ class Entry < ActiveRecord::Base
   end
 
   def check_image
-    if image.present? && image_changed?
+    if image.present? && image_changed? && ENV['CLARIFAI_CLIENT_ID'].present?
       begin
         c_image = Clarifai::Rails::Detector.new(image_url_cdn).image
         if c_image.tags_with_percent[:nsfw] > 0.15

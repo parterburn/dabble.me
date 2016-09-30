@@ -39,7 +39,7 @@
     %br
     .clearfix
 
-  - if ENV['CI'] != "true"
+  - if ENV['CI'] != "true" && ENV['RECAPTCHA_PUBLIC_KEY'].present?
     .col-md-6.col-md-offset-3
       = recaptcha_tags
       %br

@@ -10,8 +10,11 @@ This app utilizes the following 3rd party services:
 * [CloudFlare](http://cloudflare.com) manages DNS + free SSL support (free for basic service)
 * [Mailgun](http://www.mailgun.com/rackspace) for Sending & Receiving Email (free for 50k emails per month)
 * [Amazon S3](http://aws.amazon.com) for Photo Uploads & Storage (free for 1 year)
-* [MailChimp](http://mailchimp.com) for sending updates to all users (free for 2000 subscribers)
+* [MailChimp](http://mailchimp.com) for sending updates to all users (free for 2,000 subscribers)
 * [Google Analytics](http://google.com/analytics) for traffic stats (free for standard analytics)
+* [Recaptcha](https://www.google.com/recaptcha) to prevent bot signups (free)
+* [Clarafai](https://www.clarifai.com/) to analyze images for legality (free up to 5,000/mo)
+* [Intercom](https://www.intercom.io/) to understand how different features are used (free)
 
 I recommend forking and setting up a server at [Heroku](https://heroku.com/). You can generate a free SSL certificate at [StartSSL](https://www.startssl.com/).
 
@@ -22,7 +25,7 @@ In order to turn on scheduled emails in Heroku, you'll need to add an hourly job
 rake entry:send_hourly_entries
 ```
 
-Your local environment variables at ```config/local_env.yml``` will need to be something like this (```rake db:seed``` will create the admin@dabble.ex account for you):
+Your local environment variables at ```config/local_env.yml``` (and on Heroku) will need to be something like this (```rake db:seed``` will create the admin@dabble.ex account for you):
 
 ```
 MAIN_DOMAIN: yourdomain.com
@@ -33,27 +36,21 @@ MAILGUN_API_KEY=api-key
 MAILCHIMP_API_KEY: f....3333-ek3
 MAILCHIMP_LIST_ID: 9982...112
 ADMIN_EMAILS: admin@dabble.ex,user2@domain.com
-```
-
-Your environment variables on Heroku will need to be something like this:
-
-```
-MAIN_DOMAIN=yourdomain.com
-SMTP_DOMAIN=post.yourdomain.me
-RAILS_ENV=production
-SECRET_KEY_BASE=1234..1234
-DEVISE_SECRET_KEY=1234..1234
-MAILGUN_API_KEY=api-key
-GOOGLE_ANALYTICS_ID=UA-12345-67
-ADMIN_EMAILS=user1@domain.com,user2@domain.com
-
-MAILCHIMP_API_KEY=f....3333-ek3
-MAILCHIMP_LIST_ID=9982...112
+RECAPTCHA_PUBLIC_KEY: 6sdfasdfasdfasdfqXlmu
+RECAPTCHA_PRIVATE_KEY: 6782ij3kl.23n4vuioijl23414
+CLARIFAI_CLIENT_ID: asdl2k34jl2kn1l2hn234
+CLARIFAI_CLIENT_SECRET: asdflkj23498oihlj2n34kn23
+INTERCOM_APP_ID: 1234k2k3
+INTERCOM_API_KEY: 167ui23n4n23b4nklm123123
+INTERCOM_API_SECRET: asdfljknwasdfnwebiaskjfbiuh
+GOOGLE_ANALYTICS_ID=UA-12345-67 ## ONLY FOR PRODUCTION
 ```
 
 ###Things you may want to rip out
 
-If you want to bypass using Mailchimp to collect email addresses, simply don't put a value in for MAILCHIMP_API_KEY. I use Mailchimp to email out new features to the users at Dabble.me, so if you're the only one using your app it doesn't make sense to have Mailchimp.
+If you want to bypass using Mailchimp to collect email addresses, simply don't put a value in for `MAILCHIMP_API_KEY`. I use Mailchimp to email out new features to the users at Dabble.me, so if you're the only one using your app it doesn't make sense to have Mailchimp.
+
+Same for Recaptcha, Clarafai, and Intercom simply don't add an environment variables for `RECAPTCHA_PUBLIC_KEY`, `CLARIFAI_CLIENT_ID`, or `INTERCOM_APP_ID`.
 
 
 ###Tests
