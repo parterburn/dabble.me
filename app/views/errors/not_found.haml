@@ -1,4 +1,20 @@
 - title ("Page Not Found")
-.col-md-12.text-center
-  %h1{style: "color: #a41100; margin-bottom: 4%; margin-top: 8%;" } This page does not exist.
-  =image_tag "broken_pencil.png", style: "width: 250px"
+.row
+  %br
+  .col-md-8.col-md-offset-2.well.entry#entry-404
+    .center
+      .s-entry-date
+        %h2 This page does not exist.
+        %h3
+          %span 404
+    .pictureFrame
+      %br
+      =image_tag "broken_pencil.png", widht: 250, height: 250
+      %br
+      %br
+    .clearfix
+
+:javascript
+  imagesLoaded( document.querySelector("#entry-404"), function( instance ) {
+    $(this.elements[0]).find('.pictureFrame img').css("background-image","none");
+  });  

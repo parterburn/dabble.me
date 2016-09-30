@@ -21,7 +21,7 @@
     = entry.hashtag_body
 - if entry.image_url_cdn.present?
   .pictureFrame
-    =link_to entry.image_url_cdn, :target=>"_blank" do
+    =link_to entry.image_url_cdn, target: "_blank" do
       =image_code(entry)
 .clearfix
 
