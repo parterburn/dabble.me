@@ -20,6 +20,7 @@ class Entry < ActiveRecord::Base
   scope :only_email, -> { where("original_email_body IS NOT null").order('date DESC') }
 
   before_save :associate_inspiration
+  after_save :check_image
 
   def date_format_long
     # Friday, Feb 3, 2014
@@ -83,6 +84,15 @@ class Entry < ActiveRecord::Base
 
   def associate_inspiration
     self.inspiration = nil unless self.inspiration.in? Inspiration.without_ohlife_or_email_or_tips
+  end
+
+  def check_image
+    if image.present? && image_changed?
+      image = Clarifai::Rails::Detector.new(image_url_cdn).image
+      if image.tags_with_percent[:nsfw] > 0.15
+        Rails.logger.warn("NSFW Flagged — USER: #{user.email} ENTRY: #{id} URL: #{image_url_cdn}")
+      end
+    end
   end
 
 end

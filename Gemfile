@@ -42,6 +42,7 @@ gem 'fog'
 gem 'carrierwave'
 gem 'mini_magick'
 gem 'file_validators'
+gem 'clarifai-rails'
 
 # Miscellanea
 gem 'google-analytics-rails'
