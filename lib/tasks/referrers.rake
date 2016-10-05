@@ -3,7 +3,7 @@ namespace :referrers do
   # Example referrer link: https://dabble.me/?ref=dit1
   REFERRERS = {
     '*'             => 'hello@dabble.me'
-  }.merge(ENV['REFERRER']).freeze
+  }.merge(JSON.parse(ENV['REFERRERS'])).freeze
 
   task :send_updates => :environment do
     if Time.now.monday?
