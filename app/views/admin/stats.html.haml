@@ -26,7 +26,9 @@
         - if all_count > 0
           %strong #{number_to_percentage(photos_count.to_f/all_count.to_f*100, precision: 0)}
 
+  .col-md-12
     %hr
+
   .col-md-12
     .row
       .col-md-3
@@ -49,7 +51,23 @@
         %strong #{number_with_delimiter(User.yearly.count)}
       .col-md-2
         %strong #{number_with_delimiter(User.forever.count)}
+  
+  .col-md-12
+    %hr
 
+  .col-md-12
+    .row
+      .col-md-3
+        %strong Referrals
+      .col-md-2
+        %strong #{number_with_delimiter(User.referrals.count)}
+    - User.referrals.pluck(:referrer).uniq.each do |ref|
+      .row
+        .col-md-3
+          %strong= ref
+        .col-md-2
+          %strong #{number_with_delimiter(User.referrals.where(referrer: ref).count)}
+      
   .col-md-12
     %hr
 

@@ -28,12 +28,13 @@
             %thead
               %tr
                 %th{style: 'width: 14%', data: { mainsort: 'true' }} Created
-                %th{style: 'width: 26%', data: { firstsort: 'asc' }} Email
+                %th{style: 'width: auto', data: { firstsort: 'asc' }} Email
                 %th{style: 'width: 20%', data: { firstsort: 'asc' }} Name
                 %th{style: 'width: 8%', data: { firstsort: 'asc' }} Entries
                 %th{style: 'width: 8%', data: { firstsort: 'asc' }} Images
                 %th{style: 'width: 8%', data: { firstsort: 'asc' }} Paid
                 %th{style: 'width: auto', data: { firstsort: 'asc' }} Plan
+                %th{style: 'width: auto', data: { firstsort: 'asc' }} Ref
             %tbody
               -@user_list.each do |user|
                 %tr
@@ -46,6 +47,7 @@
                   %td{data: { value: "#{user_images_count}"}}=number_with_delimiter(user_images_count)
                   %td=user.payments.sum(:amount)
                   %td=user.plan
+                  %td=user.referrer
           .center
             = paginate @user_list
 .clearfix

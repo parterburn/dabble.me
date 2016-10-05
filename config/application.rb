@@ -66,5 +66,7 @@ module Dabbleme
     Gibbon::Export.throws_exceptions = false
 
     config.exceptions_app = self.routes
+
+    config.middleware.use Rack::Affiliates
   end
 end

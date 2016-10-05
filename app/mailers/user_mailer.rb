@@ -38,4 +38,17 @@ class UserMailer < ActionMailer::Base
   def no_user_here(email, source)
     mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: '[REFUND REQUIRED] Payment Without a User', body: "#{email} does not exist as a user at #{ENV['MAIN_DOMAIN']}. Payment via #{source}.")
   end
+
+  def referred_users(id, email)
+    @ref_id = id
+    if id == '*'
+      @users = User.referrals.where('created_at > ?', 1.week.ago)
+    else
+      @users = User.referrals.where(referrer: id).where('created_at > ?', 1.week.ago)
+    end
+    return unless @users.present?
+
+    email = mail(to: email, subject: 'Dabble Me Referrals')
+    email.mailgun_options = {tag: 'Referrals'}
+  end  
 end

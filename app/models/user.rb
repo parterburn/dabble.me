@@ -24,6 +24,7 @@ class User < ActiveRecord::Base
   scope :paypal_only, -> { where("plan ILIKE '%paypal%'") }
   scope :gumroad_only, -> { where("plan ILIKE '%gumroad%'") }
   scope :not_forever, -> { where("plan NOT ILIKE '%forever%'") }
+  scope :referrals, -> { where("referral IS NOT null") }
 
   before_save { email.downcase! }
   after_commit :restrict_free_frequency, on: [:create, :update]
@@ -35,6 +36,10 @@ class User < ActiveRecord::Base
   def full_name
     "#{first_name} #{last_name}" if first_name.present? || last_name.present?
   end
+
+  def abbreviated_name
+    "#{first_name} #{last_name.first&.upcase}"
+  end  
 
   def cleaned_to_address
     "#{full_name.gsub(/[^\w\s-]/i, '') if full_name.present?} <#{email}>"

@@ -1,0 +1,17 @@
+%p
+%h3 Dabble Me users created under #{@ref_id} affiliate ID in the last week
+%hr #{@users.count}
+%table
+  %tr
+    - if @ref_id == "*"
+      %td Referral
+    %td Created
+    %td Name
+    %td Email
+    - @users.each do |user|
+      %tr
+        - if @ref_id == "*"
+          %td #{user.referrer}&nbsp;&nbsp;&nbsp;
+        %td #{user.created_at.strftime("%B %-d")}&nbsp;&nbsp;&nbsp;
+        %td #{user.abbreviated_name}&nbsp;&nbsp;&nbsp;
+        %td #{user.email.gsub(/.{0,4}@/, '...@')}

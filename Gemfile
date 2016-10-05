@@ -50,6 +50,7 @@ gem "intercom-rails"
 gem 'gabba', '~> 1.0.1' # server side tracking for Google Analytics
 gem 'haml'
 gem 'exception_notification-rake', '~> 0.2.1'
+gem 'rack-affiliates' # for tracking referrers
 
 # Assets
 gem 'autoprefixer-rails'

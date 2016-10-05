@@ -8,6 +8,13 @@ class RegistrationsController < Devise::RegistrationsController
     super
   end
 
+  def create
+    super do
+      resource.referrer = request.env['affiliate.tag']
+      resource.save
+    end
+  end
+
   def update
     @user = current_user
 
