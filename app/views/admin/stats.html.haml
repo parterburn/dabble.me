@@ -64,9 +64,9 @@
     - User.referrals.pluck(:referrer).uniq.each do |ref|
       .row
         .col-md-3
-          %strong= ref
+          = ref
         .col-md-2
-          %strong #{number_with_delimiter(User.referrals.where(referrer: ref).count)}
+          #{number_with_delimiter(User.referrals.where(referrer: ref).count)}
       
   .col-md-12
     %hr

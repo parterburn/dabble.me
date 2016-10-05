@@ -24,7 +24,7 @@ class User < ActiveRecord::Base
   scope :paypal_only, -> { where("plan ILIKE '%paypal%'") }
   scope :gumroad_only, -> { where("plan ILIKE '%gumroad%'") }
   scope :not_forever, -> { where("plan NOT ILIKE '%forever%'") }
-  scope :referrals, -> { where("referral IS NOT null") }
+  scope :referrals, -> { where("referrer IS NOT null") }
 
   before_save { email.downcase! }
   after_commit :restrict_free_frequency, on: [:create, :update]

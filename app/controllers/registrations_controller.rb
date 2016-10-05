@@ -87,7 +87,7 @@ class RegistrationsController < Devise::RegistrationsController
   private
 
   def check_captcha
-    if ENV['RECAPTCHA_PUBLIC_KEY'].present? && verify_recaptcha || ENV['CI'] == "true"
+    if ENV['RECAPTCHA_PUBLIC_KEY'].blank? || (verify_recaptcha || ENV['CI'] == "true")
       true
     else
       self.resource = resource_class.new sign_up_params
