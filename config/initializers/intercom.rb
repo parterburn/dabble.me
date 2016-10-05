@@ -36,7 +36,8 @@ IntercomRails.config do |config|
     :entries => Proc.new { |current_user| current_user.entries.count },
     :plan => Proc.new { |current_user| current_user.plan },
     :frequency => Proc.new { |current_user| current_user.frequency.join(', ') },
-    :timezone => Proc.new { |current_user| current_user.send_timezone }
+    :timezone => Proc.new { |current_user| current_user.send_timezone },
+    :referrer => Proc.new { |current_user| current_user.referrer }
   }
 
   # == Custom Style
