@@ -326,9 +326,13 @@ mark {
     font-size: 18px;
     padding-left: 10px !important;
     padding-right: 10px;
+    list-style-type: none;
     li {
       margin-bottom: 10px;
     }
+  }
+  a:hover {
+    text-decoration: none;
   }
 }
 

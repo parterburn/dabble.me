@@ -51,3 +51,27 @@
     margin-bottom:70px;
   }
 }
+
+$facebook: #5D77B4;
+$twitter: #61AEE8;
+
+.btn-facebook, .btn-twitter {
+  font-family: "Raleway", sans-serif;
+  font-size: 16px;
+  margin-top: 15px;
+  display: block;
+}
+
+.btn-facebook {
+  background-color: $facebook;
+  &:hover {
+    background-color: darken($facebook, 10);
+  }
+}
+
+.btn-twitter {
+  background-color: $twitter;
+  &:hover {
+    background-color: darken($twitter, 10);
+  }
+}
