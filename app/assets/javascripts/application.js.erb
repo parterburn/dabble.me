@@ -16,4 +16,8 @@ $(document).ready(function(){
   var page = DABBLE.pages[window.action] || $.noop;
   page.call();
 
+  $(".entry").one("mouseover", function() {
+    $(this).find('.entry-panel').addClass('permahover');
+  });  
+
 });
