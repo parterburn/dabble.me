@@ -14,8 +14,8 @@ Rails.application.routes.draw do
     match 'unsubscribe/:user_key'  => 'registrations#unsubscribe', as: 'unsubscribe', via: [:put]
   end
 
-  get 'entries/import'   => 'import#show', as: 'import'
-  match 'entries/import' => 'import#update', via: [:put], as: 'import_process'
+  get 'entries/import/(:type)'   => 'import#show', as: 'import'
+  match 'entries/import/(:type)' => 'import#update', via: [:put], as: 'import_process'
   match '/entries/import/ohlife/upload'  => 'import#process_ohlife_images', via: [:post], :as => 'import_ohlife_images'
   get 'entries/export'   => 'entries#export', as: 'export_entries'
   get 'entries/calendar' => 'entries#calendar', as: 'entries_calendar'

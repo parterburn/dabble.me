@@ -1,8 +1,14 @@
-- title "Import OhLife to Dabble Me"
+- type = params[:type].present? ? params[:type].humanize : "OhLife"
+- title "Import #{type} to Dabble Me"
+
+- if type == "Ahhlife"
+  - format_placeholder = '{"Jul-2015": {"-JtqbI_fF_2348SFrMqPQ": {"content": "Your entry here...","timestamp": 1436486400000}}}'
+- else
+  - format_placeholder = "2014-10-02\n\nHere's my first entry!\n\nYYYY-MM-DD\n\nEntry text exactly 2 line-breaks after date."
 
 .row
   .col-md-8.col-md-offset-2.s-import
-    %h3 Import Entries (OhLife format)
+    %h3 Import #{type} Entries
   .clearfix
 
   - if current_user.is_free?
@@ -13,20 +19,24 @@
         to import entries.
 
   %div{class: add_class}
-    = form_for :entry, url: import_process_path, method: :put do |f|
-      
-      .col-md-8.col-md-offset-2
-        = f.text_area :text, :class => "form-control", :rows => 10, :placeholder => "2014-10-02\n\nHere's my first entry!\n\nYYYY-MM-DD\n\nEntry text exactly 2 line-breaks after date."
+    - if params[:type]&.downcase != "photos"
+      = form_for :entry, url: import_process_path(type: type), method: :put do |f|
+        .col-md-8.col-md-offset-2
+          = f.text_area :text, class: "form-control", rows: 10, placeholder: format_placeholder
+          %br
 
-        %br
+        .col-md-8.col-md-offset-2
+          = f.submit "Import Entries", :class => "form-control btn btn-primary"
+          %br
+          %br
+          .text-center
+            Try other import formats:
+            =link_to "AhhLife", import_path('ahhlife')
+            &middot;
+            =link_to "OhLife", import_path('ohlife')          
+        .clearfix
 
-      .col-md-8.col-md-offset-2
-        = f.submit "Import Entries", :class => "form-control btn btn-primary"
-        %br
-        %br
-      .clearfix
-
-    - if params[:photos].present?
+    - if params[:type]&.downcase == "photos"
       %br
       .well.col-md-8.col-md-offset-2
         .col-md-4.center

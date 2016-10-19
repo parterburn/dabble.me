@@ -8,7 +8,11 @@ class ImportController < ApplicationController
     if current_user.is_free?
       flash[:alert] = "<a href='#{subscribe_url}'' class='alert-link'>Subscribe to PRO</a> to import entries.".html_safe
     else
-      flash = import_entries(params[:entry][:text])
+      if params[:type]&.downcase == "ahhlife"
+        flash = import_ahhlife_entries(params[:entry][:text])
+      else
+        flash = import_ohlife_entries(params[:entry][:text])
+      end
     end
     redirect_to entries_path
   end
@@ -30,12 +34,11 @@ class ImportController < ApplicationController
       flash[:alert] = "Only ZIP files are allowed here."
       redirect_to import_path
     end
-
   end
 
   private
 
-  def import_entries(data)
+  def import_ohlife_entries(data)
     errors = []
     user = current_user
 
@@ -62,4 +65,35 @@ class ImportController < ApplicationController
       flash[:alert] << '<br>' + error
     end
   end
+
+  def import_ahhlife_entries(data)
+    errors = []
+    user = current_user
+
+    j_data = JSON.parse(data)
+    i = 0;
+    j_data.each do |s|
+      s.second.each do |e|
+        i += 1
+        entry = e.second
+        body = ActionController::Base.helpers.simple_format(entry['content'])
+        body.gsub!(/\A(\<p\>\<\/p\>)/, '')
+        body.gsub!(/(\<p\>\<\/p\>)\z/, '')
+        date = Time.at(entry['timestamp']/1000).utc
+        entry = user.entries.create(date: date, body: body, inspiration_id: 1)        
+        unless entry.save
+          errors << date
+        end
+      end
+    end
+    flash[:notice] = 'Finished importing ' + ActionController::Base.helpers.pluralize(i, 'entry')
+
+    return flash unless errors.present?
+
+    flash[:alert] = '<strong>' + ActionController::Base.helpers.pluralize(errors.count, 'error') + ' while importing:</strong>'
+    errors.each do |error|
+      flash[:alert] << '<br>' + error
+    end
+  end
+
 end
