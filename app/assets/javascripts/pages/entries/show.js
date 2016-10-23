@@ -20,13 +20,13 @@
         e.preventDefault(); // prevent the default action (scroll / move caret)
     });
 
-    $("body").on("swiperight", function(event) {
+    $(".entry").on("swiperight", function(event) {
       if ($('#previous-entry').length) {
         window.location = $('#previous-entry').attr('href');
       }
     });
 
-    $("body").on("swipeleft", function(event) {
+    $(".entry").on("swipeleft", function(event) {
       if ($('#next-entry').length) {
         window.location = $('#next-entry').attr('href');
       }
