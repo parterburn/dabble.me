@@ -223,3 +223,14 @@ input[type="submit"].form-control {
 .input-group-addon {
   border-width: 2px;
 }
+
+.change-days {
+  position: absolute;
+  left: 9%;
+  right: 9%;
+  top: 30%;  
+  a {
+    font-size: 20px;
+    color: #CCCCCC;
+  }
+}

@@ -2,5 +2,14 @@
 
 .row
   %br
-  .col-md-8.col-md-offset-2.well.entry
+  .change-days
+    - if @entry.previous.present?
+      .float-left
+        =link_to entry_path(@entry.previous), id: "previous-entry", rel: "tooltip", title: "Previous day" do
+          %i.fa.fa-arrow-left
+    - if @entry.next.present?
+      .float-right
+        =link_to entry_path(@entry.next), id: "next-entry", rel: "tooltip", title: "Next day" do
+          %i.fa.fa-arrow-right  
+  .col-md-8.col-md-offset-2.well.entry{id: "entry-#{@entry.id}"}  
     = render partial: 'entry', locals: { entry: @entry }

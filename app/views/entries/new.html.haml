@@ -108,6 +108,7 @@
       }).datepicker("setDate", new Date());   
 
 :javascript
-  imagesLoaded( document.querySelector("#entry-#{@entry.id}"), function( instance ) {
-    $(this.elements[0]).find('.pictureFrame img').css("background-image","none");
-  });
+  $("#entry-#{@entry.id}").imagesLoaded()
+    .done( function( instance ) {
+      $(instance.elements).find('.pictureFrame img').css("background-image","none");
+    });  

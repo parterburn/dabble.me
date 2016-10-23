@@ -15,6 +15,7 @@
     .clearfix
 
 :javascript
-  imagesLoaded( document.querySelector("#entry-404"), function( instance ) {
-    $(this.elements[0]).find('.pictureFrame img').css("background-image","none");
-  });  
+  $("#entry-404").imagesLoaded()
+    .done( function( instance ) {
+      $(instance.elements).find('.pictureFrame img').css("background-image","none");
+    });  

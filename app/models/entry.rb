@@ -80,6 +80,14 @@ class Entry < ActiveRecord::Base
     end
   end
 
+  def next
+    self.user.entries.where("date > ?", date).sort_by(&:date).first
+  end
+
+  def previous
+    self.user.entries.where("date < ?", date).sort_by(&:date).last
+  end  
+
   private
 
   def associate_inspiration
