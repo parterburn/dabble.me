@@ -80,7 +80,7 @@ class ImportController < ApplicationController
         body.gsub!(/\A(\<p\>\<\/p\>)/, '')
         body.gsub!(/(\<p\>\<\/p\>)\z/, '')
         date = Time.at(entry['timestamp']/1000).utc
-        entry = user.entries.create(date: date, body: body, inspiration_id: 1)        
+        entry = user.entries.create(date: date, body: body, inspiration_id: 59)        
         unless entry.save
           errors << date
         end

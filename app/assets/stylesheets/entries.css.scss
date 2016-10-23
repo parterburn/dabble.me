@@ -65,14 +65,17 @@
   padding: 6px 30px;
   @media screen and (max-width: 767px) {
     padding: 6px 15px;
-  }  
+  }
+  transition: all 0.15s ease;
+  -webkit-transition: all 0.15s ease;  
   &:hover{
-    cursor:pointer;
     color:$mid-gray;
   }
   a {
     font-size:20px;
     color: $light-gray;
+    transition: all 0.15s ease;
+    -webkit-transition: all 0.15s ease;    
     &:hover{
       color: $mid-gray;
     }
@@ -414,5 +417,21 @@ mark {
     opacity: 0;
     transition: opacity 0.2s ease;
     -webkit-transition: opacity 0.2s ease;
+  }
+}
+
+.change-days {
+  position: absolute;
+  left: 9%;
+  right: 9%;
+  top: 30%;  
+  a {
+    transition: all 0.15s ease;
+    -webkit-transition: all 0.15s ease;
+    font-size: 20px;
+    color: $light-gray;
+    &:hover {
+      color:$mid-gray;
+    }
   }
 }

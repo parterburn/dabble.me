@@ -151,7 +151,7 @@ class EmailProcessor
   def parse_body_for_inspiration_id(raw_body)
     inspiration_id = nil
     begin
-      Inspiration.without_ohlife_or_email_or_tips.each do |inspiration|
+      Inspiration.without_imports_or_email_or_tips.each do |inspiration|
         if raw_body.include? inspiration.body.first(71)
           inspiration_id = inspiration.id
           break

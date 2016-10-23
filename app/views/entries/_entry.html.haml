@@ -6,8 +6,8 @@
     -if entry.inspiration.present?
       .float-left.s-edit-entry{rel: "popover", title: "#{entry.inspiration.inspired_by}", data: { content: "#{entry.inspiration.body.html_safe}" } }
         %i.fa.fa-lightbulb-o
-    .float-right.s-edit-entry{rel: "tooltip", title: "Edit Entry"}
-      = link_to edit_entry_path(entry) do
+    .float-right.s-edit-entry
+      = link_to edit_entry_path(entry), rel: "tooltip", title: "Edit Entry" do
         %i.fa.fa-pencil-square-o
     %h2
       = link_to entry.date_format_short, day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day)

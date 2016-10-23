@@ -222,9 +222,9 @@ class EntriesController < ApplicationController
   end
 
   def random_inspiration
-    count = Inspiration.without_ohlife_or_email.count
+    count = Inspiration.without_imports_or_email.count
     return nil if count == 0
-    Inspiration.without_ohlife_or_email.offset(rand(count)).first
+    Inspiration.without_imports_or_email.offset(rand(count)).first
   end
 
   def calendar_json(entries)

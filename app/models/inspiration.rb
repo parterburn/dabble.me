@@ -1,13 +1,13 @@
 class Inspiration < ActiveRecord::Base
   has_many :entries
-  scope :without_ohlife_or_email, -> { where("category != 'OhLife'").where("category != 'Email'") }
-  scope :without_ohlife_or_email_or_tips, -> { where("category != 'OhLife'").where("category != 'Email'").where("category != 'Tip'") }
+  scope :without_imports_or_email, -> { where("category != 'OhLife'").where("category != 'Ahhlife'").where("category != 'Email'") }
+  scope :without_imports_or_email_or_tips, -> { without_imports_or_email.where("category != 'Tip'") }
 
   validates :category, presence: true
   validates :body, presence: true
 
   def inspired_by
-    if ["OhLife", "Email"].include? category
+    if ["OhLife", "Email", "Ahhlife"].include? category
       "Source: #{category}"
     elsif category == "Tip"
       "Tip"

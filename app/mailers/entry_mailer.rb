@@ -20,7 +20,7 @@ class EntryMailer < ActionMailer::Base
   private
 
   def random_inspiration
-    return nil unless (count = Inspiration.without_ohlife_or_email.count) > 0
-    Inspiration.without_ohlife_or_email.offset(rand(count)).first
+    return nil unless (count = Inspiration.without_imports_or_email.count) > 0
+    Inspiration.without_imports_or_email.offset(rand(count)).first
   end
 end

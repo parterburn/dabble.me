@@ -91,7 +91,7 @@ class Entry < ActiveRecord::Base
   private
 
   def associate_inspiration
-    self.inspiration = nil unless self.inspiration.in? Inspiration.without_ohlife_or_email_or_tips
+    self.inspiration = nil unless self.inspiration.in? Inspiration.without_imports_or_email_or_tips
   end
 
   def check_image
