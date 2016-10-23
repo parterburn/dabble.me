@@ -20,17 +20,19 @@
         e.preventDefault(); // prevent the default action (scroll / move caret)
     });
 
-    $(".entry").on("swiperight", function(event) {
+    var hammer_options = { cssProps: { userSelect: true } }
+
+    $(".s-entry-date").hammer(hammer_options).bind("swiperight", function(event) {
       if ($('#previous-entry').length) {
         window.location = $('#previous-entry').attr('href');
       }
     });
 
-    $(".entry").on("swipeleft", function(event) {
+    $(".entry").hammer(hammer_options).bind("swipeleft", function(event) {
       if ($('#next-entry').length) {
         window.location = $('#next-entry').attr('href');
       }
-    });    
+    });
 
   };
 
