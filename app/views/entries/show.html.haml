@@ -5,11 +5,11 @@
   .change-days
     - if @entry.previous.present?
       .float-left
-        =link_to entry_path(@entry.previous), id: "previous-entry", rel: "tooltip", title: "Previous day" do
+        =link_to day_entry_path(year: @entry.previous.date.year, month: @entry.previous.date.month, day: @entry.previous.date.day), id: "previous-entry", rel: "tooltip", title: "#{@entry.previous.date_format_short}" do
           %i.fa.fa-arrow-left
     - if @entry.next.present?
       .float-right
-        =link_to entry_path(@entry.next), id: "next-entry", rel: "tooltip", title: "Next day" do
+        =link_to day_entry_path(year: @entry.next.date.year, month: @entry.next.date.month, day: @entry.next.date.day), id: "next-entry", rel: "tooltip", title: "#{@entry.next.date_format_short}" do
           %i.fa.fa-arrow-right  
   .col-md-8.col-md-offset-2.well.entry{id: "entry-#{@entry.id}"}  
     = render partial: 'entry', locals: { entry: @entry }
