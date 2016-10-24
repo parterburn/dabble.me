@@ -419,19 +419,3 @@ mark {
     -webkit-transition: opacity 0.2s ease;
   }
 }
-
-.change-days {
-  position: absolute;
-  left: 9%;
-  right: 9%;
-  top: 30%;  
-  a {
-    transition: all 0.15s ease;
-    -webkit-transition: all 0.15s ease;
-    font-size: 20px;
-    color: $light-gray;
-    &:hover {
-      color:$mid-gray;
-    }
-  }
-}
