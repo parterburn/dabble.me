@@ -27,9 +27,9 @@ class Entry < ActiveRecord::Base
     self.date.present? ? self.date.strftime("%A, %b %-d, %Y") : ""
   end
 
-  def date_format_short(comma=",")
+  def date_format_short
     # February 3, 2014
-    self.date.present? ? self.date.strftime("%B %-d#{comma} %Y") : "July 3, 1985"
+    self.date.present? ? self.date.strftime("%B %-d, %Y") : "July 3, 1985"
   end
 
   def date_day

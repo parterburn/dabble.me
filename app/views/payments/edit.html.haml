@@ -17,7 +17,7 @@
         .input-group.date
           %span.input-group-addon
             %i.fa.fa-calendar
-          = f.text_field :date, :value =>  @payment.date.strftime("%Y-%m-%d"), :placeholder=>"2014-10-31", :class => "form-control"
+          = f.text_field :date, :value =>  @payment.date.strftime("%B %-d, %Y"), :placeholder=>"2014-10-31", :class => "form-control pickadate"
         %br
 
       %div
@@ -50,12 +50,12 @@
 
 :javascript
   var tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);  
-  $('.input-group.date').datepicker({
-      format: "yyyy-mm-dd",
-      todayHighlight: true,
-      keyboardNavigation: false,
-      endDate: tomorrow,
-      autoclose: true,
-      todayBtn: "linked"
-    });
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  $.extend($.fn.pickadate.defaults, {
+    format: 'mmmm d, yyyy',
+    selectYears: true,
+    selectMonths: true,
+    max: tomorrow
+  })
+
+  $('.pickadate').pickadate();    

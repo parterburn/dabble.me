@@ -175,14 +175,14 @@ class EntriesController < ApplicationController
   end
 
   def review
-    @year = 2015
+    @year = 2016
     @entries = current_user.entries.where("date >= '#{@year}-01-01'::DATE AND date <= '#{@year}-12-31'::DATE")
     @total_count = @entries.count
     if @total_count > 0
       @body_text = @entries.pluck(:body).join()
       @words_counter = WordsCounted.count(@body_text, exclude: ['p', 'br', 'div', 'img'])
     else
-      flash[:notice] = 'No entries in 2015 - nothing to review :('
+      flash[:notice] = 'No entries in 2016 - nothing to review :('
       redirect_to entries_path
     end
 

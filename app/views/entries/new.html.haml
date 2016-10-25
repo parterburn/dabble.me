@@ -39,8 +39,8 @@
           .input-group.date
             %span.input-group-addon
               %i.fa.fa-calendar
-            - entry_date = params[:day].present? ? Date.parse(params[:day]).strftime("%B %-d %Y") : @entry.date_format_short("")
-            = f.text_field :date, :value => entry_date, :placeholder=>"October 11 2014", :class => "form-control"
+            - entry_date = params[:day].present? ? Date.parse(params[:day]).strftime("%B %-d, %Y") : (@entry.date.present? ? @entry.date_format_short : Date.today.strftime("%B %-d, %Y"))
+            = f.text_field :date, :value => entry_date, :placeholder=>"October 11 2014", :class => "form-control pickadate"
           %br
 
           %div
@@ -82,32 +82,17 @@
     return true;
   });
 
-:javascript
   var tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + 1);
-  $('.input-group.date').datepicker({
-      format: "MM d yyyy",
-      todayHighlight: true,
-      keyboardNavigation: false,
-      endDate: tomorrow,
-      autoclose: true,
-      todayBtn: "linked"
-    });   
+  $.extend($.fn.pickadate.defaults, {
+    format: 'mmmm d, yyyy',
+    selectYears: true,
+    selectMonths: true,
+    max: tomorrow
+  })
 
--if params[:day].blank? && @entry.date.blank?
-  :javascript
-    var tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);  
-    $('.input-group.date').datepicker({
-        format: "MM d yyyy",
-        todayHighlight: true,
-        keyboardNavigation: false,
-        endDate: tomorrow,
-        autoclose: true,
-        todayBtn: "linked"
-      }).datepicker("setDate", new Date());   
+  $('.pickadate').pickadate();
 
-:javascript
   $("#entry-#{@entry.id}").imagesLoaded()
     .done( function( instance ) {
       $(instance.elements).find('.pictureFrame img').css("background-image","none");
