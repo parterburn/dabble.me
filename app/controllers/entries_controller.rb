@@ -199,7 +199,10 @@ class EntriesController < ApplicationController
   private
 
   def track_ga_event(action)
-    Gabba::Gabba.new(ENV['GOOGLE_ANALYTICS_ID'], ENV['MAIN_DOMAIN']).event('Web Entry', action, current_user.user_key) if ENV['GOOGLE_ANALYTICS_ID'].present?
+    if ENV['GOOGLE_ANALYTICS_ID'].present?
+      tracker = Staccato.tracker(ENV['GOOGLE_ANALYTICS_ID'])
+      tracker.event(category: 'Web Entry', action: action, label: current_user.user_key)
+    end
   end
 
   def entry_params

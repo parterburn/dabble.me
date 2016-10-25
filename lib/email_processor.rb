@@ -90,7 +90,10 @@ class EmailProcessor
   private
 
   def track_ga_event(action)
-    Gabba::Gabba.new(ENV['GOOGLE_ANALYTICS_ID'], ENV['MAIN_DOMAIN']).event('Email Entry', action, @user.user_key) if ENV['GOOGLE_ANALYTICS_ID'].present?
+    if ENV['GOOGLE_ANALYTICS_ID'].present?
+      tracker = Staccato.tracker(ENV['GOOGLE_ANALYTICS_ID'])
+      tracker.event(category: 'Email Entry', action: action, label: @user.user_key)
+    end    
   end
 
   def pick_meaningful_recipient(to_recipients, cc_recipients)

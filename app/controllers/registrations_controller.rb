@@ -98,7 +98,10 @@ class RegistrationsController < Devise::RegistrationsController
 
   def track_ga_event
     return nil unless @user.id.present?
-    Gabba::Gabba.new(ENV['GOOGLE_ANALYTICS_ID'], ENV['MAIN_DOMAIN']).event('User', 'Create', @user.user_key) if ENV['GOOGLE_ANALYTICS_ID'].present?
+    if ENV['GOOGLE_ANALYTICS_ID'].present?
+      tracker = Staccato.tracker(ENV['GOOGLE_ANALYTICS_ID'])
+      tracker.event(category: 'User', action: 'Create', label: @user.user_key)
+    end
   end
 
   # check if we need password to update user data

@@ -229,7 +229,6 @@ GEM
       fog-core
       nokogiri (~> 1.5, >= 1.5.11)
     formatador (0.2.5)
-    gabba (1.0.1)
     gibbon (1.1.3)
       httparty
       multi_json (>= 1.3.4)
@@ -407,6 +406,7 @@ GEM
       actionpack (>= 3.0)
       activesupport (>= 3.0)
       sprockets (>= 2.8, < 4.0)
+    staccato (0.5.0)
     summernote-rails (0.4.0)
       railties (>= 3.1)
     thor (0.19.1)
@@ -466,7 +466,6 @@ DEPENDENCIES
   faker (~> 1.6, >= 1.6.1)
   file_validators
   fog
-  gabba (~> 1.0.1)
   gibbon
   google-analytics-rails
   griddler (~> 1.3.1)
@@ -503,6 +502,7 @@ DEPENDENCIES
   sinatra (>= 1.3.0)
   spring
   spring-commands-rspec
+  staccato
   summernote-rails
   twbs_sass_rails
   uglifier (>= 1.3.0)
