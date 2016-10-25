@@ -86,7 +86,7 @@ class Entry < ActiveRecord::Base
 
   def previous
     self.user.entries.where("date < ?", date).sort_by(&:date).last
-  end  
+  end
 
   private
 

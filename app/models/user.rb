@@ -60,22 +60,22 @@ class User < ActiveRecord::Base
   def random_entry(entry_date=nil)
     if entry_date.present?
       entry_date = Date.parse(entry_date.to_s)
-      if Date.leap?(entry_date.year) && entry_date.month == 2 && entry_date.day == 29 && leap_year_entry = entries.where(date: entry_date - 4.years).first
+      if Date.leap?(entry_date.year) && entry_date.month == 2 && entry_date.day == 29 && leap_year_entry = random_entries.where(date: entry_date - 4.years).first
         leap_year_entry
-      elsif exactly_last_year_entry = entries.where(date: entry_date.last_year).first
+      elsif exactly_last_year_entry = random_entries.where(date: entry_date.last_year).first
         exactly_last_year_entry
-      elsif (emails_sent % 3 == 0) && (exactly_30_days_ago = entries.where(date: entry_date.last_month).first)
+      elsif (emails_sent % 3 == 0) && (exactly_30_days_ago = random_entries.where(date: entry_date.last_month).first)
         exactly_30_days_ago
-      elsif (emails_sent % 5 == 0) && (exactly_7_days_ago = entries.where(date: entry_date - 7.days).first)
+      elsif (emails_sent % 5 == 0) && (exactly_7_days_ago = random_entries.where(date: entry_date - 7.days).first)
         exactly_7_days_ago
-      elsif (emails_sent % 2 == 0) && (count = entries.where('date < (?)', entry_date.last_year).count) > 30
-        entries.where('date < (?)', entry_date.last_year).offset(rand(count)).first #grab entry way back
+      elsif (emails_sent % 2 == 0) && (count = random_entries.where('date < (?)', entry_date.last_year).count) > 30
+        random_entries.where('date < (?)', entry_date.last_year).offset(rand(count)).first #grab entry way back
       else
         self.random_entry
       end
     else
-      if (count = entries.count) > 0
-        entries.offset(rand(count)).first
+      if (count = random_entries.count) > 0
+        random_entries.offset(rand(count)).first
       end
     end
   end
@@ -136,6 +136,19 @@ class User < ActiveRecord::Base
     else
       ''
     end
+  end
+
+  def past_filter_entry_ids
+    if (filters = self.past_filter).present?
+      filter_names = filters.split(',').map(&:strip)
+      cond_text = filter_names.map{|w| "LOWER(entries.body) like ?"}.join(" OR ")
+      cond_values = filter_names.map{|w| "%#{w}%"}
+      self.entries.where(cond_text, *cond_values).pluck(:id)
+    end
+  end
+
+  def random_entries
+    entries.where.not(id: past_filter_entry_ids)
   end
 
   private
