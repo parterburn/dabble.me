@@ -141,11 +141,6 @@ a.s-delete {
   }  
 }
 
-#entry_date{
-  font-size:15px;
-  color: $red;
-}
-
 .s-entry-date {
   margin-top:20px;
   padding-bottom: 5px;
@@ -418,4 +413,14 @@ mark {
     transition: opacity 0.2s ease;
     -webkit-transition: opacity 0.2s ease;
   }
+}
+
+
+#entry_date{
+  font-size:18px;
+}
+
+.pickadate[readonly] {
+    cursor: pointer;
+    background-color: white;
 }

@@ -139,6 +139,7 @@ class EntriesController < ApplicationController
       flash[:notice] = 'Entry deleted!'
       redirect_back_or_to entries_path
     else
+      params.deep_merge!(entry: { remote_image_url: @entry.image.url}) unless @entry.date == Date.parse(entry_params[:date])
       if @entry.update(entry_params)
         track_ga_event('Update')
         flash[:notice] = "Entry successfully updated!"
@@ -206,7 +207,7 @@ class EntriesController < ApplicationController
   end
 
   def entry_params
-    params.require(:entry).permit(:date, :entry, :image, :inspiration_id, :remove_image)
+    params.require(:entry).permit(:date, :entry, :image, :inspiration_id, :remove_image, :remote_image_url)
   end
 
   def set_entry
