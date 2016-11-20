@@ -7,7 +7,7 @@ Dabble Me helps people remember what's happened in their life. Use it as a light
 
 This app utilizes the following 3rd party services:
 
-* [CloudFlare](http://cloudflare.com) manages DNS + free SSL support (free for basic service)
+* [CloudFlare](http://cloudflare.com) managed DNS + free SSL support (free for basic service)
 * [Mailgun](http://www.mailgun.com/rackspace) for Sending & Receiving Email (free for 50k emails per month)
 * [Amazon S3](http://aws.amazon.com) for Photo Uploads & Storage (free for 1 year)
 * [MailChimp](http://mailchimp.com) for sending updates to all users (free for 2,000 subscribers)
