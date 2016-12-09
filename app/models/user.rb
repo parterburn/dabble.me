@@ -180,6 +180,8 @@ class User < ActiveRecord::Base
 
   def send_welcome_email
     UserMailer.welcome_email(self).deliver_later
+  rescue StandardError => e
+    Rails.logger.warn("Error sending email to #{self.email}: #{e}")
   end
 
   def admin_emails

@@ -9,7 +9,11 @@ namespace :referrers do
 
     if Time.now.monday?
       referrers.each do |id, email|
-        UserMailer.referred_users(id, email).deliver_later
+        begin        
+          UserMailer.referred_users(id, email).deliver_later
+        rescue StandardError => e
+          Rails.logger.warn("Error sending email to #{email}: #{e}")
+        end          
       end
     end
   end

@@ -84,7 +84,11 @@ class EmailProcessor
     end
 
     @user.increment!(:emails_received)
-    UserMailer.second_welcome_email(@user).deliver_later if @user.emails_received == 1 && @user.entries.count == 1
+    begin    
+      UserMailer.second_welcome_email(@user).deliver_later if @user.emails_received == 1 && @user.entries.count == 1
+    rescue StandardError => e
+      Rails.logger.warn("Error sending email to #{@user.email}: #{e}")
+    end      
   end
 
   private

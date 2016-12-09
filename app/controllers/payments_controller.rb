@@ -96,12 +96,20 @@ class PaymentsController < ApplicationController
         # duplicate, don't send
       elsif user.present?
         payment = Payment.create(user_id: user.id, comments: "Gumroad #{frequency} from #{user.email}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
-        UserMailer.thanks_for_paying(user).deliver_later if user.payments.count == 1
+        begin        
+          UserMailer.thanks_for_paying(user).deliver_later if user.payments.count == 1
+        rescue StandardError => e
+          Rails.logger.warn("Error sending email to #{user.email}: #{e}")
+        end          
       end
       plan = "PRO #{frequency} Gumroad"
       gumroad_id = params[:purchaser_id]
 
-      UserMailer.no_user_here(params[:email], 'Gumroad').deliver_later if user.blank?
+      begin
+        UserMailer.no_user_here(params[:email], 'Gumroad').deliver_later if user.blank?
+      rescue StandardError => e
+        Rails.logger.warn("Error sending email to #{params[:email]}: #{e}")
+      end
 
     # check for Paypal
     elsif params[:item_name].present? && params[:item_name].include?('Dabble Me') && params[:payment_status].present? && params[:payment_status] == "Completed" && params[:receiver_id] == ENV['PAYPAL_SELLER_ID']
@@ -116,7 +124,11 @@ class PaymentsController < ApplicationController
         # duplicate, don't
       elsif user.present?
         payment = Payment.create(user_id: user.id, comments: "Paypal #{frequency} from #{params[:payer_email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
-        UserMailer.thanks_for_paying(user).deliver_later if user.payments.count == 1
+        begin
+          UserMailer.thanks_for_paying(user).deliver_later if user.payments.count == 1
+        rescue StandardError => e
+          Rails.logger.warn("Error sending email to #{user.email}: #{e}")
+        end
       end
       plan = "PRO #{frequency} PayPal"
       gumroad_id = user.gumroad_id if user.present?
