@@ -25,8 +25,8 @@ Rails.application.routes.draw do
   get 'entries/:year/:month/:day',      to: 'entries#show',  as: 'day_entry'
   resources :entries, except: [:show]
   get 'entries/(:group)(/:subgroup)',   to: 'entries#index',  as: 'group_entries'  
-  get 'latest',                         to: 'entries#latest', as: 'latest_entry'  
-  get 'review',                         to: 'entries#review', as: 'review'  
+  get 'latest',                         to: 'entries#latest', as: 'latest_entry'
+  get 'review/(:year)',                 to: 'entries#review', as: 'review'
   get 'search',                         to: 'searches#show'
   get 'write',                          to: redirect('/entries/new')
   get 'privacy',                        to: 'welcome#privacy'
