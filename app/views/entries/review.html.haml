@@ -75,7 +75,7 @@
         %h3
           - your_avg_words = @words_counter.token_count / @total_count
           %span= number_with_delimiter(your_avg_words)
-      - if @year == 2016
+      - if @year.to_s == "2016"
         .s-review-details
           - if your_avg_words > 332
             - compared = 'way more'
@@ -108,7 +108,7 @@
     .center{class: add_class}
       .s-entry-date
         %h2 Most Frequent Words
-        - if @year == 2016
+        - if @year.to_s == "2016"
           %h3
             %span= "The <i>I's</i> had it - we all wrote it 163,045 times!".html_safe
       .s-review-details
