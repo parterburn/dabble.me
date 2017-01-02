@@ -6,7 +6,7 @@ namespace :entry do
     EntryMailer.send_entry(user).deliver_now
   end
 
-  # rake "entry:stats[2016]"
+  # heroku run:detached bundle exec rake "entry:stats[2016]" --app dabble-me --size=standard-2x
   task :stats, [:year] => :environment do |_, year:|
     # Stats for 2015
     # 3,872 users created
@@ -28,11 +28,10 @@ namespace :entry do
 
     extend ActionView::Helpers::NumberHelper    
     all_entries = Entry.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE")
-    entries_bodies = []
-    all_entries.each do |entry|
-      entries_bodies << entry.body
-    end
-    entries_bodies = entries_bodies.join(" ")
+    p "Users created: #{number_with_delimiter(User.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
+    p "Entries created in #{year}: #{number_with_delimiter(Entry.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
+    p "Entries for #{year}: #{number_with_delimiter(all_entries.count)}"    
+    entries_bodies = all_entries.pluck(:body).join(" ")
     words_counter = WordsCounted.count(entries_bodies, exclude: ['p', 'br', 'div', 'img', 'span'])
     total_words = words_counter.token_count.to_f
     avg_words = total_words / all_entries.count
@@ -40,9 +39,6 @@ namespace :entry do
     avg_chars = total_chars / all_entries.count
     avg_tweets_per_post = ((avg_chars).to_f / 140).ceil
     most_frequent = words_counter.token_frequency.first(10)
-    p "Users created: #{number_with_delimiter(User.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
-    p "Entries created in #{year}: #{number_with_delimiter(Entry.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
-    p "Entries for #{year}: #{number_with_delimiter(all_entries.count)}"
     p "Total words: #{number_with_delimiter(total_words)}"
     p "Avg words per post: #{number_with_delimiter(avg_words)}"
     p "Total characters: #{number_with_delimiter(total_chars)}"
