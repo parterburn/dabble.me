@@ -12,7 +12,6 @@
  *
  *= stub twbs-variables
  *= require twbs
- *= require summernote
  *= require_self
  *= require_tree ./lib 
  *= require_tree .
@@ -20,6 +19,7 @@
 
 @import url(https://fonts.googleapis.com/css?family=Raleway:400,700,200);
 @import 'vars';
+@import "summernote";
 
 html, body {
   height: 100%;
