@@ -12,7 +12,7 @@
       .s-entry-date
         %h2 Days with Entries
         %h3
-          %span= "#{@total_count} entries in 2016"
+          %span= "#{@total_count} entries in #{@year}"
       .s-review-details
         = pie_chart({"Days With Entries": @total_count, "Days Without Entires": (365 - @total_count)},  height: "230px", library: {backgroundColor: "#ffffff"})
         .clearfix
