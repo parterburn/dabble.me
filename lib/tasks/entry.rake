@@ -32,7 +32,7 @@ namespace :entry do
     all_entries.each do |entry|
       entries_bodies << entry.body
     end
-    entries_bodies = entries_bodies.join(" "); nil
+    entries_bodies = entries_bodies.join(" ")
     words_counter = WordsCounted.count(entries_bodies, exclude: ['p', 'br', 'div', 'img', 'span'])
     total_words = words_counter.token_count.to_f
     avg_words = total_words / all_entries.count
