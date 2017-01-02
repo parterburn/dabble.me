@@ -181,51 +181,14 @@ class EntriesController < ApplicationController
     @total_count = @entries.count
     if @total_count > 0
       @body_text = @entries.pluck(:body).join(" ")
-      @words_counter = WordsCounted.count(@body_text, exclude: ['p', 'br', 'div', 'img'])
+      @words_counter = WordsCounted.count(@body_text, exclude: ['p', 'br', 'div', 'img', 'span', 'i', 'the', 'to', 'and', 'a', 'with', 'of', 'in', 'at'])
     else
       flash[:notice] = 'No entries in 2016 - nothing to review :('
       redirect_to entries_path
     end
-
-    # year_stats(2016).each do |stat|
-    #   p stat
-    # end
-
-    # Stats for 2015
-    # 3,872 users created
-    # 87,572 entries created
-    # 5,017,056 total words
-    # 150.4 avg words
-    # 28,602,926 characters
-    # 857.30 avg characters per post (6.1 tweets)
-    # 171,919 were the word "I"
   end
 
   private
-
-  def year_stats(year)
-    extend ActionView::Helpers::NumberHelper
-    all_entries = Entry.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE")
-    entries_bodies = all_entries.pluck(:body).join(" ")
-    words_counter = WordsCounted.count(entries_bodies, exclude: ['p', 'br', 'div', 'img'])
-    total_words = words_counter.token_count.to_f
-    avg_words = total_words / all_entries.count
-    total_chars = entries_bodies.length
-    avg_chars = total_chars / all_entries.count
-    avg_tweets_per_post = ((avg_chars).to_f / 140).ceil
-    most_frequent = words_counter.token_frequency.first(10)
-    review = []
-    review << "Stats for #{year}"
-    review << "Users created: #{number_with_delimiter(User.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
-    review << "Entries created in #{year}: #{number_with_delimiter(Entry.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
-    review << "Entries for #{year}: #{number_with_delimiter(all_entries.count)}"
-    review << "Total words: #{number_with_delimiter(total_words)}"
-    review << "Avg words per post: #{number_with_delimiter(avg_words)}"
-    review << "Total characters: #{number_with_delimiter(total_chars)}"
-    review << "Avg characters per post: #{number_with_delimiter(avg_chars)} (#{avg_tweets_per_post} tweets)"
-    review << "Most Frequent Words: #{most_frequent}"
-    review
-  end
 
   def track_ga_event(action)
     if ENV['GOOGLE_ANALYTICS_ID'].present?
