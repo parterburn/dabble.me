@@ -27,9 +27,9 @@ describe 'Day Entries' do
 
     it 'should not show me other users entries' do
       sign_in user
-      visit day_entry_url(year: entry.date.year + 1, month: entry.date.month - 1, day: entry.date.day - 1)
+      visit day_entry_url(year: entry.date.year + 1, month: entry.date.month, day: entry.date.day)
       expect(page).to have_content 'Not authorized'
-    end    
+    end
   end
 
 end
