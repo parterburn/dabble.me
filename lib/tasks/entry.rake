@@ -21,8 +21,12 @@ namespace :entry do
     # 31,832 entries craeted in 2016
     # 1,068 users created
     # Total characters: 676,779
-    
-    extend ActionView::Helpers::NumberHelper
+  
+    p "*"*100
+    p "STATS FOR #{year}"
+    p "*"*100
+
+    extend ActionView::Helpers::NumberHelper    
     all_entries = Entry.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE")
     entries_bodies = []
     all_entries.each do |entry|
@@ -36,9 +40,6 @@ namespace :entry do
     avg_chars = total_chars / all_entries.count
     avg_tweets_per_post = ((avg_chars).to_f / 140).ceil
     most_frequent = words_counter.token_frequency.first(10)
-    p "*"*100
-    p "STATS FOR #{year}"
-    p "*"*100
     p "Users created: #{number_with_delimiter(User.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
     p "Entries created in #{year}: #{number_with_delimiter(Entry.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
     p "Entries for #{year}: #{number_with_delimiter(all_entries.count)}"
