@@ -20,6 +20,7 @@ class Entry < ActiveRecord::Base
   scope :only_email, -> { where("original_email_body IS NOT null").order('date DESC') }
 
   before_save :associate_inspiration
+  before_save :strip_out_base64
   after_save :check_image
 
   def date_format_long
@@ -92,6 +93,17 @@ class Entry < ActiveRecord::Base
 
   def associate_inspiration
     self.inspiration = nil unless self.inspiration.in? Inspiration.without_imports_or_email_or_tips
+  end
+
+  def strip_out_base64
+    if self.body.present?
+      self.body = self.body.gsub(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"")
+      self.body = self.body.gsub(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()")
+    end
+    if self.original_email_body.present?
+      self.original_email_body = self.original_email_body.gsub(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"")
+      self.original_email_body = self.original_email_body.gsub(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()")
+    end
   end
 
   def check_image

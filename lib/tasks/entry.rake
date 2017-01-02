@@ -6,7 +6,7 @@ namespace :entry do
     EntryMailer.send_entry(user).deliver_now
   end
 
-  # heroku run:detached bundle exec rake "entry:stats[2016]" --app dabble-me --size=standard-2x
+  # heroku run:detached bundle exec rake "entry:stats[2016]" --app dabble-me
   task :stats, [:year] => :environment do |_, year:|
     # Stats for 2015
     # 3,872 users created
@@ -18,10 +18,15 @@ namespace :entry do
     # 171,919 were the word "I"
 
     # Stats for 2016
-    # 31,832 entries craeted in 2016
-    # 1,068 users created
-    # Total characters: 676,779
-  
+    # Users created: 1,068
+    # Entries created in 2016: 31,832
+    # Entries for 2016: 26,032
+    # Total words: 27,266,896.0
+    # Avg words per post: 1,047.43
+    # Total characters: 200,971,921
+    # Avg characters per post: 7,720 (56 tweets)
+    # Most Frequent Words: [[\"i\", 327167], [\"a\", 307414], [\"z\", 190594], [\"u\", 190182], [\"k\", 189018], [\"e\", 177739], [\"q\", 177676], [\"c\", 173605], [\"y\", 166801], [\"s\", 164266]]
+
     p "*"*100
     p "STATS FOR #{year}"
     p "*"*100

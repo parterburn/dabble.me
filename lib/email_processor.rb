@@ -6,6 +6,12 @@ class EmailProcessor
     @token = pick_meaningful_recipient(email.to, email.cc)
     @from = email.from[:email].downcase
     @subject = email.subject
+
+    email.body.gsub!(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"") if email.body.present?
+    email.body.gsub!(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()") if email.body.present?
+    email.raw_body.gsub!(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"") if email.raw_body.present?
+    email.raw_body.gsub!(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()") if email.raw_body.present?
+
     if email.raw_body.present? && email.raw_body.ascii_only? && email.body.ascii_only?
       @body = EmailReplyParser.parse_reply(email.body)
     else
