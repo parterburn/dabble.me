@@ -34,7 +34,7 @@ namespace :entry do
     extend ActionView::Helpers::NumberHelper    
     all_entries = Entry.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE") 
     entries_bodies = all_entries.pluck(:body).join(" ")
-    words_counter = WordsCounted.count(entries_bodies, exclude: ['p', 'br', 'div', 'img', 'span'])
+    words_counter = WordsCounted.count(entries_bodies, exclude: ['p', 'br', 'div', 'img', 'span', 'style', 'li', 'ul', 'ol'])
     total_words = words_counter.token_count.to_f
     avg_words = total_words / all_entries.count
     total_chars = entries_bodies.length
@@ -50,7 +50,32 @@ namespace :entry do
     p "Avg characters per post: #{number_with_delimiter(avg_chars)} (#{avg_tweets_per_post} tweets)"
     p "Most Frequent Words: #{most_frequent}"
     p "*"*100
-  end  
+  end
+
+  task :stats_by_user, [:year] => :environment do |_, year:|
+    data = []
+    User.all.each do |user|
+      user_entries = Entry.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE AND user_id = ?", user.id) 
+      if user_entries.count > 0
+        entries_bodies = user_entries.pluck(:body).join(" ")
+        words_counter = WordsCounted.count(entries_bodies, exclude: ['p', 'br', 'div', 'img', 'span', 'style', 'li', 'ul', 'ol'])
+        total_words = words_counter.token_count.to_f
+        avg_words = total_words / user_entries.count
+        total_chars = entries_bodies.length
+        avg_chars = total_chars / user_entries.count
+        avg_tweets_per_post = ((avg_chars).to_f / 140).ceil
+      else
+        avg_words = 0
+        avg_tweets_per_post = 0
+      end
+      data << "#{user.email}, #{user_entries.count}, #{avg_words.round(1)}, #{avg_tweets_per_post}"
+    end
+    p "*"*100
+    p "DATA BY USER"
+    p "*"*100
+    p data
+    p "*"*100
+  end
 
   task :send_hourly_entries => :environment do
     users = User.subscribed_to_emails.not_just_signed_up
