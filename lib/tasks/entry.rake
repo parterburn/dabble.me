@@ -6,7 +6,7 @@ namespace :entry do
     EntryMailer.send_entry(user).deliver_now
   end
 
-  # heroku run:detached bundle exec rake "entry:stats[2016]" --app dabble-me
+  # heroku run bundle exec rake "entry:stats[2016]" --app dabble-me
   task :stats, [:year] => :environment do |_, year:|
     # Stats for 2015
     # 3,872 users created
@@ -21,21 +21,18 @@ namespace :entry do
     # Users created: 1,068
     # Entries created in 2016: 31,832
     # Entries for 2016: 26,032
-    # Total words: 27,266,896.0
-    # Avg words per post: 1,047.43
-    # Total characters: 200,971,921
-    # Avg characters per post: 7,720 (56 tweets)
-    # Most Frequent Words: [[\"i\", 327167], [\"a\", 307414], [\"z\", 190594], [\"u\", 190182], [\"k\", 189018], [\"e\", 177739], [\"q\", 177676], [\"c\", 173605], [\"y\", 166801], [\"s\", 164266]]
+    # "Total words: 4,331,103"
+    # "Avg words per post: 166.37611401352183"
+    # "Total characters: 23,932,366"
+    # "Avg characters per post: 919 (7 tweets)"
+    # "Most Frequent Words: [[\"i\", 163045], [\"and\", 151757], [\"to\", 132691], [\"the\", 130053], [\"a\", 85094], [\"was\", 60419], [\"it\", 54396], [\"of\", 50351], [\"in\", 48510], [\"for\", 42713]]"
 
     p "*"*100
     p "STATS FOR #{year}"
     p "*"*100
 
     extend ActionView::Helpers::NumberHelper    
-    all_entries = Entry.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE")
-    p "Users created: #{number_with_delimiter(User.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
-    p "Entries created in #{year}: #{number_with_delimiter(Entry.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
-    p "Entries for #{year}: #{number_with_delimiter(all_entries.count)}"    
+    all_entries = Entry.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE") 
     entries_bodies = all_entries.pluck(:body).join(" ")
     words_counter = WordsCounted.count(entries_bodies, exclude: ['p', 'br', 'div', 'img', 'span'])
     total_words = words_counter.token_count.to_f
@@ -44,6 +41,9 @@ namespace :entry do
     avg_chars = total_chars / all_entries.count
     avg_tweets_per_post = ((avg_chars).to_f / 140).ceil
     most_frequent = words_counter.token_frequency.first(10)
+    p "Users created: #{number_with_delimiter(User.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
+    p "Entries created in #{year}: #{number_with_delimiter(Entry.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
+    p "Entries for #{year}: #{number_with_delimiter(all_entries.count)}"    
     p "Total words: #{number_with_delimiter(total_words)}"
     p "Avg words per post: #{number_with_delimiter(avg_words)}"
     p "Total characters: #{number_with_delimiter(total_chars)}"

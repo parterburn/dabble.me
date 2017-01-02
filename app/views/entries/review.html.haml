@@ -76,16 +76,16 @@
           - your_avg_words = @words_counter.token_count / @total_count
           %span= number_with_delimiter(your_avg_words)
       .s-review-details
-        - if your_avg_words > 300
+        - if your_avg_words > 332
           - compared = 'way more'
-        - elsif your_avg_words > 150
+        - elsif your_avg_words > 166
           - compared = 'more'
-        - elsif your_avg_words < 75
+        - elsif your_avg_words < 83
           - compared = 'way less'
         - else
           - compared = 'less'
-        %p= "That's #{compared} than the average of all Dabble Me users (150)."
-        %p Collectively, all Dabble Me users could have wrote 41.8 novels equivalent to The Martian - then we might actually have that movie made about our lives!
+        %p= "That's #{compared} than the average of all Dabble Me users (166)."
+        %p Collectively, all Dabble Me users could have wrote 43.6 novels equivalent to Harry Potter and the Cursed Child - then we might actually have that movie made about our lives!
         .clearfix  
 
   .col-md-8.col-md-offset-2.well
@@ -108,7 +108,7 @@
       .s-entry-date
         %h2 Most Frequent Words
         %h3
-          %span= "The <i>I's</i> had it - we all wrote it 171,919 times!".html_safe
+          %span= "The <i>I's</i> had it - we all wrote it 163,045 times!".html_safe
       .s-review-details
         - @words_counter.token_frequency.first(10).each do |word|
           %h3

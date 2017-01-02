@@ -181,7 +181,7 @@ class EntriesController < ApplicationController
     @total_count = @entries.count
     if @total_count > 0
       @body_text = @entries.pluck(:body).join(" ")
-      @words_counter = WordsCounted.count(@body_text, exclude: ['p', 'br', 'div', 'img', 'span', 'i', 'the', 'to', 'and', 'a', 'with', 'of', 'in', 'at'])
+      @words_counter = WordsCounted.count(@body_text, exclude: ['p', 'br', 'div', 'img', 'span', 'style', 'li', 'ul', 'b', 'strong', '-'])
     else
       flash[:notice] = 'No entries in 2016 - nothing to review :('
       redirect_to entries_path
