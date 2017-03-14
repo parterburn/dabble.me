@@ -121,7 +121,7 @@ class PaymentsController < ApplicationController
       frequency = paid.to_i > 10 ? 'Yearly' : 'Monthly'
 
       if user.present? && user.payments.count > 0 && Payment.where(user_id: user.id).last.date.to_date === Time.now.to_date
-        # duplicate, don't
+        # duplicate webhook, don't save
       elsif user.present?
         payment = Payment.create(user_id: user.id, comments: "Paypal #{frequency} from #{params[:payer_email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
         begin
