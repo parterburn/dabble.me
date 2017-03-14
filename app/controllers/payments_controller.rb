@@ -95,7 +95,7 @@ class PaymentsController < ApplicationController
       if user.present? && user.payments.count > 0 && Payment.where(user_id: user.id).last.date.to_date === Time.now.to_date
         # duplicate, don't send
       elsif user.present?
-        payment = Payment.create(user_id: user.id, comments: "Gumroad #{frequency} from #{user.email}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
+        payment = Payment.create(user_id: user.id, comments: "Gumroad #{frequency} from #{params[:email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
         begin        
           UserMailer.thanks_for_paying(user).deliver_later if user.payments.count == 1
         rescue StandardError => e
