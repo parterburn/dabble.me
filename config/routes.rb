@@ -30,6 +30,7 @@ Rails.application.routes.draw do
   get 'search',                         to: 'searches#show'
   get 'write',                          to: redirect('/entries/new')
   get 'privacy',                        to: 'welcome#privacy'
+  get 'terms',                          to: 'welcome#terms'
   get 'features',                       to: 'welcome#features'
   get 'faqs',                           to: 'welcome#faqs'
   get 'subscribe',                      to: 'welcome#subscribe'

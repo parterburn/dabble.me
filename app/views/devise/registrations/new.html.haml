@@ -49,4 +49,9 @@
     = f.submit "Sign up", class: "btn btn-primary form-control"
     .clearfix
     %br
+    %small.text-muted
+      %center
+        By signing up you aggree to the
+        = link_to("terms of service", terms_path) + "."
+    %br    
     = render "devise/shared/links"
