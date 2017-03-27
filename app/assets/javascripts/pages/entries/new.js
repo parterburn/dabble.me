@@ -10,6 +10,17 @@
       $(this).find('input[type=submit]').addClass('disabled');
     });
 
+    var tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    $.extend($.fn.pickadate.defaults, {
+      format: 'mmmm d, yyyy',
+      selectYears: true,
+      selectMonths: true,
+      max: tomorrow
+    });
+
+    $('.pickadate').pickadate();
+
   };
 
 }());
