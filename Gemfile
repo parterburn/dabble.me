@@ -26,7 +26,7 @@ gem 'mailgun_webhooks', '~> 1.0'
 gem 'mailgun_rails'
 
 gem 'randomized_field', '~> 0.1.0' # builds user_keys
-gem 'summernote-rails', '~> 0.8.1.1'
+gem 'summernote-rails', '~> 0.8.2.0'
 gem 'rest-client' # RESTClient
 gem 'rubyzip', '~> 1.1.6'
 gem 'zip-zip'
