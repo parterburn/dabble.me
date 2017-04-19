@@ -64,6 +64,7 @@ gem 'uglifier', '>= 1.3.0'
 
 gem 'le' # logentries
 gem 'newrelic_rpm'
+gem 'scout_apm'
 
 group :development, :test do
   gem 'byebug', '~> 8.2', '>= 8.2.2'
