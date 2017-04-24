@@ -19,6 +19,7 @@
     = highlight(entry.hashtag_body, @search.term)
   - else
     = entry.hashtag_body
+  = entry.spotify_embed    
 - if entry.image_url_cdn.present?
   .pictureFrame
     =link_to entry.image_url_cdn, target: "_blank" do

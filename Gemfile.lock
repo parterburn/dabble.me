@@ -351,6 +351,7 @@ GEM
     rest-client (1.7.2)
       mime-types (>= 1.16, < 3.0)
       netrc (~> 0.7)
+    rinku (2.0.2)
     rspec (3.1.0)
       rspec-core (~> 3.1.0)
       rspec-expectations (~> 3.1.0)
@@ -493,6 +494,7 @@ DEPENDENCIES
   randomized_field (~> 0.1.0)
   recaptcha
   rest-client
+  rinku
   rspec
   rspec-rails
   rubyzip (~> 1.1.6)

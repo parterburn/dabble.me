@@ -39,8 +39,15 @@ class Entry < ActiveRecord::Base
   end
 
   def hashtag_body
-    h_body = self.body.gsub(/(<a[^>]*>.*?< ?\/a ?>)|(#[0-9]+\W)|(#[a-zA-Z0-9_]+)/) { "#{$1}#{$2}<a href='#{Rails.application.routes.url_helpers.search_url(host: ENV['MAIN_DOMAIN'], search: {term: $3})}'>#{$3}</a>" } if self.body.present?
-    ActionController::Base.helpers.sanitize h_body, tags: %w(strong em a div span ul ol li b i img br p hr), attributes: %w(href style src)
+    return nil unless self.body.present?
+    h_body = Rinku.auto_link(self.body, :all, 'target="_blank"')
+    h_body.gsub!(/(<a[^>]*>.*?< ?\/a ?>)|(#[0-9]+\W)|(#[a-zA-Z0-9_]+)/) { "#{$1}#{$2}<a href='#{Rails.application.routes.url_helpers.search_url(host: ENV['MAIN_DOMAIN'], search: {term: $3})}'>#{$3}</a>" }
+    ActionController::Base.helpers.sanitize h_body, tags: %w(strong em a div span ul ol li b i img br p hr), attributes: %w(href style src target)
+  end
+
+  def spotify_embed
+    matches = self.body.scan(/open\.spotify\.com\/track\/(\w+)/)
+    "<p><iframe src='https://embed.spotify.com/?uri=spotify:trackset:Dabble Me entry for #{self.date_format_short}:#{matches.uniq.join(',')}' frameborder='0' height='80' width='100%' allowtransparency='true'></iframe></p>".html_safe
   end
 
   def time_ago_in_words_or_numbers(user)

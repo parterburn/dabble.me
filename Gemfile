@@ -51,6 +51,7 @@ gem 'staccato' # server side tracking for Google Analytics
 gem 'haml'
 gem 'exception_notification-rake', '~> 0.2.1'
 gem 'rack-affiliates' # for tracking referrers
+gem 'rinku' # linkify urls & emails in entries
 
 # Assets
 gem 'autoprefixer-rails'
