@@ -18,6 +18,7 @@ class Entry < ActiveRecord::Base
   scope :only_images, -> { where("image IS NOT null AND image != ''").order('date DESC') }
   scope :only_ohlife, -> { includes(:inspiration).where("inspirations.category = 'OhLife'").references(:inspiration).order('date DESC') }
   scope :only_email, -> { where("original_email_body IS NOT null").order('date DESC') }
+  scope :only_spotify, -> { where("body LIKE '%open.spotify.com%'").order('date DESC') }
 
   before_save :associate_inspiration
   before_save :strip_out_base64
@@ -47,7 +48,11 @@ class Entry < ActiveRecord::Base
 
   def spotify_embed
     matches = self.body.scan(/open\.spotify\.com\/track\/(\w+)/)
-    "<p><iframe src='https://embed.spotify.com/?uri=spotify:trackset:Dabble Me entry for #{self.date_format_short}:#{matches.uniq.join(',')}' frameborder='0' height='80' width='100%' allowtransparency='true'></iframe></p>".html_safe
+    embeds = []
+    matches.uniq.each do |match|
+      embeds << "<p><iframe src='https://open.spotify.com/embed?uri=spotify:track:#{match.first}' width='100%' height='80' frameborder='0' allowtransparency='true'></iframe></p>"
+    end
+    embeds.join.html_safe
   end
 
   def time_ago_in_words_or_numbers(user)

@@ -70,6 +70,16 @@ class EntriesController < ApplicationController
   def calendar
   end
 
+  def spotify
+    matches = current_user.is_pro? ? current_user.entries.only_spotify.pluck(:body).join(" ").scan(/open\.spotify\.com\/track\/(\w+)/) : []
+    embeds = []
+    matches.uniq.each do |match|
+      entry = current_user.entries.where("body LIKE '%#{match.first}%'").first
+      embeds << "<p><h4><a href='#{entry_path(entry)}'>Entry for #{entry.date_format_short}</a></h4><iframe src='https://open.spotify.com/embed?uri=spotify:track:#{match.first}' width='100%' height='80' frameborder='0' allowtransparency='true'></iframe></p>"
+    end
+    @spotify_embed = embeds.join.html_safe
+  end
+
   def create
     if current_user.is_free?
       flash[:alert] = "<a href='#{subscribe_url}'' class='alert-link'>Subscribe to PRO</a> to write new entries.".html_safe

@@ -27,6 +27,7 @@ Rails.application.routes.draw do
   get 'entries/(:group)(/:subgroup)',   to: 'entries#index',  as: 'group_entries'  
   get 'latest',                         to: 'entries#latest', as: 'latest_entry'
   get 'review/(:year)',                 to: 'entries#review', as: 'review'
+  get 'play',                           to: 'entries#spotify', as: 'spotify'
   get 'search',                         to: 'searches#show'
   get 'write',                          to: redirect('/entries/new')
   get 'privacy',                        to: 'welcome#privacy'
