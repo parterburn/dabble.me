@@ -18,6 +18,8 @@
           Remember this? On #{format_date} (#{@random_entry.time_ago_in_words_or_numbers(@user)} ago) you wrote...
       %p
         = @random_entry.hashtag_body
+      - if (songs = @random_entry.spotify_track_names).present?
+        = songs
       - if @random_entry_image_url.present?
         %p
           =link_to image_tag(@random_entry_image_url, style: 'max-width: 100%; border-radius: 4px;'), @random_entry_image_url

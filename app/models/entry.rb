@@ -52,8 +52,18 @@ class Entry < ActiveRecord::Base
     self.songs.each do |song|
       embeds << "<p class='spotify'><iframe src='https://open.spotify.com/embed?uri=spotify:track:#{song['spotify_id']}' width='100%' height='80' frameborder='0' allowtransparency='true'></iframe></p>"
     end
-    embeds.join.html_safe    
+    embeds.join.html_safe
   end
+
+  def spotify_track_names
+    embeds = []
+    self.songs.each do |song|
+      embeds << "<a href=\"https://open.spotify.com/track/#{song['spotify_id']}\">#{song['artists'].to_sentence} - #{song['title']}</a>&nbsp;"
+    end
+    if embeds.present?
+      "<p><i>Songs: #{embeds.to_sentence}</i></p>".html_safe
+    end
+  end  
 
   def time_ago_in_words_or_numbers(user)
     now_for_user = Time.now.in_time_zone(user.send_timezone)
