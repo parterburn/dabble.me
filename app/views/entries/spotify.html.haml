@@ -10,6 +10,9 @@
       .alert.alert-warning
         =link_to "Subscribe to PRO", subscribe_path, class: "alert-link"
         to unlock the ability to play all of the Spotify songs from your entries.
-    - elsif @spotify_embed.present?
-      %hr
-      = @spotify_embed
+    - elsif (spotify_entries = current_user.entries.only_spotify).present?
+      - spotify_entries.each do |entry|
+        - entry.songs.each do |song|
+          %p
+            %h4= link_to "Entry for #{entry.date_format_short}", day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day)
+            %iframe{src: "https://open.spotify.com/embed?uri=spotify:track:#{song['spotify_id']}", width: "100%", height: "80", frameborder: "0", allowtransparency: "true"}

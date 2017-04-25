@@ -71,13 +71,6 @@ class EntriesController < ApplicationController
   end
 
   def spotify
-    embeds = []
-    current_user.entries.only_spotify.each do |entry|
-      entry.songs.each do |song|
-        embeds << "<p><h4><a href='#{day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day)}'>Entry for #{entry.date_format_short}</a></h4><iframe src='https://open.spotify.com/embed?uri=spotify:track:#{song['spotify_id']}' width='100%' height='80' frameborder='0' allowtransparency='true'></iframe></p>"
-      end
-    end
-    @spotify_embed = embeds.join.html_safe
   end
 
   def create
