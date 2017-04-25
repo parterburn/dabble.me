@@ -295,8 +295,7 @@ GEM
       mini_portile2 (~> 2.1.0)
     orm_adapter (0.5.0)
     pg (0.17.1)
-    puma (2.9.1)
-      rack (>= 1.1, < 2.0)
+    puma (3.8.2)
     rack (1.6.5)
     rack-affiliates (0.4.0)
       rack
@@ -515,7 +514,7 @@ DEPENDENCIES
   zip-zip
 
 RUBY VERSION
-   ruby 2.3.3p222
+   ruby 2.3.4p301
 
 BUNDLED WITH
-   1.13.7
+   1.14.6
