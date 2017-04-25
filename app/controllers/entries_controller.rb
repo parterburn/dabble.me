@@ -75,7 +75,7 @@ class EntriesController < ApplicationController
     embeds = []
     matches.uniq.each do |match|
       entry = current_user.entries.where("body LIKE '%#{match.first}%'").first
-      embeds << "<p><h4><a href='#{entry_path(entry)}'>Entry for #{entry.date_format_short}</a></h4><iframe src='https://open.spotify.com/embed?uri=spotify:track:#{match.first}' width='100%' height='80' frameborder='0' allowtransparency='true'></iframe></p>"
+      embeds << "<p><h4><a href='#{day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day)}'>Entry for #{entry.date_format_short}</a></h4><iframe src='https://open.spotify.com/embed?uri=spotify:track:#{match.first}' width='100%' height='80' frameborder='0' allowtransparency='true'></iframe></p>"
     end
     @spotify_embed = embeds.join.html_safe
   end
