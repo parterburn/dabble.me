@@ -1,5 +1,5 @@
 language: ruby
 addons:
-  postgresql: "9.5"
+  postgresql: "9.6"
 before_script:
   - psql -c 'create database dabbleme_test;' -U postgres
