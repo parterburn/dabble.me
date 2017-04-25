@@ -1,5 +1,5 @@
 - title "Spotify Songs"
-
+- spotify_entries = current_user.entries.only_spotify
 .row
   .col-md-8.col-md-offset-2.well.s-faqs
     %h2.center Songs from Entries
@@ -10,11 +10,12 @@
       .alert.alert-warning
         =link_to "Subscribe to PRO", subscribe_path, class: "alert-link"
         to unlock the ability to play all of the Spotify songs from your entries.
-    - elsif (spotify_entries = current_user.entries.only_spotify).present?
+    - if spotify_entries.present?
       - unless params[:page].present?
-        - spotify_ids = spotify_entries.pluck(:songs).flatten.map { |h| h["spotify_id"] }.uniq.join(',')
-        %iframe{src: "https://embed.spotify.com/?uri=spotify:trackset:Dabble Me:#{spotify_ids}", frameborder: "0", allowtransparency: "true", width: "100%", style: "min-height: 500px; width: 100%;"}
-        %hr
+        .hidden-xs
+          - spotify_ids = spotify_entries.pluck(:songs).flatten.map { |h| h["spotify_id"] }.uniq.join(',')
+          %iframe{src: "https://embed.spotify.com/?uri=spotify:trackset:Dabble Me:#{spotify_ids}", frameborder: "0", allowtransparency: "true", width: "100%", style: "min-height: 500px; width: 100%;"}
+          %hr
       - spotify_entries = Kaminari.paginate_array(spotify_entries).page(params[:page]).per(params[:per])
       - spotify_entries.each do |entry|
         %p
@@ -23,3 +24,6 @@
             %iframe{src: "https://open.spotify.com/embed?uri=spotify:track:#{song['spotify_id']}", width: "100%", height: "80", frameborder: "0", allowtransparency: "true"}
       .center
         = paginate spotify_entries
+    - else
+      %p= link_to image_tag("copy-spotify-link.gif", style: "width: 100%;"), "https://support.spotify.com/us/using_spotify/share_music/sharing-music/", target: "_blank"
+      %p.center=link_to "See how to copy link on other devices", "https://support.spotify.com/us/using_spotify/share_music/sharing-music/", target: "_blank"
