@@ -23,6 +23,8 @@ class PaymentsController < ApplicationController
     @mrr = @monthly_recurring.to_i + (@annual_recurring.to_i/12)
 
     @payments = Payment.includes(:user).all.order("date DESC, id DESC")
+    params[:per] ||= 100
+    @paginated_payments = Kaminari.paginate_array(@payments).page(params[:page]).per(params[:per])
   end
 
   def new

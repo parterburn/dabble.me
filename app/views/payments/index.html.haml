@@ -45,7 +45,7 @@
   .col-md-3
     %h4 Comments
 
--@payments.each do |payment|
+- @paginated_payments.each do |payment|
   .row.s-inspiration-admin
     .col-md-1
       =link_to edit_payment_path(payment), :class=>"noline", title: "Edit Payment" do
@@ -67,3 +67,8 @@
         =payment.user.plan      
     .col-md-3
       =payment.comments
+
+.row
+  .col-md-12
+    .center
+      = paginate @paginated_payments
