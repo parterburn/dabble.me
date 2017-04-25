@@ -131,9 +131,9 @@ class Entry < ActiveRecord::Base
   def find_songs
     self.songs = []
     if self.body.present?
-      matches = self.body.scan(/open\.spotify\.com\/track\/(\w+)|(<a[^>]*>.*?< ?\/a ?>)/)
+      matches = self.body.scan(/open\.spotify\.com\/track\/(\w+)/)
       matches.uniq.each do |match|
-        if match.first.present? && (spotify_name = get_spotify_info_from_track_id(match.first)).present?
+        if (spotify_name = get_spotify_info_from_track_id(match.first)).present?
           self.songs << { spotify_id: match.first, artists: spotify_name.first, title: spotify_name.last }
         end
       end
