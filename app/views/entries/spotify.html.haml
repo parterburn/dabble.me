@@ -13,7 +13,7 @@
     - elsif (spotify_entries = current_user.entries.only_spotify).present?
       - if params[:playlist] == "true"
         - spotify_ids = spotify_entries.pluck(:songs).flatten.map { |h| h["spotify_id"] }.uniq.join(',')
-        %iframe{src: "https://embed.spotify.com/?uri=spotify:trackset:PREFEREDTITLE:#{spotify_ids}", frameborder: "0", allowtransparency: "true", width: "100%", style: "min-height: 500px; width: 100%;"}
+        %iframe{src: "https://embed.spotify.com/?uri=spotify:trackset:Dabble Me:#{spotify_ids}", frameborder: "0", allowtransparency: "true", width: "100%", style: "min-height: 500px; width: 100%;"}
       - else
         - spotify_entries.each do |entry|
           %p
