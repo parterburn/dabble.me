@@ -359,6 +359,9 @@ mark {
       font-size: 17px;
       font-weight: 400;
     }
+    &.spotify {
+      margin: 10px auto;
+    }
   }
   @media screen and (max-width: 767px) {
     font-size:16px;

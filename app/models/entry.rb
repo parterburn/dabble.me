@@ -18,10 +18,11 @@ class Entry < ActiveRecord::Base
   scope :only_images, -> { where("image IS NOT null AND image != ''").order('date DESC') }
   scope :only_ohlife, -> { includes(:inspiration).where("inspirations.category = 'OhLife'").references(:inspiration).order('date DESC') }
   scope :only_email, -> { where("original_email_body IS NOT null").order('date DESC') }
-  scope :only_spotify, -> { where("body LIKE '%open.spotify.com%'").order('date DESC') }
+  scope :only_spotify, -> { where.not(songs: nil).order('date DESC') }
 
   before_save :associate_inspiration
   before_save :strip_out_base64
+  before_save :find_songs
   after_save :check_image
 
   def date_format_long
@@ -47,12 +48,11 @@ class Entry < ActiveRecord::Base
   end
 
   def spotify_embed
-    matches = self.body.scan(/open\.spotify\.com\/track\/(\w+)/)
     embeds = []
-    matches.uniq.each do |match|
-      embeds << "<p><iframe src='https://open.spotify.com/embed?uri=spotify:track:#{match.first}' width='100%' height='80' frameborder='0' allowtransparency='true'></iframe></p>"
+    self.songs.each do |song|
+      embeds << "<p class='spotify'><iframe src='https://open.spotify.com/embed?uri=spotify:track:#{song['spotify_id']}' width='100%' height='80' frameborder='0' allowtransparency='true'></iframe></p>"
     end
-    embeds.join.html_safe
+    embeds.join.html_safe    
   end
 
   def time_ago_in_words_or_numbers(user)
@@ -115,6 +115,33 @@ class Entry < ActiveRecord::Base
     if self.original_email_body.present?
       self.original_email_body = self.original_email_body.gsub(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"")
       self.original_email_body = self.original_email_body.gsub(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()")
+    end
+  end
+
+  def find_songs
+    self.songs = []
+    if self.body.present?
+      matches = self.body.scan(/open\.spotify\.com\/track\/(\w+)|(<a[^>]*>.*?< ?\/a ?>)/)
+      matches.uniq.each do |match|
+        if match.first.present? && (spotify_name = get_spotify_info_from_track_id(match.first)).present?
+          self.songs << { spotify_id: match.first, artists: spotify_name.first, title: spotify_name.last }
+        end
+      end
+    end
+  end
+
+  def get_spotify_info_from_track_id(track_id)
+    uri = URI("https://api.spotify.com/v1/tracks/#{track_id}")
+    req = Net::HTTP::Get.new(uri)
+
+    res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http|
+      http.request(req)
+    }
+    song_data = JSON.parse(res.body)
+    unless song_data['error'].present?
+      [song_data['artists'].map { |a| a['name'] }, song_data['name']]
+    else
+      nil
     end
   end
 

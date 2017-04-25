@@ -11,13 +11,13 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20161025032609) do
+ActiveRecord::Schema.define(version: 20170425040542) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
   create_table "entries", force: :cascade do |t|
-    t.datetime "date",                null: false
+    t.datetime "date",                             null: false
     t.text     "body"
     t.text     "filepicker_url"
     t.text     "original_email_body"
@@ -26,6 +26,7 @@ ActiveRecord::Schema.define(version: 20161025032609) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.string   "image"
+    t.jsonb    "songs",               default: []
   end
 
   add_index "entries", ["user_id"], name: "index_entries_on_user_id", using: :btree
