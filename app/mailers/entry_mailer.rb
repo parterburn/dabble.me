@@ -16,7 +16,7 @@ class EntryMailer < ActionMailer::Base
 
     email.mailgun_options = { tag: 'Entry' }
   rescue => e
-    Rails.logger.warn("Error sending entry email to to #{user.email}: #{e}")
+    Rails.logger.warn("Error sending entry email to #{user.email}: #{e}")
   end
 
   private
