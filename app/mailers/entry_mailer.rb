@@ -15,8 +15,6 @@ class EntryMailer < ActionMailer::Base
                   subject: "It's #{Time.now.in_time_zone(user.send_timezone).strftime('%A, %b %-d')}. How was your day?"
 
     email.mailgun_options = { tag: 'Entry' }
-  rescue => e
-    Rails.logger.warn("Error sending entry email to #{user.email}: #{e}")
   end
 
   private
