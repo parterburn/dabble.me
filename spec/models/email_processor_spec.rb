@@ -22,7 +22,7 @@ describe EmailProcessor do
         from: ({ email: user.email }),
         to: [{ token: "WRONG", host: ENV['SMTP_DOMAIN'], email: "WRONG@#{ENV['SMTP_DOMAIN']}"}],
         body: "I am great"
-      )      
+      )
 
       EmailProcessor.new(email).process
       expect(user.entries.first.body).to eq("I am great")

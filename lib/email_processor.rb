@@ -13,7 +13,7 @@ class EmailProcessor
     email.raw_body.gsub!(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()") if email.raw_body.present?
 
     if email.raw_body.present? && email.raw_body.ascii_only? && email.body.ascii_only?
-      @body = EmailReplyParser.parse_reply(email.body)
+      @body = EmailReplyTrimmer.trim(email.body)
     else
       @body = email.body
     end
@@ -142,23 +142,19 @@ class EmailProcessor
   end
 
   def unfold_paragraphs(body)
-    blank = false
     text  = ''
     body.split(/\n/).each do |line|
       if /\S/ !~ line
         text << "\n\n"
-        blank = true
       else
         if line.length < 60 || /^(\s+|[*])/ =~ line
           text << (line.rstrip + "\n")
         else
           text << (line.rstrip + ' ')
         end
-        blank = false
       end
     end
-    text = text.gsub("\n\n\n", "\n\n")
-    text
+    text.gsub("\n\n\n", "\n\n")
   end
 
   def parse_body_for_inspiration_id(raw_body)
