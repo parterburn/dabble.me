@@ -41,6 +41,7 @@ class EmailProcessor
     @body.gsub!(/(?:\n\r?|\r\n?)/, '<br>') # convert line breaks
     @body = "<p>#{@body}</p>" # basic formatting
     @body.gsub!(/\*(.+?)\*/i, '<b>\1</b>') # bold when bold needed
+    @body.gsub!(/<(http[s]?:\/\/\S+)>/, "(\\1)") # convert links to show up
     @body.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, '') # remove "inline image" text
 
     date = parse_subject_for_date(@subject)
