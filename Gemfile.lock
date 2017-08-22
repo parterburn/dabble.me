@@ -79,7 +79,6 @@ GEM
       execjs
     coffee-script-source (1.8.0)
     combined_time_select (1.0.1)
-    concurrent-ruby (1.0.5)
     crack (0.4.2)
       safe_yaml (~> 1.0.0)
     database_cleaner (1.3.0)

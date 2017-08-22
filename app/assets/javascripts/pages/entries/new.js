@@ -21,6 +21,14 @@
 
     $('.pickadate').pickadate();
 
+    Offline.on("down", function () {
+        $("form input[type=submit]").attr("disabled", "disabled").addClass("disabled");
+    });
+
+    Offline.on("up", function () {
+        $("form input[type=submit]").removeAttr("disabled").removeClass("disabled");
+    });    
+
   };
 
 }());
