@@ -156,11 +156,15 @@ class Entry < ActiveRecord::Base
   end
 
   def check_image
-    if image.present? && image_changed? && ENV['CLARIFAI_CLIENT_ID'].present?
+    if image.present? && image_changed? && ENV['CLARIFAI_V2_API_KEY'].present?
       begin
-        c_image = Clarifai::Rails::Detector.new(image_url_cdn).image
-        if c_image.tags_with_percent[:nsfw] > 0.15
-          Rails.logger.warn("NSFW Flagged (#{(c_image.tags_with_percent[:nsfw]*100).round}%) — USER: #{user.email} ENTRY: #{id} IMAGE: #{image_url_cdn}")
+        url = "https://api.clarifai.com/v2/models/#{ENV['CLARIFAI_V2_NSFW_MODEL']}/outputs"
+        headers = {"Authorization" => "Key #{ENV['CLARIFAI_V2_API_KEY']}", "Content-Type" => "application/json"}
+        payload = { inputs: [ { data: { image: { url: image_url_cdn } } } ] }.to_json
+        res = JSON.parse(RestClient.post(url, payload, headers))
+        nsfw_percent = res.try(:[], 'outputs')&.first.try(:[], 'data').try(:[], 'concepts')&.second.try(:[], 'value')
+        if nsfw_percent >= 0.15
+          Rails.logger.warn("NSFW Flagged (#{(nsfw_percent*100).round}%) — USER: #{user.email} ENTRY: #{id} IMAGE: #{image_url_cdn}")
         end
       rescue => e
         Rails.logger.warn("Clarifai Error: #{e}")
