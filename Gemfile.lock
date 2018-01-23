@@ -506,8 +506,8 @@ DEPENDENCIES
   rinku
   rspec
   rspec-rails
-  rubyzip (~> 1.1.6)
-  sass-rails (~> 4.0.3)
+  rubyzip
+  sass-rails
   scout_apm
   selenium-webdriver
   simplecov
