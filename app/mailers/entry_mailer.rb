@@ -12,7 +12,9 @@ class EntryMailer < ActionMailer::Base
 
     email = mail  from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
                   to: "#{user.cleaned_to_address}",
-                  subject: "It's #{Time.now.in_time_zone(user.send_timezone).strftime('%A, %b %-d')}. How was your day?"
+                  subject: "It's #{Time.now.in_time_zone(user.send_timezone).strftime('%A, %b %-d')}. How was your day?",
+                  html: (render_to_string(template: '../views/entry_mailer/send_entry.html')).to_str,
+                  text: (render_to_string(template: '../views/entry_mailer/send_entry.text')).to_str
 
     email.mailgun_options = { tag: 'Entry' }
   end
