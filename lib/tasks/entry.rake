@@ -49,7 +49,7 @@ namespace :entry do
     avg_words = total_words / all_entries.count
     total_chars = entries_bodies.length
     avg_chars = total_chars / all_entries.count
-    avg_tweets_per_post = ((avg_chars).to_f / 140).ceil
+    avg_tweets_per_post = ((avg_chars).to_f / 280).ceil
     most_frequent = words_counter.token_frequency.first(10)
     p "Users created: #{number_with_delimiter(User.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
     p "Entries created in #{year}: #{number_with_delimiter(Entry.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
@@ -73,7 +73,7 @@ namespace :entry do
         avg_words = total_words / user_entries.count
         total_chars = entries_bodies.length
         avg_chars = total_chars / user_entries.count
-        avg_tweets_per_post = ((avg_chars).to_f / 140).ceil
+        avg_tweets_per_post = ((avg_chars).to_f / 280).ceil
       else
         avg_words = 0
         avg_tweets_per_post = 0
