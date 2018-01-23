@@ -21,11 +21,21 @@ namespace :entry do
     # Users created: 1,068
     # Entries created in 2016: 31,832
     # Entries for 2016: 26,032
-    # "Total words: 4,331,103"
-    # "Avg words per post: 166.37611401352183"
-    # "Total characters: 23,932,366"
-    # "Avg characters per post: 919 (7 tweets)"
-    # "Most Frequent Words: [[\"i\", 163045], [\"and\", 151757], [\"to\", 132691], [\"the\", 130053], [\"a\", 85094], [\"was\", 60419], [\"it\", 54396], [\"of\", 50351], [\"in\", 48510], [\"for\", 42713]]"
+    # Total words: 4,331,103
+    # Avg words per post: 166.37611401352183
+    # Total characters: 23,932,366
+    # Avg characters per post: 919 (7 tweets)
+    # Most Frequent Words: [[\"i\", 163045], [\"and\", 151757], [\"to\", 132691], [\"the\", 130053], [\"a\", 85094], [\"was\", 60419], [\"it\", 54396], [\"of\", 50351], [\"in\", 48510], [\"for\", 42713]]
+
+    # Stats for 2017
+    # Users created: 513
+    # Entries created in 2017: 26,392
+    # Entries for 2017: 23,114
+    # Total words: 4,045,874.0
+    # Avg words per post: 175.03997577225923
+    # Total characters: 22,437,002
+    # Avg characters per post: 970 (3.5 280-char tweets)
+    # Most Frequent Words: [[\"i\", 151631], [\"and\", 140573], [\"to\", 125157], [\"the\", 124716], [\"a\", 80018], [\"was\", 56392], [\"it\", 50724], [\"of\", 49439], [\"in\", 46545], [\"for\", 42304]]
 
     p "*"*100
     p "STATS FOR #{year}"

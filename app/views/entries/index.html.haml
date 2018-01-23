@@ -54,6 +54,15 @@
           .clearfix
 
   .col-md-8.col-md-offset-1
+    %br
+    = form_for Search.new(), url: search_path, method: :get, html: { class: "form-horizontal" } do |f|
+      .form-group
+        .col-xs-8.col-sm-10
+          = f.text_field :term, class: "form-control input-lg s-search-with-clear", autofocus: true, placeholder: "What are you looking for?"
+        .col-xs-4.col-sm-1
+          = f.submit "Search", class: "btn btn-primary btn-lg"
+
+  .col-md-8.col-md-offset-1
     .center
       = paginate @entries
 
