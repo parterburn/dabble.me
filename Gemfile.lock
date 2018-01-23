@@ -66,7 +66,7 @@ GEM
       mime-types (>= 1.16)
       mimemagic (>= 0.3.0)
     chartkick (1.4.1)
-    childprocess (0.5.3)
+    childprocess (0.8.0)
       ffi (~> 1.0, >= 1.0.11)
     chronic (0.10.2)
     coderay (1.1.0)
@@ -116,7 +116,7 @@ GEM
       railties (>= 3.0.0)
     faker (1.6.1)
       i18n (~> 0.5)
-    ffi (1.9.3)
+    ffi (1.9.18)
     file_validators (2.0.2)
       activemodel (>= 3.0)
       mime-types (>= 1.0)
@@ -392,11 +392,9 @@ GEM
       sprockets (~> 2.8, < 3.0)
       sprockets-rails (~> 2.0)
     scout_apm (2.1.23)
-    selenium-webdriver (2.43.0)
+    selenium-webdriver (3.8.0)
       childprocess (~> 0.5)
-      multi_json (~> 1.0)
       rubyzip (~> 1.0)
-      websocket (~> 1.0)
     simplecov (0.9.0)
       docile (~> 1.1.0)
       multi_json
@@ -446,7 +444,6 @@ GEM
     webmock (1.18.0)
       addressable (>= 2.3.6)
       crack (>= 0.3.2)
-    websocket (1.2.1)
     words_counted (1.0.2)
     xml-simple (1.1.5)
     xpath (2.0.0)
@@ -527,7 +524,7 @@ DEPENDENCIES
   zip-zip
 
 RUBY VERSION
-   ruby 2.3.4p301
+   ruby 2.3.6p384
 
 BUNDLED WITH
-   1.16.0
+   1.16.1

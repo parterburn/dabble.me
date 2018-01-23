@@ -28,7 +28,7 @@ gem 'mailgun_rails'
 gem 'randomized_field', '~> 0.1.0' # builds user_keys
 gem 'summernote-rails', '~> 0.8.2.0'
 gem 'rest-client' # RESTClient
-gem 'rubyzip', '~> 1.1.6'
+gem 'rubyzip'
 gem 'zip-zip'
 gem 'rack-utf8_sanitizer'
 gem 'chartkick' # Admin Stats
@@ -58,7 +58,7 @@ gem 'coffee-rails', '~> 4.0.0'
 gem 'haml_assets'
 gem 'i18n-js'
 gem 'jquery-rails'
-gem 'sass-rails', '~> 4.0.3'
+gem 'sass-rails'
 gem 'twbs_sass_rails'
 gem 'uglifier', '>= 1.3.0'
 
