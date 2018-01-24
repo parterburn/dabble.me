@@ -74,11 +74,8 @@ namespace :entry do
         total_chars = entries_bodies.length
         avg_chars = total_chars / user_entries.count
         avg_tweets_per_post = ((avg_chars).to_f / 280).ceil
-      else
-        avg_words = 0
-        avg_tweets_per_post = 0
+        data << "#{user.email}, #{user_entries.count}, #{avg_words.round(1)}, #{avg_tweets_per_post}"
       end
-      data << "#{user.email}, #{user_entries.count}, #{avg_words.round(1)}, #{avg_tweets_per_post}"
     end
     p "*"*100
     p "DATA BY USER"
