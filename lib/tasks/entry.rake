@@ -6,7 +6,7 @@ namespace :entry do
     EntryMailer.send_entry(user).deliver_now
   end
 
-  # heroku run bundle exec rake "entry:stats[2016]" --app dabble-me
+  # heroku run bundle exec rake "entry:stats[2017]" --app dabble-me
   task :stats, [:year] => :environment do |_, year:|
     # Stats for 2015
     # 3,872 users created
@@ -62,6 +62,7 @@ namespace :entry do
     p "*"*100
   end
 
+  # heroku run bundle exec rake "entry:stats_by_user[2017]" --app dabble-me
   task :stats_by_user, [:year] => :environment do |_, year:|
     data = []
     User.all.each do |user|
