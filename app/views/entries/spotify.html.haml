@@ -6,10 +6,6 @@
     %p.center
       %br
       Add links from Spotify to specific songs and you'll be able to play them here.
-    - if current_user.is_free?
-      .alert.alert-warning
-        =link_to "Subscribe to PRO", subscribe_path, class: "alert-link"
-        to unlock the ability to play all of the Spotify songs from your entries.
     - if spotify_entries.present?
       - spotify_entries = Kaminari.paginate_array(spotify_entries).page(params[:page]).per(params[:per])
       - spotify_entries.each do |entry|

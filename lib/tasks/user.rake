@@ -63,7 +63,7 @@ namespace :user do
 
    task :handle_free_week => :environment do
     if ENV['FREE_WEEK'].present?
-        User.free_only.each do |user|
+        User.free_only.where.not(frequency: nil).where.not(frequency: []).each do |user|
           if ENV['FREE_WEEK'] == 'true'
             user.update_column(:frequency, ['Sun', 'Wed', 'Fri'])
           elsif ENV['FREE_WEEK'] == 'false'
