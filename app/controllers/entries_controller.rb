@@ -183,10 +183,10 @@ class EntriesController < ApplicationController
     @entries = current_user.entries.where("date >= '#{@year}-01-01'::DATE AND date <= '#{@year}-12-31'::DATE")
     @total_count = @entries.count
     if @total_count > 0
-      @body_text = @entries.pluck(:body).join(" ")
-      @words_counter = WordsCounted.count(@body_text, exclude: ['p', 'br', 'div', 'img', 'span'])
+      @body_text = @entries.map { |e| ActionView::Base.full_sanitizer.sanitize(e.body) }.join(" ")
+      @words_counter = WordsCounted.count(@body_text, exclude: Entry::WORDS_NOT_TO_COUNT)
     else
-      flash[:notice] = 'No entries in 2016 - nothing to review :('
+      flash[:notice] = "No entries in #{@year} - nothing to review :("
       redirect_to entries_path
     end
   end

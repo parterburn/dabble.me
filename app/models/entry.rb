@@ -4,6 +4,8 @@ class Entry < ActiveRecord::Base
   include ActiveModel::Validations
   mount_uploader :image, ImageUploader
 
+  WORDS_NOT_TO_COUNT = ['amp', '-', 'p', 'br', 'div', 'img', 'span', 'the', 'of', 'and', 'a', 'to', 'in', 'is', 'that', 'it', 'was', 'for', 'on', 'are', 'as', 'with', 'at', 'be', 'this', 'have', 'from', 'or', 'had', 'by', 'but', 'not', 'what', 'all', 'were', 'when', 'can', 'said', 'there', 'use', 'an', 'each', 'which', 'do', 'how', 'if']
+
   belongs_to :user
   belongs_to :inspiration
 
