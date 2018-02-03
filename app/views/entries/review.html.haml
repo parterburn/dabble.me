@@ -112,7 +112,7 @@
           %h3
             %span= "The <i>I's</i> had it - we all wrote it 151,631 times!".html_safe
       .s-review-details
-        - @words_counter.token_frequency.first(10).each do |word|
+        - @words_counter.token_frequency.first(25).each do |word|
           %h3
             =word.first
             %span.middot= "&middot; #{word.second}".html_safe
