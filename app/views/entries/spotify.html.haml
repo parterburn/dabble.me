@@ -11,11 +11,6 @@
         =link_to "Subscribe to PRO", subscribe_path, class: "alert-link"
         to unlock the ability to play all of the Spotify songs from your entries.
     - if spotify_entries.present?
-      - unless params[:page].present?
-        .hidden-xs
-          - spotify_ids = spotify_entries.pluck(:songs).flatten.map { |h| h["spotify_id"] }.uniq.join(',')
-          %iframe{src: "https://embed.spotify.com/?uri=spotify:trackset:Dabble Me:#{spotify_ids}", frameborder: "0", allowtransparency: "true", width: "100%", style: "min-height: 500px; width: 100%;"}
-          %hr
       - spotify_entries = Kaminari.paginate_array(spotify_entries).page(params[:page]).per(params[:per])
       - spotify_entries.each do |entry|
         %p
