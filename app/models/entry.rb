@@ -143,13 +143,11 @@ class Entry < ActiveRecord::Base
   end
 
   def get_spotify_info_from_track_id(track_id)
-    uri = URI("https://api.spotify.com/v1/tracks/#{track_id}")
-    req = Net::HTTP::Get.new(uri)
-
-    res = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http|
-      http.request(req)
-    }
-    song_data = JSON.parse(res.body)
+    grant = Base64.strict_encode64("#{ENV['SPOTIFY_API_CLIENT']}:#{ENV['SPOTIFY_API_SECRET']}")
+    resp = RestClient.post("https://accounts.spotify.com/api/token", { grant_type: "client_credentials" }, { "Authorization": "Basic #{grant}" })
+    oath_token = JSON.parse(resp.body)["access_token"]
+    resp_song = RestClient.get("https://api.spotify.com/v1/tracks/#{track_id}", { "Authorization": "Bearer #{oath_token}" })
+    song_data = JSON.parse(resp_song.body)
     unless song_data['error'].present?
       [song_data['artists'].map { |a| a['name'] }, song_data['name']]
     else
