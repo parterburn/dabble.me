@@ -28,9 +28,9 @@ gem 'mailgun_rails'
 gem 'randomized_field', '~> 0.1.0' # builds user_keys
 gem 'summernote-rails', '~> 0.8.2.0'
 gem 'rest-client' # RESTClient
-gem 'rubyzip'
+gem 'rubyzip', '~> 1.2', '>= 1.2.1'
 gem 'zip-zip'
-gem 'rack-utf8_sanitizer'
+gem 'rack-utf8_sanitizer', '~> 1.5'
 gem 'chartkick' # Admin Stats
 gem 'groupdate' # Admin Stats
 gem 'words_counted' # Year in Review
