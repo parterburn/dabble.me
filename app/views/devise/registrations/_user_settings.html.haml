@@ -63,7 +63,7 @@
         %br
     - else
       = f.text_field :past_filter, class: "form-control disabled", placeholder: "Comma-separated words to prevent in past entries", readonly: "readonly", value: "", rel: "tooltip", title: "Upgrade to PRO for this feature."
-    - if current_user.entries.where("date < (?)", 1.year.ago).any?
+    - if @user.entries.where("date < (?)", 1.year.ago).any?
       = f.check_box :way_back_past_entries
       = f.label :way_back_past_entries, "Include past entries that are over a year old"
       %br
