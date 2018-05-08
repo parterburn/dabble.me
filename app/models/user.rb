@@ -60,16 +60,21 @@ class User < ActiveRecord::Base
   def random_entry(entry_date=nil)
     if entry_date.present?
       entry_date = Date.parse(entry_date.to_s)
-      if Date.leap?(entry_date.year) && entry_date.month == 2 && entry_date.day == 29 && leap_year_entry = random_entries.where(date: entry_date - 4.years).first
+
+      if way_back_past_entries && Date.leap?(entry_date.year) && entry_date.month == 2 && entry_date.day == 29 && leap_year_entry = random_entries.where(date: entry_date - 4.years).first
         leap_year_entry
-      elsif exact_years_back_entry = random_entries.where('extract(month from date) = ? AND extract(day from date) = ? AND extract(year from date) != ?', entry_date.month, entry_date.day, entry_date.year).sample
+      elsif way_back_past_entries && (exact_years_back_entry = random_entries.where('extract(month from date) = ? AND extract(day from date) = ? AND extract(year from date) != ?', entry_date.month, entry_date.day, entry_date.year).sample)
         exact_years_back_entry
+      elsif !way_back_past_entries && (exactly_last_year_entry = random_entries.where(date: entry_date.last_year).first)
+        exactly_last_year_entry
       elsif (emails_sent % 3 == 0) && (exactly_30_days_ago = random_entries.where(date: entry_date.last_month).first)
         exactly_30_days_ago
-      elsif (emails_sent % 2 == 0) && (count = random_entries.where('date < (?)', entry_date.last_year).count) > 30
+      elsif !way_back_past_entries (emails_sent % 5 == 0) && (exactly_7_days_ago = random_entries.where(date: entry_date - 7.days).first)
+        exactly_7_days_ago        
+      elsif way_back_past_entries && (emails_sent % 2 == 0) && (count = random_entries.where('date < (?)', entry_date.last_year).count) > 30
         random_entries.where('date < (?)', entry_date.last_year).offset(rand(count)).first #grab entry way back
       else
-        self.random_entry
+        way_back_past_entries ? self.random_entry : random_entries.where("date > (?)", 1.year.ago).sample
       end
     else
       if (count = random_entries.count) > 0
