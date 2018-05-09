@@ -71,15 +71,13 @@ class User < ActiveRecord::Base
         exactly_30_days_ago
       elsif !way_back_past_entries && (emails_sent % 5 == 0) && (exactly_7_days_ago = random_entries.where(date: entry_date - 7.days).first)
         exactly_7_days_ago        
-      elsif way_back_past_entries && (emails_sent % 2 == 0) && (count = random_entries.where('date < (?)', entry_date.last_year).count) > 30
-        random_entries.where('date < (?)', entry_date.last_year).offset(rand(count)).first #grab entry way back
+      elsif way_back_past_entries && (emails_sent % 2 == 0) && random_entries.where('date < (?)', entry_date.last_year).count > 30
+        random_entries.where('date < (?)', entry_date.last_year).sample #grab entry way back
       else
         way_back_past_entries ? self.random_entry : random_entries.where("date > (?)", 1.year.ago).sample
       end
     else
-      if (count = random_entries.count) > 0
-        random_entries.offset(rand(count)).first
-      end
+      random_entries.sample
     end
   end
 
