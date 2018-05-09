@@ -57,12 +57,12 @@ describe User do
       expect(user.random_entry(entry_date).date.year).to eq(2015)
     end   
 
-    it "returns pure random, way back" do
+    it "returns pure random, including way back" do
       user.way_back_past_entries = true
       entry_date = Date.parse("2018-10-5")
-      user.entries.create(date: Date.parse("2015-1-15"), body: "Hi from way back.")
-      expect(user.random_entry(entry_date).date.year).to eq(2015)
-    end       
+      user.entries.create(date: Date.parse("2015-1-15"), body: "hi.")
+      expect(user.random_entry(entry_date).body).to eq("hi.")
+    end
 
     it "returns pure random, not way back" do
       user.way_back_past_entries = false
