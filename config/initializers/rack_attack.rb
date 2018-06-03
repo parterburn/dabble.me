@@ -37,7 +37,7 @@ class Rack::Attack
     # Requests are blocked if the return value is truthy
     if ENV["REJECT_UNPROXIED_REQUESTS"].present? && ENV["REJECT_UNPROXIED_REQUESTS"].in?("true")
       if request.path.start_with?("/admin") || request.path.start_with?("/inspirations") || request.path.start_with?("/payments")
-        if request.ip == "18.236.27.171"
+        if request.ip == ENV["VPN_IP"]
           false
         else
           ::Rails.logger.warn "Rack Attack IP Filtering: blocked request from #{request.ip} to #{request.url}"
