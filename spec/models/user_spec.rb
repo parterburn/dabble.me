@@ -51,7 +51,7 @@ describe User do
       user.emails_sent = 2
       user.way_back_past_entries = true
       entry_date = Date.parse("2018-10-5")
-      (1..30).each do |i|
+      (1..31).each do |i|
         user.entries.create(date: Date.parse("2015-1-#{i}"), body: "Hi from way back.")
       end
       expect(user.random_entry(entry_date).date.year).to eq(2015)
