@@ -1,7 +1,7 @@
 class Rack::Attack
-  if ENV["REJECT_UNPROXIED_REQUESTS"].present? && ENV["REJECT_UNPROXIED_REQUESTS"].in?("true")
+  if ENV["REJECT_UNPROXIED_REQUESTS"].present? && ENV["REJECT_UNPROXIED_REQUESTS"].to_s == "true"
     blocklist("block non-proxied requests in production") do |request|
-      raw_ip = request.get_header("HTTP_X_FORWARDED_FOR")
+      raw_ip = request.env["HTTP_X_FORWARDED_FOR"]
       ip_addresses = raw_ip ? raw_ip.strip.split(/[,\s]+/) : []
       proxy_ip = ip_addresses.last
 
@@ -35,7 +35,7 @@ class Rack::Attack
 
   blocklist("block all access to admin") do |request|
     # Requests are blocked if the return value is truthy
-    if ENV["REJECT_UNPROXIED_REQUESTS"].present? && ENV["REJECT_UNPROXIED_REQUESTS"].in?("true")
+    if ENV["REJECT_UNPROXIED_REQUESTS"].present? && ENV["REJECT_UNPROXIED_REQUESTS"].to_s == "true"
       if request.path.start_with?("/admin") || request.path.start_with?("/inspirations") || request.path.start_with?("/payments")
         if request.ip == ENV["VPN_IP"]
           false
