@@ -19,6 +19,6 @@ shared_context 'has all objects' do
     Payment.create(user_id: paid_user.id, amount: 3.0, comments: 'Monthly', date: Time.now - 800000)
   end
 
-  let(:entry) { FactoryGirl.create(:entry, body: Faker::Lorem.paragraph, user_id: user.id) }
-  let(:not_my_entry) { FactoryGirl.create(:entry, body: Faker::Lorem.paragraph) }
+  let(:entry) { FactoryBot.create(:entry, body: Faker::Lorem.paragraph, user_id: user.id) }
+  let(:not_my_entry) { FactoryBot.create(:entry, body: Faker::Lorem.paragraph) }
 end

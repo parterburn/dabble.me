@@ -6,7 +6,7 @@ describe EmailProcessor do
 
   describe "#process" do
     it "creates an entry based on the email token" do
-      email = FactoryGirl.build(
+      email = FactoryBot.build(
         :email,
         to: [{ token: user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
         body: "I am great"
@@ -17,7 +17,7 @@ describe EmailProcessor do
     end
 
     it "creates an entry from email if the token is wrong" do
-      email = FactoryGirl.build(
+      email = FactoryBot.build(
         :email,
         from: ({ email: user.email }),
         to: [{ token: "WRONG", host: ENV['SMTP_DOMAIN'], email: "WRONG@#{ENV['SMTP_DOMAIN']}"}],

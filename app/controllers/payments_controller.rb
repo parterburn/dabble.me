@@ -108,7 +108,7 @@ class PaymentsController < ApplicationController
       gumroad_id = params[:purchaser_id]
 
       begin
-        UserMailer.no_user_here(params[:email], 'Gumroad').deliver_later if user.blank?
+        UserMailer.no_user_here(params[:email], 'Gumroad', params[:purchaser_id]).deliver_later if user.blank?
       rescue StandardError => e
         Rails.logger.warn("Error sending email to #{params[:email]}: #{e}")
       end
@@ -134,7 +134,7 @@ class PaymentsController < ApplicationController
       end
       plan = "PRO #{frequency} PayPal"
       gumroad_id = user.gumroad_id if user.present?
-      UserMailer.no_user_here(params[:payer_email], 'PayPal').deliver_later if user.blank?
+      UserMailer.no_user_here(params[:payer_email], 'PayPal', nil).deliver_later if user.blank?
     end
 
     user.update(plan: plan, gumroad_id: gumroad_id) if user.present?

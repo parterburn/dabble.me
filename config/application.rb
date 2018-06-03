@@ -44,7 +44,7 @@ module Dabbleme
 
     config.assets.precompile << Proc.new do |path|
           if path =~ /\.(css|js)\z/
-            full_path = Rails.application.assets.resolve(path).to_path
+            full_path = Rails.application.assets.resolve(path)
             app_assets_path = Rails.root.join('app', 'assets').to_path
             if full_path.starts_with? app_assets_path
               puts "including asset: " + full_path
@@ -63,7 +63,6 @@ module Dabbleme
 
     Gibbon::Export.api_key = ENV['MAILCHIMP_API_KEY']
     Gibbon::Export.timeout = 10
-    Gibbon::Export.throws_exceptions = false
 
     config.exceptions_app = self.routes
 

@@ -18,7 +18,7 @@
     /[if lt IE 9]
       = javascript_include_tag '//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js', 'respond.js'
 
-    = analytics_init if Rails.env.production?
+    = analytics_init(anonymize: true) if Rails.env.production?
 
   %body  
     #wrap

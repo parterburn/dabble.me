@@ -7,7 +7,7 @@ gem 'rails', '4.2.10'
 gem 'puma'
 
 # ORM
-gem 'pg'
+gem 'pg', '~> 0.21.0'
 
 # users
 gem 'devise', '~> 4.2'
@@ -69,9 +69,9 @@ gem 'scout_apm'
 group :development, :test do
   gem 'byebug', '~> 8.2', '>= 8.2.2'
   gem 'delorean'
-  gem 'factory_girl_rails'
+  gem 'factory_bot_rails'
   gem 'faker', '~> 1.6', '>= 1.6.1'
-  gem 'rspec-rails'
+  gem "rspec-rails", "~> 3.7.0"
 end
 
 group :development do

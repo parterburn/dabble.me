@@ -35,8 +35,9 @@ class UserMailer < ActionMailer::Base
     email.mailgun_options = {tag: 'Downgraded'}
   end
 
-  def no_user_here(email, source)
-    mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: '[REFUND REQUIRED] Payment Without a User', body: "#{email} does not exist as a user at #{ENV['MAIN_DOMAIN']}. Payment via #{source}.")
+  def no_user_here(email, source, gumroad_id)
+    add_id = gumroad_id.present? ? " Gumroad ID is #{gumroad_id}" : ""
+    mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: '[REFUND REQUIRED] Payment Without a User', body: "#{email} does not exist as a user at #{ENV['MAIN_DOMAIN']}. Payment via #{source}.#{add_id}")
   end
 
   def referred_users(id, email)
