@@ -38,7 +38,7 @@ gem 'words_counted' # Year in Review
 gem 'kaminari' # Pagination
 
  # Image Uploads
-gem 'fog'
+gem 'fog-aws'
 gem 'carrierwave', '~> 0.11.2'
 gem 'mini_magick'
 gem 'file_validators'
@@ -65,6 +65,8 @@ gem 'uglifier', '>= 1.3.0'
 gem 'le' # logentries
 gem 'newrelic_rpm'
 gem 'scout_apm'
+gem "rack-attack" # Request blocking & throttling
+gem "cloudflare-rails"
 
 group :development, :test do
   gem 'byebug', '~> 8.2', '>= 8.2.2'
