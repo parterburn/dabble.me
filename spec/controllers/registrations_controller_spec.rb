@@ -51,7 +51,26 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(user.reload.frequency.count).to eq 0
     end
 
-    it 'should let user easily update settings' do
+    it 'should let paid user easily update settings' do
+      params = {
+        user_key: paid_user.user_key,
+        frequency: { 'Mon' => '1', 'Wed'=>'1', 'Fri'=>'1'},
+        user: {
+          'send_time(5i)': '16:00:00',
+          send_timezone: 'Pacific Time (US & Canada)',
+          send_past_entry: '1'
+        }
+      }
+      post :unsubscribe, params
+      expect(response.status).to eq 302
+      expect(response).to redirect_to(settings_url(paid_user.user_key))
+      expect(paid_user.reload.frequency).to eq ['Mon', 'Wed', 'Fri']
+      expect(paid_user.send_timezone).to eq 'Pacific Time (US & Canada)'
+      expect(paid_user.send_time).to eq '2000-01-01 16:00:00 UTC'
+      expect(paid_user.send_past_entry).to eq true
+    end
+
+    it 'should prevent free users from changing frequency' do
       params = {
         user_key: user.user_key,
         frequency: { 'Mon' => '1', 'Wed'=>'1', 'Fri'=>'1'},
@@ -64,11 +83,11 @@ RSpec.describe RegistrationsController, type: :controller do
       post :unsubscribe, params
       expect(response.status).to eq 302
       expect(response).to redirect_to(settings_url(user.user_key))
-      expect(user.reload.frequency).to eq ['Mon', 'Wed', 'Fri']
+      expect(user.reload.frequency).to eq ['Mon']
       expect(user.send_timezone).to eq 'Pacific Time (US & Canada)'
       expect(user.send_time).to eq '2000-01-01 16:00:00 UTC'
       expect(user.send_past_entry).to eq true
-    end
+    end    
   end
 
   describe 'update' do
@@ -122,6 +141,20 @@ RSpec.describe RegistrationsController, type: :controller do
     end
 
     it 'should allow user updates to non-basic info with correct password' do
+      sign_in paid_user
+      expect(paid_user.frequency.count).to eq 1
+      old_password = paid_user.encrypted_password
+      email = Faker::Internet.email
+      post :update, params.deep_merge(user: { email: email, password: 'blueblue', password_confirmation: 'blueblue', current_password: paid_user.password })
+      expect(response.status).to eq 302
+      expect(response).to redirect_to(edit_user_registration_url)
+      expect(paid_user.reload.frequency).to eq ['Sun', 'Mon', 'Tue']
+      expect(paid_user.email).to eq email
+      expect(paid_user.full_name).to eq "Testy O'tester"
+      expect(paid_user.encrypted_password).to_not eq old_password
+    end
+
+    it 'should not allow user updates to frequency for free users' do
       sign_in user
       expect(user.frequency.count).to eq 1
       old_password = user.encrypted_password
@@ -129,11 +162,11 @@ RSpec.describe RegistrationsController, type: :controller do
       post :update, params.deep_merge(user: { email: email, password: 'blueblue', password_confirmation: 'blueblue', current_password: user.password })
       expect(response.status).to eq 302
       expect(response).to redirect_to(edit_user_registration_url)
-      expect(user.reload.frequency).to eq ['Sun', 'Mon', 'Tue']
+      expect(user.reload.frequency).to eq ['Sun']
       expect(user.email).to eq email
       expect(user.full_name).to eq "Testy O'tester"
       expect(user.encrypted_password).to_not eq old_password
-    end
+    end    
   end
 
   describe 'creating a user' do
