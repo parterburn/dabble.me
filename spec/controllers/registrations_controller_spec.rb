@@ -120,7 +120,7 @@ RSpec.describe RegistrationsController, type: :controller do
       post :update, params
       expect(response.status).to eq 302
       expect(response).to redirect_to(edit_user_registration_url)
-      expect(user.reload.frequency.count).to eq 3
+      expect(user.reload.frequency.count).to eq 1
       expect(user.full_name).to eq "Testy O'tester"
       expect(user.send_timezone).to eq 'Central Time (US & Canada)'
       expect(user.send_time).to eq '2000-01-01 20:00:00 UTC'
