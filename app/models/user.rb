@@ -28,9 +28,9 @@ class User < ActiveRecord::Base
 
   before_save { email.downcase! }
   after_commit :restrict_free_frequency, on: [:create, :update]
-  after_create do
-    subscribe_to_mailchimp if Rails.env.production?
+  after_commit on: :create do
     send_welcome_email
+    subscribe_to_mailchimp if Rails.env.production?
   end
 
   def full_name
@@ -162,8 +162,8 @@ class User < ActiveRecord::Base
 
   def subscribe_to_mailchimp
     if ENV['MAILCHIMP_API_KEY'].present?
-      gb = Gibbon::Request.new(api_key: ENV['MAILCHIMP_API_KEY'])
       begin
+        gb = Gibbon::Request.new(api_key: ENV['MAILCHIMP_API_KEY'])
         gb.timeout = 10
         gb.lists(ENV['MAILCHIMP_LIST_ID']).members(Digest::MD5.hexdigest(self.email.downcase)).upsert(body: {email_address: self.email, status: "subscribed", merge_fields: {FNAME: self.first_name, LNAME: self.last_name, GROUP: "Signed Up"}})
       rescue
