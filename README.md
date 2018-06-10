@@ -36,8 +36,8 @@ MAILGUN_API_KEY=api-key
 MAILCHIMP_API_KEY: f....3333-ek3
 MAILCHIMP_LIST_ID: 9982...112
 ADMIN_EMAILS: admin@dabble.ex,user2@domain.com
-RECAPTCHA_PUBLIC_KEY: 6sdfasdfasdfasdfqXlmu
-RECAPTCHA_PRIVATE_KEY: 6782ij3kl.23n4vuioijl23414
+RECAPTCHA_SITE_KEY: 6Lc6BAAAAAAAAChqRbQZcn_yyyyyyyyyyyyyyyyy
+RECAPTCHA_SECRET_KEY: 6Lc6BAAAAAAAAKN3DRm6VA_xxxxxxxxxxxxxxxxx
 CLARIFAI_V2_API_KEY: asdl2k34jl2kn1l2hn234
 CLARIFAI_V2_NSFW_MODEL: asdflkj23498oihlj2n34kn23
 INTERCOM_APP_ID: 1234k2k3
@@ -49,7 +49,7 @@ GOOGLE_ANALYTICS_ID=UA-12345-67 ## ONLY FOR PRODUCTION
 
 If you want to bypass using Mailchimp to collect email addresses, simply don't put a value in for `MAILCHIMP_API_KEY`. I use Mailchimp to email out new features to the users at Dabble.me, so if you're the only one using your app it doesn't make sense to have Mailchimp.
 
-Same for Recaptcha, Clarafai, and Intercom simply don't add an environment variables for `RECAPTCHA_PUBLIC_KEY`, `CLARIFAI_V2_API_KEY`, or `INTERCOM_APP_ID`.
+Same for Recaptcha, Clarafai, and Intercom simply don't add an environment variables for `RECAPTCHA_SITE_KEY`, `CLARIFAI_V2_API_KEY`, or `INTERCOM_APP_ID`.
 
 
 ###Tests

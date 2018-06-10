@@ -10,12 +10,12 @@
 
   .col-md-3.col-md-offset-3
     = f.label :first_name
-    = f.text_field :first_name, autofocus: true, class: "form-control"
+    = f.text_field :first_name, autofocus: true, class: "form-control", value: params[:user].try(:[], "first_name")
     %br
 
   .col-md-3
     = f.label :last_name
-    = f.text_field :last_name, class: "form-control"
+    = f.text_field :last_name, class: "form-control", value: params[:user].try(:[], "last_name")
     %br
     .clearfix
 
@@ -39,7 +39,7 @@
     %br
     .clearfix
 
-  - if ENV['CI'] != "true" && ENV['RECAPTCHA_PUBLIC_KEY'].present?
+  - if ENV['CI'] != "true" && ENV['RECAPTCHA_SITE_KEY'].present?
     .col-md-6.col-md-offset-3
       = recaptcha_tags
       %br
