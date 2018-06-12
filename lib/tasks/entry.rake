@@ -99,7 +99,7 @@ namespace :entry do
             begin
               EntryMailer.send_entry(user).deliver_now
             rescue StandardError => e
-              Rails.logger.warn("Error sending email to #{user.email}: #{e}")
+              Rails.logger.warn("Error sending daily entry email to #{user.email}: #{e}")
             end
           end
         end

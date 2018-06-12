@@ -101,7 +101,7 @@ class PaymentsController < ApplicationController
         begin        
           UserMailer.thanks_for_paying(user).deliver_later if user.payments.count == 1
         rescue StandardError => e
-          Rails.logger.warn("Error sending email to #{user.email}: #{e}")
+          Rails.logger.warn("Error sending Gumroad thanks_for_paying email email to #{user.email}: #{e}")
         end          
       end
       plan = "PRO #{frequency} Gumroad"
@@ -110,7 +110,7 @@ class PaymentsController < ApplicationController
       begin
         UserMailer.no_user_here(params[:email], 'Gumroad', params[:purchaser_id]).deliver_later if user.blank?
       rescue StandardError => e
-        Rails.logger.warn("Error sending email to #{params[:email]}: #{e}")
+        Rails.logger.warn("Error sending no_user_her email to #{params[:email]}: #{e}")
       end
 
     # check for Paypal
@@ -129,7 +129,7 @@ class PaymentsController < ApplicationController
         begin
           UserMailer.thanks_for_paying(user).deliver_later if user.payments.count == 1
         rescue StandardError => e
-          Rails.logger.warn("Error sending email to #{user.email}: #{e}")
+          Rails.logger.warn("Error sending Paypal thanks_for_paying email to #{user.email}: #{e}")
         end
       end
       plan = "PRO #{frequency} PayPal"

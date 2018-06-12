@@ -12,7 +12,7 @@ namespace :referrers do
         begin        
           UserMailer.referred_users(id, email).deliver_later
         rescue StandardError => e
-          Rails.logger.warn("Error sending email to #{email}: #{e}")
+          Rails.logger.warn("Error sending referrer email to #{email}: #{e}")
         end          
       end
     end

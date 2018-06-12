@@ -7,7 +7,7 @@ namespace :user do
       begin
         UserMailer.downgraded(user).deliver_later
       rescue StandardError => e
-        Rails.logger.warn("Error sending email to #{user.email}: #{e}")
+        Rails.logger.warn("Error sending yearly downgrade expired email to #{user.email}: #{e}")
       end      
     end
 
@@ -16,7 +16,7 @@ namespace :user do
       begin
         UserMailer.downgraded(user).deliver_later
       rescue StandardError => e
-        Rails.logger.warn("Error sending email to #{user.email}: #{e}")
+        Rails.logger.warn("Error sending montly downgrade expired email to #{user.email}: #{e}")
       end
     end
   end
@@ -27,7 +27,7 @@ namespace :user do
       begin
         UserMailer.downgraded(user).deliver_later
       rescue StandardError => e
-        Rails.logger.warn("Error sending email to #{user.email}: #{e}")
+        Rails.logger.warn("Error sending gumroad yearly expired email to #{user.email}: #{e}")
       end        
     end
 
@@ -36,7 +36,7 @@ namespace :user do
       begin
         UserMailer.downgraded(user).deliver_later
       rescue StandardError => e
-        Rails.logger.warn("Error sending email to #{user.email}: #{e}")
+        Rails.logger.warn("Error sending gumroad monthly expired email to #{user.email}: #{e}")
       end        
     end
   end 
@@ -47,7 +47,7 @@ namespace :user do
       begin
         UserMailer.downgraded(user).deliver_later
       rescue StandardError => e
-        Rails.logger.warn("Error sending email to #{user.email}: #{e}")
+        Rails.logger.warn("Error sending yearly paypal expired email to #{user.email}: #{e}")
       end        
     end
 
@@ -56,7 +56,7 @@ namespace :user do
       begin
         UserMailer.downgraded(user).deliver_later
       rescue StandardError => e
-        Rails.logger.warn("Error sending email to #{user.email}: #{e}")
+        Rails.logger.warn("Error sending montly paypal expired email to #{user.email}: #{e}")
       end        
     end
   end
