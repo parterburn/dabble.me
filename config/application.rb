@@ -40,11 +40,12 @@ module Dabbleme
                                      "fontawesome-webfont.svg",
                                      "fontawesome-webfont.woff")
 
-
+    config.assets.precompile = [ /\A[^\/\\]+\.(ccs|js)$/i ]
 
     config.assets.precompile << Proc.new do |path|
           if path =~ /\.(css|js)\z/
-            full_path = Rails.application.assets_manifest.find_sources(path)
+            @assets ||= Rails.application.assets || Sprockets::Railtie.build_environment(Rails.application)
+            full_path = @assets.resolve(path)
             app_assets_path = Rails.root.join('app', 'assets').to_path
             if full_path.starts_with? app_assets_path
               true
