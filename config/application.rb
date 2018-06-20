@@ -23,7 +23,7 @@ module Dabbleme
     config.autoload_paths << "#{config.root}/lib"
 
     # Devise
-    # config.assets.initialize_on_precompile = false
+    config.assets.initialize_on_precompile = false
 
     config.assets.version = '1.0'
     #loads the local_env.yml configuration file
