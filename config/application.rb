@@ -23,7 +23,7 @@ module Dabbleme
     config.autoload_paths << "#{config.root}/lib"
 
     # Devise
-    config.assets.initialize_on_precompile = false
+    # config.assets.initialize_on_precompile = false
 
     config.assets.version = '1.0'
     #loads the local_env.yml configuration file
@@ -44,7 +44,7 @@ module Dabbleme
 
     config.assets.precompile << Proc.new do |path|
           if path =~ /\.(css|js)\z/
-            full_path = Rails.application.assets.resolve(path)
+            full_path = Rails.application.assets_manifest.find_sources.resolve(path)
             app_assets_path = Rails.root.join('app', 'assets').to_path
             if full_path.starts_with? app_assets_path
               puts "including asset: " + full_path
