@@ -32,18 +32,4 @@ class Rack::Attack
       req.params['email'].presence
     end
   end
-
-  blocklist("block all access to admin") do |request|
-    # Requests are blocked if the return value is truthy
-    if ENV["REJECT_UNPROXIED_REQUESTS"].present? && ENV["REJECT_UNPROXIED_REQUESTS"].to_s == "true"
-      if request.path.start_with?("/admin") || request.path.start_with?("/inspirations") || request.path.start_with?("/payments")
-        if request.ip == ENV["VPN_IP"]
-          false
-        else
-          ::Rails.logger.warn "Rack Attack IP Filtering: blocked request from #{request.ip} to #{request.url}"
-          true        
-        end
-      end
-    end
-  end
 end
