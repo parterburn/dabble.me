@@ -11,6 +11,7 @@ gem 'pg', '~> 0.21.0'
 
 # users
 gem 'devise', '~> 4.2'
+gem 'devise-security'
 gem "recaptcha", require: "recaptcha/rails"
 gem 'gibbon' # mailchimp connector
 

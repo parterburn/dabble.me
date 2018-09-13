@@ -11,7 +11,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180508043459) do
+ActiveRecord::Schema.define(version: 20180913024831) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -50,12 +50,12 @@ ActiveRecord::Schema.define(version: 20180508043459) do
   add_index "payments", ["user_id"], name: "index_payments_on_user_id", using: :btree
 
   create_table "users", force: :cascade do |t|
-    t.string   "email",                  default: "",                            null: false
-    t.string   "encrypted_password",     default: "",                            null: false
+    t.string   "email",                         default: "",                            null: false
+    t.string   "encrypted_password",            default: "",                            null: false
     t.string   "reset_password_token"
     t.datetime "reset_password_sent_at"
     t.datetime "remember_created_at"
-    t.integer  "sign_in_count",          default: 0,                             null: false
+    t.integer  "sign_in_count",                 default: 0,                             null: false
     t.datetime "current_sign_in_at"
     t.datetime "last_sign_in_at"
     t.inet     "current_sign_in_ip"
@@ -64,21 +64,26 @@ ActiveRecord::Schema.define(version: 20180508043459) do
     t.datetime "updated_at"
     t.string   "first_name"
     t.string   "last_name"
-    t.text     "frequency",              default: "---\n- Sun\n"
-    t.string   "send_timezone",          default: "Mountain Time (US & Canada)"
-    t.boolean  "send_past_entry",        default: true
-    t.integer  "emails_sent",            default: 0
-    t.integer  "emails_received",        default: 0
-    t.time     "send_time",              default: '2000-01-01 20:00:00',         null: false
+    t.text     "frequency",                     default: "---\n- Sun\n"
+    t.string   "send_timezone",                 default: "Mountain Time (US & Canada)"
+    t.boolean  "send_past_entry",               default: true
+    t.integer  "emails_sent",                   default: 0
+    t.integer  "emails_received",               default: 0
+    t.time     "send_time",                     default: '2000-01-01 20:00:00',         null: false
     t.string   "user_key"
-    t.text     "plan",                   default: "Free"
+    t.text     "plan",                          default: "Free"
     t.string   "gumroad_id"
     t.string   "referrer"
     t.string   "past_filter"
-    t.boolean  "way_back_past_entries",  default: true
+    t.boolean  "way_back_past_entries",         default: true
+    t.string   "paranoid_verification_code"
+    t.integer  "paranoid_verification_attempt", default: 0
+    t.datetime "paranoid_verified_at"
   end
 
   add_index "users", ["email"], name: "index_users_on_email", unique: true, using: :btree
+  add_index "users", ["paranoid_verification_code"], name: "index_users_on_paranoid_verification_code", using: :btree
+  add_index "users", ["paranoid_verified_at"], name: "index_users_on_paranoid_verified_at", using: :btree
   add_index "users", ["plan"], name: "index_users_on_plan", using: :btree
   add_index "users", ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true, using: :btree
   add_index "users", ["user_key"], name: "index_users_on_user_key", unique: true, using: :btree
