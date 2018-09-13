@@ -153,8 +153,9 @@ class User < ActiveRecord::Base
   end
 
   def after_database_authentication
-    if self.is_admin?
-      self.generate_paranoid_code
+    if self.is_admin? && self.generate_paranoid_code
+      UserMailer.confirm_user(self).deliver_later
+    elsif self.need_paranoid_verification?
       UserMailer.confirm_user(self).deliver_later
     end
   end
