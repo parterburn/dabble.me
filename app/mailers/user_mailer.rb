@@ -13,7 +13,7 @@ class UserMailer < ActionMailer::Base
   def confirm_user(user)
     @user = user
     return nil unless @user.paranoid_verification_code.present?
-    email = mail(to: user.cleaned_to_address, subject: "Login confirmation code")
+    email = mail(to: user.cleaned_to_address, subject: "Login code for Dabble Me")
     email.mailgun_options = {tag: 'Login Code'}
   end
 

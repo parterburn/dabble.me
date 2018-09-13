@@ -1,4 +1,11 @@
 %p Hey #{@user.first_name_or_fallback},
 
 %p
-  Your code to continue logging in to Dabble Me is #{@user.paranoid_verification_code}
+  You can copy and paste the code below into the login screen:
+  %br
+  #{@user.paranoid_verification_code}
+
+%p
+  --
+  %br
+  If you didn’t try to login to dabble.me, you should make sure you have Two-Factor Authentication enabled on your email account so that no one besides you can complete login attempts on your behalf.
