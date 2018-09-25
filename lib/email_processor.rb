@@ -27,13 +27,11 @@ class EmailProcessor
     best_attachment = nil
     if @user.is_pro? && @attachments.present?
       @attachments.each do |attachment|
-        # Make sure attachments are at least 10Kb so we're not saving a bunch of signuture/footer images
+        # Make sure attachments are at least 8kb so we're not saving a bunch of signuture/footer images
         file_size = File.size?(attachment.tempfile).to_i
-        if (attachment.content_type =~ /^image\/(png|jpe?g|gif|heic)$/i || attachment.original_filename =~ /^.+\.(heic|HEIC|Heic)$/i) && (file_size <= 0 || file_size > 10000)
-          unless @user.user_key == ENV['BAD_USER_KEY'] && attachment.original_filename == ENV['BAD_FILENAME']
-            best_attachment = attachment
-            break
-          end
+        if (attachment.content_type =~ /^image\/(png|jpe?g|gif|heic)$/i || attachment.original_filename =~ /^.+\.(heic|HEIC|Heic)$/i) && (file_size <= 0 || file_size > 8000)
+          best_attachment = attachment
+          break
         end
       end
     end
