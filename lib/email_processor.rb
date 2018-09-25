@@ -29,7 +29,7 @@ class EmailProcessor
       @attachments.each do |attachment|
         # Make sure attachments are at least 10Kb so we're not saving a bunch of signuture/footer images
         file_size = File.size?(attachment.tempfile).to_i
-        if attachment.content_type =~ /^image\/(png|jpe?g|gif)$/i && (file_size <= 0 || file_size > 10000)
+        if attachment.content_type =~ /^image\/(png|jpe?g|gif|heic)$/i && (file_size <= 0 || file_size > 10000)
           best_attachment = attachment
           break
         end
@@ -91,7 +91,7 @@ class EmailProcessor
     end
 
     @user.increment!(:emails_received)
-    begin    
+    begin
       UserMailer.second_welcome_email(@user).deliver_later if @user.emails_received == 1 && @user.entries.count == 1
     rescue StandardError => e
       Rails.logger.warn("Error sending second welcome email to #{@user.email}: #{e}")
