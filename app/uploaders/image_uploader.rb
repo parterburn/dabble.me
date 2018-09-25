@@ -26,7 +26,7 @@ class ImageUploader < CarrierWave::Uploader::Base
   end
 
   def convert_heic(file)
-    if self.url && self.content_type == "image/heic"
+    if self.url && (self.content_type == "image/heic" || self.original_filename =~ /^.+\.(heic|HEIC|Heic)$/i)
       model.update_attributes(remote_image_url: "https://cdn.filestackcontent.com/#{ENV['FILESTACK_API_KEY']}/output=format:jpg/#{self.url}")
     end
   end
