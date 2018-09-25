@@ -29,6 +29,12 @@ class EmailProcessor
       @attachments.each do |attachment|
         # Make sure attachments are at least 10Kb so we're not saving a bunch of signuture/footer images
         file_size = File.size?(attachment.tempfile).to_i
+        p "*"*100
+        p attachment
+        p "*"*100
+        p "CONTENT_TYPE: #{attachment.content_type}"
+        p "FILE_SIZE: #{file_size}"
+        p "*"*100
         if attachment.content_type =~ /^image\/(png|jpe?g|gif|heic)$/i && (file_size <= 0 || file_size > 10000)
           best_attachment = attachment
           break
@@ -43,6 +49,7 @@ class EmailProcessor
     @body.gsub!(/\*(.+?)\*/i, '<b>\1</b>') # bold when bold needed
     @body.gsub!(/<(http[s]?:\/\/\S+)>/, "(\\1)") # convert links to show up
     @body.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, '') # remove "inline image" text
+    @body.gsub!(/\[image\:\ (.+)\.[a-zA-Z]{3,4}\](<br>)?/, '') # remove "inline image" text
 
     date = parse_subject_for_date(@subject)
     existing_entry = @user.existing_entry(date.to_s)
