@@ -29,13 +29,7 @@ class EmailProcessor
       @attachments.each do |attachment|
         # Make sure attachments are at least 10Kb so we're not saving a bunch of signuture/footer images
         file_size = File.size?(attachment.tempfile).to_i
-        p "*"*100
-        p attachment
-        p "*"*100
-        p "CONTENT_TYPE: #{attachment.content_type}"
-        p "FILE_SIZE: #{file_size}"
-        p "*"*100
-        if attachment.content_type =~ /^image\/(png|jpe?g|gif|heic)$/i && (file_size <= 0 || file_size > 10000)
+        if (attachment.content_type =~ /^image\/(png|jpe?g|gif|heic)$/i || attachment.original_filename =~ /^.+\.(heic|HEIC|Heic)$/i) && (file_size <= 0 || file_size > 10000)
           best_attachment = attachment
           break
         end
