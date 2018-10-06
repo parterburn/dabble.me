@@ -41,6 +41,11 @@
         %br
 
       %div
+        = label_tag :gumroad_id
+        = text_field_tag :gumroad_id, "#{@payment.user.gumroad_id if @payment.user}", :class => "form-control"
+        %br
+
+      %div
         = f.label :send_thanks, "Send thanks: "
         = f.check_box :send_thanks, :checked => true
         %br

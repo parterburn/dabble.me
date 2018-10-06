@@ -41,6 +41,11 @@
         %br
 
       %div
+        = label_tag :gumroad_id
+        = text_field_tag :gumroad_id, "#{@payment.user.gumroad_id if @payment.user}", :class => "form-control"
+        %br
+
+      %div
         = f.label :comments
         = f.text_area :comments, :class => "form-control", :rows => 2
         %br

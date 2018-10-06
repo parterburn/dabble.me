@@ -148,6 +148,6 @@ class PaymentsController < ApplicationController
   end
 
   def user_params
-    params.permit(:plan)
+    params.permit(:plan, :gumroad_id)
   end 
 end
