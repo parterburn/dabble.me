@@ -18,11 +18,6 @@
       = f.password_field :password, autocomplete: "off", :class => "form-control"
       %br
 
-    - if devise_mapping.rememberable?
-      .col-md-4.col-md-offset-4
-        = f.check_box :remember_me, {:checked => "checked"}
-        = f.label :remember_me
-
       .clearfix
 
     .col-md-4.col-md-offset-4
