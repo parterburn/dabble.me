@@ -230,7 +230,7 @@ GEM
     pg (0.21.0)
     public_suffix (3.0.2)
     puma (3.11.4)
-    rack (1.6.10)
+    rack (1.6.11)
     rack-affiliates (0.4.0)
       rack
     rack-attack (5.2.0)
