@@ -37,6 +37,16 @@ namespace :entry do
     # Avg characters per post: 970 (3.5 280-char tweets)
     # Most Frequent Words: [[\"i\", 151631], [\"and\", 140573], [\"to\", 125157], [\"the\", 124716], [\"a\", 80018], [\"was\", 56392], [\"it\", 50724], [\"of\", 49439], [\"in\", 46545], [\"for\", 42304]]
 
+    # Stats for 2018
+    # Users created: 901
+    # Entries created in 2018: 21,509
+    # Entries for 2018: 21,140
+    # Total words: 3,552,505.0
+    # Avg words per post: 168.04659413434248
+    # Total characters: 19,061,343
+    # Avg characters per post: 901 (4 tweets)
+    # Most Frequent Words: [[\i\, 133825], [\and\, 117189], [\the\, 116093], [\to\, 113897], [\a\, 72836], [\was\, 47318], [\it\, 45627], [\of\, 44308], [\in\, 40273], [\for\, 36509]]
+
     p "*"*100
     p "STATS FOR #{year}"
     p "*"*100
@@ -75,7 +85,7 @@ namespace :entry do
         total_chars = entries_bodies.length
         avg_chars = total_chars / user_entries.count
         avg_tweets_per_post = ((avg_chars).to_f / 280).ceil
-        data << "#{user.email}, #{user_entries.count}, #{avg_words.round(1)}, #{avg_tweets_per_post}"
+        data << "#{user.email}, #{user_entries.count}, #{avg_words.round(0)}, #{avg_tweets_per_post}"
       end
     end
     p "*"*100
