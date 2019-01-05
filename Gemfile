@@ -71,6 +71,8 @@ gem "cloudflare-rails"
 
 gem "test_after_commit"
 
+gem "barnes" # For advanced Heroku metrics
+
 group :development, :test do
   gem 'byebug', '~> 8.2', '>= 8.2.2'
   gem 'delorean'
