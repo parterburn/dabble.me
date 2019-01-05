@@ -158,6 +158,10 @@ class User < ActiveRecord::Base
     elsif self.need_paranoid_verification?
       UserMailer.confirm_user(self).deliver_later
     end
+  rescue
+    if Rails.env.development?
+      p "PARANOID CODE: #{self.paranoid_verification_code}"
+    end
   end
 
   private
@@ -169,15 +173,7 @@ class User < ActiveRecord::Base
   end
 
   def subscribe_to_mailchimp
-    if ENV['MAILCHIMP_API_KEY'].present?
-      begin
-        gb = Gibbon::Request.new(api_key: ENV['MAILCHIMP_API_KEY'])
-        gb.timeout = 10
-        gb.lists(ENV['MAILCHIMP_LIST_ID']).members(Digest::MD5.hexdigest(self.email.downcase)).upsert(body: {email_address: self.email, status: "subscribed", merge_fields: {FNAME: self.first_name, LNAME: self.last_name, GROUP: "Signed Up"}})
-      rescue
-        # already subscribed or issues with Mailchimp's API
-      end
-    end
+    UserJob.perform_later(self.id)
   end
 
   def send_welcome_email

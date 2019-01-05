@@ -14,7 +14,6 @@ This app utilizes the following 3rd party services:
 * [Google Analytics](http://google.com/analytics) for traffic stats (free for standard analytics)
 * [Recaptcha](https://www.google.com/recaptcha) to prevent bot signups (free)
 * [Clarafai](https://www.clarifai.com/) to analyze images for legality (free up to 5,000/mo)
-* [Intercom](https://www.intercom.io/) to understand how different features are used (free)
 
 I recommend forking and setting up a server at [Heroku](https://heroku.com/). You can generate a free SSL certificate at [StartSSL](https://www.startssl.com/).
 
@@ -40,8 +39,6 @@ RECAPTCHA_SITE_KEY: 6Lc6BAAAAAAAAChqRbQZcn_yyyyyyyyyyyyyyyyy
 RECAPTCHA_SECRET_KEY: 6Lc6BAAAAAAAAKN3DRm6VA_xxxxxxxxxxxxxxxxx
 CLARIFAI_V2_API_KEY: asdl2k34jl2kn1l2hn234
 CLARIFAI_V2_NSFW_MODEL: asdflkj23498oihlj2n34kn23
-INTERCOM_APP_ID: 1234k2k3
-INTERCOM_API_SECRET: asdfljknwasdfnwebiaskjfbiuh
 GOOGLE_ANALYTICS_ID=UA-12345-67 ## ONLY FOR PRODUCTION
 ```
 
@@ -49,7 +46,7 @@ GOOGLE_ANALYTICS_ID=UA-12345-67 ## ONLY FOR PRODUCTION
 
 If you want to bypass using Mailchimp to collect email addresses, simply don't put a value in for `MAILCHIMP_API_KEY`. I use Mailchimp to email out new features to the users at Dabble.me, so if you're the only one using your app it doesn't make sense to have Mailchimp.
 
-Same for Recaptcha, Clarafai, and Intercom simply don't add an environment variables for `RECAPTCHA_SITE_KEY`, `CLARIFAI_V2_API_KEY`, or `INTERCOM_APP_ID`.
+Same for Recaptcha and Clarafai: simply don't add an environment variables for `RECAPTCHA_SITE_KEY`, `CLARIFAI_V2_API_KEY`.
 
 
 ###Tests

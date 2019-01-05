@@ -46,7 +46,6 @@ gem 'file_validators'
 
 # Miscellanea
 gem 'google-analytics-rails'
-gem "intercom-rails"
 gem 'staccato' # server side tracking for Google Analytics
 gem 'haml'
 gem 'exception_notification-rake', '~> 0.2.1'
@@ -64,14 +63,9 @@ gem 'twbs_sass_rails'
 gem 'uglifier', '>= 1.3.0'
 
 gem 'le' # logentries
-gem 'newrelic_rpm'
-gem 'scout_apm'
 gem "rack-attack" # Request blocking & throttling
 gem "cloudflare-rails"
-
 gem "test_after_commit"
-
-gem "barnes" # For advanced Heroku metrics
 
 group :development, :test do
   gem 'byebug', '~> 8.2', '>= 8.2.2'
@@ -89,6 +83,7 @@ group :development do
   gem 'spring'
   gem 'spring-commands-rspec'
   gem 'web-console'
+  gem 'derailed'
 end
 
 group :test do
