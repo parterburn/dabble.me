@@ -27,11 +27,11 @@ class User < ActiveRecord::Base
   scope :referrals, -> { where("referrer IS NOT null") }
 
   before_save { email.downcase! }
-  after_commit :restrict_free_frequency, on: [:create, :update]
-  after_commit on: :create do
-    send_welcome_email
-    subscribe_to_mailchimp if Rails.env.production?
+  after_commit on: :update do
+    restrict_free_frequency
+    subscribe_to_mailchimp
   end
+  after_commit :send_welcome_email, on: :create
 
   def full_name
     "#{first_name} #{last_name}" if first_name.present? || last_name.present?
@@ -173,7 +173,8 @@ class User < ActiveRecord::Base
   end
 
   def subscribe_to_mailchimp
-    UserJob.perform_later(self.id)
+    email_lookup = self.previous_changes["email"]&.last(2)&.first&.downcase
+    UserJob.perform_later(email_lookup, self.id)
   end
 
   def send_welcome_email
