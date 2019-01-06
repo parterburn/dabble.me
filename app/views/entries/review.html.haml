@@ -58,14 +58,14 @@
       .s-entry-date
         %h2 Total Words
         %h3
-          - percent_book = ((@words_counter.token_count.to_f/92510).to_f * 100).round
+          - percent_book = ((@words_counter.token_count.to_f/76850).to_f * 100).round
           - book_height = 500-((percent_book.to_f / 100) * 500)
-          %span= "#{number_with_delimiter(@words_counter.token_count)} - #{percent_book}% of 1984".html_safe
+          %span= "#{number_with_delimiter(@words_counter.token_count)} - #{percent_book}% of Born a Crime".html_safe
       .s-review-details
         %div{style: 'position: relative;'}
-          =link_to 'https://read.amazon.com/kp/embed?asin=B06ZYFD3XG&preview=newtab&linkCode=kpe&ref_=cm_sw_r_kb_dp_oHVzAbMZB1EXC&tag=sixteenseven-20', target: '_blank', style: "margin-top: 20px; display: block;margin-bottom: 10px;" do
+          =link_to 'https://amzn.to/2VwvaBe', target: '_blank', style: "margin-top: 20px; display: block;margin-bottom: 10px;" do
             .s-book-cover{style: "height: #{book_height < 0 ? 0 : book_height}px"}
-            = image_tag '1984-cover2.jpg'
+            = image_tag 'born-a-crime.jpg', width: 334, height: 500
         .clearfix
 
   .col-md-8.col-md-offset-2.well
@@ -75,18 +75,21 @@
         %h3
           - your_avg_words = @words_counter.token_count / @total_count
           %span= number_with_delimiter(your_avg_words)
-      - if @year.to_s == "2017"
+      - if @year.to_s == "2018"
         .s-review-details
-          - if your_avg_words > 350
+          - if your_avg_words > 336
             - compared = 'way more'
-          - elsif your_avg_words > 175
+          - elsif your_avg_words > 168
             - compared = 'more'
-          - elsif your_avg_words < 87
+          - elsif your_avg_words < 84
             - compared = 'way less'
           - else
             - compared = 'less'
-          %p= "That's #{compared} than the average of all Dabble Me users (175 average words per post)."
-          %p Collectively, all Dabble Me users could have wrote 43 novels equivalent to George Orwell's classic, 1984!
+          %p= "That's #{compared} than the average of all Dabble Me users (168 average words per post)."
+          %p
+            %span Collectively, all Dabble Me users could have wrote 46 novels equivalent to Trevor Noah's autobiographical comedy,
+            %span<= link_to "Born a Crime: Stories from a South African Childhood", "https://amzn.to/2VwvaBe", target: :_blank
+            %span !
           .clearfix  
 
   .col-md-8.col-md-offset-2.well
