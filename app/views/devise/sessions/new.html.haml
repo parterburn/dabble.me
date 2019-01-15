@@ -18,11 +18,19 @@
       = f.password_field :password, autocomplete: "off", :class => "form-control"
       %br
 
+    - if devise_mapping.rememberable?
+      .col-md-4.col-md-offset-4
+        = f.check_box :remember_me
+        = f.label :remember_me, "Stay logged in for 2 weeks"
+        %br
       .clearfix
+      %br
 
     .col-md-4.col-md-offset-4
-      %br
-      = f.submit "Login", :class => "btn btn-primary form-control"
+      - if ENV['CI'] != "true" && ENV['RECAPTCHA_SITE_KEY'].present?
+        = invisible_recaptcha_tags text: "Login", class: "btn btn-primary form-control", style: "border: none;"
+      - else
+        = f.submit "Login", :class => "btn btn-primary form-control"
       .clearfix
       %br
       %small.text-muted

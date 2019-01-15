@@ -7,7 +7,7 @@ Rails.application.routes.draw do
     get 'admin/photos' => 'admin#photos', as: 'admin_photos'
   end
 
-  devise_for :users, controllers: { registrations: 'registrations' }
+  devise_for :users, controllers: { registrations: 'registrations', session: 'sessions' }
 
   devise_scope :user do
     get 'settings/(:user_key)'     => 'registrations#settings', as: 'settings'

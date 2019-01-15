@@ -164,6 +164,10 @@ class User < ActiveRecord::Base
     end
   end
 
+  def remember_me
+    super.present? ? super : true
+  end
+
   private
 
   def restrict_free_frequency
