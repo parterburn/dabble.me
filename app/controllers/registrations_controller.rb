@@ -87,6 +87,7 @@ class RegistrationsController < Devise::RegistrationsController
   private
 
   def check_captcha
+    Sqreen.signup_track({ email: sign_up_params[:email] })
     if ENV['RECAPTCHA_SITE_KEY'].blank? || (verify_recaptcha || ENV['CI'] == "true")
       true
     else

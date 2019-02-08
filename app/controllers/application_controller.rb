@@ -3,7 +3,7 @@ class ApplicationController < ActionController::Base
   # For APIs, you may want to use :null_session instead.
   protect_from_forgery with: :exception
   before_filter :js_action
-
+  before_filter :tag_request
   before_filter :configure_permitted_parameters, if: :devise_controller?
 
   def redirect_back_or_to(default)
@@ -31,6 +31,12 @@ class ApplicationController < ActionController::Base
 
   def js_action
     @js_action = [controller_path.camelize.gsub('::', '_'), action_name].join('_')
+  end
+
+  def tag_request
+    if current_user
+      Sqreen.identify({ id: current_user.id, email: current_user.email })
+    end    
   end
 end
 

@@ -7,6 +7,10 @@
         %h3 You've got mail!
         %iframe{src: "//giphy.com/embed/WZ4M8M2VbauEo?html5=true&hideSocial=true", width: "480", height: "273", frameborder: "0", class: "giphy-embed", allowfullscreen: "", style: "max-width: 100%;"}
         %h4 Reply to the email from Dabble Me and you'll see it here.
+        %p{style: "color: #999;"}
+          You can also use the
+          = link_to "importer", import_path
+          if you're coming from another journaling app.
     - else
       %br
       %br

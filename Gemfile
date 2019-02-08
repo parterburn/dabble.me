@@ -66,6 +66,7 @@ gem 'le' # logentries
 gem "rack-attack" # Request blocking & throttling
 gem "cloudflare-rails"
 gem "test_after_commit"
+gem "sqreen"
 
 group :development, :test do
   gem 'byebug', '~> 8.2', '>= 8.2.2'

@@ -23,7 +23,10 @@ class EmailProcessor
   end
 
   def process
-    return false unless @user.present?
+    unless @user.present?
+      Sqreen.track('inbound_email_without_user')
+      return false 
+    end
     best_attachment = nil
     if @user.is_pro? && @attachments.present?
       @attachments.each do |attachment|
@@ -89,6 +92,7 @@ class EmailProcessor
       entry.body = entry.sanitized_body if @user.is_free?
       entry.save
       track_ga_event('New')
+      Sqreen.track('inbound_email')
     end
 
     @user.increment!(:emails_received)
