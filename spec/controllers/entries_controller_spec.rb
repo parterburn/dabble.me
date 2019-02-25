@@ -80,7 +80,7 @@ RSpec.describe EntriesController, type: :controller do
 
     it 'should let me create an entry if paid user' do
       sign_in user
-      user.plan = 'PRO Gumroad Monthly'
+      user.plan = 'PRO PayHere Monthly'
       user.save
       expect { post :create, params }.to change { Entry.count }.by(1)
       expect(response.status).to eq 302
@@ -102,7 +102,7 @@ RSpec.describe EntriesController, type: :controller do
 
     it 'should delete pro user entries' do
       sign_in user
-      user.plan = 'PRO Gumroad Monthly'
+      user.plan = 'PRO PayHere Monthly'
       user.save      
       expect { delete :destroy, id: entry.id }.to change { Entry.count }.by(-1)
     end    
@@ -145,7 +145,7 @@ RSpec.describe EntriesController, type: :controller do
 
     it 'should show a CTA to logged in users without entries' do
       sign_in user
-      user.plan = 'PRO Gumroad Monthly'
+      user.plan = 'PRO PayHere Monthly'
       user.save      
       expect { delete :destroy, id: entry.id }.to change { Entry.count }.by(-1)
       get :latest

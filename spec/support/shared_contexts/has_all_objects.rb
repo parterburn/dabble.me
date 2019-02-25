@@ -4,7 +4,7 @@ shared_context 'has all objects' do
   end
 
   let(:paid_user) do
-    User.create(email: Faker::Internet.email, password: Faker::Internet.password(8), plan: 'PRO Monthly Gumroad', gumroad_id: Faker::Number.number(12), first_name: Faker::Name.first_name, last_name: Faker::Name.last_name)
+    User.create(email: Faker::Internet.email, password: Faker::Internet.password(8), plan: 'PRO Monthly PayHere', payhere_id: Faker::Number.number(3), gumroad_id: Faker::Number.number(12), first_name: Faker::Name.first_name, last_name: Faker::Name.last_name)
   end
 
   let(:superuser) do

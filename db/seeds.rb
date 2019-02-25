@@ -3,7 +3,7 @@
 
 Inspiration.create(category: 'Seed', body: 'Seeded into database')
 
-paid_user = User.new(email: 'paid@dabble.ex', first_name: Faker::Name.first_name, last_name: Faker::Name.last_name, password: 'dabble', plan: 'PRO Gumroad Monthly', gumroad_id: 1, frequency: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"])
+paid_user = User.new(email: 'paid@dabble.ex', first_name: Faker::Name.first_name, last_name: Faker::Name.last_name, password: 'dabble', plan: 'PRO PayHere Monthly', payhere_id: 1, gumroad_id: 1, frequency: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"])
 paid_user.save
 
 (1..12).each do |i|
@@ -37,7 +37,7 @@ end
 
 puts "Created free user: free@dabble.ex (with a password of 'dabble')"
 
-admin_user = User.new(email: 'admin@dabble.ex', first_name: Faker::Name.first_name, last_name: Faker::Name.last_name, password: 'dabble', plan: 'PRO Forever', gumroad_id: 1, frequency: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"])
+admin_user = User.new(email: 'admin@dabble.ex', first_name: Faker::Name.first_name, last_name: Faker::Name.last_name, password: 'dabble', plan: 'PRO Forever', payhere_id: 1, frequency: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"])
 admin_user.save
 
 (1..100).each do |i|

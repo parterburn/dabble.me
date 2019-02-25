@@ -46,6 +46,11 @@
         %br
 
       %div
+        = label_tag :payhere_id
+        = text_field_tag :payhere_id, "#{@payment.user.payhere_id if @payment.user}", :class => "form-control"
+        %br        
+
+      %div
         = f.label :send_thanks, "Send thanks: "
         = f.check_box :send_thanks, :checked => true
         %br

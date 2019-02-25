@@ -136,6 +136,58 @@ RSpec.describe PaymentsController, type: :controller do
     end
   end
 
+  describe 'payment_notify with PayHere' do
+    let(:payhere_params) do
+      {
+        customer: {
+          id: 156,
+          name: "Jack Frost",
+          email: "jack@frost.com"
+        },
+        payment: {
+          amount: 30,
+          status: "success"
+        },
+        membership_plan: {
+          name: "Dabble Me PRO Yearly",
+          billing_interval: "yearly"
+        }
+      }
+    end
+
+    it 'should create a payment for an existing user with email match, but not id' do
+      payhere_params.deep_merge!(customer: { id: Faker::Number.number(12), email: paid_user.email })
+      expect { post :payment_notify, payhere_params }.to change { Payment.count }.by(1)
+      expect(paid_user.reload.plan).to eq 'PRO Yearly PayHere'
+      expect(paid_user.reload.payhere_id).to eq payhere_params[:customer][:id].to_s
+      expect(ActionMailer::Base.deliveries.last.subject).to_not eq 'Thanks for subscribing to Dabble Me PRO!'
+    end
+
+    it 'should create a payment for an existing user with PayHere ID match, but not email' do
+      payhere_params.deep_merge!(customer: { id: paid_user.payhere_id, email: Faker::Internet.email })
+      expect { post :payment_notify, payhere_params }.to change { Payment.count }.by(1)
+      expect(paid_user.reload.plan).to eq 'PRO Yearly PayHere'
+      expect(paid_user.reload.payhere_id).to eq payhere_params[:customer][:id].to_s
+      expect(ActionMailer::Base.deliveries.last.subject).to_not eq 'Thanks for subscribing to Dabble Me PRO!'
+    end
+
+    it 'should create a payment if Free user is upgrading and email user thanks' do
+      payhere_params.deep_merge!(customer: { email: user.email }, payment: { price: 3 }, membership_plan: { billing_interval: "month" })
+      expect { post :payment_notify, payhere_params }.to change { Payment.count }.by(1)
+      expect(user.reload.plan).to eq 'PRO Monthly PayHere'
+      expect(user.reload.payhere_id).to eq payhere_params[:customer][:id].to_s
+      expect(ActionMailer::Base.deliveries.last.to).to eq [user.email]
+      expect(ActionMailer::Base.deliveries.last.subject).to eq 'Thanks for subscribing to Dabble Me PRO!'
+    end
+
+    it 'should not create a payment if no match' do
+      payhere_params.deep_merge!(customer: { id: Faker::Number.number(12), email: Faker::Internet.email })
+      expect { post :payment_notify, payhere_params }.to_not change { Payment.count }
+      expect(paid_user.reload.plan).to eq paid_user.plan
+      expect(ActionMailer::Base.deliveries.last.subject).to eq '[REFUND REQUIRED] Payment Without a User'
+    end
+  end  
+
   describe 'payment_notify with Gumroad' do
     let(:gumroad_params) do
       {

@@ -46,6 +46,11 @@
         %br
 
       %div
+        = label_tag :payhere_id
+        = text_field_tag :payhere_id, "#{@payment.user.payhere_id if @payment.user}", :class => "form-control"
+        %br        
+
+      %div
         = f.label :comments
         = f.text_area :comments, :class => "form-control", :rows => 2
         %br

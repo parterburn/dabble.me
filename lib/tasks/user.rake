@@ -41,6 +41,26 @@ namespace :user do
     end
   end 
 
+  task :downgrade_payhere_expired => :environment do
+    User.payhere_only.pro_only.yearly.not_forever.joins(:payments).having("MAX(payments.date) < ?", 368.days.ago).group("users.id").each do |user|
+      user.update(plan: "Free")
+      begin
+        UserMailer.downgraded(user).deliver_later
+      rescue StandardError => e
+        Rails.logger.warn("Error sending payhere yearly expired email to #{user.email}: #{e}")
+      end        
+    end
+
+    User.payhere_only.pro_only.monthly.not_forever.joins(:payments).having("MAX(payments.date) < ?", 33.days.ago).group("users.id").each do |user|
+      user.update(plan: "Free")
+      begin
+        UserMailer.downgraded(user).deliver_later
+      rescue StandardError => e
+        Rails.logger.warn("Error sending payhere monthly expired email to #{user.email}: #{e}")
+      end        
+    end
+  end   
+
   task :downgrade_paypal_expired => :environment do
     User.paypal_only.pro_only.yearly.not_forever.joins(:payments).having("MAX(payments.date) < ?", 367.days.ago).group("users.id").each do |user|
       user.update(plan: "Free")

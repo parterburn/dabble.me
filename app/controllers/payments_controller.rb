@@ -200,6 +200,6 @@ class PaymentsController < ApplicationController
   end
 
   def user_params
-    params.permit(:plan, :gumroad_id)
+    params.permit(:plan, :gumroad_id, :payhere_id)
   end 
 end
