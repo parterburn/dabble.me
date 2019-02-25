@@ -51,6 +51,15 @@
         %strong #{number_with_delimiter(User.yearly.count)}
       .col-md-2
         %strong #{number_with_delimiter(User.forever.count)}
+    .row
+      .col-md-3
+        %strong Pro PayHere / Gumroad / Paypal
+      .col-md-2
+        %strong #{number_with_delimiter(User.payhere_only.count)}
+      .col-md-2
+        %strong #{number_with_delimiter(User.gumroad_only.count)}
+      .col-md-2
+        %strong #{number_with_delimiter(User.paypal_only.count)}        
   
   .col-md-12
     %hr

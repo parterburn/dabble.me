@@ -82,66 +82,118 @@ class PaymentsController < ApplicationController
   end
 
   def payment_notify
-    plan = 'Free'
-
-    # check for GUMROAD
-    if params[:email].present? && params[:seller_id] == ENV['GUMROAD_SELLER_ID'] && params[:product_id] == ENV['GUMROAD_PRODUCT_ID']
-      user = User.find_by(gumroad_id: params[:purchaser_id])
-      user = User.find_by(email: params[:email].downcase) if user.blank?
-      paid = params[:price].to_f / 100
-      if params[:recurrence].present?
-        frequency = params[:recurrence].titleize
-      else
-        frequency = paid.to_i > 10 ? 'Yearly' : 'Monthly'
-      end
-      if user.present? && user.payments.count > 0 && Payment.where(user_id: user.id).last.date.to_date === Time.now.to_date
-        # duplicate, don't send
-      elsif user.present?
-        payment = Payment.create(user_id: user.id, comments: "Gumroad #{frequency} from #{params[:email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
-        begin        
-          UserMailer.thanks_for_paying(user).deliver_later if user.payments.count == 1
-        rescue StandardError => e
-          Rails.logger.warn("Error sending Gumroad thanks_for_paying email email to #{user.email}: #{e}")
-        end          
-      end
-      plan = "PRO #{frequency} Gumroad"
-      gumroad_id = params[:purchaser_id]
-
-      begin
-        UserMailer.no_user_here(params[:email], 'Gumroad', params[:purchaser_id]).deliver_later if user.blank?
-      rescue StandardError => e
-        Rails.logger.warn("Error sending no_user_her email to #{params[:email]}: #{e}")
-      end
-
-    # check for Paypal
-    elsif params[:item_name].present? && params[:item_name].include?('Dabble Me') && params[:payment_status].present? && params[:payment_status] == "Completed" && params[:receiver_id] == ENV['PAYPAL_SELLER_ID']
-
-      user_key = params[:item_name].gsub('Dabble Me PRO for ','') if params[:item_name].present?
-      user = User.find_by(user_key: user_key)
-
-      paid = params[:mc_gross]
-      frequency = paid.to_i > 10 ? 'Yearly' : 'Monthly'
-
-      if user.present? && user.payments.count > 0 && Payment.where(user_id: user.id).last.date.to_date === Time.now.to_date
-        # duplicate webhook, don't save
-      elsif user.present?
-        payment = Payment.create(user_id: user.id, comments: "Paypal #{frequency} from #{params[:payer_email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
-        begin
-          UserMailer.thanks_for_paying(user).deliver_later if user.payments.count == 1
-        rescue StandardError => e
-          Rails.logger.warn("Error sending Paypal thanks_for_paying email to #{user.email}: #{e}")
-        end
-      end
-      plan = "PRO #{frequency} PayPal"
-      gumroad_id = user.gumroad_id if user.present?
-      UserMailer.no_user_here(params[:payer_email], 'PayPal', nil).deliver_later if user.blank?
+    if payhere?
+      processed_params = process_payhere
+    elsif gumroad?
+      processed_params = process_gumroad
+    elsif paypal?
+      processed_params = process_paypal
+    else
+      Rails.logger.warn("Payment notification not processed: #{params}")
     end
 
-    user.update(plan: plan, gumroad_id: gumroad_id) if user.present?
+    @user.update(processed_params) if @user.present?
     head :ok, content_type: 'text/html'
   end
 
   private
+
+  def gumroad?
+    params[:email].present? &&
+      params[:seller_id] == ENV['GUMROAD_SELLER_ID'] &&
+      params[:product_id] == ENV['GUMROAD_PRODUCT_ID']    
+  end
+
+  def paypal?
+    params[:item_name].present? &&
+      params[:item_name].include?('Dabble Me') &&
+      params[:payment_status].present? &&
+      params[:payment_status] == "Completed" &&
+      params[:receiver_id] == ENV['PAYPAL_SELLER_ID']
+  end
+
+  def payhere?
+    params[:customer].present? &&
+      (params[:payment].present? && params[:payment][:status] == "success") &&
+      (params[:membership_plan].present? && params[:membership_plan][:name].include?("Dabble Me"))
+  end
+
+  def process_payhere
+    @user = User.find_by(payhere_id: params[:customer][:id])
+    @user = User.find_by(email: params[:customer][:email].downcase) if @user.blank?
+    paid = params[:membership_plan][:price]
+    frequency = params[:membership_plan][:billing_interval] == "month" ? "Monthly" : "Yearly"
+
+    if @user.present? && @user.payments.count > 0 && Payment.where(user_id: @user.id).last.date.to_date === Time.now.to_date
+      # duplicate, don't send
+    elsif @user.present?
+      Payment.create(user_id: @user.id, comments: "PayHere #{frequency} from #{params[:customer][:email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
+      begin
+        UserMailer.thanks_for_paying(@user).deliver_later if @user.payments.count == 1
+      rescue StandardError => e
+        Rails.logger.warn("Error sending PayHere thanks_for_paying email email to #{@user.email}: #{e}")
+      end
+    end
+
+    begin
+      UserMailer.no_user_here(params[:customer][:email], 'PayHere', params[:customer][:id]).deliver_later if @user.blank?
+    rescue StandardError => e
+      Rails.logger.warn("Error sending no_user_her email to #{params[:customer][:email]}: #{e}")
+    end
+
+    { plan: "PRO #{frequency} PayHere", payhere_id:  params[:customer][:id] }
+  end
+
+  def process_gumroad
+    @user = User.find_by(gumroad_id: params[:purchaser_id])
+    @user = User.find_by(email: params[:email].downcase) if @user.blank?
+    paid = params[:price].to_f / 100
+    if params[:recurrence].present?
+      frequency = params[:recurrence].titleize
+    else
+      frequency = paid.to_i > 10 ? 'Yearly' : 'Monthly'
+    end
+    if @user.present? && @user.payments.count > 0 && Payment.where(user_id: @user.id).last.date.to_date === Time.now.to_date
+      # duplicate, don't send
+    elsif @user.present?
+      Payment.create(user_id: @user.id, comments: "Gumroad #{frequency} from #{params[:email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
+      begin        
+        UserMailer.thanks_for_paying(@user).deliver_later if @user.payments.count == 1
+      rescue StandardError => e
+        Rails.logger.warn("Error sending Gumroad thanks_for_paying email email to #{@user.email}: #{e}")
+      end
+    end
+
+    begin
+      UserMailer.no_user_here(params[:email], 'Gumroad', params[:purchaser_id]).deliver_later if @user.blank?
+    rescue StandardError => e
+      Rails.logger.warn("Error sending no_user_her email to #{params[:email]}: #{e}")
+    end
+
+    { plan: "PRO #{frequency} Gumroad", gumroad_id:  params[:purchaser_id] }
+  end
+
+  def process_paypal
+    user_key = params[:item_name].gsub('Dabble Me PRO for ','') if params[:item_name].present?
+    @user = User.find_by(user_key: user_key)
+
+    paid = params[:mc_gross]
+    frequency = paid.to_i > 10 ? 'Yearly' : 'Monthly'
+
+    if @user.present? && @user.payments.count > 0 && Payment.where(user_id: @user.id).last.date.to_date === Time.now.to_date
+      # duplicate webhook, don't save
+    elsif @user.present?
+      Payment.create(user_id: @user.id, comments: "Paypal #{frequency} from #{params[:payer_email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
+      begin
+        UserMailer.thanks_for_paying(@user).deliver_later if @user.payments.count == 1
+      rescue StandardError => e
+        Rails.logger.warn("Error sending Paypal thanks_for_paying email to #{@user.email}: #{e}")
+      end
+    end
+    
+    UserMailer.no_user_here(params[:payer_email], 'PayPal', nil).deliver_later if @user.blank?
+    { plan: "PRO #{frequency} PayPal", gumroad_id:  @user&.gumroad_id}
+  end
 
   def payment_params
     params.require(:payment).permit(:amount, :date, :user_id,  :comments)

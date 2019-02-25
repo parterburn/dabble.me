@@ -3,12 +3,74 @@
 .row
   %br
   .col-md-8.col-md-offset-2
-    %h3 Dabble Me is free with limitations.
-    %p Email prompts are only sent every other Sunday.
+    %h4.text-muted Dabble Me is free with limitations.
+    %p.text-muted Email prompts are only sent every other Sunday.
     %hr
     %h3{style: "color: #a41100"} Dabble Me PRO is just $3 per month.
     %p.s-features
-      %strong Subscribing will unlock all premium features on your account:
+      %strong Subscribing will unlock all premium features on your account. Choose a plan below:
+
+    .center
+      - if user_signed_in?
+        - if current_user.is_pro?
+          .col-md-12.alert.alert-info{style: "text-align:center;"}
+            Currently subscribed to: 
+            %strong #{current_user.plan_details.html_safe}
+            - if current_user.plan_type.present?
+              %span{style: "font-size:12px;display:block;margin-top:10px;"} Modify or cancel your subscription at #{current_user.plan_type.html_safe}.
+            - else
+              %span{style: "font-size:12px;display:block;margin-top:10px;"} Your PRO account is being provided free of charge.
+
+        - elsif params[:paypal] === 'true'
+          %form{:action => "https://www.paypal.com/cgi-bin/webscr", :method => "post", :target => "_top"}
+            %input{:name => "cmd", :type => "hidden", :value => "_s-xclick"}
+            %input{:name => "item_name", :type => "hidden", :value => "Dabble Me PRO for #{current_user.user_key}"}
+            %input{:name => "first_name", :type => "hidden", :value => "#{current_user.first_name}"}
+            %input{:name => "last_name", :type => "hidden", :value => "#{current_user.last_name}"}
+            %input{:name => "email", :type => "hidden", :value => "#{current_user.email}"}
+            %input{:name => "night_phone_a", :type => "hidden", :value => "555"}
+            %input{:name => "night_phone_b", :type => "hidden", :value => "555"}
+            %input{:name => "night_phone_c", :type => "hidden", :value => "5555"}
+            %input{:name => "dabble_me_email", :type => "hidden", :value => "#{current_user.email}"}
+            %input{:name => "hosted_button_id", :type => "hidden", :value => "#{ENV['PAYPAL_HOSTED_BUTTON_ID']}"}
+            %input{:alt => "PayPal - The safer, easier way to pay online!", :border => "0", :name => "submit", :src => "https://www.paypalobjects.com/en_US/i/btn/btn_subscribeCC_LG.gif", :type => "image"}
+            %img{:alt => "", :border => "0", :height => "1", :src => "https://www.paypalobjects.com/en_US/i/scr/pixel.gif", :width => "1"}
+
+        - elsif params[:gumroad] === 'true'
+          .col-md-12.alert.alert-success{style: "text-align:center;"}
+            %script{:src => "https://gumroad.com/js/gumroad.js", :type => "text/javascript"}
+            %h4
+              Subscribe now using any major credit card.
+            %p{style: "margin-top:20px;"}
+              %a.gumroad-button{:href => "https://gumroad.com/l/dabbleme?email=#{current_user.email}"} Subscribe Now & Activate PRO Features
+
+        - else
+          .col-md-12.alert.alert-success{style: "text-align:center;"}
+            %script{:src => "https://payhere.co/embed/embed.js", :type => "text/javascript"}
+            .row 
+              .col-sm-7{style: "margin: 5px auto;"}
+                %button.btn.btn-primary.btn-block.btn-lg{:"data-payhere-embed" => "https://payhere.co/dabble-me/membership/dabble-me-pro-yearly", :"data-payhere-customer-name" => "#{current_user.full_name}", :"data-payhere-customer-email" => "#{current_user.email}", :style => "height: 90px;" }
+                  %h4{style: "margin-bottom:7px;"} ANNUAL PLAN
+                  $30
+                  %span{style: "font-size: 13px; color: #ddd"}<> ／
+                  year
+                  %br
+                  %small{style: "display: block;font-size: 13px; color: #a8d4f5;"} 2 months free
+              .col-sm-5{style: "margin: 5px auto;"}
+                %button.btn.btn-primary.btn-block.btn-lg{:"data-payhere-embed" => "https://payhere.co/dabble-me/membership/dabble-me-pro-monthly", :"data-payhere-customer-name" => "#{current_user.full_name}", :"data-payhere-customer-email" => "#{current_user.email}", :style => "height: 90px;" }
+                  %h4 MONTHLY PLAN
+                  $3
+                  %span{style: "font-size: 13px; color: #ddd"}<> ／
+                  mo
+
+      - else
+        - session["user_return_to"] = subscribe_path
+        .col-md-12.alert.alert-info{style: "text-align:center;"}
+          .row
+            .col-xs-6
+              =link_to "Sign Up for PRO", new_user_registration_path, class: "btn btn-primary btn-block"
+            .col-xs-6
+              =link_to "Login to Subscribe", new_user_session_path, class: "btn btn-primary btn-block"
 
     .s-features
       %ul
@@ -18,6 +80,9 @@
         %li
           %i.fa.fa-check
           Attach a photo to your entry (email or web)
+        %li
+          %i.fa.fa-check
+          Import entries from other services
         %li
           %i.fa.fa-check
           Embed Spotify tracks in your entries          
@@ -39,47 +104,4 @@
         %li
           %i.fa.fa-check
           Year in Review
-    %br
-    .center
-      - if user_signed_in?
-        - if current_user.is_pro?
-          .col-md-12.alert.alert-info{style: "text-align:center;"}
-            Currently subscribed to: 
-            %strong #{current_user.plan_details}
-            - if current_user.plan_type.present?
-              %span{style: "font-size:12px;display:block;margin-top:10px;"} Modify or cancel your subscription at #{current_user.plan_type}.
-            - else
-              %span{style: "font-size:12px;display:block;margin-top:10px;"} Your PRO account is being provided free of charge.
-
-        - elsif params[:paypal] === 'true'
-          %form{:action => "https://www.paypal.com/cgi-bin/webscr", :method => "post", :target => "_top"}
-            %input{:name => "cmd", :type => "hidden", :value => "_s-xclick"}
-            %input{:name => "item_name", :type => "hidden", :value => "Dabble Me PRO for #{current_user.user_key}"}
-            %input{:name => "first_name", :type => "hidden", :value => "#{current_user.first_name}"}
-            %input{:name => "last_name", :type => "hidden", :value => "#{current_user.last_name}"}
-            %input{:name => "email", :type => "hidden", :value => "#{current_user.email}"}
-            %input{:name => "night_phone_a", :type => "hidden", :value => "555"}
-            %input{:name => "night_phone_b", :type => "hidden", :value => "555"}
-            %input{:name => "night_phone_c", :type => "hidden", :value => "5555"}
-            %input{:name => "dabble_me_email", :type => "hidden", :value => "#{current_user.email}"}
-            %input{:name => "hosted_button_id", :type => "hidden", :value => "#{ENV['PAYPAL_HOSTED_BUTTON_ID']}"}
-            %input{:alt => "PayPal - The safer, easier way to pay online!", :border => "0", :name => "submit", :src => "https://www.paypalobjects.com/en_US/i/btn/btn_subscribeCC_LG.gif", :type => "image"}
-            %img{:alt => "", :border => "0", :height => "1", :src => "https://www.paypalobjects.com/en_US/i/scr/pixel.gif", :width => "1"}
-
-        - else
-          .col-md-12.alert.alert-success{style: "text-align:center;"}
-            %script{:src => "https://gumroad.com/js/gumroad.js", :type => "text/javascript"}
-            %h4
-              Subscribe now using any major credit card.
-            %p{style: "margin-top:20px;"}
-              %a.gumroad-button{:href => "https://gumroad.com/l/dabbleme?email=#{current_user.email}"} Subscribe Now & Activate PRO Features
-
-        .clearfix
-
-      - else
-        - session["user_return_to"] = subscribe_path
-        .col-md-12.alert.alert-info{style: "text-align:center;"}
-          =link_to "Sign Up for PRO", new_user_registration_path, class: "btn btn-primary"
-          =link_to "Login to Subscribe", new_user_session_path, class: "btn btn-primary"
-        .clearfix
-        %br
+%br

@@ -2,15 +2,14 @@
 
 .col-md-8.col-md-offset-2
   .center
-    - if current_user.created_at > 2.day.ago
+    - if current_user.created_at < 2.day.ago
       %p
         %h3 You've got mail!
         %iframe{src: "//giphy.com/embed/WZ4M8M2VbauEo?html5=true&hideSocial=true", width: "480", height: "273", frameborder: "0", class: "giphy-embed", allowfullscreen: "", style: "max-width: 100%;"}
         %h4 Reply to the email from Dabble Me and you'll see it here.
         %p{style: "color: #999;"}
-          You can also use the
-          = link_to "importer", import_path
-          if you're coming from another journaling app.
+          You can post entries anytime by emailing
+          = mail_to("#{current_user.user_key}@#{ENV['SMTP_DOMAIN']}", "#{current_user.user_key}@#{ENV['SMTP_DOMAIN']}", encode: "hex", target: "_blank", subject: "#{Time.now.in_time_zone(current_user.send_timezone).strftime('%A, %b %-d')}", body: "My first Dabble Me entry!")+'.'
     - else
       %br
       %br
@@ -24,10 +23,64 @@
       - if current_user.is_pro?
         = link_to "Write your first entry", new_entry_path, :class => "btn btn-primary btn-lg"
         = link_to "Import Entries", import_path, :class => "btn btn-primary btn-lg"
-      - else
-        = link_to "Subscribe to PRO — $3/mo", subscribe_path, :class => "btn btn-primary btn-lg"
-        = mail_to "#{current_user.user_key}@#{ENV['SMTP_DOMAIN']}", "No Email?", encode: "hex", target: "_blank", subject: "#{Time.now.in_time_zone(current_user.send_timezone).strftime('%A, %b %-d')}", body: "My first Dabble Me entry!", class: "btn btn-primary btn-lg", rel: "tooltip", title: "Click to email your unique address for sending new entries."
+      - else  
 
+- unless current_user.is_pro?
+  .col-md-8.col-md-offset-2.entry.s-no-entries-ideas.well
+    .center
+      .s-entry-date
+        %h2{style: "font-size: 18px;"} Unlock all premium features with a PRO account
+        %script{:src => "https://payhere.co/embed/embed.js", :type => "text/javascript"}
+        .row 
+          .col-xs-6{style: "margin-top: 15px;"}
+            %a{:"href" => "#", :"data-payhere-embed" => "https://payhere.co/dabble-me/membership/dabble-me-pro-yearly", :"data-payhere-customer-name" => "#{current_user.full_name}", :"data-payhere-customer-email" => "#{current_user.email}" }
+              %h4
+                $30
+                %span{style: "font-size: 13px; color: #ddd"}<> ／
+                year
+          .col-xs-6{style: "margin-top: 15px;"}
+            %a{:"href" => "#", :"data-payhere-embed" => "https://payhere.co/dabble-me/membership/dabble-me-pro-monthly", :"data-payhere-customer-name" => "#{current_user.full_name}", :"data-payhere-customer-email" => "#{current_user.email}" }
+              %h4
+                $3
+                %span{style: "font-size: 13px; color: #ddd"}<> ／
+                month
+        %h3{style: "margin-top: 5px;"}
+          %span
+            %i.fa.fa-rocket
+    .s-scrollable
+      .entry-panel     
+        .s-features
+          %ul
+            %li
+              %i.fa.fa-check
+              Change the frequency & days that emails are sent
+            %li
+              %i.fa.fa-check
+              Attach a photo to your entry (email or web)
+            %li
+              %i.fa.fa-check
+              Import entries from other services
+            %li
+              %i.fa.fa-check
+              Embed Spotify tracks in your entries
+            %li
+              %i.fa.fa-check
+              Add new entries via the web
+            %li
+              %i.fa.fa-check
+              Edit entries
+            %li
+              %i.fa.fa-check
+              Rich text formatting
+            %li
+              %i.fa.fa-check
+              Calendar view of all your entries
+            %li
+              %i.fa.fa-check
+              Search all of your past entries with support for hashtags
+            %li
+              %i.fa.fa-check
+              Year in Review
 .col-md-8.col-md-offset-2.entry.s-no-entries-ideas.well
   .center
     .s-entry-date

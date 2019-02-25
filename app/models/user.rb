@@ -21,8 +21,9 @@ class User < ActiveRecord::Base
   scope :monthly, -> { where("plan ILIKE '%monthly%'") }
   scope :yearly, -> { where("plan ILIKE '%yearly%'") }
   scope :forever, -> { where("plan ILIKE '%forever%'") }
+  scope :payhere_only, -> { where("plan ILIKE '%payhere%'") }
+  scope :gumroad_only, -> { where("plan ILIKE '%gumroad%'") }  
   scope :paypal_only, -> { where("plan ILIKE '%paypal%'") }
-  scope :gumroad_only, -> { where("plan ILIKE '%gumroad%'") }
   scope :not_forever, -> { where("plan NOT ILIKE '%forever%'") }
   scope :referrals, -> { where("referrer IS NOT null") }
 
@@ -116,9 +117,21 @@ class User < ActiveRecord::Base
     end
   end
 
+  def plan_type_unlinked
+    if plan && plan.match(/payhere/i)
+      "PayHere"
+    elsif plan && plan.match(/gumroad/i)
+      "Gumroad"
+    elsif plan && plan.match(/paypal/i)
+      'PayPal'
+    end
+  end
+
   def plan_type
-    if plan && plan.match(/gumroad/i)
-      'Gumroad'
+    if plan && plan.match(/payhere/i)
+      "<a href='https://payhere.co/customers/sessions/new' target='_blank'>PayHere</a>"
+    elsif plan && plan.match(/gumroad/i)
+      "<a href='https://gumroad.com/login' target='_blank'>Gumroad</a>"
     elsif plan && plan.match(/paypal/i)
       'PayPal'
     end
@@ -127,7 +140,6 @@ class User < ActiveRecord::Base
   def plan_details
     p = plan_name
     p = p + ' ' + plan_frequency if plan_frequency.present?
-    p = p + ' on ' + plan_type if plan_type.present?
     p
   end
 
