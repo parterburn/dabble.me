@@ -45,23 +45,22 @@
               %a.gumroad-button{:href => "https://gumroad.com/l/dabbleme?email=#{current_user.email}"} Subscribe Now & Activate PRO Features
 
         - else
-          .col-md-12.alert.alert-success{style: "text-align:center;"}
+          %div{style: "text-align:center;"}
             %script{:src => "https://payhere.co/embed/embed.js", :type => "text/javascript"}
             .row 
-              .col-sm-7{style: "margin: 5px auto;"}
-                %button.btn.btn-primary.btn-block.btn-lg{:"data-payhere-embed" => "https://payhere.co/dabble-me/membership/dabble-me-pro-yearly", :"data-payhere-customer-name" => "#{current_user.full_name}", :"data-payhere-customer-email" => "#{current_user.email}", :"data-payhere-disable-customer" => "yes", :style => "height: 90px;" }
-                  %h4{style: "margin-bottom:7px;"} ANNUAL PLAN
+              .col-sm-7{style: "margin: 5px auto 0;"}
+                %button.btn.btn-success.btn-block.btn-lg{:"data-payhere-embed" => "https://payhere.co/dabble-me/membership/dabble-me-pro-yearly", :"data-payhere-customer-name" => "#{current_user.full_name}", :"data-payhere-customer-email" => "#{current_user.email}", :"data-payhere-disable-customer" => "yes", :"style" => "height: 55px;" }
                   $30
                   %span{style: "font-size: 13px; color: #ddd"}<> ／
                   year
                   %br
-                  %small{style: "display: block;font-size: 13px; color: #a8d4f5;"} 2 months free
+                  %span{style: "font-size: 12px;margin-top: -2px; display: block;color: #307530;"} 2 months free
               .col-sm-5{style: "margin: 5px auto;"}
-                %button.btn.btn-primary.btn-block.btn-lg{:"data-payhere-embed" => "https://payhere.co/dabble-me/membership/dabble-me-pro-monthly", :"data-payhere-customer-name" => "#{current_user.full_name}", :"data-payhere-customer-email" => "#{current_user.email}", :"data-payhere-disable-customer" => "yes", :style => "height: 90px;" }
-                  %h4 MONTHLY PLAN
+                %button.btn.btn-success.btn-block.btn-lg{:"data-payhere-embed" => "https://payhere.co/dabble-me/membership/dabble-me-pro-monthly", :"data-payhere-customer-name" => "#{current_user.full_name}", :"data-payhere-customer-email" => "#{current_user.email}", :"data-payhere-disable-customer" => "yes", :"style" => "height: 55px;" }
                   $3
                   %span{style: "font-size: 13px; color: #ddd"}<> ／
-                  mo
+                  month
+            .clearfix
 
       - else
         - session["user_return_to"] = subscribe_path

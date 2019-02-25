@@ -2,7 +2,7 @@
 
 .col-md-8.col-md-offset-2
   .center
-    - if current_user.created_at < 2.day.ago
+    - if current_user.created_at > 2.day.ago
       %p
         %h3 You've got mail!
         %iframe{src: "//giphy.com/embed/WZ4M8M2VbauEo?html5=true&hideSocial=true", width: "480", height: "273", frameborder: "0", class: "giphy-embed", allowfullscreen: "", style: "max-width: 100%;"}
@@ -31,20 +31,20 @@
       .s-entry-date
         %h2{style: "font-size: 18px;"} Unlock all premium features with a PRO account
         %script{:src => "https://payhere.co/embed/embed.js", :type => "text/javascript"}
-        .row 
-          .col-xs-6{style: "margin-top: 15px;"}
+        .row
+          .col-md-6.col-md-offset-3.col-xs-10.col-xs-offset-1
             %a{:"href" => "#", :"data-payhere-embed" => "https://payhere.co/dabble-me/membership/dabble-me-pro-yearly", :"data-payhere-customer-name" => "#{current_user.full_name}", :"data-payhere-customer-email" => "#{current_user.email}", :"data-payhere-disable-customer" => "yes" }
-              %h4
+              %h4.btn.btn-success.btn-block.btn-lg{:style => "margin-bottom: 10px;"}
                 $30
                 %span{style: "font-size: 13px; color: #ddd"}<> ／
                 year
-          .col-xs-6{style: "margin-top: 15px;"}
-            %a{:"href" => "#", :"data-payhere-embed" => "https://payhere.co/dabble-me/membership/dabble-me-pro-monthly", :"data-payhere-customer-name" => "#{current_user.full_name}", :"data-payhere-customer-email" => "#{current_user.email}", :"data-payhere-disable-customer" => "yes" }
-              %h4
-                $3
-                %span{style: "font-size: 13px; color: #ddd"}<> ／
-                month
-        %h3{style: "margin-top: 5px;"}
+                %br
+                %span{style: "font-size: 12px; display: block;color: #307530;"} 2 months free
+        %a.text-muted.small{:"href" => "#", :"data-payhere-embed" => "https://payhere.co/dabble-me/membership/dabble-me-pro-monthly", :"data-payhere-customer-name" => "#{current_user.full_name}", :"data-payhere-customer-email" => "#{current_user.email}", :"data-payhere-disable-customer" => "yes" }
+          or $3
+          %span{style: "font-size: 13px; color: #ddd"}<> ／
+          month
+        %h3
           %span
             %i.fa.fa-rocket
     .s-scrollable
