@@ -33,13 +33,13 @@
         %script{:src => "https://payhere.co/embed/embed.js", :type => "text/javascript"}
         .row 
           .col-xs-6{style: "margin-top: 15px;"}
-            %a{:"href" => "#", :"data-payhere-embed" => "https://payhere.co/dabble-me/membership/dabble-me-pro-yearly", :"data-payhere-customer-name" => "#{current_user.full_name}", :"data-payhere-customer-email" => "#{current_user.email}" }
+            %a{:"href" => "#", :"data-payhere-embed" => "https://payhere.co/dabble-me/membership/dabble-me-pro-yearly", :"data-payhere-customer-name" => "#{current_user.full_name}", :"data-payhere-customer-email" => "#{current_user.email}", :"data-payhere-disable-customer" => "yes" }
               %h4
                 $30
                 %span{style: "font-size: 13px; color: #ddd"}<> ／
                 year
           .col-xs-6{style: "margin-top: 15px;"}
-            %a{:"href" => "#", :"data-payhere-embed" => "https://payhere.co/dabble-me/membership/dabble-me-pro-monthly", :"data-payhere-customer-name" => "#{current_user.full_name}", :"data-payhere-customer-email" => "#{current_user.email}" }
+            %a{:"href" => "#", :"data-payhere-embed" => "https://payhere.co/dabble-me/membership/dabble-me-pro-monthly", :"data-payhere-customer-name" => "#{current_user.full_name}", :"data-payhere-customer-email" => "#{current_user.email}", :"data-payhere-disable-customer" => "yes" }
               %h4
                 $3
                 %span{style: "font-size: 13px; color: #ddd"}<> ／
