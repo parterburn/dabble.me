@@ -25,10 +25,12 @@
         = link_to "Import Entries", import_path, :class => "btn btn-primary btn-lg"
       - else  
 
-- unless current_user.is_pro?
-  .col-md-8.col-md-offset-2.entry.s-no-entries-ideas.well
-    .center
-      .s-entry-date
+.col-md-8.col-md-offset-2.entry.s-no-entries-ideas.well
+  .center
+    .s-entry-date
+      - if current_user.is_pro?
+        %h2 Premium features unlocked!
+      - else
         %h2{style: "font-size: 18px;"} Unlock all premium features with a PRO account
         %script{:src => "https://payhere.co/embed/embed.js", :type => "text/javascript"}
         .row
@@ -44,43 +46,43 @@
           or $3
           %span{style: "font-size: 13px; color: #ddd"}<> ／
           month
-        %h3
-          %span
-            %i.fa.fa-rocket
-    .s-scrollable
-      .entry-panel     
-        .s-features
-          %ul
-            %li
-              %i.fa.fa-check
-              Change the frequency & days that emails are sent
-            %li
-              %i.fa.fa-check
-              Attach a photo to your entry (email or web)
-            %li
-              %i.fa.fa-check
-              Import entries from other services
-            %li
-              %i.fa.fa-check
-              Embed Spotify tracks in your entries
-            %li
-              %i.fa.fa-check
-              Add new entries via the web
-            %li
-              %i.fa.fa-check
-              Edit entries
-            %li
-              %i.fa.fa-check
-              Rich text formatting
-            %li
-              %i.fa.fa-check
-              Calendar view of all your entries
-            %li
-              %i.fa.fa-check
-              Search all of your past entries with support for hashtags
-            %li
-              %i.fa.fa-check
-              Year in Review
+      %h3
+        %span
+          %i.fa.fa-rocket
+  .s-scrollable
+    .entry-panel     
+      .s-features
+        %ul
+          %li
+            %i.fa.fa-check
+            Change the frequency & days that emails are sent
+          %li
+            %i.fa.fa-check
+            Attach a photo to your entry (email or web)
+          %li
+            %i.fa.fa-check
+            Import entries from other services
+          %li
+            %i.fa.fa-check
+            Embed Spotify tracks in your entries
+          %li
+            %i.fa.fa-check
+            Add new entries via the web
+          %li
+            %i.fa.fa-check
+            Edit entries
+          %li
+            %i.fa.fa-check
+            Rich text formatting
+          %li
+            %i.fa.fa-check
+            Calendar view of all your entries
+          %li
+            %i.fa.fa-check
+            Search all of your past entries with support for hashtags
+          %li
+            %i.fa.fa-check
+            Year in Review
 .col-md-8.col-md-offset-2.entry.s-no-entries-ideas.well
   .center
     .s-entry-date
