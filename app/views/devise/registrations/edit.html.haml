@@ -22,8 +22,8 @@
   .col-md-12.center
     %br
     - if current_user.is_pro? && current_user.plan_type.present?
-      - add_text = " To downgrade or cancel your paid subscription, you'll need to do so at #{current_user.plan_type} separately!"
-      - show_warning = " You will need to your subscription at #{current_user.plan_type_unlinked}"
+      - add_text = " To downgrade or cancel your paid subscription, you'll need to do so separately at #{current_user.plan_type}!"
+      - show_warning = " You will need to cancel your subscription *separately* at #{current_user.plan_type_unlinked}"
     =link_to registration_path(resource_name), class: "s-delete j-delete-user", data: { confirm: "Are you sure? This will delete your account and #{pluralize(@user.entries.count,'entry')}. There is no undo.#{show_warning}." }, method: :delete do
       %h5
         Delete your account & all associated entries
