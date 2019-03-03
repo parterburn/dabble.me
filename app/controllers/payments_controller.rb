@@ -114,34 +114,38 @@ class PaymentsController < ApplicationController
 
   def payhere?
     params[:customer].present? &&
-      (params[:payment].present? && params[:payment][:status] == "success") &&
       (params[:membership_plan].present? && params[:membership_plan][:name].include?("Dabble Me"))
   end
 
   def process_payhere
-    @user = User.find_by(payhere_id: params[:customer][:id])
-    @user = User.find_by(email: params[:customer][:email].downcase) if @user.blank?
-    paid = params[:membership_plan][:price]
-    frequency = params[:membership_plan][:billing_interval] == "month" ? "Monthly" : "Yearly"
+    return head 401 unless valid_payhere_signature?
+    if params[:event] == "payment.failed"
+      Rails.logger.warn("Failed payment of $#{params[:payment][:amount]} for #{params[:customer][:email]}")
+    else
+      @user = User.find_by(payhere_id: params[:customer][:id])
+      @user = User.find_by(email: params[:customer][:email].downcase) if @user.blank?
+      paid = params[:membership_plan][:price]
+      frequency = params[:membership_plan][:billing_interval] == "month" ? "Monthly" : "Yearly"
 
-    if @user.present? && @user.payments.count > 0 && Payment.where(user_id: @user.id).last.date.to_date === Time.now.to_date
-      # duplicate, don't send
-    elsif @user.present?
-      Payment.create(user_id: @user.id, comments: "PayHere #{frequency} from #{params[:customer][:email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
-      begin
-        UserMailer.thanks_for_paying(@user).deliver_later if @user.payments.count == 1
-      rescue StandardError => e
-        Rails.logger.warn("Error sending PayHere thanks_for_paying email email to #{@user.email}: #{e}")
+      if @user.present? && @user.payments.count > 0 && Payment.where(user_id: @user.id).last.date.to_date === Time.now.to_date
+        # duplicate, don't send
+      elsif @user.present?
+        Payment.create(user_id: @user.id, comments: "PayHere #{frequency} from #{params[:customer][:email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
+        begin
+          UserMailer.thanks_for_paying(@user).deliver_later if @user.payments.count == 1
+        rescue StandardError => e
+          Rails.logger.warn("Error sending PayHere thanks_for_paying email email to #{@user.email}: #{e}")
+        end
       end
-    end
 
-    begin
-      UserMailer.no_user_here(params[:customer][:email], 'PayHere', params[:customer][:id]).deliver_later if @user.blank?
-    rescue StandardError => e
-      Rails.logger.warn("Error sending no_user_her email to #{params[:customer][:email]}: #{e}")
-    end
+      begin
+        UserMailer.no_user_here(params[:customer][:email], 'PayHere', params[:customer][:id]).deliver_later if @user.blank?
+      rescue StandardError => e
+        Rails.logger.warn("Error sending no_user_her email to #{params[:customer][:email]}: #{e}")
+      end
 
-    { plan: "PRO #{frequency} PayHere", payhere_id:  params[:customer][:id] }
+      { plan: "PRO #{frequency} PayHere", payhere_id:  params[:customer][:id] }
+    end
   end
 
   def process_gumroad
@@ -190,7 +194,7 @@ class PaymentsController < ApplicationController
         Rails.logger.warn("Error sending Paypal thanks_for_paying email to #{@user.email}: #{e}")
       end
     end
-    
+
     UserMailer.no_user_here(params[:payer_email], 'PayPal', nil).deliver_later if @user.blank?
     { plan: "PRO #{frequency} PayPal", gumroad_id:  @user&.gumroad_id}
   end
@@ -202,4 +206,11 @@ class PaymentsController < ApplicationController
   def user_params
     params.permit(:plan, :gumroad_id, :payhere_id)
   end 
+
+  def valid_payhere_signature?
+    digest = OpenSSL::Digest.new("sha1")
+    expected = OpenSSL::HMAC.hexdigest(digest, ENV["PAYHERE_SHARED_SECRET"].to_s, request.raw_post)
+
+    Rack::Utils.secure_compare(expected, request.headers["HTTP_X_SIGNATURE"])
+  end  
 end
