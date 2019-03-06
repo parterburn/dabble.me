@@ -6,18 +6,7 @@
       customerName: "#{CGI.escape(current_user.full_name)}",
       customerEmail: "#{CGI.escape(current_user.email)}",
       onSuccess: function(payment) {
-        paymentCallback(payment);
+        setTimeout(function() { location.reload(); }, 2000);
       }
-    });
-  }
-
-  function paymentCallback(payment) {
-    var interval = "Yearly"
-    if (payment["data"]["subscription"]["billing_interval"] == "month") {
-      interval = "Monthly"
-    }
-    var paid = $.ajax({ method: "post", url: "#{payment_notify_path}", beforeSend: $.rails.CSRFProtection, data: { temp_plan: "PRO " + interval + " PayHere" } });
-    paid.done(function( data ) {
-      location.reload();
     });
   }

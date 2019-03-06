@@ -88,9 +88,6 @@ class PaymentsController < ApplicationController
       processed_params = process_gumroad
     elsif paypal?
       processed_params = process_paypal
-    elsif params[:temp_plan].present? && verify_authenticity_token.blank?
-      processed_params = { plan: params[:temp_plan] }
-      @user = current_user
     else
       Rails.logger.warn("Payment notification not processed: #{params}")
     end
