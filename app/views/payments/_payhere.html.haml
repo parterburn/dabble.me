@@ -1,0 +1,23 @@
+:javascript
+  function payhere(plan) {
+    PayHere.launch({
+      embedURL: "https://payhere.co/dabble-me/membership/dabble-me-pro-" + plan,
+      disableCustomer: "yes",
+      customerName: "#{CGI.escape(current_user.full_name)}",
+      customerEmail: "#{CGI.escape(current_user.email)}",
+      onSuccess: function(payment) {
+        paymentCallback(payment);
+      }
+    });
+  }
+
+  function paymentCallback(payment) {
+    var interval = "Yearly"
+    if (payment["data"]["subscription"]["billing_interval"] == "month") {
+      interval = "Monthly"
+    }
+    var paid = $.ajax({ method: "post", url: "#{payment_notify_path}", beforeSend: $.rails.CSRFProtection, data: { temp_plan: "PRO " + interval + " PayHere" } });
+    paid.done(function( data ) {
+      location.reload();
+    });
+  }

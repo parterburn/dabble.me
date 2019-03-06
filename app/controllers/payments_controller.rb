@@ -2,9 +2,9 @@ class PaymentsController < ApplicationController
   before_action :authenticate_user!
   before_filter :authenticate_admin!
   
-  skip_before_filter :authenticate_user!, only: [:payment_notify]
-  skip_before_filter :authenticate_admin!, only: [:payment_notify]
-  skip_before_filter :verify_authenticity_token, only: [:payment_notify]
+  skip_before_action :authenticate_user!, only: [:payment_notify]
+  skip_before_action :authenticate_admin!, only: [:payment_notify]
+  skip_before_action :verify_authenticity_token, only: [:payment_notify]
 
   def index
     @monthlys = User.pro_only.monthly
@@ -88,6 +88,9 @@ class PaymentsController < ApplicationController
       processed_params = process_gumroad
     elsif paypal?
       processed_params = process_paypal
+    elsif params[:temp_plan].present? && verify_authenticity_token.blank?
+      processed_params = { plan: params[:temp_plan] }
+      @user = current_user
     else
       Rails.logger.warn("Payment notification not processed: #{params}")
     end

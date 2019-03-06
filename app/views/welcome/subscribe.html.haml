@@ -47,16 +47,17 @@
         - else
           %div{style: "text-align:center;"}
             %script{:src => "https://payhere.co/embed/embed.js", :type => "text/javascript"}
+            = render "payments/payhere"
             .row 
               .col-sm-7{style: "margin: 5px auto 0;"}
-                %button.btn.btn-success.btn-block.btn-lg{:"data-payhere-embed" => "https://payhere.co/dabble-me/membership/dabble-me-pro-yearly", :"data-payhere-customer-name" => "#{current_user.full_name}", :"data-payhere-customer-email" => "#{current_user.email}", :"data-payhere-disable-customer" => "yes", :"style" => "height: 55px;" }
+                %button.btn.btn-success.btn-block.btn-lg{:"style" => "height: 55px;", :"onclick" => "payhere('yearly');" }
                   $30
                   %span{style: "font-size: 13px; color: #ddd"}<> ／
                   year
                   %br
                   %span{style: "font-size: 12px;margin-top: -2px; display: block;color: #307530;"} 2 months free
               .col-sm-5{style: "margin: 5px auto;"}
-                %button.btn.btn-success.btn-block.btn-lg{:"data-payhere-embed" => "https://payhere.co/dabble-me/membership/dabble-me-pro-monthly", :"data-payhere-customer-name" => "#{current_user.full_name}", :"data-payhere-customer-email" => "#{current_user.email}", :"data-payhere-disable-customer" => "yes", :"style" => "height: 55px;" }
+                %button.btn.btn-success.btn-block.btn-lg{:"style" => "height: 55px;", :"onclick" => "payhere('monthly');" }
                   $3
                   %span{style: "font-size: 13px; color: #ddd"}<> ／
                   month
