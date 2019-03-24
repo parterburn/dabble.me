@@ -167,7 +167,11 @@ class EntriesController < ApplicationController
   end
 
   def export
-    @entries = current_user.entries.sort_by(&:date)
+    if params[:only_images] == "true"
+      @entries = current_user.entries.only_images.sort_by(&:date)
+    else
+      @entries = current_user.entries.sort_by(&:date)
+    end
     track_ga_event('Export')
     respond_to do |format|
       format.json { send_data JSON.pretty_generate(JSON.parse(@entries.to_json(only: [:date, :body, :image]))), filename: "export_#{Time.now.strftime('%Y-%m-%d')}.json" }

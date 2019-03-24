@@ -39,4 +39,8 @@
       or
       =link_to "JSON", export_entries_path(:json)
       (rich formatting).
+      -if current_user.is_pro? && current_user.only_images.any?
+        Export a
+        =link_to("list of your Image URLs", export_entries_path(:txt, only_images: true)) + "."
+        You can use a script or app to download these to your computer. 
     %br

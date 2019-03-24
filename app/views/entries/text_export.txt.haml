@@ -1,8 +1,9 @@
 - @entries.each do |entry|
-  =entry.date.strftime("%Y-%m-%d")
-  \
-  =entry.sanitized_body
-  \
+  - unless params[:only_images] == "true"
+    =entry.date.strftime("%Y-%m-%d")
+    \
+    =entry.sanitized_body
+    \
   - if entry.image.present?
     =entry.image_url_cdn
     \
