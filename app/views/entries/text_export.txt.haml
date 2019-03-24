@@ -3,3 +3,6 @@
   \
   =entry.sanitized_body
   \
+  - if entry.image.present?
+    =entry.image_url_cdn
+    \

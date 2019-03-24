@@ -170,7 +170,7 @@ class EntriesController < ApplicationController
     @entries = current_user.entries.sort_by(&:date)
     track_ga_event('Export')
     respond_to do |format|
-      format.json { send_data JSON.pretty_generate(JSON.parse(@entries.to_json(only: [:date, :body, :image_url_cdn]))), filename: "export_#{Time.now.strftime('%Y-%m-%d')}.json" }
+      format.json { send_data JSON.pretty_generate(JSON.parse(@entries.to_json(only: [:date, :body, :image]))), filename: "export_#{Time.now.strftime('%Y-%m-%d')}.json" }
       format.txt do
         response.headers['Content-Type'] = 'text/txt'
         response.headers['Content-Disposition'] = "attachment; filename=export_#{Time.now.strftime('%Y-%m-%d')}.txt"
