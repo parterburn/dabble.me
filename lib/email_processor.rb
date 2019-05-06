@@ -39,10 +39,10 @@ class EmailProcessor
         file_size = File.size?(attachment.tempfile).to_i
 
         if @user.is_admin?
-          Rails.logger.warn("Attachment QA: #{attachment.content_type} // #{file_size} // #{attachment.original_filename} // #{attachment}")
+          Rails.logger.warn("Attachment QA: #{attachment.content_type} // #{file_size} // #{attachment.filename} // #{attachment.original_filename} // #{attachment.to_s}")
         end
 
-        if (attachment.content_type =~ /^image\/(png|jpe?g|gif|heic)$/i || attachment.original_filename =~ /^.+\.(heic|HEIC|Heic)$/i) && (file_size <= 0 || file_size > 8000)
+        if (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|gif|heic)$/i || attachment.original_filename =~ /^.+\.(heic|HEIC|Heic)$/i) && (file_size <= 0 || file_size > 8000)
           best_attachment = attachment
           break
         end
