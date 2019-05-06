@@ -164,10 +164,10 @@ GEM
     globalid (0.4.1)
       activesupport (>= 4.2.0)
     google-analytics-rails (1.1.1)
-    griddler (1.4.0)
+    griddler (1.5.2)
       htmlentities
       rails (>= 3.2.0)
-    griddler-mailgun (1.0.3)
+    griddler-mailgun (1.1.1)
       griddler
     groupdate (4.0.1)
       activesupport (>= 4.2)
@@ -427,8 +427,8 @@ DEPENDENCIES
   fog-aws
   gibbon
   google-analytics-rails
-  griddler (~> 1.4.0)
-  griddler-mailgun
+  griddler (~> 1.5.2)
+  griddler-mailgun (~> 1.1, >= 1.1.1)
   groupdate
   haml
   haml_assets

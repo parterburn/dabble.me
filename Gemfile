@@ -20,8 +20,9 @@ gem 'sinatra', '>= 1.3.0', require: nil
 gem 'combined_time_select', '~> 1.0.1'
 
 # email parsing
-gem 'griddler', '~> 1.4.0'
-gem 'griddler-mailgun'
+gem 'griddler', '~> 1.5.2'
+gem 'griddler-mailgun', '~> 1.1', '>= 1.1.1'
+
 gem 'email_reply_trimmer'
 gem 'mailgun_webhooks', '~> 1.0'
 gem 'mailgun_rails'
