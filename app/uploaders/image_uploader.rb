@@ -1,10 +1,14 @@
+require 'carrierwave/processing/mime_types'
+
 class ImageUploader < CarrierWave::Uploader::Base
   storage :fog
 
   include CarrierWave::MiniMagick
+  include CarrierWave::MimeTypes
 
   after :store, :convert_heic
 
+  process :set_content_type
   process :auto_orient, if: :web_image?
   process resize_to_limit: [1200, 1200], quality: 90, if: :web_image?
 

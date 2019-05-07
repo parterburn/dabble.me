@@ -44,6 +44,7 @@ gem 'fog-aws'
 gem 'carrierwave', '~> 1.2', '>= 1.2.3'
 gem 'mini_magick'
 gem 'file_validators'
+gem 'mime-types', '~> 3.2', '>= 3.2.2'
 
 # Miscellanea
 gem 'google-analytics-rails'
