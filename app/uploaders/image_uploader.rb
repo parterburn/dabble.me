@@ -9,14 +9,14 @@ class ImageUploader < CarrierWave::Uploader::Base
 
   process :clear_generic_content_type
   process resize_to_limit: [1200, 1200], quality: 90, if: :web_image?
-  process :auto_orient
+  process :auto_orient, if: :web_image?
 
   def extension_white_list
     %w(jpg jpeg gif png heic)
   end
 
   def web_image?(file)
-    self.content_type =~ /^image\/(png|jpe?g|gif)$/i
+    self.content_type =~ /^image\/(png|jpe?g|gif)$/i || self.content_type == "application/octet-stream"
   end
 
   def store_dir
