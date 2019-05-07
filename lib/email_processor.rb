@@ -28,20 +28,11 @@ class EmailProcessor
       return false 
     end
 
-    if @user.is_admin?
-      Rails.logger.warn("Email QA: #{@raw_body}")
-    end
-
     best_attachment = nil
     if @user.is_pro? && @attachments.present?
       @attachments.each do |attachment|
         # Make sure attachments are at least 8kb so we're not saving a bunch of signuture/footer images
         file_size = File.size?(attachment.tempfile).to_i
-
-        if @user.is_admin?
-          Rails.logger.warn("Attachment QA: #{attachment.content_type} // #{file_size} // #{attachment.original_filename} // #{attachment.inspect}")
-        end
-
         if (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|gif|heic)$/i || attachment.original_filename =~ /^.+\.(heic|HEIC|Heic)$/i) && (file_size <= 0 || file_size > 8000)
           best_attachment = attachment
           break
