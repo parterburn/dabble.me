@@ -55,7 +55,7 @@
                   =image_code(@entry)
             - else
               = f.label :image, "Photo"
-              = f.file_field :image
+              = f.file_field :image, accept: "image/png,image/gif,image/jpeg,image/heic"
             %br
 
         %div

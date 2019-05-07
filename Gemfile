@@ -41,10 +41,9 @@ gem 'kaminari' # Pagination
 
  # Image Uploads
 gem 'fog-aws'
-gem 'carrierwave', '~> 1.2', '>= 1.2.3'
+gem 'carrierwave', '~> 1.3', '>= 1.3.1'
 gem 'mini_magick'
 gem 'file_validators'
-gem 'mime-types', '~> 3.2', '>= 3.2.2'
 
 # Miscellanea
 gem 'google-analytics-rails'
