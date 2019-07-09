@@ -82,7 +82,7 @@ class PaymentsController < ApplicationController
   end
 
   def payment_notify
-    if payhere?
+    if payhere? && valid_payhere_signature?
       processed_params = process_payhere
     elsif gumroad?
       processed_params = process_gumroad
@@ -118,7 +118,6 @@ class PaymentsController < ApplicationController
   end
 
   def process_payhere
-    return head 401 unless valid_payhere_signature?
     if params[:event] == "payment.failed"
       Rails.logger.warn("Failed payment of $#{params[:payment][:amount]} for #{params[:customer][:email]}")
     else
