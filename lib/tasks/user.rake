@@ -81,7 +81,7 @@ namespace :user do
     end
   end
 
-   task :handle_free_week => :environment do
+  task :handle_free_week => :environment do
     if ENV['FREE_WEEK'].present?
         User.free_only.select { |u| u.frequency.present? }.each do |user|
           if ENV['FREE_WEEK'] == 'true'
@@ -92,5 +92,15 @@ namespace :user do
         end
     end
   end 
+
+  task :update_stripe_id => :environment do
+    Stripe.api_key = ENV['STRIPE_API_KEY']
+    customers = Stripe::Customer.list(limit: 100)
+
+    User.where(stripe_id: [nil, ""]).where.not(payhere_id: [nil, ""]).each do |user|
+      customer = customers.filter { |cust| cust.metadata[:customer_id] == user.payhere_id }.first
+      user.update_attributes(stripe_id: customer&.id) if customer.present?
+    end    
+  end
 
 end
