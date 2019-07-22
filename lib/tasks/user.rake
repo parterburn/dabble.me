@@ -94,12 +94,15 @@ namespace :user do
   end 
 
   task :update_stripe_id => :environment do
-    Stripe.api_key = ENV['STRIPE_API_KEY']
-    customers = Stripe::Customer.list(limit: 100)
+    users_to_update = User.where(stripe_id: [nil, ""]).where.not(payhere_id: [nil, ""])
+    return nil unless users_to_update.any?
 
-    User.where(stripe_id: [nil, ""]).where.not(payhere_id: [nil, ""]).each do |user|
-      customer = customers.filter { |cust| cust.metadata[:customer_id] == user.payhere_id }.first
-      user.update_attributes(stripe_id: customer&.id) if customer.present?
+    Stripe.api_key = ENV['STRIPE_API_KEY']
+    stripe_customers = Stripe::Customer.list(limit: 100)
+
+    users_to_update.each do |user|
+      stripe_customer = stripe_customers.filter { |cust| cust.metadata[:customer_id] == user.payhere_id }.first
+      user.update_attributes(stripe_id: stripe_customer&.id) if stripe_customer.present?
     end    
   end
 
