@@ -190,7 +190,7 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(ActionMailer::Base.deliveries.last.to).to eq [email]
       expect(ActionMailer::Base.deliveries.last.subject).to eq "Let's write your first Dabble Me entry"
 
-      new_entry_email_body = Faker::Lorem.paragraph
+      new_entry_email_body = "Here's my entry."
 
       # Check that EmailProcessor will take email and create an entry for it
       params = { to: [{
@@ -209,7 +209,7 @@ RSpec.describe RegistrationsController, type: :controller do
 
       # Check that sending two emails on the same day merge into 1 Entry
       expect{ EmailProcessor.new(email).process }.to change{ new_free_user.entries.count }.by(0)
-      expect(new_free_user.entries.last.body).to eq "<p>#{new_entry_email_body} #{new_entry_email_body} </p>"
+      expect(new_free_user.entries.last.body).to eq "<p>#{new_entry_email_body}<br></p> <p>#{new_entry_email_body}<br></p>"
       expect(new_free_user.entries.last.date.strftime('%Y-%m-%d')).to eq DateTime.now.in_time_zone(new_free_user.send_timezone).strftime('%Y-%m-%d')
     end
 
