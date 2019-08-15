@@ -13,10 +13,10 @@ describe EmailProcessor do
       )
 
       EmailProcessor.new(email).process
-      expect(user.entries.first.body).to eq("I am great")
+      expect(user.entries.first.body).to eq("<p>I am great</p>")
     end
 
-    it "creates an entry from email if the token is wrong" do
+    it "creates an entry from email if the token is wrong but email matches a user" do
       email = FactoryBot.build(
         :email,
         from: ({ email: user.email }),
@@ -25,7 +25,7 @@ describe EmailProcessor do
       )
 
       EmailProcessor.new(email).process
-      expect(user.entries.first.body).to eq("I am great")
+      expect(user.entries.first.body).to eq("<p>I am great</p>")
     end
   end
 end
