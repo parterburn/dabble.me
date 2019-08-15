@@ -84,7 +84,7 @@ class Entry < ActiveRecord::Base
   end
 
   def sanitized_body
-    body_sanitized = ActionView::Base.full_sanitizer.sanitize(self.body)
+    body_sanitized = ActionView::Base.full_sanitizer.sanitize(self.body, tags: ["br", "p"])
     body_sanitized.gsub!(/\A(\n\n)/,"") if body_sanitized
     body_sanitized.gsub!(/(\<\n\n>)\z/,"") if body_sanitized
     body_sanitized
