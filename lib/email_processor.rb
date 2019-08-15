@@ -44,7 +44,7 @@ class EmailProcessor
     @body = unfold_paragraphs(@body) unless @from.include?('yahoo.com') # fix wrapped plain text, but yahoo messes this up
     @body.gsub!(/(?:\n\r?|\r\n?)/, '<br>') # convert line breaks
     @body = "<p>#{@body}</p>" # basic formatting
-    @body.gsub!(/\*(.+?)\*/i, '<b>\1</b>') # bold when bold needed
+    @body.gsub!(/[^>]\*(.+?)\*/i, '<b>\1</b>') # bold when bold needed
     @body.gsub!(/<(http[s]?:\/\/\S+)>/, "(\\1)") # convert links to show up
     @body.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, '') # remove "inline image" text
     @body.gsub!(/\[image\:\ (.+)\.[a-zA-Z]{3,4}\](<br>)?/, '') # remove "inline image" text
