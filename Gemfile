@@ -10,7 +10,7 @@ gem 'puma'
 gem 'pg', '~> 0.21.0'
 
 # users
-gem 'devise', '~> 4.2'
+gem "devise", ">= 4.7.1"
 gem 'devise-security'
 gem "recaptcha"
 gem 'gibbon' # mailchimp connector
