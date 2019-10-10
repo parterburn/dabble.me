@@ -20,14 +20,14 @@ describe User do
 
     it "returns same day, way back" do
       entry_date = Date.parse("2019-10-5")
-      past_entry = user.entries.create(date: Date.parse("2002-10-5"), body: "Hi from way back.")
+      past_entry = user.entries.create(date: Date.parse("2003-10-5"), body: "Hi from way back.")
       user.way_back_past_entries = true
       expect(user.random_entry(entry_date)).to eq(past_entry)
     end
 
     it "returns 1 year ago" do
       entry_date = Date.parse("2019-10-5")
-      past_entry = user.entries.create(date: Date.parse("2017-10-5"), body: "Hi from 1 year back.")
+      past_entry = user.entries.create(date: Date.parse("2018-10-5"), body: "Hi from 1 year back.")
       user.way_back_past_entries = false
       expect(user.random_entry(entry_date)).to eq(past_entry)
     end
@@ -35,7 +35,7 @@ describe User do
     it "returns 1 month ago" do
       user.emails_sent = 3
       entry_date = Date.parse("2019-10-5")
-      past_entry = user.entries.create(date: Date.parse("2018-9-5"), body: "Hi from 1 month back.")
+      past_entry = user.entries.create(date: Date.parse("2019-9-5"), body: "Hi from 1 month back.")
       expect(user.random_entry(entry_date)).to eq(past_entry)
     end
 
@@ -43,7 +43,7 @@ describe User do
       user.way_back_past_entries = false
       user.emails_sent = 5
       entry_date = Date.parse("2019-10-5")
-      past_entry = user.entries.create(date: Date.parse("2018-9-28"), body: "Hi from 1 week back.")
+      past_entry = user.entries.create(date: Date.parse("2019-9-28"), body: "Hi from 1 week back.")
       expect(user.random_entry(entry_date)).to eq(past_entry)
     end    
 
