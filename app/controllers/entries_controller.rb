@@ -236,7 +236,7 @@ class EntriesController < ApplicationController
     entries.each do |entry|
       json_hash <<  {
         id: entry.id,
-        title: entry.sanitized_body.gsub(/\n/, '').truncate(100, separator: ' '),
+        title: ActionController::Base.helpers.strip_tags(entry.sanitized_body.gsub(/\n/, '')).truncate(100, separator: ' '),
         url: day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day),
         start: entry.date.strftime('%Y-%m-%d'),
         allDay: 'true'
