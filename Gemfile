@@ -33,6 +33,7 @@ gem 'rest-client' # RESTClient
 gem 'rubyzip', '~> 1.2', '>= 1.2.2'
 gem 'zip-zip'
 gem 'rack-utf8_sanitizer', '~> 1.5'
+gem "loofah", ">= 2.3.1"
 gem "chartkick", ">= 3.2.0" # Admin stats
 gem 'groupdate' # Admin Stats
 gem 'words_counted' # Year in Review
