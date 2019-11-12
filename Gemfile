@@ -30,7 +30,7 @@ gem 'mailgun_rails'
 gem 'randomized_field', '~> 0.1.0' # builds user_keys
 gem 'summernote-rails', '~> 0.8.2.0'
 gem 'rest-client' # RESTClient
-gem 'rubyzip', '~> 1.2', '>= 1.2.2'
+gem 'rubyzip', '~> 1.3'
 gem 'zip-zip'
 gem 'rack-utf8_sanitizer', '~> 1.5'
 gem "loofah", ">= 2.3.1"
