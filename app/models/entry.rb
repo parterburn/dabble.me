@@ -121,6 +121,7 @@ class Entry < ActiveRecord::Base
 
   def strip_out_base64
     if self.body.present?
+      self.body = self.body.gsub("<a href=\"https://#{ENV['MAIN_DOMAIN']}/search?search%5Bterm%5D=\"></a>", "")
       self.body = self.body.gsub(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"")
       self.body = self.body.gsub(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()")
     end
