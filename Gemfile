@@ -19,6 +19,8 @@ gem 'addressable' # better URI checking
 gem 'sinatra', '>= 1.3.0', require: nil
 gem 'combined_time_select', '~> 1.0.1'
 
+gem "rails-html-sanitizer", "~> 1.3.0"
+
 # email parsing
 gem 'griddler', '~> 1.5.2'
 gem 'griddler-mailgun', '~> 1.1', '>= 1.1.1'
@@ -100,9 +102,7 @@ group :test do
   gem 'webmock', require: false
 end
 
-group :staging, :production do
-  gem 'rack-timeout'
-end
+gem 'rack-timeout'
 
 group :production do
   gem 'rails_12factor'

@@ -6,6 +6,8 @@ class ApplicationController < ActionController::Base
   before_filter :tag_request
   before_filter :configure_permitted_parameters, if: :devise_controller?
 
+  rescue_from Rack::Timeout::RequestTimeoutException, with: :handle_timeout
+
   def redirect_back_or_to(default)
     redirect_to session.delete(:return_to) || default
   end
@@ -36,7 +38,7 @@ class ApplicationController < ActionController::Base
   def tag_request
     if current_user
       Sqreen.identify({ id: current_user.id, email: current_user.email })
-    end    
+    end
   end
 end
 
@@ -53,4 +55,9 @@ if RUBY_VERSION>='2.6.0'
   else
     puts "Monkeypatch for ActionController::TestResponse no longer needed"
   end
+
+  def handle_timeout(exception)
+    Rails.logger.warn("Timeout Error: #{params&.to_hash&.to_s}")
+    render "errors/timeout"
+  end  
 end

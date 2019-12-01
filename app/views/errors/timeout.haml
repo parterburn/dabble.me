@@ -1,0 +1,21 @@
+- title ("Page Timeout")
+.row
+  %br
+  .col-md-8.col-md-offset-2.well.entry#entry-504
+    .center
+      .s-entry-date
+        %h2 This page is taking too long to load.
+        %h3
+          %span 504
+    .pictureFrame
+      %br
+      =image_tag "broken_pencil.png", widht: 250, height: 250
+      %br
+      %br
+    .clearfix
+
+:javascript
+  $("#entry-504").imagesLoaded()
+    .done( function( instance ) {
+      $(instance.elements).find('.pictureFrame img').css("background-image","none");
+    });  
