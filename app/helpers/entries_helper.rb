@@ -5,7 +5,7 @@ module EntriesHelper
   end
 
   def link_hashtags(body)
-    body.gsub(/#([0-9]+[a-zA-Z_]+\w?|[a-zA-Z_]+\w?)/) { |match| link_to match, search_url(host: ENV['MAIN_DOMAIN'], search: {term: "##{$1}"}) }
+    body.gsub(/#([0-9]+[a-zA-Z_]+\w*|[a-zA-Z_]+\w*)/) { |match| link_to match, search_url(host: ENV['MAIN_DOMAIN'], search: {term: "##{$1}"}) }
   end  
 
   def format_body(body)
