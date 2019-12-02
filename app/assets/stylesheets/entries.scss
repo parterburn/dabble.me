@@ -236,17 +236,20 @@ mark {
 
 .s-hashtag {
   margin: 5px;
+  &:first-child {
+    margin-left: 0;
+  }
   &.s-hashtag-size-0 {
-    font-size:14px;
+    font-size:16px;
   }
   &.s-hashtag-size-1 {
     font-size:20px;
   }
   &.s-hashtag-size-2 {
-    font-size:30px;
+    font-size:26px;
   }
   &.s-hashtag-size-3 {
-    font-size:40px;
+    font-size:34px;
   }
 }
 

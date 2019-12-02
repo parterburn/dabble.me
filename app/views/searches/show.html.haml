@@ -21,10 +21,11 @@
         .col-xs-4.col-sm-1
           = f.submit "Search", class: "btn btn-primary btn-lg"
 
-    - if current_user.is_free?
-      %p
-        %strong No results.
-        =link_to "Subscribe to PRO to use search.", subscribe_path
+    - if @search.term.present? && current_user.is_free?
+      .alert.alert-danger
+        %strong
+          No results shown.
+          =link_to "SUBSCRIBE TO PRO TO USE SEARCH", subscribe_path, class: "alert-link pull-right"
     - elsif @entries.present?
       - search_entries = Kaminari.paginate_array(@entries).page(params[:page]).per(params[:per])
       %p
@@ -52,12 +53,21 @@
         Sorry, no entries include
         = succeed "." do
           %mark= @search.term
-    - else
-      - if @hashtags.length > 0
-        - @hashtags.each do |hashtag|
-          - class_size = (hashtag[1].size.to_f / @hashtags.size * (3 - 1)).round
-          =link_to hashtag[0], search_path(search: { term: hashtag[0] }), class: "s-hashtag s-hashtag-size-#{class_size}"
-      - else
-        .alert.alert-info
-          %i Tip:
-          Use hashtags throughout your entries and you'll see a tag cloud appear here making it easy to search for posts containing those hashtags.
+
+    - if @search.term.blank?
+      .alert.alert-info
+        - if @hashtags.length > 0
+          %div{:style => "margin-bottom: 5px;"}
+            %small
+              %strong YOUR TAGS
+          .hashtags
+            - @hashtags.each do |hashtag|
+              - class_size = (hashtag[1].size.to_f / @hashtags.size * (3 - 1)).round
+              - add_class = current_user.is_free? ? "s-hashtag-size-0" : "s-hashtag-size-#{class_size}"
+              =link_to hashtag[0], search_path(search: { term: "##{hashtag[0]}" }), class: "s-hashtag #{add_class}"
+        - else
+          - if current_user.is_free?
+            Pro users can use
+          - else
+            %i Tip: Use
+          hashtags throughout your entries and you'll see a tag cloud appear here making it easy to search for posts containing those hashtags.

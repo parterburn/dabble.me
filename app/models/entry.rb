@@ -42,12 +42,7 @@ class Entry < ActiveRecord::Base
     self.date.present? ? self.date.strftime("%A") : "Noday?"
   end
 
-  def hashtag_body
-    return nil unless self.body.present?
-    h_body = Rinku.auto_link(self.body, :all, 'target="_blank"')
-    h_body.gsub!(/(<a[^>]*>.*?< ?\/a ?>)|(#[0-9]+\W)|(#[a-zA-Z0-9_]+)/) { "#{$1}#{$2}<a href='#{Rails.application.routes.url_helpers.search_url(host: ENV['MAIN_DOMAIN'], search: {term: $3})}'>#{$3}</a>" }
-    ActionController::Base.helpers.sanitize h_body, tags: %w(strong em a div span ul ol li b i img br p hr), attributes: %w(href style src target)
-  end
+
 
   def spotify_embed
     embeds = []

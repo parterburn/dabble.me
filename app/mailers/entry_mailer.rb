@@ -1,5 +1,6 @@
 class EntryMailer < ActionMailer::Base
   helper.extend(ApplicationHelper)
+  add_template_helper(EntriesHelper)
 
   def send_entry(user)
     @user = user

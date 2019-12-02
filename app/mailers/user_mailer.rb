@@ -1,5 +1,6 @@
 class UserMailer < ActionMailer::Base
   helper.extend(ApplicationHelper)
+   add_template_helper(EntriesHelper)
 
   default from: "Dabble Me Support <hello@#{ENV['MAIN_DOMAIN']}>"
 

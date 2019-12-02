@@ -16,9 +16,9 @@
         = entry.date_day.upcase
 .s-scrollable
   - if @search.present?
-    = highlight(entry.hashtag_body, @search.term)
+    = highlight(format_body(entry.body), @search.term)
   - else
-    = entry.hashtag_body
+    = format_body(entry.body)
   = entry.spotify_embed    
 - if entry.image_url_cdn.present?
   .pictureFrame
