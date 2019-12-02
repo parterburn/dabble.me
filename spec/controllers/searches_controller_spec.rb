@@ -16,11 +16,13 @@ RSpec.describe SearchesController, type: :controller do
       expect(response).to redirect_to(new_user_session_url)
     end
 
-    it 'should allow search for a paid user' do
+    it 'should not allow search for a free user' do
       sign_in user
       get :show
       expect(response.status).to eq 200
-      expect(response.body).to have_content('Subscribe to PRO to use search.')
+      expect(response.body).to have_content('Subscribe now')
+      expect(response.body).to have_content('to search your entries and see which tags are used most')
+      expect(response.body).to have_content("Pro users can use")
     end
 
     it 'should allow search for a paid user' do
@@ -29,7 +31,8 @@ RSpec.describe SearchesController, type: :controller do
       user.save
       get :show
       expect(response.status).to eq 200
-      expect(response.body).to have_content("Use hashtags throughout your entries and you'll see a tag cloud appear here")
+      expect(response.body).to have_content("Tip: Use")
+      expect(response.body).to have_content("hashtags throughout your entries and you'll see a tag cloud appear here")
     end
   end
 end
