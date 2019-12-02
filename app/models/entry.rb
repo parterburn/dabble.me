@@ -108,6 +108,10 @@ class Entry < ActiveRecord::Base
     self.user.entries.where("date < ?", date).sort_by(&:date).last
   end
 
+  def hashtags
+    body.scan(/#([0-9]+[a-zA-Z_]+\w*|[a-zA-Z_]+\w*)/).map { |m| m[0] }
+  end
+
   private
 
   def associate_inspiration

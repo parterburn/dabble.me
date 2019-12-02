@@ -20,6 +20,10 @@
         = format_body(@random_entry.body)
       - if (songs = @random_entry.spotify_track_names).present?
         = songs
+      - if (hashtags = @random_entry.hashtags).present?
+        %p
+          %i
+            Tags: #{hashtags.map { |tag| link_to(tag, search_url(host: ENV['MAIN_DOMAIN'], search: {term: "##{tag}"})) }.join(", ").html_safe}
       - if @random_entry_image_url.present?
         %p
           =link_to image_tag(@random_entry_image_url, style: 'max-width: 100%; border-radius: 4px;'), @random_entry_image_url

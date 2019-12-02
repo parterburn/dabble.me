@@ -374,6 +374,27 @@ mark {
     &.spotify {
       margin: 10px auto;
     }
+    &.tags {
+      margin: 10px auto;
+      a {
+        margin: 0 2px;
+        &.noline {
+          text-decoration: none;
+        }
+        span {
+          font-weight: 300;
+          letter-spacing: 0.5px;
+          -webkit-transition: all 0.3s;
+          transition: all 0.3s;
+          position: relative;      
+          &:hover {
+            top: 1px;
+            background-color: darken($blue,20);
+            text-shadow: 0px 0px 3px darken($blue,40);
+          }          
+        }
+      }
+    }    
   }
   @media screen and (max-width: 767px) {
     font-size:16px;

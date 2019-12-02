@@ -12,6 +12,9 @@
   \ 
   #{@random_entry.sanitized_body}
   \ 
+  - if (hashtags = @random_entry.hashtags).present?
+    Tags: #{hashtags.join(", ")}
+    \ 
 - elsif @user.send_past_entry?
   Keep writing...once you have a few entries you'll see a blast from the past show up here!  
   \ 
