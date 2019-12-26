@@ -184,7 +184,8 @@ class EntriesController < ApplicationController
   end
 
   def review
-    @year = params[:year] || Time.now.year - 1
+    month = Date.today.month
+    @year = params[:year] || (month > 11 ? Time.now.year : Time.now.year - 1)
     @entries = current_user.entries.where("date >= '#{@year}-01-01'::DATE AND date <= '#{@year}-12-31'::DATE")
     @total_count = @entries.count
     if @total_count > 0

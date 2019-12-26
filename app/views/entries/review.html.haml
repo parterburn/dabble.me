@@ -58,14 +58,14 @@
       .s-entry-date
         %h2 Total Words
         %h3
-          - percent_book = ((@words_counter.token_count.to_f/76850).to_f * 100).round
+          - percent_book = ((@words_counter.token_count.to_f/57600).to_f * 100).round
           - book_height = 500-((percent_book.to_f / 100) * 500)
-          %span= "#{number_with_delimiter(@words_counter.token_count)} - #{percent_book}% of Born a Crime".html_safe
+          %span= "#{number_with_delimiter(@words_counter.token_count)} - #{percent_book}% of The Moment of Lift".html_safe
       .s-review-details
         %div{style: 'position: relative;'}
-          =link_to 'https://amzn.to/2VwvaBe', target: '_blank', style: "margin-top: 20px; display: block;margin-bottom: 10px;" do
+          =link_to 'https://amzn.to/361quIf', target: '_blank', style: "margin-top: 20px; display: block;margin-bottom: 10px;" do
             .s-book-cover{style: "height: #{book_height < 0 ? 0 : book_height}px"}
-            = image_tag 'born-a-crime.jpg', width: 334, height: 500
+            = image_tag 'moment-of-lift.jpg', width: 331, height: 500
         .clearfix
 
   .col-md-8.col-md-offset-2.well
@@ -75,20 +75,20 @@
         %h3
           - your_avg_words = @words_counter.token_count / @total_count
           %span= number_with_delimiter(your_avg_words)
-      - if @year.to_s == "2018"
+      - if @year.to_s == "2019"
         .s-review-details
-          - if your_avg_words > 336
+          - if your_avg_words > 366
             - compared = 'way more'
-          - elsif your_avg_words > 168
+          - elsif your_avg_words > 183
             - compared = 'more'
-          - elsif your_avg_words < 84
+          - elsif your_avg_words < 91
             - compared = 'way less'
           - else
             - compared = 'less'
-          %p= "That's #{compared} than the average of all Dabble Me users (168 average words per post)."
+          %p= "That's #{compared} than the average of all Dabble Me users (183 average words per post)."
           %p
-            %span Collectively, all Dabble Me users could have wrote 46 novels equivalent to Trevor Noah's autobiographical comedy,
-            %span<= link_to "Born a Crime: Stories from a South African Childhood", "https://amzn.to/2VwvaBe", target: :_blank
+            %span Collectively, all Dabble Me users could have wrote 73 novels equivalent to Melinda Gates's debut book,
+            %span<= link_to "The Moment of Lift: How Empowering Women Changes the World", "https://amzn.to/361quIf", target: :_blank
             %span !
           .clearfix  
 
@@ -100,7 +100,7 @@
           - avg_chars = @body_text.length / @total_count
           - tweets = ((avg_chars).to_f / 280).ceil
           - your_avg_words = @words_counter.token_count / @total_count
-          %span= "#{number_with_delimiter(avg_chars)} - about #{tweets} tweets (the new 280-character ones!)"
+          %span= "#{number_with_delimiter(avg_chars)} - about #{tweets} tweets"
       .s-review-details
         .s-twitter-comparison
           - (1..tweets).each do |i|
@@ -111,9 +111,9 @@
     .center{class: add_class}
       .s-entry-date
         %h2 Most Frequent Words
-        - if @year.to_s == "2017"
+        - if @year.to_s == "2019"
           %h3
-            %span= "The <i>I's</i> had it - we all wrote it 151,631 times!".html_safe
+            %span= "We're all still journaling in first-person...we collectively used <i>I</i> 151,025 times in our entries!".html_safe
       .s-review-details
         - @words_counter.token_frequency.first(25).each do |word|
           %h3

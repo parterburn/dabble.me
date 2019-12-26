@@ -28,6 +28,7 @@
         -else
           Welcome back! Here's your latest entry...
       %br
+
     .col-md-8.well.entry{:id => "entry-#{@lastest_entry.id}", :class=>"#{add_class}"}
       = render :partial => 'entries/entry', :locals => {:entry => @lastest_entry}
 
@@ -38,6 +39,24 @@
         - if back_year_entry.present?
           .col-md-8.col-md-offset-1.well.entry{:id => "entry-#{back_year_entry.id}"}
             = render :partial => 'entries/entry', :locals => {:entry => back_year_entry}
+
+    - year = 2020
+    - if Date.today < Date.parse("#{year}-01-25")
+      = javascript_include_tag "//www.gstatic.com/charts/loader.js", "chartkick"
+      - total_count = current_user.entries.where("date >= '#{year-1}-01-01'::DATE AND date <= '#{year-1}-12-31'::DATE").count
+      .col-md-8.well{:class=>"#{add_class}"}
+        .center
+          .s-entry-date
+            %h2 Year in Review
+            %h3
+              %span= "#{total_count} entries in #{year-1}"
+          .s-review-details
+            = pie_chart({"Days With Entries": total_count, "Days Without Entires": (365 - total_count)},  height: "230px", library: {backgroundColor: "#ffffff"})
+            .clearfix
+            %h4
+              %span= "See more stats in your "
+              = link_to "#{year-1} Year in Review", review_path
+              %span> !
 
 - else
   = render partial: 'no_entries'

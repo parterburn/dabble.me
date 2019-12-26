@@ -47,6 +47,17 @@ namespace :entry do
     # Avg characters per post: 901 (4 tweets)
     # Most Frequent Words: [[\i\, 133825], [\and\, 117189], [\the\, 116093], [\to\, 113897], [\a\, 72836], [\was\, 47318], [\it\, 45627], [\of\, 44308], [\in\, 40273], [\for\, 36509]]
 
+    # Stats for 2019
+    # Users created: 971
+    # Entries created in 2019: 24,204
+    # Entries for 2019: 23,132
+    # Total words: 4,234,862.0
+    # Avg words per post: 183.07375064845235
+    # Total characters: 22,842,453
+    # Avg characters per post: 987 (4 tweets)
+    # Most Frequent Words: [[i, 151025], [and, 137508], [to, 134428], [the, 132003], [a, 85921], [of, 55016], [it, 53363], [was, 52440], [in, 47202], [that, 45034]]    
+
+
     p "*"*100
     p "STATS FOR #{year}"
     p "*"*100
