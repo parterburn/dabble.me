@@ -201,8 +201,8 @@ class EntriesController < ApplicationController
   private
 
   def check_mailchimp_referrer
-    return nil unless Date.today > Date.parse("2019-12-25") && Date.today < Date.parse("2020-04-20")
-    if request.referer&.include?('dabble.us2.list-manage.com')
+    return nil unless Date.today > Date.parse("2019-12-25") && Date.today < Date.parse("2020-01-07")
+    if request.referer.nil? && params[:year] == "2018"
       redirect_to review_path(2019)
     end
   end
