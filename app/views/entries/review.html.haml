@@ -4,8 +4,13 @@
 .row.s-year-in-review
   .col-md-8.col-md-offset-2
     %h3= "#{@year} Year In Review"
+    - ((Date.today.year - 11)..Date.today.year).each do |year|
+      - entries_for_year = current_user.entries.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE")
+      - if entries_for_year.any?
+        = link_to "#{year}", review_path(year), style: "margin: 0 5px; font-size: 16px;"
+    .clearfix
     %br
-    %br
+    %br      
 
   .col-md-8.col-md-offset-2.well
     .center
