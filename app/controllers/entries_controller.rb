@@ -1,6 +1,6 @@
 # Handle Web Entries
 class EntriesController < ApplicationController
-  before_action :check_mailchimp_referrer
+  before_action :check_mailchimp_referrer, only: [:review]
   before_action :authenticate_user!
   before_filter :set_entry, :require_entry_permission, only: [:show, :edit, :update, :destroy]
 
@@ -202,7 +202,7 @@ class EntriesController < ApplicationController
 
   def check_mailchimp_referrer
     return nil unless Date.today > Date.parse("2019-12-25") && Date.today < Date.parse("2020-04-20")
-    if params[:action] == "review" && request.referer.include?('dabble.us2.list-manage.com')
+    if request.referer&.include?('dabble.us2.list-manage.com')
       redirect_to review_path(2019)
     end
   end
