@@ -118,7 +118,7 @@
         %h2 Most Frequent Words
         - if @year.to_s == "2019"
           %h3
-            %span= "We're all still journaling in first-person...we collectively used <i>I</i> 151,025 times in our entries!".html_safe
+            %span= "We're all still journaling in first-person...we collectively used <i>\"I\"</i> 151,025 times in our entries!".html_safe
       .s-review-details
         - @words_counter.token_frequency.first(25).each do |word|
           %h3
