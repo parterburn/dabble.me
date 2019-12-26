@@ -126,7 +126,7 @@ GEM
     exception_notification-rake (0.2.2)
       exception_notification (~> 4.1.0)
       rake (>= 0.9.0)
-    excon (0.62.0)
+    excon (0.71.0)
     execjs (2.7.0)
     factory_bot (4.8.2)
       activesupport (>= 3.0.0)
@@ -245,7 +245,7 @@ GEM
     pg (0.21.0)
     public_suffix (3.0.2)
     puma (3.12.2)
-    rack (1.6.11)
+    rack (1.6.12)
     rack-affiliates (0.4.0)
       rack
     rack-attack (5.2.0)
