@@ -21,6 +21,9 @@
       .s-review-details
         = pie_chart({"Days With Entries": @total_count, "Days Without Entires": (365 - @total_count)},  height: "230px", library: {backgroundColor: "#ffffff"})
         .clearfix
+        - if @pctile.present?
+          %p= "You're in the #{@pctile.ordinalize} percentile compared to all active Dabble Me users in #{@year}."
+          .clearfix
 
   - if current_user.is_free?
     .col-md-8.col-md-offset-2
@@ -82,15 +85,15 @@
           %span= number_with_delimiter(your_avg_words)
       - if @year.to_s == "2019"
         .s-review-details
-          - if your_avg_words > 366
+          - if your_avg_words > 232
             - compared = 'way more'
-          - elsif your_avg_words > 183
+          - elsif your_avg_words > 116
             - compared = 'more'
-          - elsif your_avg_words < 91
+          - elsif your_avg_words < 58
             - compared = 'way less'
           - else
             - compared = 'less'
-          %p= "That's #{compared} than the average of all Dabble Me users (183 average words per post)."
+          %p= "That's #{compared} than the average of all Dabble Me users (116 words per post)."
           %p
             %span Collectively, all Dabble Me users could have wrote 73 novels equivalent to Melinda Gates's debut book,
             %span<= link_to "The Moment of Lift: How Empowering Women Changes the World", "https://amzn.to/361quIf", target: :_blank
