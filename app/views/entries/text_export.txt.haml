@@ -4,5 +4,5 @@
   - else
     =entry.date.strftime("%Y-%m-%d")
     \
-    = ActionController::Base.helpers.strip_tags(entry.sanitized_body)
+    = raw(ActionController::Base.helpers.strip_tags(entry.sanitized_body))
     \
