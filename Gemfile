@@ -72,6 +72,7 @@ gem "cloudflare-rails"
 gem "test_after_commit"
 gem "sqreen"
 gem "stripe"
+gem "html2text" # text export conversion html->txt
 
 group :development, :test do
   gem 'byebug', '~> 8.2', '>= 8.2.2'

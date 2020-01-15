@@ -78,6 +78,10 @@ class Entry < ActiveRecord::Base
     end
   end
 
+  def text_body
+    CGI::unescape_html(Html2Text.convert(self.body))
+  end
+
   def sanitized_body
     body_sanitized = ActionController::Base.helpers.sanitize self.body, tags: %w(br p)
     body_sanitized.gsub!(/\A(\n\n)/,"") if body_sanitized

@@ -4,7 +4,7 @@
 <% else %>
 <%= entry.date.strftime("%Y-%m-%d")%>
 
-<%== CGI::unescape_html(ActionController::Base.helpers.strip_tags(entry.sanitized_body)) %>
+<%== entry.text_body %>
 
 <% if entry.image.present? %>
 <%= "[IMAGE: #{entry.image_url_cdn}]" %>
