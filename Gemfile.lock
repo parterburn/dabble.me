@@ -137,6 +137,7 @@ GEM
       i18n (>= 0.7)
     faraday (0.15.1)
       multipart-post (>= 1.2, < 3)
+    fastimage (2.1.7)
     ffi (1.10.0)
     file_validators (2.3.0)
       activemodel (>= 3.2)
@@ -431,6 +432,7 @@ DEPENDENCIES
   exception_notification-rake (~> 0.2.1)
   factory_bot_rails
   faker (~> 1.6, >= 1.6.1)
+  fastimage
   file_validators
   fog-aws
   gibbon

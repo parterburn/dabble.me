@@ -40,6 +40,24 @@ class EmailProcessor
       end
     end
 
+    # If image came in as a URL, try saving that
+    if best_attachment.blank?
+      email_reply_html = email.vendor_specific[:stripped_html].split(/reply to this email with your /).first
+      image_urls = email_reply_html&.scan(/<img\s.*?src=(?:'|")([^'">]+)(?:'|")/i)
+      image_urls.flatten! if image_urls.present?
+      if @user.is_pro? && image_urls.any?
+        image_urls.each do |image_url|
+          image_width, image_height = FastImage.size(image_url)
+          image_type = FastImage.type(image_url)
+
+          if image_type.in?([:gif, :jpeg, :png]) && image_height > 100  && image_width > 100
+            best_attachment_url = image_url
+            break
+          end
+        end
+      end
+    end
+
     @body.gsub!(/\n\n\n/, "\n\n \n\n") # allow double line breaks
     @body = unfold_paragraphs(@body) unless @from.include?('yahoo.com') # fix wrapped plain text, but yahoo messes this up
     @body.gsub!(/(?:\n\r?|\r\n?)/, '<br>') # convert line breaks
@@ -61,6 +79,8 @@ class EmailProcessor
       existing_entry.inspiration_id = inspiration_id if inspiration_id.present?
       if existing_entry.image_url_cdn.blank? && best_attachment.present?
         existing_entry.image = best_attachment
+      elsif existing_entry.image_url_cdn.blank? && best_attachment_url.present?
+        existing_entry.remote_image_url = best_attachment_url
       end
       begin
         existing_entry.save
@@ -71,24 +91,14 @@ class EmailProcessor
       end
       track_ga_event('Merged')
     else
+      params = { date: date, inspiration_id: inspiration_id }
+      best_attachment.present? ? params.merge!(image: best_attachment) : params.merge!(remote_image_url: best_attachment_url)
       begin
-        entry = @user.entries.create!(
-          date: date,
-          body: @body,
-          image: best_attachment,
-          original_email_body: @raw_body,
-          inspiration_id: inspiration_id
-        )
+        entry = @user.entries.create!(params.merge(body: @body, original_email_body: @raw_body))
       rescue
         @body = @body.force_encoding('iso-8859-1').encode('utf-8')
         @raw_body = @raw_body.force_encoding('iso-8859-1').encode('utf-8')
-        entry = @user.entries.create!(
-          date: date,
-          body: @body,
-          image: best_attachment,
-          original_email_body: @raw_body,
-          inspiration_id: inspiration_id
-        )
+        entry = @user.entries.create!(params.merge(body: @body, original_email_body: @raw_body))
       end
       entry.body = entry.sanitized_body if @user.is_free?
       entry.save
