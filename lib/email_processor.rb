@@ -6,6 +6,7 @@ class EmailProcessor
     @token = pick_meaningful_recipient(email.to, email.cc)
     @from = email.from[:email].downcase
     @subject = email.subject
+    @stripped_html = email.vendor_specific[:stripped_html]
 
     email.body.gsub!(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"") if email.body.present?
     email.body.gsub!(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()") if email.body.present?
@@ -42,7 +43,7 @@ class EmailProcessor
 
     # If image came in as a URL, try saving that
     if best_attachment.blank?
-      email_reply_html = email.vendor_specific[:stripped_html].split(/reply to this email with your /).first
+      email_reply_html = @stripped_html.split(/reply to this email with your /).first
       image_urls = email_reply_html&.scan(/<img\s.*?src=(?:'|")([^'">]+)(?:'|")/i)
       image_urls.flatten! if image_urls.present?
       if @user.is_pro? && image_urls.any?
