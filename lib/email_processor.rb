@@ -6,7 +6,10 @@ class EmailProcessor
     @token = pick_meaningful_recipient(email.to, email.cc)
     @from = email.from[:email].downcase
     @subject = email.subject
-    @stripped_html = email.raw_html
+    p "*"*100
+    p email.vendor_specific
+    p "*"*100    
+    @stripped_html = email.vendor_specific.try(:[], "stripped_html")
 
     email.body.gsub!(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"") if email.body.present?
     email.body.gsub!(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()") if email.body.present?
@@ -47,7 +50,7 @@ class EmailProcessor
       email_reply_html = @stripped_html&.split(/reply to this email with your /)&.first
       image_urls = email_reply_html&.scan(/<img\s.*?src=(?:'|")([^'">]+)(?:'|")/i)
       image_urls.flatten! if image_urls.present?
-      if @user.is_pro? && image_urls.any?
+      if @user.is_pro? && image_urls.present? && image_urls.any?
         image_urls.each do |image_url|
           image_width, image_height = FastImage.size(image_url)
           image_type = FastImage.type(image_url)
