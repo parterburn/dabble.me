@@ -1,7 +1,7 @@
 - if @lastest_entry.present?
   - title "Latest Entry"
   - review_year = Date.today.month > 11 ? Date.today.year : Date.today.year - 1
-  - year_in_review = Date.today > Date.parse("#{review_year}-12-15") || Date.today < Date.parse("#{review_year + 1}-01-15")
+  - year_in_review = Date.today > Date.parse("#{review_year}-12-15") && Date.today < Date.parse("#{review_year + 1}-01-15")
 
   .row
     .col-md-2.s-date-groups.j-date-groups.hidden-xs.hidden-sm.s-hide{style:"position:fixed; top:80px; right:60px;"}
