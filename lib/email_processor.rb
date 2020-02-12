@@ -42,6 +42,7 @@ class EmailProcessor
     end
 
     # If image came in as a URL, try saving that
+    best_attachment_url = nil
     if best_attachment.blank?
       email_reply_html = @stripped_html.split(/reply to this email with your /).first
       image_urls = email_reply_html&.scan(/<img\s.*?src=(?:'|")([^'">]+)(?:'|")/i)
