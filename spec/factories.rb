@@ -9,5 +9,6 @@ FactoryBot.define do
     subject Faker::Company.catch_phrase
     body Faker::Lorem.paragraph
     attachments {[]}
+    vendor_specific { stripped_html: Faker::Lorem.paragraph }
   end
 end

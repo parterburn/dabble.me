@@ -6,7 +6,7 @@ class EmailProcessor
     @token = pick_meaningful_recipient(email.to, email.cc)
     @from = email.from[:email].downcase
     @subject = email.subject
-    @stripped_html = email.vendor_specific[:stripped_html]
+    @stripped_html = email.try(:[], :vendor_specific).try(:[], :stripped_html)
 
     email.body.gsub!(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"") if email.body.present?
     email.body.gsub!(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()") if email.body.present?
