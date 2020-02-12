@@ -9,7 +9,7 @@ class EmailProcessor
     p "*"*100
     p email.vendor_specific
     p "*"*100    
-    @stripped_html = email.vendor_specific.try(:[], "stripped_html")
+    @stripped_html = email.vendor_specific.try(:[], :stripped_html)
 
     email.body.gsub!(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"") if email.body.present?
     email.body.gsub!(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()") if email.body.present?
