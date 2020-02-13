@@ -6,15 +6,12 @@ class EmailProcessor
     @token = pick_meaningful_recipient(email.to, email.cc)
     @from = email.from[:email].downcase
     @subject = email.subject
-    p "*"*100
-    p email.vendor_specific
-    p "*"*100    
     @stripped_html = email.vendor_specific.try(:[], :stripped_html)
 
-    email.body.gsub!(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"") if email.body.present?
-    email.body.gsub!(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()") if email.body.present?
-    email.raw_body.gsub!(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"") if email.raw_body.present?
-    email.raw_body.gsub!(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()") if email.raw_body.present?
+    email.body&.gsub!(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"") if email.body.present?
+    email.body&.gsub!(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()") if email.body.present?
+    email.raw_body&.gsub!(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"") if email.raw_body.present?
+    email.raw_body&.gsub!(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()") if email.raw_body.present?
 
     if email.raw_body.present? && email.raw_body.ascii_only? && email.body.ascii_only?
       @body = EmailReplyTrimmer.trim(email.body)
@@ -46,7 +43,7 @@ class EmailProcessor
 
     # If image came in as a URL, try saving that
     best_attachment_url = nil
-    if best_attachment.blank?
+    if best_attachment.blank? && @stripped_html.present?
       email_reply_html = @stripped_html&.split(/reply to this email with your /)&.first
       image_urls = email_reply_html&.scan(/<img\s.*?src=(?:'|")([^'">]+)(?:'|")/i)
       image_urls.flatten! if image_urls.present?
@@ -63,14 +60,14 @@ class EmailProcessor
       end
     end
 
-    @body.gsub!(/\n\n\n/, "\n\n \n\n") # allow double line breaks
+    @body&.gsub!(/\n\n\n/, "\n\n \n\n") # allow double line breaks
     @body = unfold_paragraphs(@body) unless @from.include?('yahoo.com') # fix wrapped plain text, but yahoo messes this up
-    @body.gsub!(/(?:\n\r?|\r\n?)/, '<br>') # convert line breaks
+    @body&.gsub!(/(?:\n\r?|\r\n?)/, '<br>') # convert line breaks
     @body = "<p>#{@body}</p>" # basic formatting
-    @body.gsub!(/[^>]\*(.+?)\*/i, '<b>\1</b>') # bold when bold needed
-    @body.gsub!(/<(http[s]?:\/\/\S+)>/, "(\\1)") # convert links to show up
-    @body.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, '') # remove "inline image" text
-    @body.gsub!(/\[image\:\ (.+)\.[a-zA-Z]{3,4}\](<br>)?/, '') # remove "inline image" text
+    @body&.gsub!(/[^>]\*(.+?)\*/i, '<b>\1</b>') # bold when bold needed
+    @body&.gsub!(/<(http[s]?:\/\/\S+)>/, "(\\1)") # convert links to show up
+    @body&.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, '') # remove "inline image" text
+    @body&.gsub!(/\[image\:\ (.+)\.[a-zA-Z]{3,4}\](<br>)?/, '') # remove "inline image" text
 
     date = parse_subject_for_date(@subject)
     existing_entry = @user.existing_entry(date.to_s)
