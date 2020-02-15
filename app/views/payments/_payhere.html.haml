@@ -5,6 +5,9 @@
       disableCustomer: "yes",
       customerName: "#{CGI.escape(current_user.full_name)}",
       customerEmail: "#{CGI.escape(current_user.email)}",
+      customFields: {
+        dabble_id: "#{current_user.id}"
+      },
       onSuccess: function(payment) {
         setTimeout(function() { location.reload(); }, 2000);
       }
