@@ -3,7 +3,7 @@
 .row
   %br
   .col-md-8.col-md-offset-2
-    - unless !current_user&.is_pro?
+    - unless current_user&.is_pro?
       %h4.text-muted Dabble Me is free with limitations.
       %p.text-muted Email prompts are only sent every other Sunday.
       %hr
