@@ -161,6 +161,7 @@ class EmailProcessor
   end
 
   def unfold_paragraphs(body)
+    return nil unless body.present?
     text  = ''
     body.split(/\n/).each do |line|
       if /\S/ !~ line
