@@ -247,7 +247,7 @@ GEM
     orm_adapter (0.5.0)
     pg (0.21.0)
     public_suffix (3.0.2)
-    puma (3.12.2)
+    puma (3.12.3)
     rack (1.6.12)
     rack-affiliates (0.4.0)
       rack
