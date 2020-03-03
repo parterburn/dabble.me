@@ -247,7 +247,7 @@ GEM
     orm_adapter (0.5.0)
     pg (0.21.0)
     public_suffix (3.0.2)
-    puma (3.12.3)
+    puma (3.12.4)
     rack (1.6.12)
     rack-affiliates (0.4.0)
       rack
@@ -453,7 +453,7 @@ DEPENDENCIES
   meta_request
   mini_magick (>= 4.9.4)
   pg (~> 0.21.0)
-  puma
+  puma (~> 3.4)
   rack-affiliates
   rack-attack
   rack-timeout
