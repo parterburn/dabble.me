@@ -12,7 +12,7 @@ gem 'pg', '~> 0.21.0'
 # users
 gem "devise", ">= 4.7.1"
 gem 'devise-security'
-gem "recaptcha"
+gem 'recaptcha', '~> 5.3'
 gem 'gibbon' # mailchimp connector
 
 gem 'addressable' # better URI checking
