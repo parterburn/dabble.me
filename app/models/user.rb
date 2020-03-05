@@ -62,7 +62,7 @@ class User < ActiveRecord::Base
     if entry_date.present?
       entry_date = Date.parse(entry_date.to_s)
 
-      if (exact_last_leap_year_entry = random_entries.where('extract(month from date) = ? AND extract(day from date) = ? AND extract(year from date) != ?', 2, 29, entry_date.last_year).first)
+      if (exact_last_leap_year_entry = random_entries.where('extract(month from date) = ? AND extract(day from date) = ? AND extract(year from date) = ?', 2, 29, entry_date.last_year.year).first).present?
         exact_last_leap_year_entry
       elsif way_back_past_entries && (exact_years_back_entry = random_entries.where('extract(month from date) = ? AND extract(day from date) = ? AND extract(year from date) != ?', entry_date.month, entry_date.day, entry_date.year).sample)
         exact_years_back_entry
