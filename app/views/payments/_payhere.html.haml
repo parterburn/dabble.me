@@ -1,7 +1,7 @@
 :javascript
   function payhere(plan) {
     PayHere.launch({
-      embedURL: "https://payhere.co/dabble-me/dabble-me-pro-" + plan,
+      embedURL: "https://app.payhere.co/dabble-me/dabble-me-pro-" + plan,
       disableCustomer: "yes",
       customerName: "#{current_user.full_name&.escape_javascript}",
       customerEmail: "#{current_user.email}",

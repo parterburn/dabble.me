@@ -129,7 +129,7 @@ class User < ActiveRecord::Base
 
   def plan_type
     if plan && plan.match(/payhere/i)
-      "<a href='https://payhere.co/customers' target='_blank'>PayHere</a>"
+      "<a href='https://app.payhere.co/customers' target='_blank'>PayHere</a>"
     elsif plan && plan.match(/gumroad/i)
       "<a href='https://gumroad.com/login' target='_blank'>Gumroad</a>"
     elsif plan && plan.match(/paypal/i)
