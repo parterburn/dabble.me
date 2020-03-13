@@ -10,23 +10,23 @@
 
   .col-md-3.col-md-offset-3
     = f.label :first_name
-    = f.text_field :first_name, autofocus: true, class: "form-control", value: params[:user].try(:[], "first_name")
+    = f.text_field :first_name, autofocus: true, class: "form-control", value: params[:user].try(:[], "first_name"), required: true
     %br
 
   .col-md-3
     = f.label :last_name
-    = f.text_field :last_name, class: "form-control", value: params[:user].try(:[], "last_name")
+    = f.text_field :last_name, class: "form-control", value: params[:user].try(:[], "last_name"), required: true
     %br
     .clearfix
 
   .col-md-6.col-md-offset-3
     = f.label :email
-    = f.email_field :email, class: "form-control"
+    = f.email_field :email, class: "form-control", required: true
     %br
 
   .col-md-3.col-md-offset-3
     = f.label :password
-    = f.password_field :password, autocomplete: "off", class: "form-control"
+    = f.password_field :password, autocomplete: "off", class: "form-control", required: true
     - if @validatable && @user.errors.present?
       %i.small
         (min #{@minimum_password_length} characters)    
@@ -35,7 +35,7 @@
   
   .col-md-3
     = f.label :password_confirmation
-    = f.password_field :password_confirmation, autocomplete: "off", class: "form-control"
+    = f.password_field :password_confirmation, autocomplete: "off", class: "form-control", required: true
     %br
     .clearfix
 
