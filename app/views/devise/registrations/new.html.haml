@@ -6,7 +6,7 @@
 = form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f|
   - if @user.errors.present?
     .col-md-6.col-md-offset-3
-      .alert.alert-danger= devise_error_messages!
+      .alert.alert-danger= render "devise/shared/error_messages", resource: resource
 
   .col-md-3.col-md-offset-3
     = f.label :first_name

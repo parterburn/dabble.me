@@ -6,7 +6,7 @@
     %br
   = form_for(resource, as: resource_name, url: confirmation_path(resource_name), html: { method: :post }) do |f|
     .col-md-4.col-md-offset-4
-      = devise_error_messages!
+      = render "devise/shared/error_messages", resource: resource
     
     .col-md-4.col-md-offset-4
       = f.label :email

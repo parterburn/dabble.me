@@ -6,7 +6,7 @@
     %br
   = form_for(resource, :as => resource_name, :url => [resource_name, :paranoid_verification_code], :html => { :method => :put }) do |f|
     .col-md-6.col-md-offset-3
-      = devise_error_messages!
+      = render "devise/shared/error_messages", resource: resource
 
     .col-md-6.col-md-offset-3
       = f.label :paranoid_verification_code, 'Verification code'
