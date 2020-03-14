@@ -32,7 +32,8 @@
         %h2 Premium features unlocked!
       - else
         %h2{style: "font-size: 18px;"} Unlock all premium features with a PRO account
-        %script{:src => "https://app.payhere.co/embed/embed.js", :type => "text/javascript"}
+        %script{:src => "https://payhere.co/embed/embed.js", :type => "text/javascript"}
+
         = render "payments/payhere"
         .row
           .col-md-6.col-md-offset-3.col-xs-10.col-xs-offset-1
