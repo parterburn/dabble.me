@@ -3,7 +3,7 @@
     PayHere.launch({
       embedURL: "https://app.payhere.co/dabble-me/dabble-me-pro-" + plan,
       disableCustomer: "yes",
-      customerName: "#{current_user.full_name&.escape_javascript}",
+      customerName: "#{raw(current_user.full_name&.escape_javascript)}",
       customerEmail: "#{current_user.email}",
       customFields: {
         dabble_id: "#{current_user.id}"
