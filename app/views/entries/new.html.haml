@@ -39,7 +39,7 @@
           .input-group.date
             %span.input-group-addon
               %i.fa.fa-calendar
-            - entry_date = params[:day].present? ? Date.parse(params[:day]).strftime("%B %-d, %Y") : (@entry.date.present? ? @entry.date_format_short : Date.today.strftime("%B %-d, %Y"))
+            - entry_date = params[:day].present? ? Date.parse(params[:day]).strftime("%B %-d, %Y") : (@entry.date.present? ? @entry.date_format_short : Time.now.in_time_zone(current_user.send_timezone).strftime("%B %-d, %Y"))
             = f.text_field :date, :value => entry_date, :placeholder=>"October 11 2014", :class => "form-control pickadate"
           %br
 
