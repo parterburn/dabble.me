@@ -1,6 +1,6 @@
 class InspirationsController < ApplicationController
   before_action :authenticate_user!
-  before_filter :authenticate_admin!
+  before_action :authenticate_admin!
 
   def index
     @inspirations = Inspiration.all.order(:category, :id)

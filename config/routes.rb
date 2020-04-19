@@ -40,6 +40,7 @@ Rails.application.routes.draw do
   match 'payment_notify',               to: 'payments#payment_notify', via: [:post]
   get 'ohlife-alternative',             to: 'welcome#ohlife_alternative'
   post 'email_processor',               to: 'griddler/emails#create'
+  post 'email_events',                  to: 'email_events#process'
 
   root 'welcome#index'  
 

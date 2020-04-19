@@ -2,7 +2,7 @@
 class EntriesController < ApplicationController
   before_action :check_mailchimp_referrer, only: [:review]
   before_action :authenticate_user!
-  before_filter :set_entry, :require_entry_permission, only: [:show, :edit, :update, :destroy]
+  before_action :set_entry, :require_entry_permission, only: [:show, :edit, :update, :destroy]
 
   def index
     if params[:group] == 'photos'

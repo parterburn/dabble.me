@@ -1,6 +1,6 @@
 class PaymentsController < ApplicationController
   before_action :authenticate_user!
-  before_filter :authenticate_admin!
+  before_action :authenticate_admin!
   
   skip_before_action :authenticate_user!, only: [:payment_notify]
   skip_before_action :authenticate_admin!, only: [:payment_notify]

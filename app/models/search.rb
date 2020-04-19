@@ -1,7 +1,7 @@
 class Search
   include ActiveModel::Model
 
-  attr_accessor :term, :user
+  attr_accessor :user, :term
 
   def entries
     if term.blank?

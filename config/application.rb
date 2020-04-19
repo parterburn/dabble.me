@@ -36,31 +36,22 @@ module Dabbleme
       end if File.exists?(env_file)
     end
 
-    config.assets.precompile += %w(*.png *.jpg *.jpeg *.gif,
-                                      "fontawesome-webfont.ttf",
-                                     "fontawesome-webfont.eot",
-                                     "fontawesome-webfont.svg",
-                                     "fontawesome-webfont.woff")
+    config.assets.precompile += %w(*.png *.jpg *.jpeg *.gif, *.css, *.svg *.woff *.ttf *.eot *.js)
 
-    config.assets.precompile = [ /\A[^\/\\]+\.(ccs|js)$/i ]
-
-    config.assets.precompile << Proc.new do |path|
-          if path =~ /\.(css|js)\z/
-            @assets ||= Rails.application.assets || Sprockets::Railtie.build_environment(Rails.application)
-            full_path = @assets.resolve(path)
-            app_assets_path = Rails.root.join('app', 'assets').to_path
-            if full_path.starts_with? app_assets_path
-              true
-            else
-              false
-            end
-          else
-            false
-          end
-        end    
-
-    # Do not swallow errors in after_commit/after_rollback callbacks.
-    config.active_record.raise_in_transactional_callbacks = true
+    # config.assets.precompile << Proc.new do |path|
+    #       if path =~ /\.(css|js)\z/
+    #         @assets ||= Rails.application.assets || Sprockets::Railtie.build_environment(Rails.application)
+    #         full_path = @assets.resolve(path)
+    #         app_assets_path = Rails.root.join('app', 'assets').to_path
+    #         if full_path.starts_with? app_assets_path
+    #           true
+    #         else
+    #           false
+    #         end
+    #       else
+    #         false
+    #       end
+    #     end    
 
     config.exceptions_app = self.routes
 

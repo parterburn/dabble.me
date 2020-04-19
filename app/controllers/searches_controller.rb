@@ -1,5 +1,5 @@
 class SearchesController < ApplicationController
-  before_filter :authenticate_user!
+  before_action :authenticate_user!
 
   def show
     if current_user.is_free?
@@ -29,10 +29,10 @@ class SearchesController < ApplicationController
   private
 
   def search_params
-    permitted_params.fetch(:search, {}).merge(user: current_user)
+    {term: permitted_term}.merge(user: current_user)
   end
 
-  def permitted_params
-    params.permit(:commit, :utf8, search: :term)
+  def permitted_term
+    params.permit(search: :term).try(:[], 'search').try(:[], 'term')
   end
 end
