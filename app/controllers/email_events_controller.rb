@@ -7,7 +7,7 @@ class EmailEventsController < ApplicationController
     if @user.present? && event_type.in?(["failed", "complained", "unsubscribed"])
       process_bounce
       return head(200)
-    else 
+    else
       return head(406)
     end
   end
@@ -40,7 +40,7 @@ class EmailEventsController < ApplicationController
                             to: "hello@#{ENV['MAIN_DOMAIN']}",
                             subject: "[DABBLE.ME] #{event_type}",
                             body: "#{recipient} (#{@user.plan})\n\n-----------\n\n#{delivery_status}"
-                            ).deliver      
+                            ).deliver
   end
 
   # ========================================
@@ -80,5 +80,5 @@ class EmailEventsController < ApplicationController
       head(:forbidden, text: 'Mailgun signature did not match.')
       false
     end
-  end      
+  end
 end
