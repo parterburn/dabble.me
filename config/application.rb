@@ -55,6 +55,8 @@ module Dabbleme
 
     config.exceptions_app = self.routes
 
+    config.action_mailer.delivery_job = "ActionMailer::MailDeliveryJob"
+
     config.middleware.use Rack::Attack
     config.middleware.use Rack::Affiliates
   end

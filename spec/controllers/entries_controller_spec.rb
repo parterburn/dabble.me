@@ -28,14 +28,14 @@ RSpec.describe EntriesController, type: :controller do
 
   describe 'edit' do
     it 'should redirect to sign in if not logged in' do
-      get :edit, id: entry.id
+      get :edit, params: { id: entry.id }
       expect(response.status).to eq 302
       expect(response).to redirect_to(new_user_session_url)
     end
 
     it 'should edit entry' do
       sign_in user
-      get :edit, id: entry.id
+      get :edit, params: { id: entry.id }
       expect(response.status).to eq 200
       expect(response.body).to have_content(entry.body)
     end
@@ -66,14 +66,14 @@ RSpec.describe EntriesController, type: :controller do
     end
 
     it 'should redirect to sign in if not logged in' do
-      post :create, params
+      post :create, params: params
       expect(response.status).to eq 302
       expect(response).to redirect_to(new_user_session_url)
     end
 
     it 'should not let me create an entry if free user' do
       sign_in user
-      expect { post :create, params }.to_not change { Entry.count }
+      expect { post :create, params: params }.to_not change { Entry.count }
       expect(response.status).to eq 302
       expect(response).to redirect_to(root_path)
     end
@@ -82,7 +82,7 @@ RSpec.describe EntriesController, type: :controller do
       sign_in user
       user.plan = 'PRO PayHere Monthly'
       user.save
-      expect { post :create, params }.to change { Entry.count }.by(1)
+      expect { post :create, params: params }.to change { Entry.count }.by(1)
       expect(response.status).to eq 302
       expect(response).to redirect_to(day_entry_url(year: Entry.last.date.year, month: Entry.last.date.month, day: Entry.last.date.day))
     end    
@@ -90,26 +90,26 @@ RSpec.describe EntriesController, type: :controller do
 
   describe 'destroy' do
     it 'should redirect to sign in if not logged in' do
-      delete :destroy, id: entry.id
+      delete :destroy, params: { id: entry.id }
       expect(response.status).to eq 302
       expect(response).to redirect_to(new_user_session_url)
     end
 
     it "should not delete entries unless user is pro" do
       sign_in user
-      expect { delete :destroy, id: not_my_entry.id }.to_not change { Entry.count }
+      expect { delete :destroy, params: { id: not_my_entry.id } }.to_not change { Entry.count }
     end
 
     it 'should delete pro user entries' do
       sign_in user
       user.plan = 'PRO PayHere Monthly'
       user.save      
-      expect { delete :destroy, id: entry.id }.to change { Entry.count }.by(-1)
+      expect { delete :destroy, params: { id: entry.id } }.to change { Entry.count }.by(-1)
     end    
 
     it "should not delete entries that are not the user's" do
       sign_in user
-      expect { delete :destroy, id: not_my_entry.id }.to_not change { Entry.count }
+      expect { delete :destroy, params: { id: not_my_entry.id } }.to_not change { Entry.count }
     end
   end
 
@@ -147,7 +147,7 @@ RSpec.describe EntriesController, type: :controller do
       sign_in user
       user.plan = 'PRO PayHere Monthly'
       user.save      
-      expect { delete :destroy, id: entry.id }.to change { Entry.count }.by(-1)
+      expect { delete :destroy, params: { id: entry.id } }.to change { Entry.count }.by(-1)
       get :latest
       expect(response.status).to eq 200
       expect(response.body).to have_content("Reply to the email from Dabble Me and you'll see it here.")

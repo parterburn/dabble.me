@@ -1,6 +1,10 @@
 language: ruby
+install:
+  - gem uninstall bundler
+  - gem install bundler --version '1.17.2'
 dist: trusty
 addons:
   postgresql: "9.6"
 before_script:
   - psql -c 'create database dabbleme_test;' -U postgres
+script: "rake"

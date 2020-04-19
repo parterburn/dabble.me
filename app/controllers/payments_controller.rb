@@ -160,7 +160,7 @@ class PaymentsController < ApplicationController
       # duplicate, don't send
     elsif @user.present?
       Payment.create(user_id: @user.id, comments: "Gumroad #{frequency} from #{params[:email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
-      begin        
+      begin
         UserMailer.thanks_for_paying(@user).deliver_later if @user.payments.count == 1
       rescue StandardError => e
         Rails.logger.warn("Error sending Gumroad thanks_for_paying email email to #{@user.email}: #{e}")
