@@ -1,18 +1,8 @@
 class EmailEventsController < ApplicationController
-  skip_before_action :verify_authenticity_token, only: [:process]
-  before_action      :authenticate_mailgun_request!, only: [:process]
+  skip_before_action :verify_authenticity_token, only: [:create]
+  before_action      :authenticate_mailgun_request!, only: [:create]
 
-  def process
-    p "*"*100
-    p "MAILGUN EMAIL EVENTS"
-    p params
-    p "EVENT_TYPE: #{event_type}"
-    p "RECIPIENT: #{recipient}"
-    p "DELIVERY STATUS: #{delivery_status}"
-    p "MAILGUN PARAMS: #{mailgun_params}"
-    p "EVENT PARAMS: #{event_params}"
-    p "LEGIT: #{legit_request?}"
-    p "*"*100
+  def create
     @user = User.where(email: recipient).first
     if @user.present? && event_type.in?(["failed", "complained", "unsubscribed"])
       process_bounce
