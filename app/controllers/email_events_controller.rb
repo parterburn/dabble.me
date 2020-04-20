@@ -1,9 +1,9 @@
 class EmailEventsController < ApplicationController
-  skip_before_action :verify_authenticity_token, raise: false
+  skip_before_action :verify_authenticity_token, only: [:process]
   before_action      :authenticate_mailgun_request!, only: [:process]
 
   def process
-    @user = User.find_by(email: recipient)
+    @user = User.where(email: recipient).first
     if @user.present? && event_type.in?(["failed", "complained", "unsubscribed"])
       process_bounce
       return head(200)
