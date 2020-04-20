@@ -1,4 +1,7 @@
 language: ruby
+before_install:
+  - gem uninstall bundler
+  - gem install bundler --version '1.17.2'
 dist: trusty
 addons:
   postgresql: "9.6"

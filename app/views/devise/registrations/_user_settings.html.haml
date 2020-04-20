@@ -52,26 +52,25 @@
     %br
 
   .col-md-8.col-md-offset-2
-    %div{style: "margin-bottom: 5px;"}
-      = f.check_box :send_past_entry
-      = f.label :send_past_entry, "Include past entries in emails and prevent entries that have:"
-    - if @user.is_pro?
-      = f.text_field :past_filter, class: "form-control", placeholder: "Comma-separated words to prevent showing up in past entries.", style: "margin-left: 5%; width: 90%;"
-      - if @user.past_filter.present?
-        %small
-          = link_to pluralize(current_user.past_filter_entry_ids.length, "entry"), search_path(search: { term: current_user.past_filter.split(',').map(&:strip).join(" OR ") })
-          being filtered out of past entries.
-        %br
-    - else
-      = f.text_field :past_filter, class: "form-control disabled", placeholder: "Comma-separated words to prevent in past entries", readonly: "readonly", value: "", rel: "tooltip", title: "Upgrade to PRO for this feature."
+    .well{style: 'background-color: hsla(40, 33%, 96%, 1); padding: 15px 20px;'}
+      %div{style: "margin-bottom: 5px;"}
+        = f.check_box :send_past_entry
+        = f.label :send_past_entry, "Include past entries in emails and prevent entries that have:"
+      - if @user.is_pro?
+        = f.text_field :past_filter, class: "form-control", placeholder: "Comma-separated words to prevent showing up in past entries."
+        - if @user.past_filter.present?
+          %small
+            = link_to pluralize(current_user.past_filter_entry_ids.length, "entry"), search_path(search: { term: current_user.past_filter.split(',').map(&:strip).join(" OR ") })
+            being filtered out of past entries.
+          %br
+      - else
+        = f.text_field :past_filter, class: "form-control disabled", placeholder: "Comma-separated words to prevent in past entries", readonly: "readonly", value: "", rel: "tooltip", title: "Upgrade to PRO for this feature."
 
-    - if @user.is_pro? && @user.entries.where("date < (?)", 1.year.ago).any?
-      %div{style: "margin-top: 8px; margin-left: 5%;"}
-        = f.check_box :way_back_past_entries
-        = f.label :way_back_past_entries, "Include past entries that are over a year old", style: "font-weight: normal;"
-      %br
+      - if @user.is_pro? && @user.entries.where("date < (?)", 1.year.ago).any?
+        %div{style: "margin-top: 8px;"}
+          = f.check_box :way_back_past_entries
+          = f.label :way_back_past_entries, "Include past entries that are over a year old", style: "font-weight: normal;"
 
-    %br
   .clearfix
 
   .col-md-8.col-md-offset-2

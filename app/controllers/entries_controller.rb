@@ -2,7 +2,7 @@
 class EntriesController < ApplicationController
   before_action :check_mailchimp_referrer, only: [:review]
   before_action :authenticate_user!
-  before_filter :set_entry, :require_entry_permission, only: [:show, :edit, :update, :destroy]
+  before_action :set_entry, :require_entry_permission, only: [:show, :edit, :update, :destroy]
 
   def index
     if params[:group] == 'photos'
@@ -24,14 +24,16 @@ class EntriesController < ApplicationController
         return redirect_to day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day)
       end
       @title = "Entries from #{params[:group]}"
-    else
+    elsif params[:format] != "json"
       @entries = current_user.entries.includes(:inspiration)
       @title = 'All Entries'
     end
 
-    @entries = Kaminari.paginate_array(@entries).page(params[:page]).per(params[:per])
-
-    redirect_to latest_entry_path and return if @entries.blank?
+    if @entries.present?
+      @entries = Kaminari.paginate_array(@entries).page(params[:page]).per(params[:per])
+    elsif params[:format] != "json"
+      redirect_to latest_entry_path and return
+    end
 
     respond_to do |format|
       format.json {

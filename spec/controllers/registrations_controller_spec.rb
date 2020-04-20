@@ -24,13 +24,13 @@ RSpec.describe RegistrationsController, type: :controller do
     end
 
     it 'should let user edit if visiting /settings/user_key without signing in' do
-      get :settings, user_key: user.user_key
+      get :settings, params: { user_key: user.user_key }
       expect(response.status).to eq 200
       expect(response.body).to have_css('input[type=checkbox][disabled]', count: 6)
     end
 
     it 'should let paid user edit all settings' do
-      get :settings, user_key: paid_user.user_key
+      get :settings, params: { user_key: paid_user.user_key }
       expect(response.status).to eq 200
       expect(response.body).to have_css('input[type=checkbox][disabled]', count: 0)
     end
@@ -45,7 +45,7 @@ RSpec.describe RegistrationsController, type: :controller do
           send_past_entry: '1'
         }
       }      
-      post :unsubscribe, params
+      post :unsubscribe, params: params, as: :json
       expect(response.status).to eq 302
       expect(response).to redirect_to(settings_url(user.user_key))
       expect(user.reload.frequency.count).to eq 0
@@ -61,7 +61,7 @@ RSpec.describe RegistrationsController, type: :controller do
           send_past_entry: '1'
         }
       }
-      post :unsubscribe, params
+      post :unsubscribe, params: params, as: :json
       expect(response.status).to eq 302
       expect(response).to redirect_to(settings_url(paid_user.user_key))
       expect(paid_user.reload.frequency).to eq ['Mon', 'Wed', 'Fri']
@@ -80,7 +80,7 @@ RSpec.describe RegistrationsController, type: :controller do
           send_past_entry: '1'
         }
       }
-      post :unsubscribe, params
+      post :unsubscribe, params: params, as: :json
       expect(response.status).to eq 302
       expect(response).to redirect_to(settings_url(user.user_key))
       expect(user.reload.frequency).to eq ['Mon']
@@ -109,7 +109,7 @@ RSpec.describe RegistrationsController, type: :controller do
     end
 
     it 'should redirect to root url if not logged in' do
-      post :update, params
+      post :update, { params: params }
       expect(response.status).to eq 302
       expect(response).to redirect_to(new_user_session_url)
     end
@@ -117,7 +117,7 @@ RSpec.describe RegistrationsController, type: :controller do
     it 'should allow user updates to basic info' do
       sign_in user
       expect(user.frequency.count).to eq 1
-      post :update, params
+      post :update, { params: params }
       expect(response.status).to eq 302
       expect(response).to redirect_to(edit_user_registration_url)
       expect(user.reload.frequency.count).to eq 1
@@ -132,7 +132,7 @@ RSpec.describe RegistrationsController, type: :controller do
       old_email = user.email
       old_full_name = user.full_name
       expect(user.frequency.count).to eq 1
-      post :update, params.deep_merge(user: { email: Faker::Internet.email, current_password: 'wrong' })
+      post :update, { params: params.deep_merge(user: { email: Faker::Internet.email, current_password: 'wrong' }) }
       expect(response.status).to eq 302
       expect(response).to redirect_to(edit_user_registration_url)
       expect(user.reload.frequency).to eq ['Sun']
@@ -145,7 +145,7 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(paid_user.frequency.count).to eq 1
       old_password = paid_user.encrypted_password
       email = Faker::Internet.email
-      post :update, params.deep_merge(user: { email: email, password: 'blueblue', password_confirmation: 'blueblue', current_password: paid_user.password })
+      post :update, params: params.deep_merge(user: { email: email, password: 'blueblue', password_confirmation: 'blueblue', current_password: paid_user.password }), as: :json
       expect(response.status).to eq 302
       expect(response).to redirect_to(edit_user_registration_url)
       expect(paid_user.reload.frequency).to eq ['Sun', 'Mon', 'Tue']
@@ -159,7 +159,7 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(user.frequency.count).to eq 1
       old_password = user.encrypted_password
       email = Faker::Internet.email
-      post :update, params.deep_merge(user: { email: email, password: 'blueblue', password_confirmation: 'blueblue', current_password: user.password })
+      post :update, params: params.deep_merge(user: { email: email, password: 'blueblue', password_confirmation: 'blueblue', current_password: user.password }), as: :json
       expect(response.status).to eq 302
       expect(response).to redirect_to(edit_user_registration_url)
       expect(user.reload.frequency).to eq ['Sun']
@@ -181,7 +181,7 @@ RSpec.describe RegistrationsController, type: :controller do
     it 'should be able to create free user and send that user an email' do
       email = Faker::Internet.email
       new_password = Faker::Internet.password(8)
-      post :create, { user: { email: email, password: new_password, password_confirmation: new_password } }
+      post :create, params: { user: { email: email, password: new_password, password_confirmation: new_password } }
       expect(response.status).to eq 302
       expect(response).to redirect_to(root_url)
 
@@ -216,7 +216,7 @@ RSpec.describe RegistrationsController, type: :controller do
     it 'should be able to create paid user and send that user an email with basic formatting' do
       email = Faker::Internet.email
       new_password = Faker::Internet.password(8)
-      post :create, { user: { email: email, password: new_password, password_confirmation: new_password } }
+      post :create, params: { user: { email: email, password: new_password, password_confirmation: new_password } }
       new_paid_user = User.last
       new_paid_user.plan = 'PRO Monthly Gumroad'
       new_paid_user.save
