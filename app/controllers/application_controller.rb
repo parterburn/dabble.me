@@ -43,19 +43,6 @@ class ApplicationController < ActionController::Base
 end
 
 if RUBY_VERSION>='2.6.0'
-  if Rails.version < '5'
-    class ActionController::TestResponse < ActionDispatch::TestResponse
-      def recycle!
-        # hack to avoid MonitorMixin double-initialize error:
-        @mon_mutex_owner_object_id = nil
-        @mon_mutex = nil
-        initialize
-      end
-    end
-  else
-    puts "Monkeypatch for ActionController::TestResponse no longer needed"
-  end
-
   def handle_timeout(exception)
     Rails.logger.warn("Timeout Error: #{params&.to_hash&.to_s}")
     render "errors/timeout"
