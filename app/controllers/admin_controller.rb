@@ -1,7 +1,6 @@
 class AdminController < ApplicationController
-  before_action :authenticate_user!, except: [:mailgun]
-  before_action :authenticate_admin!, except: [:mailgun]
-  skip_before_action :verify_authenticity_token, only: [:mailgun]
+  before_action :authenticate_user!
+  before_action :authenticate_admin! 
 
   def users
     if params[:email].present?
