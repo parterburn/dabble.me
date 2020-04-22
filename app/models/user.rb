@@ -1,13 +1,16 @@
 class User < ActiveRecord::Base
   # Include default devise modules. Others available are:
-  # :confirmable, :lockable, :timeoutable and :omniauthable
-  devise :database_authenticatable, :registerable,
+  # :confirmable, :timeoutable and :omniauthable
+  devise :database_authenticatable, :registerable, :lockable,
          :recoverable, :rememberable, :trackable, :validatable, :paranoid_verification
 
   randomized_field :user_key, length: 18, prefix: 'u'
 
   has_many :entries, dependent: :destroy
+  has_many :hashtags, dependent: :destroy
   has_many :payments
+
+  accepts_nested_attributes_for :hashtags, allow_destroy: true, :reject_if => proc { |att| att[:tag].blank? || att[:date].blank? }
 
   serialize :frequency, Array
 
@@ -178,6 +181,30 @@ class User < ActiveRecord::Base
 
   def remember_me
     super.present? ? super : true
+  end
+
+  alias_method :original_hashtags, :hashtags
+  def hashtags
+    @hashtags ||= begin
+      original_hashtags.build
+      original_hashtags.to_a
+    end
+  end
+
+  def hashtags_attributes=(value)
+    original_hashtags.each_with_index do |h, i|
+      if value[i.to_s]["tag"].blank?
+        h.destroy
+      else
+        h.update(tag: value[i.to_s]["tag"], date: Date.parse("#{value[i.to_s]["date(1i)"]}-#{value[i.to_s]["date(2i)"]}-#{value[i.to_s]["date(3i)"]}"))
+      end
+    end
+
+    value.each do |k, v|
+      next unless k.to_i >= original_hashtags.count
+      next unless v["tag"].present? && (d = "#{v["date(1i)"]}-#{v["date(2i)"]}-#{v["date(3i)"]}").present?
+      original_hashtags.find_or_create_by(tag: v["tag"], date: Date.parse(d))
+    end
   end
 
   private

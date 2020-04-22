@@ -28,7 +28,7 @@ class ApplicationController < ActionController::Base
   def configure_permitted_parameters
     added_attrs = [:first_name, :last_name, :email, :password, :password_confirmation]
     devise_parameter_sanitizer.permit :sign_up, keys: added_attrs
-    devise_parameter_sanitizer.permit :account_update, keys: added_attrs + [{ frequency: [] }, :way_back_past_entries, :send_past_entry, :send_time, :send_timezone, :past_filter, :current_password]
+    devise_parameter_sanitizer.permit :account_update, keys: added_attrs + [{ frequency: [] }, :way_back_past_entries, :send_past_entry, :send_time, :send_timezone, :past_filter, :current_password, hashtags_attributes: [:tag, :date]]
   end  
 
   def js_action

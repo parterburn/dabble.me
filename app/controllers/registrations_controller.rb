@@ -39,10 +39,10 @@ class RegistrationsController < Devise::RegistrationsController
       set_flash_message :notice, :updated
       # Sign in the user bypassing validation in case their password changed
       bypass_sign_in @user
-      redirect_to edit_user_registration_path
+      redirect_to edit_user_registration_path(hashtags: user_params[:hashtags])
     else
       flash[:alert] = flash[:alert].to_a.concat resource.errors.full_messages
-      redirect_to edit_user_registration_path
+      redirect_to edit_user_registration_path(hashtags: user_params[:hashtags])
     end
   end
 
@@ -115,6 +115,6 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   def user_params
-    params.require(:user).permit(:first_name, :last_name, :send_time, :send_timezone, :way_back_past_entries, :send_past_entry, :past_filter, :email, :password, :password_confirmation)
+    params.require(:user).permit(:hashtags, :first_name, :last_name, :send_time, :send_timezone, :way_back_past_entries, :send_past_entry, :past_filter, :email, :password, :password_confirmation, hashtags_attributes: [:tag, :date])
   end
 end

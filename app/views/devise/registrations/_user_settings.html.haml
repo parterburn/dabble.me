@@ -71,6 +71,17 @@
           = f.check_box :way_back_past_entries
           = f.label :way_back_past_entries, "Include past entries that are over a year old", style: "font-weight: normal;"
 
+      - if @user.is_pro? && params[:hashtags].present?
+        %div{style: "margin-top: 5px;"}
+          = f.hidden_field :hashtags
+          %strong Hashtag along with date to associate
+          %br
+          = f.fields_for :hashtags do |s|
+            = "#"
+            = s.text_field :tag, placeholder: "Anniversary"
+            = s.date_select :date
+            %br
+
   .clearfix
 
   .col-md-8.col-md-offset-2

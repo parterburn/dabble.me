@@ -25,7 +25,10 @@
       %strong.small Tags: 
       - hashtags.each do |tag|
         = link_to search_url(host: ENV['MAIN_DOMAIN'], search: {term: "##{tag}"}), class: "noline" do
-          %span.label.label-primary= tag
+          - if (date = current_user.hashtags.select{|h| h.tag == tag}.first&.date).present?
+            %span.label.label-primary{rel: "tooltip", title: "#{time_ago_in_words(date).humanize} since" }= tag
+          - else
+            %span.label.label-primary= tag
 - if entry.image_url_cdn.present?
   .pictureFrame
     =link_to entry.image_url_cdn, target: "_blank" do
