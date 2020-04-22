@@ -16,13 +16,11 @@ class SearchesController < ApplicationController
     end
 
     if search_params[:term].blank?
-      hashtagged_entries = current_user.entries.where("entries.body ~ '(#[a-zA-Z0-9_]+)'")
+      user_tags = current_user.used_hashtags(current_user.entries, false)
       @hashtags = []
-      hashtagged_entries.each do |entry|
-        entry.body.scan(/#([0-9]+[a-zA-Z_]+\w*|[a-zA-Z_]+\w*)/) { |m| @hashtags << m[0] }
+      if user_tags.present?
+        @hashtags = Hash[*user_tags.inject(Hash.new(0)) { |h,v| h[v] += 1; h }.sort_by{|k,v| v}.reverse.flatten]
       end
-      @hashtags.compact!
-      @hashtags = @hashtags.map{|i| i.downcase}.uniq.sort_by!{ |m| m.downcase }.inject({}) {|accu, uni| accu.merge({ uni => @hashtags.select{|i| i.downcase == uni.downcase } })}
     end
   end
 

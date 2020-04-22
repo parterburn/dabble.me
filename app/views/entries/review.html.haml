@@ -115,6 +115,20 @@
             %i.fa.fa-twitter
         .clearfix
 
+
+  - hashtags = Hash[*current_user.used_hashtags(@entries, true).inject(Hash.new(0)) { |h,v| h[v] += 1; h }.sort_by{|k,v| v}.reverse.flatten]
+  - if hashtags.present?
+    .col-md-8.col-md-offset-2.well
+      .center{class: add_class}
+        .s-entry-date
+          %h2 Most Frequent Hashtags
+        .s-review-details
+          - hashtags.first(25).each do |k, v|
+            %h3
+              = k
+              %span.middot= "&middot; #{v}".html_safe
+          .clearfix
+
   .col-md-8.col-md-offset-2.well
     .center{class: add_class}
       .s-entry-date

@@ -61,10 +61,10 @@
             %small
               %strong YOUR TAGS
           .hashtags
-            - @hashtags.each do |hashtag|
-              - class_size = (hashtag[1].size.to_f / @hashtags.size * (3 - 1)).round
+            - @hashtags.each do |k, v|
+              - class_size = (v.to_f / @hashtags.count * (3 - 1)).round
               - add_class = current_user.is_free? ? "s-hashtag-size-0" : "s-hashtag-size-#{class_size}"
-              =link_to hashtag[0], search_path(search: { term: "##{hashtag[0]}" }), class: "s-hashtag #{add_class}"
+              =link_to k, search_path(search: { term: "##{k}" }), class: "s-hashtag #{add_class}"
         - else
           - if current_user.is_free?
             Pro users can use

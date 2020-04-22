@@ -206,6 +206,15 @@ class User < ActiveRecord::Base
     end
   end
 
+  def used_hashtags(entries, unique)
+    hashtags = entries.where("entries.body ~ '(#[a-zA-Z0-9_]+)'").map(&:hashtags).reject(&:blank?).flatten.map(&:downcase)
+    if unique
+      hashtags.group_by{|x| x}.sort_by{|k, v| -v.size}.map(&:first)
+    else 
+      hashtags
+    end
+  end
+
   private
 
   def restrict_free_frequency
