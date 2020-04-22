@@ -26,7 +26,7 @@
       - hashtags.each do |tag|
         = link_to search_url(host: ENV['MAIN_DOMAIN'], search: {term: "##{tag}"}), class: "noline" do
           - if (date = current_user.hashtags.select{|h| h.tag.downcase == tag.downcase}.first&.date).present?
-            %span.label.label-primary{rel: "tooltip", title: "#{time_ago_in_words(date).humanize} since" }= tag
+            %span.label.label-primary{rel: "tooltip", title: "#{distance_of_time_in_words(date, Time.now, false, highest_measures: 2)} since" }= tag
           - else
             %span.label.label-primary= tag
 - if entry.image_url_cdn.present?

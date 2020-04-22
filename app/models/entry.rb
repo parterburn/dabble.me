@@ -72,8 +72,7 @@ class Entry < ActiveRecord::Base
     elsif now_for_user.month == self.date.month && now_for_user.day - 7 == self.date.day && now_for_user.year == self.date.year
       "exactly 1 week"
     else
-      in_words = distance_of_time_in_words(self.date,now_for_user)
-      in_words.to_s.include?("over") ? "exactly #{number_with_delimiter((now_for_user - self.date).to_i / 1.day)} days" : in_words
+      in_words = distance_of_time_in_words(self.date, now_for_user, false, highest_measures: 2)
     end
   end
 
