@@ -23,14 +23,13 @@
       - if (hashtags = @random_entry.hashtags).present?
         %p
           %i
-            Tags:
             - h = []
             - hashtags.each do |tag|
               - add_timeframe = ""
-              - if (date = @user.hashtags.select{|h| h.tag == tag}.first&.date).present?
+              - if (date = @user.hashtags.select{|h| h.tag.downcase == tag.downcase}.first&.date).present?
                 - add_timeframe = " <em><small>(#{time_ago_in_words(date).humanize} since)</small></em>"
               h << link_to(tag, search_url(host: ENV['MAIN_DOMAIN'], search: {term: "##{tag}"})) + add_timeframe
-            = h.join(", ").html_safe
+            = "Tags: #{h.join(", ").html_safe}"
       - if @random_entry_image_url.present?
         %p
           =link_to image_tag(@random_entry_image_url, style: 'max-width: 100%; border-radius: 4px;'), @random_entry_image_url
