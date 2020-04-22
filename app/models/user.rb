@@ -1,7 +1,7 @@
 class User < ActiveRecord::Base
   # Include default devise modules. Others available are:
-  # :confirmable, :timeoutable and :omniauthable
-  devise :database_authenticatable, :registerable, :lockable,
+  # :confirmable, :timeoutable and :omniauthable, :lockable
+  devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :trackable, :validatable, :paranoid_verification
 
   randomized_field :user_key, length: 18, prefix: 'u'
