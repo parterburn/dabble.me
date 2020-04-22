@@ -19,7 +19,7 @@
       max: tomorrow
     });
 
-    $('.pickadate').pickadate();
+    $('.pickadate').pickadate();  
 
     Offline.on("down", function () {
         $("form input[type=submit]").attr("disabled", "disabled").addClass("disabled");

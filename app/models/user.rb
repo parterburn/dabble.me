@@ -193,15 +193,15 @@ class User < ActiveRecord::Base
 
   def hashtags_attributes=(value)
     new_record = value[original_hashtags.count.to_s]
-    if new_record["tag"].present? && (d = "#{new_record["date(1i)"]}-#{new_record["date(2i)"]}-#{new_record["date(3i)"]}").present?
-      original_hashtags.find_or_create_by(tag: new_record["tag"], date: Date.parse(d))
+    if new_record["tag"].present? && new_record["date"].present?
+      original_hashtags.find_or_create_by(tag: new_record["tag"], date: Date.parse(new_record["date"]))
     end
 
     original_hashtags.each_with_index do |h, i|
-      if value[i.to_s]["tag"].blank?
+      if value[i.to_s]["tag"].blank? || value[i.to_s]["date"].blank?
         h.destroy
       else
-        h.update(tag: value[i.to_s]["tag"], date: Date.parse("#{value[i.to_s]["date(1i)"]}-#{value[i.to_s]["date(2i)"]}-#{value[i.to_s]["date(3i)"]}"))
+        h.update(tag: value[i.to_s]["tag"], date: Date.parse(value[i.to_s]["date"]))
       end
     end
   end

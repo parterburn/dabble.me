@@ -10,6 +10,17 @@
       }
     });
 
+    var tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    $.extend($.fn.pickadate.defaults, {
+      format: 'mmmm d, yyyy',
+      selectYears: true,
+      selectMonths: true,
+      max: tomorrow
+    });
+
+    $('.pickadate').pickadate();      
+
     $('form').submit(function(){
       $(this).find('input[type=submit]').prop('disabled', true);
       $(this).find('input[type=submit]').addClass('disabled');

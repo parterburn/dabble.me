@@ -71,15 +71,15 @@
           = f.check_box :way_back_past_entries
           = f.label :way_back_past_entries, "Include past entries that are over a year old", style: "font-weight: normal;"
 
-      - if @user.is_pro? && params[:hashtags].present?
+      - if @user.is_pro? && params[:hashtag].present?
         %div{style: "margin-top: 5px;"}
-          = f.hidden_field :hashtags
+          = f.hidden_field :hashtag, value: true
           %strong Hashtag along with date to associate
           %br
           = f.fields_for :hashtags do |s|
             = "#"
             = s.text_field :tag, placeholder: "Anniversary"
-            = s.date_select :date
+            = s.text_field :date, value: s.object.date_format_short, placeholder: "October 11 2014", class: "pickadate"
             %br
 
   .clearfix
