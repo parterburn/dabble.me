@@ -28,7 +28,7 @@
               - add_timeframe = ""
               - if (date = @user.hashtags.select{|h| h.tag&.downcase == tag.downcase}.first&.date).present?
                 - add_timeframe = " <em><small>(#{distance_of_time_in_words(date, @random_entry.date, false, highest_measures: 2)} since)</small></em>"
-              - h << link_to(tag, search_url(host: ENV['MAIN_DOMAIN'], search: {term: "##{tag}"})) + add_timeframe
+              - h << (link_to(tag, search_url(host: ENV['MAIN_DOMAIN'], search: {term: "##{tag}"})) + add_timeframe).html_safe
             = "Tags: #{h.join(", ").html_safe}"
       - if @random_entry_image_url.present?
         %p
