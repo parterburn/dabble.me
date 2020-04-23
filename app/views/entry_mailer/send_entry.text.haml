@@ -17,7 +17,7 @@
     - hashtags.each do |tag|
       - add_timeframe = ""
       - if (date = @user.hashtags.select{|h| h.tag&.downcase == tag.downcase}.first&.date).present?
-        - add_timeframe = " (#{distance_of_time_in_words(date, @random_entry.date, false, highest_measures: 2)} since)"
+        - add_timeframe = " (#{distance_of_time_in_words(date, @random_entry.date, false, except: [:minutes, :hours, :seconds])} since)"
       - h << tag + add_timeframe
     = "Tags #{h.join(", ")}"
     \ 
