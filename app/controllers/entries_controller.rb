@@ -130,8 +130,10 @@ class EntriesController < ApplicationController
       # existing entry exists, so add to it
       @existing_entry.body += "<hr>#{params[:entry][:entry]}"
       @existing_entry.inspiration_id = params[:entry][:inspiration_id] if params[:entry][:inspiration_id].present?
-      if @existing_entry.image_url_cdn.blank? && params[:entry][:image].present?
-        @existing_entry.image = params[:entry][:image]
+      if @existing_entry.image_url_cdn.blank? && @entry.image.present?
+        @existing_entry.image = @entry.image
+      elsif @entry.image.present?
+        @existing_entry.body += "<br><a href='#{@entry.image_url_cdn}'><img src='#{@entry.image_url_cdn}'></a>"
       end
       if @existing_entry.save
         @entry.delete
@@ -146,7 +148,6 @@ class EntriesController < ApplicationController
       flash[:notice] = 'Entry deleted!'
       redirect_back_or_to entries_path
     else
-      params.deep_merge!(entry: { remote_image_url: @entry.image.url}) unless @entry.date == Date.parse(entry_params[:date])
       if @entry.update(entry_params)
         track_ga_event('Update')
         flash[:notice] = "Entry successfully updated!"
