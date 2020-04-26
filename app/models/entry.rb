@@ -57,7 +57,7 @@ class Entry < ActiveRecord::Base
       embeds << "<a href=\"https://open.spotify.com/track/#{song['spotify_id']}\">#{song['artists'].to_sentence} - #{song['title']}</a>&nbsp;"
     end
     if embeds.present?
-      "<p><i>Songs: #{embeds.to_sentence}</i></p>".html_safe
+      "<p><i>🎶 Songs: #{embeds.to_sentence}</i></p>".html_safe
     end
   end  
 
