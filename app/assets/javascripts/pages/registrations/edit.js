@@ -16,7 +16,8 @@
       format: 'mmmm d, yyyy',
       selectYears: true,
       selectMonths: true,
-      max: tomorrow
+      max: tomorrow,
+      selectYears: 20
     });
 
     $('.pickadate').pickadate();      

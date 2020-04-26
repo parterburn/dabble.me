@@ -186,22 +186,29 @@ class User < ActiveRecord::Base
   alias_method :original_hashtags, :hashtags
   def hashtags
     @hashtags ||= begin
-      original_hashtags.build
+      used_hashtags(entries, true).first(5).each do |h|
+        next if h.downcase.in?(original_hashtags.pluck(:tag)&.map(&:downcase))
+        original_hashtags.build(tag: h)
+      end
+      original_hashtags.build      
       original_hashtags.to_a
     end
   end
 
   def hashtags_attributes=(value)
-    new_record = value[original_hashtags.count.to_s]
-    if new_record["tag"].present? && new_record["date"].present?
-      original_hashtags.find_or_create_by(tag: new_record["tag"], date: Date.parse(new_record["date"]))
-    end
-
-    original_hashtags.each_with_index do |h, i|
-      if value[i.to_s]["tag"].blank? || value[i.to_s]["date"].blank?
-        h.destroy
-      else
-        h.update(tag: value[i.to_s]["tag"], date: Date.parse(value[i.to_s]["date"]))
+    (0..value.count-1).each do |i|
+      record = value[i.to_s]
+      if record["tag"].present?
+        t = original_hashtags.where('lower(tag) = ?', record["tag"].downcase).first
+        if t.present?
+          if record["date"].blank?
+            h.destroy
+          else
+            t.update(date: Date.parse(record["date"]))
+          end
+        elsif record["date"].present?
+          original_hashtags.create(tag: record["tag"], date: Date.parse(record["date"]))
+        end
       end
     end
   end

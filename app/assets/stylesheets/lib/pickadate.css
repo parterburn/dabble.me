@@ -8,13 +8,14 @@
   font-size: 16px;
   text-align: left;
   line-height: 1.2;
-  color: #000000;
+  color: #000;
   position: absolute;
   z-index: 10000;
   -webkit-user-select: none;
      -moz-user-select: none;
       -ms-user-select: none;
           user-select: none;
+  outline: none;
 }
 /**
  * The picker input element.
@@ -26,7 +27,7 @@
  * When the picker is opened, the input element is “activated”.
  */
 .picker__input.picker__input--active {
-  border-color: #649cc7;
+  border-color: #0089ec;
 }
 /**
  * The holder is the only “scrollable” top-level container element.
@@ -53,16 +54,14 @@
   bottom: 0;
   left: 0;
   right: 0;
-  -webkit-transform: translateY(100%);
-      -ms-transform: translateY(100%);
-          transform: translateY(100%);
+  -ms-transform: translateY(100%);
+      transform: translateY(100%);
 }
 /**
  * The holder should overlay the entire screen.
  */
 .picker__holder {
   position: fixed;
-  transition: background 0.15s ease-out, -webkit-transform 0s 0.15s;
   transition: background 0.15s ease-out, transform 0s 0.15s;
   -webkit-backface-visibility: hidden;
 }
@@ -111,7 +110,7 @@
  * The box contains all the picker contents.
  */
 .picker__box {
-  background: #ffffff;
+  background: #fff;
   display: table-cell;
   vertical-align: middle;
 }
@@ -124,7 +123,7 @@
   .picker__box {
     display: block;
     font-size: 1.33em;
-    border: 1px solid #777777;
+    border: 1px solid #777;
     border-top-color: #898989;
     border-bottom-width: 0;
     border-radius: 5px 5px 0 0;
@@ -142,9 +141,8 @@
  * When the picker opens...
  */
 .picker--opened .picker__holder {
-  -webkit-transform: translateY(0);
-      -ms-transform: translateY(0);
-          transform: translateY(0);
+  -ms-transform: translateY(0);
+      transform: translateY(0);
   background: transparent;
   -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#1E000000,endColorstr=#1E000000)";
   zoom: 1;
@@ -152,9 +150,8 @@
   transition: background 0.15s ease-out;
 }
 .picker--opened .picker__frame {
-  -webkit-transform: translateY(0);
-      -ms-transform: translateY(0);
-          transform: translateY(0);
+  -ms-transform: translateY(0);
+      transform: translateY(0);
   -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
   filter: alpha(opacity=100);
   -moz-opacity: 1;
@@ -195,7 +192,7 @@
   margin-right: .25em;
 }
 .picker__year {
-  color: #999999;
+  color: #999;
   font-size: .8em;
   font-style: italic;
 }
@@ -224,7 +221,7 @@
 }
 .picker__select--month:focus,
 .picker__select--year:focus {
-  border-color: #649cc7;
+  border-color: #0089ec;
 }
 /**
  * The month navigation buttons.
@@ -267,7 +264,7 @@
   content: " ";
   border-top: .5em solid transparent;
   border-bottom: .5em solid transparent;
-  border-right: 0.75em solid #000000;
+  border-right: 0.75em solid #000;
   width: 0;
   height: 0;
   display: block;
@@ -275,12 +272,12 @@
 }
 .picker__nav--next:before {
   border-right: 0;
-  border-left: 0.75em solid #000000;
+  border-left: 0.75em solid #000;
 }
 .picker__nav--prev:hover,
 .picker__nav--next:hover {
   cursor: pointer;
-  color: #000000;
+  color: #000;
   background: #b1dcfb;
 }
 .picker__nav--disabled,
@@ -321,7 +318,7 @@
   width: 14.285714286%;
   font-size: .75em;
   padding-bottom: .25em;
-  color: #999999;
+  color: #999;
   font-weight: 500;
   /* Increase the spacing a tad */
 }
@@ -352,43 +349,43 @@
   border-left: .5em solid transparent;
 }
 .picker__day--disabled:before {
-  border-top-color: #aaaaaa;
+  border-top-color: #aaa;
 }
 .picker__day--outfocus {
-  color: #dddddd;
+  color: #ddd;
 }
 .picker__day--infocus:hover,
 .picker__day--outfocus:hover {
   cursor: pointer;
-  color: #000000;
+  color: #000;
   background: #b1dcfb;
 }
 .picker__day--highlighted {
-  border-color: #649cc7;
+  border-color: #0089ec;
 }
 .picker__day--highlighted:hover,
 .picker--focused .picker__day--highlighted {
   cursor: pointer;
-  color: #000000;
+  color: #000;
   background: #b1dcfb;
 }
 .picker__day--selected,
 .picker__day--selected:hover,
 .picker--focused .picker__day--selected {
-  background: #649cc7;
-  color: #ffffff;
+  background: #0089ec;
+  color: #fff;
 }
 .picker__day--disabled,
 .picker__day--disabled:hover,
 .picker--focused .picker__day--disabled {
   background: #f5f5f5;
   border-color: #f5f5f5;
-  color: #dddddd;
+  color: #ddd;
   cursor: default;
 }
 .picker__day--highlighted.picker__day--disabled,
 .picker__day--highlighted.picker__day--disabled:hover {
-  background: #bbbbbb;
+  background: #bbb;
 }
 /**
  * The footer containing the "today", "clear", and "close" buttons.
@@ -399,8 +396,8 @@
 .picker__button--today,
 .picker__button--clear,
 .picker__button--close {
-  border: 1px solid #ffffff;
-  background: #ffffff;
+  border: 1px solid #fff;
+  background: #fff;
   font-size: .8em;
   padding: .66em 0;
   font-weight: bold;
@@ -412,7 +409,7 @@
 .picker__button--clear:hover,
 .picker__button--close:hover {
   cursor: pointer;
-  color: #000000;
+  color: #000;
   background: #b1dcfb;
   border-bottom-color: #b1dcfb;
 }
@@ -420,7 +417,7 @@
 .picker__button--clear:focus,
 .picker__button--close:focus {
   background: #b1dcfb;
-  border-color: #649cc7;
+  border-color: #0089ec;
   outline: none;
 }
 .picker__button--today:before,
@@ -444,7 +441,7 @@
 .picker__button--clear:before {
   top: -0.25em;
   width: .66em;
-  border-top: 3px solid #ee2200;
+  border-top: 3px solid #e20;
 }
 .picker__button--close:before {
   content: "\D7";
@@ -452,17 +449,17 @@
   vertical-align: top;
   font-size: 1.1em;
   margin-right: .35em;
-  color: #777777;
+  color: #777;
 }
 .picker__button--today[disabled],
 .picker__button--today[disabled]:hover {
   background: #f5f5f5;
   border-color: #f5f5f5;
-  color: #dddddd;
+  color: #ddd;
   cursor: default;
 }
 .picker__button--today[disabled]:before {
-  border-top-color: #aaaaaa;
+  border-top-color: #aaa;
 }
 
 /* ==========================================================================
