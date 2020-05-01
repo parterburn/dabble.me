@@ -2,6 +2,7 @@ class Entry < ActiveRecord::Base
   include ActionView::Helpers::DateHelper
   include ActionView::Helpers::NumberHelper
   include ActiveModel::Validations
+  include ApplicationHelper
   mount_uploader :image, ImageUploader
 
   WORDS_NOT_TO_COUNT = ['so', 'went', 'while', 's', 'amp', '-', 'p', 'br', 'div', 'img', 'span', 'the', 'of', 'and', 'a', 'to', 'in', 'is', 'that', 'it', 'was', 'for', 'on', 'are', 'as', 'with', 'at', 'be', 'this', 'have', 'from', 'or', 'had', 'by', 'but', 'not', 'what', 'all', 'were', 'when', 'can', 'said', 'there', 'use', 'an', 'each', 'which', 'do', 'how', 'if']
@@ -72,7 +73,7 @@ class Entry < ActiveRecord::Base
     elsif now_for_user.month == self.date.month && now_for_user.day - 7 == self.date.day && now_for_user.year == self.date.year
       "exactly 1 week"
     else
-      in_words = distance_of_time_in_words(self.date, now_for_user, false, highest_measures: 2, except: [:weeks, :hour, :minutes, :seconds])
+      in_words = distance_of_time_in_words(self.date, now_for_user)
     end
   end
 

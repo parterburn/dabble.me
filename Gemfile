@@ -39,7 +39,6 @@ gem "loofah", ">= 2.5"
 gem "chartkick", ">= 3.3.1" # Admin stats
 gem 'groupdate' # Admin Stats
 gem 'words_counted' # Year in Review
-gem 'dotiw'
 
 gem 'kaminari' # Pagination
 
