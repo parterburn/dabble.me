@@ -1,33 +1,52 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-# This workflow will download a prebuilt Ruby version, install dependencies and run tests with Rake
-# For more information see: https://github.com/marketplace/actions/setup-ruby-jruby-and-truffleruby
-
-name: Ruby
+name: Rails Tests
 
 on:
-  push:
-    branches: [ master ]
   pull_request:
-    branches: [ master ]
+    branches:
+      - 'master'
+  push:
+    branches:
+      - 'master'
 
 jobs:
-  test:
-
+  build:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:11.5
+        ports: ["5432:5432"]
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+
     steps:
-    - uses: actions/checkout@v2
-    - name: Set up Ruby
-    # To automatically get bug fixes and new Ruby versions for ruby/setup-ruby,
-    # change this to (see https://github.com/ruby/setup-ruby#versioning):
-    # uses: ruby/setup-ruby@v1
-      uses: ruby/setup-ruby@ec106b438a1ff6ff109590de34ddc62c540232e0
+    - uses: actions/checkout@v1
+
+    - name: Set up Ruby 2.7.1
+      uses: actions/setup-ruby@v1
       with:
         ruby-version: 2.7.1
-    - name: Install dependencies
-      run: bundle install
-    - name: Run tests
-      run: bundle exec rake
+
+    - name: Install PostgreSQL 11 client
+      run: |
+        sudo apt-get -yqq install libpq-dev
+
+    - name: Build App
+      env:
+        PGHOST: localhost
+        PGUSER: postgres
+        RAILS_ENV: test
+      run: |
+        gem install bundler
+        bundle install --jobs 4 --retry 3
+        bin/rails db:setup
+
+    - name: Run Tests
+      env:
+        PGHOST: localhost
+        PGUSER: postgres
+        RAILS_ENV: test
+      run: |
+      bundle exec rake test
+      bundle exec rake test:system
+      # or Rspec
+      # bundle exec rspec
