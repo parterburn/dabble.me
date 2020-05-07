@@ -31,7 +31,10 @@ jobs:
           bundler exec rails db:create RAILS_ENV=test
           bundler exec rails db:migrate RAILS_ENV=test
       - name: Run tests
-        run: bundler exec rake
+        run: |
+          gem uninstall bundler
+          gem install bundler --version '1.17.2'                  
+          bundler exec rake
       - name: Upload coverage results    
         uses: actions/upload-artifact@master
         if: always()
