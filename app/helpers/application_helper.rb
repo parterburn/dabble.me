@@ -7,15 +7,29 @@ module ApplicationHelper
     content_for?(section) ? content_for(section) : default
   end
 
+  def tag_relative_date(tag_date, entry_date)
+    a = []
+    a << distance_of_time_in_words(tag_date, entry_date)
+    if tag_date > entry_date
+      a << "from"
+    else
+      a << "since"
+    end
+    a << tag_date.strftime('%b %-d, %Y')
+    a.join(" ")
+  end
+
   def distance_of_time_in_words(earlier_date, later_date)
     days = (later_date.to_datetime.to_i - earlier_date.to_datetime.to_i).abs / 86400
     months = ((later_date.year * 12 + later_date.month) - (earlier_date.year * 12 + earlier_date.month)).abs
-    extra_days = later_date.day - earlier_date.day
     if months > 18
       years = (months.to_f / 12).to_f
       rounded_years = "%.2g" % ("%.1f" % years)
       "#{rounded_years} #{'year'.pluralize(years.ceil)}"
     elsif days > 30
+      all_days = (later_date.to_date - earlier_date.to_date).to_i
+      days_between_months = (Date.parse("#{later_date.year}-#{later_date.month}-#{later_date.day}") - Date.parse("#{earlier_date.year}-#{earlier_date.month}-#{later_date.day}")).to_i
+      extra_days = (all_days - days_between_months).abs
       add_days = extra_days > 0 ? ", #{extra_days} #{'day'.pluralize(extra_days)}" : ""
       "#{months} #{'month'.pluralize(months)}#{add_days}"
     elsif days % 7 == 0
