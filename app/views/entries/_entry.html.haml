@@ -24,11 +24,12 @@
     %p.tags
       %strong.small Tags: 
       - hashtags.each do |tag|
-        = link_to search_url(host: ENV['MAIN_DOMAIN'], search: {term: "##{tag}"}), class: "noline" do
-          - if (date = current_user.hashtags.select{|h| h.tag&.downcase == tag.downcase}.first&.date).present?
-            %span.label.label-primary{rel: "tooltip-mobile-friendly", title: "#{tag_relative_date(date, entry.date)}" }= tag
-          - else
+        - if (date = current_user.hashtags.select{|h| h.tag&.downcase == tag.downcase}.first&.date).present?
+          = link_to search_url(host: ENV['MAIN_DOMAIN'], search: {term: "##{tag}"}), class: "noline", rel: "tooltip-mobile-friendly", title: "#{tag_relative_date(date, entry.date)}" do
             %span.label.label-primary= tag
+        - else
+          = link_to search_url(host: ENV['MAIN_DOMAIN'], search: {term: "##{tag}"}), class: "noline" do
+            %span.label.label-primary= tag        
 - if entry.image_url_cdn.present?
   .pictureFrame
     =link_to entry.image_url_cdn, target: "_blank" do

@@ -54,7 +54,7 @@
 
     $("[rel='tooltip-mobile-friendly']").tooltip({
       container: "body"
-    });    
+    });
 
     if ($(window).width() > 768) {
       $("[rel='popover_settings']").popover({
