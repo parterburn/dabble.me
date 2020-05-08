@@ -28,7 +28,12 @@ module ApplicationHelper
       "#{rounded_years} #{'year'.pluralize(years.ceil)}"
     elsif days > 30
       all_days = (later_date.to_date - earlier_date.to_date).to_i
-      days_between_months = (Date.parse("#{later_date.year}-#{later_date.month}-#{later_date.day}") - Date.parse("#{earlier_date.year}-#{earlier_date.month}-#{later_date.day}")).to_i
+      begin
+        earlier_same_day = Date.parse("#{earlier_date.year}-#{earlier_date.month}-#{later_date.day}")
+      rescue
+        earlier_same_day = Date.parse("#{earlier_date.year}-#{earlier_date.month}-#{earlier_date.end_of_month}")
+      end
+      days_between_months = (Date.parse("#{later_date.year}-#{later_date.month}-#{later_date.day}") - earlier_same_day).to_i
       extra_days = (all_days - days_between_months).abs
       add_days = extra_days > 0 ? ", #{extra_days} #{'day'.pluralize(extra_days)}" : ""
       "#{months} #{'month'.pluralize(months)}#{add_days}"
