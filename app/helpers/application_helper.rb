@@ -31,7 +31,7 @@ module ApplicationHelper
       begin
         earlier_same_day = Date.parse("#{earlier_date.year}-#{earlier_date.month}-#{later_date.day}")
       rescue
-        earlier_same_day = Date.parse("#{earlier_date.year}-#{earlier_date.month}-#{earlier_date.to_date.end_of_month}")
+        earlier_same_day = Date.parse("#{earlier_date.year}-#{earlier_date.month}-#{earlier_date.end_of_month.day}")
       end
       days_between_months = (later_date.to_date - earlier_same_day).to_i
       extra_days = (all_days - days_between_months).abs
