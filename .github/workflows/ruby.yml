@@ -24,7 +24,9 @@ jobs:
 
     steps:
       - name: set environment variables
-        uses: allenevans/set-env@v1.0.0      - 
+        uses: allenevans/set-env@v1.0.0
+        with:
+          overwrite: false
       - uses: actions/checkout@v1
 
       - uses: actions/setup-ruby@v1
