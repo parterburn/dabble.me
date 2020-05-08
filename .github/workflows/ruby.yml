@@ -4,6 +4,13 @@ env:
   POSTGRES_USER: postgres
   POSTGRES_PASSWORD: ""
   POSTGRES_DB: postgres
+  AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+  AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+  AWS_BUCKET: ${{ secrets.AWS_BUCKET }}
+  ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
+  DEVISE_SECRET_KEY: ${{ secrets.DEVISE_SECRET_KEY }}
+  MAIN_DOMAIN: ${{ secrets.MAIN_DOMAIN }}
+  SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE }}
 
 name: Ruby
 
@@ -23,10 +30,6 @@ jobs:
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
 
     steps:
-      - name: set environment variables
-        uses: allenevans/set-env@v1.0.0
-        with:
-          overwrite: false
       - uses: actions/checkout@v1
 
       - uses: actions/setup-ruby@v1
