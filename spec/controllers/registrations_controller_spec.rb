@@ -233,7 +233,7 @@ RSpec.describe RegistrationsController, type: :controller do
                     host: "#{ENV['SMTP_DOMAIN']}",
                     name: nil
                   }],
-                  body: new_entry_email_body.chomp('<br>').strip }
+                  body: new_entry_email_body.chomp('<br>').chomp('<br>').strip }
 
       email = FactoryBot.build(:email, params)
       expect{ EmailProcessor.new(email).process }.to change{ new_paid_user.entries.count }.by(1)
