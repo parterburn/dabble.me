@@ -1,9 +1,4 @@
 env:
-  RUBY_VERSION: 2.7.1
-  BUNDLER_VERSION: 1.17.2
-  POSTGRES_USER: postgres
-  POSTGRES_PASSWORD: ""
-  POSTGRES_DB: postgres
   AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
   AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
   AWS_BUCKET: ${{ secrets.AWS_BUCKET }}
@@ -12,51 +7,40 @@ env:
   MAIN_DOMAIN: ${{ secrets.MAIN_DOMAIN }}
   SECRET_KEY_BASE: ${{ secrets.SECRET_KEY_BASE }}
 
-name: Ruby
+name: Rails Unit Tests
 
-on: [push,pull_request]
+on: [push, pull_request]
 
 jobs:
   build:
+
     runs-on: ubuntu-latest
+
     services:
-      postgres:
+      db:
         image: postgres:11
-        ports:
-          - 5432:5432
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: postgres
-        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
-      - uses: actions/checkout@v1
-
-      - uses: actions/setup-ruby@v1
-        with:
-          ruby-version: ${{ env.RUBY_VERSION }}
-        
-      - name: Install dependent libraries
-        run: sudo apt-get install libpq-dev
-
-      - name: Bundle install
-        run: |
-          gem install bundler:${{ env.BUNDLER_VERSION }}
-          bundle install --jobs 4 --retry 3
-      - name: Create database
-        env:
-          POSTGRES_PASSWORD: postgres
-          POSTGRES_USER: postgres
-          RAILS_ENV: test        
-        run: |
-          bundler exec rails db:create RAILS_ENV=test
-          bundler exec rails db:migrate RAILS_ENV=test
-      - name: Run tests
-        run: |
-          bundler exec rake
-      - name: Upload coverage results    
-        uses: actions/upload-artifact@master
-        if: always()
-        with:
-          name: coverage-report
-          path: coverage        
+    - uses: actions/checkout@v2
+    - name: Set up Ruby 2.7.1
+      uses: actions/setup-ruby@v1
+      with:
+        ruby-version: 2.7.1
+    - name: Build and test with Rake
+      env:
+        PGHOST: 127.0.0.1
+        PGUSER: postgres
+        RAILS_ENV: test
+      run: |
+        sudo apt-get -yqq install libpq-dev
+        gem install bundler:1.17.2
+        bundle install --jobs 4 --retry 3
+        bundle exec rails db:create
+        bundle exec rails db:migrate
+        bundle exec rails test
