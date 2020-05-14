@@ -66,14 +66,8 @@ class Entry < ActiveRecord::Base
     now_for_user = Time.now.in_time_zone(user.send_timezone)
     if self.date.day == 29 && self.date.month == 2 && now_for_user.year - 4 == self.date.year && now_for_user.day == 29 && now_for_user.month == 2
       "last leap day - exactly 4 years"
-    elsif now_for_user.month == self.date.month && now_for_user.day == self.date.day && now_for_user.year - 1 == self.date.year
-      "exactly 1 year"
-    elsif now_for_user.month - 1 == self.date.month && now_for_user.day == self.date.day && now_for_user.year == self.date.year
-      "exactly 1 month"
-    elsif now_for_user.month == self.date.month && now_for_user.day - 7 == self.date.day && now_for_user.year == self.date.year
-      "exactly 1 week"
     else
-      in_words = distance_of_time_in_words(self.date, now_for_user)
+      distance_of_time_in_words(self.date, now_for_user)
     end
   end
 
@@ -112,7 +106,7 @@ class Entry < ActiveRecord::Base
   end
 
   def hashtags
-    h_body = ActionController::Base.helpers.strip_tags(ActionController::Base.helpers.simple_format(body))
+    h_body = ActionController::Base.helpers.strip_tags(ActionController::Base.helpers.simple_format(body.gsub("</p>","\n").gsub("<br>","\n").gsub("<br/>","\n")))
     return nil unless h_body.present?
     h_body.scan(/#([0-9]+[a-zA-Z_]+\w*|[a-zA-Z_]+\w*)/).map { |m| m[0] }
   end
