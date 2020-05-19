@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_04_21_212900) do
+ActiveRecord::Schema.define(version: 2020_05_19_194612) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -90,6 +90,7 @@ ActiveRecord::Schema.define(version: 2020_04_21_212900) do
     t.string "failed_attempts", default: "0", null: false
     t.string "unlock_token"
     t.datetime "locked_at"
+    t.integer "emails_bounced", default: 0
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["paranoid_verification_code"], name: "index_users_on_paranoid_verification_code"
     t.index ["paranoid_verified_at"], name: "index_users_on_paranoid_verified_at"

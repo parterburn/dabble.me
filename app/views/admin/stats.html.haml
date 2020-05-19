@@ -125,8 +125,8 @@
     %br
 
   .col-md-12
-    - upgrades = @dashboard.upgraded_users_since(30.days.ago)
-    %h3 #{pluralize(upgrades.count, "Upgrade")} from the last 30 days
+    - upgrades = @dashboard.upgraded_users_since(90.days.ago)
+    %h3 #{pluralize(upgrades.count, "Upgrade")} from the last 90 days
     %p
       %table.table.table-striped.table-hover
         %tr
@@ -145,9 +145,26 @@
 
   .col-md-12
     %hr
+
   .col-md-12
-    - free_users = @dashboard.free_users_created_since(30.days.ago).order(:created_at)
-    %h3 #{pluralize(free_users.count, "Free User")} from the last 30 days
+    - bounces = @dashboard.bounced_users_since(90.days.ago)
+    %h3 #{pluralize(upgrades.count, "user")} from the last 90 days has had emails bouncing
+    %p
+      %table.table.table-striped.table-hover
+        %tr
+          %th Email
+          %th Bounces
+        - bounces.each do |user|
+          %tr{:class => @dashboard.paid_status_for(user)}
+            %td= user.email
+            %td= user.emails_bounced
+
+  .col-md-12
+    %hr
+
+  .col-md-12
+    - free_users = @dashboard.free_users_created_since(90.days.ago).order(:created_at)
+    %h3 #{pluralize(free_users.count, "Free User")} from the last 90 days
     %p
       %table.table.table-striped.table-hover
         %tr

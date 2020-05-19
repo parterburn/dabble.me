@@ -4,7 +4,7 @@
   .center
     - if current_user.created_at > 2.day.ago
       %p
-        %h3 You've got mail!
+        %h3 Check your email at #{current_user.email}
         %iframe{src: "//giphy.com/embed/WZ4M8M2VbauEo?html5=true&hideSocial=true", width: "480", height: "273", frameborder: "0", class: "giphy-embed", allowfullscreen: "", style: "max-width: 100%;"}
         %h4 Reply to the email from Dabble Me and you'll see it here.
         %p{style: "color: #999;"}

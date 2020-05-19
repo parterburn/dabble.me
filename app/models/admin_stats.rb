@@ -89,6 +89,10 @@ class AdminStats
     pro_users
   end
 
+  def bounced_users_since(date)
+    User.where("emails_bounced > 0").where("updated_at >= ?", date)
+  end  
+
   def entries_per_day_for(user)
     (entry_count_for(user) / account_age_for(user).to_f).to_f.round(1)
   rescue ZeroDivisionError
