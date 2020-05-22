@@ -4,7 +4,7 @@ ruby File.read(File.expand_path '../.ruby-version', __FILE__).strip.sub /\-p[0-9
 gem 'rails', '~> 6.0', '>= 6.0.2.2'
 
 # Servers
-gem 'puma', '~> 4.3', '>= 4.3.3'
+gem 'puma', '~> 4.3'
 
 # ORM
 gem 'pg', '~> 1.2', '>= 1.2.3'
