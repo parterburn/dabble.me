@@ -8,6 +8,7 @@
 //= link bg_h3.gif
 //= link broken_pencil.png
 //= link copy-spotify-link.gif
+//= link baby.jpg
 
 //= link application.css
 //= link application.js

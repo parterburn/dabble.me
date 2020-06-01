@@ -20,13 +20,7 @@
 %br
 .clearfix
 
-.center.hidden-xs
-  %h4
-    %p Read about Dabble Me in...
-    %p
-      %strong=link_to "INCREASE YOUR HAPPINESS WITH DAILY JOURNALING", "https://medium.com/startup-lesson-learned/increase-your-happiness-with-daily-journaling-8109b0700506", target: "_blank"
-
-.col-md-6.col-lg-4.col-lg-offset-2.s-features.top40
+.col-md-6.col-lg-4.col-lg-offset-2.s-features.top20
   %ul
     %li
       %i.fa.fa-check
@@ -41,7 +35,7 @@
       %i.fa.fa-check
       Search entries
 
-.col-md-6.col-lg-5.s-features.top40
+.col-md-6.col-lg-5.s-features.top20
   %ul
     %li
       %i.fa.fa-check
@@ -55,8 +49,41 @@
     %li
       %i.fa.fa-check
       =link_to "Plus more with Dabble Me PRO", subscribe_path
+
+.row
+  .col-md-8.col-md-offset-2{style: "margin-top: 10px;"}
+    .email-window
+      %h1.titlebar-mail Inbox — Daily Emails
+      %nav.controls-mail
+        %a.close-mail{:href => "#"} close
+        %a.minimize-mail{:href => "#"} minimize
+        %a.maximize-mail{:href => "#"} maximize
+      .message-window
+        .message-header
+          .info
+            .from-name
+              %strong Dabble Me ✏
+            .light-text To: your@email.com
+            .email-subject{style: "padding: 2px 0;"} It's #{Time.now.yesterday.strftime("%A, %b %-d")}. How was your day?
+          .date.hidden-xs
+            .light-text= "#{Time.now.yesterday.strftime("%B %-d, %Y")} 8:00pm"
+        .message-content{style: "padding: 20px 25px;"}
+          %p Reply to this email with your entry for #{Time.now.yesterday.strftime("%B %-d")}.
+          %p 
+            %strong Remember this? On #{Time.now.yesterday.last_year.strftime("%a, %b %-d, %Y")} (exactly 1 year ago) you wrote...
+          %p Had a life changing moment today. Full of love, appreciation, and grateful for what happened today. #Jade become an older sister!
+          %p
+            %em.small.text-muted Tags: Jade (2 years 3 months)
+          %p
+            = image_tag "baby.jpg", style: "width: 300px; max-width: 100%;"
+
+
+.center.hidden-xs
+  %h4
+    %p Read about Dabble Me in...
+    %p
+      %strong=link_to "INCREASE YOUR HAPPINESS WITH DAILY JOURNALING", "https://medium.com/startup-lesson-learned/increase-your-happiness-with-daily-journaling-8109b0700506", target: "_blank"
     
 .clearfix
 %br
 %br
-
