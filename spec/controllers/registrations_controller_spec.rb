@@ -224,6 +224,7 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(ActionMailer::Base.deliveries.last.subject).to eq "Let's write your first Dabble Me entry"
 
       new_entry_email_body = Faker::Lorem.paragraph
+      new_entry_email_body2 = Faker::Lorem.paragraph
 
       # Check that EmailProcessor will take email and create an entry for it
       params = { to: [{
@@ -240,9 +241,19 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(new_paid_user.entries.last.body).to include new_entry_email_body
       expect(new_paid_user.entries.last.date.strftime('%Y-%m-%d')).to eq DateTime.now.in_time_zone(new_paid_user.send_timezone).strftime('%Y-%m-%d')
 
-      # Check that sending two emails on the same day merge into 1 Entry
-      expect{ EmailProcessor.new(email).process }.to change{ new_paid_user.entries.count }.by(0)
-      expect(new_paid_user.entries.last.body).to eq "<p>#{new_entry_email_body.gsub(/( \z)|(<br>\z)/, '')}</p><hr><p>#{new_entry_email_body.gsub(/( \z)|(<br>\z)/, '')}</p>"
+      params = { to: [{
+                    full: "#{new_paid_user.user_key}@#{ENV['SMTP_DOMAIN']}",
+                    email: "#{new_paid_user.user_key}@#{ENV['SMTP_DOMAIN']}",
+                    token: "#{new_paid_user.user_key}",
+                    host: "#{ENV['SMTP_DOMAIN']}",
+                    name: nil
+                  }],
+                  body: new_entry_email_body2 }
+
+      email2 = FactoryBot.build(:email, params)      
+      expect{ EmailProcessor.new(email2).process }.to change{ new_paid_user.entries.count }.by(0)
+      expect(new_paid_user.entries.last.body).to include new_entry_email_body
+      expect(new_paid_user.entries.last.body).to include new_entry_email_body2
       expect(new_paid_user.entries.last.date.strftime('%Y-%m-%d')).to eq DateTime.now.in_time_zone(new_paid_user.send_timezone).strftime('%Y-%m-%d')
     end    
   end
