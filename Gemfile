@@ -37,7 +37,7 @@ gem 'rubyzip', '~> 1.3'
 gem 'zip-zip'
 gem 'rack-utf8_sanitizer', '~> 1.7'
 gem "loofah", ">= 2.5"
-gem "chartkick", ">= 3.3.1" # Admin stats
+gem "chartkick", ">= 3.4.0"
 gem 'groupdate' # Admin Stats
 gem 'words_counted' # Year in Review
 
