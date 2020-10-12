@@ -18,6 +18,14 @@ $(document).ready(function(){
 
   $(".entry").one("mouseover", function() {
     $(this).find('.entry-panel').addClass('permahover');
-  });  
+  });
+
+  $(document).on('keydown',function(e){
+    var $target = $(e.target||e.srcElement);
+    if(e.keyCode == 8 && !$target.is('input,[contenteditable="true"],textarea'))
+    {
+      e.preventDefault();
+    }
+  })  
 
 });
