@@ -28,7 +28,7 @@
             - hashtags.each do |tag|
               - add_timeframe = ""
               - if (date = @user.hashtags.select{|h| h.tag&.downcase == tag.downcase}.first&.date).present?
-                - add_timeframe = " <small>(#{tag_relative_date(date, @random_entry.date)})</small>".html_safe
+                - add_timeframe = " <small>(#{ApplicationController.helpers.tag_relative_date(date, @random_entry.date)})</small>".html_safe
               - h << link_to(tag, search_url(host: ENV['MAIN_DOMAIN'], search: {term: "##{tag}"})) + add_timeframe
             = "Tags: #{h.join(", ")}".html_safe
       - if @random_entry_image_url.present?
