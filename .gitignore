@@ -71,3 +71,4 @@ brakeman.html
 
 config/local_env.yml
 config/sqreen.yml
+.env
