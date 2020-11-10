@@ -79,6 +79,7 @@ group :development, :test do
   gem 'delorean'
   gem 'factory_bot_rails'
   gem 'faker'
+  gem 'dotenv-rails'
   gem "rspec-rails"
 end
 

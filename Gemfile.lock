@@ -129,6 +129,10 @@ GEM
     docile (1.3.2)
     domain_name (0.5.20190701)
       unf (>= 0.0.5, < 1.0.0)
+    dotenv (2.7.6)
+    dotenv-rails (2.7.6)
+      dotenv (= 2.7.6)
+      railties (>= 3.2)
     email_reply_trimmer (0.1.12)
     email_spec (2.2.0)
       htmlentities (~> 4.3.3)
@@ -459,6 +463,7 @@ DEPENDENCIES
   derailed
   devise (>= 4.7.1)
   devise-security
+  dotenv-rails
   email_reply_trimmer
   email_spec
   exception_notification-rake
@@ -518,7 +523,7 @@ DEPENDENCIES
   zip-zip
 
 RUBY VERSION
-   ruby 2.7.1p83
+   ruby 2.7.2p137
 
 BUNDLED WITH
    1.17.2
