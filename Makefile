@@ -1,3 +1,5 @@
+# https://makefile.site - read about the approach
+
 # run `make init` to get everything set up
 init: sqreen dotenv
 	rails db:create && rails db:environment:set RAILS_ENV=development && rails db:schema:load && rails db:migrate && rails db:seed
