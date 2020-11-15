@@ -24,8 +24,21 @@ class Entry < ActiveRecord::Base
 
   before_save :associate_inspiration
   before_save :strip_out_base64
-  before_save :find_songs
   after_save :check_image
+
+  state_machine :initial => :created do
+    event :approve do
+      transition :created => :approved
+    end
+
+    event :pin do
+      transition :approved => :pinned
+    end
+
+    # state :first_gear, :second_gear do
+    #   validates_presence_of :seatbelt_on
+    # end
+  end
 
   def date_format_long
     # Friday, Feb 3, 2014
@@ -41,8 +54,6 @@ class Entry < ActiveRecord::Base
     # Saturday
     self.date.present? ? self.date.strftime("%A") : "Noday?"
   end
-
-
 
   def spotify_embed
     embeds = []
@@ -60,7 +71,7 @@ class Entry < ActiveRecord::Base
     if embeds.present?
       "<p><i>🎶 Songs: #{embeds.to_sentence}</i></p>".html_safe
     end
-  end  
+  end
 
   def time_ago_in_words_or_numbers(user)
     now_for_user = Time.now.in_time_zone(user.send_timezone)
@@ -126,31 +137,6 @@ class Entry < ActiveRecord::Base
     if self.original_email_body.present?
       self.original_email_body = self.original_email_body.gsub(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"")
       self.original_email_body = self.original_email_body.gsub(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()")
-    end
-  end
-
-  def find_songs
-    self.songs = []
-    if self.body.present?
-      matches = self.body.scan(/open\.spotify\.com\/track\/(\w+)/)
-      matches.uniq.each do |match|
-        if (spotify_name = get_spotify_info_from_track_id(match.first)).present?
-          self.songs << { spotify_id: match.first, artists: spotify_name.first, title: spotify_name.last }
-        end
-      end
-    end
-  end
-
-  def get_spotify_info_from_track_id(track_id)
-    grant = Base64.strict_encode64("#{ENV['SPOTIFY_API_CLIENT']}:#{ENV['SPOTIFY_API_SECRET']}")
-    resp = RestClient.post("https://accounts.spotify.com/api/token", { grant_type: "client_credentials" }, { "Authorization": "Basic #{grant}" })
-    oath_token = JSON.parse(resp.body)["access_token"]
-    resp_song = RestClient.get("https://api.spotify.com/v1/tracks/#{track_id}", { "Authorization": "Bearer #{oath_token}" })
-    song_data = JSON.parse(resp_song.body)
-    unless song_data['error'].present?
-      [song_data['artists'].map { |a| a['name'] }, song_data['name']]
-    else
-      nil
     end
   end
 

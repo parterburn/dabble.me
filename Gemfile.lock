@@ -37,6 +37,7 @@ GEM
       erubi (~> 1.4)
       rails-dom-testing (~> 2.0)
       rails-html-sanitizer (~> 1.1, >= 1.2.0)
+    active_form_model (0.1.0)
     activejob (6.0.3.2)
       activesupport (= 6.0.3.2)
       globalid (>= 0.3.6)
@@ -400,6 +401,13 @@ GEM
       libsqreen (~> 0.3.0.0)
       sq_mini_racer (~> 0.2.4.sqreen2)
     staccato (0.5.3)
+    state_machines (0.5.0)
+    state_machines-activemodel (0.7.1)
+      activemodel (>= 4.1)
+      state_machines (>= 0.5.0)
+    state_machines-activerecord (0.6.0)
+      activerecord (>= 4.1)
+      state_machines-activemodel (>= 0.5.0)
     stripe (5.17.0)
     summernote-rails (0.8.12.0)
       railties (>= 3.1)
@@ -447,6 +455,7 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  active_form_model
   addressable
   autoprefixer-rails
   better_errors
@@ -513,6 +522,7 @@ DEPENDENCIES
   spring-commands-rspec
   sqreen
   staccato
+  state_machines-activerecord
   stripe
   summernote-rails (~> 0.8.12.0)
   twbs_sass_rails

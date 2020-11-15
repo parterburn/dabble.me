@@ -26,7 +26,7 @@ class EmailProcessor
   def process
     unless @user.present?
       Sqreen.track('inbound_email_without_user')
-      return false 
+      return false
     end
 
     best_attachment = nil
@@ -75,22 +75,16 @@ class EmailProcessor
     inspiration_id = parse_body_for_inspiration_id(@raw_body)
 
     if existing_entry.present?
-      existing_entry.body += "<hr>#{@body}"
-      existing_entry.body = existing_entry.sanitized_body if @user.is_free?
-      existing_entry.original_email_body = @raw_body
-      existing_entry.inspiration_id = inspiration_id if inspiration_id.present?
-      if existing_entry.image_url_cdn.blank? && best_attachment.present?
-        existing_entry.image = best_attachment
-      elsif existing_entry.image_url_cdn.blank? && best_attachment_url.present?
-        existing_entry.remote_image_url = best_attachment_url
-      end
-      begin
-        existing_entry.save
-      rescue
-        existing_entry.body = existing_entry.body.force_encoding('iso-8859-1').encode('utf-8')
-        existing_entry.original_email_body = existing_entry.original_email_body.force_encoding('iso-8859-1').encode('utf-8')
-        existing_entry.save
-      end
+      params = {
+        entry: fix_encoding(@body),
+        original_email_body: fix_encoding(@raw_body),
+        inspiration_id: inspiration_id,
+        image_url_cdn: image_url_cdn,
+        image: best_attachment,
+        remote_image_url: best_attachment_url
+      }
+
+      existing_entry = EntryService.merge!(existing_entry, params)
       track_ga_event('Merged')
     else
       params = { date: date, inspiration_id: inspiration_id }
@@ -113,16 +107,20 @@ class EmailProcessor
       UserMailer.second_welcome_email(@user).deliver_later if @user.emails_received == 1 && @user.entries.count == 1
     rescue StandardError => e
       Rails.logger.warn("Error sending second welcome email to #{@user.email}: #{e}")
-    end      
+    end
   end
 
   private
+
+  def fix_encoding(text)
+    text.force_encoding('iso-8859-1').encode('utf-8')
+  end
 
   def track_ga_event(action)
     if ENV['GOOGLE_ANALYTICS_ID'].present?
       tracker = Staccato.tracker(ENV['GOOGLE_ANALYTICS_ID'])
       tracker.event(category: 'Email Entry', action: action, label: @user.user_key)
-    end    
+    end
   end
 
   def pick_meaningful_recipient(to_recipients, cc_recipients)

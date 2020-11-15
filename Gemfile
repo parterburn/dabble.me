@@ -109,3 +109,6 @@ gem 'rack-timeout'
 group :production do
   gem 'rails_12factor'
 end
+
+gem 'active_form_model'
+gem 'state_machines-activerecord'

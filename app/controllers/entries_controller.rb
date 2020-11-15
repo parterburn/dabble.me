@@ -86,12 +86,10 @@ class EntriesController < ApplicationController
     @existing_entry = current_user.existing_entry(params[:entry][:date].to_s)
 
     if @existing_entry.present? && params[:entry][:entry].present?
-      @existing_entry.body += "<hr>#{params[:entry][:entry]}"
-      @existing_entry.inspiration_id = params[:entry][:inspiration_id] if params[:entry][:inspiration_id].present?
-      if @existing_entry.image_url_cdn.blank? && params[:entry][:image].present?
-        @existing_entry.image = params[:entry][:image]
-      end
-      if @existing_entry.save
+      entry = current_user.entries.new(params[:entry])
+      if entry.valid?
+        @existing_entry = EntryService.merge!(@existing_entry, params[:entry])
+
         flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime("%B %-d")}."
         track_ga_event('Merged')
         redirect_to day_entry_path(year: @existing_entry.date.year, month: @existing_entry.date.month, day: @existing_entry.date.day)
@@ -99,8 +97,10 @@ class EntriesController < ApplicationController
         render 'new'
       end
     else
-      @entry = current_user.entries.create(entry_params)
-      if @entry.save
+      entry = current_user.entries.new(entry_params)
+      if entry.valid?
+        @entry = EntryService.create!(current_user, entry_params)
+
         track_ga_event('New')
         flash[:notice] = "Entry created successfully!"
         redirect_to day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day)
@@ -108,6 +108,22 @@ class EntriesController < ApplicationController
         render 'new'
       end
     end
+  end
+
+  def approve
+    @existing_entry = current_user.created.where(date: params[:entry][:date].to_s)
+    form = @existing_entry.becomes(EntryApproveForm)
+
+    if form.valid?
+      @existing_entry.update!(params[:entry])
+      @existing_entry.approve!
+    else
+
+    end
+  end
+
+  def pin
+    @existing_entry.pin!
   end
 
   def edit
