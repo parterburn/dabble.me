@@ -21,6 +21,7 @@ class Entry < ActiveRecord::Base
   scope :only_ohlife, -> { includes(:inspiration).where("inspirations.category = 'OhLife'").references(:inspiration).order('date DESC') }
   scope :only_email, -> { where("original_email_body IS NOT null").order('date DESC') }
   scope :only_spotify, -> { where.not(songs: "[]").order('date DESC') }
+  scope :pinned?, -> { where(pinned: true) }
 
   before_save :associate_inspiration
   before_save :strip_out_base64
