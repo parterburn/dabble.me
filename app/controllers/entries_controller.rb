@@ -166,6 +166,7 @@ class EntriesController < ApplicationController
 
     if @entry.pinned?
       flash[:alert] = 'You cannot delete pinned entries'
+      redirect_to entries_path
     else
       @entry.destroy
       track_ga_event('Delete')
