@@ -1,4 +1,9 @@
 FactoryBot.define do
+  factory :label do
+    label { "MyString" }
+    entry_id { 1 }
+  end
+
   factory :entry, class: Entry do
     date { Time.now }
   end
