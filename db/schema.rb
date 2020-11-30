@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_11_30_100549) do
+ActiveRecord::Schema.define(version: 2020_11_30_112209) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -27,6 +27,7 @@ ActiveRecord::Schema.define(version: 2020_11_30_100549) do
     t.string "image"
     t.jsonb "songs", default: []
     t.boolean "pinned", default: false
+    t.string "label"
     t.index ["user_id"], name: "index_entries_on_user_id"
   end
 
