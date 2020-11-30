@@ -4,6 +4,10 @@ class EntriesController < ApplicationController
   before_action :authenticate_user!
   before_action :set_entry, :require_entry_permission, only: [:show, :edit, :update, :destroy]
 
+  SPORT = %w[tennis football box hockey].freeze
+  CINEMA = %w[movie actor producer].freeze
+  READING = %w[book author plot twist].freeze
+
   def index
     if params[:group] == 'photos'
       @entries = current_user.entries.includes(:inspiration).only_images
@@ -103,6 +107,23 @@ class EntriesController < ApplicationController
       if @entry.save
         track_ga_event('New')
         flash[:notice] = "Entry created successfully!"
+
+        tags = scan_for_tags(@entry.body)
+        sport_tags = SPORT - tags
+        cinema_tags = CINEMA - tags
+        reading_tags = READING - tags
+
+        if sport_tags.size < SPORT.size
+          sport_label = Label.new(label: 'sport', entry_id: @entry.id)
+          @entry.update(label: sport_label.label)
+        elsif cinema_tags.size < CINEMA.size
+          cinema_label = Label.new(label: 'cinema', entry_id: @entry.id)
+          @entry.update(label: cinema_label.label)
+        elsif reading_tags.size < READING.size
+          reading_label = Label.new(label: 'reading', entry_id: @entry.id)
+          @entry.update(label: reading_label.label)
+        end
+
         redirect_to day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day)
       else
         render 'new'
@@ -227,7 +248,7 @@ class EntriesController < ApplicationController
   end
 
   def entry_params
-    params.require(:entry).permit(:date, :entry, :image, :inspiration_id, :remove_image, :remote_image_url)
+    params.require(:entry).permit(:date, :entry, :image, :inspiration_id, :remove_image, :remote_image_url, :label)
   end
 
   def set_entry
@@ -264,5 +285,9 @@ class EntriesController < ApplicationController
       }
     end
     json_hash.to_json
+  end
+
+  def scan_for_tags(entry)
+    entry.scan(/#([0-9]+[a-zA-Z_]+\w*|[a-zA-Z_]+\w*)/).flatten
   end
 end
