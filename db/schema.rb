@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2020_11_30_164132) do
+ActiveRecord::Schema.define(version: 2020_11_30_170818) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -29,6 +29,13 @@ ActiveRecord::Schema.define(version: 2020_11_30_164132) do
     t.boolean "pinned", default: false
     t.string "label"
     t.index ["user_id"], name: "index_entries_on_user_id"
+  end
+
+  create_table "entries_labels", force: :cascade do |t|
+    t.bigint "entry_id"
+    t.bigint "label_id"
+    t.index ["entry_id"], name: "index_entries_labels_on_entry_id"
+    t.index ["label_id"], name: "index_entries_labels_on_label_id"
   end
 
   create_table "hashtags", force: :cascade do |t|
@@ -108,4 +115,6 @@ ActiveRecord::Schema.define(version: 2020_11_30_164132) do
     t.index ["user_key"], name: "index_users_on_user_key", unique: true
   end
 
+  add_foreign_key "entries_labels", "entries"
+  add_foreign_key "entries_labels", "labels"
 end
