@@ -8,6 +8,7 @@ class Entry < ActiveRecord::Base
   WORDS_NOT_TO_COUNT = ['so', 'went', 'while', 's', 'amp', '-', 'p', 'br', 'div', 'img', 'span', 'the', 'of', 'and', 'a', 'to', 'in', 'is', 'that', 'it', 'was', 'for', 'on', 'are', 'as', 'with', 'at', 'be', 'this', 'have', 'from', 'or', 'had', 'by', 'but', 'not', 'what', 'all', 'were', 'when', 'can', 'said', 'there', 'use', 'an', 'each', 'which', 'do', 'how', 'if']
 
   has_and_belongs_to_many :labels
+  has_one :review, dependent: :destroy
   belongs_to :user
   belongs_to :inspiration
 

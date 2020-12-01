@@ -1,4 +1,11 @@
 FactoryBot.define do
+  factory :review do
+    review_body { "" }
+    status { "" }
+    user { "" }
+    entry { nil }
+  end
+
   factory :label do
     name { "MyString" }
     entry_id { 1 }

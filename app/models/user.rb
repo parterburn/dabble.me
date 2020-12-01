@@ -9,6 +9,7 @@ class User < ActiveRecord::Base
   has_many :entries, dependent: :destroy
   has_many :hashtags, dependent: :destroy
   has_many :payments
+  has_many :reviews
 
   accepts_nested_attributes_for :hashtags, allow_destroy: true, :reject_if => proc { |att| att[:tag].blank? || att[:date].blank? }
 
