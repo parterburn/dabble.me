@@ -94,6 +94,10 @@ class EntriesController < ApplicationController
       if @existing_entry.save
         flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime("%B %-d")}."
         track_ga_event('Merged')
+
+        tags = scan_for_tags(@existing_entry.body)
+        @existing_entry.update(label: tags.join(', '))
+
         redirect_to day_entry_path(year: @existing_entry.date.year, month: @existing_entry.date.month, day: @existing_entry.date.day)
       else
         render 'new'
@@ -103,6 +107,10 @@ class EntriesController < ApplicationController
       if @entry.save
         track_ga_event('New')
         flash[:notice] = "Entry created successfully!"
+
+        tags = scan_for_tags(@entry.body)
+        @entry.update(label: tags.join(', '))
+
         redirect_to day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day)
       else
         render 'new'
@@ -264,5 +272,9 @@ class EntriesController < ApplicationController
       }
     end
     json_hash.to_json
+  end
+
+  def scan_for_tags(entry)
+    entry.scan(/#([0-9]+[a-zA-Z_]+\w*|[a-zA-Z_]+\w*)/).flatten
   end
 end
