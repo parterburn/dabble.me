@@ -223,6 +223,10 @@ class User < ActiveRecord::Base
     end
   end
 
+  def karma
+    reviews.where('status <> "new"').count
+  end
+
   private
 
   def restrict_free_frequency
