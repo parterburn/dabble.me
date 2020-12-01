@@ -15,6 +15,8 @@ class Entry < ActiveRecord::Base
   validates :date, presence: true, valid_date: true
   validates :image, file_size: { less_than: 10.megabytes }
 
+  after_create :set_mate
+
   alias_attribute :entry, :body
 
   default_scope { order('date DESC') }
@@ -172,5 +174,11 @@ class Entry < ActiveRecord::Base
         Rails.logger.warn("Clarifai Error: #{e}")
       end
     end
+  end
+
+  def set_mate
+    user = User.order('RANDOM()').first
+    review = Review.new(entry: self, user: user)
+    review.save!
   end
 end
