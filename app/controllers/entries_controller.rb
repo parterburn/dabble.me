@@ -11,13 +11,13 @@ class EntriesController < ApplicationController
     elsif params[:subgroup].present?
       from_date = "#{params[:group]}-#{params[:subgroup]}"
       to_date = "#{params[:group]}-#{params[:subgroup].to_i + 1}"
-      @entries = current_user.entries.includes(:inspiration).where("date >= to_date('#{from_date}','YYYY-MM') AND date < to_date('#{to_date}','YYYY-MM')").sort_by(&:date)
+      @entries = current_user.entries.approved.includes(:inspiration).where("date >= to_date('#{from_date}','YYYY-MM') AND date < to_date('#{to_date}','YYYY-MM')").sort_by(&:date)
       date = Date.parse(params[:subgroup] + '/' + params[:group])
       @title = "Entries from #{date.strftime('%b %Y')}"
     elsif params[:group].present?
       begin
         raise 'not a year' unless params[:group] =~ /(19|20)[0-9]{2}/
-        @entries = current_user.entries.includes(:inspiration).where("date >= '#{params[:group]}-01-01'::DATE AND date <= '#{params[:group]}-12-31'::DATE").sort_by(&:date)
+        @entries = current_user.entries.approved.includes(:inspiration).where("date >= '#{params[:group]}-01-01'::DATE AND date <= '#{params[:group]}-12-31'::DATE").sort_by(&:date)
       rescue
         Rails.logger.warn("Doing expensive lookup based on ID for entry #{params[:group]} by #{current_user.email}")
         entry = current_user.entries.find(params[:group])
@@ -25,7 +25,7 @@ class EntriesController < ApplicationController
       end
       @title = "Entries from #{params[:group]}"
     elsif params[:format] != "json"
-      @entries = current_user.entries.includes(:inspiration)
+      @entries = current_user.entries.approved.includes(:inspiration)
       @title = 'All Entries'
     end
 
