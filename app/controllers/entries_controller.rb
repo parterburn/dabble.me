@@ -1,6 +1,5 @@
 # Handle Web Entries
 class EntriesController < ApplicationController
-  before_action :check_mailchimp_referrer, only: [:review]
   before_action :authenticate_user!
   before_action :set_entry, :require_entry_permission, only: [:show, :edit, :update, :destroy]
 
@@ -206,13 +205,6 @@ class EntriesController < ApplicationController
   end
 
   private
-
-  def check_mailchimp_referrer
-    return nil unless Date.today > Date.parse("2019-12-25") && Date.today < Date.parse("2020-01-07")
-    if request.referer.nil? && params[:year] == "2018"
-      redirect_to review_path(2019)
-    end
-  end
 
   def track_ga_event(action)
     if ENV['GOOGLE_ANALYTICS_ID'].present?
