@@ -29,7 +29,7 @@
             %span.label.label-primary= tag
         - else
           = link_to search_url(host: ENV['MAIN_DOMAIN'], search: {term: "##{tag}"}), class: "noline" do
-            %span.label.label-primary= tag        
+            %span.label.label-primary= tag
 - if entry.image_url_cdn.present?
   .pictureFrame
     =link_to entry.image_url_cdn, target: "_blank" do

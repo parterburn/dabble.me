@@ -68,7 +68,7 @@
         %h3
           - percent_book = ((@words_counter.token_count.to_f/124000).to_f * 100).round
           - book_height = 500-((percent_book.to_f / 100) * 500)
-          %span= "#{number_with_delimiter(@words_counter.token_count)} - #{percent_book}% of The Moment of Lift".html_safe
+          %span= "#{number_with_delimiter(@words_counter.token_count)} - #{percent_book}% of Caste".html_safe
       .s-review-details
         %div{style: 'position: relative;'}
           =link_to 'https://amzn.to/34JoS7j', target: '_blank', style: "margin-top: 20px; display: block;margin-bottom: 10px;" do
@@ -95,8 +95,8 @@
             - compared = 'less'
           %p= "That's #{compared} than the average of all Dabble Me users (116 words per post)."
           %p
-            %span Collectively, all Dabble Me users could have wrote 73 novels equivalent to Melinda Gates's debut book,
-            %span<= link_to "The Moment of Lift: How Empowering Women Changes the World", "https://amzn.to/361quIf", target: :_blank
+            %span Collectively, all Dabble Me users could have wrote 37 novels equivalent to Isabel Wilkerson's,
+            %span<= link_to "Caste: The Origins of Our Discontents", "https://amzn.to/361quIf", target: :_blank
             %span !
           .clearfix  
 
@@ -116,7 +116,7 @@
         .clearfix
 
 
-  - hashtags = Hash[*current_user.used_hashtags(@entries, true).inject(Hash.new(0)) { |h,v| h[v] += 1; h }.sort_by{|k,v| v}.reverse.flatten]
+  - hashtags = Hash[*current_user.used_hashtags(@entries, false).inject(Hash.new(0)) { |h,v| h[v] += 1; h }.sort_by{|k,v| v}.reverse.flatten]
   - if hashtags.present?
     .col-md-8.col-md-offset-2.well
       .center{class: add_class}
@@ -125,7 +125,7 @@
         .s-review-details
           - hashtags.first(25).each do |k, v|
             %h3
-              = k
+              = link_to k, search_url(host: ENV['MAIN_DOMAIN'], search: {term: "##{k}"}), class: "noline"
               %span.middot= "&middot; #{v}".html_safe
           .clearfix
 
