@@ -242,9 +242,15 @@ class EntriesController < ApplicationController
     return false unless current_user.is_pro?
     json_hash = []
     entries.each do |entry|
+      if image = entry.image.present?
+        title = "📸#{ActionController::Base.helpers.strip_tags(entry.sanitized_body.gsub(/\n/, '')).truncate(40, separator: ' ')}"
+      else
+        title = ActionController::Base.helpers.strip_tags(entry.sanitized_body.gsub(/\n/, '')).truncate(50, separator: ' ')
+      end
+      title = .image.present?
       json_hash <<  {
         id: entry.id,
-        title: ActionController::Base.helpers.strip_tags(entry.sanitized_body.gsub(/\n/, '')).truncate(100, separator: ' '),
+        title: title,
         url: day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day),
         start: entry.date.strftime('%Y-%m-%d'),
         allDay: 'true'
