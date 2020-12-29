@@ -57,7 +57,7 @@
           %span= "#{pluralize(counts.length, 'month')} covered"
       .s-review-details
         - sorted_counts = Hash.new
-        - Date::ABBR_MONTHNAMES.each_with_index { |x, i| sorted_counts[x] = counts[x] }
+        - Date::ABBR_MONTHNAMES.reject(&:blank?).each_with_index { |x, i| sorted_counts[x] = counts[x] }
         = column_chart sorted_counts, discrete: true, library: { backgroundColor: "#ffffff" }
         .clearfix
 
