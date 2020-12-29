@@ -247,7 +247,6 @@ class EntriesController < ApplicationController
       else
         title = ActionController::Base.helpers.strip_tags(entry.sanitized_body.gsub(/\n/, '')).truncate(50, separator: ' ')
       end
-      title = .image.present?
       json_hash <<  {
         id: entry.id,
         title: title,
