@@ -242,7 +242,7 @@ class EntriesController < ApplicationController
     return false unless current_user.is_pro?
     json_hash = []
     entries.each do |entry|
-      if image = entry.image.present?
+      if entry.image.present?
         title = "📸#{ActionController::Base.helpers.strip_tags(entry.sanitized_body.gsub(/\n/, '')).truncate(40, separator: ' ')}"
       else
         title = ActionController::Base.helpers.strip_tags(entry.sanitized_body.gsub(/\n/, '')).truncate(50, separator: ' ')
