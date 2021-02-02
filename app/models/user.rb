@@ -31,6 +31,7 @@ class User < ActiveRecord::Base
   scope :referrals, -> { where("referrer IS NOT null") }
 
   before_save { email.downcase! }
+  before_save { send_timezone.gsub!("&amp;", "&") }
   after_commit on: :update do
     restrict_free_frequency
     subscribe_to_mailchimp
