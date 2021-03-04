@@ -3,6 +3,12 @@ class EmailEventsController < ApplicationController
   before_action      :authenticate_mailgun_request!, only: [:create]
 
   def create
+    # отправку бы убрать из контроллера тоже в отдельный сервис, например так
+
+    # obj = Event::Send.call(mailgun_params)
+
+    # head obj.result
+
     @user = User.where(email: recipient).first
     if @user.present? && event_type.in?(["failed", "complained", "unsubscribed"])
       process_bounce
@@ -31,11 +37,12 @@ class EmailEventsController < ApplicationController
   end
 
   def process_bounce
+    # точно не уверен, но это лучше в Job или Worker (sidekiq)
     @user.increment(:emails_bounced)
     @user.frequency = [] if @user.is_free?
     @user.save
     Sqreen.identify(id: @user.id, email: @user.email)
-    Sqreen.track("Email Event: #{event_type}")    
+    Sqreen.track("Email Event: #{event_type}")
   end
 
   # ========================================
@@ -69,6 +76,10 @@ class EmailEventsController < ApplicationController
   end
 
   def authenticate_mailgun_request!
+    # разве одной строки недостаточно, вообще надо причесать весь проект rubocop
+
+    # head(:forbidden, text: 'Mailgun signature did not match.') unless legit_request?
+
     if legit_request?
       true
     else

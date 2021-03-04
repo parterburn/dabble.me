@@ -1,8 +1,11 @@
 class AdminController < ApplicationController
   before_action :authenticate_user!
-  before_action :authenticate_admin! 
+  before_action :authenticate_admin!
 
   def users
+    # Это всё про @user_list вынести в отдельный ServiceObject или заюзать https://github.com/nebulab/simple_command
+    # @user_list = Admin::Users.call(params) что типа этого тут надо
+
     if params[:email].present?
       users = User.where("email LIKE '%#{params[:email].downcase}%'")
     elsif params[:user_key].present?
@@ -11,7 +14,8 @@ class AdminController < ApplicationController
       users = User.all
     end
     @user_list = users.order('id DESC').page(params[:page]).per(params[:per])
-    render 'users'
+
+    render 'users' # это лишнее
   end
 
   def photos
@@ -21,5 +25,4 @@ class AdminController < ApplicationController
   def stats
     @dashboard = AdminStats.new
   end
-
 end

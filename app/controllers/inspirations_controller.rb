@@ -14,6 +14,8 @@ class InspirationsController < ApplicationController
 
   def create
     @inspiration = Inspiration.create(entry_params)
+
+    #такие типичные штуик в отдельный helper можно
     if @inspiration.save
       flash[:notice] = "Inspiration created successfully!"
       @highlight = @inspiration.id

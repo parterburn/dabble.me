@@ -4,6 +4,7 @@ class EntriesController < ApplicationController
   before_action :set_entry, :require_entry_permission, only: [:show, :edit, :update, :destroy]
 
   def index
+    # жуть!!!
     if params[:group] == 'photos'
       @entries = current_user.entries.includes(:inspiration).only_images
       @title = 'Photo Entries'

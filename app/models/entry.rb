@@ -28,6 +28,7 @@ class Entry < ActiveRecord::Base
   after_save :check_image
 
   def date_format_long
+    # self не обящательно
     # Friday, Feb 3, 2014
     self.date.present? ? self.date.strftime("%A, %b %-d, %Y") : ""
   end
@@ -60,7 +61,7 @@ class Entry < ActiveRecord::Base
     if embeds.present?
       "<p><i>🎶 Songs: #{embeds.to_sentence}</i></p>".html_safe
     end
-  end  
+  end
 
   def time_ago_in_words_or_numbers(user)
     now_for_user = Time.now.in_time_zone(user.send_timezone)
