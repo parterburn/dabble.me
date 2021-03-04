@@ -46,7 +46,7 @@ Rails.application.routes.draw do
   get 'subscribe',                      to: 'welcome#subscribe'
 
   # может быть так? )
-  # %w[privacy terms features faqs subscribe].each { |path| get path to: "welcome##{path}" }
+  # %w[privacy terms features faqs subscribe ohlife_alternative].each { |path| get path to: "welcome##{path}" }
 
   # или так
 
@@ -56,12 +56,13 @@ Rails.application.routes.draw do
   #   get :features
   #   get :faqs
   #   get :subscribe
+  #   get :ohlife_alternative
   # end
 
   get 'donate',                         to: redirect('/subscribe')
   get 'pro',                            to: redirect('/subscribe')
   match 'payment_notify',               to: 'payments#payment_notify', via: [:post] # зачем via, если только POST
-  get 'ohlife-alternative',             to: 'welcome#ohlife_alternative'
+  get 'ohlife-alternative',             to: 'welcome#ohlife_alternative' # в блок про welcome
   post 'email_processor',               to: 'griddler/emails#create'
   post 'email_events',                  to: 'email_events#create'
 
