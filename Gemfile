@@ -1,3 +1,5 @@
+# неплохо бы сделать некокотрые куски и кавычки одинарные или двойные? но это придирка )
+
 source 'https://rubygems.org'
 
 ruby File.read(File.expand_path '../.ruby-version', __FILE__).strip.sub /\-p[0-9]+$/, '' # Read the rbenv version file
