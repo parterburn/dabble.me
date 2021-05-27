@@ -29,10 +29,12 @@ class ImageUploader < CarrierWave::Uploader::Base
   end
 
   def convert_heic(file)
-    if self.url && (self.content_type.blank? || self.content_type == "application/octet-stream" || self.content_type == "image/heic" || self.filename =~ /^.+\.(heic|HEIC|Heic)$/i)
-      model.remote_image_url = "https://cdn.filestackcontent.com/#{ENV['FILESTACK_API_KEY']}/output=format:jpg/#{self.url}"
-      model.save
-    end
+    # TODO: Filestack is rate limiting these
+
+    # if self.url && (self.content_type.blank? || self.content_type == "application/octet-stream" || self.content_type == "image/heic" || self.filename =~ /^.+\.(heic|HEIC|Heic)$/i)
+    #   model.remote_image_url = "https://cdn.filestackcontent.com/#{ENV['FILESTACK_API_KEY']}/output=format:jpg/#{self.url}"
+    #   model.save
+    # end
   end
 
   def clear_generic_content_type
