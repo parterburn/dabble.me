@@ -34,4 +34,13 @@ class ImageUploader < CarrierWave::Uploader::Base
   def clear_generic_content_type
     file.content_type = nil if GENERIC_CONTENT_TYPES.include?(file.try(:content_type))
   end  
+
+  def full_filename(file)
+    filename = super(file)
+
+    return filename unless heic_image?(file)
+
+    basename = File.basename(filename, File.extname(filename))
+    return "#{basename}.jpg"
+  end  
 end

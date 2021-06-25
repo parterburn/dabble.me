@@ -8,10 +8,10 @@ class EmailProcessor
     @subject = email.subject
     @stripped_html = email.vendor_specific.try(:[], :stripped_html)
 
-    email.body&.gsub!(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"") if email.body.present?
-    email.body&.gsub!(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()") if email.body.present?
-    email.raw_body&.gsub!(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"") if email.raw_body.present?
-    email.raw_body&.gsub!(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()") if email.raw_body.present?
+    email.body&.gsub!(/src=\"data\:image\/(heic|jpeg|png)\;base64\,.*\"/, "src=\"\"") if email.body.present?
+    email.body&.gsub!(/url\(data\:image\/(heic|jpeg|png)\;base64\,.*\)/, "url()") if email.body.present?
+    email.raw_body&.gsub!(/src=\"data\:image\/(heic|jpeg|png)\;base64\,.*\"/, "src=\"\"") if email.raw_body.present?
+    email.raw_body&.gsub!(/url\(data\:image\/(heic|jpeg|png)\;base64\,.*\)/, "url()") if email.raw_body.present?
 
     if email.raw_body.present? && email.raw_body.ascii_only? && email.body.ascii_only?
       @body = EmailReplyTrimmer.trim(email.body)

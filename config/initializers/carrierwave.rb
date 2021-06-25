@@ -31,6 +31,6 @@ module CarrierWave
       manipulate! do |image|
         image.format('jpg')
       end
-    end    
+    end
   end
 end
