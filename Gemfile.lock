@@ -257,7 +257,7 @@ GEM
     mimemagic (0.3.5)
     mini_histogram (0.1.3)
     mini_i18n (0.8.0)
-    mini_magick (4.10.1)
+    mini_magick (4.11.0)
     mini_mime (1.0.2)
     mini_portile2 (2.4.0)
     minitest (5.14.4)
@@ -483,7 +483,7 @@ DEPENDENCIES
   loofah (>= 2.5)
   mailgun_rails
   meta_request
-  mini_magick (>= 4.9.4)
+  mini_magick
   pg (~> 1.2, >= 1.2.3)
   puma (~> 4.3, >= 4.3.7)
   rack-affiliates

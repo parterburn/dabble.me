@@ -26,5 +26,11 @@ module CarrierWave
         image
       end
     end
+
+    def convert_to_jpg
+      manipulate! do |image|
+        image.format('jpg')
+      end
+    end    
   end
 end

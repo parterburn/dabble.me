@@ -5,8 +5,7 @@ class ImageUploader < CarrierWave::Uploader::Base
 
   include CarrierWave::MiniMagick
 
-  after :store, :convert_heic
-
+  process :convert_to_jpg, if: :heic_image?
   process :clear_generic_content_type
   process resize_to_limit: [1200, 1200], quality: 90, if: :web_image?
   process :auto_orient, if: :web_image?
@@ -19,6 +18,10 @@ class ImageUploader < CarrierWave::Uploader::Base
     self.content_type =~ /^image\/(png|jpe?g|gif)$/i || self.content_type == "application/octet-stream"
   end
 
+  def heic_image?(file)
+    self.content_type.blank? || self.content_type == "application/octet-stream" || self.content_type == "image/heic" || self.filename =~ /^.+\.(heic|HEIC|Heic)$/i
+  end
+
   def store_dir
     add_dev = "/development" unless Rails.env.production?
     "uploads#{add_dev}/#{model.user.user_key}/#{model.date.strftime("%Y-%m-%d")}"
@@ -26,15 +29,6 @@ class ImageUploader < CarrierWave::Uploader::Base
 
   def fog_public
     true
-  end
-
-  def convert_heic(file)
-    # TODO: Filestack is rate limiting these
-
-    # if self.url && (self.content_type.blank? || self.content_type == "application/octet-stream" || self.content_type == "image/heic" || self.filename =~ /^.+\.(heic|HEIC|Heic)$/i)
-    #   model.remote_image_url = "https://cdn.filestackcontent.com/#{ENV['FILESTACK_API_KEY']}/output=format:jpg/#{self.url}"
-    #   model.save
-    # end
   end
 
   def clear_generic_content_type
