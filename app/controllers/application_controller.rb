@@ -9,7 +9,7 @@ class ApplicationController < ActionController::Base
   rescue_from Rack::Timeout::RequestTimeoutException, with: :handle_timeout
 
   def redirect_back_or_to(default)
-    redirect_to session.delete(:return_to) || default
+    redirect_to session&.delete(:return_to) || default
   end
 
   def store_location
