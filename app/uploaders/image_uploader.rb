@@ -27,10 +27,6 @@ class ImageUploader < CarrierWave::Uploader::Base
     "uploads#{add_dev}/#{model.user.user_key}/#{model.date.strftime("%Y-%m-%d")}"
   end
 
-  def fog_public
-    true
-  end
-
   def clear_generic_content_type
     file.content_type = nil if GENERIC_CONTENT_TYPES.include?(file.try(:content_type))
   end  

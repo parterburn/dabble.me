@@ -1,6 +1,4 @@
 CarrierWave.configure do |config|
-  config.fog_provider = 'fog/aws'
-
   config.fog_credentials = {
     provider:              "AWS",
     aws_access_key_id:     ENV.fetch("AWS_ACCESS_KEY_ID"),
@@ -9,6 +7,7 @@ CarrierWave.configure do |config|
 
   config.fog_directory = ENV.fetch("AWS_BUCKET")
   config.fog_public = true
+  config.fog_attributes = { cache_control: "public, max-age=#{365.days.to_i}" }
 end
 
 module CarrierWave
