@@ -29,7 +29,7 @@ class ImageUploader < CarrierWave::Uploader::Base
 
   def clear_generic_content_type
     file.content_type = nil if GENERIC_CONTENT_TYPES.include?(file.try(:content_type))
-  end  
+  end
 
   def full_filename(file)
     filename = super(file)
