@@ -147,6 +147,12 @@ class EntriesController < ApplicationController
       flash[:notice] = 'Entry deleted!'
       redirect_back_or_to entries_path
     else
+      if @entry.image_url_cdn.present? && entry_params[:remove_image] == "0"
+        @entry.remote_image_url = @entry.image_url_cdn
+        update_params = entry_params.permit(:entry, :date)
+      else
+        update_params = entry_params.permit(:entry, :date, :image, :remove_image)
+      end
       if @entry.update(entry_params)
         track_ga_event('Update')
         flash[:notice] = "Entry successfully updated!"
