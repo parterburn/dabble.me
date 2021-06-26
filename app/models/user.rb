@@ -175,9 +175,7 @@ class User < ActiveRecord::Base
       UserMailer.confirm_user(self).deliver_later
     end
   rescue
-    if Rails.env.development?
-      p "PARANOID CODE: #{self.paranoid_verification_code}"
-    end
+    nil
   end
 
   def remember_me
