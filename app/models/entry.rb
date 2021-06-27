@@ -11,7 +11,7 @@ class Entry < ActiveRecord::Base
   belongs_to :inspiration
 
   validates :date, presence: true, valid_date: true
-  validates :image, file_size: { less_than: 10.megabytes }
+  validates :image, file_size: { less_than: 20.megabytes }
 
   alias_attribute :entry, :body
 
