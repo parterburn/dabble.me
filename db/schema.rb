@@ -25,7 +25,7 @@ ActiveRecord::Schema.define(version: 2020_05_19_194612) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.string "image"
-    t.jsonb "songs", default: []
+    t.jsonb "songs", default: [], array: true
     t.index ["user_id"], name: "index_entries_on_user_id"
   end
 
@@ -70,7 +70,7 @@ ActiveRecord::Schema.define(version: 2020_05_19_194612) do
     t.datetime "updated_at"
     t.string "first_name"
     t.string "last_name"
-    t.text "frequency", default: "---\n- Sun\n"
+    t.text "frequency", default: ["Sun"], array: true
     t.string "send_timezone", default: "Mountain Time (US & Canada)"
     t.boolean "send_past_entry", default: true
     t.integer "emails_sent", default: 0
