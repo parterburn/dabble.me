@@ -8,7 +8,7 @@ shared_context 'has all objects' do
   end
 
   let(:superuser) do
-    User.create(email: ENV.fetch('ADMIN_EMAILS').split(',').first, password: Faker::Internet.password(8))
+    User.create(email: ENV['ADMIN_EMAILS']&.split(',').first, password: Faker::Internet.password(8))
   end
 
   let(:inspiration) do

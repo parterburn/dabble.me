@@ -100,7 +100,7 @@ Rails.application.configure do
       ignore_if: lambda { |env, exception| !env.nil? },
       email: {
         sender_address: %{"Dabble Me Errors" <noreply@#{ENV['MAIN_DOMAIN']}>},
-        exception_recipients: ENV.fetch('ADMIN_EMAILS').split(',')
+        exception_recipients: ENV['ADMIN_EMAILS']&.split(',')
       }
 
     ExceptionNotifier::Rake.configure

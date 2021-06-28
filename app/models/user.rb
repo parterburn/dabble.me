@@ -241,6 +241,6 @@ class User < ActiveRecord::Base
   end
 
   def admin_emails
-    ENV.fetch('ADMIN_EMAILS').split(',')
+    ENV['ADMIN_EMAILS']&.split(',')
   end
 end
