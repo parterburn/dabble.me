@@ -30,7 +30,7 @@ class User < ActiveRecord::Base
   scope :not_forever, -> { where("plan NOT ILIKE '%forever%'") }
   scope :referrals, -> { where("referrer IS NOT null") }
 
-  before_save { email.gsub!(",",".").downcase! }
+  before_save { email&.gsub!(",",".")&.downcase! }
   before_save { send_timezone.gsub!("&amp;", "&") }
   after_commit on: :update do
     restrict_free_frequency

@@ -97,7 +97,7 @@ group :test do
   gem 'capybara'
   gem 'database_cleaner'
   gem 'email_spec'
-  gem 'rspec'
+  gem 'rspec', '~> 3.10'
   gem 'selenium-webdriver'
   gem 'simplecov', require: false
   gem 'webmock', require: false
