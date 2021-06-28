@@ -12,7 +12,7 @@ class User < ActiveRecord::Base
 
   accepts_nested_attributes_for :hashtags, allow_destroy: true, :reject_if => proc { |att| att[:tag].blank? || att[:date].blank? }
 
-  scope :subscribed_to_emails, -> { where("frequency NOT LIKE '%[]%'") }
+  scope :subscribed_to_emails, -> { where("frequency NOT LIKE '%[]%' AND frequency NOT LIKE '--- []\n'") }
   scope :not_just_signed_up, -> { where("created_at < (?)", DateTime.now - 18.hours) }
   scope :daily_emails, -> { where(frequency: "---\n- Sun\n- Mon\n- Tue\n- Wed\n- Thu\n- Fri\n- Sat\n") }
   scope :with_entries, -> { includes(:entries).where("entries.id > 0").references(:entries) }
