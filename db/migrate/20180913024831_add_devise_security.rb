@@ -1,4 +1,4 @@
-class AddDeviseSecurity < ActiveRecord::Migration
+class AddDeviseSecurity < ActiveRecord::Migration[4.2]
   def change
     add_column :users, :paranoid_verification_code, :string
     add_column :users, :paranoid_verification_attempt, :integer, default: 0

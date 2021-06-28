@@ -1,4 +1,4 @@
-class AddUsersToEntries < ActiveRecord::Migration
+class AddUsersToEntries < ActiveRecord::Migration[4.2]
   def change
 
    create_table :entries do |t|
