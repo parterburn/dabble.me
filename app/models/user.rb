@@ -87,8 +87,8 @@ class User < ActiveRecord::Base
   def existing_entry(selected_date)
     selected_date = Date.parse(selected_date.to_s)
     entries.where(date: selected_date).first
-    rescue
-      nil
+  rescue
+    nil
   end
 
   def is_admin?
