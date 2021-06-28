@@ -1,5 +1,5 @@
 # Linux.gitignore
-.*
+# .*
 !.coveralls.yml
 !.gitignore
 !.rspec
@@ -10,6 +10,8 @@
 !.hound.yml
 !.ruby-style.yml
 *~
+/node_modules/
+.byebug_history
 
 # OSX.gitignore
 .DS_Store
