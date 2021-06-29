@@ -4,7 +4,7 @@ class CreateFrequencyField < ActiveRecord::Migration[6.0]
 
     User.find_each do |user|
       freqs = []
-      f = user.frequency.to_sentence
+      f = user.read_attribute(:frequency).to_s
 
       freqs << "Sun" if "Sun".in?(f)
       freqs << "Mon" if "Mon".in?(f)
