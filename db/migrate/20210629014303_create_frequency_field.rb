@@ -15,10 +15,7 @@ class CreateFrequencyField < ActiveRecord::Migration[6.0]
       freqs << "Sat" if "Sat".in?(f)
 
       user.frequency_upd = freqs
-      user.save
+      user.save(validate: false)
     end
-
-    remove_column :users, :frequency
-    rename_column :users, :frequency_upd, :frequency
   end
 end
