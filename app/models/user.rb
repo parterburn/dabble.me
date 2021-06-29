@@ -12,9 +12,9 @@ class User < ActiveRecord::Base
 
   accepts_nested_attributes_for :hashtags, allow_destroy: true, :reject_if => proc { |att| att[:tag].blank? || att[:date].blank? }
 
-  scope :subscribed_to_emails, -> { where("frequency NOT LIKE '%[]%' AND frequency NOT LIKE '--- []\n'") }
+  scope :subscribed_to_emails, -> { where.not(frequency: []).where.not(frequency: nil) }
   scope :not_just_signed_up, -> { where("created_at < (?)", DateTime.now - 18.hours) }
-  scope :daily_emails, -> { where(frequency: "---\n- Sun\n- Mon\n- Tue\n- Wed\n- Thu\n- Fri\n- Sat\n") }
+  scope :daily_emails, -> { where(frequency: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]) }
   scope :with_entries, -> { includes(:entries).where("entries.id > 0").references(:entries) }
   scope :without_entries, -> { includes(:entries).where("entries.id IS null").references(:entries) }
   scope :free_only, -> { where("plan ILIKE '%free%' OR plan IS null") }
