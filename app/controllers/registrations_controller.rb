@@ -63,6 +63,10 @@ class RegistrationsController < Devise::RegistrationsController
   def unsubscribe
     @user = User.find_by(user_key: params[:user_key])
 
+    p "*"*100
+    p params[:frequency]
+    p "*"*100
+
     @user.frequency = []
     if params[:frequency].present? && params[:unsub_all].blank?
       params[:frequency].each do |freq|
