@@ -10,6 +10,8 @@ class User < ActiveRecord::Base
   has_many :hashtags, dependent: :destroy
   has_many :payments
 
+  serialize :frequency, Array
+
   accepts_nested_attributes_for :hashtags, allow_destroy: true, :reject_if => proc { |att| att[:tag].blank? || att[:date].blank? }
 
   scope :subscribed_to_emails, -> { where("frequency NOT LIKE '%[]%' AND frequency NOT LIKE '--- []\n'") }
