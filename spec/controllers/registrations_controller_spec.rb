@@ -83,7 +83,7 @@ RSpec.describe RegistrationsController, type: :controller do
       post :unsubscribe, params: params, as: :json
       expect(response.status).to eq 302
       expect(response).to redirect_to(settings_url(user.user_key))
-      expect(user.reload.frequency).to eq ['Mon']
+      expect(user.reload.frequency).to eq ['Sun']
       expect(user.send_timezone).to eq 'Pacific Time (US & Canada)'
       expect(user.send_time).to eq '2000-01-01 16:00:00 UTC'
       expect(user.send_past_entry).to eq true
