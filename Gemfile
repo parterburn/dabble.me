@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 ruby File.read(File.expand_path '../.ruby-version', __FILE__).strip.sub /\-p[0-9]+$/, '' # Read the rbenv version file
-gem 'rails', '~> 6.0', '>= 6.0.4'
+gem 'rails', '~> 6.0', '>= 6.0.4.1'
 
 # Servers
 gem 'puma', '~> 4.3'
@@ -83,7 +83,7 @@ group :development, :test do
 end
 
 group :development do
-  gem 'better_errors'
+  gem 'better_errors', '~> 2.9', '>= 2.9.1'
   gem 'binding_of_caller'
   gem 'bullet'
   gem 'meta_request'
@@ -94,7 +94,7 @@ group :development do
 end
 
 group :test do
-  gem 'capybara'
+  gem 'capybara', '~> 3.35', '>= 3.35.3'
   gem 'database_cleaner'
   gem 'email_spec'
   gem 'rspec', '~> 3.10'
