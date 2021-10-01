@@ -72,7 +72,7 @@ gem "rack-attack" # Request blocking & throttling
 gem "cloudflare-rails"
 gem "sqreen"
 gem "stripe"
-gem "html2text" # text export conversion html->txt
+gem "reverse_markdown" # text export conversion html->txt
 
 group :development, :test do
   gem 'byebug'

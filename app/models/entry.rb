@@ -60,7 +60,7 @@ class Entry < ActiveRecord::Base
     if embeds.present?
       "<p><i>🎶 Songs: #{embeds.to_sentence}</i></p>".html_safe
     end
-  end  
+  end
 
   def time_ago_in_words_or_numbers(user)
     now_for_user = Time.now.in_time_zone(user.send_timezone)
@@ -72,7 +72,7 @@ class Entry < ActiveRecord::Base
   end
 
   def text_body
-    CGI::unescape_html(Html2Text.convert(self.body))
+    ReverseMarkdown.convert(self.body, unknown_tags: :bypass)
   end
 
   def sanitized_body
