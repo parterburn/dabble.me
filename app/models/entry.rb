@@ -8,7 +8,7 @@ class Entry < ActiveRecord::Base
   WORDS_NOT_TO_COUNT = ['so', 'went', 'while', 's', 'amp', '-', 'p', 'br', 'div', 'img', 'span', 'the', 'of', 'and', 'a', 'to', 'in', 'is', 'that', 'it', 'was', 'for', 'on', 'are', 'as', 'with', 'at', 'be', 'this', 'have', 'from', 'or', 'had', 'by', 'but', 'not', 'what', 'all', 'were', 'when', 'can', 'said', 'there', 'use', 'an', 'each', 'which', 'do', 'how', 'if']
 
   belongs_to :user
-  belongs_to :inspiration
+  belongs_to :inspiration, optional: true
 
   validates :date, presence: true, valid_date: true
   validates :image, file_size: { less_than: 20.megabytes }
@@ -60,7 +60,7 @@ class Entry < ActiveRecord::Base
     if embeds.present?
       "<p><i>🎶 Songs: #{embeds.to_sentence}</i></p>".html_safe
     end
-  end  
+  end
 
   def time_ago_in_words_or_numbers(user)
     now_for_user = Time.now.in_time_zone(user.send_timezone)
@@ -72,7 +72,7 @@ class Entry < ActiveRecord::Base
   end
 
   def text_body
-    CGI::unescape_html(Html2Text.convert(self.body))
+    ReverseMarkdown.convert(self.body, unknown_tags: :bypass)
   end
 
   def sanitized_body

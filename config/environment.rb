@@ -1,9 +1,5 @@
 # Load the Rails application.
-require File.expand_path('../application', __FILE__)
+require_relative 'application'
 
 # Initialize the Rails application.
 Rails.application.initialize!
-
-Mime::Type.register 'text/txt', :txt
-
-Rails.logger = Le.new(ENV['LOGENTRIES_TOKEN']) if Rails.env.production?

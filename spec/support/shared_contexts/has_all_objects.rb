@@ -1,14 +1,14 @@
 shared_context 'has all objects' do
   let(:user) do
-    User.create(email: Faker::Internet.email, password: Faker::Internet.password(8), first_name: Faker::Name.first_name, last_name: Faker::Name.last_name)
+    FactoryBot.create(:user)
   end
 
   let(:paid_user) do
-    User.create(email: Faker::Internet.email, password: Faker::Internet.password(8), plan: 'PRO Monthly PayHere', payhere_id: Faker::Number.number(3), gumroad_id: Faker::Number.number(12), first_name: Faker::Name.first_name, last_name: Faker::Name.last_name)
+    FactoryBot.create(:user, plan: 'PRO Monthly PayHere', payhere_id: Faker::Number.number(3), gumroad_id: Faker::Number.number(12))
   end
 
   let(:superuser) do
-    User.create(email: ENV['ADMIN_EMAILS']&.split(',').first, password: Faker::Internet.password(8))
+    FactoryBot.create(:user, plan: 'PRO Forver', email: ENV['ADMIN_EMAILS']&.split(',').first)
   end
 
   let(:inspiration) do
@@ -19,6 +19,6 @@ shared_context 'has all objects' do
     Payment.create(user_id: paid_user.id, amount: 3.0, comments: 'Monthly', date: Time.now - 800000)
   end
 
-  let(:entry) { FactoryBot.create(:entry, body: Faker::Lorem.paragraph, user_id: user.id) }
+  let(:entry) { FactoryBot.create(:entry, body: Faker::Lorem.paragraph, user: user, date: DateTime.now.in_time_zone(user.send_timezone)) }
   let(:not_my_entry) { FactoryBot.create(:entry, body: Faker::Lorem.paragraph) }
 end
