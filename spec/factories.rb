@@ -7,7 +7,7 @@ FactoryBot.define do
   end
 
   factory :entry, class: Entry do
-    date { Time.now }
+    date { DateTime.now }
     user { create(:user) }
   end
 
