@@ -10,8 +10,12 @@ class ImageUploader < CarrierWave::Uploader::Base
   process resize_to_limit: [1200, 1200], quality: 90, if: :web_image?
   process :auto_orient, if: :web_image?
 
-  def extension_allowlist
-    %w(jpg jpeg gif png heic)
+  # def extension_allowlist
+  #   %w(jpg jpeg gif png heic)
+  # end
+
+  def content_type_allowlist
+    [/(image|application)\/(png|jpe?g|gif|heic|octet-stream)/]
   end
 
   def web_image?(file)

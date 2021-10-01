@@ -11,7 +11,8 @@ class Entry < ActiveRecord::Base
   belongs_to :inspiration, optional: true
 
   validates :date, presence: true, valid_date: true
-  validates :image, file_size: { less_than: 20.megabytes }
+  validates :image, file_size: { less_than_or_equal_to: 20.megabytes },
+                    file_content_type: { allow: ['image/gif', 'image/jpeg', 'image/jpg', 'application/octet-stream', 'image/png', 'image/heic'] }
 
   alias_attribute :entry, :body
 

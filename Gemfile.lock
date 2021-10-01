@@ -160,7 +160,7 @@ GEM
       multipart-post (>= 1.2, < 3)
     fastimage (2.1.7)
     ffi (1.15.3)
-    file_validators (2.3.0)
+    file_validators (3.0.0)
       activemodel (>= 3.2)
       mime-types (>= 1.0)
     fog-aws (3.10.0)
