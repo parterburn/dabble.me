@@ -1,6 +1,7 @@
 FactoryBot.define do
   factory :entry, class: Entry do
     date { Time.now }
+    user { create(:user) }
   end
 
   factory :email, class: OpenStruct do
