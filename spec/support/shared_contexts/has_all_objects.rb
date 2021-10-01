@@ -1,14 +1,14 @@
 shared_context 'has all objects' do
   let(:user) do
-    User.create(email: Faker::Internet.email, password: Faker::Internet.password(8), first_name: Faker::Name.first_name, last_name: Faker::Name.last_name)
+    FactoryBot.create(:user)
   end
 
   let(:paid_user) do
-    User.create(email: Faker::Internet.email, password: Faker::Internet.password(8), plan: 'PRO Monthly PayHere', payhere_id: Faker::Number.number(3), gumroad_id: Faker::Number.number(12), first_name: Faker::Name.first_name, last_name: Faker::Name.last_name)
+    FactoryBot.create(:user, plan: 'PRO Monthly PayHere', payhere_id: Faker::Number.number(3), gumroad_id: Faker::Number.number(12))
   end
 
   let(:superuser) do
-    User.create(email: ENV['ADMIN_EMAILS']&.split(',').first, password: Faker::Internet.password(8))
+    FactoryBot.create(:user, plan: 'PRO Forver', email: ENV['ADMIN_EMAILS']&.split(',').first)
   end
 
   let(:inspiration) do

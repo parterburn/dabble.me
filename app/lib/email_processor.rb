@@ -1,3 +1,5 @@
+require 'fileutils'
+
 # Handle Emailed Entries
 class EmailProcessor
   def initialize(email)
