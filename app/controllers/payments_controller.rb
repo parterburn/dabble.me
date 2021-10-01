@@ -1,7 +1,7 @@
 class PaymentsController < ApplicationController
   before_action :authenticate_user!
   before_action :authenticate_admin!
-  
+
   skip_before_action :authenticate_user!, only: [:payment_notify]
   skip_before_action :authenticate_admin!, only: [:payment_notify]
   skip_before_action :verify_authenticity_token, only: [:payment_notify]
@@ -101,7 +101,7 @@ class PaymentsController < ApplicationController
   def gumroad?
     params[:email].present? &&
       params[:seller_id] == ENV['GUMROAD_SELLER_ID'] &&
-      params[:product_id] == ENV['GUMROAD_PRODUCT_ID']    
+      params[:product_id] == ENV['GUMROAD_PRODUCT_ID']
   end
 
   def paypal?
@@ -170,7 +170,7 @@ class PaymentsController < ApplicationController
     begin
       UserMailer.no_user_here(params[:email], 'Gumroad', params[:purchaser_id]).deliver_later if @user.blank?
     rescue StandardError => e
-      Rails.logger.warn("Error sending no_user_her email to #{params[:email]}: #{e}")
+      Rails.logger.warn("Error sending no_user_here email to #{params[:email]}: #{e}")
     end
 
     { plan: "PRO #{frequency} Gumroad", gumroad_id:  params[:purchaser_id] }
@@ -204,7 +204,7 @@ class PaymentsController < ApplicationController
 
   def user_params
     params.permit(:plan, :gumroad_id, :payhere_id)
-  end 
+  end
 
   def valid_payhere_signature?
     return true if Rails.env.test?
@@ -212,5 +212,5 @@ class PaymentsController < ApplicationController
     expected = OpenSSL::HMAC.hexdigest(digest, ENV["PAYHERE_SHARED_SECRET"].to_s, request.raw_post)
 
     Rack::Utils.secure_compare(expected, request.headers["HTTP_X_SIGNATURE"])
-  end  
+  end
 end

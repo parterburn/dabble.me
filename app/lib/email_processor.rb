@@ -89,9 +89,14 @@ class EmailProcessor
       rescue
         existing_entry.body = existing_entry.body.force_encoding('iso-8859-1').encode('utf-8')
         existing_entry.original_email_body = existing_entry.original_email_body.force_encoding('iso-8859-1').encode('utf-8')
-        existing_entry.save
       end
-      track_ga_event('Merged')
+      if existing_entry.save
+        track_ga_event('Merged')
+      else
+        # error saving entry
+        UserMailer.failed_entry(@user, existing_entry.errors.full_messages, date, @body).deliver_later
+        Rails.logger.warn("Error saving existing entry #{existing_entry.id} from email: #{enexisting_entrytry.errors.full_messages}")
+      end
     else
       params = { date: date, inspiration_id: inspiration_id }
       best_attachment.present? ? params.merge!(image: best_attachment) : params.merge!(remote_image_url: best_attachment_url)
@@ -103,9 +108,13 @@ class EmailProcessor
         entry = @user.entries.create!(params.merge(body: @body, original_email_body: @raw_body))
       end
       entry.body = entry.sanitized_body if @user.is_free?
-      entry.save
-      track_ga_event('New')
-      Sqreen.track('inbound_email')
+      if entry.save
+        track_ga_event('New')
+        Sqreen.track('inbound_email')
+      else
+        UserMailer.failed_entry(@user, entry.errors.full_messages, date, @body).deliver_later
+        Rails.logger.warn("Error saving entry from email: #{entry.errors.full_messages}")
+      end
     end
 
     @user.increment!(:emails_received)

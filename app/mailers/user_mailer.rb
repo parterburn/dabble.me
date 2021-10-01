@@ -50,6 +50,16 @@ class UserMailer < ActionMailer::Base
     mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: '[REFUND REQUIRED] Payment Without a User', body: "#{email} does not exist as a user at #{ENV['MAIN_DOMAIN']}. Payment via #{source}.#{add_id}")
   end
 
+  def failed_entry(user, errors, date, body)
+    @user = user
+    @errors = errors.to_sentence
+    @date = date.strftime('%b %-d, %Y')
+    @body = body
+    # email = mail(to: user.cleaned_to_address, subject: 'Error saving entry for #{date}')
+    email = mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: "Error saving entry for user #{user.id}")
+    email.mailgun_options = {tag: 'EntryError'}
+  end
+
   def referred_users(id, email)
     @ref_id = id
     if id == '*'
@@ -61,5 +71,5 @@ class UserMailer < ActionMailer::Base
 
     email = mail(to: email, subject: 'Dabble Me Referrals')
     email.mailgun_options = {tag: 'Referrals'}
-  end  
+  end
 end
