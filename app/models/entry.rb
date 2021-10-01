@@ -73,7 +73,7 @@ class Entry < ActiveRecord::Base
   end
 
   def text_body
-    ReverseMarkdown.convert(self.body, unknown_tags: :bypass)
+    CGI::unescape_html(ReverseMarkdown.convert(self.body, unknown_tags: :bypass))
   end
 
   def sanitized_body
