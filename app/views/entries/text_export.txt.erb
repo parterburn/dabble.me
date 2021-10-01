@@ -2,4 +2,8 @@
 <%= entry.image_url_cdn %><% else %>
 [DATE:<%= entry.date.strftime("%Y-%m-%d")%>]
 <%== entry.text_body %>
-<% if entry.image.present? %><%= "[IMAGE: #{entry.image_url_cdn}]" %><% end %><% end %><% end %>
+<% if entry.image.present? %>
+<%= "[IMAGE: #{entry.image_url_cdn}]" %>
+<% end %>
+<% end %>
+<% end %>
