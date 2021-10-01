@@ -23,7 +23,7 @@
       - if current_user.is_pro?
         = link_to "Write your first entry", new_entry_path, :class => "btn btn-primary btn-lg"
         = link_to "Import Entries", import_path, :class => "btn btn-primary btn-lg"
-      - else  
+      - else
 
 .col-md-8.col-md-offset-2.entry.s-no-entries-ideas.well
   .center
@@ -32,7 +32,7 @@
         %h2 Premium features unlocked!
       - else
         %h2{style: "font-size: 18px;"} Unlock all premium features with a PRO account
-        %script{:src => "https://payhere.co/embed/embed.js", :type => "text/javascript"}
+        %script{:src => "https://app.payhere.co/embed/embed.js", :type => "text/javascript"}
 
         = render "payments/payhere"
         .row
@@ -52,7 +52,7 @@
         %span
           %i.fa.fa-rocket
   .s-scrollable
-    .entry-panel     
+    .entry-panel
       .s-features
         %ul
           %li
@@ -133,7 +133,7 @@
         %button.btn.btn-primary.btn-large.btn-block.btn-twitter
           %i.fa.fa-twitter
           &nbsp;Share on Twitter
-    .clearfix  
+    .clearfix
 
 :javascript
   var timeout = '';

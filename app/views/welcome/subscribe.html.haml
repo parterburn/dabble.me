@@ -15,7 +15,7 @@
       - if user_signed_in?
         - if current_user.is_pro?
           .col-md-12.alert.alert-info{style: "text-align:center;"}
-            Currently subscribed to: 
+            Currently subscribed to:
             %strong #{current_user.plan_details.html_safe}
             - if current_user.plan_type.present?
               %span{style: "font-size:12px;display:block;margin-top:10px;"} Modify or cancel your subscription at #{current_user.plan_type.html_safe}.
@@ -47,9 +47,9 @@
 
         - else
           %div{style: "text-align:center;"}
-            %script{:src => "https://payhere.co/embed/embed.js", :type => "text/javascript"}
+            %script{:src => "https://app.payhere.co/embed/embed.js", :type => "text/javascript"}
             = render "payments/payhere"
-            .row 
+            .row
               .col-sm-7{style: "margin: 5px auto 0;"}
                 %button.btn.btn-success.btn-block.btn-lg{:"style" => "height: 55px;", :"onclick" => "payhere('yearly');" }
                   $30
@@ -86,7 +86,7 @@
           Import entries from other services
         %li
           %i.fa.fa-check
-          Embed Spotify tracks in your entries          
+          Embed Spotify tracks in your entries
         %li
           %i.fa.fa-check
           Add new entries via the web
