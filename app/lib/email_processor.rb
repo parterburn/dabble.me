@@ -1,5 +1,3 @@
-require 'fileutils'
-
 # Handle Emailed Entries
 class EmailProcessor
   def initialize(email)
@@ -26,7 +24,7 @@ class EmailProcessor
   def process
     unless @user.present?
       Sqreen.track('inbound_email_without_user')
-      return false 
+      return false
     end
 
     best_attachment = nil
@@ -113,7 +111,7 @@ class EmailProcessor
       UserMailer.second_welcome_email(@user).deliver_later if @user.emails_received == 1 && @user.entries.count == 1
     rescue StandardError => e
       Rails.logger.warn("Error sending second welcome email to #{@user.email}: #{e}")
-    end      
+    end
   end
 
   private
@@ -122,7 +120,7 @@ class EmailProcessor
     if ENV['GOOGLE_ANALYTICS_ID'].present?
       tracker = Staccato.tracker(ENV['GOOGLE_ANALYTICS_ID'])
       tracker.event(category: 'Email Entry', action: action, label: @user.user_key)
-    end    
+    end
   end
 
   def pick_meaningful_recipient(to_recipients, cc_recipients)
