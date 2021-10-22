@@ -53,7 +53,7 @@ class EmailProcessor
 
           if image_type.in?([:gif, :jpeg, :png])
             image_width, image_height = FastImage.size(image_url)
-            next if image_height && image_width && image_height < 100  && image_width < 100)
+            next if image_height && image_width && image_height < 100 && image_width < 100
 
             best_attachment_url = image_url
             break
