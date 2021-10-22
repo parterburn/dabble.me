@@ -1,6 +1,6 @@
 class UserJob < ActiveJob::Base
   queue_as :default
- 
+
   def perform(email_for_lookup, user_id)
     user = User.find(user_id)
     email_for_lookup ||= user.email

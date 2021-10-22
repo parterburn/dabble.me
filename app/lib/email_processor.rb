@@ -49,10 +49,12 @@ class EmailProcessor
       image_urls.flatten! if image_urls.present?
       if @user.is_pro? && image_urls.present? && image_urls.any?
         image_urls.each do |image_url|
-          image_width, image_height = FastImage.size(image_url)
           image_type = FastImage.type(image_url)
 
-          if image_type.in?([:gif, :jpeg, :png]) && image_height > 100  && image_width > 100
+          if image_type.in?([:gif, :jpeg, :png])
+            image_width, image_height = FastImage.size(image_url)
+            next if image_height && image_width && image_height < 100  && image_width < 100)
+
             best_attachment_url = image_url
             break
           end
