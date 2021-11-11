@@ -25,7 +25,7 @@ ActiveRecord::Schema.define(version: 2021_06_29_030043) do
     t.datetime "created_at"
     t.datetime "updated_at"
     t.string "image"
-    t.jsonb "songs", default: []
+    t.jsonb "songs", default: [], array: true
     t.index ["user_id"], name: "index_entries_on_user_id"
   end
 

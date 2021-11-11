@@ -29,7 +29,7 @@ class ApplicationController < ActionController::Base
     added_attrs = [:first_name, :last_name, :email, :password, :password_confirmation]
     devise_parameter_sanitizer.permit :sign_up, keys: added_attrs
     devise_parameter_sanitizer.permit :account_update, keys: added_attrs + [{ frequency: [] }, :way_back_past_entries, :send_past_entry, :send_time, :send_timezone, :past_filter, :current_password, hashtags_attributes: [:tag, :date]]
-  end  
+  end
 
   def js_action
     @js_action = [controller_path.camelize.gsub('::', '_'), action_name].join('_')
@@ -37,7 +37,7 @@ class ApplicationController < ActionController::Base
 
   def tag_request
     if current_user
-      Sqreen.identify(id: current_user.id, email: current_user.email)
+      Sqreen.identify({id: current_user.id, email: current_user.email})
     end
   end
 end
@@ -46,5 +46,5 @@ if RUBY_VERSION>='2.6.0'
   def handle_timeout(exception)
     Rails.logger.warn("Timeout Error: #{params&.to_hash&.to_s}")
     render "errors/timeout"
-  end  
+  end
 end
