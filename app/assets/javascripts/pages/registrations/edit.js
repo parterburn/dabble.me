@@ -1,6 +1,6 @@
 (function(){
-  window.DABBLE.pages.Registrations_edit = window.DABBLE.pages.Registrations_update = function(){
-    
+  window.DABBLE.pages.Registrations_settings = window.DABBLE.pages.Registrations_edit = window.DABBLE.pages.Registrations_update = function(){
+
     $(".j-delete-user").on({
       click: function(e){
         if ($('#user_current_password').val().length === 0) {
@@ -20,7 +20,7 @@
       selectYears: 20
     });
 
-    $('.pickadate').pickadate();      
+    $('.pickadate').pickadate();
 
     $('form').submit(function(){
       $(this).find('input[type=submit]').prop('disabled', true);

@@ -1,0 +1,38 @@
+- title 'Account Security Settings on Dabble Me'
+
+.row
+  .col-md-8.col-md-offset-2
+    %h3 ACCOUNT SECURITY
+    %br
+
+  = form_for(user, url: registration_path(user), html: { method: :put }) do |f|
+    .col-md-8.col-md-offset-2
+      = f.label :email
+      = f.email_field :email, class: "form-control"
+      %br
+
+    - if devise_mapping.confirmable? && resource.pending_reconfirmation?
+      .col-md-8.col-md-offset-2
+        Currently waiting confirmation for: #{resource.unconfirmed_email}
+
+    .col-md-4.col-md-offset-2
+      = f.label :password, "New Password"
+      = f.password_field :password, autocomplete: "off", class: "form-control"
+      %br
+
+    .col-md-4
+      = f.label :password_confirmation, "New Password Confirmation"
+      = f.password_field :password_confirmation, autocomplete: "off", class: "form-control"
+      %br
+
+    .col-md-8.col-md-offset-2
+      %br
+      = f.label :current_password
+      %i (to confirm your changes)
+      = f.password_field :current_password, autocomplete: "off", class: "form-control"
+      %br
+
+    .col-md-8.col-md-offset-2
+      = f.submit "Update Security", class: "btn btn-primary form-control"
+
+  .clearfix

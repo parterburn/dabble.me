@@ -11,6 +11,7 @@ Rails.application.routes.draw do
 
   devise_scope :user do
     get 'settings/(:user_key)'     => 'registrations#settings', as: 'settings'
+    get 'security'                 => 'registrations#security', as: 'security'
     match 'unsubscribe/:user_key'  => 'registrations#unsubscribe', as: 'unsubscribe', via: [:put]
   end
 
@@ -24,7 +25,7 @@ Rails.application.routes.draw do
   get 'entries/random',                 to: 'entries#random', as: 'random_entry'
   get 'entries/:year/:month/:day',      to: 'entries#show',  as: 'day_entry'
   resources :entries, except: [:show]
-  get 'entries/(:group)(/:subgroup)',   to: 'entries#index',  as: 'group_entries'  
+  get 'entries/(:group)(/:subgroup)',   to: 'entries#index',  as: 'group_entries'
   get 'latest',                         to: 'entries#latest', as: 'latest_entry'
   get 'review/(:year)',                 to: 'entries#review', as: 'review'
   get 'play',                           to: 'entries#spotify', as: 'spotify'
@@ -42,7 +43,7 @@ Rails.application.routes.draw do
   post 'email_processor',               to: 'griddler/emails#create'
   post 'email_events',                  to: 'email_events#create'
 
-  root 'welcome#index'  
+  root 'welcome#index'
 
   get "*any", via: :all, to: "errors#not_found"
 end

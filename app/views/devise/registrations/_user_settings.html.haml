@@ -1,5 +1,11 @@
 = form_for(resource, as: resource_name, url: form_path, html: { method: :put }) do |f|
-  - unless form_path.include?('unsubscribe')
+  - if form_path.include?('unsubscribe')
+    .col-md-8.col-md-offset-2
+      = f.label :email
+      = link_to "Login to change email", security_path, class: "s-delete", style: "opacity: 100%;margin-left: 5px;"
+      = f.email_field :email, class: "form-control disabled", disabled: 'disabled'
+      %br
+  - else
     .col-md-4.col-md-offset-2
       = f.label :first_name
       = f.text_field :first_name, class: "form-control"
@@ -10,11 +16,12 @@
       = f.text_field :last_name, class: "form-control"
       %br
       .clearfix
-  - else
+
     .col-md-8.col-md-offset-2
       = f.label :email
-      %i (login to change email)
+      = link_to "Change Email or Password", security_path, class: "s-delete", style: "opacity: 100%;margin-left: 5px;"
       = f.email_field :email, class: "form-control disabled", disabled: 'disabled'
+      .clearfix
       %br
       %br
 
@@ -22,10 +29,10 @@
     %div
       = label_tag "Days to send emails"
       %br
-      -if @user.is_free?
+      -if user.is_free?
         - add_class = "disabled"
       - %w(Sun Mon Tue Wed Thu Fri Sat).each do |day|
-        - if @user.frequency && @user.frequency.include?(day[0..2])
+        - if user.frequency && user.frequency.include?(day[0..2])
           = check_box_tag "frequency[#{day}]", 1, {checked: "checked"}
         - else
           - if add_class == "disabled" && day != "Sun"
@@ -35,12 +42,12 @@
         %span.s-day-email= label_tag "frequency_#{day}", day
         &nbsp;&nbsp;
       .clearfix
-      -if @user.is_free?
+      -if user.is_free?
         %strong= link_to "Subscribe to PRO to change frequency.", subscribe_path, class: "alert-link"
         Free accounts are limited to 1 email every other week.
         %br
       %br
-    
+
   .col-md-4.col-md-offset-2
     = f.label :send_time
     = f.time_select :send_time, {combined: true, minute_interval: 60, ampm: true, include_seconds: false }, class: "form-control"
@@ -56,22 +63,22 @@
       %div{style: "margin-bottom: 5px;"}
         = f.check_box :send_past_entry
         = f.label :send_past_entry, "Include past entries in emails and prevent entries that have:"
-      - if @user.is_pro?
+      - if user.is_pro?
         = f.text_field :past_filter, class: "form-control", placeholder: "Comma-separated words to prevent showing up in past entries."
-        - if @user.past_filter.present?
+        - if user.past_filter.present?
           %small
-            = link_to pluralize(current_user.past_filter_entry_ids.length, "entry"), search_path(search: { term: current_user.past_filter.split(',').map(&:strip).join(" OR ") })
+            = link_to pluralize(user.past_filter_entry_ids.length, "entry"), search_path(search: { term: user.past_filter.split(',').map(&:strip).join(" OR ") })
             being filtered out of past entries.
           %br
       - else
         = f.text_field :past_filter, class: "form-control disabled", placeholder: "Comma-separated words to prevent in past entries", readonly: "readonly", value: "", rel: "tooltip", title: "Upgrade to PRO for this feature."
 
-      - if @user.is_pro? && @user.entries.where("date < (?)", 1.year.ago).any?
+      - if user.is_pro? && user.entries.where("date < (?)", 1.year.ago).any?
         %div{style: "margin-top: 8px;"}
           = f.check_box :way_back_past_entries
           = f.label :way_back_past_entries, "Include past entries that are over a year old", style: "font-weight: normal;"
 
-    - if @user.is_pro?
+    - if user.is_pro?
       .well{style: 'background-color: hsla(40, 33%, 96%, 1); padding: 15px 20px;'}
         %div{style: "margin-bottom: 5px;"}
           .div{style: "margin-bottom: 10px;"}
@@ -88,45 +95,12 @@
   .clearfix
 
   .col-md-8.col-md-offset-2
-    = f.submit "Update Settings", class: "btn btn-primary form-control"  
+    = f.submit "Update Settings", class: "btn btn-primary form-control"
 
   - if form_path.include?('unsubscribe')
     .col-md-12.center
       %br
       %button{name: "unsub_all", type: "submit", value: "yes", class: "s-unsubscribe"}
         Unsubscribe from all emails
-
-  - else  
-    .col-md-8.col-md-offset-2
-      %hr
-      %br
-
-    .col-md-8.col-md-offset-2
-      = f.label :email
-      = f.email_field :email, class: "form-control"
-      %br
-
-    - if devise_mapping.confirmable? && resource.pending_reconfirmation?
-      .col-md-8.col-md-offset-2
-        Currently waiting confirmation for: #{resource.unconfirmed_email}
-    
-    .col-md-4.col-md-offset-2
-      = f.label :password, "New Password"
-      = f.password_field :password, autocomplete: "off", class: "form-control"
-      %br
-    
-    .col-md-4
-      = f.label :password_confirmation, "New Password Confirmation"
-      = f.password_field :password_confirmation, autocomplete: "off", class: "form-control"
-      %br
-
-    .col-md-8.col-md-offset-2
-      = f.label :current_password
-      %i (to confirm your changes)
-      = f.password_field :current_password, autocomplete: "off", class: "form-control"
-      %br
-
-    .col-md-8.col-md-offset-2
-      = f.submit "Update Settings", class: "btn btn-primary form-control"
 
   .clearfix
