@@ -151,7 +151,8 @@ RSpec.describe PaymentsController, type: :controller do
         membership_plan: {
           name: "Dabble Me PRO Yearly",
           billing_interval: "yearly"
-        }
+        },
+        event: "payment.success"
       }
     end
 
@@ -186,7 +187,7 @@ RSpec.describe PaymentsController, type: :controller do
       expect(paid_user.reload.plan).to eq paid_user.plan
       expect(ActionMailer::Base.deliveries.last.subject).to eq '[REFUND REQUIRED] Payment Without a User'
     end
-  end  
+  end
 
   describe 'payment_notify with Gumroad' do
     let(:gumroad_params) do
@@ -245,7 +246,7 @@ RSpec.describe PaymentsController, type: :controller do
       paypal_params.merge!(payer_email: paid_user.email, item_name: "Dabble Me PRO for #{paid_user.user_key}")
       expect { post :payment_notify, params: paypal_params, as: :json }.to change { Payment.count }.by(1)
       expect(paid_user.reload.plan).to eq 'PRO Yearly PayPal'
-      expect(ActionMailer::Base.deliveries.last.subject).to_not eq 'Thanks for subscribing to Dabble Me PRO!'      
+      expect(ActionMailer::Base.deliveries.last.subject).to_not eq 'Thanks for subscribing to Dabble Me PRO!'
     end
 
     it 'should not create a payment if no match' do
