@@ -18,6 +18,7 @@ class RegistrationsController < Devise::RegistrationsController
 
   def update
     if params[:frequency].present?
+      user.frequency = []
       params[:frequency].each do |freq|
         user.frequency << freq[0]
       end

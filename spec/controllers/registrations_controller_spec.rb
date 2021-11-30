@@ -44,7 +44,7 @@ RSpec.describe RegistrationsController, type: :controller do
           send_timezone: 'Pacific Time (US & Canada)',
           send_past_entry: '1'
         }
-      }      
+      }
       post :unsubscribe, params: params, as: :json
       expect(response.status).to eq 302
       expect(response).to redirect_to(settings_url(user.user_key))
@@ -87,7 +87,7 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(user.send_timezone).to eq 'Pacific Time (US & Canada)'
       expect(user.send_time).to eq '2000-01-01 16:00:00 UTC'
       expect(user.send_past_entry).to eq true
-    end    
+    end
   end
 
   describe 'update' do
@@ -140,33 +140,27 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(user.full_name).to eq old_full_name
     end
 
-    it 'should allow user updates to non-basic info with correct password' do
+    it 'should allow user updates to security settings with correct password' do
       sign_in paid_user
       expect(paid_user.frequency.count).to eq 1
       old_password = paid_user.encrypted_password
       email = Faker::Internet.email
-      post :update, params: params.deep_merge(user: { email: email, password: 'blueblue', password_confirmation: 'blueblue', current_password: paid_user.password }), as: :json
+      post :update, params: {user: { email: email, password: 'blueblue', password_confirmation: 'blueblue', current_password: paid_user.password }}, as: :json
       expect(response.status).to eq 302
       expect(response).to redirect_to(edit_user_registration_url)
-      expect(paid_user.reload.frequency).to eq ['Sun', 'Mon', 'Tue']
-      expect(paid_user.email).to eq email
-      expect(paid_user.full_name).to eq "Testy O'tester"
+      expect(paid_user.reload.email).to eq email
       expect(paid_user.encrypted_password).to_not eq old_password
     end
 
     it 'should not allow user updates to frequency for free users' do
       sign_in user
       expect(user.frequency.count).to eq 1
-      old_password = user.encrypted_password
-      email = Faker::Internet.email
-      post :update, params: params.deep_merge(user: { email: email, password: 'blueblue', password_confirmation: 'blueblue', current_password: user.password }), as: :json
+      post :update, params: params, as: :json
       expect(response.status).to eq 302
       expect(response).to redirect_to(edit_user_registration_url)
       expect(user.reload.frequency).to eq ['Sun']
-      expect(user.email).to eq email
       expect(user.full_name).to eq "Testy O'tester"
-      expect(user.encrypted_password).to_not eq old_password
-    end    
+    end
   end
 
   describe 'creating a user' do
@@ -218,7 +212,7 @@ RSpec.describe RegistrationsController, type: :controller do
                   }],
                   body: new_entry_email_body2 }
 
-      email2 = FactoryBot.build(:email, params2)      
+      email2 = FactoryBot.build(:email, params2)
       expect{ EmailProcessor.new(email2).process }.to change{ new_free_user.entries.count }.by(0)
       expect(new_free_user.entries.last.body).to include new_entry_email_body
       expect(new_free_user.entries.last.body).to include new_entry_email_body2
@@ -262,11 +256,11 @@ RSpec.describe RegistrationsController, type: :controller do
                   }],
                   body: new_entry_email_body2 }
 
-      email2 = FactoryBot.build(:email, params)      
+      email2 = FactoryBot.build(:email, params)
       expect{ EmailProcessor.new(email2).process }.to change{ new_paid_user.entries.count }.by(0)
       expect(new_paid_user.entries.last.body).to include new_entry_email_body
       expect(new_paid_user.entries.last.body).to include new_entry_email_body2
       expect(new_paid_user.entries.last.date.strftime('%Y-%m-%d')).to eq DateTime.now.in_time_zone(new_paid_user.send_timezone).strftime('%Y-%m-%d')
-    end    
+    end
   end
 end
