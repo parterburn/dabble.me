@@ -55,7 +55,7 @@ namespace :entry do
     # Avg words per post: 183.07375064845235
     # Total characters: 22,842,453
     # Avg characters per post: 987 (4 tweets)
-    # Most Frequent Words: [[i, 151025], [and, 137508], [to, 134428], [the, 132003], [a, 85921], [of, 55016], [it, 53363], [was, 52440], [in, 47202], [that, 45034]]    
+    # Most Frequent Words: [[i, 151025], [and, 137508], [to, 134428], [the, 132003], [a, 85921], [of, 55016], [it, 53363], [was, 52440], [in, 47202], [that, 45034]]
 
     # Stats for 2020
     # Users created: 269
@@ -67,12 +67,26 @@ namespace :entry do
     # Avg characters per post: 1,077 (4 tweets)
     # Most Frequent Words: [[i, 160271], [and, 139689], [the, 138717], [to, 135745], [a, 86025], [of, 62351], [it, 55065], [in, 51949], [that, 50410], [was, 45351]]
 
+    # "****************************************************************************************************"
+    # "STATS FOR 2021"
+    # "****************************************************************************************************"
+    # "Users created: 1,197"
+    # "Entries created in 2021: 24,338"
+    # "Entries for 2021: 22,833"
+    # "Total words: 4,594,465.0"
+    # "Avg words per post: 201.22038277931065"
+    # "Total characters: 24,948,169"
+    # "Avg characters per post: 1,092 (4 tweets)"
+    # "Most Frequent Words: [[\"i\", 159901], [\"and\", 138881], [\"the\", 138583], [\"to\", 135939], [\"a\", 86781], [\"of\", 59413], [\"it\", 55672], [\"in\", 51007], [\"that\", 49711], [\"was\", 45889]]"
+    # "****************************************************************************************************"
+
+
     p "*"*100
     p "STATS FOR #{year}"
     p "*"*100
 
-    extend ActionView::Helpers::NumberHelper    
-    all_entries = Entry.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE") 
+    extend ActionView::Helpers::NumberHelper
+    all_entries = Entry.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE")
     entries_bodies = all_entries.map { |e| ActionView::Base.full_sanitizer.sanitize(e.body) }.join(" ")
     words_counter = WordsCounted.count(entries_bodies)
     total_words = words_counter.token_count.to_f
@@ -83,7 +97,7 @@ namespace :entry do
     most_frequent = words_counter.token_frequency.first(10)
     p "Users created: #{number_with_delimiter(User.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
     p "Entries created in #{year}: #{number_with_delimiter(Entry.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
-    p "Entries for #{year}: #{number_with_delimiter(all_entries.count)}"    
+    p "Entries for #{year}: #{number_with_delimiter(all_entries.count)}"
     p "Total words: #{number_with_delimiter(total_words)}"
     p "Avg words per post: #{number_with_delimiter(avg_words)}"
     p "Total characters: #{number_with_delimiter(total_chars)}"
@@ -96,7 +110,7 @@ namespace :entry do
   task :stats_by_user, [:year] => :environment do |_, year:|
     data = []
     User.all.each do |user|
-      user_entries = Entry.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE AND user_id = ?", user.id) 
+      user_entries = Entry.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE AND user_id = ?", user.id)
       if user_entries.count > 0
         entries_bodies = user_entries.map { |e| ActionView::Base.full_sanitizer.sanitize(e.body) }.join(" ")
         words_counter = WordsCounted.count(entries_bodies)

@@ -197,12 +197,12 @@ class EntriesController < ApplicationController
     @year = params[:year] || (month > 11 ? Time.now.year : Time.now.year - 1)
     @entries = current_user.entries.where("date >= '#{@year}-01-01'::DATE AND date <= '#{@year}-12-31'::DATE")
     @total_count = @entries.count
-    if @total_count > 0
+    if @total_count.positive?
       @body_text = @entries.map { |e| ActionView::Base.full_sanitizer.sanitize(e.body) }.join(" ")
       @words_counter = WordsCounted.count(@body_text, exclude: Entry::WORDS_NOT_TO_COUNT)
       if @total_count > 20
         all_user_entry_count = Entry.where("date >= '#{@year}-01-01'::DATE AND date <= '#{@year}-12-31'::DATE").group(:user_id).reorder("count_all").count.values
-        @pctile = (((all_user_entry_count.find_index(@total_count) + 1).to_f / (all_user_entry_count.count)) * 100).round
+        @pctile = (((all_user_entry_count.find_index(@total_count) + 1).to_f / all_user_entry_count.count) * 100).round
       end
     else
       flash[:notice] = "No entries in #{@year} - nothing to review :("
@@ -234,6 +234,7 @@ class EntriesController < ApplicationController
 
   def require_entry_permission
     return false if @entry.present? && current_user == @entry.user
+
     flash[:alert] = 'Not authorized'
     redirect_to entries_path
   end
@@ -241,6 +242,7 @@ class EntriesController < ApplicationController
   def random_inspiration
     count = Inspiration.without_imports_or_email.count
     return nil if count == 0
+
     Inspiration.without_imports_or_email.offset(rand(count)).first
   end
 
@@ -253,7 +255,7 @@ class EntriesController < ApplicationController
       else
         title = ActionController::Base.helpers.strip_tags(entry.sanitized_body.gsub(/\n/, '')).truncate(50, separator: ' ')
       end
-      json_hash <<  {
+      json_hash << {
         id: entry.id,
         title: title,
         url: day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day),

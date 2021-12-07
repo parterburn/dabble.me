@@ -10,7 +10,7 @@
         = link_to "#{year}", review_path(year), style: "margin: 0 5px; font-size: 16px;"
     .clearfix
     %br
-    %br      
+    %br
 
   .col-md-8.col-md-offset-2.well
     .center
@@ -52,7 +52,7 @@
         %h2 Months of Entries
         - months = @entries.pluck("to_char(date, 'Mon')")
         - counts = Hash.new(0)
-        - months.each { |name| counts[name.strip] += 1 }        
+        - months.each { |name| counts[name.strip] += 1 }
         %h3
           %span= "#{pluralize(counts.length, 'month')} covered"
       .s-review-details
@@ -66,14 +66,14 @@
       .s-entry-date
         %h2 Total Words
         %h3
-          - percent_book = ((@words_counter.token_count.to_f/124000).to_f * 100).round
+          - percent_book = ((@words_counter.token_count.to_f/88000).to_f * 100).round
           - book_height = 500-((percent_book.to_f / 100) * 500)
-          %span= "#{number_with_delimiter(@words_counter.token_count)} - #{percent_book}% of Caste".html_safe
+          %span= "#{number_with_delimiter(@words_counter.token_count)} - #{percent_book}% of Untamed".html_safe
       .s-review-details
         %div{style: 'position: relative;'}
-          =link_to 'https://amzn.to/34JoS7j', target: '_blank', style: "margin-top: 20px; display: block;margin-bottom: 10px;" do
+          =link_to 'https://amzn.to/3rIqs5U', target: '_blank', style: "margin-top: 20px; display: block;margin-bottom: 10px;" do
             .s-book-cover{style: "height: #{book_height < 0 ? 0 : book_height}px"}
-            = image_tag 'caste.jpg', width: 329, height: 500
+            = image_tag 'untamed.jpg', width: 331, height: 500
         .clearfix
 
   .col-md-8.col-md-offset-2.well
@@ -83,22 +83,22 @@
         %h3
           - your_avg_words = @words_counter.token_count / @total_count
           %span= number_with_delimiter(your_avg_words)
-      - if @year.to_s == "2020"
+      - if @year.to_s == "2021"
         .s-review-details
-          - if your_avg_words > 298
+          - if your_avg_words > 300
             - compared = 'way more'
-          - elsif your_avg_words > 199
+          - elsif your_avg_words > 200
             - compared = 'more'
-          - elsif your_avg_words < 99
+          - elsif your_avg_words < 100
             - compared = 'way less'
           - else
             - compared = 'less'
-          %p= "That's #{compared} than the average of all Dabble Me users (116 words per post)."
+          %p= "That's #{compared} than the average of all Dabble Me users (201 words per post)."
           %p
-            %span Collectively, all Dabble Me users could have wrote 37 novels equivalent to Isabel Wilkerson's,
-            %span<= link_to "Caste: The Origins of Our Discontents", "https://amzn.to/361quIf", target: :_blank
+            %span Collectively, all Dabble Me users could have wrote 52 novels equivalent to Glennon Doyle's,
+            %span<= link_to "Untamed", "https://amzn.to/3rIqs5U", target: :_blank
             %span !
-          .clearfix  
+          .clearfix
 
   .col-md-8.col-md-offset-2.well
     .center{class: add_class}
@@ -133,9 +133,9 @@
     .center{class: add_class}
       .s-entry-date
         %h2 Most Frequent Words
-        - if @year.to_s == "2020"
+        - if @year.to_s == "2021"
           %h3
-            %span= "We're all still journaling in first-person...we collectively used <i>\"I\"</i> 160,271 times in our entries!".html_safe
+            %span= "We're all still journaling in first-person...we collectively used <i>\"I\"</i> 160,000 times in our entries!".html_safe
       .s-review-details
         - @words_counter.token_frequency.first(25).each do |word|
           %h3
