@@ -4,9 +4,14 @@
 = stylesheet_link_tag "//cdnjs.cloudflare.com/ajax/libs/fullcalendar/2.2.3/fullcalendar.min.css"
 
 - if current_user.is_free?
-  .alert.alert-warning
-    =link_to "Subscribe to PRO", subscribe_path, class: "alert-link"
-    to unlock the ability to see your existing entries on the calendar.
+  .row
+    .col-md-8.col-md-offset-2
+      .alert.alert-warning{style: "min-height: 45px;"}
+        =link_to subscribe_path, class: "float-left", style: "margin-top: -7px;" do
+          %button.btn.btn-warning Subscribe Now
+        %strong Dabble Me PRO
+        for $3/mo unlocks the ability to see your entries on the calendar.
+  .clearfix
 
 #calendar
 

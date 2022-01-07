@@ -1,14 +1,16 @@
 - title "New Entry on Dabble Me"
 
 .row
-  %br
   -if current_user.is_free?
     - add_class = 'blur'
     .col-md-8.col-md-offset-2
-      .alert.alert-warning
-        =link_to "Subscribe to PRO", subscribe_path, class: "alert-link"
-        to unlock the ability to add new entries via the web.
-
+      .alert.alert-warning{style: "min-height: 45px;"}
+        =link_to subscribe_path, class: "float-left", style: "margin-top: -7px;" do
+          %button.btn.btn-warning Subscribe Now
+        %strong Dabble Me PRO
+        for $3/mo unlocks the ability to add new entries via the web.
+    .clearfix
+  %br
   .col-md-8.col-md-offset-2.well.s-new-edit-entry{:id => "entry-#{@entry.id}"}
     %div{class: add_class}
       = form_for :entry, url: entries_path do |f|
@@ -19,7 +21,7 @@
             -if @entry.inspiration.present?
               =@entry.inspiration.body.html_safe
               - if @entry.inspiration.category != "Tip"
-                =f.hidden_field :inspiration_id, :value => @entry.inspiration.id          
+                =f.hidden_field :inspiration_id, :value => @entry.inspiration.id
             -elsif @random_inspiration.present?
               =@random_inspiration.body.html_safe
               - if @random_inspiration.category != "Tip"
@@ -86,4 +88,4 @@
   $("#entry-#{@entry.id}").imagesLoaded()
     .done( function( instance ) {
       $(instance.elements).find('.pictureFrame img').css("background-image","none");
-    });  
+    });

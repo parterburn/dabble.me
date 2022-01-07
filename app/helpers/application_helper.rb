@@ -8,6 +8,8 @@ module ApplicationHelper
   end
 
   def tag_relative_date(tag_date, entry_date)
+    return "Today" if tag_date == entry_date
+
     a = []
     a << distance_of_time_in_words(tag_date, entry_date)
     if tag_date > entry_date

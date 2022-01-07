@@ -22,13 +22,14 @@ Rails.application.routes.draw do
   get 'entries/calendar' => 'entries#calendar', as: 'entries_calendar'
 
   get 'past(/:anything)',               to: redirect('/entries')
+  get 'entries/songs',                  to: 'entries#spotify', as: 'spotify'
   get 'entries/random',                 to: 'entries#random', as: 'random_entry'
   get 'entries/:year/:month/:day',      to: 'entries#show',  as: 'day_entry'
   resources :entries, except: [:show]
   get 'entries/(:group)(/:subgroup)',   to: 'entries#index',  as: 'group_entries'
   get 'latest',                         to: 'entries#latest', as: 'latest_entry'
   get 'review/(:year)',                 to: 'entries#review', as: 'review'
-  get 'play',                           to: 'entries#spotify', as: 'spotify'
+  get 'play',                           to: redirect('/entries/songs')
   get 'search',                         to: 'searches#show'
   get 'write',                          to: redirect('/entries/new')
   get 'privacy',                        to: 'welcome#privacy'

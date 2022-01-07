@@ -6,15 +6,21 @@
     %br
 
   .col-md-8.col-md-offset-2
-    %p
-      Post new entries by emailing
-      =mail_to "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", encode: "hex", target: "_blank"
     .alert.alert-warning
       -if current_user.is_pro?
-        Thanks for subscribing to #{current_user.plan_name}!
+        Thanks for subscribing to
+        = link_to current_user.plan_name, subscribe_path, class: "alert-link"
       - else
-        Unlock premium features like changing the frequency of emails, adding/editing entries via the web, adding a photo, rich formatting, and searching your entries by subscribing to
-        =link_to("Dabble Me PRO", subscribe_path, class: 'alert-link')+"."
+        =link_to subscribe_path, class: "float-left" do
+          %button.btn.btn-warning Subscribe Now
+        %strong Dabble Me PRO
+        for $3/mo unlocks premium features like changing the frequency of emails, adding/editing entries via the web, adding a photo, rich formatting, and search.
+    %hr
+    %strong
+      %span{style: "margin-right: 5px;"}
+        Your post-by-email unique address to send new entries is
+      %code
+        =mail_to "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", encode: "hex", target: "_blank", style: "color: #a41100;"
     %hr
 
   = render partial: 'user_settings', locals: { form_path: registration_path(resource_name) }
@@ -42,5 +48,5 @@
       -if current_user.is_pro? && current_user.entries.only_images.any?
         Export a
         =link_to("list of your Image URLs", export_entries_path(:txt, only_images: true)) + "."
-        You can use a script or app to download these to your computer. 
+        You can use a script or app to download these to your computer.
     %br

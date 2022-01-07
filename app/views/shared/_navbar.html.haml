@@ -35,11 +35,6 @@
               %i.fa.fa-random.hidden-xs
               %span.visible-xs-inline-block RANDOM
 
-          %li{class: "#{'active' if current_page?(random_entry_path)}"}
-            =link_to spotify_path, title: "Songs from Entries" do
-              %i.fa.fa-music.hidden-xs
-              %span.visible-xs-inline-block SONGS
-
           %li{class: "#{'active' if current_page?(entries_calendar_path)}"}
             = link_to entries_calendar_path, title: "Calendar View" do
               %i.fa.fa-calendar.hidden-xs
@@ -54,7 +49,7 @@
             %li.dropdown{class: "#{'active' if params[:controller].in?(['admin', 'inspirations', 'payments'])}"}
               %a.dropdown-toggle{data: { toggle: "dropdown"}, href: "#"}
                 %i.fa.fa-lock.hidden-xs
-                %span.visible-xs-inline-block ADMIN                
+                %span.visible-xs-inline-block ADMIN
               %ul.dropdown-menu{role: "menu"}
                 %li{class: "#{'active' if current_page?(inspirations_path)}"}
                   =link_to inspirations_path, title: "Inspirations" do
@@ -63,7 +58,7 @@
                 %li{class: "#{'active' if current_page?(payments_path)}"}
                   =link_to payments_path, title: "Payments" do
                     %i.fa.fa-usd
-                    &nbsp;Payments              
+                    &nbsp;Payments
                 %li{class: "#{'active' if current_page?(admin_stats_path)}"}
                   =link_to admin_stats_path, title: "Admin Stats" do
                     %i.fa.fa-bar-chart

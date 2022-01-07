@@ -7,16 +7,19 @@
   - format_placeholder = "2014-10-02\n\nHere's my first entry!\n\nYYYY-MM-DD\n\nEntry text exactly 2 line-breaks after date."
 
 .row
-  .col-md-8.col-md-offset-2.s-import
-    %h3 Import #{type} Entries
-  .clearfix
-
   - if current_user.is_free?
     - add_class = "blur"
     .col-md-8.col-md-offset-2
-      .alert.alert-warning
-        =link_to "Subscribe now", subscribe_path, class: "alert-link"
-        to import entries.
+      .alert.alert-warning{style: "min-height: 45px;"}
+        =link_to subscribe_path, class: "float-left", style: "margin-top: -7px;" do
+          %button.btn.btn-warning Subscribe Now
+        %strong Dabble Me PRO
+        for $3/mo unlocks the ability to import entries from OhLife and Ahhlife.
+    .clearfix
+
+  .col-md-8.col-md-offset-2.s-import
+    %h3 Import #{type} Entries
+  .clearfix
 
   %div{class: add_class}
     - if params[:type]&.downcase != "photos"
@@ -33,7 +36,7 @@
             Try other import formats:
             =link_to "AhhLife", import_path('ahhlife')
             &middot;
-            =link_to "OhLife", import_path('ohlife')          
+            =link_to "OhLife", import_path('ohlife')
         .clearfix
 
     - if params[:type]&.downcase == "photos"
@@ -57,6 +60,6 @@
         .alert.alert-warning.center
           You may need to split up the ZIP file that you downloaded from OhLife into smaller ZIP files.
           %br
-          %strong This importer works best with ZIP files less than 20 MB and less than 20 files.    
+          %strong This importer works best with ZIP files less than 20 MB and less than 20 files.
           %br
           %i Filenames are expected to be in the format of: img_2014-10-22-0.jpg

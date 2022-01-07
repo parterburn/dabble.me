@@ -74,6 +74,7 @@ class EntriesController < ApplicationController
   end
 
   def spotify
+    @title = "Songs from Entries"
   end
 
   def create
@@ -265,4 +266,9 @@ class EntriesController < ApplicationController
     end
     json_hash.to_json
   end
+
+  def spotify_entries
+    @spotify_entires ||= current_user.entries.only_spotify
+  end
+  helper_method :spotify_entries
 end

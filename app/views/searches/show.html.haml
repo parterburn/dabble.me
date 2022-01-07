@@ -2,12 +2,14 @@
 - add_class = 'blur' if current_user.is_free?
 
 .row
-  - if current_user.is_free?
-    - add_class = 'blur'
+  - if @search.term.blank? && current_user.is_free?
     .col-md-8.col-md-offset-2
-      .alert.alert-warning
-        =link_to "Subscribe now", subscribe_path, class: "alert-link"
-        to search your entries and see which tags are used most.
+      .alert.alert-warning{style: "min-height: 45px;"}
+        =link_to subscribe_path, class: "float-left", style: "margin-top: -7px;" do
+          %button.btn.btn-warning Subscribe Now
+        %strong Dabble Me PRO
+        for $3/mo unlocks search and to see which tags are used most.
+    .clearfix
 
   .col-md-8.col-md-offset-2
     %br
@@ -23,9 +25,8 @@
 
     - if @search.term.present? && current_user.is_free?
       .alert.alert-danger
-        %strong
-          No results shown.
-          =link_to "SUBSCRIBE TO PRO TO USE SEARCH", subscribe_path, class: "alert-link pull-right"
+        You must be subscribed to PRO to use search.
+      = render "entries/pro_upgrade"
     - elsif @entries.present?
       - search_entries = Kaminari.paginate_array(@entries).page(params[:page]).per(params[:per])
       %p

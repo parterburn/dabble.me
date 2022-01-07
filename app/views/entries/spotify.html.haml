@@ -1,20 +1,33 @@
-- title "Spotify Songs"
-- spotify_entries = current_user.entries.only_spotify
+- title "#{@title} on Dabble Me"
 .row
-  .col-md-8.col-md-offset-2.well.s-faqs
-    %h2.center Songs from Entries
-    %p.center
-      %br
-      Add links from Spotify to your entries and you'll see a list of them here.
-    - if spotify_entries.present?
-      - spotify_entries = Kaminari.paginate_array(spotify_entries).page(params[:page]).per(params[:per])
-      - spotify_entries.each do |entry|
-        %p
-          %h5= link_to "Entry for #{entry.date_format_short}", day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day)
-          - entry.songs.each do |song|
-            %iframe{src: "https://open.spotify.com/embed?uri=spotify:track:#{song['spotify_id']}", width: "100%", height: "80", frameborder: "0", allowtransparency: "true"}
+  = render "sidebar"
+  = render "search"
+
+  - if spotify_entries.present?
+    - entries = Kaminari.paginate_array(spotify_entries).page(params[:page]).per(params[:per])
+    - entries.each do |entry|
+      .col-md-8.col-md-offset-1.well.entry{:id => "entry-#{entry.id}"}
+        .center
+          - if entry.exactly_past_years(current_user)
+            - year_back = Time.now.in_time_zone(current_user.send_timezone).year - entry.date.year
+            .label.label-past-years #{pluralize(year_back,"year").upcase} AGO
+          .s-entry-date
+            %h2
+              = link_to entry.date_format_short, day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day), rel: "tooltip-mobile-friendly", title: "#{tag_relative_date(entry.date, Date.today)}"
+        .s-scrollable
+          = entry.spotify_embed
+
+    .col-md-8.col-md-offset-2
       .center
-        = paginate spotify_entries
-    - else
-      %p= link_to image_tag("copy-spotify-link.gif", style: "width: 100%;"), "https://support.spotify.com/us/using_spotify/share_music/sharing-music/", target: "_blank"
-      %p.center=link_to "See how to copy link on other devices", "https://support.spotify.com/us/using_spotify/share_music/sharing-music/", target: "_blank"
+        = paginate entries
+  - else
+    .col-md-8.col-md-offset-1.well.s-faqs
+      .s-entry-date
+        %h2.center= @title
+      %p.center
+        %br
+        Add links to songs from Spotify to your entries and you'll see them here, ready to listen to!
+      %p
+        = link_to image_tag("copy-spotify-link.gif", style: "width: 100%;"), "https://support.spotify.com/us/using_spotify/share_music/sharing-music/", target: "_blank"
+      .center
+        =link_to "See how to copy link on other devices", "https://support.spotify.com/us/using_spotify/share_music/sharing-music/", target: "_blank"
