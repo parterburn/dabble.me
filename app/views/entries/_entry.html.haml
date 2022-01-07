@@ -6,6 +6,9 @@
     -if entry.inspiration.present?
       .float-left.s-edit-entry{rel: "popover", title: "#{entry.inspiration.inspired_by}", data: { content: "#{entry.inspiration.body.html_safe}" } }
         %i.fa.fa-lightbulb-o
+    -else
+      .float-left.s-edit-entry
+        %div{style: "width: 20px;"}
     .float-right.s-edit-entry
       = link_to edit_entry_path(entry), rel: "tooltip", title: "Edit Entry" do
         %i.fa.fa-pencil-square-o
