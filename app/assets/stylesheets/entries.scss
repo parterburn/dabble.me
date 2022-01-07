@@ -12,6 +12,9 @@
 
 .s-date-groups {
   float:right;
+  h4 {
+    font-weight: 400;
+  }
   .s-date-right {
     float:right;
   }
@@ -147,6 +150,7 @@ a.s-delete {
   > h2 {
     color: $red;
     font-size: 25px;
+    font-weight: 400;
     border: none;
     padding: 0px;
     text-align: center;
@@ -165,6 +169,7 @@ a.s-delete {
     margin-top: 20px;
     margin-bottom: 0px;
     font-size: 20px;
+    font-weight: 400;
     padding: 0px;
     background: url(image_path("bg_h3.gif")) repeat-x 0 11px;
     color: #999;

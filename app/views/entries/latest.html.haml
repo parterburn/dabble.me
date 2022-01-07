@@ -77,7 +77,8 @@
       .col-md-8.well{:class=>"#{add_class}", :id => "year-in-review"}
         .center
           .s-entry-date
-            %h2 Year in Review
+            %h2
+              = link_to "Year in Review", review_path
             %h3
               %span= "#{total_count} entries in #{review_year}"
           .s-review-details
