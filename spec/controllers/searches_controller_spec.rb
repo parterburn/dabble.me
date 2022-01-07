@@ -20,8 +20,8 @@ RSpec.describe SearchesController, type: :controller do
       sign_in user
       get :show
       expect(response.status).to eq 200
-      expect(response.body).to have_content('Subscribe now')
-      expect(response.body).to have_content('to search your entries and see which tags are used most')
+      expect(response.body).to have_content('Subscribe Now')
+      expect(response.body).to have_content('for $3/mo unlocks search and to see which tags are used most.')
       expect(response.body).to have_content("Pro users can use")
     end
 
