@@ -10,7 +10,7 @@
       = link_to edit_entry_path(entry), rel: "tooltip", title: "Edit Entry" do
         %i.fa.fa-pencil-square-o
     %h2
-      = link_to entry.date_format_short, day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day)
+      = link_to entry.date_format_short, day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day), rel: "tooltip-mobile-friendly", title: "#{tag_relative_date(entry.date, Date.today)}"
     %h3
       %span
         = entry.date_day.upcase
@@ -22,7 +22,7 @@
   = entry.spotify_embed
   - if (hashtags = entry.hashtags).present?
     %p.tags
-      %strong.small Tags: 
+      %strong.small Tags:
       - hashtags.each do |tag|
         - if (date = current_user.hashtags.select{|h| h.tag&.downcase == tag.downcase}.first&.date).present?
           = link_to search_url(host: ENV['MAIN_DOMAIN'], search: {term: "##{tag}"}), class: "noline", rel: "tooltip-mobile-friendly", title: "#{tag_relative_date(date, entry.date)}" do
