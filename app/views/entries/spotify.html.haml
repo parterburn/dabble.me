@@ -5,7 +5,7 @@
     %h2.center Songs from Entries
     %p.center
       %br
-      Add links from Spotify to specific songs and you'll be able to play them here.
+      Add links from Spotify to your entries and you'll see a list of them here.
     - if spotify_entries.present?
       - spotify_entries = Kaminari.paginate_array(spotify_entries).page(params[:page]).per(params[:per])
       - spotify_entries.each do |entry|
