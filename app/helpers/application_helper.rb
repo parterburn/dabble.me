@@ -15,7 +15,8 @@ module ApplicationHelper
     else
       a << "since"
     end
-    a << tag_date.strftime('%b %-d, %Y')
+    # a << tag_date.strftime('%b %-d, %Y')
+    a << "entry"
     a.join(" ")
   end
 
