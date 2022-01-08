@@ -7,6 +7,24 @@
       %i.fa.fa-calendar
 
 .col-xs-11.col-sm-5.col-md-2.s-date-groups.j-calendar
+  - if current_page?(latest_entry_path)
+    - has_past_entries = false
+    -if current_user.is_pro?
+      - 5.times do |year_back|
+        - year_back += 1
+        - back_year_entry = current_user.entries.where(:date => (Time.now.in_time_zone(current_user.send_timezone) - year_back.years).strftime("%Y-%m-%d")).first
+        - if back_year_entry.present?
+          - has_past_entries = true
+          %h4
+            =link_to "#entry-#{back_year_entry.id}", "data-id": "#{back_year_entry.id}",  class: "j-entry-link", style: "color: #a41100;" do
+              .s-date-left
+                %i.fa.fa-history
+                &nbsp;#{pluralize(year_back, "year").upcase} AGO
+              .clearfix
+      - if has_past_entries
+        :javascript
+          $(".j-date-header").show();
+
   %h3
     =link_to entries_path, class: "#{'active' if current_page?(entries_path)}" do
       .s-date-left

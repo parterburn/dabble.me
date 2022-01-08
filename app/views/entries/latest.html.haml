@@ -4,45 +4,9 @@
   - year_in_review = Date.today > Date.parse("#{review_year}-12-05") && Date.today < Date.parse("#{review_year + 1}-01-15")
 
   .row
-    .col-md-2.s-date-groups.j-date-groups.hidden-xs.hidden-sm.s-hide{style:"position:fixed; top:80px; right:60px;"}
-      -if year_in_review
-        %h4{style: "display: inline-block; line-height: 1; margin: 20px 0 0;"}
-          %span.label.label-success.pull-left{style: "margin-right: 5px; font-weight: normal; font-size: 11px; font-family: sans-serif;padding: 4px 6px;"} NEW
-          =link_to review_path do
-            .s-date-left
-              Year in Review
-            .clearfix
+    = render "sidebar"
 
-      - has_past_entries = false
-      -if current_user.is_pro?
-        %h3.j-date-header.s-hide= Time.now.in_time_zone(current_user.send_timezone).strftime("%b %-d")
-        - 5.times do |year_back|
-          - year_back += 1
-          - back_year_entry = current_user.entries.where(:date => (Time.now.in_time_zone(current_user.send_timezone) - year_back.years).strftime("%Y-%m-%d")).first
-          - if back_year_entry.present?
-            - has_past_entries = true
-            %h4
-              =link_to "#entry-#{back_year_entry.id}", "data-id": "#{back_year_entry.id}",  class: "j-entry-link" do
-                .s-date-left
-                  #{pluralize(year_back, "year").upcase} AGO
-                .clearfix
-
-      - if year_in_review || has_past_entries
-        :javascript
-          $(".j-date-groups").show();
-        :css
-          @media (min-width: 991px) {
-            #main-container > .alert {
-              margin-left: 7% !important;
-            }
-          }
-      - if has_past_entries
-        :javascript
-          $(".j-date-header").show();
-
-    - add_class = (year_in_review || has_past_entries) ? "col-md-offset-1" : "col-md-offset-2"
-
-    .col-md-8{:class=>"#{add_class}"}
+    .col-md-8.col-md-offset-1
       %br
       = form_for Search.new(), url: search_path, method: :get, html: { class: "form-horizontal" } do |f|
         .form-group
@@ -51,16 +15,37 @@
           .col-xs-4.col-sm-1
             = f.submit "Search", class: "btn btn-primary btn-lg"
 
-    .col-md-8{:class=>"#{add_class}"}
+    - if year_in_review
+      = javascript_include_tag "//www.gstatic.com/charts/loader.js", "chartkick"
+      - total_count = current_user.entries.where("date >= '#{review_year}-01-01'::DATE AND date <= '#{review_year}-12-31'::DATE").count
+      .col-md-8.well.col-md-offset-1{id: "year-in-review"}
+        .center
+          .s-entry-date
+            %h2
+              = link_to review_path do
+                %span.label.label-success{style: "margin-right: 5px; position: relative;top:-5px;font-weight: normal; font-size: 11px; font-family: sans-serif;padding: 4px 6px;"} NEW
+                Year in Review
+            %h3
+              %span= "#{total_count} entries in #{review_year}"
+          .s-review-details
+            = pie_chart({"Days With Entries": total_count, "Days Without Entires": (365 - total_count)},  height: "180px", library: {backgroundColor: "#ffffff"})
+            .clearfix
+            %h4
+              %span= "See more stats in your "
+              = link_to "Year in Review", review_path
+              %span> !
+
+    .col-md-8.col-md-offset-1
       %br
       %h4
         -if current_user.first_name.present?
-          Welcome back, #{current_user.first_name}! Here's your latest entry...
+          Welcome back, #{current_user.first_name}!
         -else
-          Welcome back! Here's your latest entry...
+          Welcome back!
+        Here's your latest entry...
       %br
 
-    .col-md-8.well.entry{:id => "entry-#{@lastest_entry.id}", :class=>"#{add_class}"}
+    .col-md-8.well.entry.col-md-offset-1{id: "entry-#{@lastest_entry.id}"}
       = render :partial => 'entries/entry', :locals => {:entry => @lastest_entry}
 
     -if current_user.is_pro?
@@ -70,24 +55,6 @@
         - if back_year_entry.present?
           .col-md-8.col-md-offset-1.well.entry{:id => "entry-#{back_year_entry.id}"}
             = render :partial => 'entries/entry', :locals => {:entry => back_year_entry}
-
-    - if year_in_review
-      = javascript_include_tag "//www.gstatic.com/charts/loader.js", "chartkick"
-      - total_count = current_user.entries.where("date >= '#{review_year}-01-01'::DATE AND date <= '#{review_year}-12-31'::DATE").count
-      .col-md-8.well{:class=>"#{add_class}", :id => "year-in-review"}
-        .center
-          .s-entry-date
-            %h2
-              = link_to "Year in Review", review_path
-            %h3
-              %span= "#{total_count} entries in #{review_year}"
-          .s-review-details
-            = pie_chart({"Days With Entries": total_count, "Days Without Entires": (365 - total_count)},  height: "230px", library: {backgroundColor: "#ffffff"})
-            .clearfix
-            %h4
-              %span= "See more stats in your "
-              = link_to "Year in Review", review_path
-              %span> !
 
 - else
   = render partial: 'no_entries'

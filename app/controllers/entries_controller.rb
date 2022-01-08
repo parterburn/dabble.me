@@ -52,6 +52,7 @@ class EntriesController < ApplicationController
   end
 
   def latest
+    @title = "Latest Entry"
     @lastest_entry = current_user.entries.includes(:inspiration).sort_by(&:date).last
   end
 

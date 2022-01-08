@@ -22,13 +22,13 @@
             =link_to subscribe_path do
               %span PRICING
         - else
-          %li{class: "#{'active' if params[:controller] == 'entries' && params[:action] == 'index'}"}
-            =link_to entries_path do
-              %span ENTRIES
-
           %li{class: "#{'active' if params[:controller] == 'entries' && params[:action].in?(['new', 'create'])}"}
             =link_to new_entry_path do
               %span WRITE
+
+          %li{class: "#{'active' if params[:controller] == 'entries' && params[:action] == 'index'}"}
+            =link_to entries_path do
+              %span ENTRIES
 
           %li{class: "#{'active' if current_page?(random_entry_path)}"}
             =link_to random_entry_path, title: "Random Entry" do
