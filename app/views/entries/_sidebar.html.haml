@@ -19,6 +19,7 @@
     %h4
       =link_to group_entries_path('photos'), class: "#{'active' if current_page?(group_entries_path('photos'))}" do
         .s-date-left
+          %i.fa.fa-image
           PHOTOS
         .s-date-right
           #{only_images}
@@ -28,6 +29,7 @@
   %h4
     =link_to spotify_path, class: "#{'active' if current_page?(spotify_path)}" do
       .s-date-left
+        %i.fa.fa-music
         SPOTIFY
       .s-date-right
         #{spotify_entries.size}

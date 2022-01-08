@@ -13,7 +13,11 @@
       = link_to edit_entry_path(entry), rel: "tooltip", title: "Edit Entry" do
         %i.fa.fa-pencil-square-o
     %h2
-      = link_to entry.date_format_short, day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day), rel: "tooltip-mobile-friendly", title: "#{tag_relative_date(entry.date, Date.today)}"
+      - if current_page?(day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day))
+        %span{rel: "tooltip-mobile-friendly", title: "#{tag_relative_date(entry.date, Date.today)}"}
+          = entry.date_format_short
+      - else
+        = link_to entry.date_format_short, day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day), rel: "tooltip-mobile-friendly", title: "#{tag_relative_date(entry.date, Date.today)}"
     %h3
       %span
         = entry.date_day.upcase
