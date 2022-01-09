@@ -9,8 +9,8 @@ class EntriesController < ApplicationController
       @title = 'Photo Entries'
     elsif params[:subgroup].present?
       from_date = "#{params[:group]}-#{params[:subgroup]}"
-      to_date = "#{params[:group]}-#{params[:subgroup].to_i + 1}"
-      @entries = current_user.entries.includes(:inspiration).where("date >= to_date('#{from_date}','YYYY-MM') AND date < to_date('#{to_date}','YYYY-MM')").sort_by(&:date)
+      to_date = Date.parse(from_date + "-01").end_of_month
+      @entries = current_user.entries.includes(:inspiration).where("date >= to_date('#{from_date}','YYYY-MM') AND date <= to_date('#{to_date}','YYYY-MM-DD')").sort_by(&:date)
       date = Date.parse(params[:subgroup] + '/' + params[:group])
       @title = "Entries from #{date.strftime('%b %Y')}"
     elsif params[:group].present?
