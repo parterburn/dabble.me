@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 ruby File.read(File.expand_path '../.ruby-version', __FILE__).strip.sub /\-p[0-9]+$/, '' # Read the rbenv version file
-gem 'rails', '~> 6.0', '>= 6.0.4.1'
+gem 'rails', '~> 6.0', '>= 6.0.4.4'
 
 # Servers
 gem 'puma', '~> 4.3'

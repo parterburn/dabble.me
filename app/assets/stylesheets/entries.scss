@@ -113,34 +113,36 @@ a.s-delete {
   margin-top:30px;
 }
 
-.note-editable, .summernote {
-  background:white;
-  font-family: Georgia, Cambria, "Times New Roman", Times, serif;
-  font-size: 18.5px;
-  font-style: normal;
-  font-weight: 400;
-  letter-spacing: 0;
-  line-height: 1.4;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -moz-font-feature-settings: "liga" on;
-  color: rgba(0,0,0,0.8);
-  p {
-    font-family: Georgia, Cambria, "Times New Roman", Times, serif;
-    font-weight: 400;
-    font-style: normal;
-    font-size: 18.5px;
-    line-height: 1.58;
-    letter-spacing: -.003em;
-    @media screen and (max-width: 767px) {
-      font-size: 17px;
-      font-weight: 400;
+.note-editable, .summernote, .s-scrollable{
+  background:white !important;
+  text-rendering: optimizeLegibility !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+  -moz-font-feature-settings: "liga" on !important;
+  color: rgba(0,0,0,0.8) !important;
+  font-family: Georgia, Cambria, "Times New Roman", Times, serif !important;
+  * {
+    font-family: Georgia, Cambria, "Times New Roman", Times, serif !important;
+    font-size: 18.5px !important;
+    font-style: normal !important;
+    font-weight: 400 !important;
+    letter-spacing: 0 !important;
+    line-height: 1.6 !important;
+  }
+  a {
+    color: #649cc7 !important;
+    &:hover, &:focus {
+      color: #3b76a3 !important;
     }
   }
+  b {
+    font-weight: 700 !important;
+  }
+  i {
+    font-style: italic !important;
+  }
   @media screen and (max-width: 767px) {
-    font-size:16px;
-    font-weight:400;
+    font-size:17px !important;
   }
 }
 
@@ -344,38 +346,31 @@ mark {
 
 .s-scrollable {
   overflow-x:auto;
-  font-family: Georgia,Cambria,"Times New Roman",Times,serif;
-  font-size: 18.5px;
-  font-style: normal;
-  font-weight: 400;
-  letter-spacing: 0;
-  line-height: 1.4;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -moz-font-feature-settings: "liga" on;
-  color: rgba(0,0,0,0.8);
+  // font-family: Georgia,Cambria,"Times New Roman",Times,serif !important;
+  // font-size: 18.5px;
+  // font-style: normal;
+  // font-weight: 400;
+  // letter-spacing: 0;
+  // line-height: 1.4;
+  // text-rendering: optimizeLegibility;
+  // -webkit-font-smoothing: antialiased;
+  // -moz-osx-font-smoothing: grayscale;
+  // -moz-font-feature-settings: "liga" on;
   padding: 20px;
   overflow-wrap: break-word;
   word-wrap: break-word;
   word-break: break-word;
-
-  /* Adds a hyphen where the word breaks, if supported (No Blink) */
-  -ms-hyphens: auto;
-  -moz-hyphens: auto;
-  -webkit-hyphens: auto;
-  hyphens: auto;
   p {
-    font-family: Georgia,Cambria,"Times New Roman",Times,serif;
-    font-weight: 400;
-    font-style: normal;
-    font-size: 18.5px;
-    line-height: 1.58;
-    letter-spacing: -.003em;
-    @media screen and (max-width: 767px) {
-      font-size: 17px;
-      font-weight: 400;
-    }
+    // font-family: Georgia,Cambria,"Times New Roman",Times,serif;
+    // font-weight: 400;
+    // font-style: normal;
+    // font-size: 18.5px;
+    // line-height: 1.58;
+    // letter-spacing: -.003em;
+    // @media screen and (max-width: 767px) {
+    //   font-size: 17px;
+    //   font-weight: 400;
+    // }
     &.spotify {
       margin: 10px auto;
     }
@@ -401,10 +396,10 @@ mark {
       }
     }
   }
-  @media screen and (max-width: 767px) {
-    font-size:16px;
-    font-weight:400;
-  }
+  // @media screen and (max-width: 767px) {
+  //   font-size:16px;
+  //   font-weight:400;
+  // }
 }
 
 .entry.well {

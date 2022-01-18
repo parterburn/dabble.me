@@ -11,9 +11,9 @@
   .col-md-8.col-md-offset-1.well.s-faqs
     .s-entry-date
       %h2.center Frequently Asked Questions
-      %h3
+      %h3{style: "margin-top: 30px"}
         %span PRO FEATURES ONLY
-    %div
+    %div{style: "margin-top: 10px"}
       - if !signed_in? || current_user.is_free?
         %p
           The following features are only available to users subscribed to

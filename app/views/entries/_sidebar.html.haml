@@ -25,7 +25,7 @@
         :javascript
           $(".j-date-header").show();
 
-  %h3
+  %h3{style:"margin-bottom: 15px;"}
     =link_to entries_path, class: "#{'active' if current_page?(entries_path)}" do
       .s-date-left
         ALL
@@ -34,20 +34,21 @@
       .clearfix
 
   - if (only_images = current_user.entries.only_images.length) > 0
-    %h4
+    %h4{style: "font-size: 14px;"}
       =link_to group_entries_path('photos'), class: "#{'active' if current_page?(group_entries_path('photos'))}" do
         .s-date-left
-          %i.fa.fa-image
+          %i.fa.fa-image{style: "color: #cccccc;margin-right: 2px;"}
           PHOTOS
         .s-date-right
           #{only_images}
         .clearfix
 
   - spotify_entries = current_user.entries.only_spotify
-  %h4
+  %h4{style: "font-size: 14px;"}
     =link_to spotify_path, class: "#{'active' if current_page?(spotify_path)}" do
       .s-date-left
-        %i.fa.fa-music
+        %i.fa.fa-music{style: "color: #cccccc;margin-right: 4px;"}
+
         SPOTIFY
       .s-date-right
         #{spotify_entries.size}

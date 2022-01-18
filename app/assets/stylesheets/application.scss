@@ -13,7 +13,7 @@
  *= stub twbs-variables
  *= require twbs
  *= require_self
- *= require_tree ./lib 
+ *= require_tree ./lib
  *= require_tree .
  */
 
@@ -25,10 +25,10 @@ html, body {
   height: 100%;
 }
 
-body { 
+body {
   background: $cream;
   padding-top: 70px;
-  font-family: "Raleway", sans-serif; 
+  font-family: "Raleway", sans-serif;
   font-weight: 400;
 }
 
@@ -90,7 +90,7 @@ hr {
       text-align:center;
     }
   }
-} 
+}
 
 .s-inspiration {
   font-style: italic;
@@ -172,7 +172,7 @@ label {
 }
 
 .popover.bottom > .arrow:after {
- border-bottom-color:whiteSmoke; 
+ border-bottom-color:whiteSmoke;
 }
 
 .noline {
@@ -227,10 +227,10 @@ input[type="submit"].form-control {
 .sqreen-logo {
   opacity: 0.6;
   -webkit-filter: grayscale(100%); /* Safari 6.0 - 9.0 */
-  filter: grayscale(100%);  
+  filter: grayscale(100%);
   &:hover {
     opacity: 1;
     -webkit-filter: grayscale(0%); /* Safari 6.0 - 9.0 */
-    filter: grayscale(0%);    
+    filter: grayscale(0%);
   }
 }
