@@ -2,19 +2,19 @@ namespace :user do
 
   # rake user:downgrade_expired
   task :downgrade_expired => :environment do
-    User.pro_only.yearly.not_forever.joins(:payments).having("MAX(payments.date) < ?", 368.days.ago).group("users.id").each do |user|
+    User.pro_only.yearly.not_forever.joins(:payments).having("MAX(payments.date) < ?", 375.days.ago).group("users.id").each do |user|
       user.update(plan: "Free")
       begin
-        UserMailer.downgraded(user).deliver_later
+        UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
         Rails.logger.warn("Error sending yearly downgrade expired email to #{user.email}: #{e}")
       end
     end
 
-    User.pro_only.monthly.not_forever.joins(:payments).having("MAX(payments.date) < ?", 33.days.ago).group("users.id").each do |user|
+    User.pro_only.monthly.not_forever.joins(:payments).having("MAX(payments.date) < ?", 43.days.ago).group("users.id").each do |user|
       user.update(plan: "Free")
       begin
-        UserMailer.downgraded(user).deliver_later
+        UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
         Rails.logger.warn("Error sending montly downgrade expired email to #{user.email}: #{e}")
       end
@@ -25,7 +25,7 @@ namespace :user do
     User.gumroad_only.pro_only.yearly.not_forever.joins(:payments).having("MAX(payments.date) < ?", 368.days.ago).group("users.id").each do |user|
       user.update(plan: "Free")
       begin
-        UserMailer.downgraded(user).deliver_later
+        UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
         Rails.logger.warn("Error sending gumroad yearly expired email to #{user.email}: #{e}")
       end
@@ -34,7 +34,7 @@ namespace :user do
     User.gumroad_only.pro_only.monthly.not_forever.joins(:payments).having("MAX(payments.date) < ?", 33.days.ago).group("users.id").each do |user|
       user.update(plan: "Free")
       begin
-        UserMailer.downgraded(user).deliver_later
+        UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
         Rails.logger.warn("Error sending gumroad monthly expired email to #{user.email}: #{e}")
       end
@@ -45,7 +45,7 @@ namespace :user do
     User.payhere_only.pro_only.yearly.not_forever.joins(:payments).having("MAX(payments.date) < ?", 368.days.ago).group("users.id").each do |user|
       user.update(plan: "Free")
       begin
-        UserMailer.downgraded(user).deliver_later
+        UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
         Rails.logger.warn("Error sending payhere yearly expired email to #{user.email}: #{e}")
       end
@@ -54,7 +54,7 @@ namespace :user do
     User.payhere_only.pro_only.monthly.not_forever.joins(:payments).having("MAX(payments.date) < ?", 33.days.ago).group("users.id").each do |user|
       user.update(plan: "Free")
       begin
-        UserMailer.downgraded(user).deliver_later
+        UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
         Rails.logger.warn("Error sending payhere monthly expired email to #{user.email}: #{e}")
       end
@@ -65,7 +65,7 @@ namespace :user do
     User.paypal_only.pro_only.yearly.not_forever.joins(:payments).having("MAX(payments.date) < ?", 367.days.ago).group("users.id").each do |user|
       user.update(plan: "Free")
       begin
-        UserMailer.downgraded(user).deliver_later
+        UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
         Rails.logger.warn("Error sending yearly paypal expired email to #{user.email}: #{e}")
       end
@@ -74,7 +74,7 @@ namespace :user do
     User.paypal_only.pro_only.monthly.not_forever.joins(:payments).having("MAX(payments.date) < ?", 33.days.ago).group("users.id").each do |user|
       user.update(plan: "Free")
       begin
-        UserMailer.downgraded(user).deliver_later
+        UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
         Rails.logger.warn("Error sending montly paypal expired email to #{user.email}: #{e}")
       end
