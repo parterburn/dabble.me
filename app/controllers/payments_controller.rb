@@ -82,17 +82,28 @@ class PaymentsController < ApplicationController
   end
 
   def payment_notify
-    if payhere? && valid_payhere_signature?
-      processed_params = process_payhere
+    processed_params = if payhere? && valid_payhere_signature?
+      process_payhere
     elsif gumroad?
-      processed_params = process_gumroad
+      process_gumroad
     elsif paypal?
-      processed_params = process_paypal
+      process_paypal
+    end
+
+    if processed_params
+      @user.update(processed_params) if @user.present?
+      if @user.present? && @user.previous_changes&.[]("plan").last == "Free"
+        begin # upgrade happened, send thanks
+          UserMailer.thanks_for_paying(@user).deliver_later
+        rescue StandardError => e
+          Rails.logger.warn("Error sending thanks_for_paying email to #{@user.email}: #{e}")
+        end
+      elsif @user.blank?
+        UserMailer.no_user_here(params).deliver_later
+      end
     else
       Rails.logger.warn("Payment notification not processed: #{params}")
     end
-
-    @user.update(processed_params) if @user.present?
     head :ok, content_type: 'text/html'
   end
 
@@ -137,12 +148,6 @@ class PaymentsController < ApplicationController
         end
       end
 
-      begin
-        UserMailer.no_user_here(params[:customer][:email], 'PayHere', params[:customer][:id]).deliver_later if @user.blank?
-      rescue StandardError => e
-        Rails.logger.warn("Error sending no_user_her email to #{params[:customer][:email]}: #{e}")
-      end
-
       { plan: "PRO #{frequency} PayHere", payhere_id:  params[:customer][:id] }
     end
   end
@@ -160,17 +165,6 @@ class PaymentsController < ApplicationController
       # duplicate, don't send
     elsif @user.present?
       Payment.create(user_id: @user.id, comments: "Gumroad #{frequency} from #{params[:email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
-      begin
-        UserMailer.thanks_for_paying(@user).deliver_later if @user.payments.count == 1
-      rescue StandardError => e
-        Rails.logger.warn("Error sending Gumroad thanks_for_paying email email to #{@user.email}: #{e}")
-      end
-    end
-
-    begin
-      UserMailer.no_user_here(params[:email], 'Gumroad', params[:purchaser_id]).deliver_later if @user.blank?
-    rescue StandardError => e
-      Rails.logger.warn("Error sending no_user_here email to #{params[:email]}: #{e}")
     end
 
     { plan: "PRO #{frequency} Gumroad", gumroad_id:  params[:purchaser_id] }
@@ -187,14 +181,8 @@ class PaymentsController < ApplicationController
       # duplicate webhook, don't save
     elsif @user.present?
       Payment.create(user_id: @user.id, comments: "Paypal #{frequency} from #{params[:payer_email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
-      begin
-        UserMailer.thanks_for_paying(@user).deliver_later if @user.payments.count == 1
-      rescue StandardError => e
-        Rails.logger.warn("Error sending Paypal thanks_for_paying email to #{@user.email}: #{e}")
-      end
     end
 
-    UserMailer.no_user_here(params[:payer_email], 'PayPal', nil).deliver_later if @user.blank?
     { plan: "PRO #{frequency} PayPal", gumroad_id:  @user&.gumroad_id}
   end
 
