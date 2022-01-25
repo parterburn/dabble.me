@@ -2,7 +2,7 @@
   - if form_path.include?('unsubscribe')
     .col-md-8.col-md-offset-2
       = f.label :email
-      = link_to "Login to change email", security_path, class: "s-delete", style: "opacity: 100%;margin-left: 5px;"
+      = link_to "Login to change email and other settings", edit_user_registration_path, class: "s-delete", style: "opacity: 100%;margin-left: 5px;"
       = f.email_field :email, class: "form-control disabled", disabled: 'disabled'
       %br
   - else
@@ -58,39 +58,40 @@
     = f.time_zone_select :send_timezone, ActiveSupport::TimeZone.us_zones, {}, {class: 'form-control'}
     %br
 
-  .col-md-8.col-md-offset-2
-    .well{style: 'background-color: hsla(40, 33%, 96%, 1); padding: 15px 20px;'}
-      %div{style: "margin-bottom: 5px;"}
-        = f.check_box :send_past_entry
-        = f.label :send_past_entry, "Include past entries in emails and prevent entries that have:"
-      - if user.is_pro?
-        = f.text_field :past_filter, class: "form-control", placeholder: "Comma-separated words to prevent showing up in past entries."
-        - if user.past_filter.present?
-          %small
-            = link_to pluralize(user.past_filter_entry_ids.length, "entry"), search_path(search: { term: user.past_filter.split(',').map(&:strip).join(" OR ") })
-            being filtered out of past entries.
-          %br
-      - else
-        = f.text_field :past_filter, class: "form-control disabled", placeholder: "Comma-separated words to prevent in past entries", readonly: "readonly", value: "", rel: "tooltip", title: "Upgrade to PRO for this feature."
-
-      - if user.is_pro? && user.entries.where("date < (?)", 1.year.ago).any?
-        %div{style: "margin-top: 8px;"}
-          = f.check_box :way_back_past_entries
-          = f.label :way_back_past_entries, "Include past entries that are over a year old", style: "font-weight: normal;"
-
-    - if user.is_pro?
+  - unless form_path.include?('unsubscribe')
+    .col-md-8.col-md-offset-2
       .well{style: 'background-color: hsla(40, 33%, 96%, 1); padding: 15px 20px;'}
         %div{style: "margin-bottom: 5px;"}
-          .div{style: "margin-bottom: 10px;"}
-            %strong Associate dates to your tags to see the relative age in your posts
+          = f.check_box :send_past_entry
+          = f.label :send_past_entry, "Include past entries in emails and prevent entries that have:"
+        - if user.is_pro?
+          = f.text_field :past_filter, class: "form-control", placeholder: "Comma-separated words to prevent showing up in past entries."
+          - if user.past_filter.present?
+            %small
+              = link_to pluralize(user.past_filter_entry_ids.length, "entry"), search_path(search: { term: user.past_filter.split(',').map(&:strip).join(" OR ") })
+              being filtered out of past entries.
             %br
-            %small This works great for seeing how old kids were in your posts, anniversaries, time in quarantine, etc.
-          = f.fields_for :hashtags do |s|
-            %div{style: "margin-bottom: 5px;"}
-              %strong #
-              = s.text_field :tag, placeholder: "e.g. Anniversary", class: "form-control", style: "width: 45%; display: inline-block;"
-              = s.text_field :date, value: s.object.date_format_short, placeholder: "e.g. Jan 1, 2020", class: "pickadate form-control", style: "width: 45%; display: inline-block;"
-          .clearfix
+        - else
+          = f.text_field :past_filter, class: "form-control disabled", placeholder: "Comma-separated words to prevent in past entries", readonly: "readonly", value: "", rel: "tooltip", title: "Upgrade to PRO for this feature."
+
+        - if user.is_pro? && user.entries.where("date < (?)", 1.year.ago).any?
+          %div{style: "margin-top: 8px;"}
+            = f.check_box :way_back_past_entries
+            = f.label :way_back_past_entries, "Include past entries that are over a year old", style: "font-weight: normal;"
+
+      - if user.is_pro?
+        .well{style: 'background-color: hsla(40, 33%, 96%, 1); padding: 15px 20px;'}
+          %div{style: "margin-bottom: 5px;"}
+            .div{style: "margin-bottom: 10px;"}
+              %strong Associate dates to your tags to see the relative age in your posts
+              %br
+              %small This works great for seeing how old kids were in your posts, anniversaries, time in quarantine, etc.
+            = f.fields_for :hashtags do |s|
+              %div{style: "margin-bottom: 5px;"}
+                %strong #
+                = s.text_field :tag, placeholder: "e.g. Anniversary", class: "form-control", style: "width: 45%; display: inline-block;"
+                = s.text_field :date, value: s.object.date_format_short, placeholder: "e.g. Jan 1, 2020", class: "pickadate form-control", style: "width: 45%; display: inline-block;"
+            .clearfix
 
   .clearfix
 

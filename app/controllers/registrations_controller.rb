@@ -45,15 +45,11 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   def settings
-    if user_signed_in?
-      redirect_to edit_user_registration_path
+    if !user_signed_in? && user.present? # allow unsubscribing without logging in
+      cookies.permanent[:viewed_settings] = true
+      render 'devise/registrations/settings'
     else
-      if user.present?
-        cookies.permanent[:viewed_settings] = true
-        render 'devise/registrations/settings'
-      else
-        redirect_to root_path
-      end
+      redirect_to edit_user_registration_path
     end
   end
 
