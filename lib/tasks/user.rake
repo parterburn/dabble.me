@@ -85,9 +85,9 @@ namespace :user do
     if ENV['FREE_WEEK'].present?
         User.free_only.select { |u| u.frequency.present? }.each do |user|
           if ENV['FREE_WEEK'] == 'true'
-            user.update(frequency: ['Sun', 'Wed', 'Fri'], previous_frequency: user.frequency)
+            user.update_columns(frequency: ['Sun', 'Wed', 'Fri'], previous_frequency: user.frequency)
           elsif ENV['FREE_WEEK'] == 'false'
-            user.update(frequency: ['Sun'], previous_frequency: user.frequency)
+            user.update_columns(frequency: ['Sun'], previous_frequency: user.frequency)
           end
         end
     end
