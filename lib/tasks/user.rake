@@ -2,7 +2,7 @@ namespace :user do
 
   # rake user:downgrade_expired
   task :downgrade_expired => :environment do
-    User.pro_only.yearly.not_forever.joins(:payments).having("MAX(payments.date) < ?", 375.days.ago).group("users.id").each do |user|
+    User.pro_only.yearly.not_forever.joins(:payments).having("MAX(payments.date) < ?", 368.days.ago).group("users.id").each do |user|
       user.update(plan: "Free")
       begin
         UserMailer.downgraded(user).deliver_now
@@ -11,7 +11,7 @@ namespace :user do
       end
     end
 
-    User.pro_only.monthly.not_forever.joins(:payments).having("MAX(payments.date) < ?", 43.days.ago).group("users.id").each do |user|
+    User.pro_only.monthly.not_forever.joins(:payments).having("MAX(payments.date) < ?", 33.days.ago).group("users.id").each do |user|
       user.update(plan: "Free")
       begin
         UserMailer.downgraded(user).deliver_now
@@ -62,7 +62,7 @@ namespace :user do
   end
 
   task :downgrade_paypal_expired => :environment do
-    User.paypal_only.pro_only.yearly.not_forever.joins(:payments).having("MAX(payments.date) < ?", 367.days.ago).group("users.id").each do |user|
+    User.paypal_only.pro_only.yearly.not_forever.joins(:payments).having("MAX(payments.date) < ?", 368.days.ago).group("users.id").each do |user|
       user.update(plan: "Free")
       begin
         UserMailer.downgraded(user).deliver_now
@@ -85,9 +85,9 @@ namespace :user do
     if ENV['FREE_WEEK'].present?
         User.free_only.select { |u| u.frequency.present? }.each do |user|
           if ENV['FREE_WEEK'] == 'true'
-            user.update_column(:frequency, ['Sun', 'Wed', 'Fri'])
+            user.update(frequency: ['Sun', 'Wed', 'Fri'], previous_frequency: user.frequency)
           elsif ENV['FREE_WEEK'] == 'false'
-            user.update_column(:frequency, ['Sun'])
+            user.update(frequency: ['Sun'], previous_frequency: user.frequency)
           end
         end
     end

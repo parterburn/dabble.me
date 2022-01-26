@@ -42,6 +42,7 @@ class PaymentsController < ApplicationController
 
     if @payment.save
       if user.present? && params["send_thanks"] == 1
+        user.update(frequency: user.previous_frequency) if user.previous_frequency.any?
         UserMailer.thanks_for_paying(user).deliver_later
         flash[:notice] = "Payment added successfully & thanks was sent!"
       else
@@ -93,7 +94,8 @@ class PaymentsController < ApplicationController
     if processed_params && @user.present?
       @user.update(processed_params)
       if @user.plan_previous_change.first == "Free"
-        begin # upgrade happened, send thanks
+        begin # upgrade happened, set frequency back + send thanks
+          @user.update(frequency: @user.previous_frequency) if @user.previous_frequency.any?
           UserMailer.thanks_for_paying(@user).deliver_later
         rescue StandardError => e
           Rails.logger.warn("Error sending thanks_for_paying email to #{@user.email}: #{e}")

@@ -223,7 +223,7 @@ class User < ActiveRecord::Base
 
   def restrict_free_frequency
     if self.is_free? && self.frequency.present? && ENV['FREE_WEEK'] != 'true'
-      self.update_column(:frequency, ["Sun"])
+      self.update(frequency: ["Sun"], previous_frequency: frequency)
     end
   end
 
