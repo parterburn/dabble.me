@@ -90,17 +90,17 @@ class PaymentsController < ApplicationController
       process_paypal
     end
 
-    if processed_params
-      @user.update(processed_params) if @user.present?
-      if @user.present? && @user.previous_changes&.[]("plan").last == "Free"
+    if processed_params && @user.present?
+      @user.update(processed_params)
+      if @user.plan_previous_change.first == "Free"
         begin # upgrade happened, send thanks
           UserMailer.thanks_for_paying(@user).deliver_later
         rescue StandardError => e
           Rails.logger.warn("Error sending thanks_for_paying email to #{@user.email}: #{e}")
         end
-      elsif @user.blank?
-        UserMailer.no_user_here(params).deliver_later
       end
+    elsif processed_params
+      UserMailer.no_user_here(params.permit!).deliver_later
     else
       Rails.logger.warn("Payment notification not processed: #{params}")
     end

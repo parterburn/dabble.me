@@ -5,7 +5,10 @@
     .alert.alert-warning
       -if current_user.is_pro?
         Thanks for subscribing to
-        = link_to current_user.plan_name, subscribe_path, class: "alert-link"
+        = link_to(current_user.plan_name, subscribe_path, class: "alert-link") + "."
+        - if current_user.plan_type.present?
+          Manage your subscription at
+          %strong= current_user.plan_type.html_safe + "."
       - else
         =link_to subscribe_path, class: "float-left" do
           %button.btn.btn-warning Subscribe Now
@@ -23,26 +26,15 @@
 
   .col-md-12.center
     %br
-    - if current_user.is_pro? && current_user.plan_type.present?
-      - add_text = " To downgrade or cancel your paid subscription, you'll need to do so separately at #{current_user.plan_type}!"
-      - show_warning = " You will need to cancel your subscription *separately* at #{current_user.plan_type_unlinked}"
-    =link_to registration_path(resource_name), class: "s-delete j-delete-user", data: { confirm: "Are you sure? This will delete your account and #{pluralize(@user.entries.count,'entry')}. There is no undo.#{show_warning}." }, method: :delete do
-      %h5
-        Delete your account & all associated entries
-    - if current_user.is_pro? && current_user.plan_type.present?
-      = add_text.strip.html_safe
-      %br
     %br
-
     #export.col-md-8.col-md-offset-2.alert.alert-info
       Export all entries as
-      =link_to "TXT", export_entries_path(:txt)
+      %strong=link_to "TXT", export_entries_path(:txt), style: "text-decoration: underline;"
       (plain text)
       or
-      =link_to "JSON", export_entries_path(:json)
+      %strong=link_to "JSON", export_entries_path(:json), style: "text-decoration: underline;"
       (rich formatting).
       -if current_user.is_pro? && current_user.entries.only_images.any?
         Export a
-        =link_to("list of your Image URLs", export_entries_path(:txt, only_images: true)) + "."
+        %strong=link_to("list of your Image URLs", export_entries_path(:txt, only_images: true), style: "text-decoration: underline;") + "."
         You can use a script or app to download these to your computer.
-    %br

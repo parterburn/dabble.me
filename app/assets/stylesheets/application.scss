@@ -234,3 +234,8 @@ input[type="submit"].form-control {
     filter: grayscale(0%);
   }
 }
+
+.alert-warning a {
+  color: #66512c !important;
+  text-decoration: underline !important;
+}

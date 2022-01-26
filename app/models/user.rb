@@ -23,7 +23,7 @@ class User < ActiveRecord::Base
   scope :yearly, -> { where("plan ILIKE '%yearly%'") }
   scope :forever, -> { where("plan ILIKE '%forever%'") }
   scope :payhere_only, -> { where("plan ILIKE '%payhere%'") }
-  scope :gumroad_only, -> { where("plan ILIKE '%gumroad%'") }  
+  scope :gumroad_only, -> { where("plan ILIKE '%gumroad%'") }
   scope :paypal_only, -> { where("plan ILIKE '%paypal%'") }
   scope :not_forever, -> { where("plan NOT ILIKE '%forever%'") }
   scope :referrals, -> { where("referrer IS NOT null") }
@@ -42,11 +42,11 @@ class User < ActiveRecord::Base
 
   def abbreviated_name
     "#{first_name} #{last_name.first&.upcase}"
-  end  
+  end
 
   def cleaned_to_address
     "#{full_name.gsub(/[^\w\s-]/i, '') if full_name.present?} <#{email}>"
-  end  
+  end
 
   def full_name_or_email
     first_name.present? ? "#{first_name} #{last_name}" : email
@@ -187,7 +187,7 @@ class User < ActiveRecord::Base
         next if h.downcase.in?(original_hashtags.pluck(:tag)&.map(&:downcase))
         original_hashtags.build(tag: h)
       end
-      original_hashtags.build      
+      original_hashtags.build
       original_hashtags.to_a
     end
   end
@@ -214,7 +214,7 @@ class User < ActiveRecord::Base
     hashtags = entries.where("entries.body ~ '(#[a-zA-Z0-9_]+)'").map(&:hashtags).reject(&:blank?).flatten.map(&:downcase)
     if unique
       hashtags.group_by{|x| x}.sort_by{|k, v| -v.size}.map(&:first)
-    else 
+    else
       hashtags
     end
   end

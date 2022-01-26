@@ -26,13 +26,18 @@
       %br
 
     .col-md-8.col-md-offset-2
-      %br
-      = f.label :current_password
-      %i (to confirm your changes)
-      = f.password_field :current_password, autocomplete: "off", class: "form-control"
-      %br
+      .well{style: 'background-color: hsla(40, 33%, 96%, 1); padding: 15px 20px;'}
+        = f.label :current_password
+        to confirm your changes
+        = f.password_field :current_password, autocomplete: "off", class: "form-control"
 
     .col-md-8.col-md-offset-2
-      = f.submit "Update Security", class: "btn btn-primary form-control"
+      = f.button "Update Security", class: "btn btn-primary form-control j-edit-security", name: "submit_method", value: "security", type: :submit
 
-  .clearfix
+    .clearfix
+
+    .col-md-8.col-md-offset-2
+      %br
+      - if current_user.is_pro? && current_user.plan_type.present?
+        - show_warning = " You will need to cancel your subscription *separately* at #{current_user.plan_type_unlinked}."
+      .text-center= f.button "Delete your account along with #{pluralize(current_user.entries.count,'associated entry')}", class: "btn btn-link j-delete-user", style: "color: #a41100;", name: "submit_method", value: "delete account", type: :submit, data: { confirm: "Are you sure? This will **permanently delete** your account and #{pluralize(current_user.entries.count,'entry')}. There is no undo.#{show_warning}" }

@@ -19,10 +19,13 @@
 
     .col-md-8.col-md-offset-2
       = f.label :email
-      = link_to "Change Email or Password", security_path, class: "s-delete", style: "opacity: 100%;margin-left: 5px;"
       = f.email_field :email, class: "form-control disabled", disabled: 'disabled'
       .clearfix
-      %br
+      %div{style: "margin-top: 10px;"}
+        %em{style: "color: #666;"}
+          %span<> Visit
+          = link_to "Account Security", security_path, class: "s-delete", style: "opacity: 100%;margin-left: 5px;"
+          to change your email, password, or delete your account.
       %br
 
   .col-md-8.col-md-offset-2

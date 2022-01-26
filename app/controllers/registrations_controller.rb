@@ -17,31 +17,41 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   def update
-    if params[:frequency].present?
-      user.frequency = []
-      params[:frequency].each do |freq|
-        user.frequency << freq[0]
+    if params[:submit_method] == "delete account"
+      if current_user.valid_password?(params[:user][:current_password])
+        current_user.destroy
+        redirect_to root_path, notice: "Your account has been deleted."
+      else
+        flash[:alert] = "Incorrect current password."
+        redirect_back(fallback_location: security_path)
       end
-    end
+    else # updating
+      if params[:frequency].present?
+        user.frequency = []
+        params[:frequency].each do |freq|
+          user.frequency << freq[0]
+        end
+      end
 
-    params[:user].parse_time_select! :send_time
-    successfully_updated =  if needs_password?
-                              user.update_with_password(devise_parameter_sanitizer.sanitize(:account_update))
-                            else
-                              # remove the virtual current_password attribute
-                              # update_without_password doesn't know how to ignore it
-                              params[:user].delete(:current_password)
-                              user.update_without_password(devise_parameter_sanitizer.sanitize(:preferences))
-                            end
+      params[:user].parse_time_select! :send_time
+      successfully_updated =  if needs_password?
+                                user.update_with_password(devise_parameter_sanitizer.sanitize(:account_update))
+                              else
+                                # remove the virtual current_password attribute
+                                # update_without_password doesn't know how to ignore it
+                                params[:user].delete(:current_password)
+                                user.update_without_password(devise_parameter_sanitizer.sanitize(:preferences))
+                              end
 
-    if successfully_updated
-      set_flash_message :notice, :updated
-      # Sign in the user bypassing validation in case their password changed
-      bypass_sign_in user
-    else
-      flash[:alert] = flash[:alert].to_a.concat resource.errors.full_messages
+      if successfully_updated
+        set_flash_message :notice, :updated
+        # Sign in the user bypassing validation in case their password changed
+        bypass_sign_in user
+      else
+        flash[:alert] = flash[:alert].to_a.concat resource.errors.full_messages
+      end
+      redirect_back(fallback_location: edit_user_registration_path)
     end
-    redirect_back(fallback_location: edit_user_registration_path)
   end
 
   def settings
@@ -50,6 +60,15 @@ class RegistrationsController < Devise::RegistrationsController
       render 'devise/registrations/settings'
     else
       redirect_to edit_user_registration_path
+    end
+  end
+
+  def destroy
+    if current_user.valid_password?(params[:user][:current_password])
+      super
+    else
+      flash[:alert] = "Incorrect current password."
+      redirect_back(fallback_location: security_path)
     end
   end
 
@@ -104,9 +123,8 @@ class RegistrationsController < Devise::RegistrationsController
 
   # check if we need password to update user data
   # ie if password or email was changed
-  # extend this as needed
   def needs_password?
-    params[:commit] == 'Update Security' ||
+    params[:submit_method] == "security" ||
       (user_params[:email].present? && user.email != user_params[:email]) ||
       (user_params[:password].present? || user_params[:password_confirmation].present?)
   end
