@@ -8,6 +8,8 @@ RSpec.describe PaymentsController, type: :controller do
     user
     superuser
     payment
+    paid_user
+    paid_annual_user
     ActionMailer::Base.deliveries.clear
   end
 
@@ -162,7 +164,7 @@ RSpec.describe PaymentsController, type: :controller do
       expect { post :payment_notify, params: payhere_params, as: :json }.to change { Payment.count }.by(1)
       expect(paid_user.reload.plan).to eq 'PRO Yearly PayHere'
       expect(paid_user.reload.payhere_id).to eq payhere_params[:customer][:id].to_s
-      expect(ActionMailer::Base.deliveries.last.subject).to_not eq 'Thanks for subscribing to Dabble Me PRO!'
+      expect(ActionMailer::Base.deliveries.size).to eq 0
     end
 
     it 'should create a payment but not change plan or email user thanks' do
@@ -170,7 +172,8 @@ RSpec.describe PaymentsController, type: :controller do
       expect { post :payment_notify, params: payhere_params, as: :json }.to_not change {
         paid_annual_user.reload.plan
       }
-      expect(ActionMailer::Base.deliveries.last.subject).to_not eq 'Thanks for subscribing to Dabble Me PRO!'
+      byebug
+      expect(ActionMailer::Base.deliveries.size).to eq 0
     end
 
     it 'should create a payment for an existing user with PayHere ID match, but not email' do
@@ -178,7 +181,7 @@ RSpec.describe PaymentsController, type: :controller do
       expect { post :payment_notify, params: payhere_params, as: :json }.to change { Payment.count }.by(1)
       expect(paid_user.reload.plan).to eq 'PRO Yearly PayHere'
       expect(paid_user.reload.payhere_id).to eq payhere_params[:customer][:id].to_s
-      expect(ActionMailer::Base.deliveries.last.subject).to_not eq 'Thanks for subscribing to Dabble Me PRO!'
+      expect(ActionMailer::Base.deliveries.size).to eq 0
     end
 
     it 'should create a payment if Free user is upgrading and email user thanks' do
@@ -214,7 +217,7 @@ RSpec.describe PaymentsController, type: :controller do
       expect { post :payment_notify, params: gumroad_params, as: :json }.to change { Payment.count }.by(1)
       expect(paid_user.reload.plan).to eq 'PRO Yearly Gumroad'
       expect(paid_user.reload.gumroad_id).to eq gumroad_params[:purchaser_id]
-      expect(ActionMailer::Base.deliveries.last.subject).to_not eq 'Thanks for subscribing to Dabble Me PRO!'
+      expect(ActionMailer::Base.deliveries.size).to eq 0
     end
 
     it 'should create a payment for an existing user with Gumroad ID match, but not email' do
@@ -222,7 +225,7 @@ RSpec.describe PaymentsController, type: :controller do
       expect { post :payment_notify, params: gumroad_params, as: :json }.to change { Payment.count }.by(1)
       expect(paid_user.reload.plan).to eq 'PRO Yearly Gumroad'
       expect(paid_user.reload.gumroad_id).to eq gumroad_params[:purchaser_id]
-      expect(ActionMailer::Base.deliveries.last.subject).to_not eq 'Thanks for subscribing to Dabble Me PRO!'
+      expect(ActionMailer::Base.deliveries.size).to eq 0
     end
 
     it 'should create a payment if Free user is upgrading and email user thanks' do
@@ -255,7 +258,7 @@ RSpec.describe PaymentsController, type: :controller do
       paypal_params.merge!(payer_email: paid_user.email, item_name: "Dabble Me PRO for #{paid_user.user_key}")
       expect { post :payment_notify, params: paypal_params, as: :json }.to change { Payment.count }.by(1)
       expect(paid_user.reload.plan).to eq 'PRO Yearly PayPal'
-      expect(ActionMailer::Base.deliveries.last.subject).to_not eq 'Thanks for subscribing to Dabble Me PRO!'
+      expect(ActionMailer::Base.deliveries.size).to eq 0
     end
 
     it 'should not create a payment if no match' do
