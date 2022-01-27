@@ -172,7 +172,6 @@ RSpec.describe PaymentsController, type: :controller do
       expect { post :payment_notify, params: payhere_params, as: :json }.to_not change {
         paid_annual_user.reload.plan
       }
-      byebug
       expect(ActionMailer::Base.deliveries.size).to eq 0
     end
 
