@@ -1,10 +1,14 @@
 shared_context 'has all objects' do
   let(:user) do
-    FactoryBot.create(:user)
+    FactoryBot.create(:user, plan: 'Free')
   end
 
   let(:paid_user) do
     FactoryBot.create(:user, plan: 'PRO Monthly PayHere', payhere_id: Faker::Number.number(3), gumroad_id: Faker::Number.number(12))
+  end
+
+  let(:paid_annual_user) do
+    FactoryBot.create(:user, plan: 'PRO Yearly PayHere', payhere_id: Faker::Number.number(3))
   end
 
   let(:superuser) do

@@ -8,6 +8,7 @@ RSpec.describe PaymentsController, type: :controller do
     user
     superuser
     payment
+    ActionMailer::Base.deliveries.clear
   end
 
   describe 'index' do
@@ -161,6 +162,14 @@ RSpec.describe PaymentsController, type: :controller do
       expect { post :payment_notify, params: payhere_params, as: :json }.to change { Payment.count }.by(1)
       expect(paid_user.reload.plan).to eq 'PRO Yearly PayHere'
       expect(paid_user.reload.payhere_id).to eq payhere_params[:customer][:id].to_s
+      expect(ActionMailer::Base.deliveries.last.subject).to_not eq 'Thanks for subscribing to Dabble Me PRO!'
+    end
+
+    it 'should create a payment but not change plan or email user thanks' do
+      payhere_params.deep_merge!(customer: { id: paid_annual_user.payhere_id })
+      expect { post :payment_notify, params: payhere_params, as: :json }.to_not change {
+        paid_annual_user.reload.plan
+      }
       expect(ActionMailer::Base.deliveries.last.subject).to_not eq 'Thanks for subscribing to Dabble Me PRO!'
     end
 

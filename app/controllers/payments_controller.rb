@@ -143,11 +143,6 @@ class PaymentsController < ApplicationController
         # duplicate, don't send
       elsif @user.present?
         Payment.create(user_id: @user.id, comments: "PayHere #{frequency} from #{params[:customer][:email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
-        begin
-          UserMailer.thanks_for_paying(@user).deliver_later if @user.payments.count == 1
-        rescue StandardError => e
-          Rails.logger.warn("Error sending PayHere thanks_for_paying email email to #{@user.email}: #{e}")
-        end
       end
 
       { plan: "PRO #{frequency} PayHere", payhere_id:  params[:customer][:id] }
