@@ -93,7 +93,7 @@ class PaymentsController < ApplicationController
 
     if processed_params && @user.present?
       @user.update(processed_params)
-      if @user.plan_previous_change.first == "Free"
+      if @user.plan_previous_change&.first == "Free"
         begin # upgrade happened, set frequency back + send thanks
           @user.update(frequency: @user.previous_frequency) if @user.previous_frequency.any?
           UserMailer.thanks_for_paying(@user).deliver_later
