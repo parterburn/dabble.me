@@ -245,7 +245,7 @@ RSpec.describe RegistrationsController, type: :controller do
       email = FactoryBot.build(:email, params)
       expect{ EmailProcessor.new(email).process }.to change{ new_paid_user.entries.count }.by(1)
       expect(new_paid_user.entries.last.body).to include new_entry_email_body
-      expect(new_paid_user.entries.last.date.strftime('%Y-%m-%d')).to eq DateTime.now.in_time_zone(new_paid_user.send_timezone).strftime('%Y-%m-%d')
+      expect(new_paid_user.entries.last.date.strftime('%Y-%m-%d')).to eq DateTime.now.in_time_zone(new_paid_user.reload.send_timezone).strftime('%Y-%m-%d')
 
       params = { to: [{
                     full: "#{new_paid_user.user_key}@#{ENV['SMTP_DOMAIN']}",
