@@ -12,12 +12,12 @@ class PaymentsController < ApplicationController
 
     @monthly_recurring = 0
     @monthlys.includes(:payments).each do |user|
-      @monthly_recurring += user.payments&.last.amount
+      @monthly_recurring += user.payments.last&.amount.to_f
     end
 
     @annual_recurring = 0
     @yearlys.includes(:payments).each do |user|
-      @annual_recurring += user.payments&.last.amount
+      @annual_recurring += user.payments.last&.amount.to_f
     end
 
     @mrr = @monthly_recurring.to_i + (@annual_recurring.to_i/12)
