@@ -3,7 +3,7 @@ namespace :entry do
   # rake entry:send_entries_test
   task :send_entries_test => :environment do
     user = User.where(:email=>"admin@dabble.ex").first
-    EntryMailer.send_entry(user).deliver_now
+    EntryMailer.send_entry(user, Inspiration.random).deliver_now
   end
 
   # heroku run bundle exec rake "entry:stats[2017]" --app dabble-me
@@ -131,6 +131,7 @@ namespace :entry do
 
   task :send_hourly_entries => :environment do
     users = User.subscribed_to_emails.not_just_signed_up
+    random_inspiration = Inspiration.random
     users.each do |user|
       # Check if it's the hour they want where they live AND the day where they live that they want it sent: send it.
       if Time.now.in_time_zone(user.send_timezone).hour == user.send_time.hour && user.frequency && user.frequency.include?(Time.now.in_time_zone(user.send_timezone).strftime('%a'))
@@ -141,7 +142,7 @@ namespace :entry do
           # Every other week for free users
           if user.is_pro? || (user.is_free? && Time.now.strftime("%U").to_i % 2 == 0) || ENV['FREE_WEEK'] == 'true'
             begin
-              EntryMailer.send_entry(user).deliver_now
+              EntryMailer.send_entry(user, random_inspiration).deliver_now
             rescue StandardError => e
               Rails.logger.warn("Error sending daily entry email to #{user.email}: #{e}")
             end

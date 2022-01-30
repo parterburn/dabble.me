@@ -2,6 +2,11 @@
 # The data can then be loaded with the rake db:seed (or created alongside the db with db:setup).
 
 Inspiration.create(category: 'Seed', body: 'Seeded into database')
+Inspiration.create(category: 'OhLife', body: 'Imported from OhLife')
+Inspiration.create(category: 'Ahhlife', body: 'Imported from Ahhlife')
+(1..30).each do |i|
+  Inspiration.create(category: ['Question', 'Quote', 'Tip'].sample, body: Faker::Hipster.sentence)
+end
 
 paid_user = User.new(email: 'paid@dabble.ex', first_name: Faker::Name.first_name, last_name: Faker::Name.last_name, password: 'dabble', plan: 'PRO PayHere Monthly', payhere_id: 1, gumroad_id: 1, frequency: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"])
 paid_user.save

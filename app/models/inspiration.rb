@@ -1,13 +1,13 @@
 class Inspiration < ActiveRecord::Base
   has_many :entries
-  scope :without_imports_or_email, -> { where("category != 'OhLife'").where("category != 'Ahhlife'").where("category != 'Email'") }
+  scope :without_imports_or_email, -> { where("category NOT IN (?)", ['OhLife', 'Ahhlife', 'Email', 'Seed']) }
   scope :without_imports_or_email_or_tips, -> { without_imports_or_email.where("category != 'Tip'") }
 
   validates :category, presence: true
   validates :body, presence: true
 
   def inspired_by
-    if ["OhLife", "Email", "Ahhlife"].include? category
+    if ["OhLife", "Email", "Ahhlife", "Seed"].include? category
       "Source: #{category}"
     elsif category == "Tip"
       "Tip"
@@ -20,4 +20,9 @@ class Inspiration < ActiveRecord::Base
     true if params[:inspiration][:category] != self.category || params[:inspiration][:body] != self.body
   end
 
+  def self.random
+    return nil unless (count = without_imports_or_email.count) > 0
+
+    without_imports_or_email.offset(rand(count)).first
+  end
 end

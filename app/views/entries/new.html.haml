@@ -22,10 +22,10 @@
               =@entry.inspiration.body.html_safe
               - if @entry.inspiration.category != "Tip"
                 =f.hidden_field :inspiration_id, :value => @entry.inspiration.id
-            -elsif @random_inspiration.present?
-              =@random_inspiration.body.html_safe
-              - if @random_inspiration.category != "Tip"
-                =f.hidden_field :inspiration_id, :value => @random_inspiration.id
+            -elsif (random_inspiration = Inspiration.random).present?
+              =random_inspiration.body.html_safe
+              - if random_inspiration.category != "Tip"
+                =f.hidden_field :inspiration_id, :value => random_inspiration.id
           %h3{style: 'color: #333333;'}
             %span
               NEW ENTRY

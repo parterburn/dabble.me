@@ -68,7 +68,6 @@ class EntriesController < ApplicationController
 
   def new
     @entry = Entry.new
-    @random_inspiration = random_inspiration
   end
 
   def calendar
