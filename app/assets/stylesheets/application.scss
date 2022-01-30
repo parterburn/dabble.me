@@ -251,3 +251,18 @@ input[type="submit"].form-control {
     display: flex;
   }
 }
+
+.ml-questions {
+  text-align: left;
+  list-style-type: none;
+  padding-left: 0;
+  font-size: 16px;
+  li {
+    margin-bottom: 5px;
+    &:nth-child(odd) {
+      @media screen and (min-width: 992px) {
+        text-align: right;
+      }
+    }
+  }
+}

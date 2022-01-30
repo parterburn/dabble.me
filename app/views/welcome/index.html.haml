@@ -5,12 +5,12 @@
     =image_tag("dabble_me_pencil_400.png", alt: "Dabble Me Logo", width: 240, height: 50, style: "width: 240px; height: 50px;")
   %h2{style: "margin-top: 5px;"} Your private journal.
   %br
-  .col-sm-9.col-sm-offset-3.col-sm-8.col-md-offset-4
-    %ul{style: "text-align: left; list-style-type: none; padding-left: 0;font-size: 16px;"}
-      %li{style: "margin-bottom: 5px;"} 🙏&nbsp; What are you grateful for?
-      %li{style: "margin-bottom: 5px;"} 📆&nbsp; What did you do yesterday?
-      %li{style: "margin-bottom: 5px;"} 🎯&nbsp; What are you working towards?
-      %li{style: "margin-bottom: 5px;"} 🤔&nbsp; What do you need to process through?
+  .col-sm-8.col-sm-offset-2
+    %ul.ml-questions
+      %li.col-md-6 📆&nbsp; What did you do yesterday?
+      %li.col-md-6 🙏&nbsp; What are you grateful for?
+      %li.col-md-6 🎯&nbsp; What are you working towards?
+      %li.hidden-xs.col-lg-6 🤔&nbsp; What needs processing through?
   .col-sm-12
     %p{style: "font-size: 16px; margin: 15px 0 20px 0; font-weight: 600;"}
       Dabble Me helps you disover, guide, and remember your life.
@@ -36,13 +36,13 @@
       %li
         %i.fa.fa-check
         &nbsp;Blasts from the past in your inbox
-      %li
+      %li.hidden-xs
         %i.fa.fa-check
         &nbsp;Daily inspirations for writing
 
 .row
   .col-md-10.col-md-offset-1.col-lg-8.col-lg-offset-2.s-features.s-entry-date{style: "margin-top: 0;"}
-    %h3{style: "margin: 10px 0; font-size: 14px;"}
+    %h3{style: "margin: 5px 0; font-size: 14px;"}
       %span{style: "color: #BBB; background-color: #fcfbf9;position: relative; top: 4px;"} PRO FEATURES
 
 .row.flex-end
@@ -51,10 +51,10 @@
       %li
         %i.fa.fa-lock
         &nbsp;Attach a photo to your entry
-      %li
+      %li.hidden-xs
         %i.fa.fa-lock
         &nbsp;Add/edit rich-text entries via the web
-      %li
+      %li.hidden-xs
         %i.fa.fa-lock
         &nbsp;Tag your entries with #hashtags
 
@@ -99,7 +99,7 @@
             = image_tag "baby.jpg", style: "width: 300px; max-width: 100%;"
 
 
-.center.hidden-xs
+.center
   %h4
     %p Read about Dabble Me in...
     %p
