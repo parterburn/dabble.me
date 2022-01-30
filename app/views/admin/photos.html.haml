@@ -16,11 +16,11 @@
   .col-md-12
     .row
       .center
-        = paginate @entries  
+        = paginate @entries
     .row
       - @entries.each do |entry|
-        .col-md-3{style: 'margin: 15px auto;'}
-          =link_to entry.image_url_cdn, :target=>"_blank" do
+        .pictureFrame.col-md-3
+          =link_to entry.image_url_cdn, target: "_blank" do
             =image_code(entry)
     .row
       .center
