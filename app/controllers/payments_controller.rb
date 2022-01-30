@@ -145,7 +145,7 @@ class PaymentsController < ApplicationController
 
       { plan: "PRO #{frequency} PayHere", payhere_id:  params[:customer][:id] }
     elsif params[:event].in?(["subscription.cancelled", "subscription.created"])
-      { }
+      { payhere_id: params[:customer][:id] }
     end
   end
 
