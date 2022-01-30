@@ -235,7 +235,12 @@ input[type="submit"].form-control {
   }
 }
 
-.alert-warning a {
+.alert-warning.force-links a {
   color: #66512c !important;
+  text-decoration: underline !important;
+}
+
+.alert-info.force-links a {
+  color: #245269 !important;
   text-decoration: underline !important;
 }

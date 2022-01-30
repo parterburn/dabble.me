@@ -19,10 +19,16 @@
           The following features are only available to users subscribed to
           =link_to("Dabble Me PRO", subscribe_path)+"."
           You can subscribe for $3/month or $30/year.
-      %h4 How do I add a photo to my entry?
+      %h4
+        - if !signed_in? || current_user.is_free?
+          %i.fa.fa-lock
+        How do I add a photo to my entry?
       %p When you reply to your Dabble Me email, just attach a photo to the email and it'll get saved with your entry. You can also add a photo on the website when you edit an entry. You can add 1 photo per entry, and we support jpeg, gif, png, and heic (iOS 12) formats.
 
-      %h4 How do I edit or delete an entry?
+      %h4
+        - if !signed_in? || current_user.is_free?
+          %i.fa.fa-lock
+        How do I edit or delete an entry?
       %p
         When visiting the
         =link_to("entries page", entries_path) + ","
@@ -36,10 +42,16 @@
         &nbsp;
         in case you'd like to delete your entry.
 
-      %h4 Can I write entries on the website?
+      %h4
+        - if !signed_in? || current_user.is_free?
+          %i.fa.fa-lock
+        Can I write entries on the website?
       %p You can write entries on the website for any date. Simply click "WRITE" at the top.
 
-      %h4 Can I import from OhLife or any other services?
+      %h4
+        - if !signed_in? || current_user.is_free?
+          %i.fa.fa-lock
+        Can I import from OhLife or any other services?
       %p
         Yes! Simply visit the
         =link_to("Importer", import_path) + "."

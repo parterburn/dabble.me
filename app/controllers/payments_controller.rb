@@ -133,6 +133,7 @@ class PaymentsController < ApplicationController
   def process_payhere
     if params[:event] == "payment.failed"
       Rails.logger.warn("Failed payment of $#{params[:payment][:amount]} for #{params[:customer][:email]}")
+      { payhere_id: params[:customer][:id] }
     elsif params[:event] == "payment.success"
       @user = User.find_by(payhere_id: params[:customer][:id])
       @user ||= User.find_by(email: params[:customer][:email].downcase)
