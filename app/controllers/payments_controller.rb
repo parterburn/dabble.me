@@ -11,12 +11,12 @@ class PaymentsController < ApplicationController
     @yearlys =  User.pro_only.yearly
 
     @monthly_recurring = 0
-    @monthlys.joins(:payments).each do |user|
+    @monthlys.includes(:payments).each do |user|
       @monthly_recurring += user.payments.last.amount
     end
 
     @annual_recurring = 0
-    @yearlys.joins(:payments).each do |user|
+    @yearlys.includes(:payments).each do |user|
       @annual_recurring += user.payments.last.amount
     end
 
