@@ -49,6 +49,10 @@ class UserMailer < ActionMailer::Base
     mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: '[REFUND REQUIRED] Payment Without a User', body: params.to_yaml)
   end
 
+  def pro_deleted(name, email, plan, entries)
+    mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: '[ACTION REQUIRED] Pro User Deleted', body: "Name: #{name}\nEmail: #{email}\nPlan: #{plan}\nEntries: #{entries}")
+  end
+
   def failed_entry(user, errors, date, body)
     @user = user
     @errors = errors.to_sentence

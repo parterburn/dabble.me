@@ -7,7 +7,7 @@
         Thanks for subscribing to
         = link_to(current_user.plan_name, subscribe_path, class: "alert-link") + "."
         - if current_user.plan_type.present?
-          Manage your subscription at
+          Manage your subscription and payment history at
           %strong= current_user.plan_type.html_safe + "."
       - else
         =link_to subscribe_path, class: "float-left" do
