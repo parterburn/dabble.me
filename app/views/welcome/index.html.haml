@@ -1,54 +1,75 @@
 - title "Dabble Me — Your private journal."
 
 .center.s-landing-page
-  %h1{title: "Dabble Me"}
-    =image_tag("dabble_me_pencil_400.png", alt: "Dabble Me Logo")
-  %h2 Your private journal.
+  %h1{title: "Dabble Me", style: "margin-bottom: 0;"}
+    =image_tag("dabble_me_pencil_400.png", alt: "Dabble Me Logo", width: 240, height: 50, style: "width: 240px; height: 50px;")
+  %h2{style: "margin-top: 5px;"} Your private journal.
   %br
-  .col-md-6.col-md-offset-3
-    %p
-      %span.hidden-xs
-        What were you doing last month? How about last week?
-        %br
-      Dabble Me helps you remember what's happened in your life.
-    %br
+  .col-sm-9.col-sm-offset-3.col-sm-8.col-md-offset-4
+    %ul{style: "text-align: left; list-style-type: none; padding-left: 0;font-size: 16px;"}
+      %li{style: "margin-bottom: 5px;"} 🙏&nbsp; What are you grateful for?
+      %li{style: "margin-bottom: 5px;"} 📆&nbsp; What did you do yesterday?
+      %li{style: "margin-bottom: 5px;"} 🎯&nbsp; What are you working towards?
+      %li{style: "margin-bottom: 5px;"} 🤔&nbsp; What do you need to process through?
+  .col-sm-12
+    %p{style: "font-size: 16px; margin: 15px 0 20px 0; font-weight: 600;"}
+      Dabble Me helps you disover, guide, and remember your life.
 
 .clearfix
 .center
-  = link_to "WRITE YOUR FIRST ENTRY", new_user_registration_path, :class => 'btn btn-info btn-lg col-md-4 col-md-offset-4'
+  = link_to new_user_registration_path, :class => 'btn btn-info btn-lg col-md-4 col-md-offset-4' do
+    ✏️&nbsp; WRITE YOUR FIRST ENTRY
   .clearfix
-%br
-.clearfix
 
-.col-md-6.col-lg-4.col-lg-offset-2.s-features.top20
-  %ul
-    %li
-      %i.fa.fa-check
-      Always private. Never social.
-    %li
-      %i.fa.fa-check
-      Reminders emailed on your schedule
-    %li
-      %i.fa.fa-check
-      Reply-to-post entries
-    %li
-      %i.fa.fa-check
-      Search entries
+.row{style: "margin-top: 25px;"}
+  .col-md-5.col-md-offset-1.col-lg-4.col-lg-offset-2.s-features
+    %ul{style: "padding-left: 0;"}
+      %li
+        %i.fa.fa-check
+        &nbsp;Always private. Never social.
+      %li
+        %i.fa.fa-check
+        &nbsp;Reply by email to post entries
 
-.col-md-6.col-lg-5.s-features.top20
-  %ul
-    %li
-      %i.fa.fa-check
-      Blasts from the past in your inbox
-    %li
-      %i.fa.fa-check
-      Attach an image to save it with the entry
-    %li
-      %i.fa.fa-check
-      Tag your entries with hashtags
-    %li
-      %i.fa.fa-check
-      =link_to "Plus more with Dabble Me PRO", subscribe_path
+  .col-md-5.col-lg-4.s-features
+    %ul{style: "padding-left: 0;"}
+      %li
+        %i.fa.fa-check
+        &nbsp;Blasts from the past in your inbox
+      %li
+        %i.fa.fa-check
+        &nbsp;Daily inspirations for writing
+
+.row
+  .col-md-10.col-md-offset-1.col-lg-8.col-lg-offset-2.s-features.s-entry-date{style: "margin-top: 0;"}
+    %h3{style: "margin: 10px 0; font-size: 14px;"}
+      %span{style: "color: #BBB; background-color: #fcfbf9;position: relative; top: 4px;"} PRO FEATURES
+
+.row.flex-end
+  .col-md-5.col-md-offset-1.col-lg-4.col-lg-offset-2.s-features
+    %ul{style: "padding-left: 0;"}
+      %li
+        %i.fa.fa-lock
+        &nbsp;Attach a photo to your entry
+      %li
+        %i.fa.fa-lock
+        &nbsp;Add/edit rich-text entries via the web
+      %li
+        %i.fa.fa-lock
+        &nbsp;Tag your entries with #hashtags
+
+  .col-md-5.col-lg-4.s-features
+    %ul{style: "padding-left: 0;"}
+      %li
+        %i.fa.fa-lock
+        &nbsp;Reminders emailed on your schedule
+      %li
+        %i.fa.fa-lock
+        &nbsp;Browse by calendar view or search
+      %li
+        %i.fa.fa-lock
+        =link_to subscribe_path do
+          &nbsp;…and more with Dabble Me PRO
 
 .row
   .col-md-8.col-md-offset-2{style: "margin-top: 10px;"}
@@ -69,7 +90,7 @@
             .light-text= "#{Time.now.yesterday.strftime("%B %-d, %Y")} 8:00pm"
         .message-content{style: "padding: 20px 25px;"}
           %p Reply to this email with your entry for #{Time.now.yesterday.strftime("%B %-d")}.
-          %p 
+          %p
             %strong Remember this? On #{Time.now.yesterday.last_year.strftime("%a, %b %-d, %Y")} (exactly 1 year ago) you wrote...
           %p Had a life changing moment today. Full of love, appreciation, and grateful for what happened today. #Jade become an older sister!
           %p
@@ -83,7 +104,7 @@
     %p Read about Dabble Me in...
     %p
       %strong=link_to "INCREASE YOUR HAPPINESS WITH DAILY JOURNALING", "https://medium.com/startup-lesson-learned/increase-your-happiness-with-daily-journaling-8109b0700506", target: "_blank"
-    
+
 .clearfix
 %br
 %br

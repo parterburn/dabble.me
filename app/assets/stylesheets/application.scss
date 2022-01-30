@@ -244,3 +244,10 @@ input[type="submit"].form-control {
   color: #245269 !important;
   text-decoration: underline !important;
 }
+
+.flex-end {
+  @media screen and (min-width: 992px) {
+    align-items: flex-end;
+    display: flex;
+  }
+}

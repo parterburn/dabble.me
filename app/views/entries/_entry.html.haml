@@ -26,8 +26,9 @@
     = highlight(format_body(entry.body), @search.term)
   - else
     = format_body(entry.body)
-  = entry.spotify_embed
-  - if (hashtags = entry.hashtags).present?
+  - if current_user.is_pro?
+    = entry.spotify_embed
+  - if current_user.is_pro? && (hashtags = entry.hashtags).present?
     %p.tags
       %strong.small Tags:
       - hashtags.each do |tag|

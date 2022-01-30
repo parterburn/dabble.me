@@ -19,9 +19,9 @@
       %p
         = format_body(@random_entry.body)
 
-      - if (songs = @random_entry.spotify_track_names).present?
+      - if @user.is_pro? && (songs = @random_entry.spotify_track_names).present?
         = songs
-      - if (hashtags = @random_entry.hashtags).present?
+      - if @user.is_pro? && (hashtags = @random_entry.hashtags).present?
         %p
           %i
             - h = []
@@ -31,7 +31,7 @@
                 - add_timeframe = " <small>(#{ApplicationController.helpers.tag_relative_date(date, @random_entry.date)})</small>".html_safe
               - h << link_to(tag, search_url(host: ENV['MAIN_DOMAIN'], search: {term: "##{tag}"})) + add_timeframe
             = "Tags: #{h.join(", ")}".html_safe
-      - if @random_entry_image_url.present?
+      - if @user.is_pro? && @random_entry_image_url.present?
         %p
           =link_to image_tag(@random_entry_image_url, style: 'max-width: 100%; border-radius: 4px;'), @random_entry_image_url
     - elsif @user.send_past_entry?
