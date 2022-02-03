@@ -133,7 +133,6 @@ class PaymentsController < ApplicationController
   def process_payhere
     @user = User.find_by(payhere_id: params[:customer][:id])
     @user ||= User.find_by(email: params[:customer][:email].downcase)
-    return false unless @user.present?
 
     if params[:event] == "payment.failed"
       Rails.logger.warn("Failed payment of $#{params[:payment][:amount]} for #{params[:customer][:email]}")
@@ -142,7 +141,7 @@ class PaymentsController < ApplicationController
       paid = params[:membership_plan][:price]
       frequency = params[:membership_plan][:billing_interval] == "month" ? "Monthly" : "Yearly"
 
-      if @user.payments.last&.date&.to_date != Date.today
+      if @user.present? && @user.payments.last&.date&.to_date != Date.today
         Payment.create(user_id: @user.id, comments: "PayHere #{frequency} from #{params[:customer][:email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid)
       end
       { plan: "PRO #{frequency} PayHere", payhere_id:  params[:customer][:id] }

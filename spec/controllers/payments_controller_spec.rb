@@ -193,7 +193,7 @@ RSpec.describe PaymentsController, type: :controller do
     end
 
     it 'should not create a payment if no match' do
-      payhere_params.deep_merge!(customer: { id: Faker::Number.number(12), email: Faker::Internet.email })
+      payhere_params.deep_merge!(customer: { id: 999999999999, email: "fakeemail@fake.com" })
       expect { post :payment_notify, params: payhere_params, as: :json }.to_not change { Payment.count }
       expect(paid_user.reload.plan).to eq paid_user.plan
       expect(ActionMailer::Base.deliveries.last.subject).to eq '[REFUND REQUIRED] Payment Without a User'
