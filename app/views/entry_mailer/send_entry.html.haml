@@ -5,11 +5,11 @@
     %meta{name: "viewport", content: "width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=no;"}
   %body
     - if @user.entries.count == 0
-      %p Just reply to this email with your first post for #{Time.now.in_time_zone(@user.send_timezone).strftime("%B %-d")}.
+      %p Just reply to this email with your first post for #{@send_day.strftime("%B %-d")}.
     - elsif @user.days_since_last_post.to_i > 20
-      %p It's been #{@user.days_since_last_post} days since your last entry! Reply to this email with your entry for #{Time.now.in_time_zone(@user.send_timezone).strftime("%B %-d")}.
+      %p It's been #{@user.days_since_last_post} days since your last entry! Reply to this email with your entry for #{@send_day.strftime("%B %-d")}.
     - else
-      %p Reply to this email with your entry for #{Time.now.in_time_zone(@user.send_timezone).strftime("%B %-d")}.
+      %p Reply to this email with your entry for #{@send_day.strftime("%B %-d")}.
     - if @user.send_past_entry? && @user.random_entries.count > 5 && @random_entry
       - show_entry = true
       %p

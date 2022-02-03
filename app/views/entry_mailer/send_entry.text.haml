@@ -1,9 +1,9 @@
 - if @user.entries.count == 0
-  Just reply to this email with your first post for #{Time.now.in_time_zone(@user.send_timezone).strftime("%B %-d")}.
+  Just reply to this email with your first post for #{@send_day.strftime("%B %-d")}.
 - elsif @user.days_since_last_post.to_i > 20
-  It's been #{@user.days_since_last_post} days since your last entry! Reply to this email with your entry for #{Time.now.in_time_zone(@user.send_timezone).strftime("%B %-d")}.
+  It's been #{@user.days_since_last_post} days since your last entry! Reply to this email with your entry for #{@send_day.strftime("%B %-d")}.
 - else
-  Reply to this email with your entry for #{Time.now.in_time_zone(@user.send_timezone).strftime("%B %-d")}.
+  Reply to this email with your entry for #{@send_day.strftime("%B %-d")}.
 \
 - if @user.send_past_entry? && @user.random_entries.count > 5 && @random_entry
   - show_entry = true
