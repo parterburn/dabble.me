@@ -219,6 +219,10 @@ class User < ActiveRecord::Base
     end
   end
 
+  def send_time_in_mt
+    send_time.hour + (ActiveSupport::TimeZone["America/Denver"].formatted_offset(false).to_i - ActiveSupport::TimeZone[send_timezone].formatted_offset(false).to_i)/100
+  end
+
   private
 
   def restrict_free_frequency
