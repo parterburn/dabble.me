@@ -131,21 +131,22 @@ class PaymentsController < ApplicationController
   end
 
   def process_payhere
+    @user = User.find_by(payhere_id: params[:customer][:id])
+    @user ||= User.find_by(email: params[:customer][:email].downcase)
+    return false unless @user.present?
+
     if params[:event] == "payment.failed"
       Rails.logger.warn("Failed payment of $#{params[:payment][:amount]} for #{params[:customer][:email]}")
       { payhere_id: params[:customer][:id] }
     elsif params[:event] == "payment.success"
-      @user = User.find_by(payhere_id: params[:customer][:id])
-      @user ||= User.find_by(email: params[:customer][:email].downcase)
       paid = params[:membership_plan][:price]
       frequency = params[:membership_plan][:billing_interval] == "month" ? "Monthly" : "Yearly"
 
-      if @user.present? && @user.payments.last&.date&.to_date != Date.today
-        Payment.create(user_id: @user.id, comments: "PayHere #{frequency} from #{params[:customer][:email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
+      if @user.payments.last&.date&.to_date != Date.today
+        Payment.create(user_id: @user.id, comments: "PayHere #{frequency} from #{params[:customer][:email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid)
       end
-
       { plan: "PRO #{frequency} PayHere", payhere_id:  params[:customer][:id] }
-    elsif params[:event].in?(["subscription.cancelled", "subscription.created"])
+    else # params[:event].in?(["subscription.cancelled", "subscription.created"])
       { payhere_id: params[:customer][:id] }
     end
   end
