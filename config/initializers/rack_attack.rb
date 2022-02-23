@@ -1,14 +1,14 @@
 class Rack::Attack
-  if ENV["REJECT_UNPROXIED_REQUESTS"].present? && ENV["REJECT_UNPROXIED_REQUESTS"].to_s == "true"
-    blocklist("block non-proxied requests in production") do |request|
-      raw_ip = request.env["HTTP_X_FORWARDED_FOR"]
+  if ENV["REJECT_UNPROXIED_REQUESTS"]
+    blocklist("block non-proxied requests in production") do |req|
+      raw_ip = req.get_header("HTTP_X_FORWARDED_FOR")
       ip_addresses = raw_ip ? raw_ip.strip.split(/[,\s]+/) : []
       proxy_ip = ip_addresses.last
 
-      if !(request.host =~ /heroku/) && ::Rails.application.config.cloudflare.ips.any?{ |proxy| proxy === proxy_ip }
+      if !(req.host =~ /heroku/) && req.trusted_proxy?(proxy_ip)
         false
       else
-        ::Rails.logger.warn "Rack Attack IP Filtering: blocked request from #{proxy_ip} to #{request.url} // HOST: #{request.host}"
+        ::Rails.logger.warn "Rack Attack IP Filtering: blocked request from host #{proxy_ip} to #{req.url}"
         true
       end
     end
