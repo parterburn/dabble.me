@@ -8,7 +8,7 @@ class Rack::Attack
       if !(request.host =~ /heroku/) && ::Rails.application.config.cloudflare.ips.any?{ |proxy| proxy === proxy_ip }
         false
       else
-        ::Rails.logger.warn "Rack Attack IP Filtering: blocked request from #{proxy_ip} to #{request.url}"
+        ::Rails.logger.warn "Rack Attack IP Filtering: blocked request from #{proxy_ip} to #{request.url} // HOST: #{request.host}"
         true
       end
     end
