@@ -5,6 +5,7 @@ class ApplicationController < ActionController::Base
   before_action :js_action
   before_action :tag_request
   before_action :configure_permitted_parameters, if: :devise_controller?
+  before_action :identify_current_user_to_sentry
 
   rescue_from Rack::Timeout::RequestTimeoutException, with: :handle_timeout
 
@@ -21,6 +22,14 @@ class ApplicationController < ActionController::Base
       flash[:alert] = "Not authorized"
       redirect_to entries_path
     end
+  end
+
+  def identify_current_user_to_sentry
+    if current_user
+      Sentry.set_user(id: current_user.id, email: current_user.email)
+    end
+    extras = { params: params.to_unsafe_h, url: request.url }
+    Sentry.set_extras(extras)
   end
 
   protected
@@ -46,6 +55,7 @@ end
 if RUBY_VERSION>='2.6.0'
   def handle_timeout(exception)
     Rails.logger.warn("Timeout Error: #{params&.to_hash&.to_s}")
+    Sentry.capture_message("Timeout error", level: "warning", extra: { params: params, url: request.url })
     render "errors/timeout"
   end
 end

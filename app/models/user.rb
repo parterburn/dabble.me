@@ -240,6 +240,8 @@ class User < ActiveRecord::Base
     UserMailer.welcome_email(self).deliver_later
   rescue StandardError => e
     Rails.logger.warn("Error sending welcome email to #{self.email}: #{e}")
+    Sentry.set_user(id: self.id, email: self.email)
+    Sentry.capture_exception(e)
   end
 
   def admin_emails

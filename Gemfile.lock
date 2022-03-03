@@ -386,6 +386,14 @@ GEM
     selenium-webdriver (3.142.7)
       childprocess (>= 0.5, < 4.0)
       rubyzip (>= 1.2.2)
+    sentry-rails (5.1.1)
+      railties (>= 5.0)
+      sentry-ruby-core (~> 5.1.1)
+    sentry-ruby (5.1.1)
+      concurrent-ruby (~> 1.0, >= 1.0.2)
+      sentry-ruby-core (= 5.1.1)
+    sentry-ruby-core (5.1.1)
+      concurrent-ruby
     simplecov (0.18.5)
       docile (~> 1.1)
       simplecov-html (~> 0.11)
@@ -521,6 +529,8 @@ DEPENDENCIES
   rubyzip (~> 1.3)
   sass-rails
   selenium-webdriver
+  sentry-rails
+  sentry-ruby
   simplecov
   sinatra (~> 2.0, >= 2.0.8.1)
   spring

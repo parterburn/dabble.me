@@ -68,6 +68,8 @@ gem 'twbs_sass_rails'
 gem 'uglifier'
 
 gem 'le' # logentries
+gem "sentry-ruby"
+gem "sentry-rails"
 gem "rack-attack" # Request blocking & throttling
 gem "cloudflare-rails"
 gem "sqreen"

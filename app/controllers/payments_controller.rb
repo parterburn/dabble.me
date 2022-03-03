@@ -99,12 +99,15 @@ class PaymentsController < ApplicationController
           UserMailer.thanks_for_paying(@user).deliver_later
         rescue StandardError => e
           Rails.logger.warn("Error sending thanks_for_paying email to #{@user.email}: #{e}")
+          Sentry.set_user(id: @user.id, email: @user.email)
+          Sentry.capture_exception(e)
         end
       end
     elsif processed_params
       UserMailer.no_user_here(params.permit!).deliver_later
     else
       Rails.logger.warn("Payment notification not processed: #{params}")
+      Sentry.capture_message("Payment notification not processed", level: "warning", extra: { params: params })
     end
     head :ok, content_type: 'text/html'
   end
