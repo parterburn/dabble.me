@@ -24,7 +24,7 @@
     %span{style: "margin-right: 5px;"}
       %strong Your post-by-email unique address:
     %code
-      =mail_to "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", encode: "hex", subject: "Entry for #{Date.today.strftime('%B %d, %Y')}", target: "_blank", style: "color: #a41100;"
+      =mail_to "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}", encode: "hex", subject: "Entry for #{Date.today.strftime('%B %-d, %Y')}", target: "_blank", style: "color: #a41100;"
     %div{style: "font-size: 13px; margin-top: 5px; margin-bottom: 0; padding-bottom: 0;"}
       You can send emails to this address, which will save as an entry to your Dabble Me account for the date sent in if the subject is blank; override the entry date by adding it to the subject in the format of YYYY-MM-DD.
     %hr

@@ -48,4 +48,4 @@ en:
       date:
         "%b %-d, %Y"
       short:
-        "%B %d"
+        "%B %-d"
