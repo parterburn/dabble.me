@@ -1,4 +1,6 @@
 class User < ActiveRecord::Base
+  include RandomizedField
+
   # Include default devise modules. Others available are:
   # :confirmable, :timeoutable and :omniauthable, :lockable
   devise :database_authenticatable, :registerable,

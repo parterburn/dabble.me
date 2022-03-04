@@ -51,6 +51,14 @@
       %h4
         - if !signed_in? || current_user.is_free?
           %i.fa.fa-lock
+        How do I embed songs from Spotify?
+      %p
+        Use the "Copy Link" feature in Spotify and paste those links (either dropping in the full URL or as a hyperlink) to your entry and you'll see them embedded right on the web, ready to listen to. Dabble Me will also pull out the artist & song title and send those alongside your entries in your reminder emails.
+        = link_to "How To Copy Song Link on All Devices »", "https://support.spotify.com/us/article/share-from-spotify/", target: "_blank"
+
+      %h4
+        - if !signed_in? || current_user.is_free?
+          %i.fa.fa-lock
         Can I import from OhLife or any other services?
       %p
         Yes! Simply visit the

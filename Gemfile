@@ -3,10 +3,7 @@ source 'https://rubygems.org'
 ruby File.read(File.expand_path '../.ruby-version', __FILE__).strip.sub /\-p[0-9]+$/, '' # Read the rbenv version file
 gem 'rails', '~> 6.0', '>= 6.0.4.4'
 
-# Servers
 gem 'puma', '~> 4.3'
-
-# ORM
 gem 'pg', '~> 1.2', '>= 1.2.3'
 
 # users
@@ -16,7 +13,7 @@ gem 'recaptcha', '~> 5.5'
 gem 'gibbon' # mailchimp connector
 
 gem 'addressable' # better URI checking
-gem 'sinatra', '~> 2.0', '>= 2.0.8.1'
+# gem 'sinatra', '~> 2.0', '>= 2.0.8.1'
 gem 'combined_time_select'
 gem 'jekyll-timeago'
 
@@ -30,7 +27,7 @@ gem 'email_reply_trimmer'
 
 gem 'mailgun_rails'
 
-gem 'randomized_field', '~> 0.1.0' # builds user_keys
+gem 'randomized_field', '~> 1.0' # builds user_keys
 gem 'summernote-rails', '~> 0.8.12.0'
 gem 'rest-client' # RESTClient
 gem 'rubyzip', '~> 1.3'
@@ -53,14 +50,14 @@ gem 'fastimage'
 # Miscellanea
 gem 'google-analytics-rails'
 gem 'staccato' # server side tracking for Google Analytics
+gem 'tilt', '~> 2.0', '>= 2.0.10'
 gem 'haml'
-gem 'exception_notification-rake'
 gem 'rack-affiliates' # for tracking referrers
 gem 'rinku' # linkify urls & emails in entries
 
 # Assets
 gem 'autoprefixer-rails'
-gem 'haml_assets'
+# gem 'haml_assets'
 gem 'i18n-js'
 gem 'jquery-rails'
 gem 'sass-rails'
@@ -72,7 +69,6 @@ gem "sentry-ruby"
 gem "sentry-rails"
 gem "rack-attack" # Request blocking & throttling
 gem "cloudflare-rails"
-gem "sqreen"
 gem "stripe"
 gem "reverse_markdown" # text export conversion html->txt
 
@@ -92,8 +88,11 @@ group :development do
   gem 'meta_request'
   gem 'spring'
   gem 'spring-commands-rspec'
-  gem 'web-console'
-  gem 'derailed'
+
+  # USE_SERVER=puma bundle exec derailed exec perf:mem
+  # USE_SERVER=puma bundle exec derailed exec perf:mem_over_time
+  gem 'derailed_benchmarks'
+  gem 'stackprof'
 end
 
 group :test do
@@ -110,4 +109,5 @@ gem 'rack-timeout'
 
 group :production do
   gem 'rails_12factor'
+  gem 'sqreen'
 end
