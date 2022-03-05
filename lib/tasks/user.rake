@@ -7,9 +7,8 @@ namespace :user do
       begin
         UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
-        Rails.logger.warn("Error sending yearly downgrade expired email to #{user.email}: #{e}")
         Sentry.set_user(id: user.id, email: user.email)
-        Sentry.capture_exception(e)
+        Sentry.capture_exception(e, extra: { email_type: "downgrade_expired" })
       end
     end
 
@@ -18,9 +17,8 @@ namespace :user do
       begin
         UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
-        Rails.logger.warn("Error sending montly downgrade expired email to #{user.email}: #{e}")
         Sentry.set_user(id: user.id, email: user.email)
-        Sentry.capture_exception(e)
+        Sentry.capture_exception(e, extra: { email_type: "downgrade_expired" })
       end
     end
   end
@@ -31,9 +29,8 @@ namespace :user do
       begin
         UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
-        Rails.logger.warn("Error sending gumroad yearly expired email to #{user.email}: #{e}")
         Sentry.set_user(id: user.id, email: user.email)
-        Sentry.capture_exception(e)
+        Sentry.capture_exception(e, extra: { email_type: "downgrade_gumroad_expired" })
       end
     end
 
@@ -42,9 +39,8 @@ namespace :user do
       begin
         UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
-        Rails.logger.warn("Error sending gumroad monthly expired email to #{user.email}: #{e}")
         Sentry.set_user(id: user.id, email: user.email)
-        Sentry.capture_exception(e)
+        Sentry.capture_exception(e, extra: { email_type: "downgrade_gumroad_expired" })
       end
     end
   end
@@ -55,9 +51,8 @@ namespace :user do
       begin
         UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
-        Rails.logger.warn("Error sending payhere yearly expired email to #{user.email}: #{e}")
         Sentry.set_user(id: user.id, email: user.email)
-        Sentry.capture_exception(e)
+        Sentry.capture_exception(e, extra: { email_type: "downgrade_payhere_expired" })
       end
     end
 
@@ -66,9 +61,8 @@ namespace :user do
       begin
         UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
-        Rails.logger.warn("Error sending payhere monthly expired email to #{user.email}: #{e}")
         Sentry.set_user(id: user.id, email: user.email)
-        Sentry.capture_exception(e)
+        Sentry.capture_exception(e, extra: { email_type: "downgrade_payhere_expired" })
       end
     end
   end
@@ -79,9 +73,8 @@ namespace :user do
       begin
         UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
-        Rails.logger.warn("Error sending yearly paypal expired email to #{user.email}: #{e}")
         Sentry.set_user(id: user.id, email: user.email)
-        Sentry.capture_exception(e)
+        Sentry.capture_exception(e, extra: { email_type: "downgrade_paypal_expired" })
       end
     end
 
@@ -90,9 +83,8 @@ namespace :user do
       begin
         UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
-        Rails.logger.warn("Error sending montly paypal expired email to #{user.email}: #{e}")
         Sentry.set_user(id: user.id, email: user.email)
-        Sentry.capture_exception(e)
+        Sentry.capture_exception(e, extra: { email_type: "downgrade_paypal_expired" })
       end
     end
   end

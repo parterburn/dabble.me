@@ -98,7 +98,6 @@ class PaymentsController < ApplicationController
           @user.update(frequency: @user.previous_frequency) if @user.previous_frequency.any?
           UserMailer.thanks_for_paying(@user).deliver_later
         rescue StandardError => e
-          Rails.logger.warn("Error sending thanks_for_paying email to #{@user.email}: #{e}")
           Sentry.set_user(id: @user.id, email: @user.email)
           Sentry.capture_exception(e)
         end
@@ -106,7 +105,6 @@ class PaymentsController < ApplicationController
     elsif processed_params
       UserMailer.no_user_here(params.permit!).deliver_later
     else
-      Rails.logger.warn("Payment notification not processed: #{params}")
       Sentry.capture_message("Payment notification not processed", level: "warning", extra: { params: params })
     end
     head :ok, content_type: 'text/html'
@@ -138,7 +136,7 @@ class PaymentsController < ApplicationController
     @user ||= User.find_by(email: params[:customer][:email].downcase)
 
     if params[:event] == "payment.failed"
-      Rails.logger.warn("Failed payment of $#{params[:payment][:amount]} for #{params[:customer][:email]}")
+      Sentry.capture_message("Failed payment", level: "warning", extra: { params: params })
       { payhere_id: params[:customer][:id] }
     elsif params[:event] == "payment.success"
       paid = params[:membership_plan][:price]

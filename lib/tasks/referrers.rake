@@ -9,11 +9,11 @@ namespace :referrers do
 
     if Time.now.monday?
       referrers.each do |id, email|
-        begin        
+        begin
           UserMailer.referred_users(id, email).deliver_later
         rescue StandardError => e
-          Rails.logger.warn("Error sending referrer email to #{email}: #{e}")
-        end          
+          Sentry.capture_exception(e, extra: { email: email, email_type: "send_updates_to_referrer" })
+        end
       end
     end
   end

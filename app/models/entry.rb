@@ -164,13 +164,12 @@ class Entry < ActiveRecord::Base
         res = JSON.parse(RestClient.post(url, payload, headers))
         nsfw_percent = res.try(:[], 'outputs')&.first.try(:[], 'data').try(:[], 'concepts')&.second.try(:[], 'value')
         if nsfw_percent >= 0.15
-          Rails.logger.warn("NSFW Flagged (#{(nsfw_percent*100).round}%) — USER: #{user.email} ENTRY: #{id} IMAGE: #{image_url_cdn}")
           Sentry.set_user(id: user.id, email: user.email)
           Sentry.capture_message("NSFW Flagged", level: "warning", extra: { entry_id: id, nsfw_pct: (nsfw_percent*100).round, image: image_url_cdn })
         end
       rescue => e
-        Rails.logger.warn("Clarifai Error: #{e}")
         Sentry.capture_exception(e)
+        Sentry.capture_exception(e, extra: { type: "Claraifai Error" })
       end
     end
   end

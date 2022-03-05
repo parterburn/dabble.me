@@ -54,7 +54,6 @@ end
 
 if RUBY_VERSION>='2.6.0'
   def handle_timeout(exception)
-    Rails.logger.warn("Timeout Error: #{params&.to_hash&.to_s}")
     Sentry.capture_message("Timeout error", level: "warning", extra: { params: params, url: request.url })
     render "errors/timeout"
   end

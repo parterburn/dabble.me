@@ -13,6 +13,7 @@ This app utilizes the following 3rd party services:
 * [MailChimp](http://mailchimp.com) for sending updates to all users (free for 2,000 subscribers)
 * [Google Analytics](http://google.com/analytics) for traffic stats (free for standard analytics)
 * [Recaptcha](https://www.google.com/recaptcha) to prevent bot signups (free)
+* [Sentry](https://www.sentry.io/) to report errors (free)
 * [Clarafai](https://www.clarifai.com/) to analyze images for legality (free up to 5,000/mo)
 
 I recommend forking and setting up a server at [Heroku](https://heroku.com/). You can generate a free SSL certificate at [StartSSL](https://www.startssl.com/).
@@ -40,6 +41,7 @@ RECAPTCHA_SECRET_KEY: 6Lc6BAAAAAAAAKN3DRm6VA_xxxxxxxxxxxxxxxxx
 CLARIFAI_V2_API_KEY: asdl2k34jl2kn1l2hn234
 CLARIFAI_V2_NSFW_MODEL: asdflkj23498oihlj2n34kn23
 GOOGLE_ANALYTICS_ID=UA-12345-67 ## ONLY FOR PRODUCTION
+SENTRY_DSN: https://dsn.sentry.io/1234
 ```
 
 ###Things you may want to rip out

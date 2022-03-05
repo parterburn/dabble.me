@@ -147,7 +147,6 @@ namespace :entry do
           sent_in_hour += 1
         end
       rescue => error
-        Rails.logger.warn("Error sending daily entry email to #{user.email}: #{error}")
         Sentry.set_user(id: user.id, email: user.email)
         Sentry.capture_exception(error, extra: { sent_in_hour: sent_in_hour })
       end

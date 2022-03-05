@@ -97,7 +97,6 @@ class EmailProcessor
       else
         # error saving entry
         UserMailer.failed_entry(@user, existing_entry.errors.full_messages, date, @body).deliver_later
-        Rails.logger.warn("Error saving existing entry #{existing_entry.id} from email: #{existing_entry.errors.full_messages}")
         Sentry.set_user(id: @user.id, email: @user.email)
         Sentry.capture_message("Error saving existing entry", level: "warning", extra: { entry_id: existing_entry.id, errors: existing_entry.errors })
       end
@@ -117,7 +116,6 @@ class EmailProcessor
         Sqreen.track('inbound_email')
       else
         UserMailer.failed_entry(@user, entry.errors.full_messages, date, @body).deliver_later
-        Rails.logger.warn("Error saving entry from email: #{entry.errors.full_messages}")
         Sentry.set_user(id: @user.id, email: @user.email)
         Sentry.capture_message("Error saving entry from email", level: "warning", extra: { errors: entry.errors, body: @body, date: date })
       end
@@ -127,7 +125,6 @@ class EmailProcessor
     begin
       UserMailer.second_welcome_email(@user).deliver_later if @user.emails_received == 1 && @user.entries.count == 1
     rescue StandardError => e
-      Rails.logger.warn("Error sending second welcome email to #{@user.email}: #{e}")
       Sentry.set_user(id: @user.id, email: @user.email)
       Sentry.capture_message("Error sending second welcome email", level: "warning")
     end
