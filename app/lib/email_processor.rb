@@ -98,7 +98,7 @@ class EmailProcessor
         # error saving entry
         UserMailer.failed_entry(@user, existing_entry.errors.full_messages, date, @body).deliver_later
         Sentry.set_user(id: @user.id, email: @user.email)
-        Sentry.capture_message("Error saving existing entry", level: :warning, extra: { entry_id: existing_entry.id, errors: existing_entry.errors })
+        Sentry.capture_message("Error saving existing entry from email", level: :error, extra: { entry_id: existing_entry.id, errors: existing_entry.errors })
       end
     else
       params = { date: date, inspiration_id: inspiration_id }
@@ -117,7 +117,7 @@ class EmailProcessor
       else
         UserMailer.failed_entry(@user, entry.errors.full_messages, date, @body).deliver_later
         Sentry.set_user(id: @user.id, email: @user.email)
-        Sentry.capture_message("Error saving entry from email", level: :warning, extra: { errors: entry.errors, body: @body, date: date })
+        Sentry.capture_message("Error saving new entry from email", level: :error, extra: { errors: entry.errors, body: @body, date: date })
       end
     end
 
@@ -126,7 +126,7 @@ class EmailProcessor
       UserMailer.second_welcome_email(@user).deliver_later if @user.emails_received == 1 && @user.entries.count == 1
     rescue StandardError => e
       Sentry.set_user(id: @user.id, email: @user.email)
-      Sentry.capture_message("Error sending second welcome email", level: :warning)
+      Sentry.capture_message("Error sending email", level: :error, extra: { email_type: "Second Welcome Email" })
     end
   end
 

@@ -9,7 +9,7 @@ class Rack::Attack
         false
       else
         ::Rails.logger.warn "Rack Attack IP Filtering: blocked request from host #{proxy_ip} to #{req.url}"
-        Sentry.capture_message("Rack Attack IP Filtering: blocked request", level: :warning, extra: { host: proxy_ip, request_url: req.url })
+        Sentry.capture_message("Rack Attack IP Filtering: blocked request", level: :error, extra: { host: proxy_ip, request_url: req.url })
         true
       end
     end

@@ -154,7 +154,9 @@ namespace :entry do
   end
 
   task :check_images => :environment do
-    Entry.only_images.where(created_at: 1.day.ago..).each do |entry|
+    return unless Date.today.wednesday?
+
+    Entry.only_images.where(created_at: 1.week.ago..).each do |entry|
       entry.check_image
     end
   end
