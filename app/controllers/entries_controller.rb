@@ -18,7 +18,7 @@ class EntriesController < ApplicationController
         raise 'not a year' unless params[:group] =~ /(19|20)[0-9]{2}/
         @entries = current_user.entries.includes(:inspiration).where("date >= '#{params[:group]}-01-01'::DATE AND date <= '#{params[:group]}-12-31'::DATE").sort_by(&:date)
       rescue
-        Sentry.capture_message("Doing expensive lookup based on ID for entry", level: "warning", extra: { params: params })
+        Sentry.capture_message("Doing expensive lookup based on ID for entry", level: :info, extra: { params: params })
         entry = current_user.entries.find(params[:group])
         return redirect_to day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day)
       end

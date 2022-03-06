@@ -26,7 +26,6 @@ class Entry < ActiveRecord::Base
   before_save :associate_inspiration
   before_save :strip_out_base64
   before_save :find_songs
-  after_save :check_image
 
   def date_format_long
     # Friday, Feb 3, 2014
@@ -112,6 +111,24 @@ class Entry < ActiveRecord::Base
     h_body.scan(/#([0-9]+[a-zA-Z_]+\w*|[a-zA-Z_]+\w*)/).map { |m| m[0] }
   end
 
+  def check_image
+    if image.present? && ENV['CLARIFAI_V2_API_KEY'].present?
+      begin
+        url = "https://api.clarifai.com/v2/models/#{ENV['CLARIFAI_V2_NSFW_MODEL']}/outputs"
+        headers = {"Authorization" => "Key #{ENV['CLARIFAI_V2_API_KEY']}", "Content-Type" => "application/json"}
+        payload = { inputs: [ { data: { image: { url: image_url_cdn } } } ] }.to_json
+        res = JSON.parse(RestClient.post(url, payload, headers))
+        nsfw_percent = res.try(:[], 'outputs')&.first.try(:[], 'data').try(:[], 'concepts')&.second.try(:[], 'value')
+        if nsfw_percent >= 0.15
+          Sentry.set_user(id: user.id, email: user.email)
+          Sentry.capture_message("Clarifai Flagged", level: :warning, extra: { entry_id: id, nsfw_pct: "#{(nsfw_percent*100).round(1)}%", image: image_url_cdn, clarifai: res })
+        end
+      rescue => e
+        Sentry.capture_exception(e, extra: { type: "Claraifai Error" })
+      end
+    end
+  end
+
   private
 
   def associate_inspiration
@@ -152,25 +169,6 @@ class Entry < ActiveRecord::Base
       [song_data['artists'].map { |a| a['name'] }, song_data['name']]
     else
       nil
-    end
-  end
-
-  def check_image
-    if image.present? && image_changed? && ENV['CLARIFAI_V2_API_KEY'].present?
-      begin
-        url = "https://api.clarifai.com/v2/models/#{ENV['CLARIFAI_V2_NSFW_MODEL']}/outputs"
-        headers = {"Authorization" => "Key #{ENV['CLARIFAI_V2_API_KEY']}", "Content-Type" => "application/json"}
-        payload = { inputs: [ { data: { image: { url: image_url_cdn } } } ] }.to_json
-        res = JSON.parse(RestClient.post(url, payload, headers))
-        nsfw_percent = res.try(:[], 'outputs')&.first.try(:[], 'data').try(:[], 'concepts')&.second.try(:[], 'value')
-        if nsfw_percent >= 0.15
-          Sentry.set_user(id: user.id, email: user.email)
-          Sentry.capture_message("NSFW Flagged", level: "warning", extra: { entry_id: id, nsfw_pct: (nsfw_percent*100).round, image: image_url_cdn })
-        end
-      rescue => e
-        Sentry.capture_exception(e)
-        Sentry.capture_exception(e, extra: { type: "Claraifai Error" })
-      end
     end
   end
 end

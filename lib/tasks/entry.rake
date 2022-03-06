@@ -153,4 +153,10 @@ namespace :entry do
     end
   end
 
+  task :check_images => :environment do
+    Entry.only_images.where(created_at: 1.day.ago..).each do |entry|
+      entry.check_image
+    end
+  end
+
 end

@@ -105,7 +105,7 @@ class PaymentsController < ApplicationController
     elsif processed_params
       UserMailer.no_user_here(params.permit!).deliver_later
     else
-      Sentry.capture_message("Payment notification not processed", level: "warning", extra: { params: params })
+      Sentry.capture_message("Payment notification not processed", level: :info, extra: { params: params })
     end
     head :ok, content_type: 'text/html'
   end
@@ -136,7 +136,7 @@ class PaymentsController < ApplicationController
     @user ||= User.find_by(email: params[:customer][:email].downcase)
 
     if params[:event] == "payment.failed"
-      Sentry.capture_message("Failed payment", level: "warning", extra: { params: params })
+      Sentry.capture_message("Failed payment", level: :info, extra: { params: params })
       { payhere_id: params[:customer][:id] }
     elsif params[:event] == "payment.success"
       paid = params[:membership_plan][:price]
