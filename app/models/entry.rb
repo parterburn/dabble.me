@@ -123,6 +123,7 @@ class Entry < ActiveRecord::Base
           Sentry.set_user(id: user.id, email: user.email)
           Sentry.capture_message("Clarifai Flagged", level: :warning, extra: { entry_id: id, nsfw_pct: "#{(nsfw_percent*100).round(1)}%", image: image_url_cdn, clarifai: res })
         end
+        "#{(nsfw_percent*100).round(1)}%: #{image_url_cdn}"
       rescue => e
         Sentry.capture_exception(e, extra: { type: "Claraifai Error" })
       end
