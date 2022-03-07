@@ -107,12 +107,12 @@ class EmailProcessor
       best_attachment.present? ? params.merge!(image: best_attachment) : params.merge!(remote_image_url: best_attachment_url)
       begin
         entry = @user.entries.create!(params.merge(body: @body, original_email_body: @raw_body))
-      rescue ActiveRecord::RecordInvalid => invalid
-        if invalid.record.errors.include?("Image Failed to manipulate with MiniMagick")
+      rescue ActiveRecord::RecordInvalid => error
+        if error.to_s.include?("Image Failed to manipulate with MiniMagick")
           entry = @user.entries.create!(params.except(:image, :remote_image_url).merge(body: @body, original_email_body: @raw_body))
-          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Image Failed to manipulate with MiniMagick", invalid: invalid, image: best_attachment, remote_image_url: best_attachment_url })
+          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Image Failed to manipulate with MiniMagick", error: error, image: best_attachment, remote_image_url: best_attachment_url })
         else
-          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "ActiveRecord::RecordInvalid", invalid: invalid })
+          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "ActiveRecord::RecordInvalid", error: error })
         end
       rescue => error
         Sentry.capture_message("Error processing entry via email", level: :error, extra: { error: error, body: @body, raw_body: @raw_body })
@@ -120,8 +120,8 @@ class EmailProcessor
         @raw_body = @raw_body.force_encoding('iso-8859-1').encode('utf-8')
         entry = @user.entries.create!(params.merge(body: @body, original_email_body: @raw_body))
       end
-      entry.body = entry.sanitized_body if @user.is_free?
-      if entry.save
+      entry&.body = entry&.sanitized_body if @user.is_free?
+      if entry&.save
         track_ga_event('New')
         Sqreen.track('inbound_email')
       else
