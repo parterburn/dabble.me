@@ -15,10 +15,10 @@ describe 'Day Entries' do
     it 'should show an entry to logged in users' do
       sign_in user
       visit day_entry_url(year: entry.date.year, month: entry.date.month, day: entry.date.day)
-      expect(page).to have_content entry.body
+      expect(page).to have_content entry.formatted_body
 
       visit random_entry_url
-      expect(page).to have_content entry.body
+      expect(page).to have_content entry.formatted_body
 
       sign_out user
       visit day_entry_url(year: entry.date.year, month: entry.date.month, day: entry.date.day)

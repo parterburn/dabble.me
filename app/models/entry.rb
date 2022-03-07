@@ -71,15 +71,26 @@ class Entry < ActiveRecord::Base
     end
   end
 
+  def formatted_body
+    return nil unless body.present?
+
+    detection = CharlockHolmes::EncodingDetector.detect(body)
+    formatted_body = CharlockHolmes::Converter.convert body, detection[:encoding], "UTF-8"
+    fix_encoding(formatted_body)
+  end
+
   def text_body
-    Nokogiri::HTML.parse(ReverseMarkdown.convert(self.body, unknown_tags: :bypass)).text
+    Nokogiri::HTML.parse(ReverseMarkdown.convert(formatted_body, unknown_tags: :bypass)).text
   end
 
   def sanitized_body
     body_sanitized = ActionController::Base.helpers.sanitize self.body, tags: %w(br p)
     body_sanitized.gsub!(/\A(\n\n)/,"") if body_sanitized
     body_sanitized.gsub!(/(\<\n\n>)\z/,"") if body_sanitized
-    body_sanitized
+
+    detection = CharlockHolmes::EncodingDetector.detect(body_sanitized)
+    body_sanitized = CharlockHolmes::Converter.convert body_sanitized, detection[:encoding], "UTF-8"
+    fix_encoding(body_sanitized)
   end
 
   def image_url_cdn
@@ -170,6 +181,14 @@ class Entry < ActiveRecord::Base
       [song_data['artists'].map { |a| a['name'] }, song_data['name']]
     else
       nil
+    end
+  end
+
+  def fix_encoding(string)
+    if string&.scan(%r{#{Regexp.escape("\u00E2")}|#{Regexp.escape("\u00C2")}|#{Regexp.escape("\u008B")}|#{Regexp.escape("\u0080")}|#{Regexp.escape("\u0099")}})&.any?
+      string&.encode("ISO-8859-1")&.force_encoding("UTF-8")
+    else
+      string
     end
   end
 end

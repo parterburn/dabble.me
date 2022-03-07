@@ -5,20 +5,11 @@ class EmailProcessor
   def initialize(email)
     @token = pick_meaningful_recipient(email.to, email.cc)
     @from = email.from[:email].downcase
-    @subject = email.subject
+    @subject = to_utf8(email.subject)
     @stripped_html = email.vendor_specific.try(:[], :stripped_html)
+    @body = clean_message(email.body)
 
-    email.body&.gsub!(/src=\"data\:image\/(heic|jpeg|png)\;base64\,.*\"/, "src=\"\"") if email.body.present?
-    email.body&.gsub!(/url\(data\:image\/(heic|jpeg|png)\;base64\,.*\)/, "url()") if email.body.present?
-    email.raw_body&.gsub!(/src=\"data\:image\/(heic|jpeg|png)\;base64\,.*\"/, "src=\"\"") if email.raw_body.present?
-    email.raw_body&.gsub!(/url\(data\:image\/(heic|jpeg|png)\;base64\,.*\)/, "url()") if email.raw_body.present?
-
-    if email.raw_body.present? && email.raw_body.ascii_only? && email.body.ascii_only?
-      @body = EmailReplyTrimmer.trim(email.body)
-    else
-      @body = email.body
-    end
-    @raw_body = email.raw_body
+    @raw_body = to_utf8(email.raw_body)
     @attachments = email.attachments
     @user = find_user_from_user_key(@token, @from)
   end
@@ -47,7 +38,7 @@ class EmailProcessor
     # If image came in as a URL, try saving that
     best_attachment_url = nil
     if best_attachment.blank? && @stripped_html.present?
-      email_reply_html = @stripped_html&.split(/reply to this email with your /)&.first
+      email_reply_html = @stripped_html&.split(/reply to this email with your /i)&.first
       image_urls = email_reply_html&.scan(/<img\s.*?src=(?:'|")([^'">]+)(?:'|")/i)
       image_urls.flatten! if image_urls.present?
       if @user.is_pro? && image_urls.present? && image_urls.any?
@@ -64,15 +55,6 @@ class EmailProcessor
         end
       end
     end
-
-    @body&.gsub!(/\n\n\n/, "\n\n \n\n") # allow double line breaks
-    @body = unfold_paragraphs(@body) unless @from.include?('yahoo.com') # fix wrapped plain text, but yahoo messes this up
-    @body&.gsub!(/(?:\n\r?|\r\n?)/, '<br>') # convert line breaks
-    @body = "<p>#{@body}</p>" # basic formatting
-    @body&.gsub!(/[^>]\*(.+?)\*/i, '<b>\1</b>') # bold when bold needed
-    @body&.gsub!(/<(http[s]?:\/\/\S+)>/, "(\\1)") # convert links to show up
-    @body&.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, '') # remove "inline image" text
-    @body&.gsub!(/\[image\:\ (.+)\.[a-zA-Z]{3,4}\](<br>)?/, '') # remove "inline image" text
 
     date = parse_subject_for_date(@subject)
     existing_entry = @user.existing_entry(date.to_s)
@@ -206,5 +188,39 @@ class EmailProcessor
     rescue
     end
     inspiration_id
+  end
+
+  def clean_message(body)
+    return nil unless body.present?
+
+    body = EmailReplyTrimmer.trim(body)
+    body.gsub!(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"") # remove embedded images
+    body.gsub!(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()") # remove embedded images
+    body.gsub!(/\n\n\n/, "\n\n \n\n") # allow double line breaks
+    body = unfold_paragraphs(body) unless @from.include?('yahoo.com') # fix wrapped plain text, but yahoo messes this up
+    body.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "(see attached image)") # remove "Inline image" text from griddler
+    body.gsub!(/(?:\n\r?|\r\n?)/, "<br>") # convert line breaks
+    body = "<p>#{body}</p>" # basic formatting
+    body.gsub!(/[^>]\*(.+?)\*/i, '<b>\1</b>') # bold when bold needed
+    body.gsub!(/<(http[s]?:\/\/\S*?)>/, "(\\1)") # convert links to show up
+    body.gsub!(/<br\s*\/?>$/, "") # remove last unnecessary line break
+    body.gsub!(/<br\s*\/?>$/, "") # remove last unnecessary line break
+    body.gsub!(/^$\n/, "") # remove last unnecessary line break, take 2
+    body.gsub!(/--( \*)?$\z/, "") # remove gmail signature break
+    body.gsub!(/<br\s*\/?>$/, "") # remove last unnecessary line break
+    body.gsub!(/<br\s*\/?>$/, "") # remove last unnecessary line break
+    body.gsub!(/^$\n/, "") # remove last unnecessary line break, take 2
+    body = body&.strip
+
+    return unless body.present?
+
+    to_utf8(body)
+  end
+
+  def to_utf8(content)
+    return unless content.present?
+
+    detection = CharlockHolmes::EncodingDetector.detect(content)
+    CharlockHolmes::Converter.convert content, detection[:encoding], "UTF-8"
   end
 end
