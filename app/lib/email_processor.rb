@@ -21,6 +21,7 @@ class EmailProcessor
     @raw_body = email.raw_body
     @attachments = email.attachments
     @user = find_user_from_user_key(@token, @from)
+    Sentry.set_user(id: @user.id, email: @user.email)
   end
 
   def process
@@ -97,15 +98,22 @@ class EmailProcessor
       else
         # error saving entry
         UserMailer.failed_entry(@user, existing_entry.errors.full_messages, date, @body).deliver_later
-        Sentry.set_user(id: @user.id, email: @user.email)
-        Sentry.capture_message("Error saving existing entry from email", level: :error, extra: { entry_id: existing_entry.id, errors: existing_entry.errors })
+        Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save exsiting entry", entry_id: existing_entry.id, errors: existing_entry.errors })
       end
     else
       params = { date: date, inspiration_id: inspiration_id }
       best_attachment.present? ? params.merge!(image: best_attachment) : params.merge!(remote_image_url: best_attachment_url)
       begin
         entry = @user.entries.create!(params.merge(body: @body, original_email_body: @raw_body))
-      rescue
+      rescue ActiveRecord::RecordInvalid => invalid
+        if invalid.record.errors.include?("Image Failed to manipulate with MiniMagick")
+          entry = @user.entries.create!(params.except(:image, :remote_image_url).merge(body: @body, original_email_body: @raw_body))
+          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Image Failed to manipulate with MiniMagick", invalid: invalid, image: best_attachment, remote_image_url: best_attachment_url })
+        else
+          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "ActiveRecord::RecordInvalid", invalid: invalid })
+        end
+      rescue => error
+        Sentry.capture_message("Error processing entry via email", level: :error, extra: { error: error, body: @body, raw_body: @raw_body })
         @body = @body.force_encoding('iso-8859-1').encode('utf-8')
         @raw_body = @raw_body.force_encoding('iso-8859-1').encode('utf-8')
         entry = @user.entries.create!(params.merge(body: @body, original_email_body: @raw_body))
@@ -116,8 +124,7 @@ class EmailProcessor
         Sqreen.track('inbound_email')
       else
         UserMailer.failed_entry(@user, entry.errors.full_messages, date, @body).deliver_later
-        Sentry.set_user(id: @user.id, email: @user.email)
-        Sentry.capture_message("Error saving new entry from email", level: :error, extra: { errors: entry.errors, body: @body, date: date })
+        Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save new entry (failed_entry email sent to user)", errors: entry.errors, body: @body, date: date })
       end
     end
 
@@ -125,7 +132,6 @@ class EmailProcessor
     begin
       UserMailer.second_welcome_email(@user).deliver_later if @user.emails_received == 1 && @user.entries.count == 1
     rescue StandardError => e
-      Sentry.set_user(id: @user.id, email: @user.email)
       Sentry.capture_message("Error sending email", level: :error, extra: { email_type: "Second Welcome Email" })
     end
   end
