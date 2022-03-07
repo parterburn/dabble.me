@@ -21,14 +21,15 @@ class EmailProcessor
     @raw_body = email.raw_body
     @attachments = email.attachments
     @user = find_user_from_user_key(@token, @from)
-    Sentry.set_user(id: @user.id, email: @user.email)
   end
 
   def process
     unless @user.present?
-      Sqreen.track('inbound_email_without_user')
+      Sentry.capture_message("Inbound entry not associated to user", level: :error, extra: { from: @from, subject: @subject, body: @body, raw_body: @raw_body })
       return false
     end
+
+    Sentry.set_user(id: @user.id, email: @user.email)
 
     best_attachment = nil
     if @user.is_pro? && @attachments.present?
