@@ -21,8 +21,8 @@ RSpec.describe EntriesController, type: :controller do
       sign_in user
       get :index
       expect(response.status).to eq 200
-      expect(response.body).to have_content(entry.body)
-      expect(response.body).to_not have_content(not_my_entry.body)
+      expect(response.body).to have_content(entry.formatted_body)
+      expect(response.body).to_not have_content(not_my_entry.formatted_body)
     end
   end
 
@@ -37,7 +37,7 @@ RSpec.describe EntriesController, type: :controller do
       sign_in user
       get :edit, params: { id: entry.id }
       expect(response.status).to eq 200
-      expect(response.body).to have_content(entry.body)
+      expect(response.body).to have_content(entry.formatted_body)
     end
   end
 
@@ -85,7 +85,7 @@ RSpec.describe EntriesController, type: :controller do
       expect { post :create, params: params }.to change { Entry.count }.by(1)
       expect(response.status).to eq 302
       expect(response).to redirect_to(day_entry_url(year: Entry.last.date.year, month: Entry.last.date.month, day: Entry.last.date.day))
-    end    
+    end
   end
 
   describe 'destroy' do
@@ -103,9 +103,9 @@ RSpec.describe EntriesController, type: :controller do
     it 'should delete pro user entries' do
       sign_in user
       user.plan = 'PRO PayHere Monthly'
-      user.save      
+      user.save
       expect { delete :destroy, params: { id: entry.id } }.to change { Entry.count }.by(-1)
-    end    
+    end
 
     it "should not delete entries that are not the user's" do
       sign_in user
@@ -139,14 +139,14 @@ RSpec.describe EntriesController, type: :controller do
       sign_in user
       get :latest
       expect(response.status).to eq 200
-      expect(response.body).to have_content(entry.body)
-      expect(response.body).to_not have_content(not_my_entry.body)
+      expect(response.body).to have_content(entry.formatted_body)
+      expect(response.body).to_not have_content(not_my_entry.formatted_body)
     end
 
     it 'should show a CTA to logged in users without entries' do
       sign_in user
       user.plan = 'PRO PayHere Monthly'
-      user.save      
+      user.save
       expect { delete :destroy, params: { id: entry.id } }.to change { Entry.count }.by(-1)
       get :latest
       expect(response.status).to eq 200
@@ -165,8 +165,8 @@ RSpec.describe EntriesController, type: :controller do
       sign_in user
       get :export, format: 'txt'
       expect(response.status).to eq 200
-      expect(response.body).to have_content(entry.body)
-      expect(response.body).to_not have_content(not_my_entry.body)
+      expect(response.body).to have_content(entry.formatted_body)
+      expect(response.body).to_not have_content(not_my_entry.formatted_body)
     end
   end
 end

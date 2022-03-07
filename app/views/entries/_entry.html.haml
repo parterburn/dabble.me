@@ -23,9 +23,9 @@
         = entry.date_day.upcase
 .s-scrollable
   - if @search.present?
-    = highlight(format_body(entry.body), @search.term)
+    = highlight(format_body(entry.formatted_body), @search.term)
   - else
-    = format_body(entry.body)
+    = format_body(entry.formatted_body)
   - if current_user.is_pro?
     = entry.spotify_embed
   - if current_user.is_pro? && (hashtags = entry.hashtags).present?
