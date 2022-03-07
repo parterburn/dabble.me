@@ -25,8 +25,9 @@ class EmailProcessor
 
   def process
     unless @user.present?
-      Sentry.capture_message("Inbound entry not associated to user", level: :error, extra: { from: @from, subject: @subject, body: @body, raw_body: @raw_body })
-      return false
+      Sentry.set_user(id: @token, email: @from)
+      Sentry.capture_message("Inbound entry not associated to user", level: :error, extra: { subject: @subject, body: @body, raw_body: @raw_body })
+      return head(:not_acceptable)
     end
 
     Sentry.set_user(id: @user.id, email: @user.email)
