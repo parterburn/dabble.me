@@ -109,6 +109,5 @@ end
 gem 'rack-timeout'
 
 group :production do
-  gem 'rails_12factor'
   gem 'sqreen'
 end
