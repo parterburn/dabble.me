@@ -195,12 +195,13 @@ RSpec.describe RegistrationsController, type: :controller do
                     host: "#{ENV['SMTP_DOMAIN']}",
                     name: nil
                   }],
+                  subject: "Let's write your first Dabble Me entry",
                   body: new_entry_email_body }
 
       email = FactoryBot.build(:email, params)
       expect{ EmailProcessor.new(email).process }.to change{ new_free_user.entries.count }.by(1)
       expect(new_free_user.entries.last.body).to include new_entry_email_body
-      expect(new_free_user.entries.last.date.strftime('%Y-%m-%d')).to eq DateTime.now.in_time_zone(new_free_user.send_timezone).strftime('%Y-%m-%d')
+      expect(new_free_user.entries.last.date.strftime('%Y-%m-%d')).to eq Time.now.in_time_zone(new_free_user.send_timezone).strftime('%Y-%m-%d')
 
       # Check that sending two emails on the same day merge into 1 Entry
       params2 = { to: [{
@@ -210,13 +211,14 @@ RSpec.describe RegistrationsController, type: :controller do
                     host: "#{ENV['SMTP_DOMAIN']}",
                     name: nil
                   }],
+                  subject: "Let's write your first Dabble Me entry",
                   body: new_entry_email_body2 }
 
       email2 = FactoryBot.build(:email, params2)
       expect{ EmailProcessor.new(email2).process }.to change{ new_free_user.entries.count }.by(0)
       expect(new_free_user.entries.last.body).to include new_entry_email_body
       expect(new_free_user.entries.last.body).to include new_entry_email_body2
-      expect(new_free_user.entries.last.date.strftime('%Y-%m-%d')).to eq DateTime.now.in_time_zone(new_free_user.send_timezone).strftime('%Y-%m-%d')
+      expect(new_free_user.entries.last.date.strftime('%Y-%m-%d')).to eq Time.now.in_time_zone(new_free_user.send_timezone).strftime('%Y-%m-%d')
     end
 
     it 'should be able to create paid user and send that user an email with basic formatting' do
@@ -240,12 +242,13 @@ RSpec.describe RegistrationsController, type: :controller do
                     host: "#{ENV['SMTP_DOMAIN']}",
                     name: nil
                   }],
+                  subject: "Let's write your first Dabble Me entry",
                   body: new_entry_email_body }
 
       email = FactoryBot.build(:email, params)
       expect{ EmailProcessor.new(email).process }.to change{ new_paid_user.entries.count }.by(1)
       expect(new_paid_user.entries.last.body).to include new_entry_email_body
-      expect(new_paid_user.entries.last.date.strftime('%Y-%m-%d')).to eq DateTime.now.in_time_zone(new_paid_user.reload.send_timezone).strftime('%Y-%m-%d')
+      expect(new_paid_user.entries.last.date.strftime('%Y-%m-%d')).to eq Time.now.in_time_zone(new_paid_user.reload.send_timezone).strftime('%Y-%m-%d')
 
       params = { to: [{
                     full: "#{new_paid_user.user_key}@#{ENV['SMTP_DOMAIN']}",
@@ -254,13 +257,14 @@ RSpec.describe RegistrationsController, type: :controller do
                     host: "#{ENV['SMTP_DOMAIN']}",
                     name: nil
                   }],
+                  subject: "Let's write your first Dabble Me entry",
                   body: new_entry_email_body2 }
 
       email2 = FactoryBot.build(:email, params)
       expect{ EmailProcessor.new(email2).process }.to change{ new_paid_user.entries.count }.by(0)
       expect(new_paid_user.entries.last.body).to include new_entry_email_body
       expect(new_paid_user.entries.last.body).to include new_entry_email_body2
-      expect(new_paid_user.entries.last.date.strftime('%Y-%m-%d')).to eq DateTime.now.in_time_zone(new_paid_user.send_timezone).strftime('%Y-%m-%d')
+      expect(new_paid_user.entries.last.date.strftime('%Y-%m-%d')).to eq Time.now.in_time_zone(new_paid_user.send_timezone).strftime('%Y-%m-%d')
     end
   end
 end

@@ -14,7 +14,7 @@ FactoryBot.define do
   factory :email, class: OpenStruct do
     to { [{ full: Faker::Internet.email, email: Faker::Internet.email, token: 'to_user', host: 'email.com', name: Faker::Name.name }] }
     from { { token: 'from_user', host: 'email.com', email: Faker::Internet.email, full: "#{Faker::Name.name} <#{Faker::Internet.email}>", name: Faker::Name.name } }
-    subject { Faker::Company.catch_phrase }
+    subject { nil }
     body { Faker::Lorem.paragraph }
     attachments {[]}
   end
