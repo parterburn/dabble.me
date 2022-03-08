@@ -82,7 +82,7 @@ class EmailProcessor
       else
         # error saving entry
         UserMailer.failed_entry(@user, existing_entry.errors.full_messages, date, @body).deliver_later
-        Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save exsiting entry", entry_id: existing_entry.id, errors: existing_entry.errors })
+        Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save exsiting entry", subject: @subject, entry_id: existing_entry.id, errors: existing_entry.errors })
       end
     else
       params = { date: date, inspiration_id: inspiration_id }
@@ -92,12 +92,12 @@ class EmailProcessor
       rescue ActiveRecord::RecordInvalid => error
         if error.to_s.include?("Image Failed to manipulate with MiniMagick")
           entry = @user.entries.create!(params.except(:image, :remote_image_url).merge(body: @body, original_email_body: @raw_body))
-          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Image Failed to manipulate with MiniMagick", error: error, image: best_attachment, remote_image_url: best_attachment_url })
+          Sentry.capture_message("Error processing image via email", level: :error, extra: { reason: "Image Failed to manipulate with MiniMagick", error: error, image: best_attachment, remote_image_url: best_attachment_url, subject: @subject, entry: entry })
         else
-          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "ActiveRecord::RecordInvalid", error: error })
+          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "ActiveRecord::RecordInvalid", error: error, subject: @subject })
         end
       rescue => error
-        Sentry.capture_message("Error processing entry via email", level: :error, extra: { error: error, body: @body, raw_body: @raw_body })
+        Sentry.capture_message("Error processing entry via email", level: :error, extra: { error: error, subject: @subject, body: @body, raw_body: @raw_body })
         @body = @body.force_encoding('iso-8859-1').encode('utf-8')
         @raw_body = @raw_body.force_encoding('iso-8859-1').encode('utf-8')
         entry = @user.entries.create!(params.merge(body: @body, original_email_body: @raw_body))
