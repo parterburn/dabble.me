@@ -7,7 +7,7 @@ CarrierWave.configure do |config|
 
   config.fog_directory = ENV["AWS_BUCKET"]
   config.fog_public = true
-  config.fog_attributes = { cache_control: "public, max-age=#{365.days.to_i}" }
+  config.fog_attributes = { content_disposition: "inline", cache_control: "public, max-age=#{365.days.to_i}" }
 end
 
 module CarrierWave
