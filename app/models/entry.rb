@@ -192,7 +192,7 @@ class Entry < ActiveRecord::Base
   end
 
   def fix_encoding(string)
-    if string&.scan(%r{#{Regexp.escape("\u00E2")}|#{Regexp.escape("\u00C2")}|#{Regexp.escape("\u008B")}|#{Regexp.escape("\u0080")}|#{Regexp.escape("\u0099")}})&.any?
+    if string&.scan(/\\u[0-9a-zA-Z]{4}/).any?
       string&.encode("ISO-8859-1")&.force_encoding("UTF-8")
     else
       string
