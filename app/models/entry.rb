@@ -74,8 +74,12 @@ class Entry < ActiveRecord::Base
   def formatted_body
     return nil unless body.present?
 
-    detection = CharlockHolmes::EncodingDetector.detect(body)
-    formatted_body = CharlockHolmes::Converter.convert body, detection[:encoding], "UTF-8"
+    formatted_body = body
+    begin
+      detection = CharlockHolmes::EncodingDetector.detect(body)
+      formatted_body = CharlockHolmes::Converter.convert formatted_body, detection[:encoding], "UTF-8"
+    rescue => e
+    end
     fix_encoding(formatted_body)
   end
 
@@ -88,8 +92,11 @@ class Entry < ActiveRecord::Base
     body_sanitized.gsub!(/\A(\n\n)/,"") if body_sanitized
     body_sanitized.gsub!(/(\<\n\n>)\z/,"") if body_sanitized
 
-    detection = CharlockHolmes::EncodingDetector.detect(body_sanitized)
-    body_sanitized = CharlockHolmes::Converter.convert body_sanitized, detection[:encoding], "UTF-8"
+    begin
+      detection = CharlockHolmes::EncodingDetector.detect(body_sanitized)
+      body_sanitized = CharlockHolmes::Converter.convert body_sanitized, detection[:encoding], "UTF-8"
+    rescue => e
+    end
     fix_encoding(body_sanitized)
   end
 
