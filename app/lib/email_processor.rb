@@ -194,22 +194,23 @@ class EmailProcessor
     return nil unless body.present?
 
     body = EmailReplyTrimmer.trim(body)
-    body.gsub!(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"") # remove embedded images
-    body.gsub!(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()") # remove embedded images
-    body.gsub!(/\n\n\n/, "\n\n \n\n") # allow double line breaks
+
+    body&.gsub!(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"") # remove embedded images
+    body&.gsub!(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()") # remove embedded images
+    body&.gsub!(/\n\n\n/, "\n\n \n\n") # allow double line breaks
     body = unfold_paragraphs(body) unless @from.include?('yahoo.com') # fix wrapped plain text, but yahoo messes this up
-    body.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "(see attached image)") # remove "Inline image" text from griddler
-    body.gsub!(/(?:\n\r?|\r\n?)/, "<br>") # convert line breaks
+    body&.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "(see attached image)") # remove "Inline image" text from griddler
+    body&.gsub!(/(?:\n\r?|\r\n?)/, "<br>") # convert line breaks
     body = "<p>#{body}</p>" # basic formatting
-    body.gsub!(/[^>]\*(.+?)\*/i, '<b>\1</b>') # bold when bold needed
-    body.gsub!(/<(http[s]?:\/\/\S*?)>/, "(\\1)") # convert links to show up
-    body.gsub!(/<br\s*\/?>$/, "") # remove last unnecessary line break
-    body.gsub!(/<br\s*\/?>$/, "") # remove last unnecessary line break
-    body.gsub!(/^$\n/, "") # remove last unnecessary line break, take 2
-    body.gsub!(/--( \*)?$\z/, "") # remove gmail signature break
-    body.gsub!(/<br\s*\/?>$/, "") # remove last unnecessary line break
-    body.gsub!(/<br\s*\/?>$/, "") # remove last unnecessary line break
-    body.gsub!(/^$\n/, "") # remove last unnecessary line break, take 2
+    body&.gsub!(/[^>]\*(.+?)\*/i, '<b>\1</b>') # bold when bold needed
+    body&.gsub!(/<(http[s]?:\/\/\S*?)>/, "(\\1)") # convert links to show up
+    body&.gsub!(/<br\s*\/?>$/, "") # remove last unnecessary line break
+    body&.gsub!(/<br\s*\/?>$/, "") # remove last unnecessary line break
+    body&.gsub!(/^$\n/, "") # remove last unnecessary line break, take 2
+    body&.gsub!(/--( \*)?$\z/, "") # remove gmail signature break
+    body&.gsub!(/<br\s*\/?>$/, "") # remove last unnecessary line break
+    body&.gsub!(/<br\s*\/?>$/, "") # remove last unnecessary line break
+    body&.gsub!(/^$\n/, "") # remove last unnecessary line break, take 2
     body = body&.strip
 
     return unless body.present?

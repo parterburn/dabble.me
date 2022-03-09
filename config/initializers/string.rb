@@ -20,3 +20,10 @@ class String
     self.html_safe? ? result.html_safe : result
   end
 end
+
+# Override and accept forwarded emails as posts: https://github.com/discourse/email_reply_trimmer/blob/8e2bf196f8463da6c756f3a90cc92ab450e0004a/lib/email_reply_trimmer/embedded_email_matcher.rb
+class EmbeddedEmailMatcher
+  def self.match?(line)
+    (EMBEDDED_REGEXES - FORWARDED_EMAIL_REGEXES).any? { |r| line =~ r }
+  end
+end
