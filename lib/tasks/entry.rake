@@ -153,11 +153,15 @@ namespace :entry do
     end
   end
 
-  task :check_images => :environment do
+  task :maintenance => :environment do
     if Date.today.wednesday?
+      # Run image check through Clarifai
       Entry.only_images.where(created_at: 1.week.ago..).each do |entry|
         entry.check_image
       end
+
+      # Clean up empty entries
+      Entry.where("(image IS null OR image = '') AND (body IS null OR body = '')").each(&:destroy)
     end
   end
 
