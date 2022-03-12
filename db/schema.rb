@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2022_01_26_182007) do
+ActiveRecord::Schema.define(version: 2022_03_12_195322) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -26,6 +26,7 @@ ActiveRecord::Schema.define(version: 2022_01_26_182007) do
     t.datetime "updated_at"
     t.string "image"
     t.jsonb "songs", default: [], array: true
+    t.jsonb "original_email", default: {}
     t.index ["user_id"], name: "index_entries_on_user_id"
   end
 

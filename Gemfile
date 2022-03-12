@@ -20,23 +20,23 @@ gem 'jekyll-timeago'
 gem "rails-html-sanitizer", "~> 1.3.0"
 
 # email parsing
-gem 'griddler', '~> 1.5.2'
-gem 'griddler-mailgun', '~> 1.1', '>= 1.1.1'
-gem "charlock_holmes", "~> 0.7.7" # text encoding detection for email parsing
 gem 'email_reply_trimmer'
+gem 'griddler-mailgun', '~> 1.1', '>= 1.1.1'
+gem 'griddler', '~> 1.5.2'
+gem "charlock_holmes", "~> 0.7.7" # text encoding detection for email parsing
 
 gem 'mailgun_rails'
 
+gem 'groupdate' # Admin Stats
+gem 'rack-utf8_sanitizer', '~> 1.7'
 gem 'randomized_field', '~> 1.0' # builds user_keys
-gem 'summernote-rails', '~> 0.8.12.0'
 gem 'rest-client' # RESTClient
 gem 'rubyzip', '~> 1.3'
-gem 'zip-zip'
-gem 'rack-utf8_sanitizer', '~> 1.7'
-gem "loofah", ">= 2.5"
-gem "chartkick", ">= 3.4.0"
-gem 'groupdate' # Admin Stats
+gem 'summernote-rails', '~> 0.8.12.0'
 gem 'words_counted' # Year in Review
+gem 'zip-zip'
+gem "chartkick", ">= 3.4.0"
+gem "loofah", ">= 2.5"
 
 gem "kaminari", ">= 1.2.1" # pagination
 

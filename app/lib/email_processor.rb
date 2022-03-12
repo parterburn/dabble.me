@@ -1,3 +1,8 @@
+# rubocop:disable Metrics/AbcSize
+# rubocop:disable Metrics/MethodLength
+# rubocop:disable Metrics/ClassLength
+# rubocop:disable Metrics/PerceivedComplexity
+# rubocop:disable Metrics/CyclomaticComplexity
 require 'fileutils'
 
 # Handle Emailed Entries
@@ -12,6 +17,18 @@ class EmailProcessor
     @raw_body = to_utf8(email.raw_body)
     @attachments = email.attachments
     @user = find_user_from_user_key(@token, @from)
+
+    @inbound_email_params = {
+      raw_text:    to_utf8(email.raw_text),
+      raw_html:    to_utf8(email.raw_html),
+      subject:     to_utf8(email.subject),
+      cc:          email.cc,
+      bcc:         email.bcc,
+      spam_report: email.spam_report,
+      headers:     email.headers,
+      charsets:    email.charsets,
+      vendor_specific: email.vendor_specific
+    }
   end
 
   def process
@@ -62,21 +79,18 @@ class EmailProcessor
     inspiration_id = parse_body_for_inspiration_id(@raw_body)
 
     if existing_entry.present?
+      existing_entry.original_email = @inbound_email_params
       existing_entry.body += "<hr>#{@body}"
       existing_entry.body = existing_entry.sanitized_body if @user.is_free?
       existing_entry.original_email_body = @raw_body
       existing_entry.inspiration_id = inspiration_id if inspiration_id.present?
+
       if existing_entry.image_url_cdn.blank? && best_attachment.present?
         existing_entry.image = best_attachment
       elsif existing_entry.image_url_cdn.blank? && best_attachment_url.present?
         existing_entry.remote_image_url = best_attachment_url
       end
-      begin
-        existing_entry.save
-      rescue
-        existing_entry.body = existing_entry.body.force_encoding('iso-8859-1').encode('utf-8')
-        existing_entry.original_email_body = existing_entry.original_email_body.force_encoding('iso-8859-1').encode('utf-8')
-      end
+
       if existing_entry.save
         track_ga_event('Merged')
       else
@@ -102,6 +116,7 @@ class EmailProcessor
         @raw_body = @raw_body.force_encoding('iso-8859-1').encode('utf-8')
         entry = @user.entries.create!(params.merge(body: @body, original_email_body: @raw_body))
       end
+      entry&.original_email = @inbound_email_params
       entry&.body = entry&.sanitized_body if @user.is_free?
       if entry&.save
         track_ga_event('New')
@@ -202,15 +217,11 @@ class EmailProcessor
     body&.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "(see attached image)") # remove "Inline image" text from griddler
     body&.gsub!(/(?:\n\r?|\r\n?)/, "<br>") # convert line breaks
     body = "<p>#{body}</p>" # basic formatting
-    body&.gsub!(/[^>]\*(.+?)\*/i, '<b>\1</b>') # bold when bold needed
+    # body&.gsub!(/[^>]\*(.+?)\*/i, '<b>\1</b>') # bold when bold needed
     body&.gsub!(/<(http[s]?:\/\/\S*?)>/, "(\\1)") # convert links to show up
-    body&.gsub!(/<br\s*\/?>$/, "") # remove last unnecessary line break
-    body&.gsub!(/<br\s*\/?>$/, "") # remove last unnecessary line break
-    body&.gsub!(/^$\n/, "") # remove last unnecessary line break, take 2
+    body&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
     body&.gsub!(/--( \*)?$\z/, "") # remove gmail signature break
-    body&.gsub!(/<br\s*\/?>$/, "") # remove last unnecessary line break
-    body&.gsub!(/<br\s*\/?>$/, "") # remove last unnecessary line break
-    body&.gsub!(/^$\n/, "") # remove last unnecessary line break, take 2
+    body&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
     body = body&.strip
 
     return unless body.present?
@@ -225,3 +236,8 @@ class EmailProcessor
     CharlockHolmes::Converter.convert content, detection[:encoding], "UTF-8"
   end
 end
+# rubocop:enable Metrics/AbcSize
+# rubocop:enable Metrics/MethodLength
+# rubocop:enable Metrics/ClassLength
+# rubocop:enable Metrics/PerceivedComplexity
+# rubocop:enable Metrics/CyclomaticComplexity
