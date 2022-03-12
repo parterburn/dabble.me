@@ -146,6 +146,9 @@ a.s-delete {
   i {
     font-style: italic !important;
   }
+  img {
+    max-width: 100%;
+  }
   @media screen and (max-width: 767px) {
     font-size:17px !important;
   }

@@ -56,7 +56,7 @@
 
         %div
           = f.label :entry
-          = f.text_area :entry, class: "form-control summernote", rows: 15
+          = f.text_area :entry, class: "form-control summernote", rows: 15, value: format_body(@entry.formatted_body)
 
         %div
           = f.submit "Update Entry", class: "form-control btn btn-primary"
