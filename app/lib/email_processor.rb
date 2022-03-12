@@ -13,28 +13,26 @@ class EmailProcessor
     @subject = to_utf8(email.subject)
     @stripped_html = email.vendor_specific.try(:[], :stripped_html)
     @body = clean_message(email.body)
+    @html = clean_html_version(@stripped_html)
 
     @raw_body = to_utf8(email.raw_body)
     @attachments = email.attachments
     @user = find_user_from_user_key(@token, @from)
 
     @inbound_email_params = {
-      raw_text:    to_utf8(email.raw_text),
-      raw_html:    to_utf8(email.raw_html),
       subject:     to_utf8(email.subject),
       cc:          email.cc,
       bcc:         email.bcc,
       spam_report: email.spam_report,
       headers:     email.headers,
-      charsets:    email.charsets,
-      vendor_specific: email.vendor_specific
+      charsets:    email.charsets
     }
   end
 
   def process
     unless @user.present?
       Sentry.set_user(id: @token, email: @from)
-      Sentry.capture_message("Inbound entry not associated to user", level: :error, extra: { subject: @subject, body: @body, raw_body: @raw_body })
+      Sentry.capture_message("Inbound entry not associated to user", level: :error, extra: { subject: @subject, body: @body, html: @html, raw_body: @raw_body })
       return head(:not_acceptable)
     end
 
@@ -77,6 +75,8 @@ class EmailProcessor
     existing_entry = @user.existing_entry(date.to_s)
 
     inspiration_id = parse_body_for_inspiration_id(@raw_body)
+
+    @body = @html if @html.present? && @user.is_pro?
 
     if existing_entry.present?
       existing_entry.original_email = @inbound_email_params
@@ -234,6 +234,25 @@ class EmailProcessor
 
     detection = CharlockHolmes::EncodingDetector.detect(content)
     CharlockHolmes::Converter.convert content, detection[:encoding], "UTF-8"
+  end
+
+  def clean_html_version(html)
+    return nil unless html.present?
+
+    html = EmailReplyTrimmer.trim(html)
+
+    return unless html.present?
+
+    html&.gsub!("<html>", "")&.gsub!("</html>", "")&.gsub!("<body>", "")&.gsub!("</body>", "")&.gsub!("<head>", "")&.gsub!("</head>", "")
+
+    html = Rinku.auto_link(html, :all, 'target="_blank"')
+    ActionController::Base.helpers.sanitize(html, tags: %w(strong em a div span ul ol li b i br p hr u em), attributes: %w(href style target))
+
+    html&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
+    html&.gsub!(/--( \*)?$\z/, "") # remove gmail signature break
+    html&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
+
+    to_utf8(html)
   end
 end
 # rubocop:enable Metrics/AbcSize
