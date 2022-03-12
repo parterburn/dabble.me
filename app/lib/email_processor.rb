@@ -26,7 +26,7 @@ class EmailProcessor
       spam_report: email.spam_report,
       headers:     email.headers,
       charsets:    email.charsets,
-      stripped_html: @stripped_html.
+      stripped_html: @stripped_html
     }
   end
 
