@@ -25,7 +25,8 @@ class EmailProcessor
       bcc:         email.bcc,
       spam_report: email.spam_report,
       headers:     email.headers,
-      charsets:    email.charsets
+      charsets:    email.charsets,
+      stripped_html: @stripped_html.
     }
   end
 
@@ -246,11 +247,11 @@ class EmailProcessor
     html&.gsub!("<html>", "")&.gsub!("</html>", "")&.gsub!("<body>", "")&.gsub!("</body>", "")&.gsub!("<head>", "")&.gsub!("</head>", "")
 
     html = Rinku.auto_link(html, :all, 'target="_blank"')
-    ActionController::Base.helpers.sanitize(html, tags: %w(strong em a div span ul ol li b i br p hr u em blockquote), attributes: %w(href style target))
+    ActionController::Base.helpers.sanitize(html, tags: %w(strong em a div span ul ol li b i br p hr u em blockquote), attributes: %w(href target))
 
+    html = html.split("<br>--<br>").first # strip out gmail signature
+    html&.gsub(/<div style="display:none;border:0px;width:0px;height:0px;overflow:hidden;">.+<\/div>/, "") # remove hidden divs / tracking pixels
     html&.gsub!(/src=\"cid\:\S+\"/, "src=\"\" style=\"display: none;\"") # remove attached images showing as broken inline images
-    html&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
-    html&.gsub!(/--( \*)?$\z/, "") # remove gmail signature break
     html&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
 
     to_utf8(html)
