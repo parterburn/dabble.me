@@ -124,8 +124,11 @@ class Entry < ActiveRecord::Base
   end
 
   def hashtags
+    return nil unless body.present?
+
     h_body = ActionController::Base.helpers.strip_tags(ActionController::Base.helpers.simple_format(body.gsub("</p>","\n").gsub("<br>","\n").gsub("<br/>","\n")))
     return nil unless h_body.present?
+
     h_body.scan(/#([0-9]+[a-zA-Z_]+\w*|[a-zA-Z_]+\w*)/).map { |m| m[0] }
   end
 
