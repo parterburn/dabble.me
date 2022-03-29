@@ -187,6 +187,7 @@ class User < ActiveRecord::Base
     @hashtags ||= begin
       used_hashtags(entries, true).first(5).each do |h|
         next if h.downcase.in?(original_hashtags.pluck(:tag)&.map(&:downcase))
+
         original_hashtags.build(tag: h)
       end
       original_hashtags.build
@@ -201,7 +202,7 @@ class User < ActiveRecord::Base
         t = original_hashtags.where('lower(tag) = ?', record["tag"].downcase).first
         if t.present?
           if record["date"].blank?
-            h.destroy
+            t.destroy
           else
             t.update(date: Date.parse(record["date"]))
           end

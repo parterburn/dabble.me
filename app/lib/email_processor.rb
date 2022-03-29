@@ -218,7 +218,6 @@ class EmailProcessor
     body&.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "(see attached image)") # remove "Inline image" text from griddler
     body&.gsub!(/(?:\n\r?|\r\n?)/, "<br>") # convert line breaks
     body = "<p>#{body}</p>" # basic formatting
-    # body&.gsub!(/[^>]\*(.+?)\*/i, '<b>\1</b>') # bold when bold needed
     body&.gsub!(/<(http[s]?:\/\/\S*?)>/, "(\\1)") # convert links to show up
     body&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
     body&.gsub!(/--( \*)?$\z/, "") # remove gmail signature break
