@@ -252,9 +252,9 @@ class EntriesController < ApplicationController
     json_hash = []
     entries.each do |entry|
       if entry.image.present?
-        title = "📸#{ActionController::Base.helpers.strip_tags(entry.sanitized_body.gsub(/\n/, '')).truncate(40, separator: ' ')}"
+        title = "📸#{ActionController::Base.helpers.strip_tags(entry.sanitized_body&.gsub(/\n/, ''))&.truncate(40, separator: ' ')}"
       else
-        title = ActionController::Base.helpers.strip_tags(entry.sanitized_body.gsub(/\n/, '')).truncate(50, separator: ' ')
+        title = ActionController::Base.helpers.strip_tags(entry.sanitized_body&.gsub(/\n/, ''))&.truncate(50, separator: ' ')
       end
       json_hash << {
         id: entry.id,
