@@ -108,7 +108,7 @@ jobs:
         path: ~/tmp/capybara
 
     - name: Deploy to Heroku
-      uses: parterburn/action-heroku-deploy@1
+      uses: formsort/action-heroku-deploy@v1
       with:
         github_repo: ${{ github.repository }}
         github_token: ${{ github.token }}
