@@ -24,7 +24,7 @@ jobs:
           --health-cmd pg_isready
           --health-interval 10s
           --health-timeout 5s
-          --health-retries 5        
+          --health-retries 5
       redis:
         image: redis
         ports: ['6379:6379']
@@ -83,7 +83,7 @@ jobs:
         PGHOST: localhost
         PGUSER: postgres
         PGPORT: ${{ job.services.postgres.ports[5432] }} # get randomly assigned published port
-        DATABASE_URL: postgres://postgres:postgres@localhost:${{ job.services.postgres.ports[5432] }}/dabble_test        
+        DATABASE_URL: postgres://postgres:postgres@localhost:${{ job.services.postgres.ports[5432] }}/dabble_test
         RAILS_ENV: test
         AWS_ACCESS_KEY_ID: test
         AWS_BUCKET: test
@@ -94,7 +94,7 @@ jobs:
         MAILCHIMP_API_KEY: test
         MAILCHIMP_LIST_ID: test
         MAIN_DOMAIN: test
-        PAYPAL_SELLER_ID: test 
+        PAYPAL_SELLER_ID: test
         SMTP_DOMAIN: test
         ADMIN_EMAILS: admin@dabble.ex
 
@@ -106,3 +106,12 @@ jobs:
       with:
         name: screenshots
         path: ~/tmp/capybara
+
+    - name: Deploy to Heroku
+      uses: parterburn/action-heroku-deploy@1
+      with:
+        github_repo: ${{ github.repository }}
+        github_token: ${{ github.token }}
+        heroku_api_key: ${{ secrets.HEROKU_API_KEY }}
+        heroku_app_name: ${{ secrets.HEROKU_APP_NAME }}
+        ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
