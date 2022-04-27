@@ -44,6 +44,8 @@ Rails.application.routes.draw do
   post 'email_processor',               to: 'griddler/emails#create'
   post 'email_events',                  to: 'email_events#create'
 
+  get '/health_check', to: proc { [200, {}, ['success']] }
+
   root 'welcome#index'
 
   get "*any", via: :all, to: "errors#not_found"
