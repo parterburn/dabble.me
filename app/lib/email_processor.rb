@@ -81,7 +81,7 @@ class EmailProcessor
 
     if existing_entry.present?
       existing_entry.original_email = @inbound_email_params
-      existing_entry.body += "<hr>#{@body}"
+      existing_entry.body += "<hr>#{@body}" if existing_entry.body.present?
       existing_entry.body = existing_entry.sanitized_body if @user.is_free?
       existing_entry.original_email_body = @raw_body
       existing_entry.inspiration_id = inspiration_id if inspiration_id.present?
