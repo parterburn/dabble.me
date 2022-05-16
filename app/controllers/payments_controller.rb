@@ -128,7 +128,7 @@ class PaymentsController < ApplicationController
 
   def payhere?
     params[:customer].present? &&
-      (params[:membership_plan].present? && params[:membership_plan][:name].include?("Dabble Me"))
+      (params[:plan].present? && params[:plan][:name].include?("Dabble Me"))
   end
 
   def process_payhere
@@ -139,8 +139,8 @@ class PaymentsController < ApplicationController
       Sentry.capture_message("Failed payment", level: :info, extra: { params: params })
       { payhere_id: params[:customer][:id] }
     elsif params[:event] == "payment.success"
-      paid = params[:membership_plan][:price]
-      frequency = params[:membership_plan][:billing_interval] == "month" ? "Monthly" : "Yearly"
+      paid = params[:plan][:qty].present? && params[:plan][:qty].positive? ? params[:plan][:price] * params[:plan][:qty] : params[:plan][:price]
+      frequency = params[:plan][:billing_interval] == "month" ? "Monthly" : "Yearly"
 
       if @user.present? && @user.payments.last&.date&.to_date != Date.today
         Payment.create(user_id: @user.id, comments: "PayHere #{frequency} from #{params[:customer][:email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid)
