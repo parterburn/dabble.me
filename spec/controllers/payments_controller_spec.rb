@@ -151,7 +151,7 @@ RSpec.describe PaymentsController, type: :controller do
           amount: 30,
           status: "success"
         },
-        membership_plan: {
+        plan: {
           name: "Dabble Me PRO Yearly",
           billing_interval: "yearly"
         },
@@ -184,7 +184,7 @@ RSpec.describe PaymentsController, type: :controller do
     end
 
     it 'should create a payment if Free user is upgrading and email user thanks' do
-      payhere_params.deep_merge!(customer: { email: user.email }, payment: { price: 3 }, membership_plan: { billing_interval: "month" })
+      payhere_params.deep_merge!(customer: { email: user.email }, payment: { price: 3 }, plan: { billing_interval: "month" })
       expect { post :payment_notify, params: payhere_params, as: :json }.to change { Payment.count }.by(1)
       expect(user.reload.plan).to eq 'PRO Monthly PayHere'
       expect(user.reload.payhere_id).to eq payhere_params[:customer][:id].to_s
