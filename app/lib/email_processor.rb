@@ -232,8 +232,12 @@ class EmailProcessor
   def to_utf8(content)
     return unless content.present?
 
-    detection = CharlockHolmes::EncodingDetector.detect(content)
-    CharlockHolmes::Converter.convert content, detection[:encoding], "UTF-8"
+    begin
+      detection = CharlockHolmes::EncodingDetector.detect(content)
+      CharlockHolmes::Converter.convert content, detection[:encoding], "UTF-8"
+    rescue
+      content
+    end
   end
 
   def clean_html_version(html)
