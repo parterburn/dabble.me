@@ -411,7 +411,7 @@ GEM
       rails (>= 5.0, < 6.1)
       sassc (~> 2.1)
       sassc-rails (~> 2.1)
-    tzinfo (1.2.9)
+    tzinfo (1.2.10)
       thread_safe (~> 0.1)
     uglifier (4.2.0)
       execjs (>= 0.3.0, < 3)
