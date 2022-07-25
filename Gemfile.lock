@@ -60,6 +60,9 @@ GEM
       public_suffix (>= 2.0.2, < 5.0)
     autoprefixer-rails (9.7.6)
       execjs
+    barnes (0.0.9)
+      multi_json (~> 1)
+      statsd-ruby (~> 1.1)
     bcrypt (3.1.16)
     benchmark-ips (2.9.2)
     better_errors (2.9.1)
@@ -399,6 +402,7 @@ GEM
     ssrf_filter (1.0.7)
     staccato (0.5.3)
     stackprof (0.2.19)
+    statsd-ruby (1.5.0)
     stripe (5.17.0)
     summernote-rails (0.8.12.0)
       railties (>= 3.1)
@@ -441,6 +445,7 @@ PLATFORMS
 DEPENDENCIES
   addressable
   autoprefixer-rails
+  barnes
   better_errors (~> 2.9, >= 2.9.1)
   binding_of_caller
   bullet
@@ -518,4 +523,4 @@ RUBY VERSION
    ruby 2.7.6p219
 
 BUNDLED WITH
-   2.3.9
+   2.3.17

@@ -5,6 +5,7 @@ gem 'rails', '~> 6.0', '>= 6.0.4.8'
 
 gem 'puma', '~> 4.3'
 gem 'pg', '~> 1.2', '>= 1.2.3'
+gem 'barnes'
 
 # users
 gem "devise", ">= 4.7.1"
