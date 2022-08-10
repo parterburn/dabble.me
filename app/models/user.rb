@@ -6,7 +6,9 @@ class User < ActiveRecord::Base
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :trackable, :validatable, :paranoid_verification
 
-  randomized_field :user_key, length: 18, prefix: 'u'
+  randomized_field :user_key, length: 18 do |slug_value|
+    "u" + slug_value
+  end
 
   has_many :entries, dependent: :destroy
   has_many :hashtags, dependent: :destroy

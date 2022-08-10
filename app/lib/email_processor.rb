@@ -31,108 +31,107 @@ class EmailProcessor
   end
 
   def process
-    unless @user.present?
-      Sentry.set_user(id: @token, email: @from)
-      Sentry.capture_message("Inbound entry not associated to user", level: :error, extra: { subject: @subject, body: @body, html: @html, raw_body: @raw_body })
-      return head(:not_acceptable)
-    end
+    if @user.present?
+      Sentry.set_user(id: @user.id, email: @user.email)
 
-    Sentry.set_user(id: @user.id, email: @user.email)
-
-    best_attachment = nil
-    if @user.is_pro? && @attachments.present?
-      @attachments.each do |attachment|
-        # Make sure attachments are at least 8kb so we're not saving a bunch of signuture/footer images
-        file_size = File.size?(attachment.tempfile).to_i
-        if (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|gif|heic)$/i || attachment.original_filename =~ /^.+\.(heic|HEIC|Heic)$/i) && (file_size <= 0 || file_size > 8000) && file_size > 20000 && !attachment.original_filename.in?(["tmiFinal.png"])
-          best_attachment = attachment
-          break
-        end
-      end
-    end
-
-    # If image came in as a URL, try saving that
-    best_attachment_url = nil
-    if best_attachment.blank? && @stripped_html.present?
-      email_reply_html = @stripped_html&.split(/reply to this email with your /i)&.first
-      image_urls = email_reply_html&.scan(/<img\s.*?src=(?:'|")([^'">]+)(?:'|")/i)
-      image_urls.flatten! if image_urls.present?
-      if @user.is_pro? && image_urls.present? && image_urls.any?
-        image_urls.each do |image_url|
-          image_type = FastImage.type(image_url)
-
-          if image_type.in?([:gif, :jpeg, :png])
-            image_width, image_height = FastImage.size(image_url)
-            next if image_height && image_width && image_height < 100 && image_width < 100
-
-            best_attachment_url = image_url
+      best_attachment = nil
+      if @user.is_pro? && @attachments.present?
+        @attachments.each do |attachment|
+          # Make sure attachments are at least 8kb so we're not saving a bunch of signuture/footer images
+          file_size = File.size?(attachment.tempfile).to_i
+          if (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|gif|heic)$/i || attachment.original_filename =~ /^.+\.(heic|HEIC|Heic)$/i) && (file_size <= 0 || file_size > 8000) && file_size > 20000 && !attachment.original_filename.in?(["tmiFinal.png"])
+            best_attachment = attachment
             break
           end
         end
       end
-    end
 
-    date = parse_subject_for_date(@subject)
-    existing_entry = @user.existing_entry(date.to_s)
+      # If image came in as a URL, try saving that
+      best_attachment_url = nil
+      if best_attachment.blank? && @stripped_html.present?
+        email_reply_html = @stripped_html&.split(/reply to this email with your /i)&.first
+        image_urls = email_reply_html&.scan(/<img\s.*?src=(?:'|")([^'">]+)(?:'|")/i)
+        image_urls.flatten! if image_urls.present?
+        if @user.is_pro? && image_urls.present? && image_urls.any?
+          image_urls.each do |image_url|
+            image_type = FastImage.type(image_url)
 
-    inspiration_id = parse_body_for_inspiration_id(@raw_body)
+            if image_type.in?([:gif, :jpeg, :png])
+              image_width, image_height = FastImage.size(image_url)
+              next if image_height && image_width && image_height < 100 && image_width < 100
 
-    @body = @html if @html.present? && @user.is_pro?
-
-    if existing_entry.present?
-      existing_entry.original_email = @inbound_email_params
-      existing_entry.body += "<hr>#{@body}" if existing_entry.body.present?
-      existing_entry.body = existing_entry.sanitized_body if @user.is_free?
-      existing_entry.original_email_body = @raw_body
-      existing_entry.inspiration_id = inspiration_id if inspiration_id.present?
-
-      if existing_entry.image_url_cdn.blank? && best_attachment.present?
-        existing_entry.image = best_attachment
-      elsif existing_entry.image_url_cdn.blank? && best_attachment_url.present?
-        existing_entry.remote_image_url = best_attachment_url
-      end
-
-      if existing_entry.save
-        track_ga_event('Merged')
-      else
-        # error saving entry
-        UserMailer.failed_entry(@user, existing_entry.errors.full_messages, date, @body).deliver_later
-        Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save exsiting entry", subject: @subject, entry_id: existing_entry.id, errors: existing_entry.errors })
-      end
-    else
-      params = { date: date, inspiration_id: inspiration_id }
-      best_attachment.present? ? params.merge!(image: best_attachment) : params.merge!(remote_image_url: best_attachment_url)
-      begin
-        entry = @user.entries.create!(params.merge(body: @body, original_email_body: @raw_body))
-      rescue ActiveRecord::RecordInvalid => error
-        if error.to_s.include?("Image Failed to manipulate with MiniMagick")
-          entry = @user.entries.create!(params.except(:image, :remote_image_url).merge(body: @body, original_email_body: @raw_body))
-          Sentry.capture_message("Error processing image via email", level: :error, extra: { reason: "Image Failed to manipulate with MiniMagick", error: error, image: best_attachment, remote_image_url: best_attachment_url, subject: @subject, entry: entry })
-        else
-          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "ActiveRecord::RecordInvalid", error: error, subject: @subject })
+              best_attachment_url = image_url
+              break
+            end
+          end
         end
-      rescue => error
-        Sentry.capture_message("Error processing entry via email", level: :error, extra: { error: error, subject: @subject, body: @body, raw_body: @raw_body })
-        @body = @body.force_encoding('iso-8859-1').encode('utf-8')
-        @raw_body = @raw_body.force_encoding('iso-8859-1').encode('utf-8')
-        entry = @user.entries.create!(params.merge(body: @body, original_email_body: @raw_body))
       end
-      entry&.original_email = @inbound_email_params
-      entry&.body = entry&.sanitized_body if @user.is_free?
-      if entry&.save
-        track_ga_event('New')
-        Sqreen.track('inbound_email')
-      else
-        UserMailer.failed_entry(@user, entry.errors.full_messages, date, @body).deliver_later
-        Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save new entry (failed_entry email sent to user)", errors: entry.errors, body: @body, date: date })
-      end
-    end
 
-    @user.increment!(:emails_received)
-    begin
-      UserMailer.second_welcome_email(@user).deliver_later if @user.emails_received == 1 && @user.entries.count == 1
-    rescue StandardError => e
-      Sentry.capture_message("Error sending email", level: :error, extra: { email_type: "Second Welcome Email" })
+      date = parse_subject_for_date(@subject)
+      existing_entry = @user.existing_entry(date.to_s)
+
+      inspiration_id = parse_body_for_inspiration_id(@raw_body)
+
+      @body = @html if @html.present? && @user.is_pro?
+
+      if existing_entry.present?
+        existing_entry.original_email = @inbound_email_params
+        existing_entry.body += "<hr>#{@body}" if existing_entry.body.present?
+        existing_entry.body = existing_entry.sanitized_body if @user.is_free?
+        existing_entry.original_email_body = @raw_body
+        existing_entry.inspiration_id = inspiration_id if inspiration_id.present?
+
+        if existing_entry.image_url_cdn.blank? && best_attachment.present?
+          existing_entry.image = best_attachment
+        elsif existing_entry.image_url_cdn.blank? && best_attachment_url.present?
+          existing_entry.remote_image_url = best_attachment_url
+        end
+
+        if existing_entry.save
+          track_ga_event('Merged')
+        else
+          # error saving entry
+          UserMailer.failed_entry(@user, existing_entry.errors.full_messages, date, @body).deliver_later
+          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save exsiting entry", subject: @subject, entry_id: existing_entry.id, errors: existing_entry.errors })
+        end
+      else
+        params = { date: date, inspiration_id: inspiration_id }
+        best_attachment.present? ? params.merge!(image: best_attachment) : params.merge!(remote_image_url: best_attachment_url)
+        begin
+          entry = @user.entries.create!(params.merge(body: @body, original_email_body: @raw_body))
+        rescue ActiveRecord::RecordInvalid => error
+          if error.to_s.include?("Image Failed to manipulate with MiniMagick")
+            entry = @user.entries.create!(params.except(:image, :remote_image_url).merge(body: @body, original_email_body: @raw_body))
+            Sentry.capture_message("Error processing image via email", level: :error, extra: { reason: "Image Failed to manipulate with MiniMagick", error: error, image: best_attachment, remote_image_url: best_attachment_url, subject: @subject, entry: entry })
+          else
+            Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "ActiveRecord::RecordInvalid", error: error, subject: @subject })
+          end
+        rescue => error
+          Sentry.capture_message("Error processing entry via email", level: :error, extra: { error: error, subject: @subject, body: @body, raw_body: @raw_body })
+          @body = @body.force_encoding('iso-8859-1').encode('utf-8')
+          @raw_body = @raw_body.force_encoding('iso-8859-1').encode('utf-8')
+          entry = @user.entries.create!(params.merge(body: @body, original_email_body: @raw_body))
+        end
+        entry&.original_email = @inbound_email_params
+        entry&.body = entry&.sanitized_body if @user.is_free?
+        if entry&.save
+          track_ga_event('New')
+          Sqreen.track('inbound_email')
+        else
+          UserMailer.failed_entry(@user, entry.errors.full_messages, date, @body).deliver_later
+          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save new entry (failed_entry email sent to user)", errors: entry.errors, body: @body, date: date })
+        end
+      end
+
+      @user.increment!(:emails_received)
+      begin
+        UserMailer.second_welcome_email(@user).deliver_later if @user.emails_received == 1 && @user.entries.count == 1
+      rescue StandardError => e
+        Sentry.capture_message("Error sending email", level: :error, extra: { email_type: "Second Welcome Email" })
+      end
+    else # no user found
+      Sentry.set_user(id: @token, email: @from)
+      Sentry.capture_message("Inbound entry not associated to user", level: :error, extra: { subject: @subject, body: @body, html: @html, raw_body: @raw_body })
     end
   end
 
