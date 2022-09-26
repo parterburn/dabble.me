@@ -34,7 +34,6 @@ class EmailEventsController < ApplicationController
     @user.increment(:emails_bounced)
     @user.frequency = [] if @user.is_free?
     @user.save
-    Sqreen.identify({ id: @user.id, email: @user.email })
   end
 
   # ========================================

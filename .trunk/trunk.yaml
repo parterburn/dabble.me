@@ -1,6 +1,20 @@
 version: 0.1
+runtimes:
+  enabled:
+    - go@1.18.3
+    - node@16.14.2
+    - ruby@3.1.0
+plugins:
+  sources:
+    - id: trunk
+      ref: v0.0.4
+      uri: https://github.com/trunk-io/plugins
+actions:
+  enabled:
+    - trunk-cache-prune
+    - trunk-upgrade-available
 cli:
-  version: 0.16.1-beta
+  version: 0.18.0-beta
 lint:
   enabled:
     - actionlint@1.6.4

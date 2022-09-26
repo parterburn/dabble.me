@@ -107,7 +107,3 @@ group :test do
 end
 
 gem 'rack-timeout'
-
-group :production do
-  gem 'sqreen'
-end

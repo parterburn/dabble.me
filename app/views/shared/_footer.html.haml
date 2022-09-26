@@ -13,10 +13,6 @@
             &nbsp;&middot;&nbsp;
             =link_to "SUBSCRIBE TO PRO", subscribe_path, title: "Subscribe Now"
       .col-sm-2
-        - if (ENV["SQREEN_TOKEN"].present? && !signed_in?)
-          .text-center{style: "margin: 0 auto 10px auto;"}
-            = link_to "https://www.sqreen.io/?utm_source=badge", title: "Realtime application protection", target: :_blank do
-              = image_tag "https://s3-eu-west-1.amazonaws.com/sqreen-assets/badges/20171107/sqreen-light-badge.svg", style: "width:109px;height:36px", alt: "Sqreen | Runtime Application Protection", class: "sqreen-logo"      
       .col-sm-5
         %p.muted.float-right
           &nbsp;&nbsp;
