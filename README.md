@@ -1,5 +1,3 @@
-[![Build Status](https://travis-ci.org/parterburn/dabble.me.svg?branch=master)](https://travis-ci.org/parterburn/dabble.me)
-
 # Dabble Me
 ### A private journal over email service.
 
@@ -15,8 +13,6 @@ This app utilizes the following 3rd party services:
 * [Recaptcha](https://www.google.com/recaptcha) to prevent bot signups (free)
 * [Sentry](https://www.sentry.io/) to report errors (free)
 * [Clarafai](https://www.clarifai.com/) to analyze images for legality (free up to 5,000/mo)
-
-I recommend forking and setting up a server at [Heroku](https://heroku.com/). You can generate a free SSL certificate at [StartSSL](https://www.startssl.com/).
 
 You will need to setup Mailgun to receive incoming emails and point them to your app to parse.
 
@@ -52,7 +48,7 @@ If you want to bypass using Mailchimp to collect email addresses, simply don't p
 Same for Recaptcha and Clarafai: simply don't add an environment variables for `RECAPTCHA_SITE_KEY`, `CLARIFAI_V2_API_KEY`.
 
 
-###Tests
+### Tests
 
 There is healthy coverage of the app, which you can run with:
 
@@ -60,15 +56,15 @@ There is healthy coverage of the app, which you can run with:
 rake
 ```
 
-###Administration Portal
+### Administration Portal
 
 The Admin emails are accounts that have access to the Admin Dropdown in the navbar (lock icon) that give you details into the number of entries and users in the system.
 
-###Inspirations and OhLife Importer
+### Inspirations and OhLife Importer
 
 If you want random bits of inspiration, you can load up different quotes in the Inspiration table to be shown above the New Posts page and at the bottom of emails. If you plan on using OhLife, the system will tag imported posts with ```inspiration_id``` of 1 - so create the first Inspiration with a category name of "OhLife".
 
-```
+```ruby
 Inspiration.create(category: 'OhLife', body: 'Imported from OhLife')
 ```
 
