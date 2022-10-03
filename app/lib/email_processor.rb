@@ -116,7 +116,6 @@ class EmailProcessor
         entry&.body = entry&.sanitized_body if @user.is_free?
         if entry&.save
           track_ga_event('New')
-          Sqreen.track('inbound_email')
         else
           UserMailer.failed_entry(@user, entry.errors.full_messages, date, @body).deliver_later
           Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save new entry (failed_entry email sent to user)", errors: entry.errors, body: @body, date: date })
