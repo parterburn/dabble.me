@@ -10,7 +10,7 @@ This app utilizes the following 3rd party services:
 * [Amazon S3](http://aws.amazon.com) for Photo Uploads & Storage (free for 1 year)
 * [MailChimp](http://mailchimp.com) for sending updates to all users (free for 2,000 subscribers)
 * [Google Analytics](http://google.com/analytics) for traffic stats (free for standard analytics)
-* [Recaptcha](https://www.google.com/recaptcha) to prevent bot signups (free)
+* [Recaptcha](https://www.google.com/recaptcha) to prevent bot signups (free). Note that Recaptcha requires to use http://localhost:3000/ to work locally for signing in.
 * [Sentry](https://www.sentry.io/) to report errors (free)
 * [Clarafai](https://www.clarifai.com/) to analyze images for legality (free up to 5,000/mo)
 
