@@ -140,7 +140,7 @@ namespace :entry do
         send_this_hour = Time.now.in_time_zone(user.send_timezone).hour == user.send_time.hour
 
         # retry if previous 2 hours in scheduler failed to send and last email was sent over 20 hours ago
-        retry_failed_scheduler = (user.last_sent_at.present? && user.last_sent_at.before?(20.hours.ago)) && (Time.now.in_time_zone(user.send_timezone).hour - user.send_time.hour) <= 2
+        retry_failed_scheduler = (user.last_sent_at.present? && user.last_sent_at.before?(20.hours.ago)) && (Time.now.in_time_zone(user.send_timezone).hour - user.send_time.hour).between?(0,2)
 
         next unless send_this_day && (send_this_hour || retry_failed_scheduler)
         next if user.last_sent_at.present? && user.last_sent_at.after?(22.hours.ago) # temporary fix to prevent sending multiple emails to same user in same day
