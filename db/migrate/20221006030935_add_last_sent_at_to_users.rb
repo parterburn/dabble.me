@@ -5,7 +5,7 @@ class AddLastSentAtToUsers < ActiveRecord::Migration[6.0]
     User.all.each do |user|
       next unless user.emails_sent.positive?
 
-      user.update(last_sent_at: user.entries.first&.date.presence || 3.hours.ago)
+      user.update_columns(last_sent_at: user.entries.first&.date.presence || 3.hours.ago)
     end
   end
 end
