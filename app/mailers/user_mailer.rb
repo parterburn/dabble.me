@@ -9,6 +9,7 @@ class UserMailer < ActionMailer::Base
   def welcome_email(user)
     @user = user
     @user.increment!(:emails_sent)
+    @user.update_columns(last_sent_at: Time.now)
     email = mail(from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.cleaned_to_address, subject: "Let's write your first Dabble Me entry")
     email.mailgun_options = {tag: 'Welcome'}
   end

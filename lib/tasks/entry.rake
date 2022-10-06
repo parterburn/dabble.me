@@ -136,7 +136,13 @@ namespace :entry do
     users.each do |user|
       begin
         # Check if it's the hour they want where they live AND the day where they live that they want it sent: send it.
-        next unless Time.now.in_time_zone(user.send_timezone).hour == user.send_time.hour && user.frequency && user.frequency.include?(Time.now.in_time_zone(user.send_timezone).strftime('%a'))
+        send_this_day = user.frequency && user.frequency.include?(Time.now.in_time_zone(user.send_timezone).strftime('%a'))
+        send_this_hour = Time.now.in_time_zone(user.send_timezone).hour == user.send_time.hour
+
+        # retry if previous 2 hours in scheduler failed to send and last email was sent over 20 hours ago
+        retry_failed_scheduler = (user.last_sent_at.present? && user.last_sent_at.before?(20.hours.ago)) && (Time.now.in_time_zone(user.send_timezone).hour - user.send_time.hour) <= 2
+
+        next unless send_this_day && (send_this_hour || retry_failed_scheduler)
 
         # don't keep emailing if we've already sent 3 emails (welcome + 2 weeklys) and the user is not using the service (should decrease spam reports)
         if user.is_free? && user.emails_sent > 6 && user.entries.count == 0 && ENV['FREE_WEEK'] != 'true'
