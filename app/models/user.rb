@@ -125,7 +125,7 @@ class User < ActiveRecord::Base
 
   def plan_type_unlinked
     if plan && plan.match(/payhere/i)
-      "PayHere"
+      "Stripe"
     elsif plan && plan.match(/gumroad/i)
       "Gumroad"
     elsif plan && plan.match(/paypal/i)
@@ -135,7 +135,7 @@ class User < ActiveRecord::Base
 
   def plan_type
     if plan && plan.match(/payhere/i)
-      "<a href='https://app.payhere.co/customers' target='_blank'>PayHere</a>"
+      "<a href='https://dabble.me/billing?prefilled_email=#{email}' target='_blank'>Stripe</a>"
     elsif plan && plan.match(/gumroad/i)
       "<a href='https://gumroad.com/login' target='_blank'>Gumroad</a>"
     elsif plan && plan.match(/paypal/i)
