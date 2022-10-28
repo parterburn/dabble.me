@@ -229,10 +229,20 @@ GEM
     kaminari-core (1.2.1)
     launchy (2.5.0)
       addressable (~> 2.7)
-    le (2.7.6)
     listen (3.4.1)
       rb-fsevent (~> 0.10, >= 0.10.3)
       rb-inotify (~> 0.9, >= 0.9.10)
+    logtail (0.1.7)
+      msgpack (~> 1.0)
+    logtail-rack (0.1.6)
+      logtail (~> 0.1)
+      rack (>= 1.2, < 3.0)
+    logtail-rails (0.1.7)
+      actionpack (>= 3.0.0)
+      activerecord (>= 3.0.0)
+      logtail (~> 0.1)
+      logtail-rack (~> 0.1)
+      railties (>= 3.0.0)
     loofah (2.18.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.5.9)
@@ -257,6 +267,7 @@ GEM
     mini_mime (1.1.2)
     mini_portile2 (2.8.0)
     minitest (5.16.3)
+    msgpack (1.6.0)
     multi_json (1.15.0)
     netrc (0.11.0)
     nio4r (2.5.8)
@@ -465,8 +476,8 @@ DEPENDENCIES
   jekyll-timeago
   jquery-rails
   kaminari (>= 1.2.1)
-  le
   listen
+  logtail-rails
   loofah (>= 2.5)
   mailgun_rails
   meta_request

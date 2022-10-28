@@ -65,7 +65,7 @@ gem 'sass-rails'
 gem 'twbs_sass_rails'
 gem 'uglifier'
 
-gem 'le' # logentries
+gem 'logtail-rails'
 gem "sentry-ruby"
 gem "sentry-rails"
 gem "rack-attack" # Request blocking & throttling
