@@ -18,7 +18,7 @@ gem 'addressable' # better URI checking
 gem 'combined_time_select'
 gem 'jekyll-timeago'
 
-gem "rails-html-sanitizer", "~> 1.4.3"
+gem "rails-html-sanitizer", "~> 1.4.4"
 
 # email parsing
 gem 'email_reply_trimmer'
