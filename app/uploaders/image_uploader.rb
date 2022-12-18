@@ -11,7 +11,7 @@ class ImageUploader < CarrierWave::Uploader::Base
   process :auto_orient, if: :web_image?
 
   # def extension_allowlist
-  #   %w(jpg jpeg gif png heic)
+  #   %w(jpg jpeg gif png heic heif)
   # end
 
   def content_type_allowlist
@@ -23,7 +23,7 @@ class ImageUploader < CarrierWave::Uploader::Base
   end
 
   def heic_image?(file)
-    self.content_type.blank? || self.content_type == "application/octet-stream" || self.content_type == "image/heic" || self.filename =~ /^.+\.(heic|HEIC|Heic)$/i
+    self.content_type.blank? || self.content_type == "application/octet-stream" || self.content_type == "image/heic" || self.content_type == "image/heif" || self.filename =~ /^.+\.(heic|HEIC|Heic|heif|HEIF|Heif)$/i
   end
 
   def store_dir
@@ -37,10 +37,10 @@ class ImageUploader < CarrierWave::Uploader::Base
 
   def full_filename(file)
     filename = super(file)
-    filename.gsub(/\.heic/i, ".jpg")
+    filename.gsub(/\.heic/i, ".jpg").gsub(/\.heif/i, ".jpg")
   end
 
   def filename
-    super.gsub(/\.heic/i, ".jpg") if original_filename.present?
+    super.gsub(/\.heic/i, ".jpg").gsub(/\.heif/i, ".jpg") if original_filename.present?
   end
 end
