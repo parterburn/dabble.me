@@ -56,7 +56,7 @@ class UserMailer < ActionMailer::Base
 
   def failed_entry(user, errors, date, body)
     @user = user
-    @errors = errors.to_sentence
+    @errors = errors
     @date = date.strftime('%b %-d, %Y')
     @body = body
     # email = mail(to: user.cleaned_to_address, subject: 'Error saving entry for #{date}')
