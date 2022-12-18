@@ -91,8 +91,8 @@ class EmailProcessor
           track_ga_event('Merged')
         else
           # error saving entry
+          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save exsiting entry", subject: @subject, entry_id: existing_entry&.id, errors: existing_entry&.errors })
           UserMailer.failed_entry(@user, existing_entry.errors.full_messages.to_sentence, date, @body).deliver_later
-          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save exsiting entry", subject: @subject, entry_id: existing_entry.id, errors: existing_entry.errors })
         end
       else
         params = { date: date, inspiration_id: inspiration_id }
@@ -120,11 +120,11 @@ class EmailProcessor
           track_ga_event('New')
         else
           if entry.present?
-            record_errors = entry.errors.full_messages.to_sentence
+            record_errors = entry.errors.to_s
           else
-            record_errors = @error
+            record_errors = @error.to_s
           end
-          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save new entry (failed_entry email sent to user)", errors: entry&.errors, rescue_error: @error, body: @body, date: date })
+          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save new entry (failed_entry email sent to hello@dabble.me)", errors: entry&.errors, rescue_error: @error, body: @body, date: date })
           UserMailer.failed_entry(@user, record_errors, date, @body).deliver_later
         end
       end

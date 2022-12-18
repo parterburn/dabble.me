@@ -15,7 +15,7 @@ class ImageUploader < CarrierWave::Uploader::Base
   # end
 
   def content_type_allowlist
-    [/(image|application)\/(png|jpe?g|gif|heic|octet-stream)/]
+    [/(image|application)\/(png|jpe?g|gif|heic|heif|octet-stream)/]
   end
 
   def web_image?(file)
