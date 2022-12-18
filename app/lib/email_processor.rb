@@ -100,6 +100,7 @@ class EmailProcessor
         begin
           entry = @user.entries.create!(params.merge(body: @body, original_email_body: @raw_body))
         rescue ActiveRecord::RecordInvalid => error
+          @error = error
           if error.to_s.include?("Image Failed to manipulate with MiniMagick")
             entry = @user.entries.create!(params.except(:image, :remote_image_url).merge(body: @body, original_email_body: @raw_body))
             Sentry.capture_message("Error processing image via email", level: :error, extra: { reason: "Image Failed to manipulate with MiniMagick", error: error, image: best_attachment, remote_image_url: best_attachment_url, subject: @subject, entry: entry })
@@ -107,6 +108,7 @@ class EmailProcessor
             Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "ActiveRecord::RecordInvalid", error: error, subject: @subject })
           end
         rescue => error
+          @error = error
           Sentry.capture_message("Error processing entry via email", level: :error, extra: { error: error, subject: @subject, body: @body, raw_body: @raw_body })
           @body = @body.force_encoding('iso-8859-1').encode('utf-8')
           @raw_body = @raw_body.force_encoding('iso-8859-1').encode('utf-8')
@@ -117,8 +119,8 @@ class EmailProcessor
         if entry&.save
           track_ga_event('New')
         else
-          UserMailer.failed_entry(@user, entry.errors.full_messages, date, @body).deliver_later
-          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save new entry (failed_entry email sent to user)", errors: entry.errors, body: @body, date: date })
+          UserMailer.failed_entry(@user, entry&.errors.full_messages.presence || @error, date, @body).deliver_later
+          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save new entry (failed_entry email sent to user)", errors: entry&.errors.presence || @error, body: @body, date: date })
         end
       end
 
