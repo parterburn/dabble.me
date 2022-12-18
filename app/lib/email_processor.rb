@@ -119,7 +119,7 @@ class EmailProcessor
         if entry&.save
           track_ga_event('New')
         else
-          UserMailer.failed_entry(@user, entry&.errors.full_messages.presence || @error, date, @body).deliver_later
+          UserMailer.failed_entry(@user, entry&.errors&.full_messages.presence || @error, date, @body).deliver_later
           Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save new entry (failed_entry email sent to user)", errors: entry&.errors.presence || @error, body: @body, date: date })
         end
       end
