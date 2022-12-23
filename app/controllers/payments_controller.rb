@@ -102,7 +102,7 @@ class PaymentsController < ApplicationController
           Sentry.capture_exception(e)
         end
       end
-    elsif processed_params
+    elsif processed_params && params[:event] != "subscription.cancelled"
       UserMailer.no_user_here(params.permit!).deliver_later
     else
       Sentry.capture_message("Payment notification not processed", level: :info, extra: { params: params })
