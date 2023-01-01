@@ -123,7 +123,7 @@ namespace :entry do
   task :stats_by_user, [:year] => :environment do |_, year:|
     data = []
     csv_data = CSV.generate(col_sep: "\t") do |csv|
-      csv << ["user_id", "email", "entries_count", "avg_words", "avg_tweets_per_post"]
+      csv << ["USER_ID", "EMAIL", "#{year}_ENTRY", "#{year}_WORD", "#{year}_TWEET"]
 
       User.all.each do |user|
         user_entries = Entry.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE AND user_id = ?", user.id)
