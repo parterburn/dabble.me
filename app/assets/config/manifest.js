@@ -10,6 +10,7 @@
 //= link broken_pencil.png
 //= link copy-spotify-link.gif
 //= link baby.jpg
+//= link psychology-of-money.jpg
 
 //= link application.css
 //= link application.js

@@ -6,7 +6,7 @@ namespace :entry do
     EntryMailer.send_entry(user, Inspiration.random).deliver_now
   end
 
-  # heroku run bundle exec rake "entry:stats[2017]" --app dabble-me
+  # heroku run bundle exec rake "entry:stats[2022]" --app dabble-me --size=standard-2x
   task :stats, [:year] => :environment do |_, year:|
     # Stats for 2015
     # 3,872 users created
@@ -80,6 +80,18 @@ namespace :entry do
     # "Most Frequent Words: [[\"i\", 159901], [\"and\", 138881], [\"the\", 138583], [\"to\", 135939], [\"a\", 86781], [\"of\", 59413], [\"it\", 55672], [\"in\", 51007], [\"that\", 49711], [\"was\", 45889]]"
     # "****************************************************************************************************"
 
+    # "****************************************************************************************************"
+    # "STATS FOR 2022"
+    # "****************************************************************************************************"
+    # "Users created: 2,464"
+    # "Entries created in 2022: 30,390"
+    # "Entries for 2022: 28,517"
+    # "Total words: 5,676,800.0"
+    # "Avg words per post: 199.06722305992918"
+    # "Total characters: 31,437,428"
+    # "Avg characters per post: 1,102 (4 tweets)"
+    # "Most Frequent Words: [[\"i\", 185,020], [\"the\", 161,366], [\"and\", 157113], [\"to\", 154285], [\"a\", 103471], [\"of\", 66401], [\"it\", 64570], [\"in\", 56865], [\"that\", 55433], [\"was\", 55375]]"
+    # "****************************************************************************************************"
 
     p "*"*100
     p "STATS FOR #{year}"
@@ -94,7 +106,7 @@ namespace :entry do
     total_chars = entries_bodies.length
     avg_chars = total_chars / all_entries.count
     avg_tweets_per_post = ((avg_chars).to_f / 280).ceil
-    most_frequent = words_counter.token_frequency.first(10)
+    most_frequent = words_counter.token_frequency.first(40).map { |w| "#{w[0]}: #{number_with_delimiter(w[1])}" }
     p "Users created: #{number_with_delimiter(User.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
     p "Entries created in #{year}: #{number_with_delimiter(Entry.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
     p "Entries for #{year}: #{number_with_delimiter(all_entries.count)}"
@@ -102,30 +114,41 @@ namespace :entry do
     p "Avg words per post: #{number_with_delimiter(avg_words)}"
     p "Total characters: #{number_with_delimiter(total_chars)}"
     p "Avg characters per post: #{number_with_delimiter(avg_chars)} (#{avg_tweets_per_post} tweets)"
-    p "Most Frequent Words: #{most_frequent}"
+    p "Most Frequent Words:"
+    puts most_frequent
     p "*"*100
   end
 
-  # heroku run bundle exec rake "entry:stats_by_user[2017]" --app dabble-me
+  # heroku run bundle exec rake "entry:stats_by_user[2022]" --app dabble-me --size=standard-2x
   task :stats_by_user, [:year] => :environment do |_, year:|
     data = []
-    User.all.each do |user|
-      user_entries = Entry.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE AND user_id = ?", user.id)
-      if user_entries.count > 0
-        entries_bodies = user_entries.map { |e| ActionView::Base.full_sanitizer.sanitize(e.body) }.join(" ")
-        words_counter = WordsCounted.count(entries_bodies)
-        total_words = words_counter.token_count.to_f
-        avg_words = total_words / user_entries.count
-        total_chars = entries_bodies.length
-        avg_chars = total_chars / user_entries.count
-        avg_tweets_per_post = ((avg_chars).to_f / 280).ceil
-        data << "#{user.id}, #{user.email}, #{user_entries.count}, #{avg_words.round(0)}, #{avg_tweets_per_post}"
+    csv_data = CSV.generate(col_sep: "\t") do |csv|
+      csv << ["user_id", "email", "entries_count", "avg_words", "avg_tweets_per_post"]
+
+      User.all.each do |user|
+        user_entries = Entry.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE AND user_id = ?", user.id)
+        if user_entries.count > 0
+          entries_bodies = user_entries.map { |e| ActionView::Base.full_sanitizer.sanitize(e.body) }.join(" ")
+          words_counter = WordsCounted.count(entries_bodies)
+          total_words = words_counter.token_count.to_f
+          avg_words = total_words / user_entries.count
+          total_chars = entries_bodies.length
+          avg_chars = total_chars / user_entries.count
+          avg_tweets_per_post = ((avg_chars).to_f / 280).ceil
+          csv << [
+            user.id,
+            user.email,
+            user_entries.count,
+            avg_words.round(0),
+            "#{avg_tweets_per_post} #{'Tweet'.pluralize(avg_tweets_per_post)}"
+          ]
+        end
       end
-    end
+    end;nil
     p "*"*100
     p "DATA BY USER"
     p "*"*100
-    p data
+    puts csv_data
     p "*"*100
   end
 

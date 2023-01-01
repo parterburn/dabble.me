@@ -66,14 +66,14 @@
       .s-entry-date
         %h2 Total Words
         %h3
-          - percent_book = ((@words_counter.token_count.to_f/88000).to_f * 100).round
+          - percent_book = ((@words_counter.token_count.to_f/75_348).to_f * 100).round
           - book_height = 500-((percent_book.to_f / 100) * 500)
-          %span= "#{number_with_delimiter(@words_counter.token_count)} - #{percent_book}% of Untamed".html_safe
+          %span= "#{number_with_delimiter(@words_counter.token_count)} - #{percent_book}% of Psychology of Money".html_safe
       .s-review-details
         %div{style: 'position: relative;'}
-          =link_to 'https://amzn.to/3rIqs5U', target: '_blank', style: "margin-top: 20px; display: block;margin-bottom: 10px;" do
+          =link_to 'https://amzn.to/3Z73J1I', target: '_blank', style: "margin-top: 20px; display: block;margin-bottom: 10px;" do
             .s-book-cover{style: "height: #{book_height < 0 ? 0 : book_height}px"}
-            = image_tag 'untamed.jpg', width: 331, height: 500
+            = image_tag 'psychology-of-money.jpg', width: 319, height: 500
         .clearfix
 
   .col-md-8.col-md-offset-2.well
@@ -83,20 +83,20 @@
         %h3
           - your_avg_words = @words_counter.token_count / @total_count
           %span= number_with_delimiter(your_avg_words)
-      - if @year.to_s == "2021"
+      - if @year.to_s == "2022"
         .s-review-details
-          - if your_avg_words > 300
+          - if your_avg_words > 298
             - compared = 'way more'
-          - elsif your_avg_words > 200
+          - elsif your_avg_words > 199
             - compared = 'more'
-          - elsif your_avg_words < 100
+          - elsif your_avg_words < 99
             - compared = 'way less'
           - else
             - compared = 'less'
-          %p= "That's #{compared} than the average of all Dabble Me users (201 words per post)."
+          %p= "That's #{compared} than the average of all Dabble Me users (199 words per post)."
           %p
-            %span Collectively, all Dabble Me users could have wrote 52 novels equivalent to Glennon Doyle's,
-            %span<= link_to "Untamed", "https://amzn.to/3rIqs5U", target: :_blank
+            %span Collectively, all Dabble Me users could have wrote 75 books equivalent to Morgan Housel's,
+            %span<= link_to "Psychology of Money", "https://amzn.to/3Z73J1I", target: :_blank
             %span !
           .clearfix
 
@@ -133,9 +133,9 @@
     .center{class: add_class}
       .s-entry-date
         %h2 Most Frequent Words
-        - if @year.to_s == "2021"
+        - if @year.to_s == "2022"
           %h3
-            %span= "We're all still journaling in first-person...we collectively used <i>\"i\"</i> 160,000 times in our entries!".html_safe
+            %span= "We're all still journaling in first-person...we collectively used <i>\"i\"</i> 185,020 times in our entries!".html_safe
       .s-review-details
         - @words_counter.token_frequency.first(25).each do |word|
           %h3
