@@ -1,4 +1,5 @@
 namespace :entry do
+  require 'csv'
 
   # rake entry:send_entries_test
   task :send_entries_test => :environment do
