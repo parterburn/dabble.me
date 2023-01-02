@@ -192,6 +192,8 @@ class Entry < ActiveRecord::Base
     else
       nil
     end
+  rescue RestClient::ExceptionWithResponse
+    nil
   end
 
   def fix_encoding(string)

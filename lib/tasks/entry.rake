@@ -141,7 +141,7 @@ namespace :entry do
             user.email,
             user_entries.count,
             avg_words.round(0),
-            "#{avg_tweets_per_post} #{'Tweet'.pluralize(avg_tweets_per_post)}"
+            "#{avg_tweets_per_post} #{'tweet'.pluralize(avg_tweets_per_post)}"
           ]
         end
       end
