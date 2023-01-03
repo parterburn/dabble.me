@@ -1,7 +1,9 @@
 - if @user.entries.count == 0
-  Just reply to this email with your first post for #{@send_day.strftime("%B %-d")}.
-- elsif @user.days_since_last_post.to_i > 20
-  It's been #{@user.days_since_last_post} days since your last entry! Reply to this email with your entry for #{@send_day.strftime("%B %-d")}.
+  Reply to this email with your first entry for #{@send_day.strftime("%B %-d")}.
+- elsif @user.days_since_last_post.to_i > 14
+  Reply to this email with your entry for #{@send_day.strftime("%B %-d")}. It's been #{ApplicationController.helpers.format_number(@user.days_since_last_post)} days since your last entry; for inspiration try the 1-1-1 method: 1 win from the day, 1 point of tension, 1 bit of gratitude.
+- elsif @user.writing_streak > 1
+  Reply to this email with your entry for #{@send_day.strftime("%B %-d")}. You're on a #{ApplicationController.helpers.format_number(@user.writing_streak)} day writing streak!
 - else
   Reply to this email with your entry for #{@send_day.strftime("%B %-d")}.
 \
@@ -37,5 +39,5 @@ Unsubscribe: https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}
   This email is part of Dabble Me FREE WEEK. You'll receive emails this week only on Sun, Wed, and Fri. Like the new frequency? Subscribe to PRO: https://#{ENV['MAIN_DOMAIN']}/subscribe
 - elsif @user.is_free? && @user.emails_sent % 2 == 0
   Change the frequency of these emails &amp; unlock premium features, subscribe to PRO: https://#{ENV['MAIN_DOMAIN']}/subscribe
-- elsif @random_inspiration.present?
+- elsif @random_inspiration.present? && @user.days_since_last_post.to_i <= 14
   =strip_tags(@random_inspiration.body.html_safe)

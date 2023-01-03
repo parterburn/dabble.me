@@ -2,6 +2,7 @@ class Inspiration < ActiveRecord::Base
   has_many :entries
   scope :without_imports_or_email, -> { where("category NOT IN (?)", ['OhLife', 'Ahhlife', 'Email', 'Seed']) }
   scope :without_imports_or_email_or_tips, -> { without_imports_or_email.where("category != 'Tip'") }
+  scope :writing_prompts, -> { where(category: "Question") }
 
   validates :category, presence: true
   validates :body, presence: true

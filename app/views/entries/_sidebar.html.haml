@@ -30,17 +30,17 @@
       .s-date-left
         ALL
       .s-date-right
-        #{current_user.entries.length}
+        #{format_number(current_user.entries.size)}
       .clearfix
 
-  - if (only_images = current_user.entries.only_images.length) > 0
+  - if (only_images = current_user.entries.only_images.size) > 0
     %h4{style: "font-size: 14px;"}
       =link_to group_entries_path('photos'), class: "#{'active' if current_page?(group_entries_path('photos'))}" do
         .s-date-left
           %i.fa.fa-image{style: "color: #cccccc;margin-right: 2px;"}
           PHOTOS
         .s-date-right
-          #{only_images}
+          #{format_number(only_images)}
         .clearfix
 
   - spotify_entries = current_user.entries.only_spotify
@@ -51,7 +51,7 @@
 
         SPOTIFY
       .s-date-right
-        #{spotify_entries.size}
+        #{format_number(spotify_entries.size)}
       .clearfix
 
   - current_user.entries.group_by{|c| c.date.strftime "%Y" }.each do |year_str,year_entries|
@@ -60,7 +60,7 @@
         .s-date-left
           = year_str.upcase
         .s-date-right
-          #{year_entries.length}
+          #{format_number(year_entries.size)}
         .clearfix
 
     - year_entries.group_by{|c| c.date.strftime "%b" }.each do |month_str,date_entries|
@@ -72,5 +72,5 @@
         .s-date-left
           = month_str.upcase
         .s-date-right
-          #{date_entries.length}
+          #{format_number(date_entries.size)}
         .clearfix

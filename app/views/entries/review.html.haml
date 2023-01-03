@@ -68,7 +68,7 @@
         %h3
           - percent_book = ((@words_counter.token_count.to_f/75_348).to_f * 100).round
           - book_height = 500-((percent_book.to_f / 100) * 500)
-          %span= "#{number_with_delimiter(@words_counter.token_count)} - #{percent_book}% of Psychology of Money".html_safe
+          %span= "#{format_number(@words_counter.token_count)} - #{percent_book}% of Psychology of Money".html_safe
       .s-review-details
         %div{style: 'position: relative;'}
           =link_to 'https://amzn.to/3Z73J1I', target: '_blank', style: "margin-top: 20px; display: block;margin-bottom: 10px;" do
@@ -82,7 +82,7 @@
         %h2 Average Words per Post
         %h3
           - your_avg_words = @words_counter.token_count / @total_count
-          %span= number_with_delimiter(your_avg_words)
+          %span= format_number(your_avg_words)
       - if @year.to_s == "2022"
         .s-review-details
           - if your_avg_words > 298
@@ -108,7 +108,7 @@
           - avg_chars = @body_text.length / @total_count
           - tweets = ((avg_chars).to_f / 280).ceil
           - your_avg_words = @words_counter.token_count / @total_count
-          %span= "#{number_with_delimiter(avg_chars)} - about #{tweets} tweets"
+          %span= "#{format_number(avg_chars)} - about #{tweets} tweets"
       .s-review-details
         .s-twitter-comparison
           - (1..tweets).each do |i|

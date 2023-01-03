@@ -25,4 +25,12 @@ module ApplicationHelper
   def distance_of_time_in_words(earlier_date, later_date)
     Jekyll::Timeago.timeago(earlier_date, later_date, depth: 2, threshold: 0.05).gsub(" ago", "").gsub("in ", "").gsub("tomorrow", "1 day")
   end
+
+  def format_number(number)
+    return number unless number.present?
+
+    number = trim(number) if number.is_a?(String)
+    rounded_number = number.to_i > 100 ? number.round(0) : number.round(2)
+    number_with_delimiter(rounded_number, delimiter: ",")
+  end
 end

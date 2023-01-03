@@ -150,10 +150,10 @@ class User < ActiveRecord::Base
   end
 
   def days_since_last_post
-    if last_post = self.entries.where("date < ?", Time.now).first
-      ActionController::Base.helpers.number_with_delimiter((Time.now.to_date - last_post.date.to_date).to_i)
+    if last_post = entries.where("date < ?", Time.now).first
+      (Time.now.to_date - last_post.date.to_date).to_i
     else
-      ''
+      nil
     end
   end
 
@@ -226,6 +226,18 @@ class User < ActiveRecord::Base
 
   def send_time_in_mt
     send_time.hour + (ActiveSupport::TimeZone["America/Denver"].formatted_offset(false).to_i - ActiveSupport::TimeZone[send_timezone].formatted_offset(false).to_i)/100
+  end
+
+  def writing_streak
+    streak = entries.where(date: Date.today).size
+    date = Date.yesterday
+    while date
+      break unless entries.exists?(date: date)
+
+      streak += 1
+      date -= 1.day
+    end
+    streak
   end
 
   private
