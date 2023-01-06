@@ -37,6 +37,8 @@ class EmailProcessor
       best_attachment = nil
       if @user.is_pro? && @attachments.present?
         @attachments.each do |attachment|
+          next unless attachment.present?
+
           # Make sure attachments are at least 8kb so we're not saving a bunch of signuture/footer images
           file_size = File.size?(attachment.tempfile).to_i
           if (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|gif|heic|heif)$/i || attachment.original_filename =~ /^.+\.(heic|HEIC|Heic|heif|HEIF|Heif)$/i) && (file_size <= 0 || file_size > 8000) && file_size > 20000 && !attachment.original_filename.in?(["tmiFinal.png"])
