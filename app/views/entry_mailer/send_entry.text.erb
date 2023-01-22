@@ -1,0 +1,54 @@
+<% if @user.entries.size.zero? %>
+  Reply to this email with your first entry for <%= @send_day.strftime("%B %-d") %>.
+<% elsif @user.days_since_last_post.to_i > 14 %>
+  Reply to this email with your entry for <%= @send_day.strftime("%B %-d") %>. It's been <%= ApplicationController.helpers.format_number(@user.days_since_last_post) %> days since your last entry; for inspiration try the 1-1-1 method: 1 win from the day, 1 point of tension, 1 bit of gratitude.
+<% elsif @user.writing_streak.positive? %>
+  Reply to this email with your entry for <%= @send_day.strftime("%B %-d") %>. You're on a <%= ApplicationController.helpers.format_number(@user.writing_streak) %> day writing streak!
+<% else %>
+  Reply to this email with your entry for <%= @send_day.strftime("%B %-d") %>.
+<% end %>
+
+<% if @user.send_past_entry? && @user.random_entries.count > 5 && @random_entry %>
+<% show_entry = true %>
+<% format_date  = @random_entry.date.strftime('%a, %b %-d, %Y') %>
+Remember this? On <%= format_date %> (<%= @random_entry.time_ago_in_words_or_numbers(@user) %> ago) you wrote...
+
+<%= ActionController::Base.helpers.strip_tags(@random_entry.sanitized_body) %>
+
+<% if @user.is_pro? && (hashtags = @random_entry.hashtags).present? %>
+  <% h = [] %>
+  <% hashtags.each do |tag| %>
+    <% add_timeframe = "" %>
+    <% if (date = @user.hashtags.select{ |h| h.tag&.downcase == tag.downcase }.first&.date).present? %>
+      <% add_timeframe = " (#{ApplicationController.helpers.tag_relative_date(date, @random_entry.date)})" %>
+    <% end %>
+    <% h << tag + add_timeframe %>
+  <% end %>
+Tags: <%= h.join(", ") %>
+<% end %>
+
+View entry: <%= day_entry_url(year: @random_entry.date.year, month: @random_entry.date.month, day: @random_entry.date.day) %>
+<% elsif @user.send_past_entry? %>
+Keep writing...once you have a few entries you'll see a blast from the past show up here!
+<% end %>
+
+<% if @user.is_pro? %>
+New entry: <%= new_entry_url(day: @send_day.strftime('%Y-%m-%d')) %>
+
+<% end %>
+<% if @user.entries.size.positive? %>
+All entries: <%= entries_url %>
+
+<% end %>
+
+=======================================
+
+<% if @user.is_free? && ENV['FREE_WEEK'] == 'true' %>
+  This email is part of Dabble Me FREE WEEK. You'll receive emails this week only on Sun, Wed, and Fri. Like the new frequency? Subscribe to PRO: <%= subscribe_url %>
+<% elsif @user.is_free? && @user.emails_sent % 2 == 0 %>
+  Change the frequency of these emails &amp; unlock premium features, subscribe to PRO: <%= subscribe_url %>
+<% elsif @random_inspiration.present? && @user.days_since_last_post.to_i <= 14 %>
+  <%= strip_tags(@random_inspiration.body.html_safe) %>
+<% end %>
+
+Unsubscribe: <%= settings_url(user_key: @user.user_key) %>
