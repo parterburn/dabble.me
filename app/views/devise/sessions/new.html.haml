@@ -4,15 +4,15 @@
   .col-md-4.col-md-offset-4
     %br
   = form_for(resource, as: resource_name, url: session_path(resource_name)) do |f|
-    
+
     .col-md-4.col-md-offset-4
       = render "devise/shared/error_messages", resource: resource
-    
+
     .col-md-4.col-md-offset-4
       = f.label :email
       = f.email_field :email, autofocus: true, :class => "form-control", required: true
       %br
-    
+
     .col-md-4.col-md-offset-4
       = f.label :password
       = f.password_field :password, autocomplete: "off", :class => "form-control", required: true
@@ -27,10 +27,9 @@
       %br
 
     .col-md-4.col-md-offset-4
-      - if ENV['CI'] != "true" && ENV['RECAPTCHA_SITE_KEY'].present?
-        = invisible_recaptcha_tags text: "Login", class: "btn btn-primary form-control", style: "border: none;"
-      - else
-        = f.submit "Login", :class => "btn btn-primary form-control"
+      - if ENV['CI'] != "true" && ENV['TURNSTILE_SITE_KEY'].present?
+        = captcha_tags action: "login"
+      = f.submit "Login", :class => "btn btn-primary form-control", style: "border: none;"
       .clearfix
       %br
       %small.text-muted

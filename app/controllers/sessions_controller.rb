@@ -6,11 +6,10 @@ class SessionsController < Devise::SessionsController
   private
 
   def check_captcha
-    if ENV['RECAPTCHA_SITE_KEY'].blank? || (verify_recaptcha || ENV['CI'] == "true")
+    if valid_captcha?(model: resource)
       true
     else
       self.resource = resource_class.new sign_in_params
-      flash[:alert] = 'Bad recaptcha.'
       respond_with_navigational(resource) { render :new }
     end
   end

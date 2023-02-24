@@ -29,10 +29,10 @@
     = f.password_field :password, autocomplete: "off", class: "form-control", required: true
     - if @validatable && @user.errors.present?
       %i.small
-        (min #{@minimum_password_length} characters)    
+        (min #{@minimum_password_length} characters)
       %br
     %br
-  
+
   .col-md-3
     = f.label :password_confirmation
     = f.password_field :password_confirmation, autocomplete: "off", class: "form-control", required: true
@@ -40,15 +40,14 @@
     .clearfix
 
   .col-md-6.col-md-offset-3
-    - if ENV['CI'] != "true" && ENV['RECAPTCHA_SITE_KEY'].present?
-      = invisible_recaptcha_tags text: "Sign up", class: "btn btn-primary form-control", style: "border: none;"
-    - else
-      = f.submit "Sign up", class: "btn btn-primary form-control"
+    - if ENV['CI'] != "true" && ENV['TURNSTILE_SITE_KEY'].present?
+      = captcha_tags action: "sign-up"
+    = f.submit "Sign up", class: "btn btn-primary form-control", style: "border: none;"
     .clearfix
     %br
     %small.text-muted
       %center
         By signing up you aggree to the
         = link_to("terms of service", terms_path) + "."
-    %br    
+    %br
     = render "devise/shared/links"

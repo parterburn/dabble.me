@@ -10,7 +10,7 @@ This app utilizes the following 3rd party services:
 * [Amazon S3](http://aws.amazon.com) for Photo Uploads & Storage (free for 1 year)
 * [MailChimp](http://mailchimp.com) for sending updates to all users (free for 2,000 subscribers)
 * [Google Analytics](http://google.com/analytics) for traffic stats (free for standard analytics)
-* [Recaptcha](https://www.google.com/recaptcha) to prevent bot signups (free). Note that Recaptcha requires to use http://localhost:3000/ to work locally for signing in.
+* [Turnstile](https://www.cloudflare.com/products/turnstile/) to prevent bot signups (free).
 * [Sentry](https://www.sentry.io/) to report errors (free)
 * [Clarafai](https://www.clarifai.com/) to analyze images for legality (free up to 5,000/mo)
 
@@ -32,8 +32,8 @@ MAILGUN_API_KEY=api-key
 MAILCHIMP_API_KEY: f....3333-ek3
 MAILCHIMP_LIST_ID: 9982...112
 ADMIN_EMAILS: admin@dabble.ex,user2@domain.com
-RECAPTCHA_SITE_KEY: 6Lc6BAAAAAAAAChqRbQZcn_yyyyyyyyyyyyyyyyy
-RECAPTCHA_SECRET_KEY: 6Lc6BAAAAAAAAKN3DRm6VA_xxxxxxxxxxxxxxxxx
+TURNSTILE_SITE_KEY: 6Lc6BAAAAAAAAChqRbQZcn_yyyyyyyyyyyyyyyyy
+TURNSTILE_SECRET_KEY: 6Lc6BAAAAAAAAKN3DRm6VA_xxxxxxxxxxxxxxxxx
 CLARIFAI_V2_API_KEY: asdl2k34jl2kn1l2hn234
 CLARIFAI_V2_NSFW_MODEL: asdflkj23498oihlj2n34kn23
 CLARIFAI_THRESHOLD: 0.5
@@ -45,7 +45,7 @@ SENTRY_DSN: https://dsn.sentry.io/1234
 
 If you want to bypass using Mailchimp to collect email addresses, simply don't put a value in for `MAILCHIMP_API_KEY`. I use Mailchimp to email out new features to the users at Dabble.me, so if you're the only one using your app it doesn't make sense to have Mailchimp.
 
-Same for Recaptcha and Clarafai: simply don't add an environment variables for `RECAPTCHA_SITE_KEY`, `CLARIFAI_V2_API_KEY`.
+Same for Turnstile and Clarafai: simply don't add an environment variables for `TURNSTILE_SITE_KEY`, `CLARIFAI_V2_API_KEY`.
 
 
 ### Tests

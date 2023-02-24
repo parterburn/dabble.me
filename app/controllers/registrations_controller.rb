@@ -106,13 +106,10 @@ class RegistrationsController < Devise::RegistrationsController
   private
 
   def check_captcha
-    if ENV['RECAPTCHA_SITE_KEY'].blank? || (verify_recaptcha || ENV['CI'] == "true")
+    if valid_captcha?(model: resource)
       true
     else
-      flash.delete :recaptcha_error
       build_resource(sign_up_params)
-      resource.valid?
-      resource.errors.add(:base, "Recaptcha verification failed, please try again.")
       clean_up_passwords(resource)
       respond_with_navigational(resource) { render :new }
     end

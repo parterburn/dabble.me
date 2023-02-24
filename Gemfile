@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 ruby File.read(File.expand_path '../.ruby-version', __FILE__).strip.sub /\-p[0-9]+$/, '' # Read the rbenv version file
-gem 'rails', '~> 6.0', '>= 6.0.4.8'
+gem 'rails', '~> 6.0', '>= 6.0.6.1'
 
 gem 'puma', '~> 4.3'
 gem 'pg', '~> 1.2', '>= 1.2.3'
@@ -10,7 +10,7 @@ gem 'barnes'
 # users
 gem "devise", ">= 4.7.1"
 gem 'devise-security'
-gem 'recaptcha', '~> 5.5'
+gem "turnstile-captcha", require: "turnstile"
 gem 'gibbon' # mailchimp connector
 
 gem 'addressable' # better URI checking
