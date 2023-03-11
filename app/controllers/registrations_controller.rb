@@ -20,7 +20,7 @@ class RegistrationsController < Devise::RegistrationsController
     if params[:submit_method] == "delete account"
       if current_user.valid_password?(params[:user][:current_password])
         if current_user.is_pro?
-          UserMailer.pro_deleted(current_user.full_name, current_user.email, current_user.plan, current_user.entries.size, current_user.payhere_id, current_user.stripe_id).deliver_later
+          UserMailer.pro_deleted(current_user.full_name, current_user.email, current_user.plan, current_user.entries.size, current_user.id, current_user.payhere_id, current_user.stripe_id).deliver_later
         end
         current_user.destroy
         redirect_to root_path, notice: "Your account has been deleted."

@@ -50,8 +50,8 @@ class UserMailer < ActionMailer::Base
     mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: '[REFUND REQUIRED] Payment Without a User', body: params.to_yaml)
   end
 
-  def pro_deleted(name, email, plan, entries, payhere_id, stripe_id)
-    mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: '[ACTION REQUIRED] Pro User Deleted', body: "Name: #{name}\nEmail: #{email}\nPlan: #{plan}\nPayhere ID: #{payhere_id}\nStripe ID: #{stripe_id}\nEntries: #{entries}")
+  def pro_deleted(name, email, plan, entries, user_id, payhere_id, stripe_id)
+    mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: '[ACTION REQUIRED] Pro User Deleted', body: "Name: #{name}\nEmail: #{email}\nUser ID: #{user_id}\nPlan: #{plan}\nPayhere ID: #{payhere_id}\nStripe ID: #{stripe_id}\nEntries: #{entries}")
   end
 
   def failed_entry(user, errors, date, body)
