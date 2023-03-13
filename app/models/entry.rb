@@ -77,7 +77,7 @@ class Entry < ActiveRecord::Base
     formatted_body = body
     begin
       detection = CharlockHolmes::EncodingDetector.detect(body)
-      formatted_body = CharlockHolmes::Converter.convert formatted_body, detection[:encoding], "UTF-8"
+      formatted_body = CharlockHolmes::Converter.convert formatted_body, detection[:encoding].gsub("IBM424_ltr", "UTF-8"), "UTF-8"
     rescue => e
     end
     fix_encoding(formatted_body)
@@ -94,7 +94,7 @@ class Entry < ActiveRecord::Base
 
     begin
       detection = CharlockHolmes::EncodingDetector.detect(body_sanitized)
-      body_sanitized = CharlockHolmes::Converter.convert body_sanitized, detection[:encoding], "UTF-8"
+      body_sanitized = CharlockHolmes::Converter.convert body_sanitized, detection[:encoding].gsub("IBM424_ltr", "UTF-8"), "UTF-8"
     rescue => e
     end
     fix_encoding(body_sanitized)

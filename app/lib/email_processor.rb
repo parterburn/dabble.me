@@ -241,7 +241,7 @@ class EmailProcessor
 
     begin
       detection = CharlockHolmes::EncodingDetector.detect(content)
-      CharlockHolmes::Converter.convert content, detection[:encoding], "UTF-8"
+      CharlockHolmes::Converter.convert content, detection[:encoding].gsub("IBM424_ltr", "UTF-8"), "UTF-8"
     rescue
       content
     end
