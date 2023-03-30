@@ -154,6 +154,8 @@ namespace :entry do
   end
 
   task :send_hourly_entries => :environment do
+    RestClient.post("https://sentry.io/api/0/organizations/dabble-me/monitors/send_hourly_entries/checkins/", { status: "in_progress" }, { "Authorization": "DSN #{ENV['SENTRY_CRON_CHECK']}" })
+
     users = User.subscribed_to_emails.not_just_signed_up
     random_inspiration = Inspiration.random
     sent_in_hour = 0
@@ -182,6 +184,12 @@ namespace :entry do
         Sentry.capture_exception(error, extra: { sent_in_hour: sent_in_hour })
       end
     end
+
+    # Notify Sentry your job has completed successfully:
+    RestClient.put("https://sentry.io/api/0/organizations/dabble-me/monitors/send_hourly_entries/checkins/latest/", { status: "ok" }, { "Authorization": "DSN #{ENV['SENTRY_CRON_CHECK']}" })
+  rescue => e
+    Sentry.capture_exception(e)
+    RestClient.put("https://sentry.io/api/0/organizations/dabble-me/monitors/send_hourly_entries/checkins/latest/", { status: "error" }, { "Authorization": "DSN #{ENV['SENTRY_CRON_CHECK']}" })
   end
 
   task :maintenance => :environment do
