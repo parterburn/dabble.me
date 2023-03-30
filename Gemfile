@@ -99,7 +99,7 @@ end
 group :test do
   gem 'capybara', '~> 3.35', '>= 3.35.3'
   gem 'database_cleaner'
-  gem 'email_spec'
+  gem 'email_spec', require: false
   gem 'rspec', '~> 3.10'
   gem 'selenium-webdriver'
   gem 'simplecov', require: false
