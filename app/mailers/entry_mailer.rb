@@ -1,6 +1,6 @@
 class EntryMailer < ActionMailer::Base
   helper.extend(ApplicationHelper)
-  add_template_helper(EntriesHelper)
+  helper EntriesHelper
 
   def send_entry(user, random_inspiration, send_day: nil)
     @send_day = send_day.presence || Time.now.in_time_zone(user.send_timezone)
