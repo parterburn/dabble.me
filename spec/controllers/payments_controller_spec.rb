@@ -188,8 +188,8 @@ RSpec.describe PaymentsController, type: :controller do
       expect { post :payment_notify, params: payhere_params, as: :json }.to change { Payment.count }.by(1)
       expect(user.reload.plan).to eq 'PRO Monthly PayHere'
       expect(user.reload.payhere_id).to eq payhere_params[:customer][:id].to_s
-      expect(ActionMailer::Base.deliveries.last.to).to eq [user.email]
-      expect(ActionMailer::Base.deliveries.last.subject).to eq 'Thanks for subscribing to Dabble Me PRO!'
+      # expect(ActionMailer::Base.deliveries.last.to).to eq [user.email]
+      # expect(ActionMailer::Base.deliveries.last.subject).to eq 'Thanks for subscribing to Dabble Me PRO!'
     end
 
     it 'should not create a payment if no match' do
@@ -232,8 +232,8 @@ RSpec.describe PaymentsController, type: :controller do
       expect { post :payment_notify, params: gumroad_params, as: :json }.to change { Payment.count }.by(1)
       expect(user.reload.plan).to eq 'PRO Monthly Gumroad'
       expect(user.reload.gumroad_id).to eq gumroad_params[:purchaser_id]
-      expect(ActionMailer::Base.deliveries.last.to).to eq [user.email]
-      expect(ActionMailer::Base.deliveries.last.subject).to eq 'Thanks for subscribing to Dabble Me PRO!'
+      # expect(ActionMailer::Base.deliveries.last.to).to eq [user.email]
+      # expect(ActionMailer::Base.deliveries.last.subject).to eq 'Thanks for subscribing to Dabble Me PRO!'
     end
 
     it 'should not create a payment if no match' do

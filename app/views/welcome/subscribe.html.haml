@@ -53,22 +53,23 @@
 
         - else
           %div{style: "text-align:center;"}
-            %script{:src => "https://app.payhere.co/embed/embed.js", :type => "text/javascript"}
-            = render "payments/payhere"
+            %script{:src => "https://js.stripe.com/v3", :type => "text/javascript"}
+            = render "payments/stripe"
             .row
               .col-sm-7{style: "margin: 5px auto 0;"}
-                %button.btn.btn-success.btn-block.btn-lg{:"style" => "height: 55px;", :"onclick" => "payhere('yearly');" }
+                %button.btn.btn-success.btn-block.btn-lg{:onclick => "stripeCheckout('#{ENV['STRIPE_YEARLY_PLAN']}')", :"role" => "link", :"style" => "height: 55px;" }
                   $30
                   %span{style: "font-size: 13px; color: #ddd"}<> ／
                   year
                   %br
                   %span{style: "font-size: 12px;margin-top: -2px; display: block;color: #307530;"} 2 months free
               .col-sm-5{style: "margin: 5px auto;"}
-                %button.btn.btn-success.btn-block.btn-lg{:"style" => "height: 55px;", :"onclick" => "payhere('monthly');" }
+                %button.btn.btn-success.btn-block.btn-lg{:onclick => "stripeCheckout('#{ENV['STRIPE_MONTHLY_PLAN']}')", :"style" => "height: 55px;", :"role" => "link",  }
                   $3
                   %span{style: "font-size: 13px; color: #ddd"}<> ／
                   month
             .clearfix
+            #error-message
 
       - else
         - session["user_return_to"] = subscribe_path

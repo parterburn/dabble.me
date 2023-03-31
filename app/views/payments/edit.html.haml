@@ -48,7 +48,12 @@
       %div
         = label_tag :payhere_id
         = text_field_tag :payhere_id, "#{@payment.user.payhere_id if @payment.user}", :class => "form-control"
-        %br        
+        %br
+
+      %div
+        = label_tag :stripe_id
+        = text_field_tag :stripe_id, "#{@payment.user.stripe_id if @payment.user}", :class => "form-control"
+        %br
 
       %div
         = f.label :comments
@@ -68,4 +73,4 @@
     max: tomorrow
   })
 
-  $('.pickadate').pickadate();    
+  $('.pickadate').pickadate();

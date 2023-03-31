@@ -71,6 +71,7 @@ gem "sentry-rails", "~> 5.8"
 gem "rack-attack" # Request blocking & throttling
 gem "cloudflare-rails"
 gem "stripe"
+gem "stripe_event"
 gem "reverse_markdown" # text export conversion html->txt
 
 group :development, :test do

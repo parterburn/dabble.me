@@ -3,8 +3,8 @@ class PaymentsController < ApplicationController
   before_action :authenticate_admin!
 
   skip_before_action :authenticate_user!, only: [:payment_notify]
-  skip_before_action :authenticate_admin!, only: [:payment_notify]
-  skip_before_action :verify_authenticity_token, only: [:payment_notify]
+  skip_before_action :authenticate_admin!, only: [:billing, :payment_notify]
+  skip_before_action :verify_authenticity_token, only: [:billing, :payment_notify]
 
   def index
     @monthlys = User.pro_only.monthly
@@ -96,7 +96,7 @@ class PaymentsController < ApplicationController
       if @user.plan_previous_change&.first == "Free"
         begin # upgrade happened, set frequency back + send thanks
           @user.update(frequency: @user.previous_frequency) if @user.previous_frequency.any?
-          UserMailer.thanks_for_paying(@user).deliver_later
+          # UserMailer.thanks_for_paying(@user).deliver_later
         rescue StandardError => e
           Sentry.set_user(id: @user.id, email: @user.email)
           Sentry.capture_exception(e)
@@ -108,6 +108,17 @@ class PaymentsController < ApplicationController
       Sentry.capture_message("Payment notification not processed", level: :info, extra: { params: params })
     end
     head :ok, content_type: 'text/html'
+  end
+
+  def billing
+    Stripe.api_key = ENV['STRIPE_API_KEY']
+
+    session = Stripe::BillingPortal::Session.create({
+      customer: current_user.stripe_id,
+      return_url: "https://dabble.me/settings"
+    })
+
+    redirect_to session.url
   end
 
   private
@@ -136,14 +147,14 @@ class PaymentsController < ApplicationController
     @user ||= User.find_by(email: params[:customer][:email].downcase)
 
     if params[:event] == "payment.failed"
-      Sentry.capture_message("Failed payment", level: :info, extra: { params: params })
+      # Sentry.capture_message("Failed payment", level: :info, extra: { params: params })
       { payhere_id: params[:customer][:id] }
     elsif params[:event] == "payment.success"
       paid = params[:plan][:qty].present? && params[:plan][:qty].positive? ? params[:plan][:price] * params[:plan][:qty] : params[:plan][:price]
       frequency = params[:plan][:billing_interval] == "month" ? "Monthly" : "Yearly"
 
-      if @user.present? && @user.payments.last&.date&.to_date != Date.today
-        Payment.create(user_id: @user.id, comments: "PayHere #{frequency} from #{params[:customer][:email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid)
+      if @user.present? && @user.payments.where("comments ILIKE '%#{frequency}%'").last&.date&.to_date != Date.today
+        Payment.create(user_id: @user.id, comments: "PayHere #{frequency} from #{params[:customer][:email]}", date: Time.now.strftime("%Y-%m-%d").to_s, amount: paid)
       end
       { plan: "PRO #{frequency} PayHere", payhere_id:  params[:customer][:id] }
     else # params[:event].in?(["subscription.cancelled", "subscription.created"])
@@ -163,7 +174,7 @@ class PaymentsController < ApplicationController
     if @user.present? && @user.payments.count > 0 && Payment.where(user_id: @user.id).last.date.to_date === Time.now.to_date
       # duplicate, don't send
     elsif @user.present?
-      Payment.create(user_id: @user.id, comments: "Gumroad #{frequency} from #{params[:email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
+      Payment.create(user_id: @user.id, comments: "Gumroad #{frequency} from #{params[:email]}", date: Time.now.strftime("%Y-%m-%d").to_s, amount: paid )
     end
 
     { plan: "PRO #{frequency} Gumroad", gumroad_id:  params[:purchaser_id] }
@@ -179,7 +190,7 @@ class PaymentsController < ApplicationController
     if @user.present? && @user.payments.count > 0 && Payment.where(user_id: @user.id).last.date.to_date === Time.now.to_date
       # duplicate webhook, don't save
     elsif @user.present?
-      Payment.create(user_id: @user.id, comments: "Paypal #{frequency} from #{params[:payer_email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
+      Payment.create(user_id: @user.id, comments: "Paypal #{frequency} from #{params[:payer_email]}", date: Time.now.strftime("%Y-%m-%d").to_s, amount: paid )
     end
 
     { plan: "PRO #{frequency} PayPal", gumroad_id:  @user&.gumroad_id}
@@ -190,7 +201,7 @@ class PaymentsController < ApplicationController
   end
 
   def user_params
-    params.permit(:plan, :gumroad_id, :payhere_id)
+    params.permit(:plan, :gumroad_id, :payhere_id, :stripe_id)
   end
 
   def valid_payhere_signature?

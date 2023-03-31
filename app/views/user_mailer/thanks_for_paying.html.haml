@@ -37,3 +37,13 @@
   =link_to "Paul Arterburn","https://paularterburn.com/"
   %br
   Creator of Dabble Me
+
+
+%p
+  %i
+    P.S. You can
+    =link_to "manage your subscription", "https://#{ENV['MAIN_DOMAIN']}/billing"
+    - if @user.plan_frequency == "Monthly"
+      to upgrade to the annual plan (with 2 months free) or cancel at anytime.
+    - else
+      to cancel at anytime.
