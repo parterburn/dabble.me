@@ -154,7 +154,7 @@ class PaymentsController < ApplicationController
       frequency = params[:plan][:billing_interval] == "month" ? "Monthly" : "Yearly"
 
       if @user.present? && @user.payments.where("comments ILIKE '%#{frequency}%'").last&.date&.to_date != Date.today
-        Payment.create(user_id: @user.id, comments: "PayHere #{frequency} from #{params[:customer][:email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid)
+        Payment.create(user_id: @user.id, comments: "PayHere #{frequency} from #{params[:customer][:email]}", date: Time.now.strftime("%Y-%m-%d").to_s, amount: paid)
       end
       { plan: "PRO #{frequency} PayHere", payhere_id:  params[:customer][:id] }
     else # params[:event].in?(["subscription.cancelled", "subscription.created"])
@@ -174,7 +174,7 @@ class PaymentsController < ApplicationController
     if @user.present? && @user.payments.count > 0 && Payment.where(user_id: @user.id).last.date.to_date === Time.now.to_date
       # duplicate, don't send
     elsif @user.present?
-      Payment.create(user_id: @user.id, comments: "Gumroad #{frequency} from #{params[:email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
+      Payment.create(user_id: @user.id, comments: "Gumroad #{frequency} from #{params[:email]}", date: Time.now.strftime("%Y-%m-%d").to_s, amount: paid )
     end
 
     { plan: "PRO #{frequency} Gumroad", gumroad_id:  params[:purchaser_id] }
@@ -190,7 +190,7 @@ class PaymentsController < ApplicationController
     if @user.present? && @user.payments.count > 0 && Payment.where(user_id: @user.id).last.date.to_date === Time.now.to_date
       # duplicate webhook, don't save
     elsif @user.present?
-      Payment.create(user_id: @user.id, comments: "Paypal #{frequency} from #{params[:payer_email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid )
+      Payment.create(user_id: @user.id, comments: "Paypal #{frequency} from #{params[:payer_email]}", date: Time.now.strftime("%Y-%m-%d").to_s, amount: paid )
     end
 
     { plan: "PRO #{frequency} PayPal", gumroad_id:  @user&.gumroad_id}
