@@ -102,14 +102,19 @@ namespace :user do
   end
 
   task :update_stripe_id => :environment do
-    users_to_update = User.where(stripe_id: [nil, ""]).where.not(payhere_id: [nil, ""])
+    users_to_update = User.where(stripe_id: [nil, ""]).where.not(payhere_id: [nil, ""]).where.not(plan: "Free")
     if users_to_update.any?
       Stripe.api_key = ENV['STRIPE_API_KEY']
-      stripe_customers = Stripe::Customer.list(limit: 100)
+      stripe_subs = Stripe::Subscription.list(limit: 100)
+      all_stripe_subs = []
+      stripe_subs.auto_paging_each do |stripe_sub|
+        all_stripe_subs << stripe_sub
+      end
 
       users_to_update.each do |user|
-        stripe_customer = stripe_customers.filter { |cust| cust.metadata[:customer_id] == user.payhere_id }.first
-        user.update(stripe_id: stripe_customer&.id) if stripe_customer.present?
+        stripe_sub = all_stripe_subs.select { |ss| ss.metadata["dabble_id"] == user.id.to_s }&.first
+        stripe_sub = all_stripe_subs.select { |ss| ss.metadata["customer_email"] == user.email }&.first unless stripe_sub.present?
+        user.update_column(stripe_id: stripe_sub&.customer) if stripe_sub.present?
       end
     end
   end

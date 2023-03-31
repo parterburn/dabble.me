@@ -419,7 +419,10 @@ GEM
     staccato (0.5.3)
     stackprof (0.2.19)
     statsd-ruby (1.5.0)
-    stripe (5.17.0)
+    stripe (8.5.0)
+    stripe_event (2.7.0)
+      activesupport (>= 3.1)
+      stripe (>= 2.8, < 9)
     summernote-rails (0.8.12.0)
       railties (>= 3.1)
     temple (0.8.2)
@@ -528,6 +531,7 @@ DEPENDENCIES
   staccato
   stackprof
   stripe
+  stripe_event
   summernote-rails (~> 0.8.12.0)
   tilt (~> 2.0, >= 2.0.10)
   turnstile-captcha

@@ -3,8 +3,8 @@ class PaymentsController < ApplicationController
   before_action :authenticate_admin!
 
   skip_before_action :authenticate_user!, only: [:payment_notify]
-  skip_before_action :authenticate_admin!, only: [:payment_notify]
-  skip_before_action :verify_authenticity_token, only: [:payment_notify]
+  skip_before_action :authenticate_admin!, only: [:billing, :upgrade, :payment_notify]
+  skip_before_action :verify_authenticity_token, only: [:billing, :upgrade, :payment_notify]
 
   def index
     @monthlys = User.pro_only.monthly
@@ -110,6 +110,17 @@ class PaymentsController < ApplicationController
     head :ok, content_type: 'text/html'
   end
 
+  def billing
+    Stripe.api_key = ENV['STRIPE_API_KEY']
+
+    session = Stripe::BillingPortal::Session.create({
+      customer: current_user.stripe_id,
+      return_url: "https://dabble.me/settings"
+    })
+
+    redirect_to session.url
+  end
+
   private
 
   def gumroad?
@@ -136,13 +147,13 @@ class PaymentsController < ApplicationController
     @user ||= User.find_by(email: params[:customer][:email].downcase)
 
     if params[:event] == "payment.failed"
-      Sentry.capture_message("Failed payment", level: :info, extra: { params: params })
+      # Sentry.capture_message("Failed payment", level: :info, extra: { params: params })
       { payhere_id: params[:customer][:id] }
     elsif params[:event] == "payment.success"
       paid = params[:plan][:qty].present? && params[:plan][:qty].positive? ? params[:plan][:price] * params[:plan][:qty] : params[:plan][:price]
       frequency = params[:plan][:billing_interval] == "month" ? "Monthly" : "Yearly"
 
-      if @user.present? && @user.payments.last&.date&.to_date != Date.today
+      if @user.present? && @user.payments.where("comments ILIKE '%#{frequency}%'").last&.date&.to_date != Date.today
         Payment.create(user_id: @user.id, comments: "PayHere #{frequency} from #{params[:customer][:email]}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid)
       end
       { plan: "PRO #{frequency} PayHere", payhere_id:  params[:customer][:id] }
@@ -190,7 +201,7 @@ class PaymentsController < ApplicationController
   end
 
   def user_params
-    params.permit(:plan, :gumroad_id, :payhere_id)
+    params.permit(:plan, :gumroad_id, :payhere_id, :stripe_id)
   end
 
   def valid_payhere_signature?
