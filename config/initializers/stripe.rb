@@ -28,6 +28,18 @@ StripeEvent.configure do |events|
         Payment.create(user_id: user.id, comments: "Stripe #{frequency} from #{invoice.customer_email}", date: "#{Time.now.strftime("%Y-%m-%d")}", amount: paid)
       end
       user.update(plan: "PRO #{frequency} PayHere", stripe_id: stripe_customer_id)
+
+      if user.plan_previous_change&.first == "Free"
+        begin # upgrade happened, set frequency back + send thanks
+          user.update(frequency: user.previous_frequency) if user.previous_frequency.any?
+          UserMailer.thanks_for_paying(user).deliver_later
+        rescue StandardError => e
+          Sentry.set_user(id: user.id, email: user.email)
+          Sentry.capture_exception(e)
+        end
+      end
+    else
+      UserMailer.no_user_here(invoice).deliver_later
     end
   end
 
@@ -49,9 +61,6 @@ StripeEvent.configure do |events|
     cancel_at_period_end = subscription.cancel_at_period_end
 
     if cancel_at_period_end
-      p "*"*100
-      p "cancel_at_period_end"
-      p "*"*100
       Sentry.capture_message("Customer set subscription to cancel at period end", level: :info, extra: { user_id: user.id, user_email: user.email, total_payments: user.payments.sum(:amount).to_f, subscription: subscription })
     else
       previous_attributes = event.data.previous_attributes

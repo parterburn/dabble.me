@@ -3,8 +3,8 @@ class PaymentsController < ApplicationController
   before_action :authenticate_admin!
 
   skip_before_action :authenticate_user!, only: [:payment_notify]
-  skip_before_action :authenticate_admin!, only: [:billing, :upgrade, :payment_notify]
-  skip_before_action :verify_authenticity_token, only: [:billing, :upgrade, :payment_notify]
+  skip_before_action :authenticate_admin!, only: [:billing, :payment_notify]
+  skip_before_action :verify_authenticity_token, only: [:billing, :payment_notify]
 
   def index
     @monthlys = User.pro_only.monthly
@@ -96,7 +96,7 @@ class PaymentsController < ApplicationController
       if @user.plan_previous_change&.first == "Free"
         begin # upgrade happened, set frequency back + send thanks
           @user.update(frequency: @user.previous_frequency) if @user.previous_frequency.any?
-          UserMailer.thanks_for_paying(@user).deliver_later
+          # UserMailer.thanks_for_paying(@user).deliver_later
         rescue StandardError => e
           Sentry.set_user(id: @user.id, email: @user.email)
           Sentry.capture_exception(e)
