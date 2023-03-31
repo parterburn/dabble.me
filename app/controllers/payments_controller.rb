@@ -111,14 +111,21 @@ class PaymentsController < ApplicationController
   end
 
   def billing
-    Stripe.api_key = ENV['STRIPE_API_KEY']
+    case plan_type_unlinked
+    when "Stripe"
+      Stripe.api_key = ENV['STRIPE_API_KEY']
 
-    session = Stripe::BillingPortal::Session.create({
-      customer: current_user.stripe_id,
-      return_url: "https://dabble.me/settings"
-    })
+      session = Stripe::BillingPortal::Session.create({
+        customer: current_user.stripe_id,
+        return_url: "https://dabble.me/settings"
+      })
 
-    redirect_to session.url
+      redirect_to session.url
+    when "Gumroad"
+      redirect_to "https://gumroad.com/login"
+    else
+      redirect_to "https://dabble.me/subscribe", notice: "You are not subscribed to a plan that can be managed here."
+    end
   end
 
   private
