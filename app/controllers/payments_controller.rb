@@ -111,8 +111,7 @@ class PaymentsController < ApplicationController
   end
 
   def billing
-    case plan_type_unlinked
-    when "Stripe"
+    if current_user && current_user.stripe_id.present?
       Stripe.api_key = ENV['STRIPE_API_KEY']
 
       session = Stripe::BillingPortal::Session.create({
@@ -121,7 +120,9 @@ class PaymentsController < ApplicationController
       })
 
       redirect_to session.url
-    when "Gumroad"
+    elsif current_user && current_user.plan_type_unlinked == "Stripe"
+      redirect_to "https://billing.stripe.com/p/login/3cs3fp4T0gl2cik7ss?prefilled_email=#{current_user.email}"
+    elsif current_user && current_user.plan_type_unlinked == "Gumroad"
       redirect_to "https://gumroad.com/login"
     else
       redirect_to "https://dabble.me/subscribe", notice: "You are not subscribed to a plan that can be managed here."
