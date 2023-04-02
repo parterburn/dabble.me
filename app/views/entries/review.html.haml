@@ -31,11 +31,12 @@
         =link_to "Subscribe to PRO", subscribe_path, class: "alert-link"
         to see the rest of your Year in Review.
 
+  - entry_dates = @entries.pluck(:date)
   .col-md-8.col-md-offset-2.well
     .center{class: add_class}
       .s-entry-date
         %h2 Days of Entries
-        - days = @entries.pluck("to_char(date, 'Dy')")
+        - days = entry_dates.map{|d| d.strftime('%A') }.sort
         - counts = Hash.new(0)
         - days.each { |name| counts[name.strip] += 1 }
         %h3
@@ -50,7 +51,7 @@
     .center{class: add_class}
       .s-entry-date
         %h2 Months of Entries
-        - months = @entries.pluck("to_char(date, 'Mon')")
+        - months = entry_dates.map{|d| d.strftime('%B') }.sort
         - counts = Hash.new(0)
         - months.each { |name| counts[name.strip] += 1 }
         %h3

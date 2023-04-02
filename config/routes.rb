@@ -44,6 +44,8 @@ Rails.application.routes.draw do
   post 'email_processor',               to: 'griddler/emails#create'
   post 'email_events',                  to: 'email_events#create'
 
+  post "checkout", to: "payments#checkout", as: "checkout"
+  get "success", to: "payments#success"
   get "billing", to: "payments#billing", as: "billing"
   mount StripeEvent::Engine, at: "/stripe_events"
   get '/health_check', to: proc { [200, {}, ['success']] }
