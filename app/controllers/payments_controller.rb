@@ -115,19 +115,20 @@ class PaymentsController < ApplicationController
     if current_user.stripe_id? && Stripe::Subscription.list(customer: current_user.stripe_id, status: 'active').data.any?
       redirect_to billing_path
     else
-      session = Stripe::Checkout::Session.create({
+      params = {
         line_items: [{
           price: params['plan'] == "yearly" ? ENV['STRIPE_YEARLY_PLAN'] : ENV['STRIPE_MONTHLY_PLAN'],
           quantity: 1,
         }],
-        customer: current_user.stripe_id,
         client_reference_id: current_user.id,
         customer_email: current_user.email,
         mode: 'subscription',
         subscription_data: { metadata: { dabble_id: current_user.id } },
         success_url: "https://#{ENV['MAIN_DOMAIN']}/success?session_id={CHECKOUT_SESSION_ID}",
         cancel_url: "https://#{ENV['MAIN_DOMAIN']}",
-      })
+      }
+      params = current_user.stripe_id? ? params.merge(customer: current_user.stripe_id) : params
+      session = Stripe::Checkout::Session.create(params)
       redirect_to session.url
     end
   end
