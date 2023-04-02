@@ -125,7 +125,7 @@ class PaymentsController < ApplicationController
         mode: 'subscription',
         subscription_data: { metadata: { dabble_id: current_user.id } },
         success_url: "https://#{ENV['MAIN_DOMAIN']}/success?session_id={CHECKOUT_SESSION_ID}",
-        cancel_url: "https://#{ENV['MAIN_DOMAIN']}",
+        cancel_url: request.referrer,
       }
       params = current_user.stripe_id? ? params.merge(customer: current_user.stripe_id) : params
       session = Stripe::Checkout::Session.create(params)
