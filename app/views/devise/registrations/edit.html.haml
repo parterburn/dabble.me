@@ -11,9 +11,11 @@
       .alert.alert-info.force-links
         Thanks for subscribing to
         = link_to(current_user.plan_name, subscribe_path, class: "alert-link") + "."
-        - if current_user.plan_type.present?
-          Manage your subscription and payment history at
-          %strong= current_user.plan_type.html_safe + "."
+        - if current_user.plan_type_unlinked.present?
+          Manage your subscription and payment history at&nbsp;
+          %strong<>
+            = link_to current_user.plan_type_unlinked, billing_path, target: :_blank
+          = "."
     - else
       .alert.alert-warning.force-links
         =link_to subscribe_path, class: "float-left" do

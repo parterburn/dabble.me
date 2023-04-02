@@ -3,8 +3,8 @@ class PaymentsController < ApplicationController
   before_action :authenticate_admin!
 
   skip_before_action :authenticate_user!, only: [:payment_notify]
-  skip_before_action :authenticate_admin!, only: [:billing, :payment_notify]
-  skip_before_action :verify_authenticity_token, only: [:billing, :payment_notify]
+  skip_before_action :authenticate_admin!, only: [:success, :checkout, :billing, :payment_notify]
+  skip_before_action :verify_authenticity_token, only: [:success, :checkout, :billing, :payment_notify]
 
   def index
     @monthlys = User.pro_only.monthly
@@ -110,6 +110,43 @@ class PaymentsController < ApplicationController
     head :ok, content_type: 'text/html'
   end
 
+  def checkout
+    Stripe.api_key = ENV['STRIPE_API_KEY']
+    if current_user.stripe_id? && Stripe::Subscription.list(customer: current_user.stripe_id, status: 'active').data.any?
+      redirect_to billing_path
+    else
+      session = Stripe::Checkout::Session.create({
+        line_items: [{
+          price: params['plan'] == "yearly" ? ENV['STRIPE_YEARLY_PLAN'] : ENV['STRIPE_MONTHLY_PLAN'],
+          quantity: 1,
+        }],
+        customer: current_user.stripe_id,
+        client_reference_id: current_user.id,
+        customer_email: current_user.email,
+        mode: 'subscription',
+        subscription_data: { metadata: { dabble_id: current_user.id } },
+        success_url: "https://#{ENV['MAIN_DOMAIN']}/success?session_id={CHECKOUT_SESSION_ID}",
+        cancel_url: "https://#{ENV['MAIN_DOMAIN']}",
+      })
+      redirect_to session.url
+    end
+  end
+
+  def success
+    if params[:session_id].present?
+      Stripe.api_key = ENV['STRIPE_API_KEY']
+      session = Stripe::Checkout::Session.retrieve(params[:session_id])
+      if session.present? && session.client_reference_id.present?
+        user = User.find(session.client_reference_id)
+        if user.present?
+          plan = session.amount_total > 30_00 ? "PRO Yearly PayHere" : "PRO Monthly PayHere"
+          user.update(stripe_id: session.customer, plan: plan)
+        end
+      end
+    end
+    redirect_to root_path
+  end
+
   def billing
     if current_user && current_user.stripe_id.present?
       Stripe.api_key = ENV['STRIPE_API_KEY']
@@ -119,11 +156,17 @@ class PaymentsController < ApplicationController
         return_url: "https://dabble.me/settings"
       })
 
-      redirect_to session.url
+      if session.present?
+        redirect_to session.url
+      else
+        redirect_to "https://billing.stripe.com/p/login/3cs3fp4T0gl2cik7ss?prefilled_email=#{current_user.email}"
+      end
     elsif current_user && current_user.plan_type_unlinked == "Stripe"
       redirect_to "https://billing.stripe.com/p/login/3cs3fp4T0gl2cik7ss?prefilled_email=#{current_user.email}"
     elsif current_user && current_user.plan_type_unlinked == "Gumroad"
       redirect_to "https://gumroad.com/login"
+    elsif current_user && current_user.plan_type_unlinked == "PayPal"
+      redirect_to "https://www.paypal.com/myaccount/autopay/"
     else
       redirect_to "https://dabble.me/subscribe", notice: "You are not subscribed to a plan that can be managed here."
     end

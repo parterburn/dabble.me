@@ -53,18 +53,16 @@
 
         - else
           %div{style: "text-align:center;"}
-            %script{:src => "https://js.stripe.com/v3", :type => "text/javascript"}
-            = render "payments/stripe"
             .row
               .col-sm-7{style: "margin: 5px auto 0;"}
-                %button.btn.btn-success.btn-block.btn-lg{:onclick => "stripeCheckout('#{ENV['STRIPE_YEARLY_PLAN']}')", :"role" => "link", :"style" => "height: 55px;" }
+                = button_to checkout_path(plan: "yearly"), method: "post", style: "height: 55px;", class: "btn btn-success btn-block btn-lg" do
                   $30
                   %span{style: "font-size: 13px; color: #ddd"}<> ／
                   year
                   %br
                   %span{style: "font-size: 12px;margin-top: -2px; display: block;color: #307530;"} 2 months free
               .col-sm-5{style: "margin: 5px auto;"}
-                %button.btn.btn-success.btn-block.btn-lg{:onclick => "stripeCheckout('#{ENV['STRIPE_MONTHLY_PLAN']}')", :"style" => "height: 55px;", :"role" => "link",  }
+                = button_to checkout_path(plan: "monthly"), method: "post", style: "height: 55px;", class: "btn btn-success btn-block btn-lg" do
                   $3
                   %span{style: "font-size: 13px; color: #ddd"}<> ／
                   month
@@ -79,39 +77,42 @@
               =link_to "Sign Up for PRO", new_user_registration_path, class: "btn btn-success btn-block"
             .col-xs-6
               =link_to "Login to Subscribe", new_user_session_path, class: "btn btn-success btn-block"
-
-    .s-features
-      %ul
-        %li
-          %i.fa.fa-check
-          Change the frequency & days that emails are sent
-        %li
-          %i.fa.fa-check
-          Attach a photo to your entry (email or web)
-        %li
-          %i.fa.fa-check
-          Import entries from other services
-        %li
-          %i.fa.fa-check
-          Embed Spotify tracks in your entries
-        %li
-          %i.fa.fa-check
-          Add new entries via the web
-        %li
-          %i.fa.fa-check
-          Edit entries
-        %li
-          %i.fa.fa-check
-          Rich text formatting
-        %li
-          %i.fa.fa-check
-          Calendar view of all your entries
-        %li
-          %i.fa.fa-check
-          Search all of your past entries with support for hashtags
-        %li
-          %i.fa.fa-check
-          Year in Review
+    - if user_signed_in? && current_user.is_pro?
+      .clearfix
+      = render "entries/premium_features", add_class: "s-features"
+    - else
+      .s-features
+        %ul
+          %li
+            %i.fa.fa-check
+            Change the frequency & days that emails are sent
+          %li
+            %i.fa.fa-check
+            Attach a photo to your entry (email or web)
+          %li
+            %i.fa.fa-check
+            Import entries from other services
+          %li
+            %i.fa.fa-check
+            Embed Spotify tracks in your entries
+          %li
+            %i.fa.fa-check
+            Add new entries via the web
+          %li
+            %i.fa.fa-check
+            Edit entries
+          %li
+            %i.fa.fa-check
+            Rich text formatting
+          %li
+            %i.fa.fa-check
+            Calendar view of all your entries
+          %li
+            %i.fa.fa-check
+            Search all of your past entries with support for hashtags
+          %li
+            %i.fa.fa-check
+            Year in Review
 %br
 %br
 %br
