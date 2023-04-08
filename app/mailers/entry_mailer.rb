@@ -71,7 +71,7 @@ class EntryMailer < ActionMailer::Base
       role = body.include?("DabbleMeGPT") ? "assistant" : "user"
       messages << {
         role: role,
-        content: Nokogiri::HTML.parse(ReverseMarkdown.convert(formatted_body, unknown_tags: :bypass)).text
+        content: Nokogiri::HTML.parse(ReverseMarkdown.convert(body, unknown_tags: :bypass)).text
       }
     end
 
