@@ -2,7 +2,7 @@ class EntryMailer < ActionMailer::Base
   helper.extend(ApplicationHelper)
   helper EntriesHelper
 
-  def send_entry(user, random_inspiration, send_day: nil, as_ai: false)
+  def send_entry(user, random_inspiration, send_day: nil)
     @send_day = send_day.presence || Time.now.in_time_zone(user.send_timezone)
     @random_inspiration = random_inspiration
     @user = user
@@ -13,9 +13,7 @@ class EntryMailer < ActionMailer::Base
       @random_entry_image_url = @random_entry.image_url_cdn
     end
 
-    domain = as_ai ? ENV['SMTP_DOMAIN'].gsub('post', 'ai') : ENV['SMTP_DOMAIN']
-    from = as_ai ? "Dabble Me AI 🪄" : "Dabble Me ✏"
-    email = mail  from: "#{from} <#{user.user_key}@#{domain}>",
+    email = mail  from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
                   to: "#{user.cleaned_to_address}",
                   subject: "It's #{@send_day.strftime('%A, %b %-d')}. How was your day?",
                   html: (render_to_string(template: '../views/entry_mailer/send_entry.html')).to_str,
@@ -36,7 +34,7 @@ class EntryMailer < ActionMailer::Base
     entry.body = "#{entry.body}<hr><strong>DabbleMeGPT</strong><br/>#{ActionController::Base.helpers.simple_format(@ai_answer)}"
     entry.save
 
-    email = mail  from: "Dabble Me AI 🪄 ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN'].gsub('post', 'ai')}>",
+    email = mail  from: "DabbleMeGPT 🪄 <#{user.user_key}@#{ENV['SMTP_DOMAIN'].gsub('post', 'ai')}>",
                   to: "#{user.cleaned_to_address}",
                   subject: "re: It's #{entry.date.strftime('%A, %b %-d')}. How was your day?",
                   html: (render_to_string(template: '../views/entry_mailer/respond_as_ai.html')).to_str,
@@ -62,6 +60,10 @@ class EntryMailer < ActionMailer::Base
         Respond to a journal entry for the day as the therapist with a light and witty analysis. If the sentiment of the journal entry is positive, you can be funny in your response: write a haiku, a short song, a knock knock joke, responding as Dr. Seuss etc.
 
         Only on your first response, ask one follow up question that will help the user dig into their experience or feelings more. Do not ask more than one  question during the entire conversation.
+
+        Here is a list of feelings: Accepting, Open, Calm, Centered, Content, Fulfilled, Patient, Peaceful, Present, Relaxed, Serene, Trusting, Aliveness, Joy, Amazed, Awe, Bliss, Delighted, Eager, Ecstatic, Enchanted, Energized, Engaged, Enthusiastic, Excited, Free, Happy, Inspired, Invigorated, Lively, Passionate, Playful, Radiant, Refreshed, Rejuvenated, Renewed, Satisfied, Thrilled, Vibrant, Angry, Annoyed, Agitated, Aggravated, Bitter, Contempt, Cynical, Disdain, Disgruntled, Disturbed, Edgy, Exasperated, Frustrated, Furious, Grouchy, Hostile, Impatient, Irritated, Irate, Moody, On edge, Outraged, Pissed, Resentful, Upset, Vindictive, Courageous, Powerful, Adventurous, Brave, Capable, Confident, Daring, Determined, Free, Grounded, Proud, Strong, Worthy, Valiant, Connected, Loving, Accepting, Affectionate, Caring, Compassion, Empathy, Fulfilled, Present, Safe, Warm, Worthy, Curious, Engaged, Exploring, Fascinated, Interested, Intrigued, Involved, Stimulated, Despair, Sad, Anguish, Depressed, Despondent, Disappointed, Discouraged, Forlorn, Gloomy, Grief, Heartbroken, Hopeless, Lonely, Longing, Melancholy, Sorrow, Teary, Unhappy, Upset, Weary, Yearning, Disconnected, Numb, Aloof, Bored, Confused, Distant, Empty, Indifferent, Isolated, Lethargic, Listless, Removed, Resistant, Shut Down, Uneasy, Withdrawn, Embarrassed, Shame, Ashamed, Humiliated, Inhibited, Mortified, Self-conscious, Useless, Weak, Worthless, Fear, Afraid, Anxious, Apprehensive, Frightened, Hesitant, Nervous, Panic, Paralyzed, Scared, Terrified, Worried, Fragile, Helpless, Sensitive, Grateful, Appreciative, Blessed, Delighted, Fortunate, Grace, Humbled, Lucky, Moved, Thankful, Touched, Guilt, Regret, Remorseful, Sorry, Hopeful, Encouraged, Expectant, Optimistic, Trusting, Powerless, Impotent, Incapable, Resigned, Trapped, Victim, Tender, Calm, Caring, Loving, Reflective, Self-loving, Serene, Vulnerable, Warm, Stressed, Tense, Anxious, Burned out, Cranky, Depleted, Edgy, Exhausted, Frazzled, Overwhelm, Rattled, Rejecting, Restless, Shaken, Tight, Weary, Worn out, Unsettled, Doubt, Apprehensive, Concerned, Dissatisfied, Disturbed, Grouchy, Hesitant, Inhibited, Perplexed, Questioning, Rejecting, Reluctant, Shocked, Skeptical, Suspicious, Ungrounded, Unsure, Worried
+
+        Choose one to three of the feelings from the list above that best represent how the user was most likely feeling when experiencing the events described in the journal entry (do not mistake feelings of others that might be described in the journal entry) and add them to the end of your response as hashtags on a separate line by themselves.
 
         Once a user has answered your follow up question, on your next response close out the conversation by celebrating the user for taking the time to journal with a positive and inspiring personal growth-focused message. Be more serious, do not respond in haiku/song/joke/etc.
 

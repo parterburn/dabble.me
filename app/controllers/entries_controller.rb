@@ -212,9 +212,11 @@ class EntriesController < ApplicationController
   end
 
   def process_as_ai
-    if current_user.is_admin?
+    if current_user.can_ai?
       EntryMailer.respond_as_ai(current_user, @entry).deliver_now
       flash[:notice] = "DabbleMeGPT response sent to #{current_user.email}"
+    else
+      flash[:alert] = "DabbleMeGPT is not available to you."
     end
     redirect_to entry_path(@entry)
   end

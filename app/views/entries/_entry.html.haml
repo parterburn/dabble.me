@@ -10,9 +10,10 @@
       .float-left.s-edit-entry
         %div{style: "width: 20px;"}
     .float-right.s-edit-entry
-      - if current_user.is_admin?
-        = link_to process_as_ai_path(entry), rel: "tooltip", title: "Process with DabbleMeGPT", method: :post do
-          %i.fa.fa-magic
+      - if current_user.can_ai?
+        = link_to process_as_ai_path(entry), method: :post, style: "margin-right: 10px;" do
+          %span{rel: "tooltip", title: "Process with DabbleMeGPT"}>
+            %i.fa.fa-magic>
       = link_to edit_entry_path(entry), rel: "tooltip", title: "Edit Entry" do
         %i.fa.fa-pencil-square-o
     %h2

@@ -99,6 +99,10 @@ class User < ActiveRecord::Base
     admin_emails.include?(self.email)
   end
 
+  def can_ai?
+    is_admin? || self.email.in?(["bpparks@gmail.com" "tatianaeparks@gmail.com", "katelynlutgen@gmail.com", "logan@agroots.com", "walrod@gmail.com", "brianna@agroots.com"])
+  end
+
   def is_pro?
     plan_name == 'Dabble Me PRO'
   end

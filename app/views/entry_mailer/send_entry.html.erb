@@ -56,21 +56,22 @@
     </style>
   </head>
   <body>
+    <% add_ai = @user.can_ai? ? " (or #{mail_to "Reply to DabbleMeGPT", "#{user.user_key}@#{ENV['SMTP_DOMAIN'].gsub('post', 'ai')}", subject: @send_day.strftime('%A, %b %-d')})" : "" %>
     <% if @user.entries.size.zero? %>
       <p>
-        Reply to this email with your first entry for <%= link_to @send_day.strftime("%B %-d"), new_entry_url(day: @send_day.strftime('%Y-%m-%d')), class: "hover-line" %>.
+        Reply to this email with your first entry for <%= link_to @send_day.strftime("%B %-d"), new_entry_url(day: @send_day.strftime('%Y-%m-%d')), class: "hover-line" %><%= add_ai %>.
       </p>
     <% elsif @user.days_since_last_post.to_i > 14 %>
       <p>
-        Reply to this email with your entry for <%= link_to @send_day.strftime("%B %-d"), new_entry_url(day: @send_day.strftime('%Y-%m-%d')), class: "hover-line" %>. It's been <%= ApplicationController.helpers.format_number(@user.days_since_last_post) %> days since your last entry; for inspiration try the 1-1-1 method: 1 win from the day, 1 point of tension, 1 bit of gratitude.
+        Reply to this email with your entry for <%= link_to @send_day.strftime("%B %-d"), new_entry_url(day: @send_day.strftime('%Y-%m-%d')), class: "hover-line" %><%= add_ai %>. It's been <%= ApplicationController.helpers.format_number(@user.days_since_last_post) %> days since your last entry; for inspiration try the 1-1-1 method: 1 win from the day, 1 point of tension, 1 bit of gratitude.
       </p>
     <% elsif @user.writing_streak.positive? %>
       <p>
-        Reply to this email with your entry for <%= link_to @send_day.strftime("%B %-d"), new_entry_url(day: @send_day.strftime('%Y-%m-%d')), class: "hover-line" %>. You're on a <%= ApplicationController.helpers.format_number(@user.writing_streak) %> day writing streak!
+        Reply to this email with your entry for <%= link_to @send_day.strftime("%B %-d"), new_entry_url(day: @send_day.strftime('%Y-%m-%d')), class: "hover-line" %><%= add_ai %>. You're on a <%= ApplicationController.helpers.format_number(@user.writing_streak) %> day writing streak!
       </p>
     <% else %>
       <p>
-        Reply to this email with your entry for <%= link_to @send_day.strftime("%B %-d"), new_entry_url(day: @send_day.strftime('%Y-%m-%d')), class: "hover-line" %>.
+        Reply to this email with your entry for <%= link_to @send_day.strftime("%B %-d"), new_entry_url(day: @send_day.strftime('%Y-%m-%d')), class: "hover-line" %><%= add_ai %>.
       </p>
     <% end %>
     <% if @user.send_past_entry? && @user.random_entries.count > 5 && @random_entry %>
