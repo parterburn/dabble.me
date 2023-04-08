@@ -141,7 +141,7 @@ class EmailProcessor
         Sentry.capture_message("Error sending email", level: :error, extra: { email_type: "Second Welcome Email" })
       end
 
-      if entry.present? && respond_as_ai? && @user && @user.is_admin
+      if entry.present? && respond_as_ai? && @user && @user.is_admin?
         UserMailer.respond_as_ai(@user, entry).deliver_now
       end
     else # no user found
