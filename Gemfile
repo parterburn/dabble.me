@@ -27,6 +27,7 @@ gem 'griddler', '~> 1.5.2'
 gem "charlock_holmes", "~> 0.7.7" # text encoding detection for email parsing
 
 gem 'mailgun_rails'
+gem "ruby-openai"
 
 gem 'groupdate' # Admin Stats
 gem 'rack-utf8_sanitizer', '~> 1.7'

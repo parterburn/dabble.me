@@ -174,9 +174,8 @@ namespace :entry do
         # don't keep emailing if we've already sent 3 emails (welcome + 2 weeklys) and the user is not using the service (should decrease spam reports)
         if user.is_free? && user.emails_sent > 6 && user.entries.count == 0 && ENV['FREE_WEEK'] != 'true'
           user.update_columns(frequency: [], previous_frequency: user.frequency)
-        elsif user.is_pro? || (user.is_free? && Time.now.strftime("%U").to_i % 2 == 0) || ENV['FREE_WEEK'] == 'true'
-          # Every other week for free users
-          EntryMailer.send_entry(user, random_inspiration).deliver_now
+        elsif user.is_pro? || (user.is_free? && Time.now.strftime("%U").to_i % 2 == 0) || ENV['FREE_WEEK'] == 'true' # Every other week for free users
+          EntryMailer.send_entry(user, random_inspiration, as_ai: user.is_admin?).deliver_now
           sent_in_hour += 1
         end
       rescue => error

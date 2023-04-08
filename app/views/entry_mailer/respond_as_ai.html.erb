@@ -1,0 +1,63 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type"/>
+    <meta content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=no;" name="viewport"/>
+    <style>
+      a {
+        color: #649cc7 !important;
+        text-decoration: none !important;
+      }
+      a:hover {
+        color: #3b76a3 !important;
+        text-decoration: none!important;
+      }
+      a.hover-line {
+        color: black !important;
+        border-bottom: 1px #649cc7 dotted;
+        text-decoration: none !important;
+      }
+      a.hover-line:hover {
+        color: black !important;
+        border-bottom: 1px #3b76a3 solid;
+        text-decoration: none !important;
+      } 
+
+      a[x-apple-data-detectors] {
+          color: #649cc7 !important;
+          text-decoration: none !important;
+          font-size: inherit !important;
+          font-family: inherit !important;
+          font-weight: inherit !important;
+          line-height: inherit !important;
+      }
+      a[x-apple-data-detectors]:hover {
+        color: #3b76a3 !important;
+        text-decoration: none !important;
+      }
+      
+      u + #body a {
+          color: #649cc7 !important;
+          text-decoration: none !important;
+          font-size: inherit !important;
+          font-family: inherit !important;
+          font-weight: inherit !important;
+          line-height: inherit !important;
+      }
+      
+      #MessageViewBody a {
+          color: #649cc7 !important;
+          text-decoration: none !important;
+          font-size: inherit !important;
+          font-family: inherit !important;
+          font-weight: inherit !important;
+          line-height: inherit !important;
+      }      
+    </style>
+  </head>
+  <body>
+    <p><%= format_body(@ai_answer) %></p>
+    <hr style="margin-top: 20px;margin-bottom: 20px;border: 0;border-top: 2px solid whiteSmoke;"/>
+    <p style="font-size: 11px; color: #505050; font-style: italic;">DabbleMeGPT may produce inaccurate information about people, places, or facts.</p>
+  </body>
+</html>

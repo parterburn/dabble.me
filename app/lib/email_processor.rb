@@ -10,6 +10,9 @@ class EmailProcessor
   def initialize(email)
     @token = pick_meaningful_recipient(email.to, email.cc)
     @from = email.from[:email].downcase
+    @to = email.to
+    @cc = email.cc
+    @bcc = email.bcc
     @subject = to_utf8(email.subject)
     @stripped_html = email.vendor_specific.try(:[], :stripped_html)
     @body = clean_message(email.body)
@@ -137,6 +140,10 @@ class EmailProcessor
       rescue StandardError => e
         Sentry.capture_message("Error sending email", level: :error, extra: { email_type: "Second Welcome Email" })
       end
+
+      if entry.present? && respond_as_ai? && @user && @user.is_admin
+        UserMailer.respond_as_ai(@user, entry).deliver_now
+      end
     else # no user found
       Sentry.set_user(id: @token, email: @from)
       Sentry.capture_message("Inbound entry not associated to user", level: :error, extra: { subject: @subject, body: @body, html: @html, raw_body: @raw_body })
@@ -144,6 +151,16 @@ class EmailProcessor
   end
 
   private
+
+  attr_reader :to, :cc, :bcc
+
+  def all_recipients
+    (to.to_a + cc.to_a + bcc.to_a)
+  end
+
+  def respond_as_ai?
+    all_recipients.select { |k| k[:host] == ENV['SMTP_DOMAIN'].gsub('post', 'ai') }.any?
+  end
 
   def track_ga_event(action)
     if ENV['GOOGLE_ANALYTICS_ID'].present?
@@ -153,12 +170,12 @@ class EmailProcessor
   end
 
   def pick_meaningful_recipient(to_recipients, cc_recipients)
-    host_to = to_recipients.select {|k| k[:host] =~ /^(email|post)?\.?#{ENV['MAIN_DOMAIN'].gsub(".","\.")}$/i }.first
+    host_to = to_recipients.select {|k| k[:host] =~ /^(email|post|ai)?\.?#{ENV['MAIN_DOMAIN'].gsub(".","\.")}$/i }.first
     if host_to.present?
       host_to[:token]
     elsif cc_recipients.present?
       # try CC's
-      host_cc = cc_recipients.select {|k| k[:host] =~ /^(email|post)?\.?#{ENV['MAIN_DOMAIN'].gsub(".","\.")}$/i }.first
+      host_cc = cc_recipients.select {|k| k[:host] =~ /^(email|post|ai)?\.?#{ENV['MAIN_DOMAIN'].gsub(".","\.")}$/i }.first
       host_cc[:token] if host_cc.present?
     end
   end
