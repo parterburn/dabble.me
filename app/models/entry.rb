@@ -42,8 +42,6 @@ class Entry < ActiveRecord::Base
     self.date.present? ? self.date.strftime("%A") : "Noday?"
   end
 
-
-
   def spotify_embed
     embeds = []
     self.songs.each do |song|

@@ -142,7 +142,7 @@ class EmailProcessor
       end
 
       if entry.present? && respond_as_ai? && @user && @user.is_admin?
-        UserMailer.respond_as_ai(@user, entry).deliver_now
+        EntryMailer.respond_as_ai(@user, entry).deliver_now
       end
     else # no user found
       Sentry.set_user(id: @token, email: @from)
