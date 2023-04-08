@@ -1,7 +1,7 @@
 # Handle Web Entries
 class EntriesController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_entry, :require_entry_permission, only: [:show, :edit, :update, :destroy]
+  before_action :set_entry, :require_entry_permission, only: [:show, :edit, :update, :destroy, :process_as_ai]
 
   def index
     if params[:group] == 'photos'
@@ -19,7 +19,7 @@ class EntriesController < ApplicationController
         @entries = current_user.entries.includes(:inspiration).where("date >= '#{params[:group]}-01-01'::DATE AND date <= '#{params[:group]}-12-31'::DATE").sort_by(&:date)
       rescue
         Sentry.capture_message("Doing expensive lookup based on ID for entry", level: :info, extra: { params: params })
-        entry = current_user.entries.find(params[:group])
+        entry = current_user.entries.sfind(params[:group])
         return redirect_to day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day)
       end
       @title = "Entries from #{params[:group]}"
@@ -211,6 +211,12 @@ class EntriesController < ApplicationController
     end
   end
 
+  def process_as_ai
+    return unless current_user.is_admin?
+
+    EntryMailer.respond_as_ai(current_user, entry).deliver_now
+  end
+
   private
 
   def track_ga_event(action)
@@ -220,7 +226,7 @@ class EntriesController < ApplicationController
     end
   end
 
-  def entry_params
+  s_params
     params.require(:entry).permit(:date, :entry, :image, :inspiration_id, :remove_image, :remote_image_url)
   end
 

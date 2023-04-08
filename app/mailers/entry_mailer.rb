@@ -65,9 +65,7 @@ class EntryMailer < ActionMailer::Base
 
         Once a user has answered your follow up question, on your next response close out the conversation by celebrating the user for taking the time to journal with a positive and inspiring personal growth-focused message. Be more serious, do not respond in haiku/song/joke/etc.
 
-        If the user asks for any kind of resources that you can provide, you can provide them with a link to a resource that you think would be helpful.
-
-        Convert any markdown to HTML before sending the response to the user.
+        If the user asks for any kind of resources that you can provide, please provide them with links to those resourcs that you think would be helpful.
       )
     }]
 
