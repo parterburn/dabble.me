@@ -215,6 +215,9 @@ class EntriesController < ApplicationController
     return unless current_user.is_admin?
 
     EntryMailer.respond_as_ai(current_user, entry).deliver_now
+
+    flash[:notice] = "DabbleMeGPT response sent to #{current_user.email}"
+    redirect_to entry_path(entry)
   end
 
   private
