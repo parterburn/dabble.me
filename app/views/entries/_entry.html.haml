@@ -10,11 +10,11 @@
       .float-left.s-edit-entry
         %div{style: "width: 20px;"}
     .float-right.s-edit-entry
+      - if current_user.is_admin?
+        = link_to process_as_ai_path(entry), rel: "tooltip", title: "Process with DabbleMeGPT", method: :post do
+          %i.fa.fa-magic
       = link_to edit_entry_path(entry), rel: "tooltip", title: "Edit Entry" do
         %i.fa.fa-pencil-square-o
-      - if current_user.is_admin?
-        = link_to process_as_ai_path(entry), rel: "tooltip", title: "Process with DabbleMeGPT" do
-          %i.fa.fa-magic
     %h2
       - if current_page?(day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day))
         %span{rel: "tooltip-mobile-friendly", title: "#{tag_relative_date(entry.date, Date.today)}"}

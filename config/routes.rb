@@ -25,7 +25,7 @@ Rails.application.routes.draw do
   get 'entries/songs',                  to: 'entries#spotify', as: 'spotify'
   get 'entries/random',                 to: 'entries#random', as: 'random_entry'
   get 'entries/:year/:month/:day',      to: 'entries#show',  as: 'day_entry'
-  get 'entry/:id/process_ai',           to: 'entries#process_as_ai',  as: 'process_as_ai'
+  post 'entry/:id/process_ai',          to: 'entries#process_as_ai',  as: 'process_as_ai'
   resources :entries, except: [:show]
   get 'entries/(:group)(/:subgroup)',   to: 'entries#index',  as: 'group_entries'
   get 'latest',                         to: 'entries#latest', as: 'latest_entry'
