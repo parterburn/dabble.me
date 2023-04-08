@@ -19,7 +19,7 @@ class EntriesController < ApplicationController
         @entries = current_user.entries.includes(:inspiration).where("date >= '#{params[:group]}-01-01'::DATE AND date <= '#{params[:group]}-12-31'::DATE").sort_by(&:date)
       rescue
         Sentry.capture_message("Doing expensive lookup based on ID for entry", level: :info, extra: { params: params })
-        entry = current_user.entries.sfind(params[:group])
+        entry = current_user.entries.find(params[:group])
         return redirect_to day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day)
       end
       @title = "Entries from #{params[:group]}"
@@ -228,7 +228,7 @@ class EntriesController < ApplicationController
     end
   end
 
-  s_params
+  def entry_params
     params.require(:entry).permit(:date, :entry, :image, :inspiration_id, :remove_image, :remote_image_url)
   end
 
