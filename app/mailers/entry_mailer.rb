@@ -67,7 +67,7 @@ class EntryMailer < ActionMailer::Base
       )
     }]
 
-    entry.formatted_split_body.each do |body|
+    entry.text_bodies_for_ai.each do |body|
       role = body.include?("DabbleMeGPT") ? "assistant" : "user"
       messages << {
         role: role,
