@@ -43,8 +43,7 @@ class EntryMailer < ActionMailer::Base
                   text: (render_to_string(template: '../views/entry_mailer/respond_as_ai.text')).to_str,
                   headers:  {
                     "In-Reply-To" => message_id,
-                    "References"  => message_ids&.join(" "),
-                    "Sender"      => "#{@forwarder.name} <#{@forwarder.email}>"
+                    "References"  => message_ids&.join(" ")
                   }
 
     email.mailgun_options = { tag: 'AI Entry' }
@@ -71,7 +70,7 @@ class EntryMailer < ActionMailer::Base
           },
           {
             role: "user",
-            content: entry.body
+            content: entry.text_body
           }
         ],
         temperature: 0.7,
