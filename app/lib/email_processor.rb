@@ -94,6 +94,10 @@ class EmailProcessor
 
         if existing_entry.save
           track_ga_event('Merged')
+
+          if respond_as_ai? && @user && @user.is_admin?
+            EntryMailer.respond_as_ai(@user, existing_entry).deliver_now
+          end
         else
           # error saving entry
           Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save exsiting entry", subject: @subject, entry_id: existing_entry&.id, errors: existing_entry&.errors })

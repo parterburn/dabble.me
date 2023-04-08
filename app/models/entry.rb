@@ -81,6 +81,16 @@ class Entry < ActiveRecord::Base
     fix_encoding(formatted_body)
   end
 
+  def split_for_ai
+    formatted_body.split("<hr>")
+  end
+
+  def text_bodies_for_ai
+    split_for_ai.map do |formatted_split_body|
+      Nokogiri::HTML.parse(ReverseMarkdown.convert(formatted_split_body, unknown_tags: :bypass)).text
+    end
+  end
+
   def text_body
     Nokogiri::HTML.parse(ReverseMarkdown.convert(formatted_body, unknown_tags: :bypass)).text
   end

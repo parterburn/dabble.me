@@ -53,26 +53,32 @@ class EntryMailer < ActionMailer::Base
 
   def process_as_ai(entry)
     client = OpenAI::Client.new
+
+    messages = [{
+      role: "system",
+      content: %Q(
+        You are a trained psycho-therapist.
+
+        Respond to a journal entry for the day as the therapist with a light and witty analysis. If the sentiment of the journal entry is positive, you can be funny in your response: write a haiku, a short song, a knock knock joke, responding as Dr. Seuss etc.
+
+        Only on your first response, ask one follow up question that will help the user dig into their experience or feelings more. Do not ask more than one  question during the entire conversation.
+
+        Once a user has answered your follow up question, on your next response close out the conversation by celebrating the user for taking the time to journal with a positive and inspiring personal growth-focused message. Be more serious, do not respond in haiku/song/joke/etc.
+      )
+    }]
+
+    entry.formatted_split_body.each do |body|
+      role = body.include?("DabbleMeGPT") ? "assistant" : "user"
+      messages << {
+        role: role,
+        content: Nokogiri::HTML.parse(ReverseMarkdown.convert(formatted_body, unknown_tags: :bypass)).text
+      }
+    end
+
     response = client.chat(
       parameters: {
           model: "gpt-3.5-turbo",
-          messages: [{
-            role: "system",
-            content: %Q(
-              You are a trained psycho-therapist.
-
-              Respond to a journal entry for the day as the therapist with a light and witty analysis. If the sentiment of the journal entry is positive, you can be funny in your response: write a haiku, a short song, a knock knock joke, responding as Dr. Seuss etc.
-
-              Only on your first response, ask one follow up question that will help the user dig into their experience or feelings more. Do not ask more than one  question during the entire conversation.
-
-              Once a user has answered your follow up question, on your next response close out the conversation by celebrating the user for taking the time to journal with a positive and inspiring personal growth-focused message. Be more serious, do not respond in haiku/song/joke/etc.
-            )
-          },
-          {
-            role: "user",
-            content: entry.text_body
-          }
-        ],
+          messages: messages,
         temperature: 0.7,
       })
     response.dig("choices", 0, "message", "content")
