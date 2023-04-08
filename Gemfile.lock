@@ -304,7 +304,7 @@ GEM
     puma (4.3.12)
       nio4r (~> 2.0)
     racc (1.6.2)
-    rack (2.2.6.2)
+    rack (2.2.6.4)
     rack-affiliates (0.4.0)
       rack
     rack-attack (6.6.0)
