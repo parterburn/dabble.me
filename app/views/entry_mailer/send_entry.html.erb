@@ -56,7 +56,7 @@
     </style>
   </head>
   <body>
-    <% add_ai = @user.can_ai? ? " (or #{mail_to "Reply to DabbleMeGPT", "#{@user.user_key}@#{ENV['SMTP_DOMAIN'].gsub('post', 'ai')}", subject: @send_day.strftime('%A, %b %-d')})".html_safe : "" %>
+    <% add_ai = @user.can_ai? ? " (or #{mail_to "#{@user.user_key}@#{ENV['SMTP_DOMAIN'].gsub('post', 'ai')}", "Reply to DabbleMeGPT", subject: @send_day.strftime('%A, %b %-d')})".html_safe : "" %>
     <% if @user.entries.size.zero? %>
       <p>
         Reply to this email with your first entry for <%= link_to @send_day.strftime("%B %-d"), new_entry_url(day: @send_day.strftime('%Y-%m-%d')), class: "hover-line" %><%= add_ai %>.
