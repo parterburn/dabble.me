@@ -37,7 +37,7 @@ New entry: <%= new_entry_url(day: @send_day.strftime('%Y-%m-%d')) %>
 
 <% end %>
 <% if @user.can_ai? %>
-Reply to DabbleMeGPT: <%= "#{user.user_key}@#{ENV['SMTP_DOMAIN'].gsub('post', 'ai')}" %>
+Reply to DabbleMeGPT: <%= "#{@user.user_key}@#{ENV['SMTP_DOMAIN'].gsub('post', 'ai')}" %>
 
 <% end %>
 <% if @user.entries.size.positive? %>
