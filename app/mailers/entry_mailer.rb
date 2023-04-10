@@ -31,20 +31,22 @@ class EntryMailer < ActionMailer::Base
 
     # do the AI thing
     @ai_answer = process_as_ai(entry)
-    entry.body = "#{entry.body}<hr><strong>DabbleMeGPT</strong><br/>#{ActionController::Base.helpers.simple_format(@ai_answer)}"
-    entry.save
+    if @ai_answer.present?
+      entry.body = "#{entry.body}<hr><strong>DabbleMeGPT</strong><br/>#{ActionController::Base.helpers.simple_format(@ai_answer)}"
+      entry.save
 
-    email = mail  from: "DabbleMeGPT 🪄 <#{user.user_key}@#{ENV['SMTP_DOMAIN'].gsub('post', 'ai')}>",
-                  to: "#{user.cleaned_to_address}",
-                  subject: "re: It's #{entry.date.strftime('%A, %b %-d')}. How was your day?",
-                  html: (render_to_string(template: '../views/entry_mailer/respond_as_ai.html')).to_str,
-                  text: (render_to_string(template: '../views/entry_mailer/respond_as_ai.text')).to_str,
-                  headers:  {
-                    "In-Reply-To" => message_id,
-                    "References"  => message_ids&.join(" ")
-                  }
+      email = mail  from: "DabbleMeGPT 🪄 <#{user.user_key}@#{ENV['SMTP_DOMAIN'].gsub('post', 'ai')}>",
+                    to: "#{user.cleaned_to_address}",
+                    subject: "re: It's #{entry.date.strftime('%A, %b %-d')}. How was your day?",
+                    html: (render_to_string(template: '../views/entry_mailer/respond_as_ai.html')).to_str,
+                    text: (render_to_string(template: '../views/entry_mailer/respond_as_ai.text')).to_str,
+                    headers:  {
+                      "In-Reply-To" => message_id,
+                      "References"  => message_ids&.join(" ")
+                    }
 
-    email.mailgun_options = { tag: 'AI Entry' }
+      email.mailgun_options = { tag: 'AI Entry' }
+    end
   end
 
   private
@@ -72,10 +74,10 @@ class EntryMailer < ActionMailer::Base
     }]
 
     entry.text_bodies_for_ai.each do |body|
-      role = body.include?("DabbleMeGPT") ? "therapist" : "user"
+      role = body.starts_with?("||DabbleMeGPT||") ? "assistant" : "user"
       messages << {
         role: role,
-        content: Nokogiri::HTML.parse(ReverseMarkdown.convert(body, unknown_tags: :bypass)).text
+        content: Nokogiri::HTML.parse(ReverseMarkdown.convert(body.gsub("||DabbleMeGPT||", ""), unknown_tags: :bypass)).text
       }
     end
 
