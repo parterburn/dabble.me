@@ -32,24 +32,24 @@ class EntryMailer < ActionMailer::Base
 
     # do the AI thing
     @ai_answer = process_as_ai(entry)
-    if @ai_answer.present?
-      entry.body = "#{entry.body}<hr><strong>DabbleMeGPT</strong><br/>#{ActionController::Base.helpers.simple_format(@ai_answer)}"
-      entry.save
+    return unless @ai_answer.present?
 
-      # Header must first be nullified before being reset
-      # http://api.rubyonrails.org/classes/ActionMailer/Base.html#method-i-headers
-      headers["In-Reply-To"] = nil
-      headers["References"] = nil
-      headers["In-Reply-To"] = message_id
-      headers["References"] = message_ids&.join(" ")
-      email = mail  from: "DabbleMeGPT 🪄 <#{user.user_key}@#{ENV['SMTP_DOMAIN'].gsub('post', 'ai')}>",
-                    to: "#{user.cleaned_to_address}",
-                    subject: "re: #{subject}",
-                    html: (render_to_string(template: '../views/entry_mailer/respond_as_ai.html')).to_str,
-                    text: (render_to_string(template: '../views/entry_mailer/respond_as_ai.text')).to_str,
+    entry.body = "#{entry.body}<hr><strong>DabbleMeGPT</strong><br/>#{ActionController::Base.helpers.simple_format(@ai_answer)}"
+    entry.save
 
-      email.mailgun_options = { tag: 'AI Entry' }
-    end
+    # Header must first be nullified before being reset
+    # http://api.rubyonrails.org/classes/ActionMailer/Base.html#method-i-headers
+    headers['In-Reply-To'] = nil
+    headers['References'] = nil
+    headers['In-Reply-To'] = message_id
+    headers['References'] = message_ids&.join(" ")
+    email = mail  from: "DabbleMeGPT 🪄 <#{user.user_key}@#{ENV['SMTP_DOMAIN'].gsub('post', 'ai')}>",
+                  to: "#{user.cleaned_to_address}",
+                  subject: "re: #{subject}",
+                  html: (render_to_string(template: '../views/entry_mailer/respond_as_ai.html')).to_str,
+                  text: (render_to_string(template: '../views/entry_mailer/respond_as_ai.text')).to_str
+
+    email.mailgun_options = { tag: 'AI Entry' }
   end
 
   private
@@ -59,7 +59,7 @@ class EntryMailer < ActionMailer::Base
 
     messages = [{
       role: "system",
-      content: %Q(
+      content: %(
         You are a trained psycho-therapist.
 
         Respond to a journal entry for the day as the therapist with a light and witty analysis. If the sentiment of the journal entry is positive, you can be funny in your response: write a haiku, a short song, a knock knock joke, responding as Dr. Seuss etc.
@@ -86,8 +86,8 @@ class EntryMailer < ActionMailer::Base
 
     response = client.chat(
       parameters: {
-          model: "gpt-3.5-turbo",
-          messages: messages,
+        model: "gpt-3.5-turbo",
+        messages: messages,
         temperature: 0.7,
       })
     response.dig("choices", 0, "message", "content")

@@ -1,0 +1,92 @@
+AllCops:
+  NewCops: enable
+
+  Exclude:
+    - "spec/**/*"
+    - "db/**/*"
+    - "node_modules/**/*"
+    - "lib/tasks/**/*"
+    - "app/javascript/**/*"
+    - "Guardfile"
+    - "Rakefile"
+    - "vendor/bundle/**/*"
+    - "config/initializers/carrierwave.rb"
+
+Style/StringLiterals:
+  EnforcedStyle: double_quotes
+
+Style/FormatStringToken:
+  EnforcedStyle: template
+
+Style/FrozenStringLiteralComment:
+  Enabled: false
+
+Style/IfUnlessModifier:
+  Enabled: false
+
+Layout/MultilineOperationIndentation:
+  Enabled: false
+
+Layout/SpaceInsideBlockBraces:
+  EnforcedStyle: space
+
+Layout/LineLength:
+  Enabled: false
+
+Style/Documentation:
+  Enabled: false
+
+Style/SymbolArray:
+  Enabled: false
+
+Style/RegexpLiteral:
+  EnforcedStyle: mixed
+
+Style/WhileUntilModifier:
+  Enabled: false
+
+Metrics/BlockLength:
+  Enabled: false
+
+Metrics/ClassLength:
+  Enabled: false
+
+Metrics/AbcSize:
+  Max: 40
+
+Metrics/MethodLength:
+  Max: 25
+  CountAsOne: ['array', 'heredoc', 'hash']
+
+Style/NumericLiterals:
+  Enabled: false
+
+Style/TrailingCommaInArrayLiteral:
+  Enabled: true
+
+Style/TrailingCommaInHashLiteral:
+  Enabled: true
+
+Style/TrailingCommaInArguments:
+  Enabled: true
+
+Lint/Debugger:
+  Enabled: true
+
+Layout/EndAlignment:
+  EnforcedStyleAlignWith: variable
+
+Layout/FirstHashElementIndentation:
+  EnforcedStyle: consistent
+
+Layout/EndOfLine:
+  EnforcedStyle: lf
+
+Style/HashEachMethods:
+  Enabled: true
+
+Style/HashTransformKeys:
+  Enabled: true
+
+Style/HashTransformValues:
+  Enabled: true
