@@ -27,7 +27,11 @@ class EntryMailer < ActionMailer::Base
     reply_to = entry.original_email&.dig("headers", "In-Reply-To")
     references = entry.original_email&.dig("headers", "References")
     message_ids = [message_id, reply_to, references].flatten.compact
-    subject ||= entry.original_email&.dig("headers", "Subject").presence || "#{entry.date.strftime('%A, %b %-d, %Y')}"
+    if entry.date.after?(6.months.ago)
+      subject ||= entry.original_email&.dig("headers", "Subject").presence || "Entry for #{entry.date.strftime('%A, %b %-d, %Y')}"
+    else
+      subject = "Entry for #{entry.date.strftime('%A, %b %-d, %Y')}"
+    end
     @user = user
 
     # do the AI thing
@@ -46,7 +50,7 @@ class EntryMailer < ActionMailer::Base
     headers['References'] = message_ids&.join(" ")
     email = mail  from: "DabbleMeGPT 🪄 <#{user.user_key}@#{ENV['SMTP_DOMAIN'].gsub('post', 'ai')}>",
                   to: "#{user.cleaned_to_address}",
-                  subject: "re: #{subject}",
+                  subject: "re: #{subject&.gsub("Re: ", "")&.gsub("re: ", "")}",
                   html: (render_to_string(template: '../views/entry_mailer/respond_as_ai.html')).to_str,
                   text: (render_to_string(template: '../views/entry_mailer/respond_as_ai.text')).to_str
 
