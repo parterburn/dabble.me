@@ -22,11 +22,12 @@ class EntryMailer < ActionMailer::Base
     email.mailgun_options = { tag: 'Entry' }
   end
 
-  def respond_as_ai(user, entry)
+  def respond_as_ai(user, entry, subject)
     message_id = entry.original_email&.dig("headers", "Message-ID")
     reply_to = entry.original_email&.dig("headers", "In-Reply-To")
     references = entry.original_email&.dig("headers", "References")
     message_ids = [message_id, reply_to, references].flatten.compact
+    subject ||= entry.original_email&.dig("headers", "Subject").presence || "It's #{entry.date.strftime('%A, %b %-d')}. How was your day?"
     @user = user
 
     # do the AI thing
@@ -35,15 +36,17 @@ class EntryMailer < ActionMailer::Base
       entry.body = "#{entry.body}<hr><strong>DabbleMeGPT</strong><br/>#{ActionController::Base.helpers.simple_format(@ai_answer)}"
       entry.save
 
+      # Header must first be nullified before being reset
+      # http://api.rubyonrails.org/classes/ActionMailer/Base.html#method-i-headers
+      headers["In-Reply-To"] = nil
+      headers["References"] = nil
+      headers["In-Reply-To"] = message_id
+      headers["References"] = message_ids&.join(" ")
       email = mail  from: "DabbleMeGPT 🪄 <#{user.user_key}@#{ENV['SMTP_DOMAIN'].gsub('post', 'ai')}>",
                     to: "#{user.cleaned_to_address}",
-                    subject: "re: It's #{entry.date.strftime('%A, %b %-d')}. How was your day?",
+                    subject: "re: #{subject}",
                     html: (render_to_string(template: '../views/entry_mailer/respond_as_ai.html')).to_str,
                     text: (render_to_string(template: '../views/entry_mailer/respond_as_ai.text')).to_str,
-                    headers:  {
-                      "In-Reply-To" => message_id,
-                      "References"  => message_ids&.join(" ")
-                    }
 
       email.mailgun_options = { tag: 'AI Entry' }
     end
