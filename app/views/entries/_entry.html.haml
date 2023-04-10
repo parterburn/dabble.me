@@ -11,7 +11,7 @@
         %div{style: "width: 20px;"}
     .float-right.s-edit-entry
       - if current_user.can_ai?
-        = link_to process_as_ai_path(entry), method: :post, style: "margin-right: 10px;" do
+        = link_to process_as_ai_path(entry), method: :post, style: "margin-right: 15px;" do
           %span{rel: "tooltip", title: "Process with DabbleMeGPT"}>
             %i.fa.fa-magic>
       = link_to edit_entry_path(entry), rel: "tooltip", title: "Edit Entry" do

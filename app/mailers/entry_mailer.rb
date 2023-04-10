@@ -27,7 +27,7 @@ class EntryMailer < ActionMailer::Base
     reply_to = entry.original_email&.dig("headers", "In-Reply-To")
     references = entry.original_email&.dig("headers", "References")
     message_ids = [message_id, reply_to, references].flatten.compact
-    subject ||= entry.original_email&.dig("headers", "Subject").presence || "It's #{entry.date.strftime('%A, %b %-d')}. How was your day?"
+    subject ||= entry.original_email&.dig("headers", "Subject").presence || "#{entry.date.strftime('%A, %b %-d, %Y')}"
     @user = user
 
     # do the AI thing
