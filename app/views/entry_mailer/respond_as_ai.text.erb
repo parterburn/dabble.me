@@ -1,4 +1,8 @@
+DabbleMeGPT, in response to your entry on <%= @entry.date.strftime("%B %-d") %>:
+
 <%= @ai_answer %>
 
 ------------
+View entry: <%= day_entry_url(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day) %>
+
 DabbleMeGPT may produce inaccurate information about people, places, or facts.

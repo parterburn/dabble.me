@@ -218,7 +218,7 @@ class EntriesController < ApplicationController
     else
       flash[:alert] = "DabbleMeGPT is not available to you."
     end
-    redirect_to entry_path(@entry)
+    redirect_to day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day)
   end
 
   private
