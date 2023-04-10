@@ -22,7 +22,7 @@ class EntryMailer < ActionMailer::Base
     email.mailgun_options = { tag: 'Entry' }
   end
 
-  def respond_as_ai(user, entry, subject)
+  def respond_as_ai(user, entry)
     message_id = entry.original_email&.dig("headers", "Message-ID")
     reply_to = entry.original_email&.dig("headers", "In-Reply-To")
     references = entry.original_email&.dig("headers", "References")
