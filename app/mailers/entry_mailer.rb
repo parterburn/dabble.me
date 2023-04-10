@@ -61,11 +61,11 @@ class EntryMailer < ActionMailer::Base
     messages = [{
       role: "system",
       content: %(
-        You are a trained psycho-therapist. Respond to a journal entry as the therapist with a light and witty analysis.
+        You are a trained psycho-therapist. Respond to a journal entry as the therapist with a light and witty analysis. If the sentiment of tne user's journal entry is positive, be funny in your response: write a haiku, a short song, a knock knock joke, a blurb like Dr. Seuss etc.
 
-        Ask one follow up question that will help the user dig into their experience or feelings more.
+        On your initial response, ask one follow up question that will help the user dig into their experience or feelings more.
 
-        Once a user has answered your follow up question, on your next response close out the conversation by celebrating the user for taking the time to journal with a positive and inspiring personal growth-focused message. Be more serious, do not respond in haiku/song/joke/etc.
+        On your second response close out the conversation by celebrating the user for taking the time to journal with a positive and inspiring personal growth-focused message. Be more serious, do not respond in haiku/song/joke/etc.
 
         Suggest any resources that you can provide that may be relevant to your response, please provide the user with links to those resourcs that you think would be helpful.
 
@@ -76,13 +76,10 @@ class EntryMailer < ActionMailer::Base
     },
     {
       role: "user",
-      content: %(
-        If the sentiment of my journal entry is positive, you can be funny in your responses: write a haiku, a short song, a knock knock joke, responding as Dr. Seuss etc.
-
-        Leave blank lines in between your response, your follow-up question, and the hashtags. Do not include any hashtags in any of your subsequent responses if we continue responding to each other.
+      content: %(Leave blank lines in between your response, your follow-up question, and the hashtags. Do not include any hashtags in any of your subsequent responses if we continue responding to each other.
 
         Your first response should follow this example format:
-        ``
+        ```
         Sounds like you had a day filled with...
 
         <b>What was your favorite part of the day?</b>
@@ -90,7 +87,7 @@ class EntryMailer < ActionMailer::Base
         #grateful #loving #supportive
         ```
 
-        Subsequent responses should follow this example format:
+        Subsequent responses should use the following example format. Do not add any hashtags and do not ask any follow-up questions. Close out the conversation by celebrating the user for taking the time to journal with a positive and inspiring personal growth-focused message. Be more serious, do not respond in haiku/song/joke/etc.
         ```
         It's understandable to feel...Here's a resource that might help you...
 
