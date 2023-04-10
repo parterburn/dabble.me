@@ -37,7 +37,7 @@
       %strong.small Tags:
       - hashtags.each do |tag|
         - if (date = current_user.hashtags.select{|h| h.tag&.downcase == tag.downcase}.first&.date).present?
-          = link_to search_url(host: ENV['MAIN_DOMAIN'], search: {term: "##{tag}"}), class: "noline", rel: "tooltip-mobile-friendly", title: "#{tag_relative_date(date, entry.date)}" do
+          = link_to search_url(host: ENV['MAIN_DOMAIN'], search: {term: "##{tag}"}), class: "noline", rel: "tooltip-mobile-friendly", title: "#{tag_relative_date(date, entry.date)}", style: "display: inline-block; margin-top: 8px;" do
             %span.label.label-primary= tag
         - else
           = link_to search_url(host: ENV['MAIN_DOMAIN'], search: {term: "##{tag}"}), class: "noline" do
