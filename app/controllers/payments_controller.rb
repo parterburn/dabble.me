@@ -121,13 +121,12 @@ class PaymentsController < ApplicationController
           quantity: 1,
         }],
         client_reference_id: current_user.id,
-        customer_email: current_user.email,
         mode: 'subscription',
         subscription_data: { metadata: { dabble_id: current_user.id } },
         success_url: "https://#{ENV['MAIN_DOMAIN']}/success?session_id={CHECKOUT_SESSION_ID}",
         cancel_url: request.referrer,
       }
-      stripe_params = current_user.stripe_id? ? stripe_params.merge(customer: current_user.stripe_id) : stripe_params
+      stripe_params = current_user.stripe_id? ? stripe_params.merge(customer: current_user.stripe_id) : stripe_params.merge(customer_email: current_user.email)
       session = Stripe::Checkout::Session.create(stripe_params)
       redirect_to session.url
     end
