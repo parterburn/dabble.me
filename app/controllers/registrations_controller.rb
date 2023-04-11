@@ -68,6 +68,12 @@ class RegistrationsController < Devise::RegistrationsController
 
   def destroy
     if current_user.valid_password?(params[:user][:current_password])
+      if current_user.is_pro? && current_user.plan_type_unlinked == "Stripe" && current_user.stripe_id.present?
+        customer = Stripe::Customer.retrieve(current_user.stripe_id)
+        customer.subscriptions.each do |sub|
+          sub.delete
+        end
+      end
       super
     else
       flash[:alert] = "Incorrect current password."

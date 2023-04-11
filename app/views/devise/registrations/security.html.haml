@@ -38,6 +38,7 @@
 
     .col-md-8.col-md-offset-2
       %br
-      - if current_user.is_pro? && current_user.plan_type.present?
+      - show_warning = ""
+      - if current_user.is_pro? && (current_user.plan_type_unlinked != "Stripe" || current_user.stripe_id.blank?)
         - show_warning = " You will need to cancel your subscription *separately* at #{current_user.plan_type_unlinked}."
       .text-center= f.button "Delete your account along with #{pluralize(current_user.entries.count,'associated entry')}", class: "btn btn-link j-delete-user", style: "color: #a41100;", name: "submit_method", value: "delete account", type: :submit, data: { confirm: "Are you sure? This will **permanently delete** your account and #{pluralize(current_user.entries.count,'entry')}. There is no undo.#{show_warning}" }

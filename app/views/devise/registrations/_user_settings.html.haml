@@ -106,5 +106,9 @@
       %br
       %button{name: "unsub_all", type: "submit", value: "yes", class: "s-unsubscribe"}
         Unsubscribe from all emails
+  - else
+    .col-md-12.center
+      %br
+      = link_to "Delete Account", security_path, class: "s-delete"
 
   .clearfix
