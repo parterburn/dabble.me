@@ -3,6 +3,7 @@ class Entry < ActiveRecord::Base
   include ActionView::Helpers::NumberHelper
   include ActiveModel::Validations
   include ApplicationHelper
+  include Entry::AiAssistant
   mount_uploader :image, ImageUploader
 
   WORDS_NOT_TO_COUNT = ['so', 'went', 'while', 's', 'amp', '-', 'p', 'br', 'div', 'img', 'span', 'the', 'of', 'and', 'a', 'to', 'in', 'is', 'that', 'it', 'was', 'for', 'on', 'are', 'as', 'with', 'at', 'be', 'this', 'have', 'from', 'or', 'had', 'by', 'but', 'not', 'what', 'all', 'were', 'when', 'can', 'said', 'there', 'use', 'an', 'each', 'which', 'do', 'how', 'if']

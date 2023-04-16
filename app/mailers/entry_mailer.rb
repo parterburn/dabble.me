@@ -35,7 +35,7 @@ class EntryMailer < ActionMailer::Base
     @user = user
 
     # do the AI thing
-    @ai_answer = process_as_ai(entry)
+    @ai_answer = entry.ai_response
     return unless @ai_answer.present?
 
     entry.body = "#{entry.body}<hr><strong style='font-size: 90% !important;'>DabbleMeGPT:</strong><br/>#{ActionController::Base.helpers.simple_format(@ai_answer, {}, sanitize: false)}"
@@ -55,59 +55,5 @@ class EntryMailer < ActionMailer::Base
                   text: (render_to_string(template: '../views/entry_mailer/respond_as_ai.text')).to_str
 
     email.mailgun_options = { tag: 'AI Entry' }
-  end
-
-  private
-
-  def process_as_ai(entry)
-    client = OpenAI::Client.new
-
-    messages = [{
-      role: "system",
-      content: %(
-        You are a trained psycho-therapist. Respond to a journal entry as the therapist with a light and witty analysis. If the sentiment of tne user's journal entry is positive, you can be humorous and super creative in your response.
-
-        On your initial response, ask follow up questions that will help the user dig into their experience or feelings more.
-
-        On your second response close out the conversation by celebrating the user for taking the time to journal with a positive and inspiring personal growth-focused message.
-
-        Suggest any resources that you can provide that may be relevant to your response, please provide the user with links to those resourcs that you think would be helpful.
-      )
-    },
-    {
-      role: "user",
-      content: %(Leave blank lines in between your response, and your follow-up questions.
-
-        Your first response should follow this example format:
-        ```
-        Sounds like you had a day filled with...
-
-        What was your favorite part of the day?
-        ```
-
-        Subsequent responses should use the following example format. Do not ask any follow-up questions in your subsequent responses. Close out the conversation by celebrating the user for taking the time to journal with a positive and inspiring personal growth-focused message. Be more serious, do not respond in haiku/song/joke/etc.
-        ```
-        It's understandable to feel...Here's a resource that might help you...
-
-        Great job showing up today... It's always wonderful...
-        ```
-      )
-    }]
-
-    entry.text_bodies_for_ai.each do |body|
-      role = body.starts_with?("||DabbleMeGPT||") ? "assistant" : "user"
-      messages << {
-        role: role,
-        content: Nokogiri::HTML.parse(ReverseMarkdown.convert(body.gsub("||DabbleMeGPT||", ""), unknown_tags: :bypass)).text
-      }
-    end
-
-    response = client.chat(
-      parameters: {
-        model: "gpt-3.5-turbo",
-        messages: messages,
-        temperature: 0.7,
-      })
-    response.dig("choices", 0, "message", "content")
   end
 end
