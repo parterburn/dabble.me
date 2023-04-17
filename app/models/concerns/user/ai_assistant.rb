@@ -1,14 +1,14 @@
 class User
   module AiAssistant
     OPENAI_MODEL = "gpt-3.5-turbo".freeze
-    OPENAI_TEMPERATURE = 0.85 # 0-1.0, higher = more creative
-    MAX_RESPONSE_TOKENS = 200
+    OPENAI_TEMPERATURE = 0.5 # 0-1.0, higher = more creative
+    MAX_RESPONSE_TOKENS = 80
 
     def ai_review(entries)
       return nil unless entries.size.positive?
 
       messages = as_data_analyst(entries.size)
-      messages += entry_bodies(entries).presence || []
+      messages += entry_bodies(entries)
       respond_as_ai(messages)
     end
 
