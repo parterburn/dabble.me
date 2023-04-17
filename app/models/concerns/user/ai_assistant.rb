@@ -2,7 +2,7 @@ class User
   module AiAssistant
     OPENAI_MODEL = "gpt-3.5-turbo".freeze
     OPENAI_TEMPERATURE = 0.85 # 0-1.0, higher = more creative
-    MAX_RESPONSE_TOKENS = 500
+    MAX_RESPONSE_TOKENS = 200
 
     def ai_review(entries)
       messages = as_data_analyst
