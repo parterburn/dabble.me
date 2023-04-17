@@ -160,7 +160,7 @@ RSpec.describe PaymentsController, type: :controller do
     end
 
     it 'should create a payment for an existing user with email match, but not id' do
-      payhere_params.deep_merge!(customer: { id: Faker::Number.number(12), email: paid_user.email })
+      payhere_params.deep_merge!(customer: { id: Faker::Number.number(digits: 12), email: paid_user.email })
       expect { post :payment_notify, params: payhere_params, as: :json }.to change { Payment.count }.by(1)
       expect(paid_user.reload.plan).to eq 'PRO Yearly PayHere'
       expect(paid_user.reload.payhere_id).to eq payhere_params[:customer][:id].to_s
@@ -212,7 +212,7 @@ RSpec.describe PaymentsController, type: :controller do
     end
 
     it 'should create a payment for an existing user with email match, but not id' do
-      gumroad_params.merge!(email: paid_user.email, purchaser_id: Faker::Number.number(12))
+      gumroad_params.merge!(email: paid_user.email, purchaser_id: Faker::Number.number(digits: 12).to_s)
       expect { post :payment_notify, params: gumroad_params, as: :json }.to change { Payment.count }.by(1)
       expect(paid_user.reload.plan).to eq 'PRO Yearly Gumroad'
       expect(paid_user.reload.gumroad_id).to eq gumroad_params[:purchaser_id]
@@ -237,7 +237,7 @@ RSpec.describe PaymentsController, type: :controller do
     end
 
     it 'should not create a payment if no match' do
-      gumroad_params.merge!(email: Faker::Internet.email, purchaser_id: Faker::Number.number(12))
+      gumroad_params.merge!(email: Faker::Internet.email, purchaser_id: Faker::Number.number(digits: 12))
       expect { post :payment_notify, params: gumroad_params, as: :json }.to_not change { Payment.count }
       expect(paid_user.reload.plan).to eq paid_user.plan
       expect(ActionMailer::Base.deliveries.last.subject).to eq '[REFUND REQUIRED] Payment Without a User'

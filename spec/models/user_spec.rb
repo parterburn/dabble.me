@@ -1,7 +1,7 @@
 require 'rails_helper'
 
 describe User do
-  let(:user) { User.create(email: Faker::Internet.email, password: Faker::Internet.password(8), first_name: Faker::Name.first_name, last_name: Faker::Name.last_name) }
+  let(:user) { User.create(email: Faker::Internet.email, password: Faker::Internet.password(min_length: 8), first_name: Faker::Name.first_name, last_name: Faker::Name.last_name) }
 
   before :each do
     user.entries.create(body: "hi.", date: 2.days.ago)
@@ -45,7 +45,7 @@ describe User do
       entry_date = Date.parse("2019-10-5")
       past_entry = user.entries.create(date: Date.parse("2019-9-28"), body: "Hi from 1 week back.")
       expect(user.random_entry(entry_date)).to eq(past_entry)
-    end    
+    end
 
     it "returns random from way back" do
       user.emails_sent = 2
@@ -55,7 +55,7 @@ describe User do
         user.entries.create(date: Date.parse("2015-1-#{i}"), body: "Hi from way back.")
       end
       expect(user.random_entry(entry_date).date.year).to eq(2015)
-    end   
+    end
 
     it "returns pure random, including way back" do
       user.way_back_past_entries = true
@@ -70,7 +70,7 @@ describe User do
       user.entries.create(date: Date.parse("2016-1-15"), body: "Hi from way back.")
       user.entries.create(date: Date.parse("2018-10-3"), body: "Hi from a few days ago.")
       expect(user.random_entry(entry_date).date.year).to_not eq(2015)
-    end           
+    end
 
   end
 end

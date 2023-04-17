@@ -22,7 +22,7 @@ end
 (1..30).each do |i|
   paid_user.entries.create!(
     date: Faker::Date.backward(1095),
-    body: ActionController::Base.helpers.simple_format(Faker::Hipster.paragraphs(3).join("\n\n")),
+    body: ActionController::Base.helpers.simple_format(Faker::Hipster.paragraphs(number: 3).join("\n\n")),
     inspiration_id: 1
   )
 end
@@ -35,7 +35,7 @@ free_user.save
 (1..30).each do |i|
   free_user.entries.create!(
     date: Faker::Date.backward(1095),
-    body: ActionController::Base.helpers.simple_format(Faker::Hipster.paragraphs(3).join("\n\n")),
+    body: ActionController::Base.helpers.simple_format(Faker::Hipster.paragraphs(number: 3).join("\n\n")),
     inspiration_id: 1
   )
 end
@@ -48,7 +48,7 @@ admin_user.save
 (1..100).each do |i|
   admin_user.entries.create!(
     date: Faker::Date.backward(1095),
-    body: ActionController::Base.helpers.simple_format(Faker::Hipster.paragraphs(3).join("\n\n")),
+    body: ActionController::Base.helpers.simple_format(Faker::Hipster.paragraphs(number: 3).join("\n\n")),
     inspiration_id: 1
   )
 end

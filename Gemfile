@@ -85,6 +85,7 @@ group :development, :test do
 end
 
 group :development do
+  gem 'awesome_print', '~> 1.9', '>= 1.9.2'
   gem 'better_errors', '~> 2.9', '>= 2.9.1'
   gem 'binding_of_caller'
   gem 'bullet'

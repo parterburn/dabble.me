@@ -174,7 +174,7 @@ RSpec.describe RegistrationsController, type: :controller do
 
     it 'should be able to create free user and send that user an email' do
       email = Faker::Internet.email
-      new_password = Faker::Internet.password(8)
+      new_password = Faker::Internet.password(min_length: 8)
       post :create, params: { user: { email: email, password: new_password, password_confirmation: new_password } }
       expect(response.status).to eq 302
       expect(response).to redirect_to(root_url)
@@ -223,7 +223,7 @@ RSpec.describe RegistrationsController, type: :controller do
 
     it 'should be able to create paid user and send that user an email with basic formatting' do
       email = Faker::Internet.email
-      new_password = Faker::Internet.password(8)
+      new_password = Faker::Internet.password(min_length: 8)
       post :create, params: { user: { email: email, password: new_password, password_confirmation: new_password } }
       new_paid_user = User.last
       new_paid_user.plan = 'PRO Monthly Gumroad'
