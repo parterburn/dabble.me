@@ -49,7 +49,7 @@ On your second response, wrap up the conversation by celebrating the user for ta
       },
       {
         role: "user",
-        content: %(My name is #{user.first_name}. I will provide my journal entry for #{date.strftime("%A, %B %-d, %Y")} in my next message. I want to share how I'd like to receieve reponses from you.
+        content: %(My name is #{user.first_name}. I will provide my journal entry for #{date.strftime("%A, %B %-d, %Y")} in my next message.
 
 If I forget to tag my entry with any hashtags, please add hashtags using the following list: #{user.hashtags.pluck(:tag).compact.join(", ")}
 
@@ -61,19 +61,12 @@ What was your favorite part of the day?
 
 #quarantined #dad
 ```
-
-Subsequent responses should use the following example format. Do not add tags or ask any follow-up questions in your subsequent responses:
-```
-It's understandable to feel...Here's a heres a [resource](https://www.resource-link.com) that might help you.
-
-Great job showing up today to reflect...
-```
         )
       }]
     end
 
     def entry_body
-      entry_token_count = as_therapist.to_s.length
+      entry_token_count = as_therapist.to_s.length.to_f / 4
       text_bodies_for_ai.map do |body|
         entry_token_count += body.length.to_f / 4
         tokens_left = max_tokens - entry_token_count - MAX_RESPONSE_TOKENS
