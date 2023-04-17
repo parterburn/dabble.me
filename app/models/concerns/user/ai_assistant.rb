@@ -50,7 +50,7 @@ Generate a summary of these feelings, sorted by the # of entries associated to e
     end
 
     def entry_bodies(entries)
-      entry_token_count = as_therapist.to_s.length
+      entry_token_count = as_data_analyst.to_s.length
       entries.each do |entry|
         body = entry.text_bodies_for_ai.first
         entry_token_count += body.length.to_f / 4
