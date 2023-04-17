@@ -10,5 +10,5 @@ class Hashtag < ActiveRecord::Base
   def date_format_short
     # February 3, 2014
     self.date.present? ? self.date.strftime("%B %-d, %Y") : nil
-  end  
+  end
 end
