@@ -123,4 +123,6 @@ Rails.application.configure do
     protocol: 'https',
     host: ENV['MAIN_DOMAIN']
   }
+
+  GA.tracker = ENV['GOOGLE_ANALYTICS_ID']
 end
