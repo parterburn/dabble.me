@@ -5,9 +5,9 @@ StripeEvent.configure do |events|
   events.subscribe "checkout.session.completed" do |event|
     session = event.data.object
     user = User.where(id: session.client_reference_id).first
-    return nil unless user
-
-    user.update(stripe_id: session.customer)
+    if user.present?
+      user.update(stripe_id: session.customer)
+    end
   end
 
   events.subscribe "invoice.payment_succeeded" do |event|
@@ -56,24 +56,24 @@ StripeEvent.configure do |events|
     subscription = event.data.object
     stripe_customer_id = subscription.customer
     user = User.where(stripe_id: stripe_customer_id).first
-    return nil unless user
+    if user.present?
+      cancel_at_period_end = subscription.cancel_at_period_end
 
-    cancel_at_period_end = subscription.cancel_at_period_end
+      if cancel_at_period_end
+        Sentry.capture_message("Customer set subscription to cancel at period end", level: :info, extra: { user_id: user.id, user_email: user.email, total_payments: user.payments.sum(:amount).to_f, subscription: subscription })
+      else
+        previous_attributes = event.data.previous_attributes
+        if previous_attributes && previous_attributes['items']
+          old_plan = previous_attributes['items']['data'][0]['plan']['interval']
+          new_plan = subscription.plan.interval
 
-    if cancel_at_period_end
-      Sentry.capture_message("Customer set subscription to cancel at period end", level: :info, extra: { user_id: user.id, user_email: user.email, total_payments: user.payments.sum(:amount).to_f, subscription: subscription })
-    else
-      previous_attributes = event.data.previous_attributes
-      if previous_attributes && previous_attributes['items']
-        old_plan = previous_attributes['items']['data'][0]['plan']['interval']
-        new_plan = subscription.plan.interval
-
-        # user changed plans, ajust accordingly
-        if old_plan && new_plan && old_plan != new_plan
-          if new_plan.include?("year")
-            user.update(plan: "PRO Yearly PayHere")
-          elsif new_plan.include?("month")
-            user.update(plan: "PRO Monthly PayHere")
+          # user changed plans, ajust accordingly
+          if old_plan && new_plan && old_plan != new_plan
+            if new_plan.include?("year")
+              user.update(plan: "PRO Yearly PayHere")
+            elsif new_plan.include?("month")
+              user.update(plan: "PRO Monthly PayHere")
+            end
           end
         end
       end
@@ -85,8 +85,8 @@ StripeEvent.configure do |events|
     subscription = event.data.object
     stripe_customer_id = subscription.customer
     user = User.where(stripe_id: stripe_customer_id).first
-    return nil unless user
-
-    Sentry.capture_message("Subscription deleted", level: :info, extra: { user_id: user.id, user_email: user.email, total_payments: user.payments.sum(:amount).to_f, subscription: subscription })
+    if user.present?
+      Sentry.capture_message("Subscription deleted", level: :info, extra: { user_id: user.id, user_email: user.email, total_payments: user.payments.sum(:amount).to_f, subscription: subscription })
+    end
   end
 end
