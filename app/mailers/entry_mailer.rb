@@ -50,7 +50,7 @@ class EntryMailer < ActionMailer::Base
     headers['References'] = message_ids&.join(" ")
     email = mail  from: "DabbleMeGPT 🪄 <#{user.user_key}@#{ENV['SMTP_DOMAIN'].gsub('post', 'ai')}>",
                   to: "#{user.cleaned_to_address}",
-                  subject: "re: #{subject&.gsub("Re: ", "")&.gsub("re: ", "")}",
+                  subject: "Re: #{subject&.gsub("Re: ", "")&.gsub("re: ", "")}",
                   html: (render_to_string(template: '../views/entry_mailer/respond_as_ai.html')).to_str,
                   text: (render_to_string(template: '../views/entry_mailer/respond_as_ai.text')).to_str
 
