@@ -81,7 +81,15 @@ class EmailProcessor
 
       if existing_entry.present?
         existing_entry.original_email = @inbound_email_params
-        existing_entry.body += "<hr>#{@body}" if existing_entry.body.present?
+
+        if respond_as_ai? && existing_entry.body.present?
+          existing_entry.body += "<hr><strong>👤 You:</strong><br/>#{@body}"
+        elsif existing_entry.body.present?
+          existing_entry.body += "<hr>#{@body}"
+        else
+          existing_entry.body = @body
+        end
+
         existing_entry.body = existing_entry.sanitized_body if @user.is_free?
         existing_entry.original_email_body = @raw_body
         existing_entry.inspiration_id = inspiration_id if inspiration_id.present?
@@ -95,7 +103,7 @@ class EmailProcessor
         if existing_entry.save
           track_ga_event('Merged')
 
-          if respond_as_ai? && @user && @user.is_admin?
+          if respond_as_ai? && @user && @user.can_ai?
             EntryMailer.respond_as_ai(@user, existing_entry).deliver_now
           end
         else
@@ -145,7 +153,7 @@ class EmailProcessor
         Sentry.capture_message("Error sending email", level: :error, extra: { email_type: "Second Welcome Email" })
       end
 
-      if entry.present? && respond_as_ai? && @user && @user.is_admin?
+      if entry.present? && respond_as_ai? && @user && @user.can_ai?
         EntryMailer.respond_as_ai(@user, entry).deliver_now
       end
     else # no user found
