@@ -1,10 +1,10 @@
-🤖 DabbleMeGPT's response to your entry on <%= @entry.date.strftime("%B %-d") %>:
+🤖 DabbleMeGPT's response:
 
 <%= ActionController::Base.helpers.strip_tags(@ai_answer) %>
 
 ------------
 Reply to this email to continue the conversation with DabbleMeGPT.
 
-The full conversation will be stored as your entry: <%= day_entry_url(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day) %>
+The full conversation will be stored as your entry for <%= @entry.date.strftime("%B %-d") %>: <%= day_entry_url(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day) %>
 
-DabbleMeGPT uses AI preview technology. It may respond with something odd or inaccurate.
+DabbleMeGPT employs AI preview technology that may produce unusual or incorrect responses. Your entry is not retained permanently or utilized for training any AI models.
