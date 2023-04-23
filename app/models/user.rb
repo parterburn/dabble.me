@@ -189,6 +189,10 @@ class User < ActiveRecord::Base
     super.present? ? super : true
   end
 
+  def any_hashtags?
+    hashtags.pluck(:tag).compact.any?
+  end
+
   alias_method :original_hashtags, :hashtags
   def hashtags
     @hashtags ||= begin

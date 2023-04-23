@@ -52,13 +52,15 @@
           font-family: inherit !important;
           font-weight: inherit !important;
           line-height: inherit !important;
-      }      
+      }
     </style>
   </head>
   <body>
-    <p><b>In response to your entry on <%= link_to(@entry.date.strftime("%B %-d"), day_entry_url(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day), class: "hover-line") %>:</b></p>
+    <p><b>DabbleMeGPT's response to your entry on <%= link_to(@entry.date.strftime("%B %-d"), day_entry_url(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day), class: "hover-line") %>:</b></p>
     <p><%= format_body(simple_format(@ai_answer)) %></p>
     <hr style="margin-top: 20px;margin-bottom: 20px;border: 0;border-top: 2px solid whiteSmoke;"/>
-    <p style="font-size: 12px; color: #505050; font-style: italic;">DabbleMeGPT may produce inaccurate information about people, places, or facts.</p>
+    <p>Reply to this email to continue the conversation with DabbleMeGPT. The full conversation will be stored as <%= link_to "your entry", day_entry_url(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day) %>.</p>
+    <hr style="margin-top: 20px;margin-bottom: 20px;border: 0;border-top: 2px solid whiteSmoke;"/>
+    <p style="font-size: 12px; color: #505050; font-style: italic;">DabbleMeGPT uses AI preview technology and still learning. It may respond with something odd or inaccurate.</p>
   </body>
 </html>

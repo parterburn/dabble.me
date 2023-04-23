@@ -23,6 +23,13 @@
         =link_to admin_photos_path do
           %strong #{format_number(photos_count)}
         %span{style: "margin-left: 10px;"} #{number_to_percentage(photos_count.to_f/all_count.to_f*100, precision: 0)}
+    .row
+      .col-md-3
+        %strong All Entries using DabbleMeGPT
+      - ai_entries = Entry.with_ai_responses
+      .col-md-2
+        %strong #{format_number(ai_entries.size)}
+        %span{style: "margin-left: 10px;"} #{format_number(ai_entries.pluck(:user_id).uniq.size)} users
 
   .col-md-12
     %hr

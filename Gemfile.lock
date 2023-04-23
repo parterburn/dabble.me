@@ -349,6 +349,7 @@ GEM
     rb-fsevent (0.10.4)
     rb-inotify (0.10.1)
       ffi (~> 1.0)
+    redcarpet (3.6.0)
     regexp_parser (2.1.1)
     responders (3.1.0)
       actionpack (>= 5.2)
@@ -523,6 +524,7 @@ DEPENDENCIES
   rails (~> 6.0, >= 6.0.6.1)
   rails-html-sanitizer (~> 1.4.4)
   randomized_field (~> 1.0)
+  redcarpet
   rest-client
   reverse_markdown
   rinku
