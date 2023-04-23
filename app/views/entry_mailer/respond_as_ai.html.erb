@@ -56,7 +56,7 @@
     </style>
   </head>
   <body>
-    <p><b>DabbleMeGPT's response to your entry on <%= link_to(@entry.date.strftime("%B %-d"), day_entry_url(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day), class: "hover-line") %>:</b></p>
+    <p><b>🤖 DabbleMeGPT's response to your entry on <%= link_to(@entry.date.strftime("%B %-d"), day_entry_url(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day), class: "hover-line") %>:</b></p>
     <p><%= format_body(simple_format(@ai_answer)) %></p>
     <hr style="margin-top: 20px;margin-bottom: 20px;border: 0;border-top: 2px solid whiteSmoke;"/>
     <p>Reply to this email to continue the conversation with DabbleMeGPT. The full conversation will be stored as <%= link_to "your entry", day_entry_url(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day) %>.</p>
