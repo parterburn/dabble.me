@@ -101,7 +101,7 @@ class User < ActiveRecord::Base
   end
 
   def can_ai?
-    is_admin? || self.email.in?(["mpark4124@gmail.com", "bpparks@gmail.com" "tatianaeparks@gmail.com", "katelynlutgen@gmail.com", "logan@agroots.com", "walrod@gmail.com", "brianna@agroots.com"])
+    is_admin? || self.email.in?(["paid@dabble.ex", "mpark4124@gmail.com", "bpparks@gmail.com" "tatianaeparks@gmail.com", "katelynlutgen@gmail.com", "logan@agroots.com", "walrod@gmail.com", "brianna@agroots.com"])
   end
 
   def is_pro?

@@ -6,13 +6,17 @@
     -if entry.inspiration.present?
       .float-left.s-edit-entry{rel: "popover", title: "#{entry.inspiration.inspired_by}", data: { content: "#{entry.inspiration.body.html_safe}" } }
         %i.fa.fa-lightbulb-o
+        - if current_user.can_ai?
+          %div{style: "width: 43px;"}
     -else
       .float-left.s-edit-entry
         %div{style: "width: 20px;"}
+        - if current_user.can_ai?
+          %div{style: "width: 43px;"}
     .float-right.s-edit-entry
       - if current_user.can_ai?
-        = link_to process_as_ai_path(entry), method: :post, style: "margin-right: 15px;" do
-          %span{rel: "tooltip", title: "Process with DabbleMeGPT"}>
+        = link_to process_as_ai_path(entry), method: :post, style: "margin-right: 15px;", data: { confirm: "DabbleMeGPT employs AI preview technology that may produce unusual or incorrect responses. Your input is not retained permanently or utilized for training any AI models." } do
+          %span{rel: "tooltip", title: "Process with DabbleMeGPT", class: "s-process-ai"}>
             %i.fa.fa-magic>
       = link_to edit_entry_path(entry), rel: "tooltip", title: "Edit Entry" do
         %i.fa.fa-pencil-square-o

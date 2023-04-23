@@ -85,6 +85,15 @@
   }
 }
 
+.s-process-ai {
+  color: darken($blue, 20);
+  top: -2px;
+  position: relative;
+  &:hover{
+    color: darken($mid-gray, 20);
+  }
+}
+
 a.s-delete {
   color:$red;
   opacity:0.5;
