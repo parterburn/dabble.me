@@ -15,7 +15,7 @@
           %div{style: "width: 43px;"}
     .float-right.s-edit-entry
       - if current_user.can_ai?
-        = link_to process_as_ai_path(entry), method: :post, style: "margin-right: 15px;", data: { confirm: "DabbleMeGPT employs AI preview technology that may produce unusual or incorrect responses. Your input is not retained permanently or utilized for training any AI models." } do
+        = link_to process_as_ai_path(entry), method: :post, style: "margin-right: 15px;", data: { confirm: "DabbleMeGPT employs AI preview technology that may produce unusual or incorrect responses. Your entry is not retained permanently or utilized for training any AI models." } do
           %span{rel: "tooltip", title: "Process with DabbleMeGPT", class: "s-process-ai"}>
             %i.fa.fa-magic>
       = link_to edit_entry_path(entry), rel: "tooltip", title: "Edit Entry" do
