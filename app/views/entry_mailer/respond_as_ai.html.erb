@@ -59,7 +59,7 @@
     <p><b>🤖 DabbleMeGPT's response:</b></p>
     <p><%= format_body(simple_format(@ai_answer)) %></p>
     <hr style="margin-top: 20px;margin-bottom: 20px;border: 0;border-top: 2px solid whiteSmoke;"/>
-    <p><strong style="font-size: 12px;">Reply to this email to continue the conversation.</strong></p>
-    <p style="font-size: 12px; color: #505050; font-style: italic;">DabbleMeGPT employs AI preview technology that may produce unusual or incorrect responses. Your entry is not retained permanently or utilized for training any AI models. The full conversation will be stored as your <%= link_to "entry for #{@entry.date.strftime("%B %-d")}", day_entry_url(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day), class: "hover-line" %>.</p>
+    <p><strong style="font-size: 13px;">Reply to this email to continue chatting.</strong></p>
+    <p style="font-size: 12px; line-height: 15px; color: #505050; font-style: italic;">DabbleMeGPT employs AI preview technology that may produce unusual or incorrect responses. Your entry is not retained permanently or utilized for training any AI models. The full conversation will be stored as your <%= link_to "entry for #{@entry.date.strftime("%B %-d")}", day_entry_url(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day), class: "hover-line" %>.</p>
   </body>
 </html>
