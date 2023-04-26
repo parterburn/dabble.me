@@ -3,6 +3,12 @@
   = render "sidebar"
   = render "search"
 
+  - if params[:group] == "photos" && current_user.image_collage.present?
+    .col-md-8.col-md-offset-1.well.entry
+      .s-entry-date
+        %h2 Your latest photos
+      = link_to image_tag(current_user.image_collage, class: 'img-responsive'), current_user.image_collage, target: :_blank
+
   .col-md-8.col-md-offset-1
     .center
       = paginate @entries
