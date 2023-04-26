@@ -37,7 +37,7 @@ gem 'rubyzip', '~> 1.3'
 gem 'summernote-rails', '~> 0.8.12.0'
 gem 'words_counted' # Year in Review
 gem 'zip-zip'
-gem "chartkick", ">= 3.4.0"
+gem "chartkick", "~> 5"
 gem "loofah", ">= 2.5"
 
 gem "kaminari", ">= 1.2.1" # pagination

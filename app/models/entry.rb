@@ -29,6 +29,8 @@ class Entry < ActiveRecord::Base
   before_save :strip_out_base64
   before_save :find_songs
 
+  after_commit :tag_for_sentiment, if: :saved_change_to_body?, on: [:create, :update]
+
   def date_format_long
     # Friday, Feb 3, 2014
     self.date.present? ? self.date.strftime("%A, %b %-d, %Y") : ""
@@ -214,5 +216,9 @@ class Entry < ActiveRecord::Base
     rescue Encoding::UndefinedConversionError
       string
     end
+  end
+
+  def tag_for_sentiment
+    AiTaggingJob.perform_later(self)
   end
 end

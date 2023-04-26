@@ -1,6 +1,5 @@
 class User < ActiveRecord::Base
   include RandomizedField
-  include User::AiAssistant
 
   # Include default devise modules. Others available are:
   # :confirmable, :timeoutable and :omniauthable, :lockable

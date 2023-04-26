@@ -1,4 +1,4 @@
-- title ("Year In Review")
+- title ("#{@year} In Review")
 = javascript_include_tag "//www.gstatic.com/charts/loader.js", "chartkick"
 - add_class = 'really-blur' if current_user.is_free?
 .row.s-year-in-review
@@ -19,7 +19,7 @@
         %h3
           %span= "#{@total_count} entries in #{@year}"
       .s-review-details
-        = pie_chart({"Days With Entries": @total_count, "Days Without Entires": (365 - @total_count)},  height: "230px", library: {backgroundColor: "#ffffff"})
+        = pie_chart({"Days With Entries": @total_count, "Days Without Entries": (365 - @total_count)},  height: "230px", library: {backgroundColor: "#ffffff"})
         .clearfix
         - if @pctile.present?
           %p= "You're in the #{@pctile.ordinalize} percentile compared to all active Dabble Me users in #{@year}."
@@ -31,27 +31,47 @@
         =link_to "Subscribe to PRO", subscribe_path, class: "alert-link"
         to see the rest of your Year in Review.
 
+  - if @entries_with_sentiment.count.positive?
+    .col-md-8.col-md-offset-2.well
+      .center{class: add_class}
+        .s-entry-date
+          %h2 Sentiment
+          %h3
+            %span= "#{pluralize(@entries_with_sentiment.size, 'entry')} tagged"
+        .s-review-details
+          = pie_chart(@sentiment_count,  height: "230px", library: {backgroundColor: "#ffffff"})
+          .clearfix
+
+    .col-md-8.col-md-offset-2.well
+      .center{class: add_class}
+        .s-entry-date
+          %h2 Sentiment over Time
+        .s-review-details
+          = line_chart @sentiment_by_month_data, ytitle: "Posts", min: 0, round: 0, precision: 0
+          .clearfix
+
   - entry_dates = @entries.pluck(:date)
   .col-md-8.col-md-offset-2.well
     .center{class: add_class}
       .s-entry-date
         %h2 Days of Entries
-        - days = entry_dates.map{|d| d.strftime('%A') }.sort
+        - days = entry_dates.map{|d| d.strftime('%a') }
         - counts = Hash.new(0)
         - days.each { |name| counts[name.strip] += 1 }
+        = counts
         %h3
           %span= "#{pluralize(counts.length, 'day')} a week"
       .s-review-details
         - sorted_counts = Hash.new
         - Date::ABBR_DAYNAMES.each_with_index { |x, i| sorted_counts[x] = counts[x] }
-        = column_chart sorted_counts, discrete: true, library: { backgroundColor: "#ffffff" }
+        = column_chart sorted_counts, discrete: true, library: { backgroundColor: "#ffffff" }, ytitle: "Posts", min: 0, round: 0, precision: 0
         .clearfix
 
   .col-md-8.col-md-offset-2.well
     .center{class: add_class}
       .s-entry-date
         %h2 Months of Entries
-        - months = entry_dates.map{|d| d.strftime('%B') }.sort
+        - months = entry_dates.map{|d| d.strftime('%b') }.sort
         - counts = Hash.new(0)
         - months.each { |name| counts[name.strip] += 1 }
         %h3
@@ -59,7 +79,7 @@
       .s-review-details
         - sorted_counts = Hash.new
         - Date::ABBR_MONTHNAMES.reject(&:blank?).each_with_index { |x, i| sorted_counts[x] = counts[x] }
-        = column_chart sorted_counts, discrete: true, library: { backgroundColor: "#ffffff" }
+        = column_chart sorted_counts, discrete: true, library: { backgroundColor: "#ffffff" }, ytitle: "Posts", min: 0, round: 0, precision: 0
         .clearfix
 
   .col-md-8.col-md-offset-2.well

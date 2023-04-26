@@ -99,7 +99,7 @@ GEM
       mini_mime (>= 0.1.3)
       ssrf_filter (~> 1.0)
     charlock_holmes (0.7.7)
-    chartkick (3.4.0)
+    chartkick (5.0.1)
     childprocess (3.0.0)
     chronic (0.10.2)
     cloudflare-rails (3.0.0)
@@ -484,7 +484,7 @@ DEPENDENCIES
   capybara (~> 3.35, >= 3.35.3)
   carrierwave (~> 2.2, >= 2.2.2)
   charlock_holmes (~> 0.7.7)
-  chartkick (>= 3.4.0)
+  chartkick (~> 5)
   cloudflare-rails
   combined_time_select
   database_cleaner

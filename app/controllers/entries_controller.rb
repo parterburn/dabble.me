@@ -196,7 +196,7 @@ class EntriesController < ApplicationController
   def review
     month = Date.today.month
     @year = params[:year] || (month > 11 ? Time.now.year : Time.now.year - 1)
-    @entries = current_user.entries.where("date >= '#{@year}-01-01'::DATE AND date <= '#{@year}-12-31'::DATE")
+    @entries = current_user.entries.where("date >= '#{@year}-01-01'::DATE AND date <= '#{@year}-12-31'::DATE").order(date: :asc)
     @total_count = @entries.count
     if @total_count.positive?
       @body_text = @entries.map { |e| ActionView::Base.full_sanitizer.sanitize(e.body) }.join(" ")
@@ -204,6 +204,17 @@ class EntriesController < ApplicationController
       if @total_count > 20
         all_user_entry_count = Entry.where("date >= '#{@year}-01-01'::DATE AND date <= '#{@year}-12-31'::DATE").group(:user_id).reorder("count_all").count.values
         @pctile = (((all_user_entry_count.find_index(@total_count) + 1).to_f / all_user_entry_count.count) * 100).round
+      end
+
+      @entries_with_sentiment = @entries.select { |e| e.sentiment.present? }
+      if @entries_with_sentiment.count.positive?
+        @sentiment_count = @entries_with_sentiment.map(&:sentiment).flatten.group_by(&:itself).transform_values(&:count).sort_by { |_k, v| v }.reverse.to_h
+        @sentiment_count.reject! { |k, _v| k == "unknown" }
+
+        @users_sentiment_list = @entries_with_sentiment.sort_by { |e| e.date }.map { |e| e.sentiment }.flatten.uniq.reject { |k, _v| k.blank? || k == "unknown" }
+        @sentiment_by_month_data = @users_sentiment_list.map do |sentiment|
+          { name: sentiment, data: @entries_with_sentiment.select { |e| e.sentiment.include?(sentiment) }.map { |e| [e.date.strftime('%B'), 1] }.group_by(&:first).transform_values(&:count) }
+        end
       end
     else
       flash[:notice] = "No entries in #{@year} - nothing to review :("
@@ -278,7 +289,7 @@ class EntriesController < ApplicationController
   end
 
   def spotify_entries
-    @spotify_entires ||= current_user.entries.only_spotify
+    @spotify_entries ||= current_user.entries.only_spotify
   end
   helper_method :spotify_entries
 end
