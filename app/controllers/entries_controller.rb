@@ -212,7 +212,7 @@ class EntriesController < ApplicationController
 
         @users_sentiment_list = @entries_with_sentiment.map { |e| e.sentiment }.flatten.uniq.reject { |k, _v| k.blank? }
         @sentiment_by_month_data = @users_sentiment_list.map do |sentiment|
-          { name: sentiment, data: @entries_with_sentiment.sort_by { |e| e.date }.select { |e| e.sentiment.include?(sentiment) }.map { |e| [e.date.strftime('%B'), 1] }.group_by(&:first).transform_values(&:count) }
+          { name: sentiment, data: @entries_with_sentiment.sort_by { |e| e.date }.select { |e| e.sentiment.include?(sentiment) }.map { |e| [e.date.strftime('%b'), 1] }.group_by(&:first).transform_values(&:count) }
         end
       end
     else
