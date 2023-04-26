@@ -250,7 +250,7 @@ class User < ActiveRecord::Base
   end
 
   def image_collage
-    last_5_images = entries.only_images.last(5).map(&:image_url_cdn)
+    last_5_images = entries.only_images.first(5).map(&:image_url_cdn)
     return nil unless last_5_images.size > 1
 
     "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:[#{last_5_images[1..-1].map(&:inspect).join(',')}],w:1200,h:1200,m:10/#{last_5_images.first}"
