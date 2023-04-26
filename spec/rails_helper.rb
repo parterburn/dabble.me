@@ -63,5 +63,6 @@ RSpec.configure do |config|
   config.before(:each) do
     # Start the database cleaner
     DatabaseCleaner.start
+    stub_request(:post, /api-inference.huggingface.co/).to_return(status: 200, body: [[{ "joy": 0.55 }]].to_json)
   end
 end
