@@ -58,7 +58,6 @@
         - days = entry_dates.map{|d| d.strftime('%a') }
         - counts = Hash.new(0)
         - days.each { |name| counts[name.strip] += 1 }
-        = counts
         %h3
           %span= "#{pluralize(counts.length, 'day')} a week"
       .s-review-details
