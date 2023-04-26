@@ -206,14 +206,13 @@ class EntriesController < ApplicationController
         @pctile = (((all_user_entry_count.find_index(@total_count) + 1).to_f / all_user_entry_count.count) * 100).round
       end
 
-      @entries_with_sentiment = @entries.select { |e| e.sentiment.present? }
+      @entries_with_sentiment = @entries.select { |e| e.sentiment.present? && e.sentiment != ["unknown"] }
       if @entries_with_sentiment.count.positive?
         @sentiment_count = @entries_with_sentiment.map(&:sentiment).flatten.group_by(&:itself).transform_values(&:count).sort_by { |_k, v| v }.reverse.to_h
-        @sentiment_count.reject! { |k, _v| k == "unknown" }
 
-        @users_sentiment_list = @entries_with_sentiment.sort_by { |e| e.date }.map { |e| e.sentiment }.flatten.uniq.reject { |k, _v| k.blank? || k == "unknown" }
+        @users_sentiment_list = @entries_with_sentiment.map { |e| e.sentiment }.flatten.uniq.reject { |k, _v| k.blank? }
         @sentiment_by_month_data = @users_sentiment_list.map do |sentiment|
-          { name: sentiment, data: @entries_with_sentiment.select { |e| e.sentiment.include?(sentiment) }.map { |e| [e.date.strftime('%B'), 1] }.group_by(&:first).transform_values(&:count) }
+          { name: sentiment, data: @entries_with_sentiment.sort_by { |e| e.date }.select { |e| e.sentiment.include?(sentiment) }.map { |e| [e.date.strftime('%B'), 1] }.group_by(&:first).transform_values(&:count) }
         end
       end
     else
