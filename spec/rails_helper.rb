@@ -2,7 +2,6 @@
 ENV['RAILS_ENV'] ||= 'test'
 require File.expand_path('../../config/environment', __FILE__)
 require 'rspec/rails'
-require 'webmock/rspec'
 
 # Add additional requires below this line. Rails is not loaded until this point!
 
@@ -65,6 +64,5 @@ RSpec.configure do |config|
   config.before(:each) do
     # Start the database cleaner
     DatabaseCleaner.start
-    stub_request(:post, /api-inference.huggingface.co/).to_return(status: 200, body: [[{ "joy": 0.55 }]].to_json)
   end
 end
