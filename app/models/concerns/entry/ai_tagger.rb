@@ -5,22 +5,30 @@ class Entry::AiTagger
   MAX_ENTRY_SIZE = 512
 
   def tag(entries)
-    @entries = Array(entries)
-    tags = sentiment_tags
-    @entries.each do |entry|
-      entry.sentiment = tags.shift
-      entry.save
+    all_entries = Array(entries).flatten
+    if all_entries.count > 100
+      all_entries.each_slice(100) do |entries_slice|
+        process_entries(entries_slice)
+        sleep 3
+      end
+    else
+      process_entries(all_entries)
     end
   end
 
   private
 
-  def entry_body
-    { "inputs": @entries.map { |e| e.text_body.first(MAX_ENTRY_SIZE) } }
+  def process_entries(entries)
+    tags = sentiment_tags(entries)
+    entries.each do |entry|
+      entry.sentiment = tags.shift
+      entry.save
+    end
   end
 
-  def sentiment_tags
-    response = connection.post(AI_MODEL, entry_body)
+  def sentiment_tags(entries)
+    body = { "inputs": entries.map { |e| e.text_body.first(MAX_ENTRY_SIZE) } }
+    response = connection.post(AI_MODEL, body)
 
     response.body.map do |entry_emotions|
       data = entry_emotions.map do |emotion|
