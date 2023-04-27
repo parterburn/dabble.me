@@ -20,14 +20,18 @@ class Entry::AiTagger
 
   def process_entries(entries)
     tags = sentiment_tags(entries)
-    entries.each do |entry|
-      entry.sentiment = tags.shift
-      entry.save
+    if tags.present?
+      entries.each do |entry|
+        entry.sentiment = tags.shift
+        entry.save
+      end
     end
+  rescue => e
+    Sentry.capture_exception(e, extra: { type: "AI Tagger Error", tags: tags })
   end
 
   def sentiment_tags(entries)
-    body = { "inputs": entries.map { |e| e.text_body.first(MAX_ENTRY_SIZE) } }
+    body = { inputs: entries.map { |e| e.text_body.first(MAX_ENTRY_SIZE) } }
     response = connection.post(AI_MODEL, body)
 
     response.body.map do |entry_emotions|
@@ -38,6 +42,8 @@ class Entry::AiTagger
       end.reject(&:blank?)
       data.blank? ? ["unknown"] : data
     end
+  rescue => e
+    Sentry.capture_exception(e, extra: { type: "Hugging Face Error", response: response.body })
   end
 
   def connection

@@ -91,7 +91,8 @@ class Entry < ActiveRecord::Base
 
   def text_bodies_for_ai
     split_for_ai.map do |formatted_split_body|
-      Nokogiri::HTML.parse(ReverseMarkdown.convert(formatted_split_body.gsub("<strong>🤖 DabbleMeGPT:</strong><br/>", "||DabbleMeGPT||"), unknown_tags: :bypass)).text
+      clean_chunk = formatted_split_body.gsub("👤 You:", "").gsub("🤖 DabbleMeGPT:", "||DabbleMeGPT||")
+      Nokogiri::HTML.parse(ReverseMarkdown.convert(clean_chunk, unknown_tags: :bypass)).text
     end
   end
 
