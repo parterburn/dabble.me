@@ -20,14 +20,12 @@ class Entry::AiTagger
 
   def process_entries(entries)
     tags = sentiment_tags(entries)
-    if tags.present?
+    if tags.present? && tags.is_a?(Array)
       entries.each do |entry|
         entry.sentiment = tags.shift
         entry.save
       end
     end
-  rescue => e
-    Sentry.capture_exception(e, extra: { type: "AI Tagger Error", tags: tags })
   end
 
   def sentiment_tags(entries)
@@ -36,14 +34,16 @@ class Entry::AiTagger
 
     response.body.map do |entry_emotions|
       data = entry_emotions.map do |emotion|
-        next unless emotion["score"].to_f > SCORE_THRESHOLD
+        if emotion.is_a?(Hash)
+          next unless emotion["score"].to_f > SCORE_THRESHOLD
 
-        emotion["label"]
+          emotion["label"]
+        else
+          raise "HuggingFaceError", "Unexpected response from Hugging Face API: #{response.body}"
+        end
       end.reject(&:blank?)
       data.blank? ? ["unknown"] : data
     end
-  rescue => e
-    Sentry.capture_exception(e, extra: { type: "Hugging Face Error", response: response.body })
   end
 
   def connection
