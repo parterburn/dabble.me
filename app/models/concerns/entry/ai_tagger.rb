@@ -40,7 +40,12 @@ class Entry::AiTagger
   end
 
   def sentiment_tags(entries)
-    body = { inputs: entries.map { |e| e.text_body.first(MAX_ENTRY_SIZE) } }
+    body = {
+      options: {
+        wait_for_model: true
+      },
+      inputs: entries.map { |e| e.text_body.first(MAX_ENTRY_SIZE) }
+    }
     response = connection.post(AI_MODEL, body)
 
     response.body.map do |entry_emotions|
