@@ -41,7 +41,7 @@
           = Entry::AiTagger::EMOTIONS[params[:emotion]]
           = params[:emotion].upcase
         .s-date-right
-          #{format_number(@entries.size)}
+          #{format_number(current_user.entries.size)}
         .clearfix
 
   - if (only_images = current_user.entries.only_images.size) > 0
@@ -65,24 +65,23 @@
         #{format_number(spotify_entries.size)}
       .clearfix
 
-  - if @entries.present?
-    - @entries.group_by{|c| c.date.strftime "%Y" }.each do |year_str,year_entries|
-      %h4.s-date-year
-        =link_to group_entries_path(year_str), class: "#{'active' if params[:group] == year_str}" do
-          .s-date-left
-            = year_str.upcase
-          .s-date-right
-            #{format_number(year_entries.size)}
-          .clearfix
-
-      - year_entries.group_by{|c| c.date.strftime "%b" }.each do |month_str,date_entries|
+  - current_user.entries.group_by{|c| c.date.strftime "%Y" }.each do |year_str,year_entries|
+    %h4.s-date-year
+      =link_to group_entries_path(year_str), class: "#{'active' if params[:group] == year_str}" do
         .s-date-left
-          =link_to entries_calendar_path(day: year_str+"-"+month_str.to_date.strftime('%m')), class: "noline" do
-            %i.fa.fa-calendar
-          &nbsp;
-        =link_to group_entries_path(year_str, month_str.to_date.strftime('%m')), :class => "#{'active' if params[:group] == year_str && params[:subgroup] == month_str.to_date.strftime('%m')}" do
-          .s-date-left
-            = month_str.upcase
-          .s-date-right
-            #{format_number(date_entries.size)}
-          .clearfix
+          = year_str.upcase
+        .s-date-right
+          #{format_number(year_entries.size)}
+        .clearfix
+
+    - year_entries.group_by{|c| c.date.strftime "%b" }.each do |month_str,date_entries|
+      .s-date-left
+        =link_to entries_calendar_path(day: year_str+"-"+month_str.to_date.strftime('%m')), class: "noline" do
+          %i.fa.fa-calendar
+        &nbsp;
+      =link_to group_entries_path(year_str, month_str.to_date.strftime('%m')), :class => "#{'active' if params[:group] == year_str && params[:subgroup] == month_str.to_date.strftime('%m')}" do
+        .s-date-left
+          = month_str.upcase
+        .s-date-right
+          #{format_number(date_entries.size)}
+        .clearfix
