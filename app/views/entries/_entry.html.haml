@@ -28,6 +28,10 @@
         = link_to entry.date_format_short, day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day), rel: "tooltip-mobile-friendly", title: "#{tag_relative_date(entry.date, Date.today)}"
     %h3
       %span
+        - if current_user.can_ai? && entry.sentiment.any?
+          - entry.sentiment.reject { |s| s == "unknown" }.each do |sentiment|
+            %span{rel: "tooltip-mobile-friendly", title: "AI tagged as feeling #{sentiment.titleize}"}
+              = Entry::AiTagger::EMOTIONS[sentiment]
         = entry.date_day.upcase
 .s-scrollable
   - if @search.present?

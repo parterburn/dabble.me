@@ -4,6 +4,17 @@ class Entry::AiTagger
   AI_MODEL = "/models/j-hartmann/emotion-english-distilroberta-base".freeze
   MAX_ENTRY_SIZE = 512
 
+  EMOTIONS = {
+    "anger" => "🤬",
+    "disgust" => "🤢",
+    "fear" => "😨",
+    "joy" => "😀",
+    "neutral" => "😐",
+    "sadness" => "😭",
+    "surprise" => "😲",
+    "unknown" => "unknown"
+  }.freeze
+
   def tag(entries)
     all_entries = Array(entries).flatten
     if all_entries.count > 100
