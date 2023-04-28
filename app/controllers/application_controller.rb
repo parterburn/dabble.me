@@ -17,7 +17,7 @@ class ApplicationController < ActionController::Base
   end
 
   def authenticate_admin!
-    unless current_user.is_admin?
+    unless current_user.admin?
       flash[:alert] = "Not authorized"
       redirect_to entries_path
     end

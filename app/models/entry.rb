@@ -220,6 +220,8 @@ class Entry < ActiveRecord::Base
   end
 
   def tag_for_sentiment
-    AiTaggingJob.perform_later(self)
+    if ENV["HUGGING_FACE_API_KEY"].present?
+      AiTaggingJob.perform_later(self)
+    end
   end
 end

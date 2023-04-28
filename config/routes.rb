@@ -1,5 +1,5 @@
 Rails.application.routes.draw do
-  authenticate :user, ->(u) { u.is_admin? } do
+  authenticate :user, ->(u) { u.admin? } do
     resources :inspirations, path: '/admin/inspirations'
     resources :payments, path: '/admin/payments'
     get 'admin/users' => 'admin#users', as: 'admin_users'
@@ -22,6 +22,7 @@ Rails.application.routes.draw do
   get 'entries/calendar' => 'entries#calendar', as: 'entries_calendar'
 
   get 'past(/:anything)',               to: redirect('/entries')
+  get 'entries/emotion/:emotion',       to: 'entries#index', as: 'entries_emotion'
   get 'entries/songs',                  to: 'entries#spotify', as: 'spotify'
   get 'entries/random',                 to: 'entries#random', as: 'random_entry'
   get 'entries/:year/:month/:day',      to: 'entries#show',  as: 'day_entry'

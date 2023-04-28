@@ -20,7 +20,6 @@ class Entry::AiTagger
     if all_entries.count > 100
       all_entries.each_slice(100) do |entries_slice|
         process_entries(entries_slice)
-        sleep 3
       end
     else
       process_entries(all_entries)
@@ -30,36 +29,47 @@ class Entry::AiTagger
   private
 
   def process_entries(entries)
-    tags = sentiment_tags(entries)
-    if tags.present? && tags.is_a?(Array)
-      entries.each do |entry|
-        entry.sentiment = tags.shift
-        entry.save
-      end
+    emotion_hash = sentiment_tags(entries)
+
+    emotion_hash.each do |entry_id, tags|
+      entry = entries.find { |e| e.id == entry_id }
+      next unless entry.present?
+
+      entry.sentiment = tags
+      entry.save
     end
   end
 
   def sentiment_tags(entries)
     body = {
-      options: {
-        wait_for_model: true
-      },
-      inputs: entries.map { |e| e.text_body.first(MAX_ENTRY_SIZE) }
+      inputs: entries.map { |e| e.text_bodies_for_ai.first.first(MAX_ENTRY_SIZE) }
     }
     response = connection.post(AI_MODEL, body)
 
-    response.body.map do |entry_emotions|
-      data = entry_emotions.map do |emotion|
-        if emotion.is_a?(Hash)
-          next unless emotion["score"].to_f > SCORE_THRESHOLD
-
-          emotion["label"]
-        else
-          raise(StandardError, "Unexpected response from Hugging Face API: #{response.body}")
-        end
-      end.reject(&:blank?)
-      data.blank? ? ["unknown"] : data
+    if response.body.is_a?(Hash) && response.body["error"].present?
+      Sentry.capture_message("Hugging Face Error", level: :info, extra: { error: response.body["error"] })
+      return nil
+    elsif !response.body.is_a?(Hash)
+      Sentry.capture_message("Hugging Face Error", level: :info, extra: { error: response.body })
+      return nil
     end
+
+    emotion_hash = {}
+    response.body.map do |entry_emotions|
+      emotion_hash[entries[i].id] ||= []
+      error = false
+      entry_emotions.each_with_index do |emotion, i|
+        if emotion.is_a?(Hash) && emotion["score"] && emotion["score"].to_f > SCORE_THRESHOLD
+          emotion_hash[entries[i].id] << emotion["label"]
+        elsif !emotion.is_a?(Hash) || (emotion.is_a?(Hash) && emotion["score"].blank?)
+          error = true
+          Sentry.capture_message("Hugging Face Error", level: :info, extra: { error: emotion })
+        end
+      end
+
+      emotion_hash[entries[i].id] << ["unknown"] unless error # only add unknown if no emotions are higher than threshold
+    end
+    emotion_hash
   end
 
   def connection

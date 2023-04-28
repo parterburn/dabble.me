@@ -15,6 +15,14 @@ class Entry
 
     private
 
+    # def ai_model
+    #   if user.admin?
+    #     "gpt-4"
+    #   else
+    #     OPENAI_MODEL
+    #   end
+    # end
+
     def max_tokens
       if OPENAI_MODEL == "gpt-4"
         8000

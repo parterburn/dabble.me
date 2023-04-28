@@ -15,13 +15,15 @@
     %br
     = form_for @search, url: search_path, method: :get, html: { class: "form-horizontal" } do |f|
       .form-group
-        .col-xs-8.col-sm-10
+        .col-xs-8.col-sm-9{style: "padding-right: 0px;"}
           = f.text_field :term, class: "form-control input-lg s-search-with-clear", autofocus: true, placeholder: "What are you looking for?"
           - if @search.term.present?
             =link_to search_path, class: "s-clear-search", rel: "tooltip", title: "Clear search" do
               %i.fa.fa-times-circle
-        .col-xs-4.col-sm-1
-          = f.submit "Search", class: "btn btn-primary btn-lg"
+        .col-xs-4.col-sm-3
+          = f.submit "Search", class: "btn btn-primary btn-lg", style: "max-width: 110px;"
+          = link_to random_entry_path, title: "Random Entry", rel: "tooltip", style: "width: 20%; margin-left: 15px; top: 2px; position: relative;" do
+            %i.fa.fa-random
 
     - if @search.term.present? && current_user.is_free?
       .alert.alert-danger

@@ -3,8 +3,16 @@ shared_context 'has all objects' do
     FactoryBot.create(:user, plan: 'Free')
   end
 
+  let(:free_ai) do
+    FactoryBot.create(:user, plan: 'Free', ai_opt_in: true)
+  end
+
   let(:paid_user) do
     FactoryBot.create(:user, plan: 'PRO Monthly PayHere', payhere_id: Faker::Number.number(digits: 3), gumroad_id: Faker::Number.number(digits: 12))
+  end
+
+  let(:paid_user_ai) do
+    FactoryBot.create(:user, plan: 'PRO Monthly PayHere', payhere_id: Faker::Number.number(digits: 3), gumroad_id: Faker::Number.number(digits: 12), ai_opt_in: true)
   end
 
   let(:paid_annual_user) do
@@ -12,7 +20,7 @@ shared_context 'has all objects' do
   end
 
   let(:superuser) do
-    FactoryBot.create(:user, plan: 'PRO Forver', email: ENV['ADMIN_EMAILS']&.split(',').first)
+    FactoryBot.create(:user, plan: 'PRO Forver', admin: true)
   end
 
   let(:inspiration) do

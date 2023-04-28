@@ -23,7 +23,7 @@ rake entry:send_hourly_entries
 
 Your local environment variables at ```config/local_env.yml``` (and on Heroku) will need to be something like this (```rake db:seed``` will create the admin@dabble.ex account for you):
 
-```
+```yaml
 MAIN_DOMAIN: yourdomain.com
 SECRET_KEY_BASE: 1234..1234
 DEVISE_SECRET_KEY: 1234..1234
@@ -31,7 +31,6 @@ SMTP_DOMAIN: post.yourdomain.com
 MAILGUN_API_KEY=api-key
 MAILCHIMP_API_KEY: f....3333-ek3
 MAILCHIMP_LIST_ID: 9982...112
-ADMIN_EMAILS: admin@dabble.ex,user2@domain.com
 TURNSTILE_SITE_KEY: 6Lc6BAAAAAAAAChqRbQZcn_yyyyyyyyyyyyyyyyy
 TURNSTILE_SECRET_KEY: 6Lc6BAAAAAAAAKN3DRm6VA_xxxxxxxxxxxxxxxxx
 CLARIFAI_V2_API_KEY: asdl2k34jl2kn1l2hn234
@@ -39,6 +38,11 @@ CLARIFAI_V2_NSFW_MODEL: asdflkj23498oihlj2n34kn23
 CLARIFAI_THRESHOLD: 0.5
 GOOGLE_ANALYTICS_ID=UA-12345-67 ## ONLY FOR PRODUCTION
 SENTRY_DSN: https://dsn.sentry.io/1234
+OPENAI_ACCESS_TOKEN: sk-1234
+OPENAI_ORGANIZATION_ID: org-1234
+HUGGING_FACE_API_KEY: 1234
+STRIPE_API_KEY: sk_test_1234
+STRIPE_SIGNING_SECRET: whsec_1234
 ```
 
 ###Things you may want to rip out

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2023_04_26_204325) do
+ActiveRecord::Schema.define(version: 2023_04_28_134233) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -95,6 +95,9 @@ ActiveRecord::Schema.define(version: 2023_04_26_204325) do
     t.text "frequency", default: ["Sun"], array: true
     t.text "previous_frequency", default: [], array: true
     t.datetime "last_sent_at"
+    t.boolean "admin", default: false
+    t.boolean "ai_opt_in", default: false
+    t.boolean "send_as_ai", default: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["paranoid_verification_code"], name: "index_users_on_paranoid_verification_code"
     t.index ["paranoid_verified_at"], name: "index_users_on_paranoid_verified_at"

@@ -30,7 +30,7 @@
       %span
         = entry.date_day.upcase
         - if current_user.can_ai? && entry.sentiment.reject { |s| s == "unknown" }.any?
-          %span{rel: "tooltip-mobile-friendly", title: "AI tagged as feeling #{entry.sentiment.to_sentence}", style: "padding: 0 0 0 5px;"}
+          %a{rel: "tooltip-mobile-friendly", title: "AI tagged as feeling #{entry.sentiment.to_sentence}", style: "padding: 0 0 0 5px; text-decoration: none;", href: review_path(entry.date.year)}
             - entry.sentiment.each do |sentiment|
               = Entry::AiTagger::EMOTIONS[sentiment]
 .s-scrollable

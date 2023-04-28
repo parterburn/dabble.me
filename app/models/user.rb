@@ -95,12 +95,8 @@ class User < ActiveRecord::Base
     nil
   end
 
-  def is_admin?
-    admin_emails.include?(self.email)
-  end
-
   def can_ai?
-    is_admin? || (ENV['AI_BETA_EMAILS'].present? && email.in?(ENV['AI_BETA_EMAILS']&.split(',')))
+    ai_opt_in?
   end
 
   def is_pro?
@@ -175,7 +171,7 @@ class User < ActiveRecord::Base
   end
 
   def after_database_authentication
-    if self.is_admin? && self.generate_paranoid_code
+    if self.admin? && self.generate_paranoid_code
       UserMailer.confirm_user(self).deliver_later
     elsif self.need_paranoid_verification?
       UserMailer.confirm_user(self).deliver_later
@@ -273,9 +269,5 @@ class User < ActiveRecord::Base
   rescue StandardError => e
     Sentry.set_user(id: self.id, email: self.email)
     Sentry.capture_exception(e, extra: { email_type: "Welcome Email" })
-  end
-
-  def admin_emails
-    ENV['ADMIN_EMAILS']&.split(',')
   end
 end

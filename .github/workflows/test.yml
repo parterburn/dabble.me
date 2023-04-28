@@ -91,7 +91,6 @@ jobs:
         MAIN_DOMAIN: test
         PAYPAL_SELLER_ID: test
         SMTP_DOMAIN: test
-        ADMIN_EMAILS: admin@dabble.ex
 
       run: |
         bundle exec rake

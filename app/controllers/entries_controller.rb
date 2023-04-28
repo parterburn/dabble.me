@@ -4,7 +4,10 @@ class EntriesController < ApplicationController
   before_action :set_entry, :require_entry_permission, only: [:show, :edit, :update, :destroy, :process_as_ai]
 
   def index
-    if params[:group] == 'photos'
+    if params[:emotion].present?
+      @entries = current_user.entries.includes(:inspiration).where("'sentiment' = ANY (ARRAY[?])", params[:emotion])
+      @title = "Entries tagged with #{params[:emotion].titleize}"
+    elsif params[:group] == 'photos'
       @entries = current_user.entries.includes(:inspiration).only_images
       @title = 'Photo Entries'
     elsif params[:subgroup].present?
@@ -31,6 +34,7 @@ class EntriesController < ApplicationController
     if @entries.present?
       @entries = Kaminari.paginate_array(@entries).page(params[:page]).per(params[:per])
     elsif params[:format] != "json"
+      flash[:alert] = "No entries found."
       redirect_to latest_entry_path and return
     end
 
