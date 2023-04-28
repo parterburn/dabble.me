@@ -3,7 +3,8 @@
 
   %h3.visible-sm.visible-xs
     #{@title.upcase.html_safe}
-    =link_to "javascript:void(0);", onclick: "$('.j-calendar').slideToggle('fast');", class: "s-toggle-calendar" do
+    =link_to "javascript:void(0);", onclick: "$('.j-calendar').slideToggle('fast');", class: "s-toggle-calendar", style: "text-decoration: none;" do
+      %span{style: "font-size: 13px; position: relative; top: -1px; "} FILTERS
       %i.fa.fa-calendar
 
 .col-xs-11.col-sm-5.col-md-2.s-date-groups.j-calendar
@@ -33,6 +34,16 @@
         #{format_number(current_user.entries.size)}
       .clearfix
 
+  - if params[:emotion].present?
+    %h4{style: "font-size: 14px;"}
+      =link_to entries_emotion_path(params[:emotion]), class: "active" do
+        .s-date-left
+          = Entry::AiTagger::EMOTIONS[params[:emotion]]
+          = params[:emotion].upcase
+        .s-date-right
+          #{format_number(@entries.size)}
+        .clearfix
+
   - if (only_images = current_user.entries.only_images.size) > 0
     %h4{style: "font-size: 14px;"}
       =link_to group_entries_path('photos'), class: "#{'active' if current_page?(group_entries_path('photos'))}" do
@@ -54,23 +65,24 @@
         #{format_number(spotify_entries.size)}
       .clearfix
 
-  - current_user.entries.group_by{|c| c.date.strftime "%Y" }.each do |year_str,year_entries|
-    %h4.s-date-year
-      =link_to group_entries_path(year_str), class: "#{'active' if params[:group] == year_str}" do
-        .s-date-left
-          = year_str.upcase
-        .s-date-right
-          #{format_number(year_entries.size)}
-        .clearfix
+  - if @entries.present?
+    - @entries.group_by{|c| c.date.strftime "%Y" }.each do |year_str,year_entries|
+      %h4.s-date-year
+        =link_to group_entries_path(year_str), class: "#{'active' if params[:group] == year_str}" do
+          .s-date-left
+            = year_str.upcase
+          .s-date-right
+            #{format_number(year_entries.size)}
+          .clearfix
 
-    - year_entries.group_by{|c| c.date.strftime "%b" }.each do |month_str,date_entries|
-      .s-date-left
-        =link_to entries_calendar_path(day: year_str+"-"+month_str.to_date.strftime('%m')), class: "noline" do
-          %i.fa.fa-calendar
-        &nbsp;
-      =link_to group_entries_path(year_str, month_str.to_date.strftime('%m')), :class => "#{'active' if params[:group] == year_str && params[:subgroup] == month_str.to_date.strftime('%m')}" do
+      - year_entries.group_by{|c| c.date.strftime "%b" }.each do |month_str,date_entries|
         .s-date-left
-          = month_str.upcase
-        .s-date-right
-          #{format_number(date_entries.size)}
-        .clearfix
+          =link_to entries_calendar_path(day: year_str+"-"+month_str.to_date.strftime('%m')), class: "noline" do
+            %i.fa.fa-calendar
+          &nbsp;
+        =link_to group_entries_path(year_str, month_str.to_date.strftime('%m')), :class => "#{'active' if params[:group] == year_str && params[:subgroup] == month_str.to_date.strftime('%m')}" do
+          .s-date-left
+            = month_str.upcase
+          .s-date-right
+            #{format_number(date_entries.size)}
+          .clearfix

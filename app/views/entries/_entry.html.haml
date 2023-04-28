@@ -30,9 +30,9 @@
       %span
         = entry.date_day.upcase
         - if current_user.can_ai? && entry.sentiment.reject { |s| s == "unknown" }.any?
-          %a{rel: "tooltip-mobile-friendly", title: "AI tagged as feeling #{entry.sentiment.to_sentence}", style: "padding: 0 0 0 5px; text-decoration: none;", href: review_path(entry.date.year)}
+          %span{rel: "tooltip-mobile-friendly", title: "AI tagged as feeling #{entry.sentiment.to_sentence}", style: "padding: 0 0 0 5px; text-decoration: none;"}
             - entry.sentiment.each do |sentiment|
-              = Entry::AiTagger::EMOTIONS[sentiment]
+              = link_to Entry::AiTagger::EMOTIONS[sentiment], entries_emotion_path(sentiment), style: "text-decoration: none;"
 .s-scrollable
   - if @search.present?
     = highlight(format_body(entry.formatted_body), @search.term)
