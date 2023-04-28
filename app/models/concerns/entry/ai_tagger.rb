@@ -39,7 +39,7 @@ class Entry::AiTagger
 
           emotion["label"]
         else
-          raise "HuggingFaceError", "Unexpected response from Hugging Face API: #{response.body}"
+          raise(StandardError, "Unexpected response from Hugging Face API: #{response.body}")
         end
       end.reject(&:blank?)
       data.blank? ? ["unknown"] : data
