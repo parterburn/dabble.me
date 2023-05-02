@@ -32,6 +32,8 @@ class User < ActiveRecord::Base
   scope :not_forever, -> { where("plan NOT ILIKE '%forever%'") }
   scope :referrals, -> { where("referrer IS NOT null") }
 
+  after_commit :notify_stripe
+
   before_save { email&.gsub!(",",".")&.gsub!(".@", "@")&.downcase! }
   before_save { send_timezone.gsub!("&amp;", "&") }
   after_commit on: :update do
@@ -269,5 +271,17 @@ class User < ActiveRecord::Base
   rescue StandardError => e
     Sentry.set_user(id: self.id, email: self.email)
     Sentry.capture_exception(e, extra: { email_type: "Welcome Email" })
+  end
+
+  def notify_stripe
+    return unless stripe_id.present?
+    return unless (saved_changes[:email] || saved_changes[:first_name] || saved_changes[:last_name])
+
+    params = {
+      name: full_name,
+      email: email,
+    }
+
+    Stripe::Customer.update(stripe_id, params)
   end
 end
