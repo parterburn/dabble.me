@@ -1,7 +1,7 @@
 .well{class: add_class}
   .center
     .s-entry-date
-      - if current_user.is_pro?
+      - if current_user.is_pro? && params[:plan] != "pro"
         %h2 Premium features unlocked!
       - else
         %h2{style: "font-size: 18px;"} Unlock all premium features with a PRO account
