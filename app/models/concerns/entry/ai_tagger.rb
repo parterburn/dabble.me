@@ -30,6 +30,7 @@ class Entry::AiTagger
 
   def process_entries(entries)
     emotion_hash = sentiment_tags(entries)
+    return unless emotion_hash.present?
 
     emotion_hash.each do |entry_id, tags|
       entry = entries.find { |e| e.id == entry_id }
