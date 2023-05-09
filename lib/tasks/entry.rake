@@ -179,7 +179,7 @@ namespace :entry do
           sent_in_hour += 1
         end
       rescue => error
-        Sentry.set_user(id: user.id, email: user.email)
+        Sentry.set_user(id: user.id, email: user.email, plan: user.plan)
         Sentry.capture_exception(error, extra: { sent_in_hour: sent_in_hour })
       end
     end

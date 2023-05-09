@@ -34,7 +34,7 @@ StripeEvent.configure do |events|
           user.update(frequency: user.previous_frequency) if user.previous_frequency.any?
           UserMailer.thanks_for_paying(user).deliver_later
         rescue StandardError => e
-          Sentry.set_user(id: user.id, email: user.email)
+          Sentry.set_user(id: user.id, email: user.email, plan: user.plan)
           Sentry.capture_exception(e)
         end
       end

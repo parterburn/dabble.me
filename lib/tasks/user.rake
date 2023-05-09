@@ -7,7 +7,7 @@ namespace :user do
       begin
         UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
-        Sentry.set_user(id: user.id, email: user.email)
+        Sentry.set_user(id: user.id, email: user.email, plan: user.plan)
         Sentry.capture_exception(e, extra: { email_type: "downgrade_expired" })
       end
     end
@@ -17,7 +17,7 @@ namespace :user do
       begin
         UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
-        Sentry.set_user(id: user.id, email: user.email)
+        Sentry.set_user(id: user.id, email: user.email, plan: user.plan)
         Sentry.capture_exception(e, extra: { email_type: "downgrade_expired" })
       end
     end
@@ -29,7 +29,7 @@ namespace :user do
       begin
         UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
-        Sentry.set_user(id: user.id, email: user.email)
+        Sentry.set_user(id: user.id, email: user.email, plan: user.plan)
         Sentry.capture_exception(e, extra: { email_type: "downgrade_gumroad_expired" })
       end
     end
@@ -39,7 +39,7 @@ namespace :user do
       begin
         UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
-        Sentry.set_user(id: user.id, email: user.email)
+        Sentry.set_user(id: user.id, email: user.email, plan: user.plan)
         Sentry.capture_exception(e, extra: { email_type: "downgrade_gumroad_expired" })
       end
     end
@@ -51,7 +51,7 @@ namespace :user do
       begin
         UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
-        Sentry.set_user(id: user.id, email: user.email)
+        Sentry.set_user(id: user.id, email: user.email, plan: user.plan)
         Sentry.capture_exception(e, extra: { email_type: "downgrade_payhere_expired" })
       end
     end
@@ -61,7 +61,7 @@ namespace :user do
       begin
         UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
-        Sentry.set_user(id: user.id, email: user.email)
+        Sentry.set_user(id: user.id, email: user.email, plan: user.plan)
         Sentry.capture_exception(e, extra: { email_type: "downgrade_payhere_expired" })
       end
     end
@@ -73,7 +73,7 @@ namespace :user do
       begin
         UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
-        Sentry.set_user(id: user.id, email: user.email)
+        Sentry.set_user(id: user.id, email: user.email, plan: user.plan)
         Sentry.capture_exception(e, extra: { email_type: "downgrade_paypal_expired" })
       end
     end
@@ -83,7 +83,7 @@ namespace :user do
       begin
         UserMailer.downgraded(user).deliver_now
       rescue StandardError => e
-        Sentry.set_user(id: user.id, email: user.email)
+        Sentry.set_user(id: user.id, email: user.email, plan: user.plan)
         Sentry.capture_exception(e, extra: { email_type: "downgrade_paypal_expired" })
       end
     end
