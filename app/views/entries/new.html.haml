@@ -11,17 +11,17 @@
         for $3/mo unlocks the ability to add new entries via the web.
     .clearfix
   %br
-  .col-md-8.col-md-offset-2.well.s-new-edit-entry{:id => "entry-#{@entry.id}"}
+  .col-md-8.col-md-offset-2.well.s-new-edit-entry{:id => "entry-#{@entry&.id}"}
     %div{class: add_class}
       = form_for :entry, url: entries_path do |f|
         .s-entry-date.s-new-entry
           .float-left.s-edit-entry{:rel=>"popover", :title=>"Inspiration", :"data-content"=>"If you need ideas to get started just glance up here for quotes & questions!"}
             %i.fa.fa-lightbulb-o
           .center.s-inspiration
-            -if @entry.inspiration.present?
-              =@entry.inspiration.body.html_safe
-              - if @entry.inspiration.category != "Tip"
-                =f.hidden_field :inspiration_id, :value => @entry.inspiration.id
+            -if @entry&.inspiration.present?
+              =@entry&.inspiration.body.html_safe
+              - if @entry&.inspiration.category != "Tip"
+                =f.hidden_field :inspiration_id, :value => @entry&.inspiration.id
             -elsif (random_inspiration = Inspiration.random).present?
               =random_inspiration.body.html_safe
               - if random_inspiration.category != "Tip"
@@ -30,7 +30,7 @@
             %span
               NEW ENTRY
 
-        -if @entry.errors.any?
+        -if @entry&.errors.any?
           #error_explanation
             .alert.alert-danger
               - @entry.errors.full_messages.each do |msg|
@@ -41,13 +41,13 @@
           .input-group.date
             %span.input-group-addon
               %i.fa.fa-calendar
-            - entry_date = params[:day].present? ? Date.parse(params[:day]).strftime("%B %-d, %Y") : (@entry.date.present? ? @entry.date_format_short : Time.now.in_time_zone(current_user.send_timezone).strftime("%B %-d, %Y"))
+            - entry_date = params[:day].present? ? Date.parse(params[:day]).strftime("%B %-d, %Y") : (@entry&.date.present? ? @entry.date_format_short : Time.now.in_time_zone(current_user.send_timezone).strftime("%B %-d, %Y"))
             = f.text_field :date, :value => entry_date, :placeholder=>"October 11 2014", :class => "form-control pickadate"
           %br
 
           %div
 
-            - if @entry.image.present?
+            - if @entry&.image.present?
               %label
                 = f.check_box :remove_image, class: 'j-image-remove'
                 &nbsp;Remove Photo
@@ -84,7 +84,7 @@
     return true;
   });
 
-  $("#entry-#{@entry.id}").imagesLoaded()
+  $("#entry-#{@entry&.id}").imagesLoaded()
     .done( function( instance ) {
       $(instance.elements).find('.pictureFrame img').css("background-image","none");
     });
