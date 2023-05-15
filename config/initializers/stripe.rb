@@ -50,7 +50,8 @@ StripeEvent.configure do |events|
             user.update(frequency: user.previous_frequency) if user.previous_frequency.any?
             UserMailer.thanks_for_paying(user).deliver_later
           rescue StandardError => e
-            Sentry.set_user(id: user.id, email: user.email, plan: user.plan)
+            Sentry.set_user(id: user.id, email: user.email)
+            Sentry.set_tags(plan: user.plan)
             Sentry.capture_exception(e)
           end
         end
@@ -64,7 +65,11 @@ StripeEvent.configure do |events|
     invoice = event.data.object
     stripe_customer_id = invoice.customer
     user = User.where(stripe_id: stripe_customer_id).first
-    Sentry.capture_message("Failed payment", level: :info, extra: { user_id: user&.id, user_email: user&.email, invoice: invoice })
+    if user.present?
+      Sentry.set_user(id: user.id, email: user.email)
+      Sentry.set_tags(plan: user.plan)
+    end
+    Sentry.capture_message("Failed payment", level: :info, extra: { invoice: invoice })
   end
 
   # Update plan when a user changes it
@@ -82,7 +87,11 @@ StripeEvent.configure do |events|
         cancel_at_period_end = subscription.cancel_at_period_end
 
         if cancel_at_period_end
-          Sentry.capture_message("Customer set subscription to cancel at period end", level: :info, extra: { user_id: user.id, user_email: user.email, total_payments: user.payments.sum(:amount).to_f, subscription: subscription })
+          if user.present?
+            Sentry.set_user(id: user.id, email: user.email)
+            Sentry.set_tags(plan: user.plan)
+          end
+          Sentry.capture_message("Customer set subscription to cancel at period end", level: :info, extra: { total_payments: user.payments.sum(:amount).to_f, subscription: subscription })
         else
           previous_attributes = event.data.previous_attributes
           if previous_attributes && previous_attributes['items']
@@ -110,7 +119,9 @@ StripeEvent.configure do |events|
       if stripe_customer_id.present?
       user = User.where(stripe_id: stripe_customer_id).first
       if user.present?
-        Sentry.capture_message("Subscription deleted", level: :info, extra: { user_id: user.id, user_email: user.email, total_payments: user.payments.sum(:amount).to_f, subscription: subscription })
+        Sentry.set_user(id: user.id, email: user.email)
+        Sentry.set_tags(plan: user.plan)
+        Sentry.capture_message("Subscription deleted", level: :info, extra: { total_payments: user.payments.sum(:amount).to_f, subscription: subscription })
       end
     end
   end

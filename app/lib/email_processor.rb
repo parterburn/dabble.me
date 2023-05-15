@@ -35,7 +35,8 @@ class EmailProcessor
 
   def process
     if @user.present?
-      Sentry.set_user(id: @user.id, email: @user.email, plan: @user.plan)
+      Sentry.set_user(id: @user.id, email: @user.email)
+      Sentry.set_tags(plan: @user.plan)
 
       best_attachment = nil
       if @user.is_pro? && @attachments.present?

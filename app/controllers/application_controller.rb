@@ -26,6 +26,7 @@ class ApplicationController < ActionController::Base
   def identify_current_user_to_sentry
     if current_user
       Sentry.set_user(id: current_user.id, email: current_user.email)
+      Sentry.set_tags(plan: current_user.plan)
     end
     extras = { params: params.to_unsafe_h, url: request.url }
     Sentry.set_extras(extras)
