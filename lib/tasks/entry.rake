@@ -1,12 +1,14 @@
 namespace :entry do
   require 'csv'
 
+  # TRIGGERED MANUALLY
   # rake entry:send_entries_test
   task :send_entries_test => :environment do
     user = User.where(:email=>"admin@dabble.ex").first
     EntryMailer.send_entry(user, Inspiration.random).deliver_now
   end
 
+  # TRIGGERED MANUALLY
   # heroku run bundle exec rake "entry:stats[2022]" --app dabble-me --size=standard-2x
   task :stats, [:year] => :environment do |_, year:|
     # Stats for 2015

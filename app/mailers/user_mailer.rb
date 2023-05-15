@@ -64,16 +64,16 @@ class UserMailer < ActionMailer::Base
     email.mailgun_options = {tag: 'EntryError'}
   end
 
-  def referred_users(id, email)
-    @ref_id = id
-    if id == '*'
-      @users = User.referrals.where('created_at > ?', 1.week.ago)
-    else
-      @users = User.referrals.where(referrer: id).where('created_at > ?', 1.week.ago)
-    end
-    return unless @users.present?
+  # def referred_users(id, email)
+  #   @ref_id = id
+  #   if id == '*'
+  #     @users = User.referrals.where('created_at > ?', 1.week.ago)
+  #   else
+  #     @users = User.referrals.where(referrer: id).where('created_at > ?', 1.week.ago)
+  #   end
+  #   return unless @users.present?
 
-    email = mail(to: email, subject: 'Dabble Me Referrals')
-    email.mailgun_options = {tag: 'Referrals'}
-  end
+  #   email = mail(to: email, subject: 'Dabble Me Referrals')
+  #   email.mailgun_options = {tag: 'Referrals'}
+  # end
 end
