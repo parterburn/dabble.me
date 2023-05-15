@@ -206,6 +206,8 @@ class PaymentsController < ApplicationController
         frequency = params[:plan][:billing_interval] == "month" ? "Monthly" : "Yearly"
         Payment.create(user_id: @user.id, comments: "PayHere #{frequency} from #{params[:customer][:email]}", date: Time.now.strftime("%Y-%m-%d").to_s, amount: paid)
         { plan: "PRO #{frequency} PayHere", payhere_id:  params[:customer][:id] }
+      else
+        { payhere_id: params[:customer][:id] }
       end
     else # params[:event].in?(["subscription.cancelled", "subscription.created"])
       { payhere_id: params[:customer][:id] }
@@ -227,6 +229,8 @@ class PaymentsController < ApplicationController
     elsif @user.present?
       Payment.create(user_id: @user.id, comments: "Gumroad #{frequency} from #{params[:email]}", date: Time.now.strftime("%Y-%m-%d").to_s, amount: paid )
       { plan: "PRO #{frequency} Gumroad", gumroad_id:  params[:purchaser_id] }
+    else
+      { gumroad_id:  params[:purchaser_id] }
     end
   end
 
@@ -237,12 +241,14 @@ class PaymentsController < ApplicationController
     paid = params[:mc_gross]
     frequency = paid.to_i > 10 ? 'Yearly' : 'Monthly'
 
-    if @user.present? && @user.payments.count > 0 && @user.payments.last.date.to_date === Time.now.to_date
-      # duplicate webhook, don't save
+    if @user.present? && @user.payments.size > 0 && @user.payments.last.date.to_date === Time.now.to_date
+      # duplicate webhook, don't save, don't error
       { }
     elsif @user.present?
       Payment.create(user_id: @user.id, comments: "Paypal #{frequency} from #{params[:payer_email]}", date: Time.now.strftime("%Y-%m-%d").to_s, amount: paid )
       { plan: "PRO #{frequency} PayPal" }
+    elsif params[:item_name].present? && params[:item_name].include?("Dabble Me")
+      { error: "No user match" }
     end
   end
 
@@ -256,6 +262,7 @@ class PaymentsController < ApplicationController
 
   def valid_payhere_signature?
     return true if Rails.env.test?
+
     digest = OpenSSL::Digest.new("sha1")
     expected = OpenSSL::HMAC.hexdigest(digest, ENV["PAYHERE_SHARED_SECRET"].to_s, request.raw_post)
 
