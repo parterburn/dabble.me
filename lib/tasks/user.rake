@@ -1,63 +1,41 @@
-require 'stripe'
-
 namespace :user do
 
   # rake user:downgrade_expired
   task :downgrade_expired => :environment do
-    Stripe.api_key = ENV['STRIPE_API_KEY']
-
     User.pro_only.yearly.not_forever.joins(:payments).where("payments.amount > ?", 10.00).having("MAX(payments.date) < ?", 368.days.ago).group("users.id").each do |user|
-      if user.payments.last.date.before?(368.days.ago) # double check
-        begin
-          if user.stripe_id.present?
-            charges = Stripe::Charge.list({ customer: user.stripe_id })
-            if charges && charges.data.any?
-              latest_charge = charges.data.first
-              latest_charge_date = Time.at(latest_charge.created)
-              latest_charge_amount = latest_charge.amount.to_f / 100
-              if latest_charge_date.after?(368.days.ago) && latest_charge_amount > 10.0
-                Sentry.set_user(id: user.id, email: user.email)
-                Sentry.set_tags(plan: user.plan)
-                Sentry.capture_exception("Downgrade attempt for paid user", extra: { latest_charge: latest_charge })
-                next # triple check
-              end
-            end
-          end
-          user.update(plan: "Free")
-          UserMailer.downgraded(user).deliver_now
-        rescue StandardError => e
-          Sentry.set_user(id: user.id, email: user.email)
-          Sentry.set_tags(plan: user.plan)
-          Sentry.capture_exception(e, extra: { email_type: "downgrade_expired" })
-        end
+      if user.has_active_stripe_subscription?
+        Sentry.set_user(id: user.id, email: user.email)
+        Sentry.set_tags(plan: user.plan)
+        Sentry.capture_exception("Downgrade attempt for active Stripe subscription user")
+      else
+        user.update(plan: "Free")
+      end
+
+      begin
+        UserMailer.downgraded(user).deliver_now
+      rescue StandardError => e
+        Sentry.set_user(id: user.id, email: user.email)
+        Sentry.set_tags(plan: user.plan)
+        Sentry.capture_exception(e, extra: { email_type: "downgrade_expired" })
       end
     end
 
     User.pro_only.monthly.not_forever.joins(:payments).where("payments.amount > ?", 1.00).having("MAX(payments.date) < ?", 33.days.ago).group("users.id").each do |user|
-      if user.payments.last.date < 33.days.ago # double check
-        begin
-          if user.stripe_id.present?
-            charges = Stripe::Charge.list({ customer: user.stripe_id })
-            if charges && charges.data.any?
-              latest_charge = charges.data.first
-              latest_charge_date = Time.at(latest_charge.created)
-              latest_charge_amount = latest_charge.amount.to_f / 100
-              if latest_charge_date.after?(33.days.ago) && latest_charge_amount > 1.0
-                Sentry.set_user(id: user.id, email: user.email)
-                Sentry.set_tags(plan: user.plan)
-                Sentry.capture_exception("Downgrade attempt for paid user", extra: { latest_charge: latest_charge })
-                next # triple check
-              end
-            end
-          end
+      if user.has_active_stripe_subscription?
+        Sentry.set_user(id: user.id, email: user.email)
+        Sentry.set_tags(plan: user.plan)
+        Sentry.capture_exception("Downgrade attempt for active Stripe subscription user")
+        next
+      else
+        user.update(plan: "Free")
+      end
 
-          user.update(plan: "Free")
-          UserMailer.downgraded(user).deliver_now
-        rescue StandardError => e
-          Sentry.set_user(id: user.id, email: user.email)
-          Sentry.set_tags(plan: user.plan)
-          Sentry.capture_exception(e, extra: { email_type: "downgrade_expired" })
-        end
+      begin
+        UserMailer.downgraded(user).deliver_now
+      rescue StandardError => e
+        Sentry.set_user(id: user.id, email: user.email)
+        Sentry.set_tags(plan: user.plan)
+        Sentry.capture_exception(e, extra: { email_type: "downgrade_expired" })
       end
     end
   end

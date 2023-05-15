@@ -253,6 +253,12 @@ class User < ActiveRecord::Base
     "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:[#{last_5_images[1..-1].map(&:inspect).join(',')}],w:1200,h:1200,m:10/#{last_5_images.first}"
   end
 
+  def has_active_stripe_subscription?
+    return nil unless stripe_id.present?
+    subscriptions = Stripe::Subscription.list(customer: stripe_id)
+    subscriptions.any? { |subscription| %w[trialing active].include?(subscription.status) }
+  end
+
   private
 
   def restrict_free_frequency
