@@ -6,7 +6,7 @@ namespace :user do
   task :downgrade_expired => :environment do
     Stripe.api_key = ENV['STRIPE_API_KEY']
 
-    User.pro_only.yearly.not_forever.joins(:payments).where("payments.amount > ?", 15.00).having("MAX(payments.date) < ?", 368.days.ago).group("users.id").each do |user|
+    User.pro_only.yearly.not_forever.joins(:payments).where("payments.amount > ?", 10.00).having("MAX(payments.date) < ?", 368.days.ago).group("users.id").each do |user|
       if user.payments.last.date.before?(368.days.ago) # double check
         begin
           if user.stripe_id.present?
@@ -15,7 +15,7 @@ namespace :user do
               latest_charge = charges.data.first
               latest_charge_date = Time.at(latest_charge.created)
               latest_charge_amount = latest_charge.amount.to_f / 100
-              if latest_charge_date.after?(368.days.ago) && latest_charge_amount > 3.0
+              if latest_charge_date.after?(368.days.ago) && latest_charge_amount > 10.0
                 Sentry.set_user(id: user.id, email: user.email)
                 Sentry.set_tags(plan: user.plan)
                 Sentry.capture_exception("Downgrade attempt for paid user", extra: { latest_charge: latest_charge })
@@ -42,7 +42,7 @@ namespace :user do
               latest_charge = charges.data.first
               latest_charge_date = Time.at(latest_charge.created)
               latest_charge_amount = latest_charge.amount.to_f / 100
-              if latest_charge_date.after?(33.days.ago) && latest_charge_amount > 2.0
+              if latest_charge_date.after?(33.days.ago) && latest_charge_amount > 1.0
                 Sentry.set_user(id: user.id, email: user.email)
                 Sentry.set_tags(plan: user.plan)
                 Sentry.capture_exception("Downgrade attempt for paid user", extra: { latest_charge: latest_charge })
