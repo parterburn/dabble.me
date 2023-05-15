@@ -279,7 +279,7 @@ class User < ActiveRecord::Base
 
     params = {
       name: full_name,
-      email: email,
+      email: email
     }
 
     Stripe::Customer.update(stripe_id, params)

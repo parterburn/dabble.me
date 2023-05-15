@@ -6,7 +6,7 @@ namespace :user do
   task :downgrade_expired => :environment do
     Stripe.api_key = ENV['STRIPE_API_KEY']
 
-    User.pro_only.yearly.not_forever.joins(:payments).where("payments.amount >= ?", 30.00).having("MAX(payments.date) < ?", 368.days.ago).group("users.id").each do |user|
+    User.pro_only.yearly.not_forever.joins(:payments).where("payments.amount > ?", 15.00).having("MAX(payments.date) < ?", 368.days.ago).group("users.id").each do |user|
       if user.payments.last.date.before?(368.days.ago) # double check
         begin
           if user.stripe_id.present?
@@ -33,7 +33,7 @@ namespace :user do
       end
     end
 
-    User.pro_only.monthly.not_forever.joins(:payments).where("payments.amount >= ?", 1.00).having("MAX(payments.date) < ?", 33.days.ago).group("users.id").each do |user|
+    User.pro_only.monthly.not_forever.joins(:payments).where("payments.amount > ?", 1.00).having("MAX(payments.date) < ?", 33.days.ago).group("users.id").each do |user|
       if user.payments.last.date < 33.days.ago # double check
         begin
           if user.stripe_id.present?

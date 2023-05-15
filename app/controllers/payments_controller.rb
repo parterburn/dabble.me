@@ -141,7 +141,7 @@ class PaymentsController < ApplicationController
       if session.present? && session.client_reference_id.present?
         user = User.find(session.client_reference_id)
         if user.present?
-          plan = session.amount_total > 5 ? "PRO Yearly PayHere" : "PRO Monthly PayHere"
+          plan = session.amount_total > 10 ? "PRO Yearly PayHere" : "PRO Monthly PayHere"
           user.update(stripe_id: session.customer, plan: plan)
         end
       end
