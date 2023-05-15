@@ -7,7 +7,7 @@ class User < ActiveRecord::Base
          :recoverable, :rememberable, :trackable, :validatable, :paranoid_verification
 
   randomized_field :user_key, length: 18 do |slug_value|
-    "u" + slug_value
+    "u#{slug_value}"
   end
 
   has_many :entries, dependent: :destroy

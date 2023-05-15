@@ -201,13 +201,12 @@ class PaymentsController < ApplicationController
       # Sentry.capture_message("Failed payment", level: :info, extra: { params: params })
       { payhere_id: params[:customer][:id] }
     elsif params[:event] == "payment.success"
-      paid = params[:plan][:qty].present? && params[:plan][:qty].positive? ? params[:plan][:price] * params[:plan][:qty] : params[:plan][:price]
-      frequency = params[:plan][:billing_interval] == "month" ? "Monthly" : "Yearly"
-
-      if @user.present? && @user.payments.where("comments ILIKE '%#{frequency}%'").last&.date&.to_date != Date.today
+      if @user.present? && @user.payments.last&.date&.to_date != Date.today
+        paid = params[:plan][:qty].present? && params[:plan][:qty].positive? ? params[:plan][:price] * params[:plan][:qty] : params[:plan][:price]
+        frequency = params[:plan][:billing_interval] == "month" ? "Monthly" : "Yearly"
         Payment.create(user_id: @user.id, comments: "PayHere #{frequency} from #{params[:customer][:email]}", date: Time.now.strftime("%Y-%m-%d").to_s, amount: paid)
+        { plan: "PRO #{frequency} PayHere", payhere_id:  params[:customer][:id] }
       end
-      { plan: "PRO #{frequency} PayHere", payhere_id:  params[:customer][:id] }
     else # params[:event].in?(["subscription.cancelled", "subscription.created"])
       { payhere_id: params[:customer][:id] }
     end
@@ -222,13 +221,13 @@ class PaymentsController < ApplicationController
     else
       frequency = paid.to_i > 10 ? 'Yearly' : 'Monthly'
     end
-    if @user.present? && @user.payments.count > 0 && Payment.where(user_id: @user.id).last.date.to_date === Time.now.to_date
+    if @user.present? && @user.payments.count > 0 && @user.payments.last.date.to_date === Time.now.to_date
       # duplicate, don't send
+      { gumroad_id:  params[:purchaser_id] }
     elsif @user.present?
       Payment.create(user_id: @user.id, comments: "Gumroad #{frequency} from #{params[:email]}", date: Time.now.strftime("%Y-%m-%d").to_s, amount: paid )
+      { plan: "PRO #{frequency} Gumroad", gumroad_id:  params[:purchaser_id] }
     end
-
-    { plan: "PRO #{frequency} Gumroad", gumroad_id:  params[:purchaser_id] }
   end
 
   def process_paypal
@@ -238,13 +237,13 @@ class PaymentsController < ApplicationController
     paid = params[:mc_gross]
     frequency = paid.to_i > 10 ? 'Yearly' : 'Monthly'
 
-    if @user.present? && @user.payments.count > 0 && Payment.where(user_id: @user.id).last.date.to_date === Time.now.to_date
+    if @user.present? && @user.payments.count > 0 && @user.payments.last.date.to_date === Time.now.to_date
       # duplicate webhook, don't save
+      { }
     elsif @user.present?
       Payment.create(user_id: @user.id, comments: "Paypal #{frequency} from #{params[:payer_email]}", date: Time.now.strftime("%Y-%m-%d").to_s, amount: paid )
+      { plan: "PRO #{frequency} PayPal" }
     end
-
-    { plan: "PRO #{frequency} PayPal", gumroad_id:  @user&.gumroad_id}
   end
 
   def payment_params
