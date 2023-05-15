@@ -116,6 +116,7 @@ class PaymentsController < ApplicationController
     if current_user.stripe_id? && Stripe::Subscription.list(customer: current_user.stripe_id, status: 'active').data.any?
       redirect_to billing_path
     else
+      url = Rails.env.development? ? "http://localhost:3000" : "https://#{ENV['MAIN_DOMAIN']}"
       stripe_params = {
         line_items: [{
           price: params['plan'] == "yearly" ? ENV['STRIPE_YEARLY_PLAN'] : ENV['STRIPE_MONTHLY_PLAN'],
@@ -124,8 +125,8 @@ class PaymentsController < ApplicationController
         client_reference_id: current_user.id,
         mode: 'subscription',
         subscription_data: { metadata: { dabble_id: current_user.id } },
-        success_url: "https://#{ENV['MAIN_DOMAIN']}/success?session_id={CHECKOUT_SESSION_ID}",
-        cancel_url: request.referrer,
+        success_url: "#{url}/success?session_id={CHECKOUT_SESSION_ID}",
+        cancel_url: request.referrer
       }
       stripe_params = current_user.stripe_id? ? stripe_params.merge(customer: current_user.stripe_id) : stripe_params.merge(customer_email: current_user.email)
       session = Stripe::Checkout::Session.create(stripe_params)
@@ -140,7 +141,7 @@ class PaymentsController < ApplicationController
       if session.present? && session.client_reference_id.present?
         user = User.find(session.client_reference_id)
         if user.present?
-          plan = session.amount_total > 30_00 ? "PRO Yearly PayHere" : "PRO Monthly PayHere"
+          plan = session.amount_total > 5 ? "PRO Yearly PayHere" : "PRO Monthly PayHere"
           user.update(stripe_id: session.customer, plan: plan)
         end
       end

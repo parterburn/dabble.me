@@ -4,12 +4,6 @@ StripeEvent.signing_secret = ENV["STRIPE_SIGNING_SECRET"]
 StripeEvent.configure do |events|
   events.subscribe "checkout.session.completed" do |event|
     session = event.data.object
-
-    puts "checkout.session.completed"
-    puts "USER ID: #{session.client_reference_id}"
-    puts "STRIPE_CUSTOMER_ID: #{session.customer}"
-    puts event
-
     if session.client_reference_id.present?
       user = User.where(id: session.client_reference_id).first
       if user.present?
@@ -21,15 +15,9 @@ StripeEvent.configure do |events|
   events.subscribe "invoice.payment_succeeded" do |event|
     invoice = event.data.object
     stripe_customer_id = invoice.customer
-
-    puts "invoice.payment_succeeded"
-    puts "STRIPE_CUSTOMER_ID: #{stripe_customer_id}"
-    puts event
-
     line_item = event.data.object.lines.data.first
     paid = invoice.amount_paid.to_f / 100
     frequency = line_item.plan.interval == "month" ? "Monthly" : "Yearly"
-    Sentry.capture_message("Stripe Hook", level: :info, extra: { event: event })
 
     if stripe_customer_id.present?
       user = User.where(stripe_id: stripe_customer_id).first
@@ -76,11 +64,6 @@ StripeEvent.configure do |events|
   events.subscribe "customer.subscription.updated" do |event|
     subscription = event.data.object
     stripe_customer_id = subscription.customer
-
-    puts "customer.subscription.updated"
-    puts "STRIPE_CUSTOMER_ID: #{stripe_customer_id}"
-    puts event
-
     if stripe_customer_id.present?
       user = User.where(stripe_id: stripe_customer_id).first
       if user.present?
@@ -100,9 +83,9 @@ StripeEvent.configure do |events|
 
             # user changed plans, ajust accordingly
             if old_plan && new_plan && old_plan != new_plan
-              if new_plan.include?("year")
+              if new_plan.downcase.include?("year")
                 user.update(plan: "PRO Yearly PayHere")
-              elsif new_plan.include?("month")
+              elsif new_plan.downcase.include?("month")
                 user.update(plan: "PRO Monthly PayHere")
               end
             end
