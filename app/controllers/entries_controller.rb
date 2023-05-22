@@ -92,8 +92,12 @@ class EntriesController < ApplicationController
     if @existing_entry.present? && params[:entry][:entry].present?
       @existing_entry.body = "#{@existing_entry.body}<hr>#{params[:entry][:entry]}"
       @existing_entry.inspiration_id = params[:entry][:inspiration_id] if params[:entry][:inspiration_id].present?
-      if @existing_entry.image_url_cdn.blank? && params[:entry][:image].present?
-        @existing_entry.image = params[:entry][:image]
+      if params[:entry][:image].present?
+        if @existing_entry.image_url_cdn.present? || params[:entry][:image].count > 1
+          @existing_entry.remote_image_url = collage_from_attachments(Array(params[:entry][:image]), existing_image_url: @existing_entry.image_url_cdn)
+        elsif params[:entry][:image].present?
+          @existing_entry.image = params[:entry][:image].first
+        end
       end
       if @existing_entry.save
         flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime("%B %-d")}."
@@ -104,6 +108,12 @@ class EntriesController < ApplicationController
       end
     else
       @entry = current_user.entries.create(entry_params)
+      if params[:entry][:image].present? && params[:entry][:image].count > 1
+        @entry.remote_image_url = collage_from_attachments(params[:entry][:image])
+      elsif params[:entry][:image].present?
+        @entry.image = params[:entry][:image].first
+      end
+
       if @entry.save
         track_ga_event('New')
         flash[:notice] = "Entry created successfully!"
@@ -134,10 +144,12 @@ class EntriesController < ApplicationController
       # existing entry exists, so add to it
       @existing_entry.body = "#{@existing_entry.body}<hr>#{params[:entry][:entry]}"
       @existing_entry.inspiration_id = params[:entry][:inspiration_id] if params[:entry][:inspiration_id].present?
-      if @existing_entry.image_url_cdn.blank? && @entry.image.present?
-        @existing_entry.image = @entry.image
-      elsif @entry.image.present?
-        @existing_entry.body = "#{@existing_entry.body}<br><a href='#{@entry.image_url_cdn}'><img src='#{@entry.image_url_cdn}'></a>"
+      if params[:entry][:image].present?
+        if @existing_entry.image_url_cdn.present? || params[:entry][:image].count > 1
+          @existing_entry.remote_image_url = collage_from_attachments(Array(params[:entry][:image]), existing_image_url: @existing_entry.image_url_cdn)
+        else
+          @existing_entry.image = params[:entry][:image]
+        end
       end
       if @existing_entry.save
         @entry.delete
@@ -152,13 +164,20 @@ class EntriesController < ApplicationController
       flash[:notice] = 'Entry deleted!'
       redirect_back_or_to entries_path
     else
-      if @entry.image_url_cdn.present? && entry_params[:remove_image] == "0"
+      update_params = if @entry.image_url_cdn.present? && entry_params[:remove_image] == "0"
         @entry.remote_image_url = @entry.image_url_cdn
-        update_params = entry_params.permit(:entry, :date)
+        entry_params.permit(:entry, :date)
       else
-        update_params = entry_params.permit(:entry, :date, :image, :remove_image)
+        entry_params.permit(:entry, :date, :remove_image)
       end
-      if @entry.update(entry_params)
+      if @entry.update(update_params)
+        if params[:entry][:image].present? && params[:entry][:image].size > 1
+          @entry.remote_image_url = collage_from_attachments(params[:entry][:image])
+          @entry.save
+        elsif params[:entry][:image].present?
+          @entry.image = params[:entry][:image].first
+          @entry.save
+        end
         track_ga_event('Update')
         flash[:notice] = "Entry successfully updated!"
         redirect_to day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day)
@@ -245,7 +264,7 @@ class EntriesController < ApplicationController
   end
 
   def entry_params
-    params.require(:entry).permit(:date, :entry, :image, :inspiration_id, :remove_image, :remote_image_url)
+    params.require(:entry).permit(:date, :entry, :inspiration_id, :remove_image, :remote_image_url)
   end
 
   def set_entry
@@ -295,4 +314,30 @@ class EntriesController < ApplicationController
     @spotify_entries ||= current_user.entries.only_spotify
   end
   helper_method :spotify_entries
+
+  def collage_from_attachments(attachments, existing_image_url: nil)
+    s3 = Fog::Storage.new({
+      provider:              "AWS",
+      aws_access_key_id:     ENV["AWS_ACCESS_KEY_ID"],
+      aws_secret_access_key: ENV["AWS_SECRET_ACCESS_KEY"],
+    })
+
+    directory = s3.directories.new(key: ENV["AWS_BUCKET"])
+
+    add_dev = "/development" unless Rails.env.production?
+    folder = "uploads#{add_dev}/tmp/#{Date.today.strftime("%Y-%m-%d")}/"
+
+    urls = attachments.first(10).map do |att|
+      file_key = "#{folder}#{SecureRandom.uuid}#{File.extname(att)}"
+      file = directory.files.create(key: file_key, body: att, public: true, content_disposition: "inline", cache_control: "public, max-age=#{365.days.to_i}")
+      file.public_url
+    end
+
+    collage_from_urls(urls + [existing_image_url])
+  end
+
+  def collage_from_urls(urls)
+    urls.compact!
+    "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:[#{urls[1..-1].map(&:inspect).join(',')}],w:1200,h:1200,m:10/#{urls.first}"
+  end
 end

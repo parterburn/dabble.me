@@ -59,10 +59,10 @@ class Entry::AiTagger
     end
 
     emotion_hash = {}
-    response.body.map do |entry_emotions|
+    response.body.each_with_index do |entry_emotions, i|
       emotion_hash[entries[i].id] ||= []
       error = false
-      entry_emotions.each_with_index do |emotion, i|
+      entry_emotions.each do |emotion|
         if emotion.is_a?(Hash) && emotion["score"] && emotion["score"].to_f > SCORE_THRESHOLD
           emotion_hash[entries[i].id] << emotion["label"]
         elsif !emotion.is_a?(Hash) || (emotion.is_a?(Hash) && emotion["score"].blank?)
@@ -71,13 +71,14 @@ class Entry::AiTagger
         end
       end
 
-      emotion_hash[entries[i].id] << ["unknown"] unless error # only add unknown if no emotions are higher than threshold
+      emotion_hash[entries[i].id] << "unknown" if error # only add unknown if no emotions are higher than threshold
     end
     emotion_hash
   end
 
   def connection
     @connection ||= Faraday.new(BASE_URL) do |f|
+      f.options[:timeout] = 29
       f.request :json
       f.response :json
       f.request :authorization, "Bearer", ENV["HUGGING_FACE_API_KEY"]

@@ -39,26 +39,33 @@ class EmailProcessor
       Sentry.set_tags(plan: @user.plan)
 
       best_attachment = nil
+      best_attachment_url = nil
       if @user.is_pro? && @attachments.present?
+        valid_attachments = []
         @attachments.each do |attachment|
           next unless attachment.present?
 
           # Make sure attachments are at least 8kb so we're not saving a bunch of signuture/footer images
           file_size = File.size?(attachment.tempfile).to_i
           if (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|gif|heic|heif)$/i || attachment.original_filename =~ /^.+\.(heic|HEIC|Heic|heif|HEIF|Heif)$/i) && (file_size <= 0 || file_size > 8000) && file_size > 20000 && !attachment.original_filename.in?(["tmiFinal.png"])
-            best_attachment = attachment
-            break
+            valid_attachments << attachment
           end
+        end
+
+        if valid_attachments.size > 1
+          best_attachment_url = collage_from_attachments(valid_attachments.first(10))
+        elsif valid_attachments.any?
+          best_attachment = valid_attachments.first
         end
       end
 
       # If image came in as a URL, try saving that
-      best_attachment_url = nil
-      if best_attachment.blank? && @stripped_html.present?
+      if best_attachment_url.blank? && best_attachment.blank? && @stripped_html.present?
         email_reply_html = @stripped_html&.split(/reply to this email with your /i)&.first
         image_urls = email_reply_html&.scan(/<img\s.*?src=(?:'|")([^'">]+)(?:'|")/i)
         image_urls.flatten! if image_urls.present?
         if @user.is_pro? && image_urls.present? && image_urls.any?
+          valid_attachment_urls = []
           image_urls.each do |image_url|
             image_type = FastImage.type(image_url)
 
@@ -66,18 +73,21 @@ class EmailProcessor
               image_width, image_height = FastImage.size(image_url)
               next if image_height && image_width && image_height < 100 && image_width < 100
 
-              best_attachment_url = image_url
-              break
+              valid_attachment_urls << image_url
             end
+          end
+
+          if valid_attachment_urls.size > 1
+            best_attachment_url = collage_from_urls(valid_attachment_urls.first(10))
+          elsif valid_attachment_urls.any?
+            best_attachment_url = valid_attachment_urls.first
           end
         end
       end
 
       date = parse_subject_for_date(@subject)
       existing_entry = @user.existing_entry(date.to_s)
-
       inspiration_id = parse_body_for_inspiration_id(@raw_body)
-
       @body = @html if @html.present? && @user.is_pro?
 
       if existing_entry.present?
@@ -95,10 +105,18 @@ class EmailProcessor
         existing_entry.original_email_body = @raw_body
         existing_entry.inspiration_id = inspiration_id if inspiration_id.present?
 
-        if existing_entry.image_url_cdn.blank? && best_attachment.present?
-          existing_entry.image = best_attachment
-        elsif existing_entry.image_url_cdn.blank? && best_attachment_url.present?
-          existing_entry.remote_image_url = best_attachment_url
+        if existing_entry.image_url_cdn.blank?
+          if best_attachment.present?
+            existing_entry.image = best_attachment
+          elsif best_attachment_url.present?
+            existing_entry.remote_image_url = best_attachment_url
+          end
+        elsif existing_entry.image_url_cdn.present?
+          if best_attachment.present?
+            existing_entry.remote_image_url = collage_from_attachments([best_attachment], existing_image_url: existing_entry.image_url_cdn)
+          elsif best_attachment_url.present?
+            existing_entry.remote_image_url = collage_from_urls([best_attachment_url, existing_entry.image_url_cdn])
+          end
         end
 
         if existing_entry.save
@@ -294,6 +312,32 @@ class EmailProcessor
     html&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
 
     to_utf8(html)
+  end
+
+  def collage_from_attachments(attachments, existing_image_url: nil)
+    s3 = Fog::Storage.new({
+      provider:              "AWS",
+      aws_access_key_id:     ENV["AWS_ACCESS_KEY_ID"],
+      aws_secret_access_key: ENV["AWS_SECRET_ACCESS_KEY"],
+    })
+
+    directory = s3.directories.new(key: ENV["AWS_BUCKET"])
+
+    add_dev = "/development" unless Rails.env.production?
+    folder = "uploads#{add_dev}/tmp/#{Date.today.strftime("%Y-%m-%d")}/"
+
+    urls = attachments.map do |att|
+      file_key = "#{folder}#{SecureRandom.uuid}#{File.extname(att)}"
+      file = directory.files.create(key: file_key, body: att, public: true, content_disposition: "inline", cache_control: "public, max-age=#{365.days.to_i}")
+      file.public_url
+    end
+
+    collage_from_urls(urls + [existing_image_url])
+  end
+
+  def collage_from_urls(urls)
+    urls.compact!
+    "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:[#{urls[1..-1].map(&:inspect).join(',')}],w:1200,h:1200,m:10/#{urls.first}"
   end
 end
 # rubocop:enable Metrics/AbcSize
