@@ -53,7 +53,7 @@ class Entry::AiTagger
     if response.body.is_a?(Hash) && response.body["error"].present?
       Sentry.capture_message("Hugging Face Error", level: :info, extra: { error: response.body["error"] })
       return nil
-    elsif !response.body.is_a?(Hash)
+    elsif !response.body.is_a?(Hash) && !response.body.is_a?(Array)
       Sentry.capture_message("Hugging Face Error", level: :info, extra: { error: response.body })
       return nil
     end
