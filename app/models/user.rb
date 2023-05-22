@@ -204,19 +204,11 @@ class User < ActiveRecord::Base
   end
 
   def hashtags_attributes=(value)
+    original_hashtags.destroy_all
     (0..value.count-1).each do |i|
       record = value[i.to_s]
-      if record["tag"].present?
-        t = original_hashtags.where('lower(tag) = ?', record["tag"].downcase).first
-        if t.present?
-          if record["date"].blank?
-            t.destroy
-          else
-            t.update(date: Date.parse(record["date"]))
-          end
-        elsif record["date"].present?
-          original_hashtags.create(tag: record["tag"], date: Date.parse(record["date"]))
-        end
+      if record["tag"].present? && record["date"].present?
+        original_hashtags.create(tag: record["tag"], date: Date.parse(record["date"]))
       end
     end
   end
