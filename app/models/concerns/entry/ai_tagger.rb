@@ -15,8 +15,9 @@ class Entry::AiTagger
     "unknown" => "unknown"
   }.freeze
 
-  def tag(entries)
-    all_entries = Array(entries).flatten
+  def tag(entry_ids)
+    all_entries = Entry.where(id: entry_ids)
+
     if all_entries.count > 100
       all_entries.each_slice(100) do |entries_slice|
         process_entries(entries_slice)
