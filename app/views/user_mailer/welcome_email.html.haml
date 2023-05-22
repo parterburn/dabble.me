@@ -26,7 +26,7 @@
         %br
         %br
       %li
-        Unlock premium features like changing email frequency, editing entries, and attaching a photo to your reply by subscribing to
+        Unlock premium features like changing email frequency, editing entries, and attaching photos to your reply by subscribing to
         =link_to("Dabble Me PRO", "https://#{ENV['MAIN_DOMAIN']}/subscribe")+"."
 %hr{:style=>"margin-top: 20px;margin-bottom: 20px;border: 0;border-top: 2px solid whiteSmoke;"}
 %p
@@ -36,7 +36,7 @@
 %P
   For reference, your username is: #{@user.email}
 %p
-  %i 
+  %i
     P.S. If you received this email by error, you can
     =link_to "unsubscribe", "https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}"
     to stop all future emails.

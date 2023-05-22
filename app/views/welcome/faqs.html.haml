@@ -23,8 +23,8 @@
       %h4
         - if !signed_in? || current_user.is_free?
           %i.fa.fa-lock
-        How do I add a photo to my entry?
-      %p When you reply to your Dabble Me email, just attach a photo to the email and it'll get saved with your entry. You can also add a photo on the website when you edit an entry. You can add 1 photo per entry, and we support jpeg, gif, png, and heic/heif (mobile) formats.
+        How do I add photos to my entry?
+      %p When you reply to your Dabble Me email, just attach photos to the email and it'll get saved with your entry. You can also add photos on the website when you edit an entry. You can add up to 5 photos per entry (they will create a collage). Dabble Me supports jpeg, gif, png, and heic/heif (mobile) formats.
 
       %h4
         - if !signed_in? || current_user.is_free?
@@ -122,7 +122,7 @@
 
       %h4 Is this really free?
       %p
-        The basic service is, but you're limited to receiving email prompts every other Sunday. If you want premium features like changing email frequency, adding/editing entries from the web, attaching a photo with your entry, rich text entry, calendar view, and search you'll need to
+        The basic service is, but you're limited to receiving email prompts every other Sunday. If you want premium features like changing email frequency, adding/editing entries from the web, attaching photos with your entry, rich text entry, calendar view, and search you'll need to
         =link_to "subscribe", subscribe_path
         to Dabble Me PRO.
         %span{style: "display: block; margin-top: 10px;"}
