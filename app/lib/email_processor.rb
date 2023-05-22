@@ -105,7 +105,7 @@ class EmailProcessor
           track_ga_event('Merged')
 
           if respond_as_ai? && @user && @user.can_ai?
-            EntryMailer.respond_as_ai(@user, existing_entry).deliver_now
+            AiEntryJob.perform_later(@user, existing_entry)
           end
         else
           # error saving entry
@@ -155,7 +155,7 @@ class EmailProcessor
       end
 
       if entry.present? && respond_as_ai? && @user && @user.can_ai?
-        EntryMailer.respond_as_ai(@user, entry).deliver_now
+        AiEntryJob.perform_later(@user, entry)
       end
     else # no user found
       Sentry.set_user(id: @token, email: @from)

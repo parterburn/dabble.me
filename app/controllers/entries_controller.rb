@@ -227,7 +227,7 @@ class EntriesController < ApplicationController
 
   def process_as_ai
     if current_user.can_ai?
-      EntryMailer.respond_as_ai(current_user, @entry).deliver_now
+      AiEntryJob.perform_later(current_user, @entry)
       flash[:notice] = "DabbleMeGPT response sent to #{current_user.email}"
     else
       flash[:alert] = "DabbleMeGPT is not available to you."
