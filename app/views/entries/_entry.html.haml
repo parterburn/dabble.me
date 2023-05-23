@@ -43,7 +43,7 @@
     %hr
     %strong 👤 You:
     = form_tag respond_to_ai_path(entry), method: :put, style: "margin-bottom: 20px;" do
-      %textarea{rows: 1, class: "autogrow", style: "margin-top: 10px; width: 100%; padding: 5px 10px; border-radius: 8px; border: 2px solid #CCC; color: black; font-size: 15px !important;", name: "entry[ai_response]", placeholder: "Add your response here..."}
+      %textarea{rows: 1, class: "autogrow", style: "margin-top: 10px; width: 100%; padding: 5px 10px; border-radius: 8px; border: 2px solid #CCC;", name: "entry[ai_response]", placeholder: "Add your response here..."}
       %button{type: "submit", style: "font-size: 13px !important; margin-top: -15px;font-weight: bold; font-family: Raleway, sans-serif !important;", class: "btn btn-link btn-primary"} Reply to DabbleMeGPT
   - elsif current_user.can_ai? && (entry.ai_waiting_for_ai_response || params[:ai] == "generating")
     %hr{id: "generating-ai"}
