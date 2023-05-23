@@ -330,9 +330,18 @@ class EmailProcessor
 
     resp = connection.get("/v3/#{ENV['SMTP_DOMAIN']}/events?pretty=yes&event=accepted&ascending=no&limit=1&message-id=#{@message_id}")
     last_message = resp.body["items"][0]
-    message = connection.get(last_message["storage"]["url"])
 
-    return unless message.recipients.to_s.include?(@token)
+    return unless last_message.present?
+
+    message_url = URI.parse(last_message["storage"]["url"])
+    msg_conn = Faraday.new("https://#{message_url.host}") do |f|
+      f.options[:timeout] = 29
+      f.request :json
+      f.response :json
+      f.request :authorization, :basic, 'api', ENV['MAILGUN_API_KEY']
+    end
+    message = msg_conn.get(message_url.path)
+    return unless message.body["recipients"].to_s.include?(@token)
 
     attachment_urls = message.body["attachments"].map do |att|
       att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")
