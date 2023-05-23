@@ -63,7 +63,7 @@
 }
 
 .s-edit-entry {
-  color:$light-gray;
+  color:$mid-gray;
   font-size:20px;
   padding: 6px 30px;
   @media screen and (max-width: 767px) {
@@ -72,25 +72,24 @@
   transition: all 0.15s ease;
   -webkit-transition: all 0.15s ease;
   &:hover{
-    color:$mid-gray;
+    color: darken($blue, 20);
   }
   a {
     font-size:20px;
-    color: $light-gray;
+    color: $mid-gray;
     transition: all 0.15s ease;
     -webkit-transition: all 0.15s ease;
     &:hover{
-      color: $mid-gray;
+      color: darken($blue, 20);
     }
   }
 }
 
 .s-process-ai {
-  color: darken($blue, 20);
   top: -2px;
   position: relative;
   &:hover{
-    color: darken($mid-gray, 20);
+    color: darken($blue, 20);
   }
 }
 

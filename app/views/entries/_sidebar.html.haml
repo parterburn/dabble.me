@@ -34,15 +34,17 @@
         #{format_number(current_user.entries.size)}
       .clearfix
 
-  - if params[:emotion].present?
-    %h4{style: "font-size: 14px;"}
-      =link_to entries_emotion_path(params[:emotion]), class: "active" do
-        .s-date-left
-          = Entry::AiTagger::EMOTIONS[params[:emotion]]
-          = params[:emotion].upcase
-        .s-date-right
-          #{format_number(current_user.entries.size)}
-        .clearfix
+  - if params[:emotion].present? || params[:group] == "emotion"
+    - (current_user.entries.pluck(:sentiment).flatten.uniq.sort - ["unknown"]).each do |emotion|
+      %h4{style: "font-size: 15px;"}
+        =link_to entries_emotion_path(emotion), class: ("active" if params[:emotion] == emotion) do
+          .s-date-left
+            = Entry::AiTagger::EMOTIONS[emotion]
+            = emotion.upcase
+          .s-date-right
+            = format_number(current_user.entries.where("sentiment::text LIKE '%#{emotion}%'").size)
+          .clearfix
+    %hr
 
   - if (only_images = current_user.entries.only_images.size) > 0
     %h4{style: "font-size: 15px;"}
@@ -59,7 +61,6 @@
     =link_to spotify_path, class: "#{'active' if current_page?(spotify_path)}" do
       .s-date-left
         %i.fa.fa-music{style: "color: #cccccc;margin-right: 4px;"}
-
         SPOTIFY
       .s-date-right
         #{format_number(spotify_entries.size)}

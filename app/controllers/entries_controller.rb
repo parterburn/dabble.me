@@ -7,6 +7,9 @@ class EntriesController < ApplicationController
     if params[:emotion].present?
       @entries = current_user.entries.where("sentiment::text LIKE '%#{params[:emotion]}%'")
       @title = "Entries tagged with #{params[:emotion].titleize}"
+    elsif params[:group] == "emotion"
+      @entries = current_user.entries.includes(:inspiration).where("date >= ?", Date.today.beginning_of_year).where.not(sentiment: []).sort_by(&:date)
+      @title = "Entries tagged with Sentiment"
     elsif params[:group] == 'photos'
       @entries = current_user.entries.includes(:inspiration).only_images
       @title = 'Photo Entries'

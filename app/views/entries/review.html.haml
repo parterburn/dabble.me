@@ -7,7 +7,7 @@
     - ((Date.today.year - 11)..Date.today.year).each do |year|
       - entries_for_year = current_user.entries.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE")
       - if entries_for_year.any?
-        = link_to "#{year}", review_path(year), style: "margin: 0 5px; font-size: 16px;"
+        = link_to "#{year}", review_path(year), style: "margin: 0 5px; font-size: 16px; #{'color: black;' if year.to_s == @year.to_s}"
     .clearfix
     %br
     %br
@@ -37,7 +37,7 @@
         .s-entry-date
           %h2 Sentiment
           %h3
-            %span= "#{pluralize(@entries_with_sentiment.size, 'entry')} tagged"
+            %span= link_to "#{pluralize(@entries_with_sentiment.size, 'entry')} tagged", group_entries_path("emotion")
         .s-review-details
           = pie_chart(@sentiment_count,  height: "230px", library: {backgroundColor: "#ffffff"})
           .clearfix
