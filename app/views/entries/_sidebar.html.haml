@@ -45,7 +45,7 @@
         .clearfix
 
   - if (only_images = current_user.entries.only_images.size) > 0
-    %h4{style: "font-size: 14px;"}
+    %h4{style: "font-size: 15px;"}
       =link_to group_entries_path('photos'), class: "#{'active' if current_page?(group_entries_path('photos'))}" do
         .s-date-left
           %i.fa.fa-image{style: "color: #cccccc;margin-right: 2px;"}
@@ -55,7 +55,7 @@
         .clearfix
 
   - spotify_entries = current_user.entries.only_spotify
-  %h4{style: "font-size: 14px;"}
+  %h4{style: "font-size: 15px;"}
     =link_to spotify_path, class: "#{'active' if current_page?(spotify_path)}" do
       .s-date-left
         %i.fa.fa-music{style: "color: #cccccc;margin-right: 4px;"}
@@ -75,13 +75,14 @@
         .clearfix
 
     - year_entries.group_by{|c| c.date.strftime "%b" }.each do |month_str,date_entries|
-      .s-date-left
-        =link_to entries_calendar_path(day: year_str+"-"+month_str.to_date.strftime('%m')), class: "noline" do
-          %i.fa.fa-calendar
-        &nbsp;
-      =link_to group_entries_path(year_str, month_str.to_date.strftime('%m')), :class => "#{'active' if params[:group] == year_str && params[:subgroup] == month_str.to_date.strftime('%m')}" do
+      - if (!current_page?(latest_entry_path) && year_str == params[:group]) || current_page?(latest_entry_path) && year_str == Time.now.in_time_zone(current_user.send_timezone).year.to_s
         .s-date-left
-          = month_str.upcase
-        .s-date-right
-          #{format_number(date_entries.size)}
-        .clearfix
+          =link_to entries_calendar_path(day: year_str+"-"+month_str.to_date.strftime('%m')), class: "noline" do
+            %i.fa.fa-calendar
+          &nbsp;
+        =link_to group_entries_path(year_str, month_str.to_date.strftime('%m')), :class => "#{'active' if params[:group] == year_str && params[:subgroup] == month_str.to_date.strftime('%m')}" do
+          .s-date-left
+            = month_str.upcase
+          .s-date-right
+            #{format_number(date_entries.size)}
+          .clearfix

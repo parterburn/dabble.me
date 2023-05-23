@@ -1,3 +1,11 @@
+GIT
+  remote: https://github.com/parterburn/summernote-rails
+  revision: 32fd182c929cdcacaa6e3bd3569871bd025fa669
+  specs:
+    summernote-rails (0.8.20.1)
+      nokogiri
+      railties (>= 3.1)
+
 GEM
   remote: https://rubygems.org/
   specs:
@@ -431,8 +439,6 @@ GEM
     stripe_event (2.7.0)
       activesupport (>= 3.1)
       stripe (>= 2.8, < 9)
-    summernote-rails (0.8.12.0)
-      railties (>= 3.1)
     temple (0.8.2)
     thor (1.2.1)
     tilt (2.0.10)
@@ -543,7 +549,7 @@ DEPENDENCIES
   stackprof
   stripe
   stripe_event
-  summernote-rails (~> 0.8.12.0)
+  summernote-rails (~> 0.8.20.0)!
   tilt (~> 2.0, >= 2.0.10)
   turnstile-captcha
   twbs_sass_rails

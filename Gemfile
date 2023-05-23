@@ -34,7 +34,7 @@ gem 'rack-utf8_sanitizer', '~> 1.7'
 gem 'randomized_field', '~> 1.0' # builds user_keys
 gem 'rest-client' # RESTClient
 gem 'rubyzip', '~> 1.3'
-gem 'summernote-rails', '~> 0.8.12.0'
+gem 'summernote-rails', '~> 0.8.20.0', git: "https://github.com/parterburn/summernote-rails"
 gem 'words_counted' # Year in Review
 gem 'zip-zip'
 gem "chartkick", "~> 5"
