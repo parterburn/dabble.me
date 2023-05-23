@@ -5,7 +5,7 @@ class EntriesController < ApplicationController
 
   def index
     if params[:emotion].present?
-      @entries = Entry.where("sentiment::text LIKE '%#{params[:emotion]}%'")
+      @entries = current_user.entries.where("sentiment::text LIKE '%#{params[:emotion]}%'")
       @title = "Entries tagged with #{params[:emotion].titleize}"
     elsif params[:group] == 'photos'
       @entries = current_user.entries.includes(:inspiration).only_images
