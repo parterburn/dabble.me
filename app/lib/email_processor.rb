@@ -17,7 +17,7 @@ class EmailProcessor
     @stripped_html = email.vendor_specific.try(:[], :stripped_html)
     @body = clean_message(email.body)
     @html = clean_html_version(@stripped_html)
-    @message_id = email.headers&.dig("Message-ID")
+    @message_id = email.headers&.dig("Message-ID")&.gsub("<", "")&.gsub(">", "")
 
     @raw_body = to_utf8(email.raw_body)
     @attachments = email.attachments
@@ -319,6 +319,8 @@ class EmailProcessor
   end
 
   def collage_from_mailgun_attachments
+    return unless @message_id.present?
+
     connection = Faraday.new("https://api.mailgun.net") do |f|
       f.options[:timeout] = 29
       f.request :json
@@ -327,7 +329,11 @@ class EmailProcessor
     end
 
     resp = connection.get("/v3/#{ENV['SMTP_DOMAIN']}/events?pretty=yes&event=accepted&ascending=no&limit=1&message-id=#{@message_id}")
-    message = connection.get(resp.body["items"][0]["storage"]["url"])
+    last_message = resp.body["items"][0]
+    message = connection.get(last_message["storage"]["url"])
+
+    return unless message.recipients.to_s.include?(@token)
+
     attachment_urls = message.body["attachments"].map do |att|
       att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")
     end
@@ -336,6 +342,8 @@ class EmailProcessor
   end
 
   def collage_from_attachments(attachments, existing_image_url: nil)
+    return nil unless attachments.present?
+
     s3 = Fog::Storage.new({
       provider:              "AWS",
       aws_access_key_id:     ENV["AWS_ACCESS_KEY_ID"],
@@ -357,6 +365,8 @@ class EmailProcessor
   end
 
   def collage_from_urls(urls)
+    return nil unless urls.present?
+
     urls.compact!
     "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:[#{urls[1..-1].map(&:inspect).join(',')}],w:1200,h:1200,m:10/#{urls.first}"
   end
