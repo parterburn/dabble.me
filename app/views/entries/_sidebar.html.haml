@@ -76,7 +76,7 @@
         .clearfix
 
     - year_entries.group_by{|c| c.date.strftime "%b" }.each do |month_str,date_entries|
-      - if (!current_page?(latest_entry_path) && year_str == params[:group]) || current_page?(latest_entry_path) && year_str == Time.now.in_time_zone(current_user.send_timezone).year.to_s
+      - if (!current_page?(latest_entry_path) && year_str == params[:group]) || ((current_page?(latest_entry_path) || (current_page?(entries_path) && params[:group].blank?)) && year_str == Time.now.in_time_zone(current_user.send_timezone).year.to_s)
         .s-date-left
           =link_to entries_calendar_path(day: year_str+"-"+month_str.to_date.strftime('%m')), class: "noline" do
             %i.fa.fa-calendar
