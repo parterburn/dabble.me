@@ -27,6 +27,7 @@ Rails.application.routes.draw do
   get 'entries/random',                 to: 'entries#random', as: 'random_entry'
   get 'entries/:year/:month/:day',      to: 'entries#show',  as: 'day_entry'
   post 'entries/:id/process_ai',        to: 'entries#process_as_ai',  as: 'process_as_ai'
+  match 'entries/:id/respond_to_ai' => 'entries#respond_to_ai', as: 'respond_to_ai', via: [:put]
   resources :entries, except: [:show]
   get 'entries/(:group)(/:subgroup)',   to: 'entries#index',  as: 'group_entries'
   get 'latest',                         to: 'entries#latest', as: 'latest_entry'

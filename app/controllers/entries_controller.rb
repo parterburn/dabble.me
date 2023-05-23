@@ -1,7 +1,7 @@
 # Handle Web Entries
 class EntriesController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_entry, :require_entry_permission, only: [:show, :edit, :update, :destroy, :process_as_ai]
+  before_action :set_entry, :require_entry_permission, only: [:show, :edit, :update, :destroy, :process_as_ai, :respond_to_ai]
 
   def index
     if params[:emotion].present?
@@ -249,12 +249,27 @@ class EntriesController < ApplicationController
 
   def process_as_ai
     if current_user.can_ai?
-      AiEntryJob.perform_later(current_user, @entry)
-      flash[:notice] = "DabbleMeGPT response sent to #{current_user.email}"
+      AiEntryJob.perform_later(current_user.id, @entry.id, email: false)
+      flash[:notice] = "DabbleMeGPT response is generating."
     else
       flash[:alert] = "DabbleMeGPT is not available to you."
     end
-    redirect_to day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day)
+    redirect_to day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day, ai: "generating", anchor: "generating-ai")
+  end
+
+  def respond_to_ai
+    if current_user.can_ai?
+      @entry.body += "<hr><strong>👤 You:</strong><br/>#{params[:entry][:ai_response]}"
+      if params[:entry][:ai_response].present? && @entry.save
+        AiEntryJob.perform_later(current_user.id, @entry.id, email: false)
+        flash[:notice] = "DabbleMeGPT response is generating."
+      else
+        flash[:alert] = "Error saving response"
+      end
+    else
+      flash[:alert] = "DabbleMeGPT is not available to you."
+    end
+    redirect_to day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day, anchor: "generating-ai")
   end
 
   private

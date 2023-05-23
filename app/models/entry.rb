@@ -86,7 +86,7 @@ class Entry < ActiveRecord::Base
   end
 
   def split_for_ai
-    formatted_body.split("<hr>")
+    formatted_body&.split("<hr>")
   end
 
   def text_bodies_for_ai
@@ -163,6 +163,14 @@ class Entry < ActiveRecord::Base
         Sentry.capture_exception(e, extra: { type: "Claraifai Error" })
       end
     end
+  end
+
+  def ai_waiting_for_user_response
+    @ai_waiting_for_user_response ||= split_for_ai&.last&.include?("🤖 DabbleMeGPT:")
+  end
+
+  def ai_waiting_for_ai_response
+    @ai_waiting_for_ai_response ||= updated_at > 1.minute.ago && split_for_ai&.last&.include?("👤 You:")
   end
 
   private

@@ -38,7 +38,7 @@ class EntryMailer < ActionMailer::Base
     @ai_answer = entry.ai_response
     return unless @ai_answer.present?
 
-    entry.body = "#{entry.body}<hr><strong>🤖 DabbleMeGPT:</strong><br/>#{ActionController::Base.helpers.simple_format(@ai_answer, {}, sanitize: false)}"
+    entry.body = "#{entry.body}<hr><strong>🤖 DabbleMeGPT:</strong><br/>#{ActionController::Base.helpers.simple_format(@ai_answer.gsub(/<hr\/?>/, "").gsub(/\A\n*/, ""), {}, sanitize: false)}"
     entry.save
     @entry = entry
 
