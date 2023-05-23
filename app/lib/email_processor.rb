@@ -326,13 +326,13 @@ class EmailProcessor
       f.request :authorization, :basic, 'api', ENV['MAILGUN_API_KEY']
     end
 
-    connection.get("/v3/#{ENV['SMTP_DOMAIN']}/events?pretty=yes&event=accepted&ascending=no&limit=1&message-id=#{@message_id}")
-    data = connection.get(resp.body["items"][0]["storage"]["url"])
-    urls = data.body["attachments"].map do |att|
+    resp = connection.get("/v3/#{ENV['SMTP_DOMAIN']}/events?pretty=yes&event=accepted&ascending=no&limit=1&message-id=#{@message_id}")
+    message = connection.get(resp.body["items"][0]["storage"]["url"])
+    attachment_urls = message.body["attachments"].map do |att|
       att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")
     end
 
-    collage_from_urls(urls)
+    collage_from_urls(attachment_urls)
   end
 
   def collage_from_attachments(attachments, existing_image_url: nil)
