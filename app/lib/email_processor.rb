@@ -327,10 +327,8 @@ class EmailProcessor
       f.response :json
       f.request :authorization, :basic, 'api', ENV['MAILGUN_API_KEY']
     end
-
     resp = connection.get("/v3/#{ENV['SMTP_DOMAIN']}/events?pretty=yes&event=accepted&ascending=no&limit=1&message-id=#{@message_id}")
     last_message = resp.body["items"][0]
-
     return unless last_message.present?
 
     message_url = URI.parse(last_message["storage"]["url"])
@@ -341,7 +339,7 @@ class EmailProcessor
       f.request :authorization, :basic, 'api', ENV['MAILGUN_API_KEY']
     end
     message = msg_conn.get(message_url.path)
-    return unless message.body["recipients"].to_s.include?(@token)
+    return unless message.body["recipients"].to_s.include?(@user.user_key) || message.body["from"].to_s.include?(@user.email)
 
     attachment_urls = message.body["attachments"].map do |att|
       att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")
