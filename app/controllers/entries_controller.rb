@@ -5,11 +5,11 @@ class EntriesController < ApplicationController
 
   def index
     if params[:emotion].present?
-      @entries = current_user.entries.where("sentiment::text LIKE '%#{params[:emotion]}%'")
+      @entries = current_user.entries.includes(:inspiration).where("sentiment::text LIKE '%#{params[:emotion]}%'")
       @title = "Entries tagged with #{params[:emotion].titleize}"
     elsif params[:group] == "emotion"
-      @entries = current_user.entries.includes(:inspiration).where("date >= ?", Date.today.beginning_of_year).where.not(sentiment: []).sort_by(&:date)
-      @title = "Entries tagged with Sentiment"
+      @entries = current_user.entries.includes(:inspiration).where("date >= '#{params[:subgroup]}-01-01'::DATE").where.not(sentiment: []).and(current_user.entries.where.not(sentiment: ["unknown"])).sort_by(&:date)
+      @title = "Entries tagged with Sentiment in #{params[:subgroup]}"
     elsif params[:group] == 'photos'
       @entries = current_user.entries.includes(:inspiration).only_images
       @title = 'Photo Entries'

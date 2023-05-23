@@ -37,7 +37,7 @@
         .s-entry-date
           %h2 Sentiment
           %h3
-            %span= link_to "#{pluralize(@entries_with_sentiment.size, 'entry')} tagged", group_entries_path("emotion")
+            %span= link_to "#{pluralize(@entries_with_sentiment.size, 'entry')} tagged", group_entries_path("emotion", year)
         .s-review-details
           = pie_chart(@sentiment_count,  height: "230px", library: {backgroundColor: "#ffffff"})
           .clearfix
