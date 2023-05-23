@@ -17,6 +17,7 @@ class EmailProcessor
     @stripped_html = email.vendor_specific.try(:[], :stripped_html)
     @body = clean_message(email.body)
     @html = clean_html_version(@stripped_html)
+    @message_id = email.headers&.dig("Message-ID")
 
     @raw_body = to_utf8(email.raw_body)
     @attachments = email.attachments
@@ -53,7 +54,7 @@ class EmailProcessor
         end
 
         if valid_attachments.size > 1
-          best_attachment_url = collage_from_attachments(valid_attachments.first(10))
+          best_attachment_url = collage_from_mailgun_attachments
         elsif valid_attachments.any?
           best_attachment = valid_attachments.first
         end
@@ -315,6 +316,23 @@ class EmailProcessor
     html&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
 
     to_utf8(html)
+  end
+
+  def collage_from_mailgun_attachments
+    connection = Faraday.new("https://api.mailgun.net") do |f|
+      f.options[:timeout] = 29
+      f.request :json
+      f.response :json
+      f.request :authorization, :basic, 'api', ENV['MAILGUN_API_KEY']
+    end
+
+    connection.get("/v3/#{ENV['SMTP_DOMAIN']}/events?pretty=yes&event=accepted&ascending=no&limit=1&message-id=#{@message_id}")
+    data = connection.get(resp.body["items"][0]["storage"]["url"])
+    urls = data.body["attachments"].map do |att|
+      att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")
+    end
+
+    collage_from_urls(urls)
   end
 
   def collage_from_attachments(attachments, existing_image_url: nil)

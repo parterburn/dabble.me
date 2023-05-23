@@ -38,7 +38,7 @@ class AdminStats
         unique_opens_hash[formatted_date] = stat['opened']['total']
       end
       received_emails_hash = received_emails(date)
-      [ 
+      [
         { name: "requests sent", data: requests_hash },
         { name: "failed sent", data: failed_hash },
         { name: "unique_opens", data: unique_opens_hash },
@@ -49,7 +49,7 @@ class AdminStats
 
   def received_emails(date)
     if ENV['MAILGUN_API_KEY'].present?
-      uri = URI("https://api.mailgun.net/v3/post.dabble.me/stats/total?event=delivered&resolution=month&start=#{date.to_i}")
+      uri = URI("https://api.mailgun.net/v3/#{ENV['SMTP_DOMAIN']}/stats/total?event=delivered&resolution=month&start=#{date.to_i}")
       req = Net::HTTP::Get.new(uri)
       req.basic_auth 'api', "#{ENV['MAILGUN_API_KEY']}"
 
@@ -64,7 +64,7 @@ class AdminStats
       end
       received_hash
     end
-  end  
+  end
 
   def payments_by_month(date)
     Payment.where('date > ?', date).group_by_month(:date, format: "%b").sum(:amount)
@@ -91,7 +91,7 @@ class AdminStats
 
   def bounced_users_since(date)
     User.where("emails_bounced > 0").where("updated_at >= ?", date)
-  end  
+  end
 
   def entries_per_day_for(user)
     (entry_count_for(user) / account_age_for(user).to_f).to_f.round(1)
