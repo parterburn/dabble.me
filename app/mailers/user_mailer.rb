@@ -51,7 +51,7 @@ class UserMailer < ActionMailer::Base
   end
 
   def pro_deleted(name, email, plan, entries, user_id, payhere_id, stripe_id)
-    mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: '[ACTION REQUIRED] Pro User Deleted', body: "Name: #{name}\nEmail: #{email}\nUser ID: #{user_id}\nPlan: #{plan}\nPayhere ID: #{payhere_id}\nStripe ID: https://dashboard.stripe.com/customers/#{stripe_id} \nEntries: #{entries}")
+    mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: '[ACTION REQUIRED] Pro User Deleted', body: "Name: #{name}\nEmail: #{email}\nUser ID: #{user_id}\nPlan: #{plan}\nEntries: #{entries}\nPayhere ID: #{payhere_id}\nStripe: https://dashboard.stripe.com/customers/#{stripe_id}")
   end
 
   def failed_entry(user, errors, date, body)
