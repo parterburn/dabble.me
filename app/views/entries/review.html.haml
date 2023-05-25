@@ -4,10 +4,10 @@
 .row.s-year-in-review
   .col-md-8.col-md-offset-2
     %h3= "#{@year} Year In Review"
-    - ((Date.today.year - 11)..Date.today.year).each do |year|
-      - entries_for_year = current_user.entries.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE")
+    - ((Date.today.year - 11)..Date.today.year).each do |yr|
+      - entries_for_year = current_user.entries.where("date >= '#{yr}-01-01'::DATE AND date <= '#{yr}-12-31'::DATE")
       - if entries_for_year.any?
-        = link_to "#{year}", review_path(year), style: "margin: 0 5px; font-size: 16px; #{'color: black;' if year.to_s == @year.to_s}"
+        = link_to "#{yr}", review_path(yr), style: "margin: 0 5px; font-size: 16px; #{'color: black;' if yr.to_s == @year.to_s}"
     .clearfix
     %br
     %br
@@ -37,7 +37,7 @@
         .s-entry-date
           %h2 Sentiment
           %h3
-            %span= link_to "#{pluralize(@entries_with_sentiment.size, 'entry')} tagged", group_entries_path("emotion", year)
+            %span= link_to "#{pluralize(@entries_with_sentiment.size, 'entry')} tagged", group_entries_path("emotion", @year)
         .s-review-details
           = pie_chart(@sentiment_count,  height: "230px", library: {backgroundColor: "#ffffff"})
           .clearfix
