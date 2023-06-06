@@ -342,7 +342,7 @@ class EmailProcessor
     message = msg_conn.get(message_url.path)
     return unless message.body["recipients"].to_s.include?(@user.user_key) || message.body["from"].to_s.include?(@user.email)
 
-    message.body["attachments"].map do |att|
+    attachment_urls = message.body["attachments"].map do |att|
       att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")
     end
 
