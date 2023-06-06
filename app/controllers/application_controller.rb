@@ -45,9 +45,6 @@ class ApplicationController < ActionController::Base
     @js_action = [controller_path.camelize.gsub('::', '_'), action_name].join('_')
   end
 
-end
-
-if RUBY_VERSION>='2.6.0'
   def handle_timeout(exception)
     Sentry.capture_message("Timeout error", level: :error, extra: { params: params, url: request.url })
     render "errors/timeout"

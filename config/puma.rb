@@ -1,4 +1,4 @@
-require 'barnes'
+# require 'barnes'
 
 # Puma can serve each request in a thread from an internal thread pool.
 # The `threads` method setting takes two numbers: a minimum and maximum.
@@ -39,7 +39,7 @@ pidfile ENV.fetch("PIDFILE") { "tmp/pids/server.pid" }
 # Allow puma to be restarted by `rails restart` command.
 plugin :tmp_restart
 
-before_fork do
-  # worker configuration
-  Barnes.start
-end
+# before_fork do
+#   # worker configuration
+#   Barnes.start
+# end
