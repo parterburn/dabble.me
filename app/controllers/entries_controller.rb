@@ -97,7 +97,8 @@ class EntriesController < ApplicationController
       @existing_entry.inspiration_id = params[:entry][:inspiration_id] if params[:entry][:inspiration_id].present?
       if params[:entry][:image].present?
         if @existing_entry.image_url_cdn.present? || params[:entry][:image].count > 1
-          @existing_entry.remote_image_url = collage_from_attachments(Array(params[:entry][:image]), existing_image_url: @existing_entry.image_url_cdn)
+          image_urls = collage_from_attachments(Array(params[:entry][:image]))
+          ImageCollageJob.perform_later(@existing_entry.id, image_urls)
         elsif params[:entry][:image].present?
           @existing_entry.image = params[:entry][:image].first
         end
@@ -112,7 +113,8 @@ class EntriesController < ApplicationController
     else
       @entry = current_user.entries.create(entry_params)
       if params[:entry][:image].present? && params[:entry][:image].count > 1
-        @entry.remote_image_url = collage_from_attachments(params[:entry][:image])
+        image_urls = collage_from_attachments(params[:entry][:image])
+        ImageCollageJob.perform_later(@entry.id, image_urls)
       elsif params[:entry][:image].present?
         @entry.image = params[:entry][:image].first
       end
@@ -149,7 +151,8 @@ class EntriesController < ApplicationController
       @existing_entry.inspiration_id = params[:entry][:inspiration_id] if params[:entry][:inspiration_id].present?
       if params[:entry][:image].present?
         if @existing_entry.image_url_cdn.present? || params[:entry][:image].count > 1
-          @existing_entry.remote_image_url = collage_from_attachments(Array(params[:entry][:image]), existing_image_url: @existing_entry.image_url_cdn)
+          image_urls = collage_from_attachments(Array(params[:entry][:image]))
+          ImageCollageJob.perform_later(@existing_entry.id, image_urls)
         else
           @existing_entry.image = params[:entry][:image]
         end
@@ -175,8 +178,8 @@ class EntriesController < ApplicationController
       end
       if @entry.update(update_params)
         if params[:entry][:image].present? && params[:entry][:image].size > 1
-          @entry.remote_image_url = collage_from_attachments(params[:entry][:image])
-          @entry.save
+          image_urls = collage_from_attachments(params[:entry][:image])
+          ImageCollageJob.perform_later(@entry.id, image_urls)
         elsif params[:entry][:image].present?
           @entry.image = params[:entry][:image].first
           @entry.save
@@ -345,17 +348,10 @@ class EntriesController < ApplicationController
     add_dev = "/development" unless Rails.env.production?
     folder = "uploads#{add_dev}/tmp/#{Date.today.strftime("%Y-%m-%d")}/"
 
-    urls = attachments.first(10).map do |att|
+    attachments.first(7).map do |att|
       file_key = "#{folder}#{SecureRandom.uuid}#{File.extname(att)}"
       file = directory.files.create(key: file_key, body: att, public: true, content_disposition: "inline", cache_control: "public, max-age=#{365.days.to_i}")
       file.public_url
     end
-
-    collage_from_urls(urls + [existing_image_url])
-  end
-
-  def collage_from_urls(urls)
-    urls.compact!
-    "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:[#{urls[1..-1].map(&:inspect).join(',')}],w:1200,h:1200,m:10/#{urls.first}"
   end
 end

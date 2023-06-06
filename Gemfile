@@ -3,9 +3,9 @@ source 'https://rubygems.org'
 ruby File.read(File.expand_path '../.ruby-version', __FILE__).strip.sub /\-p[0-9]+$/, '' # Read the rbenv version file
 gem 'rails', '~> 6.0', '>= 6.0.6.1'
 
-gem 'puma', '~> 4.3'
-gem 'pg', '~> 1.2', '>= 1.2.3'
-gem 'barnes'
+gem 'puma', '~> 6'
+gem 'pg', '~> 1.5', '>= 1.2.3'
+# gem 'barnes'
 
 # users
 gem "devise", ">= 4.7.1"
@@ -18,7 +18,7 @@ gem 'addressable' # better URI checking
 gem 'combined_time_select'
 gem 'jekyll-timeago'
 
-gem "rails-html-sanitizer", "~> 1.4.4"
+gem "rails-html-sanitizer", "~> 1.6"
 
 # email parsing
 gem 'email_reply_trimmer'
@@ -30,10 +30,10 @@ gem 'mailgun_rails'
 gem "ruby-openai"
 
 gem 'groupdate' # Admin Stats
-gem 'rack-utf8_sanitizer', '~> 1.7'
+gem 'rack-utf8_sanitizer', '~> 1.8'
 gem 'randomized_field', '~> 1.0' # builds user_keys
 gem 'rest-client' # RESTClient
-gem 'rubyzip', '~> 1.3'
+gem 'rubyzip', '~> 2'
 gem 'summernote-rails', '~> 0.8.20.0', git: "https://github.com/parterburn/summernote-rails"
 gem 'words_counted' # Year in Review
 gem 'zip-zip'

@@ -79,7 +79,7 @@ class EmailProcessor
           end
 
           if valid_attachment_urls.size > 1
-            best_attachment_url = collage_from_urls(valid_attachment_urls.first(10))
+            best_attachment_url = collage_from_urls(valid_attachment_urls.first(7))
           elsif valid_attachment_urls.any?
             best_attachment_url = valid_attachment_urls.first
           end
@@ -114,7 +114,8 @@ class EmailProcessor
           end
         elsif existing_entry.image_url_cdn.present?
           if best_attachment.present?
-            existing_entry.remote_image_url = collage_from_attachments([best_attachment], existing_image_url: existing_entry.image_url_cdn)
+            image_urls = collage_from_attachments([best_attachment])
+            ImageCollageJob.perform_later(existing_entry.id, image_urls)
           elsif best_attachment_url.present?
             existing_entry.remote_image_url = collage_from_urls([best_attachment_url, existing_entry.image_url_cdn])
           end
@@ -341,7 +342,7 @@ class EmailProcessor
     message = msg_conn.get(message_url.path)
     return unless message.body["recipients"].to_s.include?(@user.user_key) || message.body["from"].to_s.include?(@user.email)
 
-    attachment_urls = message.body["attachments"].map do |att|
+    message.body["attachments"].map do |att|
       att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")
     end
 
@@ -362,13 +363,11 @@ class EmailProcessor
     add_dev = "/development" unless Rails.env.production?
     folder = "uploads#{add_dev}/tmp/#{Date.today.strftime("%Y-%m-%d")}/"
 
-    urls = attachments.map do |att|
+    attachments.map do |att|
       file_key = "#{folder}#{SecureRandom.uuid}#{File.extname(att)}"
       file = directory.files.create(key: file_key, body: att, public: true, content_disposition: "inline", cache_control: "public, max-age=#{365.days.to_i}")
       file.public_url
     end
-
-    collage_from_urls(urls + [existing_image_url])
   end
 
   def collage_from_urls(urls)
