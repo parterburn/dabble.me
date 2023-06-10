@@ -6,7 +6,7 @@ namespace :user do
       if user.has_active_stripe_subscription?
         Sentry.set_user(id: user.id, email: user.email)
         Sentry.set_tags(plan: user.plan)
-        Sentry.capture_exception("Downgrade attempt for active Stripe subscription user")
+        Sentry.capture_message("Downgrade attempt for active Stripe subscription user", level: :error)
       else
         user.update(plan: "Free")
       end
@@ -24,7 +24,7 @@ namespace :user do
       if user.has_active_stripe_subscription?
         Sentry.set_user(id: user.id, email: user.email)
         Sentry.set_tags(plan: user.plan)
-        Sentry.capture_exception("Downgrade attempt for active Stripe subscription user")
+        Sentry.capture_message("Downgrade attempt for active Stripe subscription user", level: :error)
         next
       else
         user.update(plan: "Free")
