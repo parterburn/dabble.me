@@ -131,6 +131,7 @@ class EmailProcessor
           # error saving entry
           Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save exsiting entry", subject: @subject, entry_id: existing_entry&.id, errors: existing_entry&.errors })
           UserMailer.failed_entry(@user, existing_entry.errors.full_messages.to_sentence, date, @body).deliver_later
+          raise "Failed entry"
         end
       else
         params = { date: date, inspiration_id: inspiration_id }
@@ -164,6 +165,7 @@ class EmailProcessor
           end
           Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save new entry (failed_entry email sent to hello@dabble.me)", errors: entry&.errors, rescue_error: @error, body: @body, date: date })
           UserMailer.failed_entry(@user, record_errors, date, @body).deliver_later
+          raise "Failed entry"
         end
       end
 
