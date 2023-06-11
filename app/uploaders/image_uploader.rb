@@ -15,11 +15,11 @@ class ImageUploader < CarrierWave::Uploader::Base
   # end
 
   def content_type_allowlist
-    [/(image|application)\/(png|jpe?g|gif|heic|heif|octet-stream|webp)/]
+    [/(image|application)\/(png|jpe?g|gif|heic|heif|octet-stream)/]
   end
 
   def web_image?(file)
-    heic_image?(file) || self.content_type =~ /^image\/(png|jpe?g|gif|webp)$/i || self.content_type == "application/octet-stream"
+    heic_image?(file) || self.content_type =~ /^image\/(png|jpe?g|gif)$/i || self.content_type == "application/octet-stream"
   end
 
   def heic_image?(file)

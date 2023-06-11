@@ -48,7 +48,7 @@ class EmailProcessor
 
           # Make sure attachments are at least 8kb so we're not saving a bunch of signuture/footer images
           file_size = File.size?(attachment.tempfile).to_i
-          if (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|gif|heic|heif)$/i || attachment.original_filename =~ /^.+\.(heic|HEIC|Heic|heif|HEIF|Heif)$/i) && (file_size <= 0 || file_size > 8000) && file_size > 20000 && !attachment.original_filename.in?(["tmiFinal.png"])
+          if (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|gif|heic|heif)$/i || attachment.original_filename =~ /^.+\.(heic|HEIC|Heic|heif|HEIF|Heif)$/i) && (file_size <= 0 || file_size > 20000) && !attachment.original_filename.in?(["tmiFinal.png"])
             valid_attachments << attachment
           end
         end
@@ -345,6 +345,9 @@ class EmailProcessor
     return unless message.body["recipients"].to_s.include?(@user.user_key) || message.body["from"].to_s.include?(@user.email)
 
     attachment_urls = message.body["attachments"].map do |att|
+      next unless att["content-type"]&.downcase.in?(['image/gif', 'image/jpeg', 'image/jpg', 'application/octet-stream', 'image/png', 'image/heic', 'image/heif'])
+      next unless att["size"].to_i > 20_000
+
       att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")
     end
 
