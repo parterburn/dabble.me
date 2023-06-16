@@ -46,13 +46,18 @@ class EmailProcessor
         @attachments.each do |attachment|
           next unless attachment.present?
 
-          # Make sure attachments are at least 8kb so we're not saving a bunch of signuture/footer images
+          # Make sure attachments are at least 20kb so we're not saving a bunch of signuture/footer images\
+          # bypass invidiual files with attachment.original_filename != "tmiFinal.png"
           file_size = File.size?(attachment.tempfile).to_i
-          if (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|gif|heic|heif)$/i || attachment.original_filename =~ /^(.+\.(heic|heif))$/i) && (file_size <= 0 || file_size > 20_000) && attachment.original_filename != "tmiFinal.png"
+
+          p "ATTACHMENT: #{attachment.original_filename} - #{attachment.content_type} - #{file_size}"
+
+          if (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|gif|heic|heif)$/i || attachment.original_filename =~ /^(.+\.(heic|heif))$/i) && file_size > 20000
             valid_attachments << attachment
           end
         end
 
+        p "VALID ATTACHMENTS: #{valid_attachments.size}"
         if valid_attachments.size > 1
           best_attachment_url = collage_from_mailgun_attachments
         elsif valid_attachments.any?
