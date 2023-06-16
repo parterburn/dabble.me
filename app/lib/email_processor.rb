@@ -135,10 +135,12 @@ class EmailProcessor
         end
       else
         params = { date: date, inspiration_id: inspiration_id }
+        p "BEST_ATTACHMENT_URL: #{best_attachment_url}"
         best_attachment.present? ? params.merge!(image: best_attachment) : params.merge!(remote_image_url: best_attachment_url)
         begin
           entry = @user.entries.create!(params.merge(body: @body, original_email_body: @raw_body))
         rescue ActiveRecord::RecordInvalid => error
+          p "***ERROR: #{error}"
           @error = error
           if error.to_s.include?("Image Failed to manipulate with MiniMagick")
             entry = @user.entries.create!(params.except(:image, :remote_image_url).merge(body: @body, original_email_body: @raw_body))
@@ -147,6 +149,7 @@ class EmailProcessor
             Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "ActiveRecord::RecordInvalid", error: error, subject: @subject })
           end
         rescue => error
+          p "***ERROR: #{error}"
           @error = error
           Sentry.capture_message("Error processing entry via email", level: :error, extra: { error: error, subject: @subject, body: @body, raw_body: @raw_body })
           @body = @body.force_encoding('iso-8859-1').encode('utf-8')
@@ -349,7 +352,10 @@ class EmailProcessor
       next unless att["size"].to_i > 20_000
 
       att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")
-    end
+    end.compact
+
+    p "*MAILGUN ATTACHMENT URLS*: #{attachment_urls}"
+    return nil unless attachment_urls.any?
 
     collage_from_urls(attachment_urls)
   end
