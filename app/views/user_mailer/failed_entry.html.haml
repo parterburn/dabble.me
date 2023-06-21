@@ -1,12 +1,12 @@
 %p Hey #{@user.first_name_or_fallback},
 
 %p
-  Your entry for #{@date} sent to Dabble Me did not save because of the following errros:
+  Your entry for #{@date} sent to Dabble Me did not save because of the following errors:
 
 %p
-  #{@errors}
+  = @errors
 
 ====================================
 
 %p
-  #{@body}
+  = @body
