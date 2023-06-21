@@ -387,7 +387,8 @@ class EmailProcessor
     return nil unless urls.present?
 
     urls.compact!
-    "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:[#{urls[1..-1].map(&:inspect).join(',')}],w:1200,h:1200,m:10/#{CGI.escape(urls.first)}"
+    first_url = urls.first.include?("%40") ? urls.first : CGI.escape(urls.first) # don't escape if already escaped
+    "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:[#{urls[1..-1].map(&:inspect).join(',')}],w:1200,h:1200,m:10/#{first_url}"
   end
 end
 # rubocop:enable Metrics/AbcSize
