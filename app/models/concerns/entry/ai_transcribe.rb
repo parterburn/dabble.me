@@ -2,7 +2,7 @@ require 'fileutils'
 
 class Entry::AiTranscribe
   OPENAI_WHISPER_MODEL = "whisper-1".freeze
-  OPENAI_MODEL = "gpt-4".freeze
+  OPENAI_MODEL = "gpt-3.5-turbo".freeze
   OPENAI_TEMPERATURE = 0.3 # 0-1.0, higher = more creative
 
   # Entry::AiTranscribe.new.batch_ai_transcribe("/Users/user/Downloads/files", "mp3")

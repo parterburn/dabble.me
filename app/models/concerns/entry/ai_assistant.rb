@@ -19,7 +19,7 @@ class Entry
       if OPENAI_MODEL == "gpt-4"
         8000
       else
-        4000
+        16000
       end
     end
 
