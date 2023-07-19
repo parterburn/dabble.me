@@ -146,10 +146,10 @@ class Entry < ActiveRecord::Base
   end
 
   def check_image
-    if image.present? && ENV['CLARIFAI_V2_API_KEY'].present?
+    if image.present? && ENV['CLARIFAI_PERSONAL_ACCESS_TOKEN'].present?
       begin
-        url = "https://api.clarifai.com/v2/models/#{ENV['CLARIFAI_V2_NSFW_MODEL']}/outputs"
-        headers = {"Authorization" => "Key #{ENV['CLARIFAI_V2_API_KEY']}", "Content-Type" => "application/json"}
+        url = "https://api.clarifai.com/v2/users/clarifai/apps/main/models/nsfw-recognition/versions/aa47919c9a8d4d94bfa283121281bcc4/outputs"
+        headers = {"Authorization" => "Key #{ENV['CLARIFAI_PERSONAL_ACCESS_TOKEN']}", "Content-Type" => "application/json"}
         payload = { inputs: [ { data: { image: { url: image_url_cdn } } } ] }.to_json
         res = JSON.parse(RestClient.post(url, payload, headers))
         nsfw_percent = res.try(:[], 'outputs')&.first.try(:[], 'data').try(:[], 'concepts')&.second.try(:[], 'value')
