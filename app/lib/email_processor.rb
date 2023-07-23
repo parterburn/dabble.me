@@ -323,6 +323,11 @@ class EmailProcessor
       html&.gsub!(empty_line_regex, "")
     end
 
+    empty_line_regex = /(<div>\n<div>\z)|(<br\s*\/?>\z)|(\n\z)/
+    while html&.match?(empty_line_regex)
+      html&.gsub!(empty_line_regex, "")
+    end
+
     html&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
 
     to_utf8(html)
