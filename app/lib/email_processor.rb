@@ -322,11 +322,6 @@ class EmailProcessor
     html&.gsub!(/<div style="display:none;border:0px;width:0px;height:0px;overflow:hidden;">.+<\/div>/, "") # remove hidden divs / tracking pixels
     html&.gsub!(/src=\"cid\:\S+\"/, "src=\"\" style=\"display: none;\"") # remove attached images showing as broken inline images
 
-    empty_line_regex = /(<div>\n<div>)|(<br\s*\/?>)|(\n$)/
-    while html&.match?(empty_line_regex)
-      html&.gsub!(empty_line_regex, "")
-    end
-
     empty_line_regex = /(<div>\n<div>\z)|(<br\s*\/?>\z)|(\n\z)/
     while html&.match?(empty_line_regex)
       html&.gsub!(empty_line_regex, "")
