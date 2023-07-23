@@ -47,8 +47,12 @@ class EmailProcessor
           next unless attachment.present?
 
           # Make sure attachments are at least 20kb so we're not saving a bunch of signuture/footer images\
-          # bypass invidiual files with attachment.original_filename != "tmiFinal.png"
           file_size = File.size?(attachment.tempfile).to_i
+
+          # skip signature images
+          next if @user.id == 10836 && attachment.original_filename == "B_Logo.png"
+          next if @user.id == 293 && attachment.original_filename == "cropped-IMG-0719-300x86.jpeg"
+
           if (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|gif|heic|heif)$/i || attachment.original_filename =~ /^(.+\.(heic|heif))$/i) && file_size > 20000
             valid_attachments << attachment
           end
@@ -281,10 +285,10 @@ class EmailProcessor
     body&.gsub!(/<(http[s]?:\/\/\S*?)>/, "(\\1)") # convert links to show up
     body&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
     body&.gsub!(/--( \*)?$\z/, "") # remove gmail signature break
-    body&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
-    body&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
-    body&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
-    body&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
+    body&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/^$\n\z/, "") # remove last unnecessary line break
+    body&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/^$\n\z/, "") # remove last unnecessary line break
+    body&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/^$\n\z/, "") # remove last unnecessary line break
+    body&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/^$\n\z/, "") # remove last unnecessary line break
     body = body&.strip
 
     return unless body.present?
