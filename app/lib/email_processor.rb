@@ -53,6 +53,11 @@ class EmailProcessor
           next if @user.id == 10836 && attachment.original_filename == "B_Logo.png"
           next if @user.id == 293 && attachment.original_filename == "cropped-IMG-0719-300x86.jpeg"
 
+          p "*"*100
+          p "attachment.original_filename: #{attachment.original_filename}"
+          p "Content Type: #{attachment.content_type}"
+          p "File size: #{file_size}"
+          p "*"*100
           if (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|gif|heic|heif)$/i || attachment.original_filename =~ /^(.+\.(heic|heif))$/i) && file_size > 20000
             valid_attachments << attachment
           end
@@ -142,6 +147,7 @@ class EmailProcessor
         params = { date: date, inspiration_id: inspiration_id }
         best_attachment.present? ? params.merge!(image: best_attachment) : params.merge!(remote_image_url: best_attachment_url)
         begin
+          p "EMAILS: #{params}"
           entry = @user.entries.create!(params.merge(body: @body, original_email_body: @raw_body))
         rescue ActiveRecord::RecordInvalid => error
           @error = error
@@ -333,6 +339,7 @@ class EmailProcessor
   end
 
   def collage_from_mailgun_attachments
+    p "MESSAGE ID: #{@message_id}"
     return unless @message_id.present?
 
     connection = Faraday.new("https://api.mailgun.net") do |f|
