@@ -145,11 +145,14 @@ class EmailProcessor
           raise "Failed entry"
         end
       else
-        params = { date: date, inspiration_id: inspiration_id }
-        best_attachment.present? ? params.merge!(image: best_attachment) : params.merge!(remote_image_url: best_attachment_url)
         begin
-          p "EMAILS: #{params}"
-          entry = @user.entries.create!(params.merge(body: @body, original_email_body: @raw_body))
+          entry = @user.entries.create!(date: date, inspiration_id: inspiration_id, body: @body, original_email_body: @raw_body)
+          if best_attachment.present?
+            entry.image = best_attachment
+          elsif best_attachment_url.present?
+            entry.remote_image_url = best_attachment_url
+          end
+          entry.save
         rescue ActiveRecord::RecordInvalid => error
           @error = error
           if error.to_s.include?("Image Failed to manipulate with MiniMagick")
