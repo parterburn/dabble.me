@@ -65,6 +65,7 @@ class EmailProcessor
 
         if valid_attachments.size > 1
           best_attachment_url = collage_from_mailgun_attachments
+          p "best_attachment_url: #{best_attachment_url}"
         elsif valid_attachments.any?
           best_attachment = valid_attachments.first
         end
@@ -370,6 +371,7 @@ class EmailProcessor
     end.compact
     return nil unless attachment_urls.any?
 
+    p "attachment_urls: #{attachment_urls}"
     collage_from_urls(attachment_urls)
   end
 
