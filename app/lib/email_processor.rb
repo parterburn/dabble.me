@@ -53,11 +53,6 @@ class EmailProcessor
           next if @user.id == 10836 && attachment.original_filename == "B_Logo.png"
           next if @user.id == 293 && attachment.original_filename == "cropped-IMG-0719-300x86.jpeg"
 
-          p "*"*100
-          p "attachment.original_filename: #{attachment.original_filename}"
-          p "Content Type: #{attachment.content_type}"
-          p "File size: #{file_size}"
-          p "*"*100
           if (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|gif|heic|heif)$/i || attachment.original_filename =~ /^(.+\.(heic|heif))$/i) && file_size > 20000
             valid_attachments << attachment
           end
@@ -65,7 +60,6 @@ class EmailProcessor
 
         if valid_attachments.size > 1
           best_attachment_url = collage_from_mailgun_attachments
-          p "best_attachment_url: #{best_attachment_url}"
         elsif valid_attachments.any?
           best_attachment = valid_attachments.first
         end
@@ -343,7 +337,6 @@ class EmailProcessor
   end
 
   def collage_from_mailgun_attachments
-    p "MESSAGE ID: #{@message_id}"
     return unless @message_id.present?
 
     connection = Faraday.new("https://api.mailgun.net") do |f|
@@ -354,8 +347,6 @@ class EmailProcessor
     end
     resp = connection.get("/v3/#{ENV['SMTP_DOMAIN']}/events?pretty=yes&event=accepted&ascending=no&limit=1&message-id=#{@message_id}")
     last_message = resp.body["items"][0]
-
-    p "last_message: #{last_message}"
     return unless last_message.present?
 
     message_url = URI.parse(last_message["storage"]["url"])
@@ -366,8 +357,6 @@ class EmailProcessor
       f.request :authorization, :basic, 'api', ENV['MAILGUN_API_KEY']
     end
     message = msg_conn.get(message_url.path)
-    p "message: #{message.body}"
-    p "user #{@user}"
     return unless message.body["recipients"].to_s.include?(@user.user_key) || message.body["from"].to_s.include?(@user.email)
 
     attachment_urls = message.body["attachments"].map do |att|
@@ -376,7 +365,6 @@ class EmailProcessor
 
       att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")
     end.compact
-    p "attachment_urls: #{attachment_urls}"
     return nil unless attachment_urls.any?
 
     collage_from_urls(attachment_urls)
