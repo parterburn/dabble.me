@@ -346,7 +346,7 @@ class EmailProcessor
       f.request :authorization, :basic, 'api', ENV['MAILGUN_API_KEY']
     end
     resp = connection.get("/v3/#{ENV['SMTP_DOMAIN']}/events?pretty=yes&event=accepted&ascending=no&limit=1&message-id=#{@message_id}")
-    last_message = resp.body["items"][0]
+    last_message = resp.body&.dig("items", 0)
     return unless last_message.present?
 
     message_url = URI.parse(last_message["storage"]["url"])

@@ -74,7 +74,7 @@ gem "cloudflare-rails"
 gem "stripe"
 gem "stripe_event"
 gem "reverse_markdown" # text export conversion html->txt
-gem "redcarpet" # markdwon rendering
+gem "redcarpet" # markdown rendering
 
 group :development, :test do
   gem 'byebug'
