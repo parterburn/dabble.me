@@ -50,8 +50,8 @@ class EmailProcessor
           file_size = File.size?(attachment.tempfile).to_i
 
           # skip signature images
-          next if @user.id == 10836 && attachment.original_filename == "B_Logo.png"
-          next if @user.id == 293 && attachment.original_filename == "cropped-IMG-0719-300x86.jpeg"
+          next if @user.id == 10836 && attachment&.original_filename == "B_Logo.png"
+          next if @user.id == 293 && attachment&.original_filename == "cropped-IMG-0719-300x86.jpeg"
 
           if (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|gif|heic|heif)$/i || attachment.original_filename =~ /^(.+\.(heic|heif))$/i) && file_size > 20000
             valid_attachments << attachment
@@ -168,9 +168,9 @@ class EmailProcessor
           track_ga_event('New')
         else
           if entry.present?
-            record_errors = entry.errors.to_s
+            record_errors = entry.errors.full_messages.to_sentence
           else
-            record_errors = @error.to_s
+            record_errors = @error.full_messages.to_sentence
           end
           Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save new entry (failed_entry email sent to hello@dabble.me)", errors: entry&.errors, rescue_error: @error, body: @body, date: date })
           UserMailer.failed_entry(@user, record_errors, date, @body).deliver_later
