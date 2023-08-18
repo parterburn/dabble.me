@@ -22,7 +22,7 @@ namespace :user do
 
     User.pro_only.monthly.not_forever.joins(:payments).where("payments.amount > ?", 1.00).having("MAX(payments.date) < ?", 33.days.ago).group("users.id").each do |user|
       if user.has_active_stripe_subscription?
-        if user.id != 16094 # skip known issue
+        if user.id.in?([16094, 10763]) # skip known issue
           Sentry.set_user(id: user.id, email: user.email)
           Sentry.set_tags(plan: user.plan)
           Sentry.capture_message("Downgrade attempt for active Stripe subscription user", level: :error)
