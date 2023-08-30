@@ -19,7 +19,7 @@
         %h3
           %span= "#{@total_count} entries in #{@year}"
       .s-review-details
-        = pie_chart({"Days With Entries": @total_count, "Days Without Entries": (365 - @total_count)},  height: "230px", library: {backgroundColor: "#ffffff"})
+        = pie_chart({"Days With Entries": @total_count, "Days Without Entries": (elapsed_days_in_year(@year) - @total_count)},  height: "230px", library: {backgroundColor: "#ffffff"})
         .clearfix
         - if @pctile.present?
           %p= "You're in the #{@pctile.ordinalize} percentile compared to all active Dabble Me users in #{@year}."

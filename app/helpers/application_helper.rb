@@ -33,4 +33,15 @@ module ApplicationHelper
     rounded_number = number.to_i > 100 ? number.round(0) : number.round(2)
     number_with_delimiter(rounded_number, delimiter: ",")
   end
+
+  def elapsed_days_in_year(year)
+    today = Date.today
+    if today.year == year.to_i
+      start_of_year = Date.new(year.to_i, 1, 1)
+      elapsed_days = (today - start_of_year).to_i
+      return elapsed_days
+    else
+      return Date.leap?(year.to_i) ? 366 : 365
+    end
+  end
 end

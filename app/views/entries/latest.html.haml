@@ -30,7 +30,7 @@
             %h3
               %span= "#{total_count} entries in #{review_year}"
           .s-review-details
-            = pie_chart({"Days With Entries": total_count, "Days Without Entries": (365 - total_count)},  height: "180px", library: {backgroundColor: "#ffffff"})
+            = pie_chart({"Days With Entries": total_count, "Days Without Entries": (elapsed_days_in_year(review_year) - total_count)},  height: "180px", library: {backgroundColor: "#ffffff"})
             .clearfix
             %h4
               %span= "See more stats in your "
