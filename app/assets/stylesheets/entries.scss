@@ -428,6 +428,24 @@ mark {
     border-left: 0px;
     border-right: 0px;
   }
+
+  div[data-content=dabblemegpt] {
+    background: #F5F5F5;
+    padding: 20px;
+    margin: -22px -20px 0;
+  }
+
+  div[data-content=dabblemegpt] + hr {
+    margin-top: -2px;
+  }
+
+  div[data-content=dabblemegpt] + p.tags {
+    margin-top: 30px;
+  }
+
+  form.respond-to-gpt + img {
+    margin-top: 20px;
+  }
 }
 
 .s-new-edit-entry.well {

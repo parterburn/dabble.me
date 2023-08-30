@@ -8,6 +8,6 @@ module EntriesHelper
     return nil unless body.present?
 
     body = Rinku.auto_link(body, :all, 'target="_blank"')
-    sanitize body, tags: %w(strong em a div span ul ol li b i img br p hr u em blockquote), attributes: %w(href style src target)
+    sanitize body, tags: %w(strong em a div span ul ol li b i img br p hr u em blockquote), attributes: %w(href style src target data-content)
   end
 end
