@@ -56,6 +56,16 @@
           #{format_number(only_images)}
         .clearfix
 
+  - if (only_images = current_user.entries.with_ai_responses.size) > 0
+    %h4{style: "font-size: 15px;"}
+      =link_to group_entries_path('ai'), class: "#{'active' if current_page?(group_entries_path('ai'))}" do
+        .s-date-left
+          %i.fa.fa-magic{style: "color: #cccccc;margin-right: 2px;"}
+          AI
+        .s-date-right
+          #{format_number(only_images)}
+        .clearfix
+
   - spotify_entries = current_user.entries.only_spotify
   %h4{style: "font-size: 15px;"}
     =link_to spotify_path, class: "#{'active' if current_page?(spotify_path)}" do

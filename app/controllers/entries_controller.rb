@@ -13,6 +13,9 @@ class EntriesController < ApplicationController
     elsif params[:group] == 'photos'
       @entries = current_user.entries.includes(:inspiration).only_images
       @title = 'Photo Entries'
+    elsif params[:group] == 'ai'
+      @entries = current_user.entries.includes(:inspiration).with_ai_responses
+      @title = 'DabbleMeGPT Entries'
     elsif params[:subgroup].present?
       from_date = "#{params[:group]}-#{params[:subgroup]}"
       to_date = Date.parse(from_date + "-01").end_of_month
