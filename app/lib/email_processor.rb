@@ -50,7 +50,6 @@ class EmailProcessor
           file_size = File.size?(attachment.tempfile).to_i
 
           # skip signature images
-          next if @user.id == 10836 && attachment&.original_filename == "B_Logo.png"
           next if @user.id == 293 && attachment&.original_filename == "cropped-IMG-0719-300x86.jpeg"
 
           if (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|gif|heic|heif)$/i || attachment.original_filename =~ /^(.+\.(heic|heif))$/i) && file_size > 20000
@@ -394,11 +393,12 @@ class EmailProcessor
   def collage_from_urls(urls)
     return nil unless urls.present?
 
+    urls.reject! { |url| url.include?("googleusercontent.com/mail-sig/") }
     urls.compact!
 
     if urls.size == 1 && urls.first.starts_with?("http")
       urls.first
-    else
+    elsif urls.any?
       first_url = urls.first.include?("%40") ? urls.first : CGI.escape(urls.first) # don't escape if already escaped
       "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:[#{urls[1..-1].map(&:inspect).join(',')}],w:1200,h:1200,m:10/#{first_url}"
     end
