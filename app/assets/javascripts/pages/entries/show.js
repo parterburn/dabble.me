@@ -2,6 +2,11 @@
   window.DABBLE.pages.Entries_random = window.DABBLE.pages.Entries_show = function(){
 
     $(document).keydown(function(e) {
+        var tagName = e.target.tagName.toLowerCase();
+        if (tagName === 'textarea') {
+            return; // exit this handler if cursor is inside a textarea
+        }
+
         switch(e.which) {
             case 37: // left
               if ($('#previous-entry').length) {

@@ -240,8 +240,13 @@ class EntriesController < ApplicationController
         @sentiment_count = @entries_with_sentiment.map(&:sentiment).flatten.group_by(&:itself).transform_values(&:count).sort_by { |_k, v| v }.reverse.to_h
 
         @users_sentiment_list = @entries_with_sentiment.map { |e| e.sentiment }.flatten.uniq.reject { |k, _v| k.blank? }
-        @sentiment_by_month_data = @users_sentiment_list.map do |sentiment|
-          { name: sentiment, data: @entries_with_sentiment.sort_by { |e| e.date }.select { |e| e.sentiment.include?(sentiment) }.map { |e| [e.date.strftime('%b'), 1] }.group_by(&:first).transform_values(&:count) }
+
+        months = %w[Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec]
+        base_data = months.map { |month| [month, 0] }.to_h
+
+        @sentiment_by_month_data = (Entry::AiTagger::EMOTIONS.keys - ["unknown"]).map do |sentiment|
+          data = @entries_with_sentiment.sort_by { |e| e.date }.select { |e| e.sentiment.include?(sentiment) }.map { |e| [e.date.strftime('%b'), 1] }.group_by(&:first).transform_values(&:count)
+          { name: sentiment, data: base_data.merge(data) }
         end
       end
     else
