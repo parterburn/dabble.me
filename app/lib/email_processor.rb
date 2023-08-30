@@ -134,9 +134,9 @@ class EmailProcessor
           end
         else
           # error saving entry
-          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save exsiting entry", subject: @subject, entry_id: existing_entry&.id, errors: existing_entry&.errors })
+          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save existing entry", subject: @subject, entry_id: existing_entry&.id, errors: existing_entry&.errors&.full_messages })
           UserMailer.failed_entry(@user, existing_entry.errors.full_messages.to_sentence, date, @body).deliver_later
-          raise "Failed entry"
+          raise "Failed entry" # for mailgun to retry
         end
       else
         begin
@@ -172,9 +172,9 @@ class EmailProcessor
           else
             record_errors = @error.full_messages.to_sentence
           end
-          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save new entry (failed_entry email sent to hello@dabble.me)", errors: entry&.errors, rescue_error: @error, body: @body, date: date })
+          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save new entry (failed_entry email sent to hello@dabble.me)", errors: entry&.errors&.full_messages, rescue_error: @error, body: @body, date: date })
           UserMailer.failed_entry(@user, record_errors, date, @body).deliver_later
-          raise "Failed entry"
+          raise "Failed entry" # for mailgun to retry
         end
       end
 
@@ -395,8 +395,13 @@ class EmailProcessor
     return nil unless urls.present?
 
     urls.compact!
-    first_url = urls.first.include?("%40") ? urls.first : CGI.escape(urls.first) # don't escape if already escaped
-    "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:[#{urls[1..-1].map(&:inspect).join(',')}],w:1200,h:1200,m:10/#{first_url}"
+
+    if urls.size == 1 && urls.first.starts_with?("http")
+      urls.first
+    else
+      first_url = urls.first.include?("%40") ? urls.first : CGI.escape(urls.first) # don't escape if already escaped
+      "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:[#{urls[1..-1].map(&:inspect).join(',')}],w:1200,h:1200,m:10/#{first_url}"
+    end
   end
 end
 # rubocop:enable Metrics/AbcSize

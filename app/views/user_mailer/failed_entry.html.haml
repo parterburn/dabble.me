@@ -1,5 +1,7 @@
 %p Hey #{@user.first_name_or_fallback},
 
+%p Debug: https://app.mailgun.com/app/sending/domains/post.dabble.me/logs?search=#{@user.email}
+
 %p
   Your entry for #{@date} sent to Dabble Me did not save because of the following errors:
 
