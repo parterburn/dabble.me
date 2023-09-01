@@ -4,9 +4,12 @@ namespace :user do
   task :downgrade_expired => :environment do
     User.pro_only.yearly.not_forever.joins(:payments).where("payments.amount > ?", 10.00).having("MAX(payments.date) < ?", 368.days.ago).group("users.id").each do |user|
       if user.has_active_stripe_subscription?
-        Sentry.set_user(id: user.id, email: user.email)
-        Sentry.set_tags(plan: user.plan)
-        Sentry.capture_message("Downgrade attempt for active Stripe subscription user", level: :error)
+        if !user.id.in?([312]) # skip known issues
+          Sentry.set_user(id: user.id, email: user.email)
+          Sentry.set_tags(plan: user.plan)
+          Sentry.capture_message("Downgrade attempt for active Stripe subscription user", level: :error)
+        end
+        next
       else
         user.update(plan: "Free")
       end
@@ -22,7 +25,7 @@ namespace :user do
 
     User.pro_only.monthly.not_forever.joins(:payments).where("payments.amount > ?", 1.00).having("MAX(payments.date) < ?", 33.days.ago).group("users.id").each do |user|
       if user.has_active_stripe_subscription?
-        if user.id.in?([16094, 10763]) # skip known issue
+        if !user.id.in?([312, 16094, 10763]) # skip known issues
           Sentry.set_user(id: user.id, email: user.email)
           Sentry.set_tags(plan: user.plan)
           Sentry.capture_message("Downgrade attempt for active Stripe subscription user", level: :error)
