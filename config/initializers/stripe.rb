@@ -99,9 +99,14 @@ StripeEvent.configure do |events|
   events.subscribe "customer.subscription.deleted" do |event|
     subscription = event.data.object
     stripe_customer_id = subscription.customer
-      if stripe_customer_id.present?
+    if stripe_customer_id.present?
       user = User.where(stripe_id: stripe_customer_id).first
       if user.present?
+        if subscription.cancellation_details&.reason == "payment_failed"
+          user.update(plan: "Free")
+          UserMailer.downgraded(user).deliver_now
+        end
+
         Sentry.set_user(id: user.id, email: user.email)
         Sentry.set_tags(plan: user.plan)
         Sentry.capture_message("Subscription deleted", level: :info, extra: { total_payments: user.payments.sum(:amount).to_f, subscription: subscription })
