@@ -52,7 +52,7 @@ class EmailProcessor
           # skip signature images
           next if @user.id == 293 && attachment&.original_filename == "cropped-IMG-0719-300x86.jpeg"
 
-          if (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|gif|heic|heif)$/i || attachment.original_filename =~ /^(.+\.(heic|heif))$/i) && file_size > 20000
+          if (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|webp|gif|heic|heif)$/i || attachment.original_filename =~ /^(.+\.(heic|heif))$/i) && file_size > 20000
             valid_attachments << attachment
           end
         end
@@ -359,7 +359,7 @@ class EmailProcessor
     return unless message.body["recipients"].to_s.include?(@user.user_key) || message.body["from"].to_s.include?(@user.email)
 
     attachment_urls = message.body["attachments"].map do |att|
-      next unless att["content-type"]&.downcase.in?(['image/gif', 'image/jpeg', 'image/jpg', 'application/octet-stream', 'image/png', 'image/heic', 'image/heif'])
+      next unless att["content-type"]&.downcase.in?(['image/gif', 'image/jpeg', 'image/jpg', 'application/octet-stream', 'image/webp', 'image/png', 'image/heic', 'image/heif'])
       next unless att["size"].to_i > 20_000
 
       att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")
