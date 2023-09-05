@@ -396,7 +396,7 @@ class EmailProcessor
     urls.reject! { |url| url.include?("googleusercontent.com/mail-sig/") }
     urls.compact!
 
-    if urls.size == 1 && urls.first.starts_with?("http")
+    if urls.size == 1 && urls.first.starts_with?("http") && !urls.first.include?("api.mailgun.net")
       urls.first
     elsif urls.any?
       first_url = urls.first.include?("%40") ? urls.first : CGI.escape(urls.first) # don't escape if already escaped
