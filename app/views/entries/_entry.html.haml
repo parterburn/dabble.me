@@ -40,6 +40,7 @@
     = format_body(entry.formatted_body)
 
   - if current_user.can_ai? && entry.ai_waiting_for_user_response
+    %br
     %strong 👤 You:
     = form_tag respond_to_ai_path(entry), method: :put, class: "respond-to-gpt" do
       %textarea{rows: 1, class: "autogrow", style: "margin-top: 10px; width: 100%; padding: 5px 10px; border-radius: 8px; border: 2px solid #CCC;", name: "entry[ai_response]", placeholder: "Add your response here..."}
