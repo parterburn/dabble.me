@@ -51,6 +51,12 @@
         .center
           = paginate search_entries
 
+      .col-md-12
+        .center
+          = link_to export_entries_path(search: { term: @search.term }, format: :txt), class: "btn btn-default", style: "margin: 15px auto;" do
+            %i.fa.fa-download
+            Export Search Entries
+
     - elsif @search.term.present?
       %p
         Sorry, no entries include

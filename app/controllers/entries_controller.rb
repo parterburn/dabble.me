@@ -211,6 +211,15 @@ class EntriesController < ApplicationController
   def export
     if params[:only_images] == "true"
       @entries = current_user.entries.only_images.sort_by(&:date)
+    elsif search_params[:term].present? && search_params[:term].include?(" OR ")
+      @search = Search.new(search_params)
+      filter_names = search_params[:term].split(' OR ')
+      cond_text = filter_names.map{|w| "LOWER(entries.body) like ?"}.join(" OR ")
+      cond_values = filter_names.map{|w| "%#{w}%"}
+      @entries = current_user.entries.where(cond_text, *cond_values)
+    elsif search_params[:term].present?
+      @search = Search.new(search_params)
+      @entries = @search.entries
     else
       @entries = current_user.entries.sort_by(&:date)
     end
@@ -361,5 +370,13 @@ class EntriesController < ApplicationController
       file = directory.files.create(key: file_key, body: att, public: true, content_disposition: "inline", cache_control: "public, max-age=#{365.days.to_i}")
       file.public_url
     end
+  end
+
+  def search_params
+    {term: permitted_term}.merge(user: current_user)
+  end
+
+  def permitted_term
+    params.permit(search: :term).try(:[], 'search').try(:[], 'term')
   end
 end
