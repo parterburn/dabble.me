@@ -33,9 +33,9 @@ class Entry
           max_tokens: MAX_RESPONSE_TOKENS
         }
       )
-      if resp["choices"].present?
-        resp.dig("choices", 0, "message", "content")
-      end
+      return unless resp["choices"].present?
+
+      resp.dig("choices", 0, "message", "content")
     end
 
     def as_life_coach

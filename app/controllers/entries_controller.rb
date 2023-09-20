@@ -279,7 +279,7 @@ class EntriesController < ApplicationController
 
   def respond_to_ai
     if current_user.can_ai?
-      @entry.body += "<hr><strong>👤 You:</strong><br/>#{params[:entry][:ai_response]}"
+      @entry.body += "<hr><strong>👤 You:</strong><br/>#{ActionController::Base.helpers.simple_format(params[:entry][:ai_response])}"
       if params[:entry][:ai_response].present? && @entry.save
         AiEntryJob.perform_later(current_user.id, @entry.id, email: false)
         flash[:notice] = "DabbleMeGPT response is generating."
