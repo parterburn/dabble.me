@@ -39,6 +39,7 @@ class ApplicationController < ActionController::Base
     devise_parameter_sanitizer.permit :sign_up, keys: added_attrs
     devise_parameter_sanitizer.permit :account_update, keys: [:email, :password, :password_confirmation]
     devise_parameter_sanitizer.permit :preferences, keys: added_attrs + [{ frequency: [] }, :way_back_past_entries, :send_past_entry, :send_time, :send_timezone, :past_filter, :current_password, hashtags_attributes: [:tag, :date]]
+    devise_parameter_sanitizer.for(:sign_in) << :otp_attempt
   end
 
   def js_action

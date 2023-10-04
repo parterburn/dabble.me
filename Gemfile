@@ -10,6 +10,7 @@ gem 'pg', '~> 1.5', '>= 1.2.3'
 # users
 gem "devise", ">= 4.7.1"
 gem 'devise-security'
+gem 'devise-two-factor'
 gem "turnstile-captcha", require: "turnstile"
 gem 'gibbon' # mailchimp connector
 

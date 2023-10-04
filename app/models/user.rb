@@ -1,10 +1,15 @@
 class User < ActiveRecord::Base
+  devise :two_factor_authenticatable,
+         :otp_secret_encryption_key => ENV['OTP_ENCRYPTION_KEY']
+
   include RandomizedField
 
   # Include default devise modules. Others available are:
   # :confirmable, :timeoutable and :omniauthable, :lockable
-  devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :trackable, :validatable, :paranoid_verification
+  devise :registerable,
+         :recoverable, :rememberable, :trackable, :validatable, :paranoid_verification,
+         :two_factor_authenticatable, :two_factor_backupable,
+         :otp_secret_encryption_key => ENV["OTP_ENCRYPTION_KEY"]
 
   randomized_field :user_key, length: 18 do |slug_value|
     "u#{slug_value}"
