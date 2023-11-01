@@ -7,7 +7,7 @@ class ImageUploader < CarrierWave::Uploader::Base
 
   process :clear_generic_content_type
   process :convert_to_jpg, if: :heic_image?
-  process :convert_to_jpg, if: :webp_image?
+  # process :convert_to_jpg, if: :webp_image?
   process resize_to_limit: [1200, 1200], quality: 90, if: :web_image?
   process :auto_orient, if: :web_image?
 
@@ -27,9 +27,9 @@ class ImageUploader < CarrierWave::Uploader::Base
     self.content_type.blank? || self.content_type == "application/octet-stream" || self.content_type == "image/heic" || self.content_type == "image/heif" || self.filename =~ /^.+\.(heic|HEIC|Heic|heif|HEIF|Heif)$/i
   end
 
-  def webp_image?(file)
-    self.content_type == "image/webp" || self.filename =~ /^.+\.(Webp|webp|WEBP)$/i
-  end
+  # def webp_image?(file)
+  #   self.content_type == "image/webp" || self.filename =~ /^.+\.(Webp|webp|WEBP)$/i
+  # end
 
   def store_dir
     add_dev = "/development" unless Rails.env.production?

@@ -13,7 +13,7 @@ class Entry < ActiveRecord::Base
 
   validates :date, presence: true, valid_date: true
   validates :image, file_size: { less_than_or_equal_to: 20.megabytes },
-                    file_content_type: { allow: ['image/gif', 'image/jpeg', 'image/jpg', 'application/octet-stream', 'image/png', 'image/heic', 'image/heif'] }
+                    file_content_type: { allow: ['image/gif', 'image/jpeg', 'image/jpg', 'application/octet-stream', 'image/png', 'image/webp', 'image/heic', 'image/heif'] }
 
   alias_attribute :entry, :body
 
