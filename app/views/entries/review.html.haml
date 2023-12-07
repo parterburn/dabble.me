@@ -86,14 +86,14 @@
       .s-entry-date
         %h2 Total Words
         %h3
-          - percent_book = ((@words_counter.token_count.to_f/75_348).to_f * 100).round
+          - percent_book = ((@words_counter.token_count.to_f/96_000).to_f * 100).round
           - book_height = 500-((percent_book.to_f / 100) * 500)
-          %span= "#{format_number(@words_counter.token_count)} - #{percent_book}% of Psychology of Money".html_safe
+          %span= "#{format_number(@words_counter.token_count)} - #{percent_book}% of Second Mountain".html_safe
       .s-review-details
         %div{style: 'position: relative;'}
-          =link_to 'https://amzn.to/3Z73J1I', target: '_blank', style: "margin-top: 20px; display: block;margin-bottom: 10px;" do
+          =link_to 'https://www.amazon.com/Second-Mountain-David-Brooks/dp/0812993268/?&_encoding=UTF8&tag=thewashburnex-20&linkCode=ur2&linkId=d0631357c1e457da2fff80a1d8c51432&camp=1789&creative=9325', target: '_blank', style: "margin-top: 20px; display: block;margin-bottom: 10px;" do
             .s-book-cover{style: "height: #{book_height < 0 ? 0 : book_height}px"}
-            = image_tag 'psychology-of-money.jpg', width: 319, height: 500
+            = image_tag 'second-mountain.jpg', width: 324, height: 500
         .clearfix
 
   .col-md-8.col-md-offset-2.well
@@ -103,38 +103,37 @@
         %h3
           - your_avg_words = @words_counter.token_count / @total_count
           %span= format_number(your_avg_words)
-      - if @year.to_s == "2022"
+      - if @year.to_s == "2023"
         .s-review-details
-          - if your_avg_words > 298
+          - if your_avg_words > 274
             - compared = 'way more'
-          - elsif your_avg_words > 199
+          - elsif your_avg_words > 183
             - compared = 'more'
-          - elsif your_avg_words < 99
+          - elsif your_avg_words < 91.5
             - compared = 'way less'
           - else
             - compared = 'less'
-          %p= "That's #{compared} than the average of all Dabble Me users (199 words per post)."
+          %p= "That's #{compared} than the average of all Dabble Me users (183 words per post)."
           %p
-            %span Collectively, all Dabble Me users could have wrote 75 books equivalent to Morgan Housel's,
-            %span<= link_to "Psychology of Money", "https://amzn.to/3Z73J1I", target: :_blank
+            %span Collectively, all Dabble Me users could have wrote 58 books equivalent to David Brooks's,
+            %span<= link_to "The Second Mountain", "https://www.amazon.com/Second-Mountain-David-Brooks/dp/0812993268/?&_encoding=UTF8&tag=thewashburnex-20&linkCode=ur2&linkId=d0631357c1e457da2fff80a1d8c51432&camp=1789&creative=9325", target: :_blank
             %span !
           .clearfix
 
-  .col-md-8.col-md-offset-2.well
-    .center{class: add_class}
-      .s-entry-date
-        %h2 Average Characters per Post
-        %h3
-          - avg_chars = @body_text.length / @total_count
-          - tweets = ((avg_chars).to_f / 280).ceil
-          - your_avg_words = @words_counter.token_count / @total_count
-          %span= "#{format_number(avg_chars)} - about #{tweets} tweets"
-      .s-review-details
-        .s-twitter-comparison
-          - (1..tweets).each do |i|
-            %i.fa.fa-twitter
-        .clearfix
-
+  -# .col-md-8.col-md-offset-2.well
+  -#   .center{class: add_class}
+  -#     .s-entry-date
+  -#       %h2 Average Characters per Post
+  -#       %h3
+  -#         - avg_chars = @body_text.length / @total_count
+  -#         - tweets = ((avg_chars).to_f / 280).ceil
+  -#         - your_avg_words = @words_counter.token_count / @total_count
+  -#         %span= "#{format_number(avg_chars)} - about #{tweets} tweets (x's?!)"
+  -#     .s-review-details
+  -#       .s-twitter-comparison
+  -#         - (1..tweets).each do |i|
+  -#           %i.fa.fa-twitter
+  -#       .clearfix
 
   - hashtags = Hash[*current_user.used_hashtags(@entries, false).inject(Hash.new(0)) { |h,v| h[v] += 1; h }.sort_by{|k,v| v}.reverse.flatten]
   - if hashtags.present?
@@ -153,9 +152,9 @@
     .center{class: add_class}
       .s-entry-date
         %h2 Most Frequent Words
-        - if @year.to_s == "2022"
+        - if @year.to_s == "2023"
           %h3
-            %span= "We're all still journaling in first-person...we collectively used <i>\"i\"</i> 185,020 times in our entries!".html_safe
+            %span= "We're all still journaling in first-person...we collectively used <i>\"i\"</i> 203,180 times in our entries!".html_safe
       .s-review-details
         - @words_counter.token_frequency.first(25).each do |word|
           %h3
