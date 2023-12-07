@@ -11,6 +11,7 @@
 //= link copy-spotify-link.gif
 //= link baby.jpg
 //= link psychology-of-money.jpg
+//= link second-mountain.jpg
 
 //= link application.css
 //= link application.js
