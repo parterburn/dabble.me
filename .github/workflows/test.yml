@@ -67,7 +67,7 @@ jobs:
       run: |
         mkdir -p ~/tmp/capybara
         mkdir ~/rspec
-        gem install bundler
+        gem install bundler -v 2.4.22
         bundle config path vendor/bundle
         bundle install --jobs 4 --retry 3
         bin/rails db:create
