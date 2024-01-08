@@ -99,15 +99,15 @@ namespace :entry do
     # "****************************************************************************************************"
     # "STATS FOR 2023"
     # "****************************************************************************************************"
-    # "Users created: 3,076"
-    # "Entries created in 2023: 31,599"
-    # "Entries for 2023: 30,655"
-    # "Total words: 5,612,373.0"
-    # "Avg words per post: 183.08181373348557"
-    # "Total characters: 30,649,438"
-    # "Avg characters per post: 999 (4 tweets)"
+    # "Users created: 3,198"
+    # "Entries created in 2023: 33,427"
+    # "Entries for 2023: 32,763"
+    # "Total words: 6,002,827.0"
+    # "Avg words per post: 183.21969905075846"
+    # "Total characters: 32,782,265"
+    # "Avg characters per post: 1,000 (4 tweets)"
     # "Most Frequent Words:"
-    # i: 203,180
+    # i: 216,727
 
     p "*"*100
     p "STATS FOR #{year}"
@@ -150,13 +150,11 @@ namespace :entry do
           avg_words = total_words / user_entries.count
           total_chars = entries_bodies.length
           avg_chars = total_chars / user_entries.count
-          avg_tweets_per_post = ((avg_chars).to_f / 280).ceil
           csv << [
             user.id,
             user.email,
             user_entries.count,
-            avg_words.round(0),
-            "#{avg_tweets_per_post} #{'tweet'.pluralize(avg_tweets_per_post)}"
+            avg_words.round(0)
           ]
         end
       end
