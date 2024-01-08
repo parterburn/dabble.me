@@ -327,6 +327,7 @@ class EmailProcessor
     html = html.split("<div><br></div>\n<div>--</div>").first # strip out gmail signature
     html = html.split("<br>--").first # strip out gmail signature
     html = html.split("<br>\n--").first # strip out gmail signature
+    html&.gsub!(/\A<br\s*\/?>/, "") # remove <br> from very beginning of html
     html&.gsub!(/<div style="display:none;border:0px;width:0px;height:0px;overflow:hidden;">.+<\/div>/, "") # remove hidden divs / tracking pixels
     html&.gsub!(/src=\"cid\:\S+\"/, "src=\"\" style=\"display: none;\"") # remove attached images showing as broken inline images
 
