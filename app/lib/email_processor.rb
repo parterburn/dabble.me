@@ -20,6 +20,10 @@ class EmailProcessor
     @html = clean_html_version(@stripped_html)
     @message_id = email.headers&.dig("Message-ID")&.gsub("<", "")&.gsub(">", "")
 
+    @raw_body = to_utf8(email.raw_body)
+    @attachments = email.attachments
+    @user = find_user_from_user_key(@token, @from)
+
     if @user.id == 1
       p "*"*100
       p "MESSAGE ID"
@@ -27,10 +31,6 @@ class EmailProcessor
       p @message_id
       p "*"*100
     end
-
-    @raw_body = to_utf8(email.raw_body)
-    @attachments = email.attachments
-    @user = find_user_from_user_key(@token, @from)
 
     @inbound_email_params = {
       subject:     to_utf8(email.subject),
