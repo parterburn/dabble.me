@@ -24,14 +24,6 @@ class EmailProcessor
     @attachments = email.attachments
     @user = find_user_from_user_key(@token, @from)
 
-    if @user.id == 1
-      p "*"*100
-      p "MESSAGE ID"
-      p email.headers&.dig("Message-ID")
-      p @message_id
-      p "*"*100
-    end
-
     @inbound_email_params = {
       subject:     to_utf8(email.subject),
       cc:          email.cc,
@@ -335,14 +327,14 @@ class EmailProcessor
     html&.gsub!("<html>", "")&.gsub!("</html>", "")&.gsub!("<body>", "")&.gsub!("</body>", "")&.gsub!("<head>", "")&.gsub!("</head>", "")
 
     html = Rinku.auto_link(html, :all, 'target="_blank"')
+    html = html.split("<br id=\"lineBreakAtBeginningOfSignature\">").first # strip out gmail signature
+    html = html.split('<br id=\"lineBreakAtBeginningOfSignature\">').first # strip out gmail signature
+    html = html.split('<br id="lineBreakAtBeginningOfSignature">').first # strip out gmail signature
     html = ActionController::Base.helpers.sanitize(html, tags: %w(strong em a div span ul ol li b i br p hr u em blockquote), attributes: %w(href target))
     html = html.split("<br>--<br>").first # strip out gmail signature
     html = html.split("<div><br></div>\n<div>--</div>").first # strip out gmail signature
     html = html.split("<br>--").first # strip out gmail signature
     html = html.split("<br>\n--").first # strip out gmail signature
-    html = html.split("<br id=\"lineBreakAtBeginningOfSignature\">").first # strip out gmail signature
-    html = html.split('<br id=\"lineBreakAtBeginningOfSignature\">').first # strip out gmail signature
-    html = html.split('<br id="lineBreakAtBeginningOfSignature">').first # strip out gmail signature
     html&.gsub!(/\A<br\s*\/?>/, "") # remove <br> from very beginning of html
     html&.gsub!(/<div style="display:none;border:0px;width:0px;height:0px;overflow:hidden;">.+<\/div>/, "") # remove hidden divs / tracking pixels
     html&.gsub!(/src=\"cid\:\S+\"/, "src=\"\" style=\"display: none;\"") # remove attached images showing as broken inline images
