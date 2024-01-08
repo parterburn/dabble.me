@@ -49,17 +49,6 @@ class EmailProcessor
           # Make sure attachments are at least 20kb so we're not saving a bunch of signature/footer images\
           file_size = File.size?(attachment.tempfile).to_i
 
-          if @user.id == 1
-            # Temp log for debugging
-            p "*" * 100
-            p attachment
-            p file_size
-            p attachment.content_type
-            p attachment&.original_filename
-            p (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|webp|gif|heic|heif)$/i || attachment&.original_filename.to_s =~ /^(.+\.(heic|heif))$/i) && file_size > 20000
-            p "*" * 100
-          end
-
           # skip signature images
           next if @user.id == 293 && attachment&.original_filename.to_s == "cropped-IMG-0719-300x86.jpeg"
           next if @user.id == 10836 && attachment&.original_filename.to_s == "B_Logo.png"
@@ -335,8 +324,9 @@ class EmailProcessor
     html = Rinku.auto_link(html, :all, 'target="_blank"')
     html = ActionController::Base.helpers.sanitize(html, tags: %w(strong em a div span ul ol li b i br p hr u em blockquote), attributes: %w(href target))
     html = html.split("<br>--<br>").first # strip out gmail signature
-    html = html.split("<div><br></div><div>--</div>").first # strip out gmail signature
+    html = html.split("<div><br></div>\n<div>--</div>").first # strip out gmail signature
     html = html.split("<br>--").first # strip out gmail signature
+    html = html.split("<br>\n--").first # strip out gmail signature
     html&.gsub!(/<div style="display:none;border:0px;width:0px;height:0px;overflow:hidden;">.+<\/div>/, "") # remove hidden divs / tracking pixels
     html&.gsub!(/src=\"cid\:\S+\"/, "src=\"\" style=\"display: none;\"") # remove attached images showing as broken inline images
 
