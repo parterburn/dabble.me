@@ -46,15 +46,19 @@ class EmailProcessor
         @attachments.each do |attachment|
           next unless attachment.present?
 
+          # Make sure attachments are at least 20kb so we're not saving a bunch of signature/footer images\
+          file_size = File.size?(attachment.tempfile).to_i
+
           if @user.id == 1
             # Temp log for debugging
             p "*" * 100
             p attachment
+            p file_size
+            p attachment.content_type
+            p attachment&.original_filename
+            p (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|webp|gif|heic|heif)$/i || attachment&.original_filename.to_s =~ /^(.+\.(heic|heif))$/i || attachment&.filename.to_s =~ /^(.+\.(heic|heif))$/i) && file_size > 20000
             p "*" * 100
           end
-
-          # Make sure attachments are at least 20kb so we're not saving a bunch of signature/footer images\
-          file_size = attachment.size.presence || File.size?(attachment.tempfile).to_i
 
           # skip signature images
           next if @user.id == 293 && (attachment&.original_filename.to_s == "cropped-IMG-0719-300x86.jpeg" || attachment&.filename.to_s == "cropped-IMG-0719-300x86.jpeg")
