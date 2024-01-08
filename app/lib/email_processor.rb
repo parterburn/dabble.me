@@ -20,15 +20,17 @@ class EmailProcessor
     @html = clean_html_version(@stripped_html)
     @message_id = email.headers&.dig("Message-ID")&.gsub("<", "")&.gsub(">", "")
 
+    if @user.id == 1
+      p "*"*100
+      p "MESSAGE ID"
+      p email.headers&.dig("Message-ID")
+      p @message_id
+      p "*"*100
+    end
+
     @raw_body = to_utf8(email.raw_body)
     @attachments = email.attachments
     @user = find_user_from_user_key(@token, @from)
-
-    if @user.id == 1
-      p "*"*100
-      p @stripped_html
-      p "*"*100
-    end
 
     @inbound_email_params = {
       subject:     to_utf8(email.subject),
@@ -66,19 +68,7 @@ class EmailProcessor
           end
         end
 
-        if @user.id == 1
-          p "*"*100
-          p valid_attachments
-          p "*"*100
-        end
-
         if valid_attachments.size > 1
-          if @user.id == 1
-            p "*"*100
-            p "COLLAGING IMAGES FROM MAILGUN"
-            p "*"*100
-          end
-
           best_attachment_url = collage_from_mailgun_attachments
         elsif valid_attachments.any?
           best_attachment = valid_attachments.first
@@ -348,6 +338,7 @@ class EmailProcessor
     html = html.split("<br>\n--").first # strip out gmail signature
     html = html.split("<br id=\"lineBreakAtBeginningOfSignature\">").first # strip out gmail signature
     html = html.split('<br id=\"lineBreakAtBeginningOfSignature\">').first # strip out gmail signature
+    html = html.split('<br id="lineBreakAtBeginningOfSignature">').first # strip out gmail signature
     html&.gsub!(/\A<br\s*\/?>/, "") # remove <br> from very beginning of html
     html&.gsub!(/<div style="display:none;border:0px;width:0px;height:0px;overflow:hidden;">.+<\/div>/, "") # remove hidden divs / tracking pixels
     html&.gsub!(/src=\"cid\:\S+\"/, "src=\"\" style=\"display: none;\"") # remove attached images showing as broken inline images
@@ -392,12 +383,6 @@ class EmailProcessor
       att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")
     end.compact
     return nil unless attachment_urls.any?
-
-    if @user.id == 1
-      p "*"*100
-      p attachment_urls
-      p "*"*100
-    end
 
     collage_from_urls(attachment_urls)
   end
