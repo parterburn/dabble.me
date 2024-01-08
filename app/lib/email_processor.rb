@@ -350,6 +350,13 @@ class EmailProcessor
   end
 
   def collage_from_mailgun_attachments
+    if @user.id == 1
+      p "*" * 100
+      p "MESSAGE ID"
+      p @message_id
+      p "*" * 100
+    end
+
     return unless @message_id.present?
 
     connection = Faraday.new("https://api.mailgun.net") do |f|
@@ -370,6 +377,13 @@ class EmailProcessor
       f.request :authorization, :basic, 'api', ENV['MAILGUN_API_KEY']
     end
     message = msg_conn.get(message_url.path)
+
+    if @user.id == 1
+      p "*" * 100
+      p "MESSAGE BODY"
+      p message.body
+      p "*" * 100
+    end
     return unless message.body["recipients"].to_s.include?(@user.user_key) || message.body["from"].to_s.include?(@user.email)
 
     attachment_urls = message.body["attachments"].map do |att|
