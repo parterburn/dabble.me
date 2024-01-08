@@ -5,8 +5,10 @@ class ImageCollageJob < ActiveJob::Base
     entry = Entry.where(id: entry_id).first
     return nil unless entry.present?
 
+    entry.update(filepicker_url: "https://dabble-me.s3.amazonaws.com/uploading.png")
+
     filestack_collage_url = collage_from_urls(urls + [entry&.image_url_cdn])
-    entry.update(remote_image_url: filestack_collage_url)
+    entry.update(remote_image_url: filestack_collage_url, filepicker_url: nil)
   end
 
   def collage_from_urls(urls)

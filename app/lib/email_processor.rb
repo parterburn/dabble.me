@@ -132,7 +132,9 @@ class EmailProcessor
             image_urls = collage_from_attachments([best_attachment])
             ImageCollageJob.perform_later(existing_entry.id, image_urls)
           elsif best_attachment_url.present?
+            entry.update(filepicker_url: "https://dabble-me.s3.amazonaws.com/uploading.png")
             existing_entry.remote_image_url = collage_from_urls([best_attachment_url, existing_entry.image_url_cdn])
+            existing_entry.filepicker_url = nil
           end
         end
 
@@ -154,7 +156,9 @@ class EmailProcessor
           if best_attachment.present?
             entry.image = best_attachment
           elsif best_attachment_url.present?
+            entry.update(filepicker_url: "https://dabble-me.s3.amazonaws.com/uploading.png")
             entry.remote_image_url = best_attachment_url
+            entry.filepicker_url = nil
           end
           entry.save
         rescue ActiveRecord::RecordInvalid => error
