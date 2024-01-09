@@ -350,43 +350,36 @@ class EmailProcessor
   end
 
   def collage_from_mailgun_attachments
-    if @user.id == 1
-      p "*" * 100
-      p "MESSAGE ID"
-      p @message_id
-      p "*" * 100
-    end
-
     return unless @message_id.present?
 
-    connection = Faraday.new("https://api.mailgun.net") do |f|
-      f.options[:timeout] = 29
-      f.request :json
-      f.response :json
-      f.request :authorization, :basic, 'api', ENV['MAILGUN_API_KEY']
-    end
-    resp = connection.get("/v3/#{ENV['SMTP_DOMAIN']}/events?pretty=yes&event=accepted&ascending=no&limit=1&message-id=#{@message_id}")
-    last_message = resp.body&.dig("items", 0)
-    if @user.id == 1
-      p "*" * 100
-      p "LAST MESSAGE"
-      p "*" * 100
+    last_message = nil
+    5.times do
+      connection = Faraday.new("https://api.mailgun.net") do |f|
+        f.options[:timeout] = 29
+        f.request :json
+        f.response :json
+        f.request :authorization, :basic, 'api', ENV['MAILGUN_API_KEY']
+      end
+      resp = connection.get("/v3/#{ENV['SMTP_DOMAIN']}/events?pretty=yes&event=accepted&ascending=no&limit=1&message-id=#{@message_id}")
+      last_message = resp.body&.dig("items", 0) if resp.success?
+      break if last_message.present?
+      sleep 2
     end
     return unless last_message.present?
 
-    message_url = URI.parse(last_message["storage"]["url"])
-    msg_conn = Faraday.new("https://#{message_url.host}") do |f|
-      f.options[:timeout] = 29
-      f.request :json
-      f.response :json
-      f.request :authorization, :basic, 'api', ENV['MAILGUN_API_KEY']
-    end
-    message = msg_conn.get(message_url.path); nil
-
-    if @user.id == 1
-      p "*" * 100
-      p "MESSAGE BODY"
-      p "*" * 100
+    message = nil
+    5.times do
+      message_url = URI.parse(last_message["storage"]["url"])
+      msg_conn = Faraday.new("https://#{message_url.host}") do |f|
+        f.options[:timeout] = 29
+        f.request :json
+        f.response :json
+        f.request :authorization, :basic, 'api', ENV['MAILGUN_API_KEY']
+      end
+      response = msg_conn.get(message_url.path)
+      message = response.body if response.success?
+      break if message.present?
+      sleep 2
     end
     return unless message.body["recipients"].to_s.include?(@user.user_key) || message.body["from"].to_s.include?(@user.email)
 
@@ -396,12 +389,6 @@ class EmailProcessor
 
       att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")
     end.compact
-
-    if @user.id == 1
-      p "*" * 100
-      p "ATTACHMENT URLS"
-      p "*" * 100
-    end
     return nil unless attachment_urls.any?
 
     collage_from_urls(attachment_urls)
