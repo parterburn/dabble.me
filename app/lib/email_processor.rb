@@ -381,9 +381,9 @@ class EmailProcessor
       break if message.present?
       sleep 10
     end
-    return unless message.body["recipients"].to_s.include?(@user.user_key) || message.body["from"].to_s.include?(@user.email)
+    return unless message.present? && message["recipients"].to_s.include?(@user.user_key) || message["from"].to_s.include?(@user.email)
 
-    attachment_urls = message.body["attachments"].map do |att|
+    attachment_urls = message["attachments"].map do |att|
       next unless att["content-type"]&.downcase.in?(['image/gif', 'image/jpeg', 'image/jpg', 'application/octet-stream', 'image/webp', 'image/png', 'image/heic', 'image/heif'])
       next unless att["size"].to_i > 20_000
 
