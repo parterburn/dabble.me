@@ -363,7 +363,7 @@ class EmailProcessor
       resp = connection.get("/v3/#{ENV['SMTP_DOMAIN']}/events?pretty=yes&event=accepted&ascending=no&limit=1&message-id=#{@message_id}")
       last_message = resp.body&.dig("items", 0) if resp.success?
       break if last_message.present?
-      sleep 2
+      sleep 10
     end
     return unless last_message.present?
 
@@ -379,7 +379,7 @@ class EmailProcessor
       response = msg_conn.get(message_url.path)
       message = response.body if response.success?
       break if message.present?
-      sleep 2
+      sleep 10
     end
     return unless message.body["recipients"].to_s.include?(@user.user_key) || message.body["from"].to_s.include?(@user.email)
 
