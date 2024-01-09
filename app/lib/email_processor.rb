@@ -367,6 +367,11 @@ class EmailProcessor
     end
     resp = connection.get("/v3/#{ENV['SMTP_DOMAIN']}/events?pretty=yes&event=accepted&ascending=no&limit=1&message-id=#{@message_id}")
     last_message = resp.body&.dig("items", 0)
+    if @user.id == 1
+      p "*" * 100
+      p "LAST MESSAGE"
+      p "*" * 100
+    end
     return unless last_message.present?
 
     message_url = URI.parse(last_message["storage"]["url"])
@@ -376,12 +381,11 @@ class EmailProcessor
       f.response :json
       f.request :authorization, :basic, 'api', ENV['MAILGUN_API_KEY']
     end
-    message = msg_conn.get(message_url.path)
+    message = msg_conn.get(message_url.path); nil
 
     if @user.id == 1
       p "*" * 100
       p "MESSAGE BODY"
-      p message.body
       p "*" * 100
     end
     return unless message.body["recipients"].to_s.include?(@user.user_key) || message.body["from"].to_s.include?(@user.email)
@@ -392,6 +396,12 @@ class EmailProcessor
 
       att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")
     end.compact
+
+    if @user.id == 1
+      p "*" * 100
+      p "ATTACHMENT URLS"
+      p "*" * 100
+    end
     return nil unless attachment_urls.any?
 
     collage_from_urls(attachment_urls)
