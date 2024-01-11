@@ -11,6 +11,7 @@ class SearchesController < ApplicationController
       cond_values = filter_names.map{|w| "%#{w}%"}
       @entries = current_user.entries.where(cond_text, *cond_values)
     elsif search_params[:term].present? && search_params[:term].include?('"')
+      @search = Search.new(search_params)
       exact_phrase = search_params[:term].delete('"')
       @entries = current_user.entries.where("entries.body ~* ?", "\\m#{exact_phrase}\\M")
     else
