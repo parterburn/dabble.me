@@ -10,6 +10,9 @@ class SearchesController < ApplicationController
       cond_text = filter_names.map{|w| "LOWER(entries.body) like ?"}.join(" OR ")
       cond_values = filter_names.map{|w| "%#{w}%"}
       @entries = current_user.entries.where(cond_text, *cond_values)
+    elsif search_params[:term].include?('"')
+      exact_phrase = search_params[:term].delete('"')
+      @entries = current_user.entries.where("entries.body ~* ?", "\\m#{exact_phrase}\\M")
     else
       @search = Search.new(search_params)
       @entries = @search.entries
