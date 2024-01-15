@@ -7,7 +7,9 @@ class ImageCollageJob < ActiveJob::Base
 
     entry.update(filepicker_url: "https://dabble-me.s3.amazonaws.com/uploading.png")
 
-    filestack_collage_url = collage_from_urls(urls + [entry&.image_url_cdn])
+    existing_url = entry&.image_url_cdn == "https://dabble-me.s3.amazonaws.com/uploading.png" ? nil : entry&.image_url_cdn
+
+    filestack_collage_url = collage_from_urls(urls + [existing_url])
     entry.update(remote_image_url: filestack_collage_url, filepicker_url: nil)
   end
 

@@ -125,7 +125,8 @@ class EmailProcessor
             ImageCollageJob.perform_later(existing_entry.id, image_urls)
           elsif best_attachment_url.present?
             existing_entry.update(filepicker_url: "https://dabble-me.s3.amazonaws.com/uploading.png")
-            existing_entry.remote_image_url = collage_from_urls([best_attachment_url, existing_entry.image_url_cdn])
+            existing_image = existing_entry.image_url_cdn == "https://dabble-me.s3.amazonaws.com/uploading.png" ? nil : existing_entry.image_url_cdn
+            existing_entry.remote_image_url = collage_from_urls([best_attachment_url, existing_image])
             existing_entry.filepicker_url = nil
           end
         end
