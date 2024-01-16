@@ -10,6 +10,10 @@ Rails.application.routes.draw do
   devise_for :users, controllers: { registrations: 'registrations', session: 'sessions', passwords: 'passwords' }
 
   devise_scope :user do
+    post "/validate_otp", to: "sessions#validate_otp", as: "validate_otp"
+  end
+
+  devise_scope :user do
     get 'settings/(:user_key)'     => 'registrations#settings', as: 'settings'
     get 'security'                 => 'registrations#security', as: 'security'
     match 'unsubscribe/:user_key'  => 'registrations#unsubscribe', as: 'unsubscribe', via: [:put]

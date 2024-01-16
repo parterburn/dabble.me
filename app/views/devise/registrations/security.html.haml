@@ -26,13 +26,18 @@
       %br
 
     .col-md-8.col-md-offset-2
+      %strong= link_to (resource.otp_enabled? ? "✅ Change Two-Factor Authentication" : "⚠️ Setup Two-Factor Authentication"), "users/otp/token"
+      %br
+      %br
+
+    .col-md-8.col-md-offset-2
       .well{style: 'background-color: hsla(40, 33%, 96%, 1); padding: 15px 20px;'}
         = f.label :current_password
         to confirm your changes
         = f.password_field :current_password, autocomplete: "off", class: "form-control"
 
     .col-md-8.col-md-offset-2
-      = f.button "Update Security", class: "btn btn-primary form-control j-edit-security", name: "submit_method", value: "security", type: :submit
+      = f.submit "Update Security", class: "btn btn-primary form-control j-edit-security", name: "submit_method", type: :submit
 
     .clearfix
 

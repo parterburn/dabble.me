@@ -8,8 +8,9 @@ gem 'pg', '~> 1.5', '>= 1.2.3'
 # gem 'barnes'
 
 # users
-gem "devise", ">= 4.7.1"
+gem "devise"
 gem 'devise-security'
+gem "devise-otp"
 gem "turnstile-captcha", require: "turnstile"
 gem 'gibbon' # mailchimp connector
 

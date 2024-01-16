@@ -3,8 +3,8 @@ class User < ActiveRecord::Base
 
   # Include default devise modules. Others available are:
   # :confirmable, :timeoutable and :omniauthable, :lockable
-  devise :database_authenticatable, :registerable,
-         :recoverable, :rememberable, :trackable, :validatable, :paranoid_verification
+  devise :otp_authenticatable, :database_authenticatable, :registerable,
+         :recoverable, :rememberable, :trackable, :validatable
 
   randomized_field :user_key, length: 18 do |slug_value|
     "u#{slug_value}"
@@ -170,16 +170,6 @@ class User < ActiveRecord::Base
 
   def random_entries
     @random_entries ||= entries.where.not(id: past_filter_entry_ids)
-  end
-
-  def after_database_authentication
-    if self.admin? && self.generate_paranoid_code
-      UserMailer.confirm_user(self).deliver_later
-    elsif self.need_paranoid_verification?
-      UserMailer.confirm_user(self).deliver_later
-    end
-  rescue
-    nil
   end
 
   def remember_me

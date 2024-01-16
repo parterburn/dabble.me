@@ -140,6 +140,10 @@ GEM
       railties (>= 4.1.0)
       responders
       warden (~> 1.2.3)
+    devise-otp (0.6.0)
+      devise (>= 4.8.0, < 5.0)
+      rails (>= 6.1, < 7.2)
+      rotp (>= 2.0.0)
     devise-security (0.17.0)
       devise (>= 4.3.0)
     diff-lcs (1.4.4)
@@ -366,6 +370,7 @@ GEM
     reverse_markdown (2.1.1)
       nokogiri
     rinku (2.0.6)
+    rotp (6.3.0)
     rouge (4.2.0)
     rspec (3.10.0)
       rspec-core (~> 3.10.0)
@@ -492,7 +497,8 @@ DEPENDENCIES
   database_cleaner
   delorean
   derailed_benchmarks
-  devise (>= 4.7.1)
+  devise
+  devise-otp
   devise-security
   email_reply_trimmer
   email_spec
