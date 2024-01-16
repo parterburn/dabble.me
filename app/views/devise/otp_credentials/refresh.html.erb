@@ -1,7 +1,8 @@
+<% title "Identity Verification" %>
+
 <div class="row">
   <div class="col-md-8 col-md-offset-2" style="margin-bottom: 40px;">
-    <h3><%= I18n.t('title', :scope => 'devise.otp.credentials_refresh') %></h3>
-    <p><%= I18n.t('explain', :scope => 'devise.otp.credentials_refresh') %></p>
+    <h4><%= I18n.t('explain', :scope => 'devise.otp.credentials_refresh') %></h4>
 
     <%= form_for(resource, :as => resource_name, :url => [:refresh, resource_name, :otp_credential], :html => { :method => :put, "data-turbo" => false }) do |f| %>
 
