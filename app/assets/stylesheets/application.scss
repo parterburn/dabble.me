@@ -90,6 +90,13 @@ hr {
       text-align:center;
     }
   }
+  .flex {
+    display: flex; width: 100%;column-gap: 10px;
+    @media screen and (max-width: 767px) {
+      display: block;
+      column-gap: 0px;
+    }
+  }
 }
 
 .s-inspiration {

@@ -26,7 +26,7 @@
       %br
 
     .col-md-8.col-md-offset-2
-      %strong= link_to (resource.otp_enabled? ? "✅ Change Two-Factor Authentication" : "⚠️ Setup Two-Factor Authentication"), "users/otp/token"
+      %strong= link_to (resource.otp_enabled? ? "✅ Change Two-Factor Authentication" : "⚠️ Setup Two-Factor Authentication"), user_otp_token_path
       %br
       %br
 

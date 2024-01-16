@@ -265,8 +265,12 @@ class EntriesController < ApplicationController
           { name: sentiment, data: base_data.merge(data) }
         end
       end
+    elsif current_user.entries.any?
+      prev_year = current_user.entries.first.date.year.to_s
+      flash[:alert] = "No entries in #{@year} - sending you back to #{prev_year}"
+      redirect_to review_path(prev_year)
     else
-      flash[:notice] = "No entries in #{@year} - nothing to review :("
+      flash[:alert] = "No entries to review :("
       redirect_to entries_path
     end
   end

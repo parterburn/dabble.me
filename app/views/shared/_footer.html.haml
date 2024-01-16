@@ -1,8 +1,8 @@
 %footer.footer
   .container
     %hr
-    .row
-      .col-sm-5
+    .flex
+      %div{style: "flex: none;"}
         %p.muted.float-left
           =link_to "CONTACT & FAQS", faqs_path, title: "Contact & FAQs"
           &nbsp;&middot;&nbsp;
@@ -12,8 +12,13 @@
           -if current_user && current_user.is_free?
             &nbsp;&middot;&nbsp;
             =link_to "SUBSCRIBE TO PRO", subscribe_path, title: "Subscribe Now"
-      .col-sm-2
-      .col-sm-5
+      %div.muted{style: "font-size: 13px; flex: 1 1 0%;text-align: center;margin-bottom: 10px;"}
+        - two_factor_marketing = !current_user.otp_enabled? && current_user.created_at < 1.day.ago && Date.today.between?(Date.parse("2024-01-15"), Date.parse("2024-02-15"))
+        - if two_factor_marketing
+          %span.label.label-default{style: "margin-right: 4px; position: relative;top:-2px;font-weight: normal; font-size: 10px; font-family: sans-serif;padding: 3px 5px;"} NEW
+          Protect your account by setting up
+          = link_to("two-factor authentication", user_otp_token_path, style: "color: #649cc7") + "."
+      %div{style: "flex: none;"}
         %p.muted.float-right
           &nbsp;&nbsp;
           = link_to 'https://paularterburn.com/', title: "Made by Paul Arterburn" do
