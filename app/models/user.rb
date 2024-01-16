@@ -234,6 +234,14 @@ class User < ActiveRecord::Base
     subscriptions.any? { |subscription| %w[trialing active].include?(subscription.status) }
   end
 
+  def generate_otp_secret
+    self.update(
+      otp_auth_secret: ROTP::Base32.random_base32,
+      otp_recovery_secret: ROTP::Base32.random_base32,
+      otp_persistence_seed: SecureRandom.hex
+    )
+  end
+
   private
 
   def restrict_free_frequency
