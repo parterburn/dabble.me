@@ -13,7 +13,7 @@
             &nbsp;&middot;&nbsp;
             =link_to "SUBSCRIBE TO PRO", subscribe_path, title: "Subscribe Now"
       %div.muted{style: "font-size: 13px; flex: 1 1 0%;text-align: center;margin-bottom: 10px;"}
-        - two_factor_marketing = !current_user.otp_enabled? && current_user.created_at < 1.day.ago && Date.today.between?(Date.parse("2024-01-15"), Date.parse("2024-02-15"))
+        - two_factor_marketing = user_signed_in? && !current_user.otp_enabled? && current_user.created_at < 1.day.ago && Date.today.between?(Date.parse("2024-01-15"), Date.parse("2024-02-15"))
         - if two_factor_marketing
           %span.label.label-default{style: "margin-right: 4px; position: relative;top:-2px;font-weight: normal; font-size: 10px; font-family: sans-serif;padding: 3px 5px;"} NEW
           Protect your account by setting up
