@@ -19,8 +19,8 @@
         = paginate @entries
     .row
       - @entries.each do |entry|
-        .pictureFrame.col-md-3
-          =link_to entry.image_url_cdn, target: "_blank" do
+        .pictureFrame.col-xs-2.col-md-3
+          =link_to entry.image_url_cdn, target: "_blank", style: "border: 1px solid black;" do
             =image_code(entry)
     .row
       .center
