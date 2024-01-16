@@ -1,9 +1,6 @@
 <div class="row">
   <div class="col-md-6 col-md-offset-3" style="margin-bottom: 40px;">
 
-    <h3><%= I18n.t('title', :scope => 'devise.otp.submit_token') %></h3>
-    <p><%= I18n.t('explain', :scope => 'devise.otp.submit_token') %></p>
-
     <%= form_for(resource, :as => resource_name, :url => [resource_name, :otp_credential], :html => { :method => :put, "data-turbo" => false }) do |f| %>
 
       <%= f.hidden_field :challenge, {:value => @challenge} %>
