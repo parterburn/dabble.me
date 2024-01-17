@@ -429,7 +429,7 @@ class EmailProcessor
   def collage_from_urls(urls)
     return nil unless urls.present?
 
-    urls.reject! { |url| url.include?("googleusercontent.com/mail-sig/") }
+    urls.reject! { |url| url&.include?("googleusercontent.com/mail-sig/") }
     urls.compact!
 
     if urls.size == 1 && urls.first.starts_with?("http")
