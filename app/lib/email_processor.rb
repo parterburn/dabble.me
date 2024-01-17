@@ -83,10 +83,10 @@ class EmailProcessor
               next if image_height && image_width && image_height < 100 && image_width < 100
 
               # skip signature images
-              next if @user.id == 293 && image_url.include?("cropped-img-0719-300x86.jpeg")
-              next if @user.id == 10836 && image_url.include?("b_logo.png")
-              next if @user.id == 2541 && image_url.include?("image001.jpg")
-              next if image_url.include?("linkedin_icon_circle.svg.png")
+              next if @user.id == 293 && image_url.downcase.include?("cropped-img-0719-300x86.jpeg")
+              next if @user.id == 10836 && image_url.downcase.include?("b_logo.png")
+              next if @user.id == 2541 && image_url.downcase.include?("image001.jpg")
+              next if image_url.downcase.include?("linkedin_icon_circle.svg.png")
 
               valid_attachment_urls << image_url
             end
