@@ -32,7 +32,7 @@ class EmailEventsController < ApplicationController
 
   def process_bounce
     @user.increment(:emails_bounced)
-    @user.frequency = [] if @user.is_free?
+    @user.frequency = [] if @user.is_free? || @user.emails_bounced > 20
     @user.save
   end
 
