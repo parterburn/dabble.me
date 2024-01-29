@@ -101,7 +101,7 @@ class EntriesController < ApplicationController
       if params[:entry][:image].present?
         if @existing_entry.image_url_cdn.present? || params[:entry][:image].count > 1
           image_urls = collage_from_attachments(Array(params[:entry][:image]))
-          ImageCollageJob.perform_later(@existing_entry.id, image_urls)
+          ImageCollageJob.perform_later(@existing_entry.id, urls: image_urls)
         elsif params[:entry][:image].present?
           @existing_entry.image = params[:entry][:image].first
         end
@@ -117,7 +117,7 @@ class EntriesController < ApplicationController
       @entry = current_user.entries.create(entry_params)
       if params[:entry][:image].present? && params[:entry][:image].count > 1
         image_urls = collage_from_attachments(params[:entry][:image])
-        ImageCollageJob.perform_later(@entry.id, image_urls)
+        ImageCollageJob.perform_later(@entry.id, urls: image_urls)
       elsif params[:entry][:image].present?
         @entry.image = params[:entry][:image].first
       end
@@ -155,7 +155,7 @@ class EntriesController < ApplicationController
       if params[:entry][:image].present?
         if @existing_entry.image_url_cdn.present? || params[:entry][:image].count > 1
           image_urls = collage_from_attachments(Array(params[:entry][:image]))
-          ImageCollageJob.perform_later(@existing_entry.id, image_urls)
+          ImageCollageJob.perform_later(@existing_entry.id, urls: image_urls)
         else
           @existing_entry.image = params[:entry][:image]
         end
@@ -182,7 +182,7 @@ class EntriesController < ApplicationController
       if @entry.update(update_params)
         if params[:entry][:image].present? && params[:entry][:image].size > 1
           image_urls = collage_from_attachments(params[:entry][:image])
-          ImageCollageJob.perform_later(@entry.id, image_urls)
+          ImageCollageJob.perform_later(@entry.id, urls: image_urls)
         elsif params[:entry][:image].present?
           @entry.image = params[:entry][:image].first
           @entry.save

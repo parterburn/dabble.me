@@ -62,7 +62,7 @@ class EmailProcessor
         end
 
         if valid_attachments.size > 1
-          best_attachment_url = collage_from_mailgun_attachments
+          best_attachment_url = "mailgun_collage:#{@message_id}"
         elsif valid_attachments.any?
           best_attachment = valid_attachments.first
         end
@@ -123,13 +123,15 @@ class EmailProcessor
         if existing_entry.image_url_cdn.blank?
           if best_attachment.present?
             existing_entry.image = best_attachment
+          elsif best_attachment_url.present? && best_attachment_url.starts_with?("mailgun_collage:")
+            ImageCollageJob.perform_later(existing_entry.id, message_id: best_attachment_url.gsub("mailgun_collage:", ""))
           elsif best_attachment_url.present?
             existing_entry.remote_image_url = best_attachment_url
           end
         elsif existing_entry.image_url_cdn.present?
           if best_attachment.present?
             image_urls = collage_from_attachments([best_attachment])
-            ImageCollageJob.perform_later(existing_entry.id, image_urls)
+            ImageCollageJob.perform_later(existing_entry.id, urls: image_urls)
           elsif best_attachment_url.present?
             existing_entry.update(filepicker_url: "https://dabble-me.s3.amazonaws.com/uploading.png")
             existing_image = existing_entry.image_url_cdn == "https://dabble-me.s3.amazonaws.com/uploading.png" ? nil : existing_entry.image_url_cdn
@@ -155,6 +157,8 @@ class EmailProcessor
           entry = @user.entries.create!(date: date, inspiration_id: inspiration_id, body: @body, original_email_body: @raw_body)
           if best_attachment.present?
             entry.image = best_attachment
+          elsif best_attachment_url.present? && best_attachment_url.starts_with?("mailgun_collage:")
+            ImageCollageJob.perform_later(entry.id, message_id: best_attachment_url.gsub("mailgun_collage:", ""))
           elsif best_attachment_url.present?
             entry.update(filepicker_url: "https://dabble-me.s3.amazonaws.com/uploading.png")
             entry.remote_image_url = best_attachment_url
@@ -358,45 +362,6 @@ class EmailProcessor
     html&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
 
     to_utf8(html)
-  end
-
-  def collage_from_mailgun_attachments
-    return unless @message_id.present?
-
-    last_message = nil
-    connection = Faraday.new(url: "https://api.mailgun.net") do |f|
-      f.request :json
-      f.response :json
-      f.request :authorization, :basic, 'api', ENV['MAILGUN_API_KEY']
-      f.options.timeout = 20
-      f.options.open_timeout = 20
-    end
-    resp = connection.get("/v3/#{ENV['SMTP_DOMAIN']}/events?pretty=yes&event=accepted&ascending=no&limit=1&message-id=#{@message_id}")
-    last_message = resp.body&.dig("items", 0) if resp.success?
-    return unless last_message.present?
-
-    message = nil
-    message_url = URI.parse(last_message["storage"]["url"])
-    msg_conn = Faraday.new("https://#{message_url.host}") do |f|
-      f.options.timeout = 20
-      f.options.open_timeout = 20
-      f.request :json
-      f.response :json
-      f.request :authorization, :basic, 'api', ENV['MAILGUN_API_KEY']
-    end
-    response = msg_conn.get(message_url.path)
-    message = response.body if response.success?
-    return unless message.present? && message["recipients"].to_s.include?(@user.user_key) || message["from"].to_s.include?(@user.email)
-
-    attachment_urls = message["attachments"].map do |att|
-      next unless att["content-type"]&.downcase.in?(['image/gif', 'image/jpeg', 'image/jpg', 'application/octet-stream', 'image/webp', 'image/png', 'image/heic', 'image/heif'])
-      next unless att["size"].to_i > 20_000
-
-      att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")
-    end.compact
-    return nil unless attachment_urls.any?
-
-    collage_from_urls(attachment_urls)
   end
 
   def collage_from_attachments(attachments, existing_image_url: nil)
