@@ -364,18 +364,15 @@ class EmailProcessor
     return unless @message_id.present?
 
     last_message = nil
-    5.times do
-      connection = Faraday.new("https://api.mailgun.net") do |f|
-        f.options[:timeout] = 29
-        f.request :json
-        f.response :json
-        f.request :authorization, :basic, 'api', ENV['MAILGUN_API_KEY']
-      end
-      resp = connection.get("/v3/#{ENV['SMTP_DOMAIN']}/events?pretty=yes&event=accepted&ascending=no&limit=1&message-id=#{@message_id}")
-      last_message = resp.body&.dig("items", 0) if resp.success?
-      break if last_message.present?
-      sleep 10
+    connection = Faraday.new(url: "https://api.mailgun.net") do |f|
+      f.request :json
+      f.response :json
+      f.request :authorization, :basic, 'api', ENV['MAILGUN_API_KEY']
+      f.options.timeout = 20
+      f.options.open_timeout = 20
     end
+    resp = connection.get("/v3/#{ENV['SMTP_DOMAIN']}/events?pretty=yes&event=accepted&ascending=no&limit=1&message-id=#{@message_id}")
+    last_message = resp.body&.dig("items", 0) if resp.success?
     return unless last_message.present?
 
     message = nil
