@@ -376,19 +376,16 @@ class EmailProcessor
     return unless last_message.present?
 
     message = nil
-    5.times do
-      message_url = URI.parse(last_message["storage"]["url"])
-      msg_conn = Faraday.new("https://#{message_url.host}") do |f|
-        f.options[:timeout] = 29
-        f.request :json
-        f.response :json
-        f.request :authorization, :basic, 'api', ENV['MAILGUN_API_KEY']
-      end
-      response = msg_conn.get(message_url.path)
-      message = response.body if response.success?
-      break if message.present?
-      sleep 10
+    message_url = URI.parse(last_message["storage"]["url"])
+    msg_conn = Faraday.new("https://#{message_url.host}") do |f|
+      f.options.timeout = 20
+      f.options.open_timeout = 20
+      f.request :json
+      f.response :json
+      f.request :authorization, :basic, 'api', ENV['MAILGUN_API_KEY']
     end
+    response = msg_conn.get(message_url.path)
+    message = response.body if response.success?
     return unless message.present? && message["recipients"].to_s.include?(@user.user_key) || message["from"].to_s.include?(@user.email)
 
     attachment_urls = message["attachments"].map do |att|
