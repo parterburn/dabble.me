@@ -4,6 +4,7 @@ class ImageCollageJob < ActiveJob::Base
   def perform(entry_id, urls: nil, message_id: nil)
     entry = Entry.where(id: entry_id).first
     @message_id = message_id
+    @user = entry.user
     return nil unless entry.present?
 
     entry.update(filepicker_url: "https://dabble-me.s3.amazonaws.com/uploading.png")
