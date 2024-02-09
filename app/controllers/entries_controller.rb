@@ -7,7 +7,7 @@ class EntriesController < ApplicationController
     if params[:emotion].present?
       @entries = current_user.entries.includes(:inspiration).where("sentiment::text LIKE '%#{params[:emotion]}%'")
       @title = "Entries tagged with #{params[:emotion].titleize}"
-    elsif params[:group] == "emotion"
+    elsif params[:group] == "emotion" && params[:subgroup].present?  && params[:subgroup] =~ /^\d+$/
       @entries = current_user.entries.includes(:inspiration).where("date >= '#{params[:subgroup]}-01-01'::DATE").where.not(sentiment: []).and(current_user.entries.where.not(sentiment: ["unknown"])).sort_by(&:date)
       @title = "Entries tagged with Sentiment in #{params[:subgroup]}"
     elsif params[:group] == 'photos'
@@ -16,7 +16,7 @@ class EntriesController < ApplicationController
     elsif params[:group] == 'ai'
       @entries = current_user.entries.includes(:inspiration).with_ai_responses
       @title = 'DabbleMeGPT Entries'
-    elsif params[:subgroup].present?
+    elsif params[:subgroup].present? && params[:group].present? && params[:subgroup] =~ /^\d+$/ && params[:group] =~ /^\d+$/
       from_date = "#{params[:group]}-#{params[:subgroup]}"
       to_date = Date.parse(from_date + "-01").end_of_month
       @entries = current_user.entries.includes(:inspiration).where("date >= to_date('#{from_date}','YYYY-MM') AND date <= to_date('#{to_date}','YYYY-MM-DD')").sort_by(&:date)
@@ -35,6 +35,9 @@ class EntriesController < ApplicationController
     elsif params[:format] != "json"
       @entries = current_user.entries.includes(:inspiration)
       @title = 'All Entries'
+    else
+      flash[:alert] = "Page not accessible."
+      redirect_to root_path and return
     end
 
     if @entries.present?
