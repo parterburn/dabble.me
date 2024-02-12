@@ -31,6 +31,7 @@ shared_context 'has all objects' do
     Payment.create(user_id: paid_user.id, amount: 3.0, comments: 'Monthly', date: Time.now - 800000)
   end
 
-  let(:entry) { FactoryBot.create(:entry, body: Faker::Lorem.paragraph, user: user, date: DateTime.now.in_time_zone(user.send_timezone)) }
-  let(:not_my_entry) { FactoryBot.create(:entry, body: Faker::Lorem.paragraph) }
+  let!(:entry) { FactoryBot.create(:entry, body: Faker::Lorem.paragraph, user: user, date: DateTime.now.in_time_zone(user.send_timezone)) }
+  let!(:paid_entry) { FactoryBot.create(:entry, body: Faker::Lorem.paragraph, user: paid_user, date: DateTime.now.in_time_zone(user.send_timezone)) }
+  let!(:not_my_entry) { FactoryBot.create(:entry, body: Faker::Lorem.paragraph, user: free_ai) }
 end

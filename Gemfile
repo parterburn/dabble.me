@@ -102,11 +102,12 @@ group :development do
 end
 
 group :test do
-  gem 'capybara', '~> 3.35', '>= 3.35.3'
+  gem 'capybara'
   gem 'database_cleaner'
   gem 'email_spec', require: false
-  gem 'rspec', '~> 3.10'
-  gem 'selenium-webdriver'
+  gem "rspec-retry"                       # Automatically retry failed tests that timeout
+  gem 'webdrivers', '~> 5.0', require: false
+  gem "selenium-webdriver"
   gem 'simplecov', require: false
   gem 'webmock', require: false
 end

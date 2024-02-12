@@ -48,5 +48,6 @@ Rails.application.configure do
   # config.action_view.raise_on_missing_translations = true
 
   config.action_mailer.default_url_options = { host: 'localhost' }
+  config.action_controller.asset_host = 'http://127.0.0.1:64515'
   config.active_job.queue_adapter = :inline
 end
