@@ -28,16 +28,18 @@ class EntriesController < ApplicationController
         @entries = current_user.entries.includes(:inspiration).where("date >= '#{params[:group]}-01-01'::DATE AND date <= '#{params[:group]}-12-31'::DATE").sort_by(&:date)
       rescue
         Sentry.capture_message("Doing expensive lookup based on ID for entry", level: :info, extra: { params: params })
-        entry = current_user.entries.find(params[:group])
-        return redirect_to day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day)
+        entry = current_user.entries.where(id: params[:group]).first
+        if entry.present?
+          return redirect_to day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day)
+        else
+          flash[:alert] = "No entry found."
+          return redirect_to entries_path
+        end
       end
       @title = "Entries from #{params[:group]}"
     elsif params[:format] != "json"
       @entries = current_user.entries.includes(:inspiration)
       @title = 'All Entries'
-    else
-      flash[:alert] = "Page not accessible."
-      redirect_to root_path and return
     end
 
     if @entries.present?
@@ -323,6 +325,8 @@ class EntriesController < ApplicationController
     else
       @entry = current_user.entries.includes(:inspiration).where(id: params[:id]).first
     end
+  rescue
+    flash[:alert] = "Entry not found."
   end
 
   def require_entry_permission
