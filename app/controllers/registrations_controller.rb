@@ -19,9 +19,7 @@ class RegistrationsController < Devise::RegistrationsController
   def update
     if params[:submit_method] == "delete account"
       if current_user.valid_password?(params[:user][:current_password])
-        if current_user.is_pro?
-          UserMailer.pro_deleted(current_user.full_name, current_user.email, current_user.plan, current_user.entries.size, current_user.id, current_user.payhere_id, current_user.stripe_id).deliver_later
-        end
+        cancel_subscription
         current_user.destroy
         redirect_to root_path, notice: "Your account has been deleted."
       else
@@ -68,12 +66,7 @@ class RegistrationsController < Devise::RegistrationsController
 
   def destroy
     if current_user.valid_password?(params[:user][:current_password])
-      if current_user.is_pro? && current_user.plan_type_unlinked == "Stripe" && current_user.stripe_id.present?
-        customer = Stripe::Customer.retrieve(current_user.stripe_id)
-        customer.subscriptions.each do |sub|
-          sub.delete
-        end
-      end
+      cancel_subscription
       super
     else
       flash[:alert] = "Incorrect current password."
@@ -110,6 +103,18 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   private
+
+  def cancel_subscription
+    if current_user.is_pro?
+      Sentry.capture_message("Pro User Deleted", level: :info, extra: { email: current_user.email, plan: current_user.plan, entries: current_user.entries.size, user_id: current_user.id, payhere_id: current_user.payhere_id, stripe_id: current_user.stripe_id })
+      if current_user.stripe_id.present?
+        customer = Stripe::Customer.retrieve(current_user.stripe_id)
+        customer.subscriptions.each do |sub|
+          sub.delete
+        end
+      end
+    end
+  end
 
   def check_captcha
     if valid_captcha?(model: resource)

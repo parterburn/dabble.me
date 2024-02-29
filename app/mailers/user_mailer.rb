@@ -43,22 +43,6 @@ class UserMailer < ActionMailer::Base
     mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: '[REFUND REQUIRED] Payment Without a User', body: params.to_yaml)
   end
 
-  def pro_deleted(name, email, plan, entries, user_id, payhere_id, stripe_id)
-    subscription_status = nil
-    if stripe_id.present?
-      subscriptions = Stripe::Subscription.list(customer: stripe_id)
-      subscription_status = subscriptions.map do |s|
-        if s.status == "active" && s.cancel_at_period_end
-          "#{s.id} will be canceled on #{Time.at(s.cancel_at).strftime("%B %-d, %Y")}"
-        else
-          "#{s.id} is #{s.status}"
-        end
-      end.to_sentence
-    end
-
-    mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: '[ACTION REQUIRED] Pro User Deleted', body: "Name: #{name}\nEmail: #{email}\nUser ID: #{user_id}\nPlan: #{plan}\nEntries: #{entries}\nPayhere ID: #{payhere_id}\nStripe Subscription Status: #{subscription_status}\n\nStripe: https://dashboard.stripe.com/customers/#{stripe_id}")
-  end
-
   def failed_entry(user, errors, date, body)
     @user = user
     @errors = errors
