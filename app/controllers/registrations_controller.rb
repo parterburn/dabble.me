@@ -110,7 +110,7 @@ class RegistrationsController < Devise::RegistrationsController
       if current_user.stripe_id.present?
         customer = Stripe::Customer.retrieve(current_user.stripe_id)
         customer.subscriptions.each do |sub|
-          sub.delete
+          sub.cancel
         end
       end
     end
