@@ -117,6 +117,8 @@ class User < ActiveRecord::Base
     end
   end
 
+  # PRO Monthly PayHere
+  # PRO Yearly PayHere
   def plan_frequency
     if plan && plan.match(/monthly/i)
       'Monthly'
