@@ -2,7 +2,7 @@ require 'fileutils'
 
 class Entry::AiTranscribe
   OPENAI_WHISPER_MODEL = "whisper-1".freeze
-  OPENAI_MODEL = "gpt-3.5-turbo".freeze
+  OPENAI_MODEL = "gpt-4o".freeze
   OPENAI_TEMPERATURE = 0.3 # 0-1.0, higher = more creative
 
   # Entry::AiTranscribe.new.batch_ai_transcribe("/Users/user/Downloads/files", "mp3")
@@ -59,11 +59,7 @@ class Entry::AiTranscribe
   end
 
   def max_tokens
-    if OPENAI_MODEL == "gpt-4"
-      8000
-    else
-      4000
-    end
+    128_000
   end
 
   def ai_transcribe(file_path)

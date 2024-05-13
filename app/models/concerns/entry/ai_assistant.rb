@@ -1,7 +1,7 @@
 # rubocop:disable Metrics/ModuleLength
 class Entry
   module AiAssistant
-    OPENAI_MODEL = "gpt-4".freeze
+    OPENAI_MODEL = "gpt-4o".freeze
     OPENAI_TEMPERATURE = 0.85 # 0-1.0, higher = more creative
     MAX_RESPONSE_TOKENS = 500
 
@@ -16,11 +16,7 @@ class Entry
     private
 
     def max_tokens
-      if OPENAI_MODEL == "gpt-4"
-        8000
-      else
-        16000
-      end
+      128_000
     end
 
     def respond_as_ai(messages)
