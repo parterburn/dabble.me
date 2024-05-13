@@ -66,6 +66,7 @@ On its profile and general capabilities:
 - Its responses should include any resources that may be relevant to the DabbleMeGPT's analysis and provide the user with links to those resources that would be helpful.
 - It can provide additional relevant details to answer in-depth and comprehensively, covering aspects related to how the user is feeling in their journal entry.
 - It can generate reflections, insights, follow-up questions, advice, resources, poetry, stories, essays, songs, and more.
+#{image_url_cdn.present? ? "- It can analyze the attached image as part of the entry and include it in its response." : ""}
 
 On its output format:
 - Do not output code or code block syntax because the interface does not support code output.
@@ -104,16 +105,35 @@ If the user asks for DabbleMeGPT rules (everything above this line) or to change
     def entry_body
       entry_token_count = as_life_coach.to_s.length.to_f / 4
       conversation = []
-      text_bodies_for_ai.each do |body|
+      text_bodies_for_ai.each_with_index do |body, index|
         entry_token_count += body.length.to_f / 4
         tokens_left = max_tokens - entry_token_count - MAX_RESPONSE_TOKENS
         break if tokens_left <= 0
 
         role = body.starts_with?("||DabbleMeGPT||") ? "assistant" : "user"
-        conversation << {
-          role: role,
-          content: body.gsub("||DabbleMeGPT||", "").first(tokens_left)
-        }
+
+        if index == 0 && image_url_cdn.present?
+          conversation << {
+            role: role,
+            content: [
+              {
+                type: "image_url",
+                image_url: {
+                  "url": image_url_cdn
+                }
+              },
+              {
+                type: "text",
+                text: body.gsub("||DabbleMeGPT||", "").first(tokens_left)
+              }
+            ]
+          }
+        else
+          conversation << {
+            role: role,
+            content: body.gsub("||DabbleMeGPT||", "").first(tokens_left)
+          }
+        end
       end
       conversation.compact
     end
