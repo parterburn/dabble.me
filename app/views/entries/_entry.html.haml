@@ -52,7 +52,7 @@
       %br
       %p{style: "margin-top: 10px;"} Generating...
     :javascript
-      setTimeout(function() { location.reload(); }, 5000);
+      setTimeout(function() { location.reload(); }, 4500);
 
   - if current_user.is_pro?
     = entry.spotify_embed
@@ -71,6 +71,9 @@
   .pictureFrame
     =link_to entry.image_url_cdn, target: "_blank" do
       =image_code(entry)
+    - if entry.image_url_cdn == "https://dabble-me.s3.amazonaws.com/uploading.png"
+      :javascript
+        setTimeout(function() { location.reload(); }, 4500);      
 .clearfix
 
 :javascript
