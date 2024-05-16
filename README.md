@@ -44,7 +44,7 @@ STRIPE_API_KEY: sk_test_1234
 STRIPE_SIGNING_SECRET: whsec_1234
 ```
 
-###Things you may want to rip out
+### Things you may want to rip out
 
 If you want to bypass using Mailchimp to collect email addresses, simply don't put a value in for `MAILCHIMP_API_KEY`. I use Mailchimp to email out new features to the users at Dabble.me, so if you're the only one using your app it doesn't make sense to have Mailchimp.
 
