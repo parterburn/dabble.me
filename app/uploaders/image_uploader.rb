@@ -5,26 +5,38 @@ class ImageUploader < CarrierWave::Uploader::Base
 
   include CarrierWave::MiniMagick
 
-  process :clear_generic_content_type
   process :convert_to_jpg, if: :heic_image?
   # process :convert_to_jpg, if: :webp_image?
   process resize_to_limit: [1200, 1200], quality: 90, if: :web_image?
   process :auto_orient, if: :web_image?
+  process :clear_generic_content_type
 
   # def extension_allowlist
   #   %w(jpg jpeg gif png heic heif)
   # end
+
+  def process!(new_file=nil)
+    @original_width, @original_height = original_dimensions(new_file || file)
+    super
+  end
 
   def content_type_allowlist
     [/(image|application)\/(png|jpe?g|gif|webp|heic|heif|octet-stream)/]
   end
 
   def web_image?(file)
-    heic_image?(file) || self.content_type =~ /^image\/(png|jpe?g|webp|gif)$/i || self.content_type == "application/octet-stream"
+    (
+      @original_width && @original_height && @original_width.to_i < 8000 && @original_height.to_i < 8000
+    ) &&
+      (
+        heic_image?(file) ||
+        !!(self.content_type =~ /^image\/(png|jpe?g|webp|gif)$/i) ||
+        self.content_type == "application/octet-stream"
+      )
   end
 
   def heic_image?(file)
-    self.content_type.blank? || self.content_type == "application/octet-stream" || self.content_type == "image/heic" || self.content_type == "image/heif" || self.filename =~ /^.+\.(heic|HEIC|Heic|heif|HEIF|Heif)$/i
+    self.content_type.blank? || self.content_type == "application/octet-stream" || self.content_type == "image/heic" || self.content_type == "image/heif" || !!(self.filename =~ /^.+\.(heic|HEIC|Heic|heif|HEIF|Heif)$/i)
   end
 
   # def webp_image?(file)
@@ -47,5 +59,10 @@ class ImageUploader < CarrierWave::Uploader::Base
 
   def filename
     super.gsub(/\.heic/i, ".jpg").gsub(/\.heif/i, ".jpg") if original_filename.present?
+  end
+
+  def original_dimensions(file)
+    image = MiniMagick::Image.open(file.path)
+    [image.width, image.height]
   end
 end
