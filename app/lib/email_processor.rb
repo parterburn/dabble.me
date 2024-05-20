@@ -304,6 +304,7 @@ class EmailProcessor
     body = unfold_paragraphs(body) unless @from.include?('yahoo.com') # fix wrapped plain text, but yahoo messes this up
     body&.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "(see attached image)") # remove "Inline image" text from griddler
     body&.gsub!(/(?:\n\r?|\r\n?)/, "<br>") # convert line breaks
+    body&.gsub!(/(?:\n\n?|\n\n?)/, "<br><br>") # convert line breaks for iOS Mail
     body = "<p>#{body}</p>" # basic formatting
     body&.gsub!(/<(http[s]?:\/\/\S*?)>/, "(\\1)") # convert links to show up
     body&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
