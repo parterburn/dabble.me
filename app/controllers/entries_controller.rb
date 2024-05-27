@@ -51,8 +51,10 @@ class EntriesController < ApplicationController
 
     respond_to do |format|
       format.json {
+        start_date = params[:start].presence || 1.years.ago.strftime("%Y-%m-%d")
+        end_date = params[:end].presence || Date.today.strftime("%Y-%m-%d")
         render json: calendar_json(current_user.entries
-          .where("date >= '#{params[:start]}'::DATE AND date < '#{params[:end]}'::DATE")) }
+          .where("date >= '#{start_date}'::DATE AND date < '#{end_date}'::DATE")) }
       format.html
     end
   end
