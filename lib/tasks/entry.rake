@@ -5,7 +5,7 @@ namespace :entry do
   # rake entry:send_entries_test
   task :send_entries_test => :environment do
     user = User.where(:email=>"admin@dabble.ex").first
-    EntryMailer.send_entry(user, Inspiration.random).deliver_now
+    EntryJob.perform_later(user.id, Inspiration.random.id, 0)
   end
 
   # TRIGGERED MANUALLY
@@ -186,7 +186,7 @@ namespace :entry do
         if user.is_free? && user.emails_sent > 6 && user.entries.count == 0 && ENV['FREE_WEEK'] != 'true'
           user.update_columns(frequency: [], previous_frequency: user.frequency)
         elsif user.is_pro? || (user.is_free? && Time.now.strftime("%U").to_i % 2 == 0) || ENV['FREE_WEEK'] == 'true' # Every other week for free users
-          EntryMailer.send_entry(user, random_inspiration).deliver_now
+          EntryJob.perform_later(user.id, random_inspiration.id, sent_in_hour)
           sent_in_hour += 1
         end
       rescue => error
