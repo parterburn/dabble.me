@@ -2,6 +2,20 @@ namespace :entry do
   require 'csv'
 
   # TRIGGERED MANUALLY
+  # heroku run bundle exec rake "entry:resend_daily_pro_users[2024-01-01]" --app dabble-me --size=standard-1x
+  task :resend_daily_pro_users, [:send_date] => :environment do |t, args|
+    send_day = Date.parse(args[:send_date] || Time.current.in_time_zone("America/Denver").to_date.to_s)
+    users = User.daily_emails.pro_only.subscribed_to_emails.not_just_signed_up.select { |user| user.last_sent_at.before?(24.hours.ago) }
+    random_inspiration = Inspiration.random
+
+    users.each do |user|
+      EntryMailer.send_entry(user, random_inspiration, send_day: send_day).deliver_now
+      send_time = DateTime.parse("#{send_day} #{user.send_time}")
+      user.update_columns(last_sent_at: send_time)
+    end
+  end
+
+  # TRIGGERED MANUALLY
   # rake entry:send_entries_test
   task :send_entries_test => :environment do
     user = User.where(:email=>"admin@dabble.ex").first
