@@ -37,7 +37,7 @@
 
       %div
         = label_tag :plan
-        = text_field_tag :plan, "#{@payment.user.plan if @payment.user}", :class => "form-control"
+        = text_field_tag :plan, "#{@payment.user.plan if @payment.user}", :class => "form-control", :placeholder => "Free, PRO Monthly PayHere, PRO Yearly PayHere"
         %br
 
       %div
