@@ -3,6 +3,7 @@
   %head
     %title= yield_or_default :title, action_name.titlecase
     %meta{ charset: 'utf-8' }
+    %meta{ httpEquiv: "Content-Type", content: "text/html; charset=ISO-8859-1"}
     %meta{ name: 'viewport', content: 'width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0' }
     %meta{ content: 'IE=edge', 'http-equiv' => 'X-UA-Compatible' }
     = csrf_meta_tags

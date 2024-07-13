@@ -25,7 +25,7 @@ gem "rails-html-sanitizer", "~> 1.6"
 gem 'email_reply_trimmer'
 gem 'griddler-mailgun', '~> 1.1', '>= 1.1.1'
 gem 'griddler', '~> 1.5.2'
-gem "charlock_holmes", "~> 0.7.7" # text encoding detection for email parsing
+gem "charlock_holmes", "~> 0.7.9" # text encoding detection for email parsing
 
 gem 'mailgun_rails'
 gem "ruby-openai"
