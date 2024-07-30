@@ -14,6 +14,32 @@
       %br
       There's no way to share your entries. We don't have any integration with X/Twitter or Facebook, there's no way to make an entry public, and your entries are not searchable by Google. Dabble Me is strictly a private place for you to read and write about how your days went.
 
+    %h4 Data Security
+    %p
+      At Dabble Me, we prioritize the security and privacy of your journal entries. Here’s how we handle data security:
+    %ul
+      %li
+        %strong Database Security:
+        Dabble Me uses a database with encryption at rest, ensuring that your data is protected while stored on our servers. This encryption safeguards your information against unauthorized access.
+
+      %li
+        %strong Email as a Medium:
+        Given that Dabble Me uses email as the primary medium for reading and writing journal entries, additional encryption layers are not implemented for the journal entries themselves. Implementing such encryption would disrupt the core functionality of our service. If individual encryption is critical for you, we recommend exploring options like DayOne or the iOS Journal app.
+
+      %li
+        %strong Password Protection:
+        Password fields are encrypted to enhance security and protect your account.
+
+      %li
+        %strong 2-Factor Authentication:
+        To further secure your account, we offer 2-factor authentication. We highly recommend enabling this feature to add an extra layer of security. You can set it up #{link_to 'here', 'https://dabble.me/users/otp/token'}.
+
+      %li
+        %strong Single Owner/Developer:
+        Dabble Me is managed by a single owner/developer who is committed to maintaining the privacy and security of your data. Companies with larger teams are more likely to allow access to your data to their employees (unless you
+        %i personally
+        manage the encryption).
+
     %h4 Information Collected
     %p
       Dabble Me only collects information it needs so that you can use the service. Your information is never shared or sold to any third parties.
