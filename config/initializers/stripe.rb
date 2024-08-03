@@ -101,7 +101,7 @@ StripeEvent.configure do |events|
     stripe_customer_id = subscription.customer
     if stripe_customer_id.present?
       user = User.where(stripe_id: stripe_customer_id).first
-      if user.present?
+      if user.present? && !user.has_active_stripe_subscription?
         if subscription.cancellation_details&.reason == "payment_failed"
           user.update(plan: "Free")
           UserMailer.downgraded(user).deliver_now
