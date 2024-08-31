@@ -155,7 +155,8 @@ class EmailProcessor
         end
       else
         begin
-          entry = @user.entries.create!(date: date, inspiration_id: inspiration_id, body: @body, original_email_body: @raw_body)
+          params = { date: date, inspiration_id: inspiration_id, body: @body, original_email_body: @raw_body }
+          entry = @user.entries.create!(params)
           if best_attachment.present?
             entry.image = best_attachment
           elsif best_attachment_url.present? && best_attachment_url.starts_with?("mailgun_collage:")
@@ -314,6 +315,7 @@ class EmailProcessor
     body&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/^$\n\z/, "") # remove last unnecessary line break
     body&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/^$\n\z/, "") # remove last unnecessary line break
     body&.gsub!("p.MsoNormal,p.MsoNoSpacing{margin:0}", "") # remove outlook styles
+    body&.gsub!("\0", '') # remove null characters
     body = body&.strip
 
     return unless body.present?
@@ -361,6 +363,7 @@ class EmailProcessor
     html&.gsub!(/<div style="display:none;border:0px;width:0px;height:0px;overflow:hidden;">.+<\/div>/, "") # remove hidden divs / tracking pixels
     html&.gsub!(/src=\"cid\:\S+\"/, "src=\"\" style=\"display: none;\"") # remove attached images showing as broken inline images
     html&.gsub!("p.MsoNormal,p.MsoNoSpacing{margin:0}", "") # remove outlook styles
+    html&.gsub!("\0", '') # remove null characters
 
     empty_line_regex = /(<div>\n<div>\z)|(<br\s*\/?>\z)|(\n\z)/
     while html&.match?(empty_line_regex)
