@@ -315,7 +315,6 @@ class EmailProcessor
     body&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/^$\n\z/, "") # remove last unnecessary line break
     body&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/^$\n\z/, "") # remove last unnecessary line break
     body&.gsub!("p.MsoNormal,p.MsoNoSpacing{margin:0}", "") # remove outlook styles
-    body&.gsub!("\0", '') # remove null characters
     body = body&.strip
 
     return unless body.present?
@@ -325,17 +324,17 @@ class EmailProcessor
 
   def to_utf8(content)
     return unless content.present?
+    content = content&.gsub!("\0", '') # remove null characters
 
     begin
       detection = CharlockHolmes::EncodingDetector.detect(content)
       if detection[:confidence] > 95
-        CharlockHolmes::Converter.convert content, detection[:encoding].gsub("IBM424_ltr", "UTF-8"), "UTF-8"
-      else
-        content
+        content = CharlockHolmes::Converter.convert content, detection[:encoding].gsub("IBM424_ltr", "UTF-8"), "UTF-8"
       end
     rescue
-      content
     end
+
+    content
   end
 
   def clean_html_version(html)
@@ -363,7 +362,6 @@ class EmailProcessor
     html&.gsub!(/<div style="display:none;border:0px;width:0px;height:0px;overflow:hidden;">.+<\/div>/, "") # remove hidden divs / tracking pixels
     html&.gsub!(/src=\"cid\:\S+\"/, "src=\"\" style=\"display: none;\"") # remove attached images showing as broken inline images
     html&.gsub!("p.MsoNormal,p.MsoNoSpacing{margin:0}", "") # remove outlook styles
-    html&.gsub!("\0", '') # remove null characters
 
     empty_line_regex = /(<div>\n<div>\z)|(<br\s*\/?>\z)|(\n\z)/
     while html&.match?(empty_line_regex)
