@@ -3,7 +3,7 @@ Rails.application.routes.draw do
     resources :inspirations, path: '/admin/inspirations'
     resources :payments, path: '/admin/payments'
     get 'admin/users' => 'admin#users', as: 'admin_users'
-    get 'admin/stats' => 'admin#stats', as: 'admin_stats'
+    get 'admin/stats' => 'admin/stats#index', as: 'admin_stats'
     get 'admin/photos' => 'admin#photos', as: 'admin_photos'
   end
 

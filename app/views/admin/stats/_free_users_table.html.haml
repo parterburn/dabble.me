@@ -1,0 +1,12 @@
+%table.table.table-striped.table-hover
+  %tr
+    %th Email
+    %th Signed up
+    %th Entries
+    %th Per day
+  - free_users.each do |user|
+    %tr{:class => dashboard.paid_status_for(user)}
+      %td= user.email
+      %td= l(user.created_at.to_date, format: :month_day)
+      %td= user.entries.size
+      %td= dashboard.entries_per_day_for(user)

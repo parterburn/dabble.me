@@ -1,0 +1,145 @@
+- title ("Admin Stats")
+= javascript_include_tag "//www.gstatic.com/charts/loader.js", "chartkick"
+.row.s-admin-container.container{style: 'margin: 0 auto;'}
+  .col-md-12
+    %h3 Admin Stats
+
+  .col-md-12
+    %hr
+
+  .col-md-12
+    .row
+      .col-md-3
+        %strong All Entries
+      .col-md-2
+        %strong #{format_number(@all_count)}
+    .row
+      .col-md-3
+        %strong All Entries with Photos
+      .col-md-2
+        =link_to admin_photos_path do
+          %strong #{format_number(@photos_count)}
+        %span{style: "margin-left: 10px;"} #{number_to_percentage(@photos_count.to_f/@all_count.to_f*100, precision: 0)}
+    .row
+      .col-md-3
+        %strong All Entries using DabbleMeGPT
+      .col-md-2
+        %strong #{format_number(@ai_entries_count)}
+        %span{style: "margin-left: 10px;"} #{format_number(@ai_users_count)} users
+
+  .col-md-12
+    %hr
+
+  .col-md-12
+    .row
+      .col-md-3
+        %strong All Users
+      .col-md-2
+        %strong #{format_number(@users.size)}
+    .row
+      .col-md-3
+        %strong Pro / Free
+      .col-md-2
+        %strong #{format_number(@users.pro_only.size)}
+        %span{style: "margin-left: 10px;"} #{number_to_percentage(@users.pro_only.size.to_f/@users.size.to_f*100, precision: 1)}
+      .col-md-2
+        %strong #{format_number(@users.free_only.size)}
+    .row
+      .col-md-3
+        %strong Pro Monthly / Yearly / Forevers
+      .col-md-2
+        %strong #{format_number(@users.monthly.size)}
+      .col-md-2
+        %strong #{format_number(@users.yearly.size)}
+        %span{style: "margin-left: 10px;"} #{number_to_percentage(@users.yearly.size.to_f/@users.pro_only.size.to_f*100, precision: 1)}
+      .col-md-2
+        %strong #{format_number(@users.forever.size)}
+    .row
+      .col-md-3
+        %strong Pro Stripe / Gumroad / Paypal
+      .col-md-2
+        %strong #{format_number(@users.payhere_only.size)}
+      .col-md-2
+        %strong #{format_number(@users.gumroad_only.size)}
+      .col-md-2
+        %strong #{format_number(@users.paypal_only.size)}
+
+  .col-md-12
+    %hr
+
+  .col-md-12
+    .row
+      .col-md-3
+        %strong Referrals
+      .col-md-2
+        %strong #{format_number(@users.referrals.size)}
+    - @users.referrals.pluck(:referrer).uniq.each do |ref|
+      .row
+        .col-md-3
+          = ref
+        .col-md-2
+          #{format_number(@users.referrals.where(referrer: ref).size)}
+
+  .col-md-12
+    %hr
+
+  .col-md-3
+    %strong Total Emails Sent
+  .col-md-3
+    - emails_sent_total = @users.sum(:emails_sent)
+    %strong= format_number(emails_sent_total)
+  .clearfix
+  .col-md-3
+    %strong Total Emails Received
+  .col-md-2
+    - emails_received_total = @users.sum(:emails_received)
+    %strong= format_number(emails_received_total)
+    %span{style: "margin-left: 10px;"}  #{number_to_percentage(emails_received_total.to_f/emails_sent_total.to_f*100, precision: 0)}
+
+  .col-md-12
+    %hr
+
+  .col-md-12
+    %h3 Sign ups over the last 90 days
+    = line_chart @users_by_week, discrete: true
+    %br
+
+  .col-md-12
+    %h3 Pro Upgrades over the last 90 days
+    = line_chart @pro_users_by_week, discrete: true
+    %br
+
+  .col-md-12
+    %h3 Entries over the last 90 days
+    = line_chart @entries_by_week, discrete: true
+    %br
+
+  .col-md-12
+    %h3 Emails over the last 90 days
+    = line_chart @emails_sent_by_month, discrete: true
+    %br
+
+  .col-md-12
+    %h3 Payments by month over the last year
+    = column_chart @payments_by_month, discrete: true
+    %br
+
+  .col-md-12
+    %h3 #{pluralize(format_number(@upgrades.total_count), "Upgrade")} from the last 90 days
+    = render partial: 'upgrades_table', locals: { upgrades: @upgrades, dashboard: @dashboard }
+    = paginate @upgrades, param_name: 'upgrades_page'
+
+  .col-md-12
+    %hr
+  .col-md-12
+    %h3 #{pluralize(format_number(@bounces.total_count), "user")} from the last 90 days has had emails bouncing
+    = render partial: 'bounces_table', locals: { bounces: @bounces }
+    = paginate @bounces, param_name: 'bounces_page'
+
+  .col-md-12
+    %hr
+
+  .col-md-12
+    %h3 #{pluralize(format_number(@free_users_recent.total_count), "Free User")} from the last 90 days
+    = render partial: 'free_users_table', locals: { free_users: @free_users_recent, dashboard: @dashboard }
+    = paginate @free_users_recent, param_name: 'free_users_page'

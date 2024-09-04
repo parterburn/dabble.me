@@ -75,22 +75,21 @@ class AdminStats
   end
 
   def free_users_created_since(date)
-    User.free_only.where("created_at >= ?", date)
+    User.free_only.where('created_at >= ?', date)
   end
 
   def upgraded_users_since(date)
-    pro_users = []
-    User.pro_only.includes(:payments).order("payments.created_at ASC").each do | user|
-      first_payment = user.payments.order('payments.date').try(:first).try(:date)
-      if first_payment.present? && first_payment > date
-        pro_users << user
-      end
-    end
-    pro_users
+    User.pro_only
+        .joins(:payments)
+        .where('payments.date > ?', date)
+        .select('users.*, MIN(payments.date) as first_payment_date')
+        .group('users.id')
+        .order('first_payment_date ASC')
   end
 
   def bounced_users_since(date)
-    User.where("emails_bounced > 0").where("updated_at >= ?", date)
+    User.where('emails_bounced > 0')
+        .where('updated_at >= ?', date)
   end
 
   def entries_per_day_for(user)
