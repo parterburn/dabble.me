@@ -2,7 +2,6 @@ class Admin::StatsController < ApplicationController
   def index
     @dashboard = AdminStats.new
     @users = User.all
-    @entries = Entry.all
 
     # Preload data for charts
     @users_by_week = @dashboard.users_by_week_since(90.days.ago)
@@ -18,14 +17,13 @@ class Admin::StatsController < ApplicationController
 
     # User statistics
     @total_users = @users.count
-    @pro_users = @users.pro_only
-    @free_users = @users.free_only
-    @monthly_users = @users.monthly
-    @yearly_users = @users.yearly
-    @forever_users = @users.forever
-    @payhere_users = @users.payhere_only
-    @gumroad_users = @users.gumroad_only
-    @paypal_users = @users.paypal_only
+    @pro_users = @users.pro_only.count
+    @monthly_users = @users.monthly.count
+    @yearly_users = @users.yearly.count
+    @forever_users = @users.forever.count
+    @payhere_users = @users.payhere_only.count
+    @gumroad_users = @users.gumroad_only.count
+    @paypal_users = @users.paypal_only.count
     @referral_users = @users.referrals
 
     # Email statistics
@@ -35,6 +33,5 @@ class Admin::StatsController < ApplicationController
     # Paginate large datasets
     @upgrades = @dashboard.upgraded_users_since(90.days.ago).page(params[:upgrades_page]).per(20)
     @bounces = @dashboard.bounced_users_since(90.days.ago).page(params[:bounces_page]).per(20)
-    @free_users_recent = @dashboard.free_users_created_since(90.days.ago).order(:created_at).page(params[:free_users_page]).per(20)
   end
 end
