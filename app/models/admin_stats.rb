@@ -74,42 +74,42 @@ class AdminStats
     User.where("created_at >= ?", date)
   end
 
-  def free_users_created_since(date)
-    User.free_only.where("created_at >= ?", date)
-  end
+  # def free_users_created_since(date)
+  #   User.free_only.where("created_at >= ?", date)
+  # end
 
-  def upgraded_users_since(date)
-    pro_users = []
-    User.pro_only.includes(:payments).order("payments.created_at ASC").each do | user|
-      first_payment = user.payments.order('payments.date').try(:first).try(:date)
-      if first_payment.present? && first_payment > date
-        pro_users << user
-      end
-    end
-    pro_users
-  end
+  # def upgraded_users_since(date)
+  #   pro_users = []
+  #   User.pro_only.includes(:payments).order("payments.created_at ASC").each do | user|
+  #     first_payment = user.payments.order('payments.date').try(:first).try(:date)
+  #     if first_payment.present? && first_payment > date
+  #       pro_users << user
+  #     end
+  #   end
+  #   pro_users
+  # end
 
-  def bounced_users_since(date)
-    User.where("emails_bounced > 0").where("updated_at >= ?", date)
-  end
+  # def bounced_users_since(date)
+  #   User.where("emails_bounced > 0").where("updated_at >= ?", date)
+  # end
 
-  def entries_per_day_for(user)
-    (entry_count_for(user) / account_age_for(user).to_f).to_f.round(1)
-  rescue ZeroDivisionError
-    0
-  end
+  # def entries_per_day_for(user)
+  #   (entry_count_for(user) / account_age_for(user).to_f).to_f.round(1)
+  # rescue ZeroDivisionError
+  #   0
+  # end
 
-  def paid_status_for(user)
-    entries_per_day = entries_per_day_for(user)
+  # def paid_status_for(user)
+  #   entries_per_day = entries_per_day_for(user)
 
-    if entry_count_for(user) == 0
-      "danger"
-    elsif entries_per_day <= 0.2
-      "warning"
-    else
-      "great"
-    end
-  end
+  #   if entry_count_for(user) == 0
+  #     "danger"
+  #   elsif entries_per_day <= 0.2
+  #     "warning"
+  #   else
+  #     "great"
+  #   end
+  # end
 
   private
 

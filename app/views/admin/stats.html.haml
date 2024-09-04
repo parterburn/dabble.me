@@ -15,13 +15,13 @@
     .row
       .col-md-3
         %strong All Entries
-      - all_count = all_entries.size
+      - all_count = all_entries.count
       .col-md-2
         %strong #{format_number(all_count)}
     .row
       .col-md-3
         %strong All Entries with Photos
-      - photos_count = all_entries.only_images.size
+      - photos_count = all_entries.only_images.count
       .col-md-2
         =link_to admin_photos_path do
           %strong #{format_number(photos_count)}
@@ -31,8 +31,8 @@
         %strong All Entries using DabbleMeGPT
       - ai_entries = all_entries.with_ai_responses
       .col-md-2
-        %strong #{format_number(ai_entries.size)}
-        %span{style: "margin-left: 10px;"} #{format_number(ai_entries.pluck(:user_id).uniq.size)} users
+        %strong #{format_number(ai_entries.count)}
+        %span{style: "margin-left: 10px;"} #{format_number(ai_entries.pluck(:user_id).uniq.count)} users
 
   .col-md-12
     %hr
@@ -42,34 +42,34 @@
       .col-md-3
         %strong All
       .col-md-2
-        %strong #{format_number(all_users.size)}
+        %strong #{format_number(all_users.count)}
     .row
       .col-md-3
         %strong Pro / Free
       .col-md-2
-        %strong #{format_number(all_users.pro_only.size)}
-        %span{style: "margin-left: 10px;"} #{number_to_percentage(all_users.pro_only.size.to_f/all_count.to_f*100, precision: 1)}
+        %strong #{format_number(all_users.pro_only.count)}
+        %span{style: "margin-left: 10px;"} #{number_to_percentage(all_users.pro_only.count.to_f/all_count.to_f*100, precision: 1)}
       .col-md-2
-        %strong #{format_number(all_users.free_only.size)}
+        %strong #{format_number(all_users.free_only.count)}
     .row
       .col-md-3
         %strong Pro Monthly / Yearly / Forevers
       .col-md-2
-        %strong #{format_number(all_users.monthly.size)}
+        %strong #{format_number(all_users.monthly.count)}
       .col-md-2
-        %strong #{format_number(all_users.yearly.size)}
-        %span{style: "margin-left: 10px;"} #{number_to_percentage(all_users.yearly.size.to_f/all_users.pro_only.size.to_f*100, precision: 1)}
+        %strong #{format_number(all_users.yearly.count)}
+        %span{style: "margin-left: 10px;"} #{number_to_percentage(all_users.yearly.count.to_f/all_users.pro_only.count.to_f*100, precision: 1)}
       .col-md-2
-        %strong #{format_number(all_users.forever.size)}
+        %strong #{format_number(all_users.forever.count)}
     .row
       .col-md-3
         %strong Pro Stripe / Gumroad / Paypal
       .col-md-2
-        %strong #{format_number(all_users.payhere_only.size)}
+        %strong #{format_number(all_users.payhere_only.count)}
       .col-md-2
-        %strong #{format_number(all_users.gumroad_only.size)}
+        %strong #{format_number(all_users.gumroad_only.count)}
       .col-md-2
-        %strong #{format_number(all_users.paypal_only.size)}
+        %strong #{format_number(all_users.paypal_only.count)}
 
   .col-md-12
     %hr
@@ -79,13 +79,13 @@
       .col-md-3
         %strong Referrals
       .col-md-2
-        %strong #{format_number(all_users.referrals.size)}
+        %strong #{format_number(all_users.referrals.count)}
     - User.referrals.pluck(:referrer).uniq.each do |ref|
       .row
         .col-md-3
           = ref
         .col-md-2
-          #{format_number(all_users.referrals.where(referrer: ref).size)}
+          #{format_number(all_users.referrals.where(referrer: ref).count)}
 
   .col-md-12
     %hr
@@ -132,30 +132,30 @@
     = column_chart @dashboard.payments_by_month(1.year.ago), discrete: true
     %br
 
-  .col-md-12
-    - upgrades = @dashboard.upgraded_users_since(90.days.ago)
-    %h3 #{pluralize(format_number(upgrades.size), "Upgrade")} from the last 90 days
-    %p
-      %table.table.table-striped.table-hover
-        %tr
-          %th Email
-          %th Upgraded
-          %th Paid
-          %th Entries
-          %th Per day
-        - upgrades.each do |user|
-          %tr{:class => @dashboard.paid_status_for(user)}
-            %td= user.email
-            %td= l(user.payments.first.date.to_date, format: :month_day)
-            %td= user.payments.sum(:amount)
-            %td= user.entries.size
-            %td= @dashboard.entries_per_day_for(user)
+  -# .col-md-12
+  -#   - upgrades = @dashboard.upgraded_users_since(90.days.ago)
+  -#   %h3 #{pluralize(format_number(upgrades.count), "Upgrade")} from the last 90 days
+  -#   %p
+  -#     %table.table.table-striped.table-hover
+  -#       %tr
+  -#         %th Email
+  -#         %th Upgraded
+  -#         %th Paid
+  -#         %th Entries
+  -#         %th Per day
+  -#       - upgrades.each do |user|
+  -#         %tr{:class => @dashboard.paid_status_for(user)}
+  -#           %td= user.email
+  -#           %td= l(user.payments.first.date.to_date, format: :month_day)
+  -#           %td= user.payments.sum(:amount)
+  -#           %td= user.entries.count
+  -#           %td= @dashboard.entries_per_day_for(user)
 
   -# .col-md-12
   -#   %hr
   -# .col-md-12
   -#   - bounces = @dashboard.bounced_users_since(90.days.ago)
-  -#   %h3 #{pluralize(format_number(bounces.size), "user")} from the last 90 days has had emails bouncing
+  -#   %h3 #{pluralize(format_number(bounces.count), "user")} from the last 90 days has had emails bouncing
   -#   %p
   -#     %table.table.table-striped.table-hover
   -#       %tr
@@ -171,7 +171,7 @@
 
   -# .col-md-12
   -#   - free_users = @dashboard.free_users_created_since(90.days.ago).order(:created_at)
-  -#   %h3 #{pluralize(format_number(free_users.size), "Free User")} from the last 90 days
+  -#   %h3 #{pluralize(format_number(free_users.count), "Free User")} from the last 90 days
   -#   %p
   -#     %table.table.table-striped.table-hover
   -#       %tr
@@ -183,5 +183,5 @@
   -#         %tr{:class => @dashboard.paid_status_for(user)}
   -#           %td= user.email
   -#           %td= l(user.created_at.to_date, format: :month_day)
-  -#           %td= user.entries.size
+  -#           %td= user.entries.count
   -#           %td= @dashboard.entries_per_day_for(user)
