@@ -26,13 +26,13 @@
         =link_to admin_photos_path do
           %strong #{format_number(photos_count)}
         %span{style: "margin-left: 10px;"} #{number_to_percentage(photos_count.to_f/all_count.to_f*100, precision: 0)}
-    .row
-      .col-md-3
-        %strong All Entries using DabbleMeGPT
-      - ai_entries = all_entries.with_ai_responses
-      .col-md-2
-        %strong #{format_number(ai_entries.count)}
-        %span{style: "margin-left: 10px;"} #{format_number(ai_entries.pluck(:user_id).uniq.count)} users
+    -# .row
+      -# .col-md-3
+      -#   %strong All Entries using DabbleMeGPT
+      -# - ai_entries = all_entries.with_ai_responses
+      -# .col-md-2
+      -#   %strong #{format_number(ai_entries.count)}
+      -#   %span{style: "margin-left: 10px;"} #{format_number(ai_entries.pluck(:user_id).uniq.count)} users
 
   .col-md-12
     %hr
@@ -132,24 +132,24 @@
     = column_chart @dashboard.payments_by_month(1.year.ago), discrete: true
     %br
 
-  -# .col-md-12
-  -#   - upgrades = @dashboard.upgraded_users_since(90.days.ago)
-  -#   %h3 #{pluralize(format_number(upgrades.count), "Upgrade")} from the last 90 days
-  -#   %p
-  -#     %table.table.table-striped.table-hover
-  -#       %tr
-  -#         %th Email
-  -#         %th Upgraded
-  -#         %th Paid
-  -#         %th Entries
-  -#         %th Per day
-  -#       - upgrades.each do |user|
-  -#         %tr{:class => @dashboard.paid_status_for(user)}
-  -#           %td= user.email
-  -#           %td= l(user.payments.first.date.to_date, format: :month_day)
-  -#           %td= user.payments.sum(:amount)
-  -#           %td= user.entries.count
-  -#           %td= @dashboard.entries_per_day_for(user)
+  .col-md-12
+    - upgrades = @dashboard.upgraded_users_since(90.days.ago)
+    %h3 #{pluralize(format_number(upgrades.count), "Upgrade")} from the last 90 days
+    %p
+      %table.table.table-striped.table-hover
+        %tr
+          %th Email
+          %th Upgraded
+          %th Paid
+          %th Entries
+          %th Per day
+        - upgrades.each do |user|
+          %tr{:class => @dashboard.paid_status_for(user)}
+            %td= user.email
+            %td= l(user.payments.first.date.to_date, format: :month_day)
+            %td= user.payments.sum(:amount)
+            %td= user.entries.count
+            %td= @dashboard.entries_per_day_for(user)
 
   -# .col-md-12
   -#   %hr
