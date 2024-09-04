@@ -1,6 +1,0 @@
-.col-md-12
-  %hr
-.col-md-12
-  %h3 #{pluralize(format_number(@bounces.total_count), "user")} from the last 90 days has had emails bouncing
-  = render partial: 'bounces_table', locals: { bounces: @bounces, dashboard: @dashboard }
-  = paginate @bounces, param_name: 'bounces_page'

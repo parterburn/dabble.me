@@ -12,20 +12,20 @@
       .col-md-3
         %strong All Entries
       .col-md-2
-        %strong #{format_number(@all_count)}
+        %strong #{format_number(@stats[:all_count])}
     .row
       .col-md-3
         %strong All Entries with Photos
       .col-md-2
         =link_to admin_photos_path do
-          %strong #{format_number(@photos_count)}
-        %span{style: "margin-left: 10px;"} #{number_to_percentage(@photos_count.to_f/@all_count.to_f*100, precision: 0)}
+          %strong #{format_number(@stats[:photos_count])}
+        %span{style: "margin-left: 10px;"} #{number_to_percentage(@stats[:photos_count].to_f/@stats[:all_count].to_f*100, precision: 0)}
     .row
       .col-md-3
         %strong All Entries using DabbleMeGPT
       .col-md-2
-        %strong #{format_number(@ai_entries_count)}
-        %span{style: "margin-left: 10px;"} #{format_number(@ai_users_count)} users
+        %strong #{format_number(@stats[:ai_entries_count])}
+        %span{style: "margin-left: 10px;"} #{format_number(@stats[:ai_users_count])} users
 
   .col-md-12
     %hr
@@ -35,34 +35,34 @@
       .col-md-3
         %strong All Users
       .col-md-2
-        %strong #{format_number(@total_users)}
+        %strong #{format_number(@stats[:total_users])}
     .row
       .col-md-3
         %strong Pro / Free
       .col-md-2
-        %strong #{format_number(@pro_users)}
-        %span{style: "margin-left: 10px;"} #{number_to_percentage(@pro_users.to_f/@total_users.to_f*100, precision: 1)}
+        %strong #{format_number(@stats[:pro_users])}
+        %span{style: "margin-left: 10px;"} #{number_to_percentage(@stats[:pro_users].to_f/@stats[:total_users].to_f*100, precision: 1)}
       .col-md-2
-        %strong #{format_number(@total_users - @pro_users)}
+        %strong #{format_number(@stats[:total_users] - @stats[:pro_users])}
     .row
       .col-md-3
         %strong Pro Monthly / Yearly / Forevers
       .col-md-2
-        %strong #{format_number(@users.monthly)}
+        %strong #{format_number(@stats[:users][:monthly])}
       .col-md-2
-        %strong #{format_number(@users.yearly)}
-        %span{style: "margin-left: 10px;"} #{number_to_percentage(@users.yearly.to_f/@pro_users.to_f*100, precision: 1)}
+        %strong #{format_number(@stats[:users][:yearly])}
+        %span{style: "margin-left: 10px;"} #{number_to_percentage(@stats[:users][:yearly].to_f/@stats[:pro_users].to_f*100, precision: 1)}
       .col-md-2
-        %strong #{format_number(@users.forever)}
+        %strong #{format_number(@stats[:users][:forever])}
     .row
       .col-md-3
         %strong Pro Stripe / Gumroad / Paypal
       .col-md-2
-        %strong #{format_number(@users.payhere_only)}
+        %strong #{format_number(@stats[:users][:payhere_only])}
       .col-md-2
-        %strong #{format_number(@users.gumroad_only)}
+        %strong #{format_number(@stats[:users][:gumroad_only])}
       .col-md-2
-        %strong #{format_number(@users.paypal_only)}
+        %strong #{format_number(@stats[:users][:paypal_only])}
 
   .col-md-12
     %hr
@@ -72,13 +72,13 @@
       .col-md-3
         %strong Referrals
       .col-md-2
-        %strong #{format_number(@referral_users.size)}
-    - @referral_users.pluck(:referrer).uniq.each do |ref|
+        %strong #{format_number(@stats[:referral_users].size)}
+    - @stats[:referral_users].pluck(:referrer).uniq.each do |ref|
       .row
         .col-md-3
           = ref
         .col-md-2
-          #{format_number(@referral_users.where(referrer: ref).size)}
+          #{format_number(@stats[:referral_users].where(referrer: ref).size)}
 
   .col-md-12
     %hr
@@ -86,13 +86,13 @@
   .col-md-3
     %strong Total Emails Sent
   .col-md-3
-    - emails_sent_total = @users.sum(:emails_sent)
+    - emails_sent_total = @stats[:emails_sent_total]
     %strong= format_number(emails_sent_total)
   .clearfix
   .col-md-3
     %strong Total Emails Received
   .col-md-2
-    - emails_received_total = @users.sum(:emails_received)
+    - emails_received_total = @stats[:emails_received_total]
     %strong= format_number(emails_received_total)
     %span{style: "margin-left: 10px;"}  #{number_to_percentage(emails_received_total.to_f/emails_sent_total.to_f*100, precision: 0)}
 
@@ -101,27 +101,27 @@
 
   .col-md-12
     %h3 Sign ups over the last 90 days
-    = line_chart @users_by_week, discrete: true
+    = line_chart @stats[:users_by_week], discrete: true
     %br
 
   .col-md-12
     %h3 Pro Upgrades over the last 90 days
-    = line_chart @pro_users_by_week, discrete: true
+    = line_chart @stats[:pro_users_by_week], discrete: true
     %br
 
   .col-md-12
     %h3 Entries over the last 90 days
-    = line_chart @entries_by_week, discrete: true
+    = line_chart @stats[:entries_by_week], discrete: true
     %br
 
   .col-md-12
     %h3 Emails over the last 90 days
-    = line_chart @emails_sent_by_month, discrete: true
+    = line_chart @stats[:emails_sent_by_month], discrete: true
     %br
 
   .col-md-12
     %h3 Payments by month over the last year
-    = column_chart @payments_by_month, discrete: true
+    = column_chart @stats[:payments_by_month], discrete: true
     %br
 
   .col-md-12
