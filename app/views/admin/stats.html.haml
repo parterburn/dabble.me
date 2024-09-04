@@ -1,0 +1,187 @@
+- title ("Admin Stats")
+= javascript_include_tag "//www.gstatic.com/charts/loader.js", "chartkick"
+- all_entries = Entry.all
+- all_users = User.all
+
+.row.s-admin-container.container{style: 'margin: 0 auto;'}
+  .col-md-12
+    %h3
+      Admin Stats
+
+  .col-md-12
+    %hr
+
+  .col-md-12
+    .row
+      .col-md-3
+        %strong All Entries
+      - all_count = all_entries.size
+      .col-md-2
+        %strong #{format_number(all_count)}
+    .row
+      .col-md-3
+        %strong All Entries with Photos
+      - photos_count = all_entries.only_images.size
+      .col-md-2
+        =link_to admin_photos_path do
+          %strong #{format_number(photos_count)}
+        %span{style: "margin-left: 10px;"} #{number_to_percentage(photos_count.to_f/all_count.to_f*100, precision: 0)}
+    .row
+      .col-md-3
+        %strong All Entries using DabbleMeGPT
+      - ai_entries = all_entries.with_ai_responses
+      .col-md-2
+        %strong #{format_number(ai_entries.size)}
+        %span{style: "margin-left: 10px;"} #{format_number(ai_entries.pluck(:user_id).uniq.size)} users
+
+  .col-md-12
+    %hr
+
+  .col-md-12
+    .row
+      .col-md-3
+        %strong All
+      .col-md-2
+        %strong #{format_number(all_users.size)}
+    .row
+      .col-md-3
+        %strong Pro / Free
+      .col-md-2
+        %strong #{format_number(all_users.pro_only.size)}
+        %span{style: "margin-left: 10px;"} #{number_to_percentage(all_users.pro_only.size.to_f/all_count.to_f*100, precision: 1)}
+      .col-md-2
+        %strong #{format_number(all_users.free_only.size)}
+    .row
+      .col-md-3
+        %strong Pro Monthly / Yearly / Forevers
+      .col-md-2
+        %strong #{format_number(all_users.monthly.size)}
+      .col-md-2
+        %strong #{format_number(all_users.yearly.size)}
+        %span{style: "margin-left: 10px;"} #{number_to_percentage(all_users.yearly.size.to_f/all_users.pro_only.size.to_f*100, precision: 1)}
+      .col-md-2
+        %strong #{format_number(all_users.forever.size)}
+    .row
+      .col-md-3
+        %strong Pro Stripe / Gumroad / Paypal
+      .col-md-2
+        %strong #{format_number(all_users.payhere_only.size)}
+      .col-md-2
+        %strong #{format_number(all_users.gumroad_only.size)}
+      .col-md-2
+        %strong #{format_number(all_users.paypal_only.size)}
+
+  .col-md-12
+    %hr
+
+  .col-md-12
+    .row
+      .col-md-3
+        %strong Referrals
+      .col-md-2
+        %strong #{format_number(all_users.referrals.size)}
+    - User.referrals.pluck(:referrer).uniq.each do |ref|
+      .row
+        .col-md-3
+          = ref
+        .col-md-2
+          #{format_number(all_users.referrals.where(referrer: ref).size)}
+
+  .col-md-12
+    %hr
+
+  .col-md-3
+    %strong Total Emails Sent
+  .col-md-3
+    - emails_sent_total = all_users.sum(:emails_sent)
+    %strong= format_number(emails_sent_total)
+  .clearfix
+  .col-md-3
+    %strong Total Emails Received
+  .col-md-2
+    - emails_received_total = all_users.sum(:emails_received)
+    %strong= format_number(emails_received_total)
+    %span{style: "margin-left: 10px;"}  #{number_to_percentage(emails_received_total.to_f/emails_sent_total.to_f*100, precision: 0)}
+
+
+  .col-md-12
+    %hr
+
+  .col-md-12
+    %h3 Sign ups over the last 90 days
+    = line_chart @dashboard.users_by_week_since(90.days.ago), discrete: true
+    %br
+
+  .col-md-12
+    %h3 Pro Upgrades over the last 90 days
+    = line_chart @dashboard.pro_users_by_week_since(90.days.ago), discrete: true
+    %br
+
+  .col-md-12
+    %h3 Entries over the last 90 days
+    = line_chart @dashboard.entries_by_week_since(90.days.ago), discrete: true
+    %br
+
+  .col-md-12
+    %h3 Emails over the last 90 days
+    = line_chart @dashboard.emails_sent_by_month_since(90.days.ago), discrete: true
+    %br
+
+  .col-md-12
+    %h3 Payments by month over the last year
+    = column_chart @dashboard.payments_by_month(1.year.ago), discrete: true
+    %br
+
+  .col-md-12
+    - upgrades = @dashboard.upgraded_users_since(90.days.ago)
+    %h3 #{pluralize(format_number(upgrades.size), "Upgrade")} from the last 90 days
+    %p
+      %table.table.table-striped.table-hover
+        %tr
+          %th Email
+          %th Upgraded
+          %th Paid
+          %th Entries
+          %th Per day
+        - upgrades.each do |user|
+          %tr{:class => @dashboard.paid_status_for(user)}
+            %td= user.email
+            %td= l(user.payments.first.date.to_date, format: :month_day)
+            %td= user.payments.sum(:amount)
+            %td= user.entries.size
+            %td= @dashboard.entries_per_day_for(user)
+
+  -# .col-md-12
+  -#   %hr
+  -# .col-md-12
+  -#   - bounces = @dashboard.bounced_users_since(90.days.ago)
+  -#   %h3 #{pluralize(format_number(bounces.size), "user")} from the last 90 days has had emails bouncing
+  -#   %p
+  -#     %table.table.table-striped.table-hover
+  -#       %tr
+  -#         %th Email
+  -#         %th Bounces
+  -#       - bounces.each do |user|
+  -#         %tr{:class => @dashboard.paid_status_for(user)}
+  -#           %td= user.email
+  -#           %td= user.emails_bounced
+
+  -# .col-md-12
+  -#   %hr
+
+  -# .col-md-12
+  -#   - free_users = @dashboard.free_users_created_since(90.days.ago).order(:created_at)
+  -#   %h3 #{pluralize(format_number(free_users.size), "Free User")} from the last 90 days
+  -#   %p
+  -#     %table.table.table-striped.table-hover
+  -#       %tr
+  -#         %th Email
+  -#         %th Signed up
+  -#         %th Entries
+  -#         %th Per day
+  -#       - free_users.each do |user|
+  -#         %tr{:class => @dashboard.paid_status_for(user)}
+  -#           %td= user.email
+  -#           %td= l(user.created_at.to_date, format: :month_day)
+  -#           %td= user.entries.size
+  -#           %td= @dashboard.entries_per_day_for(user)
