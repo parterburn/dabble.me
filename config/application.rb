@@ -50,6 +50,7 @@ module Dabbleme
     end
 
     config.assets.precompile += %w(*.png *.jpg *.jpeg *.gif, *.css, *.svg *.woff *.ttf *.eot *.js)
+    config.assets.precompile += %w( i18n.js i18n/translations.js )
 
     # config.assets.precompile << Proc.new do |path|
     #       if path =~ /\.(css|js)\z/

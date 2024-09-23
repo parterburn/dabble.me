@@ -2,14 +2,9 @@
 //= require rails-ujs
 //= require twbs/bootstrap
 //= require_true ./lib
-//= require i18n
-//= require i18n/translations
 //= require summernote
 //= require devise-otp
 //= require_tree .
-
-I18n.defaultLocale = '<%= I18n.default_locale.to_s %>';
-I18n.locale = document.getElementsByTagName('html')[0].getAttribute('lang');
 
 $(document).ready(function(){
 

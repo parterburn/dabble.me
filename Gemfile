@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 ruby File.read(File.expand_path '../.ruby-version', __FILE__).strip.sub /\-p[0-9]+$/, '' # Read the rbenv version file
-gem 'rails', '~> 6.0', '>= 6.0.6.1'
+gem 'rails', '~> 6.1.7.8'
 
 gem 'puma', '~> 6'
 gem 'pg', '~> 1.5', '>= 1.2.3'
@@ -78,7 +78,7 @@ gem "reverse_markdown" # text export conversion html->txt
 gem "redcarpet" # markdown rendering
 
 group :development, :test do
-  gem 'byebug'
+  gem "byebug", platforms: [:mri, :mingw, :x64_mingw] # Call "byebug" anywhere in the code to stop execution and get a debugger console
   gem 'delorean'
   gem 'factory_bot_rails'
   gem 'faker'

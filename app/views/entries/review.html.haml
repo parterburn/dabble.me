@@ -86,9 +86,9 @@
       .s-entry-date
         %h2 Total Words
         %h3
-          - percent_book = ((@words_counter.token_count.to_f/96_000).to_f * 100).round
+          - percent_book = ((@words_counter.length.to_f/96_000).to_f * 100).round
           - book_height = 500-((percent_book.to_f / 100) * 500)
-          %span= "#{format_number(@words_counter.token_count)} - #{percent_book}% of Second Mountain".html_safe
+          %span= "#{format_number(@words_counter.length)} - #{percent_book}% of Second Mountain".html_safe
       .s-review-details
         %div{style: 'position: relative;'}
           =link_to 'https://www.amazon.com/Second-Mountain-David-Brooks/dp/0812993268/?&_encoding=UTF8&tag=thewashburnex-20&linkCode=ur2&linkId=d0631357c1e457da2fff80a1d8c51432&camp=1789&creative=9325', target: '_blank', style: "margin-top: 20px; display: block;margin-bottom: 10px;" do
@@ -101,7 +101,7 @@
       .s-entry-date
         %h2 Average Words per Post
         %h3
-          - your_avg_words = @words_counter.token_count / @total_count
+          - your_avg_words = @words_counter.length / @total_count
           %span= format_number(your_avg_words)
       - if @year.to_s == "2023"
         .s-review-details
@@ -127,7 +127,7 @@
   -#       %h3
   -#         - avg_chars = @body_text.length / @total_count
   -#         - tweets = ((avg_chars).to_f / 280).ceil
-  -#         - your_avg_words = @words_counter.token_count / @total_count
+  -#         - your_avg_words = @words_counter.length / @total_count
   -#         %span= "#{format_number(avg_chars)} - about #{tweets} tweets (x's?!)"
   -#     .s-review-details
   -#       .s-twitter-comparison
@@ -156,8 +156,9 @@
           %h3
             %span= "We're all still journaling in first-person...we collectively used <i>\"i\"</i> 203,180 times in our entries!".html_safe
       .s-review-details
-        - @words_counter.token_frequency.first(25).each do |word|
+        - grouped_words = @words_counter.group_by(&:itself).transform_values(&:count).sort_by { |_k, v| v }.reverse.to_h
+        - grouped_words.first(25).each do |word, count|
           %h3
-            =word.first
-            %span.middot= "&middot; #{word.second}".html_safe
+            = word
+            %span.middot= "&middot; #{count}".html_safe
         .clearfix
