@@ -109,7 +109,7 @@ RSpec.describe RegistrationsController, type: :controller do
     end
 
     it 'should redirect to root url if not logged in' do
-      post :update, { params: params }
+      post :update, params: params
       expect(response.status).to eq 302
       expect(response).to redirect_to(new_user_session_url)
     end
@@ -117,7 +117,7 @@ RSpec.describe RegistrationsController, type: :controller do
     it 'should allow user updates to basic info' do
       sign_in user
       expect(user.frequency.count).to eq 1
-      post :update, { params: params }
+      post :update, params: params
       expect(response.status).to eq 302
       expect(response).to redirect_to(edit_user_registration_url)
       expect(user.reload.frequency.count).to eq 1
@@ -132,7 +132,7 @@ RSpec.describe RegistrationsController, type: :controller do
       old_email = user.email
       old_full_name = user.full_name
       expect(user.frequency.count).to eq 1
-      post :update, { params: params.deep_merge(user: { email: Faker::Internet.email, current_password: 'wrong' }) }
+      post :update, params: params.deep_merge(user: { email: Faker::Internet.email, current_password: 'wrong' })
       expect(response.status).to eq 302
       expect(response).to redirect_to(edit_user_registration_url)
       expect(user.reload.frequency).to eq ['Sun']

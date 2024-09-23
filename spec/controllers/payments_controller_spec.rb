@@ -37,14 +37,14 @@ RSpec.describe PaymentsController, type: :controller do
 
   describe 'edit' do
     it 'should redirect to login url if not logged in' do
-      get :edit, { params: { id: payment.id } }
+      get :edit, params: { id: payment.id }
       expect(response.status).to eq 302
       expect(response).to redirect_to(new_user_session_url)
     end
 
     it 'should redirect to past entries path if not superuser' do
       sign_in user
-      get :edit, { params: { id: payment.id } }
+      get :edit, params: { id: payment.id }
       expect(response.status).to eq 302
       expect(response).to redirect_to(entries_path)
     end
@@ -96,22 +96,22 @@ RSpec.describe PaymentsController, type: :controller do
     end
 
     it 'should redirect to login url if not logged in' do
-      expect { post :create, { params: params } }.to_not change { Payment.count }
+      expect { post :create, params: params }.to_not change { Payment.count }
       expect(response.status).to eq 302
       expect(response).to redirect_to(new_user_session_url)
     end
 
     it 'should redirect to past entries path if not superuser' do
       sign_in user
-      expect { post :create, { params: params } }.to_not change { Payment.count }
+      expect { post :create, params: params }.to_not change { Payment.count }
       expect(response.status).to eq 302
       expect(response).to redirect_to(entries_path)
     end
 
     it 'should show create new Payment for superusers' do
       sign_in superuser
-      post :create, { params: params }
-      expect { post(:create, { params: params }) }.to change { Payment.count }.by(1)
+      post :create, params: params
+      expect { post(:create, params: params) }.to change { Payment.count }.by(1)
       expect(response.status).to eq 302
       expect(response).to redirect_to(payments_url)
     end
