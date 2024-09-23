@@ -461,6 +461,8 @@ GEM
       sassc-rails (~> 2.1)
     tzinfo (2.0.6)
       concurrent-ruby (~> 1.0)
+    tzinfo-data (1.2024.2)
+      tzinfo (>= 1.0.0)
     uglifier (4.2.0)
       execjs (>= 0.3.0, < 3)
     unf (0.1.4)
@@ -566,6 +568,7 @@ DEPENDENCIES
   tilt (~> 2.0, >= 2.0.10)
   turnstile-captcha
   twbs_sass_rails
+  tzinfo-data
   uglifier
   webdrivers (~> 5.0)
   webmock
