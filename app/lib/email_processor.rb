@@ -365,8 +365,8 @@ class EmailProcessor
     html = html.split("<br>\n--").first # strip out gmail signature
     html&.gsub!(/<style[^>]*>.*?<\/style>/mi, '') # remove styles
     html&.gsub!(/<xml[^>]*>.*?<\/xml>/mi, '') # remove xml
-    html.gsub!(/<!--.*?-->/m, '') # remove comments
-    html.gsub!('<![endif]-->', '') # remove comments
+    html&.gsub!(/<!--.*?-->/m, '') # remove comments
+    html&.gsub!('<![endif]-->', '') # remove comments
 
     html&.gsub!(/\A<br\s*\/?>/, "") # remove <br> from very beginning of html
     html&.gsub!(/<div style="display:none;border:0px;width:0px;height:0px;overflow:hidden;">.+<\/div>/, "") # remove hidden divs / tracking pixels
