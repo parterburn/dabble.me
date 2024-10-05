@@ -15,7 +15,7 @@ class EmailProcessor
     @bcc = email.bcc
     @subject = to_utf8(email.subject)
     @stripped_html = email.vendor_specific.try(:[], :stripped_html)
-    @body = clean_message(email.body)
+    @body = clean_message(email.body).presence || "No entry provided."
 
     @html = clean_html_version(@stripped_html)
     @message_id = email.headers&.dig("Message-ID")&.gsub("<", "")&.gsub(">", "")
@@ -104,7 +104,7 @@ class EmailProcessor
       date = parse_subject_for_date(@subject)
       existing_entry = @user.existing_entry(date.to_s)
       inspiration_id = parse_body_for_inspiration_id(@raw_body)
-      @body = @html if @html.present? && @user.is_pro?
+      @body = @html.presence if @html.present? && @user.is_pro?
 
       if existing_entry.present?
         existing_entry.original_email = @inbound_email_params
