@@ -149,8 +149,8 @@ class EntriesController < ApplicationController
 
   def update
     if current_user.is_free?
-      flash[:alert] = "<a href='#{subscribe_url}'' class='alert-link'>Subscribe to PRO</a> to edit entries.".html_safe
-      redirect_to root_path and return
+      params[:entry][:entry] = @entry.body
+      params[:entry][:image] = @entry.image
     end
 
     @existing_entry = current_user.existing_entry(params[:entry][:date].to_s)
@@ -312,8 +312,8 @@ class EntriesController < ApplicationController
 
   def track_ga_event(action)
     if ENV['GOOGLE_ANALYTICS_ID'].present?
-      tracker = Staccato.tracker(ENV['GOOGLE_ANALYTICS_ID'])
-      tracker.event(category: 'Web Entry', action: action, label: current_user.user_key)
+      # tracker = Staccato.tracker(ENV['GOOGLE_ANALYTICS_ID'])
+      # tracker.event(category: 'Web Entry', action: action, label: current_user.user_key)
     end
   end
 

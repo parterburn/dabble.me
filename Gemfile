@@ -52,7 +52,6 @@ gem 'file_validators'
 gem 'fastimage'
 
 # Miscellanea
-gem 'google-analytics-rails'
 gem 'staccato' # server side tracking for Google Analytics
 gem 'tilt', '~> 2.0', '>= 2.0.10'
 gem 'haml'

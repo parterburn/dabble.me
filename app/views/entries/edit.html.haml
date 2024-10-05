@@ -10,7 +10,7 @@
         to unlock the ability to edit entries.
 
   .col-md-8.col-md-offset-2.well.s-new-edit-entry{id: "entry-#{@entry.id}"}
-    %div{class: add_class}
+    %div
       .s-entry-date.s-new-entry
         -if @entry.inspiration.present?
           .float-left.s-edit-entry{rel: "popover", title: "#{@entry.inspiration.inspired_by}", data: { content: "#{@entry.inspiration.body.html_safe}" }}
@@ -39,7 +39,7 @@
             = f.text_field :date, value: @entry.date_format_short, placeholder: "October 11 2014", class: "form-control pickadate"
           %br
 
-        %div
+        %div{class: add_class}
 
           - if @entry.image.present?
             %label
@@ -54,7 +54,7 @@
             = f.file_field :image, accept: "image/png,image/gif,image/jpeg,image/webp,image/heic,image/heif", multiple: true
           %br
 
-        %div
+        %div{class: add_class}
           = f.label :entry
           = f.text_area :entry, class: "form-control summernote", rows: 15, value: format_body(@entry.formatted_body)
 

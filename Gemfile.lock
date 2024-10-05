@@ -201,7 +201,6 @@ GEM
     glob (0.4.1)
     globalid (1.1.0)
       activesupport (>= 5.0)
-    google-analytics-rails (1.1.1)
     griddler (1.5.2)
       htmlentities
       rails (>= 3.2.0)
@@ -521,7 +520,6 @@ DEPENDENCIES
   file_validators
   fog-aws
   gibbon
-  google-analytics-rails
   griddler (~> 1.5.2)
   griddler-mailgun (~> 1.1, >= 1.1.1)
   groupdate

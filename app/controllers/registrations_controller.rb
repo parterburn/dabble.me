@@ -129,8 +129,8 @@ class RegistrationsController < Devise::RegistrationsController
   def track_ga_event
     return nil unless user.id.present?
     if ENV['GOOGLE_ANALYTICS_ID'].present?
-      tracker = Staccato.tracker(ENV['GOOGLE_ANALYTICS_ID'])
-      tracker.event(category: 'User', action: 'Create', label: user.user_key)
+      # tracker = Staccato.tracker(ENV['GOOGLE_ANALYTICS_ID'])
+      # tracker.event(category: 'User', action: 'Create', label: user.user_key)
     end
   end
 
