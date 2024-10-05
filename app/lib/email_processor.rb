@@ -311,10 +311,14 @@ class EmailProcessor
     body&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
     body&.gsub!(/--( \*)?$\z/, "") # remove gmail signature break
     body&.gsub!(/<style[^>]*>.*?<\/style>/mi, '') # remove styles
+    body&.gsub!(/<xml[^>]*>.*?<\/xml>/mi, '') # remove xml
+    body&.gsub!(/<!--.*?-->/m, '') # remove comments
+    body&.gsub!('<![endif]-->', '') # remove comments
     body&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/^$\n\z/, "") # remove last unnecessary line break
     body&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/^$\n\z/, "") # remove last unnecessary line break
     body&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/^$\n\z/, "") # remove last unnecessary line break
     body&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/^$\n\z/, "") # remove last unnecessary line break
+    body&.gsub!(/\A(\s*<br\s*\/?>|\s*<p>\s*<\/p>|\s*<div>\s*<\/div>|\s*\n|\s*\r\n)*/, '') # remove beginning line breaks
 
     body&.gsub!("p.MsoNormal,p.MsoNoSpacing{margin:0}", "") # remove outlook styles
     body = body&.strip
@@ -360,6 +364,10 @@ class EmailProcessor
     html = html.presence || ""
     html = html.split("<br>\n--").first # strip out gmail signature
     html&.gsub!(/<style[^>]*>.*?<\/style>/mi, '') # remove styles
+    html&.gsub!(/<xml[^>]*>.*?<\/xml>/mi, '') # remove xml
+    html.gsub!(/<!--.*?-->/m, '') # remove comments
+    html.gsub!('<![endif]-->', '') # remove comments
+
     html&.gsub!(/\A<br\s*\/?>/, "") # remove <br> from very beginning of html
     html&.gsub!(/<div style="display:none;border:0px;width:0px;height:0px;overflow:hidden;">.+<\/div>/, "") # remove hidden divs / tracking pixels
     html&.gsub!(/src=\"cid\:\S+\"/, "src=\"\" style=\"display: none;\"") # remove attached images showing as broken inline images
@@ -371,6 +379,7 @@ class EmailProcessor
     end
 
     html&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
+    html&.gsub!(/\A(\s*<br\s*\/?>|\s*<p>\s*<\/p>|\s*<div>\s*<\/div>|\s*\n|\s*\r\n)*/, '')
 
     to_utf8(html)
   end
