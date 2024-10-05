@@ -52,7 +52,7 @@ gem 'file_validators'
 gem 'fastimage'
 
 # Miscellanea
-gem 'staccato' # server side tracking for Google Analytics
+# gem 'staccato' # server side tracking for Google Analytics
 gem 'tilt', '~> 2.0', '>= 2.0.10'
 gem 'haml'
 gem 'rack-affiliates' # for tracking referrers
@@ -68,8 +68,8 @@ gem 'twbs_sass_rails'
 gem 'uglifier'
 
 gem 'logtail-rails'
-gem "sentry-ruby", "~> 5.9"
-gem "sentry-rails", "~> 5.9"
+gem "sentry-ruby", "~> 5.20"
+gem "sentry-rails", "~> 5.20"
 gem "rack-attack" # Request blocking & throttling
 gem "cloudflare-rails"
 gem "stripe"
