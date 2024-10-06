@@ -310,8 +310,9 @@ class EmailProcessor
     body&.gsub!(/<(http[s]?:\/\/\S*?)>/, "(\\1)") # convert links to show up
     body&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
     body&.gsub!(/--( \*)?$\z/, "") # remove gmail signature break
-    body&.gsub!(/<style[^>]*>.*?<\/style>/mi, '') # remove styles
-    body&.gsub!(/<xml[^>]*>.*?<\/xml>/mi, '') # remove xml
+    body&.gsub!(/<style(?:\s+[^>]*)?>.*?<\/style>/mi, '') # remove styles
+    body&.gsub!(/<xml(?:\s+[^>]*)?>.*?<\/xml>/mi, '') # remove xml
+
     body&.gsub!(/<!--.*?-->/m, '') # remove comments
     body&.gsub!('<![endif]-->', '') # remove comments
     body&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/^$\n\z/, "") # remove last unnecessary line break
@@ -363,10 +364,15 @@ class EmailProcessor
     html = html.split("<br>--").first # strip out gmail signature
     html = html.presence || ""
     html = html.split("<br>\n--").first # strip out gmail signature
-    html&.gsub!(/<style[^>]*>.*?<\/style>/mi, '') # remove styles
-    html&.gsub!(/<xml[^>]*>.*?<\/xml>/mi, '') # remove xml
+    html&.gsub!(/<style(?:\s+[^>]*)?>.*?<\/style>/mi, '') # remove styles
+    html&.gsub!(/<xml(?:\s+[^>]*)?>.*?<\/xml>/mi, '') # remove xml
     html&.gsub!(/<!--.*?-->/m, '') # remove comments
     html&.gsub!('<![endif]-->', '') # remove comments
+    html&.gsub!(/<(?:\/)?html(?:\s+[^>]*)?>/i, '') # remove html tags
+    html&.gsub!(/<(?:\/)?head(?:\s+[^>]*)?>/i, '') # remove head tags
+    html&.gsub!(/<(?:\/)?body(?:\s+[^>]*)?>/i, '') # remove body tags
+
+
 
     html&.gsub!(/\A<br\s*\/?>/, "") # remove <br> from very beginning of html
     html&.gsub!(/<div style="display:none;border:0px;width:0px;height:0px;overflow:hidden;">.+<\/div>/, "") # remove hidden divs / tracking pixels
@@ -424,4 +430,3 @@ end
 # rubocop:enable Metrics/ClassLength
 # rubocop:enable Metrics/PerceivedComplexity
 # rubocop:enable Metrics/CyclomaticComplexity
-
