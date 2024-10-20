@@ -1,6 +1,6 @@
 class ImportJob < ActiveJob::Base
   queue_as :default
- 
+
   def perform(user_id,tmp_original_filename)
     user = User.find(user_id)
     dir = "public/ohlife_zips/#{user.user_key}"
@@ -42,7 +42,7 @@ class ImportJob < ActiveJob::Base
         else
           # no existing_entry
           error_count+=1
-          errors << file          
+          errors << file
         end
       else
         # not the right type of file
@@ -53,14 +53,14 @@ class ImportJob < ActiveJob::Base
 
     # Delete entire directory
     FileUtils.rm_r dir, :force => true
-    
+
     messages << "Finished importing #{ActionController::Base.helpers.pluralize(count,'photo')}." if count > 0
     messages << "\rError importing #{ActionController::Base.helpers.pluralize(error_count,'photo')}:" if error_count > 0
     errors.each do |error|
       messages << error
     end
 
-    ActionMailer::Base.mail(from: "Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>",
+    ActionMailer::Base.mail(from: "Dabble Me Team <hello@#{ENV['MAIN_DOMAIN']}>",
                             to: user.email,
                             subject: "OhLife Image Import is complete",
                             body: messages.join("\n\n")).deliver
