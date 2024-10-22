@@ -98,7 +98,6 @@
           %p
             = image_tag "baby.jpg", style: "width: 300px; max-width: 100%;"
 
-
 .center
   %h4
     %p Read about Dabble Me in...
@@ -108,3 +107,8 @@
 .clearfix
 %br
 %br
+
+.row
+  .col-md-12.center
+    %h4
+      Total number of entries: #{format_number(@total_entries)}
