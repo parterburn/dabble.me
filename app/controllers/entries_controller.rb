@@ -71,6 +71,7 @@ class EntriesController < ApplicationController
   def latest
     @title = "Latest Entry"
     @lastest_entry = current_user.entries.includes(:inspiration).sort_by(&:date).last
+    @total_entries = Entry.count
   end
 
   def random

@@ -49,6 +49,10 @@
           Here's your latest entry...
       %br
 
+    .col-md-8.col-md-offset-1
+      %h4
+        Total number of entries: #{format_number(@total_entries)}
+
     .col-md-8.well.entry.col-md-offset-1{id: "entry-#{@lastest_entry.id}"}
       = render :partial => 'entries/entry', :locals => {:entry => @lastest_entry}
 
