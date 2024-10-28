@@ -54,6 +54,8 @@ class EmailProcessor
           next if @user.id == 293 && attachment&.original_filename.to_s.downcase.include?("cropped-img-0719-300x86.jpeg")
           next if @user.id == 10836 && attachment&.original_filename.to_s.downcase.include?("b_logo.png")
           next if @user.id == 2541 && attachment&.original_filename.to_s.downcase.include?("image001.jpg")
+          next if @user.id == 20829 && attachment.content_type == "application/octet-stream"
+
           next if attachment&.original_filename.to_s.downcase.include?("linkedin_icon_circle.svg.png")
 
           if (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|webp|gif|heic|heif)$/i || attachment&.original_filename.to_s =~ /^(.+\.(heic|heif))$/i) && file_size > 20000
