@@ -207,6 +207,7 @@ namespace :entry do
         Sentry.set_user(id: user.id, email: user.email)
         Sentry.set_tags(plan: user.plan)
         Sentry.capture_exception(error, extra: { sent_in_hour: sent_in_hour })
+        next # continue with the next user
       end
     end
 
@@ -226,7 +227,19 @@ namespace :entry do
 
       # Clean up empty entries
       Entry.where("(image IS null OR image = '') AND (body IS null OR body = '')").each(&:destroy)
+
+      # Turn off emails for users with low entries and no activity for 2 years
+      users_with_no_activity = User.joins(:entries)
+        .group('users.id')
+        .having('COUNT(entries.id) < 5')
+        .having('MAX(entries.created_at) < ?', 2.years.ago)
+        .where.not(frequency: [])
+
+      users_with_no_activity.each do |user|
+          user.previous_frequency = user.frequency
+          user.frequency = []
+          user.save
+      end
     end
   end
-
 end
