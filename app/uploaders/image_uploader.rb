@@ -16,7 +16,9 @@ class ImageUploader < CarrierWave::Uploader::Base
   # end
 
   def process!(new_file=nil)
-    @original_width, @original_height = original_dimensions(new_file || file)
+    file_to_process = new_file || file
+    file_to_process = file_to_process.loader(page: 0) if pdf?(file_to_process)
+    @original_width, @original_height = original_dimensions(file_to_process)
     super
   end
 
@@ -33,6 +35,10 @@ class ImageUploader < CarrierWave::Uploader::Base
         !!(self.content_type =~ /^image\/(png|jpe?g|webp|gif)$/i) ||
         self.content_type == "application/octet-stream"
       )
+  end
+
+  def pdf?(file)
+    file.content_type == 'application/pdf'
   end
 
   def heic_image?(file)
