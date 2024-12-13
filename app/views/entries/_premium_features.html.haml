@@ -8,13 +8,13 @@
         .row
           .col-md-6.col-md-offset-3.col-xs-10.col-xs-offset-1
             = button_to checkout_path(plan: "yearly"), method: "post", style: "margin: 10px auto;", class: "btn btn-success btn-block btn-lg" do
-              $30
+              $40
               %span{style: "font-size: 13px; color: #ddd"}<> ／
               year
               %br
               %span{style: "font-size: 12px; display: block;color: #307530;"} 2 months free
             = button_to checkout_path(plan: "monthly"), method: "post", style: "color: #307530; font-size: 15px; background: none; border: none;", class: "text-muted" do
-              or $3
+              or $4
               %span{style: "font-size: 13px; color: #ddd"}<> ／
               month
       %h3

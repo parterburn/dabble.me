@@ -8,7 +8,7 @@
         %span{style: "font-weight: 600;"} Dabble Me is free with limitations.
         %span.text-muted{style: "font-size: 90%; font-weight: 400;"} Email prompts are only sent every other Sunday.
       %hr
-      %h3{style: "color: #a41100"} Dabble Me PRO is $3 per month.
+      %h3{style: "color: #a41100"} Dabble Me PRO is $4 per month.
       %p.s-features
         %strong
           Subscribing will unlock
@@ -56,14 +56,14 @@
             .row
               .col-sm-7{style: "margin: 5px auto 0;"}
                 = button_to checkout_path(plan: "yearly"), method: "post", style: "height: 55px;", class: "btn btn-success btn-block btn-lg" do
-                  $30
+                  $40
                   %span{style: "font-size: 13px; color: #ddd"}<> ／
                   year
                   %br
                   %span{style: "font-size: 12px;margin-top: -2px; display: block;color: #307530;"} 2 months free
               .col-sm-5{style: "margin: 5px auto;"}
                 = button_to checkout_path(plan: "monthly"), method: "post", style: "height: 55px;", class: "btn btn-success btn-block btn-lg" do
-                  $3
+                  $4
                   %span{style: "font-size: 13px; color: #ddd"}<> ／
                   month
             .clearfix
@@ -114,12 +114,12 @@
             %i.fa.fa-check
             Year in Review
 
-        %div{style: "margin-top: 25px;"}
+        %div{style: "margin-top: 30px; margin-left: auto; margin-right: auto; text-align: center;"}
           %blockquote.twitter-tweet{data: {theme: "light"}}
             %p{lang: "en", dir: "ltr"}
               The pro version of
               %a{href: "https://t.co/a4GV5f69A1"} https://t.co/a4GV5f69A1
-              costs $3 a month, and it is worth so much more than that.
+              costs $4 a month, and it is worth so much more than that.
             &mdash; Paul Graham
             %a{href: "https://twitter.com/paulg/status/1746341562286539118?ref_src=twsrc%5Etfw"} January 14, 2024
           = javascript_include_tag "https://platform.twitter.com/widgets.js", async: true, charset: "utf-8"

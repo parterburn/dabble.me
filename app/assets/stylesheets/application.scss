@@ -266,3 +266,19 @@ input[type="submit"].form-control {
 strong {
   font-weight: bold !important;
 }
+
+#entry-count {
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+#entry-count.animate {
+  transform: scale(1.2);
+  opacity: 0.8;
+}
+
+.twitter-tweet-rendered {
+  margin-top: 40px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}
