@@ -261,7 +261,7 @@ class EntriesController < ApplicationController
 
       @entries_with_sentiment = @entries.select { |e| e.sentiment.present? && e.sentiment != ["unknown"] }
       if @entries_with_sentiment.count.positive?
-        @sentiment_count = @entries_with_sentiment.map(&:sentiment).flatten.group_by(&:itself).transform_values(&:count).sort_by { |_k, v| v }.reverse.to_h
+        @sentiment_count = @entries_with_sentiment.map(&:sentiment).flatten.group_by(&:itself).transform_keys { |sentiment| "#{Entry::AiTagger::EMOTIONS[sentiment]} #{sentiment.titleize}" }.transform_values(&:count).sort_by { |_k, v| v }.reverse.to_h
 
         @users_sentiment_list = @entries_with_sentiment.map { |e| e.sentiment }.flatten.uniq.reject { |k, _v| k.blank? }
 
@@ -270,7 +270,7 @@ class EntriesController < ApplicationController
 
         @sentiment_by_month_data = (Entry::AiTagger::EMOTIONS.keys - ["unknown"]).map do |sentiment|
           data = @entries_with_sentiment.sort_by { |e| e.date }.select { |e| e.sentiment.include?(sentiment) }.map { |e| [e.date.strftime('%b'), 1] }.group_by(&:first).transform_values(&:count)
-          { name: sentiment, data: base_data.merge(data) }
+          { name: sentiment.titleize, data: base_data.merge(data) }
         end
       end
     elsif current_user.entries.any?

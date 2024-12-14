@@ -39,10 +39,9 @@
           %h3
             %span= "#{pluralize(@entries_with_sentiment.size, 'entry')} tagged"
         .s-review-details
-          = pie_chart(@sentiment_count,  height: "230px", library: {backgroundColor: "#ffffff"})
-          .clearfix
           - @entries_with_sentiment.pluck(:sentiment).flatten.uniq.sort.each do |sentiment|
-            = link_to "#{Entry::AiTagger::EMOTIONS[sentiment]}", entries_emotion_path(sentiment), class: "emotion-link", title: "View entries tagged with #{sentiment}"
+            = link_to "#{Entry::AiTagger::EMOTIONS[sentiment]} #{sentiment.titleize}", entries_emotion_path(sentiment), class: "emotion-link", title: "View entries tagged with #{sentiment}"        
+          = pie_chart(@sentiment_count,  height: "230px", library: {backgroundColor: "#ffffff"})
 
     .col-md-8.col-md-offset-2.well
       .center{class: add_class}

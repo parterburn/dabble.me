@@ -497,12 +497,16 @@ mark {
 .note-editor .note-dropzone { opacity: 0 !important; }
 
 .emotion-link {
-  text-decoration: none;
-  margin-left: 2px;
-  margin-right: 2px;
+  margin-top: 10px;
+  font-size: 15px !important;
+  display: inline-block;
+  text-decoration: none !important;
+  margin-left: 3px;
+  margin-right: 3px;
+  color: black;
   transition: transform 0.3s ease; /* Smooth transition */
-}
-
-.emotion-link:hover {
-  transform: scale(1.1); /* Scale up to 110% */
+  &:hover {
+    text-decoration: none !important;
+    transform: scale(1.1);
+  }
 }
