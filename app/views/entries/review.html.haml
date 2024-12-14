@@ -42,7 +42,7 @@
           = pie_chart(@sentiment_count,  height: "230px", library: {backgroundColor: "#ffffff"})
           .clearfix
           - @entries_with_sentiment.pluck(:sentiment).flatten.uniq.sort.each do |sentiment|
-            = link_to "#{Entry::AiTagger::EMOTIONS[sentiment]}", entries_emotion_path(sentiment), style: "text-decoration: none; margin-left: 2px; margin-right: 2px;", title: "View entries tagged with #{sentiment}"
+            = link_to "#{Entry::AiTagger::EMOTIONS[sentiment]}", entries_emotion_path(sentiment), class: "emotion-link", title: "View entries tagged with #{sentiment}"
 
     .col-md-8.col-md-offset-2.well
       .center{class: add_class}

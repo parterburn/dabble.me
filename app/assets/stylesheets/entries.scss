@@ -495,3 +495,14 @@ mark {
 }
 
 .note-editor .note-dropzone { opacity: 0 !important; }
+
+.emotion-link {
+  text-decoration: none;
+  margin-left: 2px;
+  margin-right: 2px;
+  transition: transform 0.3s ease; /* Smooth transition */
+}
+
+.emotion-link:hover {
+  transform: scale(1.1); /* Scale up to 110% */
+}
