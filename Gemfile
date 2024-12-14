@@ -37,7 +37,7 @@ gem 'randomized_field', '~> 1.0' # builds user_keys
 gem 'rest-client' # RESTClient
 gem 'rubyzip', '~> 2'
 gem 'summernote-rails', '~> 0.8.20.0', git: "https://github.com/parterburn/summernote-rails"
-gem 'words_counted' # Year in Review
+gem 'words_counted', '~> 1.0', '>= 1.0.3' # Year in Review
 gem 'zip-zip'
 gem "chartkick", "~> 5"
 gem "loofah", ">= 2.5"

@@ -157,7 +157,7 @@
             %span= "We're all still journaling in first-person...we collectively used <i>\"i\"</i> 203,180 times in our entries!".html_safe
       .s-review-details
         - grouped_words = @words_counter.group_by(&:itself).transform_values(&:count).sort_by { |_k, v| v }.reverse.to_h
-        - grouped_words = grouped_words.select { |word, count| !Entry::WORDS_NOT_TO_COUNT.include?(word) }
+        - grouped_words = grouped_words.select { |word, count| !Entry::COMMON_WORDS.include?(word) }
         - grouped_words.first(25).each do |word, count|
           %h3
             = word

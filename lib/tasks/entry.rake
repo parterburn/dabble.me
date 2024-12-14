@@ -139,14 +139,21 @@ namespace :entry do
     all_entries = Entry.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE")
     entries_bodies = all_entries.map { |e| ActionView::Base.full_sanitizer.sanitize(e.body) }.join(" ")
 
-    tokeniser = WordsCounted::Tokeniser.new(entries_bodies)
-    total_words = tokeniser.tokenise.length.to_f
+    tokenizer = WordsCounted::Tokeniser.new(entries_bodies).tokenise(exclude: Entry::WORDS_NOT_TO_COUNT)
+    total_words = tokenizer.count
+
+    counter = WordsCounted.count(entries_bodies)
+    most_frequent = counter.token_frequency.first(400).select { |w| !Entry::COMMON_WORDS.include?(w[0]) }.first(40).map { |w| "#{w[0]}: #{number_with_delimiter(w[1])}" }
 
     avg_words = total_words / all_entries.count
     total_chars = entries_bodies.length
     avg_chars = total_chars / all_entries.count
     avg_tweets_per_post = ((avg_chars).to_f / 280).ceil
-    most_frequent = words_counter.token_frequency.first(40).map { |w| "#{w[0]}: #{number_with_delimiter(w[1])}" }
+
+    grouped_words = total_words.group_by(&:itself).transform_values(&:count).sort_by { |_k, v| v }.reverse.to_h
+    grouped_words = grouped_words.select { |word, count| !Entry::WORDS_NOT_TO_COUNT.include?(word) }
+    grouped_words.first(25)
+
     p "Users created: #{number_with_delimiter(User.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
     p "Entries created in #{year}: #{number_with_delimiter(Entry.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
     p "Entries for #{year}: #{number_with_delimiter(all_entries.count)}"
