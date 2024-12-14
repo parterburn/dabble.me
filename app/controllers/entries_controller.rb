@@ -253,7 +253,7 @@ class EntriesController < ApplicationController
     if @total_count.positive?
       @body_text = @entries.map { |e| ActionView::Base.full_sanitizer.sanitize(e.body) }.join(" ")
       tokeniser = WordsCounted::Tokeniser.new(@body_text)
-      @words_counter = tokeniser.tokenise(exclude: Entry::WORDS_NOT_TO_COUNT)
+      @words_counter = tokeniser.tokenise
       if @total_count > 20
         all_user_entry_count = Entry.where("date >= '#{@year}-01-01'::DATE AND date <= '#{@year}-12-31'::DATE").group(:user_id).reorder("count_all").count.values
         @pctile = (((all_user_entry_count.find_index(@total_count) + 1).to_f / all_user_entry_count.count) * 100).round

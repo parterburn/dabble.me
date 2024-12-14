@@ -138,8 +138,10 @@ namespace :entry do
     extend ActionView::Helpers::NumberHelper
     all_entries = Entry.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE")
     entries_bodies = all_entries.map { |e| ActionView::Base.full_sanitizer.sanitize(e.body) }.join(" ")
-    words_counter = WordsCounted.count(entries_bodies)
-    total_words = words_counter.token_count.to_f
+
+    tokeniser = WordsCounted::Tokeniser.new(entries_bodies)
+    total_words = tokeniser.tokenise.length.to_f
+
     avg_words = total_words / all_entries.count
     total_chars = entries_bodies.length
     avg_chars = total_chars / all_entries.count
