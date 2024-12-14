@@ -162,18 +162,18 @@ namespace :entry do
     # p "Total characters: #{number_with_delimiter(total_chars)}"
     # p "Avg characters per post: #{number_with_delimiter(avg_chars)} (#{avg_tweets_per_post} tweets)"
 
-    counter = WordsCounted.count(entries_bodies)
-    most_frequent = counter.token_frequency.first(400).select { |w| !Entry::COMMON_WORDS.include?(w[0]) }.first(40).map { |w| "#{w[0]}: #{number_with_delimiter(w[1])}" }
-    p "Most Frequent Words:"
-    puts most_frequent
-    p "*"*100
+    # counter = WordsCounted.count(entries_bodies)
+    # most_frequent = counter.token_frequency.first(400).select { |w| !Entry::COMMON_WORDS.include?(w[0]) }.first(40).map { |w| "#{w[0]}: #{number_with_delimiter(w[1])}" }
+    # p "Most Frequent Words:"
+    # puts most_frequent
+    # p "*"*100
   end
 
   # heroku run bundle exec rake "entry:stats_by_user[2022]" --app dabble-me --size=standard-2x
   task :stats_by_user, [:year] => :environment do |_, year:|
     data = []
     csv_data = CSV.generate(col_sep: "\t") do |csv|
-      csv << ["USER_ID", "EMAIL", "#{year}_ENTRY", "#{year}_WORD", "#{year}_TWEET"]
+      csv << ["USER_ID", "EMAIL", "#{year}_ENTRY", "#{year}_WORD"]
 
       User.all.each do |user|
         user_entries = Entry.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE AND user_id = ?", user.id)
