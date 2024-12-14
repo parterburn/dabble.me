@@ -17,7 +17,7 @@
             = link_to random_entry_path, title: "Random Entry", rel: "tooltip", style: "width: 20%; margin-left: 15px; top: 2px; position: relative;" do
               %i.fa.fa-random
 
-    - if year_in_review
+    - if year_in_review && current_user.entries.where("date >= '#{review_year}-01-01'::DATE AND date <= '#{review_year}-12-31'::DATE").count.positive?
       = javascript_include_tag "//www.gstatic.com/charts/loader.js", "chartkick"
       - total_count = current_user.entries.where("date >= '#{review_year}-01-01'::DATE AND date <= '#{review_year}-12-31'::DATE").count
       .col-md-8.well.col-md-offset-1{id: "year-in-review"}
