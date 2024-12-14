@@ -37,10 +37,13 @@
         .s-entry-date
           %h2 Sentiment
           %h3
-            %span= link_to "#{pluralize(@entries_with_sentiment.size, 'entry')} tagged", group_entries_path("emotion", @year)
+            %span= "#{pluralize(@entries_with_sentiment.size, 'entry')} tagged"
         .s-review-details
           = pie_chart(@sentiment_count,  height: "230px", library: {backgroundColor: "#ffffff"})
           .clearfix
+          - @entries_with_sentiment.pluck(:sentiment).flatten.uniq.sort.each do |sentiment|
+            %div{style: "margin-top: 4px;"}
+              = link_to "View entries tagged #{sentiment}", entries_emotion_path(sentiment)
 
     .col-md-8.col-md-offset-2.well
       .center{class: add_class}
