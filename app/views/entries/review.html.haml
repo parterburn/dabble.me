@@ -106,17 +106,17 @@
           %span= format_number(your_avg_words)
       - if @year.to_s == "2024"
         .s-review-details{style: "margin: 30px auto;"}
-          - if your_avg_words > 274
+          - if your_avg_words > 271
             - compared = 'way more'
-          - elsif your_avg_words > 183
+          - elsif your_avg_words > 181
             - compared = 'more'
-          - elsif your_avg_words < 91.5
+          - elsif your_avg_words < 90.5
             - compared = 'way less'
           - else
             - compared = 'less'
-          %p= "That's #{compared} than the average of all Dabble Me users (183 words per post)."
+          %p= "That's #{compared} than the average of all Dabble Me users (181 words per post)."
           %p
-            %span Collectively, all Dabble Me users could have wrote 58 books equivalent to Edward Abbey's,
+            %span Collectively, all Dabble Me users could have wrote 69 books equivalent to Edward Abbey's,
             %span<= link_to "The Monkey Wrench Gang", "https://amzn.to/3BsRghE", target: :_blank
             %span !
           .clearfix
@@ -138,9 +138,9 @@
     .center{class: add_class}
       .s-entry-date
         %h2 Most Frequent Words
-        - if @year.to_s == "2024"
-          %h3
-            %span= "We're all still journaling in first-person...we collectively used <i>\"i\"</i> 203,180 times in our entries!".html_safe
+        -# - if @year.to_s == "2024"
+        -#   %h3
+        -#     %span= "We're all still journaling in first-person...we collectively used <i>\"i\"</i> 203,180 times in our entries!".html_safe
       .s-review-details
         - grouped_words = @words_counter.group_by(&:itself).transform_values(&:count).sort_by { |_k, v| v }.reverse.to_h
         - grouped_words = grouped_words.select { |word, count| !Entry::COMMON_WORDS.include?(word) }
