@@ -24,7 +24,13 @@ namespace :entry do
 
   # TRIGGERED MANUALLY
   # heroku run bundle exec rake "entry:stats[2022]" --app dabble-me --size=standard-2x
-  task :stats, [:year] => :environment do |_, year:|
+  task :stats, [:year] => :environment do |_, args|
+    year = args[:year]
+    # Ensure the year argument is provided
+    if year.nil?
+      raise ArgumentError, "Year argument is required"
+    end
+
     # Stats for 2015
     # 3,872 users created
     # 87,572 entries created
@@ -122,6 +128,8 @@ namespace :entry do
     # "Avg characters per post: 1,000 (4 tweets)"
     # "Most Frequent Words:"
     # i: 216,727
+
+
 
     p "*"*100
     p "STATS FOR #{year}"

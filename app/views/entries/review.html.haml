@@ -86,14 +86,14 @@
       .s-entry-date
         %h2 Total Words
         %h3
-          - percent_book = ((@words_counter.length.to_f/96_000).to_f * 100).round
+          - percent_book = ((@words_counter.length.to_f/105_250).to_f * 100).round
           - book_height = 500-((percent_book.to_f / 100) * 500)
-          %span= "#{format_number(@words_counter.length)} - #{percent_book}% of Second Mountain".html_safe
+          %span= "#{format_number(@words_counter.length)} - #{percent_book}% of The Monkey Wrench Gang".html_safe
       .s-review-details
         %div{style: 'position: relative;'}
-          =link_to 'https://www.amazon.com/Second-Mountain-David-Brooks/dp/0812993268/?&_encoding=UTF8&tag=thewashburnex-20&linkCode=ur2&linkId=d0631357c1e457da2fff80a1d8c51432&camp=1789&creative=9325', target: '_blank', style: "margin-top: 20px; display: block;margin-bottom: 10px;" do
-            .s-book-cover{style: "height: #{book_height < 0 ? 0 : book_height}px"}
-            = image_tag 'second-mountain.jpg', width: 324, height: 500
+          =link_to 'https://amzn.to/3BsRghE', target: '_blank', style: "margin-top: 20px; display: block;margin-bottom: 10px;" do
+            .s-book-cover{style: "width: 360px; height: #{book_height < 0 ? 0 : book_height}px"}
+            = image_tag 'monkey-wrench.jpg', width: 360, height: 500
         .clearfix
 
   .col-md-8.col-md-offset-2.well
@@ -103,8 +103,8 @@
         %h3
           - your_avg_words = @words_counter.length / @total_count
           %span= format_number(your_avg_words)
-      - if @year.to_s == "2023"
-        .s-review-details
+      - if @year.to_s == "2024"
+        .s-review-details{style: "margin: 30px auto;"}
           - if your_avg_words > 274
             - compared = 'way more'
           - elsif your_avg_words > 183
@@ -115,8 +115,8 @@
             - compared = 'less'
           %p= "That's #{compared} than the average of all Dabble Me users (183 words per post)."
           %p
-            %span Collectively, all Dabble Me users could have wrote 58 books equivalent to David Brooks's,
-            %span<= link_to "The Second Mountain", "https://www.amazon.com/Second-Mountain-David-Brooks/dp/0812993268/?&_encoding=UTF8&tag=thewashburnex-20&linkCode=ur2&linkId=d0631357c1e457da2fff80a1d8c51432&camp=1789&creative=9325", target: :_blank
+            %span Collectively, all Dabble Me users could have wrote 58 books equivalent to Edward Abbey's,
+            %span<= link_to "The Monkey Wrench Gang", "https://amzn.to/3BsRghE", target: :_blank
             %span !
           .clearfix
 

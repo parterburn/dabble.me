@@ -12,6 +12,8 @@
 //= link baby.jpg
 //= link psychology-of-money.jpg
 //= link second-mountain.jpg
+//= link anxious.jpg
+//= link monkey-wrench.jpg
 
 //= link application.css
 //= link application.js
