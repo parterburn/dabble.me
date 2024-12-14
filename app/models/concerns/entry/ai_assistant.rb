@@ -1,7 +1,7 @@
 # rubocop:disable Metrics/ModuleLength
 class Entry
   module AiAssistant
-    OPENAI_MODEL = "gpt-4o-mini".freeze
+    OPENAI_MODEL = "gpt-4o".freeze
     OPENAI_TEMPERATURE = 0.85 # 0-1.0, higher = more creative
     MAX_RESPONSE_TOKENS = 500
 
