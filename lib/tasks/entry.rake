@@ -142,18 +142,18 @@ namespace :entry do
     tokenizer = WordsCounted::Tokeniser.new(entries_bodies).tokenise(exclude: Entry::WORDS_NOT_TO_COUNT)
     total_words = tokenizer.count
 
-    avg_words = total_words / all_entries.count
-    total_chars = entries_bodies.length
-    avg_chars = total_chars / all_entries.count
-    avg_tweets_per_post = ((avg_chars).to_f / 280).ceil
+    avg_words = total_words.to_f / all_entries.count
+    # total_chars = entries_bodies.length
+    # avg_chars = total_chars.to_f / all_entries.count
+    # avg_tweets_per_post = ((avg_chars).to_f / 280).ceil
 
     p "Users created: #{number_with_delimiter(User.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
     p "Entries created in #{year}: #{number_with_delimiter(Entry.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
     p "Entries for #{year}: #{number_with_delimiter(all_entries.count)}"
     p "Total words: #{number_with_delimiter(total_words)}"
     p "Avg words per post: #{number_with_delimiter(avg_words)}"
-    p "Total characters: #{number_with_delimiter(total_chars)}"
-    p "Avg characters per post: #{number_with_delimiter(avg_chars)} (#{avg_tweets_per_post} tweets)"
+    # p "Total characters: #{number_with_delimiter(total_chars)}"
+    # p "Avg characters per post: #{number_with_delimiter(avg_chars)} (#{avg_tweets_per_post} tweets)"
 
     counter = WordsCounted.count(entries_bodies)
     most_frequent = counter.token_frequency.first(400).select { |w| !Entry::COMMON_WORDS.include?(w[0]) }.first(40).map { |w| "#{w[0]}: #{number_with_delimiter(w[1])}" }
@@ -172,9 +172,10 @@ namespace :entry do
         user_entries = Entry.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE AND user_id = ?", user.id)
         if user_entries.count > 0
           entries_bodies = user_entries.map { |e| ActionView::Base.full_sanitizer.sanitize(e.body) }.join(" ")
-          words_counter = WordsCounted.count(entries_bodies)
-          total_words = words_counter.token_count.to_f
-          avg_words = total_words / user_entries.count
+          tokenizer = WordsCounted::Tokeniser.new(entries_bodies).tokenise(exclude: Entry::WORDS_NOT_TO_COUNT)
+          total_words = tokenizer.count
+
+          avg_words = total_words.to_f / user_entries.count
           csv << [
             user.id,
             user.email,

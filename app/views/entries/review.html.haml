@@ -121,21 +121,6 @@
             %span !
           .clearfix
 
-  -# .col-md-8.col-md-offset-2.well
-  -#   .center{class: add_class}
-  -#     .s-entry-date
-  -#       %h2 Average Characters per Post
-  -#       %h3
-  -#         - avg_chars = @body_text.length / @total_count
-  -#         - tweets = ((avg_chars).to_f / 280).ceil
-  -#         - your_avg_words = @words_counter.length / @total_count
-  -#         %span= "#{format_number(avg_chars)} - about #{tweets} tweets (x's?!)"
-  -#     .s-review-details
-  -#       .s-twitter-comparison
-  -#         - (1..tweets).each do |i|
-  -#           %i.fa.fa-twitter
-  -#       .clearfix
-
   - hashtags = Hash[*current_user.used_hashtags(@entries, false).inject(Hash.new(0)) { |h,v| h[v] += 1; h }.sort_by{|k,v| v}.reverse.flatten]
   - if hashtags.present?
     .col-md-8.col-md-offset-2.well
