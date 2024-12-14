@@ -60,7 +60,7 @@ class ImportJob < ActiveJob::Base
       messages << error
     end
 
-    ActionMailer::Base.mail(from: "Dabble Me Team <hello@#{ENV['MAIN_DOMAIN']}>",
+    ActionMailer::Base.mail(from: "Paul from Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>",
                             to: user.email,
                             subject: "OhLife Image Import is complete",
                             body: messages.join("\n\n")).deliver

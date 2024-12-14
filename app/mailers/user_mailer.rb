@@ -4,7 +4,7 @@ class UserMailer < ActionMailer::Base
   helper EntriesHelper
   helper :application
 
-  default from: "Dabble Me Team <hello@#{ENV['MAIN_DOMAIN']}>"
+  default from: "Paul from Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>"
 
   def welcome_email(user)
     @user = user

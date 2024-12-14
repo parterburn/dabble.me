@@ -12,7 +12,6 @@ gem "devise"
 gem 'devise-security'
 gem "devise-otp"
 gem "turnstile-captcha", require: "turnstile"
-gem 'gibbon' # mailchimp connector
 
 gem 'addressable' # better URI checking
 # gem 'sinatra', '~> 2.0', '>= 2.0.8.1'

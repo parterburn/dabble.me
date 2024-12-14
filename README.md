@@ -8,7 +8,6 @@ This app utilizes the following 3rd party services:
 * [CloudFlare](http://cloudflare.com) managed DNS + free SSL support (free for basic service)
 * [Mailgun](http://www.mailgun.com/rackspace) for Sending & Receiving Email (free for 50k emails per month)
 * [Amazon S3](http://aws.amazon.com) for Photo Uploads & Storage (free for 1 year)
-* [MailChimp](http://mailchimp.com) for sending updates to all users (free for 2,000 subscribers)
 * [Google Analytics](http://google.com/analytics) for traffic stats (free for standard analytics)
 * [Turnstile](https://www.cloudflare.com/products/turnstile/) to prevent bot signups (free).
 * [Sentry](https://www.sentry.io/) to report errors (free)
@@ -29,8 +28,6 @@ SECRET_KEY_BASE: 1234..1234
 DEVISE_SECRET_KEY: 1234..1234
 SMTP_DOMAIN: post.yourdomain.com
 MAILGUN_API_KEY=api-key
-MAILCHIMP_API_KEY: f....3333-ek3
-MAILCHIMP_LIST_ID: 9982...112
 TURNSTILE_SITE_KEY: 6Lc6BAAAAAAAAChqRbQZcn_yyyyyyyyyyyyyyyyy
 TURNSTILE_SECRET_KEY: 6Lc6BAAAAAAAAKN3DRm6VA_xxxxxxxxxxxxxxxxx
 CLARIFAI_PERSONAL_ACCESS_TOKEN: asdl2k34jl2kn1l2hn234
@@ -46,9 +43,7 @@ STRIPE_SIGNING_SECRET: whsec_1234
 
 ### Things you may want to rip out
 
-If you want to bypass using Mailchimp to collect email addresses, simply don't put a value in for `MAILCHIMP_API_KEY`. I use Mailchimp to email out new features to the users at Dabble.me, so if you're the only one using your app it doesn't make sense to have Mailchimp.
-
-Same for Turnstile and Clarafai: simply don't add an environment variables for `TURNSTILE_SITE_KEY`, `CLARIFAI_V2_API_KEY`.
+You can opt to not use Turnstile and Clarafai: simply don't add an environment variables for `TURNSTILE_SITE_KEY`, `CLARIFAI_V2_API_KEY`.
 
 
 ### Tests

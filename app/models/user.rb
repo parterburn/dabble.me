@@ -38,7 +38,6 @@ class User < ActiveRecord::Base
   before_save { send_timezone.gsub!("&amp;", "&") }
   after_commit on: :update do
     restrict_free_frequency
-    subscribe_to_mailchimp
   end
   after_commit :send_welcome_email, on: :create
 
@@ -250,11 +249,6 @@ class User < ActiveRecord::Base
     if self.is_free? && self.frequency.present? && ENV['FREE_WEEK'] != 'true'
       self.update_columns(frequency: ["Sun"], previous_frequency: frequency)
     end
-  end
-
-  def subscribe_to_mailchimp
-    email_lookup = self.previous_changes["email"]&.last(2)&.first&.downcase
-    UserJob.perform_later(email_lookup, self.id)
   end
 
   def send_welcome_email

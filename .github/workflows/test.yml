@@ -86,8 +86,6 @@ jobs:
         DEVISE_SECRET_KEY: test
         GUMROAD_PRODUCT_ID: test
         GUMROAD_SELLER_ID: test
-        MAILCHIMP_API_KEY: test
-        MAILCHIMP_LIST_ID: test
         MAIN_DOMAIN: test
         PAYPAL_SELLER_ID: test
         SMTP_DOMAIN: test
