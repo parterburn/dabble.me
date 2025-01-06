@@ -22,7 +22,7 @@
         - if @pctile.present?
           %p= "You're in the #{@pctile.ordinalize} percentile compared to all active Dabble Me users in #{@year}."
           .clearfix
-        = render 'contribution_graph', data: contribution_calendar_data(@entries, @year), add_class: add_class          
+        = render 'contribution_graph', data: contribution_calendar_data(@entries, @year)
         .clearfix
         .center{style: "font-size: 14px;"}
           = number_to_percentage((@total_count.to_f / elapsed_days_in_year(@year)).to_f * 100, precision: 0)
