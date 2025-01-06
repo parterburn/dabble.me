@@ -19,11 +19,14 @@
         %h3
           %span= "#{@total_count} entries in #{@year}"
       .s-review-details
-        = pie_chart({"Days With Entries": @total_count, "Days Without Entries": (elapsed_days_in_year(@year) - @total_count)},  height: "230px", library: {backgroundColor: "#ffffff"})
-        .clearfix
         - if @pctile.present?
           %p= "You're in the #{@pctile.ordinalize} percentile compared to all active Dabble Me users in #{@year}."
           .clearfix
+        = render 'contribution_graph', data: contribution_calendar_data(@entries, @year), add_class: add_class          
+        .clearfix
+        .center{style: "font-size: 14px;"}
+          = number_to_percentage((@total_count.to_s + " / " + elapsed_days_in_year(@year).to_s).to_f, precision: 0)
+          of the days in #{@year} with entries.
 
   - if current_user.is_free?
     .col-md-8.col-md-offset-2
@@ -91,10 +94,10 @@
           - book_height = 500-((percent_book.to_f / 100) * 500)
           %span= "#{format_number(@words_counter.length)} - #{percent_book}% of The Monkey Wrench Gang".html_safe
       .s-review-details
-        %div{style: 'position: relative;'}
-          =link_to 'https://amzn.to/3BsRghE', target: '_blank', style: "margin-top: 20px; display: block;margin-bottom: 10px;" do
-            .s-book-cover{style: "width: 360px; height: #{book_height < 0 ? 0 : book_height}px"}
-            = image_tag 'monkey-wrench.jpg', width: 360, height: 500
+        %div{style: 'position: relative;max-width: 100%;'}
+          =link_to 'https://amzn.to/3BsRghE', target: '_blank', style: "margin-top: 20px; display: block;margin-bottom: 10px; max-width: 100%;" do
+            .s-book-cover{style: "max-width: 100%; width: 360px; height: #{book_height < 0 ? 0 : book_height}px"}
+            = image_tag 'monkey-wrench.jpg', width: 360, height: 500, style: "max-width: 100%;"
         .clearfix
 
   .col-md-8.col-md-offset-2.well

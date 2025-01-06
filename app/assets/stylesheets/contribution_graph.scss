@@ -1,0 +1,54 @@
+.table-container {
+  overflow-x: auto;
+  width: 100%;
+  text-align: center;
+}
+
+.month-labels {
+  grid-template-columns: repeat(13, 1fr); 
+}
+
+.contribution-graph {
+  border-collapse: collapse;
+  margin: 20px auto;
+  max-width: 100%;
+  width: fit-content;
+
+  .graph {
+    grid-gap: 2px;
+  }
+
+  .box {
+    width: 1rem;
+    height: 1rem;
+    background-color: #ebedf0;
+    border-radius: 2px;
+    transition: background-color 0.3s ease;
+
+    &.active {
+      background-color: #3366cc;
+    }
+
+    &:hover {
+      border: 1px solid rgba(27, 31, 35, 0.06);
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .contribution-graph {
+    .month-labels {
+      grid-template-columns: repeat(12, 1fr); 
+    }
+    
+    .box {
+      width: 0.5rem;
+    }
+    .graph {
+      grid-gap: 1px;
+    }
+    .day-label {
+      display: none;
+    }
+  }
+}
