@@ -25,7 +25,7 @@
         = render 'contribution_graph', data: contribution_calendar_data(@entries, @year), add_class: add_class          
         .clearfix
         .center{style: "font-size: 14px;"}
-          = number_to_percentage((@total_count.to_s + " / " + elapsed_days_in_year(@year).to_s).to_f, precision: 0)
+          = number_to_percentage((@total_count.to_f / elapsed_days_in_year(@year)).to_f * 100, precision: 0)
           of the days in #{@year} with entries.
 
   - if current_user.is_free?
