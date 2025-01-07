@@ -30,7 +30,7 @@
             %h3
               %span= "#{total_count} entries in #{review_year}"
           .s-review-details
-            = render 'contribution_graph', data: contribution_calendar_data(year_entries, review_year)
+            = render 'contribution_graph', data: contribution_calendar_data(year_entries, review_year), year: review_year
             .clearfix
             %h4
               %span= "See more stats in your "

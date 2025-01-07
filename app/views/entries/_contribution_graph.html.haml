@@ -13,7 +13,7 @@
           .day-label{style: "line-height: 0px; text-align: center; text-transform: uppercase; font-size: 10px; color: #999; font-weight: 600; padding-right: 5px; margin-top: 6px;"} &nbsp;
 
       - (1..380).each do |day|
-        - date = Date.ordinal(@year.to_i, day) rescue nil
+        - date = Date.ordinal(year.to_i, day) rescue nil
 
         - if date
           - if day == 1 && date.wday != 0
