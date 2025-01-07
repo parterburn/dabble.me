@@ -24,9 +24,7 @@
         .center
           .s-entry-date
             %h2
-              = link_to review_path do
-                %span.label.label-success{style: "margin-right: 5px; position: relative;top:-5px;font-weight: normal; font-size: 11px; font-family: sans-serif;padding: 4px 6px;"} NEW
-                Year in Review
+              = link_to "Year in Review", review_path
             %h3
               %span= "#{total_count} entries in #{review_year}"
           .s-review-details
