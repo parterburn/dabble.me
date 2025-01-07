@@ -22,7 +22,7 @@
     width: 1rem;
     height: 1rem;
     background-color: #ebedf0;
-    border-radius: 2px;
+    border-radius: 50%;
     transition: background-color 0.3s ease;
 
     &.active {
@@ -43,9 +43,10 @@
     
     .box {
       width: 0.5rem;
+      border-radius: 3px;
     }
     .graph {
-      grid-gap: 1px;
+      grid-gap: 1.3px;
     }
     .day-label {
       display: none;

@@ -23,8 +23,9 @@
           - day_data = data.find { |d| d[:day] == day }
           - if day_data && day_data[:has_entry]
             %div{style: "margin: 0 auto;", rel: "tooltip", title: "Entry on #{day_data[:date].strftime('%a, %b %-d')}"}
-              = link_to day_entry_path(year: day_data[:date].year, month: day_data[:date].month, day: day_data[:date].day), class: "day active", title: "Entry on #{day_data[:date].strftime('%B %-d, %Y')}", target: "_blank" do
+              = link_to day_entry_path(year: day_data[:date].year, month: day_data[:date].month, day: day_data[:date].day), class: "day", title: "Entry on #{day_data[:date].strftime('%B %-d, %Y')}", target: "_blank" do
                 .box.active{style: "margin: 0 auto;"}
           - elsif date
             %div{style: "margin: 0 auto;", rel: "tooltip", title: "No entry on #{date.strftime('%a, %b %-d')}"}
-              .box{style: "margin: 0 auto;"}
+              = link_to new_entry_path(day: date.strftime('%Y-%m-%d')), class: "day", title: "No entry on #{date.strftime('%B %-d, %Y')}", target: "_blank" do
+                .box{style: "margin: 0 auto;"}
