@@ -36,15 +36,15 @@
       -if user.is_free?
         - add_class = "disabled"
       - %w(Sun Mon Tue Wed Thu Fri Sat).each do |day|
+        = hidden_field_tag "frequency[#{day}]", "0", id: "frequency_#{day}_hidden"
         - if user.frequency && user.frequency.include?(day[0..2])
-          = check_box_tag "frequency[#{day}]", 1, {checked: "checked"}
+          = check_box_tag "frequency[#{day}]", "1", {checked: "checked", style: "cursor: pointer;"}
         - else
           - if add_class == "disabled" && day != "Sun"
-            = check_box_tag "frequency[#{day}]", 0, false, disabled: "true", title: "Payment required"
+            = check_box_tag "frequency[#{day}]", "0", false, disabled: "true", title: "Payment required", style: "cursor: pointer;"
           - else
-            = check_box_tag "frequency[#{day}]"
-        %span.s-day-email= label_tag "frequency_#{day}", day
-        &nbsp;&nbsp;
+            = check_box_tag "frequency[#{day}]", "1"
+        %span.s-day-email>= label_tag "frequency_#{day}", day
       .clearfix
       -if user.is_free?
         %strong= link_to "Subscribe to PRO to change frequency.", subscribe_path, class: "alert-link"

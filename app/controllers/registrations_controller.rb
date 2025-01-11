@@ -28,10 +28,7 @@ class RegistrationsController < Devise::RegistrationsController
       end
     else # updating
       if params[:frequency].present?
-        user.frequency = []
-        params[:frequency].each do |freq|
-          user.frequency << freq[0]
-        end
+        user.frequency = params[:frequency].select { |day, value| value == "1" }.keys.map { |day| day[0..2] }
       end
 
       params[:user].parse_time_select! :send_time
@@ -80,10 +77,7 @@ class RegistrationsController < Devise::RegistrationsController
 
   def unsubscribe
     if params[:frequency].present? && params[:unsub_all].blank?
-      user.frequency = []
-      params[:frequency].each do |freq|
-        user.frequency << freq[0]
-      end
+      user.frequency = params[:frequency].select { |day, value| value == "1" }.keys.map { |day| day[0..2] }
     elsif params[:unsub_all].present?
       user.frequency = []
     end

@@ -1,5 +1,15 @@
 @import 'vars';
 
+input[type="checkbox"] {
+  cursor: pointer;
+}
+
 .s-day-email label {
   font-weight: normal;
+  cursor: pointer;
+  margin-left: 3px;
+  margin-right: 10px;
+  position: relative;
+  font-size: 15px;
+  top: -1px;
 }
