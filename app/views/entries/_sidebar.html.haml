@@ -42,7 +42,7 @@
             = Entry::AiTagger::EMOTIONS[emotion]
             = emotion.upcase
           .s-date-right
-            = format_number(current_user.entries.where("sentiment::text LIKE '%#{emotion}%'").size)
+            = format_number(current_user.entries.where("sentiment::text LIKE ?", "%#{emotion}%").size)
           .clearfix
     %hr
 

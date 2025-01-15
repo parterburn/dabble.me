@@ -4,9 +4,9 @@ class AdminController < ApplicationController
 
   def users
     if params[:email].present?
-      users = User.where("email LIKE '%#{params[:email].downcase}%'")
+      users = User.where("email ILIKE ?", "%#{params[:email].downcase}%")
     elsif params[:user_key].present?
-      users = User.where("user_key LIKE '%#{params[:user_key]}%'")
+      users = User.where("user_key ILIKE ?", "%#{params[:user_key]}%")
     else
       users = User.all
     end

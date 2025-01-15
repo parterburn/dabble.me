@@ -28,7 +28,7 @@ StripeEvent.configure do |events|
       user ||= User.where(email: invoice.customer_email.downcase).first
 
       if user
-        if user.payments.where("comments ILIKE '%#{frequency}%'").last&.date&.to_date != Date.today
+        if user.payments.where("comments ILIKE ?", "%#{frequency}%").last&.date&.to_date != Date.today
           Payment.create(user_id: user.id, comments: "Stripe #{frequency} from #{invoice.customer_email}", date: Time.now.strftime("%Y-%m-%d").to_s, amount: paid)
         end
         user.update(plan: "PRO #{frequency} PayHere")

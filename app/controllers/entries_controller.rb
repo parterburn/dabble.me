@@ -1,11 +1,18 @@
 # Handle Web Entries
 class EntriesController < ApplicationController
+  class InvalidDateError < StandardError; end
+
+  include ActionView::Helpers::SanitizeHelper
+
   before_action :authenticate_user!
   before_action :set_entry, :require_entry_permission, only: [:show, :edit, :update, :destroy, :process_as_ai, :respond_to_ai]
+  before_action :validate_date_params, only: [:index]
+
+  rescue_from InvalidDateError, with: :handle_invalid_date
 
   def index
     if params[:emotion].present?
-      @entries = current_user.entries.includes(:inspiration).where("sentiment::text LIKE '%#{params[:emotion]}%'")
+      @entries = current_user.entries.includes(:inspiration).where("sentiment::text LIKE ?", "%#{params[:emotion]}%")
       @title = "Entries tagged with #{params[:emotion].titleize}"
     elsif params[:group] == "emotion" && params[:subgroup].present?  && params[:subgroup] =~ /^\d+$/
       @entries = current_user.entries.includes(:inspiration).where("date >= '#{params[:subgroup]}-01-01'::DATE").where.not(sentiment: []).and(current_user.entries.where.not(sentiment: ["unknown"])).sort_by(&:date)
@@ -23,18 +30,10 @@ class EntriesController < ApplicationController
       date = Date.parse(params[:subgroup] + '/' + params[:group])
       @title = "Entries from #{date.strftime('%b %Y')}"
     elsif params[:group].present?
-      begin
-        raise 'not a year' unless params[:group] =~ /(19|20)[0-9]{2}/
-        @entries = current_user.entries.includes(:inspiration).where("date >= '#{params[:group]}-01-01'::DATE AND date <= '#{params[:group]}-12-31'::DATE").sort_by(&:date)
-      rescue
-        Sentry.capture_message("Doing expensive lookup based on ID for entry", level: :info, extra: { params: params })
-        entry = current_user.entries.where(id: params[:group]).first
-        if entry.present?
-          return redirect_to day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day)
-        else
-          flash[:alert] = "No entry found."
-          return redirect_to entries_path
-        end
+      if params[:group] =~ /\A(19|20)\d{2}\z/
+        start_date = Date.new(params[:group].to_i, 1, 1)
+        end_date = Date.new(params[:group].to_i, 12, 31)
+        @entries = current_user.entries.where(date: start_date..end_date)
       end
       @title = "Entries from #{params[:group]}"
     elsif params[:format] != "json"
@@ -221,13 +220,14 @@ class EntriesController < ApplicationController
     elsif search_params[:term].present? && search_params[:term].include?(" OR ")
       @search = Search.new(search_params)
       filter_names = search_params[:term].split(' OR ')
-      cond_text = filter_names.map{|w| "LOWER(entries.body) like ?"}.join(" OR ")
-      cond_values = filter_names.map{|w| "%#{w}%"}
-      @entries = current_user.entries.where(cond_text, *cond_values)
+      sanitized_terms = filter_names.map { |term| ActiveRecord::Base.sanitize_sql_like(term) }
+      conditions = sanitized_terms.map { |term| @entries.where("LOWER(entries.body) LIKE ?", "%#{term}%") }
+      @entries = conditions.reduce(:or)
     elsif search_params[:term].present? && search_params[:term].include?('"')
       @search = Search.new(search_params)
       exact_phrase = search_params[:term].delete('"')
-      @entries = current_user.entries.where("entries.body ~* ?", "\\m#{exact_phrase}\\M")
+      sanitized_phrase = Regexp.escape(exact_phrase)
+      @entries = current_user.entries.where("entries.body ~* ?", "\\m#{sanitized_phrase}\\M")
     elsif search_params[:term].present?
       @search = Search.new(search_params)
       @entries = @search.entries
@@ -372,6 +372,12 @@ class EntriesController < ApplicationController
   helper_method :spotify_entries
 
   def collage_from_attachments(attachments, existing_image_url: nil)
+    allowed_types = %w[image/jpeg image/png image/gif image/heic image/heif]
+    attachments.each do |att|
+      unless allowed_types.include?(Marcel::MimeType.for(att))
+        raise "Invalid file type"
+      end
+    end
     s3 = Fog::Storage.new({
       provider:              "AWS",
       aws_access_key_id:     ENV["AWS_ACCESS_KEY_ID"],
@@ -391,10 +397,33 @@ class EntriesController < ApplicationController
   end
 
   def search_params
-    {term: permitted_term}.merge(user: current_user)
+    params.require(:search).permit(:term).merge(user: current_user)
   end
 
-  def permitted_term
-    params.permit(search: :term).try(:[], 'search').try(:[], 'term')
+  def validate_date_range(start_date, end_date)
+    begin
+      start_date = Date.parse(start_date.to_s)
+      end_date = Date.parse(end_date.to_s)
+      [start_date, end_date]
+    rescue ArgumentError
+      raise InvalidDateError
+    end
+  end
+
+  def validate_date_params
+    if params[:group].present?
+      unless params[:group] =~ /\A(19|20)\d{2}\z/
+        raise InvalidDateError
+      end
+    end
+  end
+
+  def handle_invalid_date
+    flash[:alert] = "Invalid date format"
+    redirect_to entries_path
+  end
+
+  def sanitize_search_term(term)
+    sanitize(term, tags: [])
   end
 end
