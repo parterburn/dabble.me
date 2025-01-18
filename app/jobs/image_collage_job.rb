@@ -17,9 +17,6 @@ class ImageCollageJob < ActiveJob::Base
     else
       filestack_collage_url = collage_from_urls(urls + [@existing_url])
     end
-    p "*" * 100
-    p filestack_collage_url
-    p "*" * 100
     entry.update(remote_image_url: filestack_collage_url, filepicker_url: nil)
   end
 
