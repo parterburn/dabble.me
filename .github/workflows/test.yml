@@ -51,14 +51,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-assets-
 
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y libicu-dev
-
     # required to compile pg ruby gem
     - name: Install PostgreSQL client
-      run: sudo apt-get install libpq-dev
+      run: sudo apt-get install libpq-dev && sudo apt-get install -y libicu-dev
 
     - name: Build and create DB
       env:
@@ -70,13 +65,13 @@ jobs:
         RAILS_ENV: test
         DATABASE_URL: postgres://postgres:postgres@localhost:${{ job.services.postgres.ports[5432] }}/dabble_test
       run: |
-        mkdir -p ~/tmp/capybara
+        mkdir -pv ./tmp/capybara
         mkdir ~/rspec
-        gem install bundler -v 2.4.22
+        gem install bundler
         bundle config path vendor/bundle
         bundle install --jobs 4 --retry 3
         bin/rails db:create
-        bin/rails db:migrate
+        bin/rails db:schema:load        
 
     - name: Run tests
       env:
