@@ -51,9 +51,12 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-assets-
 
-    # required to compile pg ruby gem
-    - name: Install PostgreSQL client
-      run: sudo apt-get install libpq-dev && sudo apt-get install -y libicu-dev
+    # required to compile pg ruby gem and charlock_holmes
+    - name: Install PostgreSQL client and ICU
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libpq-dev libicu-dev
+        sudo apt-get install -y libicu70
 
     - name: Build and create DB
       env:
