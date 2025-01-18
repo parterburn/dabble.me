@@ -51,6 +51,11 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-assets-
 
+    - name: Install system dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libicu-dev
+
     # required to compile pg ruby gem
     - name: Install PostgreSQL client
       run: sudo apt-get install libpq-dev
