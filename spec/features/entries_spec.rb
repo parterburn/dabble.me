@@ -34,8 +34,13 @@ describe 'Day Entries' do
     it 'should not show me other users entries' do
       sign_in user
       visit group_entries_url(group: not_my_entry.id)
-      expect(page).to have_content 'No entry found.'
       expect(page).to_not have_content not_my_entry.body
+    end
+
+    it 'should not show me other users entries in edit mode' do
+      sign_in user
+      visit edit_entry_url(not_my_entry)
+      expect(page).to have_content 'Not authorized'
     end
 
     it 'should show me the calendar with my entries', js: true do

@@ -217,20 +217,20 @@ class EntriesController < ApplicationController
   def export
     if params[:only_images] == "true"
       @entries = current_user.entries.only_images.sort_by(&:date)
-    elsif search_params[:term].present? && search_params[:term].include?(" OR ")
-      @search = Search.new(search_params)
-      filter_names = search_params[:term].split(' OR ')
-      sanitized_terms = filter_names.map { |term| ActiveRecord::Base.sanitize_sql_like(term) }
-      conditions = sanitized_terms.map { |term| @entries.where("LOWER(entries.body) LIKE ?", "%#{term}%") }
-      @entries = conditions.reduce(:or)
-    elsif search_params[:term].present? && search_params[:term].include?('"')
-      @search = Search.new(search_params)
-      exact_phrase = search_params[:term].delete('"')
-      sanitized_phrase = Regexp.escape(exact_phrase)
-      @entries = current_user.entries.where("entries.body ~* ?", "\\m#{sanitized_phrase}\\M")
-    elsif search_params[:term].present?
-      @search = Search.new(search_params)
-      @entries = @search.entries
+    elsif params[:search].present? && search_params[:term].present?
+      if search_params[:term].include?(" OR ")
+        filter_names = search_params[:term].split(' OR ')
+        sanitized_terms = filter_names.map { |term| ActiveRecord::Base.sanitize_sql_like(term) }
+        conditions = sanitized_terms.map { |term| @entries.where("LOWER(entries.body) LIKE ?", "%#{term}%") }
+        @entries = conditions.reduce(:or)
+      elsif search_params[:term].include?('"')
+        exact_phrase = search_params[:term].delete('"')
+        sanitized_phrase = Regexp.escape(exact_phrase)
+        @entries = current_user.entries.where("entries.body ~* ?", "\\m#{sanitized_phrase}\\M")
+      else
+        @search = Search.new(search_params)
+        @entries = @search.entries
+      end
     else
       @entries = current_user.entries.sort_by(&:date)
     end
