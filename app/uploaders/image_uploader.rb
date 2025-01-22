@@ -16,10 +16,15 @@ class ImageUploader < CarrierWave::Uploader::Base
   # end
 
   def process!(new_file=nil)
-    file_to_process = new_file || file
-    file_to_process = file_to_process.loader(page: 0) if pdf?(file_to_process)
-    @original_width, @original_height = original_dimensions(file_to_process)
-    super
+    begin
+      file_to_process = new_file || file
+      file_to_process = file_to_process.loader(page: 0) if pdf?(file_to_process)
+      @original_width, @original_height = original_dimensions(file_to_process)
+      super
+    rescue => error
+      # Always save the entry, even if the image processing fails
+      Sentry.capture_exception(error)
+    end
   end
 
   def content_type_allowlist
@@ -68,7 +73,16 @@ class ImageUploader < CarrierWave::Uploader::Base
   end
 
   def original_dimensions(file)
-    image = MiniMagick::Image.open(file.path)
-    [image.width, image.height]
+    # Add timeout protection for MiniMagick
+    Timeout.timeout(30) do
+      image = MiniMagick::Image.open(file.path)
+      [image.width, image.height]
+    end
+  rescue Timeout::Error
+    Rails.logger.error("Timeout getting image dimensions for #{file.path}")
+    [nil, nil]
+  rescue StandardError => e
+    Rails.logger.error("Error getting image dimensions: #{e.message}")
+    [nil, nil]
   end
 end

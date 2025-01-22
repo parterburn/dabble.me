@@ -1,2 +1,2 @@
 release: bin/release
-web: bundle exec puma -p $PORT -C config/puma.rb
+web: RUBY_YJIT_ENABLE=1 bundle exec puma -p $PORT -C config/puma.rb

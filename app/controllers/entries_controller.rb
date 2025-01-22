@@ -109,7 +109,15 @@ class EntriesController < ApplicationController
           image_urls = collage_from_attachments(Array(params[:entry][:image]))
           ImageCollageJob.perform_later(@existing_entry.id, urls: image_urls)
         elsif params[:entry][:image].present?
-          @existing_entry.image = params[:entry][:image].first
+          best_attachment = params[:entry][:image].first
+          ProcessEntryImageJob.perform_later(
+            @existing_entry.id,
+            attachment_data: {
+              content_type: best_attachment.content_type,
+              original_filename: best_attachment.original_filename,
+              data: Base64.strict_encode64(File.read(best_attachment.tempfile))
+            }
+          )
         end
       end
       if @existing_entry.save
@@ -121,11 +129,20 @@ class EntriesController < ApplicationController
       end
     else
       @entry = current_user.entries.create(entry_params)
+      @entry.save
       if params[:entry][:image].present? && params[:entry][:image].count > 1
         image_urls = collage_from_attachments(params[:entry][:image])
         ImageCollageJob.perform_later(@entry.id, urls: image_urls)
       elsif params[:entry][:image].present?
-        @entry.image = params[:entry][:image].first
+        best_attachment = params[:entry][:image].first
+        ProcessEntryImageJob.perform_later(
+          @entry.id,
+          attachment_data: {
+            content_type: best_attachment.content_type,
+            original_filename: best_attachment.original_filename,
+            data: Base64.strict_encode64(File.read(best_attachment.tempfile))
+          }
+        )
       end
 
       if @entry.save
@@ -163,7 +180,15 @@ class EntriesController < ApplicationController
           image_urls = collage_from_attachments(Array(params[:entry][:image]))
           ImageCollageJob.perform_later(@existing_entry.id, urls: image_urls)
         else
-          @existing_entry.image = params[:entry][:image]
+          best_attachment = params[:entry][:image].first
+          ProcessEntryImageJob.perform_later(
+            @existing_entry.id,
+            attachment_data: {
+              content_type: best_attachment.content_type,
+              original_filename: best_attachment.original_filename,
+              data: Base64.strict_encode64(File.read(best_attachment.tempfile))
+            }
+          )
         end
       end
       if @existing_entry.save
@@ -190,9 +215,17 @@ class EntriesController < ApplicationController
           image_urls = collage_from_attachments(params[:entry][:image])
           ImageCollageJob.perform_later(@entry.id, urls: image_urls)
         elsif params[:entry][:image].present?
-          @entry.image = params[:entry][:image].first
-          @entry.save
+          best_attachment = params[:entry][:image].first
+          ProcessEntryImageJob.perform_later(
+            @entry.id,
+            attachment_data: {
+              content_type: best_attachment.content_type,
+              original_filename: best_attachment.original_filename,
+              data: Base64.strict_encode64(File.read(best_attachment.tempfile))
+            }
+          )
         end
+        @entry.save
         track_ga_event('Update')
         flash[:notice] = "Entry successfully updated!"
         redirect_to day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day)

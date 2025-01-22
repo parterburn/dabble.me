@@ -122,10 +122,17 @@ class EmailProcessor
         existing_entry.body = existing_entry.sanitized_body if @user.is_free?
         existing_entry.original_email_body = @raw_body
         existing_entry.inspiration_id = inspiration_id if inspiration_id.present?
-
+        existing_entry.save
         if existing_entry.image_url_cdn.blank?
           if best_attachment.present?
-            existing_entry.image = best_attachment
+            ProcessEntryImageJob.perform_later(
+              existing_entry.id,
+              attachment_data: {
+                content_type: best_attachment.content_type,
+                original_filename: best_attachment.original_filename,
+                data: Base64.strict_encode64(File.read(best_attachment.tempfile))
+              }
+            )
           elsif best_attachment_url.present? && best_attachment_url.starts_with?("mailgun_collage:")
             ImageCollageJob.perform_later(existing_entry.id, message_id: best_attachment_url.gsub("mailgun_collage:", ""))
           elsif best_attachment_url.present?
@@ -159,16 +166,24 @@ class EmailProcessor
         begin
           params = { date: date, inspiration_id: inspiration_id, body: @body, original_email_body: @raw_body }
           entry = @user.entries.create!(params)
+          entry.save
           if best_attachment.present?
-            entry.image = best_attachment
+            ProcessEntryImageJob.perform_later(
+              entry.id,
+              attachment_data: {
+                content_type: best_attachment.content_type,
+                original_filename: best_attachment.original_filename,
+                data: Base64.strict_encode64(File.read(best_attachment.tempfile))
+              }
+            )
           elsif best_attachment_url.present? && best_attachment_url.starts_with?("mailgun_collage:")
             ImageCollageJob.perform_later(entry.id, message_id: best_attachment_url.gsub("mailgun_collage:", ""))
           elsif best_attachment_url.present?
             entry.update(filepicker_url: "https://dabble-me.s3.amazonaws.com/uploading.png")
             entry.remote_image_url = best_attachment_url
             entry.filepicker_url = nil
+            entry.save
           end
-          entry.save
         rescue ActiveRecord::RecordInvalid => error
           @error = error
           if error.to_s.include?("Image Failed to manipulate with MiniMagick")
