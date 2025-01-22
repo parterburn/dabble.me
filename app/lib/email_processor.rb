@@ -125,6 +125,7 @@ class EmailProcessor
         existing_entry.save
         if existing_entry.image_url_cdn.blank?
           if best_attachment.present?
+            existing_entry.update(filepicker_url: "https://dabble-me.s3.amazonaws.com/uploading.png")
             ProcessEntryImageJob.perform_later(
               existing_entry.id,
               attachment_data: {
@@ -168,6 +169,7 @@ class EmailProcessor
           entry = @user.entries.create!(params)
           entry.save
           if best_attachment.present?
+            entry.update(filepicker_url: "https://dabble-me.s3.amazonaws.com/uploading.png")
             ProcessEntryImageJob.perform_later(
               entry.id,
               attachment_data: {

@@ -109,6 +109,7 @@ class EntriesController < ApplicationController
           image_urls = collage_from_attachments(Array(params[:entry][:image]))
           ImageCollageJob.perform_later(@existing_entry.id, urls: image_urls)
         elsif params[:entry][:image].present?
+          @existing_entry.filepicker_url = "https://dabble-me.s3.amazonaws.com/uploading.png"
           best_attachment = params[:entry][:image].first
           ProcessEntryImageJob.perform_later(
             @existing_entry.id,
@@ -129,11 +130,11 @@ class EntriesController < ApplicationController
       end
     else
       @entry = current_user.entries.create(entry_params)
-      @entry.save
       if params[:entry][:image].present? && params[:entry][:image].count > 1
         image_urls = collage_from_attachments(params[:entry][:image])
         ImageCollageJob.perform_later(@entry.id, urls: image_urls)
       elsif params[:entry][:image].present?
+        @entry.filepicker_url = "https://dabble-me.s3.amazonaws.com/uploading.png"
         best_attachment = params[:entry][:image].first
         ProcessEntryImageJob.perform_later(
           @entry.id,
@@ -180,6 +181,7 @@ class EntriesController < ApplicationController
           image_urls = collage_from_attachments(Array(params[:entry][:image]))
           ImageCollageJob.perform_later(@existing_entry.id, urls: image_urls)
         else
+          @existing_entry.filepicker_url = "https://dabble-me.s3.amazonaws.com/uploading.png"
           best_attachment = params[:entry][:image].first
           ProcessEntryImageJob.perform_later(
             @existing_entry.id,
@@ -215,6 +217,7 @@ class EntriesController < ApplicationController
           image_urls = collage_from_attachments(params[:entry][:image])
           ImageCollageJob.perform_later(@entry.id, urls: image_urls)
         elsif params[:entry][:image].present?
+          @entry.update(filepicker_url: "https://dabble-me.s3.amazonaws.com/uploading.png")
           best_attachment = params[:entry][:image].first
           ProcessEntryImageJob.perform_later(
             @entry.id,
@@ -225,7 +228,6 @@ class EntriesController < ApplicationController
             }
           )
         end
-        @entry.save
         track_ga_event('Update')
         flash[:notice] = "Entry successfully updated!"
         redirect_to day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day)
