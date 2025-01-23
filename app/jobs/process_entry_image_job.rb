@@ -11,6 +11,7 @@ class ProcessEntryImageJob < ActiveJob::Base
       tempfile.rewind
 
       entry.image = tempfile
+      entry.filepicker_url = nil if entry.filepicker_url == "https://dabble-me.s3.amazonaws.com/uploading.png"
       entry.save
     end
   end
