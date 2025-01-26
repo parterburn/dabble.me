@@ -346,7 +346,7 @@ class EntriesController < ApplicationController
   def email_replies_test
     user = User.find(73069)
     entry_every_day = user.entries.size == (Date.today - Date.parse("2025-01-25")).to_i
-    render text: entry_every_day
+    render json: entry_every_day
   end
 
   private
