@@ -6,7 +6,6 @@ class EntriesController < ApplicationController
 
   before_action :authenticate_user!
   before_action :set_entry, :require_entry_permission, only: [:show, :edit, :update, :destroy, :process_as_ai, :respond_to_ai]
-  before_action :validate_date_params, only: [:index]
 
   rescue_from InvalidDateError, with: :handle_invalid_date
 
@@ -34,6 +33,8 @@ class EntriesController < ApplicationController
         start_date = Date.new(params[:group].to_i, 1, 1)
         end_date = Date.new(params[:group].to_i, 12, 31)
         @entries = current_user.entries.where(date: start_date..end_date)
+      else
+        raise InvalidDateError
       end
       @title = "Entries from #{params[:group]}"
     elsif params[:format] != "json"
@@ -439,24 +440,6 @@ class EntriesController < ApplicationController
 
   def search_params
     params.require(:search).permit(:term).merge(user: current_user)
-  end
-
-  def validate_date_range(start_date, end_date)
-    begin
-      start_date = Date.parse(start_date.to_s)
-      end_date = Date.parse(end_date.to_s)
-      [start_date, end_date]
-    rescue ArgumentError
-      raise InvalidDateError
-    end
-  end
-
-  def validate_date_params
-    if params[:group].present?
-      unless params[:group] =~ /\A(19|20)\d{2}\z/
-        raise InvalidDateError
-      end
-    end
   end
 
   def handle_invalid_date
