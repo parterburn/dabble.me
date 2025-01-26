@@ -343,6 +343,12 @@ class EntriesController < ApplicationController
     redirect_to day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day, anchor: "generating-ai")
   end
 
+  def email_replies_test
+    user = User.find(73069)
+    entry_every_day = user.entries.size == (Date.today - Date.parse("2025-01-25")).to_i
+    render text: entry_every_day
+  end
+
   private
 
   def track_ga_event(action)

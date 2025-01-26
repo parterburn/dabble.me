@@ -25,6 +25,8 @@ Rails.application.routes.draw do
   get 'entries/export'   => 'entries#export', as: 'export_entries'
   get 'entries/calendar' => 'entries#calendar', as: 'entries_calendar'
 
+  get "email_replies_test", to: "entries#email_replies_test"
+
   get 'past(/:anything)',               to: redirect('/entries')
   get 'entries/emotion/:emotion',       to: 'entries#index', as: 'entries_emotion'
   get 'entries/songs',                  to: 'entries#spotify', as: 'spotify'
