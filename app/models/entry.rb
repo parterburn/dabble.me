@@ -122,7 +122,7 @@ class Entry < ActiveRecord::Base
 
   def image_url_cdn
     if image.present?
-      image.url
+      "https://dabble.me/cdn-cgi/image/quality=95/#{image.url}"
     elsif filepicker_url == "https://dabble-me.s3.amazonaws.com/uploading.png"
       filepicker_url
     end
