@@ -25,6 +25,6 @@ class AdminController < ApplicationController
   private
 
   def per_page
-    params[:per].presence || 50
+    params[:per].presence || 300
   end
 end

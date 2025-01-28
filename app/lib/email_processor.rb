@@ -90,6 +90,7 @@ class EmailProcessor
               next if @user.id == 10836 && image_url.downcase.include?("b_logo.png")
               next if @user.id == 2541 && image_url.downcase.include?("image001.jpg")
               next if image_url.downcase.include?("linkedin_icon_circle.svg.png")
+              next if image_url.downcase.include?("app.v1ce.co.uk") # digital business cards
 
               valid_attachment_urls << image_url
             end
