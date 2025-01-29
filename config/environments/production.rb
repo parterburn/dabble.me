@@ -116,7 +116,8 @@ Rails.application.configure do
   config.action_mailer.delivery_method = :mailgun
   config.action_mailer.mailgun_settings = {
     api_key: ENV['MAILGUN_API_KEY'],
-    domain: ENV['MAIN_DOMAIN']
+    domain: ENV['MAIN_DOMAIN'],
+    # verify_ssl: false
   }
 
   config.action_mailer.default_url_options = {
