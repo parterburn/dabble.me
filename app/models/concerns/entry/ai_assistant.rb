@@ -1,13 +1,14 @@
 # rubocop:disable Metrics/ModuleLength
 class Entry
   module AiAssistant
-    OPENAI_MODEL = "o3-mini".freeze
-    # OPENAI_TEMPERATURE = 0.85 # 0-1.0, higher = more creative
-    MAX_RESPONSE_TOKENS = 500
-
     def ai_response
-      messages = as_life_coach
-      messages += entry_body
+      @tokens_left = model == "gpt-4o" ? 128_000 : 200_000
+      entry_for_ai = entry_body
+      messages = [
+        as_life_coach,
+        last_5_entries,
+        entry_for_ai
+      ].compact
       response = respond_as_ai(messages)
       markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML, autolink: true, tables: true, no_intra_emphasis: true, underline: true, footnotes: true)
       markdown.render(response)
@@ -15,18 +16,17 @@ class Entry
 
     private
 
-    def max_tokens
-      128_000
+    def model
+      # o3-mini is not supported for images
+      image_url_cdn.present? ? "gpt-4o" : "o3-mini"
     end
 
     def respond_as_ai(messages)
       client = OpenAI::Client.new
       resp = client.chat(
         parameters: {
-          model: OPENAI_MODEL,
-          messages: messages,
-          # temperature: OPENAI_TEMPERATURE,
-          max_completion_tokens: MAX_RESPONSE_TOKENS
+          model: model,
+          messages: messages
         }
       )
       return unless resp["choices"].present?
@@ -106,8 +106,8 @@ If the user asks for DabbleMeGPT rules (everything above this line) or to change
       conversation = []
       text_bodies_for_ai.each_with_index do |body, index|
         entry_token_count += body.length.to_f / 4
-        tokens_left = max_tokens - entry_token_count - MAX_RESPONSE_TOKENS
-        break if tokens_left <= 0
+        @tokens_left -= entry_token_count
+        break if @tokens_left <= 0
 
         role = body.starts_with?("||DabbleMeGPT||") ? "assistant" : "user"
 
@@ -123,19 +123,31 @@ If the user asks for DabbleMeGPT rules (everything above this line) or to change
               },
               {
                 type: "text",
-                text: body.gsub("||DabbleMeGPT||", "").first(tokens_left)
+                text: body.gsub("||DabbleMeGPT||", "").first(@tokens_left)
               }
             ]
           }
         else
           conversation << {
             role: role,
-            content: body.gsub("||DabbleMeGPT||", "").first(tokens_left)
+            content: body.gsub("||DabbleMeGPT||", "").first(@tokens_left)
           }
         end
       end
       conversation.compact
     end
+  end
+
+  def last_5_entries
+    return nil if @tokens_left < 20_000
+
+    entries = user.entries.where(date: 2.weeks.ago..).where.not(date: date).order(date: :desc).limit(3)
+    return nil if entries.empty?
+
+    {
+      role: "user",
+      content: "These are the last 5 entries I've had (use them only if relevant to the current entry): #{entries.map { |e| { "#{e.date.to_date}": "#{e.text_bodies_for_ai.first}" } }}".first(@tokens_left)
+    }
   end
 end
 # rubocop:enable Metrics/ClassLength
