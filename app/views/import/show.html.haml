@@ -3,6 +3,8 @@
 
 - if type == "Ahhlife"
   - format_placeholder = '{"Jul-2015": {"-JtqbI_fF_2348SFrMqPQ": {"content": "Your entry here...","timestamp": 1436486400000}}}'
+- elsif type == "Trailmix"
+  - format_placeholder = '[{"body"=>"Your entry here...", "date"=>"YYYY-MM-DD"}]'
 - else
   - format_placeholder = "2014-10-02\n\nHere's my first entry!\n\nYYYY-MM-DD\n\nEntry text exactly 2 line-breaks after date."
 
@@ -14,7 +16,7 @@
         =link_to subscribe_path, class: "float-left", style: "margin-top: -7px;" do
           %button.btn.btn-warning Subscribe Now
         %strong Dabble Me PRO
-        for $4/mo unlocks the ability to import entries from OhLife and Ahhlife.
+        for $4/mo unlocks the ability to import entries from OhLife, Ahhlife, and Trailmix.life.
     .clearfix
 
   .col-md-8.col-md-offset-2.s-import
@@ -37,6 +39,8 @@
             =link_to "AhhLife", import_path('ahhlife')
             &middot;
             =link_to "OhLife", import_path('ohlife')
+            &middot;
+            =link_to "Trailmix.life", import_path('trailmix')
         .clearfix
 
     - if params[:type]&.downcase == "photos"

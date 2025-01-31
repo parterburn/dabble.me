@@ -10,6 +10,8 @@ class ImportController < ApplicationController
     else
       if params[:type]&.downcase == "ahhlife"
         import_ahhlife_entries(params[:entry][:text])
+      elsif params[:type]&.downcase == "trailmix"
+        import_trailmix_entries(params[:entry][:text])
       else
         import_ohlife_entries(params[:entry][:text])
       end
@@ -101,4 +103,53 @@ class ImportController < ApplicationController
     redirect_to import_path(type: "ahhlife")
   end
 
+  def import_trailmix_entries(data)
+    errors = []
+    user = current_user
+
+    j_data = JSON.parse(data)
+    i = 0;
+    j_data.each do |entry|
+      body = unfold_paragraphs(entry['body'])
+      body = ActionController::Base.helpers.simple_format(body)
+      body.gsub!(/\A(\<p\>\<\/p\>)/, '')
+      body.gsub!(/(\<p\>\<\/p\>)\z/, '')
+      date = entry['date']
+      entry = user.entries.create(date: date, body: body, inspiration_id: 68)
+      unless entry.save
+        errors << date
+      end
+    end
+
+    if errors.present?
+      flash[:alert] = '<strong>' + ActionController::Base.helpers.pluralize(errors.count, 'error') + ' while importing:</strong>'
+      errors.each do |error|
+        flash[:alert] << '<br>' + error
+      end
+      redirect_to import_path(type: "trailmix")
+    else
+      flash[:notice] = 'Finished importing ' + ActionController::Base.helpers.pluralize(i, 'entry')
+      redirect_to entries_path
+    end
+  rescue JSON::ParserError, NoMethodError => e
+    flash[:alert] = "Invalid JSON Format: #{e.message}"
+    redirect_to import_path(type: "trailmix")
+  end
+
+  def unfold_paragraphs(body)
+    return nil unless body.present?
+    text  = ''
+    body.split(/\n/).each do |line|
+      if /\S/ !~ line
+        text << "\n\n"
+      else
+        if line.length < 60 || /^(\s+|[*])/ =~ line
+          text << (line.rstrip + "\n")
+        else
+          text << (line.rstrip + ' ')
+        end
+      end
+    end
+    text.gsub("\n\n\n", "\n\n")
+  end
 end
