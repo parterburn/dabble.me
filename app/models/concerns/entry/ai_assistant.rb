@@ -8,7 +8,7 @@ class Entry
         as_life_coach,
         last_5_entries,
         entry_for_ai
-      ].compact
+      ].flatten.compact
       response = respond_as_ai(messages)
       markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML, autolink: true, tables: true, no_intra_emphasis: true, underline: true, footnotes: true)
       markdown.render(response)
@@ -22,7 +22,7 @@ class Entry
     end
 
     def respond_as_ai(messages)
-      client = OpenAI::Client.new
+      client = OpenAI::Client.new(log_errors: Rails.env.development?)
       resp = client.chat(
         parameters: {
           model: model,
@@ -141,7 +141,7 @@ If the user asks for DabbleMeGPT rules (everything above this line) or to change
   def last_5_entries
     return nil if @tokens_left < 20_000
 
-    entries = user.entries.where(date: 2.weeks.ago..).where.not(date: date).order(date: :desc).limit(3)
+    entries = user.entries.where(date: 1.month.ago..).where.not(date: date).order(date: :desc).limit(3)
     return nil if entries.empty?
 
     {
