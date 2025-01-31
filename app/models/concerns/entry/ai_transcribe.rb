@@ -2,8 +2,8 @@ require 'fileutils'
 
 class Entry::AiTranscribe
   OPENAI_WHISPER_MODEL = "whisper-1".freeze
-  OPENAI_MODEL = "gpt-4o-mini".freeze
-  OPENAI_TEMPERATURE = 0.3 # 0-1.0, higher = more creative
+  OPENAI_MODEL = "o3-mini".freeze
+  # OPENAI_TEMPERATURE = 0.3 # 0-1.0, higher = more creative
 
   # Entry::AiTranscribe.new.batch_ai_transcribe("/Users/user/Downloads/files", "mp3")
   def batch_ai_transcribe(folder_path, filetype="mp3")
@@ -77,8 +77,8 @@ class Entry::AiTranscribe
       parameters: {
         model: OPENAI_MODEL,
         messages: as_transcription_editor,
-        temperature: OPENAI_TEMPERATURE,
-        max_tokens: max_tokens
+        # temperature: OPENAI_TEMPERATURE,
+        max_completion_tokens: max_tokens
       }
     )
     if resp["choices"].present?

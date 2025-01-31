@@ -1,8 +1,8 @@
 # rubocop:disable Metrics/ModuleLength
 class Entry
   module AiAssistant
-    OPENAI_MODEL = "gpt-4o".freeze
-    OPENAI_TEMPERATURE = 0.85 # 0-1.0, higher = more creative
+    OPENAI_MODEL = "o3-mini".freeze
+    # OPENAI_TEMPERATURE = 0.85 # 0-1.0, higher = more creative
     MAX_RESPONSE_TOKENS = 500
 
     def ai_response
@@ -25,8 +25,8 @@ class Entry
         parameters: {
           model: OPENAI_MODEL,
           messages: messages,
-          temperature: OPENAI_TEMPERATURE,
-          max_tokens: MAX_RESPONSE_TOKENS
+          # temperature: OPENAI_TEMPERATURE,
+          max_completion_tokens: MAX_RESPONSE_TOKENS
         }
       )
       return unless resp["choices"].present?
