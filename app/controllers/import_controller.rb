@@ -9,12 +9,11 @@ class ImportController < ApplicationController
       flash[:alert] = "<a href='#{subscribe_url}'' class='alert-link'>Subscribe to PRO</a> to import entries.".html_safe
     else
       if params[:type]&.downcase == "ahhlife"
-        flash = import_ahhlife_entries(params[:entry][:text])
+        import_ahhlife_entries(params[:entry][:text])
       else
-        flash = import_ohlife_entries(params[:entry][:text])
+        import_ohlife_entries(params[:entry][:text])
       end
     end
-    redirect_to entries_path
   end
 
   def process_ohlife_images
@@ -80,20 +79,26 @@ class ImportController < ApplicationController
         body.gsub!(/\A(\<p\>\<\/p\>)/, '')
         body.gsub!(/(\<p\>\<\/p\>)\z/, '')
         date = Time.at(entry['timestamp']/1000).utc
-        entry = user.entries.create(date: date, body: body, inspiration_id: 59)        
+        entry = user.entries.create(date: date, body: body, inspiration_id: 59)
         unless entry.save
           errors << date
         end
       end
     end
-    flash[:notice] = 'Finished importing ' + ActionController::Base.helpers.pluralize(i, 'entry')
 
-    return flash unless errors.present?
-
-    flash[:alert] = '<strong>' + ActionController::Base.helpers.pluralize(errors.count, 'error') + ' while importing:</strong>'
-    errors.each do |error|
-      flash[:alert] << '<br>' + error
+    if errors.present?
+      flash[:alert] = '<strong>' + ActionController::Base.helpers.pluralize(errors.count, 'error') + ' while importing:</strong>'
+      errors.each do |error|
+        flash[:alert] << '<br>' + error
+      end
+      redirect_to import_path(type: "ahhlife")
+    else
+      flash[:notice] = 'Finished importing ' + ActionController::Base.helpers.pluralize(i, 'entry')
+      redirect_to entries_path
     end
+  rescue JSON::ParserError, NoMethodError => e
+    flash[:alert] = "Invalid JSON Format: #{e.message}"
+    redirect_to import_path(type: "ahhlife")
   end
 
 end

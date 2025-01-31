@@ -113,7 +113,7 @@ GEM
       zeitwerk (>= 2.5.0)
     combined_time_select (2.0.0)
       rails (>= 5.0.0)
-    concurrent-ruby (1.3.5)
+    concurrent-ruby (1.3.4)
     crack (0.4.3)
       safe_yaml (~> 1.0.0)
     crass (1.0.6)
@@ -504,6 +504,7 @@ DEPENDENCIES
   chartkick (~> 5)
   cloudflare-rails
   combined_time_select
+  concurrent-ruby (= 1.3.4)
   database_cleaner
   delorean
   derailed_benchmarks
