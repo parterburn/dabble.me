@@ -76,9 +76,7 @@ class Entry::AiTranscribe
     resp = client.chat(
       parameters: {
         model: OPENAI_MODEL,
-        messages: as_transcription_editor,
-        # temperature: OPENAI_TEMPERATURE,
-        max_completion_tokens: max_tokens
+        messages: as_transcription_editor
       }
     )
     if resp["choices"].present?
