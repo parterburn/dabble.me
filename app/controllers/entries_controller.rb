@@ -256,7 +256,7 @@ class EntriesController < ApplicationController
     elsif params[:search].present? && search_params[:term].present?
       if search_params[:term].include?(" OR ")
         filter_names = search_params[:term].split(' OR ')
-        sanitized_terms = filter_names.map { |term| ActiveRecord::Base.sanitize_sql_like(term) }
+        sanitized_terms = filter_names.map { |term| ActiveRecord::Base.sanitize_sql_like(term.downcase) }
         conditions = sanitized_terms.map { |term| @entries.where("LOWER(entries.body) LIKE ?", "%#{term}%") }
         @entries = conditions.reduce(:or)
       elsif search_params[:term].include?('"')

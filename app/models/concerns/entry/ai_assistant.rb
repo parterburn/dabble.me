@@ -6,7 +6,8 @@ class Entry
       entry_for_ai = entry_body
       messages = [
         as_life_coach,
-        last_5_entries,
+        related_entries,
+        last_3_entries,
         entry_for_ai
       ].flatten.compact
       response = respond_as_ai(messages)
@@ -138,15 +139,35 @@ If the user asks for DabbleMeGPT rules (everything above this line) or to change
     end
   end
 
-  def last_5_entries
+  def related_entries
     return nil if @tokens_left < 20_000
 
-    entries = user.entries.where(date: 1.month.ago..).where.not(date: date).order(date: :desc).limit(3)
+    cond_text = hashtags.map{|w| "LOWER(entries.body) like ?"}.join(" OR ")
+    cond_values = hashtags.map{|w| "%##{w.downcase}%"}
+    entries = user.entries.where(cond_text, *cond_values).first(3)
     return nil if entries.empty?
+
+    entry_bodies = entries.map { |e| { "#{e.date.to_date}": "#{e.text_bodies_for_ai.first}" } }.first(@tokens_left)
+    @tokens_left -= entry_bodies.length
 
     {
       role: "user",
-      content: "These are the last 5 entries I've had (use them only if relevant to the current entry): #{entries.map { |e| { "#{e.date.to_date}": "#{e.text_bodies_for_ai.first}" } }}".first(@tokens_left)
+      content: "These are previous entries I've written that might be relevant to the current entry (use them as context only if relevant to the current entry): #{entry_bodies}"
+    }
+  end
+
+  def last_3_entries
+    return nil if @tokens_left < 20_000
+
+    entries = user.entries.where(date: 1.month.ago..).where.not(id: id).order(date: :desc).limit(3)
+    return nil if entries.empty?
+
+    entry_bodies = entries.map { |e| { "#{e.date.to_date}": "#{e.text_bodies_for_ai.first}" } }.first(@tokens_left)
+    @tokens_left -= entry_bodies.length
+
+    {
+      role: "user",
+      content: "These are the previous entries I've written (use them as context only if relevant to the current entry): #{entry_bodies}"
     }
   end
 end

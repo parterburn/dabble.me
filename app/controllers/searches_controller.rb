@@ -8,7 +8,7 @@ class SearchesController < ApplicationController
       @search = Search.new(search_params)
       filter_names = search_params[:term].split(' OR ')
       cond_text = filter_names.map{|w| "LOWER(entries.body) like ?"}.join(" OR ")
-      cond_values = filter_names.map{|w| "%#{w}%"}
+      cond_values = filter_names.map{|w| "%#{w.downcase}%"}
       @entries = current_user.entries.where(cond_text, *cond_values)
     elsif search_params[:term].present? && search_params[:term].include?('"')
       @search = Search.new(search_params)
