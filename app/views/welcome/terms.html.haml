@@ -28,19 +28,19 @@
     %p We use SSL encrypted browsing for all logged-in users, but we cannot guarantee that all use will be secure. We also do not guarantee that the Website or any content provided on the Website is error free. We manage your personal data according to our Privacy Policy.
 
     %h4 Payments and Refunds
-    %p
-      %strong Payments
-    %p All payments for services are processed through Stripe.
-    %p By completing a payment, you agree to Stripe’s processing terms.
-    %p We do not store your payment details; all sensitive data is handled securely by Stripe.
-    %p
-      %strong Refunds
-    %p
-      If you believe you deserve a refund, you may request one by emailing
-      = mail_to("hello@#{ENV['MAIN_DOMAIN']}", "hello@#{ENV['MAIN_DOMAIN']}", encode: "hex")
-      within 30 days of the payment.
-    %p Refund requests submitted after 30 days of the payment will not be eligible.
-    %p We reserve the right to review and approve refund requests at our sole discretion.
+    %strong Payments
+    %ul
+      %li All payments for services are processed through Stripe.
+      %li By completing a payment, you agree to Stripe’s processing terms.
+      %li We do not store your payment details; all sensitive data is handled securely by Stripe.
+    %strong Refunds
+    %ul
+      %li
+        If you believe you deserve a refund, you may request one by emailing
+        = mail_to("hello@#{ENV['MAIN_DOMAIN']}", "hello@#{ENV['MAIN_DOMAIN']}", encode: "hex")
+        within 30 days of the payment.
+      %li Refund requests submitted after 30 days of the payment will not be eligible.
+      %li We reserve the right to review and approve refund requests at our sole discretion.
 
     %h4 Intellectual Property Rights and Use Guidelines
     %p
