@@ -31,8 +31,12 @@
     %strong Payments
     %ul
       %li All payments for services are processed through Stripe.
+      %li Subscriptions are automatically recurring (either monthly or annually) and payments will continue until cancelled.
       %li By completing a payment, you agree to Stripe’s processing terms.
       %li We do not store your payment details; all sensitive data is handled securely by Stripe.
+      %li
+        To cancel your subscription, please visit the
+        = link_to("Billing", billing_path) + " page."
     %strong Refunds
     %ul
       %li
