@@ -27,6 +27,21 @@
 
     %p We use SSL encrypted browsing for all logged-in users, but we cannot guarantee that all use will be secure. We also do not guarantee that the Website or any content provided on the Website is error free. We manage your personal data according to our Privacy Policy.
 
+    %h4 Payments and Refunds
+    %p
+      %strong Payments
+    %p All payments for services are processed through Stripe.
+    %p By completing a payment, you agree to Stripe’s processing terms.
+    %p We do not store your payment details; all sensitive data is handled securely by Stripe.
+    %p
+      %strong Refunds
+    %p
+      If you believe you deserve a refund, you may request one by emailing
+      = mail_to("hello@#{ENV['MAIN_DOMAIN']}", "hello@#{ENV['MAIN_DOMAIN']}", encode: "hex")
+      within 30 days of the payment.
+    %p Refund requests submitted after 30 days of the payment will not be eligible.
+    %p We reserve the right to review and approve refund requests at our sole discretion.
+
     %h4 Intellectual Property Rights and Use Guidelines
     %p
       The Website and its entire Content (as defined below, but excluding User Content), features and functionality (including the "look and feel"), are owned by the Company and are protected by United States and international copyright, trademark, patent, trade secret and other intellectual property or proprietary rights laws. You agree to: (i) use the Website solely for internal business purposes; (ii) not copy, modify, create derivative works of, publicly display, publicly perform or republish any of our copyrighted material, except to the extent permitted by these Terms of Service; (iii) not scrape, extract or otherwise index any data made available via the Website; (iv) not sell, distribute or otherwise make available any of the data available via the Website to any third-party; (v) not interfere with or disrupt the integrity or performance of the Website; and (vi) not access the Website in order to build a competitive product or service, copy any features, functions or graphics of the Website or monitor the availability and/or functionality of the Website for any benchmarking or competitive purposes. If you have doubts about whether and how to use of material on the Website, please address your concerns to
