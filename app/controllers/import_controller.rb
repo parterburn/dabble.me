@@ -11,7 +11,13 @@ class ImportController < ApplicationController
       if params[:type]&.downcase == "ahhlife"
         import_ahhlife_entries(params[:entry][:text])
       elsif params[:type]&.downcase == "trailmix"
-        import_trailmix_entries(params[:entry][:text])
+        tmp = params[:json_file]
+        dir = FileUtils.mkdir_p("public/trailmix_zips/#{current_user.user_key}")
+        file = File.join(dir, tmp.original_filename)
+        FileUtils.mv tmp.tempfile.path, file
+        ImportTrailmixJob.perform_later(current_user.id, tmp.original_filename)
+        flash[:notice] = "Import has started. You will receive an email when it is finished."
+        redirect_to entries_path
       else
         import_ohlife_entries(params[:entry][:text])
       end
@@ -35,6 +41,14 @@ class ImportController < ApplicationController
       flash[:alert] = "Only ZIP files are allowed here."
       redirect_to import_path
     end
+  end
+
+  def process_trailmix_entries
+    data = params[:entry][:text]
+    import_trailmix_entries(data)
+  rescue JSON::ParserError, NoMethodError => e
+    flash[:alert] = "Invalid JSON Format: #{e.message}"
+    redirect_to import_path(type: "trailmix")
   end
 
   private
@@ -101,55 +115,5 @@ class ImportController < ApplicationController
   rescue JSON::ParserError, NoMethodError => e
     flash[:alert] = "Invalid JSON Format: #{e.message}"
     redirect_to import_path(type: "ahhlife")
-  end
-
-  def import_trailmix_entries(data)
-    errors = []
-    user = current_user
-
-    j_data = JSON.parse(data)
-    i = 0;
-    j_data.each do |entry|
-      body = unfold_paragraphs(entry['body'])
-      body = ActionController::Base.helpers.simple_format(body)
-      body.gsub!(/\A(\<p\>\<\/p\>)/, '')
-      body.gsub!(/(\<p\>\<\/p\>)\z/, '')
-      date = entry['date']
-      entry = user.entries.create(date: date, body: body, inspiration_id: 68)
-      unless entry.save
-        errors << date
-      end
-    end
-
-    if errors.present?
-      flash[:alert] = '<strong>' + ActionController::Base.helpers.pluralize(errors.count, 'error') + ' while importing:</strong>'
-      errors.each do |error|
-        flash[:alert] << '<br>' + error
-      end
-      redirect_to import_path(type: "trailmix")
-    else
-      flash[:notice] = 'Finished importing ' + ActionController::Base.helpers.pluralize(i, 'entry')
-      redirect_to entries_path
-    end
-  rescue JSON::ParserError, NoMethodError => e
-    flash[:alert] = "Invalid JSON Format: #{e.message}"
-    redirect_to import_path(type: "trailmix")
-  end
-
-  def unfold_paragraphs(body)
-    return nil unless body.present?
-    text  = ''
-    body.split(/\n/).each do |line|
-      if /\S/ !~ line
-        text << "\n\n"
-      else
-        if line.length < 60 || /^(\s+|[*])/ =~ line
-          text << (line.rstrip + "\n")
-        else
-          text << (line.rstrip + ' ')
-        end
-      end
-    end
-    text.gsub("\n\n\n", "\n\n")
   end
 end
