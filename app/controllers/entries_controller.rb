@@ -251,8 +251,10 @@ class EntriesController < ApplicationController
   end
 
   def export
+    filename = "dabble_export_#{Time.now.strftime('%Y-%m-%d')}.txt"
     if params[:only_images] == "true"
       @entries = current_user.entries.only_images.sort_by(&:date)
+      filename = "dabble_export_image_entries_#{Time.now.strftime('%Y-%m-%d')}.txt"
     elsif params[:search].present? && search_params[:term].present?
       if search_params[:term].include?(" OR ")
         filter_names = search_params[:term].split(' OR ')
@@ -267,6 +269,16 @@ class EntriesController < ApplicationController
         @search = Search.new(search_params)
         @entries = @search.entries
       end
+      filename = "dabble_export_search_#{params[:search].parameterize}}_#{Time.now.strftime('%Y-%m-%d')}.txt"
+    elsif params[:year].present?
+      if params[:year] =~ /\A(19|20)\d{2}\z/
+        start_date = Date.new(params[:year].to_i, 1, 1)
+        end_date = Date.new(params[:year].to_i, 12, 31)
+        @entries = current_user.entries.where(date: start_date..end_date)
+        filename = "dabble_export_#{params[:year]}.txt"
+      else
+        raise InvalidDateError
+      end
     else
       @entries = current_user.entries.sort_by(&:date)
     end
@@ -275,7 +287,7 @@ class EntriesController < ApplicationController
       format.json { send_data JSON.pretty_generate(JSON.parse(@entries.to_json(only: [:date, :body, :image]))), filename: "export_#{Time.now.strftime('%Y-%m-%d')}.json" }
       format.txt do
         response.headers['Content-Type'] = 'text/txt'
-        response.headers['Content-Disposition'] = "attachment; filename=export_#{Time.now.strftime('%Y-%m-%d')}.txt"
+        response.headers['Content-Disposition'] = "attachment; filename=#{filename}"
         render 'text_export'
       end
     end

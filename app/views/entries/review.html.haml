@@ -17,7 +17,7 @@
       .s-entry-date
         %h2 Days with Entries
         %h3
-          %span= "#{@total_count} entries in #{@year}"
+          %span= "#{pluralize(@total_count, 'entry')} in #{@year}"
       .s-review-details
         - if @pctile.present?
           %p= "You're in the #{@pctile.ordinalize} percentile compared to all active Dabble Me users in #{@year}."
@@ -33,6 +33,39 @@
       .alert.alert-warning
         =link_to "Subscribe to PRO", subscribe_path, class: "alert-link"
         to see the rest of your Year in Review.
+
+  .col-md-8.col-md-offset-2.well
+    .center{class: add_class}
+      .s-entry-date
+        %h2 Ask AI
+        %h3
+          %span= "Reflections and insights"
+      .s-review-details
+        %p{style: "margin-top: 20px;margin-bottom: 0px;"} Follow these simple steps to gain a better understanding of how you journaling and collect advice as you chat with a life coach about how your year went.
+        %ol{style: "display: inline-block;text-align: left;max-width:100%;margin-top: 10px;"}
+          %li{style: "margin-top: 10px;"}
+            %strong= link_to "Export your #{pluralize(@total_count, 'entry')} from #{@year}", export_entries_path(year: @year, format: :txt)
+          %li{style: "margin-top: 10px;"}
+            %strong 
+              Visit
+              = link_to "ChatGPT", "https://chatgpt.com", target: :_blank
+              or
+              = link_to "Claude", "https://claude.ai/", target: :_blank
+              or
+              = link_to "Gemini", "https://gemini.google.com", target: :_blank
+          %li{style: "margin-top: 10px;"}
+            %strong Upload your entries with the following instructions
+            and then continue asking it questions. You may want to turn off "train the model" when using this method.
+            %pre{style: "margin-top: 10px;max-width: 90%; overflow: scroll;"}
+              These are my journal entries from #{@year}. I will ask you questions about these entries and want you to answer as an expert life coach based on what I wrote. Be thoughtful in your replies.
+        %p{style: "margin: 20px auto 5px;"}
+          %strong Some example questions:
+        %ul{style: "display: inline-block;text-align: left;"}
+          %li{style: "margin-top: 10px;"} What advice do you have more me this year?
+          %li{style: "margin-top: 10px;"} What was I most grateful for this year?
+          %li{style: "margin-top: 10px;"} What are the key reflections of the year?
+          %li{style: "margin-top: 10px;"} What values do I live my life through?
+
 
   - if @entries_with_sentiment.count.positive?
     .col-md-8.col-md-offset-2.well

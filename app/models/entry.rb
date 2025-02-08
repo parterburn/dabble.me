@@ -120,9 +120,9 @@ class Entry < ActiveRecord::Base
     fix_encoding(body_sanitized)
   end
 
-  def image_url_cdn
+  def image_url_cdn(cloudflare: true)
     if image.present?
-      "https://dabble.me/cdn-cgi/image/quality=95/#{image.url}"
+      "#{'https://dabble.me/cdn-cgi/image/quality=95/' if cloudflare }#{image.url}"
     elsif filepicker_url == "https://dabble-me.s3.amazonaws.com/uploading.png"
       filepicker_url
     end
