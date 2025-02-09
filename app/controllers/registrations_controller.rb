@@ -31,19 +31,23 @@ class RegistrationsController < Devise::RegistrationsController
         user.frequency = params[:frequency].select { |day, value| value == "1" }.keys.map { |day| day[0..2] }
       end
 
-      params[:user].parse_time_select! :send_time
-      successfully_updated =  if needs_password?
-                                user.update_with_password(devise_parameter_sanitizer.sanitize(:account_update))
-                              else
-                                # remove the virtual current_password attribute
-                                # update_without_password doesn't know how to ignore it
-                                params[:user].delete(:current_password)
-                                user.update_without_password(devise_parameter_sanitizer.sanitize(:preferences))
-                              end
+      # Add validation for send_time
+      if params[:user][:send_time].present?
+        params[:user].parse_time_select! :send_time
+      else
+        # Set a default time (e.g., 8:00 AM) if none provided
+        params[:user][:send_time] = "08:00:00"
+      end
+
+      successfully_updated = if needs_password?
+        user.update_with_password(devise_parameter_sanitizer.sanitize(:account_update))
+      else
+        params[:user].delete(:current_password)
+        user.update_without_password(devise_parameter_sanitizer.sanitize(:preferences))
+      end
 
       if successfully_updated
         set_flash_message :notice, :updated
-        # Sign in the user bypassing validation in case their password changed
         bypass_sign_in user
       else
         flash[:alert] = flash[:alert].to_a.concat resource.errors.full_messages
@@ -82,7 +86,13 @@ class RegistrationsController < Devise::RegistrationsController
       user.frequency = []
     end
 
-    params[:user].parse_time_select! :send_time
+    # Add validation for send_time
+    if params[:user][:send_time].present?
+      params[:user].parse_time_select! :send_time
+    else
+      params[:user][:send_time] = "08:00:00"
+    end
+
     if user.update_without_password(devise_parameter_sanitizer.sanitize(:preferences))
       if user.frequency.present?
         set_flash_message :notice, :updated
