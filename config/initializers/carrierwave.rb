@@ -18,6 +18,8 @@ module CarrierWave
         image.quality(percentage)
         image
       end
+    rescue => error
+      Sentry.capture_exception(error, level: "warning")
     end
 
     def auto_orient
@@ -25,6 +27,8 @@ module CarrierWave
         image.auto_orient
         image
       end
+    rescue => error
+      Sentry.capture_exception(error, level: "warning")
     end
 
     def convert_to_jpg
@@ -32,6 +36,8 @@ module CarrierWave
         image.format("jpg")
         image
       end
+    rescue => error
+      Sentry.capture_exception(error, level: "warning")
     end
   end
 end
