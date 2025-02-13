@@ -13,10 +13,14 @@ end
 
 module CarrierWave
   module MiniMagick
-    def quality(percentage)
-      manipulate! do |image|
-        image.quality(percentage)
-        image
+    def size_and_optimize(resize_to: nil, quality: "90")
+      manipulate! do |img|
+        img.resize resize_to if resize_to.present?
+        img.strip
+        img.quality quality
+        img.interlace "plane"
+        img = yield(img) if block_given?
+        img
       end
     rescue => error
       Sentry.capture_exception(error, level: "warning")
@@ -25,6 +29,7 @@ module CarrierWave
     def auto_orient
       manipulate! do |image|
         image.auto_orient
+        image = yield(image) if block_given?
         image
       end
     rescue => error

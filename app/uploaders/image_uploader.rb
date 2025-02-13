@@ -1,15 +1,14 @@
 class ImageUploader < CarrierWave::Uploader::Base
+  include CarrierWave::MiniMagick
+
   GENERIC_CONTENT_TYPES = %w[application/octet-stream binary/octet-stream]
 
   storage :fog
 
-  include CarrierWave::MiniMagick
-
   process :convert_to_jpg, if: :heic_image?
-  # process :convert_to_jpg, if: :webp_image?
-  process resize_to_limit: [1200, 1200], quality: 90, if: :web_image?
-  process :auto_orient, if: :web_image?
   process :clear_generic_content_type
+  process :auto_orient, if: :web_image?
+  process size_and_optimize: [{resize_to: "1200x1200>", quality: "95"}], if: :web_image?
 
   # def extension_allowlist
   #   %w(jpg jpeg gif png heic heif)
@@ -37,8 +36,8 @@ class ImageUploader < CarrierWave::Uploader::Base
     ) &&
       (
         heic_image?(file) ||
-        !!(self.content_type =~ /^image\/(png|jpe?g|webp|gif)$/i) ||
-        self.content_type == "application/octet-stream"
+        !!(file.content_type =~ /^image\/(png|jpe?g|webp|gif)$/i) ||
+        !!(file.original_filename =~ /\.(png|jpe?g|webp|gif)$/i)
       )
   end
 
@@ -69,12 +68,12 @@ class ImageUploader < CarrierWave::Uploader::Base
   end
 
   def filename
-    super.gsub(/\.heic/i, ".jpg").gsub(/\.heif/i, ".jpg") if original_filename.present?
+    super.gsub(/\.heic/i, ".jpg").gsub(/\.heif/i, ".jpg")
   end
 
   def original_dimensions(file)
     # Add timeout protection for MiniMagick
-    Timeout.timeout(30) do
+    Timeout.timeout(10) do
       image = MiniMagick::Image.open(file.path)
       [image.width, image.height]
     end
