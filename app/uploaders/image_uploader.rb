@@ -37,7 +37,7 @@ class ImageUploader < CarrierWave::Uploader::Base
       (
         heic_image?(file) ||
         !!(file.content_type =~ /^image\/(png|jpe?g|webp|gif)$/i) ||
-        !!(file.original_filename =~ /\.(png|jpe?g|webp|gif)$/i)
+        !!(file.filename =~ /\.(png|jpe?g|webp|gif)$/i)
       )
   end
 
