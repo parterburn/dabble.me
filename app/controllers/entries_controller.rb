@@ -269,7 +269,7 @@ class EntriesController < ApplicationController
         @search = Search.new(search_params)
         @entries = @search.entries
       end
-      filename = "dabble_export_search_#{search_params[:term].parameterize}}_#{Time.now.strftime('%Y-%m-%d')}.txt"
+      filename = "dabble_export_search_#{search_params[:term].parameterize}_#{Time.now.strftime('%Y-%m-%d')}.txt"
     elsif params[:year].present?
       if params[:year] =~ /\A(19|20)\d{2}\z/
         start_date = Date.new(params[:year].to_i, 1, 1)
