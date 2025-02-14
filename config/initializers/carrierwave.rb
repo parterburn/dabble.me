@@ -32,6 +32,16 @@ module CarrierWave
         image = yield(image) if block_given?
         image
       end
+    rescue CarrierWave::ProcessingError => e
+      Sentry.capture_exception(e,
+        extra: {
+          mime_type: file&.content_type,
+          original_filename: file&.original_filename
+        },
+        level: "warning"
+      )
+      # Return original file without orientation to prevent upload failure
+      retrieve_from_cache!(cached_filename) if cached_filename
     rescue => error
       Sentry.capture_exception(error, level: "warning")
     end
