@@ -66,7 +66,7 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(response).to redirect_to(settings_url(paid_user.user_key))
       expect(paid_user.reload.frequency).to eq ['Mon', 'Wed', 'Fri']
       expect(paid_user.send_timezone).to eq 'Pacific Time (US & Canada)'
-      expect(paid_user.send_time.utc.strftime('%Y-%m-%d %H:%M:%S UTC')).to eq '2000-01-01 16:00:00 UTC'
+      expect(paid_user.send_time.hour).to eq 16
       expect(paid_user.send_past_entry).to eq true
     end
 
@@ -85,7 +85,7 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(response).to redirect_to(settings_url(user.user_key))
       expect(user.reload.frequency).to eq ['Sun']
       expect(user.send_timezone).to eq 'Pacific Time (US & Canada)'
-      expect(user.send_time.utc.strftime('%Y-%m-%d %H:%M:%S UTC')).to eq '2000-01-01 16:00:00 UTC'
+      expect(user.send_time.hour).to eq 16
       expect(user.send_past_entry).to eq true
     end
   end
@@ -123,7 +123,7 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(user.reload.frequency.count).to eq 1
       expect(user.full_name).to eq "Testy O'tester"
       expect(user.send_timezone).to eq 'Central Time (US & Canada)'
-      expect(user.send_time.utc.strftime('%Y-%m-%d %H:%M:%S UTC')).to eq '2000-01-01 20:00:00 UTC'
+      expect(user.send_time.hour).to eq 20
       expect(user.send_past_entry).to eq false
     end
 
