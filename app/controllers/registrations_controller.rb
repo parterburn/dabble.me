@@ -32,11 +32,12 @@ class RegistrationsController < Devise::RegistrationsController
       end
 
       # Add validation for send_time
-      if params[:user][:send_time].present?
+      if params[:user]["send_time(5i)"].present?
         params[:user].parse_time_select! :send_time
       else
         # Set a default time (e.g., 8:00 AM) if none provided
-        params[:user][:send_time] = "08:00:00"
+        params[:user]["send_time(5i)"] = "08:00:00"
+        params[:user].parse_time_select! :send_time
       end
 
       successfully_updated = if needs_password?
@@ -87,10 +88,12 @@ class RegistrationsController < Devise::RegistrationsController
     end
 
     # Add validation for send_time
-    if params[:user][:send_time].present?
+    if params[:user]["send_time(5i)"].present?
       params[:user].parse_time_select! :send_time
     else
-      params[:user][:send_time] = "08:00:00"
+      # Set a default time (e.g., 8:00 AM) if none provided
+      params[:user]["send_time(5i)"] = "08:00:00"
+      params[:user].parse_time_select! :send_time
     end
 
     if user.update_without_password(devise_parameter_sanitizer.sanitize(:preferences))
