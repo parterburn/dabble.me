@@ -19,7 +19,7 @@ class Entry
 
     def model
       # gpt-4o is better for coaching analysis
-      "gpt-4o"
+      "gpt-4.5-preview"
 
       # o3-mini is not supported for images
       # image_url_cdn.present? ? "gpt-4o" : "o3-mini"
