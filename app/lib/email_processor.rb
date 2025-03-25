@@ -126,7 +126,7 @@ class EmailProcessor
         existing_entry.save
         if existing_entry.image_url_cdn.blank?
           if best_attachment.present?
-            existing_entry.update(filepicker_url: "https://dabble-me.s3.amazonaws.com/uploading.png")
+            existing_entry.update(filepicker_url: "https://d10r8m94hrfowu.cloudfront.net/uploading.png")
             ProcessEntryImageJob.perform_later(
               existing_entry.id,
               attachment_data: {
@@ -145,8 +145,8 @@ class EmailProcessor
             image_urls = collage_from_attachments([best_attachment])
             ImageCollageJob.perform_later(existing_entry.id, urls: image_urls)
           elsif best_attachment_url.present?
-            existing_entry.update(filepicker_url: "https://dabble-me.s3.amazonaws.com/uploading.png")
-            existing_image = existing_entry.image_url_cdn == "https://dabble-me.s3.amazonaws.com/uploading.png" ? nil : existing_entry.image_url_cdn
+            existing_entry.update(filepicker_url: "https://d10r8m94hrfowu.cloudfront.net/uploading.png")
+            existing_image = existing_entry.image_url_cdn == "https://d10r8m94hrfowu.cloudfront.net/uploading.png" ? nil : existing_entry.image_url_cdn
             existing_entry.remote_image_url = collage_from_urls([best_attachment_url, existing_image])
             existing_entry.filepicker_url = nil
           end
@@ -170,7 +170,7 @@ class EmailProcessor
           entry = @user.entries.create!(params)
           entry.save
           if best_attachment.present?
-            entry.update(filepicker_url: "https://dabble-me.s3.amazonaws.com/uploading.png")
+            entry.update(filepicker_url: "https://d10r8m94hrfowu.cloudfront.net/uploading.png")
             ProcessEntryImageJob.perform_later(
               entry.id,
               attachment_data: {
@@ -182,7 +182,7 @@ class EmailProcessor
           elsif best_attachment_url.present? && best_attachment_url.starts_with?("mailgun_collage:")
             ImageCollageJob.perform_later(entry.id, message_id: best_attachment_url.gsub("mailgun_collage:", ""))
           elsif best_attachment_url.present?
-            entry.update(filepicker_url: "https://dabble-me.s3.amazonaws.com/uploading.png")
+            entry.update(filepicker_url: "https://d10r8m94hrfowu.cloudfront.net/uploading.png")
             entry.remote_image_url = best_attachment_url
             entry.filepicker_url = nil
             entry.save

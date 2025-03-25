@@ -122,8 +122,8 @@ class Entry < ActiveRecord::Base
 
   def image_url_cdn(cloudflare: true)
     if image.present?
-      "#{'https://dabble.me/cdn-cgi/image/quality=95/' if cloudflare }#{image.url}"
-    elsif filepicker_url == "https://dabble-me.s3.amazonaws.com/uploading.png"
+      "#{'https://dabble.me/cdn-cgi/image/quality=95/' if cloudflare }#{image.url.gsub('dabble-me.s3.amazonaws.com/uploads', 'd10r8m94hrfowu.cloudfront.net')}"
+    elsif filepicker_url == "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
       filepicker_url
     end
   end

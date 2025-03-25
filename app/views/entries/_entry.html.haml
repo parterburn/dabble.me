@@ -71,7 +71,7 @@
   .pictureFrame
     =link_to entry.image_url_cdn, target: "_blank" do
       =image_code(entry)
-    - if entry.image_url_cdn == "https://dabble-me.s3.amazonaws.com/uploading.png"
+    - if entry.image_url_cdn == "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
       :javascript
         setTimeout(function() { location.reload(); }, 4500);      
 .clearfix

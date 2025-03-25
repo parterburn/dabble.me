@@ -110,7 +110,7 @@ class EntriesController < ApplicationController
           image_urls = collage_from_attachments(Array(params[:entry][:image]))
           ImageCollageJob.perform_later(@existing_entry.id, urls: image_urls)
         elsif params[:entry][:image].present?
-          @existing_entry.filepicker_url = "https://dabble-me.s3.amazonaws.com/uploading.png"
+          @existing_entry.filepicker_url = "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
           best_attachment = params[:entry][:image].first
           ProcessEntryImageJob.perform_later(
             @existing_entry.id,
@@ -135,7 +135,7 @@ class EntriesController < ApplicationController
         image_urls = collage_from_attachments(params[:entry][:image])
         ImageCollageJob.perform_later(@entry.id, urls: image_urls)
       elsif params[:entry][:image].present?
-        @entry.filepicker_url = "https://dabble-me.s3.amazonaws.com/uploading.png"
+        @entry.filepicker_url = "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
         best_attachment = params[:entry][:image].first
         ProcessEntryImageJob.perform_later(
           @entry.id,
@@ -182,7 +182,7 @@ class EntriesController < ApplicationController
           image_urls = collage_from_attachments(Array(params[:entry][:image]))
           ImageCollageJob.perform_later(@existing_entry.id, urls: image_urls)
         else
-          @existing_entry.filepicker_url = "https://dabble-me.s3.amazonaws.com/uploading.png"
+          @existing_entry.filepicker_url = "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
           best_attachment = params[:entry][:image].first
           ProcessEntryImageJob.perform_later(
             @existing_entry.id,
@@ -218,7 +218,7 @@ class EntriesController < ApplicationController
           image_urls = collage_from_attachments(params[:entry][:image])
           ImageCollageJob.perform_later(@entry.id, urls: image_urls)
         elsif params[:entry][:image].present?
-          @entry.update(filepicker_url: "https://dabble-me.s3.amazonaws.com/uploading.png")
+          @entry.update(filepicker_url: "https://d10r8m94hrfowu.cloudfront.net/uploading.png")
           best_attachment = params[:entry][:image].first
           ProcessEntryImageJob.perform_later(
             @entry.id,
