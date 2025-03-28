@@ -218,15 +218,34 @@ class User < ActiveRecord::Base
   end
 
   def writing_streak
-    streak = entries.where(date: Date.today).size
-    date = Date.yesterday
-    while date
-      break unless entries.exists?(date: date)
+    # Find the first gap using a window function
+    gap_date = ActiveRecord::Base.connection.execute(<<-SQL)
+      WITH dates AS (
+        SELECT date,
+               LEAD(date) OVER (ORDER BY date DESC) as next_date
+        FROM entries
+        WHERE date < CURRENT_DATE
+        AND user_id = #{id}
+        ORDER BY date DESC
+      )
+      SELECT date
+      FROM dates
+      WHERE next_date IS NULL OR EXTRACT(EPOCH FROM (date - next_date))/86400 > 1
+      LIMIT 1
+    SQL
 
-      streak += 1
-      date -= 1.day
+    gap_date = gap_date.first&.fetch('date', nil)
+
+    # If no gap found, count all entries
+    if gap_date.nil?
+      entries.where(user_id: id).count
+    else
+      # Count entries from today until the gap
+      entries.where(user_id: id, date: gap_date..Date.today).count
     end
-    streak
+  rescue StandardError => e
+    Sentry.capture_exception(e, extra: { user_id: id })
+    0
   end
 
   def has_active_stripe_subscription?

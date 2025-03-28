@@ -41,7 +41,7 @@
         -if current_user.first_name.present?
           Welcome back, #{current_user.first_name}.
 
-        - if current_user.writing_streak.positive?
+        - if current_user.writing_streak > 1
           %span= "You're on a #{format_number(current_user.writing_streak)} day writing streak!"
         - else
           Here's your latest entry...
