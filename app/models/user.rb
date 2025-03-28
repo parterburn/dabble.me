@@ -218,13 +218,16 @@ class User < ActiveRecord::Base
   end
 
   def writing_streak
+    # Convert Rails timezone to PostgreSQL timezone identifier
+    pg_timezone = ActiveSupport::TimeZone::MAPPING[send_timezone] || 'UTC'
+
     # Find the first gap using a window function
     gap_date = ActiveRecord::Base.connection.execute(<<-SQL)
       WITH dates AS (
         SELECT date,
                LEAD(date) OVER (ORDER BY date DESC) as next_date
         FROM entries
-        WHERE date < CURRENT_DATE
+        WHERE date <= (CURRENT_TIMESTAMP AT TIME ZONE '#{pg_timezone}' AT TIME ZONE 'UTC')::date
         AND user_id = #{id}
         ORDER BY date DESC
       )
@@ -241,7 +244,7 @@ class User < ActiveRecord::Base
       entries.where(user_id: id).count
     else
       # Count entries from today until the gap
-      entries.where(user_id: id, date: gap_date..Date.today).count
+      entries.where(user_id: id, date: gap_date..Time.current.in_time_zone(send_timezone).to_date).count
     end
   rescue StandardError => e
     Sentry.capture_exception(e, extra: { user_id: id })

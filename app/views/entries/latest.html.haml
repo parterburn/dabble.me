@@ -43,6 +43,7 @@
 
         - if current_user.writing_streak > 1
           %span= "You're on a #{format_number(current_user.writing_streak)} day writing streak!"
+          = link_to "Write today's entry »", new_entry_path
         - else
           Here's your latest entry...
       %br
