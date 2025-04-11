@@ -427,10 +427,8 @@ class EntriesController < ApplicationController
 
   def collage_from_attachments(attachments, existing_image_url: nil)
     allowed_types = %w[image/jpeg image/png image/gif image/heic image/heif]
-    attachments.each do |att|
-      unless allowed_types.include?(Marcel::MimeType.for(att))
-        raise "Invalid file type"
-      end
+    attachments = attachments.select do |att|
+      allowed_types.include?(Marcel::MimeType.for(att))
     end
     s3 = Fog::Storage.new({
       provider:              "AWS",
