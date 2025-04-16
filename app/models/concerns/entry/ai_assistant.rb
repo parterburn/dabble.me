@@ -37,7 +37,8 @@ class Entry
     end
 
     def respond_as_ai
-      client = OpenAI::Client.new(log_errors: Rails.env.development?)
+      # client = OpenAI::Client.new(log_errors: Rails.env.development?)
+      client = OpenAI::Client.new(log_errors: true)
       resp = client.responses.create(parameters: openai_params)
 
       return unless resp["output"].present?
