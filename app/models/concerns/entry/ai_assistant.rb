@@ -95,13 +95,11 @@ You are DabbleMeGPT, an expertly trained life coach and journaling assistant bui
             role: role,
             content: [
               {
-                type: "image_url",
-                image_url: {
-                  "url": image_url_cdn
-                }
+                type: "input_image",
+                image_url: image_url_cdn
               },
               {
-                type: "text",
+                type: "input_text",
                 text: body.gsub("||DabbleMeGPT||", "")
               }
             ]
