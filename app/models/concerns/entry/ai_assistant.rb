@@ -3,13 +3,13 @@ class Entry
   module AiAssistant
     def ai_response
       entry_for_ai = entry_body
-      messages = [
+      @messages = [
         as_life_coach,
         related_entries,
         last_3_entries,
         entry_for_ai
-      ].flatten.compact
-      response = respond_as_ai(messages)
+      ].flatten.compact_blank
+      response = respond_as_ai
       markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML, autolink: true, tables: true, no_intra_emphasis: true, underline: true, footnotes: true)
       markdown.render(response)
     end
@@ -22,7 +22,7 @@ class Entry
 
     def openai_params
       params = {
-        input: [],
+        input: @messages,
         model: model,
         store: false
       }
@@ -36,11 +36,9 @@ class Entry
       params
     end
 
-    def respond_as_ai(messages)
+    def respond_as_ai
       client = OpenAI::Client.new(log_errors: Rails.env.development?)
-      params = openai_params
-      params[:input] << messages
-      resp = client.responses.create(parameters: params)
+      resp = client.responses.create(parameters: openai_params)
 
       return unless resp["output"].present?
 
