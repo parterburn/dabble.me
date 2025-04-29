@@ -376,6 +376,9 @@ class EmailProcessor
     html = html.split('<br id=\"lineBreakAtBeginningOfSignature\">').first # strip out gmail signature
     html = html.split('<br id="lineBreakAtBeginningOfSignature">').first # strip out gmail signature
     html = ActionController::Base.helpers.sanitize(html, tags: %w(strong em a div span ul ol li b i br p hr u em blockquote), attributes: %w(href target))
+    html = html.gsub(/\n\n/, "<br><br>") # convert line breaks
+    html = html.gsub(/\n\r?|\r\n?/, "<br>") # convert line breaks
+    html = html.gsub(/\n/, "<br>") # convert line breaks
     html = html.split("<br>--<br>").first # strip out gmail signature
     html = html.presence || ""
     html = html.split("<div><br></div>\n<div>--</div>").first # strip out gmail signature
