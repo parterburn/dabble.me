@@ -82,11 +82,13 @@ class ImageUploader < CarrierWave::Uploader::Base
   #   filename.gsub(/\.heic/i, ".jpg").gsub(/\.heif/i, ".jpg")
   # end
 
-  # def filename
-  #   name = super
-  #   name = name&.gsub(/\.heic/i, ".jpg")&.gsub(/\.heif/i, ".jpg")
-  #   name
-  # end
+  def filename
+    return unless original_filename
+    return unless heic_image?(self)
+
+    basename = File.basename(original_filename, '.*')
+    "#{basename}.jpg"
+  end
 
   def original_dimensions(file)
     # Add timeout protection for MiniMagick
