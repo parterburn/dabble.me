@@ -17,7 +17,9 @@ class ImageCollageJob < ActiveJob::Base
     else
       filestack_collage_url = collage_from_urls(urls + [@existing_url])
     end
-    entry.update(remote_image_url: filestack_collage_url, filepicker_url: nil)
+    entry.update(filepicker_url: nil)
+    entry.remote_image_url = filestack_collage_url
+    entry.save
   end
 
   def collage_from_mailgun_attachments
@@ -58,7 +60,7 @@ class ImageCollageJob < ActiveJob::Base
     return unless message.present? && message["recipients"].to_s.include?(@user.user_key) || message["from"].to_s.include?(@user.email)
 
     attachment_urls = message["attachments"].map do |att|
-      next unless att["content-type"]&.downcase.in?(['image/gif', 'image/jpeg', 'image/jpg', 'application/octet-stream', 'image/webp', 'image/png', 'image/heic', 'image/heif'])
+      next unless Entry::ALLOWED_IMAGE_TYPES.include?(att["content-type"]&.downcase)
       next unless att["size"].to_i > 20_000
 
       att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")

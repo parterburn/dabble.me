@@ -6,6 +6,8 @@ class Entry < ActiveRecord::Base
   include Entry::AiAssistant
   mount_uploader :image, ImageUploader
 
+  ALLOWED_IMAGE_TYPES = %w[image/jpg image/jpeg image/png image/gif image/webp image/heic image/heif image/heic-sequence image/heif-sequence application/octet-stream]
+
   WORDS_NOT_TO_COUNT = ['s', 'amp', '-', 'p', 'br', 'div', 'img', 'span', 'hr', '<', '>']
   COMMON_WORDS = WORDS_NOT_TO_COUNT + ['has', 'did', "you're", 'your', 'we', 'i', "it's", 'dabblemegpt', 'like', 'these', 'you', 'so', 'went', 'while', 's', 'amp', '-', 'p', 'br', 'div', 'img', 'span', 'the', 'of', 'and', 'a', 'to', 'in', 'is', 'that', 'it', 'was', 'for', 'on', 'are', 'as', 'with', 'at', 'be', 'this', 'have', 'from', 'or', 'had', 'by', 'but', 'not', 'what', 'all', 'were', 'when', 'can', 'said', 'there', 'use', 'an', 'each', 'which', 'do', 'how', 'if']
 
@@ -14,7 +16,7 @@ class Entry < ActiveRecord::Base
 
   validates :date, presence: true, valid_date: true
   validates :image, file_size: { less_than_or_equal_to: 20.megabytes },
-                    file_content_type: { allow: ['image/gif', 'image/jpeg', 'image/jpg', 'application/octet-stream', 'image/png', 'image/webp', 'image/heic', 'image/heif'] }
+                    file_content_type: { allow: ALLOWED_IMAGE_TYPES }
 
   alias_attribute :entry, :body
 

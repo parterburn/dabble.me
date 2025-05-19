@@ -112,14 +112,18 @@ class EntriesController < ApplicationController
         elsif params[:entry][:image].present?
           @existing_entry.filepicker_url = "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
           best_attachment = params[:entry][:image].first
-          ProcessEntryImageJob.perform_later(
-            @existing_entry.id,
-            attachment_data: {
-              content_type: best_attachment.content_type,
-              original_filename: best_attachment.original_filename,
-              data: Base64.strict_encode64(File.read(best_attachment.tempfile))
-            }
-          )
+          if best_attachment.content_type.in?(Entry::ALLOWED_IMAGE_TYPES) && best_attachment.original_filename&.downcase&.ends_with?(*%w[.heic .heif .jpg .jpeg .gif .png .webp])
+            ProcessEntryImageJob.perform_later(
+              @existing_entry.id,
+              attachment_data: {
+                content_type: best_attachment.content_type,
+                original_filename: best_attachment.original_filename,
+                data: Base64.strict_encode64(File.read(best_attachment.tempfile))
+              }
+            )
+          else
+            @existing_entry.filepicker_url = nil
+          end
         end
       end
       if @existing_entry.save
@@ -137,14 +141,17 @@ class EntriesController < ApplicationController
       elsif params[:entry][:image].present?
         @entry.filepicker_url = "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
         best_attachment = params[:entry][:image].first
-        ProcessEntryImageJob.perform_later(
-          @entry.id,
-          attachment_data: {
-            content_type: best_attachment.content_type,
-            original_filename: best_attachment.original_filename,
+        if best_attachment.content_type.in?(Entry::ALLOWED_IMAGE_TYPES) && best_attachment.original_filename&.downcase&.ends_with?(*%w[.heic .heif .jpg .jpeg .gif .png .webp])
+          ProcessEntryImageJob.perform_later(
+            @entry.id,
+            attachment_data: {
+              content_type: best_attachment.content_type,
+              original_filename: best_attachment.original_filename,
             data: Base64.strict_encode64(File.read(best_attachment.tempfile))
-          }
-        )
+          })
+        else
+          @entry.filepicker_url = nil
+        end
       end
 
       if @entry.save
@@ -184,14 +191,18 @@ class EntriesController < ApplicationController
         else
           @existing_entry.filepicker_url = "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
           best_attachment = params[:entry][:image].first
-          ProcessEntryImageJob.perform_later(
-            @existing_entry.id,
-            attachment_data: {
-              content_type: best_attachment.content_type,
-              original_filename: best_attachment.original_filename,
-              data: Base64.strict_encode64(File.read(best_attachment.tempfile))
-            }
-          )
+          if best_attachment.content_type.in?(Entry::ALLOWED_IMAGE_TYPES) && best_attachment.original_filename&.downcase&.ends_with?(*%w[.heic .heif .jpg .jpeg .gif .png .webp])
+            ProcessEntryImageJob.perform_later(
+              @existing_entry.id,
+              attachment_data: {
+                content_type: best_attachment.content_type,
+                original_filename: best_attachment.original_filename,
+                data: Base64.strict_encode64(File.read(best_attachment.tempfile))
+              }
+            )
+          else
+            @existing_entry.filepicker_url = nil
+          end
         end
       end
       if @existing_entry.save
@@ -220,14 +231,18 @@ class EntriesController < ApplicationController
         elsif params[:entry][:image].present?
           @entry.update(filepicker_url: "https://d10r8m94hrfowu.cloudfront.net/uploading.png")
           best_attachment = params[:entry][:image].first
-          ProcessEntryImageJob.perform_later(
-            @entry.id,
-            attachment_data: {
-              content_type: best_attachment.content_type,
-              original_filename: best_attachment.original_filename,
-              data: Base64.strict_encode64(File.read(best_attachment.tempfile))
-            }
-          )
+          if best_attachment.content_type.in?(Entry::ALLOWED_IMAGE_TYPES) && best_attachment.original_filename&.downcase&.ends_with?(*%w[.heic .heif .jpg .jpeg .gif .png .webp])
+            ProcessEntryImageJob.perform_later(
+              @entry.id,
+              attachment_data: {
+                content_type: best_attachment.content_type,
+                original_filename: best_attachment.original_filename,
+                data: Base64.strict_encode64(File.read(best_attachment.tempfile))
+              }
+            )
+          else
+            @entry.update(filepicker_url: nil)
+          end
         end
         track_ga_event('Update')
         flash[:notice] = "Entry successfully updated!"
@@ -426,9 +441,8 @@ class EntriesController < ApplicationController
   helper_method :spotify_entries
 
   def collage_from_attachments(attachments, existing_image_url: nil)
-    allowed_types = %w[image/jpeg image/png image/gif image/heic image/heif]
     attachments = attachments.select do |att|
-      allowed_types.include?(Marcel::MimeType.for(att))
+      Entry::ALLOWED_IMAGE_TYPES.include?(Marcel::MimeType.for(att))
     end
     s3 = Fog::Storage.new({
       provider:              "AWS",
