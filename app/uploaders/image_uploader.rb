@@ -5,7 +5,7 @@ class ImageUploader < CarrierWave::Uploader::Base
 
   storage :fog
 
-  process :convert_to_jpg, if: :heic_image?
+  process :convert_to_jpg_if_heic
   process :clear_generic_content_type
   process :auto_orient, if: :web_image?
   process size_and_optimize: [{resize_to: "1200x1200>", quality: "95"}], if: :web_image?
@@ -57,6 +57,13 @@ class ImageUploader < CarrierWave::Uploader::Base
     content_type.in?(%w[image/heic image/heif]) || ext.in?(%w[.heic .heif])
   end
 
+  def convert_to_jpg_if_heic
+    return if file.nil?
+    return if File.extname(file.path)&.downcase != '.heic'
+
+    self.class.process convert: :jpg
+  end
+
   # def webp_image?(file)
   #   self.content_type == "image/webp" || self.filename =~ /^.+\.(Webp|webp|WEBP)$/i
   # end
@@ -70,10 +77,10 @@ class ImageUploader < CarrierWave::Uploader::Base
     file.content_type = nil if GENERIC_CONTENT_TYPES.include?(file.try(:content_type))
   end
 
-  def full_filename(file)
-    filename = super(file)
-    filename.gsub(/\.heic/i, ".jpg").gsub(/\.heif/i, ".jpg")
-  end
+  # def full_filename(file)
+  #   filename = super(file)
+  #   filename.gsub(/\.heic/i, ".jpg").gsub(/\.heif/i, ".jpg")
+  # end
 
   # def filename
   #   name = super
