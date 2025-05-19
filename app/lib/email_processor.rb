@@ -58,7 +58,7 @@ class EmailProcessor
 
           next if attachment&.original_filename.to_s.downcase.include?("linkedin_icon_circle.svg.png")
 
-          if (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|webp|gif|heic|heif)$/i || attachment&.original_filename.to_s =~ /^(.+\.(heic|heif))$/i) && file_size > 20000
+          if (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|webp|gif|heic|heif)$/i || attachment&.original_filename.to_s =~ /^(.+\.(heic|heif))$/i) && file_size > 20_000
             valid_attachments << attachment
           end
         end
@@ -71,6 +71,7 @@ class EmailProcessor
       end
 
       # If image came in as a URL, try saving that
+      # We do not support a mix of attachments and inline images
       if best_attachment_url.blank? && best_attachment.blank? && @stripped_html.present?
         email_reply_html = @stripped_html&.split(/reply to this email with your /i)&.first
         image_urls = email_reply_html&.scan(/<img\s.*?src=(?:'|")([^'">]+)(?:'|")/i)
@@ -323,8 +324,8 @@ class EmailProcessor
     body&.gsub!(/\n\n\n/, "\n\n \n\n") # allow double line breaks
     body = unfold_paragraphs(body) unless @from.include?('yahoo.com') # fix wrapped plain text, but yahoo messes this up
     body&.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "(see attached image)") # remove "Inline image" text from griddler
-    body&.gsub!(/(?:\n\r?|\r\n?)/, "<br>") # convert line breaks
-    body&.gsub!(/(?:\n\n?|\n\n?)/, "<br><br>") # convert line breaks for iOS Mail
+    body.gsub!(/(\r\n|\n|\r){2,}/, '<br><br>') # paragraphs
+    body.gsub!(/(\r\n|\n|\r)/, '<br>')         # single line breaks
     body = "<p>#{body}</p>" # basic formatting
     body&.gsub!(/<(http[s]?:\/\/\S*?)>/, "(\\1)") # convert links to show up
     body&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
