@@ -13,7 +13,7 @@ end
 
 module CarrierWave
   module MiniMagick
-    def size_and_optimize(resize_to: nil, quality: "90")
+    def size_and_optimize(resize_to: nil, quality: "95")
       manipulate! do |img|
         img.resize resize_to if resize_to.present?
         img.strip
@@ -46,13 +46,14 @@ module CarrierWave
       Sentry.capture_exception(error, level: "warning")
     end
 
-    # def convert_to_jpg
-    #   manipulate! do |image|
-    #     image.format("jpg")
-    #     image
-    #   end
-    # rescue => error
-    #   Sentry.capture_exception(error, level: "warning")
-    # end
+    def convert_to_jpg
+      manipulate! do |image|
+        image.format("jpg")
+        image.content_type = "image/jpeg"
+        image
+      end
+    rescue => error
+      Sentry.capture_exception(error, level: "warning")
+    end
   end
 end

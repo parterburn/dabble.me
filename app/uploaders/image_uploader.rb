@@ -5,8 +5,8 @@ class ImageUploader < CarrierWave::Uploader::Base
 
   storage :fog
 
-  process :convert_to_jpg_if_heic
   process :clear_generic_content_type
+  process :convert_to_jpg, if: :heic_image?
   process :auto_orient, if: :web_image?
   process size_and_optimize: [{resize_to: "1200x1200>", quality: "95"}], if: :web_image?
 
@@ -38,9 +38,8 @@ class ImageUploader < CarrierWave::Uploader::Base
       @original_width && @original_height && @original_width.to_i < 8000 && @original_height.to_i < 8000
     ) &&
       (
-        heic_image?(file) ||
-        !!(file.content_type =~ /^image\/(png|jpe?g|webp|gif)$/i) ||
-        !!(file.filename =~ /\.(png|jpe?g|webp|gif)$/i)
+        !!(file.content_type =~ /^image\/(png|jpe?g|webp|gif|heic|heif)$/i) ||
+        !!(file.filename =~ /\.(png|jpe?g|webp|gif|heic|heif)$/i)
       )
   end
 
@@ -57,17 +56,6 @@ class ImageUploader < CarrierWave::Uploader::Base
     content_type.in?(%w[image/heic image/heif]) || ext.in?(%w[.heic .heif])
   end
 
-  def convert_to_jpg_if_heic
-    return if file.nil?
-    return if File.extname(file.path)&.downcase != '.heic'
-
-    self.class.process convert: :jpg
-  end
-
-  # def webp_image?(file)
-  #   self.content_type == "image/webp" || self.filename =~ /^.+\.(Webp|webp|WEBP)$/i
-  # end
-
   def store_dir
     add_dev = "/development" unless Rails.env.production?
     "uploads#{add_dev}/#{model.user.user_key}/#{model.date.strftime("%Y-%m-%d")}"
@@ -78,17 +66,16 @@ class ImageUploader < CarrierWave::Uploader::Base
   end
 
   # def full_filename(file)
-  #   filename = super(file)
-  #   filename.gsub(/\.heic/i, ".jpg").gsub(/\.heif/i, ".jpg")
+  #   fname = super(file)
+  #   fname.gsub(/\.heic/i, ".jpg").gsub(/\.heif/i, ".jpg")
   # end
 
-  def filename
-    return unless original_filename
-    return unless heic_image?(self)
+  # def filename
+  #   return super unless original_filename.present?
 
-    basename = File.basename(original_filename, '.*')
-    "#{basename}.jpg"
-  end
+  #   basename = File.basename(original_filename, '.*')
+  #   "#{basename}.jpg"
+  # end
 
   def original_dimensions(file)
     # Add timeout protection for MiniMagick

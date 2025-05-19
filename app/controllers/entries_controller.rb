@@ -444,6 +444,7 @@ class EntriesController < ApplicationController
     attachments = attachments.select do |att|
       Entry::ALLOWED_IMAGE_TYPES.include?(Marcel::MimeType.for(att))
     end
+
     s3 = Fog::Storage.new({
       provider:              "AWS",
       aws_access_key_id:     ENV["AWS_ACCESS_KEY_ID"],
@@ -456,6 +457,18 @@ class EntriesController < ApplicationController
     folder = "uploads#{add_dev}/tmp/#{Date.today.strftime("%Y-%m-%d")}/"
 
     attachments.first(7).map do |att|
+      begin
+        img = MiniMagick::Image.open(att.path)
+        img.auto_orient
+        img.format 'jpg'
+        img.resize '1200x1200>'
+        img.quality '80'
+        img.write(att.path)
+        att.rewind
+        att.content_type = 'image/jpeg'
+      rescue => e
+        Rails.logger.error("ProcessEntryImageJob image processing failed: #{e.message}")
+      end
       file_key = "#{folder}#{SecureRandom.uuid}#{File.extname(att)}"
       file = directory.files.create(key: file_key, body: att, public: true, content_disposition: "inline", cache_control: "public, max-age=#{365.days.to_i}")
       file.public_url
