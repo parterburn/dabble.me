@@ -123,7 +123,7 @@ class Entry < ActiveRecord::Base
   end
 
   def image_url_cdn(cloudflare: true)
-    if image.present? && !image.filename(original: true)&.downcase&.ends_with?(".heic", ".heif")
+    if image.present? && !image.filename&.downcase&.ends_with?(".heic", ".heif")
       "#{'https://dabble.me/cdn-cgi/image/quality=95/' if cloudflare }#{image.url.gsub('dabble-me.s3.amazonaws.com/uploads', 'd10r8m94hrfowu.cloudfront.net')}"
     elsif filepicker_url == "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
       filepicker_url
