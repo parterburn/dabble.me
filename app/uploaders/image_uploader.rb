@@ -75,8 +75,10 @@ class ImageUploader < CarrierWave::Uploader::Base
     filename.gsub(/\.heic/i, ".jpg").gsub(/\.heif/i, ".jpg")
   end
 
-  def filename
-    super.gsub(/\.heic/i, ".jpg").gsub(/\.heif/i, ".jpg")
+  def filename(original: false)
+    filename = super
+    filename = filename&.gsub(/\.heic/i, ".jpg")&.gsub(/\.heif/i, ".jpg") unless original
+    filename
   end
 
   def original_dimensions(file)
