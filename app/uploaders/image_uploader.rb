@@ -2,8 +2,19 @@ class ImageUploader < CarrierWave::Uploader::Base
   include CarrierWave::Vips
 
   storage :fog
-  process convert: 'jpg', if: :heic_image?
+
+  version :jpeg, if: :heic_image? do
+    process convert: :jpg
+  end
   process resize_to_limit: [1200, 1200, combine_options: { saver: { quality: 90 } }], if: :web_image?
+
+  def url(*args)
+    if version_active?(:jpeg)
+      jpeg.url(*args)
+    else
+      super
+    end
+  end
 
   def content_type_allowlist
     [/(image|application)\/(png|jpe?g|gif|webp|heic|heif|octet-stream)/]
