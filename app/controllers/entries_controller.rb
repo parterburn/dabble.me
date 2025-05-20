@@ -469,18 +469,19 @@ class EntriesController < ApplicationController
   end
 
   def process_single_image(entry, attachment)
-    temp_dir = Rails.root.join('tmp', 'image_uploads')
-    FileUtils.mkdir_p(temp_dir)
-    temp_file_path = File.join(temp_dir, "entry_#{entry.id}_#{SecureRandom.hex(8)}#{File.extname(attachment.original_filename)}")
+    s3 = Fog::Storage.new({
+      provider:              "AWS",
+      aws_access_key_id:     ENV["AWS_ACCESS_KEY_ID"],
+      aws_secret_access_key: ENV["AWS_SECRET_ACCESS_KEY"],
+    })
 
-    FileUtils.cp(attachment.tempfile.path, temp_file_path)
+    file_key = "uploads/tmp/#{entry.user.id}/#{Date.today.strftime("%Y-%m-%d")}/#{SecureRandom.uuid}#{File.extname(attachment.original_filename)}"
+    directory = s3.directories.new(key: ENV["AWS_BUCKET"])
+    file = directory.files.create(key: file_key, body: attachment.read, public: true, content_disposition: "inline", cache_control: "public, max-age=#{365.days.to_i}")
 
     ProcessEntryImageJob.perform_later(
       entry.id,
-      {
-        temp_file_path: temp_file_path,
-        original_filename: attachment.original_filename
-      }
+      file.key
     )
   end
 end
