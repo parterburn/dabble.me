@@ -108,7 +108,8 @@ class Entry < ActiveRecord::Base
   end
 
   def sanitized_body
-    body_sanitized = ActionController::Base.helpers.sanitize self.body, tags: %w(br p)
+    safe_list_sanitizer = Rails::HTML5::SafeListSanitizer.new
+    body_sanitized = safe_list_sanitizer.sanitize(self.body, tags: %w(br p))
     body_sanitized.gsub!(/\A(\n\n)/,"") if body_sanitized
     body_sanitized.gsub!(/(\<\n\n>)\z/,"") if body_sanitized
 
