@@ -113,14 +113,7 @@ class EntriesController < ApplicationController
           @existing_entry.filepicker_url = "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
           best_attachment = params[:entry][:image].first
           if best_attachment.content_type.in?(Entry::ALLOWED_IMAGE_TYPES) && best_attachment.original_filename&.downcase&.ends_with?(*%w[.heic .heif .jpg .jpeg .gif .png .webp])
-            ProcessEntryImageJob.perform_later(
-              @existing_entry.id,
-              attachment_data: {
-                content_type: best_attachment.content_type,
-                original_filename: best_attachment.original_filename,
-                data: Base64.strict_encode64(File.read(best_attachment.tempfile))
-              }
-            )
+            process_single_image(@existing_entry, best_attachment)
           else
             @existing_entry.filepicker_url = nil
           end
@@ -142,13 +135,7 @@ class EntriesController < ApplicationController
         @entry.filepicker_url = "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
         best_attachment = params[:entry][:image].first
         if best_attachment.content_type.in?(Entry::ALLOWED_IMAGE_TYPES) && best_attachment.original_filename&.downcase&.ends_with?(*%w[.heic .heif .jpg .jpeg .gif .png .webp])
-          ProcessEntryImageJob.perform_later(
-            @entry.id,
-            attachment_data: {
-              content_type: best_attachment.content_type,
-              original_filename: best_attachment.original_filename,
-            data: Base64.strict_encode64(File.read(best_attachment.tempfile))
-          })
+          process_single_image(@entry, best_attachment)
         else
           @entry.filepicker_url = nil
         end
@@ -192,14 +179,7 @@ class EntriesController < ApplicationController
           @existing_entry.filepicker_url = "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
           best_attachment = params[:entry][:image].first
           if best_attachment.content_type.in?(Entry::ALLOWED_IMAGE_TYPES) && best_attachment.original_filename&.downcase&.ends_with?(*%w[.heic .heif .jpg .jpeg .gif .png .webp])
-            ProcessEntryImageJob.perform_later(
-              @existing_entry.id,
-              attachment_data: {
-                content_type: best_attachment.content_type,
-                original_filename: best_attachment.original_filename,
-                data: Base64.strict_encode64(File.read(best_attachment.tempfile))
-              }
-            )
+            process_single_image(@existing_entry, best_attachment)
           else
             @existing_entry.filepicker_url = nil
           end
@@ -232,14 +212,7 @@ class EntriesController < ApplicationController
           @entry.update(filepicker_url: "https://d10r8m94hrfowu.cloudfront.net/uploading.png")
           best_attachment = params[:entry][:image].first
           if best_attachment.content_type.in?(Entry::ALLOWED_IMAGE_TYPES) && best_attachment.original_filename&.downcase&.ends_with?(*%w[.heic .heif .jpg .jpeg .gif .png .webp])
-            ProcessEntryImageJob.perform_later(
-              @entry.id,
-              attachment_data: {
-                content_type: best_attachment.content_type,
-                original_filename: best_attachment.original_filename,
-                data: Base64.strict_encode64(File.read(best_attachment.tempfile))
-              }
-            )
+            process_single_image(@entry, best_attachment)
           else
             @entry.update(filepicker_url: nil)
           end
@@ -496,5 +469,21 @@ class EntriesController < ApplicationController
 
   def sanitize_search_term(term)
     sanitize(term, tags: [])
+  end
+
+  def process_single_image(entry, attachment)
+    temp_dir = Rails.root.join('tmp', 'image_uploads')
+    FileUtils.mkdir_p(temp_dir)
+    temp_file_path = File.join(temp_dir, "entry_#{entry.id}_#{SecureRandom.hex(8)}#{File.extname(attachment.original_filename)}")
+
+    FileUtils.cp(attachment.tempfile.path, temp_file_path)
+
+    ProcessEntryImageJob.perform_later(
+      entry.id,
+      {
+        temp_file_path: temp_file_path,
+        original_filename: attachment.original_filename
+      }
+    )
   end
 end

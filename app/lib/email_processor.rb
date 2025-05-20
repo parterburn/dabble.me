@@ -128,14 +128,7 @@ class EmailProcessor
         if existing_entry.image_url_cdn.blank?
           if best_attachment.present?
             existing_entry.update(filepicker_url: "https://d10r8m94hrfowu.cloudfront.net/uploading.png")
-            ProcessEntryImageJob.perform_later(
-              existing_entry.id,
-              attachment_data: {
-                content_type: best_attachment.content_type,
-                original_filename: best_attachment.original_filename,
-                data: Base64.strict_encode64(File.read(best_attachment.tempfile))
-              }
-            )
+            process_single_image(existing_entry, best_attachment)
           elsif best_attachment_url.present? && best_attachment_url.starts_with?("mailgun_collage:")
             ImageCollageJob.perform_later(existing_entry.id, message_id: best_attachment_url.gsub("mailgun_collage:", ""))
           elsif best_attachment_url.present?
@@ -171,15 +164,7 @@ class EmailProcessor
           entry = @user.entries.create!(params)
           entry.save
           if best_attachment.present?
-            entry.update(filepicker_url: "https://d10r8m94hrfowu.cloudfront.net/uploading.png")
-            ProcessEntryImageJob.perform_later(
-              entry.id,
-              attachment_data: {
-                content_type: best_attachment.content_type,
-                original_filename: best_attachment.original_filename,
-                data: Base64.strict_encode64(File.read(best_attachment.tempfile))
-              }
-            )
+            process_single_image(entry, best_attachment)
           elsif best_attachment_url.present? && best_attachment_url.starts_with?("mailgun_collage:")
             ImageCollageJob.perform_later(entry.id, message_id: best_attachment_url.gsub("mailgun_collage:", ""))
           elsif best_attachment_url.present?
@@ -486,6 +471,22 @@ class EmailProcessor
       first_url = urls.first.include?("%40") ? urls.first : CGI.escape(urls.first) # don't escape if already escaped
       "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:[#{urls[1..-1].map(&:inspect).join(',')}],w:1200,h:1200,m:1/#{first_url}"
     end
+  end
+
+  def process_single_image(entry, attachment)
+    temp_dir = Rails.root.join('tmp', 'image_uploads')
+    FileUtils.mkdir_p(temp_dir)
+    temp_file_path = File.join(temp_dir, "entry_#{entry.id}_#{SecureRandom.hex(8)}#{File.extname(attachment.original_filename)}")
+
+    FileUtils.cp(attachment.tempfile.path, temp_file_path)
+
+    ProcessEntryImageJob.perform_later(
+      entry.id,
+      {
+        temp_file_path: temp_file_path,
+        original_filename: attachment.original_filename
+      }
+    )
   end
 end
 # rubocop:enable Metrics/AbcSize
