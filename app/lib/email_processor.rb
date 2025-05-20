@@ -319,14 +319,19 @@ class EmailProcessor
 
     body = EmailReplyTrimmer.trim(body)
 
+    body.gsub!(/\A(\s*\r\n|\s*\n|\s*\r)*/, '')  # Remove leading breaks
+    body.gsub!(/(\s*\r\n|\s*\n|\s*\r)*\z/, '')  # Remove trailing breaks
+
     body&.gsub!(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"") # remove embedded images
     body&.gsub!(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()") # remove embedded images
     body&.gsub!(/\n\n\n/, "\n\n \n\n") # allow double line breaks
     body = unfold_paragraphs(body) unless @from.include?('yahoo.com') # fix wrapped plain text, but yahoo messes this up
     body&.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "(see attached image)") # remove "Inline image" text from griddler
-    body.gsub!(/(\r\n|\n|\r){2,}/, '<div><br><br></div>') # paragraphs
-    body.gsub!(/(\r\n|\n|\r)/, '<div><br></div>')         # single line breaks
-    body = "<p>#{body}</p>" # basic formatting
+
+    paragraphs = body.split(/(\s*\r\n\s*|\s*\n\s*|\s*\r\s*){2,}/)
+    body = paragraphs.map { |p| "<p>#{p}</p>" }.join("\n")
+    body.gsub!(/(\r\n|\n|\r)/, '<br>')
+
     body&.gsub!(/<(http[s]?:\/\/\S*?)>/, "(\\1)") # convert links to show up
     body&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
     body&.gsub!(/--( \*)?$\z/, "") # remove gmail signature break
@@ -370,15 +375,22 @@ class EmailProcessor
 
     return unless html.present?
 
+
     html&.gsub!("<html>", "")&.gsub!("</html>", "")&.gsub!("<body>", "")&.gsub!("</body>", "")&.gsub!("<head>", "")&.gsub!("</head>", "")
 
     html = Rinku.auto_link(html, :all, 'target="_blank"')
     html = html.split("<br id=\"lineBreakAtBeginningOfSignature\">").first # strip out gmail signature
     html = html.split('<br id=\"lineBreakAtBeginningOfSignature\">').first # strip out gmail signature
     html = html.split('<br id="lineBreakAtBeginningOfSignature">').first # strip out gmail signature
+    html.gsub!(/\A(\s*\r\n|\s*\n|\s*\r)*/, '')  # Remove leading breaks
+    html.gsub!(/(\s*\r\n|\s*\n|\s*\r)*\z/, '')  # Remove trailing breaks
+
     html = ActionController::Base.helpers.sanitize(html, tags: %w(strong em a div span ul ol li b i br p hr u em blockquote), attributes: %w(href target))
-    html = html&.gsub(/(\r\n|\n|\r){2,}/, '<div><br><br></div>') # paragraphs
-    html = html&.gsub(/(\r\n|\n|\r)/, '<div><br></div>')         # single line breaks
+
+    paragraphs = html&.split(/(\s*\r\n\s*|\s*\n\s*|\s*\r\s*){2,}/)
+    html = paragraphs.map { |p| "<p>#{p}</p>" }.join("\n")
+    html&.gsub!(/(\r\n|\n|\r)/, '<br>')
+
     html = html&.split("<br>--<br>")&.first # strip out gmail signature
     html = html&.split("<div><br></div>\n<div>--</div>")&.first # strip out gmail signature
     html = html&.split("<br>--")&.first # strip out gmail signature

@@ -457,20 +457,36 @@ class EntriesController < ApplicationController
     folder = "uploads#{add_dev}/tmp/#{Date.today.strftime("%Y-%m-%d")}/"
 
     attachments.first(7).map do |att|
-      begin
-        img = MiniMagick::Image.open(att.path)
-        img.auto_orient
-        img.format 'jpg'
-        img.resize '1200x1200>'
-        img.quality '80'
-        img.write(att.path)
-        att.rewind
-        att.content_type = 'image/jpeg'
-      rescue => e
-        Rails.logger.error("ProcessEntryImageJob image processing failed: #{e.message}")
+      # Convert HEIC to JPEG if needed
+      filename = att.original_filename
+      if File.extname(att.original_filename)&.downcase == ".heic"
+        begin
+          require 'mini_magick'
+
+          # Create a new tempfile for the converted image
+          jpg_tempfile = Tempfile.new([filename.gsub(/\.heic$/i, ''), '.jpg'])
+
+          # Modify the original filename to change the extension
+          filename = filename.gsub(/\.heic$/i, '.jpg')
+
+          # Convert the image using MiniMagick
+          image = MiniMagick::Image.new(att.path)
+          image.format "jpg"
+          image.resize '1200x1200>'
+          image.quality '95'
+          image.write jpg_tempfile.path
+
+          # Use the converted file instead
+          jpg_tempfile.rewind
+          att = jpg_tempfile
+        rescue => e
+          Rails.logger.error "Failed to convert HEIC to JPEG: #{e.message}"
+        end
       end
-      file_key = "#{folder}#{SecureRandom.uuid}#{File.extname(att)}"
+
+      file_key = "#{folder}#{SecureRandom.uuid}#{File.extname(filename)}"
       file = directory.files.create(key: file_key, body: att, public: true, content_disposition: "inline", cache_control: "public, max-age=#{365.days.to_i}")
+      jpg_tempfile.close! if jpg_tempfile
       file.public_url
     end
   end
