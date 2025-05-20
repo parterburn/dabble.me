@@ -1,5 +1,5 @@
 libpoppler-glib8
-libheif-dev=1.19.8-1
 libheif=1.19.8
+libheif-dev=1.19.8
 libvips-dev
 libvips
