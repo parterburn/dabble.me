@@ -75,7 +75,45 @@ class ImageCollageJob < ActiveJob::Base
     return nil unless urls.present?
 
     urls.reject! { |url| url&.include?("googleusercontent.com/mail-sig/") }
-    urls.compact!
+
+    urls = urls.map do |url|
+      if url.to_s.downcase.ends_with?(".heic")
+        begin
+          file = URI.parse(url).open
+          tempfile = ImageConverter.new(tempfile: file, width: 1200).call
+          filename = "#{SecureRandom.uuid}.jpg"
+          jpeg_file = ActionDispatch::Http::UploadedFile.new(
+            {
+              filename: filename,
+              tempfile: tempfile,
+              type: 'image/jpg',
+              head: "Content-Disposition: form-data; name=\"property[images][]\"; filename=\"#{filename}\"\r\nContent-Type: image/jpg\r\n"
+            }
+          )
+
+          s3 = Fog::Storage.new({
+            provider:              "AWS",
+            aws_access_key_id:     ENV["AWS_ACCESS_KEY_ID"],
+            aws_secret_access_key: ENV["AWS_SECRET_ACCESS_KEY"],
+          })
+          directory = s3.directories.new(key: ENV["AWS_BUCKET"])
+
+          add_dev = "/development" unless Rails.env.production?
+          folder = "uploads#{add_dev}/#{@user.id}/collages/#{Date.today.strftime("%Y-%m-%d")}/"
+          file_key = "#{folder}#{filename}"
+          file = directory.files.create(key: file_key, body: jpeg_file, public: true, content_disposition: "inline", cache_control: "public, max-age=#{365.days.to_i}")
+          jpeg_file.tempfile.close
+          jpeg_file.tempfile.unlink rescue nil
+
+          file.public_url
+        rescue => e
+          p e
+          nil
+        end
+      else
+        url
+      end
+    end.compact_blank
 
     if urls.size == 1 && urls.first.starts_with?("http")
       urls.first
