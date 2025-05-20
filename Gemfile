@@ -48,7 +48,7 @@ gem "kaminari", ">= 1.2.1" # pagination
  # Image Uploads
 gem 'fog-aws'
 gem 'carrierwave', '~> 3'
-gem "mini_magick", '~> 5.0'
+gem "ruby-vips"
 gem 'file_validators'
 gem 'fastimage'
 

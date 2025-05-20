@@ -190,9 +190,9 @@ class EmailProcessor
           end
         rescue ActiveRecord::RecordInvalid => error
           @error = error
-          if error.to_s.include?("Image Failed to manipulate with MiniMagick")
+          if error.to_s.include?("Image Failed to manipulate")
             entry = @user.entries.create!(params.except(:image, :remote_image_url).merge(body: @body, original_email_body: @raw_body))
-            Sentry.capture_message("Error processing image via email", level: :error, extra: { reason: "Image Failed to manipulate with MiniMagick", error: error, image: best_attachment, remote_image_url: best_attachment_url, subject: @subject, entry: entry })
+            Sentry.capture_message("Error processing image via email", level: :error, extra: { reason: "Image Failed to manipulate", error: error, image: best_attachment, remote_image_url: best_attachment_url, subject: @subject, entry: entry })
           else
             Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "ActiveRecord::RecordInvalid", error: error, subject: @subject })
           end

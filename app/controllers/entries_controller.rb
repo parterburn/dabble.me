@@ -461,24 +461,19 @@ class EntriesController < ApplicationController
       filename = att.original_filename
       if File.extname(att.original_filename)&.downcase == ".heic"
         begin
-          require 'mini_magick'
-
-          # Create a new tempfile for the converted image
-          jpg_tempfile = Tempfile.new([filename.gsub(/\.heic$/i, ''), '.jpg'])
+          require "image_processing/vips"
 
           # Modify the original filename to change the extension
           filename = filename.gsub(/\.heic$/i, '.jpg')
 
-          # Convert the image using MiniMagick
-          image = MiniMagick::Image.new(att.path)
-          image.format "jpg"
-          image.resize '1200x1200>'
-          image.quality '95'
-          image.write jpg_tempfile.path
+          processed = ImageProcessing::Vips
+            .source(att.path)
+            .convert("jpg")
+            .resize_to_limit(1200, 1200)
+            .saver(strip: true)
+            .call
 
-          # Use the converted file instead
-          jpg_tempfile.rewind
-          att = jpg_tempfile
+          att = processed
         rescue => e
           Rails.logger.error "Failed to convert HEIC to JPEG: #{e.message}"
         end
@@ -486,7 +481,6 @@ class EntriesController < ApplicationController
 
       file_key = "#{folder}#{SecureRandom.uuid}#{File.extname(filename)}"
       file = directory.files.create(key: file_key, body: att, public: true, content_disposition: "inline", cache_control: "public, max-age=#{365.days.to_i}")
-      jpg_tempfile.close! if jpg_tempfile
       file.public_url
     end
   end

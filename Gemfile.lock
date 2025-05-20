@@ -540,7 +540,6 @@ DEPENDENCIES
   loofah (>= 2.5)
   mailgun_rails
   meta_request
-  mini_magick (~> 5.0)
   pg (~> 1.5, >= 1.2.3)
   puma (~> 6)
   rack-affiliates
@@ -557,6 +556,7 @@ DEPENDENCIES
   rspec-rails
   rspec-retry
   ruby-openai
+  ruby-vips
   rubyzip (~> 2)
   sass-rails
   selenium-webdriver
