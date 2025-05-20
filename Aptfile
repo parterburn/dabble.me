@@ -1,4 +1,5 @@
 libpoppler-glib8
-libheif-dev=1.18.1
+https://launchpad.net/ubuntu/+source/libheif/1.19.8-1/+download/libheif1_1.19.8-1_amd64.deb
+libde265-dev
 libvips-dev
 libvips
