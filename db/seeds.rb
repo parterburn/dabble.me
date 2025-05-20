@@ -42,7 +42,7 @@ end
 
 puts "Created free user: free@dabble.ex (with a password of 'dabble')"
 
-admin_user = User.new(email: 'admin@dabble.ex', first_name: Faker::Name.first_name, last_name: Faker::Name.last_name, password: 'dabble', plan: 'PRO Forever', payhere_id: 1, frequency: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], ai_opt_in: true)
+admin_user = User.new(admin: true, email: 'admin@dabble.ex', first_name: Faker::Name.first_name, last_name: Faker::Name.last_name, password: 'dabble', plan: 'PRO Forever', payhere_id: 1, frequency: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"], ai_opt_in: true)
 admin_user.save
 
 (1..100).each do |i|

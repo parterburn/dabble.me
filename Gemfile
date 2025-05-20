@@ -68,9 +68,12 @@ gem 'sass-rails'
 gem 'twbs_sass_rails'
 gem 'uglifier'
 
+gem "sidekiq"
+gem "redis"
 gem 'logtail-rails'
-gem "sentry-ruby", "~> 5.20"
-gem "sentry-rails", "~> 5.20"
+gem "sentry-ruby"
+gem "sentry-rails"
+gem "sentry-sidekiq"
 gem "rack-attack" # Request blocking & throttling
 gem "cloudflare-rails"
 gem "stripe"

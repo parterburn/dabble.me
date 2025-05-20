@@ -40,6 +40,18 @@ module Dabbleme
     # Devise
     config.assets.initialize_on_precompile = false
 
+    config.active_job.queue_adapter = :sidekiq
+    if ENV["REDIS_URL"].present?
+      config.cache_store = :redis_cache_store, {
+        url: ENV["REDIS_URL"],
+        ssl_params: {verify_mode: OpenSSL::SSL::VERIFY_NONE},
+        expires_in: 8.hours,
+        compress: true,
+        compression_threshold: 1.kilobyte,
+        reconnect_attempts: 1
+      }
+    end
+
     config.assets.version = '1.0'
     #loads the local_env.yml configuration file
     config.before_configuration do

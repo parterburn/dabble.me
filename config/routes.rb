@@ -1,3 +1,4 @@
+require "sidekiq/web"
 Rails.application.routes.draw do
   authenticate :user, ->(u) { u.admin? } do
     resources :inspirations, path: '/admin/inspirations'
@@ -5,6 +6,7 @@ Rails.application.routes.draw do
     get 'admin/users' => 'admin#users', as: 'admin_users'
     get 'admin/stats' => 'admin#stats', as: 'admin_stats'
     get 'admin/photos' => 'admin#photos', as: 'admin_photos'
+    mount Sidekiq::Web => "/sidekiq"
   end
 
   devise_for :users, controllers: { registrations: 'registrations', session: 'sessions', passwords: 'passwords' }
