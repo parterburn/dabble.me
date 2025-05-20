@@ -22,9 +22,7 @@ class ImageCollageJob < ActiveJob::Base
     else
       filestack_collage_url = collage_from_urls(urls + [@existing_url])
     end
-    entry.update(filepicker_url: nil)
-    entry.remote_image_url = filestack_collage_url
-    entry.save
+    entry.update(filepicker_url: nil, remote_image_url: filestack_collage_url)
   end
 
   def collage_from_mailgun_attachments

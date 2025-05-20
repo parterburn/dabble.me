@@ -48,6 +48,8 @@ module CarrierWave
 
     def convert_to_jpg
       manipulate! do |image|
+        image.strip # Remove all profiles and metadata
+        image.define("resource:auxiliary-reference-limit=20") # Increase limit for HEIC conversion
         image.format("jpg")
         image.content_type = "image/jpeg"
         image

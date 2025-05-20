@@ -25,7 +25,18 @@ class ImageUploader < CarrierWave::Uploader::Base
       # set the image to nil
       model.image = nil
       model.save!
-      Sentry.capture_exception(error)
+      if error.message.include?("Too many auxiliary image references")
+        Sentry.capture_exception(error,
+          extra: {
+            error_type: "HEIC conversion error",
+            content_type: file&.content_type,
+            file_name: file&.filename
+          },
+          level: "warning"
+        )
+      else
+        Sentry.capture_exception(error)
+      end
     end
   end
 
