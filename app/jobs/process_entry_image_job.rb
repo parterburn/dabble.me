@@ -12,15 +12,17 @@ class ProcessEntryImageJob < ActiveJob::Base
       # Convert HEIC to JPEG if needed
       if File.extname(attachment_info[:original_filename])&.downcase == ".heic"
         begin
-          require "image_processing/vips"
-          processed = ImageProcessing::Vips
-            .source(file.path)
-            .convert("jpg")
-            .resize_to_limit(1200, 1200)
-            .saver(strip: true)
-            .call
+          tempfile = ImageConverter.new(tempfile: file, width: 1200).call
+          jpeg_file = ActionDispatch::Http::UploadedFile.new(
+            {
+              filename: "#{attachment_info[:original_filename].split('.').first}.jpg",
+              tempfile: tempfile,
+              type: 'image/jpg',
+              head: "Content-Disposition: form-data; name=\"property[images][]\"; filename=\"#{attachment_info[:original_filename].split('.').first}.jpg\"\r\nContent-Type: image/jpg\r\n"
+            }
+          )
 
-          entry.image = processed
+          entry.image = jpeg_file
         rescue => e
           Rails.logger.error "Failed to convert HEIC to JPEG: #{e.message}"
           # Fall back to using the original file

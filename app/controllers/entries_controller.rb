@@ -434,19 +434,16 @@ class EntriesController < ApplicationController
       filename = att.original_filename
       if File.extname(att.original_filename)&.downcase == ".heic"
         begin
-          require "image_processing/vips"
-
-          # Modify the original filename to change the extension
-          filename = filename.gsub(/\.heic$/i, '.jpg')
-
-          processed = ImageProcessing::Vips
-            .source(att.path)
-            .convert("jpg")
-            .resize_to_limit(1200, 1200)
-            .saver(strip: true)
-            .call
-
-          att = processed
+          tempfile = ImageConverter.new(tempfile: att, width: 1200).call
+          jpeg_file = ActionDispatch::Http::UploadedFile.new(
+            {
+              filename: "#{filename.split('.').first}.jpg",
+              tempfile: tempfile,
+              type: 'image/jpg',
+              head: "Content-Disposition: form-data; name=\"property[images][]\"; filename=\"#{filename.split('.').first}.jpg\"\r\nContent-Type: image/jpg\r\n"
+            }
+          )
+          att = jpeg_file
         rescue => e
           Rails.logger.error "Failed to convert HEIC to JPEG: #{e.message}"
         end
