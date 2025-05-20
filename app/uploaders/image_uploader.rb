@@ -49,8 +49,8 @@ class ImageUploader < CarrierWave::Uploader::Base
 
   def heic_image?(new_file)
     # Detect HEIC/HEIF by MIME type or file extension on the original filename
-    content_type = new_file.content_type.to_s
-    original_name = new_file.original_filename.to_s
+    content_type = new_file&.content_type.to_s
+    original_name = new_file.respond_to?(:filename) ? new_file.filename.to_s : ""
     ext = File.extname(original_name).downcase
     # Match image/heic, image/heif MIME types or .heic/.heif extensions
     content_type.in?(%w[image/heic image/heif]) || ext.in?(%w[.heic .heif])
