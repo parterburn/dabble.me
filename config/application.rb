@@ -47,7 +47,6 @@ module Dabbleme
         ssl_params: {verify_mode: OpenSSL::SSL::VERIFY_NONE},
         expires_in: 8.hours,
         compress: true,
-        compression_threshold: 1.kilobyte,
         reconnect_attempts: 1
       }
     end
