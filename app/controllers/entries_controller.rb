@@ -418,14 +418,6 @@ class EntriesController < ApplicationController
       Entry::ALLOWED_IMAGE_TYPES.include?(Marcel::MimeType.for(att))
     end
 
-    s3 = Fog::Storage.new({
-      provider:              "AWS",
-      aws_access_key_id:     ENV["AWS_ACCESS_KEY_ID"],
-      aws_secret_access_key: ENV["AWS_SECRET_ACCESS_KEY"],
-    })
-
-    directory = s3.directories.new(key: ENV["AWS_BUCKET"])
-
     add_dev = "/development" unless Rails.env.production?
     folder = "uploads#{add_dev}/tmp/#{Date.today.strftime("%Y-%m-%d")}/"
 
@@ -450,7 +442,7 @@ class EntriesController < ApplicationController
       end
 
       file_key = "#{folder}#{SecureRandom.uuid}#{File.extname(filename)}"
-      file = directory.files.create(key: file_key, body: att, public: true, content_disposition: "inline", cache_control: "public, max-age=#{365.days.to_i}")
+      file = UploadToS3.new(file_key: file_key, body: att).call
       file.public_url
     end
   end
@@ -469,15 +461,8 @@ class EntriesController < ApplicationController
   end
 
   def process_single_image(entry, attachment)
-    s3 = Fog::Storage.new({
-      provider:              "AWS",
-      aws_access_key_id:     ENV["AWS_ACCESS_KEY_ID"],
-      aws_secret_access_key: ENV["AWS_SECRET_ACCESS_KEY"],
-    })
-
     file_key = "uploads/tmp/#{entry.user.id}/#{Date.today.strftime("%Y-%m-%d")}/#{SecureRandom.uuid}#{File.extname(attachment.original_filename)}"
-    directory = s3.directories.new(key: ENV["AWS_BUCKET"])
-    file = directory.files.create(key: file_key, body: attachment.read, public: true, content_disposition: "inline", cache_control: "public, max-age=#{365.days.to_i}")
+    file = UploadToS3.new(file_key: file_key, body: attachment.read).call
 
     ProcessEntryImageJob.perform_later(
       entry.id,

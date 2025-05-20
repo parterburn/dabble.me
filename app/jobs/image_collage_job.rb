@@ -91,17 +91,10 @@ class ImageCollageJob < ActiveJob::Base
             }
           )
 
-          s3 = Fog::Storage.new({
-            provider:              "AWS",
-            aws_access_key_id:     ENV["AWS_ACCESS_KEY_ID"],
-            aws_secret_access_key: ENV["AWS_SECRET_ACCESS_KEY"],
-          })
-          directory = s3.directories.new(key: ENV["AWS_BUCKET"])
-
           add_dev = "/development" unless Rails.env.production?
           folder = "uploads#{add_dev}/#{@user.id}/collages/#{Date.today.strftime("%Y-%m-%d")}/"
           file_key = "#{folder}#{filename}"
-          file = directory.files.create(key: file_key, body: jpeg_file, public: true, content_disposition: "inline", cache_control: "public, max-age=#{365.days.to_i}")
+          file = UploadToS3.new(file_key: file_key, body: jpeg_file.read).call
           jpeg_file.tempfile.close
           jpeg_file.tempfile.unlink rescue nil
 
