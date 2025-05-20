@@ -324,8 +324,8 @@ class EmailProcessor
     body&.gsub!(/\n\n\n/, "\n\n \n\n") # allow double line breaks
     body = unfold_paragraphs(body) unless @from.include?('yahoo.com') # fix wrapped plain text, but yahoo messes this up
     body&.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "(see attached image)") # remove "Inline image" text from griddler
-    body.gsub!(/(\r\n|\n|\r){2,}/, '<br><br>') # paragraphs
-    body.gsub!(/(\r\n|\n|\r)/, '<br>')         # single line breaks
+    body.gsub!(/(\r\n|\n|\r){2,}/, '<div><br><br></div>') # paragraphs
+    body.gsub!(/(\r\n|\n|\r)/, '<div><br></div>')         # single line breaks
     body = "<p>#{body}</p>" # basic formatting
     body&.gsub!(/<(http[s]?:\/\/\S*?)>/, "(\\1)") # convert links to show up
     body&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
@@ -377,8 +377,8 @@ class EmailProcessor
     html = html.split('<br id=\"lineBreakAtBeginningOfSignature\">').first # strip out gmail signature
     html = html.split('<br id="lineBreakAtBeginningOfSignature">').first # strip out gmail signature
     html = ActionController::Base.helpers.sanitize(html, tags: %w(strong em a div span ul ol li b i br p hr u em blockquote), attributes: %w(href target))
-    html = html&.gsub(/(\r\n|\n|\r){2,}/, '<br><br>') # paragraphs
-    html = html&.gsub(/(\r\n|\n|\r)/, '<br>')         # single line breaks
+    html = html&.gsub(/(\r\n|\n|\r){2,}/, '<div><br><br></div>') # paragraphs
+    html = html&.gsub(/(\r\n|\n|\r)/, '<div><br></div>')         # single line breaks
     html = html&.split("<br>--<br>")&.first # strip out gmail signature
     html = html&.split("<div><br></div>\n<div>--</div>")&.first # strip out gmail signature
     html = html&.split("<br>--")&.first # strip out gmail signature
