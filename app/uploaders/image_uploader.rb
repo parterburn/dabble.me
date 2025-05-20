@@ -4,9 +4,29 @@ class ImageUploader < CarrierWave::Uploader::Base
   storage :fog
 
   version :jpeg, if: :heic_image? do
-    process convert: :jpg
+    process :safe_convert_to_jpg
   end
-  process resize_to_limit: [1200, 1200, combine_options: { saver: { quality: 90 } }], if: :web_image?
+
+  # Add rescue block around resize operation
+  process :safe_resize, if: :web_image?
+
+  def safe_convert_to_jpg
+    begin
+      convert(:jpg)
+    rescue => e
+      Rails.logger.error "HEIC to JPEG conversion failed: #{e.message}"
+      # Continue without conversion rather than failing entirely
+    end
+  end
+
+  def safe_resize(*)
+    begin
+      resize_to_limit(1200, 1200, combine_options: { saver: { quality: 90 } })
+    rescue => e
+      Rails.logger.error "Image resize failed: #{e.message}"
+      # Continue without resizing rather than failing entirely
+    end
+  end
 
   def url(*args)
     if version_active?(:jpeg)
