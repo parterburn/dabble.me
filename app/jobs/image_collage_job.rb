@@ -18,15 +18,13 @@ class ImageCollageJob < ActiveJob::Base
     end
 
     entry.remote_image_url = filestack_collage_url
-    if entry.save
-      entry.update(filepicker_url: nil)
-      Sentry.capture_message("Collage image saved", level: :info, extra: { entry_id: entry_id, filepicker_url: filestack_collage_url })
-    else
+    unless FastImage.type(filestack_collage_url).present? && entry.save
       Sentry.set_user(id: @user.id, email: @user.email)
       Sentry.capture_message("Error updating collage image", level: :info, extra: { entry_id: entry_id, error: entry.errors.full_messages })
 
       EntryMailer.send_entry_image_error(@user, entry).deliver_later
     end
+    entry.update(filepicker_url: nil) if entry.filepicker_url == "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
   end
 
   def collage_from_mailgun_attachments
@@ -70,7 +68,7 @@ class ImageCollageJob < ActiveJob::Base
       next unless Entry::ALLOWED_IMAGE_TYPES.include?(att["content-type"]&.downcase)
       next unless att["size"].to_i > 20_000
 
-      att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")
+      "#{att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")}?#{att["filename"]}"
     end.compact
     return nil unless attachment_urls.any?
 
@@ -86,25 +84,7 @@ class ImageCollageJob < ActiveJob::Base
       if url.to_s.downcase.ends_with?(".heic")
         begin
           file = URI.parse(url).open
-          tempfile = ImageConverter.new(tempfile: file, width: 1200).call
-          filename = "#{SecureRandom.uuid}.jpg"
-          jpeg_file = ActionDispatch::Http::UploadedFile.new(
-            {
-              filename: filename,
-              tempfile: tempfile,
-              type: 'image/jpg',
-              head: "Content-Disposition: form-data; name=\"property[images][]\"; filename=\"#{filename}\"\r\nContent-Type: image/jpg\r\n"
-            }
-          )
-
-          add_dev = "/development" unless Rails.env.production?
-          folder = "uploads#{add_dev}/#{@user.id}/collages/#{Date.today.strftime("%Y-%m-%d")}/"
-          file_key = "#{folder}#{filename}"
-          file = UploadToS3.new(file_key: file_key, body: jpeg_file.read).call
-          jpeg_file.tempfile.close
-          jpeg_file.tempfile.unlink rescue nil
-
-          file.public_url
+          ImageConverter.new(tempfile: file, width: 1200, user: @user).s3_url
         rescue => e
           Sentry.capture_exception(e)
           nil
