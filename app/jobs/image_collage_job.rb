@@ -69,11 +69,7 @@ class ImageCollageJob < ActiveJob::Base
       next unless Entry::ALLOWED_IMAGE_TYPES.include?(att["content-type"]&.downcase)
       next unless att["size"].to_i > 20_000
 
-      {
-        url: att["url"],
-        auth: { username: "api", password: ENV['MAILGUN_API_KEY'] },
-        filename: att["filename"]
-      }
+      "#{att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")}?#{att["filename"]}"
     end.compact
     return nil unless attachment_urls.any?
 
