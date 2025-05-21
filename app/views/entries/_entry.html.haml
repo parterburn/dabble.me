@@ -22,10 +22,10 @@
         %i.fa.fa-pencil-square-o
     %h2
       - if current_page?(day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day))
-        %span{rel: "tooltip-mobile-friendly", title: "#{tag_relative_date(entry.date, Date.in_time_zone(current_user.send_timezone).today)}"}
+        %span{rel: "tooltip-mobile-friendly", title: "#{tag_relative_date(entry.date, Date.in_time_zone(current_user&.send_timezone.presence || "UTC").today)}"}
           = entry.date_format_short
       - else
-        = link_to entry.date_format_short, day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day), rel: "tooltip-mobile-friendly", title: "#{tag_relative_date(entry.date, Date.in_time_zone(current_user.send_timezone).today)}"
+        = link_to entry.date_format_short, day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day), rel: "tooltip-mobile-friendly", title: "#{tag_relative_date(entry.date, Date.in_time_zone(current_user&.send_timezone.presence || "UTC").today)}"
     %h3
       %span
         = entry.date_day.upcase
