@@ -20,6 +20,15 @@ class ImageCollageJob < ActiveJob::Base
     entry.remote_image_url = filestack_collage_url
     if entry.save
       entry.update(filepicker_url: nil)
+    else
+      Sentry.set_user(id: @user.id, email: @user.email)
+      Sentry.capture_message("Error updating collage image", level: :info, extra: { entry_id: entry_id, error: entry.errors.full_messages })
+
+      ActionMailer::Base.mail(from: "Dabble Me ✏ <#{@user.user_key}@#{ENV['SMTP_DOMAIN']}>",
+        to: "hello@#{ENV['MAIN_DOMAIN']}",
+        subject: "re: Entry for #{entry.date.strftime('%B %d, %Y')}",
+        content_type: "text/html",
+        body: "Collage for your entry on <a href='#{::Rails.application.routes.url_helpers.entry_url(entry)}'>#{entry.date.strftime('%B %d, %Y')}</a> could not be saved. Try converting the images to lower resolution JPEG images and use the <a href='#{::Rails.application.routes.url_helpers.edit_entry_url(entry)}'>web interface</a> to re-upload them.\n\n##{entry.errors.full_messages.join(', ')}").deliver_later
     end
   end
 
@@ -100,7 +109,7 @@ class ImageCollageJob < ActiveJob::Base
 
           file.public_url
         rescue => e
-          p e
+          Sentry.capture_exception(e)
           nil
         end
       else

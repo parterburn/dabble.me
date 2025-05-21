@@ -55,7 +55,16 @@ class ProcessEntryImageJob < ActiveJob::Base
       end
 
       entry.filepicker_url = nil if entry.filepicker_url == "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
-      entry.save
+      unless entry.save
+        Sentry.set_user(id: entry.user_id, email: entry.user.email)
+        Sentry.capture_message("Error updating entry image", level: :info, extra: { entry_id: entry_id, error: entry.errors.full_messages })
+
+        ActionMailer::Base.mail(from: "Dabble Me ✏ <#{entry.user.user_key}@#{ENV['SMTP_DOMAIN']}>",
+          to: "hello@#{ENV['MAIN_DOMAIN']}",
+          subject: "re: Entry for #{entry.date.strftime('%B %d, %Y')}",
+          content_type: "text/html",
+          body: "Image for your entry on <a href='#{::Rails.application.routes.url_helpers.entry_url(entry)}'>#{entry.date.strftime('%B %d, %Y')}</a> could not be saved. Try converting it to a lower resolution JPEG image and use the <a href='#{::Rails.application.routes.url_helpers.edit_entry_url(entry)}'>web interface</a> to re-upload it.\n\n##{entry.errors.full_messages.join(', ')}").deliver_later
+      end
 
       begin
         bucket.files.new(key: s3_file_key).destroy
