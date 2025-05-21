@@ -33,9 +33,7 @@ class EntryMailer < ActionMailer::Base
     entry.save
     @entry = entry
 
-    headers["In-Reply-To"] = nil
-    headers["References"] = nil
-    headers.merge!(set_reply_headers(entry))
+    set_reply_headers(entry)
     email = mail  from: "DabbleMeGPT 🪄 <#{user.user_key}@#{ENV['SMTP_DOMAIN'].gsub('post', 'ai')}>",
                   to: "#{user.cleaned_to_address}",
                   subject: "Re: #{subject(entry)}",
@@ -49,9 +47,7 @@ class EntryMailer < ActionMailer::Base
     @entry = entry
     @user = user
 
-    headers["In-Reply-To"] = nil
-    headers["References"] = nil
-    headers.merge!(set_reply_headers(entry))
+    set_reply_headers(entry)
     email = mail  from: "Paul from Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>",
                   to: "hello@#{ENV['MAIN_DOMAIN']}",
                   subject: "Re: #{subject(entry)}",
@@ -73,13 +69,14 @@ class EntryMailer < ActionMailer::Base
     return unless entry.present? && entry.original_email.present?
 
     # Header must first be nullified before being reset
+    headers["In-Reply-To"] = nil
+    headers["References"] = nil
+
     message_id = entry.original_email&.dig("headers", "Message-ID")
     reply_to = entry.original_email&.dig("headers", "In-Reply-To")
     references = entry.original_email&.dig("headers", "References")
     message_ids = [message_id, reply_to, references].flatten.compact
-    {
-      "In-Reply-To" => message_id,
-      "References" => message_ids&.join(" ")
-    }
+    headers["In-Reply-To"] = message_id
+    headers["References"] = message_ids&.join(" ")
   end
 end
