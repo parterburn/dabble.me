@@ -67,10 +67,11 @@ class ImageCollageJob < ActiveJob::Base
 
     attachment_urls = message["attachments"].map do |att|
       next unless Entry::ALLOWED_IMAGE_TYPES.include?(att["content-type"]&.downcase)
-      next unless att["size"].to_i > 20_000
+      next unless att["size"].to_i > 20_000 # ignore tiny attachments
 
       "#{att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")}?#{att["filename"]}"
-    end.compact
+    end.compact_blank
+
     return nil unless attachment_urls.any?
 
     collage_from_urls(attachment_urls + [@existing_url])
@@ -82,6 +83,8 @@ class ImageCollageJob < ActiveJob::Base
     urls.reject! { |url| url.is_a?(String) && url&.include?("googleusercontent.com/mail-sig/") }
 
     urls = urls.map do |url|
+      next if url.blank?
+
       if url.downcase.ends_with?(".heic")
         begin
           if url.include?("@")
