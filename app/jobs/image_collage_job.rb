@@ -70,7 +70,11 @@ class ImageCollageJob < ActiveJob::Base
       next unless Entry::ALLOWED_IMAGE_TYPES.include?(att["content-type"]&.downcase)
       next unless att["size"].to_i > 20_000
 
-      "#{att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")}?#{att["filename"]}"
+      {
+        url: att["url"],
+        auth: { username: "api", password: ENV['MAILGUN_API_KEY'] },
+        filename: att["filename"]
+      }
     end.compact
     return nil unless attachment_urls.any?
 
@@ -80,13 +84,31 @@ class ImageCollageJob < ActiveJob::Base
   def collage_from_urls(urls)
     return nil unless urls.present?
 
-    urls.reject! { |url| url&.include?("googleusercontent.com/mail-sig/") }
+    urls.reject! { |url| url.is_a?(String) && url&.include?("googleusercontent.com/mail-sig/") }
 
     urls = urls.map do |url|
-      if url.to_s.downcase.ends_with?(".heic")
+      if url.downcase.ends_with?(".heic")
         begin
-          file = URI.parse(url).open
-          ImageConverter.new(tempfile: file, width: 1200, user: @user).s3_url
+          if url.include?("@")
+            uri = URI.parse(url)
+            conn = Faraday.new(uri.scheme + "://" + uri.host) do |f|
+              f.options.timeout = 120
+              f.options.open_timeout = 120
+              f.request :authorization, :basic, "api", ENV['MAILGUN_API_KEY']
+            end
+            response = conn.get(uri.path)
+            tempfile = Tempfile.new(['attachment', ".heic"])
+            tempfile.binmode
+            tempfile.write(response.body)
+            tempfile.rewind
+            result = ImageConverter.new(tempfile: tempfile, width: 1200, user: @user).s3_url
+            tempfile.close
+            tempfile.unlink
+            result
+          else
+            file = URI.parse(url).open
+            ImageConverter.new(tempfile: file, width: 1200, user: @user).s3_url
+          end
         rescue => e
           Sentry.capture_exception(e)
           nil
@@ -99,8 +121,13 @@ class ImageCollageJob < ActiveJob::Base
     if urls.size == 1 && urls.first.starts_with?("http")
       urls.first
     elsif urls.any?
-      first_url = urls.first.include?("%40") ? urls.first : CGI.escape(urls.first) # don't escape if already escaped
-      "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:[#{urls[1..-1].map(&:inspect).join(',')}],w:1200,h:1200,m:1/#{first_url}"
+      first_url = urls.first.include?("%") ? urls.first : CGI.escape(urls.first) # don't escape if already contains escape sequences
+
+      remaining_urls = urls[1..-1].map do |url|
+        url.include?("%") ? url : CGI.escape(url)
+      end.map(&:inspect).join(',')
+
+      "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:[#{remaining_urls}],w:1200,h:1200,m:1/#{first_url}"
     end
   end
 end

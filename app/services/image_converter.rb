@@ -1,5 +1,5 @@
 class ImageConverter
-  def initialize(tempfile:, width: nil, height: nil, type: 'jpg', user:)
+  def initialize(tempfile:, width: nil, height: nil, type: 'jpg', user: nil)
     @tempfile = tempfile
     @width = width
     @height = height
