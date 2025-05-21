@@ -43,13 +43,12 @@ class EntryMailer < ActionMailer::Base
     email.mailgun_options = { tag: 'AI Entry' }
   end
 
-  def send_entry_image_error(user, entry)
+  def image_error(user, entry)
     set_reply_headers(entry)
     email = mail  from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
                   to: "hello@#{ENV['MAIN_DOMAIN']}",
                   subject: "Re: #{subject(entry)}",
-                  content_type: "text/html",
-                  body: "The image for your entry on <a href='#{::Rails.application.routes.url_helpers.entry_url(entry)}'>#{entry.date.strftime('%B %d, %Y')}</a> could not be saved. Try converting it to a lower resolution JPEG image and use the <a href='#{::Rails.application.routes.url_helpers.edit_entry_url(entry)}'>web interface</a> to re-upload it.\n\n##{entry.errors.full_messages.join(', ')}"
+                  html: (render_to_string(template: '../views/entry_mailer/image_error.html')).to_str
     email.mailgun_options = { tag: "Entry Image Error" }
   end
 

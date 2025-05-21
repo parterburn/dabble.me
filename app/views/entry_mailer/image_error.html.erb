@@ -1,0 +1,66 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type"/>
+    <meta content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=no;" name="viewport"/>
+    <style>
+      a {
+        color: #649cc7 !important;
+        text-decoration: none !important;
+      }
+      a:hover {
+        color: #3b76a3 !important;
+        text-decoration: none!important;
+      }
+      a.hover-line {
+        color: black !important;
+        border-bottom: 1px #649cc7 dotted;
+        text-decoration: none !important;
+      }
+      a.hover-line:hover {
+        color: black !important;
+        border-bottom: 1px #3b76a3 solid;
+        text-decoration: none !important;
+      } 
+
+      a[x-apple-data-detectors] {
+          color: #649cc7 !important;
+          text-decoration: none !important;
+          font-size: inherit !important;
+          font-family: inherit !important;
+          font-weight: inherit !important;
+          line-height: inherit !important;
+      }
+      a[x-apple-data-detectors]:hover {
+        color: #3b76a3 !important;
+        text-decoration: none !important;
+      }
+      
+      u + #body a {
+          color: #649cc7 !important;
+          text-decoration: none !important;
+          font-size: inherit !important;
+          font-family: inherit !important;
+          font-weight: inherit !important;
+          line-height: inherit !important;
+      }
+      
+      #MessageViewBody a {
+          color: #649cc7 !important;
+          text-decoration: none !important;
+          font-size: inherit !important;
+          font-family: inherit !important;
+          font-weight: inherit !important;
+          line-height: inherit !important;
+      }      
+    </style>
+  </head>
+  <body>
+    <p>
+      The image for your entry on <a href='<%= day_entry_url(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day) %>'><%= @entry.date.strftime('%B %d, %Y') %></a> could not be saved. Try converting it to a lower resolution JPEG image and use the <a href='<%= edit_entry_url(@entry) %>'>web interface</a> to re-upload it.
+    </p>
+    <p>
+      <%= @entry.errors.full_messages.join(', ') %>
+    </p>
+  </body>
+</html>
