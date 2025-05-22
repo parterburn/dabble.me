@@ -13,7 +13,7 @@ describe EmailProcessor do
       )
 
       EmailProcessor.new(email).process
-      expect(user.entries.reload.first.body).to eq("<div>I am great</div>")
+      expect(user.entries.reload.first.body).to eq("I am great")
     end
 
     it "creates an entry from email if the token is wrong but email matches a user" do
@@ -26,7 +26,7 @@ describe EmailProcessor do
       )
 
       EmailProcessor.new(email).process
-      expect(user.entries.reload.first.body).to eq("<div>I am great</div>")
+      expect(user.entries.reload.first.body).to eq("I am great")
     end
 
     it "creates an more complex entry based on the email token for free user" do
