@@ -57,7 +57,7 @@
   </head>
   <body>
     <p>
-      The image for the user <%= @user.email %> entry on <a href='<%= day_entry_url(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day) %>'><%= @entry.date.strftime('%B %d, %Y') %></a> could not be saved. Try converting it to a lower resolution JPEG image and use the <a href='<%= edit_entry_url(@entry) %>'>web interface</a> to re-upload it.
+      The image for the user <%= @user.email %> entry <%= @entry.id %> on <a href='<%= day_entry_url(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day) %>'><%= @entry.date.strftime('%B %d, %Y') %></a> could not be saved. Try converting it to a lower resolution JPEG image and use the <a href='<%= edit_entry_url(@entry) %>'>web interface</a> to re-upload it.
     </p>
     <p>
       Image Uploaded: <a href='<%= @url %>'><%= @url %></a>
