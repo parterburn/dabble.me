@@ -303,76 +303,57 @@ class EmailProcessor
     return nil unless body.present?
 
     body = EmailReplyTrimmer.trim(body)
-
-    body&.gsub!(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"") # remove embedded images
-    body&.gsub!(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()") # remove embedded images
-    body&.gsub!(/\n\n\n/, "\n\n \n\n") # allow double line breaks
-    body = unfold_paragraphs(body) unless @from.include?('yahoo.com') # fix wrapped plain text, but yahoo messes this up
-    body&.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "(see attached image)") # remove "Inline image" text from griddler
-    body&.gsub!(/(?:\n\n?|\n\n?)/, "<br><br>") # convert line breaks for iOS Mail
-    body&.gsub!(/(?:\n\r?|\r\n?)/, "<br>") # convert line breaks
-    body = "<p>#{body}</p>" # basic formatting
-    body&.gsub!(/<(http[s]?:\/\/\S*?)>/, "(\\1)") # convert links to show up
-    body&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
-    body&.gsub!(/--( \*)?$\z/, "") # remove gmail signature break
-    body&.gsub!(/<style(?:\s+[^>]*)?>.*?<\/style>/mi, '') # remove styles
-    body&.gsub!(/<xml(?:\s+[^>]*)?>.*?<\/xml>/mi, '') # remove xml
-
-    body&.gsub!(/<!--.*?-->/m, '') # remove comments
-    body&.gsub!('<![endif]-->', '') # remove comments
-    body&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/^$\n\z/, "") # remove last unnecessary line break
-    body&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/^$\n\z/, "") # remove last unnecessary line break
-    body&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/^$\n\z/, "") # remove last unnecessary line break
-    body&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/^$\n\z/, "") # remove last unnecessary line break
-    body&.gsub!(/\A(\s*<br\s*\/?>|\s*<p>\s*<\/p>|\s*<div>\s*<\/div>|\s*\n|\s*\r\n)*/, '') # remove beginning line breaks
-
-    body&.gsub!("p.MsoNormal,p.MsoNoSpacing{margin:0}", "") # remove outlook styles
-    body = body&.strip
-
     return unless body.present?
 
-    to_utf8(body)
-  end
+    # Remove embedded images and data
+    body&.gsub!(/src=\"data\:image\/(jpeg|png)\;base64\,.*?\"/, "src=\"\"")
+    body&.gsub!(/url\(data\:image\/(jpeg|png)\;base64\,.*?\)/, "url()")
 
-
-  def clean_message(body)
-    return nil unless body.present?
-
-    body = EmailReplyTrimmer.trim(body)
-
-    body.gsub!(/\A(\s*\r\n|\s*\n|\s*\r)*/, '')  # Remove leading breaks
-    body.gsub!(/(\s*\r\n|\s*\n|\s*\r)*\z/, '')  # Remove trailing breaks
-
-    body&.gsub!(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"") # remove embedded images
-    body&.gsub!(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()") # remove embedded images
+    # Handle line breaks and paragraphs
     body&.gsub!(/\n\n\n/, "\n\n \n\n") # allow double line breaks
-    body = unfold_paragraphs(body) unless @from.include?('yahoo.com') # fix wrapped plain text, but yahoo messes this up
-    body&.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "(see attached image)") # remove "Inline image" text from griddler
+    body = unfold_paragraphs(body) unless @from.include?('yahoo.com') # fix wrapped plain text
 
-    paragraphs = body.split(/(\s*\r\n\s*|\s*\n\s*|\s*\r\s*){2,}/)
-    body = paragraphs.map { |p| "<p>#{p}</p>" }.join("\n")
-    body.gsub!(/(\r\n|\n|\r)/, '<br>')
+    # Replace inline image indicators
+    body&.gsub!(/\[image\:\ Inline\ image\ [0-9]{1,2}\]/, "(see attached image)")
 
-    body&.gsub!(/<(http[s]?:\/\/\S*?)>/, "(\\1)") # convert links to show up
-    body&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
+    # Convert line breaks for various mail clients
+    body&.gsub!(/(?:\n\n?|\n\n?)/, "<br><br>") # iOS Mail double breaks
+    body&.gsub!(/(?:\n\r?|\r\n?)/, "<br>") # standard line breaks
+
+    # Handle links and signatures
+    body&.gsub!(/<(http[s]?:\/\/\S*?)>/, "(\\1)") # make links visible
     body&.gsub!(/--( \*)?$\z/, "") # remove gmail signature break
-    body&.gsub!(/<style(?:\s+[^>]*)?>.*?<\/style>/mi, '') # remove styles
-    body&.gsub!(/<xml(?:\s+[^>]*)?>.*?<\/xml>/mi, '') # remove xml
 
-    body&.gsub!(/<!--.*?-->/m, '') # remove comments
-    body&.gsub!('<![endif]-->', '') # remove comments
-    body&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/^$\n\z/, "") # remove last unnecessary line break
-    body&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/^$\n\z/, "") # remove last unnecessary line break
-    body&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/^$\n\z/, "") # remove last unnecessary line break
-    body&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/<br\s*\/?>\z/, "")&.gsub!(/^$\n\z/, "") # remove last unnecessary line break
-    body&.gsub!(/\A(\s*<br\s*\/?>|\s*<p>\s*<\/p>|\s*<div>\s*<\/div>|\s*\n|\s*\r\n)*/, '') # remove beginning line breaks
+    # Remove unnecessary HTML elements
+    body&.gsub!(/<style(?:\s+[^>]*)?>.*?<\/style>/mi, '') # styles
+    body&.gsub!(/<xml(?:\s+[^>]*)?>.*?<\/xml>/mi, '') # xml
+    body&.gsub!(/<!--.*?-->/m, '') # comments
+    body&.gsub!('<![endif]-->', '') # conditional comments
 
-    body&.gsub!("p.MsoNormal,p.MsoNoSpacing{margin:0}", "") # remove outlook styles
+    # Aggressively clean up trailing breaks
+    body&.gsub!(/<br\s*\/?>\s*(<br\s*\/?>)*\s*$/, "")
+    body&.gsub!(/\s*$/, "")
+
+    # Clean up leading line breaks and empty elements
+    body&.gsub!(/\A(\s*<br\s*\/?>|\s*<p>\s*<\/p>|\s*<div>\s*<\/div>|\s*\n|\s*\r\n)*/, '')
+
+    # Remove Outlook styles
+    body&.gsub!("p.MsoNormal,p.MsoNoSpacing{margin:0}", "")
+
+    # Final cleanup and formatting
     body = body&.strip
-
     return unless body.present?
 
-    to_utf8(body)
+    # Convert to UTF-8
+    body = to_utf8(body)
+
+    # Use div instead of p for consistency
+    if body =~ /\A<(div|p|span)[^>]*>/ && body =~ /<\/(div|p|span)>\z/
+      # Already has a container element
+      body
+    else
+      "<div>#{body}</div>"
+    end
   end
 
   def to_utf8(content)
@@ -393,49 +374,69 @@ class EmailProcessor
     return nil unless html.present?
 
     html = EmailReplyTrimmer.trim(html)
-
     return unless html.present?
 
-    html&.gsub!("<html>", "")&.gsub!("</html>", "")&.gsub!("<body>", "")&.gsub!("</body>", "")&.gsub!("<head>", "")&.gsub!("</head>", "")
+    # Remove basic HTML container tags
+    html&.gsub!(/\A\s*<html>|<\/html>\s*\z/, "")
+    html&.gsub!(/\A\s*<body>|<\/body>\s*\z/, "")
+    html&.gsub!(/\A\s*<head>.*?<\/head>\s*/mi, "")
 
+    # Process links
     html = Rinku.auto_link(html, :all, 'target="_blank"')
-    html = html.split("<br id=\"lineBreakAtBeginningOfSignature\">").first # strip out gmail signature
-    html = html.split('<br id=\"lineBreakAtBeginningOfSignature\">').first # strip out gmail signature
-    html = html.split('<br id="lineBreakAtBeginningOfSignature">').first # strip out gmail signature
+
+    # Remove signatures
+    html = html.split(%r{<br[^>]*id="lineBreakAtBeginningOfSignature"[^>]*>}).first || html # gmail signature
+    html = html.split(%r{<br>\s*--(\s*<br>|\s*$)}).first || html # standard signature separator
+    html = html.split(%r{<div>\s*<br>\s*</div>\s*<div>\s*--\s*</div>}).first || html # gmail signature variant
+
+    # Clean up HTML
     safe_list_sanitizer = Rails::HTML5::SafeListSanitizer.new
     html = safe_list_sanitizer.sanitize(html, tags: %w(strong em a div span ul ol li b i br p hr u em blockquote), attributes: %w(href target))
-    html = html.gsub(/\n\n/, "<br><br>") # convert line breaks
-    html = html.gsub(/\n\r?|\r\n?/, "<br>") # convert line breaks
-    html = html.gsub(/\n/, "<br>") # convert line breaks
-    html = html.split("<br>--<br>").first # strip out gmail signature
-    html = html.presence || ""
-    html = html.split("<div><br></div>\n<div>--</div>").first # strip out gmail signature
-    html = html.presence || ""
-    html = html.split("<br>--").first # strip out gmail signature
-    html = html.presence || ""
-    html = html.split("<br>\n--").first # strip out gmail signature
-    html&.gsub!(/<style(?:\s+[^>]*)?>.*?<\/style>/mi, '') # remove styles
-    html&.gsub!(/<xml(?:\s+[^>]*)?>.*?<\/xml>/mi, '') # remove xml
-    html&.gsub!(/<!--.*?-->/m, '') # remove comments
-    html&.gsub!('<![endif]-->', '') # remove comments
-    html&.gsub!(/<(?:\/)?html(?:\s+[^>]*)?>/i, '') # remove html tags
-    html&.gsub!(/<(?:\/)?head(?:\s+[^>]*)?>/i, '') # remove head tags
-    html&.gsub!(/<(?:\/)?body(?:\s+[^>]*)?>/i, '') # remove body tags
 
-    html&.gsub!(/\A<br\s*\/?>/, "") # remove <br> from very beginning of html
-    html&.gsub!(/<div style="display:none;border:0px;width:0px;height:0px;overflow:hidden;">.+<\/div>/, "") # remove hidden divs / tracking pixels
-    html&.gsub!(/src=\"cid\:\S+\"/, "src=\"\" style=\"display: none;\"") # remove attached images showing as broken inline images
-    html&.gsub!("p.MsoNormal,p.MsoNoSpacing{margin:0}", "") # remove outlook styles
+    # Ensure all links have target="_blank" (Rinku may not have caught existing links)
+    html = html.gsub(/<a\s+([^>]*?)href="([^"]*?)"([^>]*?)>/i, '<a \1href="\2"\3 target="_blank">')
+    html = html.gsub(/<a\s+([^>]*?)href="([^"]*?)"\s+target="_blank"\s+target="_blank"([^>]*?)>/i, '<a \1href="\2" target="_blank"\3>')
 
-    empty_line_regex = /(<div>\n<div>\z)|(<br\s*\/?>\z)|(\n\z)/
-    while html&.match?(empty_line_regex)
-      html&.gsub!(empty_line_regex, "")
+    # Convert newlines to <br>
+    html = html.gsub(/\n\n/, "<br><br>")
+    html = html.gsub(/\n\r?|\r\n?/, "<br>")
+
+    # Remove styles, xml, comments
+    html&.gsub!(/<style(?:\s+[^>]*)?>.*?<\/style>/mi, '')
+    html&.gsub!(/<xml(?:\s+[^>]*)?>.*?<\/xml>/mi, '')
+    html&.gsub!(/<!--.*?-->/m, '')
+    html&.gsub!('<![endif]-->', '')
+
+    # Remove tracking pixels and hidden content
+    html&.gsub!(/<div[^>]*?style="[^"]*?display\s*:\s*none[^"]*?"[^>]*?>.*?<\/div>/im, "")
+
+    # Handle images
+    html&.gsub!(/src="cid:[^"]+"/i, 'src=""')
+
+    # Remove empty formatting
+    html&.gsub!("p.MsoNormal,p.MsoNoSpacing{margin:0}", "")
+
+    # Clean up empty elements
+    html&.gsub!(/<div>\s*<\/div>/, "")
+    html&.gsub!(/<p>\s*<\/p>/, "")
+    html&.gsub!(/<span>\s*<\/span>/, "")
+
+    # Clean up nested empty divs
+    5.times do # limit iterations to prevent infinite loops
+      html&.gsub!(/<div>\s*(<br\s*\/?>)*\s*<\/div>/, "")
+      html&.gsub!(/<div>\s*<div>\s*<\/div>\s*<\/div>/, "<div></div>")
     end
 
-    html&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/<br\s*\/?>$/, "")&.gsub!(/^$\n/, "") # remove last unnecessary line break
-    html&.gsub!(/\A(\s*<br\s*\/?>|\s*<p>\s*<\/p>|\s*<div>\s*<\/div>|\s*\n|\s*\r\n)*/, '')
+    # Remove leading and trailing breaks
+    html&.gsub!(/\A(\s*<br\s*\/?>)+/, "")
+    html&.gsub!(/(<br\s*\/?>)+\z/, "")
+    html&.gsub!(/\s*$/, "")
 
-    to_utf8(html)
+    # Convert to UTF-8
+    html = to_utf8(html)
+    return unless html.present?
+
+    html
   end
 
   def collage_from_attachments(attachments, existing_image_url: nil)

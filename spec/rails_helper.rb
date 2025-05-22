@@ -35,6 +35,11 @@ RSpec.configure do |config|
   config.filter_run_excluding broken: true
   config.render_views
 
+  # Silence SQL query logs during test runs
+  config.before(:all) do
+    ActiveRecord::Base.logger.level = Logger::INFO
+  end
+
   # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
   config.fixture_path = "#{::Rails.root}/spec/fixtures"
 

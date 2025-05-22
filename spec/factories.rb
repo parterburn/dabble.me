@@ -17,5 +17,6 @@ FactoryBot.define do
     subject { nil }
     body { Faker::Lorem.paragraph }
     attachments {[]}
+    vendor_specific { {} }
   end
 end
