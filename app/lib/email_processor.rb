@@ -423,7 +423,8 @@ class EmailProcessor
 
     # Clean up nested empty divs
     5.times do # limit iterations to prevent infinite loops
-      html&.gsub!(/<div>\s*(<br\s*\/?>)*\s*<\/div>/, "")
+      html&.gsub!(/\A(\s*<div>\s*(<br\s*\/?>)*\s*<\/div>\s*)+/, "")
+      html&.gsub!(/(\s*<div>\s*(<br\s*\/?>)*\s*<\/div>\s*)+\z/, "")
       html&.gsub!(/<div>\s*<div>\s*<\/div>\s*<\/div>/, "")
     end
 
