@@ -417,14 +417,14 @@ class EmailProcessor
     html&.gsub!("p.MsoNormal,p.MsoNoSpacing{margin:0}", "")
 
     # Clean up empty elements
-    html&.gsub!(/<div>\s*<\/div>/, "")
-    html&.gsub!(/<p>\s*<\/p>/, "")
-    html&.gsub!(/<span>\s*<\/span>/, "")
+    html&.gsub!(/<p>(?:\s*\n\s*|\s|\n\s*\s*)*<\/p>/, "")
+    html&.gsub!(/<span>(?:\s*\n\s*|\s|\n\s*\s*)*<\/span>/, "")
+    html&.gsub!(/<div>(?:\s*\n\s*|\s|\n\s*\s*)*<\/div>/, "")
 
     # Clean up nested empty divs
     5.times do # limit iterations to prevent infinite loops
       html&.gsub!(/<div>\s*(<br\s*\/?>)*\s*<\/div>/, "")
-      html&.gsub!(/<div>\s*<div>\s*<\/div>\s*<\/div>/, "<div></div>")
+      html&.gsub!(/<div>\s*<div>\s*<\/div>\s*<\/div>/, "")
     end
 
     # Remove leading and trailing breaks
