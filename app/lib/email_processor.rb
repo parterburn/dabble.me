@@ -416,22 +416,31 @@ class EmailProcessor
     # Remove empty formatting
     html&.gsub!("p.MsoNormal,p.MsoNoSpacing{margin:0}", "")
 
-    # Clean up empty elements
+            # Clean up empty elements throughout (conservative)
     html&.gsub!(/<p>(?:\s*\n\s*|\s|\n\s*\s*)*<\/p>/, "")
     html&.gsub!(/<span>(?:\s*\n\s*|\s|\n\s*\s*)*<\/span>/, "")
     html&.gsub!(/<div>(?:\s*\n\s*|\s|\n\s*\s*)*<\/div>/, "")
 
-    # Clean up nested empty divs
-    5.times do # limit iterations to prevent infinite loops
-      html&.gsub!(/\A(\s*<div>\s*(<br\s*\/?>)*\s*<\/div>\s*)+/, "")
-      html&.gsub!(/(\s*<div>\s*(<br\s*\/?>)*\s*<\/div>\s*)+\z/, "")
-      html&.gsub!(/<div>\s*<div>\s*<\/div>\s*<\/div>/, "")
+    # Aggressively clean up trailing empty elements
+    10.times do # increased iterations for better cleanup
+      original_html = html.dup
+
+      # Remove trailing divs that contain only br tags and/or empty nested divs
+      html&.gsub!(/(\s*<div>\s*(<br[^>]*>\s*)*<\/div>\s*)+\z/, "")
+      html&.gsub!(/(\s*<div>\s*(<br[^>]*>\s*)*<div>\s*<\/div>\s*(<br[^>]*>\s*)*<\/div>\s*)+\z/, "")
+      html&.gsub!(/(\s*<div>\s*<div>\s*<\/div>\s*<\/div>\s*)+\z/, "")
+
+      # Remove leading empty divs with breaks
+      html&.gsub!(/\A(\s*<div>\s*(<br[^>]*>\s*)*<\/div>\s*)+/, "")
+
+      # Break if no more changes are made
+      break if html == original_html
     end
 
     # Remove leading and trailing breaks
     html&.gsub!(/\A(\s*<br\s*\/?>)+/, "")
     html&.gsub!(/(<br\s*\/?>)+\z/, "")
-    html&.gsub!(/\s*$/, "")
+    html = html&.strip
 
     # Convert to UTF-8
     html = to_utf8(html)
