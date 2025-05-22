@@ -20,7 +20,7 @@ class ImageCollageJob < ActiveJob::Base
     entry.remote_image_url = filestack_collage_url
     unless entry.save && FastImage.type(filestack_collage_url).present?
       Sentry.set_user(id: @user.id, email: @user.email)
-      Sentry.capture_message("Error updating collage image", level: :info, extra: { entry_id: entry_id, error: entry.errors.full_messages, fastimage_type: FastImage.type(filestack_collage_url) })
+      Sentry.capture_message("Error updating collage image", level: :info, extra: { entry_id: entry_id, error: entry.errors.full_messages, filestack_collage_url: filestack_collage_url, fastimage_type: FastImage.type(filestack_collage_url) })
 
       EntryMailer.image_error(@user, entry, filestack_collage_url).deliver_later
     end
@@ -124,7 +124,8 @@ class ImageCollageJob < ActiveJob::Base
         url.include?("%") ? url : CGI.escape(url)
       end.map(&:inspect).join(',')
 
-      "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:[#{remaining_urls}],w:1200,h:1200,m:1/#{first_url}"
+      url = "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:%5B#{remaining_urls}%5D,w:1200,h:1200,m:1/#{first_url}"
+      url
     end
   end
 end
