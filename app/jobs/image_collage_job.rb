@@ -18,12 +18,11 @@ class ImageCollageJob < ActiveJob::Base
     end
 
     entry.remote_image_url = filestack_collage_url
-    if FastImage.type(filestack_collage_url).present? && entry.save
-    else
+    unless entry.save && FastImage.type(filestack_collage_url).present?
       Sentry.set_user(id: @user.id, email: @user.email)
-      Sentry.capture_message("Error updating collage image", level: :info, extra: { entry_id: entry_id, error: entry.errors.full_messages })
+      Sentry.capture_message("Error updating collage image", level: :info, extra: { entry_id: entry_id, error: entry.errors.full_messages, fastimage_type: FastImage.type(filestack_collage_url) })
 
-      EntryMailer.image_error(@user, entry).deliver_later
+      EntryMailer.image_error(@user, entry, filestack_collage_url).deliver_later
     end
     entry.update(filepicker_url: nil) if entry.filepicker_url == "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
   end

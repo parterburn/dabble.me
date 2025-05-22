@@ -54,10 +54,10 @@ class ProcessEntryImageJob < ActiveJob::Base
         entry.remote_image_url = s3_file.public_url
       end
 
-      unless FastImage.type(entry.remote_image_url).present? && entry.save
+      unless entry.save && FastImage.type(entry.remote_image_url).present?
         Sentry.set_user(id: entry.user_id, email: entry.user.email)
-        Sentry.capture_message("Error updating entry image", level: :info, extra: { entry_id: entry_id, error: entry.errors.full_messages })
-        EntryMailer.image_error(entry.user, entry).deliver_later
+        Sentry.capture_message("Error updating entry image", level: :info, extra: { entry_id: entry_id, error: entry.errors.full_messages, fastimage_type: FastImage.type(entry.remote_image_url) })
+        EntryMailer.image_error(entry.user, entry, entry.remote_image_url).deliver_later
       end
       entry.update(filepicker_url: nil) if entry.filepicker_url == "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
 

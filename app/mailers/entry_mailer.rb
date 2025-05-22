@@ -43,9 +43,10 @@ class EntryMailer < ActionMailer::Base
     email.mailgun_options = { tag: 'AI Entry' }
   end
 
-  def image_error(user, entry)
+  def image_error(user, entry, url)
     @entry = entry
     @user = user
+    @url = url
 
     set_reply_headers(entry)
     email = mail  from: "Paul from Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>",
@@ -59,7 +60,7 @@ class EntryMailer < ActionMailer::Base
 
   def subject(entry)
     if entry.date.after?(6.months.ago)
-      subject ||= entry.original_email&.dig("headers", "Subject").presence || "Entry for #{entry.date.strftime('%A, %b %-d, %Y')}"
+      subject ||= entry.original_email&.dig("headers", "Subject")&.gsub("Re: ", "")&.presence || "Entry for #{entry.date.strftime('%A, %b %-d, %Y')}"
     else
       subject = "Entry for #{entry.date.strftime('%A, %b %-d, %Y')}"
     end
