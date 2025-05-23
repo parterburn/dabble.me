@@ -385,6 +385,7 @@ class EmailProcessor
     html&.gsub!(/\A\s*<html>|<\/html>\s*\z/, "")
     html&.gsub!(/\A\s*<body>|<\/body>\s*\z/, "")
     html&.gsub!(/\A\s*<head>.*?<\/head>\s*/mi, "")
+    html&.gsub!(/\<br ?\/>/, "<br>")
 
     # Process links
     html = Rinku.auto_link(html, :all, 'target="_blank"')
