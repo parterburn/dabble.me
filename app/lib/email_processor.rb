@@ -320,6 +320,10 @@ class EmailProcessor
     body&.gsub!(/(?:\n\n?|\n\n?)/, "<br><br>") # iOS Mail double breaks
     body&.gsub!(/(?:\n\r?|\r\n?)/, "<br>") # standard line breaks
 
+    # Handle literal \n strings (from some email clients)
+    body&.gsub!(/\\n\\n/, "<br><br>")
+    body&.gsub!(/\\n/, "<br>")
+
     # Handle links and signatures
     body&.gsub!(/<(http[s]?:\/\/\S*?)>/, "(\\1)") # make links visible
     body&.gsub!(/--( \*)?$\z/, "") # remove gmail signature break
@@ -401,6 +405,15 @@ class EmailProcessor
     html = html.gsub(/\n\n/, "<br><br>")
     html = html.gsub(/\n\r?|\r\n?/, "<br>")
 
+    # Handle literal \n strings (from some email clients)
+    html = html.gsub(/\\n\\n/, "<br><br>")
+    html = html.gsub(/\\n/, "<br>")
+
+    # Clean up literal \n between HTML tags (should be removed, not converted to br)
+    html = html.gsub(/>\s*\\n\s*</, "><")
+    html = html.gsub(/\\n\s*</, "<")
+    html = html.gsub(/>\s*\\n/, ">")
+
     # Remove styles, xml, comments
     html&.gsub!(/<style(?:\s+[^>]*)?>.*?<\/style>/mi, '')
     html&.gsub!(/<xml(?:\s+[^>]*)?>.*?<\/xml>/mi, '')
@@ -416,11 +429,6 @@ class EmailProcessor
     # Remove empty formatting
     html&.gsub!("p.MsoNormal,p.MsoNoSpacing{margin:0}", "")
 
-            # Clean up empty elements throughout (conservative)
-    html&.gsub!(/<p>(?:\s*\n\s*|\s|\n\s*\s*)*<\/p>/, "")
-    html&.gsub!(/<span>(?:\s*\n\s*|\s|\n\s*\s*)*<\/span>/, "")
-    html&.gsub!(/<div>(?:\s*\n\s*|\s|\n\s*\s*)*<\/div>/, "")
-
     # Aggressively clean up trailing empty elements
     10.times do # increased iterations for better cleanup
       original_html = html.dup
@@ -430,16 +438,36 @@ class EmailProcessor
       html&.gsub!(/(\s*<div>\s*(<br[^>]*>\s*)*<div>\s*<\/div>\s*(<br[^>]*>\s*)*<\/div>\s*)+\z/, "")
       html&.gsub!(/(\s*<div>\s*<div>\s*<\/div>\s*<\/div>\s*)+\z/, "")
 
+      # Clean up empty elements throughout (conservative)
+      html&.gsub!(/<p>(?:\s*\n\s*|\s|\n\s*\s*)*<\/p>/, "")
+      html&.gsub!(/<span>(?:\s*\n\s*|\s|\n\s*\s*)*<\/span>/, "")
+      html&.gsub!(/<div>(?:\s*\n\s*|\s|\n\s*\s*)*<\/div>/, "")
+
       # Remove leading empty divs with breaks
       html&.gsub!(/\A(\s*<div>\s*(<br[^>]*>\s*)*<\/div>\s*)+/, "")
+
+      # Remove leading and trailing breaks
+      html&.gsub!(/\A(\s*<br\s*\/?>)+/, "")
+      html&.gsub!(/(<br\s*\/?>)+\z/, "")
+      html&.gsub!(/\A<div>\s*/, "<div>")
+      html&.gsub!(/\A<div>\s*<div>/, "<div><div>")
+      html&.gsub!(/\A<div><div>\s*<div>/, "<div><div><div>")
+      html&.gsub!(/\A<div>\s*<br>/, "<div>")
+      html&.gsub!(/\A<div>\s*<br>\s*<div>/, "<div><div>")
+      html&.gsub!(/\A<div><div>\s*<br>/, "<div><div>")
+      html&.gsub!(/\s*<\/div>\z/, "</div>")
+      html&.gsub!(/\s*<br>\s*<\/div>\z/, "</div>")
+      html&.gsub!(/\s*<br>\s*<\/div><\/div>\z/, "</div></div>")
+      html&.gsub!(/\s*<br>\s*<\/div><\/div><\/div>\z/, "</div></div></div>")
+      html&.gsub!(/\s*<br>\s*<\/div><\/div><\/div><\/div>\z/, "</div></div></div></div>")
+
+      # Collapse redundant nested <div><div>...</div></div> at the root to a single <div>...</div>
+      html&.gsub!(/\A<div>\s*<div>(.*?)<\/div>\s*<\/div>\z/m, '<div>\1</div>')
 
       # Break if no more changes are made
       break if html == original_html
     end
 
-    # Remove leading and trailing breaks
-    html&.gsub!(/\A(\s*<br\s*\/?>)+/, "")
-    html&.gsub!(/(<br\s*\/?>)+\z/, "")
     html = html&.strip
 
     # Convert to UTF-8
