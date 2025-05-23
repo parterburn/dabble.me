@@ -41,7 +41,7 @@ class ImageCollageJob < ActiveJob::Base
         f.options.timeout = 120
         f.options.open_timeout = 120
       end
-      resp = connection.get("/v3/#{ENV['SMTP_DOMAIN']}/events?pretty=yes&event=accepted&ascending=no&limit=1&message-id=#{@message_id}")
+      resp = connection.get("/v3/#{ENV['SMTP_DOMAIN']}/events?pretty=yes&event=accepted&ascending=no&limit=1&message-id=#{URI.encode_www_form_component(@message_id)}")
       last_message = resp.body&.dig("items", 0) if resp.success?
       break if last_message.present?
       sleep 10
