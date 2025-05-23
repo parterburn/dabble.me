@@ -392,6 +392,7 @@ class EmailProcessor
     html = html.split(%r{<br[^>]*id="lineBreakAtBeginningOfSignature"[^>]*>}).first || html # gmail signature
     html = html.split(%r{<br>\s*--(\s*<br>|\s*$)}).first || html # standard signature separator
     html = html.split(%r{<div>\s*<br>\s*</div>\s*<div>\s*--\s*</div>}).first || html # gmail signature variant
+    html = html.split(%r{<div>\s*<br>\s*--\s*<br>\s*</div>}).first || html # signature with br tags around --
 
     # Clean up HTML
     safe_list_sanitizer = Rails::HTML5::SafeListSanitizer.new
