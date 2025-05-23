@@ -58,7 +58,7 @@ class ProcessEntryImageJob < ActiveJob::Base
 
       if entry.image.blank?
         Sentry.set_user(id: entry.user_id, email: entry.user.email)
-        Sentry.capture_message("Error updating entry image", level: :info, extra: { entry_id: entry_id, error: entry.errors.full_messages, fastimage_type: FastImage.type(entry.remote_image_url) })
+        Sentry.capture_message("Error updating entry image", level: :info, extra: { entry_id: entry_id, error: entry.errors.full_messages })
         url = s3_file.public_url
         EntryMailer.image_error(entry.user, entry, url).deliver_later
       end
