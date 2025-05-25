@@ -63,7 +63,7 @@
       Image Uploaded: <a href='<%= @url %>'><%= @url %></a>
     </p>
     <p>
-      Entry Image URL: <a href='<%= @entry.image_url_cdn %>'><%= @entry.image_url_cdn %></a>
+      Entry Image URL: <a href='<%= @entry.image_url_cdn(cloudflare: false) %>'><%= @entry.image_url_cdn(cloudflare: false) %></a>
     </p>
     <p>
       <%= @entry.errors.full_messages.join(', ') %>

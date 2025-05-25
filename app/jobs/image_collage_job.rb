@@ -9,7 +9,7 @@ class ImageCollageJob < ActiveJob::Base
     @user = entry.user
 
     entry.update(filepicker_url: "https://d10r8m94hrfowu.cloudfront.net/uploading.png")
-    @existing_url = entry&.image_url_cdn == "https://d10r8m94hrfowu.cloudfront.net/uploading.png" ? nil : entry&.image_url_cdn
+    @existing_url = entry&.image_url_cdn == "https://d10r8m94hrfowu.cloudfront.net/uploading.png" ? nil : entry&.image_url_cdn(cloudflare: false)
 
     if @message_id.present?
       filestack_collage_url = collage_from_mailgun_attachments

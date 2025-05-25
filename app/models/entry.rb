@@ -182,7 +182,7 @@ class Entry < ActiveRecord::Base
         if nsfw_percent.present? && nsfw_percent >= ENV['CLARIFAI_THRESHOLD'].to_f
           Sentry.set_user(id: user.id, email: user.email)
           Sentry.set_tags(plan: user.plan)
-          Sentry.capture_message("Clarifai Flagged", level: :warning, extra: { entry_id: id, nsfw_pct: "#{(nsfw_percent*100).round(1)}%", image: image_url_cdn, clarifai: res })
+          Sentry.capture_message("Clarifai Flagged", level: :warning, extra: { entry_id: id, nsfw_pct: "#{(nsfw_percent*100).round(1)}%", image: image_url_cdn(cloudflare: false), clarifai: res })
         end
         "#{(nsfw_percent*100).round(1)}%: #{image_url_cdn}"
       rescue => e

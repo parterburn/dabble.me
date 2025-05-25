@@ -140,7 +140,7 @@ class EmailProcessor
             ImageCollageJob.perform_later(existing_entry.id, urls: image_urls)
           elsif best_attachment_url.present?
             existing_entry.update(filepicker_url: "https://d10r8m94hrfowu.cloudfront.net/uploading.png")
-            existing_image = existing_entry.image_url_cdn == "https://d10r8m94hrfowu.cloudfront.net/uploading.png" ? nil : existing_entry.image_url_cdn
+            existing_image = existing_entry.image_url_cdn(cloudflare: false) == "https://d10r8m94hrfowu.cloudfront.net/uploading.png" ? nil : existing_entry.image_url_cdn(cloudflare: false)
             existing_entry.remote_image_url = collage_from_urls([best_attachment_url, existing_image])
             existing_entry.filepicker_url = nil
           end

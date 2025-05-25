@@ -199,7 +199,7 @@ class EntriesController < ApplicationController
       redirect_back_or_to entries_path
     else
       update_params = if @entry.image_url_cdn.present? && entry_params[:remove_image] == "0"
-        @entry.remote_image_url = @entry.image_url_cdn
+        @entry.remote_image_url = @entry.image_url_cdn(cloudflare: false)
         entry_params.permit(:entry, :date)
       else
         entry_params.permit(:entry, :date, :remove_image)
