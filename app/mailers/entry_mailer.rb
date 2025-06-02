@@ -43,15 +43,16 @@ class EntryMailer < ActionMailer::Base
     email.mailgun_options = { tag: 'AI Entry' }
   end
 
-  def image_error(user, entry, url)
+  def image_error(user, entry, url, errors)
     @entry = entry
     @user = user
     @url = url
-
+    @errors = errors
     set_reply_headers(entry)
-    email = mail  from: "Paul from Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>",
-                  to: "hello@#{ENV['MAIN_DOMAIN']}",
-                  subject: "Re: #{subject(entry)}",
+    email = mail  from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
+                  to: "#{user.name} <#{user.email}>",
+                  bcc: ["hello@#{ENV['MAIN_DOMAIN']}"],
+                  subject: "Image Error Re: #{subject(entry)}",
                   html: (render_to_string(template: '../views/entry_mailer/image_error.html')).to_str
     email.mailgun_options = { tag: "Entry Image Error" }
   end
@@ -60,9 +61,9 @@ class EntryMailer < ActionMailer::Base
 
   def subject(entry)
     if entry.date.after?(6.months.ago)
-      subject ||= entry.original_email&.dig("headers", "Subject")&.gsub("Re: ", "")&.presence || "Entry for #{entry.date.strftime('%A, %b %-d, %Y')}"
+      entry.original_email&.dig("headers", "Subject")&.gsub("Re: ", "")&.presence || "Entry for #{entry.date.strftime('%A, %b %-d, %Y')}"
     else
-      subject = "Entry for #{entry.date.strftime('%A, %b %-d, %Y')}"
+      "Entry for #{entry.date.strftime('%A, %b %-d, %Y')}"
     end
   end
 

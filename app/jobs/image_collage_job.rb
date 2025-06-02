@@ -23,7 +23,7 @@ class ImageCollageJob < ActiveJob::Base
       Sentry.set_user(id: @user.id, email: @user.email)
       Sentry.capture_message("Error updating collage image", level: :info, extra: { entry_id: entry_id, error: entry.errors.full_messages, filestack_collage_url: filestack_collage_url })
 
-      EntryMailer.image_error(@user, entry, filestack_collage_url).deliver_later
+      EntryMailer.image_error(@user, entry, filestack_collage_url, entry.errors.full_messages).deliver_later
     end
     entry.update(filepicker_url: nil) if entry.filepicker_url == "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
   end

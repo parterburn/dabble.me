@@ -57,16 +57,25 @@
   </head>
   <body>
     <p>
-      The image for the user <%= @user.email %> entry <%= @entry.id %> on <a href='<%= day_entry_url(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day) %>'><%= @entry.date.strftime('%B %d, %Y') %></a> could not be saved. Try converting it to a lower resolution JPEG image and use the <a href='<%= edit_entry_url(@entry) %>'>web interface</a> to re-upload it.
+      The image for the <strong><a href='<%= day_entry_url(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day) %>'>Entry on <%= @entry.date.strftime('%B %d, %Y') %></a></strong> could not be saved. Try using the <a href='<%= edit_entry_url(@entry) %>'>web interface</a> to re-upload it or try converting it to a lower resolution JPG image.
     </p>
-    <p>
-      Image Uploaded: <a href='<%= @url %>'><%= @url %></a>
-    </p>
-    <p>
-      Entry Image URL: <a href='<%= @entry.image_url_cdn(cloudflare: false) %>'><%= @entry.image_url_cdn(cloudflare: false) %></a>
-    </p>
-    <p>
-      <%= @entry.errors.full_messages.join(', ') %>
-    </p>
+
+    <% if @url.present? %>
+      <p>
+        Image Uploaded: <a href='<%= @url %>'><%= @url %></a>
+      </p>
+    <% end %>
+
+    <% if @entry.image.present? %>
+      <p>
+        Entry Image URL: <a href='<%= @entry.image_url_cdn(cloudflare: false) %>'><%= @entry.image_url_cdn(cloudflare: false) %></a>
+      </p>
+    <% end %>
+
+    <% if @errors.present? %>
+      <p>
+        <%= @errors.join(', ') %>
+      </p>
+    <% end %>
   </body>
 </html>
