@@ -21,7 +21,14 @@ class ImageUploader < CarrierWave::Uploader::Base
 
   def safe_resize(*)
     begin
-      resize_to_limit(1200, 1200, combine_options: { saver: { quality: 90 } })
+      # Use format-specific options to avoid compression issues
+      if heic_image?(file)
+        # For HEIC/HEIF files, use simpler resize without quality settings
+        resize_to_limit(1200, 1200)
+      else
+        # For other formats, use quality settings
+        resize_to_limit(1200, 1200, combine_options: { saver: { quality: 90 } })
+      end
     rescue => e
       Sentry.capture_exception(e, extra: { type: "Image resize failed" })
       # Continue without resizing rather than failing entirely
