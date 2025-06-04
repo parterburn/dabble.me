@@ -66,7 +66,7 @@ RSpec.describe EntriesController, type: :controller do
     end
 
     it 'should redirect to sign in if not logged in' do
-      post :create, params: params
+      expect { post :create, params: params }.to_not change { Entry.count }
       expect(response.status).to eq 302
       expect(response).to redirect_to(new_user_session_url)
     end
