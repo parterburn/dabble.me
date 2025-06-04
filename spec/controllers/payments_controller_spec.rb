@@ -96,21 +96,20 @@ RSpec.describe PaymentsController, type: :controller do
     end
 
     it 'should redirect to login url if not logged in' do
-      expect { post :create, params: params }.to_not change { Payment.count }
+      expect { post :create, params: params }.not_to change { Payment.count }
       expect(response.status).to eq 302
       expect(response).to redirect_to(new_user_session_url)
     end
 
     it 'should redirect to past entries path if not superuser' do
       sign_in user
-      expect { post :create, params: params }.to_not change { Payment.count }
+      expect { post :create, params: params }.not_to change { Payment.count }
       expect(response.status).to eq 302
       expect(response).to redirect_to(entries_path)
     end
 
     it 'should show create new Payment for superusers' do
       sign_in superuser
-      post :create, params: params
       expect { post(:create, params: params) }.to change { Payment.count }.by(1)
       expect(response.status).to eq 302
       expect(response).to redirect_to(payments_url)
@@ -119,14 +118,14 @@ RSpec.describe PaymentsController, type: :controller do
 
   describe 'destroy' do
     it 'should redirect to login url if not logged in' do
-      expect { delete(:destroy, params: { id: payment.id }) }.to_not change { Payment.count }
+      expect { delete(:destroy, params: { id: payment.id }) }.not_to change { Payment.count }
       expect(response.status).to eq 302
       expect(response).to redirect_to(new_user_session_url)
     end
 
     it 'should redirect to past entries path if not superuser' do
       sign_in user
-      expect { delete(:destroy, params: { id: payment.id }) }.to_not change { Payment.count }
+      expect { delete(:destroy, params: { id: payment.id }) }.not_to change { Payment.count }
       expect(response.status).to eq 302
       expect(response).to redirect_to(entries_path)
     end
@@ -169,7 +168,7 @@ RSpec.describe PaymentsController, type: :controller do
 
     it 'should create a payment but not change plan or email user thanks' do
       payhere_params.deep_merge!(customer: { id: paid_annual_user.payhere_id })
-      expect { post :payment_notify, params: payhere_params, as: :json }.to_not change {
+      expect { post :payment_notify, params: payhere_params, as: :json }.not_to change {
         paid_annual_user.reload.plan
       }
       expect(ActionMailer::Base.deliveries.size).to eq 0
@@ -194,7 +193,7 @@ RSpec.describe PaymentsController, type: :controller do
 
     it 'should not create a payment if no match' do
       payhere_params.deep_merge!(customer: { id: 999999999999, email: "fakeemail@fake.com" })
-      expect { post :payment_notify, params: payhere_params, as: :json }.to_not change { Payment.count }
+      expect { post :payment_notify, params: payhere_params, as: :json }.not_to change { Payment.count }
       expect(paid_user.reload.plan).to eq paid_user.plan
       expect(ActionMailer::Base.deliveries.last.subject).to eq '[REFUND REQUIRED] Payment Without a User'
     end
@@ -238,7 +237,7 @@ RSpec.describe PaymentsController, type: :controller do
 
     it 'should not create a payment if no match' do
       gumroad_params.merge!(email: Faker::Internet.email, purchaser_id: Faker::Number.number(digits: 12))
-      expect { post :payment_notify, params: gumroad_params, as: :json }.to_not change { Payment.count }
+      expect { post :payment_notify, params: gumroad_params, as: :json }.not_to change { Payment.count }
       expect(paid_user.reload.plan).to eq paid_user.plan
       expect(ActionMailer::Base.deliveries.last.subject).to eq '[REFUND REQUIRED] Payment Without a User'
     end
@@ -262,7 +261,7 @@ RSpec.describe PaymentsController, type: :controller do
 
     it 'should not create a payment if no match' do
       paypal_params.merge!(payer_email: paid_user.email, item_name: 'Dabble Me PRO for WRONG_KEY')
-      expect { post :payment_notify, params: paypal_params, as: :json }.to_not change { Payment.count }
+      expect { post :payment_notify, params: paypal_params, as: :json }.not_to change { Payment.count }
       expect(paid_user.reload.plan).to eq paid_user.plan
       expect(ActionMailer::Base.deliveries.last.subject).to eq '[REFUND REQUIRED] Payment Without a User'
     end

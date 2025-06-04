@@ -22,7 +22,7 @@ RSpec.describe EntriesController, type: :controller do
       get :index
       expect(response.status).to eq 200
       expect(response.body).to have_content(entry.formatted_body)
-      expect(response.body).to_not have_content(not_my_entry.formatted_body)
+      expect(response.body).not_to have_content(not_my_entry.formatted_body)
     end
   end
 
@@ -66,14 +66,14 @@ RSpec.describe EntriesController, type: :controller do
     end
 
     it 'should redirect to sign in if not logged in' do
-      post :create, params: params
+      expect { post :create, params: params }.not_to change { Entry.count }
       expect(response.status).to eq 302
       expect(response).to redirect_to(new_user_session_url)
     end
 
     it 'should not let me create an entry if free user' do
       sign_in user
-      expect { post :create, params: params }.to_not change { Entry.count }
+      expect { post :create, params: params }.not_to change { Entry.count }
       expect(response.status).to eq 302
       expect(response).to redirect_to(root_path)
     end
@@ -97,7 +97,7 @@ RSpec.describe EntriesController, type: :controller do
 
     it "should not delete entries unless user is pro" do
       sign_in user
-      expect { delete :destroy, params: { id: not_my_entry.id } }.to_not change { Entry.count }
+      expect { delete :destroy, params: { id: not_my_entry.id } }.not_to change { Entry.count }
     end
 
     it 'should delete pro user entries' do
@@ -109,7 +109,7 @@ RSpec.describe EntriesController, type: :controller do
 
     it "should not delete entries that are not the user's" do
       sign_in user
-      expect { delete :destroy, params: { id: not_my_entry.id } }.to_not change { Entry.count }
+      expect { delete :destroy, params: { id: not_my_entry.id } }.not_to change { Entry.count }
     end
   end
 
@@ -140,7 +140,7 @@ RSpec.describe EntriesController, type: :controller do
       get :latest
       expect(response.status).to eq 200
       expect(response.body).to have_content(entry.formatted_body)
-      expect(response.body).to_not have_content(not_my_entry.formatted_body)
+      expect(response.body).not_to have_content(not_my_entry.formatted_body)
     end
 
     it 'should show a CTA to logged in users without entries' do
@@ -166,7 +166,7 @@ RSpec.describe EntriesController, type: :controller do
       get :export, format: 'txt'
       expect(response.status).to eq 200
       expect(response.body).to have_content(entry.formatted_body)
-      expect(response.body).to_not have_content(not_my_entry.formatted_body)
+      expect(response.body).not_to have_content(not_my_entry.formatted_body)
     end
   end
 end

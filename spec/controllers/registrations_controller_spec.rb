@@ -149,7 +149,7 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(response.status).to eq 302
       expect(response).to redirect_to(edit_user_registration_url)
       expect(paid_user.reload.email).to eq email
-      expect(paid_user.encrypted_password).to_not eq old_password
+      expect(paid_user.encrypted_password).not_to eq old_password
     end
 
     it 'should not allow user updates to frequency for free users' do
