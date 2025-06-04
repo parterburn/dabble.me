@@ -43,7 +43,7 @@ STRIPE_SIGNING_SECRET: whsec_1234
 
 ### Things you may want to rip out
 
-You can opt to not use Turnstile and Clarafai: simply don't add an environment variables for `TURNSTILE_SITE_KEY`, `CLARIFAI_V2_API_KEY`.
+You can opt to not use Turnstile and Clarifai: simply don't add an environment variables for `TURNSTILE_SITE_KEY`, `CLARIFAI_PERSONAL_ACCESS_TOKEN`.
 
 
 ### Tests

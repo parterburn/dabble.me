@@ -3,7 +3,7 @@ require 'rails_helper'
 describe 'Pages' do
   include_context 'has all objects'
 
-  it 'has corect title for Root page' do
+  it 'has correct title for Root page' do
     visit root_path
     expect(page).to have_title 'Dabble Me — Your private journal.'
   end
