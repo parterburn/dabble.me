@@ -34,7 +34,7 @@ describe 'Day Entries' do
     it 'should not show me other users entries' do
       sign_in user
       visit group_entries_url(group: not_my_entry.id)
-      expect(page).to_not have_content not_my_entry.body
+      expect(page).not_to have_content not_my_entry.body
     end
 
     it 'should not show me other users entries in edit mode' do

@@ -69,7 +69,7 @@ describe User do
       entry_date = Date.parse("2019-10-5")
       user.entries.create(date: Date.parse("2016-1-15"), body: "Hi from way back.")
       user.entries.create(date: Date.parse("2018-10-3"), body: "Hi from a few days ago.")
-      expect(user.random_entry(entry_date).date.year).to_not eq(2015)
+      expect(user.random_entry(entry_date).date.year).not_to eq(2015)
     end
 
   end
