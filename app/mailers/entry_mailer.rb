@@ -50,7 +50,7 @@ class EntryMailer < ActionMailer::Base
     @errors = errors
     set_reply_headers(entry)
     email = mail  from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
-                  to: "#{user.name} <#{user.email}>",
+                  to: "#{user.cleaned_to_address}",
                   bcc: ["hello@#{ENV['MAIN_DOMAIN']}"],
                   subject: "Image Error Re: #{subject(entry)}",
                   html: (render_to_string(template: '../views/entry_mailer/image_error.html')).to_str
