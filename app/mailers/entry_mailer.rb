@@ -43,10 +43,9 @@ class EntryMailer < ActionMailer::Base
     email.mailgun_options = { tag: 'AI Entry' }
   end
 
-  def image_error(user, entry, url, errors)
+  def image_error(user, entry, errors)
     @entry = entry
     @user = user
-    @url = url
     @errors = errors
     set_reply_headers(entry)
     email = mail  from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
