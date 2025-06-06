@@ -63,7 +63,7 @@ class EmailEventsController < ApplicationController
   def legit_request?
     digest = OpenSSL::Digest::SHA256.new
     data = [timestamp, token].join
-    actual_signature == OpenSSL::HMAC.hexdigest(digest, ENV['MAILGUN_API_KEY'], data)
+    actual_signature == OpenSSL::HMAC.hexdigest(digest, ENV['MAILGUN_SIGNING_KEY'], data)
   end
 
   def authenticate_mailgun_request!
