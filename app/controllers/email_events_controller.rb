@@ -70,6 +70,7 @@ class EmailEventsController < ApplicationController
     if legit_request?
       true
     else
+      Sentry.capture_message("Mailgun signature did not match.", level: :info, extra: { actual_signature: actual_signature, data: data, timestamp: timestamp, token: token })
       head(:forbidden, text: 'Mailgun signature did not match.')
       false
     end
