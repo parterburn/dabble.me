@@ -389,15 +389,16 @@ class EmailProcessor
     # Process links
     html = Rinku.auto_link(html, :all, 'target="_blank"')
 
+    # Clean up HTML
+    safe_list_sanitizer = Rails::HTML5::SafeListSanitizer.new
+    html = safe_list_sanitizer.sanitize(html, tags: %w(strong em a div span ul ol li b i br p hr u em blockquote), attributes: %w(href target))
+
     # Remove signatures
     html = html.split(%r{<br[^>]*id="lineBreakAtBeginningOfSignature"[^>]*>}).first || html # gmail signature
     html = html.split(%r{<br>\s*--(\s*<br>|\s*$)}).first || html # standard signature separator
     html = html.split(%r{<div>\s*<br>\s*</div>\s*<div>\s*--\s*</div>}).first || html # gmail signature variant
     html = html.split(%r{<div>\s*<br>\s*--\s*<br>\s*</div>}).first || html # signature with br tags around --
-
-    # Clean up HTML
-    safe_list_sanitizer = Rails::HTML5::SafeListSanitizer.new
-    html = safe_list_sanitizer.sanitize(html, tags: %w(strong em a div span ul ol li b i br p hr u em blockquote), attributes: %w(href target))
+    html = html.split(%r{<span>\s*--\s*</span>\s*<br>}).first || html # signature with span wrapped --
 
     # Ensure all links have target="_blank" (Rinku may not have caught existing links)
     html = html.gsub(/<a\s+([^>]*?)href="([^"]*?)"([^>]*?)>/i, '<a \1href="\2"\3 target="_blank">')
