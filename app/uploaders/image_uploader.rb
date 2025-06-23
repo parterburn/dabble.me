@@ -36,7 +36,7 @@ class ImageUploader < CarrierWave::Uploader::Base
   end
 
   def url(*args)
-    if version_active?(:jpeg)
+    if version_active?(:jpeg) && jpeg.file.exists?
       jpeg.url(*args)
     else
       super
