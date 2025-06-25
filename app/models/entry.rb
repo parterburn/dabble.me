@@ -160,13 +160,9 @@ class Entry < ActiveRecord::Base
   def check_image
     if image.present? && ENV['CLARIFAI_PERSONAL_ACCESS_TOKEN'].present?
       begin
-        url = "https://api.clarifai.com/v2/models/nsfw-recognition/outputs"
+        url = "https://api.clarifai.com/v2/users/nyvlck8tgaze/apps/image-moderation-824946897443/workflows/nsfw-recognition/results"
         headers = {"Authorization" => "Key #{ENV['CLARIFAI_PERSONAL_ACCESS_TOKEN']}", "Content-Type" => "application/json"}
         payload = {
-          user_app_id: {
-            user_id: ENV['CLARIFAI_USER_ID'],
-            app_id: ENV['CLARIFAI_APP_ID']
-          },
           inputs: [
             {
               data: {
@@ -178,7 +174,7 @@ class Entry < ActiveRecord::Base
           ]
         }.to_json
         res = JSON.parse(RestClient.post(url, payload, headers))
-        nsfw_percent = res.try(:[], 'outputs')&.first.try(:[], 'data').try(:[], 'concepts')&.second.try(:[], 'value')
+        nsfw_percent = res.dig("results", 0, "outputs", 0, "data", "concepts")&.find { |r| r.dig("name") == "nsfw" }&.dig("value")
         if nsfw_percent.present? && nsfw_percent >= ENV['CLARIFAI_THRESHOLD'].to_f
           Sentry.set_user(id: user.id, email: user.email)
           Sentry.set_tags(plan: user.plan)
