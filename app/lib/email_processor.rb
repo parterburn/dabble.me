@@ -467,6 +467,14 @@ class EmailProcessor
       # Collapse redundant nested <div><div>...</div></div> at the root to a single <div>...</div>
       html&.gsub!(/\A<div>\s*<div>(.*?)<\/div>\s*<\/div>\z/m, '<div>\1</div>')
 
+      # Clean up problematic line break patterns
+      html&.gsub!(/<\/div><br><div><br><br><br><\/div><br><div><br>/, "</div><br><div>")
+      html&.gsub!(/<\/div><br><div>\s*(<br>\s*)*<\/div><br><div><br>/, "</div><br><div>")
+
+      # Remove trailing <br><br><hr>
+      html&.gsub!(/<br><br><hr>\s*\z/, "")
+      html&.gsub!(/<br>\s*<br>\s*<hr>\s*\z/, "")
+
       # Break if no more changes are made
       break if html == original_html
     end
