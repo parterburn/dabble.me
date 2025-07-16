@@ -475,6 +475,21 @@ class EmailProcessor
       html&.gsub!(/<br><br><hr>\s*\z/, "")
       html&.gsub!(/<br>\s*<br>\s*<hr>\s*\z/, "")
 
+      # Clean up empty divs with only whitespace and line breaks
+      html&.gsub!(/<div>\s*(<br[^>]*>)*\s*<\/div>/, "")
+      html&.gsub!(/<div>\s*(<br[^>]*>\s*)+<\/div>/, "")
+
+      # Clean up deeply nested empty div structures
+      html&.gsub!(/<div>\s*<div>\s*<div>\s*<\/div>\s*<\/div>\s*<\/div>/, "")
+      html&.gsub!(/<div>\s*<div>\s*<\/div>\s*<\/div>/, "")
+
+      # Clean up divs that contain only line breaks and nested empty divs
+      html&.gsub!(/<div>\s*<br>\s*<div>\s*<br>\s*<br><br>\s*<div>\s*<br>\s*<div><div><div><\/div><\/div><\/div>\s*<\/div>\s*<\/div>\s*<\/div>/, "")
+
+      # More aggressive cleanup of trailing empty nested structures
+      html&.gsub!(/(<br>\s*)*<div>\s*(<br>\s*)*<div>\s*(<br>\s*)*<div>\s*<\/div>\s*<\/div>\s*<\/div>\s*\z/, "")
+      html&.gsub!(/(<br>\s*)*<div>\s*(<br>\s*)*<\/div>\s*<\/div>\s*\z/, "")
+
       # Break if no more changes are made
       break if html == original_html
     end
