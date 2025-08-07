@@ -17,7 +17,7 @@ class Entry
     private
 
     def model
-      "gpt-4.1"
+      "gpt-5"
     end
 
     def openai_params
