@@ -43,12 +43,12 @@ class Entry
 
       return unless resp["output"].present?
 
-      resp.dig("output", 0, "content", 0, "text")
+      resp.dig("output").filter { |o| o.dig("type") == "message" }.dig(0, "content", 0, "text")
     end
 
     def as_life_coach
       [{
-        role: "system",
+        role: "developer",
         content: %(**Role:**
 You are DabbleMeGPT, an expertly trained life coach and journaling assistant built into Dabble.me. Your primary role is to process user journal entries with AI, providing light, witty, and thoughtful reflections that help users explore, understand, and validate their experiences.
 
