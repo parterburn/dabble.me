@@ -6,7 +6,7 @@ gem 'rails', '~> 6.1.7.10'
 gem "concurrent-ruby", "1.3.4" # needed until https://github.com/rails/rails/pull/54264 is in Rails 7.0.8.8
 
 gem 'puma', '~> 6'
-gem 'pg', '~> 1.5', '>= 1.2.3'
+gem 'pg', '~> 1.6'
 # gem 'barnes'
 
 # users

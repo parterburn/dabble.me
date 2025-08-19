@@ -316,7 +316,7 @@ GEM
       mini_portile2 (~> 2.8.2)
       racc (~> 1.4)
     orm_adapter (0.5.0)
-    pg (1.5.8)
+    pg (1.6.1)
     public_suffix (6.0.2)
     puma (6.6.1)
       nio4r (~> 2.0)
@@ -555,7 +555,7 @@ DEPENDENCIES
   loofah (>= 2.5)
   mailgun_rails
   meta_request
-  pg (~> 1.5, >= 1.2.3)
+  pg (~> 1.6)
   puma (~> 6)
   rack-affiliates
   rack-attack
