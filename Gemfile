@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 ruby File.read(File.expand_path '../.ruby-version', __FILE__).strip.sub /\-p[0-9]+$/, '' # Read the rbenv version file
-gem 'rails', '~> 6.1.7.8'
+gem 'rails', '~> 6.1.7.10'
 
 gem "concurrent-ruby", "1.3.4" # needed until https://github.com/rails/rails/pull/54264 is in Rails 7.0.8.8
 
