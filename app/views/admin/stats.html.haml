@@ -103,7 +103,72 @@
     %strong= format_number(emails_received_total)
     %span{style: "margin-left: 10px;"}  #{number_to_percentage(emails_received_total.to_f/emails_sent_total.to_f*100, precision: 0)}
 
+  .col-md-12
+    %hr
 
+  .col-md-12
+    - active = @dashboard.active_users_breakdown(since: 1.year.ago)
+    %h3 Active Users since #{1.year.ago.strftime('%b %-d, %Y')}
+    .row
+      .col-md-3
+        %strong Metric
+      .col-md-2
+        %strong All
+      .col-md-2
+        %strong Pro
+      .col-md-2
+        %strong Free
+    .row
+      .col-md-3
+        %strong Active (>=1 entry)
+      .col-md-2
+        %strong #{format_number(active[:all][:yearly_count])}
+      .col-md-2
+        %strong #{format_number(active[:pro][:yearly_count])}
+      .col-md-2
+        %strong #{format_number(active[:free][:yearly_count])}
+    .row
+      .col-md-3
+        %strong Monthly (all 12 months)
+      .col-md-2
+        %strong #{format_number(active[:all][:monthly_count])}
+      .col-md-2
+        %strong #{format_number(active[:pro][:monthly_count])}
+      .col-md-2
+        %strong #{format_number(active[:free][:monthly_count])}
+    .row
+      .col-md-3
+        %strong Weekly (>=52 weeks)
+      .col-md-2
+        %strong #{format_number(active[:all][:weekly_count])}
+      .col-md-2
+        %strong #{format_number(active[:pro][:weekly_count])}
+      .col-md-2
+        %strong #{format_number(active[:free][:weekly_count])}
+    .row
+      .col-md-3
+        %strong Daily (>=365 days)
+      .col-md-2
+        %strong #{format_number(active[:all][:daily_count])}
+      .col-md-2
+        %strong #{format_number(active[:pro][:daily_count])}
+      .col-md-2
+        %strong #{format_number(active[:free][:daily_count])}
+    - if active[:all][:weekly_users].any? || active[:all][:daily_users].any?
+      %br
+      %h4 Weekly/Daily Active Users
+      - weekly_all = active[:all][:weekly_users]
+      - daily_all = active[:all][:daily_users]
+      - combined_users = (weekly_all + daily_all).uniq
+      %ul.list-unstyled
+        - combined_users.each do |user|
+          - plan_tag = (user.is_pro? ? 'PRO' : 'FREE')
+          - activity_tag = (daily_all.include?(user) ? 'DAILY' : 'WEEKLY')
+          %li
+            = (user.full_name.presence || user.email)
+            %span.label.label-default{style: 'margin-left: 8px;'}= plan_tag
+            %span.label.label-default{style: 'margin-left: 6px;'}= activity_tag
+  
   .col-md-12
     %hr
 

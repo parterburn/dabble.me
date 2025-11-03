@@ -111,6 +111,20 @@ class AdminStats
     end
   end
 
+  # Active users breakdown over a period (defaults to last year)
+  # Returns a hash with keys :all, :pro, :free, each containing counts and user lists:
+  # {
+  #   yearly_count:, monthly_count:, weekly_count:, daily_count:,
+  #   weekly_users: [User], daily_users: [User]
+  # }
+  def active_users_breakdown(since: 1.year.ago)
+    {
+      all: active_counts_for_scope(User.all, since: since),
+      pro: active_counts_for_scope(User.pro_only, since: since),
+      free: active_counts_for_scope(User.free_only, since: since)
+    }
+  end
+
   private
 
   def entry_count_for(user)
@@ -119,5 +133,47 @@ class AdminStats
 
   def account_age_for(user)
     [30, Time.zone.now.to_date - user.created_at.to_date].min
+  end
+
+  def active_counts_for_scope(user_scope, since:)
+    period_end = Time.zone.now.end_of_day
+    # Remove default_scope ORDER to avoid DISTINCT/ORDER BY error
+    entries_in_period = Entry.unscoped.where(date: since..period_end)
+
+    # Thresholds relative to a one-year window
+    months_required = 12
+    weeks_required = 52
+    days_required = 365
+
+    yearly_ids = entries_in_period.select(:user_id).distinct.pluck(:user_id)
+
+    monthly_ids = entries_in_period
+      .group(:user_id)
+      .having("COUNT(DISTINCT DATE_TRUNC('month', date)) >= ?", months_required)
+      .pluck(:user_id)
+
+    weekly_ids = entries_in_period
+      .group(:user_id)
+      .having("COUNT(DISTINCT DATE_TRUNC('week', date)) >= ?", weeks_required)
+      .pluck(:user_id)
+
+    daily_ids = entries_in_period
+      .group(:user_id)
+      .having("COUNT(DISTINCT DATE(date)) >= ?", days_required)
+      .pluck(:user_id)
+
+    scoped_yearly_ids = user_scope.where(id: yearly_ids).pluck(:id)
+    scoped_monthly_ids = user_scope.where(id: monthly_ids).pluck(:id)
+    scoped_weekly_ids = user_scope.where(id: weekly_ids).pluck(:id)
+    scoped_daily_ids = user_scope.where(id: daily_ids).pluck(:id)
+
+    {
+      yearly_count: scoped_yearly_ids.size,
+      monthly_count: scoped_monthly_ids.size,
+      weekly_count: scoped_weekly_ids.size,
+      daily_count: scoped_daily_ids.size,
+      weekly_users: User.where(id: scoped_weekly_ids).order(:first_name, :last_name),
+      daily_users: User.where(id: scoped_daily_ids).order(:first_name, :last_name)
+    }
   end
 end
