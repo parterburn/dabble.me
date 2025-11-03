@@ -171,9 +171,7 @@ class AdminStats
       yearly_count: scoped_yearly_ids.size,
       monthly_count: scoped_monthly_ids.size,
       weekly_count: scoped_weekly_ids.size,
-      daily_count: scoped_daily_ids.size,
-      weekly_users: User.where(id: scoped_weekly_ids).order(:first_name, :last_name),
-      daily_users: User.where(id: scoped_daily_ids).order(:first_name, :last_name)
+      daily_count: scoped_daily_ids.size
     }
   end
 end
