@@ -141,9 +141,9 @@ class AdminStats
     entries_in_period = Entry.unscoped.where(date: since..period_end)
 
     # Thresholds relative to a one-year window
-    months_required = 12
-    weeks_required = 52
-    days_required = 365
+    months_required = 11
+    weeks_required = 51
+    days_required = 364
 
     yearly_ids = entries_in_period.select(:user_id).distinct.pluck(:user_id)
 
