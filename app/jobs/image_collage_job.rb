@@ -19,7 +19,7 @@ class ImageCollageJob < ActiveJob::Base
     end
 
     # Retry saving and checking for image up to 3 times since Filestack processing can take time
-    3.times do |attempt|
+    5.times do |attempt|
       entry.remote_image_url = filestack_collage_url
       entry.save
       entry.reload
