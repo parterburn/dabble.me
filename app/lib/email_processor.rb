@@ -207,7 +207,7 @@ class EmailProcessor
       @user.increment!(:emails_received)
       begin
         UserMailer.second_welcome_email(@user).deliver_later if @user.emails_received == 1 && @user.entries.count == 1
-      rescue StandardError => e
+      rescue StandardError => _e
         Sentry.capture_message("Error sending email", level: :error, extra: { email_type: "Second Welcome Email" })
       end
 
@@ -253,7 +253,7 @@ class EmailProcessor
   def find_user_from_user_key(to_token, from_email)
     begin
       User.where(user_key: to_token).or(User.where(email: from_email)).first
-    rescue JSON::ParserError => e
+    rescue JSON::ParserError => _e
     end
   end
 
@@ -470,6 +470,20 @@ class EmailProcessor
       # Clean up problematic line break patterns
       html&.gsub!(/<\/div><br><div><br><br><br><\/div><br><div><br>/, "</div><br><div>")
       html&.gsub!(/<\/div><br><div>\s*(<br>\s*)*<\/div><br><div><br>/, "</div><br><div>")
+
+      # Remove <br> immediately before an opening <div> when not between text
+      html&.gsub!(/(^|>)(?:\s*<br\s*\/?>\s*)+(?=\s*<div)/i, "\\1")
+      # Remove <br> after a closing </div> only when followed by another block boundary or end
+      html&.gsub!(/(<\/div>)\s*(?:<br\s*\/?>\s*)+(?=\s*(?:<div|<\/div>|$))/i, "\\1")
+
+      # Remove <br> between consecutive opening divs or consecutive closing/opening divs
+      html&.gsub!(/<div>\s*(?:<br\s*\/?>\s*)+<div>/i, "<div><div>")
+      html&.gsub!(/<\/div>\s*(?:<br\s*\/?>\s*)+<div>/i, "</div><div>")
+
+      # Remove empty divs anywhere (not just trailing/leading)
+      3.times do
+        html&.gsub!(/<div>\s*<\/div>/i, "")
+      end
 
       # Remove trailing <br><br><hr>
       html&.gsub!(/<br><br><hr>\s*\z/, "")
