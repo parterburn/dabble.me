@@ -106,11 +106,11 @@ class EntriesController < ApplicationController
       @existing_entry.body = "#{@existing_entry.body}<hr>#{params[:entry][:entry]}"
       @existing_entry.inspiration_id = params[:entry][:inspiration_id] if params[:entry][:inspiration_id].present?
       if params[:entry][:image].present?
+        @existing_entry.filepicker_url = "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
         if @existing_entry.image_url_cdn.present? || params[:entry][:image].count > 1
           image_urls = collage_from_attachments(Array(params[:entry][:image]))
           ImageCollageJob.perform_later(@existing_entry.id, urls: image_urls)
         elsif params[:entry][:image].present?
-          @existing_entry.filepicker_url = "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
           best_attachment = params[:entry][:image].first
           if best_attachment.content_type.in?(Entry::ALLOWED_IMAGE_TYPES) && best_attachment.original_filename&.downcase&.ends_with?(*%w[.heic .heif .jpg .jpeg .gif .png .webp])
             process_single_image(@existing_entry, best_attachment)
@@ -129,6 +129,7 @@ class EntriesController < ApplicationController
     else
       @entry = current_user.entries.create(entry_params)
       if params[:entry][:image].present? && params[:entry][:image].count > 1
+        @entry.filepicker_url = "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
         image_urls = collage_from_attachments(params[:entry][:image])
         ImageCollageJob.perform_later(@entry.id, urls: image_urls)
       elsif params[:entry][:image].present?
@@ -172,11 +173,11 @@ class EntriesController < ApplicationController
       @existing_entry.body = "#{@existing_entry.body}<hr>#{params[:entry][:entry]}"
       @existing_entry.inspiration_id = params[:entry][:inspiration_id] if params[:entry][:inspiration_id].present?
       if params[:entry][:image].present?
+        @existing_entry.filepicker_url = "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
         if @existing_entry.image_url_cdn.present? || params[:entry][:image].count > 1
           image_urls = collage_from_attachments(Array(params[:entry][:image]))
           ImageCollageJob.perform_later(@existing_entry.id, urls: image_urls)
         else
-          @existing_entry.filepicker_url = "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
           best_attachment = params[:entry][:image].first
           if best_attachment.content_type.in?(Entry::ALLOWED_IMAGE_TYPES) && best_attachment.original_filename&.downcase&.ends_with?(*%w[.heic .heif .jpg .jpeg .gif .png .webp])
             process_single_image(@existing_entry, best_attachment)
@@ -424,7 +425,7 @@ class EntriesController < ApplicationController
     attachments.first(7).map do |att|
       # Convert HEIC to JPEG if needed
       filename = att.original_filename
-      if File.extname(att.original_filename)&.downcase == ".heic"
+      if File.extname(att.original_filename)&.downcase == ".heic" || File.extname(att.original_filename)&.downcase == ".heif" || att.content_type&.include?("heic") || att.content_type&.include?("heif")
         begin
           tempfile = ImageConverter.new(tempfile: att, width: 1200).call
           jpeg_file = ActionDispatch::Http::UploadedFile.new(

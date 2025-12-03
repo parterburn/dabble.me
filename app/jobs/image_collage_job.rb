@@ -30,7 +30,6 @@ class ImageCollageJob < ActiveJob::Base
     if entry.image.blank?
       Sentry.set_user(id: @user.id, email: @user.email)
       Sentry.capture_message("Error updating collage image", level: :info, extra: { entry_id: entry_id, errors: entry.errors, error_messages: entry.errors.full_messages, url: filestack_collage_url, error: @error })
-
       EntryMailer.image_error(@user, entry, entry.errors.full_messages).deliver_later
     end
     entry.update(filepicker_url: nil) if entry.filepicker_url == "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
@@ -138,7 +137,7 @@ class ImageCollageJob < ActiveJob::Base
         url.include?("%") ? url : CGI.escape(url)
       end.map(&:inspect).join(',')
 
-      url = "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:%5B#{remaining_urls}%5D,w:1200,h:1200,m:1/#{first_url}"
+      url = "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:%5B#{remaining_urls}%5D,w:1200,h:1200,m:1/#{first_url}?filename=#{SecureRandom.uuid}.jpg"
       url
     end
   end
