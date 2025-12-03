@@ -47,7 +47,7 @@ class EmailProcessor
         @attachments.each do |attachment|
           next unless attachment.present?
 
-          # Make sure attachments are at least 20kb so we're not saving a bunch of signature/footer images\
+          # Make sure attachments are at least 20kb so we're not saving a bunch of signature/footer images
           file_size = File.size?(attachment.tempfile).to_i
 
           # skip signature images

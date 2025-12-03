@@ -65,6 +65,11 @@ class ImageUploader < CarrierWave::Uploader::Base
 
   def store_dir
     add_dev = "/development" unless Rails.env.production?
-    "uploads#{add_dev}/#{model.user.user_key}/#{model.date.strftime("%Y-%m-%d")}"
+    # Include timestamp in directory path to ensure unique storage location
+    # This prevents CloudFront cache issues when updating images on the same day
+    # Existing photos remain unaffected as they're already stored in their original directories
+    # Each upload gets a new directory with timestamp, ensuring CloudFront fetches fresh files
+    timestamp = Time.now.to_i
+    "uploads#{add_dev}/#{model.user.user_key}/#{model.date.strftime("%Y-%m-%d")}/#{timestamp}"
   end
 end
