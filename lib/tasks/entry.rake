@@ -23,7 +23,7 @@ namespace :entry do
   end
 
   # TRIGGERED MANUALLY
-  # heroku run bundle exec rake "entry:stats[2022]" --app dabble-me --size=standard-2x
+  # heroku run bundle exec rake "entry:stats[2025]" --app dabble-me --size=standard-2x
   task :stats, [:year] => :environment do |_, args|
     year = args[:year]
     # Ensure the year argument is provided
@@ -138,6 +138,15 @@ namespace :entry do
     # "Total words: 7,324,119"
     # "Avg words per post: 181.12419318940573"
 
+    # "****************************************************************************************************"
+    # "STATS FOR 2025"
+    # "****************************************************************************************************"
+    # "Users created: 1,458"
+    # "Entries created in 2025: 42,741"
+    # "Entries for 2025: 35,970"
+    # "Total words: 7,026,762"
+    # "Avg words per post: 195.35062552126772"
+
     p "*"*100
     p "STATS FOR #{year}"
     p "*"*100
@@ -169,7 +178,7 @@ namespace :entry do
     # p "*"*100
   end
 
-  # heroku run bundle exec rake "entry:stats_by_user[2022]" --app dabble-me --size=standard-2x
+  # heroku run bundle exec rake "entry:stats_by_user[2025]" --app dabble-me --size=standard-2x
   task :stats_by_user, [:year] => :environment do |_, year:|
     data = []
     csv_data = CSV.generate(col_sep: "\t") do |csv|

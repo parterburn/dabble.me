@@ -123,14 +123,14 @@
       .s-entry-date
         %h2 Total Words
         %h3
-          - percent_book = ((@words_counter.length.to_f/105_250).to_f * 100).round
+          - percent_book = ((@words_counter.length.to_f/97_000).to_f * 100).round
           - book_height = 500-((percent_book.to_f / 100) * 500)
-          %span= "#{format_number(@words_counter.length)} - #{percent_book}% of The Monkey Wrench Gang".html_safe
+          %span= "#{format_number(@words_counter.length)} - #{percent_book}% of The 5 Types of Wealth".html_safe
       .s-review-details
         %div{style: 'position: relative;max-width: 100%;'}
-          =link_to 'https://amzn.to/3BsRghE', target: '_blank', style: "margin-top: 20px; display: block;margin-bottom: 10px; max-width: 100%;" do
-            .s-book-cover{style: "max-width: 100%; width: 360px; height: #{book_height < 0 ? 0 : book_height}px"}
-            = image_tag 'monkey-wrench.jpg', width: 360, height: 500, style: "max-width: 100%;"
+          =link_to 'https://amzn.to/44THtN1', target: '_blank', style: "margin-top: 20px; display: block;margin-bottom: 10px; max-width: 100%;" do
+            .s-book-cover{style: "max-width: 100%; width: 383px; height: #{book_height < 0 ? 0 : book_height}px"}
+            = image_tag 'five-types-of-wealth.jpg', width: 383, height: 500, style: "max-width: 100%;"
         .clearfix
 
   .col-md-8.col-md-offset-2.well
@@ -140,20 +140,20 @@
         %h3
           - your_avg_words = @words_counter.length / @total_count
           %span= format_number(your_avg_words)
-      - if @year.to_s == "2024"
+      - if @year.to_s == "2025"
         .s-review-details{style: "margin: 30px auto;"}
-          - if your_avg_words > 271
+          - if your_avg_words > 262
             - compared = 'way more'
-          - elsif your_avg_words > 181
+          - elsif your_avg_words > 175
             - compared = 'more'
-          - elsif your_avg_words < 90.5
+          - elsif your_avg_words < 87
             - compared = 'way less'
           - else
             - compared = 'less'
           %p= "That's #{compared} than the average of all Dabble Me users (181 words per post)."
           %p
-            %span Collectively, all Dabble Me users could have wrote 69 books equivalent to Edward Abbey's,
-            %span<= link_to "The Monkey Wrench Gang", "https://amzn.to/3BsRghE", target: :_blank
+            %span Collectively, all Dabble Me users could have wrote 74 books equivalent to Sahil Bloom's,
+            %span<= link_to "The 5 Types of Wealth", "https://amzn.to/44THtN1", target: :_blank
             %span !
           .clearfix
 
@@ -174,9 +174,6 @@
     .center{class: add_class}
       .s-entry-date
         %h2 Most Frequent Words
-        -# - if @year.to_s == "2024"
-        -#   %h3
-        -#     %span= "We're all still journaling in first-person...we collectively used <i>\"i\"</i> 203,180 times in our entries!".html_safe
       .s-review-details
         - grouped_words = @words_counter.group_by(&:itself).transform_values(&:count).sort_by { |_k, v| v }.reverse.to_h
         - grouped_words = grouped_words.select { |word, count| !Entry::COMMON_WORDS.include?(word) }
