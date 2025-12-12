@@ -1,6 +1,13 @@
 class ImageCollageJob < ActiveJob::Base
   queue_as :default
 
+  # Sidekiq will retry unhandled exceptions by default. We make timeouts explicit here
+  # so we can control retry timing and attempts for transient network issues.
+  retry_on Net::ReadTimeout,
+           Faraday::TimeoutError,
+           wait: :exponentially_longer,
+           attempts: 6
+
   def perform(entry_id, urls: nil, message_id: nil)
     entry = Entry.where(id: entry_id).first
     @error = nil
