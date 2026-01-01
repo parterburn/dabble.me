@@ -82,7 +82,7 @@ class EntriesController < ApplicationController
   def latest
     @user_today = Time.now.in_time_zone(current_user.send_timezone.presence || "UTC").to_date
     @title = "Latest Entry"
-    @lastest_entry = current_user.entries.includes(:inspiration).order(date: :asc).last
+    @lastest_entry = current_user.entries.includes(:inspiration).order(date: :asc).first
     set_hashtags
     set_sidebar_stats
     set_years_ago if current_user.is_pro?
