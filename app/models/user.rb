@@ -178,13 +178,13 @@ class User < ActiveRecord::Base
   end
 
   def any_hashtags?
-    hashtags.pluck(:tag).compact.any?
+    original_hashtags.any?
   end
 
   alias_method :original_hashtags, :hashtags
   def hashtags
-    @hashtags ||= begin
-      used_hashtags(entries, true).first(5).each do |h|
+    @hashtags_list ||= begin
+      used_hashtags(entries.limit(100), true).first(5).each do |h|
         next if h.downcase.in?(original_hashtags.pluck(:tag)&.map(&:downcase))
 
         original_hashtags.build(tag: h)
@@ -218,33 +218,30 @@ class User < ActiveRecord::Base
   end
 
   def writing_streak
-    # Convert Rails timezone to PostgreSQL timezone identifier
-    pg_timezone = ActiveSupport::TimeZone::MAPPING[send_timezone] || 'UTC'
+    @writing_streak ||= begin
+      streak = 0
+      # Get all entry dates for the user, sorted descending
+      entry_dates = entries.pluck(:date).compact.map(&:to_date).uniq.sort.reverse
 
-    # Find the first gap using a window function
-    gap_date = ActiveRecord::Base.connection.execute(<<-SQL)
-      WITH dates AS (
-        SELECT date,
-               LEAD(date) OVER (ORDER BY date DESC) as next_date
-        FROM entries
-        WHERE date <= (CURRENT_TIMESTAMP AT TIME ZONE '#{pg_timezone}' AT TIME ZONE 'UTC')::date
-        AND user_id = #{id}
-        ORDER BY date DESC
-      )
-      SELECT date
-      FROM dates
-      WHERE next_date IS NULL OR EXTRACT(EPOCH FROM (date - next_date))/86400 > 1
-      LIMIT 1
-    SQL
+      if entry_dates.any?
+        today = Time.current.in_time_zone(send_timezone).to_date
 
-    gap_date = gap_date.first&.fetch('date', nil)
+        # Start checking from today or the latest entry date if it's recent
+        current_date = entry_dates.first
 
-    # If no gap found, count all entries
-    if gap_date.nil?
-      entries.where(user_id: id).count
-    else
-      # Count entries from today until the gap
-      entries.where(user_id: id, date: gap_date..Time.current.in_time_zone(send_timezone).to_date).count
+        # If the latest entry is older than yesterday, the streak is broken (unless it's today/yesterday)
+        if current_date >= today - 1.day
+          entry_dates.each do |date|
+            if date == current_date
+              streak += 1
+              current_date -= 1.day
+            else
+              break
+            end
+          end
+        end
+      end
+      streak
     end
   rescue StandardError => e
     Sentry.capture_exception(e, extra: { user_id: id })

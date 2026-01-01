@@ -74,7 +74,7 @@
           %h3
             %span= "#{pluralize(@entries_with_sentiment.size, 'entry')} tagged"
         .s-review-details
-          - @entries_with_sentiment.pluck(:sentiment).flatten.uniq.sort.each do |sentiment|
+          - @entries_with_sentiment.map(&:sentiment).flatten.uniq.reject { |s| s == "unknown" }.sort.each do |sentiment|
             = link_to "#{Entry::AiTagger::EMOTIONS[sentiment]} #{sentiment.titleize}", entries_emotion_path(sentiment), class: "emotion-link", title: "View entries tagged with #{sentiment}"        
           = pie_chart(@sentiment_count,  height: "230px", library: {backgroundColor: "#ffffff"})
 

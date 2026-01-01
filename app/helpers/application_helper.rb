@@ -35,14 +35,8 @@ module ApplicationHelper
     number_with_delimiter(rounded_number, delimiter: ",")
   end
 
-  def elapsed_days_in_year(year)
-    today = Date.today
-    if today.year == year.to_i
-      start_of_year = Date.new(year.to_i, 1, 1)
-      elapsed_days = (today - start_of_year).to_i
-      return [elapsed_days, 1].max
-    else
-      return Date.leap?(year.to_i) ? 366 : 365
-    end
+  def elapsed_days_in_year(year = Date.today.year)
+    ref_date = @user_today || Date.today
+    year.to_i == ref_date.year ? ref_date.yday : Date.new(year.to_i, 12, 31).yday
   end
 end

@@ -78,16 +78,17 @@ class Entry < ActiveRecord::Base
 
   def formatted_body
     return nil unless body.present?
-
-    formatted_body = body
-    begin
-      detection = CharlockHolmes::EncodingDetector.detect(body)
-      if detection[:confidence] > 95
-        formatted_body = CharlockHolmes::Converter.convert formatted_body, detection[:encoding].gsub("IBM424_ltr", "UTF-8"), "UTF-8"
+    @formatted_body ||= begin
+      formatted = body
+      begin
+        detection = CharlockHolmes::EncodingDetector.detect(body)
+        if detection[:confidence] > 95
+          formatted = CharlockHolmes::Converter.convert formatted, detection[:encoding].gsub("IBM424_ltr", "UTF-8"), "UTF-8"
+        end
+      rescue => e
       end
-    rescue => e
+      fix_encoding(formatted)
     end
-    fix_encoding(formatted_body)
   end
 
   def split_for_ai
@@ -131,12 +132,12 @@ class Entry < ActiveRecord::Base
     end
   end
 
-  def exactly_past_years(user)
+  def exactly_past_years(user, today = nil)
     if user.present? && self.date.present?
-      now_with_timezone = Time.now.in_time_zone(user.send_timezone)
-      now_with_timezone.month == self.date.month &&
-        now_with_timezone.day == self.date.day &&
-        now_with_timezone.year != self.date.year
+      today ||= Time.now.in_time_zone(user.send_timezone)
+      today.month == self.date.month &&
+        today.day == self.date.day &&
+        today.year != self.date.year
     end
   end
 
@@ -150,11 +151,11 @@ class Entry < ActiveRecord::Base
 
   def hashtags
     return nil unless body.present?
-
-    h_body = ActionController::Base.helpers.strip_tags(ActionController::Base.helpers.simple_format(body.gsub("</p>","\n").gsub("<br>","\n").gsub("<br/>","\n")))
-    return nil unless h_body.present?
-
-    h_body.scan(/#([0-9]+[a-zA-Z_]+\w*|[a-zA-Z_]+\w*)/).map { |m| m[0] }.uniq
+    @hashtags_memo ||= begin
+      h_body = ActionController::Base.helpers.strip_tags(body.gsub("</p>","\n").gsub("<br>","\n").gsub("<br/>","\n"))
+      return nil unless h_body.present?
+      h_body.scan(/#([0-9]+[a-zA-Z_]+\w*|[a-zA-Z_]+\w*)/).map { |m| m[0] }.uniq
+    end
   end
 
   def check_image

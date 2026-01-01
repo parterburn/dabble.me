@@ -10,49 +10,57 @@ class EntriesController < ApplicationController
   rescue_from InvalidDateError, with: :handle_invalid_date
 
   def index
+    @user_today = Time.now.in_time_zone(current_user.send_timezone.presence || "UTC").to_date
+    @entries = current_user.entries.includes(:inspiration)
+
     if params[:emotion].present?
-      @entries = current_user.entries.includes(:inspiration).where("sentiment::text LIKE ?", "%#{params[:emotion]}%")
+      @entries = @entries.where("sentiment::text LIKE ?", "%#{params[:emotion]}%")
       @title = "Entries tagged with #{params[:emotion].titleize}"
-    elsif params[:group] == "emotion" && params[:subgroup].present?  && params[:subgroup] =~ /^\d+$/
-      @entries = current_user.entries.includes(:inspiration).where("date >= '#{params[:subgroup]}-01-01'::DATE").where.not(sentiment: []).and(current_user.entries.where.not(sentiment: ["unknown"])).sort_by(&:date)
+    elsif params[:group] == "emotion" && params[:subgroup].present? && params[:subgroup] =~ /^\d+$/
+      @entries = @entries.where("date >= '#{params[:subgroup]}-01-01'::DATE").where.not(sentiment: []).where.not(sentiment: ["unknown"]).reorder(date: :asc)
       @title = "Entries tagged with Sentiment in #{params[:subgroup]}"
     elsif params[:group] == 'photos'
-      @entries = current_user.entries.includes(:inspiration).only_images
+      @entries = @entries.only_images
       @title = 'Photo Entries'
     elsif params[:group] == 'ai'
-      @entries = current_user.entries.includes(:inspiration).with_ai_responses
+      @entries = @entries.with_ai_responses
       @title = 'DabbleMeGPT Entries'
     elsif params[:subgroup].present? && params[:group].present? && params[:subgroup] =~ /^\d+$/ && params[:group] =~ /^\d+$/
-      from_date = "#{params[:group]}-#{params[:subgroup]}"
-      to_date = Date.parse(from_date + "-01").end_of_month
-      @entries = current_user.entries.includes(:inspiration).where("date >= to_date('#{from_date}','YYYY-MM') AND date <= to_date('#{to_date}','YYYY-MM-DD')").sort_by(&:date)
-      date = Date.parse(params[:subgroup] + '/' + params[:group])
-      @title = "Entries from #{date.strftime('%b %Y')}"
+      begin
+        from_date = Date.new(params[:group].to_i, params[:subgroup].to_i, 1)
+        to_date = from_date.end_of_month
+        @entries = @entries.where(date: from_date..to_date).reorder(date: :asc)
+        @title = "Entries from #{from_date.strftime('%b %Y')}"
+      rescue ArgumentError
+        raise InvalidDateError
+      end
     elsif params[:group].present?
       if params[:group] =~ /\A(19|20)\d{2}\z/
         start_date = Date.new(params[:group].to_i, 1, 1)
         end_date = Date.new(params[:group].to_i, 12, 31)
-        @entries = current_user.entries.where(date: start_date..end_date)
+        @entries = @entries.where(date: start_date..end_date)
       else
         raise InvalidDateError
       end
       @title = "Entries from #{params[:group]}"
-    elsif params[:format] != "json"
-      @entries = current_user.entries.includes(:inspiration)
+    else
       @title = 'All Entries'
     end
 
-    if @entries.present?
-      @entries = Kaminari.paginate_array(@entries).page(params[:page]).per(params[:per])
-    elsif params[:format] != "json"
+    @entries = @entries.page(params[:page]).per(params[:per])
+
+    if @entries.empty? && params[:format] != "json"
       flash[:alert] = "No entries found."
       redirect_to latest_entry_path and return
     end
 
+    set_hashtags
+    set_sidebar_stats
+
     respond_to do |format|
       format.json {
-        start_date = params[:start].presence || 1.years.ago.strftime("%Y-%m-%d")
-        end_date = params[:end].presence || Date.today.strftime("%Y-%m-%d")
+        start_date = params[:start].presence || (@user_today - 1.year).strftime("%Y-%m-%d")
+        end_date = params[:end].presence || @user_today.strftime("%Y-%m-%d")
         render json: calendar_json(current_user.entries
           .where("date >= '#{start_date}'::DATE AND date < '#{end_date}'::DATE")) }
       format.html
@@ -60,7 +68,10 @@ class EntriesController < ApplicationController
   end
 
   def show
+    @user_today = Time.now.in_time_zone(current_user.send_timezone.presence || "UTC").to_date
     if @entry
+      set_hashtags
+      set_sidebar_stats
       track_ga_event('Show')
       render 'show'
     else
@@ -69,13 +80,26 @@ class EntriesController < ApplicationController
   end
 
   def latest
+    @user_today = Time.now.in_time_zone(current_user.send_timezone.presence || "UTC").to_date
     @title = "Latest Entry"
-    @lastest_entry = current_user.entries.includes(:inspiration).sort_by(&:date).last
+    @lastest_entry = current_user.entries.includes(:inspiration).order(date: :asc).last
+    set_hashtags
+    set_sidebar_stats
+    set_years_ago if current_user.is_pro?
+  end
+
+  def set_years_ago
+    user_time = Time.now.in_time_zone(current_user.send_timezone)
+    years_back_dates = (1..5).map { |y| (user_time - y.years).strftime("%Y-%m-%d") }
+    @years_ago_entries = current_user.entries.where(date: years_back_dates).index_by { |e| (user_time.year - e.date.year) }
   end
 
   def random
+    @user_today = Time.now.in_time_zone(current_user.send_timezone.presence || "UTC").to_date
     @entry = current_user.random_entry
     if @entry
+      set_hashtags
+      set_sidebar_stats
       track_ga_event('Random')
       render 'show'
     else
@@ -91,7 +115,10 @@ class EntriesController < ApplicationController
   end
 
   def spotify
+    @user_today = Time.now.in_time_zone(current_user.send_timezone.presence || "UTC").to_date
     @title = "Songs from Entries"
+    set_hashtags
+    set_sidebar_stats
   end
 
   def create
@@ -283,8 +310,8 @@ class EntriesController < ApplicationController
   end
 
   def review
-    month = Date.today.month
-    @year = params[:year] || (month > 11 ? Time.now.year : Time.now.year - 1)
+    @user_today = Time.now.in_time_zone(current_user.send_timezone.presence || "UTC").to_date
+    @year = params[:year] || (@user_today.month > 11 ? @user_today.year : @user_today.year - 1)
     @entries = current_user.entries.where("date >= '#{@year}-01-01'::DATE AND date <= '#{@year}-12-31'::DATE").order(date: :asc)
     @total_count = @entries.count
     @years_with_entries = current_user.entries.pluck(:date).compact.map(&:year).uniq.sort
@@ -451,6 +478,49 @@ class EntriesController < ApplicationController
 
   def search_params
     params.require(:search).permit(:term).merge(user: current_user)
+  end
+
+  def set_hashtags
+    @hashtags = current_user.original_hashtags.to_a.index_by { |h| h.tag&.downcase }
+  end
+
+  def set_sidebar_stats
+    @all_entries = current_user.entries
+
+    # Consolidate main counts into a single query for speed
+    stats = Rails.cache.fetch("user_#{current_user.id}_main_stats", expires_in: 1.hour) do
+      @all_entries.unscope(:order).select(
+        "count(*) as total",
+        "count(*) FILTER (WHERE image IS NOT NULL AND image != '') as images",
+        "count(*) FILTER (WHERE body LIKE '%🤖 DabbleMeGPT:%') as ai",
+        "count(*) FILTER (WHERE songs::text NOT IN ('[]', '{}')) as spotify"
+      ).take.attributes.slice("total", "images", "ai", "spotify")
+    end
+
+    @total_entries_count = stats["total"].to_i
+    @only_images_count = stats["images"].to_i
+    @with_ai_responses_count = stats["ai"].to_i
+    @only_spotify_count = stats["spotify"].to_i
+
+    # Use SQL for emotions counts to avoid loading all entries into memory
+    @emotions_counts = Rails.cache.fetch("user_#{current_user.id}_emotions_counts", expires_in: 1.hour) do
+      # Since sentiment is jsonb[], we use unnest() to expand the array
+      @all_entries.unscope(:order)
+                  .where.not(sentiment: [])
+                  .where.not(sentiment: ["unknown"])
+                  .group("unnest(sentiment)")
+                  .count
+    end
+
+    @entries_by_year = Rails.cache.fetch("user_#{current_user.id}_entries_by_year", expires_in: 1.hour) do
+      @all_entries.unscope(:order).group("DATE_PART('year', date)").count.transform_keys { |k| k.to_i.to_s }.sort.reverse.to_h
+    end
+
+    if params[:group].present? && params[:group] =~ /\A(19|20)\d{2}\z/
+      @entries_by_month = Rails.cache.fetch("user_#{current_user.id}_entries_by_month_#{params[:group]}", expires_in: 1.hour) do
+        @all_entries.unscope(:order).where("DATE_PART('year', date) = ?", params[:group]).group("DATE_PART('month', date)").count.transform_keys { |k| k.to_i }.to_h
+      end
+    end
   end
 
   def handle_invalid_date

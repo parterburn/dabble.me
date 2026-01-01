@@ -1,8 +1,8 @@
 - if @lastest_entry.present?
   - title "Latest Entry"
-  - graph_year = Date.today.year
-  - review_year = Date.today.month > 11 ? Date.today.year : Date.today.year - 1
-  - highlight_year_in_review = Date.today > Date.parse("#{review_year}-12-1") && Date.today < Date.parse("#{review_year + 1}-01-15")
+  - graph_year = @user_today.year
+  - review_year = @user_today.month > 11 ? @user_today.year : @user_today.year - 1
+  - highlight_year_in_review = @user_today > Date.parse("#{review_year}-12-1") && @user_today < Date.parse("#{review_year + 1}-01-15")
 
   .row
     .col-md-8.col-md-offset-1.hidden-sm.hidden-xs
@@ -25,7 +25,7 @@
     - year_entries = current_user.entries.where("date >= '#{graph_year}-01-01'::DATE AND date <= '#{graph_year}-12-31'::DATE")
     = javascript_include_tag "//www.gstatic.com/charts/loader.js", "chartkick"
     - total_count = year_entries.count
-    - percent_complete = (Date.today.yday.to_f / Date.new(graph_year, 12, 31).yday * 100).round
+    - percent_complete = graph_year < @user_today.year ? 100 : (@user_today.yday.to_f / Date.new(graph_year, 12, 31).yday * 100).round
 
     .col-md-8.well.col-md-offset-1{id: "year-in-review", style: "padding-top: 0; padding-left: 0; padding-right: 0;"}
       .center
@@ -35,8 +35,9 @@
           %h3
             %span{rel: "tooltip", title: "#{percent_complete}% of the year completed."}= "#{total_count} entries in #{graph_year}"
         .s-review-details
-          - if current_user.writing_streak > 1
-            %div{style: "display: block; margin: 10px auto; font-size: 16px; font-weight: 500;"}= "You're on a #{format_number(current_user.writing_streak)} day writing streak!"            
+          - streak = current_user.writing_streak
+          - if streak > 1
+            %div{style: "display: block; margin: 10px auto; font-size: 16px; font-weight: 500;"}= "You're on a #{format_number(streak)} day writing streak!"            
           = render 'contribution_graph', data: contribution_calendar_data(year_entries, graph_year), year: graph_year
           .clearfix
           - if highlight_year_in_review
@@ -45,13 +46,15 @@
               = link_to "Year in Review", review_path, style: "color: #3366cc;"
               %span> !
           - else
-            = link_to "Write today's entry »", new_entry_path, class: "btn btn-link btn-lg"
+            %h4{style: "font-size: 16px; margin-top: 10px; font-weight: 500;"}
+              %span= "#{percent_complete}% of the year completed. "
+              = link_to "Write your memories down", new_entry_path, style: "color: #3366cc;"
+              %span= " so you can remember them later."
 
-    - today = Date.today.in_time_zone(current_user.send_timezone)
-    - unless @lastest_entry.date == today
+    - unless @lastest_entry.date == @user_today
       .col-md-8.well.col-md-offset-1.entry
         .center
-          .label.label-past-years{style: "text-transform: uppercase;"}= today.strftime("%A, %B %-d")
+          .label.label-past-years{style: "text-transform: uppercase;"}= @user_today.strftime("%A, %B %-d")
         .text-center{style: "margin: 0 0 20px;"}
           = link_to "Write today's entry »", new_entry_path, class: "btn btn-link btn-lg"  
 
@@ -59,13 +62,10 @@
       .label.label-past-years LATEST ENTRY
       = render :partial => 'entries/entry', :locals => {:entry => @lastest_entry}
 
-    -if current_user.is_pro?
-      - 5.times do |year_back|
-        - year_back += 1
-        - back_year_entry = current_user.entries.where(:date => (Time.now.in_time_zone(current_user.send_timezone) - year_back.years).strftime("%Y-%m-%d")).first
-        - if back_year_entry.present?
-          .col-md-8.col-md-offset-1.well.entry{:id => "entry-#{back_year_entry.id}"}
-            = render :partial => 'entries/entry', :locals => {:entry => back_year_entry}
+    -if current_user.is_pro? && @years_ago_entries.present?
+      - @years_ago_entries.sort.each do |year_back, back_year_entry|
+        .col-md-8.col-md-offset-1.well.entry{:id => "entry-#{back_year_entry.id}"}
+          = render :partial => 'entries/entry', :locals => {:entry => back_year_entry}
 
 - else
   = render partial: 'no_entries'
