@@ -26,6 +26,7 @@
               = link_to day_entry_path(year: day_data[:date].year, month: day_data[:date].month, day: day_data[:date].day), class: "day", title: "Entry on #{day_data[:date].strftime('%B %-d, %Y')}", target: "_blank" do
                 .box.active{style: "margin: 0 auto;"}
           - elsif date
-            %div{style: "margin: 0 auto;", rel: "tooltip", title: "No entry on #{date.strftime('%a, %b %-d')}"}
-              = link_to new_entry_path(day: date.strftime('%Y-%m-%d')), class: "day", title: "No entry on #{date.strftime('%B %-d, %Y')}", target: "_blank" do
-                .box{style: "margin: 0 auto;"}
+            - is_future = date >= Date.today
+            %div{style: "margin: 0 auto;", rel: "tooltip", title: "#{'No entry on ' unless is_future}#{date.strftime('%a, %b %-d')}"}
+              = link_to new_entry_path(day: date.strftime('%Y-%m-%d')), class: "day", title: "#{is_future ? 'Future date' : 'No entry'} on #{date.strftime('%B %-d, %Y')}", target: "_blank" do
+                .box{style: "margin: 0 auto; #{'opacity: 0.5;' if is_future}"}

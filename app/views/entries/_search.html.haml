@@ -5,6 +5,4 @@
       .col-xs-8.col-sm-9{style: "padding-right: 0px;"}
         = f.text_field :term, class: "form-control input-lg s-search-with-clear", autofocus: true, placeholder: "Search your entries..."
       .col-xs-4.col-sm-3
-        = f.submit "Search", class: "btn btn-primary btn-lg", style: "max-width: 110px;"
-        = link_to random_entry_path, title: "Random Entry", rel: "tooltip", style: "width: 20%; margin-left: 15px; top: 2px; position: relative;" do
-          %i.fa.fa-random
+        = f.submit "Search", class: "btn btn-primary btn-lg"

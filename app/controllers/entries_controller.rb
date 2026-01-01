@@ -287,6 +287,7 @@ class EntriesController < ApplicationController
     @year = params[:year] || (month > 11 ? Time.now.year : Time.now.year - 1)
     @entries = current_user.entries.where("date >= '#{@year}-01-01'::DATE AND date <= '#{@year}-12-31'::DATE").order(date: :asc)
     @total_count = @entries.count
+    @years_with_entries = current_user.entries.pluck(:date).compact.map(&:year).uniq.sort
     if @total_count.positive?
       @body_text = @entries.map { |e| ActionView::Base.full_sanitizer.sanitize(e.body) }.join(" ")
       tokeniser = WordsCounted::Tokeniser.new(@body_text)

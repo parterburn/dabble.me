@@ -40,7 +40,7 @@ module ApplicationHelper
     if today.year == year.to_i
       start_of_year = Date.new(year.to_i, 1, 1)
       elapsed_days = (today - start_of_year).to_i
-      return elapsed_days
+      return [elapsed_days, 1].max
     else
       return Date.leap?(year.to_i) ? 366 : 365
     end

@@ -21,7 +21,7 @@
   .box {
     width: 1rem;
     height: 1rem;
-    background-color: #ebedf0;
+    background-color: #CCC;
     border-radius: 50%;
     transition: background-color 0.3s ease;
 
@@ -46,7 +46,7 @@
       border-radius: 3px;
     }
     .graph {
-      grid-gap: 1.3px;
+      grid-gap: 1.9px;
     }
     .day-label {
       display: none;

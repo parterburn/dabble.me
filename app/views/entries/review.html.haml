@@ -4,15 +4,14 @@
 .row.s-year-in-review
   .col-md-8.col-md-offset-2
     %h3= "#{@year} Year In Review"
-    - ((Date.today.year - 11)..Date.today.year).each do |yr|
-      - entries_for_year = current_user.entries.where("date >= '#{yr}-01-01'::DATE AND date <= '#{yr}-12-31'::DATE")
-      - if entries_for_year.any?
+    - if @years_with_entries.size > 1
+      - @years_with_entries.each do |yr|
         = link_to "#{yr}", review_path(yr), style: "margin: 0 5px; font-size: 16px; #{'color: black;' if yr.to_s == @year.to_s}"
     .clearfix
     %br
     %br
 
-  .col-md-8.col-md-offset-2.well
+  .col-md-8.col-md-offset-2.well{style: "padding-top: 0;"}
     .center
       .s-entry-date
         %h2 Days with Entries
@@ -20,7 +19,7 @@
           %span= "#{pluralize(@total_count, 'entry')} in #{@year}"
       .s-review-details
         - if @pctile.present?
-          %p= "You're in the #{@pctile.ordinalize} percentile compared to all active Dabble Me users in #{@year}."
+          %p{style: "margin-top: 10px;"}= "You're in the #{@pctile.ordinalize} percentile compared to all active Dabble Me users in #{@year}."
           .clearfix
         = render 'contribution_graph', data: contribution_calendar_data(@entries, @year), year: @year
         .clearfix
@@ -34,7 +33,7 @@
         =link_to "Subscribe to PRO", subscribe_path, class: "alert-link"
         to see the rest of your Year in Review.
 
-  .col-md-8.col-md-offset-2.well
+  .col-md-8.col-md-offset-2.well{style: "padding-top: 0;"}
     .center{class: add_class}
       .s-entry-date
         %h2 Ask AI
@@ -68,7 +67,7 @@
 
 
   - if @entries_with_sentiment.count.positive?
-    .col-md-8.col-md-offset-2.well
+    .col-md-8.col-md-offset-2.well{style: "padding-top: 0;"}
       .center{class: add_class}
         .s-entry-date
           %h2 Sentiment
@@ -79,7 +78,7 @@
             = link_to "#{Entry::AiTagger::EMOTIONS[sentiment]} #{sentiment.titleize}", entries_emotion_path(sentiment), class: "emotion-link", title: "View entries tagged with #{sentiment}"        
           = pie_chart(@sentiment_count,  height: "230px", library: {backgroundColor: "#ffffff"})
 
-    .col-md-8.col-md-offset-2.well
+    .col-md-8.col-md-offset-2.well{style: "padding-top: 0;"}
       .center{class: add_class}
         .s-entry-date
           %h2 Sentiment over Time
@@ -88,7 +87,7 @@
           .clearfix
 
   - entry_dates = @entries.pluck(:date)
-  .col-md-8.col-md-offset-2.well
+  .col-md-8.col-md-offset-2.well{style: "padding-top: 0;"}
     .center{class: add_class}
       .s-entry-date
         %h2 Days of Entries
@@ -103,7 +102,7 @@
         = column_chart sorted_counts, discrete: true, library: { backgroundColor: "#ffffff" }, ytitle: "Posts", min: 0, round: 0, precision: 0
         .clearfix
 
-  .col-md-8.col-md-offset-2.well
+  .col-md-8.col-md-offset-2.well{style: "padding-top: 0;"}
     .center{class: add_class}
       .s-entry-date
         %h2 Months of Entries
@@ -118,7 +117,7 @@
         = column_chart sorted_counts, discrete: true, library: { backgroundColor: "#ffffff" }, ytitle: "Posts", min: 0, round: 0, precision: 0
         .clearfix
 
-  .col-md-8.col-md-offset-2.well
+  .col-md-8.col-md-offset-2.well{style: "padding-top: 0;"}
     .center{class: add_class}
       .s-entry-date
         %h2 Total Words
@@ -133,7 +132,7 @@
             = image_tag 'five-types-of-wealth.jpg', width: 383, height: 500, style: "max-width: 100%;"
         .clearfix
 
-  .col-md-8.col-md-offset-2.well
+  .col-md-8.col-md-offset-2.well{style: "padding-top: 0;"}
     .center{class: add_class}
       .s-entry-date
         %h2 Average Words per Post
@@ -159,7 +158,7 @@
 
   - hashtags = Hash[*current_user.used_hashtags(@entries, false).inject(Hash.new(0)) { |h,v| h[v] += 1; h }.sort_by{|k,v| v}.reverse.flatten]
   - if hashtags.present?
-    .col-md-8.col-md-offset-2.well
+    .col-md-8.col-md-offset-2.well{style: "padding-top: 0;"}
       .center{class: add_class}
         .s-entry-date
           %h2 Most Frequent Hashtags
@@ -170,7 +169,7 @@
               %span.middot= "&middot; #{v}".html_safe
           .clearfix
 
-  .col-md-8.col-md-offset-2.well
+  .col-md-8.col-md-offset-2.well{style: "padding-top: 0;"}
     .center{class: add_class}
       .s-entry-date
         %h2 Most Frequent Words
