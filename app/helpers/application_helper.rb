@@ -8,6 +8,7 @@ module ApplicationHelper
   end
 
   def tag_relative_date(tag_date, entry_date)
+    return "" unless entry_date.present?
     return "Today" if tag_date == entry_date
     return "Yesterday" if tag_date == entry_date - 1.day
 

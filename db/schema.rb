@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2025_03_28_162010) do
+ActiveRecord::Schema.define(version: 2026_01_01_234514) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -114,4 +114,17 @@ ActiveRecord::Schema.define(version: 2025_03_28_162010) do
     t.index ["user_key"], name: "index_users_on_user_key", unique: true
   end
 
+  create_table "webauthn_credentials", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "external_id"
+    t.string "public_key"
+    t.string "nickname"
+    t.bigint "sign_count"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["external_id"], name: "index_webauthn_credentials_on_external_id"
+    t.index ["user_id"], name: "index_webauthn_credentials_on_user_id"
+  end
+
+  add_foreign_key "webauthn_credentials", "users"
 end

@@ -1,4 +1,12 @@
 FactoryBot.define do
+  factory :webauthn_credential do
+    user { nil }
+    external_id { "MyString" }
+    public_key { "MyString" }
+    nickname { "MyString" }
+    sign_count { "" }
+  end
+
   factory :user, class: User do
     email { Faker::Internet.email }
     password { Faker::Internet.password(min_length: 8, max_length: 16) }

@@ -10,7 +10,6 @@ class EntriesController < ApplicationController
   rescue_from InvalidDateError, with: :handle_invalid_date
 
   def index
-    @user_today = Time.now.in_time_zone(current_user.send_timezone.presence || "UTC").to_date
     @entries = current_user.entries.includes(:inspiration)
 
     if params[:emotion].present?
@@ -68,7 +67,6 @@ class EntriesController < ApplicationController
   end
 
   def show
-    @user_today = Time.now.in_time_zone(current_user.send_timezone.presence || "UTC").to_date
     if @entry
       set_hashtags
       set_sidebar_stats
@@ -80,7 +78,6 @@ class EntriesController < ApplicationController
   end
 
   def latest
-    @user_today = Time.now.in_time_zone(current_user.send_timezone.presence || "UTC").to_date
     @title = "Latest Entry"
     @lastest_entry = current_user.entries.includes(:inspiration).order(date: :asc).first
     set_hashtags
@@ -95,7 +92,6 @@ class EntriesController < ApplicationController
   end
 
   def random
-    @user_today = Time.now.in_time_zone(current_user.send_timezone.presence || "UTC").to_date
     @entry = current_user.random_entry
     if @entry
       set_hashtags
@@ -115,7 +111,6 @@ class EntriesController < ApplicationController
   end
 
   def spotify
-    @user_today = Time.now.in_time_zone(current_user.send_timezone.presence || "UTC").to_date
     @title = "Songs from Entries"
     set_hashtags
     set_sidebar_stats
@@ -310,7 +305,6 @@ class EntriesController < ApplicationController
   end
 
   def review
-    @user_today = Time.now.in_time_zone(current_user.send_timezone.presence || "UTC").to_date
     @year = params[:year] || (@user_today.month > 11 ? @user_today.year : @user_today.year - 1)
     @entries = current_user.entries.where("date >= '#{@year}-01-01'::DATE AND date <= '#{@year}-12-31'::DATE").order(date: :asc)
     @total_count = @entries.count

@@ -45,7 +45,7 @@ en:
           explain: 'Take note or print these recovery codes (they will go away in 10 minutes). They allow you to login if your token device becomes unavailable.'
           sequence: 'Sequence'
           code: 'Recovery Code'
-          codes_list: 'Here is the list of your recovery codes'
+          codes_list: 'Show your recovery codes'
           download_codes: 'Download recovery codes'
       trusted_browsers:
         title: 'Trusted Browsers'

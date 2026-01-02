@@ -30,6 +30,12 @@
       - if ENV['CI'] != "true" && ENV['TURNSTILE_SITE_KEY'].present?
         = captcha_tags action: "login", data: { theme: "light" }
       = f.submit "Login", :class => "btn btn-primary form-control", style: "border: none; margin-top: 10px;"
+      %br
+      %div{style: "margin-top: 15px; margin-bottom: 15px;"}
+        %hr{style: "margin-bottom: -10px; border-top: 1px solid #ccc;"}
+        %span{style: "background: #FCFBF9; padding: 0 10px; color: #999;" } or
+      %button.btn.btn-default.form-control#login-passkey{type: "button"}
+        Login with Passkey
       .clearfix
       %br
       %small.text-muted

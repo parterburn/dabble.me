@@ -1,5 +1,5 @@
 (function(){
-  window.DABBLE = {};
+  window.DABBLE = window.DABBLE || {};
 
   DABBLE.pages = DABBLE.pages || {};
 

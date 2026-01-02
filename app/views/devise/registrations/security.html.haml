@@ -5,6 +5,36 @@
     %h3 ACCOUNT SECURITY
     %br
 
+  .col-md-8.col-md-offset-2
+    %label Additional Security
+    %br
+    %button.btn.btn-default.btn-sm#add-passkey{type: "button"}
+      Add a Passkey
+
+    = link_to user_otp_token_path do
+      %button.btn.btn-default.btn-sm#add-two-factor{type: "button"}
+        - if current_user.otp_enabled?
+          %span{class: "text-success"}
+            ✅ Change Two-Factor Authentication
+        -else
+          Setup Two-Factor Authentication
+    %br
+    %br
+    
+    - if current_user.webauthn_credentials.any?
+      %table.table
+        %thead
+          %tr
+            %th Passkey
+            %th Added
+            %th
+        %tbody
+          - current_user.webauthn_credentials.each do |credential|
+            %tr
+              %td= credential.nickname
+              %td= credential.created_at.strftime("%b %d, %Y")
+              %td= link_to "Remove", passkeys_registration_path(credential), method: :delete, data: { confirm: "Are you sure?" }, class: "text-danger"
+
   = form_for(user, url: registration_path(user), html: { method: :put }) do |f|
     .col-md-8.col-md-offset-2
       = f.label :email
@@ -23,11 +53,6 @@
     .col-md-4
       = f.label :password_confirmation, "New Password Confirmation"
       = f.password_field :password_confirmation, autocomplete: "off", class: "form-control"
-      %br
-
-    .col-md-8.col-md-offset-2
-      %strong= link_to (resource.otp_enabled? ? "✅ Change Two-Factor Authentication" : "⚠️ Setup Two-Factor Authentication"), user_otp_token_path
-      %br
       %br
 
     .col-md-8.col-md-offset-2

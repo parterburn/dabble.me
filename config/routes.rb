@@ -9,10 +9,15 @@ Rails.application.routes.draw do
     mount Sidekiq::Web => "/sidekiq"
   end
 
-  devise_for :users, controllers: { registrations: 'registrations', session: 'sessions', passwords: 'passwords' }
+  devise_for :users, controllers: { registrations: 'registrations', sessions: 'sessions', passwords: 'passwords' }
 
   devise_scope :user do
     post "/validate_otp", to: "sessions#validate_otp", as: "validate_otp"
+  end
+
+  namespace :passkeys do
+    resources :registrations, only: [:new, :create, :destroy]
+    resources :sessions, only: [:new, :create]
   end
 
   devise_scope :user do

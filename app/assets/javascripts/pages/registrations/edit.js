@@ -21,6 +21,14 @@
     });
 
     $('.pickadate').pickadate();
+    
+    $("#add-passkey").on("click", function(e) {
+      e.preventDefault();
+      var nickname = prompt("Enter a nickname for this passkey (e.g. MacBook Air, YubiKey):", "Passkey");
+      if (nickname) {
+        DABBLE.webauthn.register(nickname);
+      }
+    });
 
     $('form').submit(function(){
       $(this).find('input[type=submit]').prop('disabled', true);

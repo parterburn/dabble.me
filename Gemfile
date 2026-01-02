@@ -13,6 +13,7 @@ gem 'pg', '~> 1.6'
 gem "devise"
 gem 'devise-security'
 gem "devise-otp"
+gem "webauthn"
 gem "turnstile-captcha", require: "turnstile"
 
 gem 'addressable' # better URI checking

@@ -3,6 +3,7 @@ class ApplicationController < ActionController::Base
   # For APIs, you may want to use :null_session instead.
   protect_from_forgery with: :exception
   before_action :js_action
+  before_action :set_user_today
   before_action :configure_permitted_parameters, if: :devise_controller?
   before_action :identify_current_user_to_sentry
 
@@ -48,5 +49,9 @@ class ApplicationController < ActionController::Base
   def handle_timeout(exception)
     Sentry.capture_message("Timeout error", level: :error, extra: { params: params, url: request.url })
     render "errors/timeout"
+  end
+
+  def set_user_today
+    @user_today = Time.now.in_time_zone(current_user&.send_timezone.presence || "UTC").to_date
   end
 end

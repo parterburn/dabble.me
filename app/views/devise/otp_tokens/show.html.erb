@@ -1,7 +1,8 @@
 <% title "Two Factor Authentication Settings" %>
 
 <div class="row">
-  <div class="col-md-8 col-md-offset-2" style="margin-bottom: 40px;">
+  <div class="col-md-8 col-md-offset-2" style="margin-bottom: 40px; margin-top: 20px;">
+    <%= link_to "Back to Security Settings", security_path %>
     <h3><%= I18n.t('title', :scope => 'devise.otp.otp_tokens') %></h3>
     <p><%= I18n.t('explain', :scope => 'devise.otp.otp_tokens') %></p>
 
