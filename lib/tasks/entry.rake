@@ -152,8 +152,11 @@ namespace :entry do
     p "*"*100
 
     extend ActionView::Helpers::NumberHelper
-    all_entries = Entry.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE")
-    entries_bodies = all_entries.map { |e| ActionView::Base.full_sanitizer.sanitize(e.body) }.join(" ")
+    start_date = Date.new(year.to_i, 1, 1)
+    end_date = Date.new(year.to_i, 12, 31)
+
+    all_entries = Entry.where(date: start_date..end_date)
+    entries_bodies = all_entries.map(&:text_body).join(" ")
 
     tokenizer = WordsCounted::Tokeniser.new(entries_bodies).tokenise(exclude: Entry::WORDS_NOT_TO_COUNT)
     total_words = tokenizer.count
@@ -163,8 +166,8 @@ namespace :entry do
     # avg_chars = total_chars.to_f / all_entries.count
     # avg_tweets_per_post = ((avg_chars).to_f / 280).ceil
 
-    p "Users created: #{number_with_delimiter(User.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
-    p "Entries created in #{year}: #{number_with_delimiter(Entry.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
+    p "Users created: #{number_with_delimiter(User.where(created_at: start_date..end_date).count)}"
+    p "Entries created in #{year}: #{number_with_delimiter(Entry.where(created_at: start_date..end_date).count)}"
     p "Entries for #{year}: #{number_with_delimiter(all_entries.count)}"
     p "Total words: #{number_with_delimiter(total_words)}"
     p "Avg words per post: #{number_with_delimiter(avg_words)}"
@@ -180,15 +183,22 @@ namespace :entry do
 
   # heroku run bundle exec rake "entry:stats_by_user[2025]" --app dabble-me --size=standard-2x
   task :stats_by_user, [:year] => :environment do |_, year:|
-    data = []
     csv_data = CSV.generate(col_sep: "\t") do |csv|
       csv << ["USER_ID", "EMAIL", "FNAME", "LNAME", "#{year}_ENTRY", "#{year}_WORD"]
 
-      User.joins(:entries).includes(:entries).where("entries.date >= '#{year}-01-01'::DATE AND entries.date <= '#{year}-12-31'::DATE").group("users.id").each do |user|
-        user_entries = user.entries.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE")
-        next unless user_entries.size.positive?
+      start_date = Date.new(year.to_i, 1, 1)
+      end_date = Date.new(year.to_i, 12, 31)
 
-        entries_bodies = user_entries.map { |e| ActionView::Base.full_sanitizer.sanitize(e.body) }.join(" ")
+      user_ids_with_entries = User.joins(:entries)
+                                  .where(entries: { date: start_date..end_date })
+                                  .group("users.id")
+                                  .having("count(entries.id) >= 2")
+                                  .select(:id)
+
+      User.where(id: user_ids_with_entries).find_each do |user|
+        user_entries = user.entries.where(date: start_date..end_date)
+
+        entries_bodies = user_entries.map(&:text_body).join(" ")
         tokenizer = WordsCounted::Tokeniser.new(entries_bodies).tokenise(exclude: Entry::WORDS_NOT_TO_COUNT)
         total_words = tokenizer.count
 
