@@ -28,20 +28,20 @@
     .col-md-8.col-md-offset-2
       %label{style: 'margin-bottom: 10px;'} Additional Security
       %br
-      %button.btn.btn-default.btn-sm#add-passkey{type: "button"}
-        Add a Passkey
+      %div{style: 'margin-bottom: 15px;'}
+        %button.btn.btn-default.btn-sm#add-passkey{type: "button"}
+          Add Passkey
 
-      = link_to user_otp_token_path do
-        %button.btn.btn-default.btn-sm#add-two-factor{type: "button"}
-          - if current_user.otp_enabled?
-            %span{class: "text-success"}
-              ✅ Change Two-Factor Authentication
-          -else
-            Setup Two-Factor Authentication
-      %br
-      
+        = link_to user_otp_token_path do
+          %button.btn.btn-default.btn-sm#add-two-factor{type: "button"}
+            - if current_user.otp_enabled?
+              %span{class: "text-success"}
+                ✅ Change Two-Factor Authentication
+            -else
+              Setup Two-Factor Authentication
+
       - if current_user.webauthn_credentials.any?
-        %table.table{style: 'margin-top: 15px;'}
+        %table.table
           %thead
             %tr
               %th Passkey
