@@ -1,0 +1,72 @@
+<% title "Dabble Me — Privacy Policy" %>
+
+<div class="row">
+  <div class="col-md-8 col-md-offset-2 well s-faqs">
+    <h2 class="center">Privacy Policy</h2>
+    <hr>
+    <p>Effective Date: January 1, 2026</p>
+
+    <p>We take your privacy seriously. Dabble Me exists to be a private place to write. This Privacy Policy explains what we collect, what we don’t, and how we protect it.</p>
+
+    <h4>The core promise: your journal is private</h4>
+    <p>Your journal entries are private by default, not public, not searchable by Google, and not shareable inside the product. The intended way to access your entries is by signing in to your account and by emails sent to the email address associated with your account.</p>
+
+    <h4>What we collect</h4>
+    <p>We collect only what we need to run the service: your email address, account credentials, billing status, and the journal entries and images you choose to store in Dabble Me. We also collect limited technical data for reliability and product improvement, described below.</p>
+
+    <h4>Analytics</h4>
+    <p style="margin-bottom: 8px;">We use Google Analytics and Cloudflare Analytics to understand how the site is used and to improve performance and reliability.</p>
+    <p>We configure Google Analytics with IP anonymization. These analytics are used to measure things like page views, feature usage, and general traffic patterns. Analytics data is used only in aggregate and is not used to identify you or analyze the contents of your journal entries.</p>
+
+    <h4>Payments</h4>
+    <p>Payments are processed by Stripe. We do not store your full payment card details. Stripe handles sensitive payment information directly.</p>
+
+    <h4>What we do not do</h4>
+    <p style="margin-bottom: 8px;">We do not sell your journal content.</p>
+    <p style="margin-bottom: 8px;">We do not share your journal content with advertisers.</p>
+    <p>We do not make your entries public.</p>
+
+    <h4>Data security</h4>
+    <p style="margin-bottom: 8px;">We use industry-standard security practices to protect your account and data. This includes encrypted connections (HTTPS) and encryption at rest for stored data.</p>
+    <p style="margin-bottom: 8px;">Your password is stored using Devise and is hashed and protected using established best practices. We never store your password in plain text.</p>
+    <p>Because Dabble Me is designed around email delivery and reply-based journaling, email content may pass through email providers in transit. If end-to-end encryption is a hard requirement for you, Dabble Me may not be the right fit. You may prefer a local-first encrypted journaling option.</p>
+
+    <h4>Enhanced security</h4>
+    <p style="margin-bottom: 8px;">We support both passkey and two-factor authentication and strongly recommend enabling at least one of them in the <a href="<%= security_path %>" target="_blank">account security settings</a> to better protect your account.</p>
+    <p>We also recommend using a secure password manager to store your password and other sensitive information.</p>
+
+    <h4>AI features (opt-in, off by default)</h4>
+    <p style="margin-bottom: 8px;">Dabble Me offers optional AI-powered features in private beta. These features are opt-in only and off by default.</p>
+    <p style="margin-bottom: 8px;">If you enable AI features, your entries (or portions of them) may be sent to third-party providers to generate the requested output. Today, that may include OpenAI (for text generation) and Hugging Face (for sentiment analysis). We do not allow these providers to use your content to train their models, and we do not use your content to train our own models.</p>
+    <p>We only send the minimum content needed to provide the feature you requested. If you do not enable AI features, your entries are not sent to AI providers.</p>
+
+    <h4>Independently owned and operated</h4>
+    <p style="margin-bottom: 8px;">Dabble Me was launched in 2014. As of the Effective Date, it has been independently owned and operated continuously as a user-funded service by its original owner/developer. Operational access is limited to what’s necessary to run and support the service, and we aim to keep that surface area as small as possible to reduce risk and increase security.</p>
+    <p>Dabble Me is developed in the open. The core application code is <a href="https://github.com/parterburn/dabble.me" target="_blank">available on GitHub</a> to promote transparency and learning. Public availability of code does not mean all production systems or configurations are public, nor does it imply a security guarantee.</p>
+
+    <h4>Data retention and deletion</h4>
+    <p>You can delete your account from your <a href="<%= settings_path %>" target="_blank">account settings</a>. When you do, your account and associated entries are deleted from our systems within a reasonable period, except where we must retain limited records for legal, tax, fraud prevention, or operational purposes (for example, payment records handled by Stripe).</p>
+
+    <h4>Law enforcement and government requests</h4>
+    <p style="margin-bottom: 0;">As of the Effective Date, Dabble Me has never:</p>
+    <ul style="margin-top: 8px; margin-bottom: 8px;">
+      <li>Turned over encryption or authentication keys (ours or customers’) to anyone</li>
+      <li>Installed law enforcement monitoring software or equipment on our systems</li>
+      <li>Provided any law enforcement organization with a live or bulk feed of customer content</li>
+      <li>Modified customer content at the request of law enforcement or any third party</li>
+      <li>Altered DNS responses at the request of law enforcement or any third party</li>
+      <li>Weakened, compromised, or deliberately subverted encryption at anyone’s request</li>
+    </ul>
+    <p>If we are legally required to disclose information or take action in the future, we will comply with the law. When legally permitted, we will provide notice to affected users and limit disclosure to what is strictly required. We aim to interpret requests narrowly and disclose the minimum data required.</p>
+
+    <h4>Business changes</h4>
+    <p>We run Dabble Me as a subscription business. If the company is ever acquired or undergoes a major business change, this Privacy Policy will continue to apply to your existing data unless we clearly notify you and give you a meaningful choice (for example, the ability to export or delete your data before any materially different privacy practices apply).</p>
+
+    <h4>Changes to this policy</h4>
+    <p>We may update this Privacy Policy from time to time. If we make a material change, we will post an updated version here and make a reasonable effort to notify you in a prominent way.</p>
+
+    <h4>Questions</h4>
+    <p style="margin-bottom: 0;">Email us at <%= mail_to("hello@#{ENV['MAIN_DOMAIN']}", "hello@#{ENV['MAIN_DOMAIN']}", :encode=>"hex") %>. We read every message.</p>
+
+  </div>
+</div>
