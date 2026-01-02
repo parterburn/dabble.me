@@ -184,7 +184,7 @@ namespace :entry do
     csv_data = CSV.generate(col_sep: "\t") do |csv|
       csv << ["USER_ID", "EMAIL", "FNAME", "LNAME", "#{year}_ENTRY", "#{year}_WORD"]
 
-      User.joins(:entries).includes(:entries).each do |user|
+      User.joins(:entries).includes(:entries).where("entries.date >= '#{year}-01-01'::DATE AND entries.date <= '#{year}-12-31'::DATE").group("users.id").each do |user|
         user_entries = user.entries.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE")
         next unless user_entries.size.positive?
 
