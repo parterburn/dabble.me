@@ -464,9 +464,10 @@ class EntriesController < ApplicationController
 
   def set_sidebar_stats
     @all_entries = current_user.entries
+    all_entries_size = @all_entries.count
 
     # Consolidate main counts into a single query for speed
-    stats = Rails.cache.fetch("user_#{current_user.id}_main_stats", expires_in: 1.hour) do
+    stats = Rails.cache.fetch("user_#{current_user.id}_main_stats_#{all_entries_size}", expires_in: 1.hour) do
       @all_entries.unscope(:order).select(
         "count(*) as total",
         "count(*) FILTER (WHERE image IS NOT NULL AND image != '') as images",
@@ -481,7 +482,7 @@ class EntriesController < ApplicationController
     @only_spotify_count = stats["spotify"].to_i
 
     # Use SQL for emotions counts to avoid loading all entries into memory
-    @emotions_counts = Rails.cache.fetch("user_#{current_user.id}_emotions_counts", expires_in: 1.hour) do
+    @emotions_counts = Rails.cache.fetch("user_#{current_user.id}_emotions_counts_#{all_entries_size}", expires_in: 1.hour) do
       # Since sentiment is jsonb[], we use unnest() to expand the array
       @all_entries.unscope(:order)
                   .where.not(sentiment: [])
@@ -490,12 +491,12 @@ class EntriesController < ApplicationController
                   .count
     end
 
-    @entries_by_year = Rails.cache.fetch("user_#{current_user.id}_entries_by_year", expires_in: 1.hour) do
+    @entries_by_year = Rails.cache.fetch("user_#{current_user.id}_entries_by_year_#{all_entries_size}", expires_in: 1.hour) do
       @all_entries.unscope(:order).group("DATE_PART('year', date)").count.transform_keys { |k| k.to_i.to_s }.sort.reverse.to_h
     end
 
     if params[:group].present? && params[:group] =~ /\A(19|20)\d{2}\z/
-      @entries_by_month = Rails.cache.fetch("user_#{current_user.id}_entries_by_month_#{params[:group]}", expires_in: 1.hour) do
+      @entries_by_month = Rails.cache.fetch("user_#{current_user.id}_entries_by_month_#{params[:group]}_#{all_entries_size}", expires_in: 1.hour) do
         @all_entries.unscope(:order).where("DATE_PART('year', date) = ?", params[:group]).group("DATE_PART('month', date)").count.transform_keys { |k| k.to_i }.to_h
       end
     end

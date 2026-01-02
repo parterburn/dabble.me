@@ -184,23 +184,23 @@ namespace :entry do
     csv_data = CSV.generate(col_sep: "\t") do |csv|
       csv << ["USER_ID", "EMAIL", "FNAME", "LNAME", "#{year}_ENTRY", "#{year}_WORD"]
 
-      User.all.each do |user|
-        user_entries = Entry.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE AND user_id = ?", user.id)
-        if user_entries.count > 0
-          entries_bodies = user_entries.map { |e| ActionView::Base.full_sanitizer.sanitize(e.body) }.join(" ")
-          tokenizer = WordsCounted::Tokeniser.new(entries_bodies).tokenise(exclude: Entry::WORDS_NOT_TO_COUNT)
-          total_words = tokenizer.count
+      User.joins(:entries).includes(:entries).each do |user|
+        user_entries = user.entries.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE")
+        next unless user_entries.size.positive?
 
-          avg_words = total_words.to_f / user_entries.count
-          csv << [
-            user.id,
-            user.email,
-            user.first_name,
-            user.last_name,
-            user_entries.count,
-            avg_words.round(0)
-          ]
-        end
+        entries_bodies = user_entries.map { |e| ActionView::Base.full_sanitizer.sanitize(e.body) }.join(" ")
+        tokenizer = WordsCounted::Tokeniser.new(entries_bodies).tokenise(exclude: Entry::WORDS_NOT_TO_COUNT)
+        total_words = tokenizer.count
+
+        avg_words = total_words.to_f / user_entries.count
+        csv << [
+          user.id,
+          user.email,
+          user.first_name,
+          user.last_name,
+          user_entries.count,
+          avg_words.round(0)
+        ]
       end
     end;nil
     p "*"*100
