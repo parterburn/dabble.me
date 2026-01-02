@@ -89,3 +89,9 @@
     .done( function( instance ) {
       $(instance.elements).find('.pictureFrame img').css("background-image","none");
     });
+
+  $("#entry_image").on("change", function() {
+    if ($("#entry_image")[0].files.length > 5) {
+        alert("Photos are limited to 5 per entry.");
+    }
+  });
