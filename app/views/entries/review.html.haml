@@ -141,17 +141,17 @@
           %span= format_number(your_avg_words)
       - if @year.to_s == "2025"
         .s-review-details{style: "margin: 30px auto;"}
-          - if your_avg_words > 262
+          - if your_avg_words > 294
             - compared = 'way more'
-          - elsif your_avg_words > 175
+          - elsif your_avg_words > 196
             - compared = 'more'
-          - elsif your_avg_words < 87
+          - elsif your_avg_words < 98
             - compared = 'way less'
           - else
             - compared = 'less'
-          %p= "That's #{compared} than the average of all Dabble Me users (181 words per post)."
+          %p= "That's #{compared} than the average of all Dabble Me users (196 words per post)."
           %p
-            %span Collectively, all Dabble Me users could have wrote 74 books equivalent to Sahil Bloom's,
+            %span Collectively, all Dabble Me users could have wrote 78 books equivalent to Sahil Bloom's,
             %span<= link_to "The 5 Types of Wealth", "https://amzn.to/44THtN1", target: :_blank
             %span !
           .clearfix
