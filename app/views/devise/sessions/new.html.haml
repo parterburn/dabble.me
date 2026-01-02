@@ -10,7 +10,7 @@
 
     .col-md-6.col-md-offset-3
       = f.label :email
-      = f.email_field :email, autofocus: true, :class => "form-control", required: true
+      = f.email_field :email, autofocus: true, :class => "form-control", required: true, value: params[:user].try(:[], "email") || resource.email
       %br
 
     .col-md-6.col-md-offset-3

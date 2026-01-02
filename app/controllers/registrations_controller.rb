@@ -1,7 +1,6 @@
 # Devise Override Controller
 class RegistrationsController < Devise::RegistrationsController
   before_action :require_user, only: [:security, :update, :edit]
-  after_action :track_ga_event, only: :create
   prepend_before_action :check_captcha, only: [:create]
 
   def edit
@@ -130,14 +129,6 @@ class RegistrationsController < Devise::RegistrationsController
       build_resource(sign_up_params)
       clean_up_passwords(resource)
       respond_with_navigational(resource) { render :new }
-    end
-  end
-
-  def track_ga_event
-    return nil unless user.id.present?
-    if ENV['GOOGLE_ANALYTICS_ID'].present?
-      # tracker = Staccato.tracker(ENV['GOOGLE_ANALYTICS_ID'])
-      # tracker.event(category: 'User', action: 'Create', label: user.user_key)
     end
   end
 

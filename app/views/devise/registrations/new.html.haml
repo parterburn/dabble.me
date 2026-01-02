@@ -1,8 +1,14 @@
 - title 'Sign up for Dabble Me'
 
 .row
-  .col-md-6.col-md-offset-3
+  .col-md-6.col-md-offset-3.text-center{style: "margin-top: 20px;"}
+    %p.lead Already have an account?
+    = form_tag new_user_session_path, method: :get, class: "form-inline", id: "login-form" do
+      .form-group{style: "display: flex; align-items: center; gap: 10px;"}
+        = email_field_tag 'user[email]', nil, placeholder: "Email", class: "form-control", id: "login-email", required: true, style: "width: 100%;"
+        = submit_tag "Login", class: "btn btn-link form-control", id: "login-button", style: "border: none; height: 43px;"
     %br
+    %hr{style: "margin-top: 5px;"}
 = form_for(resource, as: resource_name, url: registration_path(resource_name)) do |f|
   - if @user.errors.present?
     .col-md-6.col-md-offset-3

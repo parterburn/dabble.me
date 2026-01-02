@@ -147,7 +147,6 @@ class EmailProcessor
         end
 
         if existing_entry.save
-          track_ga_event('Merged')
 
           if respond_as_ai? && @user && @user.can_ai?
             AiEntryJob.perform_later(@user.id, existing_entry.id)
@@ -191,7 +190,7 @@ class EmailProcessor
         entry&.original_email = @inbound_email_params
         entry&.body = entry&.sanitized_body if @user.is_free?
         if entry&.save
-          track_ga_event('New')
+          # all good
         else
           if entry.present?
             record_errors = entry.errors.full_messages.to_sentence
@@ -230,13 +229,6 @@ class EmailProcessor
 
   def respond_as_ai?
     all_recipients.select { |k| k[:host] == ENV['SMTP_DOMAIN'].gsub('post', 'ai') }.any?
-  end
-
-  def track_ga_event(action)
-    if ENV['GOOGLE_ANALYTICS_ID'].present?
-      # tracker = Staccato.tracker(ENV['GOOGLE_ANALYTICS_ID'])
-      # tracker.event(category: 'Email Entry', action: action, label: @user.user_key)
-    end
   end
 
   def pick_meaningful_recipient(to_recipients, cc_recipients)

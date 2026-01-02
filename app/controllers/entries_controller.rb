@@ -70,7 +70,6 @@ class EntriesController < ApplicationController
     if @entry
       set_hashtags
       set_sidebar_stats
-      track_ga_event('Show')
       render 'show'
     else
       redirect_to entries_path
@@ -96,7 +95,6 @@ class EntriesController < ApplicationController
     if @entry
       set_hashtags
       set_sidebar_stats
-      track_ga_event('Random')
       render 'show'
     else
       redirect_to entries_path
@@ -143,7 +141,6 @@ class EntriesController < ApplicationController
       end
       if @existing_entry.save
         flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime("%B %-d")}."
-        track_ga_event('Merged')
         redirect_to day_entry_path(year: @existing_entry.date.year, month: @existing_entry.date.month, day: @existing_entry.date.day)
       else
         render 'new'
@@ -165,7 +162,6 @@ class EntriesController < ApplicationController
       end
 
       if @entry.save
-        track_ga_event('New')
         flash[:notice] = "Entry created successfully!"
         redirect_to day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day)
       else
@@ -179,7 +175,6 @@ class EntriesController < ApplicationController
     if current_user.is_free?
       @entry.body = @entry.sanitized_body
     end
-    track_ga_event('Edit')
   end
 
   def update
@@ -211,7 +206,6 @@ class EntriesController < ApplicationController
       if @existing_entry.save
         @entry.delete
         flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime('%B %-d')}."
-        track_ga_event('Update')
         redirect_to day_entry_path(year: @existing_entry.date.year, month: @existing_entry.date.month, day: @existing_entry.date.day) and return
       else
         render 'edit'
@@ -240,7 +234,6 @@ class EntriesController < ApplicationController
             @entry.update(filepicker_url: nil)
           end
         end
-        track_ga_event('Update')
         flash[:notice] = "Entry successfully updated!"
         redirect_to day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day)
       else
@@ -256,7 +249,6 @@ class EntriesController < ApplicationController
     end
 
     @entry.destroy
-    track_ga_event('Delete')
     flash[:notice] = 'Entry deleted successfully.'
     redirect_to entries_path
   end
@@ -293,7 +285,6 @@ class EntriesController < ApplicationController
     else
       @entries = current_user.entries.sort_by(&:date)
     end
-    track_ga_event('Export')
     respond_to do |format|
       format.json { send_data JSON.pretty_generate(JSON.parse(@entries.to_json(only: [:date, :body, :image]))), filename: "export_#{Time.now.strftime('%Y-%m-%d')}.json" }
       format.txt do
@@ -374,13 +365,6 @@ class EntriesController < ApplicationController
   end
 
   private
-
-  def track_ga_event(action)
-    if ENV['GOOGLE_ANALYTICS_ID'].present?
-      # tracker = Staccato.tracker(ENV['GOOGLE_ANALYTICS_ID'])
-      # tracker.event(category: 'Web Entry', action: action, label: current_user.user_key)
-    end
-  end
 
   def entry_params
     params.require(:entry).permit(:date, :entry, :inspiration_id, :remove_image, :remote_image_url)
