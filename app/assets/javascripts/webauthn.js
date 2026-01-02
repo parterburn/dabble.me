@@ -1,7 +1,7 @@
 (function() {
   window.DABBLE = window.DABBLE || {};
   DABBLE.webauthn = {
-    register: function(nickname) {
+    register: function(nickname, currentPassword) {
       $.ajax({
         url: "/passkeys/registrations/new",
         type: "GET",
@@ -31,7 +31,8 @@
                   attestationObject: DABBLE.webauthn.bufferEncode(credential.response.attestationObject),
                   clientDataJSON: DABBLE.webauthn.bufferEncode(credential.response.clientDataJSON)
                 },
-                nickname: nickname
+                nickname: nickname,
+                current_password: currentPassword
               };
 
               $.ajax({

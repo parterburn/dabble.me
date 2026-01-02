@@ -19,6 +19,11 @@ class Passkeys::RegistrationsController < ApplicationController
   end
 
   def create
+    unless current_user.valid_password?(params[:current_password])
+      render json: { errors: ["Incorrect current password."] }, status: :unprocessable_entity
+      return
+    end
+
     webauthn_credential = ::WebAuthn::Credential.from_create(params)
 
     begin

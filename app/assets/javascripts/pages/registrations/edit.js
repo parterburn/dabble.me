@@ -24,9 +24,17 @@
     
     $("#add-passkey").on("click", function(e) {
       e.preventDefault();
+
+      var $passwordField = $('#user_current_password');
+      if ($passwordField.length > 0 && $passwordField.val().length === 0) {
+        swal({title: "Password Needed", text: "Enter your current password below to add a passkey.", type: "error", confirmButtonText: "Ok"});
+        $passwordField.focus();
+        return false;
+      }
+
       var nickname = prompt("Enter a nickname for this passkey (e.g. MacBook Air, YubiKey):", "Passkey");
       if (nickname) {
-        DABBLE.webauthn.register(nickname);
+        DABBLE.webauthn.register(nickname, $passwordField.val());
       }
     });
 
