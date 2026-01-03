@@ -10,6 +10,7 @@ Rails.application.routes.draw do
   end
 
   devise_for :users, controllers: { registrations: 'registrations', sessions: 'sessions', passwords: 'passwords' }
+  get '/users/:id', to: redirect('/security'), as: 'user'
 
   devise_scope :user do
     post "/validate_otp", to: "sessions#validate_otp", as: "validate_otp"

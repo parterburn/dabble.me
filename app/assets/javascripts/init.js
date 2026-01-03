@@ -89,6 +89,20 @@
         $(this).toggleClass("active");
     });
 
+    $(document).on('click', '.j-copy-to-clipboard', function(e) {
+      e.preventDefault();
+      var $btn = $(this);
+      var content = $btn.data('content');
+
+      navigator.clipboard.writeText(content).then(function() {
+        var originalHtml = $btn.html();
+        $btn.html('<i class="fa fa-check"></i> Copied!');
+        setTimeout(function() {
+          $btn.html(originalHtml);
+        }, 2000);
+      });
+    });
+
   };
 
 })();
