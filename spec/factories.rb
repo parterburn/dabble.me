@@ -1,10 +1,10 @@
 FactoryBot.define do
   factory :webauthn_credential do
-    user { nil }
-    external_id { "MyString" }
-    public_key { "MyString" }
-    nickname { "MyString" }
-    sign_count { "" }
+    association :user
+    external_id { SecureRandom.hex(16) }
+    public_key { SecureRandom.hex(32) }
+    nickname { "My MacBook" }
+    sign_count { 0 }
   end
 
   factory :user, class: User do

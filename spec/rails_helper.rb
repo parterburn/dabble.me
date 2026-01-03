@@ -54,6 +54,7 @@ RSpec.configure do |config|
 
   config.include Devise::Test::ControllerHelpers, type: :controller
   config.include Devise::Test::IntegrationHelpers, type: :feature
+  config.include FactoryBot::Syntax::Methods
   config.include Capybara::DSL
 
   Capybara.app_host = 'http://127.0.0.1:64515'
