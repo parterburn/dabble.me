@@ -13,7 +13,7 @@ class EntryMailer < ActionMailer::Base
       @random_entry_image_url = @random_entry.image_url_cdn
     end
 
-    email = mail  from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
+    email = mail  from: "Dabble me. <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
                   to: "#{user.cleaned_to_address}",
                   subject: "It's #{@send_day.strftime('%A, %b %-d')}. How was your day?",
                   html: render_to_string('entry_mailer/send_entry', formats: [:html]).to_str,
@@ -48,7 +48,7 @@ class EntryMailer < ActionMailer::Base
     @user = user
     @errors = errors
     set_reply_headers(entry)
-    email = mail  from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
+    email = mail  from: "Dabble me. <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
                   to: "#{user.cleaned_to_address}",
                   bcc: ["hello@#{ENV['MAIN_DOMAIN']}"],
                   subject: "Image Error Re: #{subject(entry)}",

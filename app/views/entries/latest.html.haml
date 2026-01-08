@@ -1,5 +1,5 @@
 - if @lastest_entry.present?
-  - title "Latest Entry"
+  - title "Latest Entry — Dabble me."
   - graph_year = @user_today.year
   - review_year = @user_today.month > 11 ? @user_today.year : @user_today.year - 1
   - highlight_year_in_review = @user_today > Date.parse("#{review_year}-12-1") && @user_today < Date.parse("#{review_year + 1}-01-15")
@@ -43,12 +43,12 @@
           - if highlight_year_in_review
             %h4{style: "font-size: 16px; margin-top: 10px; font-weight: 600;"}
               %span= "See more stats in your "
-              = link_to "Year in Review", review_path, style: "color: #3366cc;"
+              = link_to "Year in Review", review_path, style: "color: #649cc7;"
               %span> !
           - else
             %h4{style: "font-size: 16px; margin-top: 10px; font-weight: 500;"}
               %span= "#{percent_complete}% of the year completed. "
-              = link_to "Write your memories down", new_entry_path, style: "color: #3366cc;"
+              = link_to "Write your memories down", new_entry_path, style: "color: #5B6554;"
               %span= " so you can remember them later."
 
     - unless @lastest_entry.date == @user_today
