@@ -300,7 +300,9 @@ class EntriesController < ApplicationController
           entries_scope.select(:id, :user_id, :date, :body, :image).find_each(batch_size: 100) do |entry|
             yielder << ",\n" unless first
             first = false
-            yielder << JSON.pretty_generate(entry.as_json(only: [:date, :body, :image]))
+            entry_hash = { date: entry.date, body: entry.body }
+            entry_hash[:image] = entry.image_url_cdn(cloudflare: false) if entry.image.present?
+            yielder << JSON.pretty_generate(entry_hash)
           end
           yielder << "\n]"
         end

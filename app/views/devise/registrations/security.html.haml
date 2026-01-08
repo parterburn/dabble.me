@@ -55,7 +55,7 @@
                 %td= link_to "Remove", passkeys_registration_path(credential), method: :delete, data: { confirm: "Are you sure?" }, class: "text-danger"
 
     .col-md-8.col-md-offset-2
-      .well{style: 'background-color: hsla(40, 33%, 96%, 1); padding: 15px 20px;'}
+      .well{style: 'background-color: #E8E8E2; padding: 15px 20px;'}
         = f.label :current_password
         to confirm your changes
         = f.password_field :current_password, autocomplete: "off", class: "form-control"
