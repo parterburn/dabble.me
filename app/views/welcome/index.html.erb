@@ -4,29 +4,29 @@ sample_entries = [
     body: "#Lily took four wobbly steps toward me before crashing into my arms, and we both squealed like it was the moon landing. I replayed those ten seconds in my head for the rest of the day.",
     tag: "#Lily (1 year and 2 months since entry)",
     image: "baby.jpg",
-    date: "#{6.months.ago.strftime("%a, %b %-d, %Y")} (6 months ago)"
+    date: "#{(6.months.ago - 1.day).strftime("%a, %b %-d, %Y")} (6 months ago)"
   },
   {
     body: "Today I ran a full mile without stopping—something I couldn't do six months ago when I could barely climb the stairs. My lungs burned and my legs ached, but I cried happy tears the whole walk home. #CouchTo5k",
     tag: "#CouchTo5k (6 months from entry)",
     image: "runner.jpg",
-    date: "#{3.years.ago.strftime("%a, %b %-d, %Y")} (3 years ago)"
+    date: "#{(3.years.ago - 1.day).strftime("%a, %b %-d, %Y")} (3 years ago)"
   },
   {
     body: "Halfway through dinner, we both just stopped talking and smiled at each other like we'd known this was coming. That comfortable silence said more than the conversation.",
     image: "first-date.jpg",
-    date: "#{10.years.ago.strftime("%a, %b %-d, %Y")} (10 years ago)"
+    date: "#{(10.years.ago - 1.day).strftime("%a, %b %-d, %Y")} (10 years ago)"
   }
 ]
 sample_entry = sample_entries.sample
 %>
 
 <!-- Hero Section -->
-<section class="sm:px-6 lg:px-8 pt-4 sm:pb-24 lg:pb-32">
+<section class="sm:px-6 lg:px-8 pt-4 sm:pb-24">
   <div class="mx-auto">
     <div class="relative rounded-t-3xl sm:rounded-3xl bg-hero">
       <div class="bg-grain" style="background-image: url('data:image/svg+xml;charset=utf-8,%20%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22250%22%20height%3D%22250%22%20viewBox%3D%220%200%20100%20100%22%3E%20%3Cfilter%20id%3D%22n%22%3E%20%3CfeTurbulence%20type%3D%22turbulence%22%20baseFrequency%3D%221.4%22%20numOctaves%3D%221%22%20seed%3D%222%22%20stitchTiles%3D%22stitch%22%20result%3D%22n%22%20%2F%3E%20%3CfeComponentTransfer%20result%3D%22g%22%3E%20%3CfeFuncR%20type%3D%22linear%22%20slope%3D%224%22%20intercept%3D%221%22%20%2F%3E%20%3CfeFuncG%20type%3D%22linear%22%20slope%3D%224%22%20intercept%3D%221%22%20%2F%3E%20%3CfeFuncB%20type%3D%22linear%22%20slope%3D%224%22%20intercept%3D%221%22%20%2F%3E%20%3C%2FfeComponentTransfer%3E%20%3CfeColorMatrix%20type%3D%22saturate%22%20values%3D%220%22%20in%3D%22g%22%20%2F%3E%20%3C%2Ffilter%3E%20%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url(%23n)%22%20%2F%3E%20%3C%2Fsvg%3E%20');"></div>
-      <div class="px-6 sm:px-10 lg:px-12 pt-6 pb-3 sm:pt-16 sm:pb-16 lg:pt-18">
+      <div class="px-6 sm:px-10 lg:px-12 pt-7 pb-7 sm:pt-16 sm:pb-14">
         <div class="grid lg:grid-cols-2 gap-12 items-center">
       <!-- Hero Content -->
       <div class="text-center lg:text-left">
@@ -50,16 +50,23 @@ sample_entry = sample_entries.sample
           <a href="<%= new_user_registration_path %>" class="inline-flex items-center justify-center px-6 py-3 font-medium rounded-full transition-colors duration-200 bg-white text-olive-800 hover:bg-cream-100">
             Start writing for free
           </a>
-          <a href="#features" class="inline-flex items-center justify-center px-6 py-3 font-medium rounded-full transition-colors duration-200 border border-white/30 text-hero hover:bg-white/10">
+          <a href="#features" class="hidden sm:inline-flex items-center justify-center px-6 py-3 font-medium rounded-full transition-colors duration-200 border border-white/30 text-hero hover:bg-white/10">
             See how it works
             <svg class="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
             </svg>
           </a>
+
+          <a href="#email-preview" class="sm:hidden inline-flex items-center justify-center px-6 py-3 font-medium rounded-full transition-colors duration-200 border border-white/30 text-hero hover:bg-white/10">
+            See how it works
+            <svg class="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </a>          
         </div>
 
         <!-- Quick value props -->
-        <div class="mt-10 grid grid-cols-2 gap-4 text-sm text-hero-muted">
+        <div class="mt-10 grid grid-cols-2 gap-4 text-sm text-hero-muted" id="email-preview">
           <div class="flex items-center gap-2">
             <svg class="h-5 w-5 text-hero-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
@@ -315,7 +322,7 @@ sample_entry = sample_entries.sample
   <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
     <a href="https://twitter.com/paulg/status/1746341562286539118?ref_src=twsrc%5Etfw" target="_blank" rel="noopener" class="hover:scale-105 transition-transform duration-300 block">
       <blockquote class="font-serif text-2xl sm:text-3xl lg:text-4xl text-primary leading-relaxed">
-        "The pro version of Dabble Me costs $3 a month, and it is worth so much more than that."
+        "The pro version of Dabble Me costs ~$3 a month, and it is worth so much more than that."
       </blockquote>
 
       <div class="mt-10 flex flex-col items-center">
@@ -570,7 +577,7 @@ sample_entry = sample_entries.sample
               </li>
               <li>
                 <strong>Memory keeper for major events/milestones</strong>
-                  — we easily forget. Write it down now and the daily emails will bring you smiles when it reminds you of all your favorite moments. I started journaling when I first met my wife #{distance_of_time_in_words(Date.parse("2011-09-01"), Date.today)} ago — I took 5 minutes to write about all of the dates we went on. Reading those past entries to each other has become a routine that deepens our relationship now.
+                  — we easily forget. Write it down now and the daily emails will bring you smiles when it reminds you of all your favorite moments. Take 5 minutes to write about all of the dates you go on...you never know when it might be some of the most important moments you'll be reflecting on your future spouse 😁.
               </li>
               <li>
                 <strong>Goals/Health Tracking</strong>
