@@ -6,15 +6,14 @@
         %span.icon-bar
         %span.icon-bar
       - if user_signed_in? && current_user.is_pro?
-        =link_to new_entry_path, class: "s-write-icon visible-xs #{'active' if params[:controller] == 'entries' && params[:action].in?(['new', 'create'])}" do
-          %i.fa.fa-pencil
-      = link_to root_path, class: 'navbar-brand', title: "Dabble Me" do
+        =link_to "Write", new_entry_path, class: "s-write-icon visible-xs #{'active' if params[:controller] == 'entries' && params[:action].in?(['new', 'create'])}"
+      = link_to root_path, class: 'navbar-brand', title: "Dabble me." do
         %span
           Dabble me.
 
     .collapse.navbar-collapse
       %ul.nav.navbar-nav
-        %li{class: "#{'active' if params[:controller] == 'entries' && params[:action].in?(['new', 'create'])}"}
+        %li{class: "#{'hidden-xs' if user_signed_in? && current_user.is_pro?} #{'active' if params[:controller] == 'entries' && params[:action].in?(['new', 'create'])}"}
           =link_to new_entry_path do
             %span Write
 

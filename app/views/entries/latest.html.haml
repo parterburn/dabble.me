@@ -1,5 +1,5 @@
 - if @lastest_entry.present?
-  - title "Latest Entry"
+  - title "Latest Entry on Dabble me."
   - graph_year = @user_today.year
   - review_year = @user_today.month > 11 ? @user_today.year : @user_today.year - 1
   - highlight_year_in_review = @user_today > Date.parse("#{review_year}-12-1") && @user_today < Date.parse("#{review_year + 1}-01-15")

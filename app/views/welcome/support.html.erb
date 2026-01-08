@@ -46,6 +46,31 @@ faq_sections = {
         a: "No. There is a private beta with built-in AI-powered features, but they are entirely opt-in and turned off by default. If you prefer, you can export your full journal at any time and use it with your own AI tools for analysis or reflection."
       },
       {
+        q: "Can you give me some ideas on what to write about?",
+      a: "<ul class='list-disc list-inside text-primary pl-3 mb-4 space-y-2'>  
+        <li>
+            <strong>Daily Dabble</strong>
+            — reflections from your day is the most popular use case of any journal. This can be a scary one to get started with. If self-reflection is overwhelming to even think about, keep reading.
+        </li>
+        <li>
+          <strong>Memory keeper for major events/milestones</strong>
+            — we easily forget. Write it down now and the daily emails will bring you smiles when it reminds you of all your favorite moments. I started journaling when I first met my wife #{distance_of_time_in_words(Date.parse("2011-09-01"), Date.today)} ago — I took 5 minutes to write about all of the dates we went on. Reading those past entries to each other has become a routine that deepens our relationship now.
+        </li>
+        <li>
+          <strong>Goals/Health Tracking</strong>
+          — use #hashtags in your posts for easily tagging entries with your different goals or visits to different doctors.
+        </li>
+        <li>
+          <strong>Learning Aid</strong>
+          — especially for learning to code or different college courses. The concept of past entries in your inbox is a way of reminding you what you learned that day. It makes the subject matter much more sticky so you actually remember it.
+        </li>
+        <li>
+          <strong>Baby’s Firsts</strong>
+          — use it to track the progress of your children. Pictures go great with this one. Jot down notes and add photos so you can easily put together a scrapbook later.
+        </li>
+      </ul>"
+      },
+      {
         q: "How do I save a copy of my entries?",
         a: "You can download a copy of your entries at any time from the bottom of the <a href='#{settings_path}' class='text-accent hover:text-primary underline'>settings page</a>. Export as plain text (TXT) or JSON (with rich formatting)."
       },
@@ -126,9 +151,9 @@ llm_text += "---\nFor more help, contact: hello@#{ENV['MAIN_DOMAIN'] || 'dabble.
                 </svg>
               </button>
               <div class="accordion-content" style="max-height: 0;">
-                <p class="pb-6 text-primary">
+                <div class="pb-6 text-primary">
                   <%= qa[:a].html_safe %>
-                </p>
+                </div>
               </div>
             </div>
           <% end %>

@@ -10,7 +10,7 @@ class UserMailer < ActionMailer::Base
     @user = user
     @user.increment!(:emails_sent)
     @user.update_columns(last_sent_at: Time.now)
-    email = mail(from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.cleaned_to_address, subject: "Let's write your first Dabble Me entry")
+    email = mail(from: "Dabble me. <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.cleaned_to_address, subject: "Let's write your first Dabble Me entry")
     email.mailgun_options = {tag: 'Welcome'}
   end
 
@@ -21,7 +21,7 @@ class UserMailer < ActionMailer::Base
     if @first_entry.present?
       @first_entry_image_url = @first_entry.image_url_cdn
     end
-    email = mail(from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.cleaned_to_address, subject: 'Congrats on writing your first entry!')
+    email = mail(from: "Dabble me. <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.cleaned_to_address, subject: 'Congrats on writing your first entry!')
     email.mailgun_options = {tag: 'Welcome'}
   end
 

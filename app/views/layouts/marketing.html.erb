@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="<%= I18n.locale %>">
   <head>
-    <title><%= yield(:title).present? ? "#{yield(:title)} | Dabble Me" : "Dabble Me — Your Private Journal" %></title>
+    <title><%= yield(:title).present? ? "#{yield(:title)} | Dabble me." : "Dabble me. Private email journaling & daily reflection." %></title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -13,45 +13,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 
     <!-- Favicons -->
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-180x180.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="/apple-touch-icon-152x152.png">
-    <link rel="apple-touch-icon" sizes="144x144" href="/apple-touch-icon-144x144.png">
-    <link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
-    <link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
-    <link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
-    <link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
-    <link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
-    <link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <meta name="msapplication-TileColor" content="#4A5043">
-    <meta name="msapplication-TileImage" content="/mstile-144x144.png">
-    <meta name="theme-color" content="#4A5043">
-
-    <!-- Meta Tags -->
-    <meta name="application-name" content="Dabble Me">
-    <meta name="apple-mobile-web-app-title" content="Dabble Me">
-    <meta name="description" content="Your private journal. Write daily, reflect on the past, and remember what matters. A simple email-based journaling app.">
-    <meta name="keywords" content="dabble me, journal, diary, journaling, online diary, private journal, email journal, daily journaling">
-    <meta name="author" content="Dabble Me">
-
-    <!-- Open Graph -->
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="<%= yield(:title).present? ? "#{yield(:title)} | Dabble Me" : "Dabble Me — Your Private Journal" %>">
-    <meta property="og:description" content="Your private journal. Write daily, reflect on the past, and remember what matters.">
-    <meta property="og:image" content="https://dabble.me/dabble_logo_ogimage.png">
-    <meta property="og:image:secure_url" content="https://dabble.me/dabble_logo_ogimage.png">
-    <meta property="og:url" content="https://dabble.me">
-    <meta property="og:site_name" content="Dabble Me">
-
-    <!-- Twitter Card -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:site" content="@parterburn">
-    <meta name="twitter:title" content="<%= yield(:title).present? ? "#{yield(:title)} | Dabble Me" : "Dabble Me — Your Private Journal" %>">
-    <meta name="twitter:description" content="Your private journal. Write daily, reflect on the past, and remember what matters.">
-    <meta name="twitter:image" content="https://dabble.me/dabble_logo_ogimage.png">
+    <%= render 'shared/favicons_and_metatags' %>
 
     <!-- Tailwind CSS for Marketing -->
     <%= stylesheet_link_tag 'marketing', media: 'all' %>

@@ -67,18 +67,19 @@
 
 .s-write-icon {
   float: right;
-  font-size: 24px;
+  font-size: 15px;
   color: whiteSmoke;
-  padding: 8px 15px;
+  padding: 15px 15px;
+  text-decoration: none !important;
   height: 50px;
   -webkit-transition: all 0.3s;
   transition: all 0.3s;
   &.active {
     background-color: darken($blue,10);
-  }  
+  }
   &:hover, &:active, &:focus {
     color:white;
-    padding-top: 10px;
+    padding-top: 17px;
     padding-bottom: 13px;
     background-color: darken($blue,20);
     text-shadow: 0px 0px 3px darken($blue,40);
