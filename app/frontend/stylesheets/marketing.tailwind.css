@@ -279,7 +279,7 @@
 
   @media (prefers-color-scheme: dark) {
     .bg-hero {
-      background: linear-gradient(to bottom, #333a2b, #26361b);
+      background: linear-gradient(to bottom, #5C6654, #333a2b);
     }
   }
 
