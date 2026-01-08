@@ -23,8 +23,8 @@ describe 'Pages' do
     expect(page).to have_title 'Terms of Service — Dabble me.'
   end
 
-  it 'has correct title for Subscribe page (redirects to homepage for non-logged-in users)' do
+  it 'has correct content for Subscribe page (redirects to homepage for non-logged-in users)' do
     visit subscribe_path
-    expect(page).to have_title 'Dabble me — private email journaling & daily reflection.'
+    expect(page).to have_content 'You\'ll have access to every premium feature.'
   end
 end
