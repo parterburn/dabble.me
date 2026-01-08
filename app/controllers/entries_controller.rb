@@ -77,7 +77,7 @@ class EntriesController < ApplicationController
   end
 
   def latest
-    @title = "Latest Entry on Dabble me."
+    @title = "Latest Entry — Dabble me."
     @lastest_entry = current_user.entries.includes(:inspiration).order(date: :asc).first
     set_hashtags
     set_sidebar_stats
@@ -293,7 +293,7 @@ class EntriesController < ApplicationController
       format.json do
         # Stream JSON export to avoid memory issues
         headers['Content-Type'] = 'application/json'
-        headers['Content-Disposition'] = "attachment; filename=export_#{Time.now.strftime('%Y-%m-%d')}.json"
+        headers['Content-Disposition'] = "attachment; filename=#{filename.gsub(".txt", ".json")}"
         self.response_body = Enumerator.new do |yielder|
           yielder << "[\n"
           first = true

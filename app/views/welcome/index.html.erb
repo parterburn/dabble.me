@@ -116,7 +116,7 @@ sample_entry = sample_entries.sample
               
               <div class="bg-surface-elevated rounded-lg p-4">
                 <p class="font-semibold text-primary mb-2">
-                  Remember this? On <% sample_entry[:date] %> you wrote...
+                  Remember this? On <%= sample_entry[:date] %> you wrote...
                 </p>
                 <p class="text-primary leading-relaxed">
                   <%= sample_entry[:body] %>
@@ -131,7 +131,7 @@ sample_entry = sample_entries.sample
               </div>
 
               <div class="mt-4 text-muted text-xs">
-                <%= Inspiration.without_imports_or_email_or_tips.sample.body %>
+                <%= Inspiration.without_imports_or_email_or_tips.sample&.body || "Start your journaling journey today." %>
               </div>
             </div>
           </div>
