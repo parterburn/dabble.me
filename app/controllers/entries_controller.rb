@@ -297,7 +297,7 @@ class EntriesController < ApplicationController
         self.response_body = Enumerator.new do |yielder|
           yielder << "[\n"
           first = true
-          entries_scope.select(:date, :body, :image).find_each(batch_size: 100) do |entry|
+          entries_scope.select(:id, :user_id, :date, :body, :image).find_each(batch_size: 100) do |entry|
             yielder << ",\n" unless first
             first = false
             yielder << JSON.pretty_generate(entry.as_json(only: [:date, :body, :image]))
@@ -309,7 +309,7 @@ class EntriesController < ApplicationController
         headers['Content-Type'] = 'text/plain'
         headers['Content-Disposition'] = "attachment; filename=#{filename}"
         self.response_body = Enumerator.new do |yielder|
-          entries_scope.select(:date, :body, :image).find_each(batch_size: 100) do |entry|
+          entries_scope.select(:id, :user_id, :date, :body, :image).find_each(batch_size: 100) do |entry|
             if only_images
               yielder << "#{entry.image_url_cdn(cloudflare: false)}\n"
             else

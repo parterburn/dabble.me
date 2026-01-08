@@ -107,7 +107,7 @@ faq_sections = {
 }
 
 # Generate plain text for LLM copying
-llm_text = "I will ask you questions about Dabble Me (https://dabble.me), a private journaling service. Here are the FAQs:\n\n"
+llm_text = "I will ask you questions about Dabble Me (https://dabble.me), a private journaling service. Answer questions based on the terms of service (https://dabble.me/terms), privacy policy (https://dabble.me/privacy), and these FAQs:\n\n"
 faq_sections.each do |key, section|
   llm_text += "## #{section[:title]}\n\n"
   section[:questions].each do |qa|
@@ -122,9 +122,15 @@ llm_text += "---\nFor more help, contact: hello@#{ENV['MAIN_DOMAIN'] || 'dabble.
     <!-- Header -->
     <div class="text-center mb-12">
       <h1 class="font-serif text-4xl sm:text-5xl tracking-tight">Support</h1>
-      <p class="mt-4 text-lg text-muted">
-        If your question isn't answered below, email us at <%= mail_to("hello@#{ENV['MAIN_DOMAIN']}", "hello@#{ENV['MAIN_DOMAIN']}", encode: "hex", class: "text-accent hover:text-primary font-medium underline") %>.
-      </p>
+      <div class="mt-4 text-lg leading-relaxed text-muted max-w-2xl mx-auto">
+        <button 
+          type="button"
+          class="text-accent hover:text-primary underline cursor-pointer font-semibold"
+          onclick="copyFaqForLlm()"
+          id="copy-llm-btn"
+        ><span id="copy-llm-text">Copy these FAQs</span></button>
+        to ask questions in your favorite AI chat tool. If your question isn't answered below, email us at <%= mail_to("hello@#{ENV['MAIN_DOMAIN']}", "hello@#{ENV['MAIN_DOMAIN']}", encode: "hex", class: "text-accent hover:text-primary font-medium underline") %>.
+      </div>      
     </div>
 
     <% faq_sections.each do |section_key, section| %>
@@ -160,16 +166,6 @@ llm_text += "---\nFor more help, contact: hello@#{ENV['MAIN_DOMAIN'] || 'dabble.
         </div>
       </div>
     <% end %>
-
-    <p class="text-sm text-muted text-center">
-      <button 
-        type="button"
-        class="text-accent hover:text-primary underline cursor-pointer font-semibold"
-        onclick="copyFaqForLlm()"
-        id="copy-llm-btn"
-      ><span id="copy-llm-text">Copy these FAQs</span></button>
-      to ask questions in your favorite AI chat tool. 
-    </p>    
   </div>
 </section>
 

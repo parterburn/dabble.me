@@ -342,7 +342,7 @@
 
   /* Blinking cursor animation */
   .blinking-cursor {
-    animation: blink 1s step-end infinite;
+    animation: blink 1.3s step-end infinite;
   }
 
   @keyframes blink {
