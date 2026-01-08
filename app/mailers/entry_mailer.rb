@@ -2,8 +2,8 @@ class EntryMailer < ActionMailer::Base
   helper.extend(ApplicationHelper)
   helper EntriesHelper
 
-  def send_entry(user, random_inspiration, send_day: nil)
-    @send_day = send_day.presence || Time.now.in_time_zone(user.send_timezone)
+  def send_entry(user, random_inspiration, options = {})
+    @send_day = options[:send_day].presence || Time.now.in_time_zone(user.send_timezone)
     @random_inspiration = random_inspiration
     @user = user
     @user.increment!(:emails_sent)

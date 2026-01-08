@@ -9,7 +9,7 @@ namespace :entry do
     random_inspiration = Inspiration.random
 
     users.each do |user|
-      EntryMailer.send_entry(user, random_inspiration, send_day: send_day).deliver_now
+      EntryMailer.send_entry(user, random_inspiration, { send_day: send_day }).deliver_now
       send_time = DateTime.parse("#{send_day} #{user.send_time}")
       user.update_columns(last_sent_at: send_time)
     end
