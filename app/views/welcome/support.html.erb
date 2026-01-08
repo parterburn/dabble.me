@@ -49,13 +49,13 @@ llm_text += "---\nFor more help, contact: hello@#{ENV['MAIN_DOMAIN'] || 'dabble.
                 data-accordion-trigger
                 aria-expanded="false"
               >
-                <span><%= qa[:q] %></span>
+                <span class="text-olive-800"><%= qa[:q] %></span>
                 <svg data-accordion-icon class="h-5 w-5 text-subtle transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              <div class="accordion-content" style="max-height: 0;">
-                <div class="pb-6 text-primary">
+              <div class="accordion-content bg-page rounded-lg mb-2" style="max-height: 0;">
+                <div class="p-3 text-primary">
                   <%= qa[:a].html_safe %>
                 </div>
               </div>

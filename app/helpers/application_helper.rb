@@ -74,42 +74,42 @@ module ApplicationHelper
         badge: nil,
         questions: [
           {
-            q: "Is this really free?",
-            a: "The basic service is free, with email prompts sent every other Sunday. For daily prompts, photos, search, calendar view, and other advanced features, you can upgrade to PRO for $4/month or $40/year."
-          },
-          {
-            q: "Is there a mobile app?",
-            a: "There's no Dabble Me app in the App Store or Google Play. The website is fully mobile-friendly and works smoothly in any mobile browser. Most people write their entries by replying to the daily email using their phone’s email app, like Mail or Gmail."
+            id: "ideas-for-writing",
+            q: "What should I journal about?",
+            a: "<ul class='list-disc text-primary pl-2 space-y-2 ml-3'>
+            <li>
+              <span class='font-semibold'>The One Framework</span>
+              — if journaling feels overwhelming, start here. Every evening, write just three things: <em>1 win from the day, 1 point of tension or stress, and 1 bit of gratitude</em>. That's it. Five minutes, no pressure, and you'll start to see patterns in what lifts you up and what weighs you down. Popularized by <a href='https://www.sahilbloom.com/newsletter/the-1-1-1-method-forecasts-for-the-future-more' target='_blank' class='text-accent hover:text-primary underline'>Sahil Bloom</a>, this simple framework makes journaling finally stick.
+            </li>
+            <li>
+              <span class='font-semibold'>Travel Log</span>
+              — capture the places you go while you're still there. The name of that tiny restaurant, the street performer who made you cry, the wrong turn that led to the best view of the trip. Use #Paris or #RoadTrip2025 to group your adventures, and when the daily email resurfaces that random Tuesday in Tokyo three years later, you'll be right back on that train platform.
+            </li>
+            <li>
+              <span class='font-semibold'>Relationship Time Capsule</span>
+              — write about the people you love while the moments are fresh. The thing your partner said that made you laugh, the weird inside joke your best friend started, the look on your mom's face when you surprised her. Tag entries with #Sarah or #Dad and build a searchable archive of the people who matter most—one you'll be grateful for someday.
+            </li>
+            <li>
+              <span class='font-semibold'>Career Wins &amp; Lessons</span>
+              — it's easy to forget what you've accomplished at work by the time performance reviews roll around. Jot down the projects you crushed, the feedback you received, the hard conversations you navigated. Tag with #Work or #Promotion, and when you need to update your resume or negotiate a raise, you'll have receipts.
+            </li>
+            <li>
+              <span class='font-semibold'>Gratitude Before Bed</span>
+              — end each day with one thing you're thankful for and tag it with #Gratitude. Over time, you'll build a searchable database of hundreds of small joys. When a tough day hits, scroll back through your gratitude entries and remember: your life is fuller than it feels right now.
+            </li>
+          </ul>"
           },
           {
             q: "Does this service use AI to read or analyze my entries?",
-            a: "No. There is a private beta with built-in AI-powered features, but they are entirely opt-in and turned off by default. If you prefer, you can export your full journal at any time and use it with your own AI tools for analysis or reflection."
+            a: "No. There is a private beta with built-in AI-powered features, but they are entirely opt-in and turned off by default.<div class='mt-2'>If you'd like to use AI to analyze your entries, you can easily export your full journal (or just part of it) at any time and use it with your own AI tools for analysis or reflection.</div>"
           },
           {
-            id: "ideas-for-writing",
-            q: "Can you give me some ideas on what to write about?",
-            a: "<ul class='list-disc list-inside text-primary pl-3 mb-4 space-y-2'>
-            <li>
-                <strong>Daily Dabble</strong>
-                — reflections from your day is the most popular use case of any journal. This can be a scary one to get started with. If self-reflection is overwhelming to even think about, keep reading.
-            </li>
-            <li>
-              <strong>Memory keeper for major events/milestones</strong>
-                — we easily forget. Write it down now and the daily emails will bring you smiles when it reminds you of all your favorite moments. Take 5 minutes to write about all of the dates you go on...you never know when it might be some of the most important moments you'll be reflecting on your future spouse 😁.
-            </li>
-            <li>
-              <strong>Goals/Health Tracking</strong>
-              — use #hashtags in your posts for easily tagging entries with your different goals or visits to different doctors.
-            </li>
-            <li>
-              <strong>Learning Aid</strong>
-              — especially for learning to code or different college courses. The concept of past entries in your inbox is a way of reminding you what you learned that day. It makes the subject matter much more sticky so you actually remember it.
-            </li>
-            <li>
-              <strong>Baby’s Firsts</strong>
-              — use it to track the progress of your children. Pictures go great with this one. Jot down notes and add photos so you can easily put together a scrapbook later.
-            </li>
-          </ul>"
+            q: "Is there a mobile app?",
+            a: "There's no Dabble Me app in the App Store or Google Play. The website is fully mobile-friendly and works smoothly in any mobile browser. Most people write their entries by replying to the daily email using their phone's email app, like Mail or Gmail."
+          },
+          {
+            q: "Is this really free?",
+            a: "A basic, limited version of the service is free, with email prompts sent every other Sunday. For daily prompts, photos, search, calendar view, and other advanced features, you can upgrade to PRO for $4/month or $40/year."
           },
           {
             q: "How do I save a copy of my entries?",
@@ -125,7 +125,7 @@ module ApplicationHelper
           },
           {
             q: "How can I set the date of an entry I email in?",
-            a: "If you leave the subject line blank, the date will be today's date. If you want to adjust the date, you can add a subject line with the date in the format of \"January 2, 2024\" and Dabble Me will use that date instead. Another acceptable format is \"2024-12-22\" (YYYY-MM-DD)."
+            a: "If you leave the subject line blank, the date will be today's date. If you want to adjust the date, you can add a subject line with the date in the format of <code class='text-red-500 text-sm select-all'>January 2, 2024</code> and Dabble Me will use that date instead. Another acceptable format is <code class='text-red-500 text-sm select-all'>2024-12-22</code> (YYYY-MM-DD)."
           },
           {
             q: "What are \"Inspirations\"?",
@@ -141,7 +141,7 @@ module ApplicationHelper
           },
           {
             q: "Can I trust this service?",
-            a: "Dabble Me is built thoughtfully, with privacy and security in mind from the start. It’s not a rushed AI side project or a growth experiment. It’s independently run, funded by its users for over #{Date.today.year - Date.parse('2014-09-29').year} years, and designed to keep your journal private. No investors. No selling your data. Just a simple, trustworthy place to write. The code is also open-sourced on <a href='https://github.com/parterburn/dabble.me' class='text-accent hover:text-primary underline' target='_blank'>GitHub</a>."
+            a: "Dabble Me is built thoughtfully, with privacy and security in mind from the start. It's not a rushed AI side project or a growth experiment. It's independently run, funded by its users for over #{Date.today.year - Date.parse('2014-09-29').year} years, and designed to keep your journal private. No investors. No selling your data. Just a simple, trustworthy place to write. The code is also open-sourced on <a href='https://github.com/parterburn/dabble.me' class='text-accent hover:text-primary underline' target='_blank'>GitHub</a>."
           }
         ]
       }
