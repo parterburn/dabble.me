@@ -5,7 +5,8 @@
 
 %p
   You can upgrade again if you'd like to continue receiving all of the features of PRO at
-  =link_to(subscribe_url, subscribe_url)+"."
+  - pricing_url = root_url(anchor: 'pricing')
+  =link_to(pricing_url, pricing_url)+"."
 
 %p
   Upgrade to PRO to have access to:

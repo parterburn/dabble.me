@@ -10,11 +10,14 @@
 //= link broken_pencil.png
 //= link copy-spotify-link.gif
 //= link baby.jpg
+//= link first-date.jpg
+//= link runner.jpg
 //= link psychology-of-money.jpg
 //= link second-mountain.jpg
 //= link anxious.jpg
 //= link monkey-wrench.jpg
 //= link five-types-of-wealth.jpg
+//= link pg.jpg
 
 //= link application.css
 //= link application.js

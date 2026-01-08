@@ -1,4 +1,7 @@
 #!/bin/bash
 set -e
 
+# Build Tailwind CSS for marketing pages
+npm run build:css
+
 bundle exec rails db:migrate

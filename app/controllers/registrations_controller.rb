@@ -1,5 +1,6 @@
 # Devise Override Controller
 class RegistrationsController < Devise::RegistrationsController
+  layout :choose_layout
   before_action :require_user, only: [:security, :update, :edit]
   prepend_before_action :check_captcha, only: [:create]
 
@@ -109,6 +110,14 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   private
+
+  def choose_layout
+    if action_name == 'new' || action_name == 'create'
+      'marketing'
+    else
+      'application'
+    end
+  end
 
   def cancel_subscription
     if current_user.is_pro?

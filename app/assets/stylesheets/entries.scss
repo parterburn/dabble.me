@@ -94,8 +94,8 @@
 }
 
 a.s-delete {
-  color:$red;
-  opacity:0.5;
+  color: $red;
+  opacity: 0.8;
   &:hover{
     color:$red;
     opacity:1.0;
@@ -303,10 +303,10 @@ mark {
 
 .label-past-years {
   display:block;
-  background-color: #EEE;
+  background-color: #D8D8D0;
   letter-spacing: 1px;
   font-size: 10px;
-  color: #555;
+  color: #474739;
   margin-bottom: 20px;
   padding: 7px;
   border-radius: 0px;

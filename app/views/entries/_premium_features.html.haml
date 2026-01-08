@@ -3,6 +3,14 @@
     .s-entry-date
       - if current_user.is_pro? && params[:plan] != "pro"
         %h2 Premium features unlocked!
+
+        - if current_user.plan_type.present?
+          %p{class: "text-muted text-sm s-scrollable"}
+            Modify or cancel your subscription at
+            %span{class: "font-medium"}
+              = current_user.plan_type.html_safe
+        - else
+          %p Your PRO account is being provided free of charge.
       - else
         %h2{style: "font-size: 18px;"} Unlock all premium features with a PRO account
         .row

@@ -1,0 +1,198 @@
+<% content_for :title, "Support" %>
+
+<%
+# FAQ Data Structure
+faq_sections = {
+  pro_features: {
+    title: "Paid Features",
+    badge: "PRO",
+    questions: [
+      {
+        q: "How do I add photos to my entry?",
+        a: "When you reply to your Dabble Me email, just attach photos to the email and they'll be saved with your entry. You can also add photos on the website when you edit an entry. You can add up to 5 photos per entry (they will create a collage). Dabble Me supports JPEG, GIF, PNG, and HEIC/HEIF (mobile) formats."
+      },
+      {
+        q: "How do I edit or delete an entry?",
+        a: "When viewing the entries page, you'll see a pencil icon in the top right of each entry. Clicking that icon takes you to the edit page. There's a delete button (trash icon) on the edit page in case you'd like to delete your entry."
+      },
+      {
+        q: "Can I write entries on the website?",
+        a: "Yes! PRO members can write entries on the website for any date. Simply click \"WRITE\" at the top of the page when logged in."
+      },
+      {
+        q: "How do I embed songs from Spotify?",
+        a: "Use the \"Copy Link\" feature in Spotify and paste those links (either dropping in the full URL or as a hyperlink) to your entry and you'll see them embedded right on the web, ready to listen to. Dabble Me will also pull out the artist & song title and send those alongside your entries in your reminder emails."
+      },
+      {
+        q: "Can I import from OhLife or other services?",
+        a: "Yes! PRO members can visit the <a href='#{import_path}' class='text-accent hover:text-primary underline'>Importer</a> to import entries from OhLife, Ahhlife, and Trailmix.life."
+      }
+    ]
+  },
+  general: {
+    title: "General Questions",
+    badge: nil,
+    questions: [
+      {
+        q: "Is this really free?",
+        a: "The basic service is free, with email prompts sent every other Sunday. For daily prompts, photos, search, calendar view, and other advanced features, you can upgrade to PRO for $4/month or $40/year."
+      },
+      {
+        q: "Is there a mobile app?",
+        a: "There's no Dabble Me app in the App Store or Google Play. The website is fully mobile-friendly and works smoothly in any mobile browser. Most people write their entries by replying to the daily email using their phone’s email app, like Mail or Gmail."
+      },
+      {
+        q: "Does this service use AI to read or analyze my entries?",
+        a: "No. There is a private beta with built-in AI-powered features, but they are entirely opt-in and turned off by default. If you prefer, you can export your full journal at any time and use it with your own AI tools for analysis or reflection."
+      },
+      {
+        q: "Can you give me some ideas on what to write about?",
+      a: "<ul class='list-disc list-inside text-primary pl-3 mb-4 space-y-2'>  
+        <li>
+            <strong>Daily Dabble</strong>
+            — reflections from your day is the most popular use case of any journal. This can be a scary one to get started with. If self-reflection is overwhelming to even think about, keep reading.
+        </li>
+        <li>
+          <strong>Memory keeper for major events/milestones</strong>
+            — we easily forget. Write it down now and the daily emails will bring you smiles when it reminds you of all your favorite moments. I started journaling when I first met my wife #{distance_of_time_in_words(Date.parse("2011-09-01"), Date.today)} ago — I took 5 minutes to write about all of the dates we went on. Reading those past entries to each other has become a routine that deepens our relationship now.
+        </li>
+        <li>
+          <strong>Goals/Health Tracking</strong>
+          — use #hashtags in your posts for easily tagging entries with your different goals or visits to different doctors.
+        </li>
+        <li>
+          <strong>Learning Aid</strong>
+          — especially for learning to code or different college courses. The concept of past entries in your inbox is a way of reminding you what you learned that day. It makes the subject matter much more sticky so you actually remember it.
+        </li>
+        <li>
+          <strong>Baby’s Firsts</strong>
+          — use it to track the progress of your children. Pictures go great with this one. Jot down notes and add photos so you can easily put together a scrapbook later.
+        </li>
+      </ul>"
+      },
+      {
+        q: "How do I save a copy of my entries?",
+        a: "You can download a copy of your entries at any time from the bottom of the <a href='#{settings_path}' class='text-accent hover:text-primary underline'>settings page</a>. Export as plain text (TXT) or JSON (with rich formatting)."
+      },
+      {
+        q: "I'm new and didn't get my scheduled email. How come?",
+        a: "Things work differently on your first day. Instead of sending the email at your scheduled time, we send your first email right when you sign up. After your first day, you'll always get your email according to <a href='#{settings_path}' class='text-accent hover:text-primary underline'>your settings</a>."
+      },
+      {
+        q: "Can I reply to an email more than once?",
+        a: "Yes! Each reply just gets added to that day's entry. Write throughout the day if you'd like."
+      },
+      {
+        q: "How can I set the date of an entry I email in?",
+        a: "If you leave the subject line blank, the date will be today's date. If you want to adjust the date, you can add a subject line with the date in the format of \"January 2, 2024\" and Dabble Me will use that date instead. Another acceptable format is \"2024-12-22\" (YYYY-MM-DD)."
+      },
+      {
+        q: "What are \"Inspirations\"?",
+        a: "Ignore them if you want; they're just little quotes or questions that might inspire you to write. Entries inspired by these prompts will be tagged with a lightbulb icon that you can hover over to see the inspiration."
+      },
+      {
+        q: "Are my entries private?",
+        a: "Yes. We're trying to keep Dabble Me as similar to a real journal as possible, so there's no way to share your entries (no way to email them, no way to post them to social media, etc.) and they aren't searchable by search engines. View <a href='#{privacy_path}' class='text-accent hover:text-primary underline'>our privacy policy</a> for more details."
+      },      
+      {
+        q: "Who created this?",
+        a: "This service is created and maintained by <a href='https://paularterburn.com/' class='text-accent hover:text-primary underline' target='_blank'>Paul Arterburn</a>, who is also the VP of Engineering at <a href='https://unreasonablegroup.com/' class='text-accent hover:text-primary underline' target='_blank'>Unreasonable Group</a> helping entrepreneurs bend history in the right direction. Previously, Paul was the technical co-founder of <a href='https://brandfolder.com/' class='text-accent hover:text-primary underline' target='_blank'>Brandfolder</a>, a digital asset management platform powering some of the biggest brands in the world.<br/><br/>Paul created Dabble Me for himself as a way to remember and reflect on the days in a format that would actually trigger him to write — over email. Read about why and how he built Dabble Me in a blog post: <a href='https://medium.com/startup-lesson-learned/increase-your-happiness-with-daily-journaling-8109b0700506' class='text-accent hover:text-primary underline' target='_blank'>Increase Your Happiness with Daily Journaling</a>."
+      },
+      {
+        q: "Can I trust this service?",
+        a: "Dabble Me is built thoughtfully, with privacy and security in mind from the start. It’s not a rushed AI side project or a growth experiment. It’s independently run, funded by its users for over #{Date.today.year - Date.parse('2014-09-29').year} years, and designed to keep your journal private. No investors. No selling your data. Just a simple, trustworthy place to write. The code is also open-sourced on <a href='https://github.com/parterburn/dabble.me' class='text-accent hover:text-primary underline' target='_blank'>GitHub</a>."
+      }
+    ]
+  }
+}
+
+# Generate plain text for LLM copying
+llm_text = "I will ask you questions about Dabble Me (https://dabble.me), a private journaling service. Answer questions based on the terms of service (https://dabble.me/terms), privacy policy (https://dabble.me/privacy), and these FAQs:\n\n"
+faq_sections.each do |key, section|
+  llm_text += "## #{section[:title]}\n\n"
+  section[:questions].each do |qa|
+    llm_text += "Q: #{qa[:q]}\nA: #{qa[:a]}\n\n"
+  end
+end
+llm_text += "---\nFor more help, contact: hello@#{ENV['MAIN_DOMAIN'] || 'dabble.me'}"
+%>
+
+<section class="py-12 lg:py-20">
+  <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="text-center mb-12">
+      <h1 class="font-serif text-4xl sm:text-5xl tracking-tight">Support</h1>
+      <div class="mt-4 text-lg leading-relaxed text-muted max-w-2xl mx-auto">
+        <button 
+          type="button"
+          class="text-accent hover:text-primary underline cursor-pointer font-semibold"
+          onclick="copyFaqForLlm()"
+          id="copy-llm-btn"
+        ><span id="copy-llm-text">Copy these FAQs</span></button>
+        to ask questions in your favorite AI chat tool. If your question isn't answered below, email us at <%= mail_to("hello@#{ENV['MAIN_DOMAIN']}", "hello@#{ENV['MAIN_DOMAIN']}", encode: "hex", class: "text-accent hover:text-primary font-medium underline") %>.
+      </div>      
+    </div>
+
+    <% faq_sections.each do |section_key, section| %>
+      <div class="mb-12">
+        <h2 class="font-serif text-2xl text-primary mb-6 flex items-center gap-2">
+          <% if section[:badge] %>
+            <span class="badge badge-accent text-sm font-semibold dark:text-olive-800"><%= section[:badge] %></span>
+          <% end %>
+          <%= section[:title] %>
+        </h2>
+        
+        <div data-accordion-group class="card divide-y">
+          <% section[:questions].each do |qa| %>
+            <div class="px-6 border-subtle">
+              <button
+                type="button"
+                class="accordion-trigger cursor-pointer"
+                data-accordion-trigger
+                aria-expanded="false"
+              >
+                <span><%= qa[:q] %></span>
+                <svg data-accordion-icon class="h-5 w-5 text-subtle transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <div class="accordion-content" style="max-height: 0;">
+                <div class="pb-6 text-primary">
+                  <%= qa[:a].html_safe %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</section>
+
+<!-- Hidden textarea for copying -->
+<textarea id="llm-faq-content" class="sr-only" aria-hidden="true"><%= llm_text %></textarea>
+
+<script>
+function copyFaqForLlm() {
+  const content = document.getElementById('llm-faq-content').value;
+  const btnText = document.getElementById('copy-llm-text');
+  
+  navigator.clipboard.writeText(content).then(function() {
+    btnText.textContent = 'Copied to your clipboard!';
+    setTimeout(function() {
+      btnText.textContent = 'Copy these FAQs';
+    }, 2000);
+  }).catch(function(err) {
+    // Fallback for older browsers
+    const textarea = document.getElementById('llm-faq-content');
+    textarea.classList.remove('sr-only');
+    textarea.select();
+    document.execCommand('copy');
+    textarea.classList.add('sr-only');
+    btnText.textContent = 'Copied to your clipboard!';
+    setTimeout(function() {
+      btnText.textContent = 'Copy these FAQs';
+    }, 2000);
+  });
+}
+</script>

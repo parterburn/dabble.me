@@ -1,0 +1,359 @@
+@import "tailwindcss";
+
+/* Content paths for class detection */
+@source "../../../app/views/layouts/marketing.html.erb";
+@source "../../../app/views/welcome/*.erb";
+@source "../../../app/views/shared/_marketing_*.erb";
+@source "../../../app/views/devise/**/*.erb";
+
+/* Custom theme configuration for Dabble Me Oatmeal design */
+@theme {
+  --color-olive-50: oklch(98.8% 0.003 106.5);
+  --color-olive-100: oklch(96.6% 0.005 106.5);
+  --color-olive-150: oklch(94.5% 0.006 106.5);
+  --color-olive-200: oklch(93% 0.007 106.5);
+  --color-olive-300: oklch(88% 0.011 106.6);
+  --color-olive-400: oklch(73.7% 0.021 106.9);
+  --color-olive-500: oklch(58% 0.031 107.3);
+  --color-olive-600: oklch(46.6% 0.025 107.3);
+  --color-olive-700: oklch(39.4% 0.023 107.4);
+  --color-olive-800: oklch(28.6% 0.016 107.4);
+  --color-olive-900: oklch(22.8% 0.013 107.4);
+  --color-olive-950: oklch(15.3% 0.006 107.1);  
+
+  /* Cream/Warm neutrals - exactly matching Oatmeal */
+  --color-cream-50: #fdfcfa;
+  --color-cream-100: #f9f7f3;
+  --color-cream-200: #f3f1ec;
+  --color-cream-300: #edeae3;
+  --color-cream-400: #e0dcd2;
+  --color-cream-500: #d0cbc0;
+  --color-cream-600: #b8b2a5;
+  --color-cream-700: #9a9388;
+  --color-cream-800: #7f796f;
+  --color-cream-900: #69645c;
+  --color-cream-950: #37342f;
+
+  /* Dark mode neutrals (charcoal, not olive) */
+  --color-dark-950: #0a0a0a;
+  --color-dark-900: #0f0f0f;
+  --color-dark-800: #171717;
+  --color-dark-700: #1f1f1f;
+  --color-dark-600: #2a2a2a;
+  --color-dark-500: #3d3d3d;
+  --color-dark-400: #525252;
+  --color-dark-300: #6b6b6b;
+  --color-dark-200: #a3a3a3;
+  --color-dark-100: #d4d4d4;
+
+  /* Font families */
+  --font-serif: "Instrument Serif", Georgia, serif;
+  --font-sans: "Instrument Sans", system-ui, sans-serif;
+}
+
+/* Base layer for light/dark mode */
+@layer base {
+  :root {
+    --color-bg: var(--color-olive-100);
+    --color-surface: #ffffff;
+    --color-surface-elevated: var(--color-cream-200);
+    /* Primary text is the darkest olive for maximum readability */
+    --color-primary: var(--color-olive-950);
+    --color-primary-hover: var(--color-olive-900);
+    --color-accent: var(--color-olive-600);
+    --color-accent-hover: var(--color-olive-700);
+    --color-text: var(--color-olive-950);
+    --color-text-muted: var(--color-olive-800);
+    --color-text-subtle: var(--color-olive-600);
+    --color-border: var(--color-cream-400);
+    --color-border-subtle: var(--color-cream-300);
+    
+    /* Hero section colors (dark olive with texture) */
+    --color-hero-bg: var(--color-olive-800);
+    --color-hero-text: var(--color-white);
+    --color-hero-muted: var(--color-cream-100);
+    --color-hero-accent: var(--color-olive-300);
+    
+    /* Primary button colors - dark olive bg, cream text in light mode */
+    --color-btn-primary-bg: var(--color-olive-900);
+    --color-btn-primary-text: var(--color-cream-100);
+    --color-btn-primary-hover: var(--color-olive-950);
+
+    /* Footer colors */
+    --color-footer-bg: var(--color-olive-150);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-bg: var(--color-dark-950);
+      --color-surface: var(--color-dark-900);
+      --color-surface-elevated: var(--color-dark-800);
+      --color-primary: var(--color-cream-100);
+      --color-primary-hover: #ffffff;
+      --color-accent: var(--color-olive-400);
+      --color-accent-hover: var(--color-olive-300);
+      --color-text: var(--color-cream-100);
+      --color-text-muted: var(--color-dark-200);
+      --color-text-subtle: var(--color-dark-300);
+      --color-border: var(--color-dark-500);
+      --color-border-subtle: var(--color-dark-600);
+      
+      /* Hero in dark mode - keep the olive hero for visual pop */
+      --color-hero-bg: var(--color-olive-800);
+      --color-hero-text: var(--color-cream-100);
+      --color-hero-muted: var(--color-cream-300);
+      --color-hero-accent: var(--color-olive-500);
+      
+      /* Primary button in dark mode - cream bg, dark olive text for contrast */
+      --color-btn-primary-bg: var(--color-cream-100);
+      --color-btn-primary-text: var(--color-olive-950);
+      --color-btn-primary-hover: #ffffff;
+
+    /* Footer colors */
+    --color-footer-bg: var(--color-olive-900);      
+    }
+  }
+
+  html {
+    font-family: var(--font-sans);
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+  }
+}
+
+/* Component layer for reusable components */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center px-6 py-3 font-medium rounded-full transition-colors duration-200 cursor-pointer;
+  }
+
+  /* Primary button - uses CSS custom properties that switch with dark mode */
+  .btn-primary {
+    background-color: var(--color-btn-primary-bg);
+    color: var(--color-btn-primary-text);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .btn-primary {
+      /* Explicit dark mode override to ensure text is visible */
+      background-color: #f9f7f3; /* cream-100 */
+      color: #1f231c; /* olive-950 - dark text for contrast */
+    }
+  }
+
+  .btn-primary:hover {
+    background-color: var(--color-btn-primary-hover);
+  }
+
+  .btn-secondary {
+    background-color: transparent;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+  }
+
+  .btn-secondary:hover {
+    background-color: var(--color-surface);
+    border-color: var(--color-text-muted);
+  }
+
+  .card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 0.75rem;
+  }
+
+  .section-heading {
+    font-family: var(--font-serif);
+    font-size: 2.5rem;
+    line-height: 1.2;
+    color: var(--color-text);
+  }
+
+  .text-muted {
+    color: var(--color-text-muted);
+  }
+
+  .text-subtle {
+    color: var(--color-text-subtle);
+  }
+
+  /* Accordion styles for FAQ */
+  .accordion-item {
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+
+  .accordion-trigger {
+    @apply flex w-full items-center justify-between py-4 text-left font-medium;
+    color: var(--color-text);
+  }
+
+  .accordion-trigger:hover {
+    color: var(--color-primary);
+  }
+
+  .accordion-content {
+    @apply overflow-hidden transition-all duration-300;
+    color: var(--color-text-muted);
+  }
+
+  /* Badge/pill styles */
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium rounded-full;
+    background-color: var(--color-surface-elevated);
+    color: var(--color-text-muted);
+  }
+
+  .badge-accent {
+    background-color: var(--color-accent);
+    color: var(--color-cream-100);
+  }
+}
+
+/* Utility layer for custom utilities */
+@layer utilities {
+  .bg-page {
+    background-color: var(--color-bg);
+  }
+
+  .bg-surface {
+    background-color: var(--color-surface);
+  }
+
+  .hover\:bg-surface:hover {
+    background-color: var(--color-surface);
+  }
+
+  .bg-surface-elevated {
+    background-color: var(--color-surface-elevated);
+  }
+
+  .hover\:bg-surface-elevated:hover {
+    background-color: var(--color-surface-elevated);
+  }
+
+  .bg-footer {
+    background-color: var(--color-footer-bg);
+  }
+
+  .bg-bg {
+    background-color: var(--color-bg);
+  }
+
+  .text-primary {
+    color: var(--color-primary);
+  }
+
+  .hover\:text-primary:hover {
+    color: var(--color-primary);
+  }
+
+  .text-accent {
+    color: var(--color-accent);
+  }
+
+  .hover\:text-accent:hover {
+    color: var(--color-accent);
+  }
+
+  .border-default {
+    border-color: var(--color-border);
+  }
+
+  .border-subtle {
+    border-color: var(--color-border-subtle);
+  }
+
+  /* Hero section utilities - gradient matching Oatmeal's green theme */
+  .bg-hero {
+    background: linear-gradient(to bottom, #9ca88f, #596352);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .bg-hero {
+      background: linear-gradient(to bottom, #333a2b, #26361b);
+    }
+  }
+
+  .text-hero {
+    color: var(--color-hero-text);
+  }
+
+  .text-hero-muted {
+    color: var(--color-hero-muted);
+  }
+
+  .text-hero-accent {
+    color: var(--color-hero-accent);
+  }
+
+  .bg-grain {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-position: center;
+    pointer-events: none;
+    opacity: 0.3;
+    mix-blend-mode: overlay;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .bg-grain {
+      opacity: 0.25;
+    }
+  }
+
+  .bg-grain > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Blinking cursor animation */
+  .blinking-cursor {
+    animation: blink 1.3s step-end infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+}
+
+.twitter-tweet-rendered {
+  margin-top: 40px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
+}

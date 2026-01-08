@@ -20,10 +20,10 @@ class EntriesController < ApplicationController
       @title = "Entries tagged with Sentiment in #{params[:subgroup]}"
     elsif params[:group] == 'photos'
       @entries = @entries.only_images
-      @title = 'Photo Entries'
+      @title = 'Photos'
     elsif params[:group] == 'ai'
       @entries = @entries.with_ai_responses
-      @title = 'DabbleMeGPT Entries'
+      @title = 'AI Entries'
     elsif params[:subgroup].present? && params[:group].present? && params[:subgroup] =~ /^\d+$/ && params[:group] =~ /^\d+$/
       begin
         from_date = Date.new(params[:group].to_i, params[:subgroup].to_i, 1)
@@ -77,7 +77,7 @@ class EntriesController < ApplicationController
   end
 
   def latest
-    @title = "Latest Entry"
+    @title = "Latest Entry — Dabble me."
     @lastest_entry = current_user.entries.includes(:inspiration).order(date: :asc).first
     set_hashtags
     set_sidebar_stats
@@ -109,14 +109,14 @@ class EntriesController < ApplicationController
   end
 
   def spotify
-    @title = "Songs from Entries"
+    @title = "Songs"
     set_hashtags
     set_sidebar_stats
   end
 
   def create
     if current_user.is_free?
-      flash[:alert] = "<a href='#{subscribe_url}' class='alert-link'>Subscribe to PRO</a> to write new entries.".html_safe
+      flash[:alert] = "<a href='#{subscribe_path}' class='alert-link'>Subscribe to PRO</a> to write new entries.".html_safe
       redirect_to root_path and return
     end
 
@@ -244,7 +244,7 @@ class EntriesController < ApplicationController
 
   def destroy
     if current_user.is_free?
-      flash[:alert] = "<a href='#{subscribe_url}' class='alert-link'>Subscribe to PRO</a> to edit entries.".html_safe
+      flash[:alert] = "<a href='#{subscribe_path}' class='alert-link'>Subscribe to PRO</a> to edit entries.".html_safe
       redirect_to root_path and return
     end
 
@@ -255,42 +255,71 @@ class EntriesController < ApplicationController
 
   def export
     filename = "dabble_export_#{Time.now.strftime('%Y-%m-%d')}.txt"
-    if params[:only_images] == "true"
-      @entries = current_user.entries.only_images.sort_by(&:date)
+    only_images = params[:only_images] == "true"
+
+    if only_images
+      entries_scope = current_user.entries.only_images.order(:date)
       filename = "dabble_export_image_entries_#{Time.now.strftime('%Y-%m-%d')}.txt"
     elsif params[:search].present? && search_params[:term].present?
       if search_params[:term].include?(" OR ")
         filter_names = search_params[:term].split(' OR ')
         sanitized_terms = filter_names.map { |term| ActiveRecord::Base.sanitize_sql_like(term.downcase) }
-        conditions = sanitized_terms.map { |term| @entries.where("LOWER(entries.body) LIKE ?", "%#{term}%") }
-        @entries = conditions.reduce(:or)
+        base_scope = current_user.entries
+        conditions = sanitized_terms.map { |term| base_scope.where("LOWER(entries.body) LIKE ?", "%#{term}%") }
+        entries_scope = conditions.reduce(:or).order(:date)
       elsif search_params[:term].include?('"')
         exact_phrase = search_params[:term].delete('"')
         sanitized_phrase = Regexp.escape(exact_phrase)
-        @entries = current_user.entries.where("entries.body ~* ?", "\\m#{sanitized_phrase}\\M")
+        entries_scope = current_user.entries.where("entries.body ~* ?", "\\m#{sanitized_phrase}\\M").order(:date)
       else
         @search = Search.new(search_params)
-        @entries = @search.entries
+        entries_scope = @search.entries.order(:date)
       end
       filename = "dabble_export_search_#{search_params[:term].parameterize}_#{Time.now.strftime('%Y-%m-%d')}.txt"
     elsif params[:year].present?
       if params[:year] =~ /\A(19|20)\d{2}\z/
         start_date = Date.new(params[:year].to_i, 1, 1)
         end_date = Date.new(params[:year].to_i, 12, 31)
-        @entries = current_user.entries.where(date: start_date..end_date)
+        entries_scope = current_user.entries.where(date: start_date..end_date).order(:date)
         filename = "dabble_export_#{params[:year]}.txt"
       else
         raise InvalidDateError
       end
     else
-      @entries = current_user.entries.sort_by(&:date)
+      entries_scope = current_user.entries.order(:date)
     end
+
     respond_to do |format|
-      format.json { send_data JSON.pretty_generate(JSON.parse(@entries.to_json(only: [:date, :body, :image]))), filename: "export_#{Time.now.strftime('%Y-%m-%d')}.json" }
+      format.json do
+        # Stream JSON export to avoid memory issues
+        headers['Content-Type'] = 'application/json'
+        headers['Content-Disposition'] = "attachment; filename=#{filename.gsub(".txt", ".json")}"
+        self.response_body = Enumerator.new do |yielder|
+          yielder << "[\n"
+          first = true
+          entries_scope.select(:id, :user_id, :date, :body, :image).find_each(batch_size: 100) do |entry|
+            yielder << ",\n" unless first
+            first = false
+            entry_hash = { date: entry.date, body: entry.body }
+            entry_hash[:image] = entry.image_url_cdn(cloudflare: false) if entry.image.present?
+            yielder << JSON.pretty_generate(entry_hash)
+          end
+          yielder << "\n]"
+        end
+      end
       format.txt do
-        response.headers['Content-Type'] = 'text/txt'
-        response.headers['Content-Disposition'] = "attachment; filename=#{filename}"
-        render 'text_export'
+        headers['Content-Type'] = 'text/plain'
+        headers['Content-Disposition'] = "attachment; filename=#{filename}"
+        self.response_body = Enumerator.new do |yielder|
+          entries_scope.select(:id, :user_id, :date, :body, :image).find_each(batch_size: 100) do |entry|
+            if only_images
+              yielder << "#{entry.image_url_cdn(cloudflare: false)}\n"
+            else
+              yielder << "## #{entry.date.strftime('%Y-%m-%d')}\n"
+              yielder << "#{entry.text_body}\n\n"
+            end
+          end
+        end
       end
     end
   end

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="<%= I18n.locale %>">
+  <head>
+    <title><%= yield(:title).present? ? "#{yield(:title)} — Dabble me." : "Dabble me - private email journaling & daily reflection." %></title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <%= csrf_meta_tags %>
+
+    <!-- Google Fonts: Instrument Sans & Serif -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
+    <!-- Favicons -->
+    <%= render 'shared/favicons_and_metatags' %>
+
+    <!-- Tailwind CSS for Marketing -->
+    <%= stylesheet_link_tag 'marketing', media: 'all' %>
+
+    <!-- jQuery (needed for webauthn/passkey) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+
+    <%= yield :head %>
+
+    <% if Rails.env.production? %>
+      <%= javascript_include_tag "https://www.googletagmanager.com/gtag/js?id=#{ENV['GOOGLE_ANALYTICS_4_ID']}", async: true %>
+      <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', "<%= ENV['GOOGLE_ANALYTICS_4_ID'] %>", {
+          'anonymize_ip': true
+        });
+      </script>
+    <% end %>
+  </head>
+
+  <body class="bg-page min-h-screen antialiased">
+    <%= render 'shared/marketing_navbar' %>
+
+    <main>
+      <% if notice %>
+        <div class="fixed top-20 left-1/2 -translate-x-1/2 z-50 max-w-md w-full px-4">
+          <div class="bg-surface border border-subtle rounded-lg p-4 shadow-lg animate-fade-in">
+            <p class="text-sm text-primary"><%= notice.html_safe %></p>
+          </div>
+        </div>
+      <% end %>
+      <% if alert %>
+        <div class="fixed top-20 left-1/2 -translate-x-1/2 z-50 max-w-md w-full px-4">
+          <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 shadow-lg animate-fade-in">
+            <p class="text-sm text-red-600 dark:text-red-400"><%= alert.html_safe %></p>
+          </div>
+        </div>
+      <% end %>
+
+      <%= yield %>
+    </main>
+
+    <%= render 'shared/marketing_footer' %>
+
+    <!-- Stimulus/JavaScript for interactivity -->
+    <script>
+      // Accordion functionality
+      document.addEventListener('DOMContentLoaded', function() {
+        const accordionTriggers = document.querySelectorAll('[data-accordion-trigger]');
+        
+        accordionTriggers.forEach(trigger => {
+          trigger.addEventListener('click', function() {
+            const content = this.nextElementSibling;
+            const icon = this.querySelector('[data-accordion-icon]');
+            const isExpanded = this.getAttribute('aria-expanded') === 'true';
+            
+            // Close all other accordions in the same group
+            const group = this.closest('[data-accordion-group]');
+            if (group) {
+              group.querySelectorAll('[data-accordion-trigger]').forEach(otherTrigger => {
+                if (otherTrigger !== this) {
+                  otherTrigger.setAttribute('aria-expanded', 'false');
+                  otherTrigger.nextElementSibling.style.maxHeight = '0';
+                  const otherIcon = otherTrigger.querySelector('[data-accordion-icon]');
+                  if (otherIcon) otherIcon.style.transform = 'rotate(0deg)';
+                }
+              });
+            }
+            
+            // Toggle current accordion
+            this.setAttribute('aria-expanded', !isExpanded);
+            if (!isExpanded) {
+              content.style.maxHeight = content.scrollHeight + 'px';
+              if (icon) icon.style.transform = 'rotate(180deg)';
+            } else {
+              content.style.maxHeight = '0';
+              if (icon) icon.style.transform = 'rotate(0deg)';
+            }
+          });
+        });
+
+        // Mobile menu toggle
+        const mobileMenuButton = document.querySelector('[data-mobile-menu-button]');
+        const mobileMenu = document.querySelector('[data-mobile-menu]');
+        
+        if (mobileMenuButton && mobileMenu) {
+          mobileMenuButton.addEventListener('click', function() {
+            const isExpanded = this.getAttribute('aria-expanded') === 'true';
+            this.setAttribute('aria-expanded', !isExpanded);
+            mobileMenu.classList.toggle('hidden');
+          });
+        }
+
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+          anchor.addEventListener('click', function(e) {
+            const targetId = this.getAttribute('href');
+            if (targetId === '#') return;
+            
+            const targetElement = document.querySelector(targetId);
+            if (targetElement) {
+              e.preventDefault();
+              targetElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'start'
+              });
+              
+              // Close mobile menu if open
+              if (mobileMenu && !mobileMenu.classList.contains('hidden')) {
+                mobileMenu.classList.add('hidden');
+                if (mobileMenuButton) mobileMenuButton.setAttribute('aria-expanded', 'false');
+              }
+            }
+          });
+        });
+      });
+    </script>
+
+    <%= yield :scripts %>
+  </body>
+</html>

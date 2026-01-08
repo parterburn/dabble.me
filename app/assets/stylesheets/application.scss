@@ -18,6 +18,8 @@
  */
 
 @import url(https://fonts.googleapis.com/css?family=Raleway:400,700,200);
+@import url(https://fonts.googleapis.com/css?family=Instrument+Sans:400,700,200);
+@import url(https://fonts.googleapis.com/css?family=Instrument+Serif:400,700,200);
 @import 'vars';
 @import "summernote";
 @import "contribution_graph";
@@ -184,9 +186,9 @@ label {
 }
 
 .noline {
-  text-decoration: none;
+  text-decoration: none !important;
   &:hover {
-    text-decoration: none;
+    text-decoration: none !important;
   }
 }
 
@@ -282,4 +284,8 @@ strong {
   margin-left: auto;
   margin-right: auto;
   text-align: center;
+}
+
+.s-review-details a, .s-scrollable a { 
+  text-decoration: underline;
 }
