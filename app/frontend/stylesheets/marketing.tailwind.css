@@ -273,7 +273,7 @@
 
   /* Hero section utilities - gradient matching Oatmeal's green theme */
   .bg-hero {
-    background: linear-gradient(to bottom, #5C6654, #596352);
+    background: linear-gradient(to bottom, #5C6654, #333a2b);
   }
 
   @media (prefers-color-scheme: dark) {

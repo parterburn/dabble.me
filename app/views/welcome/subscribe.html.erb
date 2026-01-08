@@ -1,17 +1,16 @@
 <% content_for :title, "Pricing" %>
-<% 
 <main>
   <section class="py-20 lg:py-28">
-    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">      
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">      
       <% if user_signed_in? %>
         <!-- Logged in but not PRO -->
         <div class="text-center mb-12">
           <h1 class="font-serif text-4xl sm:text-5xl text-primary">Upgrade to PRO</h1>
           <p class="mt-4 text-muted text-lg max-w-2xl mx-auto">
-            Unlock all premium features for just $4/month. Build a journaling habit that sticks.
+            Unlock all premium features and build a journaling habit that sticks.
           </p>
         </div>
-        
+
         <% if params[:paypal] == 'true' %>
           <!-- PayPal checkout -->
           <div class="card p-8 text-center max-w-md mx-auto">
@@ -76,38 +75,14 @@
           <div id="error-message" class="mt-6 text-center text-red-600"></div>
         <% end %>
         
-        <!-- Features list -->
-        <div class="mt-16 max-w-2xl mx-auto">
-          <h3 class="font-serif text-2xl text-primary text-center mb-8">What you'll unlock</h3>
-          <div class="grid sm:grid-cols-2 gap-4">
-            <% [
-              "Custom email schedule",
-              "Photo attachments (up to 5)",
-              "Calendar view",
-              "Search with hashtag support",
-              "Rich text formatting",
-              "Write entries on the web",
-              "Edit and delete entries",
-              "Import from other services",
-              "Embed Spotify tracks",
-              "Year in Review"
-            ].each do |feature| %>
-              <div class="flex items-center gap-3">
-                <svg class="h-5 w-5 text-accent flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-                <span class="text-muted"><%= feature %></span>
-              </div>
-            <% end %>
-          </div>
-        </div>
+        <%= render "pro_features" %>
         
       <% else %>
         <!-- Not logged in -->
         <div class="text-center mb-12">
-          <h1 class="font-serif text-4xl sm:text-5xl text-primary">Get Started with Dabble Me</h1>
+          <h1 class="font-serif text-4xl sm:text-5xl text-primary">Get Started with Dabble Me PRO</h1>
           <p class="mt-4 text-muted text-lg max-w-2xl mx-auto">
-            Create an account to start journaling. Upgrade to PRO anytime for all premium features.
+            Let's get you started with the PRO features.
           </p>
         </div>
         
@@ -120,31 +95,7 @@
           </div>
         </div>
         
-        <!-- Features preview -->
-        <div class="mt-16 max-w-2xl mx-auto">
-          <h3 class="font-serif text-2xl text-primary text-center mb-8">PRO Features</h3>
-          <ul class="space-y-3">
-            <% [
-              "Change the frequency & days that emails are sent",
-              "Attach photos to your entry (email or web)",
-              "Import entries from other services",
-              "Embed Spotify tracks in your entries",
-              "Add new entries via the web",
-              "Edit entries",
-              "Rich text formatting",
-              "Calendar view of all your entries",
-              "Search all of your past entries with support for hashtags",
-              "Year in Review"
-            ].each do |feature| %>
-              <li class="flex items-start gap-3">
-                <svg class="h-5 w-5 text-accent flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                </svg>
-                <span class="text-muted"><%= feature %></span>
-              </li>
-            <% end %>
-          </ul>
-        </div>
+        <%= render "pro_features" %>
       <% end %>
       
     </div>
@@ -155,7 +106,7 @@
     <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
       <a href="https://twitter.com/paulg/status/1746341562286539118" target="_blank" rel="noopener" class="hover:scale-105 transition-transform duration-300 block">
         <blockquote class="font-serif text-2xl sm:text-3xl lg:text-4xl text-primary leading-relaxed">
-          "The pro version of Dabble Me costs $3 a month, and it is worth so much more than that."
+          "The pro version of Dabble Me costs ~$3 a month, and it is worth so much more than that."
         </blockquote>
         
         <div class="mt-10 flex flex-col items-center">

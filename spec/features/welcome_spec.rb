@@ -5,7 +5,7 @@ describe 'Pages' do
 
   it 'has correct title for Root page' do
     visit root_path
-    expect(page).to have_title 'Dabble me - private email journaling & daily reflection.'
+    expect(page).to have_title 'Dabble me — private email journaling & daily reflection.'
   end
 
   it 'has correct title for FAQs page' do
@@ -25,6 +25,6 @@ describe 'Pages' do
 
   it 'has correct title for Subscribe page (redirects to homepage for non-logged-in users)' do
     visit subscribe_path
-    expect(page).to have_title 'Dabble me - private email journaling & daily reflection.'
+    expect(page).to have_title 'Dabble me — private email journaling & daily reflection.'
   end
 end

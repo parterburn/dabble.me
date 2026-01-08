@@ -49,7 +49,7 @@ class EntriesController < ApplicationController
     @entries = @entries.page(params[:page]).per(params[:per])
 
     if @entries.empty? && params[:format] != "json"
-      flash[:alert] = "No entries found."
+      flash[:alert] = "No entries found." if params[:emotion].present? || params[:group].present? || params[:subgroup].present?
       redirect_to latest_entry_path and return
     end
 

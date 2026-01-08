@@ -12,10 +12,8 @@ class WelcomeController < ApplicationController
   def subscribe
     if user_signed_in? && current_user.is_pro?
       render "pro_subscribed", layout: 'application'
-    elsif user_signed_in?
-      render "subscribe", layout: "marketing"
     else
-      redirect_to root_path(anchor: "pricing")
+      render "subscribe", layout: "marketing"
     end
   end
 

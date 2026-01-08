@@ -1,0 +1,37 @@
+<% title "No Entries — Dabble me." %>
+
+<div class="col-md-8 col-md-offset-2">
+  <div class="center">
+    <% if current_user.created_at > 2.day.ago %>
+      <p>
+        <div style="max-width: 500px; margin: 0 auto;">
+          <h4 style="line-height: 1.5;">Welcome! <strong>Check your email at <%= current_user.email %></strong> and reply to the email from Dabble Me to create your first entry.</h4>
+          <h5 style="color: #7C7C67; margin-bottom: 0;">After you've replied, refresh this page to see your entry.</h5>
+        </div>
+        <%= image_tag "tom-hanks-nice.gif", width: "351", height: "200", style: "max-width: 100%; border-radius: 30px; margin: 20px auto;" %>
+        <p style="color: #7C7C67;">
+          You can post entries anytime by emailing
+          <%= mail_to("#{current_user.user_key}@#{ENV['SMTP_DOMAIN']}", "#{current_user.user_key}@#{ENV['SMTP_DOMAIN']}", encode: "hex", target: "_blank", subject: "#{Time.now.in_time_zone(current_user.send_timezone).strftime('%A, %b %-d')}", body: "My first Dabble Me entry!") %>.
+        </p>
+      </p>
+    <% else %>
+      <br>
+      <br>
+      <p>
+        <h3>You're all signed up, but don't have any entries!</h3>
+      </p>
+      <p>
+        You can post entries by emailing
+        <%= mail_to("#{current_user.user_key}@#{ENV['SMTP_DOMAIN']}", "#{current_user.user_key}@#{ENV['SMTP_DOMAIN']}", encode: "hex", target: "_blank", subject: "#{Time.now.in_time_zone(current_user.send_timezone).strftime('%A, %b %-d')}", body: "My first Dabble Me entry!") %>.
+      </p>
+    <% end %>
+    <div class="clearfix"></div>
+    <div class="s-no-entries-cta">
+      <% if current_user.is_pro? %>
+        <%= link_to "Write your first entry", new_entry_path, class: "btn btn-primary btn-lg" %>
+      <% end %>
+    </div>
+  </div>
+</div>
+
+<%= render "entries/features", add_class: "col-md-8 entry s-no-entries-ideas col-md-offset-2" %>

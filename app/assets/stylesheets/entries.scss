@@ -72,7 +72,7 @@
   transition: all 0.15s ease;
   -webkit-transition: all 0.15s ease;
   &:hover{
-    color: darken($blue, 20);
+    color: darken($olive, 20);
   }
   a {
     font-size:20px;
@@ -80,7 +80,7 @@
     transition: all 0.15s ease;
     -webkit-transition: all 0.15s ease;
     &:hover{
-      color: darken($blue, 20);
+      color: darken($olive, 20);
     }
   }
 }
@@ -89,7 +89,7 @@
   top: -2px;
   position: relative;
   &:hover{
-    color: darken($blue, 20);
+    color: darken($olive, 20);
   }
 }
 
@@ -127,7 +127,7 @@ a.s-delete {
   -webkit-font-smoothing: antialiased !important;
   -moz-osx-font-smoothing: grayscale !important;
   -moz-font-feature-settings: "liga" !important;
-  color: rgba(0,0,0,0.8) !important;
+  color: $olive-950 !important;
   font-family: Georgia, Cambria, "Times New Roman", Times, serif !important;
   font-size: 18.5px !important;
   font-style: normal !important;
@@ -143,9 +143,17 @@ a.s-delete {
     line-height: 1.6 !important;
   }
   a {
-    color: #649cc7 !important;
+    color: $olive !important;
+    text-decoration: underline;
     &:hover, &:focus {
-      color: #3b76a3 !important;
+      color: darken($olive, 20) !important;
+      text-decoration: underline !important;
+    }
+    &.noline {
+      text-decoration: none !important;
+      &:hover, &:focus {
+        text-decoration: none !important;
+      }
     }
   }
   b {
@@ -253,8 +261,8 @@ a.s-delete {
 }
 
 mark {
-  color: darken($blue,20);
-  background: lighten($blue,30);
+  color: darken($olive,20);
+  background: lighten($olive,30);
 }
 
 .s-hashtag {
@@ -404,8 +412,8 @@ mark {
           position: relative;
           &:hover {
             top: 1px;
-            background-color: darken($blue,20);
-            text-shadow: 0px 0px 3px darken($blue,40);
+            background-color: darken($olive,20);
+            text-shadow: 0px 0px 3px darken($olive,40);
           }
         }
       }

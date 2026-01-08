@@ -218,7 +218,7 @@ label {
     box-shadow: none;
   }
   &:focus {
-    border-color: $blue;
+    border-color: $olive;
     box-shadow: none;
   }
 }
@@ -288,4 +288,10 @@ strong {
 
 .s-review-details a, .s-scrollable a { 
   text-decoration: underline;
+  &.noline {
+    text-decoration: none !important;
+    &:hover {
+      text-decoration: none !important;
+    }
+  }  
 }

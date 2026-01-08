@@ -6,6 +6,7 @@
 //= link ohlifelogo.gif
 //= link born-a-crime.jpg
 //= link bg_pattern.gif
+//= link tom-hanks-nice.gif
 //= link bg_h3.gif
 //= link broken_pencil.png
 //= link copy-spotify-link.gif

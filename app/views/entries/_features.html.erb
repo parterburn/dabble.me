@@ -1,0 +1,60 @@
+<% if user_signed_in? %>
+  <%= render "entries/premium_features", add_class: add_class %>
+
+  <div class="well <%= add_class %>">
+    <div class="center">
+      <div class="s-entry-date">
+        <h2>Looking for ideas?</h2>
+        <h3>
+          <span>
+            <i class="fa fa-lightbulb-o"></i>
+          </span>
+        </h3>
+      </div>
+    </div>
+    <div class="s-scrollable">
+      <div class="entry-panel s-scrollable">
+        <%= ApplicationHelper.faqs[:general][:questions].find { |q| q[:id] == "ideas-for-writing" }[:a].html_safe %>
+      </div>
+    </div>
+    <div class="clearfix"></div>
+  </div>
+
+  <div class="well <%= add_class %>">
+    <div class="center">
+      <div class="s-entry-date">
+        <h2>Share the love</h2>
+        <h3>
+          <span>
+            <i class="fa fa-globe"></i>
+          </span>
+        </h3>
+      </div>
+    </div>
+    <div class="s-scrollable noline">
+      Do you know anyone else who might benefit from a journal over email service? Perhaps they've tried other online jounral services before and stopped using them, or they're brand new to the idea and keeping it in their daily routine is just the ticket to get them onboard!
+      <strong>Share Dabble Me with them today!</strong>
+      <p>
+        <%= link_to "https://www.facebook.com/sharer/sharer.php?u=https%3A//dabble.me", target: "_blank", class: "noline" do %>
+          <button class="btn btn-primary btn-large btn-block btn-facebook">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512" style="height: 15px;">
+              <path d="M279.14 288l14.22-92.66h-88.91v-60.13c0-25.35 12.42-50.06 52.24-50.06h40.42V6.26S260.43 0 225.36 0c-73.22 0-121.08 44.38-121.08 124.72v70.62H22.89V288h81.39v224h100.17V288z" fill="white"/>
+            </svg>
+            &nbsp;Share on Facebook
+          </button>
+        <% end %>
+      </p>
+      <p>
+        <%= link_to "https://x.com/intent/tweet?text=Having%20a%20hard%20time%20keeping%20a%20journal?%20Try%20Dabble%20Me,%20which%20works%20over%20email%3A%20https%3A//dabble.me", target: "_blank", class: "noline" do %>
+          <button class="btn btn-primary btn-large btn-block btn-twitter">
+             <svg style="height: 15px;" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>            
+            &nbsp;Share on X
+          </button>
+        <% end %>
+      </p>
+      <div class="clearfix"></div>
+    </div>
+  </div>
+<% end %>

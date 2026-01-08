@@ -56,8 +56,8 @@ Rails.application.routes.draw do
   # Redirects for old routes
   get 'features',                       to: redirect('/#features')
   get 'faqs',                           to: redirect('/support')
+  get 'pricing',                        to: redirect('/#pricing')
   get 'subscribe',                      to: "welcome#subscribe"
-  get 'donate',                         to: "welcome#subscribe"
   get 'pro',                            to: "welcome#subscribe"
   match 'payment_notify',               to: 'payments#payment_notify', via: [:post]
   get 'ohlife-alternative',             to: 'welcome#ohlife_alternative'

@@ -1,7 +1,8 @@
 @import 'vars';
 
-$brand-primary: $blue;
-$brand-success: #0C0C09;
+.text-primary {
+  color: $olive-950 !important;
+}
 
 /* Do not edit below this line */
 @import "twbs/bootstrap/variables";

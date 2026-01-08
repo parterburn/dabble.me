@@ -1,6 +1,9 @@
 class User < ActiveRecord::Base
   include RandomizedField
 
+  VALID_EMAIL_REGEX = /\A[A-Z0-9._%'+-]+@[A-Z0-9.-]+\.[A-Z]{2,63}\z/i
+  validates :email, format: { with: VALID_EMAIL_REGEX }, allow_blank: true
+
   # Include default devise modules. Others available are:
   # :confirmable, :timeoutable and :omniauthable, :lockable
   devise :otp_authenticatable, :database_authenticatable, :registerable,
