@@ -7,7 +7,7 @@ RSpec.describe WelcomeController, type: :controller do
     it 'should show the welcome page to non-logged in users' do
       get :index
       expect(response.status).to eq 200
-      expect(response.body).to have_content("A journal that shows up, right where you are.")
+      expect(response.body).to have_content("A journal you might actually stick with.")
     end
 
     it 'should redirect to latest entry for logged in users' do

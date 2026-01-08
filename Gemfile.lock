@@ -119,7 +119,7 @@ GEM
     combined_time_select (2.0.0)
       rails (>= 5.0.0)
     concurrent-ruby (1.3.4)
-    connection_pool (3.0.2)
+    connection_pool (2.5.5)
     cose (1.3.1)
       cbor (~> 0.5.9)
       openssl-signature_algorithm (~> 1.0)
@@ -308,6 +308,7 @@ GEM
     msgpack (1.6.0)
     multi_json (1.15.0)
     multipart-post (2.4.1)
+    mutex_m (0.2.0)
     net-http (0.6.0)
       uri
     net-imap (0.3.4)
@@ -552,6 +553,7 @@ DEPENDENCIES
   cloudflare-rails
   combined_time_select
   concurrent-ruby (= 1.3.4)
+  connection_pool (~> 2.4)
   database_cleaner
   delorean
   derailed_benchmarks
@@ -578,6 +580,7 @@ DEPENDENCIES
   loofah (>= 2.5)
   mailgun_rails
   meta_request
+  mutex_m
   pg (~> 1.6)
   puma (~> 6)
   rack-affiliates

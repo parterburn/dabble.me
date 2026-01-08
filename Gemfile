@@ -71,6 +71,7 @@ gem 'twbs_sass_rails'
 gem 'uglifier'
 
 gem "sidekiq"
+gem "connection_pool", "~> 2.4"  # Pin to 2.x until Sidekiq supports 3.x API
 gem "redis"
 gem 'logtail-rails'
 gem "sentry-ruby"
