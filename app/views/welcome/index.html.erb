@@ -1,24 +1,22 @@
-<% content_for :title, "Your Private Journal" %>
-
 <!-- Hero Section -->
 <section class="px-4 sm:px-6 lg:px-8 pt-4 pb-24 lg:pb-32">
-  <div class="mx-auto max-w-7xl">
-    <div class="relative rounded-3xl bg-hero bg-grain">
-      <div class="px-6 sm:px-12 lg:px-16 pt-12 pb-16 sm:pt-16 sm:pb-24 lg:pt-20">
+  <div class="mx-auto">
+    <div class="relative rounded-3xl bg-hero">
+      <div class="bg-grain" style="background-image: url('data:image/svg+xml;charset=utf-8,%20%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22250%22%20height%3D%22250%22%20viewBox%3D%220%200%20100%20100%22%3E%20%3Cfilter%20id%3D%22n%22%3E%20%3CfeTurbulence%20type%3D%22turbulence%22%20baseFrequency%3D%221.4%22%20numOctaves%3D%221%22%20seed%3D%222%22%20stitchTiles%3D%22stitch%22%20result%3D%22n%22%20%2F%3E%20%3CfeComponentTransfer%20result%3D%22g%22%3E%20%3CfeFuncR%20type%3D%22linear%22%20slope%3D%224%22%20intercept%3D%221%22%20%2F%3E%20%3CfeFuncG%20type%3D%22linear%22%20slope%3D%224%22%20intercept%3D%221%22%20%2F%3E%20%3CfeFuncB%20type%3D%22linear%22%20slope%3D%224%22%20intercept%3D%221%22%20%2F%3E%20%3C%2FfeComponentTransfer%3E%20%3CfeColorMatrix%20type%3D%22saturate%22%20values%3D%220%22%20in%3D%22g%22%20%2F%3E%20%3C%2Ffilter%3E%20%3Crect%20width%3D%22100%25%22%20height%3D%22100%25%22%20filter%3D%22url(%23n)%22%20%2F%3E%20%3C%2Fsvg%3E%20');"></div>
+      <div class="px-6 sm:px-10 lg:px-16 pt-12 pb-16 sm:pt-16 sm:pb-24 lg:pt-20">
         <div class="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
       <!-- Hero Content -->
       <div class="text-center lg:text-left">
-        <!-- Wirecutter Badge -->
-        <a href="https://www.nytimes.com/wirecutter/reviews/best-journaling-apps/" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-sm mb-6 hover:bg-white/20 transition-colors">
+        <!-- Wirecutter Badge - styled like Oatmeal with divider -->
+        <a href="https://www.nytimes.com/wirecutter/reviews/best-journaling-apps/" target="_blank" rel="noopener" class="inline-flex items-center gap-2 rounded-full bg-olive-950/20 px-4 py-1.5 text-sm mb-6 hover:bg-olive-950/30 transition-colors">
           <svg class="h-4 w-4 text-hero-accent" fill="currentColor" viewBox="0 0 20 20">
             <path fill-rule="evenodd" d="M10.868 2.884c-.321-.772-1.415-.772-1.736 0l-1.83 4.401-4.753.381c-.833.067-1.171 1.107-.536 1.651l3.62 3.102-1.106 4.637c-.194.813.691 1.456 1.405 1.02L10 15.591l4.069 2.485c.713.436 1.598-.207 1.404-1.02l-1.106-4.637 3.62-3.102c.635-.544.297-1.584-.536-1.65l-4.752-.382-1.831-4.401z" clip-rule="evenodd" />
           </svg>
-          <span class="text-hero">Featured in Wirecutter's Best Journaling Apps</span>
-          <span class="text-hero-muted">Learn more →</span>
+          <span class="text-hero block leading-none">Featured in Wirecutter<span class="hidden md:inline">: The Best Journaling Apps</span></span>
         </a>
 
         <h1 class="font-serif text-4xl sm:text-5xl lg:text-6xl tracking-tight text-hero">
-          Your private journal.
+          A journal that shows up, right where you are.
         </h1>
         
         <p class="mt-6 text-lg text-hero-muted max-w-xl mx-auto lg:mx-0">
@@ -26,10 +24,10 @@
         </p>
 
         <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
-          <a href="<%= new_user_registration_path %>" class="inline-flex items-center justify-center px-6 py-3 font-medium rounded-lg transition-colors duration-200 bg-white text-olive-800 hover:bg-cream-100">
+          <a href="<%= new_user_registration_path %>" class="inline-flex items-center justify-center px-6 py-3 font-medium rounded-full transition-colors duration-200 bg-white text-olive-800 hover:bg-cream-100">
             Start writing for free
           </a>
-          <a href="#features" class="inline-flex items-center justify-center px-6 py-3 font-medium rounded-lg transition-colors duration-200 border border-white/30 text-hero hover:bg-white/10">
+          <a href="#features" class="inline-flex items-center justify-center px-6 py-3 font-medium rounded-full transition-colors duration-200 border border-white/30 text-hero hover:bg-white/10">
             See how it works
             <svg class="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
@@ -68,7 +66,7 @@
 
       <!-- Hero Image: Email Preview -->
       <div class="relative">
-        <div class="bg-white border border-cream-300 rounded-xl shadow-xl overflow-hidden">
+        <div class="bg-white border border-cream-300 rounded-xl shadow-xl overflow-hidden dark:bg-olive-950 dark:border-dark-700">
           <!-- Email window header -->
           <div class="bg-surface-elevated px-4 py-3 border-b border-subtle flex items-center gap-2">
             <div class="flex gap-1.5">
@@ -121,12 +119,11 @@
 </section>
 
 <!-- Stats Section with Graph -->
-<section class="py-20 lg:py-28 bg-surface">
+<section class="py-16 lg:py-20 bg-surface">
   <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
     <!-- Top: Text content -->
     <div class="max-w-3xl">
-      <span class="text-sm font-medium text-primary tracking-wide">Built for scale</span>
-      <h2 class="mt-4 font-serif text-4xl sm:text-5xl lg:text-6xl text-primary leading-tight">
+      <h2 class="mt-4 font-serif text-4xl sm:text-4xl lg:text-5xl text-primary leading-tight">
         The journal powering daily<br class="hidden sm:block"> reflection everywhere.
       </h2>
       <p class="mt-6 text-lg text-muted max-w-2xl">
@@ -134,41 +131,55 @@
       </p>
     </div>
 
-    <!-- Stats with left border -->
-    <div class="mt-12 flex flex-wrap gap-8 lg:gap-16">
-      <div class="pl-6 border-l border-olive-400">
-        <p class="font-serif text-4xl lg:text-5xl text-primary">2M+</p>
-        <p class="mt-2 text-muted max-w-xs">
-          Emails sent to journalers around the world.
-        </p>
+    <!-- Stats + Graph layout -->
+    <div class="mt-10 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6 lg:gap-0 items-start">
+      <!-- Stats with left border -->
+      <div class="flex">
+        <div class="pl-5 border-l-2 border-olive-400">
+          <p class="font-serif text-4xl lg:text-5xl text-primary"><%= number_to_human(@stats[:total_entries], precision: 1, significant: false, format: '%n%u', units: { million: 'M', thousand: 'K' }) %></p>
+          <p class="mt-1 text-muted text-sm">
+            Emails processed to journalers<br class="hidden lg:block"> around the world.
+          </p>
+        </div>
       </div>
-    </div>
 
-    <!-- Graph visualization -->
-    <div class="mt-16 relative">
-      <div class="relative h-64 lg:h-80">
-        <!-- SVG Graph with vertical dashed lines -->
-        <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 1000 300">
-          <!-- Vertical dashed lines -->
-          <line x1="0" y1="280" x2="0" y2="180" stroke="currentColor" stroke-width="1" stroke-dasharray="4,4" class="text-olive-400/50" />
-          <line x1="100" y1="280" x2="100" y2="170" stroke="currentColor" stroke-width="1" stroke-dasharray="4,4" class="text-olive-400/50" />
-          <line x1="200" y1="280" x2="200" y2="155" stroke="currentColor" stroke-width="1" stroke-dasharray="4,4" class="text-olive-400/50" />
-          <line x1="300" y1="280" x2="300" y2="140" stroke="currentColor" stroke-width="1" stroke-dasharray="4,4" class="text-olive-400/50" />
-          <line x1="400" y1="280" x2="400" y2="120" stroke="currentColor" stroke-width="1" stroke-dasharray="4,4" class="text-olive-400/50" />
-          <line x1="500" y1="280" x2="500" y2="100" stroke="currentColor" stroke-width="1" stroke-dasharray="4,4" class="text-olive-400/50" />
-          <line x1="600" y1="280" x2="600" y2="80" stroke="currentColor" stroke-width="1" stroke-dasharray="4,4" class="text-olive-400/50" />
-          <line x1="700" y1="280" x2="700" y2="60" stroke="currentColor" stroke-width="1" stroke-dasharray="4,4" class="text-olive-400/50" />
-          <line x1="800" y1="280" x2="800" y2="40" stroke="currentColor" stroke-width="1" stroke-dasharray="4,4" class="text-olive-400/50" />
-          <line x1="900" y1="280" x2="900" y2="25" stroke="currentColor" stroke-width="1" stroke-dasharray="4,4" class="text-olive-400/50" />
-          <line x1="1000" y1="280" x2="1000" y2="15" stroke="currentColor" stroke-width="1" stroke-dasharray="4,4" class="text-olive-400/50" />
+      <!-- Graph visualization -->
+      <div class="relative h-52 lg:h-64">
+        <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 1000 300" shape-rendering="geometricPrecision">
+          <!-- Gradient fill definition -->
+          <defs>
+            <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stop-color="rgb(87, 99, 68)" stop-opacity="0.15" />
+              <stop offset="100%" stop-color="rgb(87, 99, 68)" stop-opacity="0" />
+            </linearGradient>
+          </defs>
+          
+          <!-- Vertical dashed lines (from bottom to curve) -->
+          <line x1="0" y1="300" x2="0" y2="295" stroke="rgb(156, 163, 143)" stroke-width="1" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
+          <line x1="111" y1="300" x2="111" y2="288" stroke="rgb(156, 163, 143)" stroke-width="1" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
+          <line x1="222" y1="300" x2="222" y2="275" stroke="rgb(156, 163, 143)" stroke-width="1" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
+          <line x1="333" y1="300" x2="333" y2="258" stroke="rgb(156, 163, 143)" stroke-width="1" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
+          <line x1="444" y1="300" x2="444" y2="232" stroke="rgb(156, 163, 143)" stroke-width="1" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
+          <line x1="555" y1="300" x2="555" y2="192" stroke="rgb(156, 163, 143)" stroke-width="1" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
+          <line x1="666" y1="300" x2="666" y2="132" stroke="rgb(156, 163, 143)" stroke-width="1" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
+          <line x1="777" y1="300" x2="777" y2="68" stroke="rgb(156, 163, 143)" stroke-width="1" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
+          <line x1="888" y1="300" x2="888" y2="22" stroke="rgb(156, 163, 143)" stroke-width="1" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
+          <line x1="1000" y1="300" x2="1000" y2="5" stroke="rgb(156, 163, 143)" stroke-width="1" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
+
+          <!-- Gradient fill under curve -->
+          <path 
+            d="M 0 295 C 150 290, 250 280, 350 260 C 450 235, 500 210, 600 160 C 700 105, 800 50, 900 20 C 950 8, 1000 5, 1000 5 L 1000 300 L 0 300 Z" 
+            fill="url(#chartGradient)"
+          />
           
           <!-- Growth curve line -->
           <path 
-            d="M 0 180 C 50 178, 100 170, 150 165 C 200 160, 250 150, 300 140 C 350 130, 400 115, 450 105 C 500 95, 550 85, 600 75 C 650 65, 700 55, 750 45 C 800 35, 850 28, 900 22 C 950 18, 1000 15, 1000 15" 
+            d="M 0 295 C 150 290, 250 280, 350 260 C 450 235, 500 210, 600 160 C 700 105, 800 50, 900 20 C 950 8, 1000 5, 1000 5" 
             fill="none" 
             stroke="rgb(87, 99, 68)" 
             stroke-width="2"
             stroke-linecap="round"
+            vector-effect="non-scaling-stroke"
           />
         </svg>
       </div>
@@ -196,7 +207,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
           </svg>
         </div>
-        <h3 class="font-semibold text-lg text-primary">Reply by Email</h3>
+        <h3 class="font-semibold text-base text-primary font-sans">Reply by Email</h3>
         <p class="mt-2 text-muted">
           Get an email prompt, hit reply, write your thoughts. No app needed — works with any email client.
         </p>
@@ -208,7 +219,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
-        <h3 class="font-semibold text-lg text-primary">Blasts from the Past</h3>
+        <h3 class="font-semibold text-base text-primary font-sans">Blasts from the Past</h3>
         <p class="mt-2 text-muted">
           Every email includes an entry from your past. Rediscover memories you forgot you had.
         </p>
@@ -220,7 +231,7 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
           </svg>
         </div>
-        <h3 class="font-semibold text-lg text-primary">Always Private</h3>
+        <h3 class="font-semibold text-base text-primary font-sans">Always Private</h3>
         <p class="mt-2 text-muted">
           No social features. No sharing. No algorithms. Your journal is yours alone.
         </p>
@@ -234,9 +245,9 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 19.5h16.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v10.5a2.25 2.25 0 002.25 2.25z" />
             </svg>
           </div>
-          <span class="badge badge-accent text-xs">PRO</span>
+          <span class="badge badge-accent dark:text-olive-800 text-xs">PRO</span>
         </div>
-        <h3 class="font-semibold text-lg text-primary">Photo Attachments</h3>
+        <h3 class="font-semibold text-base text-primary font-sans">Photo Attachments</h3>
         <p class="mt-2 text-muted">
           Attach up to 5 photos per entry via email or web. Create visual memories.
         </p>
@@ -249,9 +260,9 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
             </svg>
           </div>
-          <span class="badge badge-accent text-xs">PRO</span>
+          <span class="badge badge-accent dark:text-olive-800 text-xs">PRO</span>
         </div>
-        <h3 class="font-semibold text-lg text-primary">Calendar & Search</h3>
+        <h3 class="font-semibold text-base text-primary font-sans">Calendar & Search</h3>
         <p class="mt-2 text-muted">
           Browse entries by date or search with #hashtags. Find any memory instantly.
         </p>
@@ -264,9 +275,9 @@
               <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
             </svg>
           </div>
-          <span class="badge badge-accent text-xs">PRO</span>
+          <span class="badge badge-accent dark:text-olive-800 text-xs">PRO</span>
         </div>
-        <h3 class="font-semibold text-lg text-primary">Custom Schedule</h3>
+        <h3 class="font-semibold text-base text-primary font-sans">Custom Schedule</h3>
         <p class="mt-2 text-muted">
           Choose which days and times you receive prompts. Daily, weekly, or anywhere in between.
         </p>
@@ -275,116 +286,37 @@
   </div>
 </section>
 
-<!-- Testimonial Section -->
 <section class="py-20 lg:py-28 bg-surface border-y border-subtle">
   <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
-    <blockquote class="font-serif text-2xl sm:text-3xl lg:text-4xl text-primary leading-relaxed">
-      "The pro version of dabble.me costs $4 a month, and it is worth so much more than that."
-    </blockquote>
+    <a href="https://twitter.com/paulg/status/1746341562286539118?ref_src=twsrc%5Etfw" target="_blank" rel="noopener" class="hover:scale-105 transition-transform duration-300 block">
+      <blockquote class="font-serif text-2xl sm:text-3xl lg:text-4xl text-primary leading-relaxed">
+        "The pro version of Dabble Me costs $3 a month, and it is worth so much more than that."
+      </blockquote>
 
-    <div class="mt-10 flex flex-col items-center">
-      <div class="w-14 h-14 rounded-full bg-olive-100 flex items-center justify-center mb-4">
-        <span class="text-olive-700 font-semibold text-lg">PG</span>
+      <div class="mt-10 flex flex-col items-center">
+        <span class="w-16 h-16 rounded-full bg-olive-100 flex items-center justify-center mb-4">
+          <img src="<%= asset_path('pg.jpg') %>" alt="Paul Graham" class="w-full h-full object-cover rounded-full">
+        </span>
+        <span class="font-medium text-primary">Paul Graham</span>
+        <span class="text-sm text-muted">Co-founder, Y Combinator</span>
+        <span class="text-sm text-subtle">January 2024</span>
       </div>
-      <p class="font-medium text-primary">Paul Graham</p>
-      <p class="text-sm text-muted">Co-founder, Y Combinator</p>
-    </div>
-  </div>
-</section>
-
-<!-- Q&A Section -->
-<section class="py-20">
-  <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
-    <div class="text-center mb-12">
-      <h2 class="section-heading">Questions & Answers</h2>
-    </div>
-
-    <div data-accordion-group>
-      <!-- Q2 -->
-      <div class="accordion-item">
-        <button
-          type="button"
-          class="accordion-trigger cursor-pointer"
-          data-accordion-trigger
-          aria-expanded="false"
-        >
-          <span>Is this really free?</span>
-          <svg data-accordion-icon class="h-5 w-5 text-subtle transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        <div class="accordion-content" style="max-height: 0;">
-          <p class="pb-4">
-            The basic service is free, but you're limited to receiving email prompts every other Sunday. If you want daily prompts, photos, search, calendar view, and other features, you can subscribe to PRO for $4/month or $40/year.
-          </p>
-        </div>
-      </div>
-
-      <!-- Q3 -->
-      <div class="accordion-item">
-        <button
-          type="button"
-          class="accordion-trigger cursor-pointer"
-          data-accordion-trigger
-          aria-expanded="false"
-        >
-          <span>Does this service use AI to read or analyze my entries?</span>
-          <svg data-accordion-icon class="h-5 w-5 text-subtle transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        <div class="accordion-content" style="max-height: 0;">
-          <p class="pb-4">
-            No. There is a private beta for built-in AI-powered features, but these features are opt-in only and off by default. Instead, we offer an easy way to export your entire journal if you'd like to feed it into your own AI tool of choice for feedback or analysis.
-          </p>
-        </div>
-      </div>
-
-      <!-- Q1 -->
-      <div class="accordion-item">
-        <button
-          type="button"
-          class="accordion-trigger cursor-pointer"
-          data-accordion-trigger
-          aria-expanded="false"
-        >
-          <span>Is there a mobile app?</span>
-          <svg data-accordion-icon class="h-5 w-5 text-subtle transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
-        <div class="accordion-content" style="max-height: 0;">
-          <p class="pb-4">
-            There is no app for Dabble Me on Google Play or the Apple App Store. The site is built using a mobile-friendly design, so it will look great and function with ease when viewing it in any mobile browser. Also, the primary action in Dabble Me is writing an entry, which is typically done using your phone's email client (Mail.app, Gmail, etc.).
-          </p>
-        </div>
-      </div>
-
-    </div>
-
-    <div class="mt-8 text-center">
-      <a href="<%= support_path %>" class="text-accent hover:text-primary transition-colors font-medium">
-        View all questions →
-      </a>
-    </div>
+    </a>
   </div>
 </section>
 
 <!-- Pricing Section -->
-<section id="pricing" class="py-20 bg-surface border-y border-subtle">
+<section id="pricing" class="py-20 border-y border-subtle">
   <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
     <div class="text-center mb-16">
-      <h2 class="section-heading">Simple, honest pricing.</h2>
+      <h2 class="section-heading">Simple pricing.</h2>
       <p class="mt-4 text-lg text-muted">Start free, upgrade when you're ready.</p>
     </div>
 
     <div class="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
       <!-- Free Plan -->
-      <div class="card p-8">
-        <h3 class="text-lg font-semibold text-primary">Free</h3>
-        <p class="mt-2 text-muted text-sm">Perfect for getting started</p>
-        
-        <p class="mt-6">
+      <div class="card p-8 flex flex-col justify-between">
+        <p>
           <span class="font-serif text-4xl text-primary">$0</span>
           <span class="text-muted">/forever</span>
         </p>
@@ -441,8 +373,8 @@
           </li>
         </ul>
 
-        <a href="<%= new_user_registration_path %>" class="btn btn-secondary w-full mt-8">
-          Get started free
+        <a href="<%= new_user_registration_path %>" class="btn btn-secondary w-full mt-8 self-end">
+          Get started
         </a>
 
       </div>
@@ -450,13 +382,10 @@
       <!-- PRO Plan -->
       <div class="card p-8 border-accent ring-2 ring-accent/20 relative">
         <div class="absolute -top-3 left-1/2 -translate-x-1/2">
-          <span class="badge badge-accent">Most popular</span>
+          <span class="badge badge-accent dark:text-olive-800">Habit-forming</span>
         </div>
         
-        <h3 class="text-lg font-semibold text-primary">PRO</h3>
-        <p class="mt-2 text-muted text-sm">For those committed to forming a habit</p>
-        
-        <p class="mt-6">
+        <p>
           <span class="font-serif text-4xl text-primary">$4</span>
           <span class="text-muted">/month</span>
         </p>
@@ -509,7 +438,7 @@
             <svg class="h-5 w-5 text-accent flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
-            <span class="text-muted">Hashtag support</span>
+            <span class="text-muted">Tag your entries</span>
           </li>
           <li class="flex items-start gap-3">
             <svg class="h-5 w-5 text-accent flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -520,9 +449,87 @@
         </ul>
 
         <a href="<%= new_user_registration_path %>" class="btn btn-primary w-full mt-8">
-          Start PRO
+          Get PRO
         </a>
       </div>
+    </div>
+  </div>
+</section>
+
+<!-- Q&A Section -->
+<section class="py-20 bg-surface">
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-12">
+      <h2 class="section-heading">Questions & Answers</h2>
+    </div>
+
+    <div data-accordion-group>
+      <!-- Q2 -->
+      <div class="accordion-item">
+        <button
+          type="button"
+          class="accordion-trigger cursor-pointer"
+          data-accordion-trigger
+          aria-expanded="false"
+        >
+          <span>Is this really free?</span>
+          <svg data-accordion-icon class="h-5 w-5 text-subtle transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div class="accordion-content" style="max-height: 0;">
+          <p class="pb-4">
+            The basic service is free, with email prompts sent every other Sunday. For daily prompts, photos, search, calendar view, and other advanced features, you can upgrade to PRO for $4/month or $40/year.
+          </p>
+        </div>
+      </div>
+
+      <!-- Q3 -->
+      <div class="accordion-item">
+        <button
+          type="button"
+          class="accordion-trigger cursor-pointer"
+          data-accordion-trigger
+          aria-expanded="false"
+        >
+          <span>Does this service use AI to read or analyze my entries?</span>
+          <svg data-accordion-icon class="h-5 w-5 text-subtle transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div class="accordion-content" style="max-height: 0;">
+          <p class="pb-4">
+            No. There is a private beta with built-in AI-powered features, but they are entirely opt-in and turned off by default. If you prefer, you can export your full journal at any time and use it with your own AI tools for analysis or reflection.
+          </p>
+        </div>
+      </div>
+
+      <!-- Q1 -->
+      <div class="accordion-item">
+        <button
+          type="button"
+          class="accordion-trigger cursor-pointer"
+          data-accordion-trigger
+          aria-expanded="false"
+        >
+          <span>Is there a mobile app?</span>
+          <svg data-accordion-icon class="h-5 w-5 text-subtle transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </button>
+        <div class="accordion-content" style="max-height: 0;">
+          <p class="pb-4">
+            There's no Dabble Me app in the App Store or Google Play. The website is fully mobile-friendly and works smoothly in any mobile browser. Most people write their entries by replying to the daily email using their phone’s email app, like Mail or Gmail.
+          </p>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="mt-8 text-center">
+      <a href="<%= support_path %>" class="text-accent hover:text-primary transition-colors font-medium">
+        View all questions →
+      </a>
     </div>
   </div>
 </section>
@@ -534,7 +541,7 @@
       Ready to start remembering?
     </h2>
     <p class="mt-4 text-lg text-muted">
-      Join thousands of people who have written <%= number_with_delimiter(@total_entries) %> entries and counting.
+      Join thousands of people who have written <%= number_with_delimiter(@stats[:total_entries]) %> entries and counting.
     </p>
     <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
       <a href="<%= new_user_registration_path %>" class="btn btn-primary">

@@ -35,15 +35,15 @@ faq_sections = {
     questions: [
       {
         q: "Is this really free?",
-        a: "The basic service is free, but you're limited to receiving email prompts every other Sunday. If you want to use Dabble Me more often with all features unlocked, you can subscribe for $4/month or $40/year."
+        a: "The basic service is free, with email prompts sent every other Sunday. For daily prompts, photos, search, calendar view, and other advanced features, you can upgrade to PRO for $4/month or $40/year."
       },
       {
         q: "Is there a mobile app?",
-        a: "There is no app for Dabble Me on Google Play or the Apple App Store. The site is built using a mobile-friendly design, so it will look great and function with ease when viewing it in any mobile browser. Also, the primary action in Dabble Me is writing an entry, which is typically done using your phone's email client (Mail.app, Gmail, etc.)."
+        a: "There's no Dabble Me app in the App Store or Google Play. The website is fully mobile-friendly and works smoothly in any mobile browser. Most people write their entries by replying to the daily email using their phone’s email app, like Mail or Gmail."
       },
       {
         q: "Does this service use AI to read or analyze my entries?",
-        a: "No. There is a private beta for built-in AI-powered features, but these features are opt-in only and off by default. Instead, we offer an easy way to export your entire journal if you'd like to feed it into your own AI tool of choice for feedback or analysis."
+        a: "No. There is a private beta with built-in AI-powered features, but they are entirely opt-in and turned off by default. If you prefer, you can export your full journal at any time and use it with your own AI tools for analysis or reflection."
       },
       {
         q: "How do I save a copy of my entries?",
@@ -71,11 +71,11 @@ faq_sections = {
       },      
       {
         q: "Who created this?",
-        a: "This service is created and maintained by <a href='https://paularterburn.com/' class='text-accent hover:text-primary underline' target='_blank'>Paul Arterburn</a>, who is also the VP of Engineering at <a href='https://unreasonablegroup.com/' class='text-accent hover:text-primary underline' target='_blank'>Unreasonable Group</a> helping entrepreneurs bend history in the right direction. Previously, Paul was the technical co-founder of <a href='https://brandfolder.com/' class='text-accent hover:text-primary underline' target='_blank'>Brandfolder</a>, a digital asset management platform that some of the biggest brands in the world trust with their brand assets.<br/><br/>Paul created Dabble Me as a way to remember and reflect on my days in a format that would actually trigger me to write — email. I described why and how I built Dabble Me in a blog post: <a href='https://medium.com/startup-lesson-learned/increase-your-happiness-with-daily-journaling-8109b0700506' class='text-accent hover:text-primary underline' target='_blank'>Increase Your Happiness with Daily Journaling</a>."
+        a: "This service is created and maintained by <a href='https://paularterburn.com/' class='text-accent hover:text-primary underline' target='_blank'>Paul Arterburn</a>, who is also the VP of Engineering at <a href='https://unreasonablegroup.com/' class='text-accent hover:text-primary underline' target='_blank'>Unreasonable Group</a> helping entrepreneurs bend history in the right direction. Previously, Paul was the technical co-founder of <a href='https://brandfolder.com/' class='text-accent hover:text-primary underline' target='_blank'>Brandfolder</a>, a digital asset management platform powering some of the biggest brands in the world.<br/><br/>Paul created Dabble Me for himself as a way to remember and reflect on the days in a format that would actually trigger him to write — over email. Read about why and how he built Dabble Me in a blog post: <a href='https://medium.com/startup-lesson-learned/increase-your-happiness-with-daily-journaling-8109b0700506' class='text-accent hover:text-primary underline' target='_blank'>Increase Your Happiness with Daily Journaling</a>."
       },
       {
         q: "Can I trust this service?",
-        a: "Dabble Me is run by an established, successful solopreneur and not just another weekend vibe-coded project. It's independent, and profitably funded by its users for over #{Date.today.year - Date.parse('2014-09-29').year} years. No investors. No intent of selling your data by pursuing an exit. The code is also open-sourced on <a href='https://github.com/parterburn/dabble.me' class='text-accent hover:text-primary underline' target='_blank'>GitHub</a>."
+        a: "Dabble Me is built thoughtfully, with privacy and security in mind from the start. It’s not a rushed AI side project or a growth experiment. It’s independently run, funded by its users for over #{Date.today.year - Date.parse('2014-09-29').year} years, and designed to keep your journal private. No investors. No selling your data. Just a simple, trustworthy place to write. The code is also open-sourced on <a href='https://github.com/parterburn/dabble.me' class='text-accent hover:text-primary underline' target='_blank'>GitHub</a>."
       }
     ]
   }
@@ -98,26 +98,7 @@ llm_text += "---\nFor more help, contact: hello@#{ENV['MAIN_DOMAIN'] || 'dabble.
     <div class="text-center mb-12">
       <h1 class="font-serif text-4xl sm:text-5xl tracking-tight">Support</h1>
       <p class="mt-4 text-lg text-muted">
-        Find answers to common questions or get in touch.
-      </p>
-    </div>
-
-    <!-- Contact Card -->
-    <div class="card p-6 mb-12 text-center">
-      <h2 class="font-semibold text-lg text-primary">Need help?</h2>
-      <p class="mt-2 text-muted">
-        If your question isn't answered below, we're happy to help.
-      </p>
-      <%= mail_to("hello@#{ENV['MAIN_DOMAIN']}", "Contact us", encode: "hex", class: "btn btn-primary mt-4") %>
-      <p class="mt-4 text-sm text-muted">
-        You can
-        <button 
-          type="button"
-          class="text-accent hover:text-primary underline cursor-pointer font-semibold"
-          onclick="copyFaqForLlm()"
-          id="copy-llm-btn"
-        ><span id="copy-llm-text">copy these FAQs</span></button>
-        to ask questions in your favorite AI chat tool.
+        If your question isn't answered below, email us at <%= mail_to("hello@#{ENV['MAIN_DOMAIN']}", "hello@#{ENV['MAIN_DOMAIN']}", encode: "hex", class: "text-accent hover:text-primary font-medium underline") %>.
       </p>
     </div>
 
@@ -125,14 +106,14 @@ llm_text += "---\nFor more help, contact: hello@#{ENV['MAIN_DOMAIN'] || 'dabble.
       <div class="mb-12">
         <h2 class="font-serif text-2xl text-primary mb-6 flex items-center gap-2">
           <% if section[:badge] %>
-            <span class="badge badge-accent text-sm font-semibold"><%= section[:badge] %></span>
+            <span class="badge badge-accent text-sm font-semibold dark:text-olive-800"><%= section[:badge] %></span>
           <% end %>
           <%= section[:title] %>
         </h2>
         
-        <div data-accordion-group class="card divide-y divide-subtle">
+        <div data-accordion-group class="card divide-y">
           <% section[:questions].each do |qa| %>
-            <div class="px-6">
+            <div class="px-6 border-subtle">
               <button
                 type="button"
                 class="accordion-trigger cursor-pointer"
@@ -155,13 +136,15 @@ llm_text += "---\nFor more help, contact: hello@#{ENV['MAIN_DOMAIN'] || 'dabble.
       </div>
     <% end %>
 
-    <!-- Contact CTA -->
-    <div class="mt-12 text-center">
-      <p class="text-muted">
-        Still have questions?
-        <%= mail_to("hello@#{ENV['MAIN_DOMAIN']}", "Email us", encode: "hex", class: "text-accent hover:text-primary font-medium underline") %>
-      </p>
-    </div>
+    <p class="text-sm text-muted text-center">
+      <button 
+        type="button"
+        class="text-accent hover:text-primary underline cursor-pointer font-semibold"
+        onclick="copyFaqForLlm()"
+        id="copy-llm-btn"
+      ><span id="copy-llm-text">Copy these FAQs</span></button>
+      to ask questions in your favorite AI chat tool. 
+    </p>    
   </div>
 </section>
 
@@ -174,9 +157,9 @@ function copyFaqForLlm() {
   const btnText = document.getElementById('copy-llm-text');
   
   navigator.clipboard.writeText(content).then(function() {
-    btnText.textContent = 'copied to your clipboard!';
+    btnText.textContent = 'Copied to your clipboard!';
     setTimeout(function() {
-      btnText.textContent = 'copy these FAQs';
+      btnText.textContent = 'Copy these FAQs';
     }, 2000);
   }).catch(function(err) {
     // Fallback for older browsers
@@ -185,9 +168,9 @@ function copyFaqForLlm() {
     textarea.select();
     document.execCommand('copy');
     textarea.classList.add('sr-only');
-    btnText.textContent = 'copied to your clipboard!';
+    btnText.textContent = 'Copied to your clipboard!';
     setTimeout(function() {
-      btnText.textContent = 'copy these FAQs';
+      btnText.textContent = 'Copy these FAQs';
     }, 2000);
   });
 }

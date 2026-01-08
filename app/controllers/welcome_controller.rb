@@ -1,9 +1,22 @@
 class WelcomeController < ApplicationController
-  layout :choose_layout
+  layout "marketing"
 
   def index
     redirect_to latest_entry_path if user_signed_in?
-    @total_entries = Entry.count
+
+    @stats = Rails.cache.fetch("welcome_stats", expires_in: 1.day) do
+      { total_entries: Entry.count, emails_sent: User.sum(:emails_sent), emails_received: User.sum(:emails_received) }
+    end
+  end
+
+  def subscribe
+    if user_signed_in? && current_user.is_pro?
+      render "pro_subscribed", layout: 'application'
+    elsif user_signed_in?
+      render "subscribe", layout: "marketing"
+    else
+      redirect_to root_path(anchor: "pricing")
+    end
   end
 
   def support
@@ -20,15 +33,5 @@ class WelcomeController < ApplicationController
 
   def ohlife_alternative
     # SEO landing page for OhLife users
-  end
-
-  private
-
-  def choose_layout
-    if user_signed_in?
-      'application'
-    else
-      'marketing'
-    end
   end
 end

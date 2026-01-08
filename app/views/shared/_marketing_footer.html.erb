@@ -1,6 +1,40 @@
-<footer class="bg-surface border-t border-subtle">
+<footer class="bg-footer border-t border-subtle">
   <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
     <div class="flex flex-col sm:flex-row items-start justify-between gap-8">
+
+      <!-- Left: Footer links -->
+      <div class="grid grid-cols-2 gap-8 sm:gap-16">
+        <!-- Product -->
+        <div>
+          <ul role="list" class="mt-4 space-y-3">
+            <li>
+              <a href="<%= root_path %>" class="text-sm text-muted hover:text-primary transition-colors">Home</a>
+            </li>
+            <li>
+              <a href="/#features" class="text-sm text-muted hover:text-primary transition-colors">Features</a>
+            </li>
+            <li>
+              <a href="/#pricing" class="text-sm text-muted hover:text-primary transition-colors">Pricing</a>
+            </li>
+          </ul>
+        </div>
+
+        <!-- Resources -->
+        <div>
+          <ul role="list" class="mt-4 space-y-3">
+            <li>
+              <a href="<%= support_path %>" class="text-sm text-muted hover:text-primary transition-colors">Support</a>
+            </li>
+            <li>
+              <a href="<%= privacy_path %>" class="text-sm text-muted hover:text-primary transition-colors">Privacy Policy</a>
+            </li>
+            <li>
+              <a href="<%= terms_path %>" class="text-sm text-muted hover:text-primary transition-colors">Terms of Service</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+
       <!-- Left: Copyright and social -->
       <div class="flex flex-col gap-4">
         <a href="<%= root_path %>" class="font-serif text-xl text-primary">
@@ -23,40 +57,6 @@
         </div>
       </div>
 
-      <!-- Right: Footer links -->
-      <div class="grid grid-cols-2 gap-8 sm:gap-16">
-        <!-- Product -->
-        <div>
-          <h3 class="text-sm font-semibold text-primary">Product</h3>
-          <ul role="list" class="mt-4 space-y-3">
-            <li>
-              <a href="<%= root_path %>" class="text-sm text-muted hover:text-primary transition-colors">Home</a>
-            </li>
-            <li>
-              <a href="/#features" class="text-sm text-muted hover:text-primary transition-colors">Features</a>
-            </li>
-            <li>
-              <a href="/#pricing" class="text-sm text-muted hover:text-primary transition-colors">Pricing</a>
-            </li>
-          </ul>
-        </div>
-
-        <!-- Resources -->
-        <div>
-          <h3 class="text-sm font-semibold text-primary">Resources</h3>
-          <ul role="list" class="mt-4 space-y-3">
-            <li>
-              <a href="<%= support_path %>" class="text-sm text-muted hover:text-primary transition-colors">Support</a>
-            </li>
-            <li>
-              <a href="<%= privacy_path %>" class="text-sm text-muted hover:text-primary transition-colors">Privacy Policy</a>
-            </li>
-            <li>
-              <a href="<%= terms_path %>" class="text-sm text-muted hover:text-primary transition-colors">Terms of Service</a>
-            </li>
-          </ul>
-        </div>
-      </div>
     </div>
   </div>
 </footer>

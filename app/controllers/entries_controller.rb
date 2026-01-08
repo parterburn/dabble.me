@@ -116,7 +116,7 @@ class EntriesController < ApplicationController
 
   def create
     if current_user.is_free?
-      flash[:alert] = "<a href='#{subscribe_url}' class='alert-link'>Subscribe to PRO</a> to write new entries.".html_safe
+      flash[:alert] = "<a href='#{subscribe_path}' class='alert-link'>Subscribe to PRO</a> to write new entries.".html_safe
       redirect_to root_path and return
     end
 
@@ -244,7 +244,7 @@ class EntriesController < ApplicationController
 
   def destroy
     if current_user.is_free?
-      flash[:alert] = "<a href='#{subscribe_url}' class='alert-link'>Subscribe to PRO</a> to edit entries.".html_safe
+      flash[:alert] = "<a href='#{subscribe_path}' class='alert-link'>Subscribe to PRO</a> to edit entries.".html_safe
       redirect_to root_path and return
     end
 

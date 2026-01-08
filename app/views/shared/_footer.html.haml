@@ -4,16 +4,16 @@
     .flex
       %div{style: "flex: none;"}
         %p.muted.float-left
-          =link_to "SUPPORT", support_path, title: "Support & FAQs"
+          =link_to "Support", support_path, title: "Support & FAQs", style: "font-size: 15px;"
           &nbsp;&middot;&nbsp;
-          = link_to "PRIVACY", privacy_path, title: "Privacy Policy"
+          = link_to "Privacy", privacy_path, title: "Privacy Policy", style: "font-size: 15px;"
           &nbsp;&middot;&nbsp;
-          = link_to "TERMS", terms_path, title: "Terms of Service"
+          = link_to "Terms", terms_path, title: "Terms of Service", style: "font-size: 15px;"
           -if current_user && current_user.is_free?
             &nbsp;&middot;&nbsp;
-            =link_to "SUBSCRIBE TO PRO", "/#pricing", title: "Subscribe Now"
+            =link_to "Subscribe to Pro", subscribe_path, title: "Subscribe Now", style: "font-size: 15px;"
       %div.muted{style: "font-size: 13px; flex: 1 1 0%;text-align: center;margin-bottom: 10px;"}
-        - two_factor_marketing = user_signed_in? && !current_user.otp_enabled? && current_user.created_at < 1.day.ago && Date.today.between?(Date.parse("2024-01-15"), Date.parse("2024-02-15"))
+        - two_factor_marketing = user_signed_in? && !(current_user.otp_enabled? || current_user.webauthn_credentials.any?) && current_user.created_at < 1.day.ago && Date.today.between?(Date.parse("2024-01-15"), Date.parse("2024-02-15"))
         - if two_factor_marketing
           %span.label.label-default{style: "margin-right: 4px; position: relative;top:-2px;font-weight: normal; font-size: 10px; font-family: sans-serif;padding: 3px 5px;"} NEW
           Protect your account by setting up
@@ -21,7 +21,7 @@
       %div{style: "flex: none;"}
         %p.muted.float-right
           &nbsp;&nbsp;
-          = link_to 'https://paularterburn.com/', title: "Made by Paul Arterburn" do
+          = link_to 'https://paularterburn.com/', title: "Made by Paul Arterburn", style: "font-size: 15px;" do
             © #{Time.now.year} Dabble Dev LLC
 
 

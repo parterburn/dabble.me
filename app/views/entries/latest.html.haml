@@ -43,12 +43,12 @@
           - if highlight_year_in_review
             %h4{style: "font-size: 16px; margin-top: 10px; font-weight: 600;"}
               %span= "See more stats in your "
-              = link_to "Year in Review", review_path, style: "color: #3366cc;"
+              = link_to "Year in Review", review_path
               %span> !
           - else
             %h4{style: "font-size: 16px; margin-top: 10px; font-weight: 500;"}
               %span= "#{percent_complete}% of the year completed. "
-              = link_to "Write your memories down", new_entry_path, style: "color: #3366cc;"
+              = link_to "Write your memories down", new_entry_path, style: "color: #5B6554;"
               %span= " so you can remember them later."
 
     - unless @lastest_entry.date == @user_today

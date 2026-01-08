@@ -6,7 +6,7 @@ class ImportController < ApplicationController
 
   def update
     if current_user.is_free?
-      flash[:alert] = "<a href='#{subscribe_url}'' class='alert-link'>Subscribe to PRO</a> to import entries.".html_safe
+      flash[:alert] = "<a href='#{subscribe_path}' class='alert-link'>Subscribe to PRO</a> to import entries.".html_safe
     else
       if params[:type]&.downcase == "ahhlife"
         import_ahhlife_entries(params[:entry][:text])

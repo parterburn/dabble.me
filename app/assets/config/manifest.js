@@ -15,6 +15,7 @@
 //= link anxious.jpg
 //= link monkey-wrench.jpg
 //= link five-types-of-wealth.jpg
+//= link pg.jpg
 
 //= link application.css
 //= link application.js
