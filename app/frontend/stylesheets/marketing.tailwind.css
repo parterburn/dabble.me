@@ -188,7 +188,6 @@
   /* Accordion styles for FAQ */
   .accordion-item {
     border-bottom: 1px solid var(--color-border-subtle);
-    scroll-margin-top: 5rem; /* Account for sticky nav (h-18 + padding) */
   }
 
   .accordion-trigger {
