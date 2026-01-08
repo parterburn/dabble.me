@@ -25,7 +25,7 @@
   <changefreq>weekly</changefreq>
 </url>
 <url>
-  <loc>https://dabble.me/faqs</loc>
+  <loc>https://dabble.me/support</loc>
   <lastmod>2014-02-06T05:42:42+00:00</lastmod>
   <changefreq>weekly</changefreq>
 </url>
@@ -36,6 +36,11 @@
 </url>
 <url>
   <loc>https://dabble.me/privacy</loc>
+  <lastmod>2014-02-06T05:42:42+00:00</lastmod>
+  <changefreq>weekly</changefreq>
+</url>
+<url>
+  <loc>https://dabble.me/terms</loc>
   <lastmod>2014-02-06T05:42:42+00:00</lastmod>
   <changefreq>weekly</changefreq>
 </url>
