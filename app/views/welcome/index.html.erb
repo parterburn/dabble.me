@@ -163,7 +163,7 @@ sample_entry = sample_entries.sample
         <div class="pl-5">
           <p class="font-serif text-4xl lg:text-5xl text-primary"><%= number_to_human(@stats[:emails_sent] + @stats[:emails_received], precision: 1, significant: false, format: '%n%u', units: { million: 'M', thousand: 'K' }) %></p>
           <p class="mt-1 text-muted text-sm">
-            Emails processed
+            Total emails processed
           </p>
         </div>
       </div>
@@ -606,7 +606,7 @@ sample_entry = sample_entries.sample
       Ready to start remembering?
     </h2>
     <p class="mt-4 text-lg text-muted">
-      Join thousands of people who have written <%= <%= number_to_human(@stats[:total_entries], precision: 1, significant: false, format: '%n%u', units: { million: 'M', thousand: 'K' }) %> %> entries and counting.
+      Join thousands of people who have written <%= number_to_human(@stats[:total_entries], precision: 1, significant: false, format: '%n%u', units: { million: 'M', thousand: 'K' }) %> entries and counting.
     </p>
     <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
       <a href="<%= new_user_registration_path %>" class="btn btn-primary">
