@@ -87,7 +87,7 @@ module ApplicationHelper
             </li>
             <li>
               <span class='font-semibold'>Relationship Time Capsule</span>
-              — write about the people you love while the moments are fresh. The thing your partner said that made you laugh, the weird inside joke your best friend started, the look on your mom's face when you surprised her. Tag entries with #Sarah or #Dad and build a searchable archive of the people who matter most—one you'll be grateful for someday.
+              — write about the people you love while the moments are fresh. The thing your partner said that made you laugh, the weird inside joke your best friend started, the look on your mom's face when you surprised her. Tag entries with #Sarah or #Dad and build a searchable archive of the people who matter most—one that will guarantee you future smiles.
             </li>
             <li>
               <span class='font-semibold'>Career Wins &amp; Lessons</span>
