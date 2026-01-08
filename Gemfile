@@ -4,6 +4,7 @@ ruby File.read(File.expand_path '../.ruby-version', __FILE__).strip.sub /\-p[0-9
 gem 'rails', '~> 6.1.7.10'
 
 gem "concurrent-ruby", "1.3.4" # needed until https://github.com/rails/rails/pull/54264 is in Rails 7.0.8.8
+gem "mutex_m"                  # Ruby 3.4 stdlib extraction - required by Rails 6.1
 
 gem 'puma', '~> 6'
 gem 'pg', '~> 1.6'
@@ -37,10 +38,10 @@ gem 'groupdate' # Admin Stats
 gem 'rack-utf8_sanitizer', '~> 1.8'
 gem 'randomized_field', '~> 1.0' # builds user_keys
 gem 'rest-client' # RESTClient
-gem 'rubyzip', '~> 2'
+gem 'rubyzip', '~> 3.0'
 gem 'summernote-rails', '~> 0.8.20.0', git: "https://github.com/parterburn/summernote-rails"
 gem 'words_counted', '~> 1.0', '>= 1.0.3' # Year in Review
-gem 'zip-zip'
+# zip-zip shim removed - rubyzip 3.x uses modern Zip::File API
 gem "chartkick", "~> 5"
 gem "loofah", ">= 2.5"
 
@@ -111,8 +112,7 @@ group :test do
   gem 'database_cleaner'
   gem 'email_spec', require: false
   gem "rspec-retry"                       # Automatically retry failed tests that timeout
-  gem 'webdrivers', '~> 5.0', require: false
-  gem "selenium-webdriver"
+  gem "selenium-webdriver", ">= 4.20"  # 4.11+ has built-in Selenium Manager for driver downloads
   gem 'simplecov', require: false
   gem 'webmock', require: false
 end

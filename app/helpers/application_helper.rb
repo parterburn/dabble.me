@@ -66,6 +66,14 @@ module ApplicationHelper
           {
             q: "Can I import from OhLife or other services?",
             a: "Yes! PRO members can visit the <a href='#{Rails.application.routes.url_helpers.import_path}' class='text-accent hover:text-primary underline'>Importer</a> to import entries from OhLife, Ahhlife, and Trailmix.life."
+          },
+          {
+            q: "Can I get a refund?",
+            a: "If something doesn’t feel right, email us at #{ActionController::Base.helpers.mail_to("hello@#{ENV['MAIN_DOMAIN']}", "hello@#{ENV['MAIN_DOMAIN']}", subject: "Refund Request", encode: "hex", class: "text-accent hover:text-primary underline")} within 30 days of the charge and we’ll take care of it. Refunds are handled case by case, and we always follow applicable laws."
+          },
+          {
+            q: "What happens to my data if I cancel my subscription?",
+            a: "If you downgrade to a free account, your existing entries will remain private and accessible only to you, but you will lose access to the premium features."
           }
         ]
       },
@@ -74,9 +82,21 @@ module ApplicationHelper
         badge: nil,
         questions: [
           {
+            q: "Are my entries private?",
+            a: "<span class='font-semibold'>Yes, by design.</span> Your entries can’t be shared, posted, fed into AI models, or made public in any way...and they're never at risk of being indexed by search engines. There's no social layer and no audience — just your journal, kept private and secure. If you want the details, our <a href='#{Rails.application.routes.url_helpers.privacy_path}' class='text-accent hover:text-primary underline'>Privacy Policy</a> spells this out clearly."
+          },
+          {
+            q: "Is there a mobile app?",
+            a: "<span class='font-semibold'>No — and that’s intentional.</span> There’s no Dabble Me app in the App Store or Google Play. Most people write by replying to the daily email using the email app they already have on their phone. The website is fully mobile-friendly if you ever want to browse or edit entries."
+          },
+          {
+            q: "Is this really free?",
+            a: "<span class='font-semibold'>Yes. The core experience is free, forever.</span> You'll receive an email prompt every other Sunday and can reply by email to keep your journal. When you want daily prompts, photos, search, and other tools, you can upgrade to PRO for $4/month or $40/year."
+          },
+          {
             id: "ideas-for-writing",
             q: "What should I journal about?",
-            a: "<ul class='list-disc text-primary pl-2 space-y-2 ml-3'>
+            a: "<ul class='list-disc pl-2 space-y-2 ml-3'>
             <li>
               <span class='font-semibold'>The One Framework</span>
               — if journaling feels overwhelming, start here. Every evening, write just three things: <em>1 win from the day, 1 point of tension or stress, and 1 bit of gratitude</em>. That's it. Five minutes, no pressure, and you'll start to see patterns in what lifts you up and what weighs you down. Popularized by <a href='https://www.sahilbloom.com/newsletter/the-1-1-1-method-forecasts-for-the-future-more' target='_blank' class='text-accent hover:text-primary underline'>Sahil Bloom</a>, this simple framework makes journaling finally stick.
@@ -104,16 +124,12 @@ module ApplicationHelper
             a: "No. There is a private beta with built-in AI-powered features, but they are entirely opt-in and turned off by default.<div class='mt-2'>If you'd like to use AI to analyze your entries, you can easily export your full journal (or just part of it) at any time and use it with your own AI tools for analysis or reflection.</div>"
           },
           {
-            q: "Is there a mobile app?",
-            a: "There's no Dabble Me app in the App Store or Google Play. The website is fully mobile-friendly and works smoothly in any mobile browser. Most people write their entries by replying to the daily email using their phone's email app, like Mail or Gmail."
-          },
-          {
-            q: "Is this really free?",
-            a: "A basic, limited version of the service is free, with email prompts sent every other Sunday. For daily prompts, photos, search, calendar view, and other advanced features, you can upgrade to PRO for $4/month or $40/year."
-          },
-          {
             q: "How do I save a copy of my entries?",
             a: "You can download a copy of your entries at any time from the bottom of the <a href='#{Rails.application.routes.url_helpers.settings_path}' class='text-accent hover:text-primary underline'>settings page</a>. Export as plain text (TXT) or JSON (with rich formatting)."
+          },
+          {
+            q: "What happens to my data if I delete my account?",
+            a: "<div class='mt-2'>If you <em>delete</em> your account, all of your entries and your account data will be permanently deleted from active systems within a reasonable period, subject to backup retention and legal requirements.</div><div class='mt-2'>You can export your data at any time from the <a href='#{Rails.application.routes.url_helpers.settings_path(anchor: 'export')}' class='text-accent hover:text-primary underline'>settings page</a>.</div>"
           },
           {
             q: "I'm new and didn't get my scheduled email. How come?",
@@ -132,16 +148,8 @@ module ApplicationHelper
             a: "Ignore them if you want; they're just little quotes or questions that might inspire you to write. Entries inspired by these prompts will be tagged with a lightbulb icon that you can hover over to see the inspiration."
           },
           {
-            q: "Are my entries private?",
-            a: "Yes. We're trying to keep Dabble Me as similar to a real journal as possible, so there's no way to share your entries (no way to email them, no way to post them to social media, etc.) and they aren't searchable by search engines. View <a href='#{Rails.application.routes.url_helpers.privacy_path}' class='text-accent hover:text-primary underline'>our privacy policy</a> for more details."
-          },
-          {
-            q: "Who created this?",
-            a: "This service is created and maintained by <a href='https://paularterburn.com/' class='text-accent hover:text-primary underline' target='_blank'>Paul Arterburn</a>, who is also the VP of Engineering at <a href='https://unreasonablegroup.com/' class='text-accent hover:text-primary underline' target='_blank'>Unreasonable Group</a> helping entrepreneurs bend history in the right direction. Previously, Paul was the technical co-founder of <a href='https://brandfolder.com/' class='text-accent hover:text-primary underline' target='_blank'>Brandfolder</a>, a digital asset management platform powering some of the biggest brands in the world.<div class='mt-2'>Paul created Dabble Me for himself as a way to remember and reflect on the days in a format that would actually trigger him to write — over email. Read about why and how he built Dabble Me in a blog post: <a href='https://medium.com/startup-lesson-learned/increase-your-happiness-with-daily-journaling-8109b0700506' class='text-accent hover:text-primary underline' target='_blank'>Increase Your Happiness with Daily Journaling</a>.</div>"
-          },
-          {
-            q: "Can I trust this service?",
-            a: "Dabble Me is built thoughtfully, with privacy and security in mind from the start. It's not a rushed AI side project or a growth experiment. It's independently run, funded by its users for over #{Date.today.year - Date.parse('2014-09-29').year} years, and designed to keep your journal private. No investors. No selling your data. Just a simple, trustworthy place to write. The code is also open-sourced on <a href='https://github.com/parterburn/dabble.me' class='text-accent hover:text-primary underline' target='_blank'>GitHub</a>."
+            q: "Who built Dabble Me?",
+            a: "👋 Hi! I'm <a href='https://paularterburn.com/' class='text-accent hover:text-primary underline' target='_blank'>Paul Arterburn</a>. I built and maintain Dabble Me, and I'm also the VP of Engineering at <a href='https://unreasonablegroup.com/' class='text-accent hover:text-primary underline' target='_blank'>Unreasonable Group</a> helping entrepreneurs bend history in the right direction. Previously, I was the technical co-founder of Brandfolder, a digital asset management platform powering some of the biggest brands in the world.<div class='mt-2'>I created Dabble Me primarily for myself as a way to remember and reflect on the days in a format that would actually trigger me to write — over email. Read about why and how I built Dabble Me in a blog post: <a href='https://medium.com/startup-lesson-learned/increase-your-happiness-with-daily-journaling-8109b0700506' class='text-accent hover:text-primary underline' target='_blank'>Increase Your Happiness with Daily Journaling</a>.</div><div class='mt-2'>I built Dabble Me as an experienced developer with privacy and security in mind from the start. It's not a rushed AI side project or a growth experiment. It's independently run, funded by its users for over #{Date.today.year - Date.parse('2014-09-29').year} years, and designed to keep your journal private. No investors. No selling your data. Just a simple, trustworthy place to write. The code is also open-sourced on <a href='https://github.com/parterburn/dabble.me' class='text-accent hover:text-primary underline' target='_blank'>GitHub</a>.</div>"
           }
         ]
       }

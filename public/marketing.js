@@ -32,12 +32,6 @@ function initAccordions() {
       if (!isExpanded) {
         content.style.maxHeight = content.scrollHeight + 'px';
         if (icon) icon.style.transform = 'rotate(180deg)';
-        
-        // Scroll the accordion item into view after a brief delay
-        const accordionItem = this.closest('.accordion-item');
-        setTimeout(() => {
-          accordionItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }, 100);
       } else {
         content.style.maxHeight = '0';
         if (icon) icon.style.transform = 'rotate(0deg)';

@@ -14,8 +14,8 @@ class ImportJob < ActiveJob::Base
     file_path=File.join(dir, "unzipped")
     FileUtils.mkdir_p(file_path)
     Zip::File.open(zip_file) do |zipfile|
-      zipfile.each do |file|
-        zipfile.extract(file, "#{file_path}/#{file.name}") { true }
+      zipfile.each do |entry|
+        entry.extract("#{file_path}/#{entry.name}") { true }
       end
     end
 
@@ -62,7 +62,7 @@ class ImportJob < ActiveJob::Base
 
     ActionMailer::Base.mail(from: "Paul from Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>",
                             to: user.email,
-                            subject: "OhLife Image Import is complete",
+                            subject: "Image Import is complete",
                             body: messages.join("\n\n")).deliver
   end
 

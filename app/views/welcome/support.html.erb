@@ -54,8 +54,8 @@ llm_text += "---\nFor more help, contact: hello@#{ENV['MAIN_DOMAIN'] || 'dabble.
                   <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
               </button>
-              <div class="accordion-content bg-page rounded-lg mb-2" style="max-height: 0;">
-                <div class="p-3 text-primary">
+              <div class="accordion-content" style="max-height: 0;">
+                <div class="text-primary mb-6">
                   <%= qa[:a].html_safe %>
                 </div>
               </div>

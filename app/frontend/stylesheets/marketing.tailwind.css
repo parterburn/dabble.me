@@ -192,7 +192,7 @@
   }
 
   .accordion-trigger {
-    @apply flex w-full items-center justify-between pb-2 pt-4 text-left font-medium;
+    @apply flex w-full items-center justify-between pb-4 pt-4 text-left font-medium;
     color: var(--color-text);
   }
 

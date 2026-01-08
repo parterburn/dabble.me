@@ -38,17 +38,17 @@ sample_entry = sample_entries.sample
           <span class="text-hero block leading-none">Wirecutter: The Best Journaling Apps</span>
         </a>
 
-        <h1 class="font-serif text-4xl sm:text-5xl lg:text-6xl tracking-tight text-hero">
-          A journal that shows up, right where you are.
+        <h1 class="font-serif text-3xl sm:text-4xl lg:text-5xl tracking-tight text-hero">
+          A journal you might actually stick with.
         </h1>
         
         <p class="mt-6 text-lg text-hero-muted max-w-xl mx-auto lg:mx-0">
-          Write daily, reflect on the past, and remember what matters...with a simple email reply. So easy that you might actually stick to it. 😉
+          A simple daily email asking how your day went — plus reminders of moments you’d otherwise forget.
         </p>
 
         <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
           <a href="<%= new_user_registration_path %>" class="inline-flex items-center justify-center px-6 py-3 font-medium rounded-full transition-colors duration-200 bg-white text-olive-800 hover:bg-cream-100">
-            Start writing for free
+            Get today's prompt
           </a>
           <a href="#features" class="hidden sm:inline-flex items-center justify-center px-6 py-3 font-medium rounded-full transition-colors duration-200 border border-white/30 text-hero hover:bg-white/10">
             See how it works
@@ -71,7 +71,7 @@ sample_entry = sample_entries.sample
             <svg class="h-5 w-5 text-hero-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
             </svg>
-            <div class="grow">Reply by email</div>
+            <div class="grow">Write by replying</div>
           </div>
           <div class="flex items-center gap-2">
             <svg class="h-5 w-5 text-hero-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -156,10 +156,10 @@ sample_entry = sample_entries.sample
     <!-- Top: Text content -->
     <div class="max-w-3xl">
       <h2 class="mt-4 font-serif text-4xl sm:text-4xl lg:text-5xl text-primary leading-tight">
-        The journal powering daily<br class="hidden sm:block"> reflection everywhere.
+        Most people don’t stop journaling because they don’t care. They stop because life gets busy.
       </h2>
       <p class="mt-6 text-lg text-muted max-w-2xl">
-        Dabble Me helps people capture their daily thoughts, memories, and milestones. From busy professionals to thoughtful parents, we've delivered millions of journal prompts since 2014.
+        Dabble Me is built for that reality. Instead of asking you to make time, it fits into the day you already have — with a simple email and gentle reminders of moments you’d otherwise lose.
       </p>
     </div>
 
@@ -224,10 +224,10 @@ sample_entry = sample_entries.sample
   <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
     <div class="text-center max-w-3xl mx-auto mb-16">
       <h2 class="section-heading">
-        Everything you need to keep<br class="hidden sm:block"> a meaningful journal.
+        Everything you need to keep journaling.
       </h2>
       <p class="mt-4 text-lg text-muted">
-        No complex setup — simple, private, and designed to help you actually write.
+        Simple, private, and designed to fit into real life.
       </p>
     </div>
 
@@ -241,7 +241,7 @@ sample_entry = sample_entries.sample
         </div>
         <h3 class="font-semibold text-base text-primary font-sans">Reply by Email</h3>
         <p class="mt-2 text-muted">
-          Get an email prompt, hit reply, write your thoughts. No app needed — works with any email provider.
+          Get a daily prompt by email. Hit reply. Write your thoughts. No app needed. Works with any email provider.
         </p>
       </div>
 
@@ -253,7 +253,7 @@ sample_entry = sample_entries.sample
         </div>
         <h3 class="font-semibold text-base text-primary font-sans">Blasts from the Past</h3>
         <p class="mt-2 text-muted">
-          Every email includes an entry from your past. Rediscover memories you forgot you had.
+          Past entries resurface automatically. Rediscover moments you didn’t realize you’d forgotten.
         </p>
       </div>
 
@@ -265,11 +265,26 @@ sample_entry = sample_entries.sample
         </div>
         <h3 class="font-semibold text-base text-primary font-sans">Always Private</h3>
         <p class="mt-2 text-muted">
-          No social features. No sharing. No algorithms. Your journal is yours alone.
+          No artitifial intelligence. No social features. No sharing. No algorithms. Your journal stays yours.
         </p>
       </div>
 
       <!-- PRO features -->
+      <div class="card p-6 border-accent/30">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
+            <svg class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+            </svg>
+          </div>
+          <span class="badge badge-accent dark:text-olive-800 text-xs">PRO</span>
+        </div>
+        <h3 class="font-semibold text-base text-primary font-sans">Custom Schedule</h3>
+        <p class="mt-2 text-muted">
+          Choose when prompts arrive. Daily, weekly, or anywhere in between.
+        </p>
+      </div>
+
       <div class="card p-6 border-accent/30">
         <div class="flex items-center gap-2 mb-4">
           <div class="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
@@ -281,7 +296,7 @@ sample_entry = sample_entries.sample
         </div>
         <h3 class="font-semibold text-base text-primary font-sans">Photo Attachments</h3>
         <p class="mt-2 text-muted">
-          Attach up to 5 photos per entry via email or web. Create visual memories.
+          Attach up to five photos to any entry. Small moments, captured visually.
         </p>
       </div>
 
@@ -296,22 +311,7 @@ sample_entry = sample_entries.sample
         </div>
         <h3 class="font-semibold text-base text-primary font-sans">Calendar & Search</h3>
         <p class="mt-2 text-muted">
-          Browse entries by date or search with #hashtags. Find any memory instantly.
-        </p>
-      </div>
-
-      <div class="card p-6 border-accent/30">
-        <div class="flex items-center gap-2 mb-4">
-          <div class="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
-            <svg class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
-            </svg>
-          </div>
-          <span class="badge badge-accent dark:text-olive-800 text-xs">PRO</span>
-        </div>
-        <h3 class="font-semibold text-base text-primary font-sans">Custom Schedule</h3>
-        <p class="mt-2 text-muted">
-          Choose which days and times you receive prompts. Daily, weekly, or anywhere in between.
+          Browse entries by date, #hashtags, or search. Find what you’re looking for when it matters.
         </p>
       </div>
     </div>
@@ -340,19 +340,20 @@ sample_entry = sample_entries.sample
 <!-- Pricing Section -->
 <section id="pricing" class="py-20 border-y border-subtle">
   <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
-    <div class="text-center mb-16">
-      <h2 class="section-heading">Start free; upgrade when ready.</h2>
+    <div class="text-center mb-10">
+      <h2 class="section-heading">Start free. Upgrade when it feels right.</h2>
     </div>
 
     <div class="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
       <!-- Free Plan -->
-      <div class="card p-8 flex flex-col justify-between">
+      <div class="card p-8 flex flex-col">
         <p>
           <span class="font-serif text-4xl text-primary">$0</span>
           <span class="text-muted">/forever</span>
         </p>
+        <p class="text-sm text-subtle">Designed to help you get started.</p>
 
-        <ul class="mt-8 space-y-3">
+        <ul class="mt-8 space-y-3 grow">
           <li class="flex items-start gap-3">
             <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -375,37 +376,12 @@ sample_entry = sample_entries.sample
             <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
-            <span class="text-muted">Data export anytime</span>
-          </li>
-
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            <span class="text-subtle">Simple text entry (no formatting)</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            <span class="text-subtle">No support for photo attachments</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            <span class="text-subtle">No ability to edit or delete entries</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-red-400 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            <span class="text-subtle">No access to search or calendar</span>
+            <span class="text-muted">Export your data anytime</span>
           </li>
         </ul>
 
         <a href="<%= new_user_registration_path %>" class="btn btn-secondary w-full mt-8 self-end">
-          Get started
+          Start journaling
         </a>
 
       </div>
@@ -418,11 +394,11 @@ sample_entry = sample_entries.sample
         
         <p>
           <span class="font-serif text-4xl text-primary">$4</span>
-          <span class="text-muted">/month</span>
+          <span class="text-muted">/month or $40/year</span>
         </p>
-        <p class="text-sm text-subtle">or $40/year (2 months free)</p>
+        <p class="text-sm text-subtle">Designed to help you <em>stay</em> journaling.</p>
 
-        <ul class="mt-8 space-y-3">
+        <ul class="mt-6 space-y-3">
           <li class="flex items-start gap-3">
             <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -433,32 +409,8 @@ sample_entry = sample_entries.sample
             <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
-            <span class="text-muted">Reply by email</span>
+            <span class="text-muted">Edit and organize entries</span>
           </li>
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            <span class="text-muted">Manange entries</span>
-          </li>          
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            <span class="text-muted">Blasts from the past</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            <span class="text-muted">Data export anytime</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            <span class="text-muted">Rich text formatting</span>
-          </li>          
           <li class="flex items-start gap-3">
             <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -476,17 +428,35 @@ sample_entry = sample_entries.sample
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
             <span class="text-muted">Tag your entries</span>
+          </li>          
+          <li class="flex items-start gap-3">
+            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+            <span class="text-muted">Rich text formatting</span>
           </li>
           <li class="flex items-start gap-3">
             <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
-            <span class="text-muted">Year in Review analytics</span>
+            <span class="text-muted">Insights & Analytics</span>
           </li>
+          <li class="flex items-start gap-3">
+            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+            <span class="text-muted">Blasts from the past</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+            <span class="text-muted">Export your data anytime</span>
+          </li>          
         </ul>
 
         <a href="<%= subscribe_path %>" class="btn btn-primary w-full mt-8">
-          Get PRO
+          Upgrade to PRO
         </a>
       </div>
     </div>
@@ -503,21 +473,17 @@ sample_entry = sample_entries.sample
     <% faqs = ApplicationHelper.faqs[:general][:questions].first(4) %>
 
     <div data-accordion-group>
-      <% faqs.each_with_index do |faq, index| %>
+      <% faqs.each do |faq| %>
         <div class="accordion-item">
           <button
             type="button"
-            class="accordion-trigger cursor-pointer"
-            data-accordion-trigger
-            aria-expanded="<%= index == 0 ? 'true' : 'false' %>"
+            class="accordion-trigger"
+            aria-expanded="true"
           >
-            <span class="text-olive-900 dark:text-olive-300"><%= faq[:q] %></span>
-            <svg data-accordion-icon class="h-5 w-5 text-subtle transition-transform duration-300<%= ' rotate-180' if index == 0 %>" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
-            </svg>
+            <span class="text-olive-900 dark:text-olive-300 text-lg"><%= faq[:q] %></span>
           </button>
-          <div class="accordion-content bg-page rounded-lg mb-2" style="max-height: <%= index == 0 ? 'none' : '0' %>;">
-            <div class="text-primary p-3">
+          <div class="accordion-content mb-6" style="max-height: none;">
+            <div class="text-muted">
               <%= faq[:a].html_safe %>
             </div>
           </div>
@@ -537,14 +503,17 @@ sample_entry = sample_entries.sample
 <section class="py-20 lg:py-28">
   <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8 text-center">
     <h2 class="section-heading">
-      Ready to start remembering?
+      Start remembering the days you’d otherwise lose.
     </h2>
     <p class="mt-4 text-lg text-muted">
-      Join thousands of people who have written <%= number_to_human(@stats[:total_entries], precision: 0, significant: false, format: '%n%u', units: { million: 'M', thousand: 'K' }) %> entries and counting.
+      Join thousands of people who’ve been writing with Dabble Me for years.
+    </p>
+    <p class="mt-4 text-lg text-muted">
+      Over <%= number_to_human(@stats[:total_entries], precision: 0, significant: false, format: '%n%u', units: { million: 'M', thousand: 'K' }) %> entries and counting.
     </p>
     <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
       <a href="<%= new_user_registration_path %>" class="btn btn-primary">
-        Start writing for free
+        Get today's prompt
       </a>
       <a href="<%= support_path %>" class="btn btn-secondary">
         Questions? Get in touch
