@@ -118,14 +118,14 @@
     <p>
       <% if @user.entries.size.positive? %>
         <%= link_to "All entries", entries_url %>
-        &middot;
+        &nbsp;&middot;&nbsp;
       <% end %>
       <%= link_to "Unsubscribe", settings_url(user_key: @user.user_key) %>
     </p>
     <% if @user.is_free? || (@random_inspiration.present? && @user.days_since_last_post.to_i <= 14) %>
       <hr style="margin-top: 20px;margin-bottom: 20px;border: 0;border-top: 2px solid whiteSmoke;"/>
     <% end %>
-    <p style="color:#a8b18c">
+    <p style="color:#A3A3A3">
       <% if @user.is_free? && ENV['FREE_WEEK'] == 'true' %>
         This email is part of Dabble Me FREE WEEK. You'll receive emails this week only on Sun, Wed, and Fri. Like the new frequency? <%= link_to "Subscribe to PRO", subscribe_url %>
       <% elsif @user.is_free? && @user.emails_sent % 2 == 0 %>

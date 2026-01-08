@@ -53,6 +53,15 @@ class UserMailer < ActionMailer::Base
     email.mailgun_options = {tag: 'EntryError'}
   end
 
+  def export_ready(user, file, filename, format)
+    @user = user
+    @filename = filename
+    content_type = format.to_s == 'json' ? 'application/json' : 'text/plain'
+    attachments[filename] = { mime_type: content_type, content: file.read }
+    email = mail(to: user.email, subject: 'Your Dabble Me export is ready')
+    email.mailgun_options = { tag: 'Export' }
+  end
+
   # def referred_users(id, email)
   #   @ref_id = id
   #   if id == '*'

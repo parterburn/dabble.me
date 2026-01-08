@@ -254,46 +254,32 @@ class EntriesController < ApplicationController
   end
 
   def export
-    filename = "dabble_export_#{Time.now.strftime('%Y-%m-%d')}.txt"
-    only_images = params[:only_images] == "true"
+    only_images = params[:only_images] == 'true'
+    search_term = params[:search].present? && search_params[:term].present? ? search_params[:term] : nil
+    year = params[:year]
 
-    if only_images
-      entries_scope = current_user.entries.only_images.order(:date)
-      filename = "dabble_export_image_entries_#{Time.now.strftime('%Y-%m-%d')}.txt"
-    elsif params[:search].present? && search_params[:term].present?
-      if search_params[:term].include?(" OR ")
-        filter_names = search_params[:term].split(' OR ')
-        sanitized_terms = filter_names.map { |term| ActiveRecord::Base.sanitize_sql_like(term.downcase) }
-        base_scope = current_user.entries
-        conditions = sanitized_terms.map { |term| base_scope.where("LOWER(entries.body) LIKE ?", "%#{term}%") }
-        entries_scope = conditions.reduce(:or).order(:date)
-      elsif search_params[:term].include?('"')
-        exact_phrase = search_params[:term].delete('"')
-        sanitized_phrase = Regexp.escape(exact_phrase)
-        entries_scope = current_user.entries.where("entries.body ~* ?", "\\m#{sanitized_phrase}\\M").order(:date)
-      else
-        @search = Search.new(search_params)
-        entries_scope = @search.entries.order(:date)
-      end
-      filename = "dabble_export_search_#{search_params[:term].parameterize}_#{Time.now.strftime('%Y-%m-%d')}.txt"
-    elsif params[:year].present?
-      if params[:year] =~ /\A(19|20)\d{2}\z/
-        start_date = Date.new(params[:year].to_i, 1, 1)
-        end_date = Date.new(params[:year].to_i, 12, 31)
-        entries_scope = current_user.entries.where(date: start_date..end_date).order(:date)
-        filename = "dabble_export_#{params[:year]}.txt"
-      else
-        raise InvalidDateError
-      end
-    else
-      entries_scope = current_user.entries.order(:date)
+    # Validate year format early
+    if year.present? && year !~ /\A(19|20)\d{2}\z/
+      raise InvalidDateError
     end
+
+    entries_scope = build_export_scope(only_images, search_term, year)
+    entry_count = entries_scope.count
+
+    # Background the job if more than 100 entries
+    if entry_count > 100
+      export_options = { only_images: only_images, search_term: search_term, year: year }.compact
+      ExportEntriesJob.perform_later(current_user.id, request.format.symbol.to_s, export_options)
+      redirect_to settings_path, notice: "Your export is being prepared. You'll receive an email with the file attached shortly."
+      return
+    end
+
+    filename = build_export_filename(only_images, search_term, year)
 
     respond_to do |format|
       format.json do
-        # Stream JSON export to avoid memory issues
         headers['Content-Type'] = 'application/json'
-        headers['Content-Disposition'] = "attachment; filename=#{filename.gsub(".txt", ".json")}"
+        headers['Content-Disposition'] = "attachment; filename=#{filename.gsub('.txt', '.json')}"
         self.response_body = Enumerator.new do |yielder|
           yielder << "[\n"
           first = true
@@ -548,5 +534,45 @@ class EntriesController < ApplicationController
       entry.id,
       file.key
     )
+  end
+
+  def build_export_scope(only_images, search_term, year)
+    if only_images
+      current_user.entries.only_images.reorder(:date)
+    elsif search_term.present?
+      if search_term.include?(' OR ')
+        filter_names = search_term.split(' OR ')
+        sanitized_terms = filter_names.map { |term| ActiveRecord::Base.sanitize_sql_like(term.downcase) }
+        base_scope = current_user.entries
+        conditions = sanitized_terms.map { |term| base_scope.where("LOWER(entries.body) LIKE ?", "%#{term}%") }
+        conditions.reduce(:or).reorder(:date)
+      elsif search_term.include?('"')
+        exact_phrase = search_term.delete('"')
+        sanitized_phrase = Regexp.escape(exact_phrase)
+        current_user.entries.where("entries.body ~* ?", "\\m#{sanitized_phrase}\\M").reorder(:date)
+      else
+        @search = Search.new(search_params)
+        @search.entries.reorder(:date)
+      end
+    elsif year.present?
+      start_date = Date.new(year.to_i, 1, 1)
+      end_date = Date.new(year.to_i, 12, 31)
+      current_user.entries.where(date: start_date..end_date).reorder(:date)
+    else
+      current_user.entries.reorder(:date)
+    end
+  end
+
+  def build_export_filename(only_images, search_term, year)
+    timestamp = Time.now.strftime('%Y-%m-%d')
+    if only_images
+      "dabble_export_image_entries_#{timestamp}.txt"
+    elsif search_term.present?
+      "dabble_export_search_#{search_term.parameterize}_#{timestamp}.txt"
+    elsif year.present?
+      "dabble_export_#{year}.txt"
+    else
+      "dabble_export_#{timestamp}.txt"
+    end
   end
 end
