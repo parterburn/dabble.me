@@ -9,8 +9,9 @@
     "tailwindcss": "^4.1.18"
   },
   "scripts": {
-    "build:css": "tailwindcss -i ./app/frontend/stylesheets/marketing.tailwind.css -o ./app/assets/builds/marketing.css --minify",
-    "watch:css": "tailwindcss -i ./app/frontend/stylesheets/marketing.tailwind.css -o ./app/assets/builds/marketing.css --watch"
+    "build:css": "tailwindcss -i ./app/frontend/stylesheets/marketing.tailwind.css -o ./public/marketing.css --minify",
+    "watch:css": "tailwindcss -i ./app/frontend/stylesheets/marketing.tailwind.css -o ./public/marketing.css --watch",
+    "heroku-postbuild": "npm run build:css"
   },
   "repository": {
     "type": "git",

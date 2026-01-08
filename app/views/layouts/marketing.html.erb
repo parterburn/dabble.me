@@ -15,8 +15,8 @@
     <!-- Favicons -->
     <%= render 'shared/favicons_and_metatags' %>
 
-    <!-- Tailwind CSS for Marketing -->
-    <%= stylesheet_link_tag 'marketing', media: 'all' %>
+    <!-- Tailwind CSS for Marketing (served as static file to bypass SassC) -->
+    <link rel="stylesheet" href="/marketing.css" media="all">
 
     <!-- jQuery (needed for webauthn/passkey) -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
