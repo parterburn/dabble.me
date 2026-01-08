@@ -2,7 +2,7 @@
   "name": "dabble.me",
   "version": "1.0.0",
   "description": "Private email journaling & daily reflection.",
-  "devDependencies": {
+  "dependencies": {
     "@tailwindcss/cli": "^4.1.18",
     "autoprefixer": "^10.4.23",
     "postcss": "^8.5.6",
