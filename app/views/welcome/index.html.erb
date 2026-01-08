@@ -168,7 +168,7 @@ sample_entry = sample_entries.sample
       <!-- Stats with left border -->
       <div class="flex">
         <div class="pl-5">
-          <p class="font-serif text-4xl lg:text-5xl text-primary"><%= number_to_human(@stats[:emails_sent] + @stats[:emails_received], precision: 1, significant: false, format: '%n%u', units: { million: 'M', thousand: 'K' }) %></p>
+          <p class="font-serif text-4xl lg:text-5xl text-primary"><%= format_number(@stats[:emails_sent] + @stats[:emails_received]) %></p>
           <p class="mt-1 text-muted text-sm">
             Total emails processed
           </p>
@@ -509,7 +509,7 @@ sample_entry = sample_entries.sample
       Join thousands of people who’ve been writing with Dabble Me for years.
     </p>
     <p class="mt-4 text-lg text-muted">
-      Over <%= number_to_human(@stats[:total_entries], precision: 0, significant: false, format: '%n%u', units: { million: 'M', thousand: 'K' }) %> entries and counting.
+      <%= format_number(@stats[:total_entries]) %> entries and counting.
     </p>
     <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
       <a href="<%= new_user_registration_path %>" class="btn btn-primary">
