@@ -7,16 +7,13 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <%= csrf_meta_tags %>
 
-    <!-- Google Fonts: Instrument Sans & Serif -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
 
-    <!-- Favicons -->
     <%= render 'shared/favicons_and_metatags' %>
 
-    <!-- Tailwind CSS for Marketing (served as static file to bypass SassC) -->
-    <link rel="stylesheet" href="/marketing.css" media="all">
+    <link rel="stylesheet" href="/marketing.css?v=<%= File.mtime(Rails.root.join('public', 'marketing.css')).to_i rescue Time.now.to_i %>" media="all">
 
     <!-- jQuery (needed for webauthn/passkey) -->
     <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
@@ -60,7 +57,7 @@
 
     <%= render 'shared/marketing_footer' %>
 
-    <script src="/marketing.js"></script>
+    <script src="/marketing.js?v=<%= File.mtime(Rails.root.join('public', 'marketing.js')).to_i rescue Time.now.to_i %>"></script>
     <%= yield :scripts %>
   </body>
 </html>
