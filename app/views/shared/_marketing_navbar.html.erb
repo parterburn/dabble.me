@@ -1,0 +1,129 @@
+<header 
+  class="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+  data-navbar
+  data-navbar-scrolled-class="bg-bg/95 backdrop-blur-sm shadow-sm"
+  data-navbar-menu-open-class="bg-bg shadow-sm"
+>
+  <nav class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" aria-label="Main navigation">
+    <div class="flex h-16 items-center justify-between">
+      <!-- Left: Logo -->
+      <div class="flex items-center">
+        <a href="<%= root_path %>" class="flex items-center">
+          <span class="font-serif text-3xl font-medium text-primary">
+            Dabble me<span class="text-accent">.</span><span class="pl-1.5 blinking-cursor">|</span>
+          </span>
+        </a>
+      </div>
+
+      <!-- Center: Nav links (desktop) -->
+      <div class="hidden md:flex md:items-center md:gap-x-8">
+        <a href="/#features" class="text-sm font-medium text-muted hover:text-primary transition-colors">
+          Features
+        </a>        
+        <a href="/#pricing" class="text-sm font-medium text-muted hover:text-primary transition-colors">
+          Pricing
+        </a>
+        <a href="<%= support_path %>" class="text-sm font-medium text-muted hover:text-primary transition-colors">
+          Support
+        </a>
+      </div>
+
+      <!-- Right: Auth links + mobile menu button -->
+      <div class="flex items-center gap-x-3">
+        <!-- Get started CTA (always visible) -->
+        <a href="<%= new_user_registration_path %>" class="inline-flex items-center justify-center text-sm font-medium px-4 py-2 rounded-lg bg-olive-900 text-white hover:bg-olive-800 transition-colors">
+          Get started
+        </a>
+        
+        <!-- Log in (desktop only) -->
+        <a href="<%= new_user_session_path %>" class="hidden md:inline-flex text-sm font-medium text-muted hover:text-primary transition-colors">
+          Log in
+        </a>
+
+        <!-- Mobile menu button -->
+        <button
+          type="button"
+          class="md:hidden inline-flex items-center justify-center rounded-lg p-2 text-muted hover:bg-surface hover:text-primary transition-colors border border-subtle"
+          data-mobile-menu-button
+          aria-expanded="false"
+          aria-controls="mobile-menu"
+        >
+          <span class="sr-only">Open main menu</span>
+          <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Mobile menu (solid background for readability) -->
+    <div class="hidden md:hidden bg-bg -mx-4 px-4 pb-4 pt-2 border-t border-subtle shadow-lg" id="mobile-menu" data-mobile-menu>
+      <div class="space-y-1">
+        <a href="/#pricing" class="block rounded-lg px-3 py-2 text-base font-medium text-muted hover:bg-surface hover:text-primary transition-colors">
+          Pricing
+        </a>
+        <a href="/#features" class="block rounded-lg px-3 py-2 text-base font-medium text-muted hover:bg-surface hover:text-primary transition-colors">
+          About
+        </a>
+        <a href="<%= support_path %>" class="block rounded-lg px-3 py-2 text-base font-medium text-muted hover:bg-surface hover:text-primary transition-colors">
+          Support
+        </a>
+        <div class="border-t border-subtle my-2 pt-2">
+          <a href="<%= new_user_session_path %>" class="block rounded-lg px-3 py-2 text-base font-medium text-muted hover:bg-surface hover:text-primary transition-colors">
+            Log in
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<!-- Spacer for fixed header -->
+<div class="h-16"></div>
+
+<script>
+  (function() {
+    const navbar = document.querySelector('[data-navbar]');
+    const mobileMenuButton = document.querySelector('[data-mobile-menu-button]');
+    const mobileMenu = document.querySelector('[data-mobile-menu]');
+    
+    if (!navbar || !mobileMenuButton || !mobileMenu) return;
+    
+    let menuOpen = false;
+    const scrolledClasses = (navbar.dataset.navbarScrolledClass || '').split(' ').filter(Boolean);
+    const menuOpenClasses = (navbar.dataset.navbarMenuOpenClass || '').split(' ').filter(Boolean);
+    
+    function updateNavbar() {
+      navbar.classList.remove(...scrolledClasses, ...menuOpenClasses);
+      if (menuOpen) {
+        navbar.classList.add(...menuOpenClasses);
+      } else if (window.scrollY > 10) {
+        navbar.classList.add(...scrolledClasses);
+      }
+    }
+    
+    mobileMenuButton.addEventListener('click', function(e) {
+      e.preventDefault();
+      menuOpen = !menuOpen;
+      if (menuOpen) {
+        mobileMenu.classList.remove('hidden');
+      } else {
+        mobileMenu.classList.add('hidden');
+      }
+      this.setAttribute('aria-expanded', String(menuOpen));
+      updateNavbar();
+    });
+    
+    mobileMenu.addEventListener('click', function(e) {
+      if (e.target.tagName === 'A') {
+        menuOpen = false;
+        mobileMenu.classList.add('hidden');
+        mobileMenuButton.setAttribute('aria-expanded', 'false');
+        updateNavbar();
+      }
+    });
+    
+    window.addEventListener('scroll', updateNavbar, { passive: true });
+    updateNavbar();
+  })();
+</script>

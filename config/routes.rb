@@ -51,11 +51,14 @@ Rails.application.routes.draw do
   get 'write',                          to: redirect('/entries/new')
   get 'privacy',                        to: 'welcome#privacy'
   get 'terms',                          to: 'welcome#terms'
-  get 'features',                       to: 'welcome#features'
-  get 'faqs',                           to: 'welcome#faqs'
-  get 'subscribe',                      to: 'welcome#subscribe'
-  get 'donate',                         to: redirect('/subscribe')
-  get 'pro',                            to: redirect('/subscribe')
+  get 'support',                        to: 'welcome#support'
+
+  # Redirects for old routes
+  get 'features',                       to: redirect('/#features')
+  get 'faqs',                           to: redirect('/support')
+  get 'subscribe',                      to: redirect('/#pricing')
+  get 'donate',                         to: redirect('/#pricing')
+  get 'pro',                            to: redirect('/#pricing')
   match 'payment_notify',               to: 'payments#payment_notify', via: [:post]
   get 'ohlife-alternative',             to: 'welcome#ohlife_alternative'
   post 'email_processor',               to: 'griddler/emails#create'

@@ -1,0 +1,297 @@
+@import "tailwindcss";
+
+/* Content paths for class detection */
+@source "../../../app/views/layouts/marketing.html.erb";
+@source "../../../app/views/welcome/*.erb";
+@source "../../../app/views/shared/_marketing_*.erb";
+
+/* Custom theme configuration for Dabble Me Oatmeal design */
+@theme {
+  /* Olive color palette */
+  --color-olive-50: #f8f9f5;
+  --color-olive-100: #eef0e8;
+  --color-olive-200: #dde1d2;
+  --color-olive-300: #c4cab1;
+  --color-olive-400: #a8b18c;
+  --color-olive-500: #8b9a6d;
+  --color-olive-600: #6f7d55;
+  --color-olive-700: #576344;
+  --color-olive-800: #4a5043;
+  --color-olive-900: #3d4338;
+  --color-olive-950: #1f231c;
+
+  /* Cream/Warm neutrals */
+  --color-cream-50: #fdfcfa;
+  --color-cream-100: #f9f7f3;
+  --color-cream-200: #f5f3ee;
+  --color-cream-300: #edeae3;
+  --color-cream-400: #e0dcd2;
+  --color-cream-500: #d0cbc0;
+  --color-cream-600: #b8b2a5;
+  --color-cream-700: #9a9388;
+  --color-cream-800: #7f796f;
+  --color-cream-900: #69645c;
+  --color-cream-950: #37342f;
+
+  /* Dark mode neutrals (charcoal, not olive) */
+  --color-dark-950: #0f0f0f;
+  --color-dark-900: #171717;
+  --color-dark-800: #1f1f1f;
+  --color-dark-700: #2a2a2a;
+  --color-dark-600: #3d3d3d;
+  --color-dark-500: #525252;
+  --color-dark-400: #6b6b6b;
+  --color-dark-300: #8a8a8a;
+  --color-dark-200: #a8a8a8;
+  --color-dark-100: #d4d4d4;
+
+  /* Font families */
+  --font-serif: "Instrument Serif", Georgia, serif;
+  --font-sans: "Instrument Sans", system-ui, sans-serif;
+}
+
+/* Base layer for light/dark mode */
+@layer base {
+  :root {
+    --color-bg: var(--color-cream-100);
+    --color-surface: #ffffff;
+    --color-surface-elevated: var(--color-cream-200);
+    --color-primary: var(--color-olive-800);
+    --color-primary-hover: var(--color-olive-900);
+    --color-accent: var(--color-olive-600);
+    --color-accent-hover: var(--color-olive-700);
+    --color-text: var(--color-olive-950);
+    --color-text-muted: var(--color-olive-700);
+    --color-text-subtle: var(--color-olive-500);
+    --color-border: var(--color-cream-400);
+    --color-border-subtle: var(--color-cream-300);
+    
+    /* Hero section colors (dark olive with texture) */
+    --color-hero-bg: var(--color-olive-800);
+    --color-hero-text: var(--color-cream-100);
+    --color-hero-muted: var(--color-cream-300);
+    --color-hero-accent: var(--color-olive-300);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --color-bg: var(--color-dark-950);
+      --color-surface: var(--color-dark-900);
+      --color-surface-elevated: var(--color-dark-800);
+      --color-primary: var(--color-cream-100);
+      --color-primary-hover: var(--color-cream-200);
+      --color-accent: var(--color-olive-400);
+      --color-accent-hover: var(--color-olive-300);
+      --color-text: var(--color-cream-100);
+      --color-text-muted: var(--color-dark-200);
+      --color-text-subtle: var(--color-dark-300);
+      --color-border: var(--color-dark-600);
+      --color-border-subtle: var(--color-dark-700);
+      
+      /* Hero in dark mode - same as main bg */
+      --color-hero-bg: var(--color-dark-950);
+      --color-hero-text: var(--color-cream-100);
+      --color-hero-muted: var(--color-dark-200);
+      --color-hero-accent: var(--color-olive-400);
+    }
+  }
+
+  html {
+    font-family: var(--font-sans);
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-serif);
+  }
+}
+
+/* Component layer for reusable components */
+@layer components {
+  .btn {
+    @apply inline-flex items-center justify-center px-6 py-3 font-medium rounded-lg transition-colors duration-200;
+  }
+
+  .btn-primary {
+    background-color: var(--color-primary);
+    color: var(--color-cream-100);
+  }
+
+  .btn-primary:hover {
+    background-color: var(--color-primary-hover);
+  }
+
+  .btn-secondary {
+    background-color: transparent;
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+  }
+
+  .btn-secondary:hover {
+    background-color: var(--color-surface);
+    border-color: var(--color-text-muted);
+  }
+
+  .card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-border-subtle);
+    border-radius: 0.75rem;
+  }
+
+  .section-heading {
+    font-family: var(--font-serif);
+    font-size: 2.5rem;
+    line-height: 1.2;
+    color: var(--color-text);
+  }
+
+  .text-muted {
+    color: var(--color-text-muted);
+  }
+
+  .text-subtle {
+    color: var(--color-text-subtle);
+  }
+
+  /* Accordion styles for FAQ */
+  .accordion-item {
+    border-bottom: 1px solid var(--color-border-subtle);
+  }
+
+  .accordion-trigger {
+    @apply flex w-full items-center justify-between py-4 text-left font-medium;
+    color: var(--color-text);
+  }
+
+  .accordion-trigger:hover {
+    color: var(--color-primary);
+  }
+
+  .accordion-content {
+    @apply overflow-hidden transition-all duration-300;
+    color: var(--color-text-muted);
+  }
+
+  /* Badge/pill styles */
+  .badge {
+    @apply inline-flex items-center gap-1.5 px-3 py-1 text-sm font-medium rounded-full;
+    background-color: var(--color-surface-elevated);
+    color: var(--color-text-muted);
+  }
+
+  .badge-accent {
+    background-color: var(--color-accent);
+    color: var(--color-cream-100);
+  }
+}
+
+/* Utility layer for custom utilities */
+@layer utilities {
+  .bg-page {
+    background-color: var(--color-bg);
+  }
+
+  .bg-surface {
+    background-color: var(--color-surface);
+  }
+
+  .bg-surface-elevated {
+    background-color: var(--color-surface-elevated);
+  }
+
+  .text-primary {
+    color: var(--color-primary);
+  }
+
+  .text-accent {
+    color: var(--color-accent);
+  }
+
+  .border-default {
+    border-color: var(--color-border);
+  }
+
+  .border-subtle {
+    border-color: var(--color-border-subtle);
+  }
+
+  /* Hero section utilities */
+  .bg-hero {
+    background-color: var(--color-hero-bg);
+  }
+
+  .text-hero {
+    color: var(--color-hero-text);
+  }
+
+  .text-hero-muted {
+    color: var(--color-hero-muted);
+  }
+
+  .text-hero-accent {
+    color: var(--color-hero-accent);
+  }
+
+  /* Olive grain texture background - subtle noise overlay */
+  .bg-grain {
+    position: relative;
+  }
+
+  .bg-grain::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background-position: center;
+    /* Subtle fractal noise texture - paper-like effect matching Oatmeal */
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    opacity: 0.12;
+    mix-blend-mode: soft-light;
+  }
+
+  .bg-grain > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Animation utilities */
+  .animate-fade-in {
+    animation: fadeIn 0.5s ease-out forwards;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.5s ease-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Blinking cursor animation */
+  .blinking-cursor {
+    animation: blink 1s step-end infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+}

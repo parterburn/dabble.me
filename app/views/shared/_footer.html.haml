@@ -4,14 +4,14 @@
     .flex
       %div{style: "flex: none;"}
         %p.muted.float-left
-          =link_to "CONTACT & FAQS", faqs_path, title: "Contact & FAQs"
+          =link_to "SUPPORT", support_path, title: "Support & FAQs"
           &nbsp;&middot;&nbsp;
           = link_to "PRIVACY", privacy_path, title: "Privacy Policy"
           &nbsp;&middot;&nbsp;
           = link_to "TERMS", terms_path, title: "Terms of Service"
           -if current_user && current_user.is_free?
             &nbsp;&middot;&nbsp;
-            =link_to "SUBSCRIBE TO PRO", subscribe_path, title: "Subscribe Now"
+            =link_to "SUBSCRIBE TO PRO", "/#pricing", title: "Subscribe Now"
       %div.muted{style: "font-size: 13px; flex: 1 1 0%;text-align: center;margin-bottom: 10px;"}
         - two_factor_marketing = user_signed_in? && !current_user.otp_enabled? && current_user.created_at < 1.day.ago && Date.today.between?(Date.parse("2024-01-15"), Date.parse("2024-02-15"))
         - if two_factor_marketing

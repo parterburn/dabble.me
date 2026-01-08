@@ -1,111 +1,182 @@
-<% title "Dabble Me — Terms of Service" %>
+<% content_for :title, "Terms of Service" %>
 
-<div class="row">
-  <div class="col-md-8 col-md-offset-2 well s-faqs">
-    <h2 class="center">Terms of Service</h2>
-    <hr>
-    <p>Effective Date: January 1, 2026</p>
-    <p>These Terms of Service (“Terms”) govern your access to and use of Dabble Me (the “Service”), operated by Dabble Dev LLC (“Dabble,” “we,” “us”). By creating an account, accessing, or using the Service, you agree to these Terms.</p>
+<section class="py-12 lg:py-20">
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="text-center mb-12">
+      <h1 class="font-serif text-4xl sm:text-5xl tracking-tight">Terms of Service</h1>
+      <p class="mt-4 text-muted">Effective Date: January 1, 2026</p>
+    </div>
 
-    <h4>Who We Are</h4>
-    <p>Dabble Me is a private journaling service. The core promise is simple: your journal is yours, and the Service exists to help you store and access it.</p>
+    <!-- Content -->
+    <div class="prose prose-olive max-w-none">
+      <p class="text-muted mb-8">
+        These Terms of Service ("Terms") govern your access to and use of Dabble Me (the "Service"), operated by Dabble Dev LLC ("Dabble," "we," "us"). By creating an account, accessing, or using the Service, you agree to these Terms.
+      </p>
 
-    <h4>Privacy Policy</h4>
-    <p>The <a href="<%= privacy_path %>" target="_blank">Privacy Policy</a> explains how we collect and use information. It is incorporated into these Terms by reference. If you do not agree with the <a href="<%= privacy_path %>" target="_blank">Privacy Policy</a>, do not use the Service.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Who We Are</h2>
+      <p class="text-muted">
+        Dabble Me is a private journaling service. The core promise is simple: your journal is yours, and the Service exists to help you store and access it.
+      </p>
 
-    <h4>Eligibility</h4>
-    <p>You must be at least 13 years old to use the Service. If you are under the age of majority where you live, you represent that your parent or legal guardian has reviewed and agreed to these Terms.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Privacy Policy</h2>
+      <p class="text-muted">
+        The <a href="<%= privacy_path %>" class="text-accent hover:text-primary underline">Privacy Policy</a> explains how we collect and use information. It is incorporated into these Terms by reference. If you do not agree with the <a href="<%= privacy_path %>" class="text-accent hover:text-primary underline">Privacy Policy</a>, do not use the Service.
+      </p>
 
-    <h4>Your Account</h4>
-    <p>You are responsible for maintaining the confidentiality of your login credentials and for all activity under your account. You agree to provide accurate information and to keep it current. We may suspend or terminate accounts to protect the Service, users, or the public, or if you materially violate these Terms.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Eligibility</h2>
+      <p class="text-muted">
+        You must be at least 13 years old to use the Service. If you are under the age of majority where you live, you represent that your parent or legal guardian has reviewed and agreed to these Terms.
+      </p>
 
-    <h4>Your Content and Ownership</h4>
-    <p>You own the content you create, upload, or store in the Service, including journal entries, images, and attachments (“Your Content”). These Terms do not transfer ownership of Your Content to Dabble.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Your Account</h2>
+      <p class="text-muted">
+        You are responsible for maintaining the confidentiality of your login credentials and for all activity under your account. You agree to provide accurate information and to keep it current. We may suspend or terminate accounts to protect the Service, users, or the public, or if you materially violate these Terms.
+      </p>
 
-    <h4>Our Limited License to Host Your Content</h4>
-    <p>To provide the Service, you grant Dabble a limited, non-exclusive, worldwide license to host, store, back up, reproduce (solely for these purposes), transmit, and display Your Content only as needed to operate, maintain, and improve the Service in a manner consistent with these Terms and the <a href="<%= privacy_path %>">Privacy Policy</a>, and to provide features you enable. This license exists only for as long as your content is stored in the Service and ends when Your Content is deleted from our systems, subject to typical backup retention and legal obligations.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Your Content and Ownership</h2>
+      <p class="text-muted">
+        You own the content you create, upload, or store in the Service, including journal entries, images, and attachments ("Your Content"). These Terms do not transfer ownership of Your Content to Dabble.
+      </p>
 
-    <h4>What We Will Not Do With Your Content</h4>
-    <p>We do not sell Your Content. We do not use Your Content to build advertising profiles. We do not share Your Content with third parties for their marketing purposes.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Our Limited License to Host Your Content</h2>
+      <p class="text-muted">
+        To provide the Service, you grant Dabble a limited, non-exclusive, worldwide license to host, store, back up, reproduce (solely for these purposes), transmit, and display Your Content only as needed to operate, maintain, and improve the Service in a manner consistent with these Terms and the <a href="<%= privacy_path %>" class="text-accent hover:text-primary underline">Privacy Policy</a>, and to provide features you enable. This license exists only for as long as your content is stored in the Service and ends when Your Content is deleted from our systems, subject to typical backup retention and legal obligations.
+      </p>
 
-    <h4>Content Rules and Acceptable Use</h4>
-    <p style="margin-bottom: 8px;">You are responsible for all content you create or upload to the Service. You agree that Your Content and your use of the Service will comply with applicable laws and these Terms.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">What We Will Not Do With Your Content</h2>
+      <p class="text-muted">
+        We do not sell Your Content. We do not use Your Content to build advertising profiles. We do not share Your Content with third parties for their marketing purposes.
+      </p>
 
-    <p style="margin-bottom: 8px;">You agree not to use the Service to:</p>
-    <ul style="margin-bottom: 8px;">
-      <li>Upload or store malicious software, viruses, or harmful code</li>
-      <li>Infringe the intellectual property, privacy, or other rights of others</li>
-      <li>Engage in unlawful, abusive, or fraudulent activity</li>
-      <li>Impersonate another person or misrepresent your identity</li>
-      <li>Interfere with or disrupt the security or operation of the Service</li>
-    </ul>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Content Rules and Acceptable Use</h2>
+      <p class="text-muted mb-4">
+        You are responsible for all content you create or upload to the Service. You agree that Your Content and your use of the Service will comply with applicable laws and these Terms.
+      </p>
+      <p class="text-muted mb-4">You agree not to use the Service to:</p>
+      <ul class="list-disc pl-6 space-y-1 text-muted mb-4">
+        <li>Upload or store malicious software, viruses, or harmful code</li>
+        <li>Infringe the intellectual property, privacy, or other rights of others</li>
+        <li>Engage in unlawful, abusive, or fraudulent activity</li>
+        <li>Impersonate another person or misrepresent your identity</li>
+        <li>Interfere with or disrupt the security or operation of the Service</li>
+      </ul>
+      <p class="text-muted">
+        The Service is intended for personal journaling and reflection. Content generated or stored in the Service is not legal, medical, financial, or professional advice, and use of the Service does not create an attorney-client or other professional relationship.
+      </p>
 
-    <p>The Service is intended for personal journaling and reflection. Content generated or stored in the Service is not legal, medical, financial, or professional advice, and use of the Service does not create an attorney-client or other professional relationship.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Confidentiality of Private Journals</h2>
+      <p class="text-muted">
+        We treat private journal entries as private by design. Private content is accessed only as needed with your consent for specific support requests, to address security or abuse, or to comply with the law. Extreme care is taken to limit internal access, and the service is built with transparency and security in mind.
+      </p>
 
-    <h4>Confidentiality of Private Journals</h4>
-    <p>We treat private journal entries as private by design. Private content is accessed only as needed with your consent for specific support requests, to address security or abuse, or to comply with the law. Extreme care is taken to limit internal access, and the service is built with transparency and security in mind.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Third-Party Services</h2>
+      <p class="text-muted">
+        The Service may integrate with third-party services (for example, email delivery and payment processing). When we use third-party services, we share only the minimum information required for them to provide their functionality. Your use of third-party services is governed by their terms and policies, and we are not responsible for third-party services.
+      </p>
 
-    <h4>Third-Party Services</h4>
-    <p>The Service may integrate with third-party services (for example, email delivery and payment processing). When we use third-party services, we share only the minimum information required for them to provide their functionality. Your use of third-party services is governed by their terms and policies, and we are not responsible for third-party services.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Payments, Subscriptions, and Billing</h2>
+      <p class="text-muted mb-4">
+        If you purchase a subscription, you agree to pay the fees shown at checkout. Subscriptions renew automatically until canceled. You can cancel at any time through your account billing settings, and cancellation takes effect at the end of the current billing period unless otherwise stated at purchase.
+      </p>
+      <p class="text-muted">
+        Payments are processed by our payment processor (Stripe). We do not store full payment card details.
+      </p>
 
-    <h4>Payments, Subscriptions, and Billing</h4>
-    <p style="margin-bottom: 8px;">If you purchase a subscription, you agree to pay the fees shown at checkout. Subscriptions renew automatically until canceled. You can cancel at any time through your <a href="<%= settings_path %>" target="_blank">account billing settings</a>, and cancellation takes effect at the end of the current billing period unless otherwise stated at purchase.</p>
-    <p>Payments are processed by our payment processor (Stripe). We do not store full payment card details.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Refunds</h2>
+      <p class="text-muted">
+        If you believe you deserve a refund, contact us at <a href="mailto:hello@<%= ENV['MAIN_DOMAIN'] || 'dabble.me' %>" class="text-accent hover:text-primary underline">hello@<%= ENV['MAIN_DOMAIN'] || 'dabble.me' %></a> within 30 days of the charge. Refunds, if any, are granted at our discretion unless required by law.
+      </p>
 
-    <h4>Refunds</h4>
-    <p>If you believe you deserve a refund, contact us at <%= mail_to("hello@#{ENV['MAIN_DOMAIN']}", "hello@#{ENV['MAIN_DOMAIN']}", :encode=>"hex") %> within 30 days of the charge. Refunds, if any, are granted at our discretion unless required by law.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Data Export and Deletion</h2>
+      <p class="text-muted">
+        We aim to make it practical to export your data on the Settings page. If you close your account, Your Content will be deleted from active systems within a reasonable period, subject to backup retention and legal requirements.
+      </p>
 
-    <h4>Data Export and Deletion</h4>
-    <p>We aim to make it practical to export your data on the <a href="<%= settings_path(anchor: 'export') %>" target="_blank">Settings</a> page. If you close your account, Your Content will be deleted from active systems within a reasonable period, subject to backup retention and legal requirements.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Service Availability and Changes</h2>
+      <p class="text-muted mb-4">
+        We work to keep the Service available, but it may be interrupted, including for maintenance, outages, or events outside our control. Features may change over time, including adding, modifying, or removing functionality.
+      </p>
+      <p class="text-muted">
+        We are not responsible for delays or failures caused by events beyond our reasonable control, including acts of God, natural disasters, internet or hosting failures, labor disputes, or government actions.
+      </p>
 
-    <h4>Service Availability and Changes</h4>
-    <p style="margin-bottom: 8px;">We work to keep the Service available, but it may be interrupted, including for maintenance, outages, or events outside our control. Features may change over time, including adding, modifying, or removing functionality.</p>
-    <p>We are not responsible for delays or failures caused by events beyond our reasonable control, including acts of God, natural disasters, internet or hosting failures, labor disputes, or government actions.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Security</h2>
+      <p class="text-muted">
+        We use reasonable administrative, technical, and organizational measures designed to protect Your Content and account information. No system is perfectly secure, and you accept that risk when using online services.
+      </p>
 
-    <h4>Security</h4>
-    <p>We use reasonable administrative, technical, and organizational measures designed to protect Your Content and account information. No system is perfectly secure, and you accept that risk when using online services.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Intellectual Property of the Service</h2>
+      <p class="text-muted">
+        The Service, including its software, design, and branding, is owned by Dabble or its licensors and is protected by intellectual property laws. These Terms give you a limited, personal, non-transferable, revocable license to use the Service as intended, subject to these Terms.
+      </p>
 
-    <h4>Intellectual Property of the Service</h4>
-    <p>The Service, including its software, design, and branding, is owned by Dabble or its licensors and is protected by intellectual property laws. These Terms give you a limited, personal, non-transferable, revocable license to use the Service as intended, subject to these Terms.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">AI Features (Opt-In Private Beta)</h2>
+      <p class="text-muted mb-4">
+        Certain AI-powered features may be offered as an optional, opt-in private beta ("AI Features"). AI Features are off by default. If you enable AI Features, you instruct us to process the specific content you submit to those features to produce the requested output.
+      </p>
+      <p class="text-muted mb-4">
+        We do not use Your Content to train or improve general-purpose machine learning models. If we use third-party AI providers to deliver AI Features, we will require them (by contract or applicable provider terms) to process data only to provide the feature and not to use it to train their general models, to the extent such controls are available.
+      </p>
+      <p class="text-muted">
+        AI Features may produce incorrect or incomplete output. You are responsible for how you use AI output. Do not rely on AI output as professional advice.
+      </p>
 
-    <h4>AI Features (Opt-In Private Beta)</h4>
-    <p style="margin-bottom: 8px;">Certain AI-powered features may be offered as an optional, opt-in private beta (“AI Features”). AI Features are off by default. If you enable AI Features, you instruct us to process the specific content you submit to those features to produce the requested output.</p>
-    <p style="margin-bottom: 8px;">We do not use Your Content to train or improve general-purpose machine learning models. If we use third-party AI providers to deliver AI Features, we will require them (by contract or applicable provider terms) to process data only to provide the feature and not to use it to train their general models, to the extent such controls are available.</p>
-    <p>AI Features may produce incorrect or incomplete output. You are responsible for how you use AI output. Do not rely on AI output as professional advice.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Termination</h2>
+      <p class="text-muted">
+        You may stop using the Service at any time. We may suspend or terminate your access if you materially breach these Terms, if we are required to do so by law, or to protect the Service or others. If your account is terminated, your right to use the Service ends immediately.
+      </p>
 
-    <h4>Termination</h4>
-    <p>You may stop using the Service at any time. We may suspend or terminate your access if you materially breach these Terms, if we are required to do so by law, or to protect the Service or others. If your account is terminated, your right to use the Service ends immediately.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Company Changes, Including Acquisition</h2>
+      <p class="text-muted mb-4">
+        If Dabble is involved in a merger, acquisition, reorganization, bankruptcy, or sale of assets, user data may be transferred as part of that transaction. We do not sell user journals as assets, and any transfer would be solely to continue operating the Service. Any successor entity would remain bound by these Terms and the <a href="<%= privacy_path %>" class="text-accent hover:text-primary underline">Privacy Policy</a>, including ownership of Your Content and restrictions on use, unless the law requires a different outcome.
+      </p>
+      <p class="text-muted">
+        As of the Effective Date, Dabble Me is independently owned and operated.
+      </p>
 
-    <h4>Company Changes, Including Acquisition</h4>
-    <p style="margin-bottom: 8px;">If Dabble is involved in a merger, acquisition, reorganization, bankruptcy, or sale of assets, user data may be transferred as part of that transaction. We do not sell user journals as assets, and any transfer would be solely to continue operating the Service. Any successor entity would remain bound by these Terms and the <a href="<%= privacy_path %>" >Privacy Policy</a>, including ownership of Your Content and restrictions on use, unless the law requires a different outcome.</p>
-    <p>As of the Effective Date, Dabble Me is independently owned and operated.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Disclaimers</h2>
+      <p class="text-muted">
+        The Service is provided "as is" and "as available." To the maximum extent permitted by law, we disclaim all warranties, express, implied, and statutory, including warranties of merchantability, fitness for a particular purpose, and non-infringement. We do not warrant that the Service will be uninterrupted, error-free, or completely secure.
+      </p>
 
-    <h4>Disclaimers</h4>
-    <p>The Service is provided “as is” and “as available.” To the maximum extent permitted by law, we disclaim all warranties, express, implied, and statutory, including warranties of merchantability, fitness for a particular purpose, and non-infringement. We do not warrant that the Service will be uninterrupted, error-free, or completely secure.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Limitation of Liability</h2>
+      <p class="text-muted">
+        To the maximum extent permitted by law, Dabble and its affiliates, officers, employees, agents, and suppliers will not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits, revenue, data, or goodwill, arising from or related to your use of the Service. To the maximum extent permitted by law, Dabble's total liability for any claim will not exceed the amount you paid to Dabble for the Service in the 12 months before the event giving rise to the claim.
+      </p>
 
-    <h4>Limitation of Liability</h4>
-    <p>To the maximum extent permitted by law, Dabble and its affiliates, officers, employees, agents, and suppliers will not be liable for any indirect, incidental, special, consequential, or punitive damages, or any loss of profits, revenue, data, or goodwill, arising from or related to your use of the Service. To the maximum extent permitted by law, Dabble’s total liability for any claim will not exceed the amount you paid to Dabble for the Service in the 12 months before the event giving rise to the claim.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Indemnity</h2>
+      <p class="text-muted">
+        You agree to indemnify and hold harmless Dabble and its affiliates, officers, employees, and agents from any claims, liabilities, damages, and expenses (including reasonable attorneys' fees) arising from your misuse of the Service, your violation of these Terms, or your violation of any rights of another person or entity.
+      </p>
 
-    <h4>Indemnity</h4>
-    <p>You agree to indemnify and hold harmless Dabble and its affiliates, officers, employees, and agents from any claims, liabilities, damages, and expenses (including reasonable attorneys’ fees) arising from your misuse of the Service, your violation of these Terms, or your violation of any rights of another person or entity.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">DMCA Copyright Notice</h2>
+      <p class="text-muted">
+        If you believe content on the Service infringes your copyright, send a notice to <a href="mailto:hello@<%= ENV['MAIN_DOMAIN'] || 'dabble.me' %>" class="text-accent hover:text-primary underline">hello@<%= ENV['MAIN_DOMAIN'] || 'dabble.me' %></a> with: your signature; identification of the copyrighted work; identification of the allegedly infringing material and where it is located; your contact information; a statement of good-faith belief that the use is not authorized; and a statement under penalty of perjury that the information is accurate and that you are authorized to act.
+      </p>
 
-    <h4>DMCA Copyright Notice</h4>
-    <p>If you believe content on the Service infringes your copyright, send a notice to <%= mail_to("hello@#{ENV['MAIN_DOMAIN']}", "hello@#{ENV['MAIN_DOMAIN']}", :encode=>"hex") %> with: your signature; identification of the copyrighted work; identification of the allegedly infringing material and where it is located; your contact information; a statement of good-faith belief that the use is not authorized; and a statement under penalty of perjury that the information is accurate and that you are authorized to act.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Governing Law and Venue</h2>
+      <p class="text-muted">
+        These Terms are governed by the laws of the State of Colorado, without regard to its conflict-of-law principles. Any dispute arising out of or relating to these Terms or the Service will be brought exclusively in the state or federal courts located in Colorado, and you consent to personal jurisdiction in those courts.
+      </p>
 
-    <h4>Governing Law and Venue</h4>
-    <p>These Terms are governed by the laws of the State of Colorado, without regard to its conflict-of-law principles. Any dispute arising out of or relating to these Terms or the Service will be brought exclusively in the state or federal courts located in Colorado, and you consent to personal jurisdiction in those courts.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Changes to These Terms</h2>
+      <p class="text-muted">
+        We may update these Terms from time to time. If we make material changes, we will provide notice within the Service or by email. The updated Terms will be effective when posted (or on a later date if stated). By continuing to use the Service after the effective date, you agree to the updated Terms.
+      </p>
 
-    <h4>Changes to These Terms</h4>
-    <p>We may update these Terms from time to time. If we make material changes, we will provide notice within the Service or by email. The updated Terms will be effective when posted (or on a later date if stated). By continuing to use the Service after the effective date, you agree to the updated Terms.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Entire Agreement</h2>
+      <p class="text-muted">
+        These Terms and the <a href="<%= privacy_path %>" class="text-accent hover:text-primary underline">Privacy Policy</a> are the entire agreement between you and Dabble regarding the Service and supersede any prior agreements on this subject. If any provision is found unenforceable, the remaining provisions will remain in effect.
+      </p>
 
-    <h4>Entire Agreement</h4>
-    <p>These Terms and the <a href="<%= privacy_path %>">Privacy Policy</a> are the entire agreement between you and Dabble regarding the Service and supersede any prior agreements on this subject. If any provision is found unenforceable, the remaining provisions will remain in effect.</p>
-
-    <h4>Feedback</h4>
-    <p style="margin-bottom: 8px;">
-      We welcome any comment, question and communication at
-      <span><%= mail_to("hello@#{ENV['MAIN_DOMAIN']}", "hello@#{ENV['MAIN_DOMAIN']}", :encode=>"hex") %>.</span>
-    </p>
-    <p style="margin-bottom: 0;">If you send feedback or suggestions, you grant us a non-exclusive, worldwide, royalty-free license to use it without compensation to operate, maintain, and improve the Service in a manner consistent with these Terms and the <a href="<%= privacy_path %>">Privacy Policy</a>.</p>
+      <h2 class="font-serif text-2xl text-primary mt-10 mb-4">Feedback</h2>
+      <p class="text-muted mb-4">
+        We welcome any comment, question and communication at <a href="mailto:hello@<%= ENV['MAIN_DOMAIN'] || 'dabble.me' %>" class="text-accent hover:text-primary underline">hello@<%= ENV['MAIN_DOMAIN'] || 'dabble.me' %></a>.
+      </p>
+      <p class="text-muted">
+        If you send feedback or suggestions, you grant us a non-exclusive, worldwide, royalty-free license to use it without compensation to operate, maintain, and improve the Service in a manner consistent with these Terms and the <a href="<%= privacy_path %>" class="text-accent hover:text-primary underline">Privacy Policy</a>.
+      </p>
+    </div>
   </div>
-</div>
+</section>
