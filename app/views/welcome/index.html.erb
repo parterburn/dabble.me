@@ -606,7 +606,7 @@ sample_entry = sample_entries.sample
       Ready to start remembering?
     </h2>
     <p class="mt-4 text-lg text-muted">
-      Join thousands of people who have written <%= number_to_human(@stats[:total_entries], precision: 1, significant: false, format: '%n%u', units: { million: 'M', thousand: 'K' }) %> entries and counting.
+      Join thousands of people who have written <%= number_to_human(@stats[:total_entries], precision: 0, significant: false, format: '%n%u', units: { million: 'M', thousand: 'K' }) %> entries and counting.
     </p>
     <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
       <a href="<%= new_user_registration_path %>" class="btn btn-primary">
