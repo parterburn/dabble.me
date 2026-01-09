@@ -76,7 +76,7 @@
     <% end %>
     <% if @user.send_past_entry? && @user.random_entries.count > 5 && @random_entry %>
       <% show_entry = true %>
-      <div style="background-color: #F9F7F3; color: #4a5043; padding: 16px 20px; border-radius: 8px; margin: 16px 0;">
+      <div style="background-color: #F4F4F1; color: #2B2B22; padding: 16px 20px; border-radius: 8px; margin: 16px 0;">
         <p style="margin-top: 0;">
           <b>
             <% format_date  = @random_entry.date.strftime('%a, %b %-d, %Y') %>
@@ -91,23 +91,23 @@
         <% end %>
         <% if @user.is_pro? && (hashtags = @random_entry.hashtags).present? %>
           <p style="margin-bottom: 0;">
-            <i style="color: #576344;">
+            <i style="color: #5C6654;">
               <% h = [] %>
               <% hashtags.each do |tag| %>
                 <% add_timeframe = "" %>
                 <% if (date = @user.hashtags.select{|h| h.tag&.downcase == tag.downcase}.first&.date).present? %>
                   <% add_timeframe = " <small>(#{ApplicationController.helpers.tag_relative_date(date, @random_entry.date)})</small>".html_safe %>
                 <% end %>
-                <% h << link_to(tag, search_url(search: {term: tag}), style: 'color: #576344 !important;') + add_timeframe %>
+                <% h << link_to(tag, search_url(search: {term: tag}), style: 'color: #5C6654 !important;') + add_timeframe %>
               <% end %>
               <%= "Tags: #{h.join(", ")}".html_safe %>
             </i>
           </p>
         <% end %>
         <% if @user.is_pro? && @random_entry_image_url.present? %>
-          <p style="margin-bottom: 0;">
-            <%= link_to image_tag(@random_entry_image_url, style: 'max-width: 100%; border-radius: 4px;'), @random_entry_image_url %>
-          </p>
+          <div style="line-height: 0 !important;">
+            <%= link_to image_tag(@random_entry_image_url, style: 'max-width: 100%; border-radius: 4px;'), @random_entry_image_url, style: "display: inline-block; line-height: 0 !important;" %>
+          </div>
         <% end %>
       </div>
     <% elsif @user.send_past_entry? %>

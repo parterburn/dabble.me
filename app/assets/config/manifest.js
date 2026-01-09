@@ -19,6 +19,7 @@
 //= link monkey-wrench.jpg
 //= link five-types-of-wealth.jpg
 //= link pg.jpg
+//= link cassidoo.jpg
 
 //= link application.css
 //= link application.js
