@@ -58,7 +58,7 @@ Rails.application.routes.draw do
   get 'faqs',                           to: redirect('/support')
   get 'pricing',                        to: redirect('/#pricing')
   get 'subscribe',                      to: "welcome#subscribe"
-  get 'pro',                            to: "welcome#subscribe"
+  get 'pro',                            to: redirect('/subscribe')
   match 'payment_notify',               to: 'payments#payment_notify', via: [:post]
   get 'ohlife-alternative',             to: 'welcome#ohlife_alternative'
   post 'email_processor',               to: 'griddler/emails#create'
