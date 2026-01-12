@@ -105,7 +105,7 @@ class Entry < ActiveRecord::Base
   end
 
   def text_body
-    Nokogiri::HTML.parse(ReverseMarkdown.convert(formatted_body, unknown_tags: :bypass)).text
+    Nokogiri::HTML.parse(ReverseMarkdown.convert(formatted_body&.strip, unknown_tags: :bypass)).text
   end
 
   def sanitized_body
