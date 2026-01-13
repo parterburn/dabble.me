@@ -146,12 +146,34 @@ Now, ask me to paste my journal entries into the chat if I haven't already attac
         <p style="margin: 20px auto 5px;">
           <strong>Some example questions:</strong>
         </p>
-        <ul style="display: inline-block; text-align: left;">
+        <ul style="display: block; text-align: left;">
           <li style="margin-top: 10px;">What advice do you have for me this year?</li>
           <li style="margin-top: 10px;">What was I most grateful for this year?</li>
           <li style="margin-top: 10px;">What are the key reflections of the year?</li>
           <li style="margin-top: 10px;">What values do I live my life through?</li>
-          <li style="margin-top: 10px;">Tag each entry with emotions (anger, disgust, fear, joy, neutral, sadness, surprise) and chart out the sentiment of my entries over time.</li>
+          <li style="margin-top: 10px;">
+            <pre style="display: block; max-width: 95%; max-height: 25px; overflow: hidden; position: relative; background: none; border: none; padding: 0; font-size: inherit; color: inherit; font-family: inherit;" onclick="copyToClipboard(this)" title="Click to copy">
+Review the sentiment of my journal entries.
+
+I will paste (or attach) journal entries. Each entry starts with a date line like YYYY-MM-DD, followed by text until the next date.
+
+Goal:
+1) Tag each entry with ONE primary sentiment label: happy, sad, angry, fearful/anxious, neutral, surprised, disgusted.
+2) Show how often each sentiment occurs over time so I can quickly see which periods skew happy/sad/etc.
+
+Output:
+- A table with columns: date, sentiment
+- A monthly summary table showing counts of each sentiment per month (include months with zeroes)
+- A short, plain-English takeaway describing the main shifts and the months that stand out
+
+Rules:
+- Use only the text as evidence. Don’t infer extra context.
+- If an entry is mixed, pick the strongest emotion.
+- If unclear, use neutral.
+- Keep it concise. No long explanations. No bullet lists of tips.
+
+Now analyze the attached/pasted entries.</pre>              
+          </li>
         </ul>
       </div>
     </div>

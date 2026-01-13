@@ -23,8 +23,7 @@
 
         %li{class: "#{'active' if params[:action] == "review"}"}
           =link_to review_path(Date.today.year), title: "Analytics" do
-            %i.fa.fa-bar-chart.hidden-xs
-            %span.visible-xs-inline-block Analytics
+            %span Stats
 
         %li{class: "#{'active' if current_page?(entries_calendar_path)}"}
           = link_to entries_calendar_path, title: "Calendar View" do
