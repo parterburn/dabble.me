@@ -1,0 +1,150 @@
+<% title "New Entry — Dabble me." %>
+
+<div class="row">
+  <% if current_user.is_free? %>
+    <% add_class = 'blur' %>
+    <div class="col-md-8 col-md-offset-2">
+      <div class="alert alert-warning" style="min-height: 45px;">
+        <%= link_to subscribe_path, class: "float-left", style: "margin-top: -7px;" do %>
+          <button class="btn btn-warning">Subscribe Now</button>
+        <% end %>
+        <strong>Dabble Me PRO</strong>
+        for $4/mo unlocks the ability to add new entries via the web.
+      </div>
+    </div>
+    <div class="clearfix"></div>
+  <% end %>
+  <br>
+  <div id="entry-<%= @entry&.id %>" class="col-md-8 col-md-offset-2 well s-new-edit-entry">
+    <div class="<%= add_class %>">
+      <%= form_for :entry, url: entries_path do |f| %>
+        <div class="s-entry-date s-new-entry">
+          <div class="float-left s-edit-entry" rel="popover" title="Inspiration" data-content="If you need ideas to get started just glance up here for quotes & questions!">
+            <i class="fa fa-lightbulb-o"></i>
+          </div>
+          <div class="center s-inspiration">
+            <% if @entry&.inspiration.present? %>
+              <%= @entry&.inspiration.body.html_safe %>
+              <% if @entry&.inspiration.category != "Tip" %>
+                <%= f.hidden_field :inspiration_id, :value => @entry&.inspiration.id %>
+              <% end %>
+            <% elsif (random_inspiration = Inspiration.random).present? %>
+              <%= random_inspiration.body.html_safe %>
+              <% if random_inspiration.category != "Tip" %>
+                <%= f.hidden_field :inspiration_id, :value => random_inspiration.id %>
+              <% end %>
+            <% end %>
+          </div>
+          <h3 style="color: #333333;">
+            <span>NEW ENTRY</span>
+          </h3>
+        </div>
+
+        <% if @entry&.errors && @entry&.errors.any? %>
+          <div id="error_explanation">
+            <div class="alert alert-danger">
+              <% @entry.errors.full_messages.each do |msg| %>
+                <p><%= msg %></p>
+              <% end %>
+            </div>
+          </div>
+        <% end %>
+
+        <div>
+          <%= f.label :date %>
+          <div class="input-group date">
+            <span class="input-group-addon">
+              <i class="fa fa-calendar"></i>
+            </span>
+            <% entry_date = params[:day].present? ? Date.parse(params[:day]).strftime("%B %-d, %Y") : (@entry&.date.present? ? @entry.date_format_short : Time.now.in_time_zone(current_user.send_timezone).strftime("%B %-d, %Y")) %>
+            <%= f.text_field :date, :value => entry_date, :placeholder=>"October 11 2014", :class => "form-control pickadate" %>
+          </div>
+          <br>
+
+          <div>
+            <% if @entry&.image.present? %>
+              <label>
+                <%= f.check_box :remove_image, class: 'j-image-remove' %>
+                &nbsp;Remove Photo
+              </label>
+              <br>
+              <div class="pictureFrame editable j-image-preview">
+                <%= link_to @entry.image_url_cdn, target: "_blank" do %>
+                  <%= image_code(@entry) %>
+                <% end %>
+              </div>
+            <% else %>
+              <%= f.label :image, "Photo" %>
+              <%= f.file_field :image, accept: Entry::ALLOWED_IMAGE_TYPES.join(","), multiple: true %>
+            <% end %>
+            <br>
+          </div>
+        </div>
+
+        <div>
+          <%= f.label :entry %>
+          <%= f.text_area :entry, :class => "form-control summernote", :rows => 15 %>
+        </div>
+
+        <div>
+          <%= f.submit "Create Entry", :class => "form-control btn btn-primary" %>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <div class="email-post-card col-md-8 col-md-offset-2">
+    <div class="email-post-flex">
+      <div class="email-post-content">
+        <h3>Send directly from your email</h3>
+        <p class="text-muted">Post to your journal by sending an email to your unique address</p>
+        
+        <div class="email-address-box">
+          <% email_address = "#{current_user.user_key}@#{ENV['SMTP_DOMAIN']}" %>
+          <code>
+            <%= email_address %>
+          </code>
+          <button class="j-copy-to-clipboard" data-content="<%= email_address %>">
+            <i class="fa fa-copy"></i>
+            Copy
+          </button>
+        </div>
+              
+        <div class="email-post-footer">
+          Emailing this address creates a new Dabble Me entry in your account — keep it secret! If the subject line is blank, the entry is saved under the date the email is sent. To save it under a different date, put that date in the subject line as YYYY-MM-DD.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="clearfix"></div>
+
+<script>
+  var summer_note = $('#entry_entry');
+  summer_note.summernote({
+    mode: 'text/html',
+    height: 300,
+    theme: 'flatly',
+    disableDragAndDrop: true,
+    focus: true,
+    tabDisable: false,
+    toolbar: [["style", ["bold", "italic", "underline", "clear"]], ["layout", ["ul", "ol"]], ['insert', ['link']], ['misc', ['fullscreen', 'codeview']]]
+  });
+
+  summer_note.summernote("code", summer_note.val());
+  summer_note.closest('form').submit(function() {
+    summer_note.val(summer_note.summernote("code"));
+    return true;
+  });
+
+  $("#entry-<%= @entry&.id %>").imagesLoaded()
+    .done( function( instance ) {
+      $(instance.elements).find('.pictureFrame img').css("background-image","none");
+    });
+
+  $("#entry_image").on("change", function() {
+    if ($("#entry_image")[0].files.length > 5) {
+        alert("Photos are limited to 5 per entry.");
+    }
+  });
+</script>

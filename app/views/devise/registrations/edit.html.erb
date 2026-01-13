@@ -1,0 +1,80 @@
+<% title 'Edit account — Dabble me.' %>
+
+<div class="row">
+  <div class="col-md-8 col-md-offset-2">
+    <h3>SETTINGS AND SUBSCRIPTION</h3>
+    <br>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-8 col-md-offset-2">
+    <% if current_user.is_pro? %>
+      <div class="alert alert-info force-links">
+        Thanks for subscribing to
+        <%= link_to(current_user.plan_name, subscribe_path, class: "alert-link") %>.
+        <% if current_user.plan_type_unlinked.present? %>
+          Manage your subscription and payment history at&nbsp;<strong><%= link_to current_user.plan_type_unlinked, billing_path, target: :_blank %></strong>.
+        <% end %>
+      </div>
+    <% else %>
+      <div class="alert alert-warning force-links">
+        <%= link_to subscribe_path, class: "float-left" do %>
+          <button class="btn btn-warning">Subscribe Now</button>
+        <% end %>
+        <strong>Dabble Me PRO</strong>
+        for $4/mo unlocks premium features like changing the frequency of emails, adding/editing entries via the web, adding photos, rich formatting, and search.
+      </div>
+    <% end %>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-8 col-md-offset-2">
+    <div class="email-post-card">
+      <div class="email-post-flex">        
+        <div class="email-post-content">
+          <h3>Send directly from your email</h3>
+          <p class="text-muted">Post to your journal by sending an email to your unique address</p>
+          
+          <div class="email-address-box">
+            <% email_address = "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}" %>
+            <code>
+              <%= email_address %>
+            </code>
+            <button class="j-copy-to-clipboard" data-content="<%= email_address %>">
+              <i class="fa fa-copy"></i>
+              Copy
+            </button>
+          </div>
+                
+          <div class="email-post-footer">
+            Emailing this address creates a new Dabble Me entry in your account — keep it secret! If the subject line is blank, the entry is saved under the date the email is sent. To save it under a different date, put that date in the subject line as YYYY-MM-DD.
+          </div>
+        </div>
+      </div>
+    </div>
+    <hr>
+  </div>
+</div>
+
+  <%= render partial: 'user_settings', locals: { form_path: registration_path(resource_name) } %>
+
+  <div class="col-md-12 center">
+    <br>
+    <br>
+    <div id="export" class="col-md-8 col-md-offset-2 alert alert-info">
+      Export all entries as
+      <strong><%= link_to "TXT", export_entries_path(:txt), style: "text-decoration: underline;" %></strong>
+      (plain text)
+      or
+      <strong><%= link_to "JSON", export_entries_path(:json), style: "text-decoration: underline;" %></strong>
+      (rich formatting).
+      <% if current_user.is_pro? && current_user.entries.only_images.any? %>
+        Export a
+        <strong><%= link_to("list of your Image URLs", export_entries_path(:txt, only_images: true), style: "text-decoration: underline;") %>.</strong>
+        You can use a script or app to download these to your computer.
+      <% end %>
+    </div>
+  </div>
+</div>

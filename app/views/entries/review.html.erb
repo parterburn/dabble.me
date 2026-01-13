@@ -1,0 +1,344 @@
+<% title ("#{@year} In Review — Dabble me.") %>
+<%= javascript_include_tag "//www.gstatic.com/charts/loader.js", "chartkick" %>
+<% add_class = 'really-blur' if current_user.is_free? %>
+
+<div class="row s-year-in-review">
+  <div class="col-md-8 col-md-offset-2">
+    <h3><%= "#{@year} Year In Review" %></h3>
+    <% if @years_with_entries.size > 1 %>
+      <% @years_with_entries.each do |yr| %>
+        <%= link_to "#{yr}", review_path(yr), style: "margin: 0 5px; font-size: 16px; #{'color: black;' if yr.to_s == @year.to_s}" %>
+      <% end %>
+    <% end %>
+    <div class="clearfix"></div>
+    <br>
+    <br>
+  </div>
+
+  <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
+    <div class="center">
+      <div class="s-entry-date">
+        <h2>Days with Entries</h2>
+        <h3>
+          <span><%= "#{pluralize(@total_count, 'entry')} in #{@year}" %></span>
+        </h3>
+      </div>
+      <div class="s-review-details">
+        <% if @pctile.present? %>
+          <p style="margin-top: 10px;"><%= "You're in the #{@pctile.ordinalize} percentile compared to all active Dabble Me users in #{@year}." %></p>
+          <div class="clearfix"></div>
+        <% end %>
+        <%= render 'contribution_graph', data: contribution_calendar_data(@entries, @year), year: @year %>
+        <div class="clearfix"></div>
+        <div class="center" style="font-size: 14px;">
+          <%= number_to_percentage((@total_count.to_f / elapsed_days_in_year(@year)).to_f * 100, precision: 0) %>
+          of the days in <%= @year %> with entries.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <% if current_user.is_free? %>
+    <div class="col-md-8 col-md-offset-2">
+      <div class="alert alert-warning">
+        <%= link_to "Subscribe to PRO", subscribe_path, class: "alert-link" %>
+        to see the rest of your Year in Review.
+      </div>
+    </div>
+  <% end %>
+
+  <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
+    <div class="center <%= add_class %>">
+      <div class="s-entry-date">
+        <h2>Ask AI</h2>
+        <h3>
+          <span>Reflections and insights</span>
+        </h3>
+      </div>
+      <div class="s-review-details">
+        <p style="margin-top: 20px; margin-bottom: 0px;">Follow these simple steps to gain a better understanding of how you journaled and collect advice as you chat with a life coach about how your year went.</p>
+        <ol style="display: inline-block; text-align: left; max-width: 100%; margin-top: 10px;">
+          <li style="margin-top: 10px;">
+            <strong><%= link_to "Export your #{pluralize(@total_count, 'entry')} from #{@year}", export_entries_path(year: @year, format: :txt) %></strong>
+          </li>
+          <li style="margin-top: 10px;">
+            <strong>
+              Visit
+              <%= link_to "ChatGPT", "https://chatgpt.com", target: :_blank %>
+              or
+              <%= link_to "Claude", "https://claude.ai/", target: :_blank %>
+              or
+              <%= link_to "Gemini", "https://gemini.google.com", target: :_blank %>
+            </strong>
+          </li>
+          <li style="margin-top: 10px;">
+            <strong>Upload your entries with the following instructions</strong>
+            and then continue asking follow-up questions.
+            <pre style="margin-top: 10px; max-width: 90%; overflow: scroll; cursor: pointer; position: relative;" onclick="copyToClipboard(this)" title="Click to copy">
+You are an insightful, non-therapeutic journal analyst. Your job is to produce a retrospective summary from my journal entries.
+
+INPUT
+I will paste journal entries below. Each entry may include:
+- a date (YYYY-MM-DD or similar)
+- freeform text
+- occasional lists, photos captions, or short fragments
+
+RULES
+- Use ONLY the journal text as evidence. Do not invent events, motives, diagnoses, or facts.
+- If the data is thin or uneven (e.g., only a few entries), say so explicitly and scale your confidence down.
+- Quote short snippets (5–20 words) from the journal to support key claims when helpful (max 6 quotes total).
+- Be kind but direct. Avoid clichés, generic self-help, or “you should” lecturing.
+- No clinical language. No mental health diagnosing.
+- If there are contradictions, note them neutrally.
+- If entries span multiple years, focus on the requested timeframe and call out spillover patterns separately.
+
+OUTPUT FORMAT (match these headings exactly)
+Your <%= @year %> retrospective
+Key Themes
+Sentiment Analysis
+Significant Events
+Personal Growth
+Behavioral Patterns
+Recommendations
+Life Advice
+
+CONTENT REQUIREMENTS PER SECTION
+Key Themes:
+- 3–7 themes with 1–2 sentences each.
+- For each theme, include (a) what it is, (b) how it shows up, and optionally (c) a short quote.
+
+Sentiment Analysis:
+- Describe overall tone (e.g., steady, volatile, rising/falling).
+- Call out major shifts and what seems associated with them (only if supported).
+- If too little data, say what you can and can’t infer.
+
+Significant Events:
+- Bullet list of notable events/milestones mentioned (if any).
+- If no clear events, say “No specific events identified” and why.
+
+Personal Growth:
+- 2–6 observations about skills, mindset, relationships, health habits, or work patterns.
+- Distinguish “explicit growth reflections” vs “implicit signals.”
+
+Behavioral Patterns:
+- 3–6 patterns across time (triggers, routines, recurring conflicts, energy cycles, productivity, social connection).
+- Include 1–2 “pattern loops” in plain language: “When X happens, I tend to do Y, which leads to Z.”
+
+Recommendations:
+- 5–10 practical suggestions grounded in what the journal reveals.
+- Make them specific and small enough to try this week.
+- Include 1 “tracking idea” (what to notice or measure) and 1 “writing prompt” tailored to my patterns.
+
+Life Advice:
+- 3–6 sentences.
+- Should feel like a grounded, encouraging closing note.
+- Can include one memorable line or question (like “How’s this feeling?”), but don’t overdo it.
+
+TIMEFRAME
+Assume the timeframe is: <%= @year %>. If I don’t specify, infer from the entries’ dates and state what you inferred.
+
+STYLE: concise, structured, slightly clinical-but-warm. When evidence is limited, say “More data would be needed to confirm patterns.”
+
+Now, ask me to paste my journal entries into the chat if I haven't already attached them.
+            </pre>
+          </li>
+        </ol>
+        <p style="font-style: italic; font-size: 14px;">You may want to turn off "train the model" when using this method.</p>
+        <p style="margin: 20px auto 5px;">
+          <strong>Some example questions:</strong>
+        </p>
+        <ul style="display: inline-block; text-align: left;">
+          <li style="margin-top: 10px;">What advice do you have for me this year?</li>
+          <li style="margin-top: 10px;">What was I most grateful for this year?</li>
+          <li style="margin-top: 10px;">What are the key reflections of the year?</li>
+          <li style="margin-top: 10px;">What values do I live my life through?</li>
+          <li style="margin-top: 10px;">Chart out the sentiment of my entries over time.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <% if @entries_with_sentiment.count.positive? %>
+    <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
+      <div class="center <%= add_class %>">
+        <div class="s-entry-date">
+          <h2>Sentiment</h2>
+          <h3>
+            <span><%= "#{pluralize(@entries_with_sentiment.size, 'entry')} tagged" %></span>
+          </h3>
+        </div>
+        <div class="s-review-details">
+          <% @entries_with_sentiment.map(&:sentiment).flatten.uniq.reject { |s| s == "unknown" }.sort.each do |sentiment| %>
+            <%= link_to "#{Entry::AiTagger::EMOTIONS[sentiment]} #{sentiment.titleize}", entries_emotion_path(sentiment), class: "emotion-link", title: "View entries tagged with #{sentiment}" %>
+          <% end %>
+          <%= pie_chart(@sentiment_count, height: "230px", library: { backgroundColor: "#ffffff" }) %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
+      <div class="center <%= add_class %>">
+        <div class="s-entry-date">
+          <h2>Sentiment over Time</h2>
+        </div>
+        <div class="s-review-details">
+          <%= line_chart @sentiment_by_month_data, ytitle: "Posts", min: 0, round: 0, precision: 0 %>
+          <div class="clearfix"></div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <% entry_dates = @entries.pluck(:date) %>
+  <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
+    <div class="center <%= add_class %>">
+      <div class="s-entry-date">
+        <h2>Days of Entries</h2>
+        <% days = entry_dates.map { |d| d.strftime('%a') } %>
+        <% counts = Hash.new(0) %>
+        <% days.each { |name| counts[name.strip] += 1 } %>
+        <h3>
+          <span><%= "#{pluralize(counts.length, 'day')} a week" %></span>
+        </h3>
+      </div>
+      <div class="s-review-details">
+        <% sorted_counts = Hash.new %>
+        <% Date::ABBR_DAYNAMES.each_with_index { |x, i| sorted_counts[x] = counts[x] } %>
+        <%= column_chart sorted_counts, discrete: true, library: { backgroundColor: "#ffffff" }, ytitle: "Posts", min: 0, round: 0, precision: 0 %>
+        <div class="clearfix"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
+    <div class="center <%= add_class %>">
+      <div class="s-entry-date">
+        <h2>Months of Entries</h2>
+        <% months = entry_dates.map { |d| d.strftime('%b') }.sort %>
+        <% counts = Hash.new(0) %>
+        <% months.each { |name| counts[name.strip] += 1 } %>
+        <h3>
+          <span><%= "#{pluralize(counts.length, 'month')} covered" %></span>
+        </h3>
+      </div>
+      <div class="s-review-details">
+        <% sorted_counts = Hash.new %>
+        <% Date::ABBR_MONTHNAMES.reject(&:blank?).each_with_index { |x, i| sorted_counts[x] = counts[x] } %>
+        <%= column_chart sorted_counts, discrete: true, library: { backgroundColor: "#ffffff" }, ytitle: "Posts", min: 0, round: 0, precision: 0 %>
+        <div class="clearfix"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
+    <div class="center <%= add_class %>">
+      <div class="s-entry-date">
+        <h2>Total Words</h2>
+        <h3>
+          <% percent_book = ((@words_counter.length.to_f / 97_000).to_f * 100).round %>
+          <% book_height = 500 - ((percent_book.to_f / 100) * 500) %>
+          <span><%= "#{format_number(@words_counter.length)} - #{percent_book}% of The 5 Types of Wealth" %></span>
+        </h3>
+      </div>
+      <div class="s-review-details">
+        <div style="position: relative; max-width: 100%;">
+          <%= link_to 'https://amzn.to/44THtN1', target: '_blank', style: "margin-top: 20px; display: block; margin-bottom: 10px; max-width: 100%;" do %>
+            <div class="s-book-cover" style="max-width: 100%; width: 383px; height: <%= book_height < 0 ? 0 : book_height %>px"></div>
+            <%= image_tag 'five-types-of-wealth.jpg', width: 383, height: 500, style: "max-width: 100%;" %>
+          <% end %>
+        </div>
+        <div class="clearfix"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
+    <div class="center <%= add_class %>">
+      <div class="s-entry-date">
+        <h2>Average Words per Post</h2>
+        <h3>
+          <% your_avg_words = @words_counter.length / @total_count %>
+          <span><%= format_number(your_avg_words) %></span>
+        </h3>
+      </div>
+      <% if @year.to_s == "2025" %>
+        <div class="s-review-details" style="margin: 30px auto;">
+          <% if your_avg_words > 294 %>
+            <% compared = 'way more' %>
+          <% elsif your_avg_words > 196 %>
+            <% compared = 'more' %>
+          <% elsif your_avg_words < 98 %>
+            <% compared = 'way less' %>
+          <% else %>
+            <% compared = 'less' %>
+          <% end %>
+          <p><%= "That's #{compared} than the average of all Dabble Me users (196 words per post)." %></p>
+          <p>
+            <span>Collectively, all Dabble Me users could have wrote 78 books equivalent to Sahil Bloom's,</span>
+            <span><%= link_to "The 5 Types of Wealth", "https://amzn.to/44THtN1", target: :_blank %></span>
+            <span>!</span>
+          </p>
+          <div class="clearfix"></div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <% hashtags = Hash[*current_user.used_hashtags(@entries, false).inject(Hash.new(0)) { |h, v| h[v] += 1; h }.sort_by { |k, v| v }.reverse.flatten] %>
+  <% if hashtags.present? %>
+    <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
+      <div class="center <%= add_class %>">
+        <div class="s-entry-date">
+          <h2>Most Frequent Hashtags</h2>
+        </div>
+        <div class="s-review-details">
+          <% hashtags.first(25).each do |k, v| %>
+            <h3>
+              <%= link_to k, search_url(host: ENV['MAIN_DOMAIN'], search: { term: "##{k}" }), class: "noline" %>
+              <span class="middot">&middot; <%= v %></span>
+            </h3>
+          <% end %>
+          <div class="clearfix"></div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
+    <div class="center <%= add_class %>">
+      <div class="s-entry-date">
+        <h2>Most Frequent Words</h2>
+      </div>
+      <div class="s-review-details">
+        <% grouped_words = @words_counter.group_by(&:itself).transform_values(&:count).sort_by { |_k, v| v }.reverse.to_h %>
+        <% grouped_words = grouped_words.select { |word, count| !Entry::COMMON_WORDS.include?(word) } %>
+        <% grouped_words.first(25).each do |word, count| %>
+          <h3>
+            <%= word %>
+            <span class="middot">&middot; <%= count %></span>
+          </h3>
+        <% end %>
+        <div class="clearfix"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function copyToClipboard(element) {
+    var text = element.innerText.trim();
+    navigator.clipboard.writeText(text).then(function() {
+      var original = element.innerHTML;
+      element.innerHTML = '✓ Copied! Paste into your AI tool.';
+      element.style.backgroundColor = '#d4edda';
+      element.style.color = '#155724';
+      setTimeout(function() {
+        element.innerHTML = original;
+        element.style.backgroundColor = '';
+        element.style.color = '';
+      }, 2000);
+    }).catch(function(err) {
+      alert('Failed to copy text: ' + err);
+    });
+  }
+</script>
