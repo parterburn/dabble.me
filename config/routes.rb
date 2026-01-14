@@ -72,5 +72,8 @@ Rails.application.routes.draw do
 
   root 'welcome#index'
 
-  # get "*any", via: :all, to: "errors#not_found"
+  match '/404', to: 'errors#not_found', via: :all
+  match '/422', to: 'errors#unprocessable_entity', via: :all
+  match '/500', to: 'errors#internal_server_error', via: :all
+  match '/504', to: 'errors#timeout', via: :all
 end

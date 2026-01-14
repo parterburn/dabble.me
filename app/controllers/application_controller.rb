@@ -48,7 +48,7 @@ class ApplicationController < ActionController::Base
 
   def handle_timeout(exception)
     Sentry.capture_message("Timeout error", level: :error, extra: { params: params, url: request.url })
-    render "errors/timeout"
+    render "errors/timeout", layout: "marketing", status: 504
   end
 
   def set_user_today
