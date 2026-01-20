@@ -72,3 +72,4 @@ config/local_env.yml
 .vscode
 .rubocop
 .trunk
+.cursor/environment.json
