@@ -35,14 +35,23 @@ install_aptfile_packages() {
     fi
 
     if [[ "$line" =~ ^https?:// ]]; then
-      deb_path="$(mktemp /tmp/aptfile.XXXXXX.deb)"
-      curl -fsSL "$line" -o "$deb_path"
-      run_as_root dpkg -i "$deb_path" || run_as_root apt-get -f install -y
-      rm -f "$deb_path"
+      install_deb_from_url "$line"
     else
       run_as_root apt-get install -y "$line"
     fi
   done < "${APP_ROOT}/Aptfile"
+}
+
+install_deb_from_url() {
+  local url="$1"
+
+  (
+    local deb_path
+    deb_path="$(mktemp /tmp/aptfile.XXXXXX.deb)"
+    trap 'rm -f "$deb_path"' EXIT
+    curl -fsSL "$url" -o "$deb_path"
+    run_as_root dpkg -i "$deb_path" || run_as_root apt-get -f install -y
+  )
 }
 
 install_ruby_dependencies() {
