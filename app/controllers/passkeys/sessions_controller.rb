@@ -22,8 +22,14 @@ class Passkeys::SessionsController < ApplicationController
   def create
     webauthn_credential = ::WebAuthn::Credential.from_get(params)
 
-    user = User.find(session[:webauthn_authentication_user_id])
+    user_id = session[:webauthn_authentication_user_id]
+    return render json: { errors: ["Authentication session expired"] }, status: :unprocessable_entity unless user_id
+
+    user = User.find_by(id: user_id)
+    return render json: { errors: ["User not found"] }, status: :not_found unless user
+
     credential = user.webauthn_credentials.find_by(external_id: webauthn_credential.id)
+    return render json: { errors: ["Credential not found"] }, status: :unprocessable_entity unless credential
 
     begin
       webauthn_credential.verify(
