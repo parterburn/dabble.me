@@ -20,7 +20,8 @@ class User < ActiveRecord::Base
 
   accepts_nested_attributes_for :hashtags, allow_destroy: true, :reject_if => proc { |att| att[:tag].blank? || att[:date].blank? }
 
-  scope :subscribed_to_emails, -> { where.not(frequency: []).where.not(frequency: nil) }
+  scope :not_deleted, -> { where(deleted_at: nil) }
+  scope :subscribed_to_emails, -> { not_deleted.where.not(frequency: []).where.not(frequency: nil) }
   scope :not_just_signed_up, -> { where("created_at < (?)", DateTime.now - 18.hours) }
   scope :daily_emails, -> { where(frequency: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]) }
   scope :with_entries, -> { includes(:entries).where("entries.id > 0").references(:entries) }
@@ -102,6 +103,20 @@ class User < ActiveRecord::Base
 
   def can_ai?
     ai_opt_in?
+  end
+
+  def deletion_pending?
+    deleted_at.present?
+  end
+
+  # Devise: prevent login if account is pending deletion
+  def active_for_authentication?
+    super && !deletion_pending?
+  end
+
+  # Devise: custom message for pending deletion
+  def inactive_message
+    deletion_pending? ? :account_pending_deletion : super
   end
 
   def is_pro?
