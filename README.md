@@ -11,7 +11,6 @@ This app utilizes the following 3rd party services:
 * [Google Analytics](http://google.com/analytics) for traffic stats (free for standard analytics)
 * [Turnstile](https://www.cloudflare.com/products/turnstile/) to prevent bot signups (free).
 * [Sentry](https://www.sentry.io/) to report errors (free)
-* [Clarifai](https://www.clarifai.com/) to analyze images for legality (free up to 5,000/mo)
 
 You will need to setup Mailgun to receive incoming emails and point them to your app to parse.
 
@@ -30,8 +29,6 @@ SMTP_DOMAIN: post.yourdomain.com
 MAILGUN_API_KEY=api-key
 TURNSTILE_SITE_KEY: 6Lc6BAAAAAAAAChqRbQZcn_yyyyyyyyyyyyyyyyy
 TURNSTILE_SECRET_KEY: 6Lc6BAAAAAAAAKN3DRm6VA_xxxxxxxxxxxxxxxxx
-CLARIFAI_PERSONAL_ACCESS_TOKEN: asdl2k34jl2kn1l2hn234
-CLARIFAI_THRESHOLD: 0.5
 GOOGLE_ANALYTICS_ID=UA-12345-67 ## ONLY FOR PRODUCTION
 SENTRY_DSN: https://dsn.sentry.io/1234
 OPENAI_ACCESS_TOKEN: sk-1234
@@ -43,7 +40,7 @@ STRIPE_SIGNING_SECRET: whsec_1234
 
 ### Things you may want to rip out
 
-You can opt to not use Turnstile and Clarifai: simply don't add an environment variables for `TURNSTILE_SITE_KEY`, `CLARIFAI_PERSONAL_ACCESS_TOKEN`.
+You can opt to not use Turnstile: simply don't add an environment variables for `TURNSTILE_SITE_KEY`.
 
 
 ### Tests

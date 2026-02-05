@@ -158,35 +158,35 @@ class Entry < ActiveRecord::Base
     end
   end
 
-  def check_image
-    if image.present? && ENV['CLARIFAI_PERSONAL_ACCESS_TOKEN'].present?
-      begin
-        url = "https://api.clarifai.com/v2/users/nyvlck8tgaze/apps/image-moderation-824946897443/workflows/nsfw-recognition/results"
-        headers = {"Authorization" => "Key #{ENV['CLARIFAI_PERSONAL_ACCESS_TOKEN']}", "Content-Type" => "application/json"}
-        payload = {
-          inputs: [
-            {
-              data: {
-                image: {
-                  url: image_url_cdn
-                }
-              }
-            }
-          ]
-        }.to_json
-        res = JSON.parse(RestClient.post(url, payload, headers))
-        nsfw_percent = res.dig("results", 0, "outputs", 0, "data", "concepts")&.find { |r| r.dig("name") == "nsfw" }&.dig("value")
-        if nsfw_percent.present? && nsfw_percent >= ENV['CLARIFAI_THRESHOLD'].to_f
-          Sentry.set_user(id: user.id, email: user.email)
-          Sentry.set_tags(plan: user.plan)
-          Sentry.capture_message("Clarifai Flagged", level: :warning, extra: { entry_id: id, nsfw_pct: "#{(nsfw_percent*100).round(1)}%", image: image_url_cdn(cloudflare: false), clarifai: res })
-        end
-        "#{(nsfw_percent*100).round(1)}%: #{image_url_cdn}"
-      rescue => e
-        Sentry.capture_exception(e, extra: { type: "Claraifai Error" })
-      end
-    end
-  end
+  # def check_image
+  #   if image.present? && ENV['CLARIFAI_PERSONAL_ACCESS_TOKEN'].present?
+  #     begin
+  #       url = "https://api.clarifai.com/v2/users/nyvlck8tgaze/apps/image-moderation-824946897443/workflows/nsfw-recognition/results"
+  #       headers = {"Authorization" => "Key #{ENV['CLARIFAI_PERSONAL_ACCESS_TOKEN']}", "Content-Type" => "application/json"}
+  #       payload = {
+  #         inputs: [
+  #           {
+  #             data: {
+  #               image: {
+  #                 url: image_url_cdn
+  #               }
+  #             }
+  #           }
+  #         ]
+  #       }.to_json
+  #       res = JSON.parse(RestClient.post(url, payload, headers))
+  #       nsfw_percent = res.dig("results", 0, "outputs", 0, "data", "concepts")&.find { |r| r.dig("name") == "nsfw" }&.dig("value")
+  #       if nsfw_percent.present? && nsfw_percent >= ENV['CLARIFAI_THRESHOLD'].to_f
+  #         Sentry.set_user(id: user.id, email: user.email)
+  #         Sentry.set_tags(plan: user.plan)
+  #         Sentry.capture_message("Clarifai Flagged", level: :warning, extra: { entry_id: id, nsfw_pct: "#{(nsfw_percent*100).round(1)}%", image: image_url_cdn(cloudflare: false), clarifai: res })
+  #       end
+  #       "#{(nsfw_percent*100).round(1)}%: #{image_url_cdn}"
+  #     rescue => e
+  #       Sentry.capture_exception(e, extra: { type: "Claraifai Error" })
+  #     end
+  #   end
+  # end
 
   def ai_waiting_for_user_response
     @ai_waiting_for_user_response ||= split_for_ai&.last&.include?("🤖 DabbleMeGPT:")
