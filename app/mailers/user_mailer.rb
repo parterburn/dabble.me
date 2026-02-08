@@ -69,9 +69,9 @@ class UserMailer < ActionMailer::Base
 
     @summary = AiBookmarkSummarizer.new.summarize(user, since: 1.week.ago)
     email = mail(
-      from: "Dabble Marks <no-reply@#{ENV['SMTP_DOMAIN']}>",
+      from: "X Bookmarks <no-reply@#{ENV['SMTP_DOMAIN']}>",
       to: user.cleaned_to_address,
-      subject: "Your Latest X Marks (#{@bookmarks.count})"
+      subject: "#{pluralize(@bookmarks.count, 'bookmark')} from the past week"
     )
     email.mailgun_options = { tag: 'XBookmarksSummary' }
   end
