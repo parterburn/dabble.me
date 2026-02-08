@@ -5,9 +5,7 @@ class AiBookmarkSummarizer
     @bookmarks = bookmarks
     return nil unless @bookmarks.any?
 
-    response = respond_as_ai
-    markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML, autolink: true, tables: true, no_intra_emphasis: true, underline: true, footnotes: true)
-    markdown.render(response)
+    respond_as_ai
   end
 
   private
@@ -30,8 +28,7 @@ class AiBookmarkSummarizer
   end
 
   def respond_as_ai
-    # client = OpenAI::Client.new(log_errors: Rails.env.development?)
-    client = OpenAI::Client.new(log_errors: true)
+    client = OpenAI::Client.new(log_errors: Rails.env.development?)
     resp = client.responses.create(parameters: openai_params)
 
     return unless resp["output"].present?
@@ -42,43 +39,34 @@ class AiBookmarkSummarizer
   def as_bookmark_summarizer
     [{
       role: "developer",
-      content: %(You are an assistant that summarizes a batch of X (Twitter) bookmarks into a single concise briefing.
+      content: %(You summarize X bookmarks into a scannable HTML briefing for email.
 
-Input format
-- You will be given multiple bookmarks separated by a delimiter.
-- Each bookmark includes: tweeted_at, author_name, author_username, text, tweet_url, entities (JSON), and public_metrics (JSON).
+OUTPUT FORMAT: Raw HTML only. No markdown. No code fences. Use <b>, <i>, <a>, <ul>, <li>, <p> tags.
 
-Core output goal
-Produce an “executive briefing” that helps the user decide what to click/open next.
+INPUT: Bookmarks separated by "######". Each has: tweeted_at, author_name, author_username, text, tweet_url, entities (JSON), public_metrics (JSON).
 
-Hard rules
-- Do NOT do a word-for-word breakdown of each bookmark.
-- Do NOT list every bookmark.
-- Do NOT quote large chunks of tweet text. If you include any text, keep it to short fragments only.
-- Focus on patterns, themes, and the few most worth opening.
-- Use public_metrics to detect what’s trending/popular and prioritize accordingly.
-- Use entities to identify topics, people, companies, locations, and links; incorporate these into clustering.
+HARD RULES:
+- Output raw HTML directly. Do NOT wrap in markdown code blocks.
+- Never output raw URLs as text. Always hyperlink them: <a href="URL">descriptive text</a>.
+- Hyperlink tweet references using the tweet_url with a short descriptive title as link text.
+- Each tweet may appear in ONE section only. No duplicates across sections.
+- Omit any section entirely if it has no relevant items.
+- Keep it highly scannable: short bullets, bold key phrases, minimal prose.
+- Do NOT reproduce tweet text verbatim. Summarize in a few words.
 
-What to produce (in this order)
-1. One-sentence headline capturing the overall vibe/theme of the batch.
-2. "Worth opening" section: 3–7 items, each item is a recommendation to open a tweet.
-   - For each item include:
-     - a short reason (why it matters)
-     - the author handle
-     - the tweet_url
-     - an engagement cue derived from public_metrics (e.g., "high likes/retweets", "spiking replies") without dumping raw JSON
-3. "Themes & patterns" section: 3–6 bullets summarizing recurring topics across the batch.
-4. "Actionables" section: 2–5 bullets with concrete follow-ups (ideas to try, people to follow up on, tools to check, questions to investigate).
-5. "Wildcard" section (optional): 1–2 items that are low-metric but unusually insightful/novel.
+SECTIONS (in order, all optional — skip if empty):
 
-Ranking guidance
-- Prefer tweets that are: high engagement, unusually timely, strategically relevant, or repeatedly echoed across bookmarks.
-- Deprioritize: memes, vague hot takes, duplicates, and anything without a clear takeaway.
+1. <h3>Themes</h3> — 1 to 4 short bullets identifying recurring patterns/topics across the batch. No individual tweet links here.
 
-Style constraints
-- Be crisp and practical.
-- Use short bullets.
-- Assume the user will see the full bookmarks below your summary, so your job is triage + synthesis, not reproduction.)
+2. <h3>Most Engagement</h3> — Up to 5 tweets ranked by engagement (likes, retweets, bookmarks). For each:
+   - <a href="tweet_url"><b>Short descriptive title</b></a> — @author_handle
+   - One short line on why it's notable (do not state the obvious/generic reasons like high likes, retweets, bookmarks, replies, etc.)
+
+3. <h3>Wildcards</h3> — 1–2 low-metric but unusually insightful/novel insights from the tweets (hyperlink to specific topics). Similar format as above.
+
+RANKING: Prefer high engagement, timely, strategically relevant. Deprioritize memes, vague hot takes, duplicates.
+
+STYLE: Crisp. Practical. The full bookmarks appear below the summary so your job is triage, not reproduction.)
     }, {
       role: "user",
       content: %(Here are my #{ActionController::Base.helpers.pluralize(@bookmarks.count, 'X bookmark')}:\n\n#{@bookmarks.map(&:to_s).join("\n\n######\n\n")})

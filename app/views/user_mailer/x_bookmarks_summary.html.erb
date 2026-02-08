@@ -15,12 +15,12 @@
   <body id="body" style="margin: 0; padding: 0; background-color: #f5f5f0;">
     <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f5f5f0;">
       <tr>
-        <td align="center" style="padding: 24px 16px;">
+        <td align="center" style="padding: 16px 8px;">
           <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;">
 
             <%# ═══ HEADER ═══ %>
             <tr>
-              <td style="padding: 20px 0 16px 0; text-align: center;">
+              <td style="padding: 12px 0 10px 0; text-align: center;">
                 <span style="font-size: 15px; color: #536471; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 600;">
                   X Bookmarks
                 </span>
@@ -34,13 +34,13 @@
             <%# ═══ AI SUMMARY ═══ %>
             <% if @summary.present? %>
               <tr>
-                <td style="padding: 0 0 16px 0;">
+                <td style="padding: 0 0 10px 0;">
                   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 12px; border: 1px solid #e1e8ed;">
                     <tr>
-                      <td style="padding: 20px 24px;">
+                      <td style="padding: 14px 16px;">
                         <table width="100%" cellpadding="0" cellspacing="0" border="0">
                           <tr>
-                            <td style="font-size: 14px; line-height: 22px; color: #14171a; padding-top: 12px;">
+                            <td style="font-size: 14px; line-height: 22px; color: #14171a; padding-top: 8px;">
                               <%= @summary.html_safe %>
                             </td>
                           </tr>
@@ -62,10 +62,10 @@
               <% metrics = bookmark.public_metrics || {} %>
 
               <tr>
-                <td style="padding: 0 0 16px 0;">
+                <td style="padding: 0 0 10px 0;">
                   <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 12px; border: 1px solid #e1e8ed;">
                     <tr>
-                      <td style="padding: 20px 24px;">
+                      <td style="padding: 14px 16px;">
 
                         <%# ── Author row ── %>
                         <table width="100%" cellpadding="0" cellspacing="0" border="0">
@@ -98,7 +98,7 @@
                         <%# ── Tweet text ── %>
                         <table width="100%" cellpadding="0" cellspacing="0" border="0">
                           <tr>
-                            <td style="padding: 12px 0 0 0; font-size: 15px; line-height: 22px; color: #14171a; word-wrap: break-word;">
+                            <td style="padding: 8px 0 0 0; font-size: 15px; line-height: 21px; color: #14171a; word-wrap: break-word;">
                               <a href="<%= bookmark.tweet_url %>" style="color: #14171a !important;">
                                 <%# Replace t.co URLs with display URLs %>
                                 <% display_text = bookmark.text.dup %>
@@ -119,7 +119,7 @@
                         <% if yt_match %>
                           <table width="100%" cellpadding="0" cellspacing="0" border="0">
                             <tr>
-                              <td style="padding: 12px 0 0 0;">
+                              <td style="padding: 8px 0 0 0;">
                                 <a href="<%= link_preview['expanded_url'] %>">
                                   <img src="https://img.youtube.com/vi/<%= yt_match[1] %>/hqdefault.jpg"
                                        width="100%" style="border-radius: 8px; display: block; max-width: 552px;"
@@ -134,7 +134,7 @@
                           <% img = images.find { |i| i['width'].to_i > 150 } || images.first %>
                           <table width="100%" cellpadding="0" cellspacing="0" border="0">
                             <tr>
-                              <td style="padding: 12px 0 0 0;">
+                              <td style="padding: 8px 0 0 0;">
                                 <a href="<%= link_preview['expanded_url'] || link_preview['url'] %>">
                                   <img src="<%= img['url'] %>"
                                        width="100%" style="border-radius: 8px; display: block; max-width: 552px;"
@@ -149,9 +149,9 @@
                         <% if link_preview && link_preview['title'].present? %>
                           <table width="100%" cellpadding="0" cellspacing="0" border="0">
                             <tr>
-                              <td style="padding: 8px 0 0 0;">
+                              <td style="padding: 6px 0 0 0;">
                                 <a href="<%= link_preview['expanded_url'] || link_preview['unwound_url'] || link_preview['url'] %>"
-                                   style="display: block; border: 1px solid #e1e8ed; border-radius: 8px; padding: 12px 16px; color: #14171a !important;">
+                                   style="display: block; border: 1px solid #e1e8ed; border-radius: 8px; padding: 10px 12px; color: #14171a !important;">
                                   <span style="font-size: 14px; font-weight: 600; color: #14171a !important; display: block;">
                                     <%= link_preview['title'] %>
                                   </span>
@@ -172,18 +172,18 @@
                         <%# ── Engagement metrics ── %>
                         <table width="100%" cellpadding="0" cellspacing="0" border="0">
                           <tr>
-                            <td style="padding: 14px 0 0 0; font-size: 13px; color: #536471; border-top: 1px solid #eee; margin-top: 12px;">
+                            <td style="padding: 10px 0 0 0; font-size: 13px; color: #536471; border-top: 1px solid #eee;">
                               <% if metrics['like_count'].to_i > 0 %>
-                                <span style="padding-right: 16px;">♥ <%= number_with_delimiter(metrics['like_count']) %></span>
+                                <span style="padding-right: 16px;">♥ <%= XBookmark.human_count(metrics['like_count']) %></span>
                               <% end %>
                               <% if metrics['retweet_count'].to_i > 0 %>
-                                <span style="padding-right: 16px;">🔁 <%= number_with_delimiter(metrics['retweet_count']) %></span>
+                                <span style="padding-right: 16px;">🔁 <%= XBookmark.human_count(metrics['retweet_count']) %></span>
                               <% end %>
                               <% if metrics['bookmark_count'].to_i > 0 %>
-                                <span style="padding-right: 16px;">🔖 <%= number_with_delimiter(metrics['bookmark_count']) %></span>
+                                <span style="padding-right: 16px;">🔖 <%= XBookmark.human_count(metrics['bookmark_count']) %></span>
                               <% end %>
                               <% if metrics['reply_count'].to_i > 0 %>
-                                <span style="padding-right: 16px;">💬 <%= number_with_delimiter(metrics['reply_count']) %></span>
+                                <span style="padding-right: 16px;">💬 <%= XBookmark.human_count(metrics['reply_count']) %></span>
                               <% end %>
                             </td>
                           </tr>

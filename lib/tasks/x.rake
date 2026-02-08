@@ -14,17 +14,16 @@ namespace :x do
     end
   end
 
-  desc 'Sync X bookmarks to DB (skips duplicates, paginates through all)'
-  # rake x:sync_bookmarks[admin@dabble.ex]
-  task :sync_bookmarks, [:email] => :environment do |_t, args|
-    abort "Not the last day of the month!" unless DateTime.now.to_date.end_of_month == DateTime.now.to_date
+  desc 'Sync X bookmarks to DB and send monthly summaries'
+  # rake x:bookmark_summaries
+  task :bookmark_summaries => :environment do |_t, args|
+    if DateTime.now.to_date.end_of_month == DateTime.now.to_date
+      # We only run this monthly
 
-    user = User.find_by!(email: args[:email])
-    abort "No X tokens on record. Run rake x:save_tokens first." unless user.x_connected?
-
-    new_count = XBookmark.sync_for_user!(user, max_results: 30)
-    puts "#{new_count} new bookmarks saved (#{user.x_bookmarks.count} total)"
-
-    UserMailer.x_bookmarks_summary(user).deliver_now
+      User.where.not(x_refresh_token: nil).each do |user|
+        XBookmark.sync_for_user!(user, max_results: 30)
+        UserMailer.x_bookmarks_summary(user, since: DateTime.now.beginning_of_month).deliver_now
+      end
+    end
   end
 end

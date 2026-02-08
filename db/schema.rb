@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2026_02_08_040242) do
+ActiveRecord::Schema.define(version: 2026_02_08_172837) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -114,6 +114,7 @@ ActiveRecord::Schema.define(version: 2026_02_08_040242) do
     t.string "x_uid"
     t.text "x_access_token"
     t.text "x_refresh_token"
+    t.string "raindrop_api_key"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["otp_challenge_expires"], name: "index_users_on_otp_challenge_expires"
     t.index ["otp_session_challenge"], name: "index_users_on_otp_session_challenge", unique: true

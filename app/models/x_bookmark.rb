@@ -14,8 +14,18 @@ class XBookmark < ActiveRecord::Base
     url || "https://x.com/#{author_username}/status/#{tweet_id}"
   end
 
+  def self.human_count(n)
+    n = n.to_i
+    if n >= 1_000_000
+      "#{(n / 1_000_000.0).round(1).to_s.sub(/\.0$/, '')}M"
+    elsif n >= 1_000
+      "#{(n / 1_000.0).round(n >= 10_000 ? 0 : 1).to_s.sub(/\.0$/, '')}k"
+    else
+      n.to_s
+    end
+  end
+
   # Syncs latest 30 bookmarks from X API for a user. Skips duplicates.
-  # Returns count of new bookmarks saved.
   def self.sync_for_user!(user, max_results: 30)
     client = XApiClient.new(user: user)
     result = client.bookmarks(max_results: max_results)
@@ -48,12 +58,12 @@ class XBookmark < ActiveRecord::Base
   end
 
   def self.save_to_raindrop(bookmark)
-    return unless ENV['RAINDROP_API_KEY'].present?
+    return unless bookmark.user.raindrop_api_key.present?
 
     conn = Faraday.new('https://api.raindrop.io') do |f|
       f.request :json
       f.response :json
-      f.headers['Authorization'] = "Bearer #{ENV['RAINDROP_API_KEY']}"
+      f.headers['Authorization'] = "Bearer #{bookmark.user.raindrop_api_key}"
     end
 
     conn.post('/rest/v1/raindrop', {
