@@ -1,7 +1,6 @@
 # Personal use: X bookmarks. See lib/tasks/X_BOOKMARKS_SETUP.md for initial setup.
 namespace :x do
   desc 'One-time: save X tokens to your user record from the manual OAuth flow'
-  # rake x:save_tokens[you@email.com,ACCESS_TOKEN,REFRESH_TOKEN]
   task :save_tokens, [:email, :access_token, :refresh_token] => :environment do |_t, args|
     user = User.find_by!(email: args[:email])
     user.update!(x_access_token: args[:access_token], x_refresh_token: args[:refresh_token])
@@ -15,19 +14,12 @@ namespace :x do
     end
   end
 
-  desc 'Fetch X bookmarks for your user'
-  # rake x:bookmarks[you@email.com]
-  task :bookmarks, [:email] => :environment do |_t, args|
+  desc 'Sync X bookmarks to DB (skips duplicates, paginates through all)'
+  task :sync_bookmarks, [:email] => :environment do |_t, args|
     user = User.find_by!(email: args[:email])
     abort "No X tokens on record. Run rake x:save_tokens first." unless user.x_connected?
 
-    client = XApiClient.new(user: user)
-    result = client.bookmarks
-    if result['data']
-      result['data'].each { |t| puts "#{t['created_at']} — #{t['text']}\n---" }
-      puts "#{result.dig('meta', 'result_count')} bookmarks"
-    else
-      puts "Error: #{result.dig('errors', 0, 'message')}"
-    end
+    new_count = XBookmark.sync_for_user!(user, max_results: 5)
+    puts "#{new_count} new bookmarks saved (#{user.x_bookmarks.count} total)"
   end
 end

@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2026_02_08_023003) do
+ActiveRecord::Schema.define(version: 2026_02_08_040242) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -134,5 +134,23 @@ ActiveRecord::Schema.define(version: 2026_02_08_023003) do
     t.index ["user_id"], name: "index_webauthn_credentials_on_user_id"
   end
 
+  create_table "x_bookmarks", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "tweet_id", null: false
+    t.string "author_id"
+    t.string "author_username"
+    t.string "author_name"
+    t.text "text"
+    t.datetime "tweeted_at"
+    t.string "url"
+    t.jsonb "entities", default: {}
+    t.jsonb "public_metrics", default: {}
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["user_id", "tweet_id"], name: "index_x_bookmarks_on_user_id_and_tweet_id", unique: true
+    t.index ["user_id"], name: "index_x_bookmarks_on_user_id"
+  end
+
   add_foreign_key "webauthn_credentials", "users"
+  add_foreign_key "x_bookmarks", "users"
 end

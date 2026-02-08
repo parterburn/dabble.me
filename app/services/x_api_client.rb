@@ -2,7 +2,7 @@
 # When initialized with a user, auto-refreshes the token before each request.
 class XApiClient
   BASE_URL = 'https://api.x.com'
-  BOOKMARKS_MAX_RESULTS = 100
+  BOOKMARKS_MAX_RESULTS = 10
 
   def initialize(user: nil, access_token: nil)
     @user = user
