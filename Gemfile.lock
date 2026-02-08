@@ -127,7 +127,7 @@ GEM
       safe_yaml (~> 1.0.0)
     crass (1.0.6)
     database_cleaner (1.8.4)
-    date (3.3.3)
+    date (3.4.1)
     dead_end (3.1.1)
     debug_inspector (1.2.0)
     delorean (2.1.0)
@@ -311,12 +311,12 @@ GEM
     mutex_m (0.2.0)
     net-http (0.6.0)
       uri
-    net-imap (0.3.4)
+    net-imap (0.3.9)
       date
       net-protocol
     net-pop (0.1.2)
       net-protocol
-    net-protocol (0.2.1)
+    net-protocol (0.2.2)
       timeout
     net-smtp (0.3.3)
       net-protocol
@@ -488,7 +488,7 @@ GEM
     temple (0.8.2)
     thor (1.5.0)
     tilt (2.0.10)
-    timeout (0.3.2)
+    timeout (0.4.3)
     tpm-key_attestation (0.14.1)
       bindata (~> 2.4)
       openssl (> 2.0)
