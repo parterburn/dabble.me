@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2026_02_05_004116) do
+ActiveRecord::Schema.define(version: 2026_02_08_023003) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -110,6 +110,10 @@ ActiveRecord::Schema.define(version: 2026_02_05_004116) do
     t.text "otp_recovery_secret_ciphertext"
     t.text "otp_persistence_seed_ciphertext"
     t.datetime "deleted_at"
+    t.string "x_username"
+    t.string "x_uid"
+    t.text "x_access_token"
+    t.text "x_refresh_token"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["otp_challenge_expires"], name: "index_users_on_otp_challenge_expires"
     t.index ["otp_session_challenge"], name: "index_users_on_otp_session_challenge", unique: true
