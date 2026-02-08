@@ -1,8 +1,16 @@
 class ImageCollageJob < ActiveJob::Base
   queue_as :default
 
+  # Sidekiq will retry unhandled exceptions by default. We make timeouts explicit here
+  # so we can control retry timing and attempts for transient network issues.
+  retry_on Net::ReadTimeout,
+           Faraday::TimeoutError,
+           wait: :exponentially_longer,
+           attempts: 6
+
   def perform(entry_id, urls: nil, message_id: nil)
     entry = Entry.where(id: entry_id).first
+    @error = nil
     return nil unless entry.present?
 
     @message_id = message_id
@@ -11,24 +19,31 @@ class ImageCollageJob < ActiveJob::Base
     entry.update(filepicker_url: "https://d10r8m94hrfowu.cloudfront.net/uploading.png")
     @existing_url = entry&.image_url_cdn == "https://d10r8m94hrfowu.cloudfront.net/uploading.png" ? nil : entry&.image_url_cdn(cloudflare: false)
 
-    if @message_id.present?
-      filestack_collage_url = collage_from_mailgun_attachments
+    filestack_collage_url = if @message_id.present?
+      collage_from_mailgun_attachments
     else
-      filestack_collage_url = collage_from_urls(urls + [@existing_url])
+      collage_from_urls(urls + [@existing_url])
     end
 
-    entry.remote_image_url = filestack_collage_url
-    entry.save
+    # Retry saving and checking for image up to 3 times since Filestack processing can take time
+    5.times do |attempt|
+      entry.remote_image_url = filestack_collage_url
+      entry.save
+      entry.reload
+      break if entry.image.present?
+      sleep 5 unless attempt == 2 # Don't sleep on last attempt
+    end
+
     if entry.image.blank?
       Sentry.set_user(id: @user.id, email: @user.email)
-      Sentry.capture_message("Error updating collage image", level: :info, extra: { entry_id: entry_id, error: entry.errors.full_messages, url: filestack_collage_url })
-
+      Sentry.capture_message("Error updating collage image", level: :info, extra: { entry_id: entry_id, errors: entry.errors, error_messages: entry.errors.full_messages, url: filestack_collage_url, error: @error })
       EntryMailer.image_error(@user, entry, entry.errors.full_messages).deliver_later
     end
     entry.update(filepicker_url: nil) if entry.filepicker_url == "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
   end
 
   def collage_from_mailgun_attachments
+    @error = "No message ID found" unless @message_id.present?
     return unless @message_id.present?
 
     last_message = nil
@@ -46,6 +61,7 @@ class ImageCollageJob < ActiveJob::Base
       break if last_message.present?
       sleep 10
     end
+    @error = "No last message found" unless last_message.present?
     return unless last_message.present?
 
     message = nil
@@ -63,6 +79,8 @@ class ImageCollageJob < ActiveJob::Base
       break if message.present?
       sleep 10
     end
+    @error = "No message found" unless message.present?
+    @error = "Message not from user" unless message["recipients"].to_s.include?(@user.user_key) || message["from"].to_s.include?(@user.email)
     return unless message.present? && message["recipients"].to_s.include?(@user.user_key) || message["from"].to_s.include?(@user.email)
 
     attachment_urls = message["attachments"].map do |att|
@@ -72,6 +90,7 @@ class ImageCollageJob < ActiveJob::Base
       "#{att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")}?#{att["name"]}"
     end.compact_blank
 
+    @error = "No attachments found" unless attachment_urls.any?
     return nil unless attachment_urls.any?
 
     collage_from_urls(attachment_urls + [@existing_url])
@@ -125,7 +144,7 @@ class ImageCollageJob < ActiveJob::Base
         url.include?("%") ? url : CGI.escape(url)
       end.map(&:inspect).join(',')
 
-      url = "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:%5B#{remaining_urls}%5D,w:1200,h:1200,m:1/#{first_url}"
+      url = "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:%5B#{remaining_urls}%5D,w:1200,h:1200,m:1/#{first_url}?filename=#{SecureRandom.uuid}.jpg"
       url
     end
   end

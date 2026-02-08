@@ -1,0 +1,96 @@
+<% content_for :title, "Support" %>
+
+<%
+
+faq_sections = ApplicationHelper.faqs
+
+# Generate plain text for LLM copying
+llm_text = "I will ask you questions about Dabble Me (https://dabble.me), a private journaling service. Answer questions based on the terms of service (https://dabble.me/terms), privacy policy (https://dabble.me/privacy), and these FAQs:\n\n"
+faq_sections.each do |key, section|
+  llm_text += "## #{section[:title]}\n\n"
+  section[:questions].each do |qa|
+    llm_text += "Q: #{qa[:q]}\nA: #{qa[:a]}\n\n"
+  end
+end
+llm_text += "---\nFor more help, contact: hello@#{ENV['MAIN_DOMAIN'] || 'dabble.me'}"
+%>
+
+<section class="py-12 lg:py-20">
+  <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+    <!-- Header -->
+    <div class="text-center mb-12">
+      <h1 class="font-serif text-4xl sm:text-5xl tracking-tight">Support</h1>
+      <div class="mt-4 text-lg leading-relaxed text-muted max-w-2xl mx-auto">
+        <button 
+          type="button"
+          class="text-accent hover:text-primary underline cursor-pointer font-semibold"
+          onclick="copyFaqForLlm()"
+          id="copy-llm-btn"
+        ><span id="copy-llm-text">Copy these FAQs</span></button>
+        to ask questions in your favorite AI chat tool. If your question isn't answered below, email us at <%= mail_to("hello@#{ENV['MAIN_DOMAIN']}", "hello@#{ENV['MAIN_DOMAIN']}", encode: "hex", class: "text-accent hover:text-primary font-medium underline") %>.
+      </div>      
+    </div>
+
+    <% faq_sections.each do |section_key, section| %>
+      <div class="mb-12">
+        <h2 class="font-serif text-2xl text-primary mb-6 flex items-center gap-2">
+          <% if section[:badge] %>
+            <span class="badge badge-accent text-sm font-semibold dark:text-olive-800"><%= section[:badge] %></span>
+          <% end %>
+          <%= section[:title] %>
+        </h2>
+        
+        <div data-accordion-group class="card divide-y">
+          <% section[:questions].each do |qa| %>
+            <div class="px-6 border-subtle">
+              <button
+                type="button"
+                class="accordion-trigger cursor-pointer"
+                data-accordion-trigger
+                aria-expanded="false"
+              >
+                <span class="text-olive-900 dark:text-olive-300"><%= qa[:q] %></span>
+                <svg data-accordion-icon class="h-5 w-5 text-subtle transition-transform duration-300" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              <div class="accordion-content" style="max-height: 0;">
+                <div class="text-primary mb-6">
+                  <%= qa[:a].html_safe %>
+                </div>
+              </div>
+            </div>
+          <% end %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</section>
+
+<!-- Hidden textarea for copying -->
+<textarea id="llm-faq-content" class="sr-only" aria-hidden="true"><%= llm_text %></textarea>
+
+<script>
+function copyFaqForLlm() {
+  const content = document.getElementById('llm-faq-content').value;
+  const btnText = document.getElementById('copy-llm-text');
+  
+  navigator.clipboard.writeText(content).then(function() {
+    btnText.textContent = 'Copied to your clipboard!';
+    setTimeout(function() {
+      btnText.textContent = 'Copy these FAQs';
+    }, 2000);
+  }).catch(function(err) {
+    // Fallback for older browsers
+    const textarea = document.getElementById('llm-faq-content');
+    textarea.classList.remove('sr-only');
+    textarea.select();
+    document.execCommand('copy');
+    textarea.classList.add('sr-only');
+    btnText.textContent = 'Copied to your clipboard!';
+    setTimeout(function() {
+      btnText.textContent = 'Copy these FAQs';
+    }, 2000);
+  });
+}
+</script>

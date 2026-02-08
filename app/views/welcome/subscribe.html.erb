@@ -1,0 +1,123 @@
+<% content_for :title, "Pricing" %>
+<main>
+  <section class="py-20 lg:py-28">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">      
+      <% if user_signed_in? %>
+        <!-- Logged in but not PRO -->
+        <div class="text-center mb-12">
+          <h1 class="font-serif text-4xl sm:text-5xl text-primary">Upgrade to PRO</h1>
+          <p class="mt-4 text-muted text-lg max-w-2xl mx-auto">
+            Unlock all premium features and build a journaling habit that sticks.
+          </p>
+        </div>
+
+        <% if params[:paypal] == 'true' %>
+          <!-- PayPal checkout -->
+          <div class="card p-8 text-center max-w-md mx-auto">
+            <h3 class="font-serif text-2xl text-primary mb-6">Subscribe with PayPal</h3>
+            <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_top">
+              <input type="hidden" name="cmd" value="_s-xclick">
+              <input type="hidden" name="item_name" value="Dabble Me PRO for <%= current_user.user_key %>">
+              <input type="hidden" name="first_name" value="<%= current_user.first_name %>">
+              <input type="hidden" name="last_name" value="<%= current_user.last_name %>">
+              <input type="hidden" name="email" value="<%= current_user.email %>">
+              <input type="hidden" name="night_phone_a" value="555">
+              <input type="hidden" name="night_phone_b" value="555">
+              <input type="hidden" name="night_phone_c" value="5555">
+              <input type="hidden" name="dabble_me_email" value="<%= current_user.email %>">
+              <input type="hidden" name="hosted_button_id" value="<%= ENV['PAYPAL_HOSTED_BUTTON_ID'] %>">
+              <input type="image" src="https://www.paypalobjects.com/en_US/i/btn/btn_subscribeCC_LG.gif" alt="PayPal - The safer, easier way to pay online!" name="submit" class="mx-auto">
+            </form>
+          </div>
+          
+        <% elsif params[:gumroad] == 'true' %>
+          <!-- Gumroad checkout -->
+          <div class="card p-8 text-center max-w-md mx-auto">
+            <script src="https://gumroad.com/js/gumroad.js" type="text/javascript"></script>
+            <h3 class="font-serif text-2xl text-primary mb-4">Subscribe with Credit Card</h3>
+            <p class="text-muted mb-6">Subscribe now using any major credit card.</p>
+            <a class="gumroad-button btn btn-primary" href="https://gumroad.com/l/dabbleme?email=<%= current_user.email %>">
+              Subscribe Now & Activate PRO Features
+            </a>
+          </div>
+          
+        <% else %>
+          <!-- Stripe checkout (default) -->
+          <div class="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
+            <!-- Yearly Plan -->
+            <div class="card p-8 border-accent ring-2 ring-accent/20 relative">
+              <div class="absolute -top-3 left-1/2 -translate-x-1/2">
+                <span class="badge badge-accent dark:text-olive-800">Best value</span>
+              </div>
+              <p class="text-center">
+                <span class="font-serif text-5xl text-primary">$40</span>
+                <span class="text-muted">/year</span>
+              </p>
+              <p class="text-center text-sm text-accent font-medium mt-2">2 months free</p>
+              <%= button_to checkout_path(plan: "yearly"), method: "post", class: "btn btn-primary w-full mt-6" do %>
+                Subscribe Yearly
+              <% end %>
+            </div>
+            
+            <!-- Monthly Plan -->
+            <div class="card p-8">
+              <p class="text-center">
+                <span class="font-serif text-5xl text-primary">$4</span>
+                <span class="text-muted">/month</span>
+              </p>
+              <p class="text-center text-sm text-subtle mt-2">&nbsp;</p>
+              <%= button_to checkout_path(plan: "monthly"), method: "post", class: "btn btn-secondary w-full mt-6" do %>
+                Subscribe Monthly
+              <% end %>
+            </div>
+          </div>
+          
+          <div id="error-message" class="mt-6 text-center text-red-600"></div>
+        <% end %>
+        
+        <%= render "pro_features" %>
+        
+      <% else %>
+        <!-- Not logged in -->
+        <div class="text-center mb-12">
+          <h1 class="font-serif text-4xl sm:text-5xl text-primary">Get Started with Dabble Me PRO</h1>
+          <p class="mt-4 text-muted text-lg max-w-2xl mx-auto">
+            You'll have access to every premium feature.
+          </p>
+        </div>
+        
+        <% session["user_return_to"] = subscribe_path %>
+        
+        <div class="card p-8 max-w-md mx-auto text-center">
+          <div class="space-y-4">
+            <%= link_to "Sign Up for PRO", new_user_registration_path, class: "btn btn-primary w-full" %>
+            <%= link_to "Log In to Subscribe", new_user_session_path, class: "btn btn-secondary w-full" %>
+          </div>
+        </div>
+        
+        <%= render "pro_features" %>
+      <% end %>
+      
+    </div>
+  </section>
+  
+  <!-- Paul Graham testimonial -->
+  <section class="py-20 lg:py-28 bg-surface border-y border-subtle">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8 text-center">
+      <a href="https://twitter.com/paulg/status/1746341562286539118" target="_blank" rel="noopener" class="hover:scale-105 transition-transform duration-300 block">
+        <blockquote class="font-serif text-2xl sm:text-3xl lg:text-4xl text-primary leading-relaxed">
+          "Dabble Me costs ~$3 a month, and it is worth so much more than that."
+        </blockquote>
+        
+        <div class="mt-10 flex flex-col items-center">
+          <span class="w-16 h-16 rounded-full bg-olive-100 flex items-center justify-center mb-4">
+            <img src="<%= asset_path('pg.jpg') %>" alt="Paul Graham" class="w-full h-full object-cover rounded-full">
+          </span>
+          <span class="font-medium text-primary">Paul Graham</span>
+          <span class="text-sm text-muted">Co-founder, Y Combinator</span>
+          <span class="text-sm text-subtle">January 2024</span>
+        </div>
+      </a>
+    </div>
+  </section>
+</main>

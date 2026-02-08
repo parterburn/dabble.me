@@ -70,10 +70,11 @@ GEM
       zeitwerk (~> 2.3)
     addressable (2.8.7)
       public_suffix (>= 2.0.2, < 7.0)
+    android_key_attestation (0.3.0)
     autoprefixer-rails (9.7.6)
       execjs
     awesome_print (1.9.2)
-    base64 (0.2.0)
+    base64 (0.3.0)
     bcrypt (3.1.18)
     benchmark (0.4.0)
     benchmark-ips (2.9.2)
@@ -81,7 +82,8 @@ GEM
       erubi (>= 1.0.0)
       rack (>= 0.9.0)
       rouge (>= 1.0.0)
-    bigdecimal (3.1.9)
+    bigdecimal (4.0.1)
+    bindata (2.5.1)
     binding_of_caller (1.0.0)
       debug_inspector (>= 0.0.1)
     builder (3.3.0)
@@ -105,6 +107,7 @@ GEM
       image_processing (~> 1.1)
       marcel (~> 1.0.0)
       ssrf_filter (~> 1.0)
+    cbor (0.5.10.1)
     charlock_holmes (0.7.9)
     chartkick (5.1.0)
     chronic (0.10.2)
@@ -116,7 +119,10 @@ GEM
     combined_time_select (2.0.0)
       rails (>= 5.0.0)
     concurrent-ruby (1.3.4)
-    connection_pool (2.5.3)
+    connection_pool (2.5.5)
+    cose (1.3.1)
+      cbor (~> 0.5.9)
+      openssl-signature_algorithm (~> 1.0)
     crack (0.4.3)
       safe_yaml (~> 1.0.0)
     crass (1.0.6)
@@ -222,7 +228,7 @@ GEM
     http-accept (1.7.0)
     http-cookie (1.0.3)
       domain_name (~> 0.5)
-    i18n (1.14.7)
+    i18n (1.14.8)
       concurrent-ruby (~> 1.0)
     i18n-js (4.2.3)
       glob (>= 0.4.0)
@@ -237,6 +243,8 @@ GEM
       railties (>= 4.2.0)
       thor (>= 0.14, < 2.0)
     json (2.7.2)
+    jwt (3.1.2)
+      base64
     kaminari (1.2.1)
       activesupport (>= 4.1.0)
       kaminari-actionview (= 1.2.1)
@@ -266,7 +274,7 @@ GEM
       logtail (~> 0.1)
       logtail-rack (~> 0.1)
       railties (>= 5.0.0)
-    loofah (2.24.0)
+    loofah (2.25.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.12.0)
     mail (2.8.1)
@@ -295,10 +303,12 @@ GEM
       logger
     mini_mime (1.1.5)
     mini_portile2 (2.8.9)
-    minitest (5.25.5)
+    minitest (6.0.1)
+      prism (~> 1.5)
     msgpack (1.6.0)
     multi_json (1.15.0)
     multipart-post (2.4.1)
+    mutex_m (0.2.0)
     net-http (0.6.0)
       uri
     net-imap (0.3.9)
@@ -312,16 +322,20 @@ GEM
       net-protocol
     netrc (0.11.0)
     nio4r (2.7.4)
-    nokogiri (1.18.9)
+    nokogiri (1.19.0)
       mini_portile2 (~> 2.8.2)
       racc (~> 1.4)
+    openssl (4.0.0)
+    openssl-signature_algorithm (1.3.0)
+      openssl (> 2.0)
     orm_adapter (0.5.0)
     pg (1.6.1)
+    prism (1.7.0)
     public_suffix (6.0.2)
     puma (6.6.1)
       nio4r (~> 2.0)
     racc (1.8.1)
-    rack (2.2.17)
+    rack (2.2.21)
     rack-affiliates (0.4.0)
       rack
     rack-attack (6.6.1)
@@ -348,7 +362,7 @@ GEM
       bundler (>= 1.15.0)
       railties (= 6.1.7.10)
       sprockets-rails (>= 2.0.0)
-    rails-dom-testing (2.2.0)
+    rails-dom-testing (2.3.0)
       activesupport (>= 5.0.0)
       minitest
       nokogiri (>= 1.6)
@@ -361,7 +375,7 @@ GEM
       method_source
       rake (>= 12.2)
       thor (~> 1.0)
-    rake (13.2.1)
+    rake (13.3.1)
     randomized_field (1.0.0)
       activerecord (>= 4.0.0)
     rb-fsevent (0.10.4)
@@ -370,7 +384,7 @@ GEM
     redcarpet (3.6.0)
     redis (5.4.0)
       redis-client (>= 0.22.0)
-    redis-client (0.24.0)
+    redis-client (0.26.3)
       connection_pool
     regexp_parser (2.9.0)
     responders (3.1.0)
@@ -383,7 +397,7 @@ GEM
       netrc (~> 0.8)
     reverse_markdown (2.1.1)
       nokogiri
-    rexml (3.4.2)
+    rexml (3.4.4)
     rinku (2.0.6)
     rotp (6.3.0)
     rouge (4.2.0)
@@ -414,8 +428,10 @@ GEM
     ruby-vips (2.2.3)
       ffi (~> 1.12)
       logger
-    rubyzip (2.3.2)
+    rubyzip (3.2.2)
     safe_yaml (1.0.5)
+    safety_net_attestation (0.5.0)
+      jwt (>= 2.0, < 4.0)
     sass-rails (6.0.0)
       sassc-rails (~> 2.1, >= 2.1.1)
     sassc (2.4.0)
@@ -426,19 +442,21 @@ GEM
       sprockets (> 3.0)
       sprockets-rails
       tilt
-    selenium-webdriver (4.9.0)
+    selenium-webdriver (4.39.0)
+      base64 (~> 0.2)
+      logger (~> 1.4)
       rexml (~> 3.2, >= 3.2.5)
-      rubyzip (>= 1.2.2, < 3.0)
+      rubyzip (>= 1.2.2, < 4.0)
       websocket (~> 1.0)
-    sentry-rails (5.24.0)
-      railties (>= 5.0)
-      sentry-ruby (~> 5.24.0)
-    sentry-ruby (5.24.0)
+    sentry-rails (6.2.0)
+      railties (>= 5.2.0)
+      sentry-ruby (~> 6.2.0)
+    sentry-ruby (6.2.0)
       bigdecimal
       concurrent-ruby (~> 1.0, >= 1.0.2)
-    sentry-sidekiq (5.24.0)
-      sentry-ruby (~> 5.24.0)
-      sidekiq (>= 3.0)
+    sentry-sidekiq (6.2.0)
+      sentry-ruby (~> 6.2.0)
+      sidekiq (>= 5.0)
     sidekiq (7.3.9)
       base64
       connection_pool (>= 2.3.0)
@@ -468,9 +486,13 @@ GEM
       activesupport (>= 3.1)
       stripe (>= 2.8, < 13)
     temple (0.8.2)
-    thor (1.3.2)
+    thor (1.5.0)
     tilt (2.0.10)
     timeout (0.4.3)
+    tpm-key_attestation (0.14.1)
+      bindata (~> 2.4)
+      openssl (> 2.0)
+      openssl-signature_algorithm (~> 1.0)
     turnstile-captcha (0.1.4)
       faraday
       hashie
@@ -492,24 +514,26 @@ GEM
     uri (1.0.3)
     warden (1.2.9)
       rack (>= 2.0.9)
-    webdrivers (5.3.1)
-      nokogiri (~> 1.6)
-      rubyzip (>= 1.3.0)
-      selenium-webdriver (~> 4.0, < 4.11)
+    webauthn (3.4.3)
+      android_key_attestation (~> 0.3.0)
+      bindata (~> 2.4)
+      cbor (~> 0.5.9)
+      cose (~> 1.1)
+      openssl (>= 2.2)
+      safety_net_attestation (~> 0.5.0)
+      tpm-key_attestation (~> 0.14.0)
     webmock (3.8.3)
       addressable (>= 2.3.6)
       crack (>= 0.3.2)
       hashdiff (>= 0.4.0, < 2.0.0)
-    websocket (1.2.10)
+    websocket (1.2.11)
     websocket-driver (0.7.6)
       websocket-extensions (>= 0.1.0)
     websocket-extensions (0.1.5)
     words_counted (1.0.3)
     xpath (3.2.0)
       nokogiri (~> 1.8)
-    zeitwerk (2.7.3)
-    zip-zip (0.3)
-      rubyzip (>= 1.0.0)
+    zeitwerk (2.7.4)
 
 PLATFORMS
   ruby
@@ -529,6 +553,7 @@ DEPENDENCIES
   cloudflare-rails
   combined_time_select
   concurrent-ruby (= 1.3.4)
+  connection_pool (~> 2.4)
   database_cleaner
   delorean
   derailed_benchmarks
@@ -555,6 +580,7 @@ DEPENDENCIES
   loofah (>= 2.5)
   mailgun_rails
   meta_request
+  mutex_m
   pg (~> 1.6)
   puma (~> 6)
   rack-affiliates
@@ -573,9 +599,9 @@ DEPENDENCIES
   rspec-retry
   ruby-openai
   ruby-vips
-  rubyzip (~> 2)
+  rubyzip (~> 3.0)
   sass-rails
-  selenium-webdriver
+  selenium-webdriver (>= 4.20)
   sentry-rails
   sentry-ruby
   sentry-sidekiq
@@ -592,13 +618,12 @@ DEPENDENCIES
   twbs_sass_rails
   tzinfo-data
   uglifier
-  webdrivers (~> 5.0)
+  webauthn
   webmock
   words_counted (~> 1.0, >= 1.0.3)
-  zip-zip
 
 RUBY VERSION
-   ruby 3.2.9p265
+   ruby 3.3.10p183
 
 BUNDLED WITH
    2.6.6

@@ -47,7 +47,7 @@ class EmailProcessor
         @attachments.each do |attachment|
           next unless attachment.present?
 
-          # Make sure attachments are at least 20kb so we're not saving a bunch of signature/footer images\
+          # Make sure attachments are at least 20kb so we're not saving a bunch of signature/footer images
           file_size = File.size?(attachment.tempfile).to_i
 
           # skip signature images
@@ -147,7 +147,6 @@ class EmailProcessor
         end
 
         if existing_entry.save
-          track_ga_event('Merged')
 
           if respond_as_ai? && @user && @user.can_ai?
             AiEntryJob.perform_later(@user.id, existing_entry.id)
@@ -191,7 +190,7 @@ class EmailProcessor
         entry&.original_email = @inbound_email_params
         entry&.body = entry&.sanitized_body if @user.is_free?
         if entry&.save
-          track_ga_event('New')
+          # all good
         else
           if entry.present?
             record_errors = entry.errors.full_messages.to_sentence
@@ -207,7 +206,7 @@ class EmailProcessor
       @user.increment!(:emails_received)
       begin
         UserMailer.second_welcome_email(@user).deliver_later if @user.emails_received == 1 && @user.entries.count == 1
-      rescue StandardError => e
+      rescue StandardError => _e
         Sentry.capture_message("Error sending email", level: :error, extra: { email_type: "Second Welcome Email" })
       end
 
@@ -232,13 +231,6 @@ class EmailProcessor
     all_recipients.select { |k| k[:host] == ENV['SMTP_DOMAIN'].gsub('post', 'ai') }.any?
   end
 
-  def track_ga_event(action)
-    if ENV['GOOGLE_ANALYTICS_ID'].present?
-      # tracker = Staccato.tracker(ENV['GOOGLE_ANALYTICS_ID'])
-      # tracker.event(category: 'Email Entry', action: action, label: @user.user_key)
-    end
-  end
-
   def pick_meaningful_recipient(to_recipients, cc_recipients)
     host_to = to_recipients.select {|k| k[:host] =~ /^(email|post|ai)?\.?#{ENV['MAIN_DOMAIN'].gsub(".","\.")}$/i }.first
     if host_to.present?
@@ -253,7 +245,7 @@ class EmailProcessor
   def find_user_from_user_key(to_token, from_email)
     begin
       User.where(user_key: to_token).or(User.where(email: from_email)).first
-    rescue JSON::ParserError => e
+    rescue JSON::ParserError => _e
     end
   end
 
@@ -470,6 +462,20 @@ class EmailProcessor
       # Clean up problematic line break patterns
       html&.gsub!(/<\/div><br><div><br><br><br><\/div><br><div><br>/, "</div><br><div>")
       html&.gsub!(/<\/div><br><div>\s*(<br>\s*)*<\/div><br><div><br>/, "</div><br><div>")
+
+      # Remove <br> immediately before an opening <div> when not between text
+      html&.gsub!(/(^|>)(?:\s*<br\s*\/?>\s*)+(?=\s*<div)/i, "\\1")
+      # Remove <br> after a closing </div> only when followed by another block boundary or end
+      html&.gsub!(/(<\/div>)\s*(?:<br\s*\/?>\s*)+(?=\s*(?:<div|<\/div>|$))/i, "\\1")
+
+      # Remove <br> between consecutive opening divs or consecutive closing/opening divs
+      html&.gsub!(/<div>\s*(?:<br\s*\/?>\s*)+<div>/i, "<div><div>")
+      html&.gsub!(/<\/div>\s*(?:<br\s*\/?>\s*)+<div>/i, "</div><div>")
+
+      # Remove empty divs anywhere (not just trailing/leading)
+      3.times do
+        html&.gsub!(/<div>\s*<\/div>/i, "")
+      end
 
       # Remove trailing <br><br><hr>
       html&.gsub!(/<br><br><hr>\s*\z/, "")

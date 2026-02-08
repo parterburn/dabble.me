@@ -76,38 +76,40 @@
     <% end %>
     <% if @user.send_past_entry? && @user.random_entries.count > 5 && @random_entry %>
       <% show_entry = true %>
-      <p>
-        <b>
-          <% format_date  = @random_entry.date.strftime('%a, %b %-d, %Y') %>
-          Remember this? On <%= link_to(format_date, day_entry_url(year: @random_entry.date.year, month: @random_entry.date.month, day: @random_entry.date.day), class: "hover-line") %> (<%= @random_entry.time_ago_in_words_or_numbers(@user)%> ago) you wrote...
-        </b>
-      </p>
-      <p>
-        <%= format_body(@random_entry.formatted_body) %>
-      </p>
-      <% if @user.is_pro? && (songs = @random_entry.spotify_track_names).present? %>
-        <%= songs %>
-      <% end %>
-      <% if @user.is_pro? && (hashtags = @random_entry.hashtags).present? %>
+      <div style="background-color: #F4F4F1; color: #2B2B22; padding: 16px 20px; border-radius: 8px; margin: 16px 0;">
+        <p style="margin-top: 0;">
+          <b>
+            <% format_date  = @random_entry.date.strftime('%a, %b %-d, %Y') %>
+            Remember this? On <%= link_to(format_date, day_entry_url(year: @random_entry.date.year, month: @random_entry.date.month, day: @random_entry.date.day), class: "hover-line") %> (<%= @random_entry.time_ago_in_words_or_numbers(@user)%> ago) you wrote...
+          </b>
+        </p>
         <p>
-          <i>
-            <% h = [] %>
-            <% hashtags.each do |tag| %>
-              <% add_timeframe = "" %>
-              <% if (date = @user.hashtags.select{|h| h.tag&.downcase == tag.downcase}.first&.date).present? %>
-                <% add_timeframe = " <small>(#{ApplicationController.helpers.tag_relative_date(date, @random_entry.date)})</small>".html_safe %>
+          <%= format_body(@random_entry.formatted_body) %>
+        </p>
+        <% if @user.is_pro? && (songs = @random_entry.spotify_track_names).present? %>
+          <%= songs %>
+        <% end %>
+        <% if @user.is_pro? && (hashtags = @random_entry.hashtags).present? %>
+          <p style="margin-bottom: 0;">
+            <i style="color: #5C6654;">
+              <% h = [] %>
+              <% hashtags.each do |tag| %>
+                <% add_timeframe = "" %>
+                <% if (date = @user.hashtags.select{|h| h.tag&.downcase == tag.downcase}.first&.date).present? %>
+                  <% add_timeframe = " <small>(#{ApplicationController.helpers.tag_relative_date(date, @random_entry.date)})</small>".html_safe %>
+                <% end %>
+                <% h << link_to(tag, search_url(search: {term: tag}), style: 'color: #5C6654 !important;') + add_timeframe %>
               <% end %>
-              <% h << link_to(tag, search_url(search: {term: tag})) + add_timeframe %>
-            <% end %>
-            <%= "Tags: #{h.join(", ")}".html_safe %>
-          </i>
-        </p>
-      <% end %>
-      <% if @user.is_pro? && @random_entry_image_url.present? %>
-        <p>
-          <%= link_to image_tag(@random_entry_image_url, style: 'max-width: 100%; border-radius: 4px;'), @random_entry_image_url %>
-        </p>
-      <% end %>
+              <%= "Tags: #{h.join(", ")}".html_safe %>
+            </i>
+          </p>
+        <% end %>
+        <% if @user.is_pro? && @random_entry_image_url.present? %>
+          <div style="line-height: 0 !important;">
+            <%= link_to image_tag(@random_entry_image_url, style: 'max-width: 100%; border-radius: 4px;'), @random_entry_image_url, style: "display: inline-block; line-height: 0 !important;" %>
+          </div>
+        <% end %>
+      </div>
     <% elsif @user.send_past_entry? %>
       <p>
         <b>Keep writing...once you have a few entries you'll see a blast from the past show up here!</b>
@@ -116,14 +118,14 @@
     <p>
       <% if @user.entries.size.positive? %>
         <%= link_to "All entries", entries_url %>
-        &middot;
+        &nbsp;&middot;&nbsp;
       <% end %>
       <%= link_to "Unsubscribe", settings_url(user_key: @user.user_key) %>
     </p>
     <% if @user.is_free? || (@random_inspiration.present? && @user.days_since_last_post.to_i <= 14) %>
       <hr style="margin-top: 20px;margin-bottom: 20px;border: 0;border-top: 2px solid whiteSmoke;"/>
     <% end %>
-    <p style="color:#CCC">
+    <p style="color:#A3A3A3">
       <% if @user.is_free? && ENV['FREE_WEEK'] == 'true' %>
         This email is part of Dabble Me FREE WEEK. You'll receive emails this week only on Sun, Wed, and Fri. Like the new frequency? <%= link_to "Subscribe to PRO", subscribe_url %>
       <% elsif @user.is_free? && @user.emails_sent % 2 == 0 %>

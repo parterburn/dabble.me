@@ -9,7 +9,7 @@ namespace :entry do
     random_inspiration = Inspiration.random
 
     users.each do |user|
-      EntryMailer.send_entry(user, random_inspiration, send_day: send_day).deliver_now
+      EntryMailer.send_entry(user, random_inspiration, { send_day: send_day }).deliver_now
       send_time = DateTime.parse("#{send_day} #{user.send_time}")
       user.update_columns(last_sent_at: send_time)
     end
@@ -23,7 +23,7 @@ namespace :entry do
   end
 
   # TRIGGERED MANUALLY
-  # heroku run bundle exec rake "entry:stats[2022]" --app dabble-me --size=standard-2x
+  # heroku run bundle exec rake "entry:stats[2025]" --app dabble-me --size=standard-2x
   task :stats, [:year] => :environment do |_, args|
     year = args[:year]
     # Ensure the year argument is provided
@@ -138,13 +138,25 @@ namespace :entry do
     # "Total words: 7,324,119"
     # "Avg words per post: 181.12419318940573"
 
+    # "****************************************************************************************************"
+    # "STATS FOR 2025"
+    # "****************************************************************************************************"
+    # "Users created: 1,493"
+    # "Entries created in 2025: 45,218"
+    # "Entries for 2025: 38,634"
+    # "Total words: 7,572,531"
+    # "Avg words per post: 196.00691101102655"
+
     p "*"*100
     p "STATS FOR #{year}"
     p "*"*100
 
     extend ActionView::Helpers::NumberHelper
-    all_entries = Entry.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE")
-    entries_bodies = all_entries.map { |e| ActionView::Base.full_sanitizer.sanitize(e.body) }.join(" ")
+    start_date = Date.new(year.to_i, 1, 1)
+    end_date = Date.new(year.to_i, 12, 31)
+
+    all_entries = Entry.where(date: start_date..end_date)
+    entries_bodies = all_entries.map(&:text_body).join(" ")
 
     tokenizer = WordsCounted::Tokeniser.new(entries_bodies).tokenise(exclude: Entry::WORDS_NOT_TO_COUNT)
     total_words = tokenizer.count
@@ -154,8 +166,8 @@ namespace :entry do
     # avg_chars = total_chars.to_f / all_entries.count
     # avg_tweets_per_post = ((avg_chars).to_f / 280).ceil
 
-    p "Users created: #{number_with_delimiter(User.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
-    p "Entries created in #{year}: #{number_with_delimiter(Entry.where("created_at >= '#{year}-01-01'::DATE AND created_at <= '#{year}-12-31'::DATE").count)}"
+    p "Users created: #{number_with_delimiter(User.where(created_at: start_date..end_date).count)}"
+    p "Entries created in #{year}: #{number_with_delimiter(Entry.where(created_at: start_date..end_date).count)}"
     p "Entries for #{year}: #{number_with_delimiter(all_entries.count)}"
     p "Total words: #{number_with_delimiter(total_words)}"
     p "Avg words per post: #{number_with_delimiter(avg_words)}"
@@ -169,27 +181,36 @@ namespace :entry do
     # p "*"*100
   end
 
-  # heroku run bundle exec rake "entry:stats_by_user[2022]" --app dabble-me --size=standard-2x
+  # heroku run bundle exec rake "entry:stats_by_user[2025]" --app dabble-me --size=standard-2x
   task :stats_by_user, [:year] => :environment do |_, year:|
-    data = []
     csv_data = CSV.generate(col_sep: "\t") do |csv|
-      csv << ["USER_ID", "EMAIL", "#{year}_ENTRY", "#{year}_WORD"]
+      csv << ["USER_ID", "EMAIL", "FNAME", "LNAME", "#{year}_ENTRY", "#{year}_WORD"]
 
-      User.all.each do |user|
-        user_entries = Entry.where("date >= '#{year}-01-01'::DATE AND date <= '#{year}-12-31'::DATE AND user_id = ?", user.id)
-        if user_entries.count > 0
-          entries_bodies = user_entries.map { |e| ActionView::Base.full_sanitizer.sanitize(e.body) }.join(" ")
-          tokenizer = WordsCounted::Tokeniser.new(entries_bodies).tokenise(exclude: Entry::WORDS_NOT_TO_COUNT)
-          total_words = tokenizer.count
+      start_date = Date.new(year.to_i, 1, 1)
+      end_date = Date.new(year.to_i, 12, 31)
 
-          avg_words = total_words.to_f / user_entries.count
-          csv << [
-            user.id,
-            user.email,
-            user_entries.count,
-            avg_words.round(0)
-          ]
-        end
+      user_ids_with_entries = User.joins(:entries)
+                                  .where(entries: { date: start_date..end_date })
+                                  .group("users.id")
+                                  .having("count(entries.id) >= 2")
+                                  .select(:id)
+
+      User.where(id: user_ids_with_entries).find_each do |user|
+        user_entries = user.entries.where(date: start_date..end_date)
+
+        entries_bodies = user_entries.map(&:text_body).join(" ")
+        tokenizer = WordsCounted::Tokeniser.new(entries_bodies).tokenise(exclude: Entry::WORDS_NOT_TO_COUNT)
+        total_words = tokenizer.count
+
+        avg_words = total_words.to_f / user_entries.count
+        csv << [
+          user.id,
+          user.email,
+          user.first_name,
+          user.last_name,
+          user_entries.count,
+          avg_words.round(0)
+        ]
       end
     end;nil
     p "*"*100
@@ -242,9 +263,9 @@ namespace :entry do
   task :maintenance => :environment do
     if Date.today.wednesday?
       # Run image check through Clarifai
-      Entry.only_images.where(created_at: 1.week.ago..).each do |entry|
-        entry.check_image
-      end
+      # Entry.only_images.where(created_at: 1.week.ago..).each do |entry|
+      #   entry.check_image
+      # end
 
       # Clean up empty entries
       Entry.where("(image IS null OR image = '') AND (body IS null OR body = '')").each(&:destroy)

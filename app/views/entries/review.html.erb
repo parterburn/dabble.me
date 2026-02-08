@@ -1,0 +1,365 @@
+<% title ("#{@year} In Review — Dabble me.") %>
+<%= javascript_include_tag "//www.gstatic.com/charts/loader.js", "chartkick" %>
+<% add_class = 'really-blur' if current_user.is_free? %>
+
+<div class="row s-year-in-review">
+  <div class="col-md-8 col-md-offset-2">
+    <h3><%= "#{@year} Year In Review" %></h3>
+    <% if @years_with_entries.size > 1 %>
+      <% @years_with_entries.each do |yr| %>
+        <%= link_to "#{yr}", review_path(yr), style: "margin: 0 5px; font-size: 16px; #{'color: black;' if yr.to_s == @year.to_s}" %>
+      <% end %>
+    <% end %>
+    <div class="clearfix"></div>
+    <br>
+    <br>
+  </div>
+
+  <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
+    <div class="center">
+      <div class="s-entry-date">
+        <h2>Days with Entries</h2>
+        <h3>
+          <span><%= "#{pluralize(@total_count, 'entry')} in #{@year}" %></span>
+        </h3>
+      </div>
+      <div class="s-review-details">
+        <% if @pctile.present? %>
+          <p style="margin-top: 10px;"><%= "You're in the #{@pctile.ordinalize} percentile compared to all active Dabble Me users in #{@year}." %></p>
+          <div class="clearfix"></div>
+        <% end %>
+        <%= render 'contribution_graph', data: contribution_calendar_data(@entries, @year), year: @year %>
+        <div class="clearfix"></div>
+        <div class="center" style="font-size: 14px;">
+          <%= number_to_percentage((@total_count.to_f / elapsed_days_in_year(@year)).to_f * 100, precision: 0) %>
+          of the days in <%= @year %> with entries.
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <% if current_user.is_free? %>
+    <div class="col-md-8 col-md-offset-2">
+      <div class="alert alert-warning">
+        <%= link_to "Subscribe to PRO", subscribe_path, class: "alert-link" %>
+        to see the rest of your Year in Review.
+      </div>
+    </div>
+  <% end %>
+
+  <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
+    <div class="center <%= add_class %>">
+      <div class="s-entry-date">
+        <h2>Ask AI</h2>
+        <h3>
+          <span>Reflections and insights</span>
+        </h3>
+      </div>
+      <div class="s-review-details">
+        <p style="margin-top: 20px; margin-bottom: 0px;">Follow these simple steps to gain a better understanding of how you journaled and collect advice as you chat with a life coach about how your year went.</p>
+        <ol style="display: inline-block; text-align: left; max-width: 100%; margin-top: 10px;">
+          <li style="margin-top: 10px;">
+            <strong><%= link_to "Export your #{pluralize(@total_count, 'entry')} from #{@year}", export_entries_path(year: @year, format: :txt) %></strong>
+          </li>
+          <li style="margin-top: 10px;">
+            <strong>
+              Visit
+              <%= link_to "ChatGPT", "https://chatgpt.com/?q=You%20are%20an%20insightful%2C%20non-therapeutic%20journal%20analyst.%20Your%20job%20is%20to%20produce%20a%20retrospective%20summary%20from%20my%20journal%20entries.%0A%0AINPUT%0AI%20will%20paste%20journal%20entries%20below.%20Each%20entry%20may%20include%3A%0A-%20a%20date%20(YYYY-MM-DD%20or%20similar)%0A-%20freeform%20text%0A-%20occasional%20lists%2C%20photos%20captions%2C%20or%20short%20fragments%0A%0ARULES%0A-%20Use%20ONLY%20the%20journal%20text%20as%20evidence.%20Do%20not%20invent%20events%2C%20motives%2C%20diagnoses%2C%20or%20facts.%0A-%20If%20the%20data%20is%20thin%20or%20uneven%20(e.g.%2C%20only%20a%20few%20entries)%2C%20say%20so%20explicitly%20and%20scale%20your%20confidence%20down.%0A-%20Quote%20short%20snippets%20(5%E2%80%9320%20words)%20from%20the%20journal%20to%20support%20key%20claims%20when%20helpful%20(max%206%20quotes%20total).%0A-%20Be%20kind%20but%20direct.%20Avoid%20clich%C3%A9s%2C%20generic%20self-help%2C%20or%20%E2%80%9Cyou%20should%E2%80%9D%20lecturing.%0A-%20No%20clinical%20language.%20No%20mental%20health%20diagnosing.%0A-%20If%20there%20are%20contradictions%2C%20note%20them%20neutrally.%0A-%20If%20entries%20span%20multiple%20years%2C%20focus%20on%20the%20requested%20timeframe%20and%20call%20out%20spillover%20patterns%20separately.%0A%0AOUTPUT%20FORMAT%20(match%20these%20headings%20exactly)%0AYour%20#{@year}%20retrospective%0AKey%20Themes%0ASentiment%20Analysis%0ASignificant%20Events%0APersonal%20Growth%0ABehavioral%20Patterns%0ARecommendations%0ALife%20Advice%0A%0ACONTENT%20REQUIREMENTS%20PER%20SECTION%0AKey%20Themes%3A%0A-%203%E2%80%937%20themes%20with%201%E2%80%932%20sentences%20each.%0A-%20For%20each%20theme%2C%20include%20(a)%20what%20it%20is%2C%20(b)%20how%20it%20shows%20up%2C%20and%20optionally%20(c)%20a%20short%20quote.%0A%0ASentiment%20Analysis%3A%0A-%20Describe%20overall%20tone%20(e.g.%2C%20steady%2C%20volatile%2C%20rising%2Ffalling).%0A-%20Call%20out%20major%20shifts%20and%20what%20seems%20associated%20with%20them%20(only%20if%20supported).%0A-%20If%20too%20little%20data%2C%20say%20what%20you%20can%20and%20can%E2%80%99t%20infer.%0A%0ASignificant%20Events%3A%0A-%20Bullet%20list%20of%20notable%20events%2Fmilestones%20mentioned%20(if%20any).%0A-%20If%20no%20clear%20events%2C%20say%20%E2%80%9CNo%20specific%20events%20identified%E2%80%9D%20and%20why.%0A%0APersonal%20Growth%3A%0A-%202%E2%80%936%20observations%20about%20skills%2C%20mindset%2C%20relationships%2C%20health%20habits%2C%20or%20work%20patterns.%0A-%20Distinguish%20%E2%80%9Cexplicit%20growth%20reflections%E2%80%9D%20vs%20%E2%80%9Cimplicit%20signals.%E2%80%9D%0A%0ABehavioral%20Patterns%3A%0A-%203%E2%80%936%20patterns%20across%20time%20(triggers%2C%20routines%2C%20recurring%20conflicts%2C%20energy%20cycles%2C%20productivity%2C%20social%20connection).%0A-%20Include%201%E2%80%932%20%E2%80%9Cpattern%20loops%E2%80%9D%20in%20plain%20language%3A%20%E2%80%9CWhen%20X%20happens%2C%20I%20tend%20to%20do%20Y%2C%20which%20leads%20to%20Z.%E2%80%9D%0A%0ARecommendations%3A%0A-%205%E2%80%9310%20practical%20suggestions%20grounded%20in%20what%20the%20journal%20reveals.%0A-%20Make%20them%20specific%20and%20small%20enough%20to%20try%20this%20week.%0A-%20Include%201%20%E2%80%9Ctracking%20idea%E2%80%9D%20(what%20to%20notice%20or%20measure)%20and%201%20%E2%80%9Cwriting%20prompt%E2%80%9D%20tailored%20to%20my%20patterns.%0A%0ALife%20Advice%3A%0A-%203%E2%80%936%20sentences.%0A-%20Should%20feel%20like%20a%20grounded%2C%20encouraging%20closing%20note.%0A-%20Can%20include%20one%20memorable%20line%20or%20question%20(like%20%E2%80%9CHow%E2%80%99s%20this%20feeling%3F%E2%80%9D)%2C%20but%20don%E2%80%99t%20overdo%20it.%0A%0ATIMEFRAME%0AAssume%20the%20timeframe%20is%3A%20#{@year}.%20If%20I%20don%E2%80%99t%20specify%2C%20infer%20from%20the%20entries%E2%80%99%20dates%20and%20state%20what%20you%20inferred.%0A%0ASTYLE%3A%20concise%2C%20structured%2C%20slightly%20clinical-but-warm.%20When%20evidence%20is%20limited%2C%20say%20%E2%80%9CMore%20data%20would%20be%20needed%20to%20confirm%20patterns.%E2%80%9D%0A%0ANow%2C%20ask%20me%20to%20paste%20my%20journal%20entries%20into%20the%20chat%20if%20I%20haven't%20already%20attached%20them.", target: :_blank %>
+              or
+              <%= link_to "Claude", "https://claude.ai/", target: :_blank %>
+              or
+              <%= link_to "Gemini", "https://gemini.google.com", target: :_blank %>
+            </strong>
+          </li>
+          <li style="margin-top: 10px;">
+            <strong>Upload your entries with the following instructions</strong>
+            and then continue asking follow-up questions.
+            <pre style="margin-top: 10px; max-width: 95%; max-height: 40px; overflow: scroll; cursor: pointer; position: relative;" onclick="copyToClipboard(this)" title="Click to copy">
+You are an insightful, non-therapeutic expert life coach. Your job is to produce a retrospective summary from my journal entries.
+
+INPUT
+I will paste journal entries below. Each entry may include:
+- a date (YYYY-MM-DD or similar)
+- freeform text
+- occasional lists, photos captions, or short fragments
+
+RULES
+- Use ONLY the journal text as evidence. Do not invent events, motives, diagnoses, or facts.
+- If the data is thin or uneven (e.g., only a few entries), say so explicitly and scale your confidence down.
+- Quote short snippets (5–20 words) from the journal to support key claims when helpful (max 6 quotes total).
+- Be kind but direct. Avoid clichés, generic self-help, or “you should” lecturing.
+- No clinical language. No mental health diagnosing.
+- If there are contradictions, note them neutrally.
+- If entries span multiple years, focus on the requested timeframe and call out spillover patterns separately.
+
+OUTPUT FORMAT (match these headings exactly)
+Your <%= @year %> retrospective
+Key Themes
+Sentiment Analysis
+Significant Events
+Personal Growth
+Behavioral Patterns
+Recommendations
+Life Advice
+
+CONTENT REQUIREMENTS PER SECTION
+Key Themes:
+- 3–7 themes with 1–2 sentences each.
+- For each theme, include (a) what it is, (b) how it shows up, and optionally (c) a short quote.
+
+Sentiment Analysis:
+- Describe overall tone (e.g., steady, volatile, rising/falling).
+- Call out major shifts and what seems associated with them (only if supported).
+- If too little data, say what you can and can’t infer.
+
+Significant Events:
+- Bullet list of notable events/milestones mentioned (if any).
+- If no clear events, say “No specific events identified” and why.
+
+Personal Growth:
+- 2–6 observations about skills, mindset, relationships, health habits, or work patterns.
+- Distinguish “explicit growth reflections” vs “implicit signals.”
+
+Behavioral Patterns:
+- 3–6 patterns across time (triggers, routines, recurring conflicts, energy cycles, productivity, social connection).
+- Include 1–2 “pattern loops” in plain language: “When X happens, I tend to do Y, which leads to Z.”
+
+Recommendations:
+- 5–10 practical suggestions grounded in what the journal reveals.
+- Make them specific and small enough to try this week.
+- Include 1 “tracking idea” (what to notice or measure) and 1 “writing prompt” tailored to my patterns.
+
+Life Advice:
+- 3–6 sentences.
+- Should feel like a grounded, encouraging closing note.
+- Can include one memorable line or question (like “How’s this feeling?”), but don’t overdo it.
+
+TIMEFRAME
+Assume the timeframe is: <%= @year %>. If I don’t specify, infer from the entries’ dates and state what you inferred.
+
+STYLE: concise, structured, slightly clinical-but-warm. When evidence is limited, say “More data would be needed to confirm patterns.”
+
+Now, ask me to paste my journal entries into the chat if I haven't already attached them.</pre>
+          </li>
+        </ol>
+        <p style="font-style: italic; font-size: 14px;">You may want to turn off "train the model" when using this method.</p>
+        <p style="margin: 20px auto 5px;">
+          <strong>Some example questions:</strong>
+        </p>
+        <ul style="display: block; text-align: left;">
+          <li style="margin-top: 10px;">What advice do you have for me this year?</li>
+          <li style="margin-top: 10px;">What was I most grateful for this year?</li>
+          <li style="margin-top: 10px;">What are the key reflections of the year?</li>
+          <li style="margin-top: 10px;">What values do I live my life through?</li>
+          <li style="margin-top: 10px;">
+            <pre style="display: block; max-width: 95%; max-height: 25px; overflow: hidden; position: relative; background: none; border: none; padding: 0; font-size: inherit; color: inherit; font-family: inherit;" onclick="copyToClipboard(this)" title="Click to copy">
+Review the sentiment of my journal entries.
+
+I will paste (or attach) journal entries. Each entry starts with a date line like YYYY-MM-DD, followed by text until the next date.
+
+Goal:
+1) Tag each entry with ONE primary sentiment label: happy, sad, angry, fearful/anxious, neutral, surprised, disgusted.
+2) Show how often each sentiment occurs over time so I can quickly see which periods skew happy/sad/etc.
+
+Output:
+- A table with columns: date, sentiment
+- A monthly summary table showing counts of each sentiment per month (include months with zeroes)
+- A short, plain-English takeaway describing the main shifts and the months that stand out
+
+Rules:
+- Use only the text as evidence. Don’t infer extra context.
+- If an entry is mixed, pick the strongest emotion.
+- If unclear, use neutral.
+- Keep it concise. No long explanations. No bullet lists of tips.
+
+Now analyze the attached/pasted entries.</pre>              
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <% if @entries_with_sentiment.count.positive? %>
+    <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
+      <div class="center <%= add_class %>">
+        <div class="s-entry-date">
+          <h2>Sentiment</h2>
+          <h3>
+            <span><%= "#{pluralize(@entries_with_sentiment.size, 'entry')} tagged" %></span>
+          </h3>
+        </div>
+        <div class="s-review-details">
+          <% @entries_with_sentiment.map(&:sentiment).flatten.uniq.reject { |s| s == "unknown" }.sort.each do |sentiment| %>
+            <%= link_to "#{Entry::AiTagger::EMOTIONS[sentiment]} #{sentiment.titleize}", entries_emotion_path(sentiment), class: "emotion-link", title: "View entries tagged with #{sentiment}" %>
+          <% end %>
+          <%= pie_chart(@sentiment_count, height: "230px", library: { backgroundColor: "#ffffff" }) %>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
+      <div class="center <%= add_class %>">
+        <div class="s-entry-date">
+          <h2>Sentiment over Time</h2>
+        </div>
+        <div class="s-review-details">
+          <%= line_chart @sentiment_by_month_data, ytitle: "Posts", min: 0, round: 0, precision: 0 %>
+          <div class="clearfix"></div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <% entry_dates = @entries.pluck(:date) %>
+  <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
+    <div class="center <%= add_class %>">
+      <div class="s-entry-date">
+        <h2>Days of Entries</h2>
+        <% days = entry_dates.map { |d| d.strftime('%a') } %>
+        <% counts = Hash.new(0) %>
+        <% days.each { |name| counts[name.strip] += 1 } %>
+        <h3>
+          <span><%= "#{pluralize(counts.length, 'day')} a week" %></span>
+        </h3>
+      </div>
+      <div class="s-review-details">
+        <% sorted_counts = Hash.new %>
+        <% Date::ABBR_DAYNAMES.each_with_index { |x, i| sorted_counts[x] = counts[x] } %>
+        <%= column_chart sorted_counts, discrete: true, library: { backgroundColor: "#ffffff" }, ytitle: "Posts", min: 0, round: 0, precision: 0 %>
+        <div class="clearfix"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
+    <div class="center <%= add_class %>">
+      <div class="s-entry-date">
+        <h2>Months of Entries</h2>
+        <% months = entry_dates.map { |d| d.strftime('%b') }.sort %>
+        <% counts = Hash.new(0) %>
+        <% months.each { |name| counts[name.strip] += 1 } %>
+        <h3>
+          <span><%= "#{pluralize(counts.length, 'month')} covered" %></span>
+        </h3>
+      </div>
+      <div class="s-review-details">
+        <% sorted_counts = Hash.new %>
+        <% Date::ABBR_MONTHNAMES.reject(&:blank?).each_with_index { |x, i| sorted_counts[x] = counts[x] } %>
+        <%= column_chart sorted_counts, discrete: true, library: { backgroundColor: "#ffffff" }, ytitle: "Posts", min: 0, round: 0, precision: 0 %>
+        <div class="clearfix"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
+    <div class="center <%= add_class %>">
+      <div class="s-entry-date">
+        <h2>Total Words</h2>
+        <h3>
+          <% percent_book = ((@words_counter.length.to_f / 97_000).to_f * 100).round %>
+          <% book_height = 500 - ((percent_book.to_f / 100) * 500) %>
+          <span><%= "#{format_number(@words_counter.length)} - #{percent_book}% of The 5 Types of Wealth" %></span>
+        </h3>
+      </div>
+      <div class="s-review-details">
+        <div style="position: relative; max-width: 100%;">
+          <%= link_to 'https://amzn.to/44THtN1', target: '_blank', style: "margin-top: 20px; display: block; margin-bottom: 10px; max-width: 100%;" do %>
+            <div class="s-book-cover" style="max-width: 100%; width: 383px; height: <%= book_height < 0 ? 0 : book_height %>px"></div>
+            <%= image_tag 'five-types-of-wealth.jpg', width: 383, height: 500, style: "max-width: 100%;" %>
+          <% end %>
+        </div>
+        <div class="clearfix"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
+    <div class="center <%= add_class %>">
+      <div class="s-entry-date">
+        <h2>Average Words per Post</h2>
+        <h3>
+          <% your_avg_words = @words_counter.length / @total_count %>
+          <span><%= format_number(your_avg_words) %></span>
+        </h3>
+      </div>
+      <% if @year.to_s == "2025" %>
+        <div class="s-review-details" style="margin: 30px auto;">
+          <% if your_avg_words > 294 %>
+            <% compared = 'way more' %>
+          <% elsif your_avg_words > 196 %>
+            <% compared = 'more' %>
+          <% elsif your_avg_words < 98 %>
+            <% compared = 'way less' %>
+          <% else %>
+            <% compared = 'less' %>
+          <% end %>
+          <p><%= "That's #{compared} than the average of all Dabble Me users (196 words per post)." %></p>
+          <p>
+            <span>Collectively, all Dabble Me users could have wrote 78 books equivalent to Sahil Bloom's,</span>
+            <span><%= link_to "The 5 Types of Wealth", "https://amzn.to/44THtN1", target: :_blank %></span>
+            <span>!</span>
+          </p>
+          <div class="clearfix"></div>
+        </div>
+      <% end %>
+    </div>
+  </div>
+
+  <% hashtags = Hash[*current_user.used_hashtags(@entries, false).inject(Hash.new(0)) { |h, v| h[v] += 1; h }.sort_by { |k, v| v }.reverse.flatten] %>
+  <% if hashtags.present? %>
+    <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
+      <div class="center <%= add_class %>">
+        <div class="s-entry-date">
+          <h2>Most Frequent Hashtags</h2>
+        </div>
+        <div class="s-review-details">
+          <% hashtags.first(25).each do |k, v| %>
+            <h3>
+              <%= link_to k, search_url(host: ENV['MAIN_DOMAIN'], search: { term: "##{k}" }), class: "noline" %>
+              <span class="middot">&middot; <%= v %></span>
+            </h3>
+          <% end %>
+          <div class="clearfix"></div>
+        </div>
+      </div>
+    </div>
+  <% end %>
+
+  <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
+    <div class="center <%= add_class %>">
+      <div class="s-entry-date">
+        <h2>Most Frequent Words</h2>
+      </div>
+      <div class="s-review-details">
+        <% grouped_words = @words_counter.group_by(&:itself).transform_values(&:count).sort_by { |_k, v| v }.reverse.to_h %>
+        <% grouped_words = grouped_words.select { |word, count| !Entry::COMMON_WORDS.include?(word) } %>
+        <% grouped_words.first(25).each do |word, count| %>
+          <h3>
+            <%= word %>
+            <span class="middot">&middot; <%= count %></span>
+          </h3>
+        <% end %>
+        <div class="clearfix"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function copyToClipboard(element) {
+    var text = element.innerText.trim();
+    navigator.clipboard.writeText(text).then(function() {
+      var original = element.innerHTML;
+      element.innerHTML = '✓ Copied! Paste into your AI tool.';
+      element.style.backgroundColor = '#d4edda';
+      element.style.color = '#155724';
+      setTimeout(function() {
+        element.innerHTML = original;
+        element.style.backgroundColor = '';
+        element.style.color = '';
+      }, 2000);
+    }).catch(function(err) {
+      alert('Failed to copy text: ' + err);
+    });
+  }
+</script>

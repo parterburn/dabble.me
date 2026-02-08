@@ -1,0 +1,205 @@
+<header 
+  class="fixed top-0 left-0 right-0 z-50 transition-all duration-300"
+  data-navbar
+  data-navbar-scrolled-class="bg-bg/95 backdrop-blur-sm shadow-sm bg-white/20"
+  data-navbar-menu-open-class="bg-bg"
+>
+  <nav class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" aria-label="Main navigation">
+    <div class="flex h-15 items-center justify-between">
+      <!-- Left: Logo -->
+      <div class="flex items-center z-50">
+        <a href="<%= root_path %>" class="flex items-center" title="Write something.">
+          <span class="font-serif text-[30px] font-medium text-primary">
+            Dabble me<span class="text-accent">.</span><span class="pl-1.5 text-subtle blinking-cursor">|</span>
+          </span>
+        </a>
+      </div>
+
+      <% unless user_signed_in? %>
+        <!-- Center: Nav links (desktop) - hidden on smaller screens -->
+        <div class="hidden lg:flex lg:items-center lg:gap-x-8">
+          <a href="/#features" class="text-base font-medium text-muted hover:text-primary transition-colors">
+            Features
+          </a>        
+          <a href="/#pricing" class="text-base font-medium text-muted hover:text-primary transition-colors">
+            Pricing
+          </a>
+          <a href="<%= support_path %>" class="text-base font-medium text-muted hover:text-primary transition-colors">
+            Support
+          </a>
+        </div>
+      <% end %>
+
+      <!-- Right: Auth links + mobile menu button -->
+      <div class="flex items-center gap-x-4 z-50">
+        <% if user_signed_in? %>
+          <a href="<%= entries_path %>" class="inline-flex items-center justify-center text-sm font-medium px-4 py-2 rounded-full bg-olive-900 text-cream-100 hover:bg-olive-950 transition-colors" data-hide-when-menu-open>
+            My Entries
+          </a>
+
+          <!-- Mobile menu button -->
+          <button
+            type="button"
+            class="lg:hidden inline-flex items-center justify-center rounded-lg p-2 text-muted hover:bg-surface hover:text-primary transition-colors touch-manipulation"
+            data-mobile-menu-button
+            aria-expanded="false"
+            aria-controls="mobile-menu"
+          >
+            <span class="sr-only">Toggle menu</span>
+            <!-- Hamburger icon -->
+            <svg class="h-6 w-6" data-icon="hamburger" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+            <!-- X icon (hidden by default) -->
+            <svg class="h-6 w-6 hidden" data-icon="close" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        <% else %>
+          <!-- Log in (desktop only) -->
+          <a href="<%= new_user_session_path %>" class="hidden lg:inline-flex text-base font-medium text-muted hover:text-primary transition-colors">
+            Log in
+          </a>
+          
+          <!-- Get started CTA (always visible) -->
+          <a href="<%= new_user_registration_path %>" class="inline-flex items-center justify-center text-base font-medium px-4 py-2 rounded-full bg-olive-900 text-cream-100 hover:bg-olive-950 transition-colors">
+            Get started
+          </a>
+
+          <!-- Mobile menu button -->
+          <button
+            type="button"
+            class="lg:hidden inline-flex items-center justify-center rounded-lg p-2 text-muted hover:bg-surface hover:text-primary transition-colors touch-manipulation"
+            data-mobile-menu-button
+            aria-expanded="false"
+            aria-controls="mobile-menu"
+          >
+            <span class="sr-only">Toggle menu</span>
+            <!-- Hamburger icon -->
+            <svg class="h-6 w-6" data-icon="hamburger" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+            </svg>
+            <!-- X icon (hidden by default) -->
+            <svg class="h-6 w-6 hidden" data-icon="close" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>          
+        <% end %>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<!-- Full-screen mobile menu overlay -->
+<div 
+  class="lg:hidden"
+  id="mobile-menu" 
+  data-mobile-menu
+  style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 40; background-color: var(--color-bg);"
+>
+  <!-- Menu content - centered vertically with padding for header -->
+  <div class="flex flex-col items-center justify-center min-h-screen px-6 pt-24 pb-12">
+    <nav class="flex flex-col items-center space-y-8">
+      <a href="/#features" class="text-3xl font-medium text-primary hover:text-accent transition-colors">
+        Features
+      </a>
+      <a href="/#pricing" class="text-3xl font-medium text-primary hover:text-accent transition-colors">
+        Pricing
+      </a>
+      <a href="<%= support_path %>" class="text-3xl font-medium text-primary hover:text-accent transition-colors">
+        Support
+      </a>
+      
+      <div class="w-16 h-px bg-subtle my-6"></div>
+      
+      <a href="<%= new_user_session_path %>" class="text-3xl font-medium text-primary hover:text-accent transition-colors">
+        Log in
+      </a>
+    </nav>
+  </div>
+</div>
+
+<!-- Spacer for fixed header -->
+<div class="h-15"></div>
+
+<script>
+  (function() {
+    const navbar = document.querySelector('[data-navbar]');
+    const mobileMenuButtons = document.querySelectorAll('[data-mobile-menu-button]');
+    const mobileMenu = document.querySelector('[data-mobile-menu]');
+    
+    if (!navbar || !mobileMenuButtons.length || !mobileMenu) return;
+    
+    let menuOpen = false;
+    let ticking = false;
+    const scrolledClasses = (navbar.dataset.navbarScrolledClass || '').split(' ').filter(Boolean);
+    const menuOpenClasses = (navbar.dataset.navbarMenuOpenClass || '').split(' ').filter(Boolean);
+    
+    function updateIcons() {
+      mobileMenuButtons.forEach(function(btn) {
+        const hamburger = btn.querySelector('[data-icon="hamburger"]');
+        const close = btn.querySelector('[data-icon="close"]');
+        if (hamburger && close) {
+          if (menuOpen) {
+            hamburger.style.display = 'none';
+            close.style.display = 'block';
+          } else {
+            hamburger.style.display = 'block';
+            close.style.display = 'none';
+          }
+        }
+      });
+    }
+    
+    function updateNavbar() {
+      navbar.classList.remove(...scrolledClasses, ...menuOpenClasses);
+      if (menuOpen) {
+        navbar.classList.add(...menuOpenClasses);
+        document.body.style.overflow = 'hidden';
+        mobileMenu.style.display = 'block';
+      } else {
+        document.body.style.overflow = '';
+        mobileMenu.style.display = 'none';
+        if (window.scrollY > 10) {
+          navbar.classList.add(...scrolledClasses);
+        }
+      }
+      updateIcons();
+      ticking = false;
+    }
+    
+    function onScroll() {
+      if (!ticking) {
+        requestAnimationFrame(updateNavbar);
+        ticking = true;
+      }
+    }
+    
+    function toggleMenu(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      menuOpen = !menuOpen;
+      mobileMenuButtons.forEach(function(btn) {
+        btn.setAttribute('aria-expanded', String(menuOpen));
+      });
+      updateNavbar();
+    }
+    
+    mobileMenuButtons.forEach(function(btn) {
+      btn.addEventListener('click', toggleMenu);
+    });
+    
+    mobileMenu.addEventListener('click', function(e) {
+      if (e.target.tagName === 'A') {
+        menuOpen = false;
+        mobileMenuButtons.forEach(function(btn) {
+          btn.setAttribute('aria-expanded', 'false');
+        });
+        updateNavbar();
+      }
+    });
+    
+    window.addEventListener('scroll', onScroll, { passive: true });
+    updateNavbar();
+  })();
+</script>

@@ -26,7 +26,7 @@
           %span<> Visit
           = link_to "Account Security", security_path, class: "s-delete", style: "opacity: 100%;margin-left: 5px;"
           to change your email, password,
-          =link_to("two-factor authentication", user_otp_token_path, class: "s-delete", style: "opacity: 100%;") + ", or delete your account."
+          =link_to("setup a passkey", security_path, class: "s-delete", style: "opacity: 100%;") + ", or delete your account."
       %br
 
   .col-md-8.col-md-offset-2
@@ -64,7 +64,7 @@
 
   - unless form_path.include?('unsubscribe')
     .col-md-8.col-md-offset-2
-      .well{style: 'background-color: hsla(40, 33%, 96%, 1); padding: 15px 20px;'}
+      .well{style: 'background-color: #E8E8E2; padding: 15px 20px;'}
         %div{style: "margin-bottom: 5px;"}
           = f.check_box :send_past_entry
           = f.label :send_past_entry, "Include past entries in emails and prevent entries that have:"
@@ -84,7 +84,7 @@
             = f.label :way_back_past_entries, "Include past entries that are over a year old", style: "font-weight: normal;"
 
       - if user.is_pro?
-        .well{style: 'background-color: hsla(40, 33%, 96%, 1); padding: 15px 20px;'}
+        .well{style: 'background-color: #E8E8E2; padding: 15px 20px;'}
           %div{style: "margin-bottom: 5px;"}
             .div{style: "margin-bottom: 10px;"}
               %strong Associate dates to your tags to see the relative age in your posts

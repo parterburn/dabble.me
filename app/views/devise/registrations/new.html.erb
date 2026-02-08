@@ -1,0 +1,213 @@
+<% content_for :title, "Sign up" %>
+
+<section class="py-12 lg:py-20">
+  <div class="mx-auto max-w-xl px-4 sm:px-6">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <h1 class="font-serif text-3xl sm:text-4xl tracking-tight text-primary">Create your free account</h1>
+      <p class="mt-3 text-muted">
+        Start your journaling habit with day one.
+      </p>
+    </div>
+
+    <!-- Sign up form -->
+    <div class="card p-6 sm:p-8">
+      <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { class: "space-y-5" }) do |f| %>
+        <%= render "devise/shared/error_messages", resource: resource %>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <%= f.label :first_name, class: "block text-sm font-medium text-primary mb-1.5" %>
+            <%= f.text_field :first_name, 
+                autofocus: true, 
+                required: true,
+                value: params[:user].try(:[], "first_name"),
+                class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
+          </div>
+          <div>
+            <%= f.label :last_name, class: "block text-sm font-medium text-primary mb-1.5" %>
+            <%= f.text_field :last_name, 
+                required: true,
+                value: params[:user].try(:[], "last_name"),
+                class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
+          </div>
+        </div>
+
+        <div>
+          <%= f.label :email, class: "block text-sm font-medium text-primary mb-1.5" %>
+          <%= f.email_field :email, 
+              required: true,
+              placeholder: "you@example.com",
+              class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <%= f.label :password, class: "block text-sm font-medium text-primary mb-1.5" %>
+            <%= f.password_field :password, 
+                autocomplete: "new-password", 
+                required: true,
+                class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
+            <% if @validatable %>
+              <p class="mt-1 text-xs text-muted">Min <%= @minimum_password_length %> characters</p>
+            <% end %>
+          </div>
+          <div>
+            <%= f.label :password_confirmation, "Confirm password", class: "block text-sm font-medium text-primary mb-1.5" %>
+            <%= f.password_field :password_confirmation, 
+                autocomplete: "new-password", 
+                required: true,
+                class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
+          </div>
+        </div>
+
+        <% if ENV['CI'] != "true" && ENV['TURNSTILE_SITE_KEY'].present? %>
+          <div class="flex justify-center">
+            <%= captcha_tags action: "sign-up", data: { theme: "light" } %>
+          </div>
+        <% end %>
+
+        <div>
+          <%= f.submit "Create account", class: "w-full px-6 py-3 text-sm font-medium rounded-lg bg-olive-900 text-white hover:bg-olive-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-olive-500 cursor-pointer transition-colors" %>
+        </div>
+
+        <p class="text-center text-xs text-muted">
+          By signing up you agree to the
+          <%= link_to "terms of service", terms_path, class: "text-accent hover:text-primary underline" %>.
+        </p>
+      <% end %>
+    </div>
+
+    <!-- Already have an account -->
+    <div class="mt-8 text-center space-y-4">
+      <p class="text-muted">
+        Already have an account?
+        <%= link_to "Log in", new_user_session_path, class: "text-accent underline hover:text-primary font-medium transition-colors" %>
+      </p>
+    </div>
+  </div>
+</section>
+
+<% content_for :scripts do %>
+<script>
+(function() {
+  window.DABBLE = window.DABBLE || {};
+  DABBLE.webauthn = {
+    authenticate: function(email) {
+      $.ajax({
+        url: "/passkeys/sessions/new",
+        type: "GET",
+        data: { email: email },
+        dataType: "json",
+        success: function(options) {
+          options.challenge = DABBLE.webauthn.bufferDecode(options.challenge);
+          var allowCredentials = options.allowCredentials || options.allow_credentials;
+          if (allowCredentials) {
+            options.allowCredentials = allowCredentials.map(function(item) {
+              var id = typeof item === 'string' ? item : item.id;
+              return {
+                type: 'public-key',
+                id: DABBLE.webauthn.bufferDecode(id)
+              };
+            });
+          }
+          delete options.allow_credentials;
+
+          navigator.credentials.get({ publicKey: options })
+            .then(function(assertion) {
+              var assertionResponse = {
+                id: assertion.id,
+                rawId: DABBLE.webauthn.bufferEncode(assertion.rawId),
+                type: assertion.type,
+                response: {
+                  authenticatorData: DABBLE.webauthn.bufferEncode(assertion.response.authenticatorData),
+                  clientDataJSON: DABBLE.webauthn.bufferEncode(assertion.response.clientDataJSON),
+                  signature: DABBLE.webauthn.bufferEncode(assertion.response.signature),
+                  userHandle: assertion.response.userHandle ? DABBLE.webauthn.bufferEncode(assertion.response.userHandle) : null
+                }
+              };
+
+              $.ajax({
+                url: "/passkeys/sessions",
+                type: "POST",
+                headers: {
+                  'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+                },
+                data: JSON.stringify(assertionResponse),
+                contentType: "application/json",
+                success: function(response) {
+                  document.cookie = "dabble_passkey_user_hint=" + encodeURIComponent(email) + "; path=/; max-age=" + (60*60*24*365);
+                  window.location.href = response.redirect_url;
+                },
+                error: function(xhr) {
+                  alert("Authentication failed: " + (xhr.responseJSON ? xhr.responseJSON.errors.join(", ") : "Unknown error"));
+                }
+              });
+            })
+            .catch(function(err) {
+              if (err.name === 'NotAllowedError' || err.name === 'AbortError') {
+                document.cookie = "dabble_passkey_user_hint=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC";
+              } else {
+                alert("Error getting credential: " + err);
+              }
+            });
+        },
+        error: function(xhr) {
+          alert("Error: " + (xhr.responseJSON ? xhr.responseJSON.errors.join(", ") : "User not found or no passkey registered"));
+        }
+      });
+    },
+
+    bufferDecode: function(value) {
+      if (typeof value !== "string") {
+        return value;
+      }
+      var base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+      var pad = base64.length % 4;
+      if (pad) {
+        if (pad === 1) {
+          throw new Error("InvalidLengthError: Input base64url string is the wrong length to determine padding");
+        }
+        base64 += new Array(5 - pad).join("=");
+      }
+      return Uint8Array.from(atob(base64), function(c) {
+        return c.charCodeAt(0);
+      });
+    },
+
+    bufferEncode: function(value) {
+      return btoa(String.fromCharCode.apply(null, new Uint8Array(value)))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=/g, "");
+    },
+
+    getCookie: function(name) {
+      var value = "; " + document.cookie;
+      var parts = value.split("; " + name + "=");
+      if (parts.length === 2) return decodeURIComponent(parts.pop().split(";").shift());
+    }
+  };
+
+  $(document).ready(function() {
+    var rememberedEmail = DABBLE.webauthn.getCookie("dabble_passkey_user_hint");
+    if (rememberedEmail) {
+      // Auto-authenticate with saved passkey hint
+      DABBLE.webauthn.authenticate(rememberedEmail);
+    }
+
+    $("#login-passkey").on("click", function(e) {
+      e.preventDefault();
+      var email = rememberedEmail;
+      if (!email) {
+        email = prompt("Enter your email address to log in with passkey:");
+      }
+      if (!email) {
+        return;
+      }
+      DABBLE.webauthn.authenticate(email);
+    });
+  });
+})();
+</script>
+<% end %>

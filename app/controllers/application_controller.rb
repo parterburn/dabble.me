@@ -3,13 +3,14 @@ class ApplicationController < ActionController::Base
   # For APIs, you may want to use :null_session instead.
   protect_from_forgery with: :exception
   before_action :js_action
+  before_action :set_user_today
   before_action :configure_permitted_parameters, if: :devise_controller?
   before_action :identify_current_user_to_sentry
 
   rescue_from Rack::Timeout::RequestTimeoutException, with: :handle_timeout
 
   def redirect_back_or_to(default)
-    redirect_to session&.delete(:return_to) || default
+    redirect_to session&.delete(:return_to) || session&.delete(:user_return_to) || default
   end
 
   def store_location
@@ -47,6 +48,10 @@ class ApplicationController < ActionController::Base
 
   def handle_timeout(exception)
     Sentry.capture_message("Timeout error", level: :error, extra: { params: params, url: request.url })
-    render "errors/timeout"
+    render "errors/timeout", layout: "marketing", status: 504
+  end
+
+  def set_user_today
+    @user_today = Time.now.in_time_zone(current_user&.send_timezone.presence || "UTC").to_date
   end
 end

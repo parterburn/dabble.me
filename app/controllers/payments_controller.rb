@@ -115,6 +115,8 @@ class PaymentsController < ApplicationController
     Stripe.api_key = ENV['STRIPE_API_KEY']
     if current_user.stripe_id? && Stripe::Subscription.list(customer: current_user.stripe_id, status: 'active').data.any?
       redirect_to billing_path
+    elsif current_user.email !~ User::VALID_EMAIL_REGEX
+      redirect_to root_path, alert: "Your email address is not valid. Please update your email address in your account settings."
     else
       url = Rails.env.development? ? "http://localhost:3000" : "https://#{ENV['MAIN_DOMAIN']}"
       stripe_params = {

@@ -10,49 +10,56 @@ class EntriesController < ApplicationController
   rescue_from InvalidDateError, with: :handle_invalid_date
 
   def index
+    @entries = current_user.entries.includes(:inspiration)
+
     if params[:emotion].present?
-      @entries = current_user.entries.includes(:inspiration).where("sentiment::text LIKE ?", "%#{params[:emotion]}%")
+      @entries = @entries.where("sentiment::text LIKE ?", "%#{params[:emotion]}%")
       @title = "Entries tagged with #{params[:emotion].titleize}"
-    elsif params[:group] == "emotion" && params[:subgroup].present?  && params[:subgroup] =~ /^\d+$/
-      @entries = current_user.entries.includes(:inspiration).where("date >= '#{params[:subgroup]}-01-01'::DATE").where.not(sentiment: []).and(current_user.entries.where.not(sentiment: ["unknown"])).sort_by(&:date)
+    elsif params[:group] == "emotion" && params[:subgroup].present? && params[:subgroup] =~ /^\d+$/
+      @entries = @entries.where("date >= '#{params[:subgroup]}-01-01'::DATE").where.not(sentiment: []).where.not(sentiment: ["unknown"]).reorder(date: :asc)
       @title = "Entries tagged with Sentiment in #{params[:subgroup]}"
     elsif params[:group] == 'photos'
-      @entries = current_user.entries.includes(:inspiration).only_images
-      @title = 'Photo Entries'
+      @entries = @entries.only_images
+      @title = 'Photos'
     elsif params[:group] == 'ai'
-      @entries = current_user.entries.includes(:inspiration).with_ai_responses
-      @title = 'DabbleMeGPT Entries'
+      @entries = @entries.with_ai_responses
+      @title = 'AI Entries'
     elsif params[:subgroup].present? && params[:group].present? && params[:subgroup] =~ /^\d+$/ && params[:group] =~ /^\d+$/
-      from_date = "#{params[:group]}-#{params[:subgroup]}"
-      to_date = Date.parse(from_date + "-01").end_of_month
-      @entries = current_user.entries.includes(:inspiration).where("date >= to_date('#{from_date}','YYYY-MM') AND date <= to_date('#{to_date}','YYYY-MM-DD')").sort_by(&:date)
-      date = Date.parse(params[:subgroup] + '/' + params[:group])
-      @title = "Entries from #{date.strftime('%b %Y')}"
+      begin
+        from_date = Date.new(params[:group].to_i, params[:subgroup].to_i, 1)
+        to_date = from_date.end_of_month
+        @entries = @entries.where(date: from_date..to_date).reorder(date: :asc)
+        @title = "Entries from #{from_date.strftime('%b %Y')}"
+      rescue ArgumentError
+        raise InvalidDateError
+      end
     elsif params[:group].present?
       if params[:group] =~ /\A(19|20)\d{2}\z/
         start_date = Date.new(params[:group].to_i, 1, 1)
         end_date = Date.new(params[:group].to_i, 12, 31)
-        @entries = current_user.entries.where(date: start_date..end_date)
+        @entries = @entries.where(date: start_date..end_date)
       else
         raise InvalidDateError
       end
       @title = "Entries from #{params[:group]}"
-    elsif params[:format] != "json"
-      @entries = current_user.entries.includes(:inspiration)
+    else
       @title = 'All Entries'
     end
 
-    if @entries.present?
-      @entries = Kaminari.paginate_array(@entries).page(params[:page]).per(params[:per])
-    elsif params[:format] != "json"
-      flash[:alert] = "No entries found."
+    @entries = @entries.page(params[:page]).per(params[:per])
+
+    if @entries.empty? && params[:format] != "json"
+      flash[:alert] = "No entries found." if params[:emotion].present? || params[:group].present? || params[:subgroup].present?
       redirect_to latest_entry_path and return
     end
 
+    set_hashtags
+    set_sidebar_stats
+
     respond_to do |format|
       format.json {
-        start_date = params[:start].presence || 1.years.ago.strftime("%Y-%m-%d")
-        end_date = params[:end].presence || Date.today.strftime("%Y-%m-%d")
+        start_date = params[:start].presence || (@user_today - 1.year).strftime("%Y-%m-%d")
+        end_date = params[:end].presence || @user_today.strftime("%Y-%m-%d")
         render json: calendar_json(current_user.entries
           .where("date >= '#{start_date}'::DATE AND date < '#{end_date}'::DATE")) }
       format.html
@@ -61,7 +68,8 @@ class EntriesController < ApplicationController
 
   def show
     if @entry
-      track_ga_event('Show')
+      set_hashtags
+      set_sidebar_stats
       render 'show'
     else
       redirect_to entries_path
@@ -69,14 +77,24 @@ class EntriesController < ApplicationController
   end
 
   def latest
-    @title = "Latest Entry"
-    @lastest_entry = current_user.entries.includes(:inspiration).sort_by(&:date).last
+    @title = "Latest Entry — Dabble me."
+    @lastest_entry = current_user.entries.includes(:inspiration).order(date: :asc).first
+    set_hashtags
+    set_sidebar_stats
+    set_years_ago if current_user.is_pro?
+  end
+
+  def set_years_ago
+    user_time = Time.now.in_time_zone(current_user.send_timezone)
+    years_back_dates = (1..5).map { |y| (user_time - y.years).strftime("%Y-%m-%d") }
+    @years_ago_entries = current_user.entries.where(date: years_back_dates).index_by { |e| (user_time.year - e.date.year) }
   end
 
   def random
     @entry = current_user.random_entry
     if @entry
-      track_ga_event('Random')
+      set_hashtags
+      set_sidebar_stats
       render 'show'
     else
       redirect_to entries_path
@@ -91,12 +109,14 @@ class EntriesController < ApplicationController
   end
 
   def spotify
-    @title = "Songs from Entries"
+    @title = "Songs"
+    set_hashtags
+    set_sidebar_stats
   end
 
   def create
     if current_user.is_free?
-      flash[:alert] = "<a href='#{subscribe_url}' class='alert-link'>Subscribe to PRO</a> to write new entries.".html_safe
+      flash[:alert] = "<a href='#{subscribe_path}' class='alert-link'>Subscribe to PRO</a> to write new entries.".html_safe
       redirect_to root_path and return
     end
 
@@ -106,11 +126,11 @@ class EntriesController < ApplicationController
       @existing_entry.body = "#{@existing_entry.body}<hr>#{params[:entry][:entry]}"
       @existing_entry.inspiration_id = params[:entry][:inspiration_id] if params[:entry][:inspiration_id].present?
       if params[:entry][:image].present?
+        @existing_entry.filepicker_url = "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
         if @existing_entry.image_url_cdn.present? || params[:entry][:image].count > 1
           image_urls = collage_from_attachments(Array(params[:entry][:image]))
           ImageCollageJob.perform_later(@existing_entry.id, urls: image_urls)
         elsif params[:entry][:image].present?
-          @existing_entry.filepicker_url = "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
           best_attachment = params[:entry][:image].first
           if best_attachment.content_type.in?(Entry::ALLOWED_IMAGE_TYPES) && best_attachment.original_filename&.downcase&.ends_with?(*%w[.heic .heif .jpg .jpeg .gif .png .webp])
             process_single_image(@existing_entry, best_attachment)
@@ -121,7 +141,6 @@ class EntriesController < ApplicationController
       end
       if @existing_entry.save
         flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime("%B %-d")}."
-        track_ga_event('Merged')
         redirect_to day_entry_path(year: @existing_entry.date.year, month: @existing_entry.date.month, day: @existing_entry.date.day)
       else
         render 'new'
@@ -129,6 +148,7 @@ class EntriesController < ApplicationController
     else
       @entry = current_user.entries.create(entry_params)
       if params[:entry][:image].present? && params[:entry][:image].count > 1
+        @entry.filepicker_url = "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
         image_urls = collage_from_attachments(params[:entry][:image])
         ImageCollageJob.perform_later(@entry.id, urls: image_urls)
       elsif params[:entry][:image].present?
@@ -142,7 +162,6 @@ class EntriesController < ApplicationController
       end
 
       if @entry.save
-        track_ga_event('New')
         flash[:notice] = "Entry created successfully!"
         redirect_to day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day)
       else
@@ -156,7 +175,6 @@ class EntriesController < ApplicationController
     if current_user.is_free?
       @entry.body = @entry.sanitized_body
     end
-    track_ga_event('Edit')
   end
 
   def update
@@ -172,11 +190,11 @@ class EntriesController < ApplicationController
       @existing_entry.body = "#{@existing_entry.body}<hr>#{params[:entry][:entry]}"
       @existing_entry.inspiration_id = params[:entry][:inspiration_id] if params[:entry][:inspiration_id].present?
       if params[:entry][:image].present?
+        @existing_entry.filepicker_url = "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
         if @existing_entry.image_url_cdn.present? || params[:entry][:image].count > 1
           image_urls = collage_from_attachments(Array(params[:entry][:image]))
           ImageCollageJob.perform_later(@existing_entry.id, urls: image_urls)
         else
-          @existing_entry.filepicker_url = "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
           best_attachment = params[:entry][:image].first
           if best_attachment.content_type.in?(Entry::ALLOWED_IMAGE_TYPES) && best_attachment.original_filename&.downcase&.ends_with?(*%w[.heic .heif .jpg .jpeg .gif .png .webp])
             process_single_image(@existing_entry, best_attachment)
@@ -188,7 +206,6 @@ class EntriesController < ApplicationController
       if @existing_entry.save
         @entry.delete
         flash[:notice] = "Merged with existing entry on #{@existing_entry.date.strftime('%B %-d')}."
-        track_ga_event('Update')
         redirect_to day_entry_path(year: @existing_entry.date.year, month: @existing_entry.date.month, day: @existing_entry.date.day) and return
       else
         render 'edit'
@@ -217,7 +234,6 @@ class EntriesController < ApplicationController
             @entry.update(filepicker_url: nil)
           end
         end
-        track_ga_event('Update')
         flash[:notice] = "Entry successfully updated!"
         redirect_to day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day)
       else
@@ -228,64 +244,77 @@ class EntriesController < ApplicationController
 
   def destroy
     if current_user.is_free?
-      flash[:alert] = "<a href='#{subscribe_url}' class='alert-link'>Subscribe to PRO</a> to edit entries.".html_safe
+      flash[:alert] = "<a href='#{subscribe_path}' class='alert-link'>Subscribe to PRO</a> to edit entries.".html_safe
       redirect_to root_path and return
     end
 
     @entry.destroy
-    track_ga_event('Delete')
     flash[:notice] = 'Entry deleted successfully.'
     redirect_to entries_path
   end
 
   def export
-    filename = "dabble_export_#{Time.now.strftime('%Y-%m-%d')}.txt"
-    if params[:only_images] == "true"
-      @entries = current_user.entries.only_images.sort_by(&:date)
-      filename = "dabble_export_image_entries_#{Time.now.strftime('%Y-%m-%d')}.txt"
-    elsif params[:search].present? && search_params[:term].present?
-      if search_params[:term].include?(" OR ")
-        filter_names = search_params[:term].split(' OR ')
-        sanitized_terms = filter_names.map { |term| ActiveRecord::Base.sanitize_sql_like(term.downcase) }
-        conditions = sanitized_terms.map { |term| @entries.where("LOWER(entries.body) LIKE ?", "%#{term}%") }
-        @entries = conditions.reduce(:or)
-      elsif search_params[:term].include?('"')
-        exact_phrase = search_params[:term].delete('"')
-        sanitized_phrase = Regexp.escape(exact_phrase)
-        @entries = current_user.entries.where("entries.body ~* ?", "\\m#{sanitized_phrase}\\M")
-      else
-        @search = Search.new(search_params)
-        @entries = @search.entries
-      end
-      filename = "dabble_export_search_#{search_params[:term].parameterize}_#{Time.now.strftime('%Y-%m-%d')}.txt"
-    elsif params[:year].present?
-      if params[:year] =~ /\A(19|20)\d{2}\z/
-        start_date = Date.new(params[:year].to_i, 1, 1)
-        end_date = Date.new(params[:year].to_i, 12, 31)
-        @entries = current_user.entries.where(date: start_date..end_date)
-        filename = "dabble_export_#{params[:year]}.txt"
-      else
-        raise InvalidDateError
-      end
-    else
-      @entries = current_user.entries.sort_by(&:date)
+    only_images = params[:only_images] == 'true'
+    search_term = params[:search].present? && search_params[:term].present? ? search_params[:term] : nil
+    year = params[:year]
+
+    # Validate year format early
+    if year.present? && year !~ /\A(19|20)\d{2}\z/
+      raise InvalidDateError
     end
-    track_ga_event('Export')
+
+    entries_scope = build_export_scope(only_images, search_term, year)
+    entry_count = entries_scope.count
+
+    # Background the job if more than 100 entries
+    if entry_count > 100
+      export_options = { only_images: only_images, search_term: search_term, year: year }.compact
+      ExportEntriesJob.perform_later(current_user.id, request.format.symbol.to_s, export_options)
+      redirect_to settings_path, notice: "Your export is being prepared. You'll receive an email with the file attached shortly."
+      return
+    end
+
+    filename = build_export_filename(only_images, search_term, year)
+
     respond_to do |format|
-      format.json { send_data JSON.pretty_generate(JSON.parse(@entries.to_json(only: [:date, :body, :image]))), filename: "export_#{Time.now.strftime('%Y-%m-%d')}.json" }
+      format.json do
+        headers['Content-Type'] = 'application/json'
+        headers['Content-Disposition'] = "attachment; filename=#{filename.gsub('.txt', '.json')}"
+        self.response_body = Enumerator.new do |yielder|
+          yielder << "[\n"
+          first = true
+          entries_scope.select(:id, :user_id, :date, :body, :image).find_each(batch_size: 100) do |entry|
+            yielder << ",\n" unless first
+            first = false
+            entry_hash = { date: entry.date.strftime('%Y-%m-%d'), body: entry.body.strip }
+            entry_hash[:image] = entry.image_url_cdn(cloudflare: false) if entry.image.present?
+            yielder << JSON.pretty_generate(entry_hash)
+          end
+          yielder << "\n]"
+        end
+      end
       format.txt do
-        response.headers['Content-Type'] = 'text/txt'
-        response.headers['Content-Disposition'] = "attachment; filename=#{filename}"
-        render 'text_export'
+        headers['Content-Type'] = 'text/plain'
+        headers['Content-Disposition'] = "attachment; filename=#{filename}"
+        self.response_body = Enumerator.new do |yielder|
+          entries_scope.select(:id, :user_id, :date, :body, :image).find_each(batch_size: 100) do |entry|
+            if only_images
+              yielder << "#{entry.image_url_cdn(cloudflare: false)}\n"
+            else
+              yielder << "## #{entry.date.strftime('%Y-%m-%d')}\n"
+              yielder << "#{entry.text_body}\n\n"
+            end
+          end
+        end
       end
     end
   end
 
   def review
-    month = Date.today.month
-    @year = params[:year] || (month > 11 ? Time.now.year : Time.now.year - 1)
+    @year = params[:year] || (@user_today.month > 11 ? @user_today.year : @user_today.year - 1)
     @entries = current_user.entries.where("date >= '#{@year}-01-01'::DATE AND date <= '#{@year}-12-31'::DATE").order(date: :asc)
     @total_count = @entries.count
+    @years_with_entries = current_user.entries.pluck(:date).compact.map(&:year).uniq.sort
     if @total_count.positive?
       @body_text = @entries.map { |e| ActionView::Base.full_sanitizer.sanitize(e.body) }.join(" ")
       tokeniser = WordsCounted::Tokeniser.new(@body_text)
@@ -352,13 +381,6 @@ class EntriesController < ApplicationController
 
   private
 
-  def track_ga_event(action)
-    if ENV['GOOGLE_ANALYTICS_ID'].present?
-      # tracker = Staccato.tracker(ENV['GOOGLE_ANALYTICS_ID'])
-      # tracker.event(category: 'Web Entry', action: action, label: current_user.user_key)
-    end
-  end
-
   def entry_params
     params.require(:entry).permit(:date, :entry, :inspiration_id, :remove_image, :remote_image_url)
   end
@@ -424,7 +446,7 @@ class EntriesController < ApplicationController
     attachments.first(7).map do |att|
       # Convert HEIC to JPEG if needed
       filename = att.original_filename
-      if File.extname(att.original_filename)&.downcase == ".heic"
+      if File.extname(att.original_filename)&.downcase == ".heic" || File.extname(att.original_filename)&.downcase == ".heif" || att.content_type&.include?("heic") || att.content_type&.include?("heif")
         begin
           tempfile = ImageConverter.new(tempfile: att, width: 1200).call
           jpeg_file = ActionDispatch::Http::UploadedFile.new(
@@ -451,6 +473,50 @@ class EntriesController < ApplicationController
     params.require(:search).permit(:term).merge(user: current_user)
   end
 
+  def set_hashtags
+    @hashtags = current_user.original_hashtags.to_a.index_by { |h| h.tag&.downcase }
+  end
+
+  def set_sidebar_stats
+    @all_entries = current_user.entries
+    all_entries_size = @all_entries.count
+
+    # Consolidate main counts into a single query for speed
+    stats = Rails.cache.fetch("user_#{current_user.id}_main_stats_#{all_entries_size}", expires_in: 1.hour) do
+      @all_entries.unscope(:order).select(
+        "count(*) as total",
+        "count(*) FILTER (WHERE image IS NOT NULL AND image != '') as images",
+        "count(*) FILTER (WHERE body LIKE '%🤖 DabbleMeGPT:%') as ai",
+        "count(*) FILTER (WHERE songs::text NOT IN ('[]', '{}')) as spotify"
+      ).take.attributes.slice("total", "images", "ai", "spotify")
+    end
+
+    @total_entries_count = stats["total"].to_i
+    @only_images_count = stats["images"].to_i
+    @with_ai_responses_count = stats["ai"].to_i
+    @only_spotify_count = stats["spotify"].to_i
+
+    # Use SQL for emotions counts to avoid loading all entries into memory
+    @emotions_counts = Rails.cache.fetch("user_#{current_user.id}_emotions_counts_#{all_entries_size}", expires_in: 1.hour) do
+      # Since sentiment is jsonb[], we use unnest() to expand the array
+      @all_entries.unscope(:order)
+                  .where.not(sentiment: [])
+                  .where.not(sentiment: ["unknown"])
+                  .group("unnest(sentiment)")
+                  .count
+    end
+
+    @entries_by_year = Rails.cache.fetch("user_#{current_user.id}_entries_by_year_#{all_entries_size}", expires_in: 1.hour) do
+      @all_entries.unscope(:order).group("DATE_PART('year', date)").count.transform_keys { |k| k.to_i.to_s }.sort.reverse.to_h
+    end
+
+    if params[:group].present? && params[:group] =~ /\A(19|20)\d{2}\z/
+      @entries_by_month = Rails.cache.fetch("user_#{current_user.id}_entries_by_month_#{params[:group]}_#{all_entries_size}", expires_in: 1.hour) do
+        @all_entries.unscope(:order).where("DATE_PART('year', date) = ?", params[:group]).group("DATE_PART('month', date)").count.transform_keys { |k| k.to_i }.to_h
+      end
+    end
+  end
+
   def handle_invalid_date
     flash[:alert] = "Invalid date format"
     redirect_to entries_path
@@ -468,5 +534,45 @@ class EntriesController < ApplicationController
       entry.id,
       file.key
     )
+  end
+
+  def build_export_scope(only_images, search_term, year)
+    if only_images
+      current_user.entries.only_images.reorder(:date)
+    elsif search_term.present?
+      if search_term.include?(' OR ')
+        filter_names = search_term.split(' OR ')
+        sanitized_terms = filter_names.map { |term| ActiveRecord::Base.sanitize_sql_like(term.downcase) }
+        base_scope = current_user.entries
+        conditions = sanitized_terms.map { |term| base_scope.where("LOWER(entries.body) LIKE ?", "%#{term}%") }
+        conditions.reduce(:or).reorder(:date)
+      elsif search_term.include?('"')
+        exact_phrase = search_term.delete('"')
+        sanitized_phrase = Regexp.escape(exact_phrase)
+        current_user.entries.where("entries.body ~* ?", "\\m#{sanitized_phrase}\\M").reorder(:date)
+      else
+        @search = Search.new(search_params)
+        @search.entries.reorder(:date)
+      end
+    elsif year.present?
+      start_date = Date.new(year.to_i, 1, 1)
+      end_date = Date.new(year.to_i, 12, 31)
+      current_user.entries.where(date: start_date..end_date).reorder(:date)
+    else
+      current_user.entries.reorder(:date)
+    end
+  end
+
+  def build_export_filename(only_images, search_term, year)
+    timestamp = Time.now.strftime('%Y-%m-%d')
+    if only_images
+      "dabble_export_image_entries_#{timestamp}.txt"
+    elsif search_term.present?
+      "dabble_export_search_#{search_term.parameterize}_#{timestamp}.txt"
+    elsif year.present?
+      "dabble_export_#{year}.txt"
+    else
+      "dabble_export_#{timestamp}.txt"
+    end
   end
 end

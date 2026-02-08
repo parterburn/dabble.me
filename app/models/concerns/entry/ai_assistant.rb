@@ -17,13 +17,14 @@ class Entry
     private
 
     def model
-      "gpt-5"
+      "gpt-5.2"
     end
 
     def openai_params
       params = {
         input: @messages,
         model: model,
+        reasoning: { effort: "medium" },
         store: false
       }
 

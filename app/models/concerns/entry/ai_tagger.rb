@@ -1,7 +1,7 @@
 class Entry::AiTagger
   SCORE_THRESHOLD = 0.35 # higher = higher confidence in match
-  BASE_URL = "https://api-inference.huggingface.co".freeze
-  AI_MODEL = "/models/j-hartmann/emotion-english-distilroberta-base".freeze
+  BASE_URL = "https://router.huggingface.co".freeze
+  AI_MODEL = "/hf-inference/models/j-hartmann/emotion-english-distilroberta-base".freeze
   MAX_ENTRY_SIZE = 512
 
   EMOTIONS = {

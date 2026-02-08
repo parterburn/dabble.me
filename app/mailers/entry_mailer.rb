@@ -2,8 +2,8 @@ class EntryMailer < ActionMailer::Base
   helper.extend(ApplicationHelper)
   helper EntriesHelper
 
-  def send_entry(user, random_inspiration, send_day: nil)
-    @send_day = send_day.presence || Time.now.in_time_zone(user.send_timezone)
+  def send_entry(user, random_inspiration, options = {})
+    @send_day = options[:send_day].presence || Time.now.in_time_zone(user.send_timezone)
     @random_inspiration = random_inspiration
     @user = user
     @user.increment!(:emails_sent)
@@ -13,11 +13,11 @@ class EntryMailer < ActionMailer::Base
       @random_entry_image_url = @random_entry.image_url_cdn
     end
 
-    email = mail  from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
+    email = mail  from: "Dabble me. <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
                   to: "#{user.cleaned_to_address}",
                   subject: "It's #{@send_day.strftime('%A, %b %-d')}. How was your day?",
-                  html: (render_to_string(template: '../views/entry_mailer/send_entry.html')).to_str,
-                  text: (render_to_string(template: '../views/entry_mailer/send_entry.text')).to_str
+                  html: render_to_string('entry_mailer/send_entry', formats: [:html]).to_str,
+                  text: render_to_string('entry_mailer/send_entry', formats: [:text]).to_str
 
     email.mailgun_options = { tag: 'Entry' }
   end
@@ -37,8 +37,8 @@ class EntryMailer < ActionMailer::Base
     email = mail  from: "DabbleMeGPT 🪄 <#{user.user_key}@#{ENV['SMTP_DOMAIN'].gsub('post', 'ai')}>",
                   to: "#{user.cleaned_to_address}",
                   subject: "Re: #{subject(entry)}",
-                  html: (render_to_string(template: '../views/entry_mailer/respond_as_ai.html')).to_str,
-                  text: (render_to_string(template: '../views/entry_mailer/respond_as_ai.text')).to_str
+                  html: render_to_string('entry_mailer/respond_as_ai', formats: [:html]).to_str,
+                  text: render_to_string('entry_mailer/respond_as_ai', formats: [:text]).to_str
 
     email.mailgun_options = { tag: 'AI Entry' }
   end
@@ -48,11 +48,11 @@ class EntryMailer < ActionMailer::Base
     @user = user
     @errors = errors
     set_reply_headers(entry)
-    email = mail  from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
+    email = mail  from: "Dabble me. <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
                   to: "#{user.cleaned_to_address}",
                   bcc: ["hello@#{ENV['MAIN_DOMAIN']}"],
                   subject: "Image Error Re: #{subject(entry)}",
-                  html: (render_to_string(template: '../views/entry_mailer/image_error.html')).to_str
+                  html: render_to_string('entry_mailer/image_error', formats: [:html]).to_str
     email.mailgun_options = { tag: "Entry Image Error" }
   end
 

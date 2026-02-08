@@ -1,5 +1,9 @@
 class User < ActiveRecord::Base
   include RandomizedField
+  include User::XOauth
+
+  VALID_EMAIL_REGEX = /\A[A-Z0-9._%'+-]+@[A-Z0-9.-]+\.[A-Z]{2,63}\z/i
+  validates :email, format: { with: VALID_EMAIL_REGEX }, allow_blank: true
 
   # Include default devise modules. Others available are:
   # :confirmable, :timeoutable and :omniauthable, :lockable
@@ -13,10 +17,13 @@ class User < ActiveRecord::Base
   has_many :entries, dependent: :destroy
   has_many :hashtags, dependent: :destroy
   has_many :payments
+  has_many :webauthn_credentials, dependent: :destroy
+  has_many :x_bookmarks, dependent: :destroy
 
   accepts_nested_attributes_for :hashtags, allow_destroy: true, :reject_if => proc { |att| att[:tag].blank? || att[:date].blank? }
 
-  scope :subscribed_to_emails, -> { where.not(frequency: []).where.not(frequency: nil) }
+  scope :not_deleted, -> { where(deleted_at: nil) }
+  scope :subscribed_to_emails, -> { not_deleted.where.not(frequency: []).where.not(frequency: nil) }
   scope :not_just_signed_up, -> { where("created_at < (?)", DateTime.now - 18.hours) }
   scope :daily_emails, -> { where(frequency: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]) }
   scope :with_entries, -> { includes(:entries).where("entries.id > 0").references(:entries) }
@@ -100,6 +107,20 @@ class User < ActiveRecord::Base
     ai_opt_in?
   end
 
+  def deletion_pending?
+    deleted_at.present?
+  end
+
+  # Devise: prevent login if account is pending deletion
+  def active_for_authentication?
+    super && !deletion_pending?
+  end
+
+  # Devise: custom message for pending deletion
+  def inactive_message
+    deletion_pending? ? :account_pending_deletion : super
+  end
+
   def is_pro?
     plan_name == 'Dabble Me PRO'
   end
@@ -178,13 +199,13 @@ class User < ActiveRecord::Base
   end
 
   def any_hashtags?
-    hashtags.pluck(:tag).compact.any?
+    original_hashtags.any?
   end
 
   alias_method :original_hashtags, :hashtags
   def hashtags
-    @hashtags ||= begin
-      used_hashtags(entries, true).first(5).each do |h|
+    @hashtags_list ||= begin
+      used_hashtags(entries.limit(100), true).first(5).each do |h|
         next if h.downcase.in?(original_hashtags.pluck(:tag)&.map(&:downcase))
 
         original_hashtags.build(tag: h)
@@ -218,33 +239,30 @@ class User < ActiveRecord::Base
   end
 
   def writing_streak
-    # Convert Rails timezone to PostgreSQL timezone identifier
-    pg_timezone = ActiveSupport::TimeZone::MAPPING[send_timezone] || 'UTC'
+    @writing_streak ||= begin
+      streak = 0
+      # Get all entry dates for the user, sorted descending
+      entry_dates = entries.pluck(:date).compact.map(&:to_date).uniq.sort.reverse
 
-    # Find the first gap using a window function
-    gap_date = ActiveRecord::Base.connection.execute(<<-SQL)
-      WITH dates AS (
-        SELECT date,
-               LEAD(date) OVER (ORDER BY date DESC) as next_date
-        FROM entries
-        WHERE date <= (CURRENT_TIMESTAMP AT TIME ZONE '#{pg_timezone}' AT TIME ZONE 'UTC')::date
-        AND user_id = #{id}
-        ORDER BY date DESC
-      )
-      SELECT date
-      FROM dates
-      WHERE next_date IS NULL OR EXTRACT(EPOCH FROM (date - next_date))/86400 > 1
-      LIMIT 1
-    SQL
+      if entry_dates.any?
+        today = Time.current.in_time_zone(send_timezone).to_date
 
-    gap_date = gap_date.first&.fetch('date', nil)
+        # Start checking from today or the latest entry date if it's recent
+        current_date = entry_dates.first
 
-    # If no gap found, count all entries
-    if gap_date.nil?
-      entries.where(user_id: id).count
-    else
-      # Count entries from today until the gap
-      entries.where(user_id: id, date: gap_date..Time.current.in_time_zone(send_timezone).to_date).count
+        # If the latest entry is older than yesterday, the streak is broken (unless it's today/yesterday)
+        if current_date >= today - 1.day
+          entry_dates.each do |date|
+            if date == current_date
+              streak += 1
+              current_date -= 1.day
+            else
+              break
+            end
+          end
+        end
+      end
+      streak
     end
   rescue StandardError => e
     Sentry.capture_exception(e, extra: { user_id: id })

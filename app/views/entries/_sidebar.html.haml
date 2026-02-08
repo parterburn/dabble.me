@@ -1,27 +1,34 @@
+- dashboard = local_assigns[:dashboard] || false
+- current_user_entries = current_user.entries
+
 .col-md-8.col-md-offset-1
   = render "pro_upgrade"
 
   %h3.visible-sm.visible-xs
-    #{@title.upcase.html_safe}
-    =link_to "javascript:void(0);", onclick: "$('.j-calendar').slideToggle('fast');", class: "s-toggle-calendar", style: "text-decoration: none;" do
-      %span{style: "font-size: 13px; position: relative; top: -1px; "} FILTERS
-      %i.fa.fa-calendar
+    %div{style: "display: flex; justify-content: space-between; align-items: center;"}
+      - if dashboard
+        -if current_user.first_name.present?
+          Welcome back, #{current_user.first_name}.
+        - else
+          Welcome back.
+      - else
+        #{@title.upcase.html_safe}
+
+      =link_to "javascript:void(0);", onclick: "$('.j-calendar').slideToggle('fast');", class: "s-toggle-calendar", style: "text-decoration: none; flex-shrink: 0;" do
+        %span{style: "font-size: 13px; position: relative; top: -1px; "} FILTERS 🔽
 
 .col-xs-11.col-sm-5.col-md-2.s-date-groups.j-calendar
   - if current_page?(latest_entry_path)
     - has_past_entries = false
-    -if current_user.is_pro?
-      - 5.times do |year_back|
-        - year_back += 1
-        - back_year_entry = current_user.entries.where(:date => (Time.now.in_time_zone(current_user.send_timezone) - year_back.years).strftime("%Y-%m-%d")).first
-        - if back_year_entry.present?
-          - has_past_entries = true
-          %h4
-            =link_to "#entry-#{back_year_entry.id}", "data-id": "#{back_year_entry.id}",  class: "j-entry-link", style: "color: #a41100;" do
-              .s-date-left
-                %i.fa.fa-history
-                &nbsp;#{pluralize(year_back, "year").upcase} AGO
-              .clearfix
+    - if current_user.is_pro? && @years_ago_entries.present?
+      - @years_ago_entries.sort.each do |year_back, back_year_entry|
+        - has_past_entries = true
+        %h4
+          =link_to "#entry-#{back_year_entry.id}", "data-id": "#{back_year_entry.id}",  class: "j-entry-link", style: "color: #a41100;" do
+            .s-date-left
+              %i.fa.fa-history
+              &nbsp;#{pluralize(year_back, "year").upcase} AGO
+            .clearfix
       - if has_past_entries
         :javascript
           $(".j-date-header").show();
@@ -31,69 +38,69 @@
       .s-date-left
         ALL
       .s-date-right
-        #{format_number(current_user.entries.size)}
+        #{format_number(@total_entries_count)}
       .clearfix
 
   - if params[:emotion].present? || params[:group] == "emotion"
-    - (current_user.entries.pluck(:sentiment).flatten.uniq.sort - ["unknown"]).each do |emotion|
+    - @emotions_counts.sort_by { |emotion, count| emotion }.each do |emotion, count|
       %h4{style: "font-size: 15px;"}
         =link_to entries_emotion_path(emotion), class: ("active" if params[:emotion] == emotion) do
           .s-date-left
             = Entry::AiTagger::EMOTIONS[emotion]
             = emotion.upcase
           .s-date-right
-            = format_number(current_user.entries.where("sentiment::text LIKE ?", "%#{emotion}%").size)
+            = format_number(count)
           .clearfix
     %hr
 
-  - if (only_images = current_user.entries.only_images.size) > 0
+  - if @only_images_count && @only_images_count > 0
     %h4{style: "font-size: 15px;"}
       =link_to group_entries_path('photos'), class: "#{'active' if current_page?(group_entries_path('photos'))}" do
         .s-date-left
           %i.fa.fa-image{style: "color: #cccccc;margin-right: 2px;"}
           PHOTOS
         .s-date-right
-          #{format_number(only_images)}
+          #{format_number(@only_images_count)}
         .clearfix
 
-  - if (only_images = current_user.entries.with_ai_responses.size) > 0
+  - if @with_ai_responses_count && @with_ai_responses_count > 0
     %h4{style: "font-size: 15px;"}
       =link_to group_entries_path('ai'), class: "#{'active' if current_page?(group_entries_path('ai'))}" do
         .s-date-left
           %i.fa.fa-magic{style: "color: #cccccc;margin-right: 2px;"}
           AI
         .s-date-right
-          #{format_number(only_images)}
+          #{format_number(@with_ai_responses_count)}
         .clearfix
 
-  - spotify_entries = current_user.entries.only_spotify
   %h4{style: "font-size: 15px;"}
     =link_to spotify_path, class: "#{'active' if current_page?(spotify_path)}" do
       .s-date-left
         %i.fa.fa-music{style: "color: #cccccc;margin-right: 4px;"}
         SPOTIFY
       .s-date-right
-        #{format_number(spotify_entries.size)}
+        #{format_number(@only_spotify_count)}
       .clearfix
 
-  - current_user.entries.group_by{|c| c.date.strftime "%Y" }.each do |year_str,year_entries|
+  - @entries_by_year.each do |year_str, count|
     %h4.s-date-year
       =link_to group_entries_path(year_str), class: "#{'active' if params[:group] == year_str}" do
         .s-date-left
           = year_str.upcase
         .s-date-right
-          #{format_number(year_entries.size)}
+          #{format_number(count)}
         .clearfix
 
-    - year_entries.group_by{|c| c.date.strftime "%b" }.each do |month_str,date_entries|
-      - if (!current_page?(latest_entry_path) && year_str == params[:group]) || ((current_page?(latest_entry_path) || (current_page?(entries_path) && params[:group].blank?)) && year_str == Time.now.in_time_zone(current_user.send_timezone).year.to_s)
+    - if params[:group] == year_str && @entries_by_month.present?
+      - @entries_by_month.sort.each do |month_num, count|
+        - month_str = Date::ABBR_MONTHNAMES[month_num].upcase
         .s-date-left
-          =link_to entries_calendar_path(day: year_str+"-"+month_str.to_date.strftime('%m')), class: "noline" do
+          =link_to entries_calendar_path(day: year_str+"-"+month_num.to_s.rjust(2, '0')), class: "noline" do
             %i.fa.fa-calendar
           &nbsp;
-        =link_to group_entries_path(year_str, month_str.to_date.strftime('%m')), :class => "#{'active' if params[:group] == year_str && params[:subgroup] == month_str.to_date.strftime('%m')}" do
+        =link_to group_entries_path(year_str, month_num.to_s.rjust(2, '0')), :class => "#{'active' if params[:group] == year_str && params[:subgroup] == month_num.to_s.rjust(2, '0')}" do
           .s-date-left
-            = month_str.upcase
+            = month_str
           .s-date-right
-            #{format_number(date_entries.size)}
+            #{format_number(count)}
           .clearfix

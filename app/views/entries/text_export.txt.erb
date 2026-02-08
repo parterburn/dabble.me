@@ -1,5 +1,5 @@
 <% @entries.each do |entry| %><% if params[:only_images] == "true" %>
 <%= entry.image_url_cdn(cloudflare: false) %><% else %>
 ## <%= entry.date.strftime("%Y-%m-%d")%>
-<%== entry.text_bodies_for_ai.first %>
+<%== entry.text_body %>
 <% end %><% end %>

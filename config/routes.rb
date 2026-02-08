@@ -9,10 +9,16 @@ Rails.application.routes.draw do
     mount Sidekiq::Web => "/sidekiq"
   end
 
-  devise_for :users, controllers: { registrations: 'registrations', session: 'sessions', passwords: 'passwords' }
+  devise_for :users, controllers: { registrations: 'registrations', sessions: 'sessions', passwords: 'passwords' }
+  get '/users/:id', to: redirect('/security'), as: 'user'
 
   devise_scope :user do
     post "/validate_otp", to: "sessions#validate_otp", as: "validate_otp"
+  end
+
+  namespace :passkeys do
+    resources :registrations, only: [:new, :create, :destroy]
+    resources :sessions, only: [:new, :create]
   end
 
   devise_scope :user do
@@ -45,10 +51,13 @@ Rails.application.routes.draw do
   get 'write',                          to: redirect('/entries/new')
   get 'privacy',                        to: 'welcome#privacy'
   get 'terms',                          to: 'welcome#terms'
-  get 'features',                       to: 'welcome#features'
-  get 'faqs',                           to: 'welcome#faqs'
-  get 'subscribe',                      to: 'welcome#subscribe'
-  get 'donate',                         to: redirect('/subscribe')
+  get 'support',                        to: 'welcome#support'
+
+  # Redirects for old routes
+  get 'features',                       to: redirect('/#features')
+  get 'faqs',                           to: redirect('/support')
+  get 'pricing',                        to: redirect('/#pricing')
+  get 'subscribe',                      to: "welcome#subscribe"
   get 'pro',                            to: redirect('/subscribe')
   match 'payment_notify',               to: 'payments#payment_notify', via: [:post]
   get 'ohlife-alternative',             to: 'welcome#ohlife_alternative'
@@ -63,5 +72,8 @@ Rails.application.routes.draw do
 
   root 'welcome#index'
 
-  # get "*any", via: :all, to: "errors#not_found"
+  match '/404', to: 'errors#not_found', via: :all
+  match '/422', to: 'errors#unprocessable_entity', via: :all
+  match '/500', to: 'errors#internal_server_error', via: :all
+  match '/504', to: 'errors#timeout', via: :all
 end

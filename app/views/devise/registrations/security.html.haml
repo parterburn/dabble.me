@@ -1,4 +1,4 @@
-- title 'Account Security Settings on Dabble Me'
+- title 'Account Settings — Dabble me.'
 
 .row
   .col-md-8.col-md-offset-2
@@ -26,12 +26,36 @@
       %br
 
     .col-md-8.col-md-offset-2
-      %strong= link_to (resource.otp_enabled? ? "✅ Change Two-Factor Authentication" : "⚠️ Setup Two-Factor Authentication"), user_otp_token_path
+      %label{style: 'margin-bottom: 10px;'} Additional Security
       %br
-      %br
+      %div{style: 'margin-bottom: 15px;'}
+        %button.btn.btn-default.btn-sm#add-passkey{type: "button"}
+          Add Passkey
+
+        = link_to user_otp_token_path do
+          %button.btn.btn-default.btn-sm#add-two-factor{type: "button"}
+            - if current_user.otp_enabled?
+              %span{class: "text-success"}
+                ✅ Change Two-Factor Authentication
+            -else
+              Setup Two-Factor Authentication
+
+      - if current_user.webauthn_credentials.any?
+        %table.table
+          %thead
+            %tr
+              %th Passkey
+              %th Added
+              %th
+          %tbody
+            - current_user.webauthn_credentials.each do |credential|
+              %tr
+                %td= credential.nickname
+                %td= credential.created_at.strftime("%b %d, %Y")
+                %td= link_to "Remove", passkeys_registration_path(credential), method: :delete, data: { confirm: "Are you sure?" }, class: "text-danger"
 
     .col-md-8.col-md-offset-2
-      .well{style: 'background-color: hsla(40, 33%, 96%, 1); padding: 15px 20px;'}
+      .well{style: 'background-color: #E8E8E2; padding: 15px 20px;'}
         = f.label :current_password
         to confirm your changes
         = f.password_field :current_password, autocomplete: "off", class: "form-control"

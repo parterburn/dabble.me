@@ -103,7 +103,63 @@
     %strong= format_number(emails_received_total)
     %span{style: "margin-left: 10px;"}  #{number_to_percentage(emails_received_total.to_f/emails_sent_total.to_f*100, precision: 0)}
 
+  .col-md-12
+    %hr
 
+  .col-md-12
+    - active = @dashboard.active_users_breakdown(since: 1.year.ago)
+    - pro_total = all_users.pro_only.count
+    %h3 Active Users since #{1.year.ago.strftime('%b %-d, %Y')}
+    .row
+      .col-md-3
+        %strong Metric
+      .col-md-2
+        %strong All
+      .col-md-2
+        %strong Pro
+      .col-md-2
+        %strong Free
+    .row
+      .col-md-3
+        %strong Active (>=1 entry)
+      .col-md-2
+        %strong #{format_number(active[:all][:yearly_count])}
+      .col-md-2
+        %strong #{format_number(active[:pro][:yearly_count])}
+        %span{style: "margin-left: 10px;"} #{number_to_percentage(active[:pro][:yearly_count].to_f/pro_total.to_f*100, precision: 1)}
+      .col-md-2
+        %strong #{format_number(active[:free][:yearly_count])}
+    .row
+      .col-md-3
+        %strong Monthly (all 12 months)
+      .col-md-2
+        %strong #{format_number(active[:all][:monthly_count])}
+      .col-md-2
+        %strong #{format_number(active[:pro][:monthly_count])}
+        %span{style: "margin-left: 10px;"} #{number_to_percentage(active[:pro][:monthly_count].to_f/pro_total.to_f*100, precision: 1)}
+      .col-md-2
+        %strong #{format_number(active[:free][:monthly_count])}
+    .row
+      .col-md-3
+        %strong Weekly (>=52 weeks)
+      .col-md-2
+        %strong #{format_number(active[:all][:weekly_count])}
+      .col-md-2
+        %strong #{format_number(active[:pro][:weekly_count])}
+        %span{style: "margin-left: 10px;"} #{number_to_percentage(active[:pro][:weekly_count].to_f/pro_total.to_f*100, precision: 1)}
+      .col-md-2
+        %strong #{format_number(active[:free][:weekly_count])}
+    .row
+      .col-md-3
+        %strong Daily (>=365 days)
+      .col-md-2
+        %strong #{format_number(active[:all][:daily_count])}
+      .col-md-2
+        %strong #{format_number(active[:pro][:daily_count])}
+        %span{style: "margin-left: 10px;"} #{number_to_percentage(active[:pro][:daily_count].to_f/pro_total.to_f*100, precision: 1)}
+      .col-md-2
+        %strong #{format_number(active[:free][:daily_count])}
+  
   .col-md-12
     %hr
 

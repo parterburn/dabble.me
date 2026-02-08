@@ -1,0 +1,209 @@
+<% content_for :title, "Log in" %>
+
+<section class="py-12 lg:py-20">
+  <div class="mx-auto max-w-lg px-4 sm:px-6">
+    <!-- Header -->
+    <div class="text-center mb-8">
+      <h1 class="font-serif text-3xl sm:text-4xl tracking-tight text-primary">Welcome back</h1>
+    </div>
+
+    <!-- Login form -->
+    <div class="card p-6 sm:p-8">
+      <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "space-y-5" }) do |f| %>
+        
+        <%= render "devise/shared/error_messages", resource: resource %>
+
+        <div>
+          <%= f.label :email, class: "block text-sm font-medium text-primary mb-1.5" %>
+          <%= f.email_field :email, 
+              autofocus: true, 
+              required: true,
+              value: params[:user].try(:[], "email") || resource.email,
+              placeholder: "you@example.com",
+              class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
+        </div>
+
+        <div>
+          <%= f.label :password, class: "block text-sm font-medium text-primary mb-1.5" %>
+          <%= f.password_field :password, 
+              autocomplete: "current-password", 
+              required: true,
+              class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
+        </div>
+
+        <% if devise_mapping.rememberable? %>
+          <div class="flex items-center justify-between">
+            <label class="flex items-center gap-2 cursor-pointer">
+              <%= f.check_box :remember_me, class: "w-4 h-4 rounded border-subtle text-accent focus:ring-accent cursor-pointer" %>
+              <span class="text-sm text-muted">Stay logged in for 2 weeks</span>
+            </label>
+            <%= link_to "Forgot password?", new_password_path(resource_name), class: "text-sm text-accent hover:text-primary transition-colors" %>
+          </div>
+        <% end %>
+
+        <% if ENV['CI'] != "true" && ENV['TURNSTILE_SITE_KEY'].present? %>
+          <div class="flex justify-center">
+            <%= captcha_tags action: "login", data: { theme: "light" } %>
+          </div>
+        <% end %>
+
+        <div>
+          <%= f.submit "Log in", class: "w-full px-6 py-3 text-sm font-medium rounded-lg bg-olive-900 text-white hover:bg-olive-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-olive-500 cursor-pointer transition-colors" %>
+        </div>
+
+        <!-- Divider -->
+        <div class="relative">
+          <div class="absolute inset-0 flex items-center">
+            <div class="w-full border-t border-subtle"></div>
+          </div>
+          <div class="relative flex justify-center text-sm">
+            <span class="px-4 bg-surface text-muted">or</span>
+          </div>
+        </div>
+
+        <!-- Passkey login -->
+        <button type="button" id="login-passkey" class="w-full px-6 py-3 text-sm font-medium rounded-lg border border-subtle bg-surface text-primary hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent cursor-pointer transition-colors flex items-center justify-center gap-2">
+          <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M7.864 4.243A7.5 7.5 0 0119.5 10.5c0 2.92-.556 5.709-1.568 8.268M5.742 6.364A7.465 7.465 0 004.5 10.5a7.464 7.464 0 01-1.15 3.993m1.989 3.559A11.209 11.209 0 008.25 10.5a3.75 3.75 0 117.5 0c0 .527-.021 1.049-.064 1.565M12 10.5a14.94 14.94 0 01-3.6 9.75m6.633-4.596a18.666 18.666 0 01-2.485 5.33" />
+          </svg>
+          Log in with Passkey
+        </button>
+
+        <p class="text-center text-xs text-muted">
+          By logging in you agree to the
+          <%= link_to "terms of service", terms_path, class: "text-accent hover:text-primary underline" %>.
+        </p>
+      <% end %>
+    </div>
+
+    <!-- Sign up CTA -->
+    <div class="mt-8 text-center">
+      <p class="text-muted">
+        Don't have an account?
+        <%= link_to "Sign up for free", new_registration_path(resource_name), class: "text-accent underline hover:text-primary font-medium transition-colors" %>
+      </p>
+    </div>
+  </div>
+</section>
+
+<% content_for :scripts do %>
+<script>
+(function() {
+  window.DABBLE = window.DABBLE || {};
+  DABBLE.webauthn = {
+    authenticate: function(email) {
+      $.ajax({
+        url: "/passkeys/sessions/new",
+        type: "GET",
+        data: { email: email },
+        dataType: "json",
+        success: function(options) {
+          options.challenge = DABBLE.webauthn.bufferDecode(options.challenge);
+          var allowCredentials = options.allowCredentials || options.allow_credentials;
+          if (allowCredentials) {
+            options.allowCredentials = allowCredentials.map(function(item) {
+              var id = typeof item === 'string' ? item : item.id;
+              return {
+                type: 'public-key',
+                id: DABBLE.webauthn.bufferDecode(id)
+              };
+            });
+          }
+          delete options.allow_credentials;
+
+          navigator.credentials.get({ publicKey: options })
+            .then(function(assertion) {
+              var assertionResponse = {
+                id: assertion.id,
+                rawId: DABBLE.webauthn.bufferEncode(assertion.rawId),
+                type: assertion.type,
+                response: {
+                  authenticatorData: DABBLE.webauthn.bufferEncode(assertion.response.authenticatorData),
+                  clientDataJSON: DABBLE.webauthn.bufferEncode(assertion.response.clientDataJSON),
+                  signature: DABBLE.webauthn.bufferEncode(assertion.response.signature),
+                  userHandle: assertion.response.userHandle ? DABBLE.webauthn.bufferEncode(assertion.response.userHandle) : null
+                }
+              };
+
+              $.ajax({
+                url: "/passkeys/sessions",
+                type: "POST",
+                headers: {
+                  'X-CSRF-Token': $('meta[name="csrf-token"]').attr('content')
+                },
+                data: JSON.stringify(assertionResponse),
+                contentType: "application/json",
+                success: function(response) {
+                  document.cookie = "dabble_passkey_user_hint=" + encodeURIComponent(email) + "; path=/; max-age=" + (60*60*24*365);
+                  window.location.href = response.redirect_url;
+                },
+                error: function(xhr) {
+                  alert("Authentication failed: " + (xhr.responseJSON ? xhr.responseJSON.errors.join(", ") : "Unknown error"));
+                }
+              });
+            })
+            .catch(function(err) {
+              if (err.name === 'NotAllowedError' || err.name === 'AbortError') {
+                document.cookie = "dabble_passkey_user_hint=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC";
+              } else {
+                alert("Error getting credential: " + err);
+              }
+            });
+        },
+        error: function(xhr) {
+          alert("Error: " + (xhr.responseJSON ? xhr.responseJSON.errors.join(", ") : "User not found or no passkey registered"));
+        }
+      });
+    },
+
+    bufferDecode: function(value) {
+      if (typeof value !== "string") {
+        return value;
+      }
+      var base64 = value.replace(/-/g, "+").replace(/_/g, "/");
+      var pad = base64.length % 4;
+      if (pad) {
+        if (pad === 1) {
+          throw new Error("InvalidLengthError: Input base64url string is the wrong length to determine padding");
+        }
+        base64 += new Array(5 - pad).join("=");
+      }
+      return Uint8Array.from(atob(base64), function(c) {
+        return c.charCodeAt(0);
+      });
+    },
+
+    bufferEncode: function(value) {
+      return btoa(String.fromCharCode.apply(null, new Uint8Array(value)))
+        .replace(/\+/g, "-")
+        .replace(/\//g, "_")
+        .replace(/=/g, "");
+    },
+
+    getCookie: function(name) {
+      var value = "; " + document.cookie;
+      var parts = value.split("; " + name + "=");
+      if (parts.length === 2) return decodeURIComponent(parts.pop().split(";").shift());
+    }
+  };
+
+  $(document).ready(function() {
+    var rememberedEmail = DABBLE.webauthn.getCookie("dabble_passkey_user_hint");
+    if (rememberedEmail) {
+      DABBLE.webauthn.authenticate(rememberedEmail);
+    }
+
+    $("#login-passkey").on("click", function(e) {
+      e.preventDefault();
+      var email = $("#user_email").val() || rememberedEmail;
+      if (!email) {
+        alert("Please enter your email address first.");
+        $("#user_email").focus();
+        return;
+      }
+      DABBLE.webauthn.authenticate(email);
+    });
+  });
+})();
+</script>
+<% end %>

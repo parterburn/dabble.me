@@ -150,7 +150,7 @@ RSpec.describe EntriesController, type: :controller do
       expect { delete :destroy, params: { id: entry.id } }.to change { Entry.count }.by(-1)
       get :latest
       expect(response.status).to eq 200
-      expect(response.body).to have_content("Reply to the email from Dabble Me and you'll see it here.")
+      expect(response.body).to have_content("reply to the email from Dabble Me to create your first entry")
     end
   end
 

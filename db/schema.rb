@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2025_03_28_162010) do
+ActiveRecord::Schema.define(version: 2026_02_08_172837) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -106,6 +106,15 @@ ActiveRecord::Schema.define(version: 2025_03_28_162010) do
     t.string "otp_persistence_seed"
     t.string "otp_session_challenge"
     t.datetime "otp_challenge_expires"
+    t.text "otp_auth_secret_ciphertext"
+    t.text "otp_recovery_secret_ciphertext"
+    t.text "otp_persistence_seed_ciphertext"
+    t.datetime "deleted_at"
+    t.string "x_username"
+    t.string "x_uid"
+    t.text "x_access_token"
+    t.text "x_refresh_token"
+    t.string "raindrop_api_key"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["otp_challenge_expires"], name: "index_users_on_otp_challenge_expires"
     t.index ["otp_session_challenge"], name: "index_users_on_otp_session_challenge", unique: true
@@ -114,4 +123,35 @@ ActiveRecord::Schema.define(version: 2025_03_28_162010) do
     t.index ["user_key"], name: "index_users_on_user_key", unique: true
   end
 
+  create_table "webauthn_credentials", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "external_id"
+    t.string "public_key"
+    t.string "nickname"
+    t.bigint "sign_count"
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["external_id"], name: "index_webauthn_credentials_on_external_id"
+    t.index ["user_id"], name: "index_webauthn_credentials_on_user_id"
+  end
+
+  create_table "x_bookmarks", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "tweet_id", null: false
+    t.string "author_id"
+    t.string "author_username"
+    t.string "author_name"
+    t.text "text"
+    t.datetime "tweeted_at"
+    t.string "url"
+    t.jsonb "entities", default: {}
+    t.jsonb "public_metrics", default: {}
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["user_id", "tweet_id"], name: "index_x_bookmarks_on_user_id_and_tweet_id", unique: true
+    t.index ["user_id"], name: "index_x_bookmarks_on_user_id"
+  end
+
+  add_foreign_key "webauthn_credentials", "users"
+  add_foreign_key "x_bookmarks", "users"
 end

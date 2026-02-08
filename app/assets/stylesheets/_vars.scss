@@ -1,6 +1,50 @@
 // Colors
-$cream: #fcfbf9;
-$red: #a41100;
-$blue: #649cc7;
+$red-50: #FEF3F2;
+$red-200: #FFCACA;
+$red-300: #FFA2A3;
+$red-800: #AC171C;
+$red-900: #9E0812;
+$olive-300: #D8D8D0;
+$olive-400: #ABAB9D;
+$olive-500: #7C7C67;
+$olive-600: #5B5B4A;
+$olive-700: #474739;
+$olive-800: #2B2B22;
+$olive-900: #1D1D16;
+$olive-950: #0C0C09;
+$cream-400: #e0dcd2;
+
+$cream: #F4F4F1;
+$red: $red-900;
+$olive: #5C6654;
 $light-gray: #cccccc;
 $mid-gray: #777777;
+
+$brand-warning: $olive-500;
+$brand-danger: $red;
+$brand-primary: $olive;
+$brand-success: $olive-800;
+
+.text-olive-700 {
+  color: $olive-700;
+}
+
+.alert-warning {
+  background-color: $olive-300;
+  border-color: $olive-400;
+  color: $olive-800;
+}
+
+.alert-danger {
+  background-color: $red-800;
+  border-color: $red-900;
+  color: $cream;
+}
+
+.alert-danger .alert-link {
+  color: $cream;
+}
+
+.font-semibold {
+  font-weight: 600;
+}

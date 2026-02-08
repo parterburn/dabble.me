@@ -1,0 +1,47 @@
+<% content_for :title, "Change your password - Dabble Me" %>
+
+<section class="py-12 lg:py-20">
+  <div class="mx-auto max-w-md px-4 sm:px-6">
+    <div class="text-center mb-8">
+      <div class="mx-auto w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center mb-4">
+        <svg class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+        </svg>
+      </div>
+      <h1 class="font-serif text-3xl sm:text-4xl tracking-tight text-primary">Change your password</h1>
+      <p class="mt-3 text-muted">
+        Enter a new password to secure your account.
+      </p>
+    </div>
+
+    <div class="card p-6 sm:p-8">
+      <%= form_for(resource, as: resource_name, url: password_path(resource_name), html: { method: :put, class: "space-y-5" }) do |f| %>
+        <%= render "devise/shared/error_messages", resource: resource %>
+        <%= f.hidden_field :reset_password_token %>
+
+        <div>
+          <%= f.label :password, "New password", class: "block text-sm font-medium text-primary mb-1.5" %>
+          <%= f.password_field :password,
+              autofocus: true,
+              autocomplete: "off",
+              class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
+        </div>
+
+        <div>
+          <%= f.label :password_confirmation, "Confirm new password", class: "block text-sm font-medium text-primary mb-1.5" %>
+          <%= f.password_field :password_confirmation,
+              autocomplete: "off",
+              class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
+        </div>
+
+        <div>
+          <%= f.submit "Change my password", class: "w-full px-6 py-3 text-sm font-medium rounded-lg bg-olive-900 text-white hover:bg-olive-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-olive-500 cursor-pointer transition-colors" %>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="mt-8 text-center text-sm text-muted">
+      <%= render "devise/shared/links" %>
+    </div>
+  </div>
+</section>

@@ -1,7 +1,7 @@
 module EntriesHelper
   def image_code(entry)
     converted_image_url = entry.image_url_cdn
-    image_tag converted_image_url, data: { src: converted_image_url }, alt: "#{entry.date_format_short}"
+    image_tag converted_image_url, data: { src: converted_image_url }, alt: "#{entry.date_format_short}", loading: "lazy"
   end
 
   def format_body(body)
@@ -15,8 +15,8 @@ module EntriesHelper
     start_date = Date.new(year.to_i, 1, 1)
     end_date = Date.new(year.to_i, 12, 31)
 
-    # Create a set of dates that have entries
-    entry_dates = entries.pluck(:date).map(&:to_date)
+    # Create a set of dates that have entries for O(1) lookup
+    entry_dates = entries.pluck(:date).map(&:to_date).to_set
 
     # Generate calendar data
     dates = []
@@ -29,6 +29,26 @@ module EntriesHelper
         day: date.yday
       }
       date += 1.day
+    end
+
+    # Post-process to find streaks
+    current_streak = []
+    dates.each do |d|
+      if d[:has_entry]
+        current_streak << d
+      else
+        if current_streak.any?
+          streak_length = current_streak.size
+          current_streak.each { |day| day[:streak] = streak_length }
+          current_streak = []
+        end
+        d[:streak] = 0
+      end
+    end
+    # Handle the last streak if year ends with an entry
+    if current_streak.any?
+      streak_length = current_streak.size
+      current_streak.each { |day| day[:streak] = streak_length }
     end
 
     dates

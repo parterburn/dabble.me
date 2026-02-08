@@ -1,4 +1,4 @@
-- title "Search Your Entries on Dabble Me"
+- title "Search — Dabble me."
 - add_class = 'blur' if current_user.is_free?
 
 .row
@@ -21,9 +21,7 @@
             =link_to search_path, class: "s-clear-search", rel: "tooltip", title: "Clear search" do
               %i.fa.fa-times-circle
         .col-xs-4.col-sm-3
-          = f.submit "Search", class: "btn btn-primary btn-lg", style: "max-width: 110px;"
-          = link_to random_entry_path, title: "Random Entry", rel: "tooltip", style: "width: 20%; margin-left: 15px; top: 2px; position: relative;" do
-            %i.fa.fa-random
+          = f.submit "Search", class: "btn btn-primary btn-lg"
 
     - if @search.term.present? && current_user.is_free?
       .alert.alert-danger

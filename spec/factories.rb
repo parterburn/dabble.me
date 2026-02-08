@@ -1,4 +1,12 @@
 FactoryBot.define do
+  factory :webauthn_credential do
+    association :user
+    external_id { SecureRandom.hex(16) }
+    public_key { SecureRandom.hex(32) }
+    nickname { "My MacBook" }
+    sign_count { 0 }
+  end
+
   factory :user, class: User do
     email { Faker::Internet.email }
     password { Faker::Internet.password(min_length: 8, max_length: 16) }

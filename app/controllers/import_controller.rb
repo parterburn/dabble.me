@@ -6,21 +6,22 @@ class ImportController < ApplicationController
 
   def update
     if current_user.is_free?
-      flash[:alert] = "<a href='#{subscribe_url}'' class='alert-link'>Subscribe to PRO</a> to import entries.".html_safe
+      flash[:alert] = "<a href='#{subscribe_path}' class='alert-link'>Subscribe to PRO</a> to import entries.".html_safe
+      redirect_to import_path and return
+    end
+
+    if params[:type]&.downcase == "ahhlife"
+      import_ahhlife_entries(params[:entry][:text])
+    elsif params[:type]&.downcase == "trailmix"
+      tmp = params[:json_file]
+      dir = FileUtils.mkdir_p("public/trailmix_zips/#{current_user.user_key}")
+      file = File.join(dir, tmp.original_filename)
+      FileUtils.mv tmp.tempfile.path, file
+      ImportTrailmixJob.perform_later(current_user.id, tmp.original_filename)
+      flash[:notice] = "Import has started. You will receive an email when it is finished."
+      redirect_to entries_path
     else
-      if params[:type]&.downcase == "ahhlife"
-        import_ahhlife_entries(params[:entry][:text])
-      elsif params[:type]&.downcase == "trailmix"
-        tmp = params[:json_file]
-        dir = FileUtils.mkdir_p("public/trailmix_zips/#{current_user.user_key}")
-        file = File.join(dir, tmp.original_filename)
-        FileUtils.mv tmp.tempfile.path, file
-        ImportTrailmixJob.perform_later(current_user.id, tmp.original_filename)
-        flash[:notice] = "Import has started. You will receive an email when it is finished."
-        redirect_to entries_path
-      else
-        import_ohlife_entries(params[:entry][:text])
-      end
+      import_ohlife_entries(params[:entry][:text])
     end
   end
 

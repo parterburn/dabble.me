@@ -2,7 +2,6 @@
 ENV['RAILS_ENV'] ||= 'test'
 require File.expand_path('../../config/environment', __FILE__)
 require 'rspec/rails'
-require 'webdrivers'
 
 # Add additional requires below this line. Rails is not loaded until this point!
 
@@ -54,6 +53,7 @@ RSpec.configure do |config|
 
   config.include Devise::Test::ControllerHelpers, type: :controller
   config.include Devise::Test::IntegrationHelpers, type: :feature
+  config.include FactoryBot::Syntax::Methods
   config.include Capybara::DSL
 
   Capybara.app_host = 'http://127.0.0.1:64515'

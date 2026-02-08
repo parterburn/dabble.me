@@ -10,7 +10,7 @@ class UserMailer < ActionMailer::Base
     @user = user
     @user.increment!(:emails_sent)
     @user.update_columns(last_sent_at: Time.now)
-    email = mail(from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.cleaned_to_address, subject: "Let's write your first Dabble Me entry")
+    email = mail(from: "Dabble me. <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.cleaned_to_address, subject: "Let's write your first Dabble Me entry")
     email.mailgun_options = {tag: 'Welcome'}
   end
 
@@ -21,7 +21,7 @@ class UserMailer < ActionMailer::Base
     if @first_entry.present?
       @first_entry_image_url = @first_entry.image_url_cdn
     end
-    email = mail(from: "Dabble Me ✏ <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.cleaned_to_address, subject: 'Congrats on writing your first entry!')
+    email = mail(from: "Dabble me. <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.cleaned_to_address, subject: 'Congrats on writing your first entry!')
     email.mailgun_options = {tag: 'Welcome'}
   end
 
@@ -53,16 +53,26 @@ class UserMailer < ActionMailer::Base
     email.mailgun_options = {tag: 'EntryError'}
   end
 
-  # def referred_users(id, email)
-  #   @ref_id = id
-  #   if id == '*'
-  #     @users = User.referrals.where('created_at > ?', 1.week.ago)
-  #   else
-  #     @users = User.referrals.where(referrer: id).where('created_at > ?', 1.week.ago)
-  #   end
-  #   return unless @users.present?
+  def export_ready(user, file, filename, format)
+    @user = user
+    @filename = filename
+    content_type = format.to_s == 'json' ? 'application/json' : 'text/plain'
+    attachments[filename] = { mime_type: content_type, content: file.read }
+    email = mail(to: user.email, subject: 'Your Dabble Me export is ready')
+    email.mailgun_options = { tag: 'Export' }
+  end
 
-  #   email = mail(to: email, subject: 'Dabble Me Referrals')
-  #   email.mailgun_options = {tag: 'Referrals'}
-  # end
+  def x_bookmarks_summary(user, since = DateTime.now.beginning_of_month)
+    @user = user
+    @bookmarks = user.x_bookmarks.where(created_at: since..)
+    return unless @bookmarks.any?
+
+    @summary = AiBookmarkSummarizer.new.summarize!(bookmarks: @bookmarks)
+    email = mail(
+      from: "X Bookmarks <no-reply@#{ENV['SMTP_DOMAIN']}>",
+      to: user.cleaned_to_address,
+      subject: "#{@bookmarks.count} #{'bookmark'.pluralize(@bookmarks.count)} this month"
+    )
+    email.mailgun_options = { tag: 'XBookmarksSummary' }
+  end
 end

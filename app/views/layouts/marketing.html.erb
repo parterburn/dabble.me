@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="<%= I18n.locale %>">
+  <head>
+    <title><%= yield(:title).present? ? "#{yield(:title)} — Dabble me." : "Dabble me. Private email journaling & daily reflection." %></title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <%= csrf_meta_tags %>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:ital,wght@0,400..700;1,400..700&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
+    <%= render 'shared/favicons_and_metatags' %>
+
+    <link rel="stylesheet" href="/marketing.css?v=<%= File.mtime(Rails.root.join('public', 'marketing.css')).to_i rescue Time.now.to_i %>" media="all">
+
+    <!-- jQuery (needed for webauthn/passkey) -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+
+    <%= yield :head %>
+
+    <% if Rails.env.production? %>
+      <%= javascript_include_tag "https://www.googletagmanager.com/gtag/js?id=#{ENV['GOOGLE_ANALYTICS_4_ID']}", async: true %>
+      <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', "<%= ENV['GOOGLE_ANALYTICS_4_ID'] %>", {
+          'anonymize_ip': true
+        });
+      </script>
+    <% end %>
+  </head>
+
+  <body class="bg-page min-h-screen antialiased">
+    <%= render 'shared/marketing_navbar' %>
+
+    <main>
+      <% if notice %>
+        <div class="fixed top-20 left-1/2 -translate-x-1/2 z-50 max-w-md w-full px-4">
+          <div class="bg-surface border border-subtle rounded-lg p-4 shadow-lg animate-fade-in">
+            <p class="text-sm text-primary"><%= notice.html_safe %></p>
+          </div>
+        </div>
+      <% end %>
+      <% if alert %>
+        <div class="fixed top-20 left-1/2 -translate-x-1/2 z-50 max-w-md w-full px-4">
+          <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 shadow-lg animate-fade-in">
+            <p class="text-sm text-red-600 dark:text-red-400"><%= alert.html_safe %></p>
+          </div>
+        </div>
+      <% end %>
+
+      <%= yield %>
+    </main>
+
+    <%= render 'shared/marketing_footer' %>
+
+    <script src="/marketing.js?v=<%= File.mtime(Rails.root.join('public', 'marketing.js')).to_i rescue Time.now.to_i %>"></script>
+    <%= yield :scripts %>
+  </body>
+</html>

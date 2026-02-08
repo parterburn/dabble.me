@@ -18,6 +18,8 @@
  */
 
 @import url(https://fonts.googleapis.com/css?family=Raleway:400,700,200);
+@import url(https://fonts.googleapis.com/css?family=Instrument+Sans:400,700,200);
+@import url(https://fonts.googleapis.com/css?family=Instrument+Serif:400,700,200);
 @import 'vars';
 @import "summernote";
 @import "contribution_graph";
@@ -70,7 +72,6 @@ hr {
 }
 
 #main-container {
-  overflow:auto;
   padding-bottom:150px; /* this needs to be bigger than footer height*/
 }
 
@@ -184,9 +185,9 @@ label {
 }
 
 .noline {
-  text-decoration: none;
+  text-decoration: none !important;
   &:hover {
-    text-decoration: none;
+    text-decoration: none !important;
   }
 }
 
@@ -216,7 +217,7 @@ label {
     box-shadow: none;
   }
   &:focus {
-    border-color: $blue;
+    border-color: $olive;
     box-shadow: none;
   }
 }
@@ -282,4 +283,120 @@ strong {
   margin-left: auto;
   margin-right: auto;
   text-align: center;
+}
+
+.s-review-details a, .s-scrollable a { 
+  text-decoration: underline;
+  &.noline {
+    text-decoration: none !important;
+    &:hover {
+      text-decoration: none !important;
+    }
+  }  
+}
+
+.email-post-card {
+  background-color: white;
+  border: 1px solid rgba(224, 224, 224, 0.6);
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+
+  .email-post-flex {
+    display: flex;
+    align-items: flex-start;
+    @media screen and (max-width: 767px) {
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+  }
+
+  .email-post-content {
+    flex-grow: 1;
+    @media screen and (max-width: 767px) {
+      margin-left: 0;
+      width: 100%;
+    }
+  }
+
+  h3 {
+    margin-top: 0;
+    margin-bottom: 5px;
+    font-weight: bold;
+    font-size: 18px;
+    color: $olive-800;
+  }
+
+  .email-address-box {
+    display: flex;
+    align-items: center;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 20px;
+    @media screen and (max-width: 767px) {
+      flex-direction: column;
+    }
+    
+    code {
+      flex-grow: 1;
+      padding: 12px 15px;
+      background: transparent;
+      border: none;
+      color: $olive;
+      font-family: monospace;
+      font-size: 14px;
+      @media screen and (max-width: 767px) {
+        width: 100%;
+        border-bottom: 1px solid #e5e7eb;
+        overflow-x: auto;
+      }
+    }
+
+    .j-copy-to-clipboard {
+      background: $olive;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      font-size: 13px;
+      font-weight: 600;
+      transition: background 0.2s;
+      @media screen and (max-width: 767px) {
+        width: 100%;
+      }
+      &:hover {
+        background: darken($olive, 10%);
+      }
+    }
+  }
+
+  .email-post-footer {
+    margin-top: 15px;
+    font-size: 13px;
+    margin-bottom: 0px;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    @media screen and (max-width: 767px) {
+      justify-content: center;
+    }
+    i {
+      margin-right: 8px;
+      color: $olive;
+    }
+  }
+}
+
+.dark {
+  .email-post-card {
+    background-color: #1a1c15;
+    border-color: rgba(255,255,255,0.1);
+    .email-address-box {
+      background: #26291e;
+      border-color: #3f4235;
+    }
+  }
 }

@@ -1,7 +1,7 @@
 # Devise Override Controller
 class RegistrationsController < Devise::RegistrationsController
+  layout :choose_layout
   before_action :require_user, only: [:security, :update, :edit]
-  after_action :track_ga_event, only: :create
   prepend_before_action :check_captcha, only: [:create]
 
   def edit
@@ -19,9 +19,9 @@ class RegistrationsController < Devise::RegistrationsController
   def update
     if params[:submit_method] == "delete account"
       if current_user.valid_password?(params[:user][:current_password])
-        cancel_subscription
-        current_user.destroy
-        redirect_to root_path, notice: "Your account has been deleted."
+        schedule_user_deletion
+        sign_out current_user
+        redirect_to root_path, notice: "Your account will be permanently deleted in 1 hour. Contact support if you change your mind."
       else
         flash[:alert] = "Incorrect current password."
         redirect_back(fallback_location: security_path)
@@ -68,8 +68,9 @@ class RegistrationsController < Devise::RegistrationsController
 
   def destroy
     if current_user.valid_password?(params[:user][:current_password])
-      cancel_subscription
-      super
+      schedule_user_deletion
+      sign_out current_user
+      redirect_to root_path, notice: "Your account will be permanently deleted in 1 hour. Contact support if you change your mind."
     else
       flash[:alert] = "Incorrect current password."
       redirect_back(fallback_location: security_path)
@@ -111,16 +112,27 @@ class RegistrationsController < Devise::RegistrationsController
 
   private
 
-  def cancel_subscription
-    if current_user.is_pro?
-      Sentry.capture_message("Pro User Deleted", level: :info, extra: { email: current_user.email, plan: current_user.plan, entries: current_user.entries.size, user_id: current_user.id, payhere_id: current_user.payhere_id, stripe_id: current_user.stripe_id })
-      if current_user.stripe_id.present?
-        customer = Stripe::Customer.retrieve(current_user.stripe_id)
-        customer.subscriptions.each do |sub|
-          sub.cancel
-        end
-      end
+  def choose_layout
+    if action_name == 'new' || action_name == 'create'
+      'marketing'
+    else
+      'application'
     end
+  end
+
+  def schedule_user_deletion
+    cancel_stripe_subscription
+    current_user.update_column(:deleted_at, Time.current)
+    DeleteUserJob.set(wait: 1.hour).perform_later(current_user.id)
+  end
+
+  def cancel_stripe_subscription
+    return unless current_user.stripe_id.present?
+
+    customer = Stripe::Customer.retrieve(current_user.stripe_id)
+    customer.subscriptions.each(&:cancel)
+  rescue Stripe::InvalidRequestError => e
+    Sentry.capture_exception(e, extra: { user_id: current_user.id, stripe_id: current_user.stripe_id })
   end
 
   def check_captcha
@@ -130,14 +142,6 @@ class RegistrationsController < Devise::RegistrationsController
       build_resource(sign_up_params)
       clean_up_passwords(resource)
       respond_with_navigational(resource) { render :new }
-    end
-  end
-
-  def track_ga_event
-    return nil unless user.id.present?
-    if ENV['GOOGLE_ANALYTICS_ID'].present?
-      # tracker = Staccato.tracker(ENV['GOOGLE_ANALYTICS_ID'])
-      # tracker.event(category: 'User', action: 'Create', label: user.user_key)
     end
   end
 

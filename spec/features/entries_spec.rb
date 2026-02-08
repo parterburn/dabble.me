@@ -46,8 +46,9 @@ describe 'Day Entries' do
     it 'should show me the calendar with my entries', js: true do
       sign_in paid_user
       entry.update(date: Date.today, image: nil)
+
       visit entries_calendar_path
-      expect(page).to have_content ActionController::Base.helpers.strip_tags(paid_entry.sanitized_body&.gsub(/\n/, ''))&.truncate(50, separator: ' ')
+      expect(page).to have_content ActionController::Base.helpers.strip_tags(paid_entry.sanitized_body&.gsub(/\n/, '') )&.truncate(50, separator: ' ')
     end
   end
 

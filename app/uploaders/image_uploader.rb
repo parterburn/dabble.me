@@ -14,6 +14,7 @@ class ImageUploader < CarrierWave::Uploader::Base
     begin
       convert(:jpg)
     rescue => e
+      Rails.logger.error "HEIC to JPEG conversion failed: #{e.message}"
       Sentry.capture_exception(e, extra: { type: "HEIC to JPEG conversion failed" })
       # Continue without conversion rather than failing entirely
     end
