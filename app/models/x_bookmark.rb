@@ -14,9 +14,9 @@ class XBookmark < ActiveRecord::Base
     url || "https://x.com/#{author_username}/status/#{tweet_id}"
   end
 
-  # Syncs latest 5 bookmarks from X API for a user. Skips duplicates.
+  # Syncs latest 30 bookmarks from X API for a user. Skips duplicates.
   # Returns count of new bookmarks saved.
-  def self.sync_for_user!(user, max_results: 5)
+  def self.sync_for_user!(user, max_results: 30)
     client = XApiClient.new(user: user)
     result = client.bookmarks(max_results: max_results)
     tweets = result['data']
@@ -29,7 +29,7 @@ class XBookmark < ActiveRecord::Base
       next if user.x_bookmarks.exists?(tweet_id: tweet['id'])
 
       author = authors[tweet['author_id']] || {}
-      user.x_bookmarks.create!(
+      new_bookmark = user.x_bookmarks.create!(
         tweet_id: tweet['id'],
         author_id: tweet['author_id'],
         author_username: author['username'],
@@ -40,9 +40,30 @@ class XBookmark < ActiveRecord::Base
         entities: tweet['entities'] || {},
         public_metrics: tweet['public_metrics'] || {}
       )
+      save_to_raindrop(new_bookmark)
       new_count += 1
     end
 
     new_count
+  end
+
+  def self.save_to_raindrop(bookmark)
+    return unless ENV['RAINDROP_API_KEY'].present?
+
+    conn = Faraday.new('https://api.raindrop.io') do |f|
+      f.request :json
+      f.response :json
+      f.headers['Authorization'] = "Bearer #{ENV['RAINDROP_API_KEY']}"
+    end
+
+    conn.post('/rest/v1/raindrop', {
+      link: bookmark.tweet_url,
+      title: "#{bookmark.author_name} on X: #{bookmark.text.split("\n").first.truncate(80)}",
+      excerpt: bookmark.text,
+      tags: ['x-bookmarks'],
+      pleaseParse: {}
+    })
+  rescue => e
+    Rails.logger.error("Raindrop save failed for tweet #{bookmark.tweet_id}: #{e.message}")
   end
 end

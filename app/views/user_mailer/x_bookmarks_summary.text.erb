@@ -1,9 +1,7 @@
-X Bookmarks — <%= pluralize(@bookmarks.count, 'bookmark') %> from the last week
+X Bookmarks — <%= pluralize(@bookmarks.count, 'bookmark') %> this month
 <%= '=' * 60 %>
 
 <% if @summary.present? %>
-AI SUMMARY
-<%= '-' * 40 %>
 <%= strip_tags(@summary) %>
 
 <% end %>

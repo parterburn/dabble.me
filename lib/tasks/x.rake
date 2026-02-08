@@ -22,7 +22,7 @@ namespace :x do
     user = User.find_by!(email: args[:email])
     abort "No X tokens on record. Run rake x:save_tokens first." unless user.x_connected?
 
-    new_count = XBookmark.sync_for_user!(user, max_results: 15)
+    new_count = XBookmark.sync_for_user!(user, max_results: 30)
     puts "#{new_count} new bookmarks saved (#{user.x_bookmarks.count} total)"
 
     UserMailer.x_bookmarks_summary(user).deliver_now

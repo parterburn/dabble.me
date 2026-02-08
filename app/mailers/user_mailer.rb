@@ -71,7 +71,7 @@ class UserMailer < ActionMailer::Base
     email = mail(
       from: "X Bookmarks <no-reply@#{ENV['SMTP_DOMAIN']}>",
       to: user.cleaned_to_address,
-      subject: "#{@bookmarks.count} #{'bookmark'.pluralize(@bookmarks.count)} from this month"
+      subject: "#{@bookmarks.count} #{'bookmark'.pluralize(@bookmarks.count)} this month"
     )
     email.mailgun_options = { tag: 'XBookmarksSummary' }
   end

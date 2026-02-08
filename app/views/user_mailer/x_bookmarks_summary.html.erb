@@ -26,7 +26,7 @@
                 </span>
                 <br/>
                 <span style="font-size: 13px; color: #8899a6;">
-                  <%= pluralize(@bookmarks.count, 'bookmark') %> from the last week
+                  <%= pluralize(@bookmarks.count, 'bookmark') %> this month
                 </span>
               </td>
             </tr>
@@ -39,11 +39,6 @@
                     <tr>
                       <td style="padding: 20px 24px;">
                         <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                          <tr>
-                            <td style="font-size: 14px; font-weight: 700; color: #14171a; padding-bottom: 12px; border-bottom: 1px solid #eee;">
-                              ✨ AI Summary
-                            </td>
-                          </tr>
                           <tr>
                             <td style="font-size: 14px; line-height: 22px; color: #14171a; padding-top: 12px;">
                               <%= @summary.html_safe %>
@@ -114,7 +109,7 @@
                                 <% (entities['urls'] || []).select { |u| u['display_url']&.start_with?('pic.x.com') }.each do |u| %>
                                   <% display_text.gsub!(u['url'], '') %>
                                 <% end %>
-                                <%= display_text.strip.html_safe %>
+                                <%= simple_format(display_text.strip) %>
                               </a>
                             </td>
                           </tr>
