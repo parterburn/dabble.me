@@ -62,7 +62,7 @@ class UserMailer < ActionMailer::Base
     email.mailgun_options = { tag: 'Export' }
   end
 
-  def x_bookmarks_summary(user, since: DateTime.now.beginning_of_month)
+  def x_bookmarks_summary(user, since = DateTime.now.beginning_of_month)
     @user = user
     @bookmarks = user.x_bookmarks.where(created_at: since..)
     return unless @bookmarks.any?
