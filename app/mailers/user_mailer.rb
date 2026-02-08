@@ -64,14 +64,14 @@ class UserMailer < ActionMailer::Base
 
   def x_bookmarks_summary(user)
     @user = user
-    @bookmarks = user.x_bookmarks.where(created_at: 1.week.ago..).recent
-    return unless @bookmarks.present?
+    @bookmarks = user.x_bookmarks.where(created_at: DateTime.now.beginning_of_month..DateTime.now.end_of_month)
+    return unless @bookmarks.any?
 
-    @summary = AiBookmarkSummarizer.new.summarize(user, since: 1.week.ago)
+    @summary = AiBookmarkSummarizer.new.summarize!(bookmarks: @bookmarks)
     email = mail(
       from: "X Bookmarks <no-reply@#{ENV['SMTP_DOMAIN']}>",
       to: user.cleaned_to_address,
-      subject: "#{pluralize(@bookmarks.count, 'bookmark')} from the past week"
+      subject: "#{@bookmarks.count} #{'bookmark'.pluralize(@bookmarks.count)} from this month"
     )
     email.mailgun_options = { tag: 'XBookmarksSummary' }
   end

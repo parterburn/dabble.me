@@ -17,7 +17,7 @@ namespace :x do
   desc 'Sync X bookmarks to DB (skips duplicates, paginates through all)'
   # rake x:sync_bookmarks[admin@dabble.ex]
   task :sync_bookmarks, [:email] => :environment do |_t, args|
-    abort "Not Friday! Syncing X bookmarks is only available on Fridays." unless Time.current.friday?
+    abort "Not the last day of the month!" unless DateTime.now.to_date.end_of_month == DateTime.now.to_date
 
     user = User.find_by!(email: args[:email])
     abort "No X tokens on record. Run rake x:save_tokens first." unless user.x_connected?
