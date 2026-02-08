@@ -46,10 +46,33 @@ RSpec.describe AdminController, type: :controller do
     end
 
     it 'should show Admin Stats to superusers' do
+      require 'webmock/rspec'
+      WebMock.enable!
+      
+      # Stub Mailgun API requests
+      stub_request(:get, /api\.mailgun\.net\/v3\/.+\/stats\/total/)
+        .to_return(
+          status: 200,
+          body: {
+            stats: [
+              {
+                time: Time.now.strftime('%Y-%m-%d'),
+                accepted: { total: 100 },
+                failed: { total: 5 },
+                opened: { total: 80 },
+                delivered: { total: 95 }
+              }
+            ]
+          }.to_json,
+          headers: { 'Content-Type' => 'application/json' }
+        )
+
       sign_in superuser
       get :stats
       expect(response.status).to eq 200
       expect(response.body).to have_content('Admin Stats')
+      
+      WebMock.disable!
     end
   end    
 end
