@@ -6,6 +6,10 @@ class XBookmark < ActiveRecord::Base
   scope :recent, -> { order(tweeted_at: :desc) }
   scope :since, ->(time) { where('tweeted_at >= ?', time) }
 
+  def to_s
+    "#{tweeted_at.strftime('%A, %B %-d, %Y')} — #{author_name} (#{author_username}):\n#{text}\n\n#{tweet_url}\n\n#{entities.to_json}\n\n#{public_metrics.to_json}"
+  end
+
   def tweet_url
     url || "https://x.com/#{author_username}/status/#{tweet_id}"
   end

@@ -1,0 +1,218 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+  <head>
+    <meta content="text/html; charset=UTF-8" http-equiv="Content-Type"/>
+    <meta content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=no;" name="viewport"/>
+    <style>
+      body { margin: 0; padding: 0; background-color: #f5f5f0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+      a { color: #1d9bf0 !important; text-decoration: none !important; }
+      a:hover { color: #0c7abf !important; }
+      a[x-apple-data-detectors] { color: #1d9bf0 !important; text-decoration: none !important; font-size: inherit !important; font-family: inherit !important; font-weight: inherit !important; line-height: inherit !important; }
+      u + #body a { color: #1d9bf0 !important; text-decoration: none !important; }
+      #MessageViewBody a { color: #1d9bf0 !important; text-decoration: none !important; }
+    </style>
+  </head>
+  <body id="body" style="margin: 0; padding: 0; background-color: #f5f5f0;">
+    <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f5f5f0;">
+      <tr>
+        <td align="center" style="padding: 24px 16px;">
+          <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;">
+
+            <%# ═══ HEADER ═══ %>
+            <tr>
+              <td style="padding: 20px 0 16px 0; text-align: center;">
+                <span style="font-size: 15px; color: #536471; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 600;">
+                  X Bookmarks
+                </span>
+                <br/>
+                <span style="font-size: 13px; color: #8899a6;">
+                  <%= pluralize(@bookmarks.count, 'bookmark') %> from the last week
+                </span>
+              </td>
+            </tr>
+
+            <%# ═══ AI SUMMARY ═══ %>
+            <% if @summary.present? %>
+              <tr>
+                <td style="padding: 0 0 16px 0;">
+                  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 12px; border: 1px solid #e1e8ed;">
+                    <tr>
+                      <td style="padding: 20px 24px;">
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                          <tr>
+                            <td style="font-size: 14px; font-weight: 700; color: #14171a; padding-bottom: 12px; border-bottom: 1px solid #eee;">
+                              ✨ AI Summary
+                            </td>
+                          </tr>
+                          <tr>
+                            <td style="font-size: 14px; line-height: 22px; color: #14171a; padding-top: 12px;">
+                              <%= @summary.html_safe %>
+                            </td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            <% end %>
+
+            <%# ═══ BOOKMARKS ═══ %>
+            <% @bookmarks.each do |bookmark| %>
+              <% entities = bookmark.entities || {} %>
+              <% urls = (entities['urls'] || []).reject { |u| u['display_url']&.start_with?('pic.x.com') } %>
+              <% link_preview = urls.find { |u| u['title'].present? } %>
+              <% images = (link_preview && link_preview['images'].present?) ? link_preview['images'] : [] %>
+              <% yt_match = link_preview && link_preview['expanded_url']&.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([^&]+)/) %>
+              <% metrics = bookmark.public_metrics || {} %>
+
+              <tr>
+                <td style="padding: 0 0 16px 0;">
+                  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 12px; border: 1px solid #e1e8ed;">
+                    <tr>
+                      <td style="padding: 20px 24px;">
+
+                        <%# ── Author row ── %>
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                          <tr>
+                            <td width="44" valign="top" style="padding-right: 12px;">
+                              <a href="https://x.com/<%= bookmark.author_username %>">
+                                <img src="<%= bookmark.entities.dig('author_profile_image_url') || "https://unavatar.io/x/#{bookmark.author_username}" %>"
+                                     width="44" height="44"
+                                     style="border-radius: 50%; display: block;"
+                                     alt="<%= bookmark.author_name %>"/>
+                              </a>
+                            </td>
+                            <td valign="middle">
+                              <a href="https://x.com/<%= bookmark.author_username %>" style="font-size: 15px; font-weight: 700; color: #14171a !important;">
+                                <%= bookmark.author_name %>
+                              </a>
+                              <br/>
+                              <a href="https://x.com/<%= bookmark.author_username %>" style="font-size: 13px; color: #536471 !important;">
+                                @<%= bookmark.author_username %>
+                              </a>
+                            </td>
+                            <td valign="middle" align="right">
+                              <span style="font-size: 12px; color: #8899a6;">
+                                <%= bookmark.tweeted_at&.strftime('%b %-d') %>
+                              </span>
+                            </td>
+                          </tr>
+                        </table>
+
+                        <%# ── Tweet text ── %>
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                          <tr>
+                            <td style="padding: 12px 0 0 0; font-size: 15px; line-height: 22px; color: #14171a; word-wrap: break-word;">
+                              <a href="<%= bookmark.tweet_url %>" style="color: #14171a !important;">
+                                <%# Replace t.co URLs with display URLs %>
+                                <% display_text = bookmark.text.dup %>
+                                <% (entities['urls'] || []).each do |u| %>
+                                  <% next if u['display_url']&.start_with?('pic.x.com') %>
+                                  <% display_text.gsub!(u['url'], "<span style='color: #1d9bf0 !important;'>#{u['display_url']}</span>") %>
+                                <% end %>
+                                <% (entities['urls'] || []).select { |u| u['display_url']&.start_with?('pic.x.com') }.each do |u| %>
+                                  <% display_text.gsub!(u['url'], '') %>
+                                <% end %>
+                                <%= display_text.strip.html_safe %>
+                              </a>
+                            </td>
+                          </tr>
+                        </table>
+
+                        <%# ── YouTube thumbnail ── %>
+                        <% if yt_match %>
+                          <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td style="padding: 12px 0 0 0;">
+                                <a href="<%= link_preview['expanded_url'] %>">
+                                  <img src="https://img.youtube.com/vi/<%= yt_match[1] %>/hqdefault.jpg"
+                                       width="100%" style="border-radius: 8px; display: block; max-width: 552px;"
+                                       alt="<%= link_preview['title'] %>"/>
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
+
+                        <%# ── Link preview image (non-YouTube) ── %>
+                        <% elsif images.present? %>
+                          <% img = images.find { |i| i['width'].to_i > 150 } || images.first %>
+                          <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td style="padding: 12px 0 0 0;">
+                                <a href="<%= link_preview['expanded_url'] || link_preview['url'] %>">
+                                  <img src="<%= img['url'] %>"
+                                       width="100%" style="border-radius: 8px; display: block; max-width: 552px;"
+                                       alt="<%= link_preview['title'] %>"/>
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
+                        <% end %>
+
+                        <%# ── Link preview card ── %>
+                        <% if link_preview && link_preview['title'].present? %>
+                          <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                            <tr>
+                              <td style="padding: 8px 0 0 0;">
+                                <a href="<%= link_preview['expanded_url'] || link_preview['unwound_url'] || link_preview['url'] %>"
+                                   style="display: block; border: 1px solid #e1e8ed; border-radius: 8px; padding: 12px 16px; color: #14171a !important;">
+                                  <span style="font-size: 14px; font-weight: 600; color: #14171a !important; display: block;">
+                                    <%= link_preview['title'] %>
+                                  </span>
+                                  <% if link_preview['description'].present? %>
+                                    <span style="font-size: 13px; color: #536471 !important; display: block; margin-top: 4px; line-height: 18px;">
+                                      <%= truncate(link_preview['description'], length: 160) %>
+                                    </span>
+                                  <% end %>
+                                  <span style="font-size: 12px; color: #8899a6 !important; display: block; margin-top: 4px;">
+                                    🔗 <%= URI.parse(link_preview['expanded_url'] || link_preview['unwound_url'] || link_preview['url']).host rescue link_preview['display_url'] %>
+                                  </span>
+                                </a>
+                              </td>
+                            </tr>
+                          </table>
+                        <% end %>
+
+                        <%# ── Engagement metrics ── %>
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                          <tr>
+                            <td style="padding: 14px 0 0 0; font-size: 13px; color: #536471; border-top: 1px solid #eee; margin-top: 12px;">
+                              <% if metrics['like_count'].to_i > 0 %>
+                                <span style="padding-right: 16px;">♥ <%= number_with_delimiter(metrics['like_count']) %></span>
+                              <% end %>
+                              <% if metrics['retweet_count'].to_i > 0 %>
+                                <span style="padding-right: 16px;">🔁 <%= number_with_delimiter(metrics['retweet_count']) %></span>
+                              <% end %>
+                              <% if metrics['bookmark_count'].to_i > 0 %>
+                                <span style="padding-right: 16px;">🔖 <%= number_with_delimiter(metrics['bookmark_count']) %></span>
+                              <% end %>
+                              <% if metrics['reply_count'].to_i > 0 %>
+                                <span style="padding-right: 16px;">💬 <%= number_with_delimiter(metrics['reply_count']) %></span>
+                              <% end %>
+                            </td>
+                          </tr>
+                        </table>
+
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+            <% end %>
+
+            <%# ═══ FOOTER ═══ %>
+            <tr>
+              <td style="padding: 8px 0 24px 0; text-align: center;">
+                <span style="font-size: 12px; color: #8899a6;">
+                  Sent by <a href="https://dabble.me" style="color: #8899a6 !important;">Dabble Me</a>
+                </span>
+              </td>
+            </tr>
+
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

@@ -1,0 +1,18 @@
+X Bookmarks — <%= pluralize(@bookmarks.count, 'bookmark') %> from the last week
+<%= '=' * 60 %>
+
+<% if @summary.present? %>
+AI SUMMARY
+<%= '-' * 40 %>
+<%= strip_tags(@summary) %>
+
+<% end %>
+<% @bookmarks.each do |bookmark| %>
+<%= bookmark.author_name %> (@<%= bookmark.author_username %>) — <%= bookmark.tweeted_at&.strftime('%b %-d, %Y') %>
+<%= bookmark.text %>
+<%= bookmark.tweet_url %>
+<% metrics = bookmark.public_metrics || {} %>
+<%= [metrics['like_count'].to_i > 0 ? "#{metrics['like_count']} likes" : nil, metrics['retweet_count'].to_i > 0 ? "#{metrics['retweet_count']} retweets" : nil, metrics['bookmark_count'].to_i > 0 ? "#{metrics['bookmark_count']} bookmarks" : nil].compact.join(' · ') %>
+<%= '-' * 40 %>
+
+<% end %>

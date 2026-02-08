@@ -62,16 +62,17 @@ class UserMailer < ActionMailer::Base
     email.mailgun_options = { tag: 'Export' }
   end
 
-  # def referred_users(id, email)
-  #   @ref_id = id
-  #   if id == '*'
-  #     @users = User.referrals.where('created_at > ?', 1.week.ago)
-  #   else
-  #     @users = User.referrals.where(referrer: id).where('created_at > ?', 1.week.ago)
-  #   end
-  #   return unless @users.present?
+  def x_bookmarks_summary(user)
+    @user = user
+    @bookmarks = user.x_bookmarks.where(created_at: 1.week.ago..).recent
+    return unless @bookmarks.present?
 
-  #   email = mail(to: email, subject: 'Dabble Me Referrals')
-  #   email.mailgun_options = {tag: 'Referrals'}
-  # end
+    @summary = AiBookmarkSummarizer.new.summarize(user, since: 1.week.ago)
+    email = mail(
+      from: "Dabble Marks <no-reply@#{ENV['SMTP_DOMAIN']}>",
+      to: user.cleaned_to_address,
+      subject: "Your Latest X Marks (#{@bookmarks.count})"
+    )
+    email.mailgun_options = { tag: 'XBookmarksSummary' }
+  end
 end
