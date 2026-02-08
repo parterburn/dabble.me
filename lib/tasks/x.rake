@@ -1,6 +1,7 @@
 # Personal use: X bookmarks. See lib/tasks/X_BOOKMARKS_SETUP.md for initial setup.
 namespace :x do
   desc 'One-time: save X tokens to your user record from the manual OAuth flow'
+  # rake x:save_tokens[you@email.com,ACCESS_TOKEN,REFRESH_TOKEN]
   task :save_tokens, [:email, :access_token, :refresh_token] => :environment do |_t, args|
     user = User.find_by!(email: args[:email])
     user.update!(x_access_token: args[:access_token], x_refresh_token: args[:refresh_token])
@@ -15,6 +16,7 @@ namespace :x do
   end
 
   desc 'Fetch X bookmarks for your user'
+  # rake x:bookmarks[you@email.com]
   task :bookmarks, [:email] => :environment do |_t, args|
     user = User.find_by!(email: args[:email])
     abort "No X tokens on record. Run rake x:save_tokens first." unless user.x_connected?

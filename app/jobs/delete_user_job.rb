@@ -1,4 +1,4 @@
-class DeleteUserJob < ApplicationJob
+class DeleteUserJob < ActiveJob::Base
   queue_as :default
 
   def perform(user_id)
