@@ -4,7 +4,10 @@ ruby File.read(File.expand_path '../.ruby-version', __FILE__).strip.sub /\-p[0-9
 gem 'rails', '~> 6.1.7.10'
 
 gem "concurrent-ruby", "1.3.4" # needed until https://github.com/rails/rails/pull/54264 is in Rails 7.0.8.8
+gem "csv"                      # Ruby 3.4 stdlib extraction - required by ActiveSupport
+gem "drb"                      # Ruby 3.4 stdlib extraction - required by ActiveSupport
 gem "mutex_m"                  # Ruby 3.4 stdlib extraction - required by Rails 6.1
+gem "ostruct"                  # Ruby 3.4 stdlib extraction - required by file_validators
 
 gem 'puma', '~> 6'
 gem 'pg', '~> 1.6'
