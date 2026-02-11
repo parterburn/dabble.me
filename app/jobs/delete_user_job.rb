@@ -27,7 +27,7 @@ class DeleteUserJob < ActiveJob::Base
     Entry.where(user_id: user_id).find_each(batch_size: 100, &:destroy)
 
     # Destroy remaining associations and the user
-    user.hashtags.delete_all
+    user.original_hashtags.delete_all
     user.webauthn_credentials.delete_all
     user.delete
 
