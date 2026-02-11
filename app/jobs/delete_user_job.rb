@@ -32,14 +32,16 @@ class DeleteUserJob < ActiveJob::Base
     user.delete
 
     # Log the deletion
-    Sentry.capture_message('User Deleted', level: :info, extra: {
-      email: user_email,
-      plan: user_plan,
-      entries: entries_count,
-      user_id: user_id,
-      payhere_id: payhere_id,
-      stripe_id: stripe_id,
-      deleted_at: user.deleted_at
-    })
+    if user_plan.present? && user_plan.match(/pro/i)
+      Sentry.capture_message('Pro User Deleted', level: :info, extra: {
+        email: user_email,
+        plan: user_plan,
+        entries: entries_count,
+        user_id: user_id,
+        payhere_id: payhere_id,
+        stripe_id: stripe_id,
+        deleted_at: user.deleted_at
+      })
+    end
   end
 end
