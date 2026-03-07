@@ -1,5 +1,5 @@
 class AiBookmarkSummarizer
-  MODEL = "gpt-5.2"
+  MODEL = "gpt-5.4"
 
   def summarize!(bookmarks:)
     @bookmarks = bookmarks
