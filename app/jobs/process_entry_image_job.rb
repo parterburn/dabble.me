@@ -54,16 +54,19 @@ class ProcessEntryImageJob < ActiveJob::Base
         entry.remote_image_url = s3_file.public_url
       end
 
-      entry.save
-
-      if entry.image.blank?
-        Sentry.set_user(id: entry.user_id, email: entry.user.email)
-        url = s3_file.public_url
-        Sentry.capture_message("Error updating entry image", level: :info, extra: { entry_id: entry_id, url: url, error: entry.errors.full_messages })
-        EntryMailer.image_error(entry.user, entry, entry.errors.full_messages).deliver_later
+      unless entry.save
+        @error = entry.errors.full_messages.to_sentence
       end
 
-      entry.update(filepicker_url: nil) if entry.filepicker_url == "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
+      entry.reload
+      if entry.image.blank?
+        error_messages = @error.present? ? [@error] : ['The image could not be saved. Please try uploading again via the web interface.']
+        Sentry.set_user(id: entry.user_id, email: entry.user.email)
+        Sentry.capture_message("Error updating entry image", level: :info, extra: { entry_id: entry_id, url: s3_file.public_url, error_messages: error_messages })
+        EntryMailer.image_error(entry.user, entry, "single", error_messages).deliver_later
+      end
+
+      entry.update(filepicker_url: nil) if entry.filepicker_url == Entry::UPLOADING_PLACEHOLDER_URL
 
       begin
         bucket.files.new(key: s3_file_key).destroy
@@ -76,10 +79,10 @@ class ProcessEntryImageJob < ActiveJob::Base
         jpeg_file.tempfile.unlink rescue nil
       end
     else
-      entry.update(filepicker_url: nil) if entry.filepicker_url == "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
+      entry.update(filepicker_url: nil) if entry.filepicker_url == Entry::UPLOADING_PLACEHOLDER_URL
     end
   rescue => e
     Rails.logger.error "Error processing entry image: #{e.message}"
-    entry.update(filepicker_url: nil) if entry.filepicker_url == "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
+    entry.update(filepicker_url: nil) if entry.filepicker_url == Entry::UPLOADING_PLACEHOLDER_URL
   end
 end

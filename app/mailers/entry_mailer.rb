@@ -43,15 +43,16 @@ class EntryMailer < ActionMailer::Base
     email.mailgun_options = { tag: 'AI Entry' }
   end
 
-  def image_error(user, entry, errors)
+  def image_error(user, entry, type, errors)
     @entry = entry
     @user = user
+    @type = type
     @errors = errors
     set_reply_headers(entry)
     email = mail  from: "Dabble me. <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>",
                   to: "#{user.cleaned_to_address}",
                   bcc: ["hello@#{ENV['MAIN_DOMAIN']}"],
-                  subject: "Image Error Re: #{subject(entry)}",
+                  subject: "#{type.capitalize} Image Error Re: #{subject(entry)}",
                   html: render_to_string('entry_mailer/image_error', formats: [:html]).to_str
     email.mailgun_options = { tag: "Entry Image Error" }
   end

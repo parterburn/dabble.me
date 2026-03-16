@@ -7,6 +7,7 @@ class Entry < ActiveRecord::Base
   mount_uploader :image, ImageUploader
 
   ALLOWED_IMAGE_TYPES = %w[image/jpg image/jpeg image/png image/gif image/webp image/heic image/heif image/heic-sequence image/heif-sequence application/octet-stream]
+  UPLOADING_PLACEHOLDER_URL = 'https://d10r8m94hrfowu.cloudfront.net/uploading.png'
 
   WORDS_NOT_TO_COUNT = ['s', 'amp', '-', 'p', 'br', 'div', 'img', 'span', 'hr', '<', '>']
   COMMON_WORDS = WORDS_NOT_TO_COUNT + ['has', 'did', "you're", 'your', 'we', 'i', "it's", 'dabblemegpt', 'like', 'these', 'you', 'so', 'went', 'while', 's', 'amp', '-', 'p', 'br', 'div', 'img', 'span', 'the', 'of', 'and', 'a', 'to', 'in', 'is', 'that', 'it', 'was', 'for', 'on', 'are', 'as', 'with', 'at', 'be', 'this', 'have', 'from', 'or', 'had', 'by', 'but', 'not', 'what', 'all', 'were', 'when', 'can', 'said', 'there', 'use', 'an', 'each', 'which', 'do', 'how', 'if']
@@ -127,7 +128,7 @@ class Entry < ActiveRecord::Base
   def image_url_cdn(cloudflare: true)
     if image.present?
       "#{'https://dabble.me/cdn-cgi/image/quality=95/' if cloudflare }#{image.url.gsub('dabble-me.s3.amazonaws.com/uploads', 'd10r8m94hrfowu.cloudfront.net')}"
-    elsif filepicker_url == "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
+    elsif filepicker_url == UPLOADING_PLACEHOLDER_URL
       filepicker_url
     end
   end

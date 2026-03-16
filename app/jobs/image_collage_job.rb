@@ -16,8 +16,8 @@ class ImageCollageJob < ActiveJob::Base
     @message_id = message_id
     @user = entry.user
 
-    entry.update(filepicker_url: "https://d10r8m94hrfowu.cloudfront.net/uploading.png")
-    @existing_url = entry&.image_url_cdn == "https://d10r8m94hrfowu.cloudfront.net/uploading.png" ? nil : entry&.image_url_cdn(cloudflare: false)
+    entry.update(filepicker_url: Entry::UPLOADING_PLACEHOLDER_URL)
+    @existing_url = entry&.image_url_cdn == Entry::UPLOADING_PLACEHOLDER_URL ? nil : entry&.image_url_cdn(cloudflare: false)
 
     filestack_collage_url = if @message_id.present?
       collage_from_mailgun_attachments
@@ -25,21 +25,62 @@ class ImageCollageJob < ActiveJob::Base
       collage_from_urls(urls + [@existing_url])
     end
 
-    # Retry saving and checking for image up to 3 times since Filestack processing can take time
+    # Fetch with explicit long timeout (Filestack can take ~20s to generate). CarrierWave's
+    # remote_image_url uses OpenURI/SsrfFilter whose timeouts can be too short on some stacks.
+    tempfile = nil
     5.times do |attempt|
-      entry.remote_image_url = filestack_collage_url
-      entry.save
-      entry.reload
-      break if entry.image.present?
-      sleep 5 unless attempt == 2 # Don't sleep on last attempt
+      tempfile&.close
+      tempfile&.unlink
+      tempfile = fetch_filestack_image(filestack_collage_url)
+      if tempfile
+        entry.image = tempfile
+        unless entry.save
+          @error = entry.errors.full_messages.to_sentence
+        end
+        entry.reload
+        break if entry.image.present?
+      end
+      sleep 5 unless attempt == 4
     end
+    tempfile&.close
+    tempfile&.unlink
 
+    entry.reload
     if entry.image.blank?
+      error_messages = if entry.errors.any?
+        entry.errors.full_messages
+      elsif @error.present?
+        [@error]
+      else
+        ['The images could not be generated or saved after several attempts. Please try uploading again via the web interface.']
+      end
       Sentry.set_user(id: @user.id, email: @user.email)
-      Sentry.capture_message("Error updating collage image", level: :info, extra: { entry_id: entry_id, errors: entry.errors, error_messages: entry.errors.full_messages, url: filestack_collage_url, error: @error })
-      EntryMailer.image_error(@user, entry, entry.errors.full_messages).deliver_later
+      Sentry.capture_message("Error updating collage image", level: :info, extra: { entry_id: entry_id, error_messages: error_messages, url: filestack_collage_url })
+      EntryMailer.image_error(@user, entry, "collage", error_messages).deliver_later
     end
-    entry.update(filepicker_url: nil) if entry.filepicker_url == "https://d10r8m94hrfowu.cloudfront.net/uploading.png"
+    entry.update(filepicker_url: nil) if entry.filepicker_url == Entry::UPLOADING_PLACEHOLDER_URL
+  end
+
+  # Download Filestack URL with explicit long read timeout (generation can take ~20s).
+  # Returns a Tempfile on success (caller must close/unlink after use), nil on failure.
+  def fetch_filestack_image(url)
+    return nil if url.blank?
+
+    conn = Faraday.new do |f|
+      f.options.open_timeout = 15
+      f.options.timeout = 45
+    end
+    response = conn.get(url)
+    return nil unless response.success?
+
+    tempfile = Tempfile.new(['filestack_collage', '.jpg'])
+    tempfile.binmode
+    tempfile.write(response.body)
+    tempfile.rewind
+    tempfile
+  rescue StandardError => e
+    Sentry.capture_exception(e, extra: { url: url })
+    nil
   end
 
   def collage_from_mailgun_attachments
