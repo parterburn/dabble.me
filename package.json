@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "Private email journaling & daily reflection.",
   "dependencies": {
-    "@tailwindcss/cli": "^4.1.18",
-    "autoprefixer": "^10.4.23",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.18"
+    "@tailwindcss/cli": "^4.2.1",
+    "autoprefixer": "^10.4.27",
+    "postcss": "^8.5.8",
+    "tailwindcss": "^4.2.1"
   },
   "scripts": {
     "build:css": "tailwindcss -i ./app/frontend/stylesheets/marketing.tailwind.css -o ./public/marketing.css --minify",
