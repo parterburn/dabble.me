@@ -112,7 +112,7 @@ end
 
 group :test do
   gem 'capybara'
-  gem 'database_cleaner'
+  gem 'database_cleaner-active_record'
   gem 'email_spec', require: false
   gem "rspec-retry"                       # Automatically retry failed tests that timeout
   gem "selenium-webdriver", ">= 4.20"  # 4.11+ has built-in Selenium Manager for driver downloads
