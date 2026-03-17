@@ -78,7 +78,7 @@ class ImageCollageJob < ActiveJob::Base
     tempfile.write(response.body)
     tempfile.rewind
     tempfile
-  rescue StandardError => e
+  rescue URI::InvalidURIError, StandardError => e
     Sentry.capture_exception(e, extra: { url: url })
     nil
   end
@@ -181,9 +181,9 @@ class ImageCollageJob < ActiveJob::Base
     elsif urls.any?
       first_url = urls.first.include?("%") ? urls.first : CGI.escape(urls.first) # don't escape if already contains escape sequences
 
-      remaining_urls = urls[1..-1].map do |url|
-        url.include?("%") ? url : CGI.escape(url)
-      end.map(&:inspect).join(',')
+      # Filestack expects a JSON-style array in the path; use %22 (") and %2C (,) so the path is a valid URI.
+      escaped_rest = urls[1..-1].map { |u| u.include?("%") ? u : CGI.escape(u) }
+      remaining_urls = escaped_rest.map { |u| "%22#{u}%22" }.join("%2C")
 
       url = "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:%5B#{remaining_urls}%5D,w:1200,h:1200,m:1/#{first_url}?filename=#{SecureRandom.uuid}.jpg"
       url
