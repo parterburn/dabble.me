@@ -1,6 +1,12 @@
 class ProcessEntryImageJob < ActiveJob::Base
   queue_as :default
 
+  retry_on Net::ReadTimeout,
+           Net::OpenTimeout,
+           Faraday::TimeoutError,
+           wait: :exponentially_longer,
+           attempts: 5
+
   def perform(entry_id, s3_file_key)
     entry = Entry.find_by(id: entry_id)
     return unless entry
@@ -63,7 +69,11 @@ class ProcessEntryImageJob < ActiveJob::Base
         error_messages = @error.present? ? [@error] : ['The image could not be saved. Please try uploading again via the web interface.']
         Sentry.set_user(id: entry.user_id, email: entry.user.email)
         Sentry.capture_message("Error updating entry image", level: :info, extra: { entry_id: entry_id, url: s3_file.public_url, error_messages: error_messages })
-        EntryMailer.image_error(entry.user, entry, "single", error_messages).deliver_later
+        cache_key = "process_entry_image_error_email_sent:#{entry_id}"
+        unless Rails.cache.read(cache_key)
+          EntryMailer.image_error(entry.user, entry, "single", error_messages).deliver_later
+          Rails.cache.write(cache_key, true, expires_in: 1.hour)
+        end
       end
 
       entry.update(filepicker_url: nil) if entry.filepicker_url == Entry::UPLOADING_PLACEHOLDER_URL
@@ -81,8 +91,19 @@ class ProcessEntryImageJob < ActiveJob::Base
     else
       entry.update(filepicker_url: nil) if entry.filepicker_url == Entry::UPLOADING_PLACEHOLDER_URL
     end
+  rescue Net::ReadTimeout, Net::OpenTimeout, Faraday::TimeoutError => e
+    Rails.logger.error "Error processing entry image: #{e.message}"
+    clear_uploading_placeholder(entry_id)
+    raise
   rescue => e
     Rails.logger.error "Error processing entry image: #{e.message}"
-    entry.update(filepicker_url: nil) if entry.filepicker_url == Entry::UPLOADING_PLACEHOLDER_URL
+    clear_uploading_placeholder(entry_id)
+  end
+
+  private
+
+  def clear_uploading_placeholder(entry_id)
+    entry = Entry.find_by(id: entry_id)
+    entry&.update(filepicker_url: nil) if entry&.filepicker_url == Entry::UPLOADING_PLACEHOLDER_URL
   end
 end

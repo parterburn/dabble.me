@@ -56,7 +56,12 @@ class ImageCollageJob < ActiveJob::Base
       end
       Sentry.set_user(id: @user.id, email: @user.email)
       Sentry.capture_message("Error updating collage image", level: :info, extra: { entry_id: entry_id, error_messages: error_messages, url: filestack_collage_url })
-      EntryMailer.image_error(@user, entry, "collage", error_messages).deliver_later
+      # Only send one error email per entry per hour; job can retry up to 6 times and would otherwise send 6 emails.
+      cache_key = "image_collage_error_email_sent:#{entry_id}"
+      unless Rails.cache.read(cache_key)
+        EntryMailer.image_error(@user, entry, "collage", error_messages).deliver_later
+        Rails.cache.write(cache_key, true, expires_in: 1.hour)
+      end
     end
     entry.update(filepicker_url: nil) if entry.filepicker_url == Entry::UPLOADING_PLACEHOLDER_URL
   end
