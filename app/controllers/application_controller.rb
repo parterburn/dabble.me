@@ -9,8 +9,12 @@ class ApplicationController < ActionController::Base
 
   rescue_from Rack::Timeout::RequestTimeoutException, with: :handle_timeout
 
-  def redirect_back_or_to(default)
-    redirect_to session&.delete(:return_to) || session&.delete(:user_return_to) || default
+  def redirect_back_or_to(default, allow_other_host: _allow_other_host, **options)
+    redirect_to(
+      session&.delete(:return_to) || session&.delete(:user_return_to) || default,
+      allow_other_host: allow_other_host,
+      **options
+    )
   end
 
   def store_location
