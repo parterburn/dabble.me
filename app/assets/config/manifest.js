@@ -23,5 +23,6 @@
 
 //= link application.css
 //= link application.js
+//= link respond.js
 
 //= link chartkick.js
