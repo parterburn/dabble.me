@@ -319,6 +319,9 @@ class EmailProcessor
     # Handle links and signatures
     body&.gsub!(/<(http[s]?:\/\/\S*?)>/, "(\\1)") # make links visible
     body&.gsub!(/--( \*)?$\z/, "") # remove gmail signature break
+    body&.gsub!(%r{<br><br>\s*—\s*<br><br>\s*[^<]+?\s*\z}m, "")
+    body&.gsub!(%r{<br>\s*#{mobile_signature_pattern}\s*\z}i, "")
+    body&.gsub!(%r{<br><br>\s*#{mobile_signature_pattern}\s*\z}i, "")
 
     # Remove unnecessary HTML elements
     body&.gsub!(/<style(?:\s+[^>]*)?>.*?<\/style>/mi, '') # styles
@@ -389,8 +392,12 @@ class EmailProcessor
     html = html.split(%r{<br[^>]*id="lineBreakAtBeginningOfSignature"[^>]*>}).first || html # gmail signature
     html = html.split(%r{<br>\s*--(\s*<br>|\s*$)}).first || html # standard signature separator
     html = html.split(%r{<div>\s*<br>\s*</div>\s*<div>\s*--\s*</div>}).first || html # gmail signature variant
-    html = html.split(%r{<div>\s*<br>\s*--\s*<br>\s*</div>}).first || html # signature with br tags around --
-    html = html.split(%r{<span>\s*--\s*</span>\s*<br>}).first || html # signature with span wrapped --
+    html = html.split(%r{<div>\s*<br>\s*--\s*<br>\s*</div>}).first || html # signature with br tags around separator
+    html = html.split(%r{<span>\s*--\s*</span>\s*<br>}).first || html # signature with span wrapped separator
+    html = html.gsub(%r{<br>\s*—\s*<br>\s*[^<]+(?=(?:</(?:div|p|span)>)?\s*\z)}m, "") # trailing em-dash separator plus signature line
+    html = html.gsub(%r{<(?:div|p|span)>\s*—\s*</(?:div|p|span)>\s*<(?:div|p|span)>\s*[^<]+\s*</(?:div|p|span)>\s*\z}m, "") # trailing em-dash block plus signature block
+    html = html.gsub(%r{<br>\s*#{mobile_signature_pattern}(?=(?:</(?:div|p|span)>)?\s*\z)}im, "") # trailing device signature line
+    html = html.gsub(%r{<(?:div|p|span)>\s*#{mobile_signature_pattern}\s*</(?:div|p|span)>\s*\z}im, "") # trailing device signature block
 
     # Ensure all links have target="_blank" (Rinku may not have caught existing links)
     html = html.gsub(/<a\s+([^>]*?)href="([^"]*?)"([^>]*?)>/i, '<a \1href="\2"\3 target="_blank">')
@@ -543,6 +550,10 @@ class EmailProcessor
       entry.id,
       file.key
     )
+  end
+
+  def mobile_signature_pattern
+    /sent from my (?:iphone|ipad|android|mobile device|phone|galaxy|pixel)/i
   end
 end
 # rubocop:enable Metrics/AbcSize

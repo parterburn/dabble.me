@@ -55,5 +55,59 @@ describe EmailProcessor do
       EmailProcessor.new(email).process
       expect(paid_user.entries.reload.first.body).to eq("<p>I am great</p><br><br><p>Here's a link: <a href=\"https://www.google.com\" target=\"_blank\">https://www.google.com</a></p>")
     end
+
+    it "removes a trailing em-dash separator followed by a signature line" do
+      paid_user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "Today was good",
+        vendor_specific: {
+          stripped_html: "<div>Today was good</div><div>—</div><div>Someone here</div>"
+        }
+      )
+
+      EmailProcessor.new(email).process
+      expect(paid_user.entries.reload.first.body).to eq("<div>Today was good</div>")
+    end
+
+    it "removes a trailing em-dash separator followed by a signature line from free plain text email" do
+      user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "Today was good\n\n—\n\nSomeone here"
+      )
+
+      EmailProcessor.new(email).process
+      expect(user.entries.reload.first.body).to eq("Today was good")
+    end
+
+    it "removes a trailing Sent from my iPhone signature from paid html email" do
+      paid_user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "Today was good",
+        vendor_specific: {
+          stripped_html: "<div>Today was good</div><div>Sent from my iPhone</div>"
+        }
+      )
+
+      EmailProcessor.new(email).process
+      expect(paid_user.entries.reload.first.body).to eq("<div>Today was good</div>")
+    end
+
+    it "removes a trailing Sent from my iPhone signature from free plain text email" do
+      user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "Today was good\n\nSent from my iPhone"
+      )
+
+      EmailProcessor.new(email).process
+      expect(user.entries.reload.first.body).to eq("Today was good")
+    end
   end
 end
