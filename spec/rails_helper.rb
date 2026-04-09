@@ -2,6 +2,7 @@
 ENV['RAILS_ENV'] ||= 'test'
 require File.expand_path('../../config/environment', __FILE__)
 require 'rspec/rails'
+require 'database_cleaner/active_record'
 
 # Add additional requires below this line. Rails is not loaded until this point!
 
@@ -64,7 +65,7 @@ RSpec.configure do |config|
   end
 
   # Hooks
-  config.before(:all) do
+  config.before(:suite) do
     Rails.application.eager_load!
     DatabaseCleaner.clean_with :truncation
     DatabaseCleaner.strategy = :truncation

@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 ruby File.read(File.expand_path '../.ruby-version', __FILE__).strip.sub /\-p[0-9]+$/, '' # Read the rbenv version file
-gem 'rails', '~> 6.1.7.10'
+gem 'rails', '~> 7.1.5', '>= 7.1.5.2'
 
 gem "concurrent-ruby", "1.3.4" # needed until https://github.com/rails/rails/pull/54264 is in Rails 7.0.8.8
 gem "csv"                      # Ruby 3.4 stdlib extraction - required by ActiveSupport
@@ -69,8 +69,7 @@ gem 'autoprefixer-rails'
 # gem 'haml_assets'
 gem 'i18n-js'
 gem 'jquery-rails'
-gem 'sass-rails'
-gem 'twbs_sass_rails'
+gem 'sassc-rails'
 gem 'uglifier'
 
 gem "sidekiq"
@@ -113,7 +112,7 @@ end
 
 group :test do
   gem 'capybara'
-  gem 'database_cleaner'
+  gem 'database_cleaner-active_record'
   gem 'email_spec', require: false
   gem "rspec-retry"                       # Automatically retry failed tests that timeout
   gem "selenium-webdriver", ">= 4.20"  # 4.11+ has built-in Selenium Manager for driver downloads
