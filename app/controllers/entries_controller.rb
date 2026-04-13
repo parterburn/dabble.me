@@ -213,7 +213,7 @@ class EntriesController < ApplicationController
     elsif params[:entry][:entry].blank?
       @entry.destroy
       flash[:notice] = 'Entry deleted!'
-      redirect_back_or_to entries_path
+      redirect_to_return_or entries_path
     else
       update_params = if @entry.image_url_cdn.present? && entry_params[:remove_image] == "0"
         @entry.remote_image_url = @entry.image_url_cdn(cloudflare: false)

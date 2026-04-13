@@ -1,78 +1,107 @@
-%nav.navbar.navbar-default.navbar-fixed-top{ role: 'navigation', style: "font-family: 'Instrument Sans', sans-serif;" }
-  .container
-    .navbar-header
-      %button.navbar-toggle{ type: 'button', data: { toggle: 'collapse', target: '.navbar-collapse' } }
-        %span.icon-bar
-        %span.icon-bar
-        %span.icon-bar
+%nav#app-nav{ role: 'navigation', style: "font-family: 'Instrument Sans', sans-serif;", class: 'fixed top-0 z-[1000] w-full border-b border-olive-700 bg-olive-600 text-cream-100 shadow-sm transition-transform duration-200 ease-out' }
+  .mx-auto.flex.max-w-7xl.flex-wrap.items-center.justify-between.gap-2.px-3.py-2{ class: 'sm:px-4' }
+    .flex.min-w-0.flex-1.items-center.gap-2
       - if user_signed_in? && current_user.is_pro?
-        =link_to "Write", new_entry_path, class: "s-write-icon visible-xs #{'active' if params[:controller] == 'entries' && params[:action].in?(['new', 'create'])}"
-      = link_to root_path, class: 'navbar-brand', title: "Dabble me." do
-        %span
-          Dabble me.
+        = link_to 'Write', new_entry_path, class: "s-write-icon rounded px-3 py-2 text-sm font-medium text-cream-100 hover:bg-black/20 md:hidden #{'bg-black/10' if params[:controller] == 'entries' && params[:action].in?(['new', 'create'])}"
+      = link_to root_path, class: 'font-serif text-xl tracking-tight text-cream-100 hover:bg-black/20 rounded px-2 py-1', title: 'Dabble me.' do
+        %span Dabble me.
 
-    .collapse.navbar-collapse
-      %ul.nav.navbar-nav
-        %li{class: "#{'hidden-xs' if user_signed_in? && current_user.is_pro?} #{'active' if params[:controller] == 'entries' && params[:action].in?(['new', 'create'])}"}
-          =link_to new_entry_path do
+    .hidden.flex-1.items-center.justify-center{ class: 'md:flex' }
+      %ul.flex.flex-wrap.items-center.justify-center.gap-1
+        %li
+          - active = params[:controller] == 'entries' && params[:action].in?(['new', 'create'])
+          = link_to new_entry_path, class: "rounded px-3 py-2 text-sm font-medium text-cream-100 hover:bg-black/20 #{'bg-black/10' if active} #{'hidden' if user_signed_in? && current_user.is_pro?}" do
             %span Write
-
-        %li{class: "#{'active' if params[:controller] == 'entries' && params[:action] == 'index'}"}
-          =link_to entries_path do
+        %li
+          - active = params[:controller] == 'entries' && params[:action] == 'index'
+          = link_to entries_path, class: "rounded px-3 py-2 text-sm font-medium text-cream-100 hover:bg-black/20 #{'bg-black/10' if active}" do
             %span Entries
-
-        %li{class: "#{'active' if params[:action] == "review"}"}
-          =link_to review_path(Date.today.year), title: "Analytics" do
+        %li
+          - active = params[:action] == 'review'
+          = link_to review_path(Date.today.year), title: 'Analytics', class: "rounded px-3 py-2 text-sm font-medium text-cream-100 hover:bg-black/20 #{'bg-black/10' if active}" do
             %span Stats
-
-        %li{class: "#{'active' if current_page?(entries_calendar_path)}"}
-          = link_to entries_calendar_path, title: "Calendar View" do
-            %i.fa.fa-calendar.hidden-xs
-            %span.visible-xs-inline-block Calendar
-
-        %li{class: "#{'active' if current_page?(search_path)}"}
-          = link_to search_path, title: "Search" do
-            %i.fa.fa-search.hidden-xs
-            %span.visible-xs-inline-block Search
-
+        %li
+          - active = current_page?(entries_calendar_path)
+          = link_to entries_calendar_path, title: 'Calendar View', class: "rounded px-3 py-2 text-sm font-medium text-cream-100 hover:bg-black/20 #{'bg-black/10' if active}" do
+            %i.fa.fa-calendar{ class: 'mr-0 sm:mr-1' }
+            %span{ class: 'hidden sm:inline' } Calendar
+        %li
+          - active = current_page?(search_path)
+          = link_to search_path, title: 'Search', class: "rounded px-3 py-2 text-sm font-medium text-cream-100 hover:bg-black/20 #{'bg-black/10' if active}" do
+            %i.fa.fa-search{ class: 'mr-0 sm:mr-1' }
+            %span{ class: 'hidden sm:inline' } Search
         - if user_signed_in? && current_user.admin?
-          %li.dropdown{class: "#{'active' if params[:controller].in?(['admin', 'inspirations', 'payments'])}"}
-            %a.dropdown-toggle{data: { toggle: "dropdown"}, href: "#"}
-              %i.fa.fa-lock.hidden-xs
-              %span.visible-xs-inline-block Admin
-            %ul.dropdown-menu{role: "menu"}
-              %li{class: "#{'active' if current_page?(inspirations_path)}"}
-                =link_to inspirations_path, title: "Inspirations" do
-                  %i.fa.fa-lightbulb-o
-                  &nbsp;Inspirations
-              %li{class: "#{'active' if current_page?(payments_path)}"}
-                =link_to payments_path, title: "Payments" do
-                  %i.fa.fa-usd
-                  &nbsp;Payments
-              %li{class: "#{'active' if current_page?(admin_stats_path)}"}
-                =link_to admin_stats_path, title: "Admin Stats" do
-                  %i.fa.fa-bar-chart
-                  &nbsp;Stats
-              %li{class: "#{'active' if current_page?(admin_photos_path)}"}
-                =link_to admin_photos_path, title: "Admin Photos" do
-                  %i.fa.fa-picture-o
-                  &nbsp;Photos
-              %li{class: "#{'active' if current_page?(admin_users_path)}"}
-                =link_to admin_users_path, title: "Admin Users" do
-                  %i.fa.fa-users
-                  &nbsp;Users
+          %li.relative
+            %details.group.relative
+              %summary{ class: "flex cursor-pointer list-none items-center gap-1 rounded px-3 py-2 text-sm font-medium text-cream-100 hover:bg-black/20 #{'bg-black/10' if params[:controller].in?(['admin', 'inspirations', 'payments'])}" }
+                %span{ class: 'fa fa-lock hidden sm:inline' }
+                %span Admin
+                %span.text-xs.opacity-80 ▾
+              %div{ class: 'absolute left-0 top-full z-[1001] mt-1 min-w-[12rem] rounded-md border border-olive-800 bg-olive-700 py-1 shadow-lg' }
+                = link_to inspirations_path, title: 'Inspirations', class: 'block px-4 py-2 text-sm text-cream-100 hover:bg-black/20' do
+                  %span.fa.fa-lightbulb-o
+                  Inspirations
+                = link_to payments_path, title: 'Payments', class: 'block px-4 py-2 text-sm text-cream-100 hover:bg-black/20' do
+                  %span.fa.fa-usd
+                  Payments
+                = link_to admin_stats_path, title: 'Admin Stats', class: 'block px-4 py-2 text-sm text-cream-100 hover:bg-black/20' do
+                  %span.fa.fa-bar-chart
+                  Stats
+                = link_to admin_photos_path, title: 'Admin Photos', class: 'block px-4 py-2 text-sm text-cream-100 hover:bg-black/20' do
+                  %span.fa.fa-picture-o
+                  Photos
+                = link_to admin_users_path, title: 'Admin Users', class: 'block px-4 py-2 text-sm text-cream-100 hover:bg-black/20' do
+                  %span.fa.fa-users
+                  Users
 
-      %ul.nav.navbar-nav.navbar-right
+    .hidden.items-center{ class: 'md:flex' }
+      %ul.flex.items-center.gap-1
+        - add_popover = nil
+        - current_settings = nil
         - if user_signed_in? && current_user.sign_in_count < 10 && !cookies[:viewed_settings] && (current_page?(entries_path) || current_page?(root_path))
-          - add_popover = "popover_settings"
+          - add_popover = 'popover_settings'
           - if current_user.frequency.count > 0
             - current_settings = "You will be emailed at <strong>#{current_user.send_time.strftime("%-I %P")} #{current_user.send_timezone}</strong> on <strong>#{current_user.frequencies}</strong>."
           - else
-            - current_settings = "Email reminders are currently <strong>disabled</strong>."
-        %li{class: "#{'active' if current_page?(edit_user_registration_path)}", rel: "#{add_popover}", title: "", data: { content: "#{current_settings}", placement: "bottom"}}
-          = link_to edit_user_registration_path do
-            %span Settings
+            - current_settings = 'Email reminders are currently <strong>disabled</strong>.'
         %li
-          = link_to destroy_user_session_path, method: :delete, title: "Logout" do
-            %i.fa.fa-sign-out.hidden-xs
-            %span.visible-xs-inline-block Logout
+          - active = current_page?(edit_user_registration_path)
+          - if add_popover
+            = link_to edit_user_registration_path, rel: add_popover, title: '', data: { content: current_settings }, class: "rounded px-3 py-2 text-sm font-medium text-cream-100 hover:bg-black/20 #{'bg-black/10' if active}" do
+              %span Settings
+          - else
+            = link_to edit_user_registration_path, class: "rounded px-3 py-2 text-sm font-medium text-cream-100 hover:bg-black/20 #{'bg-black/10' if active}" do
+              %span Settings
+        %li
+          = link_to destroy_user_session_path, method: :delete, title: 'Logout', class: 'rounded px-3 py-2 text-sm font-medium text-cream-100 hover:bg-black/20' do
+            %i.fa.fa-sign-out{ class: 'hidden sm:inline' }
+            %span{ class: 'sm:hidden' } Logout
+            %span{ class: 'hidden sm:inline' } Logout
+
+    %button#mobile-menu-toggle{ class: 'rounded p-2 text-cream-100 hover:bg-black/20 md:hidden', type: 'button', 'aria-expanded': 'false', 'aria-controls': 'mobile-menu' }
+      %span.sr-only Toggle menu
+      %svg.h-6.w-6{ fill: 'none', stroke: 'currentColor', viewBox: '0 0 24 24' }
+        %path{ 'stroke-linecap': 'round', 'stroke-linejoin': 'round', 'stroke-width': '2', d: 'M4 6h16M4 12h16M4 18h16' }
+
+  #mobile-menu.hidden.w-full.border-t.border-olive-700.bg-olive-600{ class: 'md:hidden' }
+    .flex.flex-col.px-3.py-2
+      = link_to new_entry_path, class: "rounded px-3 py-2 text-sm font-medium text-cream-100 hover:bg-black/20 #{'bg-black/10' if params[:controller] == 'entries' && params[:action].in?(['new', 'create'])}" do
+        Write
+      = link_to entries_path, class: "rounded px-3 py-2 text-sm font-medium text-cream-100 hover:bg-black/20 #{'bg-black/10' if params[:controller] == 'entries' && params[:action] == 'index'}" do
+        Entries
+      = link_to review_path(Date.today.year), class: "rounded px-3 py-2 text-sm font-medium text-cream-100 hover:bg-black/20 #{'bg-black/10' if params[:action] == 'review'}" do
+        Stats
+      = link_to entries_calendar_path, class: "rounded px-3 py-2 text-sm font-medium text-cream-100 hover:bg-black/20 #{'bg-black/10' if current_page?(entries_calendar_path)}" do
+        Calendar
+      = link_to search_path, class: "rounded px-3 py-2 text-sm font-medium text-cream-100 hover:bg-black/20 #{'bg-black/10' if current_page?(search_path)}" do
+        Search
+      - if user_signed_in? && current_user.admin?
+        %p.mt-2.text-xs.font-semibold.uppercase.tracking-wide.text-cream-200 Admin
+        = link_to 'Inspirations', inspirations_path, class: 'rounded px-3 py-2 text-sm text-cream-100 hover:bg-black/20'
+        = link_to 'Payments', payments_path, class: 'rounded px-3 py-2 text-sm text-cream-100 hover:bg-black/20'
+        = link_to 'Admin Stats', admin_stats_path, class: 'rounded px-3 py-2 text-sm text-cream-100 hover:bg-black/20'
+        = link_to 'Admin Photos', admin_photos_path, class: 'rounded px-3 py-2 text-sm text-cream-100 hover:bg-black/20'
+        = link_to 'Admin Users', admin_users_path, class: 'rounded px-3 py-2 text-sm text-cream-100 hover:bg-black/20'
+      = link_to edit_user_registration_path, class: "rounded px-3 py-2 text-sm font-medium text-cream-100 hover:bg-black/20 #{'bg-black/10' if current_page?(edit_user_registration_path)}" do
+        Settings
+      = link_to 'Logout', destroy_user_session_path, method: :delete, class: 'rounded px-3 py-2 text-sm font-medium text-cream-100 hover:bg-black/20'

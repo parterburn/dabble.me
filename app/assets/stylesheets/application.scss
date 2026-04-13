@@ -10,8 +10,6 @@
  * defined in the other CSS/SCSS files in this directory. It is generally better to create a new
  * file per style scope.
  *
- *= stub twbs-variables
- *= require twbs
  *= require_self
  *= require_tree ./lib
  *= require_tree .
@@ -30,8 +28,7 @@ html, body {
 
 body {
   background: $cream;
-  padding-top: 70px;
-  font-family: "Raleway", sans-serif;
+  font-family: "Instrument Sans", "Raleway", sans-serif;
   font-weight: 400;
 }
 
@@ -203,34 +200,8 @@ label {
   height: 575px !important;
 }
 
-.form-control {
-  height: 45px;
-  border-radius: 4px;
-  font-size: 16px;
-  border: 2px solid $light-gray;
-  box-shadow: none;
-  outline: none;
-  -webkit-transition: all 0.3s;
-  transition: all 0.3s;
-  &:hover {
-    border-color: #999999;
-    box-shadow: none;
-  }
-  &:focus {
-    border-color: $olive;
-    box-shadow: none;
-  }
-}
 input[type="submit"].form-control {
   border: 0px;
-}
-
-.btn-lg, .btn-group-lg>.btn {
-  border-radius: 4px;
-}
-
-.input-group-addon {
-  border-width: 2px;
 }
 
 .alert-warning.force-links a {
