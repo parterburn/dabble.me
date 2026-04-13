@@ -9,7 +9,8 @@ class ApplicationController < ActionController::Base
 
   rescue_from Rack::Timeout::RequestTimeoutException, with: :handle_timeout
 
-  def redirect_back_or_to(default)
+  # Custom name avoids clashing with Rails 7's `redirect_back_or_to` (used by `redirect_back`).
+  def redirect_to_return_or(default)
     redirect_to session&.delete(:return_to) || session&.delete(:user_return_to) || default
   end
 

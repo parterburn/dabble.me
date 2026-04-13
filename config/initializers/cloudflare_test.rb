@@ -1,6 +1,9 @@
 if Rails.env.test?
-  # Set CloudflareRails IPs manually to avoid external HTTP requests during tests
+  # Skip live Cloudflare IP fetches (avoids Net::HTTP during tests and WebMock conflicts).
   Rails.application.config.after_initialize do
-    CloudflareRails::VALID_CLOUDFLARE_CIDRS = ['127.0.0.1/32', '::1/128']
+    CloudflareRails::Importer.define_singleton_method(:cloudflare_ips) do |refresh: false|
+      @ips = nil if refresh
+      @ips ||= (CloudflareRails::FallbackIps::IPS_V4 + CloudflareRails::FallbackIps::IPS_V6).freeze
+    end
   end
 end

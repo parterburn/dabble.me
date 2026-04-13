@@ -5,13 +5,18 @@
   "dependencies": {
     "@tailwindcss/cli": "^4.2.1",
     "autoprefixer": "^10.4.27",
+    "font-awesome": "^4.7.0",
     "postcss": "^8.5.8",
-    "tailwindcss": "^4.2.1"
+    "tailwindcss": "^4.2.1",
+    "tippy.js": "^6.3.7"
   },
   "scripts": {
     "build:css": "tailwindcss -i ./app/frontend/stylesheets/marketing.tailwind.css -o ./public/marketing.css --minify",
     "watch:css": "tailwindcss -i ./app/frontend/stylesheets/marketing.tailwind.css -o ./public/marketing.css --watch",
-    "heroku-postbuild": "npm run build:css"
+    "build:css:app": "tailwindcss -i ./app/frontend/stylesheets/application.tailwind.css -o ./public/application-tailwind.css --minify",
+    "watch:css:app": "tailwindcss -i ./app/frontend/stylesheets/application.tailwind.css -o ./public/application-tailwind.css --watch",
+    "build:css:all": "npm run build:css && npm run build:css:app",
+    "heroku-postbuild": "npm run build:css:all"
   },
   "repository": {
     "type": "git",

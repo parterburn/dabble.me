@@ -1,0 +1,12 @@
+@import "tailwindcss";
+
+/* Authenticated app + all non-marketing templates */
+@source "../../../app/views/**/*.haml";
+@source "../../../app/views/**/*.erb";
+
+@import "./dabble-design-system.css";
+@import "./bootstrap-grid-compat.css";
+
+@import "../../../node_modules/font-awesome/css/font-awesome.min.css";
+@import "../../../node_modules/tippy.js/dist/tippy.css";
+@import "../../../node_modules/tippy.js/themes/light-border.css";

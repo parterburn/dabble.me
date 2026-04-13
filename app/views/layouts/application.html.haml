@@ -9,6 +9,7 @@
     = csrf_meta_tags
     = yield :head
     = render 'shared/favicons_and_metatags'
+    = stylesheet_link_tag '/application-tailwind.css', media: 'all'
     = stylesheet_link_tag 'application', media: 'all'
     = javascript_include_tag 'application'
 
@@ -30,21 +31,21 @@
           'anonymize_ip': true
         });
 
-  %body
-    #wrap
+  %body.bg-page.min-h-screen
+    #wrap.min-h-screen
       = render 'shared/navbar'
 
-      #main-container.clear-top{class: "#{params[:controller].in?(['admin', 'payments', 'inspirations']) ? 'container-fluid' : 'container'}"}
+      #main-container.mx-auto.max-w-6xl.px-4.pb-40.pt-16{class: "#{params[:controller].in?(['admin', 'payments', 'inspirations']) ? 'max-w-full' : ''}"}
         - if notice
-          .col-md-8.col-md-offset-2.alert.alert-success= notice.html_safe
-          .clearfix
+          .mx-auto.mb-4.max-w-2xl
+            .alert.alert-success= notice.html_safe
         - if alert && alert.class == Array
           - alert.each do |message|
-            .col-md-8.col-md-offset-2
+            .mx-auto.mb-4.max-w-2xl
               .alert.alert-danger= message
         - elsif alert
-          .col-md-8.col-md-offset-2.alert.alert-danger= alert.html_safe
-          .clearfix
+          .mx-auto.mb-4.max-w-2xl
+            .alert.alert-danger= alert.html_safe
 
         = yield
 

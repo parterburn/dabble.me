@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 ruby File.read(File.expand_path '../.ruby-version', __FILE__).strip.sub /\-p[0-9]+$/, '' # Read the rbenv version file
-gem 'rails', '~> 6.1.7.10'
+gem 'rails', '~> 7.0.8'
 
 gem "concurrent-ruby", "1.3.4" # needed until https://github.com/rails/rails/pull/54264 is in Rails 7.0.8.8
 gem "csv"                      # Ruby 3.4 stdlib extraction - required by ActiveSupport
@@ -70,7 +70,6 @@ gem 'autoprefixer-rails'
 gem 'i18n-js'
 gem 'jquery-rails'
 gem 'sass-rails'
-gem 'twbs_sass_rails'
 gem 'uglifier'
 
 gem "sidekiq"
@@ -92,7 +91,7 @@ group :development, :test do
   gem 'delorean'
   gem 'factory_bot_rails'
   gem 'faker'
-  gem "rspec-rails"
+  gem 'rspec-rails', '~> 6.1'
   gem 'listen'
 end
 

@@ -7,9 +7,10 @@
     var didScroll;
     var lastScrollTop = 0;
     var delta = 20;
-    var navbarHeight = $('.navbar-fixed-top').outerHeight();
+    var $nav = $('#app-nav');
+    var navbarHeight = $nav.length ? $nav.outerHeight() : 56;
 
-    $(window).scroll(function(event){
+    $(window).scroll(function(){
         didScroll = true;
     });
 
@@ -21,59 +22,75 @@
     }, 250);
 
     function hasScrolled() {
-        var st = $(this).scrollTop();
-        
-        // Make sure they scroll more than delta
+        var st = $(window).scrollTop();
+
         if(Math.abs(lastScrollTop - st) <= delta)
             return;
-        
-        // If they scrolled down and are past the navbar, add class .nav-up.
-        // This is necessary so you never see what is "behind" the navbar.
+
         if (st > lastScrollTop && st > navbarHeight && $(window).width() > 768){
-            // Scroll Down
-            $('.navbar-fixed-top').addClass('nav-up');
+            $nav.addClass('nav-up');
             $(".j-back-to-top").fadeOut();
         } else {
-            // Scroll Up
             if(st + $(window).height() < $(document).height()) {
-                $('.navbar-fixed-top').removeClass('nav-up');
+                $nav.removeClass('nav-up');
                 if ((window.innerHeight + window.scrollY) >= 1600 && $(window).width() > 768) {
                   $(".j-back-to-top").fadeIn();
                 }
             }
         }
-        
+
         lastScrollTop = st;
     }
 
-    $("[rel='popover']").popover({
-      trigger: "hover",
-      container: "body",
-      html: true
-    });
-
-    $("[rel='tooltip-mobile-friendly']").tooltip({
-      container: "body"
-    });
-
-    if ($(window).width() > 768) {
-      $("[rel='popover_settings']").popover({
-        trigger: "hover",
-        container: "body",
-        html: true
-      }).popover('show');
-
-      $("[rel='tooltip']").tooltip({
-        container: "body"
+    if (typeof tippy !== 'undefined') {
+      tippy('[rel="popover"]', {
+        content: function(reference) {
+          return reference.getAttribute('data-content');
+        },
+        allowHTML: true,
+        interactive: true,
+        theme: 'light-border',
+        placement: 'auto',
+        trigger: 'mouseenter focus',
       });
+
+      tippy('[rel="tooltip-mobile-friendly"]', {
+        content: function(reference) {
+          return reference.getAttribute('title');
+        },
+        placement: 'top',
+        theme: 'light-border',
+      });
+
+      if ($(window).width() > 768) {
+        var settingsEls = document.querySelectorAll('[rel="popover_settings"]');
+        tippy(settingsEls, {
+          content: function(reference) {
+            return reference.getAttribute('data-content');
+          },
+          allowHTML: true,
+          interactive: true,
+          theme: 'light-border',
+          placement: 'bottom',
+          trigger: 'mouseenter focus',
+          showOnCreate: true,
+        });
+
+        tippy('[rel="tooltip"]', {
+          content: function(reference) {
+            return reference.getAttribute('title');
+          },
+          placement: 'top',
+          theme: 'light-border',
+        });
+      }
     }
 
-    $("[rel='popover']").click(function (e) {
-        //e.stopPropagation();
-        $(this).popover('hide');
+    $(document).on('click', "[rel='popover']", function () {
+      if (this._tippy) { this._tippy.hide(); }
     });
 
-    $(".j-entry-link").click(function(e) {
+    $(".j-entry-link").on('click', function() {
       var $entry = $("#entry-"+$(this).attr('data-id'));
       $('body,html').animate({scrollTop: $entry.offset().top - 70}, 600);
       $entry.addClass("pulse");
@@ -82,11 +99,12 @@
       }, 2000);
     });
 
-    
     $(".pictureFrame img").unveil(300);
 
-    $(".navbar-toggle").on("click", function () {
-        $(this).toggleClass("active");
+    $('#mobile-menu-toggle').on('click', function() {
+      $('#mobile-menu').toggleClass('hidden');
+      var expanded = !$('#mobile-menu').hasClass('hidden');
+      $(this).attr('aria-expanded', expanded);
     });
 
     $(document).on('click', '.j-copy-to-clipboard', function(e) {

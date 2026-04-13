@@ -63,6 +63,17 @@ jobs:
         sudo apt-get install -y libpq-dev libicu-dev
         sudo apt-get install -y libicu74
 
+    - name: Set up Node
+      uses: actions/setup-node@v6
+      with:
+        node-version: '22'
+        cache: npm
+
+    - name: Install Node and build CSS
+      run: |
+        npm ci
+        npm run build:css:all
+
     - name: Build and create DB
       env:
         # use localhost for the host here because we have specified a container for the job.
