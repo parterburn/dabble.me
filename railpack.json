@@ -1,5 +1,8 @@
 {
   "$schema": "https://schema.railpack.com",
+  "buildAptPackages": [
+    "libvips42"
+  ],
   "deploy": {
     "aptPackages": [
       "libvips42"
