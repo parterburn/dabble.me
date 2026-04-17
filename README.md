@@ -14,12 +14,9 @@ This app utilizes the following 3rd party services:
 
 You will need to setup Mailgun to receive incoming emails and point them to your app to parse.
 
-In order to turn on scheduled emails in Heroku, you'll need to add an hourly job using the Heroku Scheduler.
-```
-rake entry:send_hourly_entries
-```
+Scheduled jobs (including hourly email sending) are run by [sidekiq-cron](https://github.com/sidekiq-cron/sidekiq-cron) inside the Sidekiq worker process. The schedule lives in `config/schedule.yml`. No external scheduler is required.
 
-Your local environment variables at ```config/local_env.yml``` (and on Heroku) will need to be something like this (```rake db:seed``` will create the admin@dabble.ex account for you):
+Your local environment variables at ```config/local_env.yml``` (and on Railway) will need to be something like this (```rake db:seed``` will create the admin@dabble.ex account for you):
 
 ```yaml
 MAIN_DOMAIN: yourdomain.com

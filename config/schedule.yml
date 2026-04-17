@@ -1,0 +1,19 @@
+user_downgrade_expired:
+  cron: "30 0 * * *"
+  class: "UserDowngradeExpiredWorker"
+  description: "Daily at 12:30 AM UTC"
+
+send_hourly_entries:
+  cron: "0 * * * *"
+  class: "SendHourlyEntriesWorker"
+  description: "Hourly at :00"
+
+entry_maintenance:
+  cron: "0 15 * * *"
+  class: "EntryMaintenanceWorker"
+  description: "Daily at 3:00 PM UTC"
+
+x_bookmark_summaries:
+  cron: "0 16 * * *"
+  class: "XBookmarkSummariesWorker"
+  description: "Daily at 4:00 PM UTC"
