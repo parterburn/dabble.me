@@ -2,12 +2,16 @@
   "$schema": "https://schema.railpack.com",
   "buildAptPackages": [
     "libvips42",
-    "libyaml-0-2"
+    "libyaml-0-2",
+    "libmagic1",
+    "libpq5"
   ],
   "deploy": {
     "aptPackages": [
       "libvips42",
-      "libyaml-0-2"
+      "libyaml-0-2",
+      "libmagic1",
+      "libpq5"
     ]
   }
 }
