@@ -1,4 +1,5 @@
-require "open-uri"
+require "net/http"
+require "uri"
 
 # Builds a square JPEG collage from a list of image URLs using libvips.
 #
@@ -14,6 +15,7 @@ class CollageGenerator
   JPEG_QUALITY = 88
   HTTP_OPEN_TIMEOUT = 15
   HTTP_READ_TIMEOUT = 60
+  MAX_REDIRECTS = 5
 
   # Gutter (px) between tiles AND around the outer canvas edge. White.
   SHIM = 16
@@ -154,18 +156,38 @@ class CollageGenerator
     nil
   end
 
-  def fetch_bytes(url)
+  # Downloads the URL body using Net::HTTP directly. We avoid open-uri because
+  # since Ruby 3.0 it raises "userinfo not supported. [RFC3986]" on any URI
+  # with an `@` that parses as userinfo (happens with some legacy Filestack
+  # filenames), even if we never intended basic auth.
+  def fetch_bytes(url, redirects_left = MAX_REDIRECTS)
+    return nil if redirects_left.negative?
+
     uri = URI.parse(url)
     return nil unless uri.is_a?(URI::HTTP) || uri.is_a?(URI::HTTPS)
 
-    open_opts = { read_timeout: HTTP_READ_TIMEOUT, open_timeout: HTTP_OPEN_TIMEOUT }
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = uri.is_a?(URI::HTTPS)
+    http.open_timeout = HTTP_OPEN_TIMEOUT
+    http.read_timeout = HTTP_READ_TIMEOUT
+
+    request = Net::HTTP::Get.new(uri.request_uri)
     if uri.userinfo
       user, pass = uri.userinfo.split(":", 2)
-      open_opts[:http_basic_authentication] = [user, pass]
-      uri.userinfo = nil
+      request.basic_auth(user, pass)
     end
 
-    uri.open(open_opts, &:read)
+    response = http.request(request)
+
+    case response
+    when Net::HTTPSuccess
+      response.body
+    when Net::HTTPRedirection
+      location = response["location"]
+      return nil if location.blank?
+
+      fetch_bytes(URI.join(uri, location).to_s, redirects_left - 1)
+    end
   rescue StandardError => e
     Sentry.capture_exception(e, extra: { url: sanitize_url(url) })
     nil
