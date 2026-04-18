@@ -54,8 +54,9 @@
         %strong 🤖 DabbleMeGPT:
         %br
         %p{style: "margin-top: 10px;"} Generating...
-      :javascript
-        setTimeout(function() { location.reload(); }, 4500);
+      - if params[:action] != "index"
+        :javascript
+          setTimeout(function() { location.reload(); }, 4500);
 
     - if current_user.is_pro?
       = entry.spotify_embed
@@ -75,7 +76,7 @@
     .pictureFrame
       =link_to entry.display_image_url, target: "_blank" do
         =image_code(entry)
-      - if entry.uploading_image?
+      - if entry.uploading_image? && params[:action] != "index"
         :javascript
           setTimeout(function() { location.reload(); }, 4500);      
   .clearfix
