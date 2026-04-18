@@ -18,8 +18,11 @@ port        ENV.fetch("PORT") { 3000 }
 #
 environment ENV.fetch("RAILS_ENV") { "development" }
 
-# Specifies the `pidfile` that Puma will use.
-pidfile ENV.fetch("PIDFILE") { "tmp/pids/server.pid" }
+# Only write a pidfile in development — containerized production runs (Railway) have
+# Puma as PID 1 and the `tmp/pids/` directory isn't shipped in the deploy image.
+if ENV.fetch("RAILS_ENV", "development") == "development"
+  pidfile ENV.fetch("PIDFILE") { "tmp/pids/server.pid" }
+end
 
 # Specifies the number of `workers` to boot in clustered mode.
 # Workers are forked web server processes. If using threads and workers together

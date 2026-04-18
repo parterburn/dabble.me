@@ -30,6 +30,9 @@ class Entry::AiTagger
   private
 
   def process_entries(entries)
+    entries = entries.select { |e| e.text_bodies_for_ai&.first.present? }
+    return unless entries.present?
+
     emotion_hash = sentiment_tags(entries)
     return unless emotion_hash.present?
 
@@ -47,7 +50,7 @@ class Entry::AiTagger
       options: {
         wait_for_model: true
       },
-      inputs: entries.map { |e| e.text_bodies_for_ai.first.first(MAX_ENTRY_SIZE) }
+      inputs: entries.map { |e| e.text_bodies_for_ai&.first&.first(MAX_ENTRY_SIZE) }
     }
     response = connection.post(AI_MODEL, body)
 
@@ -79,7 +82,7 @@ class Entry::AiTagger
 
   def connection
     @connection ||= Faraday.new(BASE_URL) do |f|
-      f.options[:timeout] = 29
+      f.options[:timeout] = 110
       f.request :json
       f.response :json
       f.request :authorization, "Bearer", ENV["HUGGING_FACE_API_KEY"]

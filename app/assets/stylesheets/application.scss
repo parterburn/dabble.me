@@ -400,3 +400,12 @@ strong {
     }
   }
 }
+
+a:focus, button:focus {
+  outline: none;
+}
+
+a:focus-visible, button:focus-visible {
+  outline: 2px solid #5B5B4B;
+  outline-offset: 2px;
+}

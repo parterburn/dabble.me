@@ -126,6 +126,9 @@ GEM
     crack (0.4.3)
       safe_yaml (~> 1.0.0)
     crass (1.0.6)
+    cronex (0.15.0)
+      tzinfo
+      unicode (>= 0.4.4.5)
     csv (3.3.5)
     database_cleaner (1.8.4)
     date (3.4.1)
@@ -168,6 +171,8 @@ GEM
       launchy (~> 2.1)
       mail (~> 2.7)
     erubi (1.13.1)
+    et-orbi (1.4.0)
+      tzinfo
     event_stream_parser (1.0.0)
     excon (0.91.0)
     execjs (2.7.0)
@@ -207,6 +212,9 @@ GEM
       fog-core
       nokogiri (>= 1.5.11, < 2.0.0)
     formatador (0.3.0)
+    fugit (1.12.1)
+      et-orbi (~> 1.4)
+      raabro (~> 1.4)
     get_process_mem (0.2.7)
       ffi (~> 1.0)
     glob (0.4.1)
@@ -265,17 +273,6 @@ GEM
       rb-fsevent (~> 0.10, >= 0.10.3)
       rb-inotify (~> 0.9, >= 0.9.10)
     logger (1.7.0)
-    logtail (0.1.8)
-      msgpack (~> 1.0)
-    logtail-rack (0.2.5)
-      logtail (~> 0.1)
-      rack (>= 1.2, < 4.0)
-    logtail-rails (0.2.8)
-      actionpack (>= 5.0.0)
-      activerecord (>= 5.0.0)
-      logtail (~> 0.1)
-      logtail-rack (~> 0.1)
-      railties (>= 5.0.0)
     loofah (2.25.0)
       crass (~> 1.0.2)
       nokogiri (>= 1.12.0)
@@ -307,7 +304,6 @@ GEM
     mini_portile2 (2.8.9)
     minitest (6.0.1)
       prism (~> 1.5)
-    msgpack (1.6.0)
     multi_json (1.15.0)
     multipart-post (2.4.1)
     mutex_m (0.2.0)
@@ -337,6 +333,7 @@ GEM
     public_suffix (6.0.2)
     puma (6.6.1)
       nio4r (~> 2.0)
+    raabro (1.4.0)
     racc (1.8.1)
     rack (2.2.22)
     rack-affiliates (0.4.0)
@@ -466,6 +463,11 @@ GEM
       logger
       rack (>= 2.2.4)
       redis-client (>= 0.22.2)
+    sidekiq-cron (2.3.1)
+      cronex (>= 0.13.0)
+      fugit (~> 1.8, >= 1.11.1)
+      globalid (>= 1.0.1)
+      sidekiq (>= 6.5.0)
     simplecov (0.22.0)
       docile (~> 1.1)
       simplecov-html (~> 0.11)
@@ -513,6 +515,7 @@ GEM
     unf (0.1.4)
       unf_ext
     unf_ext (0.0.7.7)
+    unicode (0.4.4.5)
     uniform_notifier (1.16.0)
     uri (1.1.1)
     warden (1.2.9)
@@ -581,7 +584,6 @@ DEPENDENCIES
   jquery-rails
   kaminari (>= 1.2.1)
   listen
-  logtail-rails
   loofah (>= 2.5)
   mailgun_rails
   meta_request
@@ -612,6 +614,7 @@ DEPENDENCIES
   sentry-ruby
   sentry-sidekiq
   sidekiq
+  sidekiq-cron
   simplecov
   spring
   spring-commands-rspec

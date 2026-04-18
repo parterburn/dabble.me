@@ -37,8 +37,10 @@
   .s-scrollable
     - if @search.present?
       = highlight(format_body(entry.formatted_body), @search.term)
-    - else
+    - elsif entry.formatted_body.present?
       = format_body(entry.formatted_body)
+    - else
+      %div.text-muted.text-center{style: "margin: 25px 0;"} Entry has no content.
 
     - if current_user.can_ai? && entry.ai_waiting_for_user_response
       %br

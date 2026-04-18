@@ -2,7 +2,7 @@ namespace :entry do
   require 'csv'
 
   # TRIGGERED MANUALLY
-  # heroku run bundle exec rake "entry:resend_daily_pro_users[2024-01-01]" --app dabble-me --size=standard-1x
+  # railway run --service worker bundle exec rake "entry:resend_daily_pro_users[2024-01-01]"
   task :resend_daily_pro_users, [:send_date] => :environment do |t, args|
     send_day = Date.parse(args[:send_date] || Time.current.in_time_zone("America/Denver").to_date.to_s)
     users = User.daily_emails.pro_only.subscribed_to_emails.not_just_signed_up.select { |user| user.last_sent_at.before?(24.hours.ago) }
@@ -23,7 +23,7 @@ namespace :entry do
   end
 
   # TRIGGERED MANUALLY
-  # heroku run bundle exec rake "entry:stats[2025]" --app dabble-me --size=standard-2x
+  # railway run --service worker bundle exec rake "entry:stats[2025]"
   task :stats, [:year] => :environment do |_, args|
     year = args[:year]
     # Ensure the year argument is provided
@@ -181,7 +181,7 @@ namespace :entry do
     # p "*"*100
   end
 
-  # heroku run bundle exec rake "entry:stats_by_user[2025]" --app dabble-me --size=standard-2x
+  # railway run --service worker bundle exec rake "entry:stats_by_user[2025]"
   task :stats_by_user, [:year] => :environment do |_, year:|
     csv_data = CSV.generate(col_sep: "\t") do |csv|
       csv << ["USER_ID", "EMAIL", "FNAME", "LNAME", "#{year}_ENTRY", "#{year}_WORD"]
@@ -220,68 +220,4 @@ namespace :entry do
     p "*"*100
   end
 
-  task :send_hourly_entries => :environment do
-    check_in_id = Sentry.capture_check_in("send_hourly_entries", :in_progress)
-
-    users = User.subscribed_to_emails.not_just_signed_up
-    random_inspiration = Inspiration.random
-    sent_in_hour = 0
-    users.each do |user|
-      begin
-        # Check if it's the hour they want where they live AND the day where they live that they want it sent: send it.
-        send_this_day = user.frequency && user.frequency.include?(Time.now.in_time_zone(user.send_timezone).strftime('%a'))
-        send_this_hour = Time.now.in_time_zone(user.send_timezone).hour == user.send_time.hour
-
-        # retry if previous 2 hours in scheduler failed to send and last email was sent over 20 hours ago
-        retry_failed_scheduler = (user.last_sent_at.present? && user.last_sent_at.before?(20.hours.ago)) && (Time.now.in_time_zone(user.send_timezone).hour - user.send_time.hour).between?(0,2)
-
-        next unless send_this_day && (send_this_hour || retry_failed_scheduler)
-        next if user.last_sent_at.present? && user.last_sent_at.after?(12.hours.ago) # prevent sending multiple emails to same user in same day
-
-        # don't keep emailing if we've already sent 3 emails (welcome + 2 weeklys) and the user is not using the service (should decrease spam reports)
-        if user.is_free? && user.emails_sent > 6 && user.entries.count == 0 && ENV['FREE_WEEK'] != 'true'
-          user.update_columns(frequency: [], previous_frequency: user.frequency)
-        elsif user.is_pro? || (user.is_free? && Time.now.strftime("%U").to_i % 2 == 0) || ENV['FREE_WEEK'] == 'true' # Every other week for free users
-          EntryMailer.send_entry(user, random_inspiration).deliver_now
-          sent_in_hour += 1
-        end
-      rescue => error
-        Sentry.set_user(id: user.id, email: user.email)
-        Sentry.set_tags(plan: user.plan)
-        Sentry.capture_exception(error, extra: { sent_in_hour: sent_in_hour })
-        next # continue with the next user
-      end
-    end
-
-    # Notify Sentry your job has completed successfully:
-    Sentry.capture_check_in("send_hourly_entries", :ok, check_in_id: check_in_id)
-  rescue => e
-    Sentry.capture_exception(e)
-    Sentry.capture_check_in("send_hourly_entries", :error, check_in_id: check_in_id)
-  end
-
-  task :maintenance => :environment do
-    if Date.today.wednesday?
-      # Run image check through Clarifai
-      # Entry.only_images.where(created_at: 1.week.ago..).each do |entry|
-      #   entry.check_image
-      # end
-
-      # Clean up empty entries
-      Entry.where("(image IS null OR image = '') AND (body IS null OR body = '')").each(&:destroy)
-
-      # Turn off emails for users with low entries and no activity for 2 years
-      users_with_no_activity = User.joins(:entries)
-        .group('users.id')
-        .having('COUNT(entries.id) < 5')
-        .having('MAX(entries.created_at) < ?', 2.years.ago)
-        .where.not(frequency: [])
-
-      users_with_no_activity.each do |user|
-          user.previous_frequency = user.frequency
-          user.frequency = []
-          user.save
-      end
-    end
-  end
 end

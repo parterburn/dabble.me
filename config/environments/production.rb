@@ -45,6 +45,11 @@ Rails.application.configure do
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
   config.force_ssl = true
+  # Railway's healthcheck probes the service over plain HTTP on the internal network,
+  # so skip the SSL redirect for that path; otherwise the deploy fails on the 301.
+  config.ssl_options = {
+    redirect: { exclude: ->(request) { request.path == "/health_check" } }
+  }
 
   # Use the lowest log level to ensure availability of diagnostic information
   # when problems arise.
