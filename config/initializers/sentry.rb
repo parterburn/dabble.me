@@ -3,7 +3,7 @@ if ENV["SENTRY_DSN"].present?
     config.dsn = ENV["SENTRY_DSN"]
     config.excluded_exceptions = Sentry::Rails::IGNORE_DEFAULT - ["ActionController::BadRequest"]
     config.breadcrumbs_logger = [:active_support_logger, :http_logger]
-
+    config.enabled_patches += [:sidekiq_cron]
     config.traces_sample_rate = 1.0
   end
 end

@@ -1,5 +1,5 @@
 Turnstile.configure do |config|
-  config.enabled = ENV["TURNSTILE_SITE_KEY"].present?
+  config.enabled = ENV['CI'] != "true" && ENV['TURNSTILE_SITE_KEY'].present?
   config.site_key = ENV["TURNSTILE_SITE_KEY"]
   config.secret_key = ENV["TURNSTILE_SECRET_KEY"]
   config.on_failure = ->(verification) {
