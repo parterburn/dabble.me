@@ -79,7 +79,7 @@ class Entry::AiTagger
 
   def connection
     @connection ||= Faraday.new(BASE_URL) do |f|
-      f.options[:timeout] = 29
+      f.options[:timeout] = 110
       f.request :json
       f.response :json
       f.request :authorization, "Bearer", ENV["HUGGING_FACE_API_KEY"]
