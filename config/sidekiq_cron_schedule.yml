@@ -1,3 +1,9 @@
+# Sidekiq-Cron schedules (loaded when Sidekiq starts). All times are UTC unless a
+# timezone suffix is added to the cron field (see https://github.com/sidekiq-cron/sidekiq-cron).
+
+# CRON FORMAT:
+# minute hour day-of-month month day-of-week
+
 user_downgrade_expired:
   cron: "30 0 * * *"
   class: "UserDowngradeExpiredWorker"
