@@ -4,8 +4,6 @@ class EntryMaintenanceWorker
   sidekiq_options retry: false, queue: :default
 
   def perform
-    return unless Date.today.wednesday?
-
     # Clean up empty entries
     Entry.where("(image IS null OR image = '') AND (body IS null OR body = '')").each(&:destroy)
 
