@@ -126,7 +126,7 @@ class EntriesController < ApplicationController
       @existing_entry.body = "#{@existing_entry.body}<hr>#{params[:entry][:entry]}"
       @existing_entry.inspiration_id = params[:entry][:inspiration_id] if params[:entry][:inspiration_id].present?
       if params[:entry][:image].present?
-        @existing_entry.filepicker_url = Entry::UPLOADING_PLACEHOLDER_URL
+        @existing_entry.uploading_image = true
         if @existing_entry.image_url_cdn.present? || params[:entry][:image].count > 1
           image_urls = collage_from_attachments(Array(params[:entry][:image]))
           ImageCollageJob.perform_later(@existing_entry.id, urls: image_urls)
@@ -135,7 +135,7 @@ class EntriesController < ApplicationController
           if best_attachment.content_type.in?(Entry::ALLOWED_IMAGE_TYPES) && best_attachment.original_filename&.downcase&.ends_with?(*%w[.heic .heif .jpg .jpeg .gif .png .webp])
             process_single_image(@existing_entry, best_attachment)
           else
-            @existing_entry.filepicker_url = nil
+            @existing_entry.uploading_image = false
           end
         end
       end
@@ -148,16 +148,16 @@ class EntriesController < ApplicationController
     else
       @entry = current_user.entries.create(entry_params)
       if params[:entry][:image].present? && params[:entry][:image].count > 1
-        @entry.filepicker_url = Entry::UPLOADING_PLACEHOLDER_URL
+        @entry.uploading_image = true
         image_urls = collage_from_attachments(params[:entry][:image])
         ImageCollageJob.perform_later(@entry.id, urls: image_urls)
       elsif params[:entry][:image].present?
-        @entry.filepicker_url = Entry::UPLOADING_PLACEHOLDER_URL
+        @entry.uploading_image = true
         best_attachment = params[:entry][:image].first
         if best_attachment.content_type.in?(Entry::ALLOWED_IMAGE_TYPES) && best_attachment.original_filename&.downcase&.ends_with?(*%w[.heic .heif .jpg .jpeg .gif .png .webp])
           process_single_image(@entry, best_attachment)
         else
-          @entry.filepicker_url = nil
+          @entry.uploading_image = false
         end
       end
 
@@ -190,7 +190,7 @@ class EntriesController < ApplicationController
       @existing_entry.body = "#{@existing_entry.body}<hr>#{params[:entry][:entry]}"
       @existing_entry.inspiration_id = params[:entry][:inspiration_id] if params[:entry][:inspiration_id].present?
       if params[:entry][:image].present?
-        @existing_entry.filepicker_url = Entry::UPLOADING_PLACEHOLDER_URL
+        @existing_entry.uploading_image = true
         if @existing_entry.image_url_cdn.present? || params[:entry][:image].count > 1
           image_urls = collage_from_attachments(Array(params[:entry][:image]))
           ImageCollageJob.perform_later(@existing_entry.id, urls: image_urls)
@@ -199,7 +199,7 @@ class EntriesController < ApplicationController
           if best_attachment.content_type.in?(Entry::ALLOWED_IMAGE_TYPES) && best_attachment.original_filename&.downcase&.ends_with?(*%w[.heic .heif .jpg .jpeg .gif .png .webp])
             process_single_image(@existing_entry, best_attachment)
           else
-            @existing_entry.filepicker_url = nil
+            @existing_entry.uploading_image = false
           end
         end
       end
@@ -223,15 +223,16 @@ class EntriesController < ApplicationController
       end
       if @entry.update(update_params)
         if params[:entry][:image].present? && params[:entry][:image].size > 1
+          @entry.update(uploading_image: true)
           image_urls = collage_from_attachments(params[:entry][:image])
           ImageCollageJob.perform_later(@entry.id, urls: image_urls)
         elsif params[:entry][:image].present?
-          @entry.update(filepicker_url: Entry::UPLOADING_PLACEHOLDER_URL)
+          @entry.update(uploading_image: true)
           best_attachment = params[:entry][:image].first
           if best_attachment.content_type.in?(Entry::ALLOWED_IMAGE_TYPES) && best_attachment.original_filename&.downcase&.ends_with?(*%w[.heic .heif .jpg .jpeg .gif .png .webp])
             process_single_image(@entry, best_attachment)
           else
-            @entry.update(filepicker_url: nil)
+            @entry.update(uploading_image: false)
           end
         end
         flash[:notice] = "Entry successfully updated!"
@@ -382,7 +383,13 @@ class EntriesController < ApplicationController
   private
 
   def entry_params
-    params.require(:entry).permit(:date, :entry, :inspiration_id, :remove_image, :remote_image_url)
+    # `image: []` permits the uploaded file array posted as `entry[image][]`.
+    # The uploads themselves are not applied via `update(entry_params)` — the
+    # update action reads `params[:entry][:image]` directly and routes the
+    # files to `collage_from_attachments` / `process_single_image`. Permitting
+    # it here just silences the strong-params "Unpermitted parameter: :image"
+    # warning on every entry save.
+    params.require(:entry).permit(:date, :entry, :inspiration_id, :remove_image, :remote_image_url, image: [])
   end
 
   def set_entry

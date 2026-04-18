@@ -127,7 +127,7 @@ class EmailProcessor
         existing_entry.save
         if existing_entry.image_url_cdn.blank?
           if best_attachment.present?
-            existing_entry.update(filepicker_url: Entry::UPLOADING_PLACEHOLDER_URL)
+            existing_entry.update(uploading_image: true)
             process_single_image(existing_entry, best_attachment)
           elsif best_attachment_url.present? && best_attachment_url.starts_with?("mailgun_collage:")
             ImageCollageJob.perform_later(existing_entry.id, message_id: best_attachment_url.gsub("mailgun_collage:", ""))
@@ -139,10 +139,10 @@ class EmailProcessor
             image_urls = collage_from_attachments([best_attachment])
             ImageCollageJob.perform_later(existing_entry.id, urls: image_urls)
           elsif best_attachment_url.present?
-            existing_entry.update(filepicker_url: Entry::UPLOADING_PLACEHOLDER_URL)
-            existing_image = existing_entry.image_url_cdn(cloudflare: false) == Entry::UPLOADING_PLACEHOLDER_URL ? nil : existing_entry.image_url_cdn(cloudflare: false)
+            existing_image = existing_entry.image_url_cdn(cloudflare: false) if existing_entry.image.present?
+            existing_entry.update(uploading_image: true)
             existing_entry.remote_image_url = collage_from_urls([best_attachment_url, existing_image])
-            existing_entry.filepicker_url = nil
+            existing_entry.uploading_image = false
           end
         end
 
@@ -167,9 +167,9 @@ class EmailProcessor
           elsif best_attachment_url.present? && best_attachment_url.starts_with?("mailgun_collage:")
             ImageCollageJob.perform_later(entry.id, message_id: best_attachment_url.gsub("mailgun_collage:", ""))
           elsif best_attachment_url.present?
-            entry.update(filepicker_url: Entry::UPLOADING_PLACEHOLDER_URL)
+            entry.update(uploading_image: true)
             entry.remote_image_url = best_attachment_url
-            entry.filepicker_url = nil
+            entry.uploading_image = false
             entry.save
           end
         rescue ActiveRecord::RecordInvalid => error
@@ -537,8 +537,7 @@ class EmailProcessor
     if urls.size == 1 && urls.first.starts_with?("http")
       urls.first
     elsif urls.any?
-      first_url = urls.first.include?("%40") ? urls.first : CGI.escape(urls.first) # don't escape if already escaped
-      "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:[#{urls[1..-1].map(&:inspect).join(',')}],w:1200,h:1200,m:1/#{first_url}"
+      CollageGenerator.new(urls: urls, user: @user).s3_url
     end
   end
 

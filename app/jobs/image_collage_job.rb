@@ -16,22 +16,22 @@ class ImageCollageJob < ActiveJob::Base
     @message_id = message_id
     @user = entry.user
 
-    entry.update(filepicker_url: Entry::UPLOADING_PLACEHOLDER_URL)
-    @existing_url = entry&.image_url_cdn == Entry::UPLOADING_PLACEHOLDER_URL ? nil : entry&.image_url_cdn(cloudflare: false)
+    @existing_url = entry.image.present? ? entry.image_url_cdn(cloudflare: false) : nil
+    entry.update(uploading_image: true)
 
-    filestack_collage_url = if @message_id.present?
+    collage_url = if @message_id.present?
       collage_from_mailgun_attachments
     else
       collage_from_urls(urls + [@existing_url])
     end
 
-    # Fetch with explicit long timeout (Filestack can take ~20s to generate). CarrierWave's
-    # remote_image_url uses OpenURI/SsrfFilter whose timeouts can be too short on some stacks.
+    # We still fetch the final image into a Tempfile before handing it to CarrierWave
+    # so we control timeouts explicitly (SsrfFilter's defaults can be short on some stacks).
     tempfile = nil
     5.times do |attempt|
       tempfile&.close
       tempfile&.unlink
-      tempfile = fetch_filestack_image(filestack_collage_url)
+      tempfile = fetch_collage_image(collage_url)
       if tempfile
         entry.image = tempfile
         unless entry.save
@@ -55,7 +55,7 @@ class ImageCollageJob < ActiveJob::Base
         ['The images could not be generated or saved after several attempts. Please try uploading again via the web interface.']
       end
       Sentry.set_user(id: @user.id, email: @user.email)
-      Sentry.capture_message("Error updating collage image", level: :info, extra: { entry_id: entry_id, error_messages: error_messages, url: filestack_collage_url })
+      Sentry.capture_message("Error updating collage image", level: :info, extra: { entry_id: entry_id, error_messages: error_messages, url: collage_url })
       # Only send one error email per entry per hour; job can retry up to 6 times and would otherwise send 6 emails.
       cache_key = "image_collage_error_email_sent:#{entry_id}"
       unless Rails.cache.read(cache_key)
@@ -63,12 +63,12 @@ class ImageCollageJob < ActiveJob::Base
         Rails.cache.write(cache_key, true, expires_in: 1.hour)
       end
     end
-    entry.update(filepicker_url: nil) if entry.filepicker_url == Entry::UPLOADING_PLACEHOLDER_URL
+    entry.update(uploading_image: false) if entry.uploading_image?
   end
 
-  # Download Filestack URL with explicit long read timeout (generation can take ~20s).
+  # Download the collage URL into a Tempfile with explicit timeouts.
   # Returns a Tempfile on success (caller must close/unlink after use), nil on failure.
-  def fetch_filestack_image(url)
+  def fetch_collage_image(url)
     return nil if url.blank?
 
     conn = Faraday.new do |f|
@@ -78,7 +78,7 @@ class ImageCollageJob < ActiveJob::Base
     response = conn.get(url)
     return nil unless response.success?
 
-    tempfile = Tempfile.new(['filestack_collage', '.jpg'])
+    tempfile = Tempfile.new(['collage', '.jpg'])
     tempfile.binmode
     tempfile.write(response.body)
     tempfile.rewind
@@ -184,14 +184,7 @@ class ImageCollageJob < ActiveJob::Base
     if urls.size == 1 && urls.first.starts_with?("http")
       urls.first
     elsif urls.any?
-      first_url = urls.first.include?("%") ? urls.first : CGI.escape(urls.first) # don't escape if already contains escape sequences
-
-      # Filestack expects a JSON-style array in the path; use %22 (") and %2C (,) so the path is a valid URI.
-      escaped_rest = urls[1..-1].map { |u| u.include?("%") ? u : CGI.escape(u) }
-      remaining_urls = escaped_rest.map { |u| "%22#{u}%22" }.join("%2C")
-
-      url = "https://process.filestackapi.com/#{ENV['FILESTACK_API_KEY']}/collage=a:true,i:auto,f:%5B#{remaining_urls}%5D,w:1200,h:1200,m:1/#{first_url}?filename=#{SecureRandom.uuid}.jpg"
-      url
+      CollageGenerator.new(urls: urls, user: @user).s3_url
     end
   end
 end

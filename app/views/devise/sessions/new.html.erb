@@ -43,8 +43,34 @@
 
         <% if ENV['CI'] != "true" && ENV['TURNSTILE_SITE_KEY'].present? %>
           <div class="flex justify-center">
-            <%= captcha_tags action: "login", data: { theme: "light" } %>
+            <%= captcha_tags action: "login", data: {
+              theme: "light",
+              callback: "dabbleCaptchaSolved",
+              "expired-callback": "dabbleCaptchaExpired",
+              "error-callback": "dabbleCaptchaError"
+            } %>
           </div>
+          <p id="captcha-error" class="hidden text-center text-sm text-red-600" role="alert">
+            Captcha failed to load. Please disable any ad/privacy blockers for this site and reload the page.
+          </p>
+          <script>
+            (function () {
+              var script = document.currentScript;
+              var form = script && script.closest('form');
+              var submit = form && form.querySelector('[type="submit"]');
+              var errEl = document.getElementById('captcha-error');
+              if (!submit) return;
+              submit.disabled = true;
+              window.dabbleCaptchaSolved  = function () { submit.disabled = false; if (errEl) errEl.classList.add('hidden'); };
+              window.dabbleCaptchaExpired = function () { submit.disabled = true;  if (window.turnstile) window.turnstile.reset(); };
+              window.dabbleCaptchaError   = function () { submit.disabled = true;  if (errEl) errEl.classList.remove('hidden'); };
+              setTimeout(function () {
+                if (submit.disabled && window.dabbleCaptchaSolved && !window.turnstile) {
+                  if (errEl) errEl.classList.remove('hidden');
+                }
+              }, 10000);
+            })();
+          </script>
         <% end %>
 
         <div>

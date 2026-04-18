@@ -71,11 +71,11 @@
             = link_to search_url(host: ENV['MAIN_DOMAIN'], search: {term: "##{tag}"}), class: "noline", style: "display: inline-block; margin-top: 8px;" do
               %span.label.label-default= tag
 
-  - if entry.image_url_cdn.present?
+  - if entry.display_image_url.present?
     .pictureFrame
-      =link_to entry.image_url_cdn, target: "_blank" do
+      =link_to entry.display_image_url, target: "_blank" do
         =image_code(entry)
-      - if entry.image_url_cdn == Entry::UPLOADING_PLACEHOLDER_URL
+      - if entry.uploading_image?
         :javascript
           setTimeout(function() { location.reload(); }, 4500);      
   .clearfix

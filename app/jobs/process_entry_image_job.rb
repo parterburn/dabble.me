@@ -76,7 +76,7 @@ class ProcessEntryImageJob < ActiveJob::Base
         end
       end
 
-      entry.update(filepicker_url: nil) if entry.filepicker_url == Entry::UPLOADING_PLACEHOLDER_URL
+      entry.update(uploading_image: false) if entry.uploading_image?
 
       begin
         bucket.files.new(key: s3_file_key).destroy
@@ -89,7 +89,7 @@ class ProcessEntryImageJob < ActiveJob::Base
         jpeg_file.tempfile.unlink rescue nil
       end
     else
-      entry.update(filepicker_url: nil) if entry.filepicker_url == Entry::UPLOADING_PLACEHOLDER_URL
+      entry.update(uploading_image: false) if entry.uploading_image?
     end
   rescue Net::ReadTimeout, Net::OpenTimeout, Faraday::TimeoutError => e
     Rails.logger.error "Error processing entry image: #{e.message}"
@@ -104,6 +104,6 @@ class ProcessEntryImageJob < ActiveJob::Base
 
   def clear_uploading_placeholder(entry_id)
     entry = Entry.find_by(id: entry_id)
-    entry&.update(filepicker_url: nil) if entry&.filepicker_url == Entry::UPLOADING_PLACEHOLDER_URL
+    entry&.update(uploading_image: false) if entry&.uploading_image?
   end
 end

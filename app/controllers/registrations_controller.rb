@@ -136,13 +136,16 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   def check_captcha
-    if valid_captcha?(model: resource)
-      true
-    else
-      build_resource(sign_up_params)
-      clean_up_passwords(resource)
-      respond_with_navigational(resource) { render :new }
-    end
+    # Build the resource BEFORE the captcha check so that (a) the error we add
+    # below actually sticks to something the view can render and (b) the form
+    # re-renders with the values the user already typed.
+    build_resource(sign_up_params)
+    return true if valid_captcha?
+
+    resource.errors.add(:base, "Couldn't verify that you're a human. Please complete the captcha below and try again.")
+    clean_up_passwords(resource)
+    flash.now[:alert] = "Captcha verification failed. Please try again."
+    respond_with_navigational(resource) { render :new }
   end
 
   # check if we need password to update user data

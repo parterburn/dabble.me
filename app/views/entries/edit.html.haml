@@ -47,7 +47,7 @@
               &nbsp;Remove Photo
             %br
             .pictureFrame.editable.j-image-preview
-              =link_to @entry.image_url_cdn, target: "_blank" do
+              =link_to @entry.display_image_url, target: "_blank" do
                 =image_code(@entry)
           - else
             = f.label :image, "Photo"

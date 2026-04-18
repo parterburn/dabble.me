@@ -1,0 +1,177 @@
+require "open-uri"
+
+# Builds a square JPEG collage from a list of image URLs using libvips.
+#
+# Layout: per-count "row plan" (see ROW_PLANS) so the output has no empty
+# padding tiles for 2, 3, 5, 7 images. Tiles are letterboxed (no crop) onto
+# a white background so no photo content is lost — typical inputs are iPhone
+# photos in either orientation, and aggressive center-cropping was trimming
+# subjects/context. White SHIM separates tiles and an outer border of the
+# same width mattes the whole canvas. Duplicate URLs are collapsed.
+class CollageGenerator
+  MAX_IMAGES = 16
+  DEFAULT_SIZE = 1200
+  JPEG_QUALITY = 88
+  HTTP_OPEN_TIMEOUT = 15
+  HTTP_READ_TIMEOUT = 60
+
+  # Gutter (px) between tiles AND around the outer canvas edge. White.
+  SHIM = 16
+  BACKGROUND = [255, 255, 255].freeze
+
+  # Hand-tuned row breakdowns that fill the grid completely (no empty cells).
+  # Each entry is the list of tiles-per-row. N=2 is picked dynamically based
+  # on input orientation (see `row_plan`). For N > 9 we fall back to a
+  # square-ish auto grid.
+  ROW_PLANS = {
+    1 => [1],
+    3 => [3],
+    4 => [2, 2],
+    5 => [2, 3],
+    6 => [3, 3],
+    7 => [3, 4],
+    8 => [4, 4],
+    9 => [3, 3, 3]
+  }.freeze
+
+  def initialize(urls:, size: DEFAULT_SIZE, user: nil)
+    @urls = Array(urls).compact_blank.uniq.first(MAX_IMAGES)
+    @size = size
+    @user = user
+  end
+
+  # Builds the collage and returns a Tempfile. Caller must close/unlink.
+  # Returns nil if no usable source images.
+  def tempfile
+    return nil if @urls.empty?
+
+    images = @urls.map { |u| load_image(u) }.compact
+    return nil if images.empty?
+
+    grid = build_grid(images)
+
+    tf = Tempfile.new(["collage", ".jpg"])
+    tf.binmode
+    grid.jpegsave(tf.path, Q: JPEG_QUALITY, strip: true)
+    tf.rewind
+    tf
+  rescue StandardError => e
+    Sentry.capture_exception(e, extra: { url_count: @urls.size })
+    nil
+  end
+
+  # Builds the collage, uploads the JPEG to S3, and returns the public URL.
+  # Returns nil on failure.
+  def s3_url
+    tf = tempfile
+    return nil unless tf
+
+    add_dev = "/development" unless Rails.env.production?
+    user_segment = @user ? "#{@user.id}/" : ""
+    folder = "uploads#{add_dev}/#{user_segment}collages/#{Date.today.strftime('%Y-%m-%d')}/"
+    file_key = "#{folder}#{SecureRandom.uuid}.jpg"
+    UploadToS3.new(file_key: file_key, body: File.binread(tf.path)).call.public_url
+  ensure
+    tf&.close
+    begin
+      tf&.unlink
+    rescue StandardError
+      nil
+    end
+  end
+
+  private
+
+  def build_grid(images)
+    plan = row_plan(images)
+    # Reserve SHIM-wide margin on all sides; tiles live inside `inner`.
+    inner = @size - (2 * SHIM)
+    row_count = plan.size
+    cell_h = (inner - ((row_count - 1) * SHIM)) / row_count
+
+    idx = 0
+    row_images = plan.map do |cols|
+      cell_w = (inner - ((cols - 1) * SHIM)) / cols
+      tiles = Array.new(cols) do
+        tile = prepare_tile(images[idx], cell_w, cell_h)
+        idx += 1
+        tile
+      end
+      Vips::Image.arrayjoin(tiles, across: cols, shim: SHIM, background: BACKGROUND)
+    end
+
+    grid = Vips::Image.arrayjoin(row_images, across: 1, shim: SHIM, background: BACKGROUND, halign: "centre")
+
+    # Matte the grid onto a full @size canvas, centering so integer-division
+    # rounding spreads any residual pixels evenly in the outer white border.
+    ox = ((@size - grid.width) / 2.0).round
+    oy = ((@size - grid.height) / 2.0).round
+    grid.embed(ox, oy, @size, @size, extend: :background, background: BACKGROUND)
+  end
+
+  # How many tiles each row should contain, summing to `images.size`.
+  #
+  # N=2 is orientation-aware: two landscape photos stack better (each tile is
+  # ~2:1, matching landscape aspect) while two portraits or a mixed pair look
+  # better side-by-side (each tile is ~1:2). This avoids the common failure
+  # mode of slicing a landscape photo into a narrow vertical strip.
+  def row_plan(images)
+    n = images.size
+    return [2] if n == 2 && images.any? { |img| img.height >= img.width }
+    return [1, 1] if n == 2
+    return ROW_PLANS[n] if ROW_PLANS.key?(n)
+
+    cols = Math.sqrt(n).ceil
+    rows = (n.to_f / cols).ceil
+    per_row = Array.new(rows, cols)
+    remainder = (cols * rows) - n
+    per_row[-1] -= remainder if remainder.positive?
+    per_row
+  end
+
+  # Letterbox the image into the cell: preserve aspect ratio (no crop), then
+  # center on a white canvas of exactly cell_w x cell_h. Trades some whitespace
+  # for never amputating subjects.
+  def prepare_tile(image, width, height)
+    tile = image.thumbnail_image(width, height: height)
+    tile = tile.flatten(background: BACKGROUND) if tile.has_alpha?
+    tile = tile.colourspace(:srgb).cast(:uchar)
+
+    return tile if tile.width == width && tile.height == height
+
+    pad_x = (width - tile.width) / 2
+    pad_y = (height - tile.height) / 2
+    tile.embed(pad_x, pad_y, width, height, extend: :background, background: BACKGROUND)
+  end
+
+  def load_image(url)
+    data = fetch_bytes(url)
+    return nil unless data
+
+    Vips::Image.new_from_buffer(data, "")
+  rescue Vips::Error => e
+    Sentry.capture_exception(e, extra: { url: sanitize_url(url) })
+    nil
+  end
+
+  def fetch_bytes(url)
+    uri = URI.parse(url)
+    return nil unless uri.is_a?(URI::HTTP) || uri.is_a?(URI::HTTPS)
+
+    open_opts = { read_timeout: HTTP_READ_TIMEOUT, open_timeout: HTTP_OPEN_TIMEOUT }
+    if uri.userinfo
+      user, pass = uri.userinfo.split(":", 2)
+      open_opts[:http_basic_authentication] = [user, pass]
+      uri.userinfo = nil
+    end
+
+    uri.open(open_opts, &:read)
+  rescue StandardError => e
+    Sentry.capture_exception(e, extra: { url: sanitize_url(url) })
+    nil
+  end
+
+  def sanitize_url(url)
+    url.to_s.gsub(%r{//[^/@]+@}, "//***@")[0, 200]
+  end
+end

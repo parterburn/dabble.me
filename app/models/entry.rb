@@ -7,7 +7,15 @@ class Entry < ActiveRecord::Base
   mount_uploader :image, ImageUploader
 
   ALLOWED_IMAGE_TYPES = %w[image/jpg image/jpeg image/png image/gif image/webp image/heic image/heif image/heic-sequence image/heif-sequence application/octet-stream]
+
+  # Placeholder image shown in the UI while an entry's image is being processed
+  # asynchronously (see `uploading_image?`).
   UPLOADING_PLACEHOLDER_URL = 'https://d10r8m94hrfowu.cloudfront.net/uploading.png'
+
+  # Entries whose image job was started more than this long ago are treated as
+  # "no longer uploading" even if `uploading_image_at` was never cleared (e.g.
+  # crashed worker). Keeps a stale flag from pinning the placeholder forever.
+  UPLOADING_IMAGE_TIMEOUT = 30.minutes
 
   WORDS_NOT_TO_COUNT = ['s', 'amp', '-', 'p', 'br', 'div', 'img', 'span', 'hr', '<', '>']
   COMMON_WORDS = WORDS_NOT_TO_COUNT + ['has', 'did', "you're", 'your', 'we', 'i', "it's", 'dabblemegpt', 'like', 'these', 'you', 'so', 'went', 'while', 's', 'amp', '-', 'p', 'br', 'div', 'img', 'span', 'the', 'of', 'and', 'a', 'to', 'in', 'is', 'that', 'it', 'was', 'for', 'on', 'are', 'as', 'with', 'at', 'be', 'this', 'have', 'from', 'or', 'had', 'by', 'but', 'not', 'what', 'all', 'were', 'when', 'can', 'said', 'there', 'use', 'an', 'each', 'which', 'do', 'how', 'if']
@@ -128,9 +136,37 @@ class Entry < ActiveRecord::Base
   def image_url_cdn(cloudflare: true)
     if image.present?
       "#{'https://dabble.me/cdn-cgi/image/quality=95/' if cloudflare }#{image.url.gsub('dabble-me.s3.amazonaws.com/uploads', 'd10r8m94hrfowu.cloudfront.net')}"
-    elsif filepicker_url == UPLOADING_PLACEHOLDER_URL
-      filepicker_url
+    elsif uploading_image?
+      UPLOADING_PLACEHOLDER_URL
     end
+  end
+
+  # URL to render in the UI for this entry's image.
+  #
+  # Prefers the "uploading" placeholder while a job is processing a new or
+  # replacement upload, so users see a spinner instead of the stale previous
+  # image. Backend consumers (outbound email HTML, AI vision input, data
+  # exports) should keep calling `image_url_cdn` — they need the real CDN URL
+  # and shouldn't leak the placeholder into emails or to third parties.
+  def display_image_url(cloudflare: true)
+    return UPLOADING_PLACEHOLDER_URL if uploading_image?
+
+    image_url_cdn(cloudflare: cloudflare)
+  end
+
+  # Whether this entry is currently waiting for its image to finish processing.
+  # Stale flags (older than UPLOADING_IMAGE_TIMEOUT) are treated as cleared so a
+  # crashed worker can't leave the placeholder pinned indefinitely.
+  def uploading_image?
+    uploading_image_at.present? && uploading_image_at > UPLOADING_IMAGE_TIMEOUT.ago
+  end
+
+  # Virtual boolean setter mapped to the `uploading_image_at` timestamp:
+  #   entry.uploading_image = true    # stamps now
+  #   entry.uploading_image = false   # clears
+  #   entry.update(uploading_image: true)
+  def uploading_image=(flag)
+    self.uploading_image_at = flag ? Time.current : nil
   end
 
   def exactly_past_years(user, today = nil)

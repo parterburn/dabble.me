@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2026_02_08_172837) do
+ActiveRecord::Schema.define(version: 2026_04_18_120000) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -18,7 +18,6 @@ ActiveRecord::Schema.define(version: 2026_02_08_172837) do
   create_table "entries", id: :serial, force: :cascade do |t|
     t.datetime "date", null: false
     t.text "body"
-    t.text "filepicker_url"
     t.text "original_email_body"
     t.integer "inspiration_id"
     t.integer "user_id"
@@ -28,6 +27,7 @@ ActiveRecord::Schema.define(version: 2026_02_08_172837) do
     t.jsonb "songs", default: [], array: true
     t.jsonb "original_email", default: {}
     t.jsonb "sentiment", default: [], array: true
+    t.datetime "uploading_image_at"
     t.index ["user_id", "date"], name: "index_entries_on_user_id_and_date", order: { date: :desc }
     t.index ["user_id"], name: "index_entries_on_user_id"
   end

@@ -15,11 +15,14 @@ class SessionsController < Devise::SessionsController
   private
 
   def check_captcha
-    if valid_captcha?(model: resource)
-      true
-    else
-      self.resource = resource_class.new sign_in_params
-      respond_with_navigational(resource) { render :new }
-    end
+    # Build the resource BEFORE the captcha check so the error message we add
+    # below actually attaches to something the view renders, and so the form
+    # re-renders with the email the user already typed.
+    self.resource = resource_class.new(sign_in_params)
+    return true if valid_captcha?
+
+    resource.errors.add(:base, "Couldn't verify that you're a human. Please complete the captcha below and try again.")
+    flash.now[:alert] = "Captcha verification failed. Please try again."
+    respond_with_navigational(resource) { render :new }
   end
 end

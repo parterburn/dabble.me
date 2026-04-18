@@ -16,6 +16,32 @@ namespace :entry do
   end
 
   # TRIGGERED MANUALLY
+  # railway run --service worker bundle exec rake "entry:resend_for_hour[2026-04-18,2]"
+  task :resend_for_hour, [:send_date, :hours_ago] => :environment do |t, args|
+    hours_ago = (args[:hours_ago] || 0).to_i
+    send_day = Date.parse(args[:send_date] || Time.current.in_time_zone("America/Denver").to_date.to_s)
+
+    resend_users = User.all.select { |u| u.is_pro? && u.frequency.include?(send_day.strftime("%a")) && Time.now.in_time_zone(u.send_timezone).hour - u.send_time.hour == hours_ago }
+
+    # confirm requesting user is in array
+    resend_users.size
+    resend_users.select { |u| u.email == "user@host.com" }
+
+    # resend to selected users
+    random_inspiration = Inspiration.random
+    sent_in_hour = 0
+    resend_users.each do |user|
+      begin
+        EntryMailer.send_entry(user, random_inspiration, { send_day: send_day }).deliver_now
+        sent_in_hour += 1
+      rescue => error
+        Sentry.set_user(id: user.id, email: user.email)
+        Sentry.capture_exception(error, extra: { sent_in_hour: sent_in_hour })
+      end
+    end
+  end
+
+  # TRIGGERED MANUALLY
   # rake entry:send_entries_test
   task :send_entries_test => :environment do
     user = User.where(:email=>"admin@dabble.ex").first
