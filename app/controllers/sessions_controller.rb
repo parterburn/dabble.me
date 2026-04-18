@@ -1,7 +1,6 @@
 # Devise Override Controller
 class SessionsController < Devise::SessionsController
   layout 'marketing', only: [:new, :create]
-  prepend_before_action :check_captcha, only: [:create]
 
   def validate_otp
     if current_user.validate_otp_token(params[:user][:token].gsub(/\D/, ''))
