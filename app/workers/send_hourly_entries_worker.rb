@@ -4,6 +4,8 @@ class SendHourlyEntriesWorker
   sidekiq_options retry: false, queue: :default
 
   def perform
+    check_in_id = Sentry.capture_check_in("send_hourly_entries", :in_progress)
+
     random_inspiration = Inspiration.random
     sent_in_hour = 0
     failed_in_hour = 0
@@ -31,8 +33,10 @@ class SendHourlyEntriesWorker
     end
 
     Rails.logger.info("SendHourlyEntriesWorker finished: sent=#{sent_in_hour} failed=#{failed_in_hour}")
+    Sentry.capture_check_in("send_hourly_entries", :ok, check_in_id: check_in_id)
   rescue StandardError => e
     Sentry.capture_exception(e)
+    Sentry.capture_check_in("send_hourly_entries", :error, check_in_id: check_in_id) if check_in_id
     raise
   end
 
