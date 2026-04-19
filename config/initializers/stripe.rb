@@ -60,38 +60,51 @@ StripeEvent.configure do |events|
     Sentry.capture_message("Failed payment", level: :info, extra: { invoice: invoice })
   end
 
-  # Update plan when a user changes it
+  # Update user.plan to match the current Stripe subscription's billing
+  # interval. Fires on any subscription mutation — plan swap, trial end,
+  # status change, cancel toggled, etc. — so we don't try to diff
+  # `previous_attributes` (Stripe only delta-encodes what changed at the
+  # root, and plan swaps rarely surface the old interval there). Instead
+  # we read the current interval and set user.plan to match. Idempotent.
   events.subscribe "customer.subscription.updated" do |event|
-    subscription = event.data.object
-    stripe_customer_id = subscription.customer
-    if stripe_customer_id.present?
+    begin
+      subscription = event.data.object
+      stripe_customer_id = subscription.customer
+      next if stripe_customer_id.blank?
+
       user = User.where(stripe_id: stripe_customer_id).first
-      if user.present?
-        cancel_at_period_end = subscription.cancel_at_period_end
+      next unless user
 
-        if cancel_at_period_end
-          if user.present?
-            Sentry.set_user(id: user.id, email: user.email)
-            Sentry.set_tags(plan: user.plan)
-          end
-          Sentry.capture_message("Customer set subscription to cancel at period end", level: :info, extra: { total_payments: user.payments.sum(:amount).to_f, subscription: subscription })
-        else
-          previous_attributes = event.data.previous_attributes
-          if previous_attributes && previous_attributes['items']
-            old_plan = previous_attributes['items']['data'][0]['plan']['interval']
-            new_plan = subscription.plan.interval
+      Sentry.set_user(id: user.id, email: user.email)
+      Sentry.set_tags(plan: user.plan)
 
-            # user changed plans, ajust accordingly
-            if old_plan && new_plan && old_plan != new_plan
-              if new_plan.downcase.include?("year")
-                user.update(plan: "PRO Yearly PayHere")
-              elsif new_plan.downcase.include?("month")
-                user.update(plan: "PRO Monthly PayHere")
-              end
-            end
-          end
-        end
+      if subscription.cancel_at_period_end
+        Sentry.capture_message(
+          "Customer set subscription to cancel at period end",
+          level: :info,
+          extra: { total_payments: user.payments.sum(:amount).to_f, subscription: subscription }
+        )
+        next
       end
+
+      # Prefer the modern `items.data[0].price.recurring.interval` path (Stripe
+      # API 2020-08-27+); fall back to the legacy `subscription.plan.interval`
+      # alias for older API versions or back-compat objects.
+      item = subscription.items&.data&.first
+      interval = item&.price&.recurring&.interval ||
+                 item&.plan&.interval ||
+                 subscription.try(:plan)&.interval
+      next if interval.blank?
+
+      desired_plan =
+        case interval.to_s.downcase
+        when "year"  then "PRO Yearly PayHere"
+        when "month" then "PRO Monthly PayHere"
+        end
+
+      user.update(plan: desired_plan) if desired_plan && user.plan != desired_plan
+    rescue StandardError => e
+      Sentry.capture_exception(e, extra: { event_id: event.id, subscription_id: subscription&.id })
     end
   end
 

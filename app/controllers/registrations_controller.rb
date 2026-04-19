@@ -21,7 +21,7 @@ class RegistrationsController < Devise::RegistrationsController
       if current_user.valid_password?(params[:user][:current_password])
         schedule_user_deletion
         sign_out current_user
-        redirect_to root_path, notice: "Your account will be permanently deleted in 1 hour. Contact support if you change your mind."
+        redirect_to root_path, notice: "Your account will be permanently deleted in 1 hour. Contact support if you change your mind: hello@#{ENV['MAIN_DOMAIN']}"
       else
         flash[:alert] = "Incorrect current password."
         redirect_back(fallback_location: security_path)
@@ -70,7 +70,7 @@ class RegistrationsController < Devise::RegistrationsController
     if current_user.valid_password?(params[:user][:current_password])
       schedule_user_deletion
       sign_out current_user
-      redirect_to root_path, notice: "Your account will be permanently deleted in 1 hour. Contact support if you change your mind."
+      redirect_to root_path, notice: "Your account will be permanently deleted in 1 hour. Contact support if you change your mind: hello@#{ENV['MAIN_DOMAIN']}"
     else
       flash[:alert] = "Incorrect current password."
       redirect_back(fallback_location: security_path)
