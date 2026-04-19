@@ -205,10 +205,12 @@ class User < ActiveRecord::Base
   alias_method :original_hashtags, :hashtags
   def hashtags
     @hashtags_list ||= begin
+      existing_tags = original_hashtags.pluck(:tag).map(&:downcase)
       used_hashtags(entries.limit(100), true).first(5).each do |h|
-        next if h.downcase.in?(original_hashtags.pluck(:tag)&.map(&:downcase))
+        next if existing_tags.include?(h.downcase)
 
         original_hashtags.build(tag: h)
+        existing_tags << h.downcase
       end
       original_hashtags.build
       original_hashtags.to_a
