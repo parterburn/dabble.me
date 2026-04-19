@@ -68,14 +68,14 @@ GEM
       minitest (>= 5.1)
       tzinfo (~> 2.0)
       zeitwerk (~> 2.3)
-    addressable (2.8.7)
-      public_suffix (>= 2.0.2, < 7.0)
+    addressable (2.9.0)
+      public_suffix (>= 2.0.2, < 8.0)
     android_key_attestation (0.3.0)
     autoprefixer-rails (9.7.6)
       execjs
     awesome_print (1.9.2)
     base64 (0.3.0)
-    bcrypt (3.1.18)
+    bcrypt (3.1.22)
     benchmark (0.4.0)
     benchmark-ips (2.9.2)
     better_errors (2.10.1)
@@ -346,7 +346,7 @@ GEM
     psych (5.3.1)
       date
       stringio
-    public_suffix (6.0.2)
+    public_suffix (7.0.5)
     puma (6.6.1)
       nio4r (~> 2.0)
     raabro (1.4.0)
