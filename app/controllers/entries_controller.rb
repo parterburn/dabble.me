@@ -383,13 +383,17 @@ class EntriesController < ApplicationController
   private
 
   def entry_params
-    # `image: []` permits the uploaded file array posted as `entry[image][]`.
-    # The uploads themselves are not applied via `update(entry_params)` — the
-    # update action reads `params[:entry][:image]` directly and routes the
-    # files to `collage_from_attachments` / `process_single_image`. Permitting
-    # it here just silences the strong-params "Unpermitted parameter: :image"
-    # warning on every entry save.
-    params.require(:entry).permit(:date, :entry, :inspiration_id, :remove_image, :remote_image_url, image: [])
+    # NOTE: `:image` is intentionally NOT permitted here. Entry#image is a
+    # singular CarrierWave mount, but the form posts `entry[image][]` as an
+    # array (the `multiple: true` file field supports collages of up to N
+    # photos). Permitting `image: []` would cause mass-assignment to call
+    # `entry.image = <array>`, which CarrierWave then tries to cache and
+    # blows up in `workfile_path` with "no implicit conversion of nil into
+    # String" on the array entries that have no `original_filename`.
+    # The create/update actions read `params[:entry][:image]` directly and
+    # route the files to `collage_from_attachments` or `process_single_image`.
+    # The resulting "Unpermitted parameter: :image" log line is expected.
+    params.require(:entry).permit(:date, :entry, :inspiration_id, :remove_image, :remote_image_url)
   end
 
   def set_entry

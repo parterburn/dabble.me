@@ -1,11 +1,24 @@
 class SendHourlyEntriesWorker
   include Sidekiq::Worker
+  include Sentry::Cron::MonitorCheckIns
 
   sidekiq_options retry: false, queue: :default
 
-  def perform
-    check_in_id = Sentry.capture_check_in("send_hourly_entries", :in_progress)
+  # Sentry cron monitoring — this is the most important scheduled job, and our
+  # Sentry plan only allows one cron monitor, so we don't enable the
+  # `:sidekiq_cron` patch globally (that would register a monitor for every
+  # job in config/sidekiq_cron_schedule.yml). The mixin below registers a
+  # single monitor and emits in_progress/ok/error check-ins automatically.
+  #
+  # IMPORTANT: the crontab here must stay in sync with the entry in
+  # config/sidekiq_cron_schedule.yml — if you change the schedule there,
+  # update this line too or Sentry will report missed/late runs.
+  sentry_monitor_check_ins(
+    slug: "send_hourly_entries",
+    monitor_config: Sentry::Cron::MonitorConfig.from_crontab("0 * * * *")
+  )
 
+  def perform
     random_inspiration = Inspiration.random
     sent_in_hour = 0
     failed_in_hour = 0
@@ -33,11 +46,6 @@ class SendHourlyEntriesWorker
     end
 
     Rails.logger.info("SendHourlyEntriesWorker finished: sent=#{sent_in_hour} failed=#{failed_in_hour}")
-    Sentry.capture_check_in("send_hourly_entries", :ok, check_in_id: check_in_id)
-  rescue StandardError => e
-    Sentry.capture_exception(e)
-    Sentry.capture_check_in("send_hourly_entries", :error, check_in_id: check_in_id) if check_in_id
-    raise
   end
 
   private

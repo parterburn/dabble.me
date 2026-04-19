@@ -4,15 +4,15 @@
 # CRON FORMAT:
 # minute hour day-of-month month day-of-week
 
-user_downgrade_expired:
-  cron: "30 0 * * *"
-  class: "UserDowngradeExpiredWorker"
-  description: "Daily at 12:30 AM UTC"
-
 send_hourly_entries:
   cron: "0 * * * *"
   class: "SendHourlyEntriesWorker"
   description: "Hourly at :00"
+
+user_downgrade_expired:
+  cron: "30 0 * * *"
+  class: "UserDowngradeExpiredWorker"
+  description: "Daily at 12:30 AM UTC"
 
 entry_maintenance:
   cron: "0 15 * * 3"
