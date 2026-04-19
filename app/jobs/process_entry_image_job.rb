@@ -69,11 +69,16 @@ class ProcessEntryImageJob < ActiveJob::Base
         error_messages = @error.present? ? [@error] : ['The image could not be saved. Please try uploading again via the web interface.']
         Sentry.set_user(id: entry.user_id, email: entry.user.email)
         Sentry.capture_message("Error updating entry image", level: :info, extra: { entry_id: entry_id, url: s3_file.public_url, error_messages: error_messages })
+        # Persist the error on the entry so the logged-in user sees a banner
+        # on their next page view (see ImageCollageJob for the rationale).
+        entry.update(image_error: error_messages.to_sentence.presence)
         cache_key = "process_entry_image_error_email_sent:#{entry_id}"
         unless Rails.cache.read(cache_key)
           EntryMailer.image_error(entry.user, entry, "single", error_messages).deliver_later
           Rails.cache.write(cache_key, true, expires_in: 1.hour)
         end
+      else
+        entry.update(image_error: nil) if entry.image_error.present?
       end
 
       entry.update(uploading_image: false) if entry.uploading_image?

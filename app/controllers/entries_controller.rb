@@ -5,7 +5,7 @@ class EntriesController < ApplicationController
   include ActionView::Helpers::SanitizeHelper
 
   before_action :authenticate_user!
-  before_action :set_entry, :require_entry_permission, only: [:show, :edit, :update, :destroy, :process_as_ai, :respond_to_ai]
+  before_action :set_entry, :require_entry_permission, only: [:show, :edit, :update, :destroy, :process_as_ai, :respond_to_ai, :dismiss_image_error]
 
   rescue_from InvalidDateError, with: :handle_invalid_date
 
@@ -372,6 +372,14 @@ class EntriesController < ApplicationController
       flash[:alert] = "DabbleMeGPT is not available to you."
     end
     redirect_to day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day, anchor: "generating-ai")
+  end
+
+  # Clear the image_error banner that ImageCollageJob / ProcessEntryImageJob
+  # writes to `entries.image_error` when async image processing fails. Called
+  # via the × on the alert in `_entry.html.haml`.
+  def dismiss_image_error
+    @entry.update(image_error: nil)
+    redirect_back fallback_location: day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day)
   end
 
   def email_replies_test

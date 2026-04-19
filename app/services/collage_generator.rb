@@ -16,6 +16,11 @@ class CollageGenerator
   HTTP_OPEN_TIMEOUT = 15
   HTTP_READ_TIMEOUT = 60
   MAX_REDIRECTS = 5
+  # One refetch is enough to absorb the typical failure mode — S3 just-PUT
+  # consistency lag or a flaky proxy truncating the body. More than one is
+  # mostly wasted work on genuinely corrupt objects.
+  MAX_TRUNCATION_RETRIES = 1
+  TRUNCATION_RETRY_DELAY = 1 # seconds
 
   # Gutter (px) between tiles AND around the outer canvas edge. White.
   SHIM = 16
@@ -150,17 +155,36 @@ class CollageGenerator
     data = fetch_bytes(url)
     return nil unless data
 
-    Vips::Image.new_from_buffer(data, "")
+    decode_image(data)
   rescue Vips::Error => e
     Sentry.capture_exception(e, extra: { url: sanitize_url(url) })
     nil
+  end
+
+  # Decode a JPEG/PNG/etc buffer with libvips, tolerating truncated or partly
+  # corrupt scans rather than blowing up the whole collage. A single bad tile
+  # in one source image was killing the entire pipeline in production — e.g.
+  #   (process:xxx): VIPS-WARNING **: error in tile 0 x 4448
+  # which happens when an S3 tmp upload hasn't fully propagated or a proxy cut
+  # the body short. With fail_on: :none, libvips returns the decoded portion;
+  # with the legacy `fail: false` kwarg for older libvips builds, same idea.
+  def decode_image(data)
+    Vips::Image.new_from_buffer(data, "", fail_on: :none)
+  rescue ArgumentError
+    Vips::Image.new_from_buffer(data, "", fail: false)
   end
 
   # Downloads the URL body using Net::HTTP directly. We avoid open-uri because
   # since Ruby 3.0 it raises "userinfo not supported. [RFC3986]" on any URI
   # with an `@` that parses as userinfo (happens with some legacy Filestack
   # filenames), even if we never intended basic auth.
-  def fetch_bytes(url, redirects_left = MAX_REDIRECTS)
+  #
+  # When the server sends a Content-Length header and the received body is
+  # shorter, we treat the response as truncated and retry once after a short
+  # delay — this is the common S3 read-after-write race when a browser has
+  # only just finished PUTting the tmp object. Without this, we hand a
+  # half-baked JPEG to libvips and it errors mid-decode.
+  def fetch_bytes(url, redirects_left = MAX_REDIRECTS, truncation_retries_left = MAX_TRUNCATION_RETRIES)
     return nil if redirects_left.negative?
 
     uri = URI.parse(url)
@@ -181,12 +205,26 @@ class CollageGenerator
 
     case response
     when Net::HTTPSuccess
-      response.body
+      body = response.body
+      expected = response["content-length"]&.to_i
+      if expected && expected.positive? && body.to_s.bytesize != expected
+        if truncation_retries_left.positive?
+          sleep TRUNCATION_RETRY_DELAY
+          return fetch_bytes(url, redirects_left, truncation_retries_left - 1)
+        end
+        Sentry.capture_message(
+          "Truncated response in CollageGenerator#fetch_bytes",
+          level: :warning,
+          extra: { url: sanitize_url(url), expected: expected, received: body.to_s.bytesize }
+        )
+        return nil
+      end
+      body
     when Net::HTTPRedirection
       location = response["location"]
       return nil if location.blank?
 
-      fetch_bytes(URI.join(uri, location).to_s, redirects_left - 1)
+      fetch_bytes(URI.join(uri, location).to_s, redirects_left - 1, truncation_retries_left)
     end
   rescue StandardError => e
     Sentry.capture_exception(e, extra: { url: sanitize_url(url) })

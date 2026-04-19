@@ -79,6 +79,15 @@
       - if entry.uploading_image? && params[:action] != "index"
         :javascript
           setTimeout(function() { location.reload(); }, 4500);      
+  - if entry.image_error.present? && !entry.uploading_image? && params[:action] != "index"
+    .alert.alert-danger{style: "margin-top: 10px; position: relative;"}
+      %strong Image upload failed.
+      %br/
+      = entry.image_error
+      %br/
+      %small.text-muted Try re-uploading via the #{link_to "edit page", edit_entry_path(entry)}.
+      = button_to dismiss_entry_image_error_path(entry), method: :delete, class: "close", style: "position: absolute; top: 8px; right: 12px; background: transparent; border: 0; font-size: 20px; line-height: 1; padding: 0; cursor: pointer;", "aria-label": "Dismiss" do
+        %span{"aria-hidden": "true"} &times;
   .clearfix
 
   :javascript

@@ -33,6 +33,16 @@ class ApplicationController < ActionController::Base
     Sentry.set_extras(extras)
   end
 
+  def service_worker
+    # This is a Service Worker
+    # We don't currently use it, but it's here for future use as Chrome hits the route.
+    if request.referer.present?
+      redirect_to root_path
+    else
+      render body: nil, content_type: "application/javascript"
+    end
+  end
+
   protected
 
   def configure_permitted_parameters

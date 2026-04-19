@@ -56,12 +56,20 @@ class ImageCollageJob < ActiveJob::Base
       end
       Sentry.set_user(id: @user.id, email: @user.email)
       Sentry.capture_message("Error updating collage image", level: :info, extra: { entry_id: entry_id, error_messages: error_messages, url: collage_url })
+      # Persist the error on the entry so the logged-in user sees a banner on
+      # their next page view. The job runs async after the request is gone,
+      # so we can't use `flash` — the entry itself is the durable channel.
+      entry.update(image_error: error_messages.to_sentence.presence)
       # Only send one error email per entry per hour; job can retry up to 6 times and would otherwise send 6 emails.
       cache_key = "image_collage_error_email_sent:#{entry_id}"
       unless Rails.cache.read(cache_key)
         EntryMailer.image_error(@user, entry, "collage", error_messages).deliver_later
         Rails.cache.write(cache_key, true, expires_in: 1.hour)
       end
+    else
+      # Success — clear any leftover banner from a prior failed attempt so the
+      # user isn't shown a stale error over their new collage.
+      entry.update(image_error: nil) if entry.image_error.present?
     end
     entry.update(uploading_image: false) if entry.uploading_image?
   end

@@ -43,6 +43,7 @@ Rails.application.routes.draw do
   get 'entries/:year/:month/:day',      to: 'entries#show',  as: 'day_entry'
   post 'entries/:id/process_ai',        to: 'entries#process_as_ai',  as: 'process_as_ai'
   match 'entries/:id/respond_to_ai' => 'entries#respond_to_ai', as: 'respond_to_ai', via: [:put]
+  match 'entries/:id/image_error'   => 'entries#dismiss_image_error', as: 'dismiss_entry_image_error', via: [:delete]
   resources :entries, except: [:show]
   get 'entries/(:group)(/:subgroup)',   to: 'entries#index',  as: 'group_entries'
   get 'latest',                         to: 'entries#latest', as: 'latest_entry'
@@ -77,4 +78,6 @@ Rails.application.routes.draw do
   match '/422', to: 'errors#unprocessable_entity', via: :all
   match '/500', to: 'errors#internal_server_error', via: :all
   match '/504', to: 'errors#timeout', via: :all
+
+  get "/sw.js", to: "application#service_worker", as: :service_worker
 end
