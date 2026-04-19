@@ -462,7 +462,7 @@ class EntriesController < ApplicationController
     add_dev = "/development" unless Rails.env.production?
     folder = "uploads#{add_dev}/tmp/#{Date.today.strftime("%Y-%m-%d")}/"
 
-    attachments.first(7).map do |att|
+    attachments.first(CollageGenerator::MAX_IMAGES).map do |att|
       # Convert HEIC to JPEG if needed
       filename = att.original_filename
       if File.extname(att.original_filename)&.downcase == ".heic" || File.extname(att.original_filename)&.downcase == ".heif" || att.content_type&.include?("heic") || att.content_type&.include?("heif")

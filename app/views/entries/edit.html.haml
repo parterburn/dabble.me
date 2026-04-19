@@ -85,7 +85,7 @@
     });
 
   $("#entry_image").on("change", function() {
-    if ($("#entry_image")[0].files.length > 5) {
-        alert("Photos are limited to 5 per entry.");
+    if ($("#entry_image")[0].files.length > #{CollageGenerator::MAX_IMAGES}) {
+        alert("Photos are limited to #{CollageGenerator::MAX_IMAGES} per entry.");
     }
   });

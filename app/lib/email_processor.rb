@@ -98,7 +98,7 @@ class EmailProcessor
           end
 
           if valid_attachment_urls.size > 1
-            best_attachment_url = collage_from_urls(valid_attachment_urls.first(7))
+            best_attachment_url = collage_from_urls(valid_attachment_urls.first(CollageGenerator::MAX_IMAGES))
           elsif valid_attachment_urls.any?
             best_attachment_url = valid_attachment_urls.first
           end

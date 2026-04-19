@@ -1,14 +1,18 @@
 require "net/http"
 require "uri"
 
-# Builds a square JPEG collage from a list of image URLs using libvips.
+# Builds a JPEG collage from a list of image URLs using libvips.
 #
-# Layout: per-count "row plan" (see ROW_PLANS) so the output has no empty
-# padding tiles for 2, 3, 5, 7 images. Tiles are letterboxed (no crop) onto
-# a white background so no photo content is lost — typical inputs are iPhone
-# photos in either orientation, and aggressive center-cropping was trimming
-# subjects/context. White SHIM separates tiles and an outer border of the
-# same width mattes the whole canvas. Duplicate URLs are collapsed.
+# Layout: per-count "row plan" (see ROW_PLANS + `row_plan`) so the output has
+# no empty padding tiles for 2..9 images. Canvas WIDTH is fixed at @size and
+# HEIGHT floats based on the source photos' aspect ratios, so three landscapes
+# produce a near-square output instead of a thin strip inside a huge square
+# canvas. Tiles are cover-cropped to exactly fill each cell using libvips'
+# attention-based crop (centers the crop on salient features like faces);
+# because each row's cell height is derived from the actual content, crop
+# loss is typically zero for uniform rows and small for mixed rows. White
+# SHIM separates tiles and an outer margin mattes the whole canvas. Duplicate
+# URLs are collapsed.
 class CollageGenerator
   MAX_IMAGES = 16
   DEFAULT_SIZE = 1200
@@ -27,12 +31,11 @@ class CollageGenerator
   BACKGROUND = [255, 255, 255].freeze
 
   # Hand-tuned row breakdowns that fill the grid completely (no empty cells).
-  # Each entry is the list of tiles-per-row. N=2 is picked dynamically based
-  # on input orientation (see `row_plan`). For N > 9 we fall back to a
+  # Each entry is the list of tiles-per-row. N=2 and N=3 are picked dynamically
+  # based on input orientation (see `row_plan`). For N > 9 we fall back to a
   # square-ish auto grid.
   ROW_PLANS = {
     1 => [1],
-    3 => [3],
     4 => [2, 2],
     5 => [2, 3],
     6 => [3, 3],
@@ -40,6 +43,12 @@ class CollageGenerator
     8 => [4, 4],
     9 => [3, 3, 3]
   }.freeze
+
+  # Clamp each row's computed height so one wildly-proportioned input can't
+  # produce a comical strip. Expressed as tile-aspect bounds: row_h is floored
+  # at cell_w / MAX_TILE_ASPECT and ceilinged at cell_w * MAX_TILE_PORTRAIT.
+  MAX_TILE_ASPECT = 3.0    # no tile flatter than 3:1 (w:h)
+  MAX_TILE_PORTRAIT = 2.0  # no tile taller than 1:2 (w:h)
 
   def initialize(urls:, size: DEFAULT_SIZE, user: nil)
     @urls = Array(urls).compact_blank.uniq.first(MAX_IMAGES)
@@ -91,41 +100,61 @@ class CollageGenerator
 
   def build_grid(images)
     plan = row_plan(images)
-    # Reserve SHIM-wide margin on all sides; tiles live inside `inner`.
-    inner = @size - (2 * SHIM)
-    row_count = plan.size
-    cell_h = (inner - ((row_count - 1) * SHIM)) / row_count
+    inner_w = @size - (2 * SHIM)
 
+    # For each row, derive its height from the photos that live in it so the
+    # canvas ends up at a natural aspect — three landscapes in one row no
+    # longer sit in a tall square canvas surrounded by dead white space, and
+    # a single portrait doesn't get letterboxed into a wide square.
     idx = 0
-    row_images = plan.map do |cols|
-      cell_w = (inner - ((cols - 1) * SHIM)) / cols
-      tiles = Array.new(cols) do
-        tile = prepare_tile(images[idx], cell_w, cell_h)
-        idx += 1
-        tile
-      end
-      Vips::Image.arrayjoin(tiles, across: cols, shim: SHIM, background: BACKGROUND)
+    rows = plan.map do |cols|
+      cell_w = (inner_w - ((cols - 1) * SHIM)) / cols
+      row_imgs = images[idx, cols]
+      idx += cols
+
+      # Each image's "natural" height at this cell width. The row shares one
+      # height, so we average — this bounds per-tile crop to the spread of
+      # aspects within the row (uniform rows → ~zero crop; mixed rows → a
+      # mild, attention-centered crop on the outliers).
+      naturals = row_imgs.map { |img| (cell_w.to_f * img.height / img.width).round }
+      avg = naturals.sum / naturals.size
+      row_h = avg.clamp((cell_w / MAX_TILE_ASPECT).round, (cell_w * MAX_TILE_PORTRAIT).round)
+
+      tiles = row_imgs.map { |img| prepare_tile(img, cell_w, row_h) }
+      [Vips::Image.arrayjoin(tiles, across: cols, shim: SHIM, background: BACKGROUND), row_h]
     end
 
-    grid = Vips::Image.arrayjoin(row_images, across: 1, shim: SHIM, background: BACKGROUND, halign: "centre")
+    grid = Vips::Image.arrayjoin(rows.map(&:first), across: 1, shim: SHIM, background: BACKGROUND, halign: "centre")
 
-    # Matte the grid onto a full @size canvas, centering so integer-division
-    # rounding spreads any residual pixels evenly in the outer white border.
+    total_h = rows.sum { |_, h| h } + ((rows.size - 1) * SHIM) + (2 * SHIM)
     ox = ((@size - grid.width) / 2.0).round
-    oy = ((@size - grid.height) / 2.0).round
-    grid.embed(ox, oy, @size, @size, extend: :background, background: BACKGROUND)
+    oy = SHIM
+    grid.embed(ox, oy, @size, total_h, extend: :background, background: BACKGROUND)
   end
 
   # How many tiles each row should contain, summing to `images.size`.
   #
-  # N=2 is orientation-aware: two landscape photos stack better (each tile is
-  # ~2:1, matching landscape aspect) while two portraits or a mixed pair look
-  # better side-by-side (each tile is ~1:2). This avoids the common failure
-  # mode of slicing a landscape photo into a narrow vertical strip.
+  # N=2 and N=3 are orientation-aware because those are the common counts
+  # where a naive plan produces dramatic blank padding on our fixed-width,
+  # adaptive-height canvas:
+  #   - 2 landscapes  → stacked [1, 1]       (two rows of 1 full-width landscape)
+  #   - 2 portraits   → side-by-side [2]     (one row of two half-width portraits)
+  #   - 3 landscapes  → hero + pair [1, 2]   (near-square: 1 big on top, 2 below)
+  #   - 3 portraits   → row-of-three [3]     (already near-square at adaptive height)
+  # For N > 9 we fall back to a square-ish auto grid.
   def row_plan(images)
     n = images.size
-    return [2] if n == 2 && images.any? { |img| img.height >= img.width }
-    return [1, 1] if n == 2
+
+    if n == 2
+      return [1, 1] if images.all? { |img| img.width > img.height }
+      return [2]
+    end
+
+    if n == 3
+      return [1, 2] if images.all? { |img| img.width > img.height }
+      return [3]
+    end
+
     return ROW_PLANS[n] if ROW_PLANS.key?(n)
 
     cols = Math.sqrt(n).ceil
@@ -136,19 +165,23 @@ class CollageGenerator
     per_row
   end
 
-  # Letterbox the image into the cell: preserve aspect ratio (no crop), then
-  # center on a white canvas of exactly cell_w x cell_h. Trades some whitespace
-  # for never amputating subjects.
+  # Cover-crop the image to exactly fill cell_w x cell_h using libvips'
+  # attention-based smart crop (centers on salient features — faces, subjects
+  # — instead of the geometric center). Because build_grid picks row heights
+  # to match the row's content aspect, most tiles come out essentially
+  # uncropped; outliers in a mixed row get a modest smart-crop rather than
+  # blind center-cropping or bands of white letterbox.
+  #
+  # Falls back to :centre if libvips was built without smartcrop (older
+  # builds / minimal containers).
   def prepare_tile(image, width, height)
-    tile = image.thumbnail_image(width, height: height)
+    tile = begin
+      image.thumbnail_image(width, height: height, crop: :attention)
+    rescue Vips::Error, ArgumentError
+      image.thumbnail_image(width, height: height, crop: :centre)
+    end
     tile = tile.flatten(background: BACKGROUND) if tile.has_alpha?
-    tile = tile.colourspace(:srgb).cast(:uchar)
-
-    return tile if tile.width == width && tile.height == height
-
-    pad_x = (width - tile.width) / 2
-    pad_y = (height - tile.height) / 2
-    tile.embed(pad_x, pad_y, width, height, extend: :background, background: BACKGROUND)
+    tile.colourspace(:srgb).cast(:uchar)
   end
 
   def load_image(url)
