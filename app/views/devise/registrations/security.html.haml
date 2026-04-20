@@ -119,15 +119,16 @@
             Status:
             %span.text-muted Disabled
 
-        = form_with url: generate_mcp_token_path, method: :post, local: true do |mcp_form|
-          .form-group
-            = mcp_form.label :current_password, 'Current password to generate a token'
-            = mcp_form.password_field :current_password, name: 'user[current_password]', autocomplete: 'current-password', class: 'form-control'
-          .row
-            .col-sm-6
-              = mcp_form.submit 'Generate / Regenerate MCP token', class: 'btn btn-primary form-control', data: { confirm: 'Generate a new MCP token? Any previous token will stop working immediately.' }
-            .col-sm-6
-              = button_to 'Revoke MCP token', revoke_mcp_token_path, method: :delete, class: 'btn btn-default form-control', disabled: !current_user.mcp_enabled?
+        .form-group
+          = label_tag 'mcp_current_password', 'Current password to generate a token'
+          = password_field_tag 'user[current_password]', nil, id: 'mcp_current_password', autocomplete: 'current-password', class: 'form-control'
+        .row
+          .col-sm-6
+            = form_with url: generate_mcp_token_path, method: :post, local: true do |mcp_form|
+              = mcp_form.hidden_field :current_password, name: 'user[current_password]', value: ''
+              = mcp_form.submit 'Generate / Regenerate MCP token', class: 'btn btn-primary form-control', data: { confirm: 'Generate a new MCP token? Any previous token will stop working immediately.' }, onclick: "this.form.querySelector('input[name=\"user[current_password]\"]').value = document.getElementById('mcp_current_password').value;"
+          .col-sm-6
+            = button_to 'Revoke MCP token', revoke_mcp_token_path, method: :delete, class: 'btn btn-default form-control', disabled: !current_user.mcp_enabled?
 
         %hr
         %p
