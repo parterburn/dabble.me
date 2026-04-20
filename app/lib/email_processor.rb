@@ -138,6 +138,15 @@ class EmailProcessor
           if best_attachment.present?
             image_urls = collage_from_attachments([best_attachment])
             ImageCollageJob.perform_later(existing_entry.id, urls: image_urls)
+          elsif best_attachment_url.present? && best_attachment_url.starts_with?("mailgun_collage:")
+            # Multi-attachment email landing on an entry that already has an image.
+            # Hand off to ImageCollageJob — it'll fetch the attachments from Mailgun
+            # via the message_id and merge them with the existing entry image itself
+            # (see ImageCollageJob#collage_from_mailgun_attachments). Previously this
+            # fell into the `elsif` below and passed the literal "mailgun_collage:…"
+            # marker into CollageGenerator as a URL, which blew up with
+            # URI::InvalidURIError.
+            ImageCollageJob.perform_later(existing_entry.id, message_id: best_attachment_url.gsub("mailgun_collage:", ""))
           elsif best_attachment_url.present?
             existing_image = existing_entry.image_url_cdn(cloudflare: false) if existing_entry.image.present?
             existing_entry.update(uploading_image: true)
