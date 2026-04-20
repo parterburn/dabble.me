@@ -2,7 +2,7 @@ class WelcomeController < ApplicationController
   layout "marketing"
 
   def index
-    redirect_to latest_entry_path if user_signed_in?
+    redirect_to latest_entry_path if user_signed_in? && params[:s] != "0"
 
     @stats = Rails.cache.fetch("welcome_stats", expires_in: 1.day) do
       { total_entries: Entry.count, emails_sent: User.sum(:emails_sent), emails_received: User.sum(:emails_received) }
