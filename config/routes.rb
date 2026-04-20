@@ -17,6 +17,9 @@ Rails.application.routes.draw do
     post "/validate_otp", to: "sessions#validate_otp", as: "validate_otp"
   end
 
+  post 'security/mcp_token', to: 'registrations#generate_mcp_token', as: 'generate_mcp_token'
+  delete 'security/mcp_token', to: 'registrations#revoke_mcp_token', as: 'revoke_mcp_token'
+
   namespace :passkeys do
     resources :registrations, only: [:new, :create, :destroy]
     resources :sessions, only: [:new, :create]
@@ -54,6 +57,7 @@ Rails.application.routes.draw do
   get 'privacy',                        to: 'welcome#privacy'
   get 'terms',                          to: 'welcome#terms'
   get 'support',                        to: 'welcome#support'
+  post 'mcp',                           to: 'mcp#create'
 
   # Redirects for old routes
   get 'features',                       to: redirect('/#features')

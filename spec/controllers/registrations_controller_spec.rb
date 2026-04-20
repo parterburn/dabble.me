@@ -163,6 +163,47 @@ RSpec.describe RegistrationsController, type: :controller do
     end
   end
 
+  describe 'MCP access' do
+    before do
+      sign_in paid_user
+    end
+
+    it 'does not generate an MCP token without stronger account security' do
+      post :generate_mcp_token, params: { user: { current_password: paid_user.password } }
+
+      expect(response.status).to eq 302
+      expect(response).to redirect_to(security_url)
+      expect(flash[:alert]).to include('passkey or two-factor authentication')
+      expect(paid_user.reload.mcp_token_digest).to be_blank
+      expect(paid_user.mcp_enabled).to eq(false)
+    end
+
+    it 'generates an MCP token once stronger account security is enabled' do
+      paid_user.update!(otp_enabled: true, otp_enabled_on: Time.current)
+
+      post :generate_mcp_token, params: { user: { current_password: paid_user.password } }
+
+      expect(response.status).to eq 302
+      expect(response).to redirect_to(security_url)
+      expect(flash[:notice]).to include('will not be shown again')
+      expect(flash[:mcp_token]).to start_with('dmcp_')
+      expect(paid_user.reload.mcp_enabled).to eq(true)
+      expect(paid_user.mcp_token_digest).to be_present
+    end
+
+    it 'revokes MCP access' do
+      paid_user.update!(otp_enabled: true, otp_enabled_on: Time.current)
+      paid_user.generate_mcp_token!
+
+      delete :revoke_mcp_token
+
+      expect(response.status).to eq 302
+      expect(response).to redirect_to(security_url)
+      expect(paid_user.reload.mcp_enabled).to eq(false)
+      expect(paid_user.mcp_token_digest).to be_blank
+    end
+  end
+
   describe 'creating a user' do
     it 'should see create user form' do
       get :new

@@ -2,6 +2,7 @@
 class RegistrationsController < Devise::RegistrationsController
   layout :choose_layout
   before_action :require_user, only: [:security, :update, :edit]
+  before_action :authenticate_user!, only: [:generate_mcp_token, :revoke_mcp_token]
   prepend_before_action :check_captcha, only: [:create]
 
   def edit
@@ -79,6 +80,26 @@ class RegistrationsController < Devise::RegistrationsController
 
   def security
     render 'devise/registrations/security'
+  end
+
+  def generate_mcp_token
+    unless current_user.valid_password?(params.dig(:user, :current_password))
+      flash[:alert] = 'Incorrect current password.'
+      return redirect_to(security_path)
+    end
+
+    token = current_user.generate_mcp_token!
+    flash[:notice] = 'MCP access is enabled. Copy this token now; it will not be shown again.'
+    flash[:mcp_token] = token
+    redirect_to security_path
+  rescue ArgumentError => e
+    flash[:alert] = e.message
+    redirect_to security_path
+  end
+
+  def revoke_mcp_token
+    current_user.revoke_mcp_token!
+    redirect_to security_path, notice: 'MCP access has been revoked.'
   end
 
   def unsubscribe

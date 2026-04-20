@@ -1,4 +1,8 @@
 module ApplicationHelper
+  def self.mcp_endpoint
+    '/mcp'
+  end
+
   def title(page_title)
     content_for(:title) { page_title.to_s }
   end
@@ -42,6 +46,8 @@ module ApplicationHelper
   end
 
   def self.faqs
+    mcp_endpoint = Rails.application.routes.url_helpers.mcp_path
+
     {
       pro_features: {
         title: "Paid Features",
@@ -121,7 +127,15 @@ module ApplicationHelper
           },
           {
             q: "Does this service use AI to read or analyze my entries?",
-            a: "No. There is a private beta with built-in AI-powered features, but they are entirely opt-in and turned off by default.<div class='mt-2'>If you'd like to use AI to analyze your entries, you can easily export your full journal (or just part of it) at any time and use it with your own AI tools for analysis or reflection.</div>"
+            a: "No, not by default. Dabble Me does not use AI to read or analyze your entries unless you explicitly turn on an optional feature yourself.<div class='mt-2'>PRO members can also choose to enable a read-only MCP connection for their own account so an AI client like Claude Desktop or Cursor can search and analyze their entries. This is <span class='font-semibold'>off by default</span>, requires a passkey or two-factor authentication first, uses a separate secret token that you can revoke at any time, and only exposes your own entries.</div><div class='mt-2'>If you prefer not to connect an AI client directly, you can always export your journal and analyze it locally or in a tool you control.</div>"
+          },
+          {
+            q: "How do I use MCP with Dabble Me?",
+            a: "MCP access is available for <span class='font-semibold'>PRO accounts only</span> and is fully opt-in.<ol class='list-decimal pl-5 mt-2 space-y-2'><li>Go to <a href='#{Rails.application.routes.url_helpers.security_path}' class='text-accent hover:text-primary underline'>Account Security</a>.</li><li>Set up a <span class='font-semibold'>passkey</span> or <span class='font-semibold'>two-factor authentication</span> first.</li><li>In the <span class='font-semibold'>MCP Access</span> section, generate a token and copy it somewhere safe. For security, the full token is only shown once.</li><li>Add the server path and bearer token to your MCP client.</li></ol><div class='mt-3'><span class='font-semibold'>Server path:</span> <code class='text-red-500 text-sm select-all'>#{mcp_endpoint}</code></div><div class='mt-2'><span class='font-semibold'>Available tools:</span> <code>search_entries</code>, <code>list_entries</code>, and <code>analyze_entries</code>.</div><div class='mt-2'>You can revoke the token instantly from the same security page at any time.</div>"
+          },
+          {
+            q: "What can I ask an MCP client to do with my entries?",
+            a: "A few example queries:<ul class='list-disc pl-5 mt-2 space-y-2'><li><em>Search my Dabble Me entries for mentions of burnout from the last 6 months.</em></li><li><em>List entries between 2025-01-01 and 2025-03-31 and show short excerpts.</em></li><li><em>Analyze my entries from this year and summarize common themes, top hashtags, and changes in writing frequency.</em></li><li><em>Find entries where I mentioned Paris or quoted “career change”.</em></li></ul><div class='mt-2'>The MCP server is read-only. It does not let clients create, edit, or delete entries.</div>"
           },
           {
             q: "How do I save a copy of my entries?",

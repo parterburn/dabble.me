@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2026_04_19_180000) do
+ActiveRecord::Schema.define(version: 2026_04_20_120000) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -107,16 +107,18 @@ ActiveRecord::Schema.define(version: 2026_04_19_180000) do
     t.string "otp_persistence_seed"
     t.string "otp_session_challenge"
     t.datetime "otp_challenge_expires"
-    t.text "otp_auth_secret_ciphertext"
-    t.text "otp_recovery_secret_ciphertext"
-    t.text "otp_persistence_seed_ciphertext"
     t.datetime "deleted_at"
-    t.string "x_username"
-    t.string "x_uid"
     t.text "x_access_token"
     t.text "x_refresh_token"
+    t.string "x_uid"
+    t.string "x_username"
     t.string "raindrop_api_key"
+    t.boolean "mcp_enabled", default: false, null: false
+    t.string "mcp_token_digest"
+    t.datetime "mcp_token_generated_at"
+    t.datetime "mcp_last_used_at"
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["mcp_token_digest"], name: "index_users_on_mcp_token_digest", unique: true, where: "(mcp_token_digest IS NOT NULL)"
     t.index ["otp_challenge_expires"], name: "index_users_on_otp_challenge_expires"
     t.index ["otp_session_challenge"], name: "index_users_on_otp_session_challenge", unique: true
     t.index ["plan"], name: "index_users_on_plan"

@@ -51,6 +51,7 @@ class Passkeys::RegistrationsController < ApplicationController
   def destroy
     credential = current_user.webauthn_credentials.find(params[:id])
     credential.destroy
+    current_user.revoke_mcp_token! unless current_user.mcp_security_requirements_met?
     cookies.delete(:dabble_passkey_user_hint) if current_user.webauthn_credentials.none?
     redirect_to security_path, notice: "Passkey removed."
   end
