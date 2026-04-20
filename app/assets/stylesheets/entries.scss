@@ -142,6 +142,9 @@ a.s-delete {
     letter-spacing: 0 !important;
     line-height: 1.6 !important;
   }
+  p, li {
+    color: $olive-950 !important;
+  }
   a {
     color: $olive !important;
     text-decoration: underline;
@@ -437,7 +440,7 @@ mark {
   }
 
   div[data-content=dabblemegpt] {
-    background: #F5F5F5;
+    background: oklch(93% 0.007 106.5);
     padding: 20px;
     margin: -22px -20px 0;
   }

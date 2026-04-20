@@ -352,9 +352,9 @@ class EntriesController < ApplicationController
   def process_as_ai
     if current_user.can_ai?
       AiEntryJob.perform_later(current_user.id, @entry.id, email: false)
-      flash[:notice] = "DabbleMeGPT response is generating."
+      flash[:notice] = "AI assistant is generating a response."
     else
-      flash[:alert] = "DabbleMeGPT is not available to you."
+      flash[:alert] = "AI assistant is not available to you."
     end
     redirect_to day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day, ai: "generating", anchor: "generating-ai")
   end
@@ -364,12 +364,12 @@ class EntriesController < ApplicationController
       @entry.body += "<hr><strong>👤 You:</strong><br/>#{ActionController::Base.helpers.simple_format(params[:entry][:ai_response])}"
       if params[:entry][:ai_response].present? && @entry.save
         AiEntryJob.perform_later(current_user.id, @entry.id, email: false)
-        flash[:notice] = "DabbleMeGPT response is generating."
+        flash[:notice] = "AI assistant is generating a response."
       else
         flash[:alert] = "Error saving response"
       end
     else
-      flash[:alert] = "DabbleMeGPT is not available to you."
+      flash[:alert] = "AI assistant is not available to you."
     end
     redirect_to day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day, anchor: "generating-ai")
   end

@@ -34,7 +34,7 @@ class EntryMailer < ActionMailer::Base
     @entry = entry
 
     set_reply_headers(entry)
-    email = mail  from: "DabbleMeGPT 🪄 <#{user.user_key}@#{ENV['SMTP_DOMAIN'].gsub('post', 'ai')}>",
+    email = mail  from: "AI Dabble me. <#{user.user_key}@#{ENV['SMTP_DOMAIN'].gsub('post', 'ai')}>",
                   to: "#{user.cleaned_to_address}",
                   subject: "Re: #{subject(entry)}",
                   html: render_to_string('entry_mailer/respond_as_ai', formats: [:html]).to_str,

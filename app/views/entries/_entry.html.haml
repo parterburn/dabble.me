@@ -16,8 +16,8 @@
             %div{style: "width: 43px;"}
       .float-right.s-edit-entry
         - if current_user.can_ai? && !entry.body.include?("🤖 DabbleMeGPT:") && !(entry.ai_waiting_for_ai_response || params[:ai] == "generating")
-          = link_to process_as_ai_path(entry), method: :post, style: "margin-right: 15px;", data: { confirm: "DabbleMeGPT employs AI preview technology that may produce unusual or incorrect responses. Your entry is not retained permanently or utilized for training any AI models." } do
-            %span{rel: "tooltip", title: "Process with DabbleMeGPT", class: "s-process-ai"}>
+          = link_to process_as_ai_path(entry), method: :post, style: "margin-right: 15px;", data: { confirm: "AI preview technology may produce unusual or incorrect responses. Your entry is not retained permanently or utilized for training any AI models." } do
+            %span{rel: "tooltip", title: "Process with AI", class: "s-process-ai"}>
               %i.fa.fa-magic>
         = link_to edit_entry_path(entry), rel: "tooltip", title: "Edit Entry" do
           %i.fa.fa-pencil-square-o
@@ -44,14 +44,13 @@
 
     - if current_user.can_ai? && entry.ai_waiting_for_user_response
       %br
-      %strong 👤 You:
       = form_tag respond_to_ai_path(entry), method: :put, class: "respond-to-gpt" do
         %textarea{rows: 1, class: "autogrow", style: "margin-top: 10px; width: 100%; padding: 5px 10px; border-radius: 8px; border: 2px solid #CCC;", name: "entry[ai_response]", placeholder: "Add your response here..."}
-        %button{type: "submit", style: "font-size: 13px !important; margin-top: -15px;font-weight: bold; font-family: Raleway, sans-serif !important;", class: "btn btn-link btn-primary"} Reply to DabbleMeGPT
+        %button{type: "submit", style: "font-size: 13px !important; margin-top: -15px;font-weight: bold; font-family: Raleway, sans-serif !important;", class: "btn btn-link btn-primary"} Reply to AI Assistant
     - elsif current_user.can_ai? && (entry.ai_waiting_for_ai_response || params[:ai] == "generating")
       %hr{id: "generating-ai"}
       %div{data: { content: "dabblemegpt" }}
-        %strong 🤖 DabbleMeGPT:
+        %strong 🤖 AI Assistant:
         %br
         %p{style: "margin-top: 10px;"} Generating...
       - if params[:action] != "index"
