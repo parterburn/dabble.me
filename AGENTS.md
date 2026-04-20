@@ -8,9 +8,18 @@ Dabble Me is a private journaling-over-email Rails 6.1 application. Users receiv
 
 ### Tech stack
 
-- Ruby 3.4.8 (managed via rbenv), Rails 6.1, PostgreSQL, Redis, Sidekiq, Puma
-- Node.js 22.x only for Tailwind CSS marketing page build (`npm run build:css`)
+- Ruby 3.4.8 and Node.js 22.x (managed via asdf), Rails 6.1, PostgreSQL, Redis, Sidekiq, Puma
 - Tests: RSpec with Capybara + headless Chrome
+
+### Shell initialization
+
+New shells must load asdf before running Ruby/Node commands:
+
+```bash
+. "$HOME/.asdf/asdf.sh"
+```
+
+Or ensure `~/.bashrc` sources it.
 
 ### Services required
 
@@ -23,8 +32,8 @@ Dabble Me is a private journaling-over-email Rails 6.1 application. Users receiv
 ### Starting services
 
 ```bash
-sudo service postgresql start
-sudo service redis-server start
+sudo pg_ctlcluster 16 main start
+redis-server --daemonize yes
 ```
 
 ### Running the dev server
