@@ -15,10 +15,9 @@ Rails.application.routes.draw do
 
   devise_scope :user do
     post "/validate_otp", to: "sessions#validate_otp", as: "validate_otp"
+    post 'security/mcp_token', to: 'registrations#generate_mcp_token', as: 'generate_mcp_token'
+    delete 'security/mcp_token', to: 'registrations#revoke_mcp_token', as: 'revoke_mcp_token'
   end
-
-  post 'security/mcp_token', to: 'registrations#generate_mcp_token', as: 'generate_mcp_token'
-  delete 'security/mcp_token', to: 'registrations#revoke_mcp_token', as: 'revoke_mcp_token'
 
   namespace :passkeys do
     resources :registrations, only: [:new, :create, :destroy]
