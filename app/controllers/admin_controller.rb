@@ -15,7 +15,15 @@ class AdminController < ApplicationController
   end
 
   def photos
-    @entries = Kaminari.paginate_array(Entry.select(:image, :user_id, :date).includes(:user).only_images.order('date DESC')).page(params[:page]).per(per_page)
+    # `uploading_image_at` is required by Entry#uploading_image? (called through
+    # image_code → display_image_url in the view). Keep `:id` for AR identity
+    # and any future per-entry actions. Heavy columns like body/original_email
+    # stay excluded so the 300-per-page grid stays cheap.
+    entries = Entry.select(:id, :image, :user_id, :date, :uploading_image_at)
+                   .includes(:user)
+                   .only_images
+                   .order('date DESC')
+    @entries = Kaminari.paginate_array(entries).page(params[:page]).per(per_page)
   end
 
   def stats
