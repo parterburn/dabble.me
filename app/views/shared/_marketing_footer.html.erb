@@ -8,13 +8,13 @@
         <div>
           <ul role="list" class="mt-4 space-y-3">
             <li>
-              <a href="<%= root_path((s: user_signed_in? ? "0" : nil)) %>" class="text-sm text-muted hover:text-primary transition-colors">Home</a>
+              <a href="<%= root_path(s: (user_signed_in? ? '0' : nil)) %>" class="text-sm text-muted hover:text-primary transition-colors">Home</a>
             </li>
             <li>
-              <a href="<%= root_path((s: user_signed_in? ? "0" : nil), anchor: "features") %>" class="text-sm text-muted hover:text-primary transition-colors">Features</a>
+              <a href="<%= root_path(s: (user_signed_in? ? '0' : nil), anchor: 'features') %>" class="text-sm text-muted hover:text-primary transition-colors">Features</a>
             </li>
             <li>
-              <a href="<%= root_path((s: user_signed_in? ? "0" : nil), anchor: "pricing") %>" class="text-sm text-muted hover:text-primary transition-colors">Pricing</a>
+              <a href="<%= root_path(s: (user_signed_in? ? '0' : nil), anchor: 'pricing') %>" class="text-sm text-muted hover:text-primary transition-colors">Pricing</a>
             </li>
           </ul>
         </div>
