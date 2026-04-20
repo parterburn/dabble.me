@@ -4,6 +4,8 @@
     .flex
       %div{style: "flex: none;"}
         %p.muted.float-left
+          =link_to "Features", root_path(s: 0, anchor: "features"), title: "Features", style: "font-size: 15px;"
+          &nbsp;&middot;&nbsp;
           =link_to "Support", support_path, title: "Support & FAQs", style: "font-size: 15px;"
           &nbsp;&middot;&nbsp;
           = link_to "Privacy", privacy_path, title: "Privacy Policy", style: "font-size: 15px;"
