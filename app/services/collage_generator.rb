@@ -219,8 +219,17 @@ class CollageGenerator
   # half-baked JPEG to libvips and it errors mid-decode.
   def fetch_bytes(url, redirects_left = MAX_REDIRECTS, truncation_retries_left = MAX_TRUNCATION_RETRIES)
     return nil if redirects_left.negative?
+    return nil if url.blank?
 
-    uri = URI.parse(url)
+    # Malformed strings (e.g. internal sentinels like "mailgun_collage:…" that
+    # leaked out of the email processor) should be dropped silently rather than
+    # paged to Sentry — they're a caller-contract problem, not a runtime fault
+    # to investigate, and the collage degrades gracefully by skipping the tile.
+    uri = begin
+      URI.parse(url)
+    rescue URI::InvalidURIError
+      return nil
+    end
     return nil unless uri.is_a?(URI::HTTP) || uri.is_a?(URI::HTTPS)
 
     http = Net::HTTP.new(uri.host, uri.port)

@@ -10,7 +10,10 @@ if ENV["SENTRY_DSN"].present?
     # Requires stackprof; 10% in production only.
     config.profiles_sample_rate = Rails.env.production? ? 0.1 : 0.0
     config.breadcrumbs_logger = [:active_support_logger, :http_logger]
-    config.enabled_patches += [:sidekiq_cron] if Flow.sidekiq_cron_enabled?
+    # Intentionally NOT enabling the `:sidekiq_cron` Sentry patch: it would
+    # register a monitor for every job in config/sidekiq_cron_schedule.yml,
+    # but our Sentry plan only allows one. The single most-important job
+    # (SendHourlyEntriesWorker) registers itself via `sentry_monitor_check_ins`.
 
     # Load stackprof when profiling is enabled so Sentry can attach profiles (avoids WARN).
     require "stackprof" if config.profiles_sample_rate.to_f.positive?
