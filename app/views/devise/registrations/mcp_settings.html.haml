@@ -1,0 +1,75 @@
+- title "MCP settings — Dabble me."
+
+- mcp_server_url = mcp_url(**ApplicationHelper.mcp_url_options)
+
+.row
+  .col-md-8.col-md-offset-2
+    %h3 MCP (journal access)
+    %p.text-muted
+      This page is not linked from the app yet. Bookmark it if you need it.
+    %br
+
+  .col-md-8.col-md-offset-2
+    .well{style: "background-color: #E8E8E2; padding: 15px 20px; margin-top: 10px;"}
+      %h4{style: "margin-top: 0;"} MCP access to your journal
+      - if current_user.is_free?
+        %p
+          MCP access is available for
+          = link_to "Dabble Me PRO", subscribe_path, class: "alert-link"
+          only.
+      - elsif !current_user.mcp_security_requirements_met?
+        %p
+          To enable MCP, first add a passkey or set up two-factor authentication.
+          MCP stays disabled unless your account has stronger login protection.
+      - else
+        %p
+          MCP is opt-in and read-only. It only exposes your own entries over a bearer token that is shown once when generated.
+        %p
+          Server URL:
+          %code= mcp_server_url
+
+        - if flash[:mcp_token].present?
+          .alert.alert-warning.force-links
+            %strong Copy this token now.
+            It will not be shown again after you leave this page.
+            %div{style: "margin-top: 8px;"}
+              %code{style: "word-break: break-all;"}= flash[:mcp_token]
+            %div{style: "margin-top: 8px;"}
+              %button.btn.btn-default.btn-sm.j-copy-to-clipboard{type: "button", data: { content: flash[:mcp_token] }}
+                Copy token
+
+        - if current_user.mcp_available?
+          %p
+            Status:
+            %span.text-success Enabled
+            - if current_user.mcp_last_used_at.present?
+              %br
+              Last used:
+              = current_user.mcp_last_used_at.strftime("%b %-d, %Y at %-l:%M %p %Z")
+            - if current_user.mcp_token_generated_at.present?
+              %br
+              Token created:
+              = current_user.mcp_token_generated_at.strftime("%b %-d, %Y at %-l:%M %p %Z")
+        - else
+          %p
+            Status:
+            %span.text-muted Disabled
+
+        .form-group
+          = label_tag "mcp_current_password", "Current password to generate a token"
+          = password_field_tag "user[current_password]", nil, id: "mcp_current_password", autocomplete: "current-password", class: "form-control"
+        .row
+          .col-sm-6
+            = form_with url: generate_mcp_token_path, method: :post, local: true do |mcp_form|
+              = mcp_form.hidden_field :current_password, name: "user[current_password]", value: ""
+              = mcp_form.submit "Generate / Regenerate MCP token", class: "btn btn-primary form-control", data: { confirm: "Generate a new MCP token? Any previous token will stop working immediately." }, onclick: "this.form.querySelector('input[name=\"user[current_password]\"]').value = document.getElementById('mcp_current_password').value;"
+          .col-sm-6
+            = button_to "Revoke MCP token", revoke_mcp_token_path, method: :delete, class: "btn btn-default form-control", disabled: !current_user.mcp_enabled?
+
+        .mt-2
+          %p
+            Example MCP config:
+          %pre{style: "white-space: pre-wrap;"}= "{\n  \"url\": \"#{mcp_server_url}\",\n  \"headers\": {\n    \"Authorization\": \"Bearer YOUR_MCP_BEARER_TOKEN\"\n  }\n}"
+          %p
+            Quick smoke test:
+          %pre{style: "white-space: pre-wrap;"}= "curl -X POST #{mcp_server_url} \\\n  -H \"Content-Type: application/json\" \\\n  -H \"Authorization: Bearer YOUR_MCP_BEARER_TOKEN\" \\\n  -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}'"

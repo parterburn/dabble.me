@@ -172,8 +172,8 @@ RSpec.describe RegistrationsController, type: :controller do
       post :generate_mcp_token, params: { user: { current_password: paid_user.password } }
 
       expect(response.status).to eq 302
-      expect(response).to redirect_to(security_url)
-      expect(flash[:alert]).to include('passkey or two-factor authentication')
+      expect(response).to redirect_to(settings_mcp_url)
+      expect(flash[:alert]).to include("passkey or two-factor authentication")
       expect(paid_user.reload.mcp_token_digest).to be_blank
       expect(paid_user.mcp_enabled).to eq(false)
     end
@@ -184,9 +184,9 @@ RSpec.describe RegistrationsController, type: :controller do
       post :generate_mcp_token, params: { user: { current_password: paid_user.password } }
 
       expect(response.status).to eq 302
-      expect(response).to redirect_to(security_url)
-      expect(flash[:notice]).to include('will not be shown again')
-      expect(flash[:mcp_token]).to start_with('dmcp_')
+      expect(response).to redirect_to(settings_mcp_url)
+      expect(flash[:notice]).to include("will not be shown again")
+      expect(flash[:mcp_token]).to start_with("dmcp_")
       expect(paid_user.reload.mcp_enabled).to eq(true)
       expect(paid_user.mcp_token_digest).to be_present
     end
@@ -198,7 +198,7 @@ RSpec.describe RegistrationsController, type: :controller do
       delete :revoke_mcp_token
 
       expect(response.status).to eq 302
-      expect(response).to redirect_to(security_url)
+      expect(response).to redirect_to(settings_mcp_url)
       expect(paid_user.reload.mcp_enabled).to eq(false)
       expect(paid_user.mcp_token_digest).to be_blank
     end
