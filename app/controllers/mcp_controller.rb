@@ -113,6 +113,23 @@ class McpController < ActionController::API
               },
               additionalProperties: false
             }
+          },
+          {
+            name: 'create_entry',
+            description: 'Create a journal entry on a given calendar day (defaults to today in the user account timezone). Plain text is turned into HTML paragraphs. If an entry already exists for that day, appends after a separator (same as the web app) unless merge_with_existing is false.',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                date: { type: 'string', description: 'Optional YYYY-MM-DD; omitted means today in the account timezone.' },
+                body: { type: 'string', description: 'Entry text (plain text; line breaks become paragraphs). HTML is escaped.' },
+                merge_with_existing: {
+                  type: 'boolean',
+                  description: 'When true (default), append to the existing entry for this date if one exists. When false, return an error if the date is already taken.'
+                }
+              },
+              required: ['body'],
+              additionalProperties: false
+            }
           }
         ]
       }
@@ -131,6 +148,8 @@ class McpController < ActionController::API
         list_tool(arguments)
       when 'analyze_entries'
         analyze_tool(arguments)
+      when 'create_entry'
+        create_entry_tool(arguments)
       else
         return render_mcp_error(code: -32601, message: "Unknown tool: #{tool_name}")
       end
@@ -193,6 +212,23 @@ class McpController < ActionController::API
       average_words_per_entry: result[:average_entry_length_words],
       sample_entries: result[:sample_highlights]
     }
+  end
+
+  def create_entry_tool(arguments)
+    merge = arguments['merge_with_existing'] != false
+    date_str = arguments['date'].presence&.strip
+    date_str = mcp_default_entry_date_iso8601 if date_str.blank?
+
+    Mcp::EntryCreator.new(user: @mcp_user).create(
+      date_string: date_str,
+      body_text: arguments.fetch('body'),
+      merge_with_existing: merge
+    )
+  end
+
+  def mcp_default_entry_date_iso8601
+    tz = ActiveSupport::TimeZone[@mcp_user.send_timezone] || Time.zone
+    Time.current.in_time_zone(tz).to_date.iso8601
   end
 
   def entry_search

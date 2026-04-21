@@ -6,55 +6,61 @@
 
 .row
   .col-md-8.col-md-offset-2
-    %h3 MCP (journal access)
-    %p.text-muted
-      This page is not linked from the app yet. Bookmark it if you need it.
+    %h3 MCP (journal access to AI tools)
     %br
 
   .col-md-8.col-md-offset-2
     .well{style: "background-color: #E8E8E2; padding: 15px 20px; margin-top: 10px;"}
-      %h4{style: "margin-top: 0;"} Using MCP with Dabble Me
+      %h4{style: "margin-top: 0;"} How it works
       %p
-        %strong Optional, PRO-only, read-only.
-        MCP exposes your own journal entries to tools you connect with a secret token. It is off until you generate a token on this page (while signed in).
+        %strong PRO only, optional.
+        Your journal stays private until you create a secret token on this page. Connected tools can search, list, and analyze your entries, and add new entries on a chosen date (appending to that day if you already wrote that day—same as the site). There are no MCP tools to edit or delete arbitrary entries.
       %p
-        You need a passkey or two-factor authentication first—set that up under
+        You need a passkey or two-factor authentication first (
         = link_to "Account security", security_path
-        \.
-        Change your email or password anytime from
+        ). For email or password,
         = succeed "." do
           = link_to "Account settings", edit_user_registration_path
       %p
-        Tokens are shown once when generated, expire after six months (regenerate anytime before then), and we email you when a new token is created. Revoke anytime below.
+        Each token is shown once, expires after six months, and we email you when a new one is created. Rotate or revoke from the section below.
+
+      %h5{style: "margin-top: 16px;"} Connect a client
       %p
         %strong Claude custom connectors
-        only accept a server URL (no custom headers). Use the same secret as
-        %code Authorization: Bearer
-        but pass it as a query parameter, for example:
+        take a single server URL (no custom headers). Use the same secret as
+        %code Bearer
+        auth, but as the
+        %code access_token
+        query parameter—for example:
       %pre{style: "white-space: pre-wrap; margin-top: 8px;"}= claude_example_url
       %p{style: "margin-top: 8px;"}
         See
         = link_to "Anthropic’s guide to remote MCP custom connectors", ApplicationHelper.claude_remote_mcp_connectors_url, target: "_blank", rel: "noopener noreferrer"
         \.
-        Putting the token in the URL can appear in access logs more easily than header-only auth—use only if you accept that tradeoff.
+        Putting the token in the URL can appear in access logs more easily than header-only auth—use it only if you accept that tradeoff.
       %p
-        %strong Other MCP clients (Bearer header)
-        — example configuration:
+        %strong Other clients
+        send
+        %code Authorization: Bearer YOUR_TOKEN
+        \. Example config:
       %pre{style: "white-space: pre-wrap; margin-top: 8px;"}= mcp_json_example
       %p{style: "margin-top: 12px;"}
-        %strong Base URL (no token)
-        for clients that send the header themselves:
+        %strong Base URL
+        (no token; client adds the header):
       %pre{style: "white-space: pre-wrap;"}= mcp_server_url
+
       %p{style: "margin-top: 12px;"}
-        %strong Available tools
-        (read-only; no create, edit, or delete):
+        %strong Tools:
         %code search_entries
         \,
         %code list_entries
         \,
         %code analyze_entries
+        \,
+        %code create_entry
         \.
-      %h5{style: "margin-top: 16px;"} Example prompts for your MCP client
+
+      %h5{style: "margin-top: 16px;"} Example prompts
       %ul
         %li
           %em Search my Dabble Me entries for mentions of burnout from the last 6 months.
@@ -66,35 +72,18 @@
           %em Find entries where I mentioned Paris or quoted “career change”.
 
     .well{style: "background-color: #E8E8E2; padding: 15px 20px; margin-top: 10px;"}
-      %h4{style: "margin-top: 0;"} MCP access to your journal
+      %h4{style: "margin-top: 0;"} Your token
       - if current_user.is_free?
         %p
-          MCP access is available for
+          MCP is included with
           = link_to "Dabble Me PRO", subscribe_path, class: "alert-link"
-          only.
+          \.
       - elsif !current_user.mcp_security_requirements_met?
         %p
-          To enable MCP, first add a passkey or set up two-factor authentication.
-          MCP stays disabled unless your account has stronger login protection.
+          Add a passkey or two-factor authentication under
+          = link_to "Account security", security_path
+          to enable token generation here.
       - else
-        %p
-          MCP is opt-in and read-only. It only exposes your own entries over a secret token that is shown once when generated.
-        %p
-          %strong Tokens expire after six months.
-          Generate a new token anytime before then (we will email you when a new token is created).
-        %p
-          %strong Claude custom connectors
-          only accept a server URL (no custom headers). Put your token in the URL as
-          %code access_token=
-          (same value as
-          %code Authorization: Bearer
-          for other clients). See
-          = succeed "." do
-            = link_to "Anthropic’s remote MCP connector guide", ApplicationHelper.claude_remote_mcp_connectors_url, target: "_blank", rel: "noopener noreferrer"
-        %p
-          %strong Base URL (no token)
-          — use in clients that send a Bearer header:
-          %code= mcp_server_url
         - if flash[:mcp_token].present?
           - claude_mcp_url = "#{mcp_server_url}?access_token=#{flash[:mcp_token]}"
           .alert.alert-warning.force-links
