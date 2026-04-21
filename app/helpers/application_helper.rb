@@ -156,10 +156,7 @@ module ApplicationHelper
   \"headers\": {
     \"Authorization\": \"Bearer YOUR_MCP_BEARER_TOKEN\"
   }
-}</code></pre><div class='mt-2'><span class='font-semibold'>Quick smoke test:</span><pre class='mt-2 text-xs overflow-x-auto'><code>curl -X POST #{mcp_url} \\
-  -H \"Content-Type: application/json\" \\
-  -H \"Authorization: Bearer YOUR_MCP_BEARER_TOKEN\" \\
-  -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}'</code></pre></div><div class='mt-3'>Example prompts you can use in your MCP client:</div><ul class='list-disc pl-5 mt-2 space-y-2'><li><em>Search my Dabble Me entries for mentions of burnout from the last 6 months.</em></li><li><em>List entries between 2025-01-01 and 2025-03-31 and show short excerpts.</em></li><li><em>Analyze my entries from this year and summarize common themes, top hashtags, and changes in writing frequency.</em></li><li><em>Find entries where I mentioned Paris or quoted “career change”.</em></li></ul>"
+}</code></pre><div class='mt-3'>Example prompts you can use in your MCP client:</div><ul class='list-disc pl-5 mt-2 space-y-2'><li><em>Search my Dabble Me entries for mentions of burnout from the last 6 months.</em></li><li><em>List entries between 2025-01-01 and 2025-03-31 and show short excerpts.</em></li><li><em>Analyze my entries from this year and summarize common themes, top hashtags, and changes in writing frequency.</em></li><li><em>Find entries where I mentioned Paris or quoted “career change”.</em></li></ul>"
           },
           {
             q: "How do I save a copy of my entries?",
