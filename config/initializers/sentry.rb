@@ -1,4 +1,6 @@
 if ENV["SENTRY_DSN"].present?
+  require Rails.root.join("lib/sentry_sensitive_scrubber")
+
   Sentry.init do |config|
     config.dsn = ENV["SENTRY_DSN"]
     config.excluded_exceptions = Sentry::Rails::IGNORE_DEFAULT - ["ActionController::BadRequest"]
@@ -24,6 +26,14 @@ if ENV["SENTRY_DSN"].present?
       # Ignore health checks entirely
       return 0.0 if context[:transaction_context][:name]&.include?("/health")
       0.1
+    end
+
+    config.before_send = lambda do |event, _hint|
+      SentrySensitiveScrubber.scrub_event!(event)
+    end
+
+    config.before_send_transaction = lambda do |event, _hint|
+      SentrySensitiveScrubber.scrub_event!(event)
     end
   end
 end
