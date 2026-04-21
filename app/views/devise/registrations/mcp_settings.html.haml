@@ -1,6 +1,8 @@
 - title "MCP settings — Dabble me."
 
 - mcp_server_url = mcp_url(**ApplicationHelper.mcp_url_options)
+- mcp_json_example = JSON.pretty_generate("url" => mcp_server_url, "headers" => { "Authorization" => "Bearer YOUR_MCP_BEARER_TOKEN" })
+- claude_example_url = "#{mcp_server_url}?access_token=YOUR_MCP_BEARER_TOKEN"
 
 .row
   .col-md-8.col-md-offset-2
@@ -10,6 +12,59 @@
     %br
 
   .col-md-8.col-md-offset-2
+    .well{style: "background-color: #E8E8E2; padding: 15px 20px; margin-top: 10px;"}
+      %h4{style: "margin-top: 0;"} Using MCP with Dabble Me
+      %p
+        %strong Optional, PRO-only, read-only.
+        MCP exposes your own journal entries to tools you connect with a secret token. It is off until you generate a token on this page (while signed in).
+      %p
+        You need a passkey or two-factor authentication first—set that up under
+        = link_to "Account security", security_path
+        \.
+        Change your email or password anytime from
+        = succeed "." do
+          = link_to "Account settings", edit_user_registration_path
+      %p
+        Tokens are shown once when generated, expire after six months (regenerate anytime before then), and we email you when a new token is created. Revoke anytime below.
+      %p
+        %strong Claude custom connectors
+        only accept a server URL (no custom headers). Use the same secret as
+        %code Authorization: Bearer
+        but pass it as a query parameter, for example:
+      %pre{style: "white-space: pre-wrap; margin-top: 8px;"}= claude_example_url
+      %p{style: "margin-top: 8px;"}
+        See
+        = link_to "Anthropic’s guide to remote MCP custom connectors", ApplicationHelper.claude_remote_mcp_connectors_url, target: "_blank", rel: "noopener noreferrer"
+        \.
+        Putting the token in the URL can appear in access logs more easily than header-only auth—use only if you accept that tradeoff.
+      %p
+        %strong Other MCP clients (Bearer header)
+        — example configuration:
+      %pre{style: "white-space: pre-wrap; margin-top: 8px;"}= mcp_json_example
+      %p{style: "margin-top: 12px;"}
+        %strong Base URL (no token)
+        for clients that send the header themselves:
+      %pre{style: "white-space: pre-wrap;"}= mcp_server_url
+      %p{style: "margin-top: 12px;"}
+        %strong Available tools
+        (read-only; no create, edit, or delete):
+        %code search_entries
+        \,
+        %code list_entries
+        \,
+        %code analyze_entries
+        \.
+      %h5{style: "margin-top: 16px;"} Example prompts for your MCP client
+      %ul
+        %li
+          %em Search my Dabble Me entries for mentions of burnout from the last 6 months.
+        %li
+          %em List entries between 2025-01-01 and 2025-03-31 and show short excerpts.
+        %li
+          %em Analyze my entries from this year and summarize common themes, top hashtags, and changes in writing frequency.
+        %li
+          %em Find entries where I mentioned Paris or quoted “career change”.
+
     .well{style: "background-color: #E8E8E2; padding: 15px 20px; margin-top: 10px;"}
       %h4{style: "margin-top: 0;"} MCP access to your journal
       - if current_user.is_free?
@@ -23,15 +78,25 @@
           MCP stays disabled unless your account has stronger login protection.
       - else
         %p
-          MCP is opt-in and read-only. It only exposes your own entries over a bearer token that is shown once when generated.
+          MCP is opt-in and read-only. It only exposes your own entries over a secret token that is shown once when generated.
         %p
           %strong Tokens expire after six months.
           Generate a new token anytime before then (we will email you when a new token is created).
         %p
-          Server URL:
+          %strong Claude custom connectors
+          only accept a server URL (no custom headers). Put your token in the URL as
+          %code access_token=
+          (same value as
+          %code Authorization: Bearer
+          for other clients). See
+          = succeed "." do
+            = link_to "Anthropic’s remote MCP connector guide", ApplicationHelper.claude_remote_mcp_connectors_url, target: "_blank", rel: "noopener noreferrer"
+        %p
+          %strong Base URL (no token)
+          — use in clients that send a Bearer header:
           %code= mcp_server_url
-
         - if flash[:mcp_token].present?
+          - claude_mcp_url = "#{mcp_server_url}?access_token=#{flash[:mcp_token]}"
           .alert.alert-warning.force-links
             %strong Copy this token now.
             It will not be shown again after you leave this page.
@@ -40,6 +105,13 @@
             %div{style: "margin-top: 8px;"}
               %button.btn.btn-default.btn-sm.j-copy-to-clipboard{type: "button", data: { content: flash[:mcp_token] }}
                 Copy token
+            %p{style: "margin-top: 12px; margin-bottom: 4px;"}
+              %strong Claude connector URL
+              (paste this whole line into Claude):
+            %code{style: "word-break: break-all; display: block;"}= claude_mcp_url
+            %div{style: "margin-top: 8px;"}
+              %button.btn.btn-default.btn-sm.j-copy-to-clipboard{type: "button", data: { content: claude_mcp_url }}
+                Copy Claude URL
 
         - if current_user.mcp_available?
           %p
@@ -72,8 +144,3 @@
               = mcp_form.submit "Generate / Regenerate MCP token", class: "btn btn-primary form-control", data: { confirm: "Generate a new MCP token? Any previous token will stop working immediately." }, onclick: "this.form.querySelector('input[name=\"user[current_password]\"]').value = document.getElementById('mcp_current_password').value;"
           .col-sm-6
             = button_to "Revoke MCP token", revoke_mcp_token_path, method: :delete, class: "btn btn-default form-control", disabled: !current_user.mcp_enabled?
-
-        .mt-2
-          %p
-            Example MCP config:
-          %pre{style: "white-space: pre-wrap;"}= "{\n  \"url\": \"#{mcp_server_url}\",\n  \"headers\": {\n    \"Authorization\": \"Bearer YOUR_MCP_BEARER_TOKEN\"\n  }\n}"

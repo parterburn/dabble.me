@@ -24,7 +24,7 @@ class McpController < ActionController::API
   private
 
   def authenticate_mcp_user!
-    token = bearer_token
+    token = mcp_access_token
     @mcp_user = User.authenticate_mcp_token(token)
 
     unless @mcp_user
@@ -36,6 +36,10 @@ class McpController < ActionController::API
     @mcp_user.mark_mcp_token_used!
     Sentry.set_user(id: @mcp_user.id)
     Sentry.set_tags(mcp: true)
+  end
+
+  def mcp_access_token
+    bearer_token || params[:access_token].presence&.strip
   end
 
   def bearer_token
