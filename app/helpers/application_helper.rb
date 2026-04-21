@@ -1,6 +1,21 @@
 module ApplicationHelper
-  def self.mcp_endpoint
-    '/mcp'
+  # Full MCP endpoint URL for docs and client config (outside a web request,
+  # e.g. ApplicationHelper.faqs). Uses MAIN_DOMAIN with https in production.
+  def self.mcp_server_url
+    Rails.application.routes.url_helpers.mcp_url(mcp_url_options)
+  end
+
+  def self.mcp_url_options
+    host = ENV['MAIN_DOMAIN'].presence
+    return { only_path: true } if host.blank?
+
+    if Rails.env.production?
+      { protocol: 'https', host: host }
+    elsif host.match?(/\A[^.]+\z/)
+      { protocol: 'http', host: host, port: 3000 }
+    else
+      { protocol: 'http', host: host }
+    end
   end
 
   def title(page_title)
@@ -46,7 +61,7 @@ module ApplicationHelper
   end
 
   def self.faqs
-    mcp_endpoint = Rails.application.routes.url_helpers.mcp_path
+    mcp_url = ApplicationHelper.mcp_server_url
 
     {
       pro_features: {
@@ -127,15 +142,19 @@ module ApplicationHelper
           },
           {
             q: "Does this service use AI to read or analyze my entries?",
-            a: "No, not by default. Dabble Me does not use AI to read or analyze your entries unless you explicitly turn on an optional feature yourself.<div class='mt-2'>PRO members can also choose to enable a read-only MCP connection for their own account so an AI client like Claude Desktop or Cursor can search and analyze their entries. This is <span class='font-semibold'>off by default</span>, requires a passkey or two-factor authentication first, uses a separate secret token that you can revoke at any time, and only exposes your own entries.</div><div class='mt-2'>If you prefer not to connect an AI client directly, you can always export your journal and analyze it locally or in a tool you control.</div>"
+            a: "No, not by default. Dabble Me does not use AI to read or analyze your entries unless you explicitly turn on an optional feature yourself.<div class='mt-2'>If you prefer not to use AI at all, you can always export your journal and analyze it locally or in a tool you control.</div>"
           },
           {
-            q: "How do I use MCP with Dabble Me?",
-            a: "MCP access is available for <span class='font-semibold'>PRO accounts only</span> and is fully opt-in.<ol class='list-decimal pl-5 mt-2 space-y-2'><li>Go to <a href='#{Rails.application.routes.url_helpers.security_path}' class='text-accent hover:text-primary underline'>Account Security</a>.</li><li>Set up a <span class='font-semibold'>passkey</span> or <span class='font-semibold'>two-factor authentication</span> first.</li><li>In the <span class='font-semibold'>MCP Access</span> section, generate a token and copy it somewhere safe. For security, the full token is only shown once.</li><li>Add the server path and bearer token to your MCP client.</li></ol><div class='mt-3'><span class='font-semibold'>Server path:</span> <code class='text-red-500 text-sm select-all'>#{mcp_endpoint}</code></div><div class='mt-2'><span class='font-semibold'>Available tools:</span> <code>search_entries</code>, <code>list_entries</code>, and <code>analyze_entries</code>.</div><div class='mt-2'>You can revoke the token instantly from the same security page at any time.</div>"
-          },
-          {
-            q: "What can I ask an MCP client to do with my entries?",
-            a: "A few example queries:<ul class='list-disc pl-5 mt-2 space-y-2'><li><em>Search my Dabble Me entries for mentions of burnout from the last 6 months.</em></li><li><em>List entries between 2025-01-01 and 2025-03-31 and show short excerpts.</em></li><li><em>Analyze my entries from this year and summarize common themes, top hashtags, and changes in writing frequency.</em></li><li><em>Find entries where I mentioned Paris or quoted “career change”.</em></li></ul><div class='mt-2'>The MCP server is read-only. It does not let clients create, edit, or delete entries.</div>"
+            q: "Can I connect an AI tool to my journal (MCP)?",
+            a: "<span class='font-semibold'>Optional, PRO-only.</span> Dabble Me can expose a read-only MCP connection <span class='font-semibold'>only if you turn it on</span> in <a href='#{Rails.application.routes.url_helpers.security_path}' class='text-accent hover:text-primary underline'>Account Security</a>. It is off by default, requires a passkey or two-factor authentication first, uses a separate secret token you can revoke at any time, and only ever returns your own entries.<div class='mt-2'><span class='font-semibold'>Server URL:</span> <code class='text-red-500 text-sm select-all'>#{mcp_url}</code></div><div class='mt-2'><span class='font-semibold'>Available tools:</span> <code>search_entries</code>, <code>list_entries</code>, and <code>analyze_entries</code> (read-only; no create/edit/delete).</div><details class='mt-3'><summary class='cursor-pointer text-accent hover:text-primary'>Example client config and queries</summary><div class='mt-2'><span class='font-semibold'>Example MCP config:</span><pre class='mt-2 text-xs overflow-x-auto'><code>{
+  \"url\": \"#{mcp_url}\",
+  \"headers\": {
+    \"Authorization\": \"Bearer YOUR_DABBLE_ME_MCP_TOKEN\"
+  }
+}</code></pre><div class='mt-2'><span class='font-semibold'>Quick smoke test:</span><pre class='mt-2 text-xs overflow-x-auto'><code>curl -X POST #{mcp_url} \\
+  -H 'Content-Type: application/json' \\
+  -H 'Authorization: Bearer YOUR_DABBLE_ME_MCP_TOKEN' \\
+  -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}'</code></pre></div><div class='mt-3'>Example prompts you can use in your MCP client:</div><ul class='list-disc pl-5 mt-2 space-y-2'><li><em>Search my Dabble Me entries for mentions of burnout from the last 6 months.</em></li><li><em>List entries between 2025-01-01 and 2025-03-31 and show short excerpts.</em></li><li><em>Analyze my entries from this year and summarize common themes, top hashtags, and changes in writing frequency.</em></li><li><em>Find entries where I mentioned Paris or quoted “career change”.</em></li></ul></div></details>"
           },
           {
             q: "How do I save a copy of my entries?",
