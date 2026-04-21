@@ -135,7 +135,7 @@
           .mt-2
             %p
               Example MCP config:
-            %pre{style: 'white-space: pre-wrap;'}= "{\n  \"url\": \"#{mcp_server_url}\",\n  \"headers\": {\n    \"Authorization\": \"Bearer YOUR_DABBLE_ME_MCP_TOKEN\"\n  }\n}"
+            %pre{style: 'white-space: pre-wrap;'}= "{\n  \"url\": \"#{mcp_server_url}\",\n  \"headers\": {\n    \"Authorization\": \"Bearer YOUR_MCP_BEARER_TOKEN\"\n  }\n}"
             %p
               Quick smoke test:
-            %pre{style: 'white-space: pre-wrap;'}= "curl -X POST #{mcp_server_url} \\\n  -H 'Content-Type: application/json' \\\n  -H 'Authorization: Bearer YOUR_DABBLE_ME_MCP_TOKEN' \\\n  -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}'"
+            %pre{style: 'white-space: pre-wrap;'}= "curl -X POST #{mcp_server_url} \\\n  -H 'Content-Type: application/json' \\\n  -H 'Authorization: Bearer YOUR_MCP_BEARER_TOKEN' \\\n  -d '{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"tools/list\"}'"
