@@ -9,7 +9,8 @@ llm_text = "I will ask you questions about Dabble Me (https://dabble.me), a priv
 faq_sections.each do |key, section|
   llm_text += "## #{section[:title]}\n\n"
   section[:questions].each do |qa|
-    llm_text += "Q: #{qa[:q]}\nA: #{qa[:a]}\n\n"
+    plain_answer = ActionController::Base.helpers.strip_tags(qa[:a].to_s).squish
+    llm_text += "Q: #{qa[:q]}\nA: #{plain_answer}\n\n"
   end
 end
 llm_text += "---\nFor more help, contact: hello@#{ENV['MAIN_DOMAIN'] || 'dabble.me'}"

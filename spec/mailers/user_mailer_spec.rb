@@ -10,6 +10,7 @@ RSpec.describe UserMailer do
       expect(email.to).to eq([user.email])
       expect(email.subject).to include("MCP access enabled")
       expect(email.body.encoded).to include("Read-only MCP")
+      expect(email.body.encoded).to include("access_token")
       expect(email.body.encoded).to include("six months")
     end
   end

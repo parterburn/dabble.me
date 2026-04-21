@@ -23,15 +23,25 @@
           MCP stays disabled unless your account has stronger login protection.
       - else
         %p
-          MCP is opt-in and read-only. It only exposes your own entries over a bearer token that is shown once when generated.
+          MCP is opt-in and read-only. It only exposes your own entries over a secret token that is shown once when generated.
         %p
           %strong Tokens expire after six months.
           Generate a new token anytime before then (we will email you when a new token is created).
         %p
-          Server URL:
+          %strong Claude custom connectors
+          only accept a server URL (no custom headers). Put your token in the URL as
+          %code access_token=
+          (same value as
+          %code Authorization: Bearer
+          for other clients). See
+          = succeed "." do
+            = link_to "Anthropic’s remote MCP connector guide", ApplicationHelper.claude_remote_mcp_connectors_url, target: "_blank", rel: "noopener noreferrer"
+        %p
+          %strong Base URL (no token)
+          — use in clients that send a Bearer header:
           %code= mcp_server_url
-
         - if flash[:mcp_token].present?
+          - claude_mcp_url = "#{mcp_server_url}?access_token=#{flash[:mcp_token]}"
           .alert.alert-warning.force-links
             %strong Copy this token now.
             It will not be shown again after you leave this page.
@@ -40,6 +50,13 @@
             %div{style: "margin-top: 8px;"}
               %button.btn.btn-default.btn-sm.j-copy-to-clipboard{type: "button", data: { content: flash[:mcp_token] }}
                 Copy token
+            %p{style: "margin-top: 12px; margin-bottom: 4px;"}
+              %strong Claude connector URL
+              (paste this whole line into Claude):
+            %code{style: "word-break: break-all; display: block;"}= claude_mcp_url
+            %div{style: "margin-top: 8px;"}
+              %button.btn.btn-default.btn-sm.j-copy-to-clipboard{type: "button", data: { content: claude_mcp_url }}
+                Copy Claude URL
 
         - if current_user.mcp_available?
           %p

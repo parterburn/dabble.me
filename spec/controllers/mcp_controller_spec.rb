@@ -24,6 +24,16 @@ RSpec.describe McpController, type: :controller do
         paid_user.generate_mcp_token!
       end
 
+      it 'initializes the MCP server with access_token query (Claude-style URL)' do
+        request.env.delete("HTTP_AUTHORIZATION")
+
+        post :create, params: { jsonrpc: "2.0", id: 1, method: "initialize", access_token: token }, as: :json
+
+        expect(response).to have_http_status(:ok)
+        body = JSON.parse(response.body)
+        expect(body.dig("result", "serverInfo", "name")).to eq("dabble-me")
+      end
+
       it 'initializes the MCP server' do
         post :create, params: { jsonrpc: '2.0', id: 1, method: 'initialize' }, as: :json
 
