@@ -1,9 +1,32 @@
 module ApplicationHelper
+  # Full MCP endpoint URL for docs and client config (outside a web request,
+  # e.g. ApplicationHelper.faqs). Host comes from the app’s primary domain env var.
+  def self.mcp_server_url
+    Rails.application.routes.url_helpers.mcp_url(mcp_url_options)
+  end
+
+  def self.primary_domain_env_key
+    %w[MAIN DOMAIN].join("_")
+  end
+
+  def self.mcp_url_options
+    host = ENV[primary_domain_env_key].presence
+    return { only_path: true } if host.blank?
+
+    if Rails.env.production?
+      { protocol: "https", host: host }
+    elsif host.match?(/\A[^.]+\z/)
+      { protocol: "http", host: host, port: 3000 }
+    else
+      { protocol: "http", host: host }
+    end
+  end
+
   def title(page_title)
     content_for(:title) { page_title.to_s }
   end
 
-  def yield_or_default(section, default = '')
+  def yield_or_default(section, default = "")
     content_for?(section) ? content_for(section) : default
   end
 
@@ -42,6 +65,9 @@ module ApplicationHelper
   end
 
   def self.faqs
+    mcp_url = ApplicationHelper.mcp_server_url
+    main_domain = ENV.fetch(primary_domain_env_key, "")
+
     {
       pro_features: {
         title: "Paid Features",
@@ -69,7 +95,7 @@ module ApplicationHelper
           },
           {
             q: "Can I get a refund?",
-            a: "If something doesn’t feel right, email us at #{ActionController::Base.helpers.mail_to("hello@#{ENV['MAIN_DOMAIN']}", "hello@#{ENV['MAIN_DOMAIN']}", subject: "Refund Request", encode: "hex", class: "text-accent hover:text-primary underline")} within 30 days of the charge and we’ll take care of it. Refunds are handled case by case, and we always follow applicable laws."
+            a: "If something doesn’t feel right, email us at #{ActionController::Base.helpers.mail_to("hello@#{main_domain}", "hello@#{main_domain}", subject: "Refund Request", encode: "hex", class: "text-accent hover:text-primary underline")} within 30 days of the charge and we’ll take care of it. Refunds are handled case by case, and we always follow applicable laws."
           },
           {
             q: "What happens to my data if I cancel my subscription?",
@@ -121,7 +147,16 @@ module ApplicationHelper
           },
           {
             q: "Does this service use AI to read or analyze my entries?",
-            a: "No. There is a private beta with built-in AI-powered features, but they are entirely opt-in and turned off by default.<div class='mt-2'>If you'd like to use AI to analyze your entries, you can easily export your full journal (or just part of it) at any time and use it with your own AI tools for analysis or reflection.</div>"
+            a: "No, not by default. Dabble Me does not use AI to read or analyze your entries unless you explicitly turn on an optional feature yourself.<div class='mt-2'>If you prefer not to use AI at all, you can always export your journal and analyze it locally or in a tool you control.</div>"
+          },
+          {
+            q: "Can I connect an AI tool to my journal (MCP)?",
+            a: "<span class='font-semibold'>Optional, PRO-only.</span> Dabble Me can expose a read-only MCP connection <span class='font-semibold'>only if you turn it on</span> on the <code class='text-red-500 text-sm select-all'>#{Rails.application.routes.url_helpers.settings_mcp_path}</code> page (while signed in). It is off by default, requires a passkey or two-factor authentication first, uses a separate secret token you can revoke at any time (tokens expire after six months unless you generate a new one), sends a confirmation email when enabled, and only ever returns your own entries.<div class='mt-2'><span class='font-semibold'>Server URL:</span> <code class='text-red-500 text-sm select-all'>#{mcp_url}</code></div><div class='mt-2'><span class='font-semibold'>Available tools:</span> <code>search_entries</code>, <code>list_entries</code>, and <code>analyze_entries</code> (read-only; no create/edit/delete).</div><div class='mt-3'><span class='font-semibold'>Example MCP config:</span><pre class='mt-2 text-xs overflow-x-auto'><code>{
+  \"url\": \"#{mcp_url}\",
+  \"headers\": {
+    \"Authorization\": \"Bearer YOUR_MCP_BEARER_TOKEN\"
+  }
+}</code></pre><div class='mt-3'>Example prompts you can use in your MCP client:</div><ul class='list-disc pl-5 mt-2 space-y-2'><li><em>Search my Dabble Me entries for mentions of burnout from the last 6 months.</em></li><li><em>List entries between 2025-01-01 and 2025-03-31 and show short excerpts.</em></li><li><em>Analyze my entries from this year and summarize common themes, top hashtags, and changes in writing frequency.</em></li><li><em>Find entries where I mentioned Paris or quoted “career change”.</em></li></ul>"
           },
           {
             q: "How do I save a copy of my entries?",
@@ -149,7 +184,7 @@ module ApplicationHelper
           },
           {
             q: "Who built Dabble Me?",
-            a: "👋 Hi! I'm <a href='https://paularterburn.com/' class='text-accent hover:text-primary underline' target='_blank'>Paul Arterburn</a>. I built and maintain Dabble Me, and I'm also the VP of Engineering at <a href='https://unreasonablegroup.com/' class='text-accent hover:text-primary underline' target='_blank'>Unreasonable Group</a> helping entrepreneurs bend history in the right direction. Previously, I was the technical co-founder of Brandfolder, a digital asset management platform powering some of the biggest brands in the world.<div class='mt-2'>I created Dabble Me primarily for myself as a way to remember and reflect on the days in a format that would actually trigger me to write — over email. Read about why and how I built Dabble Me in a blog post: <a href='https://medium.com/startup-lesson-learned/increase-your-happiness-with-daily-journaling-8109b0700506' class='text-accent hover:text-primary underline' target='_blank'>Increase Your Happiness with Daily Journaling</a>.</div><div class='mt-2'>I built Dabble Me as an experienced developer with privacy and security in mind from the start. It's not a rushed AI side project or a growth experiment. It's independently run, funded by its users for over #{Date.today.year - Date.parse('2014-09-29').year} years, and designed to keep your journal private. No investors. No selling your data. Just a simple, trustworthy place to write. The code is also open-sourced on <a href='https://github.com/parterburn/dabble.me' class='text-accent hover:text-primary underline' target='_blank'>GitHub</a>.</div>"
+            a: "👋 Hi! I'm <a href='https://paularterburn.com/' class='text-accent hover:text-primary underline' target='_blank'>Paul Arterburn</a>. I built and maintain Dabble Me, and I'm also the VP of Engineering at <a href='https://unreasonablegroup.com/' class='text-accent hover:text-primary underline' target='_blank'>Unreasonable Group</a> helping entrepreneurs bend history in the right direction. Previously, I was the technical co-founder of Brandfolder, a digital asset management platform powering some of the biggest brands in the world.<div class='mt-2'>I created Dabble Me primarily for myself as a way to remember and reflect on the days in a format that would actually trigger me to write — over email. Read about why and how I built Dabble Me in a blog post: <a href='https://medium.com/startup-lesson-learned/increase-your-happiness-with-daily-journaling-8109b0700506' class='text-accent hover:text-primary underline' target='_blank'>Increase Your Happiness with Daily Journaling</a>.</div><div class='mt-2'>I built Dabble Me as an experienced developer with privacy and security in mind from the start. It's not a rushed AI side project or a growth experiment. It's independently run, funded by its users for over #{Date.today.year - Date.new(2014, 9, 29).year} years, and designed to keep your journal private. No investors. No selling your data. Just a simple, trustworthy place to write. The code is also open-sourced on <a href='https://github.com/parterburn/dabble.me' class='text-accent hover:text-primary underline' target='_blank'>GitHub</a>.</div>" # pragma: allowlist secret
           }
         ]
       }

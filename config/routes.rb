@@ -15,6 +15,8 @@ Rails.application.routes.draw do
 
   devise_scope :user do
     post "/validate_otp", to: "sessions#validate_otp", as: "validate_otp"
+    post 'security/mcp_token', to: 'registrations#generate_mcp_token', as: 'generate_mcp_token'
+    delete 'security/mcp_token', to: 'registrations#revoke_mcp_token', as: 'revoke_mcp_token'
   end
 
   namespace :passkeys do
@@ -23,6 +25,7 @@ Rails.application.routes.draw do
   end
 
   devise_scope :user do
+    get 'settings/mcp'             => 'registrations#mcp_settings', as: 'settings_mcp'
     get 'settings/(:user_key)'     => 'registrations#settings', as: 'settings'
     get 'security'                 => 'registrations#security', as: 'security'
     match 'unsubscribe/:user_key'  => 'registrations#unsubscribe', as: 'unsubscribe', via: [:put]
@@ -54,6 +57,7 @@ Rails.application.routes.draw do
   get 'privacy',                        to: 'welcome#privacy'
   get 'terms',                          to: 'welcome#terms'
   get 'support',                        to: 'welcome#support'
+  post 'mcp',                           to: 'mcp#create'
 
   # Redirects for old routes
   get 'features',                       to: redirect('/#features')

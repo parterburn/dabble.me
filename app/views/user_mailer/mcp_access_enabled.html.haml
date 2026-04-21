@@ -1,0 +1,21 @@
+%p Hey #{@user.first_name_or_fallback},
+
+%p
+  Read-only MCP access was just enabled for your Dabble Me account (#{@user.email}).
+  If you turned this on, you can ignore this message.
+
+%p
+  MCP connections use a separate bearer token (shown only once when you generate it) and expire after six months unless you generate a new token.
+
+%p
+  If you did not enable MCP,
+  = link_to "sign in", new_user_session_url
+  and revoke access from your
+  = succeed "." do
+    = link_to "MCP settings", settings_mcp_url
+
+%p
+  %br
+  Thanks,
+  %br
+  Dabble Me

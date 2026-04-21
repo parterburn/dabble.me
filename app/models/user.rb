@@ -43,6 +43,7 @@ class User < ActiveRecord::Base
 
   before_save { email&.gsub!(",",".")&.gsub!(".@", "@")&.downcase! }
   before_save { send_timezone.gsub!("&amp;", "&") }
+  before_save :disable_mcp_without_strong_auth
   after_commit on: :update do
     restrict_free_frequency
   end
@@ -105,6 +106,57 @@ class User < ActiveRecord::Base
 
   def can_ai?
     ai_opt_in?
+  end
+
+  MCP_TOKEN_LIFETIME = 6.months
+
+  def mcp_security_requirements_met?
+    otp_enabled? || webauthn_credentials.exists?
+  end
+
+  def mcp_token_expired?
+    return false if mcp_token_digest.blank?
+
+    expires = mcp_token_expires_at
+    return true if expires.blank?
+
+    expires < Time.current
+  end
+
+  def mcp_available?
+    is_pro? && !deletion_pending? && mcp_enabled? && mcp_token_digest.present? &&
+      mcp_security_requirements_met? && !mcp_token_expired?
+  end
+
+  def generate_mcp_token!
+    raise ArgumentError, "MCP access requires a PRO subscription." unless is_pro?
+    raise ArgumentError, "MCP access requires a passkey or two-factor authentication." unless mcp_security_requirements_met?
+
+    raw_token = "dmcp_#{SecureRandom.urlsafe_base64(48)}"
+    now = Time.current
+
+    update!(
+      mcp_enabled: true,
+      mcp_token_digest: self.class.digest_mcp_token(raw_token),
+      mcp_token_generated_at: now,
+      mcp_token_expires_at: now + MCP_TOKEN_LIFETIME
+    )
+
+    raw_token
+  end
+
+  def revoke_mcp_token!
+    update!(
+      mcp_enabled: false,
+      mcp_token_digest: nil,
+      mcp_token_generated_at: nil,
+      mcp_token_expires_at: nil,
+      mcp_last_used_at: nil
+    )
+  end
+
+  def mark_mcp_token_used!
+    update_column(:mcp_last_used_at, Time.current)
   end
 
   def deletion_pending?
@@ -285,6 +337,28 @@ class User < ActiveRecord::Base
     )
   end
 
+  def self.authenticate_mcp_token(raw_token)
+    return nil if raw_token.blank?
+
+    digest = digest_mcp_token(raw_token)
+    user = find_by(mcp_token_digest: digest)
+    return nil unless user
+    return nil unless ActiveSupport::SecurityUtils.secure_compare(user.mcp_token_digest, digest)
+
+    if user.mcp_token_expired?
+      user.revoke_mcp_token!
+      return nil
+    end
+
+    return nil unless user.mcp_available?
+
+    user
+  end
+
+  def self.digest_mcp_token(raw_token)
+    Digest::SHA256.hexdigest(raw_token.to_s)
+  end
+
   private
 
   def restrict_free_frequency
@@ -310,5 +384,16 @@ class User < ActiveRecord::Base
     }
 
     Stripe::Customer.update(stripe_id, params)
+  end
+
+  def disable_mcp_without_strong_auth
+    return unless mcp_enabled?
+    return if is_pro? && mcp_security_requirements_met?
+
+    self.mcp_enabled = false
+    self.mcp_token_digest = nil
+    self.mcp_token_generated_at = nil
+    self.mcp_token_expires_at = nil
+    self.mcp_last_used_at = nil
   end
 end
