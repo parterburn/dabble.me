@@ -24,11 +24,13 @@ class Rack::Attack
     req.ip if req.path == MCP_PATH && req.post?
   end
 
-  throttle('mcp/auth-failures', limit: 10, period: 10.minutes) do |req|
-    req.ip if req.path == MCP_PATH && req.post? && req.env['rack.attack.matched'] == 'mcp/auth_failure'
-  end
+  # Brute-force / leaked-token probing: POST /mcp with a Bearer token (valid shape)
+  throttle('mcp/bearer-auth-attempts/ip', limit: 10, period: 10.minutes) do |req|
+    next unless req.path == MCP_PATH && req.post?
 
-  track('mcp/auth_failure') do |req|
-    req.path == MCP_PATH && req.post?
+    auth = req.env["HTTP_AUTHORIZATION"].to_s
+    next unless auth.match?(/\ABearer\s+\S+/i)
+
+    req.ip
   end
 end

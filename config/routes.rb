@@ -25,6 +25,7 @@ Rails.application.routes.draw do
   end
 
   devise_scope :user do
+    get 'settings/mcp'             => 'registrations#mcp_settings', as: 'settings_mcp'
     get 'settings/(:user_key)'     => 'registrations#settings', as: 'settings'
     get 'security'                 => 'registrations#security', as: 'security'
     match 'unsubscribe/:user_key'  => 'registrations#unsubscribe', as: 'unsubscribe', via: [:put]

@@ -15,7 +15,7 @@ RSpec.describe "MCP security routes", type: :request do
   it "posts to the MCP token generation route successfully" do
     post generate_mcp_token_path, params: { user: { current_password: user.password } }
 
-    expect(response).to redirect_to(security_path)
+    expect(response).to redirect_to(settings_mcp_path)
     expect(flash[:mcp_token]).to start_with("dmcp_")
     expect(user.reload.mcp_enabled).to eq(true)
   end

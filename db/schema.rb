@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2026_04_20_120000) do
+ActiveRecord::Schema.define(version: 2026_04_21_120000) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -120,6 +120,7 @@ ActiveRecord::Schema.define(version: 2026_04_20_120000) do
     t.string "mcp_token_digest"
     t.datetime "mcp_token_generated_at"
     t.datetime "mcp_last_used_at"
+    t.datetime "mcp_token_expires_at"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["mcp_token_digest"], name: "index_users_on_mcp_token_digest", unique: true, where: "(mcp_token_digest IS NOT NULL)"
     t.index ["otp_challenge_expires"], name: "index_users_on_otp_challenge_expires"
