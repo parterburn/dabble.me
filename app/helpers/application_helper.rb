@@ -1,25 +1,11 @@
-require "json"
-
 module ApplicationHelper
   # Anthropic docs: remote MCP / custom connectors (URL + optional OAuth in UI).
   def self.claude_remote_mcp_connectors_url
     "https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp"
   end
 
-  def self.mcp_settings_link(href, css_classes)
-    %(<a href="#{ERB::Util.html_escape(href)}" class="#{ERB::Util.html_escape(css_classes)}">MCP settings</a>)
-  end
-
-  def self.mcp_security_link(href, css_classes)
-    %(<a href="#{ERB::Util.html_escape(href)}" class="#{ERB::Util.html_escape(css_classes)}">Account security</a>)
-  end
-
-  def self.mcp_account_settings_link(href, css_classes)
-    %(<a href="#{ERB::Util.html_escape(href)}" class="#{ERB::Util.html_escape(css_classes)}">Account settings</a>)
-  end
-
-  # Full MCP endpoint URL for docs and client config (outside a web request,
-  # e.g. ApplicationHelper.faqs). Host comes from the app’s primary domain env var.
+  # Full MCP endpoint URL for docs and client config (outside a web request).
+  # Host comes from the app’s primary domain env var.
   def self.mcp_server_url
     Rails.application.routes.url_helpers.mcp_url(mcp_url_options)
   end
@@ -84,47 +70,7 @@ module ApplicationHelper
   end
 
   def self.faqs
-    mcp_url = ApplicationHelper.mcp_server_url
-    url_opts = ApplicationHelper.mcp_url_options
-    rh = Rails.application.routes.url_helpers
-    settings_mcp_href = url_opts[:only_path] ? rh.settings_mcp_path : rh.settings_mcp_url(url_opts)
-    security_href = url_opts[:only_path] ? rh.security_path : rh.security_url(url_opts)
-    link_class = "text-accent hover:text-primary underline"
-    code_class = "text-sm font-mono break-all rounded bg-muted/30 px-1.5 py-0.5"
     main_domain = ENV.fetch(primary_domain_env_key, "")
-
-    mcp_json_example = JSON.pretty_generate(
-      "url" => mcp_url,
-      "headers" => { "Authorization" => "Bearer YOUR_MCP_BEARER_TOKEN" }
-    )
-    mcp_claude_example_url = "#{mcp_url}?access_token=YOUR_MCP_BEARER_TOKEN"
-    account_settings_href = url_opts[:only_path] ? rh.edit_user_registration_path : rh.edit_user_registration_url(url_opts)
-
-    mcp_faq_answer = +<<~HTML
-      <p><span class="font-semibold">Optional, PRO-only.</span>
-      Dabble Me can expose a read-only MCP connection <span class="font-semibold">only if you turn it on</span>
-      from #{mcp_settings_link(settings_mcp_href, link_class)} (while signed in), after you enable a passkey or two-factor authentication under
-      #{mcp_security_link(security_href, link_class)}.
-      You can open #{mcp_account_settings_link(account_settings_href, link_class)} any time to change your email or password.
-      It is off by default, uses a secret token you can revoke at any time (tokens expire after six months unless you generate a new one),
-      sends a confirmation email when enabled, and only ever returns your own entries.</p>
-      <p class="mt-2"><span class="font-semibold">Claude custom connectors:</span>
-      Claude only asks for a server URL—no custom headers—so put your token in the URL as a query parameter (this is the same secret as the <code class="#{code_class}">Authorization: Bearer</code> value for other clients):</p>
-      <p class="mt-2"><code class="#{code_class}">#{ERB::Util.html_escape(mcp_claude_example_url)}</code></p>
-      <p class="mt-2 text-sm text-muted">See Anthropic’s guide: <a href="#{ERB::Util.html_escape(claude_remote_mcp_connectors_url)}" class="#{link_class}" rel="noopener noreferrer" target="_blank">Get started with custom connectors using remote MCP</a>.</p>
-      <p class="mt-2"><span class="font-semibold">Other MCP clients (header auth):</span></p>
-      <pre class="mt-2 text-xs overflow-x-auto rounded-md bg-muted/20 p-3"><code>#{ERB::Util.html_escape(mcp_json_example)}</code></pre>
-      <p class="mt-2"><span class="font-semibold">Server URL (no token):</span> <code class="#{code_class}">#{ERB::Util.html_escape(mcp_url)}</code></p>
-      <p class="mt-2"><span class="font-semibold">Available tools:</span>
-      <code class="#{code_class}">search_entries</code>, <code class="#{code_class}">list_entries</code>, and <code class="#{code_class}">analyze_entries</code> (read-only; no create/edit/delete).</p>
-      <p class="mt-3 font-semibold">Example prompts you can use in your MCP client:</p>
-      <ul class="list-disc pl-5 mt-2 space-y-2">
-        <li><em>Search my Dabble Me entries for mentions of burnout from the last 6 months.</em></li>
-        <li><em>List entries between 2025-01-01 and 2025-03-31 and show short excerpts.</em></li>
-        <li><em>Analyze my entries from this year and summarize common themes, top hashtags, and changes in writing frequency.</em></li>
-        <li><em>Find entries where I mentioned Paris or quoted “career change”.</em></li>
-      </ul>
-    HTML
 
     {
       pro_features: {
@@ -206,10 +152,6 @@ module ApplicationHelper
           {
             q: "Does this service use AI to read or analyze my entries?",
             a: "No, not by default. Dabble Me does not use AI to read or analyze your entries unless you explicitly turn on an optional feature yourself.<div class='mt-2'>If you prefer not to use AI at all, you can always export your journal and analyze it locally or in a tool you control.</div>"
-          },
-          {
-            q: "Can I connect an AI tool to my journal (MCP)?",
-            a: mcp_faq_answer
           },
           {
             q: "How do I save a copy of my entries?",
