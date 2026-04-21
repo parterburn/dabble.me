@@ -108,24 +108,38 @@ class User < ActiveRecord::Base
     ai_opt_in?
   end
 
+  MCP_TOKEN_LIFETIME = 6.months
+
   def mcp_security_requirements_met?
     otp_enabled? || webauthn_credentials.exists?
   end
 
+  def mcp_token_expired?
+    return false if mcp_token_digest.blank?
+
+    expires = mcp_token_expires_at
+    return true if expires.blank?
+
+    expires < Time.current
+  end
+
   def mcp_available?
-    is_pro? && !deletion_pending? && mcp_enabled? && mcp_token_digest.present? && mcp_security_requirements_met?
+    is_pro? && !deletion_pending? && mcp_enabled? && mcp_token_digest.present? &&
+      mcp_security_requirements_met? && !mcp_token_expired?
   end
 
   def generate_mcp_token!
-    raise ArgumentError, 'MCP access requires a PRO subscription.' unless is_pro?
-    raise ArgumentError, 'MCP access requires a passkey or two-factor authentication.' unless mcp_security_requirements_met?
+    raise ArgumentError, "MCP access requires a PRO subscription." unless is_pro?
+    raise ArgumentError, "MCP access requires a passkey or two-factor authentication." unless mcp_security_requirements_met?
 
     raw_token = "dmcp_#{SecureRandom.urlsafe_base64(48)}"
+    now = Time.current
 
     update!(
       mcp_enabled: true,
       mcp_token_digest: self.class.digest_mcp_token(raw_token),
-      mcp_token_generated_at: Time.current
+      mcp_token_generated_at: now,
+      mcp_token_expires_at: now + MCP_TOKEN_LIFETIME
     )
 
     raw_token
@@ -136,6 +150,7 @@ class User < ActiveRecord::Base
       mcp_enabled: false,
       mcp_token_digest: nil,
       mcp_token_generated_at: nil,
+      mcp_token_expires_at: nil,
       mcp_last_used_at: nil
     )
   end
@@ -327,8 +342,15 @@ class User < ActiveRecord::Base
 
     digest = digest_mcp_token(raw_token)
     user = find_by(mcp_token_digest: digest)
-    return nil unless user&.mcp_available?
+    return nil unless user
     return nil unless ActiveSupport::SecurityUtils.secure_compare(user.mcp_token_digest, digest)
+
+    if user.mcp_token_expired?
+      user.revoke_mcp_token!
+      return nil
+    end
+
+    return nil unless user.mcp_available?
 
     user
   end
@@ -371,6 +393,7 @@ class User < ActiveRecord::Base
     self.mcp_enabled = false
     self.mcp_token_digest = nil
     self.mcp_token_generated_at = nil
+    self.mcp_token_expires_at = nil
     self.mcp_last_used_at = nil
   end
 end

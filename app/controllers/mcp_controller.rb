@@ -28,7 +28,6 @@ class McpController < ActionController::API
     @mcp_user = User.authenticate_mcp_token(token)
 
     unless @mcp_user
-      request.env['mcp.auth_failure'] = true
       response.set_header('WWW-Authenticate', 'Bearer realm="Dabble Me MCP"')
       render json: { jsonrpc: '2.0', id: params[:id], error: { code: -32001, message: 'Unauthorized' } }, status: :unauthorized
       return

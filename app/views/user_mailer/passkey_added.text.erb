@@ -1,0 +1,10 @@
+Hey <%= @user.first_name_or_fallback %>,
+
+A new passkey ("<%= @nickname %>") was added to your Dabble Me account (<%= @user.email %>). If this was you, you can ignore this message.
+
+If you did not add this passkey, change your password and remove the passkey from Account Security right away:
+<%= edit_user_registration_url %>
+<%= security_url %>
+
+Thanks,
+Dabble Me

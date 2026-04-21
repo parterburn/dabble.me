@@ -25,6 +25,9 @@
         %p
           MCP is opt-in and read-only. It only exposes your own entries over a bearer token that is shown once when generated.
         %p
+          %strong Tokens expire after six months.
+          Generate a new token anytime before then (we will email you when a new token is created).
+        %p
           Server URL:
           %code= mcp_server_url
 
@@ -50,6 +53,10 @@
               %br
               Token created:
               = current_user.mcp_token_generated_at.strftime("%b %-d, %Y at %-l:%M %p %Z")
+            - if current_user.mcp_token_expires_at.present?
+              %br
+              Token expires:
+              = current_user.mcp_token_expires_at.strftime("%b %-d, %Y at %-l:%M %p %Z")
         - else
           %p
             Status:

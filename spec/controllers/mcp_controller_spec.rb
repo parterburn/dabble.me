@@ -1,7 +1,8 @@
-require 'rails_helper'
+require "rails_helper"
 
 RSpec.describe McpController, type: :controller do
-  include_context 'has all objects'
+  include ActiveSupport::Testing::TimeHelpers
+  include_context "has all objects"
 
   before do
     request.env['HTTP_AUTHORIZATION'] = "Bearer #{token}" if defined?(token)
@@ -89,6 +90,26 @@ RSpec.describe McpController, type: :controller do
         post :create, params: { jsonrpc: '2.0', id: 4, method: 'initialize' }, as: :json
 
         expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context 'when the MCP token has expired' do
+      let(:token) do
+        travel_to(Time.zone.local(2025, 1, 1, 12, 0, 0)) do
+          paid_user.generate_otp_secret
+          paid_user.update!(otp_enabled: true, otp_enabled_on: Time.current)
+          paid_user.generate_mcp_token!
+        end
+      end
+
+      it 'rejects the request and revokes stored credentials' do
+        travel_to(Time.zone.local(2025, 8, 1, 12, 0, 0)) do
+          post :create, params: { jsonrpc: '2.0', id: 5, method: 'initialize' }, as: :json
+        end
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(paid_user.reload.mcp_token_digest).to be_blank
+        expect(paid_user.mcp_enabled).to eq(false)
       end
     end
   end

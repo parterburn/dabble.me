@@ -181,14 +181,19 @@ RSpec.describe RegistrationsController, type: :controller do
     it 'generates an MCP token once stronger account security is enabled' do
       paid_user.update!(otp_enabled: true, otp_enabled_on: Time.current)
 
-      post :generate_mcp_token, params: { user: { current_password: paid_user.password } }
+      expect do
+        post :generate_mcp_token, params: { user: { current_password: paid_user.password } }
+      end.to change { ActionMailer::Base.deliveries.count }.by(1)
 
       expect(response.status).to eq 302
       expect(response).to redirect_to(settings_mcp_url)
       expect(flash[:notice]).to include("will not be shown again")
+      expect(flash[:notice]).to include("six months")
       expect(flash[:mcp_token]).to start_with("dmcp_")
       expect(paid_user.reload.mcp_enabled).to eq(true)
       expect(paid_user.mcp_token_digest).to be_present
+      expect(paid_user.mcp_token_expires_at).to be_within(2.seconds).of(Time.current + User::MCP_TOKEN_LIFETIME)
+      expect(ActionMailer::Base.deliveries.last.subject).to include("MCP access enabled")
     end
 
     it 'revokes MCP access' do

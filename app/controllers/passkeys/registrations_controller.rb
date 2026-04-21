@@ -37,6 +37,7 @@ class Passkeys::RegistrationsController < ApplicationController
       )
 
       if credential.save
+        UserMailer.passkey_added(current_user, credential.nickname).deliver_later
         render json: { status: "ok" }, status: :ok
       else
         render json: { errors: credential.errors.full_messages }, status: :unprocessable_entity

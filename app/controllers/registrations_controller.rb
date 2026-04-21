@@ -93,7 +93,8 @@ class RegistrationsController < Devise::RegistrationsController
     end
 
     token = current_user.generate_mcp_token!
-    flash[:notice] = "MCP access is enabled. Copy this token now; it will not be shown again."
+    UserMailer.mcp_access_enabled(current_user).deliver_later
+    flash[:notice] = "MCP access is enabled. Copy this token now; it will not be shown again. Tokens expire after six months; generate a new one anytime before then."
     flash[:mcp_token] = token
     redirect_to settings_mcp_path
   rescue ArgumentError => e
