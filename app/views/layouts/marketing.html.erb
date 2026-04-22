@@ -3,6 +3,10 @@
   <head>
     <title><%= yield(:title).present? ? "#{yield(:title)} — Dabble me." : "Dabble me. Private email journaling & daily reflection." %></title>
     <meta charset="utf-8">
+    <%# Defer fragment scroll until marketing.js expands accordions + scrolls with scroll-padding-top %>
+    <script>
+      (function(){var h=location.hash;if(!h||h==="#")return;history.replaceState(null,"",location.pathname+location.search);window.__marketingPendingHash=h;})();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <%= csrf_meta_tags %>

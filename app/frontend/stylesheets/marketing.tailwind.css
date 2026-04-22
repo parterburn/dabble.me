@@ -117,6 +117,8 @@
   html {
     font-family: var(--font-sans);
     scroll-behavior: smooth;
+    /* Fragment links + scrollIntoView respect this for the fixed marketing navbar */
+    scroll-padding-top: 100px;
   }
 
   body {
