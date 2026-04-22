@@ -10,7 +10,7 @@
 <div class="row">
   <div class="col-md-8 col-md-offset-2">
     <% if current_user.is_pro? %>
-      <div class="alert alert-info force-links">
+      <div class="alert alert-info force-links" style="margin-bottom: 0;">
         Thanks for subscribing to
         <%= link_to(current_user.plan_name, subscribe_path, class: "alert-link") %>.
         <% if current_user.plan_type_unlinked.present? %>

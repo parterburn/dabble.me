@@ -1,24 +1,22 @@
-- if @oauth_applications.present?
-  - date_fmt = t("doorkeeper.authorized_applications.index.date_format", default: "%Y-%m-%d %H:%M:%S")
-  .well#connected-apps{style: "background-color: #E8E8E2; padding: 15px 20px; margin-top: 10px;"}
-    %h4{style: "margin-top: 0;"} Connected apps
+.col-md-8.col-md-offset-2
+  %label{style: 'margin-bottom: 10px;'} Connected Apps
+  - if @oauth_applications.any?
     %p.small.text-muted{style: "margin-bottom: 12px;"}
       These tools can call Dabble Me on your behalf until you revoke them.
     .table-responsive
-      %table.table.table-striped{style: "margin-bottom: 0;"}
+      %table.table
         %thead
           %tr
-            %th= t("doorkeeper.authorized_applications.index.application")
-            %th= t("doorkeeper.authorized_applications.index.created_at")
+            %th Application
+            %th Added
             %th
         %tbody
           - @oauth_applications.each do |application|
             %tr
               %td= application.name
-              %td= application.created_at.strftime(date_fmt)
+              %td= application.created_at.strftime("%b %d, %Y")
               %td.text-right
-                = button_to t("doorkeeper.authorized_applications.buttons.revoke"),
-                    oauth_authorized_application_path(application),
-                    method: :delete,
-                    class: "btn btn-default btn-sm",
-                    data: { confirm: t("doorkeeper.authorized_applications.confirmations.revoke") }
+                = link_to "Remove",oauth_authorized_application_path(application), method: :delete, data: { confirm: "Are you sure?" }, class: "text-danger"
+  - else
+    %p.text-muted{style: "margin-bottom: 12px;"}
+      Connect to apps like Claude by adding a #{link_to "Custom MCP connector", support_path(anchor: "mcp"), class: "text-accent hover:text-primary underline font-semibold"}.

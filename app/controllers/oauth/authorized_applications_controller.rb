@@ -20,7 +20,7 @@ module Oauth
 
       respond_to do |format|
         format.html do
-          redirect_to security_path, notice: I18n.t(
+          redirect_to security_path(anchor: "connected-apps"), notice: I18n.t(
             :notice,
             scope: %i[doorkeeper flash authorized_applications destroy]
           )

@@ -40,6 +40,7 @@ Rails.application.routes.draw do
 
   devise_scope :user do
     get 'settings/mcp', to: redirect { |_params, req| "#{req.protocol}#{req.host_with_port}/support#mcp" }
+    get 'settings/delete-account'  => 'registrations#delete_account', as: 'delete_account'
     get 'settings/(:user_key)'     => 'registrations#settings', as: 'settings'
     get 'security'                 => 'registrations#security', as: 'security'
     match 'unsubscribe/:user_key'  => 'registrations#unsubscribe', as: 'unsubscribe', via: [:put]

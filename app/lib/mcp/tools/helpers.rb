@@ -21,7 +21,7 @@ module Mcp
         MCP::Tool::Response.new(
           [{
             type: 'text',
-            text: 'Dabble Me MCP requires PRO, a passkey or two-factor authentication, and an active account.'
+            text: 'The Dabble Me connector requires a paid Dabble Me PRO account, and either a passkey or two-factor authentication setup on the Account Security page.'
           }],
           error: true
         )

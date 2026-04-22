@@ -3,6 +3,15 @@ require 'rails_helper'
 describe User do
   let(:user) { User.create(email: Faker::Internet.email, password: Faker::Internet.password(min_length: 8), first_name: Faker::Name.first_name, last_name: Faker::Name.last_name) }
 
+  let(:doorkeeper_app) do
+    Doorkeeper::Application.find_or_create_by!(uid: 'rspec-oauth-app') do |a|
+      a.name = 'RSpec OAuth'
+      a.redirect_uri = 'http://127.0.0.1/cb'
+      a.scopes = 'mcp:access'
+      a.confidential = false
+    end
+  end
+
   before :each do
     user.entries.create(body: "hi.", date: 2.days.ago)
     user.entries.create(body: "hi.", date: 3.days.ago)
@@ -72,5 +81,46 @@ describe User do
       expect(user.random_entry(entry_date).date.year).not_to eq(2015)
     end
 
+  end
+
+  describe 'Doorkeeper OAuth when downgrading from PRO' do
+    it 'revokes access tokens and grants when plan changes from PRO to Free' do
+      u = FactoryBot.create(:user, plan: 'PRO Monthly PayHere', payhere_id: '999', gumroad_id: '999999999999')
+      token = Doorkeeper::AccessToken.create!(
+        resource_owner_id: u.id,
+        application_id: doorkeeper_app.id,
+        scopes: 'mcp:access',
+        expires_in: 7200
+      )
+      grant = Doorkeeper::AccessGrant.create!(
+        resource_owner_id: u.id,
+        application_id: doorkeeper_app.id,
+        token: SecureRandom.hex(32),
+        expires_in: 600,
+        redirect_uri: 'http://127.0.0.1/cb',
+        scopes: 'mcp:access',
+        created_at: Time.current
+      )
+      expect(token.reload.revoked_at).to be_nil
+      expect(grant.reload.revoked_at).to be_nil
+
+      u.update!(plan: 'Free')
+
+      expect(token.reload.revoked_at).to be_present
+      expect(grant.reload.revoked_at).to be_present
+    end
+
+    it 'does not revoke when changing between PRO plans' do
+      u = FactoryBot.create(:user, plan: 'PRO Monthly PayHere', payhere_id: '999', gumroad_id: '999999999999')
+      token = Doorkeeper::AccessToken.create!(
+        resource_owner_id: u.id,
+        application_id: doorkeeper_app.id,
+        scopes: 'mcp:access',
+        expires_in: 7200
+      )
+      u.update!(plan: 'PRO Yearly PayHere', payhere_id: '999')
+
+      expect(token.reload.revoked_at).to be_nil
+    end
   end
 end

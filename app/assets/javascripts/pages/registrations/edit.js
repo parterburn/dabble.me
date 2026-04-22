@@ -1,5 +1,5 @@
 (function(){
-  window.DABBLE.pages.Registrations_security = window.DABBLE.pages.Registrations_settings = window.DABBLE.pages.Registrations_edit = window.DABBLE.pages.Registrations_update = function(){
+    window.DABBLE.pages.Registrations_delete_account = window.DABBLE.pages.Registrations_security = window.DABBLE.pages.Registrations_settings = window.DABBLE.pages.Registrations_edit = window.DABBLE.pages.Registrations_update = function(){
 
     $(".j-delete-user, .j-edit-security").on({
       click: function(e){

@@ -161,6 +161,62 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(user.reload.frequency).to eq ['Sun']
       expect(user.full_name).to eq "Testy O'tester"
     end
+
+    it 'redirects legacy delete-account submit to the dedicated page' do
+      sign_in user
+      post :update, params: {
+        submit_method: "delete account",
+        user: { current_password: user.password }
+      }
+      expect(response).to redirect_to(delete_account_url)
+      expect(flash[:alert]).to include("moved")
+    end
+  end
+
+  describe "delete_account" do
+    it "redirects when not signed in" do
+      get :delete_account
+      expect(response).to redirect_to(new_user_session_url)
+    end
+
+    it "renders when signed in" do
+      sign_in user
+      get :delete_account
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include("Delete your account")
+    end
+  end
+
+  describe "destroy" do
+    around do |example|
+      previous_adapter = ActiveJob::Base.queue_adapter
+      ActiveJob::Base.queue_adapter = :test
+      example.run
+      ActiveJob::Base.queue_adapter = previous_adapter
+    end
+
+    it "redirects when not signed in" do
+      delete :destroy, params: { user: { current_password: "anything" } }
+      expect(response).to redirect_to(new_user_session_url)
+    end
+
+    it "rejects wrong password" do
+      sign_in user
+      expect do
+        delete :destroy, params: { user: { current_password: "wrong-password" } }
+      end.not_to(change { user.reload.deleted_at })
+      expect(response).to redirect_to(delete_account_url)
+      expect(flash[:alert]).to eq("Incorrect current password.")
+    end
+
+    it "schedules deletion with correct password" do
+      sign_in user
+      expect do
+        delete :destroy, params: { user: { current_password: user.password } }
+      end.to have_enqueued_job(DeleteUserJob).with(user.id)
+      expect(user.reload.deleted_at).to be_present
+      expect(response).to redirect_to(root_path)
+    end
   end
 
   describe 'creating a user' do

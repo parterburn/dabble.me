@@ -1,7 +1,7 @@
 # Devise Override Controller
 class RegistrationsController < Devise::RegistrationsController
   layout :choose_layout
-  before_action :require_user, only: [:security, :update, :edit]
+  before_action :require_user, only: [:security, :delete_account, :update, :edit]
   prepend_before_action :check_captcha, only: [:create]
 
   def edit
@@ -18,14 +18,7 @@ class RegistrationsController < Devise::RegistrationsController
 
   def update
     if params[:submit_method] == "delete account"
-      if current_user.valid_password?(params[:user][:current_password])
-        schedule_user_deletion
-        sign_out current_user
-        redirect_to root_path, notice: "Your account will be permanently deleted in 1 hour. Contact support if you change your mind: hello@#{ENV['MAIN_DOMAIN']}"
-      else
-        flash[:alert] = "Incorrect current password."
-        redirect_back(fallback_location: security_path)
-      end
+      redirect_to delete_account_path, alert: "Account deletion has moved. Use the delete page to continue."
     else # updating
       if params[:frequency].present?
         user.frequency = params[:frequency].select { |day, value| value == "1" }.keys.map { |day| day[0..2] }
@@ -73,8 +66,12 @@ class RegistrationsController < Devise::RegistrationsController
       redirect_to root_path, notice: "Your account will be permanently deleted in 1 hour. Contact support if you change your mind: hello@#{ENV['MAIN_DOMAIN']}"
     else
       flash[:alert] = "Incorrect current password."
-      redirect_back(fallback_location: security_path)
+      redirect_to delete_account_path
     end
+  end
+
+  def delete_account
+    render "devise/registrations/delete_account"
   end
 
   def security

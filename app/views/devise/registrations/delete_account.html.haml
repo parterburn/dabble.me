@@ -1,0 +1,45 @@
+- title "Delete account — Dabble me."
+- entry_count = current_user.entries.count
+- pro_cancel_warning = current_user.is_pro? && (current_user.plan_type_unlinked != "Stripe" || current_user.stripe_id.blank?)
+
+.row
+  .col-md-8.col-md-offset-2
+    %h3 DELETE YOUR ACCOUNT
+    %p.lead{style: "margin-bottom: 1rem;"}
+      This cannot be undone. Your account and
+      %span{style: "font-weight: 500;"}= pluralize(entry_count, "journal entry")
+      will be permanently deleted.
+    %p.lead
+      Before deleting your account, you can export your entries as 
+      %strong= link_to "TXT", export_entries_path(:txt), style: "text-decoration: underline;"
+      (plain text)
+      or
+      %strong= link_to "JSON", export_entries_path(:json), style: "text-decoration: underline;"
+      (rich formatting).
+      - if current_user.is_pro? && current_user.entries.only_images.any?
+        Export a
+        %strong
+          = link_to "list of your Image URLs", export_entries_path(:txt, only_images: true), style: "text-decoration: underline;"
+          \.
+        You can use a script or app to download these to your computer.
+
+    - if pro_cancel_warning
+      .alert.alert-warning
+        You will need to cancel your paid subscription separately at
+        %strong= current_user.plan_type_unlinked
+        if billing is active there.      
+
+    = form_for(current_user, as: :user, url: user_registration_path, html: { method: :delete }) do |f|
+      .well{style: "background-color: #E8E8E2; padding: 15px 20px; margin-top: 1rem;"}
+        = f.label :current_password, "Type your current password to confirm"
+        = f.password_field :current_password, autocomplete: "current-password", class: "form-control", required: true
+
+      .checkbox{style: "margin-top: 1rem;"}
+        %label
+          = check_box_tag :account_deletion_ack, "1", false, required: true
+          I understand my account and #{pluralize(entry_count, "entry")} will be permanently deleted.
+
+      = f.submit "Permanently delete my account", class: "btn btn-danger btn-block j-delete-user", style: "margin-top: 1rem;", data: { confirm: "Last chance: delete this account and #{pluralize(entry_count, 'entry')}? This cannot be undone." }
+
+    %p{style: "margin-top: 1.5rem;"}
+      = link_to "← Back to Account security", security_path, class: "text-muted"

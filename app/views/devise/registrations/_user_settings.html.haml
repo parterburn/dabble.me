@@ -26,7 +26,8 @@
           %span<> Visit
           = link_to "Account Security", security_path, class: "s-delete", style: "opacity: 100%;margin-left: 5px;"
           to change your email, password,
-          =link_to("setup a passkey", security_path, class: "s-delete", style: "opacity: 100%;") + ", or delete your account."
+          = link_to("setup a passkey", security_path, class: "s-delete", style: "opacity: 100%;") + ", or "
+          = link_to("delete your account", delete_account_path, class: "s-delete", style: "opacity: 100%;") + "."
       %br
 
   .col-md-8.col-md-offset-2
@@ -110,6 +111,6 @@
   - else
     .col-md-12.center
       %br
-      = link_to "Delete Account", security_path, class: "s-delete"
+      = link_to "Delete Account", delete_account_path, class: "s-delete"
 
   .clearfix

@@ -19,7 +19,8 @@ Doorkeeper.configure do
   end
 
   authorization_code_expires_in 10.minutes
-  access_token_expires_in 2.hours
+  # MCP / OAuth access tokens (refresh_token remains available for renewal).
+  access_token_expires_in 3.months
 
   force_pkce
   pkce_code_challenge_methods ['S256']

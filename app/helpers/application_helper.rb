@@ -221,7 +221,7 @@ module ApplicationHelper
           },
           {
             q: "What happens to my data if I delete my account?",
-            a: "<div class='mt-2'>If you <em>delete</em> your account, all of your entries and your account data will be permanently deleted from active systems within a reasonable period, subject to backup retention and legal requirements.</div><div class='mt-2'>You can export your data at any time from the <a href='#{Rails.application.routes.url_helpers.settings_path(anchor: 'export')}' class='text-accent hover:text-primary underline'>settings page</a>.</div>"
+            a: "<div class='mt-2'>If you <em>delete</em> your account, all of your entries and your account data will be permanently deleted from active systems within a reasonable period, subject to backup retention and legal requirements.</div><div class='mt-2'>Delete your account <a href='#{Rails.application.routes.url_helpers.delete_account_path}' class='text-accent hover:text-primary underline'>here</a>.</div><div class='mt-2'>You can export your data at any time from the <a href='#{Rails.application.routes.url_helpers.settings_path(anchor: 'export')}' class='text-accent hover:text-primary underline'>settings page</a>.</div>"
           },
           {
             q: "I'm new and didn't get my scheduled email. How come?",

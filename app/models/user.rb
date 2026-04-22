@@ -40,6 +40,7 @@ class User < ActiveRecord::Base
   scope :referrals, -> { where("referrer IS NOT null") }
 
   after_commit :notify_stripe
+  after_update :revoke_doorkeeper_oauth_if_downgraded_from_pro
 
   before_save { email&.gsub!(",",".")&.gsub!(".@", "@")&.downcase! }
   before_save { send_timezone.gsub!("&amp;", "&") }
@@ -111,9 +112,11 @@ class User < ActiveRecord::Base
     otp_enabled? || webauthn_credentials.exists?
   end
 
-  # OAuth MCP tokens (Doorkeeper). Call when the user loses passkey/2FA so MCP access cannot continue.
+  # OAuth MCP tokens and in-flight auth codes (Doorkeeper). Call when the user loses passkey/2FA or PRO access.
   def revoke_doorkeeper_access_tokens!
-    Doorkeeper::AccessToken.where(resource_owner_id: id, revoked_at: nil).update_all(revoked_at: Time.current.utc)
+    now = Time.current.utc
+    Doorkeeper::AccessToken.where(resource_owner_id: id, revoked_at: nil).update_all(revoked_at: now)
+    Doorkeeper::AccessGrant.where(resource_owner_id: id, revoked_at: nil).update_all(revoked_at: now)
   end
 
   def deletion_pending?
@@ -319,6 +322,17 @@ class User < ActiveRecord::Base
     }
 
     Stripe::Customer.update(stripe_id, params)
+  end
+
+  def revoke_doorkeeper_oauth_if_downgraded_from_pro
+    return unless saved_change_to_plan?
+
+    previous_plan = plan_before_last_save.to_s
+    current_plan = plan.to_s
+    return unless previous_plan.match?(/pro/i)
+    return if current_plan.match?(/pro/i)
+
+    revoke_doorkeeper_access_tokens!
   end
 
 end
