@@ -16,7 +16,8 @@ module Mcp
       end
 
       def journal_access_response(user)
-        return nil if user.is_pro? && user.mcp_security_requirements_met? && !user.deletion_pending?
+        # return nil if user.is_pro? && user.mcp_security_requirements_met? && !user.deletion_pending?
+        return nil if user.is_pro? && !user.deletion_pending?
 
         MCP::Tool::Response.new(
           [{
