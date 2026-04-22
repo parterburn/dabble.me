@@ -320,7 +320,10 @@ mark {
   color: #474739;
   margin-bottom: 20px;
   padding: 7px;
-  border-radius: 0px;
+  border-top-left-radius: 10px;
+  border-top-right-radius: 10px;
+  border-bottom-left-radius: 0px;
+  border-bottom-right-radius: 0px;
 }
 
 .s-year-in-review {
@@ -386,6 +389,8 @@ mark {
   overflow-wrap: break-word;
   word-wrap: break-word;
   word-break: break-word;
+  border-bottom-left-radius: 12px;
+  border-bottom-right-radius: 12px;
   p {
     // font-family: Georgia,Cambria,"Times New Roman",Times,serif;
     // font-weight: 400;
@@ -430,7 +435,11 @@ mark {
 
 .entry.well {
   padding: 0px;
-  box-shadow: none;
+  // box-shadow: none;
+  img {
+    border-bottom-left-radius: 12px;
+    border-bottom-right-radius: 12px;
+  }
   p:last-child {
     margin-bottom: 0px;
   }

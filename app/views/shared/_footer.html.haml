@@ -2,6 +2,7 @@
   .container
     %hr
     .flex
+      - two_factor_marketing = user_signed_in? && !(current_user.otp_enabled? || current_user.webauthn_credentials.any?) && current_user.created_at < 1.day.ago && Date.today.between?(Date.parse("2024-01-15"), Date.parse("2024-02-15"))
       %div{style: "flex: none;"}
         %p.muted.float-left
           =link_to "Features", root_path(s: 0, anchor: "features"), title: "Features", style: "font-size: 15px;"
@@ -14,12 +15,12 @@
           -if current_user && current_user.is_free?
             &nbsp;&middot;&nbsp;
             =link_to "Subscribe to Pro", subscribe_path, title: "Subscribe Now", style: "font-size: 15px;"
-      %div.muted{style: "font-size: 13px; flex: 1 1 0%;text-align: center;margin-bottom: 10px;"}
-        - two_factor_marketing = user_signed_in? && !(current_user.otp_enabled? || current_user.webauthn_credentials.any?) && current_user.created_at < 1.day.ago && Date.today.between?(Date.parse("2024-01-15"), Date.parse("2024-02-15"))
+      %div.muted.footer__flex-center{ style: "font-size: 13px; flex: 1 1 0%; text-align: center;" }
         - if two_factor_marketing
-          %span.label.label-default{style: "margin-right: 4px; position: relative;top:-2px;font-weight: normal; font-size: 10px; font-family: sans-serif;padding: 3px 5px;"} NEW
-          Protect your account by setting up
-          = link_to("two-factor authentication", user_otp_token_path, style: "color: #649cc7") + "."
+          .footer__2fa-promo
+            %span.label.label-default{style: "margin-right: 4px; position: relative;top:-2px;font-weight: normal; font-size: 10px; font-family: sans-serif;padding: 3px 5px;"} NEW
+            Protect your account by setting up
+            = link_to("two-factor authentication", user_otp_token_path, style: "color: #649cc7") + "."
       %div{style: "flex: none;"}
         %p.muted.float-right
           &nbsp;&nbsp;

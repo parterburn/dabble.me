@@ -1,135 +1,53 @@
 - title "MCP settings — Dabble me."
 
 - mcp_server_url = mcp_url(**ApplicationHelper.mcp_url_options)
-- mcp_json_example = JSON.pretty_generate("url" => mcp_server_url, "headers" => { "Authorization" => "Bearer YOUR_MCP_BEARER_TOKEN" })
-- claude_example_url = "#{mcp_server_url}?access_token=YOUR_MCP_BEARER_TOKEN"
+- date_fmt = t("doorkeeper.authorized_applications.index.date_format", default: "%Y-%m-%d %H:%M:%S")
 
 .row
   .col-md-8.col-md-offset-2
-    %h3 MCP (journal access to AI tools)
-    %br
-
-  .col-md-8.col-md-offset-2
-    .well{style: "background-color: #E8E8E2; padding: 15px 20px; margin-top: 10px;"}
-      %h4{style: "margin-top: 0;"} How it works
-      %p
-        %strong PRO only, optional.
-        Your journal stays private until you create a secret token on this page. Connected tools can search, list, and analyze your entries, and add new entries on a chosen date (appending to that day if you already wrote that day—same as the site). There are no MCP tools to edit or delete arbitrary entries.
-      %p
-        You need a passkey or two-factor authentication first (
-        = link_to "Account security", security_path
-        ). For email or password,
-        = succeed "." do
-          = link_to "Account settings", edit_user_registration_path
-      %p
-        Each token is shown once, expires after six months, and we email you when a new one is created. Rotate or revoke from the section below.
-
-      %h5{style: "margin-top: 16px;"} Connect a client
-      %p
-        %strong Claude custom connectors
-        take a single server URL (no custom headers). Use the same secret as
-        %code Bearer
-        auth, but as the
-        %code access_token
-        query parameter—for example:
-      %pre{style: "white-space: pre-wrap; margin-top: 8px;"}= claude_example_url
-      %p{style: "margin-top: 8px;"}
-        See
-        = link_to "Anthropic’s guide to remote MCP custom connectors", ApplicationHelper.claude_remote_mcp_connectors_url, target: "_blank", rel: "noopener noreferrer"
-        \.
-        Putting the token in the URL can appear in access logs more easily than header-only auth—use it only if you accept that tradeoff.
-      %p
-        %strong Other clients
-        send
-        %code Authorization: Bearer YOUR_TOKEN
-        \. Example config:
-      %pre{style: "white-space: pre-wrap; margin-top: 8px;"}= mcp_json_example
-      %p{style: "margin-top: 12px;"}
-        %strong Base URL
-        (no token; client adds the header):
-      %pre{style: "white-space: pre-wrap;"}= mcp_server_url
-
-      %p{style: "margin-top: 12px;"}
-        %strong Tools:
-        %code search_entries
-        \,
-        %code list_entries
-        \,
-        %code analyze_entries
-        \,
-        %code create_entry
-        \.
-
-      %h5{style: "margin-top: 16px;"} Example prompts
-      %ul
-        %li
-          %em Search my Dabble Me entries for mentions of burnout from the last 6 months.
-        %li
-          %em List entries between 2025-01-01 and 2025-03-31 and show short excerpts.
-        %li
-          %em Analyze my entries from this year and summarize common themes, top hashtags, and changes in writing frequency.
-        %li
-          %em Find entries where I mentioned Paris or quoted “career change”.
+    %h3 MCP settings
 
     .well{style: "background-color: #E8E8E2; padding: 15px 20px; margin-top: 10px;"}
-      %h4{style: "margin-top: 0;"} Your token
       - if current_user.is_free?
         %p
-          MCP is included with
-          = link_to "Dabble Me PRO", subscribe_path, class: "alert-link"
-          \.
-      - elsif !current_user.mcp_security_requirements_met?
-        %p
-          Add a passkey or two-factor authentication under
-          = link_to "Account security", security_path
-          to enable token generation here.
+          MCP lets compatible apps use your journal after you sign in with Dabble Me.
+          = link_to "Upgrade to PRO", subscribe_path, class: "alert-link"
+          to turn it on.
       - else
-        - if flash[:mcp_token].present?
-          - claude_mcp_url = "#{mcp_server_url}?access_token=#{flash[:mcp_token]}"
-          .alert.alert-warning.force-links
-            %strong Copy this token now.
-            It will not be shown again after you leave this page.
-            %div{style: "margin-top: 8px;"}
-              %code{style: "word-break: break-all;"}= flash[:mcp_token]
-            %div{style: "margin-top: 8px;"}
-              %button.btn.btn-default.btn-sm.j-copy-to-clipboard{type: "button", data: { content: flash[:mcp_token] }}
-                Copy token
-            %p{style: "margin-top: 12px; margin-bottom: 4px;"}
-              %strong Claude connector URL
-              (paste this whole line into Claude):
-            %code{style: "word-break: break-all; display: block;"}= claude_mcp_url
-            %div{style: "margin-top: 8px;"}
-              %button.btn.btn-default.btn-sm.j-copy-to-clipboard{type: "button", data: { content: claude_mcp_url }}
-                Copy Claude URL
-
-        - if current_user.mcp_available?
-          %p
-            Status:
-            %span.text-success Enabled
-            - if current_user.mcp_last_used_at.present?
-              %br
-              Last used:
-              = current_user.mcp_last_used_at.strftime("%b %-d, %Y at %-l:%M %p %Z")
-            - if current_user.mcp_token_generated_at.present?
-              %br
-              Token created:
-              = current_user.mcp_token_generated_at.strftime("%b %-d, %Y at %-l:%M %p %Z")
-            - if current_user.mcp_token_expires_at.present?
-              %br
-              Token expires:
-              = current_user.mcp_token_expires_at.strftime("%b %-d, %Y at %-l:%M %p %Z")
+        - if current_user.mcp_security_requirements_met?
+          %p.text-success
+            You’re ready. Paste the URL into your MCP client and approve access when asked.
         - else
           %p
-            Status:
-            %span.text-muted Disabled
+            Add a passkey or two-factor authentication on
+            = succeed "," do
+              = link_to "Account security", security_path
+            then use the URL below.
 
-        .form-group
-          = label_tag "mcp_current_password", "Current password to generate a token"
-          = password_field_tag "user[current_password]", nil, id: "mcp_current_password", autocomplete: "current-password", class: "form-control"
-        .row
-          .col-sm-6
-            = form_with url: generate_mcp_token_path, method: :post, local: true do |mcp_form|
-              = mcp_form.hidden_field :current_password, name: "user[current_password]", value: ""
-              = mcp_form.submit "Generate / Regenerate MCP token", class: "btn btn-primary form-control", data: { confirm: "Generate a new MCP token? Any previous token will stop working immediately." }, onclick: "this.form.querySelector('input[name=\"user[current_password]\"]').value = document.getElementById('mcp_current_password').value;"
-          .col-sm-6
-            = button_to "Revoke MCP token", revoke_mcp_token_path, method: :delete, class: "btn btn-default form-control", disabled: !current_user.mcp_enabled?
+        %p{style: "margin-bottom: 6px;"}
+          %strong MCP server URL (Streamable HTTP)
+        %pre{style: "white-space: pre-wrap;"}= mcp_server_url
+
+    - if @oauth_applications.present?
+      .well{style: "background-color: #E8E8E2; padding: 15px 20px; margin-top: 10px;"}
+        %h4{style: "margin-top: 0;"} Connected apps
+        %p.small.text-muted{style: "margin-bottom: 12px;"}
+          These tools can call Dabble Me on your behalf until you revoke them.
+        .table-responsive
+          %table.table.table-striped{style: "margin-bottom: 0;"}
+            %thead
+              %tr
+                %th= t("doorkeeper.authorized_applications.index.application")
+                %th= t("doorkeeper.authorized_applications.index.created_at")
+                %th
+            %tbody
+              - @oauth_applications.each do |application|
+                %tr
+                  %td= application.name
+                  %td= application.created_at.strftime(date_fmt)
+                  %td.text-right
+                    = button_to t("doorkeeper.authorized_applications.buttons.revoke"),
+                        oauth_authorized_application_path(application),
+                        method: :delete,
+                        class: "btn btn-default btn-sm",
+                        data: { confirm: t("doorkeeper.authorized_applications.confirmations.revoke") }

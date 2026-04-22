@@ -24,14 +24,21 @@ class Rack::Attack
     req.ip if req.path == MCP_PATH && req.post?
   end
 
-  # Brute-force / leaked-token probing: POST /mcp with credentials (Bearer header or access_token query)
+  # OAuth dynamic client registration (public); keep tight to limit abuse.
+  throttle('oauth/dcr/ip', limit: 5, period: 1.minute) do |req|
+    req.ip if req.path == '/oauth/registrations' && req.post?
+  end
+
+  throttle('oauth/dcr/ip/day', limit: 50, period: 1.day) do |req|
+    req.ip if req.path == '/oauth/registrations' && req.post?
+  end
+
+  # Brute-force OAuth token attempts against MCP
   throttle("mcp/auth-attempts/ip", limit: 10, period: 10.minutes) do |req|
     next unless req.path == MCP_PATH && req.post?
 
     auth = req.env["HTTP_AUTHORIZATION"].to_s
-    has_bearer = auth.match?(/\ABearer\s+\S+/i)
-    has_query_token = req.GET["access_token"].present?
-    next unless has_bearer || has_query_token
+    next unless auth.match?(/\ABearer\s+\S+/i)
 
     req.ip
   end

@@ -1,0 +1,3 @@
+// Outside app/stylesheets so require_tree . does not merge this into application.css.
+// Linked explicitly after application.css on OAuth consent screens.
+@import "oauth_consent";

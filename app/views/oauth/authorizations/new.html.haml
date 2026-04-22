@@ -1,0 +1,85 @@
+- title "Connect an app — Dabble me."
+- client_name = @pre_auth.client.name
+- client_initials = oauth_application_initials(client_name)
+- mcp_access = @pre_auth.scopes.map(&:to_s).include?("mcp:access")
+
+.row.oauth-consent#oauth-consent-root
+  .col-xs-12.oauth-consent__column{style: "max-width: 800px;"}
+    %h1.oauth-consent__title= t("doorkeeper.authorizations.new.title")
+    %p.oauth-consent__subtitle
+      Link an AI tool to your account. You can disconnect anytime.
+
+    .oauth-consent__panel
+      .oauth-consent__flow
+        .oauth-consent__flow-node
+          .oauth-consent__avatar{style: "font-size: 35px; background: #1D1D16; color: #fff;line-height: 59px;align-items: baseline;"} me
+          %span.oauth-consent__flow-name Dabble Me
+          %span.oauth-consent__flow-caption= t("doorkeeper.authorizations.new.flow_you_label")
+        .oauth-consent__flow-arrows
+          %i.fa.fa-long-arrow-right{ "aria-hidden": "true" }
+          %i.fa.fa-long-arrow-left{ "aria-hidden": "true" }
+        .oauth-consent__flow-node
+          .oauth-consent__avatar{style: "font-size: 35px; background: #fff; color: #1D1D16;line-height: 59px;align-items: baseline;"}= client_initials.downcase
+          %span.oauth-consent__flow-name= client_name
+          %span.oauth-consent__flow-caption= t("doorkeeper.authorizations.new.flow_app_label")
+
+      .oauth-consent__identity
+        %p.oauth-consent__identity-text
+          = t("doorkeeper.authorizations.new.signed_in_as")
+          %strong= current_user.email
+        = link_to t("doorkeeper.authorizations.new.change_account"), destroy_user_session_path, method: :delete, class: "oauth-consent__change-account"
+
+      %p.oauth-consent__prompt
+        != t("doorkeeper.authorizations.new.prompt", client_name: content_tag(:strong, client_name))
+
+      %p.oauth-consent__trust-note= t("doorkeeper.authorizations.new.trust_note")
+
+      .oauth-consent__permissions
+        %p.oauth-consent__permissions-title
+          %i.fa.fa-lock{ "aria-hidden": "true" }
+          = t("doorkeeper.authorizations.new.able_to")
+        - if mcp_access
+          %ul.oauth-consent__permissions-list
+            %li.oauth-consent__permission-item
+              %i.fa.fa-check{ "aria-hidden": "true" }
+              = t("doorkeeper.authorizations.new.permission_read")
+            %li.oauth-consent__permission-item
+              %i.fa.fa-check{ "aria-hidden": "true" }
+              = t("doorkeeper.authorizations.new.permission_write")
+        - elsif @pre_auth.scopes.any?
+          %ul.oauth-consent__permissions-list
+            - @pre_auth.scopes.each do |scope|
+              %li.oauth-consent__permission-item
+                %i.fa.fa-check{ "aria-hidden": "true" }
+                = t scope, scope: %i[doorkeeper scopes]
+
+      %p.oauth-consent__privacy
+        %i.fa.fa-shield{ "aria-hidden": "true" }
+        = t("doorkeeper.authorizations.new.privacy_intro")
+        = t("doorkeeper.authorizations.new.privacy_access", client_name: client_name)
+        #{t("doorkeeper.authorizations.new.privacy_revoke")}
+        = link_to t("doorkeeper.authorizations.new.privacy_settings_link"), settings_mcp_path
+        \.
+
+      .oauth-consent__actions
+        = form_tag oauth_authorization_path, method: :post do
+          = hidden_field_tag :client_id, @pre_auth.client.uid, id: nil
+          = hidden_field_tag :redirect_uri, @pre_auth.redirect_uri, id: nil
+          = hidden_field_tag :state, @pre_auth.state, id: nil
+          = hidden_field_tag :response_type, @pre_auth.response_type, id: nil
+          = hidden_field_tag :response_mode, @pre_auth.response_mode, id: nil
+          = hidden_field_tag :scope, @pre_auth.scope, id: nil
+          = hidden_field_tag :code_challenge, @pre_auth.code_challenge, id: nil
+          = hidden_field_tag :code_challenge_method, @pre_auth.code_challenge_method, id: nil
+          = submit_tag t("doorkeeper.authorizations.buttons.authorize"), class: "oauth-consent__submit--allow"
+
+        = form_tag oauth_authorization_path, method: :delete do
+          = hidden_field_tag :client_id, @pre_auth.client.uid, id: nil
+          = hidden_field_tag :redirect_uri, @pre_auth.redirect_uri, id: nil
+          = hidden_field_tag :state, @pre_auth.state, id: nil
+          = hidden_field_tag :response_type, @pre_auth.response_type, id: nil
+          = hidden_field_tag :response_mode, @pre_auth.response_mode, id: nil
+          = hidden_field_tag :scope, @pre_auth.scope, id: nil
+          = hidden_field_tag :code_challenge, @pre_auth.code_challenge, id: nil
+          = hidden_field_tag :code_challenge_method, @pre_auth.code_challenge_method, id: nil
+          = submit_tag t("doorkeeper.authorizations.buttons.deny"), class: "oauth-consent__submit--deny"

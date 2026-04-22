@@ -6,7 +6,6 @@ Rails.application.config.filter_parameters += [
   :current_password,
   :password_confirmation,
   :access_token,
-  :mcp_token,
   :authorization,
   :otp_attempt,
   :otp_code,

@@ -2,7 +2,7 @@
 class RegistrationsController < Devise::RegistrationsController
   layout :choose_layout
   before_action :require_user, only: [:security, :mcp_settings, :update, :edit]
-  before_action :authenticate_user!, only: [:mcp_settings, :generate_mcp_token, :revoke_mcp_token]
+  before_action :authenticate_user!, only: [:mcp_settings]
   prepend_before_action :check_captcha, only: [:create]
 
   def edit
@@ -83,28 +83,8 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   def mcp_settings
+    @oauth_applications = Doorkeeper::Application.authorized_for(current_user)
     render 'devise/registrations/mcp_settings'
-  end
-
-  def generate_mcp_token
-    unless current_user.valid_password?(params.dig(:user, :current_password))
-      flash[:alert] = "Incorrect current password."
-      return redirect_to(settings_mcp_path)
-    end
-
-    token = current_user.generate_mcp_token!
-    UserMailer.mcp_access_enabled(current_user).deliver_later
-    flash[:notice] = "MCP access is enabled. Copy this token now; it will not be shown again. Tokens expire after six months; generate a new one anytime before then."
-    flash[:mcp_token] = token
-    redirect_to settings_mcp_path
-  rescue ArgumentError => e
-    flash[:alert] = e.message
-    redirect_to settings_mcp_path
-  end
-
-  def revoke_mcp_token
-    current_user.revoke_mcp_token!
-    redirect_to settings_mcp_path, notice: "MCP access has been revoked."
   end
 
   def unsubscribe

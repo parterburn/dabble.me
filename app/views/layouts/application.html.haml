@@ -10,6 +10,8 @@
     = yield :head
     = render 'shared/favicons_and_metatags'
     = stylesheet_link_tag 'application', media: 'all'
+    - if controller_path == 'oauth/authorizations'
+      = stylesheet_link_tag 'oauth_consent_bundle', media: 'all'
     = javascript_include_tag 'application'
 
     :javascript
@@ -30,7 +32,7 @@
           'anonymize_ip': true
         });
 
-  %body
+  %body{ class: @body_class }
     #wrap
       = render 'shared/navbar'
 

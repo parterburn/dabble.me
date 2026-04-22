@@ -35,6 +35,21 @@ module ApplicationHelper
     content_for?(section) ? content_for(section) : default
   end
 
+  # Two-letter initials for OAuth consent (e.g. "MCP Inspector" -> "MI").
+  def oauth_application_initials(name)
+    return "?" if name.blank?
+
+    words = name.strip.split(/\s+/).reject(&:blank?)
+    letters =
+      if words.length >= 2
+        [words[0][0], words[1][0]]
+      else
+        w = words[0]
+        [w[0], w[1] || w[0]]
+      end
+    letters.join.upcase
+  end
+
   def tag_relative_date(tag_date, entry_date)
     return "" unless entry_date.present?
     return "Today" if tag_date == entry_date

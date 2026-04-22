@@ -124,3 +124,8 @@ group :test do
 end
 
 gem 'rack-timeout'
+
+gem "mcp", "~> 0.13.0"
+gem "doorkeeper", "~> 5.9"
+
+gem "rack-cors", "~> 2.0", group: :development
