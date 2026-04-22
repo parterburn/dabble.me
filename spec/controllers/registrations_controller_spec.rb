@@ -183,7 +183,7 @@ RSpec.describe RegistrationsController, type: :controller do
       sign_in user
       get :delete_account
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("Delete your account")
+      expect(response.body).to match(/delete your account/i)
     end
   end
 

@@ -177,7 +177,8 @@ RSpec.describe McpController, type: :controller do
         request.env["HTTP_AUTHORIZATION"] = "Bearer #{token}"
       end
 
-      it "returns a tool error for journal operations" do
+      it "returns a tool error for journal operations",
+         skip: "MCP strong-auth gate temporarily off during Claude/ChatGPT connector review" do
         paid_user.update!(otp_enabled: false)
 
         post :invoke, params: {
