@@ -39,6 +39,21 @@ STRIPE_SIGNING_SECRET: whsec_1234
 
 You can opt to not use Turnstile: simply don't add an environment variables for `TURNSTILE_SITE_KEY`.
 
+### MCP (Model Context Protocol)
+
+PRO accounts can use Dabble Me as a **remote MCP server** so compatible clients (for example Claude) can search, list, analyze, and create journal entries after OAuth.
+
+**Requirements:** PRO subscription, plus a passkey or two-factor authentication on Account security (`/security`). Connected OAuth apps can be reviewed and revoked on the same page under **Connected apps** (shown only when something is connected).
+
+**Endpoint:** Streamable HTTP at `https://<MAIN_DOMAIN>/mcp` (see `MAIN_DOMAIN` in `config/local_env.yml`). The client should use OAuth: authorization metadata is published under `/.well-known/oauth-authorization-server` and `/.well-known/oauth-protected-resource` (see `Oauth::MetadataController`).
+
+**User-facing instructions:** [Support → MCP](https://dabble.me/support#mcp) (or `/support#mcp` on your own host).
+
+**Deep links for assistants:** a single day opens at `https://<MAIN_DOMAIN>/entries/YYYY/M/D` with **unpadded** month and day (example: `https://dabble.me/entries/2026/4/21`). The web compose URL is `https://<MAIN_DOMAIN>/write`.
+
+For generic remote-connector setup in Claude, see Anthropic’s [Get started with custom connectors using remote MCP](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp).
+
+**Automated smoke (curl + [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) CLI):** `./script/mcp_inspector_smoke.sh` uses `RAILS_ENV=test`, starts a short-lived Rails server, checks OAuth metadata and `/mcp`, then runs Inspector against all four tools (`tools/list` exercises `initialize` + connect). Aligns with Anthropic’s [Testing your connector](https://claude.com/docs/connectors/build/testing) guidance.
 
 ### Tests
 
@@ -72,3 +87,4 @@ Inspiration.create(category: 'OhLife', body: 'Imported from OhLife')
 * Search with basic analytics around posting
 * Hashtag support for tagging your entries
 * Year in Review
+* MCP (PRO): OAuth-backed journal tools for external clients

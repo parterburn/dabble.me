@@ -1,8 +1,7 @@
 # Devise Override Controller
 class RegistrationsController < Devise::RegistrationsController
   layout :choose_layout
-  before_action :require_user, only: [:security, :mcp_settings, :update, :edit]
-  before_action :authenticate_user!, only: [:mcp_settings]
+  before_action :require_user, only: [:security, :update, :edit]
   prepend_before_action :check_captcha, only: [:create]
 
   def edit
@@ -79,12 +78,8 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   def security
-    render 'devise/registrations/security'
-  end
-
-  def mcp_settings
     @oauth_applications = Doorkeeper::Application.authorized_for(current_user)
-    render 'devise/registrations/mcp_settings'
+    render 'devise/registrations/security'
   end
 
   def unsubscribe

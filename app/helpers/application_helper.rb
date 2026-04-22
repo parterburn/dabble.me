@@ -27,6 +27,18 @@ module ApplicationHelper
     end
   end
 
+  # Public journal site base URL (browser links), not the MCP JSON-RPC path.
+  def self.site_public_base_url
+    host = ENV[primary_domain_env_key].presence || "dabble.me"
+    if Rails.env.production?
+      "https://#{host}"
+    elsif host.match?(/\A[^.]+\z/)
+      "http://#{host}:3000"
+    else
+      "http://#{host}"
+    end
+  end
+
   def title(page_title)
     content_for(:title) { page_title.to_s }
   end
@@ -86,6 +98,27 @@ module ApplicationHelper
 
   def self.faqs
     main_domain = ENV.fetch(primary_domain_env_key, "")
+    routes = Rails.application.routes.url_helpers
+    base = site_public_base_url
+    mcp_endpoint = mcp_server_url
+    claude_url = claude_remote_mcp_connectors_url
+    self_host_hint = main_domain.presence || "dabble.me"
+    mcp_connect_answer = <<~HTML.squish
+      <p class="text-muted mb-3"><span class="font-semibold">Requirements:</span> a PRO subscription plus a passkey or two-factor authentication on
+      <a href="#{routes.security_path}" class="text-accent hover:text-primary underline">Account security</a>.</p>
+      <p class="text-muted mb-3">In your MCP client, add a remote MCP connector using this endpoint (Streamable HTTP, OAuth when prompted):</p>
+      <p class="mb-3"><code class="text-sm select-all break-all">#{ERB::Util.html_escape(mcp_endpoint)}</code></p>
+      <p class="text-muted mb-3">Complete the browser sign-in and approve access. For connector UI details, see
+      <a href="#{ERB::Util.html_escape(claude_url)}" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">Anthropic’s guide to remote MCP connectors</a>.</p>
+      <p class="text-muted mb-3">To disconnect an app, open
+      <a href="#{routes.security_path(anchor: "connected-apps")}" class="text-accent hover:text-primary underline">Account security</a>
+      and use <span class="font-semibold">Connected apps</span> (only shown when something is connected).</p>
+      <p class="text-muted mb-0"><span class="font-semibold">Web URLs for assistants:</span> a single day’s entry is
+      <code class="text-sm select-all">#{ERB::Util.html_escape(base)}/entries/YYYY/M/D</code> with unpadded month and day (example:
+      <a href="#{ERB::Util.html_escape(base)}/entries/2026/4/21" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">#{ERB::Util.html_escape(base)}/entries/2026/4/21</a>).
+      The web “write” page is <a href="#{ERB::Util.html_escape(base)}/write" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">#{ERB::Util.html_escape(base)}/write</a>.
+      Replace <code class="text-sm">#{ERB::Util.html_escape(self_host_hint)}</code> with your own domain if you self-host.</p>
+    HTML
 
     {
       pro_features: {
@@ -103,6 +136,11 @@ module ApplicationHelper
           {
             q: "Can I write entries on the website?",
             a: "Yes! PRO members can write entries on the website for any date. Simply click \"WRITE\" at the top of the page when logged in."
+          },
+          {
+            html_id: "mcp",
+            q: "How do I connect Dabble Me as an MCP server?",
+            a: mcp_connect_answer
           },
           {
             q: "How do I embed songs from Spotify?",

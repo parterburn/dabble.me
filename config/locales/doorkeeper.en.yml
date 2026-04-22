@@ -83,7 +83,7 @@ en:
         privacy_intro: 'We take your privacy seriously. '
         privacy_access: '%{client_name} will only have access to the data you authorize. '
         privacy_revoke: 'You can revoke access at any time in '
-        privacy_settings_link: 'MCP settings'
+        privacy_settings_link: 'Account security'
       show:
         title: 'Authorization code'
       form_post:

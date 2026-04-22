@@ -34,7 +34,7 @@ llm_text += "---\nFor more help, contact: hello@#{ENV['MAIN_DOMAIN'] || 'dabble.
 
     <% faq_sections.each do |section_key, section| %>
       <div class="mb-12">
-        <h2 class="font-serif text-2xl text-primary mb-6 flex items-center gap-2">
+        <h2 class="font-serif text-2xl text-primary mb-6 flex items-center gap-2"<% if section[:html_id].present? %> id="<%= section[:html_id] %>"<% end %>>
           <% if section[:badge] %>
             <span class="badge badge-accent text-sm font-semibold dark:text-olive-800"><%= section[:badge] %></span>
           <% end %>
@@ -43,7 +43,7 @@ llm_text += "---\nFor more help, contact: hello@#{ENV['MAIN_DOMAIN'] || 'dabble.
         
         <div data-accordion-group class="card divide-y">
           <% section[:questions].each do |qa| %>
-            <div class="px-6 border-subtle">
+            <div class="px-6 border-subtle"<% if qa[:html_id].present? %> id="<%= qa[:html_id] %>"<% end %>>
               <button
                 type="button"
                 class="accordion-trigger cursor-pointer"

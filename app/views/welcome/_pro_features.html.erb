@@ -29,7 +29,7 @@
         </div>
         <h3 class="font-semibold text-base text-primary font-sans">Photo Attachments</h3>
         <p class="mt-2 text-muted text-sm">
-          Attach up to 5 photos per entry via email or web to create visual memories.
+          Attach up to <%= CollageGenerator::MAX_IMAGES %> photos per entry via email or web to create visual memories.
         </p>
       </div>
 
@@ -95,6 +95,20 @@
         <h3 class="font-semibold text-base text-primary font-sans">Web Editor</h3>
         <p class="mt-2 text-muted text-sm">
           Add and edit entries directly on the web with rich text formatting.
+        </p>
+      </div>
+
+      <!-- MCP (Claude & compatible apps) -->
+      <div class="card p-6 border-accent/30">
+        <div class="w-10 h-10 rounded-lg bg-surface-elevated flex items-center justify-center mb-4">
+          <svg class="h-5 w-5 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m9-13.5h-1.5m0 1.5h1.5m-18 0H3m18 0h1.5m-15 3.75H3m18 0h1.5m-9-9V9m0 6v1.5m0 0V9m0 6h1.5m-1.5 0h-1.5m1.5 0v1.5M15 9v1.5m0 0V9m0 6h1.5m-1.5 0h-1.5m1.5 0v1.5" />
+          </svg>
+        </div>
+        <h3 class="font-semibold text-base text-primary font-sans">MCP for Claude &amp; more</h3>
+        <p class="mt-2 text-muted text-sm">
+          Connect compatible assistants over the Model Context Protocol to search, analyze, and add entries.
+          <%= link_to "How to connect", support_path(anchor: "mcp"), class: "text-accent hover:text-primary underline" %>.
         </p>
       </div>
 

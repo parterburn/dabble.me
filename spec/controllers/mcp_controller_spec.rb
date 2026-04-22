@@ -49,6 +49,8 @@ RSpec.describe McpController, type: :controller do
         expect(response).to have_http_status(:ok)
         body = JSON.parse(response.body)
         expect(body.dig("result", "serverInfo", "name")).to eq("dabble-me")
+        instructions = body.dig("result", "instructions").to_s
+        expect(instructions).to include("/entries/YYYY/M/D").and include("/write")
       end
 
       it "searches only the authenticated user entries" do

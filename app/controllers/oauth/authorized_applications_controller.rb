@@ -4,7 +4,7 @@ module Oauth
   class AuthorizedApplicationsController < Doorkeeper::AuthorizedApplicationsController
     def index
       respond_to do |format|
-        format.html { redirect_to settings_mcp_path }
+        format.html { redirect_to security_path }
         format.json do
           @applications = Doorkeeper.config.application_model.authorized_for(current_resource_owner)
           render json: @applications, current_resource_owner: current_resource_owner
@@ -20,7 +20,7 @@ module Oauth
 
       respond_to do |format|
         format.html do
-          redirect_to settings_mcp_path, notice: I18n.t(
+          redirect_to security_path, notice: I18n.t(
             :notice,
             scope: %i[doorkeeper flash authorized_applications destroy]
           )

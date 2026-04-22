@@ -58,7 +58,7 @@
         = t("doorkeeper.authorizations.new.privacy_intro")
         = t("doorkeeper.authorizations.new.privacy_access", client_name: client_name)
         #{t("doorkeeper.authorizations.new.privacy_revoke")}
-        = link_to t("doorkeeper.authorizations.new.privacy_settings_link"), settings_mcp_path
+        = link_to t("doorkeeper.authorizations.new.privacy_settings_link"), security_path(anchor: "connected-apps")
         \.
 
       .oauth-consent__actions

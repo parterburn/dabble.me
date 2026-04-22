@@ -54,6 +54,8 @@
                 %td= credential.created_at.strftime("%b %d, %Y")
                 %td= link_to "Remove", passkeys_registration_path(credential), method: :delete, data: { confirm: "Are you sure?" }, class: "text-danger"
 
+      = render "oauth_connected_apps"
+
     .col-md-8.col-md-offset-2
       .well{style: 'background-color: #E8E8E2; padding: 15px 20px;'}
         = f.label :current_password

@@ -352,6 +352,22 @@ sample_entry = sample_entries.sample
           Browse entries by date, #hashtags, or search. Find what you’re looking for when it matters.
         </p>
       </div>
+
+      <div class="card p-6 border-accent/30">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
+            <svg class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 3v1.5M4.5 8.25H3m18 0h-1.5M4.5 12H3m18 0h-1.5m-15 3.75H3m18 0h-1.5M8.25 19.5V21M12 3v1.5m0 15V21m3.75-18v1.5m0 15V21m9-13.5h-1.5m0 1.5h1.5m-18 0H3m18 0h1.5m-15 3.75H3m18 0h1.5m-9-9V9m0 6v1.5m0 0V9m0 6h1.5m-1.5 0h-1.5m1.5 0v1.5M15 9v1.5m0 0V9m0 6h1.5m-1.5 0h-1.5m1.5 0v1.5" />
+            </svg>
+          </div>
+          <span class="badge badge-accent dark:text-olive-800 text-xs">PRO</span>
+        </div>
+        <h3 class="font-semibold text-base text-primary font-sans">MCP for Claude &amp; more</h3>
+        <p class="mt-2 text-muted">
+          Plug in assistants that speak the Model Context Protocol to work with your journal securely.
+          <%= link_to "Setup guide", support_path(anchor: "mcp"), class: "text-accent hover:text-primary underline" %>.
+        </p>
+      </div>
     </div>
   </div>
 </section>
@@ -540,13 +556,19 @@ sample_entry = sample_entries.sample
             <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
-            <span class="text-muted">Photo attachments (up to 5)</span>
+            <span class="text-muted">Photo attachments (up to <%= CollageGenerator::MAX_IMAGES %>)</span>
           </li>
           <li class="flex items-start gap-3">
             <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
             <span class="text-muted">Calendar view & search</span>
+          </li>
+          <li class="flex items-start gap-3">
+            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+            </svg>
+            <span class="text-muted">MCP (Claude &amp; compatible apps) with OAuth</span>
           </li>
           <li class="flex items-start gap-3">
             <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">

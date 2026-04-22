@@ -1,0 +1,24 @@
+- if @oauth_applications.present?
+  - date_fmt = t("doorkeeper.authorized_applications.index.date_format", default: "%Y-%m-%d %H:%M:%S")
+  .well#connected-apps{style: "background-color: #E8E8E2; padding: 15px 20px; margin-top: 10px;"}
+    %h4{style: "margin-top: 0;"} Connected apps
+    %p.small.text-muted{style: "margin-bottom: 12px;"}
+      These tools can call Dabble Me on your behalf until you revoke them.
+    .table-responsive
+      %table.table.table-striped{style: "margin-bottom: 0;"}
+        %thead
+          %tr
+            %th= t("doorkeeper.authorized_applications.index.application")
+            %th= t("doorkeeper.authorized_applications.index.created_at")
+            %th
+        %tbody
+          - @oauth_applications.each do |application|
+            %tr
+              %td= application.name
+              %td= application.created_at.strftime(date_fmt)
+              %td.text-right
+                = button_to t("doorkeeper.authorized_applications.buttons.revoke"),
+                    oauth_authorized_application_path(application),
+                    method: :delete,
+                    class: "btn btn-default btn-sm",
+                    data: { confirm: t("doorkeeper.authorized_applications.confirmations.revoke") }
