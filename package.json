@@ -10,8 +10,7 @@
   },
   "scripts": {
     "build:css": "tailwindcss -i ./app/frontend/stylesheets/marketing.tailwind.css -o ./public/marketing.css --minify",
-    "watch:css": "tailwindcss -i ./app/frontend/stylesheets/marketing.tailwind.css -o ./public/marketing.css --watch",
-    "heroku-postbuild": "npm run build:css"
+    "watch:css": "tailwindcss -i ./app/frontend/stylesheets/marketing.tailwind.css -o ./public/marketing.css --watch"
   },
   "repository": {
     "type": "git",
