@@ -22,6 +22,7 @@
 //= link cassidoo.jpg
 
 //= link application.css
+//= link oauth_consent_bundle.css
 //= link application.js
 
 //= link chartkick.js

@@ -1,17 +1,12 @@
 # frozen_string_literal: true
 
-# Removes MCP bearer tokens and access_token query values from Sentry payloads
-# before upload. Complements Rails filter_parameters (logs) and avoids relying
-# on token naming conventions.
+# Removes OAuth/access_token query values from Sentry payloads before upload.
+# Complements Rails filter_parameters (logs).
 module SentrySensitiveScrubber
   FILTERED = "[FILTERED]"
 
-  # Raw MCP tokens issued by User#generate_mcp_token!
-  TOKEN_PATTERN = /\bdmcp_[A-Za-z0-9_-]+\b/
-
   SENSITIVE_PARAM_KEYS = %w[
     access_token
-    mcp_token
     password
     current_password
     password_confirmation
@@ -120,7 +115,6 @@ module SentrySensitiveScrubber
     return str unless str.is_a?(String)
 
     out = str.dup
-    out.gsub!(TOKEN_PATTERN, FILTERED)
     out.gsub!(/Bearer\s+\S+/i, "Bearer #{FILTERED}")
     out.gsub!(/([?&]access_token=)[^&\s"']+/i, "\\1#{FILTERED}")
     out

@@ -1,0 +1,9 @@
+- title "Authorization code — Dabble me."
+
+.row
+  .col-md-8.col-md-offset-2
+    %p.text-muted{style: "margin-bottom: 4px;"} Dabble Me
+    %h3{style: "margin-top: 0;"}= "#{t('doorkeeper.authorizations.show.title')}:"
+
+    .well{style: "background-color: #E8E8E2; padding: 15px 20px; margin-top: 16px;"}
+      %code#authorization_code= params[:code]

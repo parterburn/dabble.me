@@ -1,6 +1,22 @@
 require "sidekiq/web"
 require "sidekiq/cron/web"
 Rails.application.routes.draw do
+  use_doorkeeper do
+    controllers(
+      authorizations: "oauth/authorizations",
+      authorized_applications: "oauth/authorized_applications"
+    )
+  end
+
+  get '.well-known/oauth-protected-resource', to: 'oauth/metadata#protected_resource'
+  get '.well-known/oauth-protected-resource/mcp', to: 'oauth/metadata#protected_resource'
+  get '.well-known/oauth-authorization-server', to: 'oauth/metadata#authorization_server'
+  get '.well-known/oauth-authorization-server/mcp', to: 'oauth/metadata#authorization_server'
+
+  namespace :oauth, defaults: { format: :json } do
+    resources :registrations, only: :create
+  end
+
   authenticate :user, ->(u) { u.admin? } do
     resources :inspirations, path: '/admin/inspirations'
     resources :payments, path: '/admin/payments'
@@ -15,8 +31,6 @@ Rails.application.routes.draw do
 
   devise_scope :user do
     post "/validate_otp", to: "sessions#validate_otp", as: "validate_otp"
-    post 'security/mcp_token', to: 'registrations#generate_mcp_token', as: 'generate_mcp_token'
-    delete 'security/mcp_token', to: 'registrations#revoke_mcp_token', as: 'revoke_mcp_token'
   end
 
   namespace :passkeys do
@@ -57,7 +71,7 @@ Rails.application.routes.draw do
   get 'privacy',                        to: 'welcome#privacy'
   get 'terms',                          to: 'welcome#terms'
   get 'support',                        to: 'welcome#support'
-  post 'mcp',                           to: 'mcp#create'
+  match 'mcp', to: 'mcp#invoke', via: %i[get post], format: :json, as: :mcp
 
   # Redirects for old routes
   get 'features',                       to: redirect('/#features')
