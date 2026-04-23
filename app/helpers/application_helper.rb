@@ -120,7 +120,7 @@ module ApplicationHelper
       <code class="text-sm">search_entries</code> (keyword or phrase, optional dates),
       <code class="text-sm">list_entries</code> (date range),
       <code class="text-sm">analyze_entries</code> (counts, hashtags, volume),
-      <code class="text-sm">create_entry</code> (body text, optional date).</p>
+      <code class="text-sm">create_entry</code> (body text and/or optional <code class="text-sm">image_url</code> / <code class="text-sm">image_base64</code>, optional date).</p>
       <p class="text-muted mb-3"><span class="font-semibold">Opening a day in the browser:</span> <code class="text-sm select-all">#{ERB::Util.html_escape(base)}/entries/YYYY/M/D</code> with <span class="font-medium">unpadded</span> month and day (example:
       <a href="#{ERB::Util.html_escape(base)}/entries/2026/4/21" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">#{ERB::Util.html_escape(base)}/entries/2026/4/21</a>).
       New web entries: <a href="#{ERB::Util.html_escape(base)}/write" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">#{ERB::Util.html_escape(base)}/write</a>.</p>
