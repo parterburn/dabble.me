@@ -120,7 +120,7 @@ module Mcp
     end
 
     def excerpt(text)
-      text.to_s.gsub(/\s+/, ' ').strip.truncate(220)
+      text.to_s.gsub(/\s+/, ' ').strip.truncate(500)
     end
   end
 end

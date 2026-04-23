@@ -22,7 +22,7 @@ module Mcp
         MCP::Tool::Response.new(
           [{
             type: 'text',
-            text: 'The Dabble Me connector requires a paid Dabble Me PRO account, and either a passkey or two-factor authentication setup on the Account Security page.'
+            text: 'The Dabble Me connector requires a paid Dabble Me PRO account, and either a passkey or two-factor authentication setup on the [Account Security page](https://dabble.me/security).'
           }],
           error: true
         )
@@ -32,7 +32,7 @@ module Mcp
         {
           id: entry[:id],
           date: entry[:date],
-          excerpt: entry[:text_body].to_s.squish.truncate(400),
+          excerpt: entry[:text_body].to_s.squish.truncate(5000),
           hashtags: entry[:hashtags],
           has_image: entry[:has_image]
         }

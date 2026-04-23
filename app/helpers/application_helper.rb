@@ -106,7 +106,7 @@ module ApplicationHelper
       <p class="text-muted mb-3"><span class="font-semibold">Requirements:</span> a PRO subscription plus a passkey or two-factor authentication on
       <a href="#{routes.security_path}" class="text-accent hover:text-primary underline">Account security</a>.</p>
       <p class="text-muted mb-3">In your MCP client, add a remote MCP connector using this endpoint (Streamable HTTP, OAuth when prompted):</p>
-      <p class="mb-3"><code class="text-base select-all break-all bg-olive-200 px-2 py-1">#{ERB::Util.html_escape(mcp_endpoint)}</code></p>
+      <p class="mb-3"><code class="text-base select-all break-all bg-olive-200 px-2 py-1 text-olive-900">#{ERB::Util.html_escape(mcp_endpoint)}</code></p>
       <p class="text-muted mb-3">Complete the browser sign-in and approve access. For connector UI details, see
       <a href="#{ERB::Util.html_escape(claude_url)}" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">Anthropic’s guide to remote MCP connectors</a>.</p>
       <p class="text-muted mb-2"><span class="font-semibold">Example prompts</span> (plain language—the client calls tools for you):</p>

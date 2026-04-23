@@ -18,7 +18,7 @@ module Mcp
           query: { type: 'string' },
           start_date: { type: 'string', description: 'Optional YYYY-MM-DD inclusive start date.' },
           end_date: { type: 'string', description: 'Optional YYYY-MM-DD inclusive end date.' },
-          limit: { type: 'integer', minimum: 1, maximum: 50 }
+          limit: { type: 'integer', minimum: 1, maximum: 100 }
         },
         required: ['query'],
         additionalProperties: false
@@ -31,7 +31,7 @@ module Mcp
 
         result = Mcp::EntrySearch.new(user: user).search(
           query: query,
-          limit: limit || 10,
+          limit: limit || 50,
           since: start_date,
           until_date: end_date
         )
