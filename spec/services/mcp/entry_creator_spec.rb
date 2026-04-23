@@ -7,23 +7,31 @@ RSpec.describe Mcp::EntryCreator do
   include_context "has all objects"
 
   before do
-    s3 = %r{\Ahttps://dabble-me\.s3\.amazonaws\.com/}
-    stub_request(:put, s3).to_return(
-      status: 200,
-      body: %(<?xml version="1.0" encoding="UTF-8"?>\n<PutObjectResult><ETag>"stub"</ETag></PutObjectResult>\n),
-      headers: { "Content-Type" => "application/xml", "ETag" => '"stub"' }
-    )
-    stub_request(:head, s3).to_return(
-      status: 200,
-      body: "",
-      headers: {
-        "Content-Type" => "image/png",
-        "Content-Length" => "70",
-        "Last-Modified" => "Wed, 01 Jan 2020 00:00:00 GMT",
-        "ETag" => '"stub"'
-      }
-    )
-    stub_request(:delete, s3).to_return(status: 204, body: "", headers: {})
+    # CI sets AWS_BUCKET=test (see .github/workflows/test.yml); dev machines may use dabble-me from local_env.yml.
+    # Stub whatever host/path Fog uses for this app's configured bucket (virtual-hosted and path-style S3 URLs).
+    bucket = CarrierWave::Uploader::Base.fog_directory
+    s3_patterns = [
+      %r{\Ahttps://#{Regexp.escape(bucket)}\.s3(?:\.[a-z0-9-]+)*\.amazonaws\.com/}i,
+      %r{\Ahttps://s3(?:\.[a-z0-9-]+)*\.amazonaws\.com/#{Regexp.escape(bucket)}/}i
+    ]
+    s3_patterns.each do |s3|
+      stub_request(:put, s3).to_return(
+        status: 200,
+        body: %(<?xml version="1.0" encoding="UTF-8"?>\n<PutObjectResult><ETag>"stub"</ETag></PutObjectResult>\n),
+        headers: { "Content-Type" => "application/xml", "ETag" => '"stub"' }
+      )
+      stub_request(:head, s3).to_return(
+        status: 200,
+        body: "",
+        headers: {
+          "Content-Type" => "image/png",
+          "Content-Length" => "70",
+          "Last-Modified" => "Wed, 01 Jan 2020 00:00:00 GMT",
+          "ETag" => '"stub"'
+        }
+      )
+      stub_request(:delete, s3).to_return(status: 204, body: "", headers: {})
+    end
   end
 
   def clear_calendar_day!(user, date)
