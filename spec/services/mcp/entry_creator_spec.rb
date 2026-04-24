@@ -83,6 +83,7 @@ RSpec.describe Mcp::EntryCreator do
       entry = paid_user.entries.find(result[:entry][:id])
       expect(entry.image).to be_present
       expect(entry.body).to include("with photo")
+      expect(result[:entry][:url]).to eq("http://[REDACTED]/entries/2099/1/10")
     end
 
     it "accepts a data-URL image_base64 without body text" do
@@ -97,6 +98,7 @@ RSpec.describe Mcp::EntryCreator do
 
       expect(result[:success]).to eq(true)
       expect(result[:entry][:has_image]).to eq(true)
+      expect(result[:entry][:url]).to eq("http://[REDACTED]/entries/2099/1/11")
     end
   end
 end

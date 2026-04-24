@@ -120,6 +120,7 @@ RSpec.describe McpController, type: :controller do
         structured = JSON.parse(response.body).dig("result", "structuredContent")
         expect(structured["success"]).to eq(true)
         expect(structured["entry"]["date"]).to eq("2030-01-15")
+        expect(structured["entry"]["url"]).to eq("http://test.host/entries/2030/1/15")
       end
 
       it "creates a new entry on an unused date" do
@@ -142,6 +143,7 @@ RSpec.describe McpController, type: :controller do
         expect(structured["success"]).to eq(true)
         expect(structured["merged"]).to eq(false)
         expect(structured["entry"]["date"]).to eq("2099-06-15")
+        expect(structured["entry"]["url"]).to eq("http://test.host/entries/2099/6/15")
 
         created = paid_user.entries.find(structured["entry"]["id"])
         expect(created.body).to include("<p>Line one.</p>")

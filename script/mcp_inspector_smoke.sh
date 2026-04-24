@@ -99,7 +99,7 @@ echo "==> MCP Inspector: tools/call analyze_entries"
 "${INSPECTOR[@]}" --method tools/call --tool-name analyze_entries | ruby -rjson -e 'j=JSON.parse(STDIN.read); t=j.dig("content",0,"text"); abort("analyze") unless t.include?("total_entries"); puts "ok"'
 
 echo "==> MCP Inspector: tools/call create_entry (2099-06-20)"
-"${INSPECTOR[@]}" --method tools/call --tool-name create_entry --tool-arg date=2099-06-20 --tool-arg body="MCP inspector smoke" | ruby -rjson -e 'j=JSON.parse(STDIN.read); t=j.dig("content",0,"text"); abort("create") unless t.include?("\"success\": true") || t.include?("\"success\":true"); puts "ok"'
+"${INSPECTOR[@]}" --method tools/call --tool-name create_entry --tool-arg date=2099-06-20 --tool-arg body="MCP inspector smoke" | ruby -rjson -e 'j=JSON.parse(STDIN.read); text=JSON.parse(j.dig("content",0,"text")); url=text.dig("entry","url").to_s; abort("create") unless text["success"] == true && url.end_with?("/entries/2099/6/20"); puts "ok"'
 
 echo "==> MCP Inspector: resources/list (expect empty or protocol-compliant)"
 set +e

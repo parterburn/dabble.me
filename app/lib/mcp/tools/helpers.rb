@@ -42,6 +42,13 @@ module Mcp
         tz = ActiveSupport::TimeZone[user.send_timezone] || Time.zone
         Time.current.in_time_zone(tz).to_date.iso8601
       end
+
+      def entry_public_url(entry_or_date)
+        date = entry_or_date.respond_to?(:date) ? entry_or_date.date : entry_or_date
+        date = date.to_date
+
+        "#{ApplicationHelper.site_public_base_url}/entries/#{date.year}/#{date.month}/#{date.day}"
+      end
     end
   end
 end
