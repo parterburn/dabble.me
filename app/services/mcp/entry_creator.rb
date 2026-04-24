@@ -340,6 +340,7 @@ module Mcp
       {
         id: entry.id,
         date: entry.date.to_date.iso8601,
+        url: Tools::Helpers.entry_public_url(entry),
         excerpt: entry.text_body.to_s.squish.truncate(5000),
         hashtags: entry.hashtags,
         has_image: entry.image.present?
