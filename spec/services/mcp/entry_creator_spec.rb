@@ -5,6 +5,10 @@ require "rails_helper"
 RSpec.describe Mcp::EntryCreator do
   include_context "has all objects"
 
+  def expected_entry_url(date)
+    "#{ApplicationHelper.site_public_base_url}/entries/#{date.year}/#{date.month}/#{date.day}"
+  end
+
   before do
     # CI sets AWS_BUCKET=test (see .github/workflows/test.yml); dev machines may use dabble-me from local_env.yml.
     # Stub whatever host/path Fog uses for this app's configured bucket (virtual-hosted and path-style S3 URLs).
@@ -83,7 +87,7 @@ RSpec.describe Mcp::EntryCreator do
       entry = paid_user.entries.find(result[:entry][:id])
       expect(entry.image).to be_present
       expect(entry.body).to include("with photo")
-      expect(result[:entry][:url]).to eq("http://[REDACTED]/entries/2099/1/10")
+      expect(result[:entry][:url]).to eq(expected_entry_url(Date.new(2099, 1, 10)))
     end
 
     it "accepts a data-URL image_base64 without body text" do
@@ -98,7 +102,7 @@ RSpec.describe Mcp::EntryCreator do
 
       expect(result[:success]).to eq(true)
       expect(result[:entry][:has_image]).to eq(true)
-      expect(result[:entry][:url]).to eq("http://[REDACTED]/entries/2099/1/11")
+      expect(result[:entry][:url]).to eq(expected_entry_url(Date.new(2099, 1, 11)))
     end
   end
 end

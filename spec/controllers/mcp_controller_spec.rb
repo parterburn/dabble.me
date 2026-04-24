@@ -98,6 +98,8 @@ RSpec.describe McpController, type: :controller do
       end
 
       it "defaults date to today in the user timezone when omitted" do
+        expected_url = Mcp::Tools::Helpers.entry_public_url(Date.new(2030, 1, 15))
+
         denver = ActiveSupport::TimeZone["America/Denver"]
         travel_to denver.local(2030, 1, 15, 14, 0, 0) do
           paid_user.update!(send_timezone: "America/Denver")
@@ -120,10 +122,12 @@ RSpec.describe McpController, type: :controller do
         structured = JSON.parse(response.body).dig("result", "structuredContent")
         expect(structured["success"]).to eq(true)
         expect(structured["entry"]["date"]).to eq("2030-01-15")
-        expect(structured["entry"]["url"]).to eq("http://test.host/entries/2030/1/15")
+        expect(structured["entry"]["url"]).to eq(expected_url)
       end
 
       it "creates a new entry on an unused date" do
+        expected_url = Mcp::Tools::Helpers.entry_public_url(Date.new(2099, 6, 15))
+
         post :invoke, params: {
           jsonrpc: "2.0",
           id: 31,
@@ -143,7 +147,7 @@ RSpec.describe McpController, type: :controller do
         expect(structured["success"]).to eq(true)
         expect(structured["merged"]).to eq(false)
         expect(structured["entry"]["date"]).to eq("2099-06-15")
-        expect(structured["entry"]["url"]).to eq("http://test.host/entries/2099/6/15")
+        expect(structured["entry"]["url"]).to eq(expected_url)
 
         created = paid_user.entries.find(structured["entry"]["id"])
         expect(created.body).to include("<p>Line one.</p>")
