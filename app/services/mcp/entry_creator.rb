@@ -1,6 +1,7 @@
 # frozen_string_literal: true
 
 require 'base64'
+require 'image_processing/vips'
 require 'ipaddr'
 require 'net/http'
 require 'resolv'
@@ -9,6 +10,7 @@ require 'uri'
 module Mcp
   class EntryCreator
     MAX_IMAGE_BYTES = 20.megabytes
+    BASE64_IMAGE_MAX_DIMENSION = 800
     HTTP_OPEN_TIMEOUT = 15
     HTTP_READ_TIMEOUT = 60
     MAX_REDIRECTS = 5
@@ -24,6 +26,17 @@ module Mcp
       'application/octet-stream' => '.bin'
     }.freeze
 
+    BASE64_RESIZE_OUTPUT_TYPES = {
+      'image/jpeg' => 'jpg',
+      'image/jpg' => 'jpg',
+      'image/png' => 'png',
+      'image/gif' => 'gif',
+      'image/webp' => 'webp',
+      'image/heic' => 'heic',
+      'image/heif' => 'heif',
+      'application/octet-stream' => 'jpg'
+    }.freeze
+
     def initialize(user:)
       @user = user
     end
@@ -33,8 +46,9 @@ module Mcp
     #
     # Optional image (only one):
     # - image_url: https URL to an image (fetched server-side; blocks loopback/private hosts).
-    # - image_base64: raw base64 or a data URL (data:image/png;base64,...). With raw base64,
-    #   pass image_mime_type (e.g. image/png) or it defaults to image/jpeg.
+    # - image_base64: raw base64 or a data URL (data:image/png;base64,...). Callers should
+    #   resize to fit within 800x800 before encoding; the server enforces that limit too.
+    #   With raw base64, pass image_mime_type (e.g. image/png) or it defaults to image/jpeg.
     def create(date_string:, body_text:, merge_with_existing: true, image_url: nil, image_base64: nil, image_mime_type: nil)
       date = parse_date(date_string)
       return date if date.is_a?(Hash)
@@ -154,6 +168,7 @@ module Mcp
         return { success: false, errors: ["image_mime_type #{mime.inspect} is not an allowed image type"] }
       end
 
+      bytes, mime = resize_base64_image(bytes, mime)
       ext = extension_for(mime, nil)
       build_upload(bytes, "mcp-image#{ext}", content_type_for_store(mime))
     rescue ArgumentError, OpenSSL::SSL::SSLError => e
@@ -184,6 +199,33 @@ module Mcp
         filename: File.basename(filename),
         type: content_type
       )
+    end
+
+    def resize_base64_image(bytes, mime)
+      input = Tempfile.new(['mcp-base64-image', extension_for(mime, nil)])
+      input.binmode
+      input.write(bytes)
+      input.rewind
+
+      content_type = content_type_for_store(mime)
+      output_type = BASE64_RESIZE_OUTPUT_TYPES.fetch(content_type, 'jpg')
+      output_content_type = content_type == 'application/octet-stream' ? 'image/jpeg' : content_type
+      processed = ImageProcessing::Vips
+                  .source(input)
+                  .resize_to_limit(BASE64_IMAGE_MAX_DIMENSION, BASE64_IMAGE_MAX_DIMENSION)
+                  .convert(output_type)
+                  .call
+      processed.binmode
+      processed.rewind
+      [processed.read, output_content_type]
+    rescue StandardError => e
+      Rails.logger.warn("[Mcp::EntryCreator] image_base64 resize failed: #{e.class}: #{e.message}")
+      raise ArgumentError, "could not resize image to #{BASE64_IMAGE_MAX_DIMENSION}x#{BASE64_IMAGE_MAX_DIMENSION}"
+    ensure
+      processed&.close
+      processed&.unlink
+      input&.close
+      input&.unlink
     end
 
     def parse_public_http_uri(url_string)

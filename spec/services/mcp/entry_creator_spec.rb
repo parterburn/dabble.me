@@ -48,6 +48,10 @@ RSpec.describe Mcp::EntryCreator do
     Base64.decode64("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==")
   end
 
+  let(:large_png_bytes) do
+    Vips::Image.black(1200, 900).write_to_buffer(".png")
+  end
+
   describe "#create" do
     it "rejects both image_url and image_base64" do
       result = Mcp::EntryCreator.new(user: paid_user).create(
@@ -103,6 +107,20 @@ RSpec.describe Mcp::EntryCreator do
       expect(result[:success]).to eq(true)
       expect(result[:entry][:has_image]).to eq(true)
       expect(result[:entry][:url]).to eq(expected_entry_url(Date.new(2099, 1, 11)))
+    end
+
+    it "resizes base64 images to fit within 800x800 before upload" do
+      upload = Mcp::EntryCreator
+               .new(user: paid_user)
+               .send(:decode_image_upload_from_base64, Base64.strict_encode64(large_png_bytes), "image/png")
+
+      image = Vips::Image.new_from_file(upload.tempfile.path)
+
+      expect(image.width).to eq(800)
+      expect(image.height).to eq(600)
+    ensure
+      upload&.tempfile&.close
+      upload&.tempfile&.unlink
     end
   end
 end

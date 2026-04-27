@@ -5,7 +5,7 @@ module Mcp
     class CreateEntry < MCP::Tool
       tool_name 'create_entry'
       title 'Create entry'
-      description 'Create a journal entry on a given calendar day (defaults to today in the user account timezone). Plain text is turned into HTML paragraphs. If an entry already exists for that day, appends after a separator (same as the web app) unless merge_with_existing is false. Optionally attach one image via image_url (https, fetched server-side) or image_base64 (raw base64 or data URL); do not send both.'
+      description 'Create a journal entry on a given calendar day (defaults to today in the user account timezone). Plain text is turned into HTML paragraphs. If an entry already exists for that day, appends after a separator (same as the web app) unless merge_with_existing is false. Optionally attach one image via image_url (https, fetched server-side) or image_base64 (raw base64 or data URL); do not send both. For image_base64, resize the image to fit within 800x800 before base64 encoding.'
       annotations(
         read_only_hint: false,
         destructive_hint: false,
@@ -30,7 +30,7 @@ module Mcp
           },
           image_base64: {
             type: 'string',
-            description: 'Optional image as base64: either a data URL (data:image/png;base64,...) or raw base64 bytes. If raw, set image_mime_type (e.g. image/png) or it defaults to image/jpeg.'
+            description: 'Optional image as base64: either a data URL (data:image/png;base64,...) or raw base64 bytes. Resize the image to fit within 800x800 before encoding. If raw, set image_mime_type (e.g. image/png) or it defaults to image/jpeg.'
           },
           image_mime_type: {
             type: 'string',
