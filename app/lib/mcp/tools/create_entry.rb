@@ -5,7 +5,7 @@ module Mcp
     class CreateEntry < MCP::Tool
       tool_name 'create_entry'
       title 'Create entry'
-      description 'Create a journal entry on a given calendar day (defaults to today in the user account timezone). Plain text is turned into HTML paragraphs. If an entry already exists for that day, appends after a separator (same as the web app) unless merge_with_existing is false. Optionally attach one image via image_url (https, fetched server-side) or image_base64 (raw base64 or data URL); do not send both. For image_base64, resize the image to fit within 800x800 before base64 encoding.'
+      description 'Create a journal entry on a given calendar day (defaults to today in the user account timezone). Plain text is turned into HTML paragraphs. If an entry already exists for that day, appends after a separator (same as the web app) unless merge_with_existing is false. Optionally attach one image via uploaded_image_key (preferred, from get_image_upload_url), image_url (https, fetched server-side), or image_base64 (small fallback); do not send more than one. For image_base64, resize the image to fit within 800x800 before base64 encoding.'
       annotations(
         read_only_hint: false,
         destructive_hint: false,
@@ -28,6 +28,10 @@ module Mcp
             type: 'string',
             description: 'Optional https URL of an image to attach (one image per call). Fetched by the server; private/loopback hosts are rejected. In production, only https URLs are accepted.'
           },
+          uploaded_image_key: {
+            type: 'string',
+            description: 'Preferred image attachment flow. First call get_image_upload_url, upload the image bytes with the returned PUT URL and headers, then pass the returned uploaded_image_key here. Do not combine with image_url or image_base64.'
+          },
           image_base64: {
             type: 'string',
             description: 'Optional image as base64: either a data URL (data:image/png;base64,...) or raw base64 bytes. Resize the image to fit within 800x800 before encoding. If raw, set image_mime_type (e.g. image/png) or it defaults to image/jpeg.'
@@ -41,7 +45,7 @@ module Mcp
         additionalProperties: false
       )
 
-      def self.call(server_context:, body: nil, date: nil, merge_with_existing: true, image_url: nil, image_base64: nil, image_mime_type: nil)
+      def self.call(server_context:, body: nil, date: nil, merge_with_existing: true, image_url: nil, image_base64: nil, image_mime_type: nil, uploaded_image_key: nil)
         user = Helpers.scoped_user!(server_context)
         denied = Helpers.journal_access_response(user)
         return denied if denied
@@ -55,7 +59,8 @@ module Mcp
           merge_with_existing: merge,
           image_url: image_url,
           image_base64: image_base64,
-          image_mime_type: image_mime_type
+          image_mime_type: image_mime_type,
+          uploaded_image_key: uploaded_image_key
         )
 
         MCP::Tool::Response.new(

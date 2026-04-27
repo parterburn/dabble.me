@@ -46,24 +46,32 @@ module Mcp
     #
     # Optional image (only one):
     # - image_url: https URL to an image (fetched server-side; blocks loopback/private hosts).
+    # - uploaded_image_key: key returned by get_image_upload_url after the client uploads directly.
     # - image_base64: raw base64 or a data URL (data:image/png;base64,...). Callers should
     #   resize to fit within 800x800 before encoding; the server enforces that limit too.
     #   With raw base64, pass image_mime_type (e.g. image/png) or it defaults to image/jpeg.
-    def create(date_string:, body_text:, merge_with_existing: true, image_url: nil, image_base64: nil, image_mime_type: nil)
+    def create(date_string:, body_text:, merge_with_existing: true, image_url: nil, image_base64: nil, image_mime_type: nil, uploaded_image_key: nil)
       date = parse_date(date_string)
       return date if date.is_a?(Hash)
 
-      image_upload = resolve_image_upload(image_url: image_url, image_base64: image_base64, image_mime_type: image_mime_type)
+      uploaded_key = uploaded_image_key.to_s.strip.presence
+      image_upload = resolve_image_upload(
+        image_url: image_url,
+        image_base64: image_base64,
+        image_mime_type: image_mime_type,
+        uploaded_image_key: uploaded_key
+      )
       return image_upload if image_upload.is_a?(Hash) && image_upload[:success] == false
 
       plain = body_text.to_s.strip
-      if plain.blank? && image_upload.nil?
+      has_image_input = image_upload.present? || uploaded_key.present?
+      if plain.blank? && !has_image_input
         return { success: false, errors: ['Body cannot be blank unless an image is provided'] }
       end
 
       html_body = if plain.present?
         format_plain_body(plain)
-      elsif image_upload.present?
+      elsif has_image_input
         '<p></p>'
       else
         ''
@@ -71,17 +79,17 @@ module Mcp
       existing = find_entry_on_calendar_day(date)
 
       if existing.present?
-        if existing.image.present? && image_upload.present?
+        if existing.image.present? && has_image_input
           return {
             success: false,
-            errors: ['This day already has an image. Omit image_url / image_base64 when merging, or use a day without a photo.']
+            errors: ['This day already has an image. Omit image_url / image_base64 / uploaded_image_key when merging, or use a day without a photo.']
           }
         end
 
         if merge_with_existing
           existing.body = plain.present? ? "#{existing.body}<hr>#{html_body}" : existing.body
           assign_entry_image!(existing, image_upload)
-          return persist(existing, merged: true)
+          return persist(existing, merged: true, uploaded_image_key: uploaded_key)
         end
 
         return {
@@ -94,7 +102,7 @@ module Mcp
 
       entry = @user.entries.build(date: calendar_day_start(date), body: html_body)
       assign_entry_image!(entry, image_upload)
-      persist(entry, merged: false)
+      persist(entry, merged: false, uploaded_image_key: uploaded_key)
     end
 
     private
@@ -105,12 +113,21 @@ module Mcp
       entry.image = image_upload
     end
 
-    def resolve_image_upload(image_url:, image_base64:, image_mime_type:)
+    def resolve_image_upload(image_url:, image_base64:, image_mime_type:, uploaded_image_key:)
       url = image_url.to_s.strip.presence
       b64 = image_base64.to_s.strip.presence
+      uploaded_key = uploaded_image_key.to_s.strip.presence
 
-      if url && b64
-        return { success: false, errors: ['Provide only one of image_url or image_base64'] }
+      if [url, b64, uploaded_key].compact.size > 1
+        return { success: false, errors: ['Provide only one of image_url, image_base64, or uploaded_image_key'] }
+      end
+
+      if uploaded_key
+        unless Mcp::PresignedImageUpload.key_allowed_for_user?(@user, uploaded_key)
+          return { success: false, errors: ['uploaded_image_key is not valid for this account'] }
+        end
+
+        return nil
       end
 
       if url
@@ -360,8 +377,11 @@ module Mcp
       ActionController::Base.helpers.simple_format(escaped, {}, sanitize: false)
     end
 
-    def persist(entry, merged:)
+    def persist(entry, merged:, uploaded_image_key: nil)
+      entry.uploading_image = true if uploaded_image_key.present?
+
       if entry.save
+        ProcessEntryImageJob.perform_later(entry.id, uploaded_image_key) if uploaded_image_key.present?
         { success: true, merged: merged, entry: serialize(entry) }
       else
         { success: false, errors: entry.errors.full_messages }
@@ -385,7 +405,8 @@ module Mcp
         url: Tools::Helpers.entry_public_url(entry),
         excerpt: entry.text_body.to_s.squish.truncate(5000),
         hashtags: entry.hashtags,
-        has_image: entry.image.present?
+        has_image: entry.image.present?,
+        image_processing: entry.uploading_image?
       }
     end
   end

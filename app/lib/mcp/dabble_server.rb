@@ -6,6 +6,7 @@ module Mcp
       Tools::SearchEntries,
       Tools::ListEntries,
       Tools::AnalyzeEntries,
+      Tools::GetImageUploadUrl,
       Tools::CreateEntry
     ].freeze
 
@@ -19,8 +20,10 @@ module Mcp
                       '(dabble.me) after OAuth. Users often say diary, daily log, reflections, notes, or entries to ' \
                       'mean the same saved writing in their account—use tools when they clearly mean that data, ' \
                       'not creative writing or generic prompts. Capabilities: search or list saved posts, analyze ' \
-                      'their writing, or add a new entry. Do not use for fictional scenes, scholarly journals, other products, ' \
+                      'their writing, upload a journal image, or add a new entry. Do not use for fictional scenes, scholarly journals, other products, ' \
                       'or advice that does not require their stored Dabble Me data. ' \
+                      'For user-uploaded or local images, prefer get_image_upload_url first so the client can upload bytes directly; ' \
+                      'then pass uploaded_image_key to create_entry. Use image_base64 only as a small-image fallback. ' \
                       'Tools always apply to the signed-in account from OAuth and cannot access other users’ data. ' \
                       "When linking to a day in the web app, use #{site}/entries/YYYY/M/D with unpadded month and day " \
                       "(example: #{site}/entries/2026/4/21). The compose page for new entries is #{site}/write .",

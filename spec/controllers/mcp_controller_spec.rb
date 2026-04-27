@@ -153,6 +153,50 @@ RSpec.describe McpController, type: :controller do
         expect(created.body).to include("<p>Line one.</p>")
       end
 
+      it "returns a direct image upload URL" do
+        post :invoke, params: {
+          jsonrpc: "2.0",
+          id: 32,
+          method: "tools/call",
+          params: {
+            name: "get_image_upload_url",
+            arguments: {
+              "filename" => "journal-photo.png",
+              "content_type" => "image/png"
+            }
+          }
+        }, as: :json
+
+        expect(response).to have_http_status(:ok)
+        structured = JSON.parse(response.body).dig("result", "structuredContent")
+        expect(structured["success"]).to eq(true)
+        expect(structured["upload_method"]).to eq("PUT")
+        expect(structured["upload_url"]).to include("X-Amz-Signature")
+        expect(structured["uploaded_image_key"]).to start_with(Mcp::PresignedImageUpload.key_prefix_for(paid_user))
+        expect(structured["upload_headers"]).to include("Content-Type" => "image/png")
+      end
+
+      it "rejects direct image upload URLs for accounts without journal access" do
+        free_token = doorkeeper_plain_token_for(free_ai)
+        request.env["HTTP_AUTHORIZATION"] = "Bearer #{free_token}"
+
+        post :invoke, params: {
+          jsonrpc: "2.0",
+          id: 33,
+          method: "tools/call",
+          params: {
+            name: "get_image_upload_url",
+            arguments: {
+              "filename" => "journal-photo.png",
+              "content_type" => "image/png"
+            }
+          }
+        }, as: :json
+
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body).dig("result", "isError")).to eq(true)
+      end
+
       it "scopes tools to server_context user, not another user id in memory" do
         paid_entry.update!(body: "secret paid content")
         other = free_ai

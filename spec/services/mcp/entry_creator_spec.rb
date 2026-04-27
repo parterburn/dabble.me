@@ -64,6 +64,31 @@ RSpec.describe Mcp::EntryCreator do
       expect(result[:errors].first).to include("only one of image_url")
     end
 
+    it "rejects uploaded_image_key combined with another image input" do
+      key = Mcp::PresignedImageUpload.build_key(user: paid_user, filename: "photo.jpg", content_type: "image/jpeg")
+
+      result = Mcp::EntryCreator.new(user: paid_user).create(
+        date_string: "2099-01-02",
+        body_text: "hello",
+        image_url: "https://example.com/a.png",
+        uploaded_image_key: key
+      )
+
+      expect(result[:success]).to eq(false)
+      expect(result[:errors].first).to include("only one of image_url")
+    end
+
+    it "rejects uploaded_image_key outside the authenticated user's upload prefix" do
+      result = Mcp::EntryCreator.new(user: paid_user).create(
+        date_string: "2099-01-02",
+        body_text: "hello",
+        uploaded_image_key: "uploads/development/another-user/mcp-temp/photo.jpg"
+      )
+
+      expect(result[:success]).to eq(false)
+      expect(result[:errors].first).to include("not valid for this account")
+    end
+
     it "rejects private-host image URLs before fetching" do
       result = Mcp::EntryCreator.new(user: paid_user).create(
         date_string: "2099-01-03",
@@ -121,6 +146,25 @@ RSpec.describe Mcp::EntryCreator do
     ensure
       upload&.tempfile&.close
       upload&.tempfile&.unlink
+    end
+
+    it "creates an image-only entry from an uploaded image key and schedules processing" do
+      clear_calendar_day!(paid_user, Date.new(2099, 1, 12))
+      key = Mcp::PresignedImageUpload.build_key(user: paid_user, filename: "photo.jpg", content_type: "image/jpeg")
+      allow(ProcessEntryImageJob).to receive(:perform_later)
+
+      result = Mcp::EntryCreator.new(user: paid_user).create(
+        date_string: "2099-01-12",
+        body_text: "",
+        uploaded_image_key: key
+      )
+
+      expect(result[:success]).to eq(true)
+      expect(result[:entry][:image_processing]).to eq(true)
+      entry = paid_user.entries.find(result[:entry][:id])
+      expect(entry).to be_uploading_image
+      expect(entry.body).to eq("<p></p>")
+      expect(ProcessEntryImageJob).to have_received(:perform_later).with(entry.id, key)
     end
   end
 end
