@@ -102,7 +102,7 @@ class ImageCollageJob < ActiveJob::Base
 
     last_message = nil
     message = nil
-    5.times do
+    5.times do |attempt|
       connection = Faraday.new(url: "https://api.mailgun.net") do |f|
         f.request :json
         f.response :json
@@ -113,13 +113,14 @@ class ImageCollageJob < ActiveJob::Base
       resp = connection.get("/v3/#{ENV['SMTP_DOMAIN']}/events?pretty=yes&event=accepted&ascending=no&limit=1&message-id=#{URI.encode_www_form_component(@message_id)}")
       last_message = resp.body&.dig("items", 0) if resp.success?
       break if last_message.present?
-      sleep 10
+
+      sleep(10 * (2**attempt)) if attempt < 4
     end
     @error = "No last message found" unless last_message.present?
     return unless last_message.present?
 
     message = nil
-    5.times do
+    5.times do |attempt|
       message_url = URI.parse(last_message["storage"]["url"])
       msg_conn = Faraday.new("https://#{message_url.host}") do |f|
         f.options.timeout = 120
@@ -131,7 +132,8 @@ class ImageCollageJob < ActiveJob::Base
       response = msg_conn.get(message_url.path)
       message = response.body if response.success?
       break if message.present?
-      sleep 10
+
+      sleep(10 * (2**attempt)) if attempt < 4
     end
     @error = "No message found" unless message.present?
     @error = "Message not from user" unless message["recipients"].to_s.include?(@user.user_key) || message["from"].to_s.include?(@user.email)
