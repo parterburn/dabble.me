@@ -127,8 +127,7 @@ class RegistrationsController < Devise::RegistrationsController
   def cancel_stripe_subscription
     return unless current_user.stripe_id.present?
 
-    customer = Stripe::Customer.retrieve(current_user.stripe_id)
-    customer.subscriptions.each(&:cancel)
+    Stripe::Subscription.list(customer: current_user.stripe_id).auto_paging_each(&:cancel)
   rescue Stripe::InvalidRequestError => e
     Sentry.capture_exception(e, extra: { user_id: current_user.id, stripe_id: current_user.stripe_id })
   end

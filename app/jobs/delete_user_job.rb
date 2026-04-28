@@ -16,8 +16,7 @@ class DeleteUserJob < ActiveJob::Base
     # Cancel Stripe subscription (should already be cancelled, but ensures cleanup)
     if stripe_id.present?
       begin
-        customer = Stripe::Customer.retrieve(stripe_id)
-        customer.subscriptions.each(&:cancel)
+        Stripe::Subscription.list(customer: stripe_id).auto_paging_each(&:cancel)
       rescue Stripe::InvalidRequestError
         # Already cancelled or customer doesn't exist - that's fine
       end
