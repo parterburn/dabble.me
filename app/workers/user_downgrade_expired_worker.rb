@@ -12,7 +12,7 @@ class UserDowngradeExpiredWorker
 
   def downgrade_yearly
     User.pro_only.yearly.not_forever.joins(:payments)
-        .where("payments.amount > ?", 10.00)
+        .where("payments.amount > ?", 7.00)
         .having("MAX(payments.date) < ?", 375.days.ago)
         .group("users.id")
         .each { |user| downgrade(user) }
@@ -31,7 +31,7 @@ class UserDowngradeExpiredWorker
       unless user.id.in?(skip_ids)
         Sentry.set_user(id: user.id, email: user.email)
         Sentry.set_tags(plan: user.plan)
-        Sentry.capture_message("Downgrade attempt for active Stripe subscription user", level: :error)
+        Sentry.capture_message("Downgrade attempt for active Stripe subscription user", level: :error, extra: { email: user.email, plan: user.plan })
       end
       return
     end

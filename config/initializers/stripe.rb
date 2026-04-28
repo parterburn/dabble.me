@@ -28,9 +28,21 @@ StripeEvent.configure do |events|
       user ||= User.where(email: invoice.customer_email.downcase).first
 
       if user
-        if user.payments.where("comments ILIKE ?", "%#{frequency}%").last&.date&.to_date != Date.today
-          Payment.create(user_id: user.id, comments: "Stripe #{frequency} from #{invoice.customer_email}", date: Time.now.strftime("%Y-%m-%d").to_s, amount: paid)
+        # Idempotent per invoice — same-day proration + subscription update are separate invoices.
+        begin
+          payment = user.payments.find_or_initialize_by(stripe_invoice_id: invoice.id)
+          if payment.new_record?
+            payment.assign_attributes(
+              comments: "Stripe #{frequency} from #{invoice.customer_email}",
+              date: Time.now.strftime('%Y-%m-%d').to_s,
+              amount: paid
+            )
+            payment.save!
+          end
+        rescue ActiveRecord::RecordNotUnique
+          # Concurrent duplicate webhook delivery
         end
+
         user.update(plan: "PRO #{frequency} PayHere")
 
         if user.plan_previous_change&.first == "Free"
