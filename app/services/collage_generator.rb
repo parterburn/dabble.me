@@ -10,11 +10,15 @@ require "uri"
 # canvas. Tiles are cover-cropped to exactly fill each cell using libvips'
 # attention-based crop (centers the crop on salient features like faces);
 # because each row's cell height is derived from the actual content, crop
-# loss is typically zero for uniform rows and small for mixed rows. White
+# loss is typically zero for uniform rows and small for mildly mixed rows.
+# For fixed row plans (e.g. eight photos → two rows of four), input order is
+# re-sorted by aspect ratio before placement so each row groups landscape-like
+# and portrait-like shots together instead of interleaving them (which shares
+# one row height and forces heavy smart-crops on both orientations). White
 # SHIM separates tiles and an outer margin mattes the whole canvas. Duplicate
 # URLs are collapsed.
 class CollageGenerator
-  MAX_IMAGES = 16
+  MAX_IMAGES = 8
   DEFAULT_SIZE = 1200
   JPEG_QUALITY = 88
   HTTP_OPEN_TIMEOUT = 15
@@ -100,6 +104,7 @@ class CollageGenerator
 
   def build_grid(images)
     plan = row_plan(images)
+    images = reorder_images_for_aspect_rows(images, plan)
     inner_w = @size - (2 * SHIM)
 
     # For each row, derive its height from the photos that live in it so the
@@ -163,6 +168,24 @@ class CollageGenerator
     remainder = (cols * rows) - n
     per_row[-1] -= remainder if remainder.positive?
     per_row
+  end
+
+  # Sort by width/height (landscape-heavy → portrait-heavy) then assign
+  # consecutive runs to each row in `plan`. That way a [4,4] collage with four
+  # of each orientation tends to get one landscape row and one portrait row
+  # instead of four mixed cells per row sharing a single compromised height.
+  def reorder_images_for_aspect_rows(images, plan)
+    return images if images.size <= 1 || plan.blank?
+
+    sorted = images.sort_by { |img| -(img.width.to_f / img.height) }
+    out = []
+    idx = 0
+    plan.each do |cols|
+      slice = sorted[idx, cols]
+      out.concat(slice) if slice
+      idx += cols
+    end
+    out
   end
 
   # Cover-crop the image to exactly fill cell_w x cell_h using libvips'

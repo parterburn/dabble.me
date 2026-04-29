@@ -136,7 +136,7 @@ module ApplicationHelper
         questions: [
           {
             q: "How do I add photos to my entry?",
-            a: "When you reply to your Dabble Me email, just attach photos to the email and they'll be saved with your entry. You can also add photos on the website when you edit an entry. You can add up to 5 photos per entry (they will create a collage). Dabble Me supports JPEG, GIF, PNG, and HEIC/HEIF (mobile) formats."
+            a: "When you reply to your Dabble Me email, just attach photos to the email and they'll be saved with your entry. You can also add photos on the website when you edit an entry. You can add up to #{CollageGenerator::MAX_IMAGES} photos per entry (they will create a collage). Dabble Me supports JPEG, GIF, PNG, and HEIC/HEIF (mobile) formats."
           },
           {
             q: "How do I edit or delete an entry?",
