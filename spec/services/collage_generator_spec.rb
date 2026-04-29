@@ -30,5 +30,15 @@ RSpec.describe CollageGenerator do
       expect(ordered[0, 2]).to all satisfy { |img| img.width > img.height }
       expect(ordered[2, 3]).to contain_exactly(land, port, port)
     end
+
+    it "fits each tile to the cell without cropping (letterbox), exact output size" do
+      gen = described_class.new(urls: [])
+      # Wide source in a square cell → scaled down, vertical padding.
+      img = Vips::Image.black(200, 100, bands: 3).linear(1, [40, 80, 120])
+      tile = gen.send(:prepare_tile, img, 100, 100)
+
+      expect(tile.width).to eq(100)
+      expect(tile.height).to eq(100)
+    end
   end
 end

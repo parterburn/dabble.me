@@ -7,16 +7,13 @@ require "uri"
 # no empty padding tiles for 2..9 images. Canvas WIDTH is fixed at @size and
 # HEIGHT floats based on the source photos' aspect ratios, so three landscapes
 # produce a near-square output instead of a thin strip inside a huge square
-# canvas. Tiles are cover-cropped to exactly fill each cell using libvips'
-# attention-based crop (centers the crop on salient features like faces);
-# because each row's cell height is derived from the actual content, crop
-# loss is typically zero for uniform rows and small for mildly mixed rows.
-# For fixed row plans (e.g. eight photos → two rows of four), input order is
-# re-sorted by aspect ratio before placement so each row groups landscape-like
-# and portrait-like shots together instead of interleaving them (which shares
-# one row height and forces heavy smart-crops on both orientations). White
-# SHIM separates tiles and an outer margin mattes the whole canvas. Duplicate
-# URLs are collapsed.
+# canvas. Each tile is scaled down (never up) to fit entirely inside its cell;
+# leftover space is white letterboxing so no part of the photo is cropped.
+# Row height is still derived from the photos in each row so the overall
+# collage stays compact. For fixed row plans (e.g. eight photos → two rows of
+# four), input order is re-sorted by aspect ratio so each row groups similar
+# orientations and needs less padding. White SHIM separates tiles and an outer
+# margin mattes the whole canvas. Duplicate URLs are collapsed.
 class CollageGenerator
   MAX_IMAGES = 8
   DEFAULT_SIZE = 1200
@@ -118,9 +115,8 @@ class CollageGenerator
       idx += cols
 
       # Each image's "natural" height at this cell width. The row shares one
-      # height, so we average — this bounds per-tile crop to the spread of
-      # aspects within the row (uniform rows → ~zero crop; mixed rows → a
-      # mild, attention-centered crop on the outliers).
+      # height, so we average — uniform rows get tight lettering; mixed rows
+      # get more white padding around tiles that are shorter than row_h.
       naturals = row_imgs.map { |img| (cell_w.to_f * img.height / img.width).round }
       avg = naturals.sum / naturals.size
       row_h = avg.clamp((cell_w / MAX_TILE_ASPECT).round, (cell_w * MAX_TILE_PORTRAIT).round)
@@ -188,21 +184,30 @@ class CollageGenerator
     out
   end
 
-  # Cover-crop the image to exactly fill cell_w x cell_h using libvips'
-  # attention-based smart crop (centers on salient features — faces, subjects
-  # — instead of the geometric center). Because build_grid picks row heights
-  # to match the row's content aspect, most tiles come out essentially
-  # uncropped; outliers in a mixed row get a modest smart-crop rather than
-  # blind center-cropping or bands of white letterbox.
-  #
-  # Falls back to :centre if libvips was built without smartcrop (older
-  # builds / minimal containers).
+  # Scale the image to fit inside cell_w × cell_h (shrink only), center it on
+  # a white canvas of exactly that size — no cropping; mismatch shows as
+  # letterboxing / pillarboxing.
   def prepare_tile(image, width, height)
-    tile = begin
-      image.thumbnail_image(width, height: height, crop: :attention)
-    rescue Vips::Error, ArgumentError
-      image.thumbnail_image(width, height: height, crop: :centre)
+    iw = image.width
+    ih = image.height
+    raise Vips::Error, 'zero-sized collage source' if iw < 1 || ih < 1
+
+    scale = [width.to_f / iw, height.to_f / ih].min
+    scale = [scale, 1.0].min
+    scale = [scale, 1e-9].max
+
+    scaled = image.resize(scale)
+    if scaled.width > width || scaled.height > height
+      scale2 = [width.to_f / scaled.width, height.to_f / scaled.height].min
+      scaled = scaled.resize(scale2)
     end
+
+    left = ((width - scaled.width) / 2.0).round
+    top = ((height - scaled.height) / 2.0).round
+    left = left.clamp(0, width)
+    top = top.clamp(0, height)
+
+    tile = scaled.embed(left, top, width, height, extend: :background, background: BACKGROUND)
     tile = tile.flatten(background: BACKGROUND) if tile.has_alpha?
     tile.colourspace(:srgb).cast(:uchar)
   end
