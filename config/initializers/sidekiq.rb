@@ -1,28 +1,30 @@
 # frozen_string_literal: true
+
 Rails.application.config.to_prepare do
   Sidekiq.strict_args!(false)
 end
 
+# Gate cron loading via env — keeps cron off in dev/test unless explicitly enabled.
 if ENV.key?("SIDEKIQ_CRON_ENABLED")
   require "sidekiq/cron"
 
   Sidekiq::Cron.configure do |config|
     config.cron_schedule_file = "config/sidekiq_cron_schedule.yml"
 
-    config.cron_poll_interval = 60  # 1 minute in seconds
+    config.cron_poll_interval = 60 # seconds
 
     # Allow one-off jobs (e.g. daily) to enqueue after a deploy/restart window.
-    config.reschedule_grace_period = 600  # 10 minutes in seconds
+    config.reschedule_grace_period = 600 # seconds
   end
 
-  # sidekiq-cron already reloads YAML on Sidekiq boot (schedule_loader.rb). Redis
-  # plugins (e.g. Railway) may restart Redis without persistence, wiping cron
-  # definitions while the Sidekiq process keeps running; nothing re-enqueues then.
-  # A periodic Sidekiq-cron entry cannot heal a full wipe (it's stored in Redis too),
-  # so we re-assert the YAML schedule from disk on an interval inside the Sidekiq process.
-  Sidekiq.configure_server do |config|
-    config.on(:startup) do
-      SidekiqCronScheduleSync.start_periodic_daemon
+  # Cron metadata lives only in Redis. Managed Redis (e.g. Railway) can restart without
+  # durable persistence, wiping cron definitions while Sidekiq keeps running. sidekiq-cron
+  # reloads YAML on boot (schedule_loader.rb); we also reload explicitly via Rails.root
+  # paths and run a daemon to recover mid-flight Redis flushes — see SidekiqCronSchedule.
+  Sidekiq.configure_server do |cfg|
+    cfg.on(:startup) do
+      SidekiqCronSchedule.load_from_file!
+      SidekiqCronSchedule.start_health_daemon
     end
   end
 end

@@ -2,17 +2,17 @@
 
 require "rails_helper"
 
-RSpec.describe SidekiqCronScheduleSync do
+RSpec.describe SidekiqCronSchedule do
   before do
     Sidekiq::Cron.configuration.cron_schedule_file = "config/sidekiq_cron_schedule.yml"
   end
 
-  describe ".heal_if_needed" do
+  describe ".repair_if_drifted!" do
     it "reloads schedule when Redis is missing cron jobs vs YAML set" do
       allow(Sidekiq::Cron::Job).to receive(:all).and_return([])
       allow(Sidekiq::Cron::Job).to receive(:load_from_hash!)
 
-      described_class.heal_if_needed
+      described_class.repair_if_drifted!
 
       expect(Sidekiq::Cron::Job).to have_received(:load_from_hash!).with(
         kind_of(Hash),
@@ -27,7 +27,7 @@ RSpec.describe SidekiqCronScheduleSync do
 
       allow(Sidekiq::Cron::Job).to receive_messages(all: jobs, load_from_hash!: nil)
 
-      described_class.heal_if_needed
+      described_class.repair_if_drifted!
 
       expect(Sidekiq::Cron::Job).not_to have_received(:load_from_hash!)
     end
