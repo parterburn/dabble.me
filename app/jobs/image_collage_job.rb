@@ -160,7 +160,7 @@ class ImageCollageJob < ActiveJob::Base
     urls = urls.map do |url|
       next if url.blank?
 
-      if url.downcase.ends_with?(".heic")
+      if heic_like_url?(url)
         begin
           if url.include?("@")
             uri = URI.parse(url)
@@ -170,7 +170,8 @@ class ImageCollageJob < ActiveJob::Base
               f.request :authorization, :basic, "api", ENV['MAILGUN_API_KEY']
             end
             response = conn.get(uri.path)
-            tempfile = Tempfile.new(['attachment', ".heic"])
+            ext = heic_temp_extension(url)
+            tempfile = Tempfile.new(['attachment', ext])
             tempfile.binmode
             tempfile.write(response.body)
             tempfile.rewind
@@ -196,5 +197,21 @@ class ImageCollageJob < ActiveJob::Base
     elsif urls.any?
       CollageGenerator.new(urls: urls, user: @user).s3_url
     end
+  end
+
+  private
+
+  # Mailgun URLs may look like `.../storage/abc?name=IMG.heic` (see `?#{att["name"]}`).
+  def heic_like_url?(url)
+    u = url.to_s.downcase
+    return true if u.end_with?('.heic', '.heif')
+
+    q = u.split('?', 2)[1]
+    q.present? && (q.end_with?('.heic', '.heif'))
+  end
+
+  def heic_temp_extension(url)
+    base = url.to_s.downcase.split('?', 2).last
+    base.end_with?('.heif') ? '.heif' : '.heic'
   end
 end

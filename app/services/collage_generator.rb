@@ -202,13 +202,18 @@ class CollageGenerator
       scaled = scaled.resize(scale2)
     end
 
+    # Composite alpha before embed — libvips requires background vectors to match
+    # band count (HEIC often decodes as RGBA; embed with [255,255,255] errors as
+    # "linear: vector must have 1 or 4 elements"). CMYK etc. must be sRGB before embed.
+    scaled = scaled.flatten(background: BACKGROUND) if scaled.has_alpha?
+    scaled = scaled.colourspace(:srgb)
+
     left = ((width - scaled.width) / 2.0).round
     top = ((height - scaled.height) / 2.0).round
     left = left.clamp(0, width)
     top = top.clamp(0, height)
 
     tile = scaled.embed(left, top, width, height, extend: :background, background: BACKGROUND)
-    tile = tile.flatten(background: BACKGROUND) if tile.has_alpha?
     tile.colourspace(:srgb).cast(:uchar)
   end
 
@@ -216,7 +221,10 @@ class CollageGenerator
     data = fetch_bytes(url)
     return nil unless data
 
-    decode_image(data)
+    img = decode_image(data)
+    # `new_from_buffer` can succeed lazily then fail mid-pipeline (truncated HEIC,
+    # seek errors). Materialize while we still know the URL for logging.
+    img.copy_memory
   rescue Vips::Error => e
     Sentry.capture_exception(e, extra: { url: sanitize_url(url) })
     nil
