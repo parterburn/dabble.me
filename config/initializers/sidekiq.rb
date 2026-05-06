@@ -12,27 +12,15 @@ Sidekiq.configure_server do |config|
   config[:dead_timeout_in_seconds] = 15_552_000 # 180 days (~6 months)
 end
 
-# Gate cron loading via env — keeps cron off in dev/test unless explicitly enabled.
+# sidekiq-cron: https://github.com/sidekiq-cron/sidekiq-cron
+# ScheduleLoader (bundled with the gem) runs on Sidekiq process startup and loads the YAML.
+# Gate with SIDEKIQ_CRON_ENABLED so dev/test Sidekiq processes skip cron unless you opt in.
 if ENV.key?("SIDEKIQ_CRON_ENABLED")
   require "sidekiq/cron"
 
   Sidekiq::Cron.configure do |config|
     config.cron_schedule_file = "config/sidekiq_cron_schedule.yml"
-
-    config.cron_poll_interval = 60 # seconds
-
-    # Allow one-off jobs (e.g. daily) to enqueue after a deploy/restart window.
-    config.reschedule_grace_period = 600 # seconds
-  end
-
-  # Cron metadata lives only in Redis. Managed Redis (e.g. Railway) can restart without
-  # durable persistence, wiping cron definitions while Sidekiq keeps running. sidekiq-cron
-  # reloads YAML on boot (schedule_loader.rb); we also reload explicitly via Rails.root
-  # paths and run a daemon to recover mid-flight Redis flushes — see SidekiqCronSchedule.
-  Sidekiq.configure_server do |cfg|
-    cfg.on(:startup) do
-      SidekiqCronSchedule.load_from_file!
-      SidekiqCronSchedule.start_health_daemon
-    end
+    config.cron_poll_interval = 60
+    config.reschedule_grace_period = 600 # seconds — catch-up after deploy/restart
   end
 end

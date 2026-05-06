@@ -75,9 +75,10 @@ gem 'sass-rails'
 gem 'twbs_sass_rails'
 gem 'uglifier'
 
-gem "sidekiq"
-gem "sidekiq-cron"
-gem "connection_pool", "~> 2.4"  # Pin to 2.x until Sidekiq supports 3.x API
+# Sidekiq 8.x requires Rack 3.2+ (Rails 7+). Rails 6.1 stays on Rack 2.x — use latest Sidekiq 7.3.x.
+gem "sidekiq", "~> 7.3"
+gem "sidekiq-cron", "~> 2.4"
+gem "connection_pool", "~> 2.4"
 gem "redis"
 gem "sentry-ruby"
 gem "sentry-rails"
