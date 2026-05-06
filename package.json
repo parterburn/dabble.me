@@ -5,7 +5,7 @@
   "dependencies": {
     "@tailwindcss/cli": "^4.2.1",
     "autoprefixer": "^10.4.27",
-    "postcss": "^8.5.8",
+    "postcss": "^8.5.14",
     "tailwindcss": "^4.2.1"
   },
   "scripts": {
