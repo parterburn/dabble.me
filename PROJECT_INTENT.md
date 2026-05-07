@@ -39,7 +39,6 @@ If you're modifying behavior around imports, scheduling, or the email reply form
 | **Spotify songs** | Entries can carry a list of songs; the UI embeds Spotify players. Adds a "what was I listening to" dimension to memory. |
 | **Image upload (S3 + CloudFront + libvips/libheif)** | One image per entry. HEIC/HEIF is explicitly supported because that's what iPhones produce by default. Conversion happens async via [ProcessEntryImageJob](app/jobs/process_entry_image_job.rb) with a placeholder image while it works. |
 | **MCP server** (`/mcp`, [McpController](app/controllers/mcp_controller.rb), [Mcp::DabbleServer](app/services/mcp/)) | Lets PRO users connect Dabble Me to AI clients (Claude, etc.) over OAuth so the assistant can search/list/analyze/create entries. **Currently a power-user feature**, but the medium-term bet is getting listed in the OpenAI / Claude connector stores so non-technical users can one-click install. Decisions about MCP UX, naming, scope descriptions, and OAuth flow should be made with that future audience in mind, not just current power users. |
-| **X (Twitter) bookmark digests** ([XBookmark](app/models/x_bookmark.rb), [XBookmarkSummariesWorker](app/workers/x_bookmark_summaries_worker.rb)) | **Paul-only feature** that lives in this app to avoid spinning up (and paying for) a separate Railway service. Not exposed to other users. If a refactor would meaningfully simplify the rest of the codebase by extracting it, that's worth flagging — but don't extract unprompted. |
 | **Admin portal** (`/admin/*`, Sidekiq UI at `/sidekiq`) | Operator-only views: user counts, payments/MRR, photos, Sidekiq state. Gated by `User#admin?`. |
 | **Year in Review** (`/review/:year`) | Always-on, surfaced in the navbar under stats. Pushed harder in marketing/email around end-of-year and start-of-year. The intent is "annual reflection ritual" — the EOY/BOY push is a campaign on top of an evergreen feature. |
 
@@ -73,6 +72,7 @@ These aren't written down anywhere but the code clearly reflects them.
 - **`Inspiration` row with category "OhLife"** is load-bearing for the OhLife importer — it's the FK target for imported entries.
 - **Body field stores HTML, including embedded `<div data-content='dabblemegpt'>` AI responses.** The DOM-ish markers are how AI replies are detected and re-rendered. Don't strip them.
 - **Default S3 image domain in the model is a CloudFront URL** (`d10r8m94hrfowu.cloudfront.net`). That's a real prod CDN — don't accidentally hardcode it elsewhere.
+- **Stale `x_*` and `raindrop_api_key` columns on `users` plus an empty `x_bookmarks` table** are leftovers from a personal X-bookmarks digest feature that has been moved to a separate service ([parterburn/x-recap](https://github.com/parterburn/x-recap)). The columns/table will be dropped in a follow-up migration once the data is moved over. Don't reintroduce code that reads them.
 
 ## 7. Hosting & operational context
 

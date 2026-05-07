@@ -8,8 +8,5 @@ Rails.application.config.filter_parameters += [
   :access_token,
   :authorization,
   :otp_attempt,
-  :otp_code,
-  :raindrop_api_key,
-  :x_access_token,
-  :x_refresh_token
+  :otp_code
 ]

@@ -1,6 +1,5 @@
 class User < ActiveRecord::Base
   include RandomizedField
-  include User::XOauth
 
   VALID_EMAIL_REGEX = /\A[A-Z0-9._%'+-]+@[A-Z0-9.-]+\.[A-Z]{2,63}\z/i
   validates :email, format: { with: VALID_EMAIL_REGEX }, allow_blank: true
@@ -18,7 +17,6 @@ class User < ActiveRecord::Base
   has_many :hashtags, dependent: :destroy
   has_many :payments
   has_many :webauthn_credentials, dependent: :destroy
-  has_many :x_bookmarks, dependent: :destroy
 
   accepts_nested_attributes_for :hashtags, allow_destroy: true, :reject_if => proc { |att| att[:tag].blank? || att[:date].blank? }
 
