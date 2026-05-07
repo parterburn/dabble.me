@@ -72,7 +72,6 @@ These aren't written down anywhere but the code clearly reflects them.
 - **`Inspiration` row with category "OhLife"** is load-bearing for the OhLife importer — it's the FK target for imported entries.
 - **Body field stores HTML, including embedded `<div data-content='dabblemegpt'>` AI responses.** The DOM-ish markers are how AI replies are detected and re-rendered. Don't strip them.
 - **Default S3 image domain in the model is a CloudFront URL** (`d10r8m94hrfowu.cloudfront.net`). That's a real prod CDN — don't accidentally hardcode it elsewhere.
-- **Stale `x_*` and `raindrop_api_key` columns on `users` plus an empty `x_bookmarks` table** are leftovers from a personal X-bookmarks digest feature that has been moved to a separate service ([parterburn/x-recap](https://github.com/parterburn/x-recap)). The columns/table will be dropped in a follow-up migration once the data is moved over. Don't reintroduce code that reads them.
 
 ## 7. Hosting & operational context
 

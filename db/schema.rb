@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2026_05_06_210000) do
+ActiveRecord::Schema.define(version: 2026_05_07_120100) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -159,11 +159,6 @@ ActiveRecord::Schema.define(version: 2026_05_06_210000) do
     t.text "otp_recovery_secret_ciphertext"
     t.text "otp_persistence_seed_ciphertext"
     t.datetime "deleted_at"
-    t.string "x_username"
-    t.string "x_uid"
-    t.text "x_access_token"
-    t.text "x_refresh_token"
-    t.string "raindrop_api_key"
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["otp_challenge_expires"], name: "index_users_on_otp_challenge_expires"
     t.index ["otp_session_challenge"], name: "index_users_on_otp_session_challenge", unique: true
@@ -184,27 +179,9 @@ ActiveRecord::Schema.define(version: 2026_05_06_210000) do
     t.index ["user_id"], name: "index_webauthn_credentials_on_user_id"
   end
 
-  create_table "x_bookmarks", force: :cascade do |t|
-    t.bigint "user_id", null: false
-    t.string "tweet_id", null: false
-    t.string "author_id"
-    t.string "author_username"
-    t.string "author_name"
-    t.text "text"
-    t.datetime "tweeted_at"
-    t.string "url"
-    t.jsonb "entities", default: {}
-    t.jsonb "public_metrics", default: {}
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
-    t.index ["user_id", "tweet_id"], name: "index_x_bookmarks_on_user_id_and_tweet_id", unique: true
-    t.index ["user_id"], name: "index_x_bookmarks_on_user_id"
-  end
-
   add_foreign_key "oauth_access_grants", "oauth_applications", column: "application_id"
   add_foreign_key "oauth_access_grants", "users", column: "resource_owner_id"
   add_foreign_key "oauth_access_tokens", "oauth_applications", column: "application_id"
   add_foreign_key "oauth_access_tokens", "users", column: "resource_owner_id"
   add_foreign_key "webauthn_credentials", "users"
-  add_foreign_key "x_bookmarks", "users"
 end
