@@ -210,6 +210,10 @@ class User < ActiveRecord::Base
     super.present? ? super : true
   end
 
+  def send_devise_notification(notification, *args)
+    devise_mailer.send(notification, self, *args).deliver_later
+  end
+
   def any_hashtags?
     original_hashtags.any?
   end

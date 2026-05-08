@@ -123,4 +123,22 @@ describe User do
       expect(token.reload.revoked_at).to be_nil
     end
   end
+
+  describe '#send_devise_notification' do
+    around do |example|
+      previous_adapter = ActiveJob::Base.queue_adapter
+      ActiveJob::Base.queue_adapter = :test
+      example.run
+    ensure
+      ActiveJob::Base.queue_adapter = previous_adapter
+    end
+
+    it 'enqueues reset password instructions instead of delivering them synchronously' do
+      ActiveJob::Base.queue_adapter.enqueued_jobs.clear
+
+      expect do
+        user.send_reset_password_instructions
+      end.to have_enqueued_mail(Devise::Mailer, :reset_password_instructions)
+    end
+  end
 end
