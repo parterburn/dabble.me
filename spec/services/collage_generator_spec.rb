@@ -31,6 +31,25 @@ RSpec.describe CollageGenerator do
       expect(ordered[2, 3]).to contain_exactly(land, port, port)
     end
 
+    it "applies EXIF orientation via autorot" do
+      gen = described_class.new(urls: [])
+      img = Vips::Image.black(100, 200, bands: 3)
+
+      oriented = gen.send(:orient_image, img)
+
+      expect(oriented).to be_a(Vips::Image)
+      expect(oriented.width).to eq(100)
+      expect(oriented.height).to eq(200)
+    end
+
+    it "returns the original image when autorot fails" do
+      gen = described_class.new(urls: [])
+      img = Vips::Image.black(10, 20, bands: 3)
+      allow(img).to receive(:autorot).and_raise(Vips::Error, "autorot failed")
+
+      expect(gen.send(:orient_image, img)).to eq(img)
+    end
+
     it "fits each tile to the cell without cropping (letterbox), exact output size" do
       gen = described_class.new(urls: [])
       # Wide source in a square cell → scaled down, vertical padding.
