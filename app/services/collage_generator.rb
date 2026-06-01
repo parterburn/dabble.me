@@ -221,7 +221,7 @@ class CollageGenerator
     data = fetch_bytes(url)
     return nil unless data
 
-    img = decode_image(data)
+    img = orient_image(decode_image(data))
     # `new_from_buffer` can succeed lazily then fail mid-pipeline (truncated HEIC,
     # seek errors). Materialize while we still know the URL for logging.
     img.copy_memory
@@ -241,6 +241,14 @@ class CollageGenerator
     Vips::Image.new_from_buffer(data, "", fail_on: :none)
   rescue ArgumentError
     Vips::Image.new_from_buffer(data, "", fail: false)
+  end
+
+  # Phone JPEGs/HEIC often store pixels on the side and rely on EXIF orientation.
+  # Browsers respect that tag; libvips does not unless we autorot explicitly.
+  def orient_image(image)
+    image.autorot
+  rescue Vips::Error
+    image
   end
 
   # Downloads the URL body using Net::HTTP directly. We avoid open-uri because
