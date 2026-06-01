@@ -124,6 +124,18 @@ describe User do
     end
   end
 
+  describe '#cancel_pending_deletion!' do
+    it 'clears deleted_at when deletion is pending' do
+      user.update_column(:deleted_at, Time.current)
+      expect(user.cancel_pending_deletion!).to eq(true)
+      expect(user.reload.deleted_at).to be_nil
+    end
+
+    it 'returns false when deletion is not pending' do
+      expect(user.cancel_pending_deletion!).to eq(false)
+    end
+  end
+
   describe '#send_devise_notification' do
     around do |example|
       previous_adapter = ActiveJob::Base.queue_adapter

@@ -121,14 +121,11 @@ class User < ActiveRecord::Base
     deleted_at.present?
   end
 
-  # Devise: prevent login if account is pending deletion
-  def active_for_authentication?
-    super && !deletion_pending?
-  end
+  def cancel_pending_deletion!
+    return false unless deletion_pending?
 
-  # Devise: custom message for pending deletion
-  def inactive_message
-    deletion_pending? ? :account_pending_deletion : super
+    update_column(:deleted_at, nil)
+    true
   end
 
   def is_pro?

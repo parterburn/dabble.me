@@ -291,3 +291,9 @@ Devise.setup do |config|
   #config.otp_controller_path = 'devise'
 
 end
+
+Warden::Manager.after_authentication do |user, auth, _opts|
+  next unless user.is_a?(User) && user.cancel_pending_deletion!
+
+  auth.request.flash[:notice] = I18n.t('devise.sessions.deletion_cancelled')
+end
