@@ -13,14 +13,7 @@ class DeleteUserJob < ActiveJob::Base
     payhere_id = user.payhere_id
     stripe_id = user.stripe_id
 
-    # Cancel Stripe subscription (should already be cancelled, but ensures cleanup)
-    if stripe_id.present?
-      begin
-        Stripe::Subscription.list(customer: stripe_id).auto_paging_each(&:cancel)
-      rescue Stripe::InvalidRequestError
-        # Already cancelled or customer doesn't exist - that's fine
-      end
-    end
+    cancel_stripe_subscriptions(stripe_id)
 
     # Destroy entries in batches to avoid memory issues and trigger CarrierWave cleanup
     Entry.where(user_id: user_id).find_each(batch_size: 100, &:destroy)
@@ -42,5 +35,15 @@ class DeleteUserJob < ActiveJob::Base
         deleted_at: user.deleted_at
       })
     end
+  end
+
+  private
+
+  def cancel_stripe_subscriptions(stripe_id)
+    return if stripe_id.blank?
+
+    Stripe::Subscription.list(customer: stripe_id).auto_paging_each(&:cancel)
+  rescue Stripe::InvalidRequestError => e
+    Sentry.capture_exception(e, extra: { stripe_id: stripe_id })
   end
 end

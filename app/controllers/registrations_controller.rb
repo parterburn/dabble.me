@@ -63,7 +63,7 @@ class RegistrationsController < Devise::RegistrationsController
     if current_user.valid_password?(params[:user][:current_password])
       schedule_user_deletion
       sign_out current_user
-      redirect_to root_path, notice: "Your account will be permanently deleted in 1 hour. Contact support if you change your mind: hello@#{ENV['MAIN_DOMAIN']}"
+      redirect_to root_path, notice: "Your account will be permanently deleted in 1 hour. Sign back in before then to cancel deletion."
     else
       flash[:alert] = "Incorrect current password."
       redirect_to delete_account_path
@@ -119,17 +119,8 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   def schedule_user_deletion
-    cancel_stripe_subscription
     current_user.update_column(:deleted_at, Time.current)
     DeleteUserJob.set(wait: 1.hour).perform_later(current_user.id)
-  end
-
-  def cancel_stripe_subscription
-    return unless current_user.stripe_id.present?
-
-    Stripe::Subscription.list(customer: current_user.stripe_id).auto_paging_each(&:cancel)
-  rescue Stripe::InvalidRequestError => e
-    Sentry.capture_exception(e, extra: { user_id: current_user.id, stripe_id: current_user.stripe_id })
   end
 
   def check_captcha

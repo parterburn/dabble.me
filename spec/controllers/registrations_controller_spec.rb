@@ -216,6 +216,7 @@ RSpec.describe RegistrationsController, type: :controller do
       end.to have_enqueued_job(DeleteUserJob).with(user.id)
       expect(user.reload.deleted_at).to be_present
       expect(response).to redirect_to(root_path)
+      expect(flash[:notice]).to include('Sign back in before then to cancel deletion')
     end
   end
 

@@ -3,17 +3,21 @@ require "uri"
 
 # Builds a JPEG collage from a list of image URLs using libvips.
 #
-# Layout: per-count "row plan" (see ROW_PLANS + `row_plan`) so the output has
-# no empty padding tiles for 2..9 images. Canvas WIDTH is fixed at @size and
-# HEIGHT floats based on the source photos' aspect ratios, so three landscapes
-# produce a near-square output instead of a thin strip inside a huge square
-# canvas. Each tile is scaled down (never up) to fit entirely inside its cell;
-# leftover space is white letterboxing so no part of the photo is cropped.
-# Row height is still derived from the photos in each row so the overall
-# collage stays compact. For fixed row plans (e.g. eight photos → two rows of
-# four), input order is re-sorted by aspect ratio so each row groups similar
-# orientations and needs less padding. White SHIM separates tiles and an outer
-# margin mattes the whole canvas. Duplicate URLs are collapsed.
+# Layout: a "justified rows" gallery (the Flickr / Google Photos approach). A
+# per-count "row plan" (see ROW_PLANS + `row_plan`) decides how many tiles land
+# in each row, then every tile in a row keeps its EXACT aspect ratio while the
+# whole row is scaled to one shared HEIGHT chosen so the row fills the canvas
+# width edge-to-edge. Because the height is solved from the photos' real aspect
+# ratios — height = available_width / sum(aspect_ratios) — there is no cropping
+# and no letterbox padding inside a row: a portrait sitting next to a landscape
+# simply renders narrower at the same height instead of being matted with big
+# white margins. Rows can differ in height (that's the organic, gap-free look),
+# and canvas WIDTH stays fixed at @size while HEIGHT floats with the content.
+# For fixed row plans (e.g. eight photos → two rows of four), input order is
+# re-sorted by aspect ratio so each row groups similar orientations. White SHIM
+# separates tiles and an outer margin mattes the whole canvas. A pathologically
+# tall row (e.g. a lone portrait) is capped via MAX_ROW_HEIGHT_RATIO and then
+# centered. Duplicate URLs are collapsed.
 class CollageGenerator
   MAX_IMAGES = 8
   DEFAULT_SIZE = 1200
@@ -45,11 +49,12 @@ class CollageGenerator
     9 => [3, 3, 3]
   }.freeze
 
-  # Clamp each row's computed height so one wildly-proportioned input can't
-  # produce a comical strip. Expressed as tile-aspect bounds: row_h is floored
-  # at cell_w / MAX_TILE_ASPECT and ceilinged at cell_w * MAX_TILE_PORTRAIT.
-  MAX_TILE_ASPECT = 3.0    # no tile flatter than 3:1 (w:h)
-  MAX_TILE_PORTRAIT = 2.0  # no tile taller than 1:2 (w:h)
+  # Upper bound on a justified row's height, as a multiple of the canvas inner
+  # width. A row of mostly-portrait photos (small aspect-ratio sum) would
+  # otherwise solve to an enormous height; we cap it and center the row instead.
+  # We only ever cap DOWN — capping a height up would widen tiles past the
+  # canvas and reintroduce cropping, which we never want.
+  MAX_ROW_HEIGHT_RATIO = 1.0
 
   def initialize(urls:, size: DEFAULT_SIZE, user: nil)
     @urls = Array(urls).compact_blank.uniq.first(MAX_IMAGES)
@@ -104,33 +109,61 @@ class CollageGenerator
     images = reorder_images_for_aspect_rows(images, plan)
     inner_w = @size - (2 * SHIM)
 
-    # For each row, derive its height from the photos that live in it so the
-    # canvas ends up at a natural aspect — three landscapes in one row no
-    # longer sit in a tall square canvas surrounded by dead white space, and
-    # a single portrait doesn't get letterboxed into a wide square.
     idx = 0
     rows = plan.map do |cols|
-      cell_w = (inner_w - ((cols - 1) * SHIM)) / cols
       row_imgs = images[idx, cols]
       idx += cols
-
-      # Each image's "natural" height at this cell width. The row shares one
-      # height, so we average — uniform rows get tight lettering; mixed rows
-      # get more white padding around tiles that are shorter than row_h.
-      naturals = row_imgs.map { |img| (cell_w.to_f * img.height / img.width).round }
-      avg = naturals.sum / naturals.size
-      row_h = avg.clamp((cell_w / MAX_TILE_ASPECT).round, (cell_w * MAX_TILE_PORTRAIT).round)
-
-      tiles = row_imgs.map { |img| prepare_tile(img, cell_w, row_h) }
-      [Vips::Image.arrayjoin(tiles, across: cols, shim: SHIM, background: BACKGROUND), row_h]
+      build_justified_row(row_imgs, inner_w)
     end
 
-    grid = Vips::Image.arrayjoin(rows.map(&:first), across: 1, shim: SHIM, background: BACKGROUND, halign: "centre")
+    # Stack rows vertically, centering any capped (narrower-than-canvas) row.
+    grid = join_images(rows, :vertical)
 
-    total_h = rows.sum { |_, h| h } + ((rows.size - 1) * SHIM) + (2 * SHIM)
-    ox = ((@size - grid.width) / 2.0).round
-    oy = SHIM
-    grid.embed(ox, oy, @size, total_h, extend: :background, background: BACKGROUND)
+    total_h = grid.height + (2 * SHIM)
+    grid.embed(SHIM, SHIM, @size, total_h, extend: :background, background: BACKGROUND)
+  end
+
+  # One justified row: every tile keeps its true aspect ratio and the row is
+  # scaled to a single shared height so its tiles + inter-tile shims fill
+  # `inner_w` exactly. Solving the row height this way is what removes both the
+  # cropping and the letterbox whitespace of the old per-cell layout.
+  #
+  #   total_w = Σ(aspect_i · h) + (cols - 1)·SHIM = inner_w
+  #   ⇒ h = (inner_w - (cols - 1)·SHIM) / Σ(aspect_i)
+  #
+  # We only cap the height DOWN (MAX_ROW_HEIGHT_RATIO): capping up would push
+  # tile widths past the canvas edge and force a crop. A capped row is narrower
+  # than the canvas and gets centered by the outer arrayjoin/embed.
+  def build_justified_row(images, inner_w)
+    cols = images.size
+    avail_w = inner_w - ((cols - 1) * SHIM)
+    sum_aspect = images.sum { |img| aspect_ratio(img) }
+    sum_aspect = 1.0 if sum_aspect <= 0
+
+    row_h = (avail_w / sum_aspect).round
+    row_h = [row_h, (inner_w * MAX_ROW_HEIGHT_RATIO).round].min
+    row_h = [row_h, 1].max
+
+    tiles = images.map { |img| scale_to_height(img, row_h) }
+    join_images(tiles, :horizontal)
+  end
+
+  # Join images edge-to-edge with a white SHIM gutter between them. We use
+  # pairwise `join` rather than `arrayjoin` on purpose: arrayjoin sizes every
+  # cell to the largest image (re-introducing pillarbox whitespace around a
+  # narrow portrait), whereas `join` honors each tile's real width/height.
+  # `align: :centre` keeps tiles centered on the cross axis; with `expand` the
+  # shorter image is padded with `background` rather than cropped.
+  def join_images(images, direction)
+    images.reduce do |acc, img|
+      acc.join(img, direction, expand: true, shim: SHIM, background: BACKGROUND, align: :centre)
+    end
+  end
+
+  def aspect_ratio(image)
+    return 1.0 if image.width < 1 || image.height < 1
+
+    image.width.to_f / image.height
   end
 
   # How many tiles each row should contain, summing to `images.size`.
@@ -184,44 +217,30 @@ class CollageGenerator
     out
   end
 
-  # Scale the image to fit inside cell_w × cell_h (shrink only), center it on
-  # a white canvas of exactly that size — no cropping; mismatch shows as
-  # letterboxing / pillarboxing.
-  def prepare_tile(image, width, height)
+  # Resize the image to an exact target height, preserving aspect ratio. No
+  # cropping and no padding: width simply follows from the height. Because the
+  # scale factor is height/ih, every tile in a row lands on the same integer
+  # height, so they line up cleanly when joined across.
+  def scale_to_height(image, target_h)
     iw = image.width
     ih = image.height
     raise Vips::Error, 'zero-sized collage source' if iw < 1 || ih < 1
 
-    scale = [width.to_f / iw, height.to_f / ih].min
-    scale = [scale, 1.0].min
-    scale = [scale, 1e-9].max
+    scaled = image.resize(target_h.to_f / ih)
 
-    scaled = image.resize(scale)
-    if scaled.width > width || scaled.height > height
-      scale2 = [width.to_f / scaled.width, height.to_f / scaled.height].min
-      scaled = scaled.resize(scale2)
-    end
-
-    # Composite alpha before embed — libvips requires background vectors to match
-    # band count (HEIC often decodes as RGBA; embed with [255,255,255] errors as
-    # "linear: vector must have 1 or 4 elements"). CMYK etc. must be sRGB before embed.
+    # Composite alpha before any joins — libvips requires background vectors to
+    # match band count (HEIC often decodes as RGBA; joining with [255,255,255]
+    # errors as "linear: vector must have 1 or 4 elements"). CMYK etc. must be
+    # sRGB too.
     scaled = scaled.flatten(background: BACKGROUND) if scaled.has_alpha?
-    scaled = scaled.colourspace(:srgb)
-
-    left = ((width - scaled.width) / 2.0).round
-    top = ((height - scaled.height) / 2.0).round
-    left = left.clamp(0, width)
-    top = top.clamp(0, height)
-
-    tile = scaled.embed(left, top, width, height, extend: :background, background: BACKGROUND)
-    tile.colourspace(:srgb).cast(:uchar)
+    scaled.colourspace(:srgb).cast(:uchar)
   end
 
   def load_image(url)
     data = fetch_bytes(url)
     return nil unless data
 
-    img = decode_image(data)
+    img = orient_image(decode_image(data))
     # `new_from_buffer` can succeed lazily then fail mid-pipeline (truncated HEIC,
     # seek errors). Materialize while we still know the URL for logging.
     img.copy_memory
@@ -241,6 +260,14 @@ class CollageGenerator
     Vips::Image.new_from_buffer(data, "", fail_on: :none)
   rescue ArgumentError
     Vips::Image.new_from_buffer(data, "", fail: false)
+  end
+
+  # Phone JPEGs/HEIC often store pixels on the side and rely on EXIF orientation.
+  # Browsers respect that tag; libvips does not unless we autorot explicitly.
+  def orient_image(image)
+    image.autorot
+  rescue Vips::Error
+    image
   end
 
   # Downloads the URL body using Net::HTTP directly. We avoid open-uri because
