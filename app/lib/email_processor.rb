@@ -396,6 +396,7 @@ class EmailProcessor
     # Clean up HTML
     safe_list_sanitizer = Rails::HTML5::SafeListSanitizer.new
     html = safe_list_sanitizer.sanitize(html, tags: %w(strong em a div span ul ol li b i br p hr u em blockquote), attributes: %w(href target))
+    html = preserve_blank_html_lines(html)
 
     # Remove signatures
     html = html.split(%r{<br[^>]*id="lineBreakAtBeginningOfSignature"[^>]*>}).first || html # gmail signature
@@ -479,14 +480,15 @@ class EmailProcessor
       html&.gsub!(/<\/div><br><div><br><br><br><\/div><br><div><br>/, "</div><br><div>")
       html&.gsub!(/<\/div><br><div>\s*(<br>\s*)*<\/div><br><div><br>/, "</div><br><div>")
 
-      # Remove <br> immediately before an opening <div> when not between text
-      html&.gsub!(/(^|>)(?:\s*<br\s*\/?>\s*)+(?=\s*<div)/i, "\\1")
-      # Remove <br> after a closing </div> only when followed by another block boundary or end
-      html&.gsub!(/(<\/div>)\s*(?:<br\s*\/?>\s*)+(?=\s*(?:<div|<\/div>|$))/i, "\\1")
+      # Remove only incidental single breaks at div boundaries; doubled breaks
+      # are intentional paragraph spacing from the sender.
+      html&.gsub!(/\A\s*<br\s*\/?>\s*(?=\s*<div)/i, "")
+      html&.gsub!(/(<\/div>)\s*<br\s*\/?>\s*(?=\s*(?:<div|<\/div>|$))/i, "\\1")
 
-      # Remove <br> between consecutive opening divs or consecutive closing/opening divs
-      html&.gsub!(/<div>\s*(?:<br\s*\/?>\s*)+<div>/i, "<div><div>")
-      html&.gsub!(/<\/div>\s*(?:<br\s*\/?>\s*)+<div>/i, "</div><div>")
+      # Remove stray single breaks between divs without collapsing intentional
+      # doubled breaks.
+      html&.gsub!(/<div>\s*<br\s*\/?>\s*<div>/i, "<div><div>")
+      html&.gsub!(/<\/div>\s*<br\s*\/?>\s*<div>/i, "</div><div>")
 
       # Remove empty divs anywhere (not just trailing/leading)
       3.times do
@@ -562,6 +564,12 @@ class EmailProcessor
 
   def mobile_signature_pattern
     /sent from my (?:iphone|ipad|android|mobile device|phone|galaxy|pixel)/i
+  end
+
+  def preserve_blank_html_lines(html)
+    return html unless html.present?
+
+    html.gsub(%r{(</(?:div|p|span)>)\s*<(?:div|p|span)>\s*(?:<br\s*/?>|&nbsp;|\s)*</(?:div|p|span)>\s*(?=<(?:div|p|span)\b)}i, "\\1<br><br>")
   end
 end
 # rubocop:enable Metrics/AbcSize

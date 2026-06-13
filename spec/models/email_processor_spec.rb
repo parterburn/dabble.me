@@ -56,6 +56,21 @@ describe EmailProcessor do
       expect(paid_user.entries.reload.first.body).to eq("<p>I am great</p><br><br><p>Here's a link: <a href=\"https://www.google.com\" target=\"_blank\">https://www.google.com</a></p>")
     end
 
+    it "preserves blank lines between HTML email paragraphs" do
+      paid_user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "Blah blah blah. Blah blah.\n\nBlah blah blah. Blah!",
+        vendor_specific: {
+          stripped_html: "<div>Blah blah blah. Blah blah.</div><div><br></div><div>Blah blah blah. Blah!</div>"
+        }
+      )
+
+      EmailProcessor.new(email).process
+      expect(paid_user.entries.reload.first.body).to eq("<div>Blah blah blah. Blah blah.</div><br><br><div>Blah blah blah. Blah!</div>")
+    end
+
     it "removes a trailing em-dash separator followed by a signature line" do
       paid_user.entries.destroy_all
       email = FactoryBot.build(
