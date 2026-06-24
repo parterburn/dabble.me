@@ -32,7 +32,7 @@ RSpec.describe ImageCollageJob, type: :job do
           )
         )
       )
-      expect(paid_entry.reload.image_error).to eq('No last message found')
+      expect(paid_entry.reload.image_error).to eq("No last message found for message ID #{message_id}")
     end
   end
 end
