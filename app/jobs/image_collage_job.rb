@@ -55,7 +55,10 @@ class ImageCollageJob < ActiveJob::Base
         ['The images could not be generated or saved after several attempts. Please try uploading again via the web interface.']
       end
       Sentry.set_user(id: @user.id, email: @user.email)
-      Sentry.capture_message("Error updating collage image", level: :info, extra: { entry_id: entry_id, error_messages: error_messages, url: collage_url })
+      sentry_extra = { entry_id: entry_id, error_messages: error_messages, url: collage_url }
+      sentry_extra[:mailgun_lookup_attempts] = @mailgun_event_lookup_log if @mailgun_event_lookup_log.present?
+      sentry_extra[:message_id] = @message_id if @message_id.present?
+      Sentry.capture_message("Error updating collage image", level: :info, extra: sentry_extra)
       # Persist the error on the entry so the logged-in user sees a banner on
       # their next page view. The job runs async after the request is gone,
       # so we can't use `flash` — the entry itself is the durable channel.
@@ -100,24 +103,12 @@ class ImageCollageJob < ActiveJob::Base
     @error = "No message ID found" unless @message_id.present?
     return unless @message_id.present?
 
-    last_message = nil
-    message = nil
-    5.times do |attempt|
-      connection = Faraday.new(url: "https://api.mailgun.net") do |f|
-        f.request :json
-        f.response :json
-        f.request :authorization, :basic, 'api', ENV['MAILGUN_API_KEY']
-        f.options.timeout = 120
-        f.options.open_timeout = 120
-      end
-      resp = connection.get("/v3/#{ENV['SMTP_DOMAIN']}/events?pretty=yes&event=accepted&ascending=no&limit=1&message-id=#{URI.encode_www_form_component(@message_id)}")
-      last_message = resp.body&.dig("items", 0) if resp.success?
-      break if last_message.present?
-
-      sleep(10 * (2**attempt)) if attempt < 4
+    last_message, @mailgun_event_lookup_log = fetch_mailgun_stored_event
+    unless last_message.present?
+      @error = "No last message found for message ID #{@message_id}"
+      log_mailgun_event_lookup_failure
+      return
     end
-    @error = "No last message found for message ID #{@message_id}" unless last_message.present?
-    return unless last_message.present?
 
     message = nil
     5.times do |attempt|
@@ -200,6 +191,83 @@ class ImageCollageJob < ActiveJob::Base
   end
 
   private
+
+  # Inbound multi-attachment emails are indexed as `stored` events; `accepted` is
+  # primarily outbound. Try both (and unfiltered) with/without angle brackets.
+  def fetch_mailgun_stored_event
+    lookup_log = []
+
+    5.times do |attempt|
+      mailgun_message_id_variants.each do |message_id|
+        %w[stored accepted].each do |event|
+          item, resp = mailgun_events_lookup(message_id: message_id, event: event)
+          lookup_log << mailgun_lookup_attempt(attempt, message_id, event, resp, item)
+          return [item, lookup_log] if item.present?
+        end
+
+        item, resp = mailgun_events_lookup(message_id: message_id)
+        lookup_log << mailgun_lookup_attempt(attempt, message_id, nil, resp, item)
+        return [item, lookup_log] if item.present?
+      end
+
+      sleep(10 * (2**attempt)) if attempt < 4
+    end
+
+    [nil, lookup_log]
+  end
+
+  def mailgun_message_id_variants
+    [@message_id, "<#{@message_id}>"].uniq
+  end
+
+  def mailgun_events_connection
+    @mailgun_events_connection ||= Faraday.new(url: "https://api.mailgun.net") do |f|
+      f.request :json
+      f.response :json
+      f.request :authorization, :basic, 'api', ENV['MAILGUN_API_KEY']
+      f.options.timeout = 120
+      f.options.open_timeout = 120
+    end
+  end
+
+  def mailgun_events_lookup(message_id:, event: nil)
+    params = {
+      pretty: 'yes',
+      ascending: 'no',
+      limit: 1,
+      'message-id': message_id
+    }
+    params[:event] = event if event.present?
+    query = params.map { |key, value| "#{key}=#{URI.encode_www_form_component(value)}" }.join('&')
+    resp = mailgun_events_connection.get("/v3/#{ENV['SMTP_DOMAIN']}/events?#{query}")
+    item = resp.body&.dig('items', 0) if resp.success?
+    [item, resp]
+  end
+
+  def mailgun_lookup_attempt(attempt, message_id, event, resp, item)
+    {
+      attempt: attempt,
+      message_id: message_id,
+      event: event,
+      status: resp.status,
+      items_count: resp.body.is_a?(Hash) ? resp.body['items']&.size : nil,
+      error: resp.body.is_a?(Hash) ? resp.body['error'] : nil,
+      found_storage_url: item&.dig('storage', 'url').present?
+    }
+  end
+
+  def log_mailgun_event_lookup_failure
+    Sentry.capture_message(
+      'Mailgun events lookup failed for collage attachments',
+      level: :warning,
+      extra: {
+        entry_user_id: @user&.id,
+        message_id: @message_id,
+        smtp_domain: ENV['SMTP_DOMAIN'],
+        lookup_attempts: @mailgun_event_lookup_log
+      }
+    )
+  end
 
   # Mailgun URLs may look like `.../storage/abc?name=IMG.heic` (see `?#{att["name"]}`).
   def heic_like_url?(url)
