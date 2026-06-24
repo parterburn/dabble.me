@@ -116,7 +116,7 @@ class ImageCollageJob < ActiveJob::Base
 
       sleep(10 * (2**attempt)) if attempt < 4
     end
-    @error = "No last message found" unless last_message.present?
+    @error = "No last message found for message ID #{@message_id}" unless last_message.present?
     return unless last_message.present?
 
     message = nil
