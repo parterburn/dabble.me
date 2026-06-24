@@ -28,7 +28,7 @@ class UserMailer < ActionMailer::Base
   def thanks_for_paying(user)
     @user = user
     @user.increment!(:emails_sent)
-    email = mail(to: user.cleaned_to_address, subject: 'Thanks for subscribing to Dabble Me PRO!')
+    email = mail(from: "Dabble me. <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.cleaned_to_address, subject: 'Thanks for subscribing to Dabble Me PRO!')
     email.mailgun_options = {tag: 'Thanks'}
   end
 
