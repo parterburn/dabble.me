@@ -2,6 +2,7 @@
 set -euo pipefail
 
 APP_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+POSTGRESQL_VERSION="${POSTGRESQL_VERSION:-18}"
 
 log() {
   printf '\n== %s ==\n' "$1"
@@ -124,22 +125,41 @@ install_aptfile_packages() {
   done < "${APP_ROOT}/Aptfile"
 }
 
+install_postgresql() {
+  if ! command -v apt-get >/dev/null; then
+    return 0
+  fi
+
+  log "Installing PostgreSQL ${POSTGRESQL_VERSION} (PGDG)"
+  export DEBIAN_FRONTEND=noninteractive
+  run_as_root apt-get update -y
+  run_as_root apt-get install -y curl ca-certificates postgresql-common
+
+  if [ ! -f /etc/apt/sources.list.d/pgdg.sources ] && [ ! -f /etc/apt/sources.list.d/pgdg.list ]; then
+    run_as_root /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+  fi
+
+  run_as_root apt-get update -y
+  run_as_root apt-get install -y \
+    "postgresql-${POSTGRESQL_VERSION}" \
+    "postgresql-client-${POSTGRESQL_VERSION}" \
+    "postgresql-contrib-${POSTGRESQL_VERSION}"
+
+  if command -v pg_ctlcluster >/dev/null; then
+    run_as_root pg_ctlcluster "${POSTGRESQL_VERSION}" main start || true
+  fi
+}
+
 install_database_and_cache_services() {
   if ! command -v apt-get >/dev/null; then
     return 0
   fi
 
-  log 'Installing PostgreSQL and Redis'
+  log 'Installing Redis'
   run_as_root apt-get update -y
-  run_as_root apt-get install -y postgresql postgresql-contrib redis-server
+  run_as_root apt-get install -y redis-server
 
-  if command -v pg_ctlcluster >/dev/null; then
-    local cluster
-    cluster="$(pg_lsclusters -h | awk 'NR==1 {print $1}')"
-    if [ -n "$cluster" ]; then
-      run_as_root pg_ctlcluster "$cluster" main start || true
-    fi
-  fi
+  install_postgresql
 
   if command -v redis-server >/dev/null; then
     redis-server --daemonize yes 2>/dev/null || run_as_root systemctl start redis-server 2>/dev/null || true

@@ -33,7 +33,7 @@ Or ensure `~/.bashrc` sources it.
 ### Starting services
 
 ```bash
-sudo pg_ctlcluster 16 main start
+sudo pg_ctlcluster 18 main start
 redis-server --daemonize yes
 ```
 
