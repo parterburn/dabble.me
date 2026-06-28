@@ -1,5 +1,20 @@
 class ImageCollageJob < ActiveJob::Base
+  class MailgunStoredEventNotFound < StandardError
+    attr_reader :message_id, :lookup_log
+
+    def initialize(message_id, lookup_log: [])
+      @message_id = message_id
+      @lookup_log = lookup_log
+      super("No last message found for message ID #{message_id}")
+    end
+  end
+
   queue_as :default
+
+  # Mailgun often needs a minute before inbound `stored` events are searchable.
+  MAILGUN_INDEX_DELAY = 60.seconds
+  MAILGUN_LOOKUP_JOB_ATTEMPTS = 10
+  MAILGUN_LOOKUP_ROUNDS = 3
 
   # Sidekiq will retry unhandled exceptions by default. We make timeouts explicit here
   # so we can control retry timing and attempts for transient network issues.
@@ -7,6 +22,60 @@ class ImageCollageJob < ActiveJob::Base
            Faraday::TimeoutError,
            wait: :exponentially_longer,
            attempts: 6
+
+  retry_on MailgunStoredEventNotFound,
+           wait: :exponentially_longer,
+           attempts: MAILGUN_LOOKUP_JOB_ATTEMPTS do |job, error|
+    record_mailgun_lookup_failure(job, error)
+  end
+
+  def self.perform_later_for_mailgun(entry_id, message_id:)
+    set(wait: MAILGUN_INDEX_DELAY).perform_later(entry_id, message_id: message_id)
+  end
+
+  def self.record_mailgun_lookup_failure(job, error)
+    entry_id = job.arguments.first
+    entry = Entry.find_by(id: entry_id)
+    return unless entry.present?
+
+    user = entry.user
+    Sentry.set_user(id: user.id, email: user.email)
+    Sentry.capture_message(
+      'Mailgun events lookup failed for collage attachments',
+      level: :warning,
+      extra: {
+        entry_id: entry_id,
+        entry_user_id: user.id,
+        message_id: error.message_id,
+        smtp_domain: ENV['SMTP_DOMAIN'],
+        lookup_attempts: error.lookup_log,
+        job_executions: job.executions
+      }
+    )
+    record_image_failure(
+      entry,
+      user,
+      [error.message],
+      entry_id: entry_id,
+      mailgun_lookup_attempts: error.lookup_log,
+      message_id: error.message_id
+    )
+  end
+
+  def self.record_image_failure(entry, user, error_messages, sentry_extra = {})
+    Sentry.set_user(id: user.id, email: user.email)
+    Sentry.capture_message(
+      'Error updating collage image',
+      level: :info,
+      extra: sentry_extra.merge(entry_id: entry.id, error_messages: error_messages)
+    )
+    entry.update(image_error: error_messages.to_sentence.presence, uploading_image: false)
+    cache_key = "image_collage_error_email_sent:#{entry.id}"
+    unless Rails.cache.read(cache_key)
+      EntryMailer.image_error(user, entry, 'collage', error_messages).deliver_later
+      Rails.cache.write(cache_key, true, expires_in: 1.hour)
+    end
+  end
 
   def perform(entry_id, urls: nil, message_id: nil)
     entry = Entry.where(id: entry_id).first
@@ -54,21 +123,10 @@ class ImageCollageJob < ActiveJob::Base
       else
         ['The images could not be generated or saved after several attempts. Please try uploading again via the web interface.']
       end
-      Sentry.set_user(id: @user.id, email: @user.email)
-      sentry_extra = { entry_id: entry_id, error_messages: error_messages, url: collage_url }
+      sentry_extra = { url: collage_url }
       sentry_extra[:mailgun_lookup_attempts] = @mailgun_event_lookup_log if @mailgun_event_lookup_log.present?
       sentry_extra[:message_id] = @message_id if @message_id.present?
-      Sentry.capture_message("Error updating collage image", level: :info, extra: sentry_extra)
-      # Persist the error on the entry so the logged-in user sees a banner on
-      # their next page view. The job runs async after the request is gone,
-      # so we can't use `flash` — the entry itself is the durable channel.
-      entry.update(image_error: error_messages.to_sentence.presence)
-      # Only send one error email per entry per hour; job can retry up to 6 times and would otherwise send 6 emails.
-      cache_key = "image_collage_error_email_sent:#{entry_id}"
-      unless Rails.cache.read(cache_key)
-        EntryMailer.image_error(@user, entry, "collage", error_messages).deliver_later
-        Rails.cache.write(cache_key, true, expires_in: 1.hour)
-      end
+      self.class.record_image_failure(entry, @user, error_messages, sentry_extra)
     else
       # Success — clear any leftover banner from a prior failed attempt so the
       # user isn't shown a stale error over their new collage.
@@ -105,9 +163,7 @@ class ImageCollageJob < ActiveJob::Base
 
     last_message, @mailgun_event_lookup_log = fetch_mailgun_stored_event
     unless last_message.present?
-      @error = "No last message found for message ID #{@message_id}"
-      log_mailgun_event_lookup_failure
-      return
+      raise MailgunStoredEventNotFound.new(@message_id, lookup_log: @mailgun_event_lookup_log)
     end
 
     message = nil
@@ -197,7 +253,7 @@ class ImageCollageJob < ActiveJob::Base
   def fetch_mailgun_stored_event
     lookup_log = []
 
-    5.times do |attempt|
+    MAILGUN_LOOKUP_ROUNDS.times do |attempt|
       mailgun_message_id_variants.each do |message_id|
         %w[stored accepted].each do |event|
           item, resp = mailgun_events_lookup(message_id: message_id, event: event)
@@ -210,7 +266,7 @@ class ImageCollageJob < ActiveJob::Base
         return [item, lookup_log] if item.present?
       end
 
-      sleep(10 * (2**attempt)) if attempt < 4
+      sleep(10 * (2**attempt)) if attempt < MAILGUN_LOOKUP_ROUNDS - 1
     end
 
     [nil, lookup_log]
@@ -254,19 +310,6 @@ class ImageCollageJob < ActiveJob::Base
       error: resp.body.is_a?(Hash) ? resp.body['error'] : nil,
       found_storage_url: item&.dig('storage', 'url').present?
     }
-  end
-
-  def log_mailgun_event_lookup_failure
-    Sentry.capture_message(
-      'Mailgun events lookup failed for collage attachments',
-      level: :warning,
-      extra: {
-        entry_user_id: @user&.id,
-        message_id: @message_id,
-        smtp_domain: ENV['SMTP_DOMAIN'],
-        lookup_attempts: @mailgun_event_lookup_log
-      }
-    )
   end
 
   # Mailgun URLs may look like `.../storage/abc?name=IMG.heic` (see `?#{att["name"]}`).
