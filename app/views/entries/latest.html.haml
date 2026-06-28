@@ -26,6 +26,8 @@
     = javascript_include_tag "//www.gstatic.com/charts/loader.js", "chartkick"
     - total_count = year_entries.count
     - percent_complete = graph_year < @user_today.year ? 100 : (@user_today.yday.to_f / Date.new(graph_year, 12, 31).yday * 100).round
+    - days_with_entries = year_entries.where("date <= ?", @user_today).distinct.count(:date)
+    - percent_with_entries = (days_with_entries.to_f / elapsed_days_in_year(graph_year) * 100).round
 
     .col-md-8.well.col-md-offset-1{id: "year-in-review", style: "padding-top: 0; padding-left: 0; padding-right: 0;"}
       .center
@@ -33,7 +35,7 @@
           %h2
             = link_to "Year in Progress", review_path
           %h3
-            %span{rel: "tooltip", title: "#{percent_complete}% of the year completed."}= "#{total_count} entries in #{graph_year}"
+            %span{rel: "tooltip", title: "#{percent_with_entries}% of days so far in #{graph_year} have entries."}= "#{total_count} entries in #{graph_year}"
         .s-review-details
           - streak = current_user.writing_streak
           - if streak > 1
