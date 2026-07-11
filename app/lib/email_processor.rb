@@ -384,144 +384,21 @@ class EmailProcessor
     html = EmailReplyTrimmer.trim(html)
     return unless html.present?
 
-    # Remove basic HTML container tags
-    html&.gsub!(/\A\s*<html>|<\/html>\s*\z/, "")
-    html&.gsub!(/\A\s*<body>|<\/body>\s*\z/, "")
-    html&.gsub!(/\A\s*<head>.*?<\/head>\s*/mi, "")
-    html&.gsub!(/\<br ?\/>/, "<br>")
-
-    # Process links
+    html = remove_html_document_wrappers(html)
+    html = remove_unsafe_html_content(html)
+    html = remove_gmail_signature(html)
     html = Rinku.auto_link(html, :all, 'target="_blank"')
 
-    # Clean up HTML
     safe_list_sanitizer = Rails::HTML5::SafeListSanitizer.new
     html = safe_list_sanitizer.sanitize(html, tags: %w(strong em a div span ul ol li b i br p hr u em blockquote), attributes: %w(href target))
-    html = preserve_blank_html_lines(html)
+    html = remove_html_signatures(html)
+    fragment = Nokogiri::HTML5.fragment(html)
+    normalize_empty_html_blocks(fragment)
+    normalize_html_text_nodes(fragment)
+    trim_html_edge_breaks(fragment)
+    fragment.css('a[href]').each { |link| link['target'] = '_blank' }
 
-    # Remove signatures
-    html = html.split(%r{<br[^>]*id="lineBreakAtBeginningOfSignature"[^>]*>}).first || html # gmail signature
-    html = html.split(%r{<br>\s*--(\s*<br>|\s*$)}).first || html # standard signature separator
-    html = html.split(%r{<div>\s*<br>\s*</div>\s*<div>\s*--\s*</div>}).first || html # gmail signature variant
-    html = html.split(%r{<div>\s*<br>\s*--\s*<br>\s*</div>}).first || html # signature with br tags around separator
-    html = html.split(%r{<span>\s*--\s*</span>\s*<br>}).first || html # signature with span wrapped separator
-    html = html.gsub(%r{<br>\s*—\s*<br>\s*[^<]+(?=(?:</(?:div|p|span)>)?\s*\z)}m, "") # trailing em-dash separator plus signature line
-    html = html.gsub(%r{<(?:div|p|span)>\s*—\s*</(?:div|p|span)>\s*<(?:div|p|span)>\s*[^<]+\s*</(?:div|p|span)>\s*\z}m, "") # trailing em-dash block plus signature block
-    html = html.gsub(%r{<br>\s*#{mobile_signature_pattern}(?=(?:</(?:div|p|span)>)?\s*\z)}im, "") # trailing device signature line
-    html = html.gsub(%r{<(?:div|p|span)>\s*#{mobile_signature_pattern}\s*</(?:div|p|span)>\s*\z}im, "") # trailing device signature block
-
-    # Ensure all links have target="_blank" (Rinku may not have caught existing links)
-    html = html.gsub(/<a\s+([^>]*?)href="([^"]*?)"([^>]*?)>/i, '<a \1href="\2"\3 target="_blank">')
-    html = html.gsub(/<a\s+([^>]*?)href="([^"]*?)"\s+target="_blank"\s+target="_blank"([^>]*?)>/i, '<a \1href="\2" target="_blank"\3>')
-
-    # Convert newlines to <br>
-    html = html.gsub(/\n\n/, "<br><br>")
-    html = html.gsub(/\n\r?|\r\n?/, "<br>")
-
-    # Handle literal \n strings (from some email clients)
-    html = html.gsub(/\\n\\n/, "<br><br>")
-    html = html.gsub(/\\n/, "<br>")
-
-    # Clean up literal \n between HTML tags (should be removed, not converted to br)
-    html = html.gsub(/>\s*\\n\s*</, "><")
-    html = html.gsub(/\\n\s*</, "<")
-    html = html.gsub(/>\s*\\n/, ">")
-
-    # Remove styles, xml, comments
-    html&.gsub!(/<style(?:\s+[^>]*)?>.*?<\/style>/mi, '')
-    html&.gsub!(/<xml(?:\s+[^>]*)?>.*?<\/xml>/mi, '')
-    html&.gsub!(/<!--.*?-->/m, '')
-    html&.gsub!('<![endif]-->', '')
-
-    # Remove tracking pixels and hidden content
-    html&.gsub!(/<div[^>]*?style="[^"]*?display\s*:\s*none[^"]*?"[^>]*?>.*?<\/div>/im, "")
-
-    # Handle images
-    html&.gsub!(/src="cid:[^"]+"/i, 'src=""')
-
-    # Remove empty formatting
-    html&.gsub!("p.MsoNormal,p.MsoNoSpacing{margin:0}", "")
-
-    # Aggressively clean up trailing empty elements
-    10.times do # increased iterations for better cleanup
-      original_html = html.dup
-
-      # Remove trailing divs that contain only br tags and/or empty nested divs
-      html&.gsub!(/(\s*<div>\s*(<br[^>]*>\s*)*<\/div>\s*)+\z/, "")
-      html&.gsub!(/(\s*<div>\s*(<br[^>]*>\s*)*<div>\s*<\/div>\s*(<br[^>]*>\s*)*<\/div>\s*)+\z/, "")
-      html&.gsub!(/(\s*<div>\s*<div>\s*<\/div>\s*<\/div>\s*)+\z/, "")
-
-      # Clean up empty elements throughout (conservative)
-      html&.gsub!(/<p>(?:\s*\n\s*|\s|\n\s*\s*)*<\/p>/, "")
-      html&.gsub!(/<span>(?:\s*\n\s*|\s|\n\s*\s*)*<\/span>/, "")
-      html&.gsub!(/<div>(?:\s*\n\s*|\s|\n\s*\s*)*<\/div>/, "")
-
-      # Remove leading empty divs with breaks
-      html&.gsub!(/\A(\s*<div>\s*(<br[^>]*>\s*)*<\/div>\s*)+/, "")
-
-      # Remove leading and trailing breaks
-      html&.gsub!(/\A(\s*<br\s*\/?>)+/, "")
-      html&.gsub!(/(<br\s*\/?>)+\z/, "")
-      html&.gsub!(/\A<div>\s*/, "<div>")
-      html&.gsub!(/\A<div>\s*<div>/, "<div><div>")
-      html&.gsub!(/\A<div><div>\s*<div>/, "<div><div><div>")
-      html&.gsub!(/\A<div>\s*<br>/, "<div>")
-      html&.gsub!(/\A<div>\s*<br>\s*<div>/, "<div><div>")
-      html&.gsub!(/\A<div><div>\s*<br>/, "<div><div>")
-      html&.gsub!(/\s*<\/div>\z/, "</div>")
-      html&.gsub!(/\s*<br>\s*<\/div>\z/, "</div>")
-      html&.gsub!(/\s*<br>\s*<\/div><\/div>\z/, "</div></div>")
-      html&.gsub!(/\s*<br>\s*<\/div><\/div><\/div>\z/, "</div></div></div>")
-      html&.gsub!(/\s*<br>\s*<\/div><\/div><\/div><\/div>\z/, "</div></div></div></div>")
-
-      # Collapse redundant nested <div><div>...</div></div> at the root to a single <div>...</div>
-      html&.gsub!(/\A<div>\s*<div>(.*?)<\/div>\s*<\/div>\z/m, '<div>\1</div>')
-
-      # Clean up problematic line break patterns
-      html&.gsub!(/<\/div><br><div><br><br><br><\/div><br><div><br>/, "</div><br><div>")
-      html&.gsub!(/<\/div><br><div>\s*(<br>\s*)*<\/div><br><div><br>/, "</div><br><div>")
-
-      # Remove only incidental single breaks at div boundaries; doubled breaks
-      # are intentional paragraph spacing from the sender.
-      html&.gsub!(/\A\s*<br\s*\/?>\s*(?=\s*<div)/i, "")
-      html&.gsub!(/(<\/div>)\s*<br\s*\/?>\s*(?=\s*(?:<div|<\/div>|$))/i, "\\1")
-
-      # Remove stray single breaks between divs without collapsing intentional
-      # doubled breaks.
-      html&.gsub!(/<div>\s*<br\s*\/?>\s*<div>/i, "<div><div>")
-      html&.gsub!(/<\/div>\s*<br\s*\/?>\s*<div>/i, "</div><div>")
-
-      # Remove empty divs anywhere (not just trailing/leading)
-      3.times do
-        html&.gsub!(/<div>\s*<\/div>/i, "")
-      end
-
-      # Remove trailing <br><br><hr>
-      html&.gsub!(/<br><br><hr>\s*\z/, "")
-      html&.gsub!(/<br>\s*<br>\s*<hr>\s*\z/, "")
-
-      # Clean up empty divs with only whitespace and line breaks
-      html&.gsub!(/<div>\s*(<br[^>]*>)*\s*<\/div>/, "")
-      html&.gsub!(/<div>\s*(<br[^>]*>\s*)+<\/div>/, "")
-
-      # Clean up deeply nested empty div structures
-      html&.gsub!(/<div>\s*<div>\s*<div>\s*<\/div>\s*<\/div>\s*<\/div>/, "")
-      html&.gsub!(/<div>\s*<div>\s*<\/div>\s*<\/div>/, "")
-
-      # Clean up divs that contain only line breaks and nested empty divs
-      html&.gsub!(/<div>\s*<br>\s*<div>\s*<br>\s*<br><br>\s*<div>\s*<br>\s*<div><div><div><\/div><\/div><\/div>\s*<\/div>\s*<\/div>\s*<\/div>/, "")
-
-      # More aggressive cleanup of trailing empty nested structures
-      html&.gsub!(/(<br>\s*)*<div>\s*(<br>\s*)*<div>\s*(<br>\s*)*<div>\s*<\/div>\s*<\/div>\s*<\/div>\s*\z/, "")
-      html&.gsub!(/(<br>\s*)*<div>\s*(<br>\s*)*<\/div>\s*<\/div>\s*\z/, "")
-
-      # Break if no more changes are made
-      break if html == original_html
-    end
-
-    html = html&.strip
-
-    # Convert to UTF-8
-    html = to_utf8(html)
+    html = to_utf8(fragment.to_html.strip)
     return unless html.present?
 
     html
@@ -566,10 +443,166 @@ class EmailProcessor
     /sent from my (?:iphone|ipad|android|mobile device|phone|galaxy|pixel)/i
   end
 
-  def preserve_blank_html_lines(html)
-    return html unless html.present?
+  HTML_BLOCK_ELEMENTS = %w[blockquote br div hr li ol p ul].freeze
+  HTML_EMPTY_LINE_ELEMENTS = %w[div p].freeze
 
-    html.gsub(%r{(</(?:div|p|span)>)\s*<(?:div|p|span)>\s*(?:<br\s*/?>|&nbsp;|\s)*</(?:div|p|span)>\s*(?=<(?:div|p|span)\b)}i, "\\1<br><br>")
+  def remove_html_document_wrappers(html)
+    html = html.dup
+    html.gsub!(/\A\s*<!doctype[^>]*>\s*/i, '')
+    html.gsub!(/\A\s*<html\b[^>]*>\s*/i, '')
+    html.gsub!(%r{\s*</html>\s*\z}i, '')
+    html.gsub!(/\A\s*<head\b[^>]*>.*?<\/head>\s*/mi, '')
+    html.gsub!(/\A\s*<body\b[^>]*>\s*/i, '')
+    html.gsub!(%r{\s*</body>\s*\z}i, '')
+    html.gsub!(/<br\s*\/?>/i, '<br>')
+    html
+  end
+
+  # Remove content that depends on attributes before sanitization strips those
+  # attributes and makes the content indistinguishable from normal email text.
+  def remove_unsafe_html_content(html)
+    html = html.dup
+    html.gsub!(/<style(?:\s+[^>]*)?>.*?<\/style>/mi, '')
+    html.gsub!(/<xml(?:\s+[^>]*)?>.*?<\/xml>/mi, '')
+    html.gsub!(/<!--.*?-->/m, '')
+    html.gsub!('<![endif]-->', '')
+    html.gsub!(/<div\b[^>]*style=(["'])[^"']*display\s*:\s*none[^"']*\1[^>]*>.*?<\/div>/im, '')
+    html
+  end
+
+  def remove_gmail_signature(html)
+    html.split(%r{<br\b[^>]*\bid=(["'])lineBreakAtBeginningOfSignature\1[^>]*>}i, 2).first || html
+  end
+
+  # Signature matching happens after sanitization so client-specific classes
+  # and styles cannot prevent otherwise equivalent markup from matching.
+  def remove_html_signatures(html)
+    html = html.split(%r{<br>\s*--(?:\s*<br>|\s*$)}i, 2).first || html
+    html = html.split(%r{<div>\s*<br>\s*</div>\s*<div>\s*--\s*</div>}i, 2).first || html
+    html = html.split(%r{<div>\s*<br>\s*--\s*<br>\s*</div>}i, 2).first || html
+    html = html.split(%r{<span>\s*--\s*</span>\s*<br>}i, 2).first || html
+    html = html.gsub(%r{<br>\s*—\s*<br>\s*[^<]+(?=(?:</(?:div|p|span)>)?\s*\z)}m, '')
+    html = html.gsub(%r{<(?:div|p|span)>\s*—\s*</(?:div|p|span)>\s*<(?:div|p|span)>\s*[^<]+\s*</(?:div|p|span)>\s*\z}m, '')
+    html = html.gsub(%r{<br>\s*#{mobile_signature_pattern}(?=(?:</(?:div|p|span)>)?\s*\z)}im, '')
+    html.gsub(%r{<(?:div|p|span)>\s*#{mobile_signature_pattern}\s*</(?:div|p|span)>\s*\z}im, '')
+  end
+
+  # Empty block elements are how clients such as Apple Mail represent a blank
+  # line. Collapse an internal run to one <br>, and discard leading/trailing
+  # runs so an email cannot acquire padding around its content.
+  def normalize_empty_html_blocks(fragment)
+    blank_blocks = fragment.css(HTML_EMPTY_LINE_ELEMENTS.join(',')).select { |node| blank_html_block?(node) }
+    preserve_as_break = blank_blocks.index_with do |node|
+      previous_node = nearest_non_whitespace_sibling(node, :previous)
+      first_in_run = !blank_html_block?(previous_node)
+      first_in_run &&
+        meaningful_sibling(node, :previous).present? &&
+        meaningful_sibling(node, :next).present?
+    end
+
+    blank_blocks.sort_by { |node| -node.ancestors.length }.each do |node|
+      next unless node.parent
+
+      if preserve_as_break[node]
+        node.replace(Nokogiri::XML::Node.new('br', node.document))
+      else
+        node.remove
+      end
+    end
+  end
+
+  def blank_html_block?(node)
+    return false unless node&.element? && HTML_EMPTY_LINE_ELEMENTS.include?(node.name)
+
+    node.children.all? do |child|
+      whitespace_html_text_node?(child) ||
+        (child.element? && (child.name == 'br' || blank_html_block?(child)))
+    end
+  end
+
+  def meaningful_sibling(node, direction)
+    sibling = nearest_non_whitespace_sibling(node, direction)
+    while blank_html_block?(sibling)
+      sibling = nearest_non_whitespace_sibling(sibling, direction)
+    end
+    sibling
+  end
+
+  def nearest_non_whitespace_sibling(node, direction)
+    sibling = direction == :previous ? node.previous_sibling : node.next_sibling
+    while whitespace_html_text_node?(sibling)
+      sibling = direction == :previous ? sibling.previous_sibling : sibling.next_sibling
+    end
+    sibling
+  end
+
+  # Newlines inside a text node are authored line breaks. Whitespace-only text
+  # nodes between tags are source formatting and should not become <br> tags.
+  def normalize_html_text_nodes(fragment)
+    fragment.xpath('.//text()').to_a.each do |node|
+      next unless node.parent
+
+      content = node.text.gsub(/\\r\\n|\\n|\\r/, "\n").gsub(/\r\n?/, "\n")
+      content = normalize_text_boundary_newlines(node, content)
+      if content.strip.empty?
+        normalize_html_whitespace_node(node)
+      elsif content.include?("\n")
+        replace_text_newlines_with_breaks(node, content)
+      else
+        node.content = content
+      end
+    end
+  end
+
+  # Pretty-printed HTML commonly puts newlines around inline children. Those
+  # boundary newlines are collapsible whitespace, unlike a newline surrounded
+  # by text within the same node.
+  def normalize_text_boundary_newlines(node, content)
+    leading_space = node.previous_sibling.present? && !html_block_node?(node.previous_sibling) ? ' ' : ''
+    trailing_space = node.next_sibling.present? && !html_block_node?(node.next_sibling) ? ' ' : ''
+    content = content.sub(/\A[ \t]*(?:\n[ \t]*)+/, leading_space)
+    content.sub(/(?:[ \t]*\n)+[ \t]*\z/, trailing_space)
+  end
+
+  def normalize_html_whitespace_node(node)
+    if node.previous_sibling.nil? || node.next_sibling.nil? ||
+       html_block_node?(node.previous_sibling) || html_block_node?(node.next_sibling)
+      node.remove
+    else
+      node.content = ' '
+    end
+  end
+
+  def replace_text_newlines_with_breaks(node, content)
+    parts = content.split("\n", -1)
+    parts.each_with_index do |part, index|
+      node.add_previous_sibling(Nokogiri::XML::Text.new(part, node.document)) if part.present?
+      node.add_previous_sibling(Nokogiri::XML::Node.new('br', node.document)) if index < parts.length - 1
+    end
+    node.remove
+  end
+
+  def trim_html_edge_breaks(fragment)
+    ([fragment] + fragment.css('blockquote,div,li,p').to_a).each do |parent|
+      first_content_child(parent)&.remove while first_content_child(parent)&.name == 'br'
+      last_content_child(parent)&.remove while last_content_child(parent)&.name == 'br'
+    end
+  end
+
+  def first_content_child(parent)
+    parent.children.find { |child| !whitespace_html_text_node?(child) }
+  end
+
+  def last_content_child(parent)
+    parent.children.reverse.find { |child| !whitespace_html_text_node?(child) }
+  end
+
+  def whitespace_html_text_node?(node)
+    node&.text? && node.text.delete("\u00A0").strip.empty?
+  end
+
+  def html_block_node?(node)
+    node&.element? && HTML_BLOCK_ELEMENTS.include?(node.name)
   end
 end
 # rubocop:enable Metrics/AbcSize

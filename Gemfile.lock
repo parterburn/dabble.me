@@ -125,7 +125,7 @@ GEM
       openssl-signature_algorithm (~> 1.0)
     crack (0.4.3)
       safe_yaml (~> 1.0.0)
-    crass (1.0.6)
+    crass (1.0.7)
     cronex (0.15.0)
       tzinfo
       unicode (>= 0.4.4.5)
@@ -242,7 +242,7 @@ GEM
     http-accept (1.7.0)
     http-cookie (1.0.3)
       domain_name (~> 0.5)
-    i18n (1.14.8)
+    i18n (1.15.2)
       concurrent-ruby (~> 1.0)
     i18n-js (4.2.3)
       glob (>= 0.4.0)
@@ -337,7 +337,7 @@ GEM
       net-protocol
     netrc (0.11.0)
     nio4r (2.7.5)
-    nokogiri (1.19.3)
+    nokogiri (1.19.4)
       mini_portile2 (~> 2.8.2)
       racc (~> 1.4)
     openssl (4.0.0)
@@ -413,7 +413,7 @@ GEM
     redcarpet (3.6.0)
     redis (5.4.1)
       redis-client (>= 0.22.0)
-    redis-client (0.28.0)
+    redis-client (0.30.0)
       connection_pool
     regexp_parser (2.9.0)
     reline (0.6.3)
@@ -479,15 +479,15 @@ GEM
       rexml (~> 3.2, >= 3.2.5)
       rubyzip (>= 1.2.2, < 4.0)
       websocket (~> 1.0)
-    sentry-rails (6.5.0)
+    sentry-rails (6.6.2)
       railties (>= 5.2.0)
-      sentry-ruby (~> 6.5.0)
-    sentry-ruby (6.5.0)
+      sentry-ruby (~> 6.6.2)
+    sentry-ruby (6.6.2)
       bigdecimal
       concurrent-ruby (~> 1.0, >= 1.0.2)
       logger
-    sentry-sidekiq (6.5.0)
-      sentry-ruby (~> 6.5.0)
+    sentry-sidekiq (6.6.2)
+      sentry-ruby (~> 6.6.2)
       sidekiq (>= 5.0)
     sidekiq (7.3.10)
       base64
@@ -575,7 +575,7 @@ GEM
     words_counted (1.0.3)
     xpath (3.2.0)
       nokogiri (~> 1.8)
-    zeitwerk (2.7.5)
+    zeitwerk (2.8.2)
 
 PLATFORMS
   ruby
@@ -673,7 +673,7 @@ DEPENDENCIES
   words_counted (~> 1.0, >= 1.0.3)
 
 RUBY VERSION
-   ruby 3.4.8p250
+  ruby 3.4.10
 
 BUNDLED WITH
-   2.6.6
+  4.0.6

@@ -53,7 +53,7 @@ describe EmailProcessor do
       )
 
       EmailProcessor.new(email).process
-      expect(paid_user.entries.reload.first.body).to eq("<p>I am great</p><br><br><p>Here's a link: <a href=\"https://www.google.com\" target=\"_blank\">https://www.google.com</a></p>")
+      expect(paid_user.entries.reload.first.body).to eq("<p>I am great</p><p>Here's a link: <a href=\"https://www.google.com\" target=\"_blank\">https://www.google.com</a></p>")
     end
 
     it "preserves blank lines between HTML email paragraphs" do
@@ -68,7 +68,7 @@ describe EmailProcessor do
       )
 
       EmailProcessor.new(email).process
-      expect(paid_user.entries.reload.first.body).to eq("<div>Blah blah blah. Blah blah.</div><br><br><div>Blah blah blah. Blah!</div>")
+      expect(paid_user.entries.reload.first.body).to eq("<div>Blah blah blah. Blah blah.</div><br><div>Blah blah blah. Blah!</div>")
     end
 
     it "removes a trailing em-dash separator followed by a signature line" do
@@ -123,6 +123,60 @@ describe EmailProcessor do
 
       EmailProcessor.new(email).process
       expect(user.entries.reload.first.body).to eq("Today was good")
+    end
+  end
+
+  describe '#clean_html_version' do
+    subject(:clean_html) { described_class.allocate }
+
+    def clean(html)
+      clean_html.send(:clean_html_version, html)
+    end
+
+    it 'does not turn source formatting whitespace between blocks into breaks' do
+      html = "<div>First</div>\n\n<div>Second</div>\n<p>Third</p>"
+
+      expect(clean(html)).to eq('<div>First</div><div>Second</div><p>Third</p>')
+    end
+
+    it 'turns authored newlines inside text into breaks' do
+      expect(clean("<div>First\nSecond\\nThird</div>")).to eq('<div>First<br>Second<br>Third</div>')
+    end
+
+    it 'collapses internal empty block runs to one blank line' do
+      html = '<div>First</div><div><br></div><p>&nbsp;</p><div>Second</div>'
+
+      expect(clean(html)).to eq('<div>First</div><br><div>Second</div>')
+    end
+
+    it 'removes leading and trailing empty blocks' do
+      html = '<p><br></p><div>Content</div><p>&nbsp;</p>'
+
+      expect(clean(html)).to eq('<div>Content</div>')
+    end
+
+    it 'preserves whitespace between inline elements' do
+      html = "<div><strong>First</strong>\n<span>Second</span></div>"
+
+      expect(clean(html)).to eq('<div><strong>First</strong> <span>Second</span></div>')
+    end
+
+    it 'does not turn pretty-printing around inline elements into breaks' do
+      html = "<div>\n  First\n  <strong>Second</strong>\n  <span>Third</span>\n</div>"
+
+      expect(clean(html)).to eq('<div>First <strong>Second</strong> <span>Third</span></div>')
+    end
+
+    it 'removes a Gmail signature before sanitization strips its marker' do
+      html = '<div>Content</div><br id="lineBreakAtBeginningOfSignature"><div>Signature</div>'
+
+      expect(clean(html)).to eq('<div>Content</div>')
+    end
+
+    it 'removes a signature preceded by an empty block' do
+      html = '<div>Content</div><div><br></div><div>--</div><div>Signature</div>'
+
+      expect(clean(html)).to eq('<div>Content</div>')
     end
   end
 end
