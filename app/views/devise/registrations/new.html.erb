@@ -180,7 +180,7 @@
             });
         },
         error: function(xhr) {
-          alert("Error: " + (xhr.responseJSON ? xhr.responseJSON.errors.join(", ") : "User not found or no passkey registered"));
+          alert("Unable to start passkey sign-in. Please try again or use your password.");
         }
       });
     },

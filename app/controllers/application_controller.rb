@@ -29,7 +29,7 @@ class ApplicationController < ActionController::Base
       Sentry.set_user(id: current_user.id, email: current_user.email)
       Sentry.set_tags(plan: current_user.plan)
     end
-    extras = { params: params.to_unsafe_h, url: request.url }
+    extras = { params: filtered_params_for_sentry, url: request.url }
     Sentry.set_extras(extras)
   end
 
@@ -57,11 +57,16 @@ class ApplicationController < ActionController::Base
   end
 
   def handle_timeout(exception)
-    Sentry.capture_message("Timeout error", level: :error, extra: { params: params, url: request.url })
+    Sentry.capture_message("Timeout error", level: :error, extra: { params: filtered_params_for_sentry, url: request.url })
     render "errors/timeout", layout: "marketing", status: 504
   end
 
   def set_user_today
     @user_today = Time.now.in_time_zone(current_user&.send_timezone.presence || "UTC").to_date
+  end
+
+  def filtered_params_for_sentry
+    ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters)
+      .filter(params.to_unsafe_h)
   end
 end

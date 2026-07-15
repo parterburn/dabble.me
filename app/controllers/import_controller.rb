@@ -13,34 +13,31 @@ class ImportController < ApplicationController
     if params[:type]&.downcase == "ahhlife"
       import_ahhlife_entries(params[:entry][:text])
     elsif params[:type]&.downcase == "trailmix"
-      tmp = params[:json_file]
-      dir = FileUtils.mkdir_p("public/trailmix_zips/#{current_user.user_key}")
-      file = File.join(dir, tmp.original_filename)
-      FileUtils.mv tmp.tempfile.path, file
-      ImportTrailmixJob.perform_later(current_user.id, tmp.original_filename)
-      flash[:notice] = "Import has started. You will receive an email when it is finished."
-      redirect_to entries_path
+      enqueue_trailmix_import
     else
       import_ohlife_entries(params[:entry][:text])
     end
   end
 
   def process_ohlife_images
-    tmp = params[:zip_file]
-    if tmp && File.extname(tmp.original_filename).downcase == ".zip"
+    if current_user.is_free?
+      flash[:alert] = "<a href='#{subscribe_path}' class='alert-link'>Subscribe to PRO</a> to import entries.".html_safe
+      redirect_to import_path and return
+    end
 
-      #move uploaded ZIP file to /tmp/ohlife_zips
-      dir = FileUtils.mkdir_p("public/ohlife_zips/#{current_user.user_key}")
-      file = File.join(dir, tmp.original_filename)
-      FileUtils.mv tmp.tempfile.path, file
-
-      ImportJob.perform_later(current_user.id, tmp.original_filename)
+    begin
+      stored_path = ImportUploadStore.store!(
+        uploaded_file: params[:zip_file],
+        user_key: current_user.user_key,
+        kind: "ohlife"
+      )
+      ImportJob.perform_later(current_user.id, stored_path)
       flash[:notice] = "Photo Import has started."
       redirect_to entries_path
-    else
-      FileUtils.rm tmp.tempfile.path if tmp
-      flash[:alert] = "Only ZIP files are allowed here."
-      redirect_to import_path
+    rescue ImportUploadStore::Error => e
+      FileUtils.rm_f(params[:zip_file]&.tempfile&.path) if params[:zip_file]
+      flash[:alert] = e.message
+      redirect_to import_path(type: "photos")
     end
   end
 
@@ -53,6 +50,21 @@ class ImportController < ApplicationController
   end
 
   private
+
+  def enqueue_trailmix_import
+    stored_path = ImportUploadStore.store!(
+      uploaded_file: params[:json_file],
+      user_key: current_user.user_key,
+      kind: "trailmix"
+    )
+    ImportTrailmixJob.perform_later(current_user.id, stored_path)
+    flash[:notice] = "Import has started. You will receive an email when it is finished."
+    redirect_to entries_path
+  rescue ImportUploadStore::Error => e
+    FileUtils.rm_f(params[:json_file]&.tempfile&.path) if params[:json_file]
+    flash[:alert] = e.message
+    redirect_to import_path(type: "trailmix")
+  end
 
   def import_ohlife_entries(data)
     errors = []

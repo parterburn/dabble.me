@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Removes OAuth/access_token query values from Sentry payloads before upload.
+# Removes credentials and private journal content from Sentry payloads before upload.
 # Complements Rails filter_parameters (logs).
 module SentrySensitiveScrubber
   FILTERED = "[FILTERED]"
@@ -12,6 +12,17 @@ module SentrySensitiveScrubber
     password_confirmation
     otp_attempt
     otp_code
+  ].freeze
+
+  # Journal entry text / inbound email payloads — never send to Sentry.
+  PRIVATE_CONTENT_KEYS = %w[
+    body
+    raw_body
+    html
+    stripped_html
+    original_email_body
+    original_email
+    text_body
   ].freeze
 
   module_function
@@ -132,6 +143,7 @@ module SentrySensitiveScrubber
 
   def sensitive_param_key?(key_s)
     SENSITIVE_PARAM_KEYS.include?(key_s) ||
+      PRIVATE_CONTENT_KEYS.include?(key_s) ||
       key_s.include?("password") ||
       key_s.include?("token") ||
       key_s.include?("secret")

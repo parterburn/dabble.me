@@ -22,5 +22,30 @@ RSpec.describe SentrySensitiveScrubber do
       expect(out["access_token"]).to eq(described_class::FILTERED)
       expect(out["ok"]).to eq("plain")
     end
+
+    it "filters private journal content keys" do
+      input = {
+        "body" => "private journal text",
+        "raw_body" => "full email body",
+        "html" => "<p>private</p>",
+        "stripped_html" => "<p>stripped</p>",
+        "original_email_body" => "original",
+        "original_email" => { "body-plain" => "plain" },
+        "text_body" => "mcp text",
+        "subject" => "Sunday journal",
+        "params" => { "entry" => { "body" => "nested private", "date" => "2026-07-15" } }
+      }
+      out = described_class.scrub_value(input)
+      expect(out["body"]).to eq(described_class::FILTERED)
+      expect(out["raw_body"]).to eq(described_class::FILTERED)
+      expect(out["html"]).to eq(described_class::FILTERED)
+      expect(out["stripped_html"]).to eq(described_class::FILTERED)
+      expect(out["original_email_body"]).to eq(described_class::FILTERED)
+      expect(out["original_email"]).to eq(described_class::FILTERED)
+      expect(out["text_body"]).to eq(described_class::FILTERED)
+      expect(out["subject"]).to eq("Sunday journal")
+      expect(out["params"]["entry"]["body"]).to eq(described_class::FILTERED)
+      expect(out["params"]["entry"]["date"]).to eq("2026-07-15")
+    end
   end
 end

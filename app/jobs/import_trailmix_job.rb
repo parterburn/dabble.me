@@ -1,17 +1,16 @@
 class ImportTrailmixJob < ActiveJob::Base
   queue_as :default
 
-  def perform(user_id, tmp_original_filename)
+  def perform(user_id, stored_path)
     @user = User.find(user_id)
-    dir = "public/trailmix_zips/#{@user.user_key}"
-    json_file = File.join(dir, tmp_original_filename)
-    import_trailmix_entries(json_file)
+    import_trailmix_entries(stored_path)
+  ensure
+    ImportUploadStore.cleanup!(stored_path)
   end
 
   def import_trailmix_entries(file)
     json_data = JSON.parse(File.read(file))
     errors = []
-    i = 0;
     json_data.each do |entry|
       body = unfold_paragraphs(entry['body'])
       body = ActionController::Base.helpers.simple_format(body)
@@ -35,11 +34,13 @@ class ImportTrailmixJob < ActiveJob::Base
       errors_for_mailer = "There were errors while importing the entries: #{errors.join(', ')}."
     end
 
-    ActionMailer::Base.mail(from: "Paul from Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>",
+    ActionMailer::Base.mail(
+      from: "Paul from Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>",
       to: @user.email,
       subject: "Import of Trailmix.life entries is complete",
       content_type: "text/html",
-      body: "Import of Trailmix.life entries is complete. You can view them at #{::Rails.application.routes.url_helpers.entries_url}. #{errors_for_mailer}").deliver_later
+      body: "Import of Trailmix.life entries is complete. You can view them at #{::Rails.application.routes.url_helpers.entries_url}. #{errors_for_mailer}"
+    ).deliver_later
   rescue JSON::ParserError, NoMethodError => e
     Sentry.capture_exception(e)
   end

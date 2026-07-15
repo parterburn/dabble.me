@@ -16,8 +16,7 @@ module Mcp
       end
 
       def journal_access_response(user)
-        # TODO: restore `&& user.mcp_security_requirements_met?` after Claude/ChatGPT connector review.
-        return nil if user.is_pro? && !user.deletion_pending?
+        return nil if user.is_pro? && !user.deletion_pending? && user.mcp_security_requirements_met?
 
         MCP::Tool::Response.new(
           [{

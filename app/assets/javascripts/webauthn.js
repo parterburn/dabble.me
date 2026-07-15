@@ -119,7 +119,7 @@
                    });
         },
         error: function(xhr) {
-          alert("Error: " + xhr.responseJSON.errors.join(", "));
+          alert("Unable to start passkey sign-in. Please try again or use your password.");
         }
       });
     },

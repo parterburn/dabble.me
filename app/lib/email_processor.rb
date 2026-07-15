@@ -185,13 +185,13 @@ class EmailProcessor
           @error = error
           if error.to_s.include?("Image Failed to manipulate")
             entry = @user.entries.create!(params.except(:image, :remote_image_url).merge(body: @body, original_email_body: @raw_body))
-            Sentry.capture_message("Error processing image via email", level: :error, extra: { reason: "Image Failed to manipulate", error: error, image: best_attachment, remote_image_url: best_attachment_url, subject: @subject, entry: entry })
+            Sentry.capture_message("Error processing image via email", level: :error, extra: { reason: "Image Failed to manipulate", error: error, image: best_attachment, remote_image_url: best_attachment_url, subject: @subject, entry_id: entry&.id })
           else
             Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "ActiveRecord::RecordInvalid", error: error, subject: @subject })
           end
         rescue => error
           @error = error
-          Sentry.capture_message("Error processing entry via email", level: :error, extra: { error: error, subject: @subject, body: @body, raw_body: @raw_body })
+          Sentry.capture_message("Error processing entry via email", level: :error, extra: { error: error, subject: @subject })
           @body = @body.force_encoding('iso-8859-1').encode('utf-8')
           @raw_body = @raw_body.force_encoding('iso-8859-1').encode('utf-8')
           entry = @user.entries.create!(params.merge(body: @body, original_email_body: @raw_body))
@@ -206,7 +206,7 @@ class EmailProcessor
           else
             record_errors = @error.full_messages.to_sentence
           end
-          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save new entry (failed_entry email sent to hello@dabble.me)", errors: entry&.errors&.full_messages, rescue_error: @error, body: @body, date: date })
+          Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save new entry (failed_entry email sent to hello@dabble.me)", errors: entry&.errors&.full_messages, rescue_error: @error, date: date })
           UserMailer.failed_entry(@user, record_errors, date, @body).deliver_later
           raise "Failed entry" # for mailgun to retry
         end
@@ -224,7 +224,7 @@ class EmailProcessor
       end
     else # no user found
       Sentry.set_user(id: @token, email: @from)
-      Sentry.capture_message("Inbound entry not associated to user", level: :error, extra: { subject: @subject, body: @body, html: @html, raw_body: @raw_body })
+      Sentry.capture_message("Inbound entry not associated to user", level: :error, extra: { subject: @subject, from: @from })
     end
   end
 
