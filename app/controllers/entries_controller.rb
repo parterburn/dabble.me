@@ -58,10 +58,10 @@ class EntriesController < ApplicationController
 
     respond_to do |format|
       format.json {
-        start_date = params[:start].presence || (@user_today - 1.year).strftime("%Y-%m-%d")
-        end_date = params[:end].presence || @user_today.strftime("%Y-%m-%d")
+        start_date = parse_iso_date(params[:start]) || (@user_today - 1.year)
+        end_date = parse_iso_date(params[:end]) || @user_today
         render json: calendar_json(current_user.entries
-          .where("date >= '#{start_date}'::DATE AND date < '#{end_date}'::DATE")) }
+          .where("date >= ? AND date < ?", start_date, end_date)) }
       format.html
     end
   end
@@ -312,8 +312,12 @@ class EntriesController < ApplicationController
   end
 
   def review
-    @year = params[:year] || (@user_today.month > 11 ? @user_today.year : @user_today.year - 1)
-    @entries = current_user.entries.where("date >= '#{@year}-01-01'::DATE AND date <= '#{@year}-12-31'::DATE").order(date: :asc)
+    raw_year = params[:year].presence || (@user_today.month > 11 ? @user_today.year : @user_today.year - 1)
+    raise InvalidDateError unless raw_year.to_s =~ /\A(19|20)\d{2}\z/
+
+    @year = raw_year.to_i
+    year_range = Date.new(@year, 1, 1)..Date.new(@year, 12, 31)
+    @entries = current_user.entries.where(date: year_range).order(date: :asc)
     @total_count = @entries.count
     @years_with_entries = current_user.entries.pluck(:date).compact.map(&:year).uniq.sort
     if @total_count.positive?
@@ -321,7 +325,7 @@ class EntriesController < ApplicationController
       tokeniser = WordsCounted::Tokeniser.new(@body_text)
       @words_counter = tokeniser.tokenise(exclude: Entry::WORDS_NOT_TO_COUNT)
       if @total_count > 20
-        all_user_entry_count = Entry.where("date >= '#{@year}-01-01'::DATE AND date <= '#{@year}-12-31'::DATE").group(:user_id).reorder("count_all").count.values
+        all_user_entry_count = Entry.where(date: year_range).group(:user_id).reorder("count_all").count.values
         @pctile = (((all_user_entry_count.find_index(@total_count) + 1).to_f / all_user_entry_count.count) * 100).round
       end
 
@@ -539,6 +543,16 @@ class EntriesController < ApplicationController
   def handle_invalid_date
     flash[:alert] = "Invalid date format"
     redirect_to entries_path
+  end
+
+  # Parse a user-supplied ISO date (YYYY-MM-DD) for use in SQL bind params.
+  # Returns nil for blank/invalid input so callers can fall back to a default.
+  def parse_iso_date(value)
+    return nil if value.blank?
+
+    Date.iso8601(value.to_s)
+  rescue ArgumentError, TypeError
+    nil
   end
 
   def sanitize_search_term(term)
