@@ -196,6 +196,87 @@ address with the original host header/SNI) to close the window.
 
 ---
 
+## Dependency vulnerabilities
+
+GitHub Dependabot reports 26 alerts on the default branch. Running `bundler-audit`
+(ruby-advisory-db) against `Gemfile.lock` surfaces **31 advisories** (the DB is a superset
+of Dependabot). The important nuance is **reachability**: several map to Rails subsystems or
+Devise modules this app does not load, so the real exposure is much smaller than the raw count.
+
+> The lockfile could not be regenerated in this review environment (Ruby 3.4.10 required by
+> the Gemfile is not installed here — only up to 3.3.6), so the bumps below are a plan to run
+> locally with `bundle update`, not applied changes.
+
+### A. Not reachable in this app (12 of 31) — safe to deprioritize
+- **activestorage (6 advisories)** — `config/application.rb` requires railties individually
+  and never loads `active_storage/engine`. Active Storage is not in the app; DiskService path
+  traversal / glob injection / proxy-mode DoS / content-type bypass do not apply.
+- **puma (2, both rated High)** — both are PROXY-protocol-v1 parser bugs. The app has no
+  `proxy_protocol` binding (no custom `bind` in `config/puma.rb`), so the vulnerable parser
+  is never enabled.
+- **net-imap (3)** — command injection / DoS via IMAP commands. The app sends mail via the
+  Mailgun API and receives via Griddler webhooks; it never opens IMAP connections.
+- **devise (1 of 2)** — the "change email confirmable race" requires `:confirmable`, which the
+  `User` model does not enable.
+
+  A bump is still worthwhile as defense-in-depth, but none of these is an active hole today.
+
+### B. Also not applicable, worth noting
+- **devise — Timeoutable open redirect (`CVE-2026-40295`)** — requires `:timeoutable`; the
+  `User` model does not use it. Not applicable.
+
+### C. Reachable / act on these
+Direct dependency, in-constraint, low-risk:
+- **carrierwave 3.1.2 → 3.1.3** (Medium, `~> 3` already allows it). Content-type **denylist**
+  bypass. This app uses an **allowlist** (`file_content_type allow: ALLOWED_IMAGE_TYPES`), so
+  likely not exploitable here, but the bump is trivial — do it.
+
+Transitive, fixable via `bundle update` (subject to parent-gem constraints):
+- **faraday 2.14.2 → 2.14.3** (High) — NestedParamsEncoder recursion DoS. Pulled in by
+  `ruby-openai` (and others). Patch bump.
+- **jwt 3.1.2 → 3.2.0** (High) — empty-key HMAC bypass. Transitive. Patch/minor bump.
+- **json 2.19.5 → 2.19.9** (Low) — heap overflow when streaming to IO.
+- **websocket-driver 0.8.0 → 0.8.2** (4 advisories) — header/compression memory-exhaustion DoS.
+- **net-imap → 0.6.4.1** — bump anyway (see A; not reachable but cheap).
+- **excon 0.91.0 → 1.5.0** (Medium) — header redaction on redirect. **Caveat:** `excon` is
+  held at 0.91 by `fog-aws`/`fog-core`, which may cap `excon < 1.0`. Bumping likely requires
+  updating the `fog-*` stack too; verify the resolve before committing.
+
+Suggested command (run locally on Ruby 3.4.10, then run the suite):
+```
+bundle update carrierwave faraday jwt json websocket-driver net-imap
+# excon: attempt separately; may require fog-aws/fog-core updates
+```
+
+### D. Needs a decision — `concurrent-ruby` and the Rails 6.1 EOL
+- **concurrent-ruby 1.3.4 → 1.3.7** (3 advisories: lock-correctness bugs). This gem is
+  **pinned at 1.3.4** in the `Gemfile` with a comment about a Rails PR. The pin exists because
+  newer `concurrent-ruby` dropped its internal `logger` require, which breaks Rails 6.1 boot.
+  To bump safely, add `gem "logger"` explicitly (or upgrade Rails) and then move the pin to
+  `>= 1.3.7`. **Test app boot** after this change — it's a known 6.1 compatibility landmine.
+
+- **Rails core — actionpack, actionview, activerecord, activesupport (5 reachable advisories)**
+  — CSP bypass in Action Dispatch, XSS in Action View tag helpers, ANSI-escape injection in
+  AR logging, ReDoS/XSS/DoS in Active Support number & `SafeBuffer#%` helpers. Every fix
+  requires **Rails ≥ 7.0.8.7 / 7.1 / 7.2 / 8.0**. The app is on **Rails 6.1.7.10, which is
+  end-of-life and receives no further security patches** — this is the root cause of most of
+  the Rails-family alerts and the single most important dependency item.
+
+  **Recommendation:** plan a Rails 7.x upgrade (7.1 or 7.2 LTS-ish line). It's a multi-day
+  effort (Zeitwerk already on, but check `bundle update` for devise/doorkeeper/carrierwave
+  compatibility). Until then, individual 6.1 CVEs cannot be patched by gem bumps. Reachability
+  of the specific advisories is low-to-moderate given current usage (no CSP set yet, limited
+  number-helper exposure), but the EOL status alone is the reason to prioritize the upgrade.
+
+### Priority order
+1. **Plan the Rails 6.1 → 7.x upgrade** (EOL framework; unlocks ~5 core CVEs).
+2. **Patch bumps now:** carrierwave, faraday (High), jwt (High), json, websocket-driver, net-imap.
+3. **concurrent-ruby** bump alongside an explicit `logger` gem (test boot).
+4. **excon** — only with a coordinated `fog-*` update.
+5. Enable **Dependabot security updates** (auto-PRs) so transitive patch bumps land continuously.
+
+---
+
 ## Things that are done well (no action needed)
 
 - **OAuth/MCP:** `force_pkce` + `pkce_code_challenge_methods ['S256']`, `hash_token_secrets`,
