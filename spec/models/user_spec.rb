@@ -138,11 +138,10 @@ describe User do
 
   describe '#send_devise_notification' do
     around do |example|
-      previous_adapter = ActiveJob::Base.queue_adapter
       ActiveJob::Base.queue_adapter = :test
       example.run
     ensure
-      ActiveJob::Base.queue_adapter = previous_adapter
+      ActiveJob::Base.queue_adapter = :inline
     end
 
     it 'enqueues reset password instructions instead of delivering them synchronously' do

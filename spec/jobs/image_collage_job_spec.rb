@@ -8,16 +8,12 @@ RSpec.describe ImageCollageJob, type: :job do
 
   describe '.perform_later_for_mailgun' do
     it 'waits for Mailgun to index the stored event before running' do
-      previous_adapter = ActiveJob::Base.queue_adapter
-      ActiveJob::Base.queue_adapter = :test
-
+      # ActiveJob::TestHelper already installs a test adapter for this example.
       expect do
         described_class.perform_later_for_mailgun(paid_entry.id, message_id: message_id)
       end.to have_enqueued_job(described_class)
         .with(paid_entry.id, message_id: message_id)
         .at(a_value_within(1.second).of(described_class::MAILGUN_INDEX_DELAY.from_now))
-
-      ActiveJob::Base.queue_adapter = previous_adapter
     end
   end
 
