@@ -40,6 +40,7 @@ class Entry < ActiveRecord::Base
   before_save :associate_inspiration
   before_save :strip_out_base64
   before_save :find_songs
+  before_update :relocate_image_on_date_change
 
   after_commit :tag_for_sentiment, if: :saved_change_to_body?, on: [:create, :update]
 
@@ -234,6 +235,22 @@ class Entry < ActiveRecord::Base
   end
 
   private
+
+  # ImageUploader#store_dir includes the entry date. Changing the date without
+  # moving the stored object makes image URLs 404. Relocate on S3 when keeping
+  # the photo; skip when the user checked "Remove Photo".
+  def relocate_image_on_date_change
+    return if read_attribute(:image).blank?
+    return unless will_save_change_to_date?
+    return if remove_image?
+
+    old_date = attribute_in_database('date')
+    new_date = date
+    return if old_date.blank? || new_date.blank?
+    return if old_date.to_date == new_date.to_date
+
+    image.relocate_between_dates!(old_date, new_date)
+  end
 
   def associate_inspiration
     self.inspiration = nil unless self.inspiration.in? Inspiration.without_imports_or_email_or_tips
