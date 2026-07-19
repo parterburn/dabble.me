@@ -215,12 +215,11 @@ class EntriesController < ApplicationController
       flash[:notice] = 'Entry deleted!'
       redirect_back_or_to entries_path
     else
-      update_params = if @entry.image_url_cdn.present? && entry_params[:remove_image] == "0"
-        @entry.remote_image_url = @entry.image_url_cdn(cloudflare: false)
-        entry_params.permit(:entry, :date)
-      else
-        entry_params.permit(:entry, :date, :remove_image)
-      end
+      # Do not re-download / re-assign the existing image on every edit. That
+      # old remote_image_url workaround wiped photos when the CDN fetch failed
+      # (CarrierWave validate_download is false). Date changes relocate the
+      # stored object via Entry#relocate_image_on_date_change instead.
+      update_params = entry_params.permit(:entry, :date, :remove_image)
       if @entry.update(update_params)
         if params[:entry][:image].present? && params[:entry][:image].size > 1
           @entry.update(uploading_image: true)
