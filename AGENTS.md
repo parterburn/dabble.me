@@ -37,6 +37,14 @@ sudo pg_ctlcluster 18 main start
 redis-server --daemonize yes
 ```
 
+`config/database.yml` sets no DB username, so the app connects to Postgres via peer auth as the OS user `ubuntu`. If a fresh cluster errors with `role "ubuntu" does not exist`, create it once:
+
+```bash
+sudo -u postgres psql -c "CREATE ROLE ubuntu WITH LOGIN SUPERUSER;"
+```
+
+Then create/seed the dev DB with the dev env vars: `bundle exec rails db:create db:schema:load db:seed`.
+
 ### Running the dev server
 
 ```bash
