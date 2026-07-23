@@ -1,0 +1,28 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.parterburn/dabble-me",
+  "title": "Dabble Me Journal",
+  "description": "Private journal MCP server to search, analyze, and create Dabble Me entries securely via OAuth.",
+  "version": "1.0.0",
+  "websiteUrl": "https://dabble\u002eme/mcp-server",
+  "repository": {
+    "url": "https://github.com/parterburn/dabble\u002eme",
+    "source": "github",
+    "id": "24485897"
+  },
+  "icons": [
+    {
+      "src": "https://dabble\u002eme/favicon-96x96.png",
+      "mimeType": "image/png",
+      "sizes": [
+        "96x96"
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://dabble\u002eme/mcp"
+    }
+  ]
+}

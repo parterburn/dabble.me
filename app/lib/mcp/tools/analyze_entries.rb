@@ -4,8 +4,8 @@ module Mcp
   module Tools
     class AnalyzeEntries < MCP::Tool
       tool_name 'analyze_entries'
-      title 'Analyze entries'
-      description 'Return counts, date coverage, top hashtags, and writing volume summaries over your own entries.'
+      title 'Analyze journal patterns'
+      description 'Summarize patterns in the signed-in user’s private Dabble Me journal over an optional inclusive date range. Returns entry counts, year coverage, top hashtags, average words per entry, and sample highlights for reflection requests such as “summarize my journaling habits this year.”'
       annotations(
         read_only_hint: true,
         destructive_hint: false,

@@ -4,8 +4,8 @@ module Mcp
   module Tools
     class ListEntries < MCP::Tool
       tool_name 'list_entries'
-      title 'List entries'
-      description 'List your own entries for a date range, newest first.'
+      title 'List journal entries'
+      description 'Read the signed-in user’s private Dabble Me journal entries newest first, optionally within an inclusive date range. Use when the user asks to review a period such as last week or last month without requiring a keyword.'
       annotations(
         read_only_hint: true,
         destructive_hint: false,
@@ -17,7 +17,12 @@ module Mcp
         properties: {
           start_date: { type: 'string', description: 'Optional YYYY-MM-DD inclusive start date.' },
           end_date: { type: 'string', description: 'Optional YYYY-MM-DD inclusive end date.' },
-          limit: { type: 'integer', minimum: 1, maximum: 730 }
+          limit: {
+            type: 'integer',
+            minimum: 1,
+            maximum: Mcp::EntrySearch::MAX_LIMIT,
+            description: "Maximum entries to return (1–#{Mcp::EntrySearch::MAX_LIMIT}; default 50). total_entries reports the full count in the date range."
+          }
         },
         additionalProperties: false
       )
@@ -28,7 +33,7 @@ module Mcp
         return denied if denied
 
         result = Mcp::EntrySearch.new(user: user).list(
-          limit: limit || 365,
+          limit: limit || Mcp::EntrySearch::MAX_LIMIT,
           since: start_date,
           until_date: end_date
         )

@@ -4,8 +4,8 @@ module Mcp
   module Tools
     class CreateEntry < MCP::Tool
       tool_name 'create_entry'
-      title 'Create entry'
-      description 'Create a journal entry on a given calendar day (defaults to today in the user account timezone). Plain text is turned into HTML paragraphs. If an entry already exists for that day, appends after a separator (same as the web app) unless merge_with_existing is false. Optionally attach one image via uploaded_image_key (preferred, from get_image_upload_url), image_url (https, fetched server-side), or image_base64 (small fallback); do not send more than one. For image_base64, resize the image to fit within 800x800 before base64 encoding.'
+      title 'Create or append a journal entry'
+      description 'Write to the signed-in user’s private Dabble Me journal on a calendar day (default: today in the account timezone). Plain text becomes paragraphs. By default, text appends to an existing entry on that day; set merge_with_existing false to fail instead. Optionally attach one image using uploaded_image_key (preferred), a public HTTPS image URL, or small base64 data.'
       annotations(
         read_only_hint: false,
         destructive_hint: false,
