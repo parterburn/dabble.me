@@ -24,6 +24,48 @@ RSpec.describe EntriesController, type: :controller do
       expect(response.body).to have_content(entry.formatted_body)
       expect(response.body).not_to have_content(not_my_entry.formatted_body)
     end
+
+    it 'should clamp per page to a sane maximum' do
+      sign_in user
+      get :index, params: { per: 500 }
+      expect(response.status).to eq 200
+      expect(controller.send(:index_per_page)).to eq 50
+    end
+  end
+
+  describe 'show' do
+    before { sign_in user }
+
+    it 'shows an entry stored at a non-midnight datetime for that calendar day' do
+      entry.update_columns(date: Time.utc(2026, 7, 17, 15, 30, 0), body: '<p>UniqueShowBody999</p>')
+
+      get :show, params: { year: 2026, month: 7, day: 17 }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('UniqueShowBody999')
+      expect(flash[:alert]).to be_blank
+    end
+
+    it 'shows a timezone beginning-of-day entry for that calendar day' do
+      tz = ActiveSupport::TimeZone[user.send_timezone]
+      day = Date.new(2026, 7, 17)
+      entry.update_columns(
+        date: tz.local(day.year, day.month, day.day).beginning_of_day,
+        body: '<p>McpStyleShowBody</p>'
+      )
+
+      get :show, params: { year: 2026, month: 7, day: 17 }
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('McpStyleShowBody')
+    end
+
+    it 'redirects with Entry not found when no entry exists that day' do
+      get :show, params: { year: 2099, month: 1, day: 1 }
+
+      expect(response).to redirect_to(entries_path)
+      expect(flash[:alert]).to eq('Entry not found.')
+    end
   end
 
   describe 'edit' do
@@ -82,9 +124,27 @@ RSpec.describe EntriesController, type: :controller do
       sign_in user
       user.plan = 'PRO PayHere Monthly'
       user.save
+      params[:entry][:date] = Date.new(2027, 3, 15)
       expect { post :create, params: params }.to change { Entry.count }.by(1)
       expect(response.status).to eq 302
-      expect(response).to redirect_to(day_entry_url(year: Entry.last.date.year, month: Entry.last.date.month, day: Entry.last.date.day))
+      expect(response).to redirect_to(day_entry_url(year: 2027, month: 3, day: 15))
+    end
+
+    it 'should merge into an existing same-day entry if paid user' do
+      sign_in paid_user
+      existing = paid_user.entries.create!(date: Time.utc(2026, 8, 1, 15, 0, 0), body: '<p>Morning</p>')
+      merge_params = {
+        entry: {
+          entry: 'Afternoon addition',
+          date: Time.utc(2026, 8, 1, 9, 0, 0),
+          inspiration_id: inspiration.id
+        }
+      }
+
+      expect { post :create, params: merge_params }.not_to change { Entry.count }
+      expect(response).to redirect_to(day_entry_url(year: 2026, month: 8, day: 1))
+      expect(existing.reload.body).to include('Morning')
+      expect(existing.body).to include('Afternoon addition')
     end
   end
 

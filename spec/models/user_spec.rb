@@ -152,4 +152,14 @@ describe User do
       end.to have_enqueued_mail(Devise::Mailer, :reset_password_instructions)
     end
   end
+
+  describe '#existing_entry' do
+    it 'finds an entry stored at a non-midnight datetime on that calendar day' do
+      entry = user.entries.create!(date: Time.utc(2099, 3, 15, 18, 45, 0), body: 'afternoon')
+
+      expect(user.existing_entry('2099-03-15')).to eq(entry)
+      expect(user.existing_entry(Date.new(2099, 3, 15))).to eq(entry)
+      expect(user.existing_entry('2099-03-16')).to be_nil
+    end
+  end
 end
