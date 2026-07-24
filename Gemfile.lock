@@ -621,6 +621,7 @@ DEPENDENCIES
   jquery-rails
   kaminari (>= 1.2.1)
   listen
+  logger
   loofah (>= 2.5)
   mailgun_rails
   mcp (~> 0.13.0)
