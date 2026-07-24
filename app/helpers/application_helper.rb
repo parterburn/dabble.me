@@ -47,6 +47,20 @@ module ApplicationHelper
     content_for?(section) ? content_for(section) : default
   end
 
+  # Known third-party apps shown with brand logos on the OAuth consent screen.
+  OAUTH_KNOWN_APPLICATION_LOGOS = [
+    { pattern: /\bnotion\b/i, asset: "oauth/notion.png", alt: "Notion", fit: :contain },
+    { pattern: /\b(claude|anthropic)\b/i, asset: "oauth/anthropic.png", alt: "Claude", fit: :cover },
+    { pattern: /\b(chatgpt|chat\s*gpt|openai)\b/i, asset: "oauth/openai.png", alt: "ChatGPT", fit: :contain }
+  ].freeze
+
+  # Brand logo metadata for major OAuth clients, or nil for letter initials.
+  def oauth_application_logo(name)
+    return nil if name.blank?
+
+    OAUTH_KNOWN_APPLICATION_LOGOS.find { |logo| name.match?(logo[:pattern]) }
+  end
+
   # Two-letter initials for OAuth consent (e.g. "MCP Inspector" -> "MI").
   def oauth_application_initials(name)
     return "?" if name.blank?
@@ -109,6 +123,8 @@ module ApplicationHelper
       <p class="mb-3"><code class="text-base select-all break-all bg-olive-200 px-2 py-1 text-olive-900">#{ERB::Util.html_escape(mcp_endpoint)}</code></p>
       <p class="text-muted mb-3">Complete the browser sign-in and approve access. For connector UI details, see
       <a href="#{ERB::Util.html_escape(claude_url)}" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">Anthropic’s guide to remote MCP connectors</a>.</p>
+      <p class="text-muted mb-3">For Claude and ChatGPT steps, authentication details, privacy notes, and the complete live tool reference, see the
+      <a href="#{routes.mcp_server_docs_path}" class="text-accent hover:text-primary underline">Dabble Me MCP Server documentation</a>.</p>
       <p class="text-muted mb-2"><span class="font-semibold">Example prompts</span> (plain language—the client calls tools for you):</p>
       <ul class="list-disc pl-5 space-y-1.5 text-muted text-sm mb-3">
         <li><span class="font-medium text-primary">Look back:</span> “What did I write about travel last year?” or “Show entries from March with #gratitude.”</li>
@@ -120,7 +136,8 @@ module ApplicationHelper
       <code class="text-sm">search_entries</code> (keyword or phrase, optional dates),
       <code class="text-sm">list_entries</code> (date range),
       <code class="text-sm">analyze_entries</code> (counts, hashtags, volume),
-      <code class="text-sm">create_entry</code> (body text and/or optional <code class="text-sm">image_url</code> / <code class="text-sm">image_base64</code>, optional date).</p>
+      <code class="text-sm">get_image_upload_url</code> (prepare a direct upload for local image bytes), and
+      <code class="text-sm">create_entry</code> (body text and/or one optional image via <code class="text-sm">image_url</code> when a public https URL exists, optional date).</p>
       <p class="text-muted mb-3"><span class="font-semibold">Opening a day in the browser:</span> <code class="text-sm select-all">#{ERB::Util.html_escape(base)}/entries/YYYY/M/D</code> with <span class="font-medium">unpadded</span> month and day (example:
       <a href="#{ERB::Util.html_escape(base)}/entries/2026/4/21" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">#{ERB::Util.html_escape(base)}/entries/2026/4/21</a>).
       New web entries: <a href="#{ERB::Util.html_escape(base)}/write" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">#{ERB::Util.html_escape(base)}/write</a>.</p>
@@ -179,7 +196,7 @@ module ApplicationHelper
           },
           {
             q: "Is there a mobile app?",
-            a: "<span class='font-semibold'>No — and that’s intentional.</span> There’s no Dabble Me app in the App Store or Google Play. Most people write by replying to the daily email using the email app they already have on their phone. The website is fully mobile-friendly if you ever want to browse or edit entries."
+            a: "<span class='font-semibold'>No — and that’s intentional.</span> There’s no standalone Dabble Me app in the App Store or Google Play. Most people write by replying to the daily email using the email app already on their phone, and the website is fully mobile-friendly for browsing or editing entries. PRO members can also <a href='#{routes.mcp_server_docs_path}' class='text-accent hover:text-primary underline'>connect Dabble Me to ChatGPT, Claude, or another MCP-compatible AI app</a>. Once connected, you can use that app on the go—and use voice prompts where the AI app supports them—to find memories, reflect on past entries, or add a new journal entry."
           },
           {
             q: "Is this really free?",

@@ -95,10 +95,12 @@ class User < ActiveRecord::Base
     end
   end
 
+  # Entries.date is a datetime. Match any timestamp on the given calendar day
+  # (UTC, matching config.time_zone) so non-midnight values still resolve.
   def existing_entry(selected_date)
-    selected_date = Date.parse(selected_date.to_s)
-    entries.where(date: selected_date).first
-  rescue
+    date = Date.parse(selected_date.to_s)
+    entries.where(date: date.all_day).first
+  rescue ArgumentError, TypeError
     nil
   end
 

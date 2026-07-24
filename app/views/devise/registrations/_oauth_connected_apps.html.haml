@@ -19,4 +19,4 @@
                 = link_to "Remove",oauth_authorized_application_path(application), method: :delete, data: { confirm: "Are you sure?" }, class: "text-danger"
   - else
     %p.text-muted{style: "margin-bottom: 12px;"}
-      Connect to apps like Claude by adding a #{link_to "Custom MCP connector", support_path(anchor: "mcp"), class: "text-accent hover:text-primary underline font-semibold"}.
+      Connect to apps like Claude or ChatGPT using the #{link_to "Dabble Me MCP server", mcp_server_docs_path, class: "text-accent hover:text-primary underline font-semibold"}.

@@ -189,10 +189,13 @@ RSpec.describe RegistrationsController, type: :controller do
 
   describe "destroy" do
     around do |example|
-      previous_adapter = ActiveJob::Base.queue_adapter
       ActiveJob::Base.queue_adapter = :test
       example.run
-      ActiveJob::Base.queue_adapter = previous_adapter
+    ensure
+      # Always restore the test-env default. Capturing queue_adapter while a
+      # TestAdapter is active (e.g. from ActiveJob::TestHelper) and writing it
+      # back leaks enqueue-only delivery into later examples.
+      ActiveJob::Base.queue_adapter = :inline
     end
 
     it "redirects when not signed in" do

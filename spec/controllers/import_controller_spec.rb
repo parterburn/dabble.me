@@ -4,17 +4,12 @@ require "rails_helper"
 
 RSpec.describe ImportController, type: :controller do
   include_context "has all objects"
+  # ActiveJob::TestHelper enables/disables a per-example test adapter via
+  # before_setup/after_teardown. Do not also assign ActiveJob::Base.queue_adapter
+  # around examples — capturing queue_adapter while the test adapter is active
+  # and writing it back leaks TestAdapter into later examples, so deliver_later
+  # stops delivering into ActionMailer::Base.deliveries.
   include ActiveJob::TestHelper
-
-  around do |example|
-    previous_adapter = ActiveJob::Base.queue_adapter
-    ActiveJob::Base.queue_adapter = :test
-    clear_enqueued_jobs
-    example.run
-  ensure
-    clear_enqueued_jobs
-    ActiveJob::Base.queue_adapter = previous_adapter
-  end
 
   after { FileUtils.rm_rf(ImportUploadStore::BASE_DIR) }
 

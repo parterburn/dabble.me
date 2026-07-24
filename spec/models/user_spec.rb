@@ -138,11 +138,10 @@ describe User do
 
   describe '#send_devise_notification' do
     around do |example|
-      previous_adapter = ActiveJob::Base.queue_adapter
       ActiveJob::Base.queue_adapter = :test
       example.run
     ensure
-      ActiveJob::Base.queue_adapter = previous_adapter
+      ActiveJob::Base.queue_adapter = :inline
     end
 
     it 'enqueues reset password instructions instead of delivering them synchronously' do
@@ -151,6 +150,16 @@ describe User do
       expect do
         user.send_reset_password_instructions
       end.to have_enqueued_mail(Devise::Mailer, :reset_password_instructions)
+    end
+  end
+
+  describe '#existing_entry' do
+    it 'finds an entry stored at a non-midnight datetime on that calendar day' do
+      entry = user.entries.create!(date: Time.utc(2099, 3, 15, 18, 45, 0), body: 'afternoon')
+
+      expect(user.existing_entry('2099-03-15')).to eq(entry)
+      expect(user.existing_entry(Date.new(2099, 3, 15))).to eq(entry)
+      expect(user.existing_entry('2099-03-16')).to be_nil
     end
   end
 end

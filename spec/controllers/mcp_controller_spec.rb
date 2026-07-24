@@ -49,8 +49,32 @@ RSpec.describe McpController, type: :controller do
         expect(response).to have_http_status(:ok)
         body = JSON.parse(response.body)
         expect(body.dig("result", "serverInfo", "name")).to eq("dabble-me")
+        expect(body.dig("result", "serverInfo", "title")).to eq("Dabble Me Journal")
         instructions = body.dig("result", "instructions").to_s
+        expect(instructions).to include("private personal journal MCP server")
+        expect(instructions).to include("summarize my journal from last month")
+        expect(instructions).to include("pass it as image_url")
         expect(instructions).to include("/entries/YYYY/M/D").and include("/write")
+      end
+
+      it "publishes specific tool metadata for client discovery" do
+        post :invoke, params: { jsonrpc: "2.0", id: 2, method: "tools/list", params: {} }, as: :json
+
+        expect(response).to have_http_status(:ok)
+        tools = JSON.parse(response.body).dig("result", "tools").index_by { |tool| tool["name"] }
+        expect(tools.keys).to contain_exactly(
+          "search_entries",
+          "list_entries",
+          "analyze_entries",
+          "get_image_upload_url",
+          "create_entry"
+        )
+        expect(tools.dig("search_entries", "description")).to include("find every time I mentioned burnout")
+        expect(tools.dig("search_entries", "inputSchema", "properties", "query", "description")).to include("keyword")
+        expect(tools.dig("list_entries", "inputSchema", "properties", "limit", "maximum")).to eq(Mcp::EntrySearch::MAX_LIMIT)
+        expect(tools.dig("create_entry", "description")).to include("prefer image_url")
+        expect(tools.dig("create_entry", "inputSchema", "properties", "image_url", "description")).to include("fetches and attaches")
+        expect(tools.dig("get_image_upload_url", "description")).to include("skip this tool")
       end
 
       it "searches only the authenticated user entries" do

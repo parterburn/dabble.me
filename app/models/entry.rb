@@ -40,6 +40,7 @@ class Entry < ActiveRecord::Base
   before_save :associate_inspiration
   before_save :strip_out_base64
   before_save :find_songs
+  before_update :relocate_image_on_date_change
 
   after_commit :tag_for_sentiment, if: :saved_change_to_body?, on: [:create, :update]
 
@@ -88,14 +89,7 @@ class Entry < ActiveRecord::Base
   def formatted_body
     return nil unless body.present?
     @formatted_body ||= begin
-      formatted = body
-      begin
-        detection = CharlockHolmes::EncodingDetector.detect(body)
-        if detection[:confidence] > 95
-          formatted = CharlockHolmes::Converter.convert formatted, detection[:encoding].gsub("IBM424_ltr", "UTF-8"), "UTF-8"
-        end
-      rescue => e
-      end
+      formatted = ensure_utf8(body)
       fix_encoding(formatted)
     end
   end
@@ -122,15 +116,9 @@ class Entry < ActiveRecord::Base
     body_sanitized = safe_list_sanitizer.sanitize(self.body, tags: %w(br p))
     body_sanitized.gsub!(/\A(\n\n)/,"") if body_sanitized
     body_sanitized.gsub!(/(\<\n\n>)\z/,"") if body_sanitized
+    return nil if body_sanitized.blank?
 
-    begin
-      detection = CharlockHolmes::EncodingDetector.detect(body_sanitized)
-      if detection[:confidence] > 95
-        body_sanitized = CharlockHolmes::Converter.convert body_sanitized, detection[:encoding].gsub("IBM424_ltr", "UTF-8"), "UTF-8"
-      end
-    rescue => e
-    end
-    fix_encoding(body_sanitized)
+    fix_encoding(ensure_utf8(body_sanitized))
   end
 
   def image_url_cdn(cloudflare: true)
@@ -179,11 +167,11 @@ class Entry < ActiveRecord::Base
   end
 
   def next
-    self.user.entries.where("date > ?", date).sort_by(&:date).first
+    @next_entry ||= user.entries.unscope(:order).where('date > ?', date).order(date: :asc).first
   end
 
   def previous
-    self.user.entries.where("date < ?", date).sort_by(&:date).last
+    @previous_entry ||= user.entries.unscope(:order).where('date < ?', date).order(date: :desc).first
   end
 
   def hashtags
@@ -235,6 +223,22 @@ class Entry < ActiveRecord::Base
 
   private
 
+  # ImageUploader#store_dir includes the entry date. Changing the date without
+  # moving the stored object makes image URLs 404. Relocate on S3 when keeping
+  # the photo; skip when the user checked "Remove Photo".
+  def relocate_image_on_date_change
+    return if read_attribute(:image).blank?
+    return unless will_save_change_to_date?
+    return if remove_image?
+
+    old_date = attribute_in_database('date')
+    new_date = date
+    return if old_date.blank? || new_date.blank?
+    return if old_date.to_date == new_date.to_date
+
+    image.relocate_between_dates!(old_date, new_date)
+  end
+
   def associate_inspiration
     self.inspiration = nil unless self.inspiration.in? Inspiration.without_imports_or_email_or_tips
   end
@@ -278,11 +282,26 @@ class Entry < ActiveRecord::Base
     nil
   end
 
+  # Skip CharlockHolmes when the string is already valid UTF-8 — the common
+  # case for journal bodies, and much cheaper on the entries index.
+  def ensure_utf8(string)
+    return string if string.encoding == Encoding::UTF_8 && string.valid_encoding?
+
+    detection = CharlockHolmes::EncodingDetector.detect(string)
+    if detection && detection[:confidence].to_i > 95 && detection[:encoding].present?
+      CharlockHolmes::Converter.convert(string, detection[:encoding].gsub('IBM424_ltr', 'UTF-8'), 'UTF-8')
+    else
+      string
+    end
+  rescue StandardError
+    string
+  end
+
   def fix_encoding(string)
     return string unless string&.scan(/\\u[0-9a-zA-Z]{4}/)&.any?
 
     begin
-      string&.encode("ISO-8859-1")&.force_encoding("UTF-8")
+      string&.encode('ISO-8859-1')&.force_encoding('UTF-8')
     rescue Encoding::UndefinedConversionError
       string
     end

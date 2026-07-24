@@ -13,9 +13,9 @@ RSpec.describe "OAuth authorized applications", type: :request do
     expect(response).to redirect_to(security_path)
   end
 
-  it "redirects legacy /settings/mcp to Support MCP FAQ" do
+  it "redirects legacy /settings/mcp to the dedicated MCP documentation" do
     sign_in user
     get "/settings/mcp"
-    expect(response).to redirect_to(a_string_ending_with("/support#mcp"))
+    expect(response).to redirect_to(a_string_ending_with("/mcp-server"))
   end
 end
