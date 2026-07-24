@@ -311,8 +311,8 @@ structured_data = {
           ["Create a dated entry", "Create a journal entry for July 17, 2026: Dinner with old friends reminded me how much I value staying connected."]
         ].each do |title, prompt| %>
           <div class="card p-5">
-            <h3 class="font-semibold text-sm text-primary"><%= title %></h3>
-            <blockquote class="mt-2 text-sm text-muted">“<%= prompt %>”</blockquote>
+            <h3 class="font-sans font-semibold text-base tracking-tight text-primary"><%= title %></h3>
+            <blockquote class="mt-2 text-sm leading-relaxed text-muted">“<%= prompt %>”</blockquote>
           </div>
         <% end %>
       </div>
