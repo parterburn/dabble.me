@@ -47,6 +47,20 @@ module ApplicationHelper
     content_for?(section) ? content_for(section) : default
   end
 
+  # Known third-party apps shown with brand logos on the OAuth consent screen.
+  OAUTH_KNOWN_APPLICATION_LOGOS = [
+    { pattern: /\bnotion\b/i, asset: "oauth/notion.png", alt: "Notion", fit: :contain },
+    { pattern: /\b(claude|anthropic)\b/i, asset: "oauth/anthropic.png", alt: "Claude", fit: :cover },
+    { pattern: /\b(chatgpt|chat\s*gpt|openai)\b/i, asset: "oauth/openai.png", alt: "ChatGPT", fit: :contain }
+  ].freeze
+
+  # Brand logo metadata for major OAuth clients, or nil for letter initials.
+  def oauth_application_logo(name)
+    return nil if name.blank?
+
+    OAUTH_KNOWN_APPLICATION_LOGOS.find { |logo| name.match?(logo[:pattern]) }
+  end
+
   # Two-letter initials for OAuth consent (e.g. "MCP Inspector" -> "MI").
   def oauth_application_initials(name)
     return "?" if name.blank?

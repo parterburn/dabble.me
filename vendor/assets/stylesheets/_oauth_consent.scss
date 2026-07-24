@@ -193,6 +193,25 @@
     color: $olive-950;
   }
 
+  &__avatar--logo {
+    background: #fff;
+    overflow: hidden;
+    padding: 0;
+  }
+
+  &__avatar-img {
+    display: block;
+    height: 100%;
+    object-fit: cover;
+    width: 100%;
+  }
+
+  &__avatar--contain &__avatar-img {
+    box-sizing: border-box;
+    object-fit: contain;
+    padding: 10px;
+  }
+
   &__flow-name {
     color: $olive-900;
     display: block;
