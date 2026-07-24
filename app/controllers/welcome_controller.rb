@@ -21,6 +21,27 @@ class WelcomeController < ApplicationController
     # Support/FAQ page
   end
 
+  def mcp_server
+    @mcp_tools = Mcp::DabbleServer::TOOLS.map do |tool|
+      schema = tool.input_schema.schema
+      {
+        name: tool.tool_name,
+        title: tool.title,
+        description: tool.description,
+        properties: schema[:properties] || {},
+        required: schema[:required] || []
+      }
+    end
+  end
+
+  def day_one_ai_journaling
+    # Comparison page for people choosing an MCP-enabled journal.
+  end
+
+  def best_journaling_apps_with_mcp
+    # Guide to vendor-supported journaling apps with MCP.
+  end
+
   def privacy
     # Privacy policy page
   end

@@ -59,7 +59,7 @@
         <p style="margin-top: 20px; margin-bottom: 0px;">Analyze your journal with your preferred AI tool to get insights on how you journaled and what <%= @year %> looked like.</p>
         <div class="alert alert-info" style="text-align: left; margin-top: 20px; max-width: 100%; display: inline-block;">
           <p style="margin-bottom: 10px;"><strong>Dabble Me MCP connector</strong> (most secure)</p>
-          <p style="margin-bottom: 12px;">If your app supports the Model Context Protocol, add the <%= link_to "Dabble Me MCP connector", support_path(anchor: "mcp"), target: :_blank, style: "font-weight: bold" %>. Your tool reaches your journal over a secure OAuth connection instead of you copying full exports into chat or the clipboard.</p>
+          <p style="margin-bottom: 12px;">If your app supports the Model Context Protocol, add the <%= link_to "Dabble Me MCP connector", mcp_server_docs_path, target: :_blank, style: "font-weight: bold" %>. Your tool reaches your journal over a secure OAuth connection instead of you copying full exports into chat or the clipboard.</p>
           <ol style="margin: 0; padding-left: 20px;">
             <li style="margin-top: 6px;"><%= current_user.mcp_security_requirements_met? ? "✅" : "❌" %> Setup <%= link_to "passkey or two-factor authentication", security_path, style: "font-weight: bold" %></li>
             <li style="margin-top: 6px;">Add the remote MCP connector in your AI app using <code style="cursor: pointer; font-size: 13px;" onclick="copyToClipboard(this)" title="Click to copy">http://dabble.me/mcp</code> as the endpoint and follow the OAuth steps.</li>

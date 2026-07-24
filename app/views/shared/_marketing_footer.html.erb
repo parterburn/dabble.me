@@ -16,6 +16,9 @@
             <li>
               <a href="<%= root_path(s: (user_signed_in? ? '0' : nil), anchor: 'pricing') %>" class="text-sm text-muted hover:text-primary transition-colors">Pricing</a>
             </li>
+            <li>
+              <a href="<%= support_path %>" class="text-sm text-muted hover:text-primary transition-colors">Support</a>
+            </li>
           </ul>
         </div>
 
@@ -23,7 +26,10 @@
         <div>
           <ul role="list" class="mt-4 space-y-3">
             <li>
-              <a href="<%= support_path %>" class="text-sm text-muted hover:text-primary transition-colors">Support</a>
+              <a href="<%= mcp_server_docs_path %>" class="text-sm text-muted hover:text-primary transition-colors">MCP Server</a>
+            </li>
+            <li>
+              <a href="<%= best_journaling_apps_with_mcp_path %>" class="text-sm text-muted hover:text-primary transition-colors">MCP Journal Guide</a>
             </li>
             <li>
               <a href="<%= privacy_path %>" class="text-sm text-muted hover:text-primary transition-colors">Privacy Policy</a>

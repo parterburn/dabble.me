@@ -14,17 +14,27 @@ module Mcp
       site = ApplicationHelper.site_public_base_url
       MCP::Server.new(
         name: 'dabble-me',
-        title: 'Dabble Me',
+        title: 'Dabble Me Journal',
         version: '1.0.0',
-        instructions: 'Use these tools only when the user wants something done with their own journal on Dabble Me ' \
-                      '(dabble.me) after OAuth. Users often say diary, daily log, reflections, notes, or entries to ' \
-                      'mean the same saved writing in their account—use tools when they clearly mean that data, ' \
-                      'not creative writing or generic prompts. Capabilities: search or list saved posts, analyze ' \
-                      'their writing, upload a journal image, or add a new entry. Do not use for fictional scenes, scholarly journals, other products, ' \
-                      'or advice that does not require their stored Dabble Me data. ' \
-                      'For user-uploaded or local images, prefer get_image_upload_url first so the client can upload bytes directly; ' \
-                      'then pass uploaded_image_key to create_entry. Use image_base64 only as a small-image fallback. ' \
+        instructions: 'Dabble Me is a private personal journal MCP server. Use these tools only when the user clearly ' \
+                      'intends to read, search, reflect on, analyze, or write their own Dabble Me journal after OAuth. ' \
+                      'Users may call it their journal, diary, daily log, reflections, memories, notes, or entries. ' \
+                      'Typical requests include “summarize my journal from last month,” “find every time I mentioned ' \
+                      'burnout,” “what patterns do you notice in my writing?”, and “add this reflection to today’s journal.” ' \
+                      'Choose search_entries for a topic or phrase, list_entries for a time period, analyze_entries for ' \
+                      'counts and writing patterns, and create_entry only when the user asks to save something. ' \
+                      'Do not use these tools for fictional writing, scholarly journals, another journal product, or ' \
+                      'general advice that does not require the user’s stored Dabble Me data. ' \
+                      'When attaching one image to create_entry, choose the simplest path: ' \
+                      'if you already have a publicly reachable https image URL (including a URL the AI client hosted for the user), ' \
+                      'pass it as image_url so Dabble Me fetches and attaches the image server-side—this avoids client sandbox ' \
+                      'egress allowlists and large base64 payloads. ' \
+                      'Only for local bytes without a public URL, call get_image_upload_url, PUT the bytes to the returned upload URL, ' \
+                      'then pass uploaded_image_key to create_entry. Use image_base64 only as a last-resort small-image fallback. ' \
+                      'Never combine image_url, uploaded_image_key, and image_base64 in the same create_entry call. ' \
                       'Tools always apply to the signed-in account from OAuth and cannot access other users’ data. ' \
+                      'Reading sends selected journal content to the connected AI client for processing. Never claim a ' \
+                      'write succeeded unless create_entry returns success. ' \
                       "When linking to a day in the web app, use #{site}/entries/YYYY/M/D with unpadded month and day " \
                       "(example: #{site}/entries/2026/4/21). The compose page for new entries is #{site}/write .",
         tools: TOOLS,

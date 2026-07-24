@@ -4,8 +4,8 @@ module Mcp
   module Tools
     class CreateEntry < MCP::Tool
       tool_name 'create_entry'
-      title 'Create entry'
-      description 'Create a journal entry on a given calendar day (defaults to today in the user account timezone). Plain text is turned into HTML paragraphs. If an entry already exists for that day, appends after a separator (same as the web app) unless merge_with_existing is false. Optionally attach one image via uploaded_image_key (preferred, from get_image_upload_url), image_url (https, fetched server-side), or image_base64 (small fallback); do not send more than one. For image_base64, resize the image to fit within 800x800 before base64 encoding.'
+      title 'Create or append a journal entry'
+      description 'Write to the signed-in user’s private Dabble Me journal on a calendar day (default: today in the account timezone). Plain text becomes paragraphs. By default, text appends to an existing entry on that day; set merge_with_existing false to fail instead. Optionally attach one image: prefer image_url when you already have a public https URL; otherwise use get_image_upload_url + uploaded_image_key for local bytes; image_base64 only as a small fallback.'
       annotations(
         read_only_hint: false,
         destructive_hint: false,
@@ -18,7 +18,7 @@ module Mcp
           date: { type: 'string', description: 'Optional YYYY-MM-DD; omitted means today in the account timezone.' },
           body: {
             type: 'string',
-            description: 'Entry text (plain text; line breaks become paragraphs). HTML is escaped. Use an empty string for an image-only entry when image_url or image_base64 is set.'
+            description: 'Entry text (plain text; line breaks become paragraphs). HTML is escaped. Use an empty string for an image-only entry when image_url, uploaded_image_key, or image_base64 is set.'
           },
           merge_with_existing: {
             type: 'boolean',
@@ -26,15 +26,15 @@ module Mcp
           },
           image_url: {
             type: 'string',
-            description: 'Optional https URL of an image to attach (one image per call). Fetched by the server; private/loopback hosts are rejected. In production, only https URLs are accepted.'
+            description: 'Preferred when a public https image URL is already available. Dabble Me fetches and attaches the image server-side (avoids client sandbox egress allowlists and large base64). Private/loopback hosts are rejected. In production, only https is accepted. Do not combine with uploaded_image_key or image_base64.'
           },
           uploaded_image_key: {
             type: 'string',
-            description: 'Preferred image attachment flow. First call get_image_upload_url, upload the image bytes with the returned PUT URL and headers, then pass the returned uploaded_image_key here. Do not combine with image_url or image_base64.'
+            description: 'For local image bytes without a public URL: first call get_image_upload_url, PUT the bytes to the returned upload URL with the required headers, then pass the returned uploaded_image_key here. Do not combine with image_url or image_base64.'
           },
           image_base64: {
             type: 'string',
-            description: 'Optional image as base64: either a data URL (data:image/png;base64,...) or raw base64 bytes. Resize the image to fit within 800x800 before encoding. If raw, set image_mime_type (e.g. image/png) or it defaults to image/jpeg.'
+            description: 'Last-resort small image as base64: either a data URL (data:image/png;base64,...) or raw base64 bytes. Resize to fit within 800x800 before encoding. If raw, set image_mime_type (e.g. image/png) or it defaults to image/jpeg. Prefer image_url or uploaded_image_key instead.'
           },
           image_mime_type: {
             type: 'string',

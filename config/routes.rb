@@ -39,7 +39,7 @@ Rails.application.routes.draw do
   end
 
   devise_scope :user do
-    get 'settings/mcp', to: redirect { |_params, req| "#{req.protocol}#{req.host_with_port}/support#mcp" }
+    get 'settings/mcp', to: redirect { |_params, req| "#{req.protocol}#{req.host_with_port}/mcp-server" }
     get 'settings/delete-account'  => 'registrations#delete_account', as: 'delete_account'
     get 'settings/(:user_key)'     => 'registrations#settings', as: 'settings'
     get 'security'                 => 'registrations#security', as: 'security'
@@ -72,6 +72,9 @@ Rails.application.routes.draw do
   get 'privacy',                        to: 'welcome#privacy'
   get 'terms',                          to: 'welcome#terms'
   get 'support',                        to: 'welcome#support'
+  get 'mcp-server',                     to: 'welcome#mcp_server', as: :mcp_server_docs
+  get 'dabble-me-vs-day-one-ai-journaling', to: 'welcome#day_one_ai_journaling', as: :day_one_ai_journaling
+  get 'best-journaling-apps-with-mcp',  to: 'welcome#best_journaling_apps_with_mcp', as: :best_journaling_apps_with_mcp
   match 'mcp', to: 'mcp#invoke', via: %i[get post], format: :json, as: :mcp
 
   # Redirects for old routes

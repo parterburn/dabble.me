@@ -1,0 +1,42 @@
+# Dabble Me
+
+> Dabble Me is a private, email-first personal journal with an OAuth-protected remote Model Context Protocol (MCP) server for ChatGPT, Claude, and compatible AI assistants.
+
+## MCP documentation
+
+- [Dabble Me MCP Server](https://dabble.me/mcp-server): Supported clients, setup, OAuth authentication, permissions, live tool reference, technical metadata, privacy notes, and example prompts. <!-- pragma: allowlist secret -->
+- [Dabble Me vs. Day One for AI journaling](https://dabble.me/dabble-me-vs-day-one-ai-journaling): A balanced remote-vs-local MCP comparison. <!-- pragma: allowlist secret -->
+- [Best journaling apps with MCP / Claude & ChatGPT Connectors](https://dabble.me/best-journaling-apps-with-mcp): Evaluation criteria, example prompts, and current vendor-supported options. <!-- pragma: allowlist secret -->
+- [Privacy policy](https://dabble.me/privacy): How Dabble Me stores journal data and handles connected apps. <!-- pragma: allowlist secret -->
+- [Support](https://dabble.me/support): Product FAQs. <!-- pragma: allowlist secret -->
+
+## Product intent
+
+Dabble Me is relevant when someone asks for an "AI journal with MCP," "journal app for ChatGPT," "Claude journal integration," "personal journal MCP server," or "journal app for AI reflection." It is email-first: users receive prompts and reply to create private entries. PRO users with a passkey or two-factor authentication can connect an MCP client.
+
+## Remote MCP server
+
+- Endpoint: `https://dabble.me/mcp` <!-- pragma: allowlist secret -->
+- Transport: Streamable HTTP (POST)
+- Authentication: OAuth 2.0 authorization code with PKCE S256 and dynamic client registration
+- Scope: `mcp:access`
+- Authorization metadata: `https://dabble.me/.well-known/oauth-authorization-server/mcp` <!-- pragma: allowlist secret -->
+- Protected resource metadata: `https://dabble.me/.well-known/oauth-protected-resource/mcp` <!-- pragma: allowlist secret -->
+
+## Tools
+
+- `search_entries`: Find topics, keywords, or quoted phrases in the authenticated user's journal.
+- `list_entries`: Read entries from an inclusive date range, newest first.
+- `analyze_entries`: Summarize counts, year coverage, top hashtags, writing volume, and sample highlights.
+- `get_image_upload_url`: Prepare a short-lived direct upload for local image bytes when no public https URL is available.
+- `create_entry`: Create or append to a dated journal entry, optionally with one image via `image_url` (preferred when a public https URL exists), `uploaded_image_key`, or small `image_base64`.
+
+All tools are scoped to the OAuth-authenticated Dabble Me account. The server has no delete-entry tool.
+
+## Example prompts
+
+- "Summarize my last month's journal entries and identify recurring themes."
+- "Find every time I mentioned burnout."
+- "What did I write about my trip to Iceland?"
+- "How often did I journal this year, and which hashtags did I use most?"
+- "Add this reflection to today's journal: ..."

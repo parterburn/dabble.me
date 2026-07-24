@@ -1,3 +1,10 @@
+- default_description = "The simple, private journal that helps you actually write. Reply to a daily email, rediscover memories, and connect your journal to AI with MCP."
+- page_description = content_for?(:description) ? content_for(:description) : default_description
+- page_title = content_for?(:social_title) ? content_for(:social_title) : (content_for?(:title) ? "#{content_for(:title)} — Dabble me." : "Dabble me. Private email journaling & daily reflection.")
+- page_keywords = content_for?(:keywords) ? content_for(:keywords) : "dabble me,journal,diary,journaling,online diary,private journal"
+- canonical_url = content_for?(:canonical_url) ? content_for(:canonical_url) : "#{request.base_url}#{request.path}"
+- social_image = "#{request.base_url}/dabble_logo_ogimage.jpg"
+
 -#GENERATED FROM http://realfavicongenerator.net/
 %link{href: "/apple-touch-icon.png", rel: "apple-touch-icon", sizes: "180x180"}
 %link{href: "/android-chrome-192x192.png", rel: "android-chrome-icon", sizes: "192x192"}
@@ -10,20 +17,21 @@
 %link{href: "/favicon-32x32.png", rel: "icon", sizes: "32x32", type: "image/png"}
 %meta{content: "Dabble me.", name: "apple-mobile-web-app-title"}
 %meta{content: "Dabble me.", name: "application-name"}
-%meta{content: "The simple, private journal that helps you actually write. Just reply to a daily email to capture thoughts and rediscover memories with Blasts from the Past. Start for free.", property: "description"}
-%meta{content: "dabble me,journal,diary,journaling,online diary,baby journal", property: "keywords"}
+%meta{content: page_description, name: "description"}
+%meta{content: page_keywords, name: "keywords"}
+%link{href: canonical_url, rel: "canonical"}
 %link{href: "Dabble Me", rel: "author"}
 %meta{content: "summary_large_image", name: "twitter:card"}
 %meta{content: "@parterburn", name: "twitter:site"}
-%meta{content: "Dabble me. Private email journaling & daily reflection.", name: "twitter:title"}
-%meta{content: "The simple, private journal that helps you actually write. Just reply to a daily email to capture thoughts and rediscover memories with Blasts from the Past. Start for free.", name: "twitter:description"}
-%meta{content: "https://dabble.me/dabble_logo_ogimage.jpg", name: "twitter:image:src"}
-%meta{content: "dabble.me", name: "twitter:domain"}
-%meta{content: "Dabble me. Private email journaling & daily reflection.", property: "og:title"}
-%meta{content: "The simple, private journal that helps you actually write. Just reply to a daily email to capture thoughts and rediscover memories with Blasts from the Past. Start for free.", property: "og:description"}
-%meta{content: "http://dabble.me/dabble_logo_ogimage.jpg", property: "og:image"}
-%meta{content: "https://dabble.me/dabble_logo_ogimage.jpg", property: "og:image:secure_url"}
+%meta{content: page_title, name: "twitter:title"}
+%meta{content: page_description, name: "twitter:description"}
+%meta{content: social_image, name: "twitter:image:src"}
+%meta{content: request.host, name: "twitter:domain"}
+%meta{content: page_title, property: "og:title"}
+%meta{content: page_description, property: "og:description"}
+%meta{content: social_image, property: "og:image"}
+%meta{content: social_image, property: "og:image:secure_url"}
 %meta{content: "Dabble me.", property: "og:site_name"}
 %meta{content: "website", property: "og:type"}
-%meta{content: "https://dabble.me", property: "og:url"}
-%meta{content: "https://dabble.me", property: "og:site_url"}
+%meta{content: canonical_url, property: "og:url"}
+%meta{content: request.base_url, property: "og:site_url"}
