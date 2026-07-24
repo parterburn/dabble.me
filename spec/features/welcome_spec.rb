@@ -8,6 +8,14 @@ describe 'Pages' do
     expect(page).to have_title 'Dabble me. Private email journaling & daily reflection.'
   end
 
+  it 'groups Support beneath Pricing in the footer' do
+    visit root_path
+
+    footer_lists = page.all('footer ul')
+    expect(footer_lists.first.all('a').map(&:text)).to eq(%w[Home Features Pricing Support])
+    expect(footer_lists.second).not_to have_link('Support')
+  end
+
   it 'has correct title for FAQs page' do
     visit support_path
     expect(page).to have_title 'Support — Dabble me.'
