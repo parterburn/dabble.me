@@ -6,7 +6,7 @@
 
 - [Dabble Me MCP Server](https://dabble.me/mcp-server): Supported clients, setup, OAuth authentication, permissions, live tool reference, technical metadata, privacy notes, and example prompts. <!-- pragma: allowlist secret -->
 - [Dabble Me vs. Day One for AI journaling](https://dabble.me/dabble-me-vs-day-one-ai-journaling): A balanced remote-vs-local MCP comparison. <!-- pragma: allowlist secret -->
-- [Best journaling apps with MCP](https://dabble.me/best-journaling-apps-with-mcp): Evaluation criteria and current vendor-supported options. <!-- pragma: allowlist secret -->
+- [Best journaling apps with MCP / Claude & ChatGPT Connectors](https://dabble.me/best-journaling-apps-with-mcp): Evaluation criteria, example prompts, and current vendor-supported options. <!-- pragma: allowlist secret -->
 - [Privacy policy](https://dabble.me/privacy): How Dabble Me stores journal data and handles connected apps. <!-- pragma: allowlist secret -->
 - [Support](https://dabble.me/support): Product FAQs. <!-- pragma: allowlist secret -->
 

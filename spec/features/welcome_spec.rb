@@ -8,9 +8,26 @@ describe 'Pages' do
     expect(page).to have_title 'Dabble me. Private email journaling & daily reflection.'
   end
 
+  it 'groups Support beneath Pricing in the footer' do
+    visit root_path
+
+    footer_lists = page.all('footer ul')
+    expect(footer_lists.first.all('a').map(&:text)).to eq(%w[Home Features Pricing Support])
+    expect(footer_lists[1]).not_to have_link('Support')
+  end
+
   it 'has correct title for FAQs page' do
     visit support_path
     expect(page).to have_title 'Support — Dabble me.'
+  end
+
+  it 'explains mobile journaling through MCP AI connectors' do
+    visit support_path
+
+    expect(page).to have_content 'Is there a mobile app?'
+    expect(page).to have_content 'connect Dabble Me to ChatGPT, Claude, or another MCP-compatible AI app'
+    expect(page).to have_content 'use voice prompts where the AI app supports them'
+    expect(page).to have_link('connect Dabble Me to ChatGPT, Claude, or another MCP-compatible AI app', href: mcp_server_docs_path)
   end
 
   it 'has correct title for Privacy page' do
@@ -60,10 +77,17 @@ describe 'Pages' do
   it 'publishes a guide to journaling apps with MCP' do
     visit best_journaling_apps_with_mcp_path
 
-    expect(page).to have_title 'Best Journaling Apps with MCP for ChatGPT and Claude — Dabble me.'
+    expect(page).to have_title 'Best Journaling Apps with MCP / Claude and ChatGPT Connectors — Dabble me.'
+    expect(page).to have_content 'Best journaling apps with MCP'
+    expect(page).to have_content 'Claude & ChatGPT Connectors'
     expect(page).to have_content 'How this guide evaluates an AI journal with MCP'
+    expect(page).to have_content 'Prompts that show why MCP matters'
+    expect(page).to have_content 'Using voice in my favorite AI tool, help me process my day out loud'
     expect(page).to have_content 'Dabble Me'
     expect(page).to have_content 'Day One'
     expect(page).to have_content 'Find every time I mentioned burnout'
+
+    page_text = page.text
+    expect(page_text.index('Prompts that show why MCP matters')).to be < page_text.index('1. Dabble Me')
   end
 end

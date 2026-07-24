@@ -1,16 +1,16 @@
-<% content_for :title, "Best Journaling Apps with MCP for ChatGPT and Claude" %>
-<% content_for :social_title, "Best journaling apps with MCP for ChatGPT and Claude" %>
-<% content_for :description, "A practical guide to journaling apps with vendor-supported MCP integrations, including Dabble Me and Day One, setup differences, security, and AI reflection prompts." %>
-<% content_for :keywords, "best journaling apps with MCP,AI journal with MCP,personal journal MCP server,journal app for ChatGPT,Claude journal integration,journal app for AI reflection" %>
+<% content_for :title, "Best Journaling Apps with MCP / Claude and ChatGPT Connectors" %>
+<% content_for :social_title, "Best journaling apps with MCP / Claude and ChatGPT Connectors" %>
+<% content_for :description, "A practical guide to journaling apps with vendor-supported MCP integrations for Claude and ChatGPT, including Dabble Me and Day One, setup differences, security, and AI reflection prompts." %>
+<% content_for :keywords, "best journaling apps with MCP,Claude ChatGPT connectors,AI journal with MCP,personal journal MCP server,journal app for ChatGPT,Claude journal integration,journal app for AI reflection" %>
 
 <% content_for :head do %>
   <script type="application/ld+json"><%= raw(json_escape({
     "@context": "https://schema.org",
     "@type": "Article",
-    headline: "Best Journaling Apps with MCP for ChatGPT and Claude",
+    headline: "Best Journaling Apps with MCP / Claude and ChatGPT Connectors",
     description: content_for(:description),
     url: "#{ApplicationHelper.site_public_base_url}/best-journaling-apps-with-mcp",
-    dateModified: "2026-07-23",
+    dateModified: "2026-07-24",
     author: { "@type": "Organization", name: "Dabble Dev LLC" }
   }.to_json)) %></script>
 <% end %>
@@ -19,7 +19,10 @@
   <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
     <header class="text-center">
       <p class="text-sm font-semibold tracking-wide text-accent uppercase">Buyer’s guide · July 2026</p>
-      <h1 class="mt-4 font-serif text-4xl sm:text-5xl tracking-tight">Best journaling apps with MCP</h1>
+      <h1 class="mt-4 font-serif text-4xl sm:text-5xl tracking-tight">
+        Best journaling apps with MCP
+        <span class="block mt-3 font-sans text-xl sm:text-2xl font-medium tracking-normal text-muted">Claude &amp; ChatGPT Connectors</span>
+      </h1>
       <p class="mt-5 text-lg leading-relaxed text-muted max-w-3xl mx-auto">
         The useful question is not simply whether a journal “has AI.” It is whether the journal offers a clear,
         permissioned Model Context Protocol server that your chosen AI assistant can use for real retrieval and writing.
@@ -36,6 +39,35 @@
         <li><strong class="text-primary">Revocation:</strong> there is a documented way to remove access.</li>
         <li><strong class="text-primary">Data clarity:</strong> users are told that retrieved text reaches the AI provider.</li>
       </ul>
+    </section>
+
+    <section class="mt-16" id="example-prompts">
+      <h2 class="font-serif text-3xl text-primary">Prompts that show why MCP matters</h2>
+      <p class="mt-3 text-muted max-w-3xl">
+        Ask in plain language inside Claude, ChatGPT, or another MCP-compatible AI app. The strongest prompts below
+        are emphasized so you can scan for common starting points—including voice-first journaling on the go.
+      </p>
+      <div class="mt-6 grid sm:grid-cols-2 gap-5">
+        <%
+          prompts = [
+            { bold: true,  text: "Summarize my last month's journal entries and cite the dates behind each theme." },
+            { bold: false, text: "Find every time I mentioned burnout. What situations usually came before it?" },
+            { bold: true,  text: "Using voice in my favorite AI tool, help me process my day out loud—then save it as today's journal entry with the key moments." },
+            { bold: false, text: "How has the way I write about my new job changed since January?" },
+            { bold: false, text: "What people and places appeared most often in my journal this year?" },
+            { bold: true,  text: "Talk me through tonight, then add this reflection to today's journal without overwriting anything already there." },
+            { bold: false, text: "Show me entries tagged #gratitude from the last six months." },
+            { bold: false, text: "Compare how I wrote about sleep in March versus June. What changed?" },
+            { bold: true,  text: "Find every time I mentioned burnout, then help me draft tomorrow's intention as a new journal entry." },
+            { bold: false, text: "List entries from last week and pull out anything that still feels unfinished." }
+          ]
+        %>
+        <% prompts.each do |prompt| %>
+          <blockquote class="card p-5 text-sm leading-relaxed <%= prompt[:bold] ? 'font-semibold text-primary' : 'text-muted' %>">
+            “<%= prompt[:text] %>”
+          </blockquote>
+        <% end %>
+      </div>
     </section>
 
     <section class="mt-16">
@@ -131,22 +163,6 @@
         <li>Which text is sent to the AI provider when you request a summary or search?</li>
         <li>Can you see clear tool names and descriptions before approving access?</li>
       </ol>
-    </section>
-
-    <section class="mt-16">
-      <h2 class="font-serif text-3xl text-primary">Prompts that show why MCP matters</h2>
-      <div class="mt-6 grid sm:grid-cols-2 gap-5">
-        <% [
-          "Summarize my last month's journal entries and cite the dates behind each theme.",
-          "Find every time I mentioned burnout. What situations usually came before it?",
-          "How has the way I write about my new job changed since January?",
-          "What people and places appeared most often in my journal this year?",
-          "Show me entries tagged #gratitude from the last six months.",
-          "Add this reflection to today's journal, but do not overwrite anything already there."
-        ].each do |prompt| %>
-          <blockquote class="card p-5 text-sm text-muted">“<%= prompt %>”</blockquote>
-        <% end %>
-      </div>
     </section>
 
     <section class="mt-16 card p-8 text-center">

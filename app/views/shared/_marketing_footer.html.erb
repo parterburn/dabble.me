@@ -16,15 +16,15 @@
             <li>
               <a href="<%= root_path(s: (user_signed_in? ? '0' : nil), anchor: 'pricing') %>" class="text-sm text-muted hover:text-primary transition-colors">Pricing</a>
             </li>
+            <li>
+              <a href="<%= support_path %>" class="text-sm text-muted hover:text-primary transition-colors">Support</a>
+            </li>
           </ul>
         </div>
 
         <!-- Resources -->
         <div>
           <ul role="list" class="mt-4 space-y-3">
-            <li>
-              <a href="<%= support_path %>" class="text-sm text-muted hover:text-primary transition-colors">Support</a>
-            </li>
             <li>
               <a href="<%= mcp_server_docs_path %>" class="text-sm text-muted hover:text-primary transition-colors">MCP Server</a>
             </li>
