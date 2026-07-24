@@ -7,6 +7,7 @@ gem "concurrent-ruby", "1.3.7" # needed until https://github.com/rails/rails/pul
 gem "csv"                      # Ruby 3.4 stdlib extraction - required by ActiveSupport
 gem "drb"                      # Ruby 3.4 stdlib extraction - required by ActiveSupport
 gem "irb"                      # Ruby 3.4 stdlib extraction - required by `rails console`
+gem "logger"                   # Ruby 3.4 stdlib extraction - required by ActiveSupport, see config/boot.rb
 gem "mutex_m"                  # Ruby 3.4 stdlib extraction - required by Rails 6.1
 gem "ostruct"                  # Ruby 3.4 stdlib extraction - required by file_validators
 gem "rdoc"                     # Ruby 3.4 stdlib extraction - required by irb
