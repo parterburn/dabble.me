@@ -57,6 +57,9 @@ describe 'Pages' do
     expect(page).to have_content 'search_entries'
     expect(page).to have_content 'get_image_upload_url'
     expect(page).to have_content 'Summarize my journal entries from last month'
+    expect(page).to have_content 'How should an AI assistant attach a photo'
+    expect(page).to have_content 'Prefer create_entry with image_url'
+    expect(page).to have_content 'Claude can’t upload a photo'
     expect(page).to have_css('script[type="application/ld+json"]', visible: false)
 
     description = page.find('meta[name="description"]', visible: false)['content']

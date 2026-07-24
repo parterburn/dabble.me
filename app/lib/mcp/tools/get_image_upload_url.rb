@@ -5,7 +5,7 @@ module Mcp
     class GetImageUploadUrl < MCP::Tool
       tool_name 'get_image_upload_url'
       title 'Prepare a journal image upload'
-      description 'Prepare one image for a new Dabble Me journal entry. Returns a short-lived presigned PUT URL, required headers, and an uploaded_image_key. Upload the user-provided bytes to that URL, then pass the key to create_entry. Prefer this flow over base64 for local images.'
+      description 'Prepare one local image for a new Dabble Me journal entry when you do not already have a public https URL. Returns a short-lived presigned PUT URL, required headers, and an uploaded_image_key. PUT the user-provided bytes to that URL, then pass the key to create_entry. If you already have a public https image URL, skip this tool and pass image_url to create_entry instead. Prefer this flow over base64 for local images.'
       annotations(
         read_only_hint: false,
         destructive_hint: false,
