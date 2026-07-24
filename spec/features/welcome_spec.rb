@@ -13,7 +13,7 @@ describe 'Pages' do
 
     footer_lists = page.all('footer ul')
     expect(footer_lists.first.all('a').map(&:text)).to eq(%w[Home Features Pricing Support])
-    expect(footer_lists.second).not_to have_link('Support')
+    expect(footer_lists[1]).not_to have_link('Support')
   end
 
   it 'has correct title for FAQs page' do
