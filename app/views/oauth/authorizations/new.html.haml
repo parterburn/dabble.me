@@ -1,5 +1,6 @@
 - title "Connect an app — Dabble me."
 - client_name = @pre_auth.client.name
+- client_logo = oauth_application_logo(client_name)
 - client_initials = oauth_application_initials(client_name)
 - mcp_access = @pre_auth.scopes.map(&:to_s).include?("mcp:access")
 
@@ -19,7 +20,11 @@
           %i.fa.fa-long-arrow-right{ "aria-hidden": "true" }
           %i.fa.fa-long-arrow-left{ "aria-hidden": "true" }
         .oauth-consent__flow-node
-          .oauth-consent__avatar{style: "font-size: 35px; background: #fff; color: #1D1D16;line-height: 59px;align-items: baseline;"}= client_initials.downcase
+          - if client_logo
+            .oauth-consent__avatar.oauth-consent__avatar--logo{class: "oauth-consent__avatar--#{client_logo[:fit]}"}
+              = image_tag client_logo[:asset], alt: client_logo[:alt], class: "oauth-consent__avatar-img"
+          - else
+            .oauth-consent__avatar{style: "font-size: 35px; background: #fff; color: #1D1D16;line-height: 59px;align-items: baseline;"}= client_initials.downcase
           %span.oauth-consent__flow-name= client_name
           %span.oauth-consent__flow-caption= t("doorkeeper.authorizations.new.flow_app_label")
 
