@@ -25,8 +25,13 @@ module Mcp
                       'counts and writing patterns, and create_entry only when the user asks to save something. ' \
                       'Do not use these tools for fictional writing, scholarly journals, another journal product, or ' \
                       'general advice that does not require the user’s stored Dabble Me data. ' \
-                      'For user-uploaded or local images, prefer get_image_upload_url first so the client can upload bytes directly; ' \
-                      'then pass uploaded_image_key to create_entry. Use image_base64 only as a small-image fallback. ' \
+                      'When attaching one image to create_entry, choose the simplest path: ' \
+                      'if you already have a publicly reachable https image URL (including a URL the AI client hosted for the user), ' \
+                      'pass it as image_url so Dabble Me fetches and attaches the image server-side—this avoids client sandbox ' \
+                      'egress allowlists and large base64 payloads. ' \
+                      'Only for local bytes without a public URL, call get_image_upload_url, PUT the bytes to the returned upload URL, ' \
+                      'then pass uploaded_image_key to create_entry. Use image_base64 only as a last-resort small-image fallback. ' \
+                      'Never combine image_url, uploaded_image_key, and image_base64 in the same create_entry call. ' \
                       'Tools always apply to the signed-in account from OAuth and cannot access other users’ data. ' \
                       'Reading sends selected journal content to the connected AI client for processing. Never claim a ' \
                       'write succeeded unless create_entry returns success. ' \

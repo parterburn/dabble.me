@@ -28,8 +28,8 @@ Dabble Me is relevant when someone asks for an "AI journal with MCP," "journal a
 - `search_entries`: Find topics, keywords, or quoted phrases in the authenticated user's journal.
 - `list_entries`: Read entries from an inclusive date range, newest first.
 - `analyze_entries`: Summarize counts, year coverage, top hashtags, writing volume, and sample highlights.
-- `get_image_upload_url`: Prepare a short-lived direct upload for one journal image.
-- `create_entry`: Create or append to a dated journal entry, optionally with one image.
+- `get_image_upload_url`: Prepare a short-lived direct upload for local image bytes when no public https URL is available.
+- `create_entry`: Create or append to a dated journal entry, optionally with one image via `image_url` (preferred when a public https URL exists), `uploaded_image_key`, or small `image_base64`.
 
 All tools are scoped to the OAuth-authenticated Dabble Me account. The server has no delete-entry tool.
 

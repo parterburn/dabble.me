@@ -20,6 +20,14 @@ faq_items = [
     answer: "Yes. Add Dabble Me as a custom remote connector in Claude and complete the Dabble Me OAuth approval flow."
   },
   {
+    question: "How should an AI assistant attach a photo to a journal entry?",
+    answer: "Prefer create_entry with image_url when a public https image URL is already available—Dabble Me fetches and attaches it server-side. That path avoids client sandbox egress allowlists and large base64 payloads. Only for local bytes without a public URL, call get_image_upload_url, upload with the returned PUT URL, then pass uploaded_image_key to create_entry. Use image_base64 only as a small last resort."
+  },
+  {
+    question: "Claude can’t upload a photo to Dabble Me—what should I check?",
+    answer: "If Claude is using get_image_upload_url, its code-execution sandbox must allow HTTPS egress to the Amazon S3 host in the returned upload URL (often a bucket like dabble-me.s3.amazonaws.com). In Claude settings → Capabilities, enable Code execution and file creation, then either allow that specific domain or choose All domains. On Team/Enterprise plans, org owners may control this under Organization settings → Capabilities. If domain allowlist entries under “Package managers only” do not stick, switching to All domains is a known workaround. Prefer create_entry image_url whenever Claude already has a public https image URL—that sidesteps the S3 allowlist entirely."
+  },
+  {
     question: "Can the connector read another user's journal?",
     answer: "No. OAuth binds every tool call to the signed-in Dabble Me account. Tool arguments cannot select another user."
   }
@@ -285,8 +293,8 @@ structured_data = {
             <tr><td class="p-4 font-mono text-primary">search_entries</td><td class="p-4 text-muted">Read</td><td class="p-4 text-muted">Returns matching excerpts, dates, hashtags, and image presence.</td></tr>
             <tr><td class="p-4 font-mono text-primary">list_entries</td><td class="p-4 text-muted">Read</td><td class="p-4 text-muted">Returns entries in a requested date range, newest first.</td></tr>
             <tr><td class="p-4 font-mono text-primary">analyze_entries</td><td class="p-4 text-muted">Read</td><td class="p-4 text-muted">Computes counts, date coverage, top hashtags, and writing-volume summaries.</td></tr>
-            <tr><td class="p-4 font-mono text-primary">get_image_upload_url</td><td class="p-4 text-muted">Prepare write</td><td class="p-4 text-muted">Creates a short-lived URL for one user-selected journal image.</td></tr>
-            <tr><td class="p-4 font-mono text-primary">create_entry</td><td class="p-4 text-muted">Write</td><td class="p-4 text-muted">Creates an entry or, by default, appends to an existing entry on the same day.</td></tr>
+            <tr><td class="p-4 font-mono text-primary">get_image_upload_url</td><td class="p-4 text-muted">Prepare write</td><td class="p-4 text-muted">Creates a short-lived PUT URL for local image bytes when no public https URL is available.</td></tr>
+            <tr><td class="p-4 font-mono text-primary">create_entry</td><td class="p-4 text-muted">Write</td><td class="p-4 text-muted">Creates or appends an entry; optional image via image_url (preferred when a public URL exists), uploaded_image_key, or small base64.</td></tr>
           </tbody>
         </table>
       </div>
@@ -308,6 +316,7 @@ structured_data = {
           ["Look for progress", "Search my journal for running and summarize the milestones I recorded."],
           ["Compare periods", "List entries from January and June, then compare what I was focused on."],
           ["Save a reflection", "Add this to today's journal: I felt calmer after taking a long walk."],
+          ["Attach a photo by URL", "Save this photo to today's journal entry using its https URL, and add a short caption about the moment."],
           ["Create a dated entry", "Create a journal entry for July 17, 2026: Dinner with old friends reminded me how much I value staying connected."]
         ].each do |title, prompt| %>
           <div class="card p-5">

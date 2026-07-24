@@ -53,6 +53,7 @@ RSpec.describe McpController, type: :controller do
         instructions = body.dig("result", "instructions").to_s
         expect(instructions).to include("private personal journal MCP server")
         expect(instructions).to include("summarize my journal from last month")
+        expect(instructions).to include("pass it as image_url")
         expect(instructions).to include("/entries/YYYY/M/D").and include("/write")
       end
 
@@ -71,7 +72,9 @@ RSpec.describe McpController, type: :controller do
         expect(tools.dig("search_entries", "description")).to include("find every time I mentioned burnout")
         expect(tools.dig("search_entries", "inputSchema", "properties", "query", "description")).to include("keyword")
         expect(tools.dig("list_entries", "inputSchema", "properties", "limit", "maximum")).to eq(Mcp::EntrySearch::MAX_LIMIT)
-        expect(tools.dig("create_entry", "description")).to include("signed-in user")
+        expect(tools.dig("create_entry", "description")).to include("prefer image_url")
+        expect(tools.dig("create_entry", "inputSchema", "properties", "image_url", "description")).to include("fetches and attaches")
+        expect(tools.dig("get_image_upload_url", "description")).to include("skip this tool")
       end
 
       it "searches only the authenticated user entries" do
