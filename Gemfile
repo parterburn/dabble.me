@@ -3,15 +3,16 @@ source 'https://rubygems.org'
 ruby File.read(File.expand_path '../.ruby-version', __FILE__).strip.sub /\-p[0-9]+$/, '' # Read the rbenv version file
 gem 'rails', '~> 6.1.7.10'
 
-gem "concurrent-ruby", "1.3.4" # needed until https://github.com/rails/rails/pull/54264 is in Rails 7.0.8.8
+gem "concurrent-ruby", "1.3.7" # needed until https://github.com/rails/rails/pull/54264 is in Rails 7.0.8.8
 gem "csv"                      # Ruby 3.4 stdlib extraction - required by ActiveSupport
 gem "drb"                      # Ruby 3.4 stdlib extraction - required by ActiveSupport
 gem "irb"                      # Ruby 3.4 stdlib extraction - required by `rails console`
+gem "logger"                   # Ruby 3.4 stdlib extraction - required by ActiveSupport, see config/boot.rb
 gem "mutex_m"                  # Ruby 3.4 stdlib extraction - required by Rails 6.1
 gem "ostruct"                  # Ruby 3.4 stdlib extraction - required by file_validators
 gem "rdoc"                     # Ruby 3.4 stdlib extraction - required by irb
 
-gem 'puma', '~> 6'
+gem 'puma', '~> 7'
 gem 'pg', '~> 1.6'
 # gem 'barnes'
 
