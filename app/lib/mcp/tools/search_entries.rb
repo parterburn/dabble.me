@@ -4,8 +4,8 @@ module Mcp
   module Tools
     class SearchEntries < MCP::Tool
       tool_name 'search_entries'
-      title 'Search entries'
-      description 'Search your own Dabble Me entries by keyword or quoted phrase, optionally constrained by date range.'
+      title 'Search journal entries'
+      description 'Find text in the signed-in user’s private Dabble Me journal. Use for requests such as “find every time I mentioned burnout,” searching a quoted phrase, or finding a topic within an inclusive date range. Returns matching entry dates, excerpts, hashtags, and image presence; never searches another user’s journal.'
       annotations(
         read_only_hint: true,
         destructive_hint: false,
@@ -15,10 +15,19 @@ module Mcp
       input_schema(
         type: 'object',
         properties: {
-          query: { type: 'string' },
+          query: {
+            type: 'string',
+            minLength: 1,
+            description: 'Required keyword, topic, or quoted phrase to find in entry text. Examples: burnout, "new job", gratitude.'
+          },
           start_date: { type: 'string', description: 'Optional YYYY-MM-DD inclusive start date.' },
           end_date: { type: 'string', description: 'Optional YYYY-MM-DD inclusive end date.' },
-          limit: { type: 'integer', minimum: 1, maximum: 100 }
+          limit: {
+            type: 'integer',
+            minimum: 1,
+            maximum: Mcp::EntrySearch::MAX_LIMIT,
+            description: "Maximum matching entries to return (1–#{Mcp::EntrySearch::MAX_LIMIT}; default 50). total_matches still reports the full count."
+          }
         },
         required: ['query'],
         additionalProperties: false

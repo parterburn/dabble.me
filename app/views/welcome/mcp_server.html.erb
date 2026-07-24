@@ -1,0 +1,363 @@
+<% content_for :title, "Dabble Me MCP Server: Connect Your Journal to ChatGPT and Claude" %>
+<% content_for :social_title, "Dabble Me MCP Server — A private journal for ChatGPT and Claude" %>
+<% content_for :description, "Connect your private Dabble Me journal to ChatGPT, Claude, and other MCP clients. Setup, OAuth security, supported tools, permissions, and real prompt examples." %>
+<% content_for :keywords, "AI journal with MCP,journal app for ChatGPT,Claude journal integration,personal journal MCP server,journal app for AI reflection,Dabble Me MCP" %>
+
+<%
+base_url = ApplicationHelper.site_public_base_url
+mcp_endpoint = ApplicationHelper.mcp_server_url
+faq_items = [
+  {
+    question: "What can the Dabble Me MCP server do?",
+    answer: "It lets an MCP-compatible AI assistant search, list, analyze, and create entries in the journal belonging to the person who approved OAuth access."
+  },
+  {
+    question: "Can ChatGPT connect to Dabble Me?",
+    answer: "Yes. ChatGPT paid plans that include Developer mode can add Dabble Me as a remote MCP app using the Dabble Me MCP endpoint."
+  },
+  {
+    question: "Can Claude connect to Dabble Me?",
+    answer: "Yes. Add Dabble Me as a custom remote connector in Claude and complete the Dabble Me OAuth approval flow."
+  },
+  {
+    question: "Can the connector read another user's journal?",
+    answer: "No. OAuth binds every tool call to the signed-in Dabble Me account. Tool arguments cannot select another user."
+  }
+]
+structured_data = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "TechArticle",
+      headline: "Dabble Me MCP Server: Connect Your Journal to ChatGPT and Claude",
+      description: content_for(:description),
+      url: "#{base_url}/mcp-server",
+      author: { "@type": "Organization", name: "Dabble Dev LLC" },
+      about: [
+        "Model Context Protocol",
+        "AI journaling",
+        "ChatGPT journal integration",
+        "Claude journal integration"
+      ]
+    },
+    {
+      "@type": "FAQPage",
+      mainEntity: faq_items.map do |item|
+        {
+          "@type": "Question",
+          name: item[:question],
+          acceptedAnswer: { "@type": "Answer", text: item[:answer] }
+        }
+      end
+    }
+  ]
+}
+%>
+
+<% content_for :head do %>
+  <script type="application/ld+json"><%= raw(json_escape(structured_data.to_json)) %></script>
+<% end %>
+
+<section class="py-12 lg:py-20">
+  <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+    <header class="text-center">
+      <span class="badge badge-accent text-sm font-semibold dark:text-olive-800">DABBLE ME PRO</span>
+      <h1 class="mt-5 font-serif text-4xl sm:text-5xl tracking-tight">
+        Dabble Me MCP Server
+      </h1>
+      <p class="mt-4 text-xl text-primary max-w-3xl mx-auto">
+        Connect your private journal to ChatGPT, Claude, and other MCP-compatible AI assistants.
+      </p>
+      <p class="mt-4 text-base leading-relaxed text-muted max-w-3xl mx-auto">
+        Dabble Me is an <strong class="text-primary">AI journal with MCP</strong>: a remote Model Context Protocol server
+        for people looking for a <strong class="text-primary">journal app for ChatGPT</strong>, a
+        <strong class="text-primary">Claude journal integration</strong>, a
+        <strong class="text-primary">personal journal MCP server</strong>, or a
+        <strong class="text-primary">journal app for AI reflection</strong>.
+      </p>
+      <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+        <a href="<%= new_user_registration_path %>" class="btn btn-primary">Start journaling</a>
+        <a href="#setup" class="btn btn-secondary">Connect an AI assistant</a>
+      </div>
+    </header>
+
+    <nav aria-label="On this page" class="card p-6 mt-12">
+      <h2 class="font-serif text-xl text-primary">On this page</h2>
+      <ul class="mt-3 grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
+        <li><a class="text-accent hover:text-primary underline" href="#supported-clients">Supported clients</a></li>
+        <li><a class="text-accent hover:text-primary underline" href="#setup">Setup instructions</a></li>
+        <li><a class="text-accent hover:text-primary underline" href="#authentication">Authentication and privacy</a></li>
+        <li><a class="text-accent hover:text-primary underline" href="#tools">Available MCP tools</a></li>
+        <li><a class="text-accent hover:text-primary underline" href="#permissions">Permissions</a></li>
+        <li><a class="text-accent hover:text-primary underline" href="#example-prompts">Example prompts</a></li>
+        <li><a class="text-accent hover:text-primary underline" href="#technical-details">Technical metadata</a></li>
+        <li><a class="text-accent hover:text-primary underline" href="#faq">Frequently asked questions</a></li>
+      </ul>
+    </nav>
+
+    <section class="mt-16" id="what-is-mcp">
+      <h2 class="font-serif text-3xl text-primary">Your journal, available when you ask</h2>
+      <p class="mt-4 text-muted leading-relaxed">
+        Model Context Protocol (MCP) is an open standard that lets an AI client use narrowly defined tools from another
+        service. After you connect Dabble Me, you can ask your AI assistant to retrieve selected journal entries,
+        look for themes, summarize a period, or save a new reflection. The assistant chooses a Dabble Me tool, and
+        Dabble Me applies it only to the account you authorized.
+      </p>
+      <div class="mt-6 card p-6 bg-accent/5 border-accent/20">
+        <p class="text-primary font-medium">Dabble Me does not train an AI model on your journal.</p>
+        <p class="mt-2 text-sm text-muted">
+          When you ask a connected AI assistant to read entries, the requested content is sent to that AI provider for
+          processing under its terms and privacy policy. Connect only clients you trust and revoke access at any time.
+        </p>
+      </div>
+    </section>
+
+    <section class="mt-16" id="supported-clients">
+      <h2 class="font-serif text-3xl text-primary">Supported clients</h2>
+      <p class="mt-3 text-muted">
+        Dabble Me uses remote Streamable HTTP plus OAuth 2.0. It works with clients that support that MCP transport,
+        OAuth authorization-code flow with PKCE, and dynamic client registration.
+      </p>
+      <div class="mt-6 overflow-x-auto card">
+        <table class="w-full text-left text-sm">
+          <thead class="border-b border-subtle">
+            <tr>
+              <th class="p-4 font-semibold text-primary">Client</th>
+              <th class="p-4 font-semibold text-primary">Connection</th>
+              <th class="p-4 font-semibold text-primary">Notes</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-subtle">
+            <tr>
+              <td class="p-4 text-primary font-medium">Claude</td>
+              <td class="p-4 text-muted">Custom remote connector</td>
+              <td class="p-4 text-muted">Claude web, Desktop, mobile, and Cowork use the same cloud-hosted connector.</td>
+            </tr>
+            <tr>
+              <td class="p-4 text-primary font-medium">ChatGPT</td>
+              <td class="p-4 text-muted">Developer-mode app</td>
+              <td class="p-4 text-muted">Available on paid ChatGPT plans with Developer mode enabled; workspace policies may restrict it.</td>
+            </tr>
+            <tr>
+              <td class="p-4 text-primary font-medium">MCP Inspector</td>
+              <td class="p-4 text-muted">Streamable HTTP</td>
+              <td class="p-4 text-muted">Useful for developers testing discovery, OAuth, and tool calls.</td>
+            </tr>
+            <tr>
+              <td class="p-4 text-primary font-medium">Other MCP clients</td>
+              <td class="p-4 text-muted">Remote Streamable HTTP</td>
+              <td class="p-4 text-muted">The client must support OAuth-protected remote MCP servers.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="mt-16" id="setup">
+      <h2 class="font-serif text-3xl text-primary">Setup instructions</h2>
+
+      <div class="mt-6 card p-6">
+        <h3 class="font-serif text-2xl text-primary">Before connecting</h3>
+        <ol class="mt-4 list-decimal pl-5 space-y-2 text-muted">
+          <li>Sign in to a Dabble Me account with an active PRO subscription.</li>
+          <li>Enable a passkey or two-factor authentication in <a href="<%= security_path %>" class="text-accent hover:text-primary underline">Account security</a>.</li>
+          <li>Copy the remote MCP endpoint:</li>
+        </ol>
+        <p class="mt-4"><code class="block text-base select-all break-all bg-olive-200 px-4 py-3 rounded text-olive-900"><%= mcp_endpoint %></code></p>
+      </div>
+
+      <div class="mt-8 card p-6">
+        <h3 class="font-serif text-2xl text-primary">Connect Claude</h3>
+        <ol class="mt-4 list-decimal pl-5 space-y-2 text-muted">
+          <li>Open Claude and go to <strong class="text-primary">Settings → Connectors</strong>. On an individual plan, select <strong class="text-primary">Add custom connector</strong>. Team and Enterprise workspaces require an owner to add it first.</li>
+          <li>Name the connector <strong class="text-primary">Dabble Me</strong> and paste <code><%= mcp_endpoint %></code> as the remote MCP server URL.</li>
+          <li>Finish adding the connector, select <strong class="text-primary">Connect</strong>, and sign in to Dabble Me in the browser window.</li>
+          <li>Review the requested read/write permission and approve access.</li>
+          <li>Enable Dabble Me in a conversation, then try one of the prompts on this page.</li>
+        </ol>
+        <p class="mt-4 text-sm text-muted">
+          Claude’s interface changes over time. See
+          <a href="<%= ApplicationHelper.claude_remote_mcp_connectors_url %>" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">Anthropic’s current remote connector guide</a>.
+        </p>
+      </div>
+
+      <div class="mt-8 card p-6">
+        <h3 class="font-serif text-2xl text-primary">Connect ChatGPT</h3>
+        <ol class="mt-4 list-decimal pl-5 space-y-2 text-muted">
+          <li>In ChatGPT on the web, open <strong class="text-primary">Settings → Security and login</strong> and enable <strong class="text-primary">Developer mode</strong>.</li>
+          <li>Open <strong class="text-primary">Settings → Plugins</strong> (called apps or connectors in some interfaces) and create a developer-mode app.</li>
+          <li>Use <strong class="text-primary">Dabble Me</strong> as the name, explain that it reads and writes the signed-in user’s private journal, and paste <code><%= mcp_endpoint %></code> as the MCP server URL.</li>
+          <li>Choose OAuth when asked, complete the browser sign-in, and approve access.</li>
+          <li>Start a conversation in Developer mode with the Dabble Me app enabled.</li>
+        </ol>
+        <p class="mt-4 text-sm text-muted">
+          Custom MCP apps require an eligible paid ChatGPT plan, and organization administrators may disable them.
+          See <a href="https://developers.openai.com/api/docs/guides/developer-mode" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">OpenAI’s current Developer mode guide</a>.
+        </p>
+      </div>
+
+      <div class="mt-8 card p-6">
+        <h3 class="font-serif text-2xl text-primary">Connect another MCP client</h3>
+        <p class="mt-3 text-muted">
+          Add <code><%= mcp_endpoint %></code> as a remote <strong class="text-primary">Streamable HTTP</strong> server.
+          Let the client discover the OAuth metadata, register as a public client, open the authorization page, and
+          exchange the authorization code using PKCE. No API key or client secret is required.
+        </p>
+      </div>
+    </section>
+
+    <section class="mt-16" id="authentication">
+      <h2 class="font-serif text-3xl text-primary">Authentication and privacy</h2>
+      <div class="mt-6 grid sm:grid-cols-2 gap-6">
+        <div class="card p-6">
+          <h3 class="font-serif text-xl text-primary">OAuth 2.0 + PKCE</h3>
+          <p class="mt-3 text-sm text-muted">
+            You sign in on Dabble Me’s own domain and approve the <code>mcp:access</code> scope. Dabble Me never asks
+            you to paste your password into the AI client.
+          </p>
+        </div>
+        <div class="card p-6">
+          <h3 class="font-serif text-xl text-primary">Account-bound access</h3>
+          <p class="mt-3 text-sm text-muted">
+            The OAuth token identifies one Dabble Me user. User IDs are not accepted as tool arguments, so a client
+            cannot switch the journal it is querying.
+          </p>
+        </div>
+        <div class="card p-6">
+          <h3 class="font-serif text-xl text-primary">Strong account security</h3>
+          <p class="mt-3 text-sm text-muted">
+            Tool calls require Dabble Me PRO plus a passkey or two-factor authentication. Access is also blocked while
+            account deletion is pending.
+          </p>
+        </div>
+        <div class="card p-6">
+          <h3 class="font-serif text-xl text-primary">Revocable access</h3>
+          <p class="mt-3 text-sm text-muted">
+            Review and disconnect clients under
+            <a href="<%= security_path(anchor: "connected-apps") %>" class="text-accent hover:text-primary underline">Account security → Connected apps</a>.
+            Downgrading from PRO also revokes MCP access.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-16" id="tools">
+      <h2 class="font-serif text-3xl text-primary">Available MCP tools</h2>
+      <p class="mt-3 text-muted">
+        These names and descriptions come from the same metadata exposed to MCP clients.
+      </p>
+      <div class="mt-6 space-y-5">
+        <% @mcp_tools.each do |tool| %>
+          <article class="card p-6" id="tool-<%= tool[:name].tr("_", "-") %>">
+            <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
+              <h3 class="font-serif text-2xl text-primary"><%= tool[:title] %></h3>
+              <code class="text-sm bg-olive-200 text-olive-900 px-2 py-1 rounded"><%= tool[:name] %></code>
+            </div>
+            <p class="mt-3 text-sm leading-relaxed text-muted"><%= tool[:description] %></p>
+            <% if tool[:properties].present? %>
+              <h4 class="mt-5 font-semibold text-sm text-primary">Arguments</h4>
+              <dl class="mt-2 space-y-2 text-sm">
+                <% tool[:properties].each do |name, details| %>
+                  <div>
+                    <dt class="inline font-mono text-primary"><%= name %><%= " (required)" if tool[:required].include?(name.to_s) %></dt>
+                    <dd class="inline text-muted"> — <%= details[:description].presence || details["description"].presence || details[:type] || details["type"] %></dd>
+                  </div>
+                <% end %>
+              </dl>
+            <% end %>
+          </article>
+        <% end %>
+      </div>
+    </section>
+
+    <section class="mt-16" id="permissions">
+      <h2 class="font-serif text-3xl text-primary">Permissions and behavior</h2>
+      <div class="mt-6 overflow-x-auto card">
+        <table class="w-full text-left text-sm">
+          <thead class="border-b border-subtle">
+            <tr>
+              <th class="p-4 font-semibold text-primary">Capability</th>
+              <th class="p-4 font-semibold text-primary">Read or write</th>
+              <th class="p-4 font-semibold text-primary">What happens</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-subtle">
+            <tr><td class="p-4 font-mono text-primary">search_entries</td><td class="p-4 text-muted">Read</td><td class="p-4 text-muted">Returns matching excerpts, dates, hashtags, and image presence.</td></tr>
+            <tr><td class="p-4 font-mono text-primary">list_entries</td><td class="p-4 text-muted">Read</td><td class="p-4 text-muted">Returns entries in a requested date range, newest first.</td></tr>
+            <tr><td class="p-4 font-mono text-primary">analyze_entries</td><td class="p-4 text-muted">Read</td><td class="p-4 text-muted">Computes counts, date coverage, top hashtags, and writing-volume summaries.</td></tr>
+            <tr><td class="p-4 font-mono text-primary">get_image_upload_url</td><td class="p-4 text-muted">Prepare write</td><td class="p-4 text-muted">Creates a short-lived URL for one user-selected journal image.</td></tr>
+            <tr><td class="p-4 font-mono text-primary">create_entry</td><td class="p-4 text-muted">Write</td><td class="p-4 text-muted">Creates an entry or, by default, appends to an existing entry on the same day.</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="mt-4 text-sm text-muted">
+        There is no delete-entry tool. Dabble Me marks tools with MCP read-only, destructive, idempotent, and
+        open-world annotations so compatible clients can present appropriate confirmation behavior.
+      </p>
+    </section>
+
+    <section class="mt-16" id="example-prompts">
+      <h2 class="font-serif text-3xl text-primary">Real example prompts</h2>
+      <p class="mt-3 text-muted">Ask naturally. The client decides which Dabble Me tools to call.</p>
+      <div class="mt-6 grid sm:grid-cols-2 gap-5">
+        <% [
+          ["Reflect on a month", "Summarize my journal entries from last month. What themes kept coming up?"],
+          ["Find a recurring topic", "Find every time I mentioned burnout and show how the language changed over time."],
+          ["Review a year", "How often did I journal this year? What hashtags did I use most?"],
+          ["Recall a memory", "What did I write about my trip to Iceland? Include dates and short excerpts."],
+          ["Look for progress", "Search my journal for running and summarize the milestones I recorded."],
+          ["Compare periods", "List entries from January and June, then compare what I was focused on."],
+          ["Save a reflection", "Add this to today's journal: I felt calmer after taking a long walk."],
+          ["Create a dated entry", "Create a journal entry for July 17, 2026: Dinner with old friends reminded me how much I value staying connected."]
+        ].each do |title, prompt| %>
+          <div class="card p-5">
+            <h3 class="font-semibold text-sm text-primary"><%= title %></h3>
+            <blockquote class="mt-2 text-sm text-muted">“<%= prompt %>”</blockquote>
+          </div>
+        <% end %>
+      </div>
+    </section>
+
+    <section class="mt-16" id="technical-details">
+      <h2 class="font-serif text-3xl text-primary">Technical metadata</h2>
+      <dl class="mt-6 card divide-y divide-subtle text-sm">
+        <div class="p-4 sm:grid sm:grid-cols-3 gap-4"><dt class="font-semibold text-primary">Server name</dt><dd class="mt-1 sm:mt-0 sm:col-span-2 text-muted"><code>dabble-me</code></dd></div>
+        <div class="p-4 sm:grid sm:grid-cols-3 gap-4"><dt class="font-semibold text-primary">Endpoint</dt><dd class="mt-1 sm:mt-0 sm:col-span-2 text-muted break-all"><code><%= mcp_endpoint %></code></dd></div>
+        <div class="p-4 sm:grid sm:grid-cols-3 gap-4"><dt class="font-semibold text-primary">Transport</dt><dd class="mt-1 sm:mt-0 sm:col-span-2 text-muted">Streamable HTTP; JSON-RPC requests use POST</dd></div>
+        <div class="p-4 sm:grid sm:grid-cols-3 gap-4"><dt class="font-semibold text-primary">Authentication</dt><dd class="mt-1 sm:mt-0 sm:col-span-2 text-muted">OAuth 2.0 authorization code, PKCE S256, public clients, refresh tokens</dd></div>
+        <div class="p-4 sm:grid sm:grid-cols-3 gap-4"><dt class="font-semibold text-primary">OAuth scope</dt><dd class="mt-1 sm:mt-0 sm:col-span-2 text-muted"><code>mcp:access</code> — read and create journal entries on your behalf</dd></div>
+        <div class="p-4 sm:grid sm:grid-cols-3 gap-4"><dt class="font-semibold text-primary">Protected-resource metadata</dt><dd class="mt-1 sm:mt-0 sm:col-span-2 text-muted break-all"><a class="text-accent hover:text-primary underline" href="<%= base_url %>/.well-known/oauth-protected-resource/mcp"><%= base_url %>/.well-known/oauth-protected-resource/mcp</a></dd></div>
+        <div class="p-4 sm:grid sm:grid-cols-3 gap-4"><dt class="font-semibold text-primary">Authorization-server metadata</dt><dd class="mt-1 sm:mt-0 sm:col-span-2 text-muted break-all"><a class="text-accent hover:text-primary underline" href="<%= base_url %>/.well-known/oauth-authorization-server/mcp"><%= base_url %>/.well-known/oauth-authorization-server/mcp</a></dd></div>
+        <div class="p-4 sm:grid sm:grid-cols-3 gap-4"><dt class="font-semibold text-primary">Tool result limit</dt><dd class="mt-1 sm:mt-0 sm:col-span-2 text-muted">Up to <%= Mcp::EntrySearch::MAX_LIMIT %> entries per search/list call; aggregate analysis samples up to 500 entries</dd></div>
+        <div class="p-4 sm:grid sm:grid-cols-3 gap-4"><dt class="font-semibold text-primary">Write behavior</dt><dd class="mt-1 sm:mt-0 sm:col-span-2 text-muted">Create or append only; no MCP delete tool</dd></div>
+      </dl>
+      <p class="mt-4 text-sm text-muted">
+        The official registry manifest is maintained as <code>server.json</code> in the
+        <a href="https://github.com/parterburn/<%= %w[dabble me].join(".") %>" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">public source repository</a>.
+      </p>
+    </section>
+
+    <section class="mt-16" id="faq">
+      <h2 class="font-serif text-3xl text-primary">Frequently asked questions</h2>
+      <div class="mt-6 space-y-5">
+        <% faq_items.each do |item| %>
+          <article class="card p-6">
+            <h3 class="font-serif text-xl text-primary"><%= item[:question] %></h3>
+            <p class="mt-2 text-sm leading-relaxed text-muted"><%= item[:answer] %></p>
+          </article>
+        <% end %>
+      </div>
+    </section>
+
+    <section class="mt-16 card p-8 text-center">
+      <h2 class="font-serif text-3xl text-primary">Choose the journal workflow that fits</h2>
+      <p class="mt-3 text-muted">
+        Compare remote, email-first Dabble Me with a local Mac journal, or review the current MCP journaling options.
+      </p>
+      <div class="mt-6 flex flex-col sm:flex-row justify-center gap-3">
+        <a class="btn btn-secondary" href="<%= day_one_ai_journaling_path %>">Dabble Me vs. Day One</a>
+        <a class="btn btn-secondary" href="<%= best_journaling_apps_with_mcp_path %>">Best journaling apps with MCP</a>
+      </div>
+    </section>
+  </div>
+</section>

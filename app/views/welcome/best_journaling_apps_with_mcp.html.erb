@@ -1,0 +1,161 @@
+<% content_for :title, "Best Journaling Apps with MCP for ChatGPT and Claude" %>
+<% content_for :social_title, "Best journaling apps with MCP for ChatGPT and Claude" %>
+<% content_for :description, "A practical guide to journaling apps with vendor-supported MCP integrations, including Dabble Me and Day One, setup differences, security, and AI reflection prompts." %>
+<% content_for :keywords, "best journaling apps with MCP,AI journal with MCP,personal journal MCP server,journal app for ChatGPT,Claude journal integration,journal app for AI reflection" %>
+
+<% content_for :head do %>
+  <script type="application/ld+json"><%= raw(json_escape({
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: "Best Journaling Apps with MCP for ChatGPT and Claude",
+    description: content_for(:description),
+    url: "#{ApplicationHelper.site_public_base_url}/best-journaling-apps-with-mcp",
+    dateModified: "2026-07-23",
+    author: { "@type": "Organization", name: "Dabble Dev LLC" }
+  }.to_json)) %></script>
+<% end %>
+
+<section class="py-12 lg:py-20">
+  <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+    <header class="text-center">
+      <p class="text-sm font-semibold tracking-wide text-accent uppercase">Buyer’s guide · July 2026</p>
+      <h1 class="mt-4 font-serif text-4xl sm:text-5xl tracking-tight">Best journaling apps with MCP</h1>
+      <p class="mt-5 text-lg leading-relaxed text-muted max-w-3xl mx-auto">
+        The useful question is not simply whether a journal “has AI.” It is whether the journal offers a clear,
+        permissioned Model Context Protocol server that your chosen AI assistant can use for real retrieval and writing.
+      </p>
+    </header>
+
+    <section class="mt-14 card p-6 bg-accent/5 border-accent/20">
+      <h2 class="font-serif text-2xl text-primary">How this guide evaluates an AI journal with MCP</h2>
+      <ul class="mt-4 grid sm:grid-cols-2 gap-3 text-sm text-muted">
+        <li><strong class="text-primary">Official ownership:</strong> the journal vendor operates or publishes the MCP server.</li>
+        <li><strong class="text-primary">Useful tools:</strong> search, reading, reflection, or writing—not a marketing-only integration.</li>
+        <li><strong class="text-primary">Clear consent:</strong> the user explicitly chooses what the client can access.</li>
+        <li><strong class="text-primary">Client fit:</strong> remote URL or local process matches where the AI client runs.</li>
+        <li><strong class="text-primary">Revocation:</strong> there is a documented way to remove access.</li>
+        <li><strong class="text-primary">Data clarity:</strong> users are told that retrieved text reaches the AI provider.</li>
+      </ul>
+    </section>
+
+    <section class="mt-16">
+      <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
+        <h2 class="font-serif text-3xl text-primary">1. Dabble Me</h2>
+        <span class="badge badge-accent text-xs font-semibold dark:text-olive-800">BEST FOR EMAIL-FIRST, REMOTE MCP</span>
+      </div>
+      <p class="mt-4 text-muted leading-relaxed">
+        Dabble Me is a private email journal with an official remote MCP server. You write by replying to scheduled
+        email prompts or using the web app, then connect Claude, ChatGPT, or another compatible remote client with one
+        HTTPS URL. OAuth binds the tools to your account.
+      </p>
+      <div class="mt-6 grid sm:grid-cols-2 gap-5">
+        <div class="card p-5">
+          <h3 class="font-serif text-xl text-primary">Strengths</h3>
+          <ul class="mt-3 list-disc pl-5 space-y-2 text-sm text-muted">
+            <li>No local MCP server, CLI, or Mac requirement</li>
+            <li>Purpose-built search, date listing, and pattern analysis</li>
+            <li>Create or append entries from natural language</li>
+            <li>OAuth, PKCE, passkey/2FA requirement, and connected-app revocation</li>
+          </ul>
+        </div>
+        <div class="card p-5">
+          <h3 class="font-serif text-xl text-primary">Considerations</h3>
+          <ul class="mt-3 list-disc pl-5 space-y-2 text-sm text-muted">
+            <li>MCP tools require Dabble Me PRO</li>
+            <li>It is a hosted service, not a local-only journal database</li>
+            <li>One account journal rather than Day One-style per-journal selection</li>
+            <li>The connected AI provider receives content selected for a prompt</li>
+          </ul>
+        </div>
+      </div>
+      <div class="mt-5 flex flex-wrap gap-3">
+        <a href="<%= mcp_server_docs_path %>" class="btn btn-primary">Dabble Me MCP setup</a>
+        <a href="<%= new_user_registration_path %>" class="btn btn-secondary">Create an account</a>
+      </div>
+    </section>
+
+    <section class="mt-16">
+      <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
+        <h2 class="font-serif text-3xl text-primary">2. Day One</h2>
+        <span class="badge text-xs font-semibold">BEST FOR LOCAL MCP ON MAC</span>
+      </div>
+      <p class="mt-4 text-muted leading-relaxed">
+        Day One provides an official local MCP server through its Mac app and CLI. It uses stdio rather than a hosted
+        remote URL, and users grant MCP access to selected Day One journals. It is a strong fit for established Day One
+        users who want the MCP data path to begin on their own Mac.
+      </p>
+      <div class="mt-6 grid sm:grid-cols-2 gap-5">
+        <div class="card p-5">
+          <h3 class="font-serif text-xl text-primary">Strengths</h3>
+          <ul class="mt-3 list-disc pl-5 space-y-2 text-sm text-muted">
+            <li>Official server integrated with the Day One Mac ecosystem</li>
+            <li>Local process with no MCP-server network calls</li>
+            <li>Per-journal access control</li>
+            <li>Read, search, and create journal entries</li>
+          </ul>
+        </div>
+        <div class="card p-5">
+          <h3 class="font-serif text-xl text-primary">Considerations</h3>
+          <ul class="mt-3 list-disc pl-5 space-y-2 text-sm text-muted">
+            <li>Currently requires Day One for Mac and the Day One CLI</li>
+            <li>Local stdio setup is more technical than pasting a remote URL</li>
+            <li>The Mac app and authorized journal must remain available</li>
+            <li>The AI client still typically sends retrieved content to its model provider</li>
+          </ul>
+        </div>
+      </div>
+      <div class="mt-5 flex flex-wrap gap-3">
+        <a href="https://dayoneapp.com/guides/day-one-for-mac/day-one-mcp-server/" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">Official Day One MCP guide</a>
+        <a href="<%= day_one_ai_journaling_path %>" class="btn btn-secondary">Compare with Dabble Me</a>
+      </div>
+    </section>
+
+    <section class="mt-16">
+      <h2 class="font-serif text-3xl text-primary">What about community MCP servers?</h2>
+      <p class="mt-4 text-muted leading-relaxed">
+        Community servers can connect plain-text folders, note databases, and older journal tools. They may be useful,
+        but they require more diligence: inspect the source, confirm which files or accounts the process can read,
+        understand whether it sends data to another service, pin versions, and verify how credentials are stored.
+        For intimate journal data, prefer a server operated by the journal provider or code you can audit and run yourself.
+      </p>
+    </section>
+
+    <section class="mt-16">
+      <h2 class="font-serif text-3xl text-primary">Questions to ask before connecting your journal</h2>
+      <ol class="mt-5 list-decimal pl-5 space-y-3 text-muted">
+        <li>Who operates the MCP server, and does its domain or package belong to the journal vendor?</li>
+        <li>Does it use OAuth, local app authorization, or a long-lived API key?</li>
+        <li>Can tool arguments select another account, folder, or journal?</li>
+        <li>Which tools write or delete data? Does the client confirm write actions?</li>
+        <li>How do you revoke the client without changing your journal password?</li>
+        <li>Which text is sent to the AI provider when you request a summary or search?</li>
+        <li>Can you see clear tool names and descriptions before approving access?</li>
+      </ol>
+    </section>
+
+    <section class="mt-16">
+      <h2 class="font-serif text-3xl text-primary">Prompts that show why MCP matters</h2>
+      <div class="mt-6 grid sm:grid-cols-2 gap-5">
+        <% [
+          "Summarize my last month's journal entries and cite the dates behind each theme.",
+          "Find every time I mentioned burnout. What situations usually came before it?",
+          "How has the way I write about my new job changed since January?",
+          "What people and places appeared most often in my journal this year?",
+          "Show me entries tagged #gratitude from the last six months.",
+          "Add this reflection to today's journal, but do not overwrite anything already there."
+        ].each do |prompt| %>
+          <blockquote class="card p-5 text-sm text-muted">“<%= prompt %>”</blockquote>
+        <% end %>
+      </div>
+    </section>
+
+    <section class="mt-16 card p-8 text-center">
+      <h2 class="font-serif text-3xl text-primary">Want a personal journal MCP server without local setup?</h2>
+      <p class="mt-3 text-muted">Connect Dabble Me by URL, approve OAuth, and start reflecting with the AI assistant you already use.</p>
+      <div class="mt-6 flex flex-col sm:flex-row justify-center gap-3">
+        <a href="<%= new_user_registration_path %>" class="btn btn-primary">Start journaling</a>
+        <a href="<%= mcp_server_docs_path %>" class="btn btn-secondary">Read the technical documentation</a>
+      </div>
+    </section>
+  </div>
+</section>
