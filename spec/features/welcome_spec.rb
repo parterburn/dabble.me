@@ -77,10 +77,17 @@ describe 'Pages' do
   it 'publishes a guide to journaling apps with MCP' do
     visit best_journaling_apps_with_mcp_path
 
-    expect(page).to have_title 'Best Journaling Apps with MCP for ChatGPT and Claude — Dabble me.'
+    expect(page).to have_title 'Best Journaling Apps with MCP / Claude & ChatGPT Connectors — Dabble me.'
+    expect(page).to have_content 'Best journaling apps with MCP'
+    expect(page).to have_content 'Claude & ChatGPT Connectors'
     expect(page).to have_content 'How this guide evaluates an AI journal with MCP'
+    expect(page).to have_content 'Prompts that show why MCP matters'
+    expect(page).to have_content 'Using voice in my favorite AI app, help me process my day out loud'
     expect(page).to have_content 'Dabble Me'
     expect(page).to have_content 'Day One'
     expect(page).to have_content 'Find every time I mentioned burnout'
+
+    page_text = page.text
+    expect(page_text.index('Prompts that show why MCP matters')).to be < page_text.index('1. Dabble Me')
   end
 end
