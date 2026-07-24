@@ -182,7 +182,7 @@ module ApplicationHelper
           },
           {
             q: "Is there a mobile app?",
-            a: "<span class='font-semibold'>No — and that’s intentional.</span> There’s no Dabble Me app in the App Store or Google Play. Most people write by replying to the daily email using the email app they already have on their phone. The website is fully mobile-friendly if you ever want to browse or edit entries."
+            a: "<span class='font-semibold'>No — and that’s intentional.</span> There’s no standalone Dabble Me app in the App Store or Google Play. Most people write by replying to the daily email using the email app already on their phone, and the website is fully mobile-friendly for browsing or editing entries. PRO members can also <a href='#{routes.mcp_server_docs_path}' class='text-accent hover:text-primary underline'>connect Dabble Me to ChatGPT, Claude, or another MCP-compatible AI app</a>. Once connected, you can use that app on the go—and use voice prompts where the AI app supports them—to find memories, reflect on past entries, or add a new journal entry."
           },
           {
             q: "Is this really free?",

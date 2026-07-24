@@ -13,6 +13,15 @@ describe 'Pages' do
     expect(page).to have_title 'Support — Dabble me.'
   end
 
+  it 'explains mobile journaling through MCP AI connectors' do
+    visit support_path
+
+    expect(page).to have_content 'Is there a mobile app?'
+    expect(page).to have_content 'connect Dabble Me to ChatGPT, Claude, or another MCP-compatible AI app'
+    expect(page).to have_content 'use voice prompts where the AI app supports them'
+    expect(page).to have_link('connect Dabble Me to ChatGPT, Claude, or another MCP-compatible AI app', href: mcp_server_docs_path)
+  end
+
   it 'has correct title for Privacy page' do
     visit privacy_path
     expect(page).to have_title 'Privacy Policy — Dabble me.'
