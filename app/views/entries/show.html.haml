@@ -1,18 +1,21 @@
 - title "Entry on #{@entry.date_format_short}"
 
+- previous_entry = @entry.previous
+- next_entry = @entry.next
+
 .row
   .col-md-8.col-md-offset-2
     .center
       .pagination
-        - if @entry.previous.present?
-          =link_to "« Prev", day_entry_path(year: @entry.previous.date.year, month: @entry.previous.date.month, day: @entry.previous.date.day), id: "previous-entry", rel: "tooltip", title: "#{@entry.previous.date_format_short}"
+        - if previous_entry.present?
+          =link_to "« Prev", day_entry_path(year: previous_entry.date.year, month: previous_entry.date.month, day: previous_entry.date.day), id: "previous-entry", rel: "tooltip", title: "#{previous_entry.date_format_short}"
         - else
           %span{style: "color: #999; cursor: not-allowed;"} « Prev
 
         = link_to "Random", random_entry_path, style: "margin: 0 30px;"
 
-        - if @entry.next.present?
-          =link_to "Next »", day_entry_path(year: @entry.next.date.year, month: @entry.next.date.month, day: @entry.next.date.day), id: "next-entry", rel: "tooltip", title: "#{@entry.next.date_format_short}"
+        - if next_entry.present?
+          =link_to "Next »", day_entry_path(year: next_entry.date.year, month: next_entry.date.month, day: next_entry.date.day), id: "next-entry", rel: "tooltip", title: "#{next_entry.date_format_short}"
         - else
           %span{style: "color: #999; cursor: not-allowed;"} Next »
     .clearfix

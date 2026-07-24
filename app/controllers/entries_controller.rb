@@ -46,7 +46,7 @@ class EntriesController < ApplicationController
       @title = 'All Entries'
     end
 
-    @entries = @entries.page(params[:page]).per(params[:per])
+    @entries = @entries.page(params[:page]).per(index_per_page)
 
     if @entries.empty? && params[:format] != "json"
       flash[:alert] = "No entries found." if params[:emotion].present? || params[:group].present? || params[:subgroup].present?
@@ -86,8 +86,9 @@ class EntriesController < ApplicationController
 
   def set_years_ago
     user_time = Time.now.in_time_zone(current_user.send_timezone)
-    years_back_dates = (1..5).map { |y| (user_time - y.years).strftime("%Y-%m-%d") }
-    @years_ago_entries = current_user.entries.where(date: years_back_dates).index_by { |e| (user_time.year - e.date.year) }
+    day_ranges = (1..5).map { |y| (user_time - y.years).to_date.all_day }
+    years_ago_scope = day_ranges.map { |range| current_user.entries.where(date: range) }.reduce(:or)
+    @years_ago_entries = (years_ago_scope || current_user.entries.none).index_by { |e| (user_time.year - e.date.year) }
   end
 
   def random
@@ -409,20 +410,29 @@ class EntriesController < ApplicationController
 
   def set_entry
     if params[:day].present?
-      date = Date.parse("#{params[:year]}-#{params[:month]}-#{params[:day]}")
-      @entry = current_user.entries.includes(:inspiration).where(date: date).first
+      date = Date.new(params[:year].to_i, params[:month].to_i, params[:day].to_i)
+      # entries.date is datetime; match the whole calendar day (see User#existing_entry)
+      @entry = current_user.entries.includes(:inspiration).where(date: date.all_day).first
     else
       @entry = current_user.entries.includes(:inspiration).where(id: params[:id]).first
     end
-  rescue
-    flash[:alert] = "Entry not found."
+  rescue ArgumentError, TypeError
+    @entry = nil
+    flash[:alert] = 'Entry not found.'
   end
 
   def require_entry_permission
-    return false if @entry.present? && current_user == @entry.user
+    return if @entry.present? && current_user == @entry.user
 
-    flash[:alert] = 'Not authorized'
+    flash[:alert] = @entry.blank? ? 'Entry not found.' : 'Not authorized'
     redirect_to entries_path
+  end
+
+  def index_per_page
+    per = params[:per].presence&.to_i
+    return Kaminari.config.default_per_page if per.blank? || per <= 0
+
+    per.clamp(1, 50)
   end
 
   def random_inspiration
