@@ -21,6 +21,10 @@
 //= link pg.jpg
 //= link cassidoo.jpg
 
+//= link oauth/anthropic.png
+//= link oauth/notion.png
+//= link oauth/openai.png
+
 //= link application.css
 //= link oauth_consent_bundle.css
 //= link application.js

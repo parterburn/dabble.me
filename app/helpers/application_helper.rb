@@ -55,10 +55,20 @@ module ApplicationHelper
   ].freeze
 
   # Brand logo metadata for major OAuth clients, or nil for letter initials.
+  # Returns nil when the image is missing from the asset pipeline so a broken
+  # logo can never block the consent screen.
   def oauth_application_logo(name)
     return nil if name.blank?
 
-    OAUTH_KNOWN_APPLICATION_LOGOS.find { |logo| name.match?(logo[:pattern]) }
+    logo = OAUTH_KNOWN_APPLICATION_LOGOS.find { |candidate| name.match?(candidate[:pattern]) }
+    return nil if logo.blank?
+
+    begin
+      logo.merge(src: image_path(logo[:asset]))
+    rescue Sprockets::Rails::Helper::AssetNotFound, Sprockets::Rails::Helper::AssetNotPrecompiled => e
+      Sentry.capture_exception(e)
+      nil
+    end
   end
 
   # Two-letter initials for OAuth consent (e.g. "MCP Inspector" -> "MI").
