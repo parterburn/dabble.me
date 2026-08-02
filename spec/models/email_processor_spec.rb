@@ -71,6 +71,24 @@ describe EmailProcessor do
       expect(paid_user.entries.reload.first.body).to eq("<div>Blah blah blah. Blah blah.</div><br><div>Blah blah blah. Blah!</div>")
     end
 
+    it "stores consistent separators from mixed Gmail paragraph markup" do
+      paid_user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "First paragraph\n\nSecond paragraph\n\nThird paragraph. Lorem ipsum\n\nFourth paragraph. Lorem ipsum",
+        vendor_specific: {
+          stripped_html: '<div>First paragraph<br></div><div>Second paragraph</div><div><br></div><div>Third paragraph.&nbsp;Lorem ipsum</div><div><br></div><div>Fourth paragraph.&nbsp;Lorem ipsum</div>'
+        }
+      )
+
+      EmailProcessor.new(email).process
+
+      expect(paid_user.entries.reload.first.body).to eq(
+        '<div>First paragraph</div><br><div>Second paragraph</div><br><div>Third paragraph.&nbsp;Lorem ipsum</div><br><div>Fourth paragraph.&nbsp;Lorem ipsum</div>'
+      )
+    end
+
     it "removes a trailing em-dash separator followed by a signature line" do
       paid_user.entries.destroy_all
       email = FactoryBot.build(
@@ -153,6 +171,61 @@ describe EmailProcessor do
       html = '<div>First paragraph<br></div><div>Second paragraph</div><div><br></div><div>Third paragraph.&nbsp;Lorem ipsum</div><div><br></div><div>Fourth paragraph.&nbsp;Lorem ipsum</div>'
 
       expect(clean(html)).to eq('<div>First paragraph</div><br><div>Second paragraph</div><br><div>Third paragraph.&nbsp;Lorem ipsum</div><br><div>Fourth paragraph.&nbsp;Lorem ipsum</div>')
+    end
+
+    describe 'paragraph separator variants' do
+      {
+        'a trailing break in the preceding block' => [
+          '<div>First<br></div><div>Second</div>',
+          '<div>First</div><br><div>Second</div>'
+        ],
+        'a leading break in the following block' => [
+          '<div>First</div><div><br>Second</div>',
+          '<div>First</div><br><div>Second</div>'
+        ],
+        'an explicit break between blocks' => [
+          '<div>First</div><br><div>Second</div>',
+          '<div>First</div><br><div>Second</div>'
+        ],
+        'an empty div between blocks' => [
+          '<div>First</div><div><br></div><div>Second</div>',
+          '<div>First</div><br><div>Second</div>'
+        ],
+        'an NBSP-only paragraph between blocks' => [
+          '<div>First</div><p>&nbsp;</p><div>Second</div>',
+          '<div>First</div><br><div>Second</div>'
+        ],
+        'duplicate trailing and empty-block separators' => [
+          '<div>First<br></div><div><br></div><div>Second</div>',
+          '<div>First</div><br><div>Second</div>'
+        ],
+        'multiple trailing breaks' => [
+          '<div>First<br><br></div><div>Second</div>',
+          '<div>First</div><br><div>Second</div>'
+        ],
+        'multiple consecutive empty blocks' => [
+          '<div>First</div><div><br></div><p>&nbsp;</p><div><br></div><div>Second</div>',
+          '<div>First</div><br><div>Second</div>'
+        ]
+      }.each do |description, (html, expected)|
+        it "normalizes #{description} to exactly one blank line" do
+          expect(clean(html)).to eq(expected)
+        end
+      end
+
+      it 'normalizes separators inside a Gmail wrapper' do
+        html = '<div><div>First<br></div><div>Second</div><div><br></div><div>Third</div></div>'
+
+        expect(clean(html)).to eq('<div><div>First</div><br><div>Second</div><br><div>Third</div></div>')
+      end
+
+      it 'does not invent a blank line between adjacent blocks' do
+        expect(clean('<div>First</div><div>Second</div>')).to eq('<div>First</div><div>Second</div>')
+      end
+
+      it 'preserves a single authored line break within a paragraph' do
+        expect(clean('<div>First line<br>Second line</div>')).to eq('<div>First line<br>Second line</div>')
+      end
     end
 
     it 'removes leading and trailing empty blocks' do

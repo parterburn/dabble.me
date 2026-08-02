@@ -28,6 +28,28 @@ describe 'Day Entries' do
       expect(page).to have_content 'You need to login or sign up before continuing.'
     end
 
+    it 'renders one blank line for every mixed Gmail paragraph separator' do
+      paid_user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "First paragraph\n\nSecond paragraph\n\nThird paragraph. Lorem ipsum\n\nFourth paragraph. Lorem ipsum",
+        vendor_specific: {
+          stripped_html: '<div>First paragraph<br></div><div>Second paragraph</div><div><br></div><div>Third paragraph.&nbsp;Lorem ipsum</div><div><br></div><div>Fourth paragraph.&nbsp;Lorem ipsum</div>'
+        }
+      )
+
+      EmailProcessor.new(email).process
+      processed_entry = paid_user.entries.reload.first
+
+      sign_in paid_user
+      visit day_entry_url(year: processed_entry.date.year, month: processed_entry.date.month, day: processed_entry.date.day)
+
+      rendered_entry = page.find('.s-scrollable')
+      expect(rendered_entry.all(:xpath, './*').map(&:tag_name)).to eq(%w[div br div br div br div])
+      expect(rendered_entry).to have_text('First paragraph Second paragraph Third paragraph. Lorem ipsum Fourth paragraph. Lorem ipsum')
+    end
+
     it 'should show an entry stored at a non-midnight datetime' do
       sign_in user
       entry.update_columns(date: Time.utc(2026, 7, 17, 15, 30, 0), body: '<p>Afternoon journal entry</p>')
