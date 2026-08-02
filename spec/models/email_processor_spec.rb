@@ -71,7 +71,10 @@ describe EmailProcessor do
       EmailProcessor.new(email).process
 
       saved_body = paid_user.entries.reload.first.body
-      expect(saved_body).to include('FIRST PARAGRAPH', 'SECOND PARAGRAPH', 'THIRD PARAGRAPH with&nbsp;NBSP', 'FOURTH PARAGRAPH with&nbsp;NBSP')
+      expect(saved_body).to eq(
+        '<div>FIRST PARAGRAPH<br><br>SECOND PARAGRAPH<br><br>THIRD PARAGRAPH with NBSP<br><br>FOURTH PARAGRAPH with NBSP</div>'
+      )
+      expect(saved_body.scan('<br><br>').size).to eq(3)
       expect(saved_body).not_to include('Paul Arterburn')
     end
 
@@ -99,6 +102,23 @@ describe EmailProcessor do
         to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
         body: "FIRST PARAGRAPH\n\nSECOND PARAGRAPH",
         raw_html: '<div>FIRST PARAGRAPH</div><div>SECOND PARAGRAPH</div><blockquote>QUOTED HISTORY</blockquote>',
+        vendor_specific: {
+          stripped_html: '<div>FIRST PARAGRAPH</div>'
+        }
+      )
+
+      EmailProcessor.new(email).process
+
+      expect(paid_user.entries.reload.first.body).to eq("<div>FIRST PARAGRAPH<br><br>SECOND PARAGRAPH</div>")
+    end
+
+    it "does not fall back to raw HTML when stripped HTML is truncated" do
+      paid_user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "FIRST PARAGRAPH\n\nSECOND PARAGRAPH",
+        raw_html: '<div><strong>FIRST PARAGRAPH</strong></div><div>SECOND PARAGRAPH</div>',
         vendor_specific: {
           stripped_html: '<div>FIRST PARAGRAPH</div>'
         }

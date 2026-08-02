@@ -15,7 +15,6 @@ class EmailProcessor
     @bcc = email.bcc
     @subject = to_utf8(email.subject)
     @stripped_html = email.vendor_specific.try(:[], :stripped_html)
-    @raw_html = email.raw_html
     @body = clean_message(email.body).presence || "No entry provided."
 
     @html = clean_html_version(@stripped_html)
@@ -424,10 +423,6 @@ class EmailProcessor
                                      plain_text != stripped_html_text
 
     return @html unless stripped_html_is_strict_prefix
-
-    cleaned_raw_html = clean_html_version(@raw_html)
-    return cleaned_raw_html if cleaned_raw_html.present? &&
-                               normalized_visible_text(cleaned_raw_html) == plain_text
 
     @body
   end

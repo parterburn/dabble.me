@@ -72,10 +72,16 @@ describe 'Day Entries' do
       EmailProcessor.new(email).process
       processed_entry = paid_user.entries.reload.first
 
+      expect(processed_entry.body).to eq(
+        '<div>First paragraph<br><br>Second paragraph<br><br>Third paragraph<br><br>Fourth paragraph</div>'
+      )
+
       sign_in paid_user
       visit day_entry_url(year: processed_entry.date.year, month: processed_entry.date.month, day: processed_entry.date.day)
 
       rendered_entry = page.find('.s-scrollable')
+      rendered_body = rendered_entry.find(:xpath, './div')
+      expect(rendered_body.all(:xpath, './br').map(&:tag_name)).to eq(%w[br br br br br br])
       expect(rendered_entry).to have_text('First paragraph')
       expect(rendered_entry).to have_text('Second paragraph')
       expect(rendered_entry).to have_text('Third paragraph')
