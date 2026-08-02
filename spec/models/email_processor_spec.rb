@@ -149,6 +149,12 @@ describe EmailProcessor do
       expect(clean(html)).to eq('<div>First</div><br><div>Second</div>')
     end
 
+    it 'normalizes mixed Gmail paragraph separators to one blank line' do
+      html = '<div>First paragraph<br></div><div>Second paragraph</div><div><br></div><div>Third paragraph.&nbsp;Lorem ipsum</div><div><br></div><div>Fourth paragraph.&nbsp;Lorem ipsum</div>'
+
+      expect(clean(html)).to eq('<div>First paragraph</div><br><div>Second paragraph</div><br><div>Third paragraph.&nbsp;Lorem ipsum</div><br><div>Fourth paragraph.&nbsp;Lorem ipsum</div>')
+    end
+
     it 'removes leading and trailing empty blocks' do
       html = '<p><br></p><div>Content</div><p>&nbsp;</p>'
 
