@@ -56,6 +56,95 @@ describe EmailProcessor do
       expect(paid_user.entries.reload.first.body).to eq("<p>I am great</p><p>Here's a link: <a href=\"https://www.google.com\" target=\"_blank\">https://www.google.com</a></p>")
     end
 
+    it "recovers a complete paid entry when Mailgun stripped HTML loses nested authored paragraphs" do
+      paid_user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "FIRST PARAGRAPH\n\nSECOND PARAGRAPH\n\nTHIRD PARAGRAPH with NBSP\n\nFOURTH PARAGRAPH with NBSP",
+        raw_html: '<div dir="ltr"><div>FIRST PARAGRAPH<br><div class="gmail_quote"><div dir="ltr"><div class="gmail_quote"><div dir="ltr"><div><br></div><div>SECOND PARAGRAPH</div><div><br></div><div>THIRD PARAGRAPH with&nbsp;NBSP</div><div><br></div><div>FOURTH PARAGRAPH with&nbsp;NBSP</div></div></div></div></div></div><div><div dir="ltr" class="gmail_signature" data-smartmail="gmail_signature"><div dir="ltr"><div><br>--<br></div><div><b>Paul Arterburn</b></div></div></div></div></div>',
+        vendor_specific: {
+          stripped_html: '<div><div>FIRST PARAGRAPH</div></div>'
+        }
+      )
+
+      EmailProcessor.new(email).process
+
+      saved_body = paid_user.entries.reload.first.body
+      expect(saved_body).to eq(
+        '<div>FIRST PARAGRAPH<br><br>SECOND PARAGRAPH<br><br>THIRD PARAGRAPH with NBSP<br><br>FOURTH PARAGRAPH with NBSP</div>'
+      )
+      expect(saved_body.scan('<br><br>').size).to eq(3)
+      expect(saved_body).not_to include('Paul Arterburn')
+    end
+
+    it "prefers complete stripped HTML for a normal paid entry" do
+      paid_user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "Complete rich reply",
+        raw_html: "<div>Complete rich reply</div>",
+        vendor_specific: {
+          stripped_html: "<div>Complete <strong>rich</strong> reply</div>"
+        }
+      )
+
+      EmailProcessor.new(email).process
+
+      expect(paid_user.entries.reload.first.body).to eq("<div>Complete <strong>rich</strong> reply</div>")
+    end
+
+    it "rejects raw HTML with quoted history and preserves the complete plain reply" do
+      paid_user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "FIRST PARAGRAPH\n\nSECOND PARAGRAPH",
+        raw_html: '<div>FIRST PARAGRAPH</div><div>SECOND PARAGRAPH</div><blockquote>QUOTED HISTORY</blockquote>',
+        vendor_specific: {
+          stripped_html: '<div>FIRST PARAGRAPH</div>'
+        }
+      )
+
+      EmailProcessor.new(email).process
+
+      expect(paid_user.entries.reload.first.body).to eq("<div>FIRST PARAGRAPH<br><br>SECOND PARAGRAPH</div>")
+    end
+
+    it "does not fall back to raw HTML when stripped HTML is truncated" do
+      paid_user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "FIRST PARAGRAPH\n\nSECOND PARAGRAPH",
+        raw_html: '<div><strong>FIRST PARAGRAPH</strong></div><div>SECOND PARAGRAPH</div>',
+        vendor_specific: {
+          stripped_html: '<div>FIRST PARAGRAPH</div>'
+        }
+      )
+
+      EmailProcessor.new(email).process
+
+      expect(paid_user.entries.reload.first.body).to eq("<div>FIRST PARAGRAPH<br><br>SECOND PARAGRAPH</div>")
+    end
+
+    it "preserves the complete plain reply when raw HTML is unavailable" do
+      paid_user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "FIRST PARAGRAPH\n\nSECOND PARAGRAPH",
+        vendor_specific: {
+          stripped_html: '<div>FIRST PARAGRAPH</div>'
+        }
+      )
+
+      EmailProcessor.new(email).process
+
+      expect(paid_user.entries.reload.first.body).to eq("<div>FIRST PARAGRAPH<br><br>SECOND PARAGRAPH</div>")
+    end
+
     it "preserves blank lines between HTML email paragraphs" do
       paid_user.entries.destroy_all
       email = FactoryBot.build(

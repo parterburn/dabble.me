@@ -57,6 +57,38 @@ describe 'Day Entries' do
       )
     end
 
+    it 'renders all authored paragraphs when Mailgun stripped HTML is truncated' do
+      paid_user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "First paragraph\n\nSecond paragraph\n\nThird paragraph\n\nFourth paragraph",
+        raw_html: '<div dir="ltr"><div>First paragraph<br><div class="gmail_quote"><div dir="ltr"><div><br></div><div>Second paragraph</div><div><br></div><div>Third paragraph</div><div><br></div><div>Fourth paragraph</div></div></div></div><div class="gmail_signature"><div><br>--<br></div><div>Sender signature</div></div></div>',
+        vendor_specific: {
+          stripped_html: '<div><div>First paragraph</div></div>'
+        }
+      )
+
+      EmailProcessor.new(email).process
+      processed_entry = paid_user.entries.reload.first
+
+      expect(processed_entry.body).to eq(
+        '<div>First paragraph<br><br>Second paragraph<br><br>Third paragraph<br><br>Fourth paragraph</div>'
+      )
+
+      sign_in paid_user
+      visit day_entry_url(year: processed_entry.date.year, month: processed_entry.date.month, day: processed_entry.date.day)
+
+      rendered_entry = page.find('.s-scrollable')
+      rendered_body = rendered_entry.find(:xpath, './div')
+      expect(rendered_body.all(:xpath, './br').map(&:tag_name)).to eq(%w[br br br br br br])
+      expect(rendered_entry).to have_text('First paragraph')
+      expect(rendered_entry).to have_text('Second paragraph')
+      expect(rendered_entry).to have_text('Third paragraph')
+      expect(rendered_entry).to have_text('Fourth paragraph')
+      expect(rendered_entry).not_to have_text('Sender signature')
+    end
+
     it 'should show an entry stored at a non-midnight datetime' do
       sign_in user
       entry.update_columns(date: Time.utc(2026, 7, 17, 15, 30, 0), body: '<p>Afternoon journal entry</p>')
