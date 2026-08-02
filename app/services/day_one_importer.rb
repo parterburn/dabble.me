@@ -56,9 +56,13 @@ class DayOneImporter
         next if entry.name.include?("..")
         next if entry.name.include?("__MACOSX/")
 
-        dest = File.join(tmpdir, entry.name)
+        dest = File.expand_path(File.join(tmpdir, entry.name))
+        next unless dest.start_with?(File.expand_path(tmpdir) + File::SEPARATOR) || dest == File.expand_path(tmpdir)
+
         FileUtils.mkdir_p(File.dirname(dest))
-        entry.extract(dest) { true }
+        File.open(dest, "wb") do |f|
+          f.write(entry.get_input_stream.read)
+        end
       end
     end
   end
