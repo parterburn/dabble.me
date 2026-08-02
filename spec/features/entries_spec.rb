@@ -89,6 +89,31 @@ describe 'Day Entries' do
       expect(rendered_entry).not_to have_text('Sender signature')
     end
 
+    it 'renders Gmail-authored indentation as a blockquote without quote history' do
+      paid_user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "First paragraph\n\n> Second intentionally indented paragraph",
+        raw_html: '<div dir="ltr"><div>First paragraph</div><blockquote style="margin:0 0 0 40px;border:none;padding:0"><div>Second intentionally indented paragraph</div></blockquote></div><div class="gmail_quote"><div>On Aug 2, 2026, Dabble Me wrote:</div><blockquote><div>Actual quoted history</div></blockquote></div>',
+        vendor_specific: {
+          stripped_html: '<div>First paragraph</div>'
+        }
+      )
+
+      EmailProcessor.new(email).process
+      processed_entry = paid_user.entries.reload.first
+
+      sign_in paid_user
+      visit day_entry_url(year: processed_entry.date.year, month: processed_entry.date.month, day: processed_entry.date.day)
+
+      rendered_entry = page.find('.s-scrollable')
+      expect(rendered_entry).to have_text('First paragraph')
+      expect(rendered_entry.find('blockquote')).to have_text('Second intentionally indented paragraph')
+      expect(rendered_entry).not_to have_text('Actual quoted history')
+      expect(rendered_entry).not_to have_text('Dabble Me wrote')
+    end
+
     it 'should show an entry stored at a non-midnight datetime' do
       sign_in user
       entry.update_columns(date: Time.utc(2026, 7, 17, 15, 30, 0), body: '<p>Afternoon journal entry</p>')

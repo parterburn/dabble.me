@@ -56,7 +56,158 @@ describe EmailProcessor do
       expect(paid_user.entries.reload.first.body).to eq("<p>I am great</p><p>Here's a link: <a href=\"https://www.google.com\" target=\"_blank\">https://www.google.com</a></p>")
     end
 
-    it "recovers a complete paid entry when Mailgun stripped HTML loses nested authored paragraphs" do
+    it "preserves a trailing Gmail-authored indentation block" do
+      paid_user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "First paragraph\n\n> Second intentionally indented paragraph",
+        raw_html: '<div dir="ltr"><div>First paragraph</div><blockquote style="margin:0 0 0 40px;border:none;padding:0"><div>Second intentionally indented paragraph</div></blockquote></div>',
+        vendor_specific: {
+          stripped_html: '<div>First paragraph</div>'
+        }
+      )
+
+      EmailProcessor.new(email).process
+
+      expect(paid_user.entries.reload.first.body).to eq(
+        '<div><div>First paragraph</div><blockquote><div>Second intentionally indented paragraph</div></blockquote></div>'
+      )
+    end
+
+    it "preserves trailing Gmail-authored indentation for a free user as plain formatting" do
+      user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "First paragraph\n\n> Second intentionally indented paragraph",
+        raw_html: '<div dir="ltr"><div>First paragraph</div><blockquote style="margin:0 0 0 40px;border:none;padding:0"><div>Second intentionally indented paragraph</div></blockquote></div><div class="gmail_quote"><div>On Aug 2, 2026, Dabble Me wrote:</div><blockquote><div>Actual quoted history</div></blockquote></div>',
+        vendor_specific: {
+          stripped_html: '<div>First paragraph</div>'
+        }
+      )
+
+      EmailProcessor.new(email).process
+
+      expect(user.entries.reload.first.body).to eq(
+        'First paragraph<br><br>Second intentionally indented paragraph'
+      )
+    end
+
+    it "preserves a whole Gmail-authored indented entry with multiple quote lines" do
+      paid_user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "> First indented paragraph\n>\n> Second indented paragraph",
+        raw_html: '<blockquote style="margin:0 0 0 40px;border:none;padding:0"><div>First indented paragraph</div><div><br></div><div>Second indented paragraph</div></blockquote>',
+        vendor_specific: {
+          stripped_html: nil
+        }
+      )
+
+      EmailProcessor.new(email).process
+
+      expect(paid_user.entries.reload.first.body).to eq(
+        '<blockquote><div>First indented paragraph</div><br><div>Second indented paragraph</div></blockquote>'
+      )
+    end
+
+    it "preserves normal text after a Gmail-authored indentation block" do
+      paid_user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "Before indentation\n\n> Intentionally indented\n\nAfter indentation",
+        raw_html: '<div dir="ltr"><div>Before indentation</div><blockquote style="margin:0 0 0 40px;border:none;padding:0"><div>Intentionally indented</div></blockquote><div>After indentation</div></div>',
+        vendor_specific: {
+          stripped_html: '<div>Before indentation</div><div>After indentation</div>'
+        }
+      )
+
+      EmailProcessor.new(email).process
+
+      expect(paid_user.entries.reload.first.body).to eq(
+        '<div><div>Before indentation</div><blockquote><div>Intentionally indented</div></blockquote><div>After indentation</div></div>'
+      )
+    end
+
+    it "preserves authored indentation while excluding actual Gmail quote history" do
+      paid_user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "First paragraph\n\n> Authored indentation",
+        raw_html: '<div dir="ltr"><div>First paragraph</div><blockquote style="margin:0 0 0 40px;border:none;padding:0"><div>Authored indentation</div></blockquote></div><div class="gmail_quote"><div>On Aug 2, 2026, Dabble Me wrote:</div><blockquote><div>Actual quoted history</div></blockquote></div>',
+        vendor_specific: {
+          stripped_html: '<div>First paragraph</div>'
+        }
+      )
+
+      EmailProcessor.new(email).process
+
+      saved_body = paid_user.entries.reload.first.body
+      expect(saved_body).to eq(
+        '<div><div>First paragraph</div><blockquote><div>Authored indentation</div></blockquote></div>'
+      )
+      expect(saved_body).not_to include('Actual quoted history')
+      expect(saved_body).not_to include('Dabble Me wrote')
+    end
+
+    it "rejects a generic raw quote when an attribution reveals quoted history" do
+      paid_user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "New response\n\n> Previous entry",
+        raw_html: '<div>New response</div><div>On Aug 2, 2026, Someone wrote:</div><blockquote><div>Previous entry</div></blockquote>',
+        vendor_specific: {
+          stripped_html: '<div>New response</div>'
+        }
+      )
+
+      EmailProcessor.new(email).process
+
+      expect(paid_user.entries.reload.first.body).to eq('<div>New response</div>')
+    end
+
+    it "falls back safely when raw indentation HTML contains active content" do
+      paid_user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "First paragraph\n\n> Second paragraph",
+        raw_html: '<div>First paragraph</div><blockquote style="margin:0 0 0 40px;border:none;padding:0" onclick="alert(1)"><div>Second paragraph</div></blockquote>',
+        vendor_specific: {
+          stripped_html: '<div>First paragraph</div>'
+        }
+      )
+
+      EmailProcessor.new(email).process
+
+      saved_body = paid_user.entries.reload.first.body
+      expect(saved_body).to eq('<div>First paragraph</div>')
+      expect(saved_body).not_to include('onclick')
+    end
+
+    it "falls back safely when raw indentation text does not match the Griddler body" do
+      paid_user.entries.destroy_all
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "First paragraph\n\n> Expected second paragraph",
+        raw_html: '<div>First paragraph</div><blockquote style="margin:0 0 0 40px;border:none;padding:0"><div>Different second paragraph</div></blockquote>',
+        vendor_specific: {
+          stripped_html: '<div>First paragraph</div>'
+        }
+      )
+
+      EmailProcessor.new(email).process
+
+      expect(paid_user.entries.reload.first.body).to eq('<div>First paragraph</div>')
+    end
+
+    it "keeps the complete plain fallback for #144 malformed authored content inside .gmail_quote" do
       paid_user.entries.destroy_all
       email = FactoryBot.build(
         :email,
