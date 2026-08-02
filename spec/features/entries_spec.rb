@@ -146,7 +146,7 @@ describe 'Day Entries' do
       sign_in paid_user
       visit edit_entry_url(paid_entry)
 
-      delete_link = page.find('form + .delete-entry-action a.s-delete', text: 'delete this entry')
+      delete_link = page.find('form + .delete-entry-action a.s-delete', text: 'Delete Entry')
       expect(delete_link['data-method']).to eq('delete')
       expect(delete_link['data-confirm']).to eq('Are you sure you want to delete this entry? There is no undo.')
       expect(page).not_to have_css('.s-entry-date .fa-trash')

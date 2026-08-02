@@ -59,7 +59,7 @@
           = f.submit "Update Entry", class: "form-control btn btn-primary"
 
       .delete-entry-action
-        = link_to "delete this entry", entry_path(@entry), class: "s-delete", method: :delete, data: { confirm: 'Are you sure you want to delete this entry? There is no undo.' }
+        = link_to "Delete Entry", entry_path(@entry), class: "s-delete", method: :delete, data: { confirm: 'Are you sure you want to delete this entry? There is no undo.' }
 
 :javascript
   var summer_note = $('#entry_entry');
