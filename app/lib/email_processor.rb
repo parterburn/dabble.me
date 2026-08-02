@@ -395,6 +395,7 @@ class EmailProcessor
     fragment = Nokogiri::HTML5.fragment(html)
     normalize_empty_html_blocks(fragment)
     normalize_html_text_nodes(fragment)
+    normalize_html_block_edge_breaks(fragment)
     trim_html_edge_breaks(fragment)
     fragment.css('a[href]').each { |link| link['target'] = '_blank' }
 
@@ -580,6 +581,35 @@ class EmailProcessor
       node.add_previous_sibling(Nokogiri::XML::Node.new('br', node.document)) if index < parts.length - 1
     end
     node.remove
+  end
+
+  # Gmail can encode the same blank line either as an empty block between
+  # paragraphs or as a <br> at the edge of a content block. Move edge breaks
+  # between block siblings so both representations render identically.
+  def normalize_html_block_edge_breaks(fragment)
+    fragment.css('blockquote,div,li,p').each do |block|
+      normalize_html_block_edge_break(block, :previous)
+      normalize_html_block_edge_break(block, :next)
+    end
+  end
+
+  def normalize_html_block_edge_break(block, direction)
+    edge_child = direction == :previous ? first_content_child(block) : last_content_child(block)
+    return unless edge_child&.name == 'br'
+
+    sibling = nearest_non_whitespace_sibling(block, direction)
+    return unless sibling&.element? && (sibling.name == 'br' || html_block_node?(sibling))
+
+    loop do
+      edge_child = direction == :previous ? first_content_child(block) : last_content_child(block)
+      break unless edge_child&.name == 'br'
+
+      edge_child.remove
+    end
+    return if sibling.name == 'br'
+
+    separator = Nokogiri::XML::Node.new('br', block.document)
+    direction == :previous ? block.add_previous_sibling(separator) : block.add_next_sibling(separator)
   end
 
   def trim_html_edge_breaks(fragment)
