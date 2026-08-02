@@ -1,6 +1,8 @@
 class Inspiration < ActiveRecord::Base
+  IMPORT_CATEGORIES = ["OhLife", "Ahhlife", "Email", "Seed", "Trailmix", "Day One"].freeze
+
   has_many :entries
-  scope :without_imports_or_email, -> { where("category NOT IN (?)", ['OhLife', 'Ahhlife', 'Email', 'Seed', 'Trailmix']) }
+  scope :without_imports_or_email, -> { where("category NOT IN (?)", IMPORT_CATEGORIES) }
   scope :without_imports_or_email_or_tips, -> { without_imports_or_email.where("category != 'Tip'") }
   scope :writing_prompts, -> { where(category: "Question") }
 
@@ -8,7 +10,7 @@ class Inspiration < ActiveRecord::Base
   validates :body, presence: true
 
   def inspired_by
-    if ["OhLife", "Email", "Ahhlife", "Seed", "Trailmix"].include? category
+    if IMPORT_CATEGORIES.include?(category)
       "Source: #{category}"
     elsif category == "Tip"
       "Tip"

@@ -38,6 +38,20 @@ RSpec.describe ImportUploadStore do
       expect(File.stat(path).mode & 0o777).to eq(0o600)
     end
 
+    it "stores day_one ZIP outside public/ with a random filename" do
+      zip = Tempfile.new(["journal", ".zip"], tmpdir)
+      zip.write("PK\x03\x04")
+      zip.rewind
+      upload = uploaded_file(filename: "Journal.zip", content_type: "application/zip", tempfile: zip)
+
+      path = described_class.store!(uploaded_file: upload, user_key: user_key, kind: "day_one")
+
+      expect(path).to start_with(ImportUploadStore::BASE_DIR.to_s)
+      expect(path).to include("/day_one/")
+      expect(File.basename(path)).to eq("upload.zip")
+      expect(File.stat(path).mode & 0o777).to eq(0o600)
+    end
+
     it "rejects non-json trailmix uploads" do
       html = Tempfile.new(["xss", ".html"], tmpdir)
       html.write("<script>alert(1)</script>")

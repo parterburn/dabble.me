@@ -4,6 +4,8 @@
 Inspiration.create(category: 'Seed', body: 'Seeded into database')
 Inspiration.create(category: 'OhLife', body: 'Imported from OhLife')
 Inspiration.create(category: 'Ahhlife', body: 'Imported from Ahhlife')
+Inspiration.create(category: 'Day One', body: 'Imported from Day One')
+Inspiration.create(category: 'Trailmix', body: 'Imported from Trailmix')
 (1..30).each do |i|
   Inspiration.create(category: ['Question', 'Quote', 'Tip'].sample, body: Faker::Hipster.sentence)
 end

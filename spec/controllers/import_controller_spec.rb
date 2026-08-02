@@ -51,6 +51,45 @@ RSpec.describe ImportController, type: :controller do
     end
   end
 
+  describe "PUT #update day_one" do
+    it "rejects non-zip uploads for day_one" do
+      sign_in paid_user
+      file = Tempfile.new(["not", ".json"])
+      file.write("{}")
+      file.rewind
+      upload = Rack::Test::UploadedFile.new(file.path, "application/json", original_filename: "Journal.json")
+
+      put :update, params: { type: "day_one", zip_file: upload }
+
+      expect(response).to redirect_to(import_path(type: "day_one"))
+      expect(flash[:alert]).to match(/Only \.zip/)
+      expect(ImportDayOneJob).not_to have_been_enqueued
+    ensure
+      file.close!
+    end
+
+    it "enqueues ImportDayOneJob with a path under tmp/imports" do
+      sign_in paid_user
+      file = Tempfile.new(["journal", ".zip"])
+      file.write("PK\x03\x04fake")
+      file.rewind
+      upload = Rack::Test::UploadedFile.new(file.path, "application/zip", original_filename: "Journal.zip")
+
+      expect {
+        put :update, params: { type: "day_one", zip_file: upload }
+      }.to have_enqueued_job(ImportDayOneJob).with { |_user_id, path|
+        expect(path).to start_with(ImportUploadStore::BASE_DIR.to_s)
+        expect(path).to include("/day_one/")
+        expect(File.basename(path)).to eq("upload.zip")
+      }
+
+      expect(response).to redirect_to(entries_path)
+      expect(flash[:notice]).to match(/Day One import has started/)
+    ensure
+      file.close!
+    end
+  end
+
   describe "POST #process_ohlife_images" do
     it "rejects non-zip uploads" do
       sign_in paid_user

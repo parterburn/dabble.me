@@ -376,7 +376,8 @@ strong {
       }
     }
 
-    .j-copy-to-clipboard {
+    .j-copy-to-clipboard,
+    .email-post-cta {
       background: $olive;
       color: white;
       border: none;
@@ -389,6 +390,8 @@ strong {
       }
       &:hover {
         background: darken($olive, 10%);
+        color: white;
+        text-decoration: none;
       }
     }
   }

@@ -14,6 +14,8 @@ class ImportController < ApplicationController
       import_ahhlife_entries(params[:entry][:text])
     elsif params[:type]&.downcase == "trailmix"
       enqueue_trailmix_import
+    elsif params[:type]&.downcase == "day_one"
+      enqueue_day_one_import
     else
       import_ohlife_entries(params[:entry][:text])
     end
@@ -64,6 +66,21 @@ class ImportController < ApplicationController
     FileUtils.rm_f(params[:json_file]&.tempfile&.path) if params[:json_file]
     flash[:alert] = e.message
     redirect_to import_path(type: "trailmix")
+  end
+
+  def enqueue_day_one_import
+    stored_path = ImportUploadStore.store!(
+      uploaded_file: params[:zip_file],
+      user_key: current_user.user_key,
+      kind: "day_one"
+    )
+    ImportDayOneJob.perform_later(current_user.id, stored_path)
+    flash[:notice] = "Day One import has started. You will receive an email when it is finished."
+    redirect_to entries_path
+  rescue ImportUploadStore::Error => e
+    FileUtils.rm_f(params[:zip_file]&.tempfile&.path) if params[:zip_file]
+    flash[:alert] = e.message
+    redirect_to import_path(type: "day_one")
   end
 
   def import_ohlife_entries(data)

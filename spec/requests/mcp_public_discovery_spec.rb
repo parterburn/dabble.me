@@ -24,6 +24,7 @@ RSpec.describe 'Public MCP discovery', type: :request do
 
     expect(sitemap).to include("#{public_url}/mcp-server")
     expect(sitemap).to include("#{public_url}/dabble-me-vs-day-one-ai-journaling")
+    expect(sitemap).to include("#{public_url}/day-one-alternative")
     expect(sitemap).to include("#{public_url}/best-journaling-apps-with-mcp")
     expect(robots).to include("Sitemap: #{public_url}/sitemap.xml")
   end

@@ -38,6 +38,10 @@ class WelcomeController < ApplicationController
     # Comparison page for people choosing an MCP-enabled journal.
   end
 
+  def day_one_alternative
+    # SEO landing page for Day One users considering email journaling + import.
+  end
+
   def best_journaling_apps_with_mcp
     # Guide to vendor-supported journaling apps with MCP.
   end
