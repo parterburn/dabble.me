@@ -15,9 +15,12 @@ class EmailProcessor
     @bcc = email.bcc
     @subject = to_utf8(email.subject)
     @stripped_html = email.vendor_specific.try(:[], :stripped_html)
-    @body = clean_message(email.body).presence || "No entry provided."
+    @griddler_body = to_utf8(email.body&.dup)
+    @raw_html = email.raw_html
+    @body = clean_message(@griddler_body&.dup).presence || "No entry provided."
 
     @html = clean_html_version(@stripped_html)
+    @authored_indentation_html = clean_authored_indentation_html(@raw_html, @griddler_body)
     @message_id = email.headers&.dig("Message-ID")&.gsub("<", "")&.gsub(">", "")
 
     @raw_body = to_utf8(email.raw_body)
@@ -108,7 +111,11 @@ class EmailProcessor
       date = parse_subject_for_date(@subject)
       existing_entry = @user.existing_entry(date.to_s)
       inspiration_id = parse_body_for_inspiration_id(@raw_body)
-      @body = preferred_pro_body if @user.is_pro?
+      if @user.is_pro?
+        @body = preferred_pro_body
+      elsif @user.is_free? && @authored_indentation_html.present?
+        @body = clean_message(without_leading_quote_markers(@griddler_body)).presence || @body
+      end
 
       if existing_entry.present?
         existing_entry.original_email = @inbound_email_params
@@ -414,7 +421,48 @@ class EmailProcessor
     fragment.text.unicode_normalize(:nfkc).gsub(/\s+/, ' ').strip
   end
 
+  def clean_authored_indentation_html(raw_html, griddler_body)
+    return unless raw_html.present? && griddler_body.present?
+
+    has_quote_markers = griddler_body.lines.any? { |line| line.match?(/\A[[:blank:]]*>/) }
+    fragment = Nokogiri::HTML5.fragment(raw_html)
+    fragment.css('.gmail_quote, .gmail_signature').remove
+    blockquote_count = fragment.css('blockquote').count
+    unsafe_content = unsafe_raw_html?(fragment)
+    cleaned_html = clean_html_version(fragment.to_html) if has_quote_markers && blockquote_count.positive? && !unsafe_content
+    text_matches = cleaned_html.present? &&
+                   normalized_visible_text(cleaned_html) == normalized_unquoted_plain_text(griddler_body)
+    accepted = has_quote_markers && blockquote_count.positive? && !unsafe_content && text_matches
+
+    cleaned_html if accepted
+  end
+
+  def normalized_unquoted_plain_text(body)
+    without_leading_quote_markers(body)
+        .unicode_normalize(:nfkc)
+        .gsub(/\s+/, ' ')
+        .strip
+  end
+
+  def without_leading_quote_markers(body)
+    body.to_s.lines.map { |line| line.sub(/\A[[:blank:]]*(?:>[[:blank:]]*)+/, '') }.join
+  end
+
+  def unsafe_raw_html?(fragment)
+    unsafe_elements = %w[script iframe object embed form input button textarea select option link meta base svg math]
+    return true if fragment.css(unsafe_elements.join(',')).any?
+
+    fragment.css('*').any? do |node|
+      node.attribute_nodes.any? do |attribute|
+        attribute.name.match?(/\Aon/i) ||
+          (%w[href src xlink:href formaction].include?(attribute.name.downcase) &&
+            attribute.value.match?(/\A\s*(?:javascript|vbscript|data):/i))
+      end
+    end
+  end
+
   def preferred_pro_body
+    return @authored_indentation_html if @authored_indentation_html.present?
     return @body unless @html.present?
 
     plain_text = normalized_visible_text(@body)
