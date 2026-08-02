@@ -47,7 +47,14 @@ describe 'Day Entries' do
 
       rendered_entry = page.find('.s-scrollable')
       expect(rendered_entry.all(:xpath, './*').map(&:tag_name)).to eq(%w[div br div br div br div])
-      expect(rendered_entry).to have_text('First paragraph Second paragraph Third paragraph. Lorem ipsum Fourth paragraph. Lorem ipsum')
+      expect(rendered_entry.text.split("\n")).to eq(
+        [
+          'First paragraph',
+          'Second paragraph',
+          'Third paragraph. Lorem ipsum',
+          'Fourth paragraph. Lorem ipsum'
+        ]
+      )
     end
 
     it 'should show an entry stored at a non-midnight datetime' do
