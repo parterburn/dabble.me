@@ -78,3 +78,17 @@
           - else
             %i Tip: Use
           hashtags throughout your entries and you'll see a tag cloud appear here making it easy to search for posts containing those hashtags.
+
+    .email-post-card
+      .email-post-flex
+        .email-post-content
+          %h3 Ask ChatGPT or Claude about your journal
+          %p.text-muted
+            Connect Dabble Me once, then ask things like “What was I writing about last spring?” or “When did I mention burnout?”
+          .email-address-box
+            %code Secure AI connector
+            = link_to mcp_server_docs_path, class: "email-post-cta", style: "text-decoration: none; display: inline-block;" do
+              %i.fa.fa-external-link
+              How to connect
+          .email-post-footer
+            You approve access each time an app connects. Nothing runs until you choose to. PRO feature.
