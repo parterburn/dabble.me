@@ -19,4 +19,17 @@ RSpec.describe WelcomeController, type: :controller do
       expect(response).to redirect_to(latest_entry_url)
     end
   end
+
+  describe 'mcp_server' do
+    it 'renders documentation from the MCP tool schemas' do
+      get :mcp_server
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include(
+        '<title>Dabble Me MCP Server: Connect Your Journal to ChatGPT and Claude — Dabble me.</title>'
+      )
+      expect(response.body).to have_content('search_entries')
+      expect(response.body).to have_content('query (required)')
+    end
+  end
 end

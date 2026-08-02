@@ -28,7 +28,7 @@ gem 'addressable' # better URI checking
 gem 'combined_time_select'
 gem 'jekyll-timeago'
 
-gem "rails-html-sanitizer", "~> 1.6"
+gem "rails-html-sanitizer", "~> 1.7"
 gem 'tzinfo-data'
 
 # email parsing
@@ -127,7 +127,7 @@ end
 
 gem 'rack-timeout'
 
-gem "mcp", "~> 0.13.0"
+gem "mcp", "~> 0.23.0"
 gem "doorkeeper", "~> 5.9"
 
 gem "rack-cors", "~> 2.0", group: :development
