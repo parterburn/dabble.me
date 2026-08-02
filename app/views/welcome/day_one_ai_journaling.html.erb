@@ -1,7 +1,7 @@
 <% content_for :title, "Dabble Me vs. Day One for AI Journaling and MCP" %>
 <% content_for :social_title, "Dabble Me vs. Day One for AI journaling" %>
-<% content_for :description, "Compare Dabble Me and Day One for MCP-enabled AI journaling: remote vs. local setup, ChatGPT and Claude access, writing workflows, security, and best fit." %>
-<% content_for :keywords, "Dabble Me vs Day One AI journaling,Day One MCP alternative,AI journal with MCP,journal app for ChatGPT,Claude journal integration" %>
+<% content_for :description, "Compare Dabble Me and Day One AI connectors: remote vs. local MCP, mobile and desktop access, ChatGPT and Claude setup, writing workflows, security, and best fit." %>
+<% content_for :keywords, "Dabble Me vs Day One AI journaling,Day One MCP alternative,AI journal with MCP,journal app for ChatGPT,Claude journal integration,remote MCP vs local MCP" %>
 
 <% content_for :head do %>
   <script type="application/ld+json"><%= raw(json_escape({
@@ -21,12 +21,35 @@
       <p class="text-sm font-semibold tracking-wide text-accent uppercase">AI journaling comparison</p>
       <h1 class="mt-4 font-serif text-4xl sm:text-5xl tracking-tight">Dabble Me vs. Day One for AI journaling</h1>
       <p class="mt-5 text-lg leading-relaxed text-muted max-w-3xl mx-auto">
-        Both products now offer vendor-supported MCP access for ChatGPT, Claude, and other AI assistants.
-        The main difference is architectural: Dabble Me is a hosted, email-first remote MCP service, while Day One’s
-        official MCP server runs locally through the Day One app and CLI on a Mac.
+        Both products offer an official AI connector for ChatGPT, Claude, and other assistants.
+        The practical difference is <strong class="text-primary">remote vs. local</strong>: Dabble Me’s connector
+        lives in the cloud and works wherever you use ChatGPT or Claude — including on a phone —
+        while Day One’s connector runs on your Mac and is available when that desktop setup is running.
       </p>
-      <p class="mt-3 text-sm text-subtle">Feature information reviewed July 23, 2026.</p>
+      <p class="mt-3 text-sm text-subtle">Feature information reviewed August 2, 2026.</p>
     </header>
+
+    <section class="mt-14 card p-6 bg-accent/5 border-accent/20">
+      <h2 class="font-serif text-2xl text-primary">Remote connector vs. local connector</h2>
+      <div class="mt-4 grid sm:grid-cols-2 gap-5 text-sm text-muted">
+        <div>
+          <p class="font-semibold text-primary">Dabble Me — remote</p>
+          <p class="mt-2 leading-relaxed">
+            The AI connector is hosted by Dabble Me. You connect by URL once, approve access, and can use it
+            from the ChatGPT or Claude apps on <strong class="text-primary">mobile and desktop</strong> —
+            no Mac app or local process has to stay running.
+          </p>
+        </div>
+        <div>
+          <p class="font-semibold text-primary">Day One — local</p>
+          <p class="mt-2 leading-relaxed">
+            The AI connector runs on your computer through Day One for Mac and its CLI.
+            That means it is a <strong class="text-primary">desktop / Mac setup</strong>: it is not something you
+            carry with you as a phone-only connection the way a remote URL connector is.
+          </p>
+        </div>
+      </div>
+    </section>
 
     <section class="mt-14 overflow-x-auto card">
       <table class="w-full text-left text-sm">
@@ -38,6 +61,16 @@
           </tr>
         </thead>
         <tbody class="divide-y divide-subtle">
+          <tr>
+            <td class="p-4 font-medium text-primary">Connector type</td>
+            <td class="p-4 text-muted">Remote (cloud-hosted URL)</td>
+            <td class="p-4 text-muted">Local (runs on your Mac)</td>
+          </tr>
+          <tr>
+            <td class="p-4 font-medium text-primary">Where it works</td>
+            <td class="p-4 text-muted">Mobile and desktop ChatGPT / Claude apps</td>
+            <td class="p-4 text-muted">Desktop Mac setup — not a mobile-first connector</td>
+          </tr>
           <tr>
             <td class="p-4 font-medium text-primary">MCP transport</td>
             <td class="p-4 text-muted">Remote Streamable HTTP</td>
@@ -70,8 +103,8 @@
           </tr>
           <tr>
             <td class="p-4 font-medium text-primary">Best fit</td>
-            <td class="p-4 text-muted">Email-first writers who want a cloud-hosted Claude or ChatGPT journal connection</td>
-            <td class="p-4 text-muted">Mac users who want local MCP access to native Day One journals</td>
+            <td class="p-4 text-muted">Writers who want ChatGPT or Claude on phone and desktop without keeping a Mac process online</td>
+            <td class="p-4 text-muted">Mac users who want the connector to run locally against Day One journals on that computer</td>
           </tr>
         </tbody>
       </table>
@@ -80,9 +113,9 @@
     <section class="mt-16">
       <h2 class="font-serif text-3xl text-primary">Choose Dabble Me when…</h2>
       <ul class="mt-5 space-y-3 text-muted">
-        <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span>You want a <strong class="text-primary">journal app for ChatGPT</strong> or Claude that connects by URL with no local MCP process.</span></li>
+        <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span>You want a <strong class="text-primary">journal app for ChatGPT</strong> or Claude that works on <strong class="text-primary">mobile and desktop</strong> via a remote connector.</span></li>
+        <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span>You do not want to leave a Mac app and CLI running for the AI connection to work.</span></li>
         <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span>Email is the habit you already keep: prompts arrive in your inbox and replies become journal entries.</span></li>
-        <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span>You use more than one operating system or do not want the integration tied to a Mac that must be available.</span></li>
         <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span>You want built-in aggregate reflection tools for counts, top hashtags, writing volume, and sample highlights.</span></li>
       </ul>
     </section>
@@ -90,8 +123,8 @@
     <section class="mt-14">
       <h2 class="font-serif text-3xl text-primary">Choose Day One when…</h2>
       <ul class="mt-5 space-y-3 text-muted">
-        <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span>You already keep journals in Day One and use a Mac.</span></li>
-        <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span>You prefer the MCP server to run locally and read the Day One data available on that computer.</span></li>
+        <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span>You already keep journals in Day One and primarily use a Mac.</span></li>
+        <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span>You prefer a <strong class="text-primary">local desktop connector</strong> that reads Day One data on that computer — accepting it is not a mobile-first setup.</span></li>
         <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span>You maintain multiple journals and want to authorize MCP access journal by journal.</span></li>
         <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span>Native Apple apps are more important to you than an email-first workflow.</span></li>
       </ul>
@@ -100,7 +133,7 @@
     <section class="mt-14 card p-6 bg-accent/5 border-accent/20">
       <h2 class="font-serif text-2xl text-primary">Privacy trade-off: local server vs. remote service</h2>
       <p class="mt-3 text-sm leading-relaxed text-muted">
-        Day One’s MCP server makes its journal access locally on the Mac. Dabble Me’s server runs in Dabble Me’s hosted
+        Day One’s local connector keeps the MCP process on your Mac. Dabble Me’s remote connector runs in Dabble Me’s hosted
         environment and limits calls to the OAuth-authorized account. In either case, the AI client normally sends
         retrieved journal content to its model provider to answer your prompt. Review that provider’s privacy settings
         before connecting highly sensitive writing.
@@ -111,7 +144,7 @@
       <h2 class="font-serif text-2xl text-primary">Already writing in Day One?</h2>
       <p class="mt-3 text-sm leading-relaxed text-muted">
         If you want the habit in your inbox instead of (or alongside) Day One’s apps, Dabble Me can import a Day One
-        JSON ZIP export. That migration path is covered separately so this page can stay focused on MCP.
+        JSON ZIP export. That migration path is covered separately so this page can stay focused on AI connectors.
       </p>
       <a href="<%= day_one_alternative_path %>" class="mt-4 inline-block text-accent hover:text-primary underline">
         Day One alternative &amp; journal import →
@@ -142,11 +175,11 @@
     </section>
 
     <section class="mt-16 card p-8 text-center">
-      <h2 class="font-serif text-3xl text-primary">Try the email-first MCP journal</h2>
-      <p class="mt-3 text-muted">Build the writing habit first, then ask ChatGPT or Claude to help you reflect.</p>
+      <h2 class="font-serif text-3xl text-primary">Try the email-first AI journal</h2>
+      <p class="mt-3 text-muted">Build the writing habit first, then ask ChatGPT or Claude to help you reflect — on phone or desktop.</p>
       <div class="mt-6 flex flex-col sm:flex-row justify-center gap-3">
         <a href="<%= new_user_registration_path %>" class="btn btn-primary">Start with Dabble Me</a>
-        <a href="<%= mcp_server_docs_path %>" class="btn btn-secondary">Read the MCP setup guide</a>
+        <a href="<%= mcp_server_docs_path %>" class="btn btn-secondary">Read the AI connector setup guide</a>
       </div>
     </section>
   </div>

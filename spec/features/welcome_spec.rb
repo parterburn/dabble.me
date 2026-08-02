@@ -72,6 +72,9 @@ describe 'Pages' do
     visit day_one_ai_journaling_path
 
     expect(page).to have_title 'Dabble Me vs. Day One for AI Journaling and MCP — Dabble me.'
+    expect(page).to have_content 'Remote connector vs. local connector'
+    expect(page).to have_content 'Mobile and desktop ChatGPT / Claude apps'
+    expect(page).to have_content 'Desktop Mac setup — not a mobile-first connector'
     expect(page).to have_content 'Remote Streamable HTTP'
     expect(page).to have_content 'Local stdio process'
     expect(page).to have_link('official MCP guide')
