@@ -1,0 +1,135 @@
+<% content_for :title, "Day One Alternative: Import Your Journal into Dabble Me" %>
+<% content_for :social_title, "Day One alternative — email journaling with Dabble Me" %>
+<% content_for :description, "Looking for a Day One alternative? Import your Day One JSON export into Dabble Me and keep journaling by email — private prompts, reply-to-post entries, and optional remote MCP for ChatGPT and Claude." %>
+<% content_for :keywords, "Day One alternative,import Day One journal,Day One JSON export,switch from Day One,email journaling alternative,Day One to Dabble Me" %>
+
+<% content_for :head do %>
+  <script type="application/ld+json"><%= raw(json_escape({
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: "Day One Alternative: Import Your Journal into Dabble Me",
+    description: content_for(:description),
+    url: "#{ApplicationHelper.site_public_base_url}/day-one-alternative",
+    dateModified: "2026-08-02",
+    author: { "@type": "Organization", name: "Dabble Dev LLC" }
+  }.to_json)) %></script>
+<% end %>
+
+<section class="py-12 lg:py-20">
+  <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
+    <header class="text-center">
+      <p class="text-sm font-semibold tracking-wide text-accent uppercase">Day One alternative</p>
+      <h1 class="mt-4 font-serif text-4xl sm:text-5xl tracking-tight">
+        Import Day One. Journal by email.
+      </h1>
+      <p class="mt-5 text-lg leading-relaxed text-muted max-w-3xl mx-auto">
+        Dabble Me is a private, email-first journal. Export your Day One journal as JSON, import the ZIP into Dabble Me PRO,
+        and keep writing by replying to a daily prompt — no new app to open every day.
+      </p>
+      <div class="mt-8 flex flex-col sm:flex-row justify-center gap-3">
+        <a href="<%= new_user_registration_path %>" class="btn btn-primary">Start free, then import</a>
+        <a href="<%= import_path('day_one') %>" class="btn btn-secondary">Open the Day One importer</a>
+      </div>
+    </header>
+
+    <section class="mt-16">
+      <h2 class="font-serif text-3xl text-primary">How to move your Day One journal</h2>
+      <ol class="mt-6 space-y-4 text-muted">
+        <li class="flex gap-4">
+          <span class="font-serif text-2xl text-accent leading-none">1</span>
+          <span>In Day One, export your journal as <strong class="text-primary">JSON</strong> and include media if you want photos.</span>
+        </li>
+        <li class="flex gap-4">
+          <span class="font-serif text-2xl text-accent leading-none">2</span>
+          <span>Create a Dabble Me account (PRO unlocks imports) and open
+            <a href="<%= import_path('day_one') %>" class="text-accent hover:text-primary underline">Entries → Import → Day One</a>.</span>
+        </li>
+        <li class="flex gap-4">
+          <span class="font-serif text-2xl text-accent leading-none">3</span>
+          <span>Upload the ZIP Day One created. Dabble Me imports your entries and emails you when it finishes.</span>
+        </li>
+      </ol>
+      <p class="mt-5 text-sm text-subtle">
+        Multiple Day One entries on the same calendar day are combined into one Dabble Me entry. Existing Dabble Me dates are left unchanged.
+      </p>
+    </section>
+
+    <section class="mt-16 overflow-x-auto card">
+      <table class="w-full text-left text-sm">
+        <thead class="border-b border-subtle">
+          <tr>
+            <th class="p-4 font-semibold text-primary">If you care about…</th>
+            <th class="p-4 font-semibold text-primary">Day One</th>
+            <th class="p-4 font-semibold text-primary">Dabble Me</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-subtle">
+          <tr>
+            <td class="p-4 font-medium text-primary">Daily writing habit</td>
+            <td class="p-4 text-muted">Native apps on Apple platforms and Android</td>
+            <td class="p-4 text-muted">Email prompts; reply to create an entry</td>
+          </tr>
+          <tr>
+            <td class="p-4 font-medium text-primary">Bringing your history</td>
+            <td class="p-4 text-muted">JSON / PDF / Markdown exports</td>
+            <td class="p-4 text-muted">Import Day One JSON ZIP (plus OhLife, Ahhlife, Trailmix)</td>
+          </tr>
+          <tr>
+            <td class="p-4 font-medium text-primary">Photos</td>
+            <td class="p-4 text-muted">Rich media in the Day One apps</td>
+            <td class="p-4 text-muted">One image per day (collage if several photos import)</td>
+          </tr>
+          <tr>
+            <td class="p-4 font-medium text-primary">AI / MCP</td>
+            <td class="p-4 text-muted">Official local MCP on Mac</td>
+            <td class="p-4 text-muted">Hosted remote MCP for ChatGPT and Claude</td>
+          </tr>
+          <tr>
+            <td class="p-4 font-medium text-primary">Best fit</td>
+            <td class="p-4 text-muted">People who love Day One’s native apps</td>
+            <td class="p-4 text-muted">People who want the habit to live in their inbox</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="mt-16">
+      <h2 class="font-serif text-3xl text-primary">Choose Dabble Me as a Day One alternative when…</h2>
+      <ul class="mt-5 space-y-3 text-muted">
+        <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span>You want journaling reminders in email — and replies that become private entries.</span></li>
+        <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span>You already have years in Day One and need a straightforward JSON ZIP import.</span></li>
+        <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span>You use more than one device or OS and do not want the habit tied to a single app.</span></li>
+        <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span>You want optional AI reflection through a remote MCP connection, not a local Mac server.</span></li>
+      </ul>
+    </section>
+
+    <section class="mt-14">
+      <h2 class="font-serif text-3xl text-primary">Stay with Day One when…</h2>
+      <ul class="mt-5 space-y-3 text-muted">
+        <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span>Day One’s native apps, multi-journal layout, and media features are central to how you write.</span></li>
+        <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span>You prefer local MCP on a Mac over a hosted email-first journal.</span></li>
+        <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span>You do not want to change your daily capture workflow.</span></li>
+      </ul>
+    </section>
+
+    <section class="mt-14 card p-6 bg-accent/5 border-accent/20">
+      <h2 class="font-serif text-2xl text-primary">Comparing AI access separately?</h2>
+      <p class="mt-3 text-sm leading-relaxed text-muted">
+        If you are choosing between Dabble Me and Day One specifically for ChatGPT or Claude MCP setup,
+        read the focused comparison — it stays on remote vs. local AI architecture, not migration.
+      </p>
+      <a href="<%= day_one_ai_journaling_path %>" class="mt-4 inline-block text-accent hover:text-primary underline">
+        Dabble Me vs. Day One for AI journaling →
+      </a>
+    </section>
+
+    <section class="mt-16 card p-8 text-center">
+      <h2 class="font-serif text-3xl text-primary">Bring your Day One history with you</h2>
+      <p class="mt-3 text-muted">Sign up free, upgrade to PRO when you are ready to import, and keep the habit in your inbox.</p>
+      <div class="mt-6 flex flex-col sm:flex-row justify-center gap-3">
+        <a href="<%= new_user_registration_path %>" class="btn btn-primary">Create your account</a>
+        <a href="<%= import_path('day_one') %>" class="btn btn-secondary">Import Day One entries</a>
+      </div>
+    </section>
+  </div>
+</section>

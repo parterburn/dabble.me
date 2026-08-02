@@ -75,6 +75,21 @@ describe 'Pages' do
     expect(page).to have_content 'Remote Streamable HTTP'
     expect(page).to have_content 'Local stdio process'
     expect(page).to have_link('official MCP guide')
+    expect(page).to have_link('Day One alternative & journal import', href: day_one_alternative_path)
+  end
+
+  it 'publishes a Day One alternative page focused on import and email journaling' do
+    visit day_one_alternative_path
+
+    expect(page).to have_title 'Day One Alternative: Import Your Journal into Dabble Me — Dabble me.'
+    expect(page).to have_content 'Import Day One. Journal by email.'
+    expect(page).to have_content 'export your journal as JSON'
+    expect(page).to have_link('Open the Day One importer', href: import_path('day_one'))
+    expect(page).to have_link('Dabble Me vs. Day One for AI journaling', href: day_one_ai_journaling_path)
+    expect(page).to have_css('script[type="application/ld+json"]', visible: false)
+
+    description = page.find('meta[name="description"]', visible: false)['content']
+    expect(description).to include('Day One alternative')
   end
 
   it 'publishes a guide to journaling apps with MCP' do
