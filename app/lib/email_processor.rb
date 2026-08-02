@@ -15,6 +15,7 @@ class EmailProcessor
     @bcc = email.bcc
     @subject = to_utf8(email.subject)
     @stripped_html = email.vendor_specific.try(:[], :stripped_html)
+    @raw_html = email.raw_html
     @body = clean_message(email.body).presence || "No entry provided."
 
     @html = clean_html_version(@stripped_html)
@@ -108,7 +109,7 @@ class EmailProcessor
       date = parse_subject_for_date(@subject)
       existing_entry = @user.existing_entry(date.to_s)
       inspiration_id = parse_body_for_inspiration_id(@raw_body)
-      @body = @html.presence if @html.present? && @user.is_pro?
+      @body = preferred_pro_body if @user.is_pro?
 
       if existing_entry.present?
         existing_entry.original_email = @inbound_email_params
@@ -403,6 +404,32 @@ class EmailProcessor
     return unless html.present?
 
     html
+  end
+
+  def normalized_visible_text(html)
+    fragment = Nokogiri::HTML5.fragment(html.to_s)
+    fragment.css('br').each { |node| node.replace(Nokogiri::XML::Text.new(' ', node.document)) }
+    fragment.css(HTML_BLOCK_ELEMENTS.join(',')).each do |node|
+      node.add_next_sibling(Nokogiri::XML::Text.new(' ', node.document))
+    end
+    fragment.text.unicode_normalize(:nfkc).gsub(/\s+/, ' ').strip
+  end
+
+  def preferred_pro_body
+    return @body unless @html.present?
+
+    plain_text = normalized_visible_text(@body)
+    stripped_html_text = normalized_visible_text(@html)
+    stripped_html_is_strict_prefix = plain_text.start_with?(stripped_html_text) &&
+                                     plain_text != stripped_html_text
+
+    return @html unless stripped_html_is_strict_prefix
+
+    cleaned_raw_html = clean_html_version(@raw_html)
+    return cleaned_raw_html if cleaned_raw_html.present? &&
+                               normalized_visible_text(cleaned_raw_html) == plain_text
+
+    @body
   end
 
   def collage_from_attachments(attachments, existing_image_url: nil)
