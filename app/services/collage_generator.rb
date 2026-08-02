@@ -284,6 +284,14 @@ class CollageGenerator
     return nil if redirects_left.negative?
     return nil if url.blank?
 
+    # Local filesystem paths (used by Day One ZIP import) bypass HTTP.
+    local_path = local_image_path(url)
+    if local_path
+      return File.binread(local_path) if File.file?(local_path)
+
+      return nil
+    end
+
     # Malformed strings (e.g. internal sentinels like "mailgun_collage:…" that
     # leaked out of the email processor) should be dropped silently rather than
     # paged to Sentry — they're a caller-contract problem, not a runtime fault
@@ -334,6 +342,17 @@ class CollageGenerator
   rescue StandardError => e
     Sentry.capture_exception(e, extra: { url: sanitize_url(url) })
     nil
+  end
+
+  def local_image_path(url)
+    path = url.to_s
+    if path.start_with?("file://")
+      path = path.delete_prefix("file://")
+    end
+    return nil unless path.start_with?("/")
+    return nil if path.include?("\0")
+
+    path
   end
 
   def sanitize_url(url)

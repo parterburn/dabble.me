@@ -22,7 +22,7 @@ Dabble Me was built as a **direct replacement for OhLife** — a much-loved emai
 
 - There's a dedicated `OhLife` import flow ([entries/import/ohlife](app/controllers/import_controller.rb)) including image-archive upload.
 - There's an SEO landing page at `/ohlife-alternative` ([welcome_controller.rb](app/controllers/welcome_controller.rb)).
-- Imported entries are tagged with `Inspiration.category = "OhLife"` so they're identifiable forever.
+- Imported entries are tagged with `Inspiration.category = "OhLife"` (and similarly Day One / Ahhlife / Trailmix) so they're identifiable forever.
 
 If you're modifying behavior around imports, scheduling, or the email reply format, **do not break OhLife parity unless explicitly asked** — that audience is part of the product's reason for existing.
 

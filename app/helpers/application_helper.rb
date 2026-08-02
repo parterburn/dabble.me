@@ -184,7 +184,7 @@ module ApplicationHelper
           },
           {
             q: "Can I import from OhLife or other services?",
-            a: "Yes! PRO members can visit the <a href='#{Rails.application.routes.url_helpers.import_path}' class='text-accent hover:text-primary underline'>Importer</a> to import entries from OhLife, Ahhlife, and Trailmix.life."
+            a: "Yes! PRO members can visit the <a href='#{Rails.application.routes.url_helpers.import_path}' class='text-accent hover:text-primary underline'>Importer</a> to import entries from OhLife, Day One, Ahhlife, and Trailmix.life."
           },
           {
             q: "Can I get a refund?",

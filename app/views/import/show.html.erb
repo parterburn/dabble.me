@@ -1,5 +1,10 @@
-<% type = params[:type].present? ? params[:type].humanize : "OhLife" %>
+<% type = case params[:type]&.downcase
+          when "day_one" then "Day One"
+          when nil, "" then "OhLife"
+          else params[:type].humanize
+          end %>
 <% content_for :title, "Import #{type} to Dabble Me" %>
+<% add_class = current_user.is_free? ? "blur" : nil %>
 
 <% if type == "Ahhlife" %>
   <% format_placeholder = '{"Jul-2015": {"-JtqbI_fF_2348SFrMqPQ": {"content": "Your entry here...","timestamp": 1436486400000}}}' %>
@@ -11,7 +16,6 @@
 
 <div class="row">
   <% if current_user.is_free? %>
-    <% add_class = "blur" %>
     <div class="col-md-8 col-md-offset-2">
       <div class="alert alert-warning" style="min-height: 45px;">
         <%= link_to subscribe_path, class: "float-left", style: "margin-top: -7px;" do %>
@@ -77,6 +81,28 @@
         </i>
       </div>
     </div>
+
+  <% elsif params[:type]&.downcase == "day_one" %>
+    <div class="well col-md-8 col-md-offset-2 <%= add_class %>">
+      <%= form_tag(import_process_path(type: "day_one"), multipart: true, method: :put, style: "text-align: center; padding-top: 10px;") do %>
+        <div><%= label_tag 'zip_file', "Choose Day One JSON ZIP export" %></div>
+        <div style="margin: 20px 0;"><%= file_field_tag 'zip_file', class: "center", accept: ".zip,application/zip" %></div>
+        <%= submit_tag "Upload Day One ZIP", class: "btn btn-primary" %>
+        <div class="clearfix"></div>
+      <% end %>
+      <div class="center" style="padding-top: 30px;">
+        <p>
+          In Day One, export your journal as <strong>JSON</strong> and include media if you want photos imported.
+        </p>
+        <p>
+          <i>
+            Upload the ZIP Day One creates (it should contain a <code>.json</code> file and optional
+            <code>photos/</code> folder). Multiple entries on the same day are combined into one Dabble Me entry.
+            Existing Dabble Me entries for a date are left unchanged.
+          </i>
+        </p>
+      </div>
+    </div>
   <% else %>
     <%= form_for :entry, url: import_process_path(type: type), method: :put, html: { class: add_class } do |f| %>
       <div class="col-md-8 col-md-offset-2">
@@ -96,8 +122,10 @@
     Try other import formats:
     <%= link_to "AhhLife", import_path('ahhlife') %>
     &middot;
+    <%= link_to "Day One", import_path('day_one') %>
+    &middot;
     <%= link_to "OhLife", import_path('ohlife') %>
     &middot;
     <%= link_to "Trailmix.life", import_path('trailmix') %>
-  </div>      
+  </div>
 </div>

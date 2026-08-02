@@ -240,7 +240,11 @@ class Entry < ActiveRecord::Base
   end
 
   def associate_inspiration
-    self.inspiration = nil unless self.inspiration.in? Inspiration.without_imports_or_email_or_tips
+    return if inspiration.blank?
+    # Keep import/source tags (OhLife, Day One, etc.) so importers can label origin.
+    return if inspiration.category.in?(Inspiration::IMPORT_CATEGORIES)
+
+    self.inspiration = nil unless inspiration.in?(Inspiration.without_imports_or_email_or_tips)
   end
 
   def strip_out_base64

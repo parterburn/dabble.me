@@ -5,14 +5,20 @@
 class ImportUploadStore
   BASE_DIR = Rails.root.join("tmp", "imports").freeze
 
+  ZIP_CONTENT_TYPES = %w[
+    application/zip
+    application/x-zip-compressed
+    application/octet-stream
+  ].freeze
+
   ALLOWED = {
     "ohlife" => {
       extensions: %w[.zip].freeze,
-      content_types: %w[
-        application/zip
-        application/x-zip-compressed
-        application/octet-stream
-      ].freeze
+      content_types: ZIP_CONTENT_TYPES
+    }.freeze,
+    "day_one" => {
+      extensions: %w[.zip].freeze,
+      content_types: ZIP_CONTENT_TYPES
     }.freeze,
     "trailmix" => {
       extensions: %w[.json].freeze,

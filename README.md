@@ -69,13 +69,16 @@ rake
 
 The Admin emails are accounts that have access to the Admin Dropdown in the navbar (lock icon) that give you details into the number of entries and users in the system.
 
-### Inspirations and OhLife Importer
+### Inspirations and Importers
 
-If you want random bits of inspiration, you can load up different quotes in the Inspiration table to be shown above the New Posts page and at the bottom of emails. If you plan on using OhLife, the system will tag imported posts with ```inspiration_id``` of 1 - so create the first Inspiration with a category name of "OhLife".
+If you want random bits of inspiration, you can load up different quotes in the Inspiration table to be shown above the New Posts page and at the bottom of emails. Import sources are tagged via Inspiration categories — seed OhLife / Ahhlife / Day One / Trailmix rows (see `db/seeds.rb`), or the Day One importer will create its category on first use.
 
 ```ruby
 Inspiration.create(category: 'OhLife', body: 'Imported from OhLife')
+Inspiration.create(category: 'Day One', body: 'Imported from Day One')
 ```
+
+PRO users can import from OhLife (text + photo ZIP), Day One (JSON ZIP export), Ahhlife (JSON paste), and Trailmix.life (JSON upload) at `/entries/import`.
 
 =====
 
@@ -83,7 +86,7 @@ Inspiration.create(category: 'OhLife', body: 'Imported from OhLife')
 
 * Read past entries by month/year
 * Create new entries with simple formatting
-* OhLife Importer
+* Importers: OhLife, Day One, Ahhlife, Trailmix.life
 * Email: Reply-to-post new entries on days of the week you choose (with random past entries embedded)
 * Associate 1 image to a specific entry
 * Search with basic analytics around posting
