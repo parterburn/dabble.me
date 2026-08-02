@@ -23,7 +23,7 @@ class WelcomeController < ApplicationController
 
   def mcp_server
     @mcp_tools = Mcp::DabbleServer::TOOLS.map do |tool|
-      schema = tool.input_schema.schema
+      schema = tool.input_schema.to_h
       {
         name: tool.tool_name,
         title: tool.title,
