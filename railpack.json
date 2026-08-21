@@ -5,7 +5,8 @@
     "libyaml-0-2",
     "libmagic1",
     "libpq5",
-    "libjemalloc2"
+    "libjemalloc2",
+    "libicu72"
   ],
   "deploy": {
     "aptPackages": [
@@ -13,7 +14,8 @@
       "libyaml-0-2",
       "libmagic1",
       "libpq5",
-      "libjemalloc2"
+      "libjemalloc2",
+      "libicu72"
     ]
   }
 }
