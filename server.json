@@ -4,15 +4,15 @@
   "title": "Dabble Me Journal",
   "description": "Private journal MCP server to search, analyze, and create Dabble Me entries securely via OAuth.",
   "version": "1.0.0",
-  "websiteUrl": "https://dabble\u002eme/mcp-server",
+  "websiteUrl": "https://dabble.me/mcp-server",
   "repository": {
-    "url": "https://github.com/parterburn/dabble\u002eme",
+    "url": "https://github.com/parterburn/dabble.me",
     "source": "github",
     "id": "24485897"
   },
   "icons": [
     {
-      "src": "https://dabble\u002eme/favicon-96x96.png",
+      "src": "https://dabble.me/favicon-96x96.png",
       "mimeType": "image/png",
       "sizes": [
         "96x96"
@@ -22,7 +22,7 @@
   "remotes": [
     {
       "type": "streamable-http",
-      "url": "https://dabble\u002eme/mcp"
+      "url": "https://dabble.me/mcp"
     }
   ]
 }
