@@ -1,21 +1,23 @@
 {
   "$schema": "https://schema.railpack.com",
   "buildAptPackages": [
-    "libvips42",
+    "...",
+    "libvips42t64",
     "libyaml-0-2",
-    "libmagic1",
+    "libmagic1t64",
     "libpq5",
     "libjemalloc2",
-    "libicu72"
+    "libicu76"
   ],
   "deploy": {
     "aptPackages": [
-      "libvips42",
+      "...",
+      "libvips42t64",
       "libyaml-0-2",
-      "libmagic1",
+      "libmagic1t64",
       "libpq5",
       "libjemalloc2",
-      "libicu72"
+      "libicu76"
     ]
   }
 }
