@@ -12,7 +12,7 @@
 
     <!-- Sign up form -->
     <div class="card p-6 sm:p-8">
-      <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { class: "space-y-5" }) do |f| %>
+      <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { class: "space-y-5", toolname: "create_account", tooldescription: "Create a free Dabble Me journal account. Fill the form and leave it for the user to review and submit. Do not submit automatically." }) do |f| %>
         <%= render "devise/shared/error_messages", resource: resource %>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -22,6 +22,7 @@
                 autofocus: true, 
                 required: true,
                 value: params[:user].try(:[], "first_name"),
+                toolparamdescription: "First name for the new journal account.",
                 class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
           </div>
           <div>
@@ -29,6 +30,7 @@
             <%= f.text_field :last_name, 
                 required: true,
                 value: params[:user].try(:[], "last_name"),
+                toolparamdescription: "Last name for the new journal account.",
                 class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
           </div>
         </div>
@@ -38,6 +40,7 @@
           <%= f.email_field :email, 
               required: true,
               placeholder: "you@example.com",
+              toolparamdescription: "Email address that will receive journal prompts.",
               class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
         </div>
 
@@ -47,6 +50,7 @@
             <%= f.password_field :password, 
                 autocomplete: "new-password", 
                 required: true,
+                toolparamdescription: "New account password. Leave empty unless the user provided one.",
                 class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
             <% if @validatable %>
               <p class="mt-1 text-xs text-muted">Min <%= @minimum_password_length %> characters</p>
@@ -57,6 +61,7 @@
             <%= f.password_field :password_confirmation, 
                 autocomplete: "new-password", 
                 required: true,
+                toolparamdescription: "Password confirmation. Must match the password field.",
                 class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
           </div>
         </div>

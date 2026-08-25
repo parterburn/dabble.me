@@ -20,7 +20,7 @@
           %span
             = @entry.date_day.upcase
 
-      = form_for :entry, url: entry_path(@entry), method: :patch do |f|
+      = form_for :entry, url: entry_path(@entry), method: :patch, html: { toolname: "update_journal_entry", tooldescription: "Update the signed-in user's private journal entry on this page. Fill the date and body, then leave the form for the user to review and submit." } do |f|
 
         -if @entry.errors.any?
           #error_explanation
@@ -33,7 +33,7 @@
           .input-group.date
             %span.input-group-addon
               %i.fa.fa-calendar
-            = f.text_field :date, value: @entry.date_format_short, placeholder: "October 11 2014", class: "form-control pickadate"
+            = f.text_field :date, value: @entry.date_format_short, placeholder: "October 11 2014", class: "form-control pickadate", toolparamdescription: "Entry date, such as July 17, 2026."
           %br
 
         %div{class: add_class}
@@ -53,7 +53,7 @@
 
         %div{class: add_class}
           = f.label :entry
-          = f.text_area :entry, class: "form-control summernote", rows: 15, value: format_body(@entry.formatted_body)
+          = f.text_area :entry, class: "form-control summernote", rows: 15, value: format_body(@entry.formatted_body), toolparamdescription: "Updated journal entry body."
 
         %div
           = f.submit "Update Entry", class: "form-control btn btn-primary"

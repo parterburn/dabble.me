@@ -55,6 +55,8 @@ For generic remote-connector setup in Claude, see Anthropic’s [Get started wit
 
 **Registry metadata:** `server.json` describes the hosted Streamable HTTP endpoint for the official MCP Registry.
 
+**WebMCP / AI-client discovery:** public pages advertise `/.well-known/webmcp`, `/mcp/server-card`, and `/.well-known/ai-catalog.json`. In a signed-in browser tab, WebMCP also registers session journal tools (search, list, analyze, open a day, draft an entry without submitting). Search/analyze/draft need PRO. Remote MCP at `/mcp` still uses OAuth (PRO + passkey or 2FA). For the WebMCP Challenge, put a dedicated PRO demo account (email/password, no 2FA) on the submission form — do not use a real journal.
+
 **Automated smoke (curl + [MCP Inspector](https://modelcontextprotocol.io/docs/tools/inspector) CLI):** `./script/mcp_inspector_smoke.sh` uses `RAILS_ENV=test`, starts a short-lived Rails server, checks OAuth metadata and `/mcp`, then runs Inspector against all five tools (`tools/list` exercises `initialize` + connect). Aligns with Anthropic’s [Testing your connector](https://claude.com/docs/connectors/build/testing) guidance.
 
 ### Tests

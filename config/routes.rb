@@ -12,6 +12,22 @@ Rails.application.routes.draw do
   get '.well-known/oauth-protected-resource/mcp', to: 'oauth/metadata#protected_resource'
   get '.well-known/oauth-authorization-server', to: 'oauth/metadata#authorization_server'
   get '.well-known/oauth-authorization-server/mcp', to: 'oauth/metadata#authorization_server'
+  get '.well-known/webmcp', to: 'mcp/discovery#webmcp', format: false
+  get '.well-known/webmcp.json', to: redirect(status: 301) { |_params, req|
+    "#{req.protocol}#{req.host_with_port}/.well-known/webmcp"
+  }, format: false
+  get '.well-known/ai-catalog.json', to: 'mcp/discovery#ai_catalog', format: false
+  get '.well-known/api-catalog', to: 'mcp/discovery#api_catalog'
+  get '.well-known/mcp.json', to: 'mcp/discovery#server_card', format: false
+  get '.well-known/agents.md', to: 'mcp/discovery#agents', format: false
+  get 'mcp/server-card', to: 'mcp/discovery#server_card'
+  match 'webmcp/tools/:name', to: 'mcp/discovery#invoke_tool', via: %i[get post options], constraints: { name: /[a-z0-9_]+/ }
+  scope path: 'webmcp/journal', module: 'webmcp', as: :webmcp_journal do
+    match 'session', to: 'journal#session_info', via: %i[get post]
+    post 'search', to: 'journal#search'
+    post 'list', to: 'journal#list'
+    post 'analyze', to: 'journal#analyze'
+  end
 
   namespace :oauth, defaults: { format: :json } do
     resources :registrations, only: :create

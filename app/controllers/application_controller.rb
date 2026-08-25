@@ -6,6 +6,8 @@ class ApplicationController < ActionController::Base
   before_action :set_user_today
   before_action :configure_permitted_parameters, if: :devise_controller?
   before_action :identify_current_user_to_sentry
+  after_action :set_webmcp_discovery_headers
+  helper_method :webmcp_catalog
 
   rescue_from Rack::Timeout::RequestTimeoutException, with: :handle_timeout
 
@@ -68,5 +70,17 @@ class ApplicationController < ActionController::Base
   def filtered_params_for_sentry
     ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters)
       .filter(params.to_unsafe_h)
+  end
+
+  def webmcp_catalog
+    @webmcp_catalog ||= Mcp::WebmcpCatalog.new(base_url: request.base_url, user: current_user)
+  end
+
+  def set_webmcp_discovery_headers
+    return unless response.media_type.to_s.include?('html')
+
+    existing = response.headers['Link']
+    additions = webmcp_catalog.link_header_values
+    response.headers['Link'] = [existing, *additions].compact.join(', ')
   end
 end

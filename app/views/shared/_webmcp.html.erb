@@ -1,0 +1,36 @@
+<% catalog = webmcp_catalog %>
+<% catalog.html_links.each do |link| %>
+  <link href="<%= link[:href] %>" rel="<%= link[:rel] %>" type="<%= link[:type] %>">
+<% end %>
+<script type="application/json" id="dabble-webmcp-config"><%= raw json_escape(catalog.page_config.to_json) %></script>
+<script src="/webmcp.js?v=<%= File.mtime(Rails.root.join('public', 'webmcp.js')).to_i rescue Time.now.to_i %>" defer></script>
+<style>
+  form:tool-form-active,
+  form.dabble-webmcp-drafted {
+    outline: 2px dashed #5c6b3f;
+    outline-offset: 4px;
+  }
+  [type="submit"]:tool-submit-active {
+    outline: 2px dashed #8a4b2f;
+    outline-offset: 2px;
+  }
+  #dabble-webmcp-status {
+    position: fixed;
+    z-index: 1080;
+    left: 50%;
+    bottom: 1.25rem;
+    transform: translateX(-50%);
+    max-width: min(36rem, calc(100vw - 2rem));
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    background: #1f2a16;
+    color: #f4f1e8;
+    font-size: 0.875rem;
+    line-height: 1.4;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  }
+  #dabble-webmcp-status[hidden] {
+    display: none;
+  }
+</style>
+<div id="dabble-webmcp-status" hidden role="status"></div>

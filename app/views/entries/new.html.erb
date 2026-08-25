@@ -17,7 +17,7 @@
   <br>
   <div id="entry-<%= @entry&.id %>" class="col-md-8 col-md-offset-2 well s-new-edit-entry">
     <div class="<%= add_class %>">
-      <%= form_for :entry, url: entries_path do |f| %>
+      <%= form_for :entry, url: entries_path, html: { toolname: "write_journal_entry", tooldescription: "Draft a new private journal entry on the signed-in user's Dabble Me write page. Fill the date and body, then leave the form for the user to review and submit." } do |f| %>
         <div class="s-entry-date s-new-entry">
           <div class="float-left s-edit-entry" rel="popover" title="Inspiration" data-content="If you need ideas to get started just glance up here for quotes & questions!">
             <i class="fa fa-lightbulb-o"></i>
@@ -57,7 +57,7 @@
               <i class="fa fa-calendar"></i>
             </span>
             <% entry_date = params[:day].present? ? Date.parse(params[:day]).strftime("%B %-d, %Y") : (@entry&.date.present? ? @entry.date_format_short : Time.now.in_time_zone(current_user.send_timezone).strftime("%B %-d, %Y")) %>
-            <%= f.text_field :date, :value => entry_date, :placeholder=>"October 11 2014", :class => "form-control pickadate" %>
+            <%= f.text_field :date, :value => entry_date, :placeholder=>"October 11 2014", :class => "form-control pickadate", toolparamdescription: "Entry date, such as July 17, 2026." %>
           </div>
           <br>
 
@@ -83,7 +83,7 @@
 
         <div>
           <%= f.label :entry %>
-          <%= f.text_area :entry, :class => "form-control summernote", :rows => 15 %>
+          <%= f.text_area :entry, :class => "form-control summernote", :rows => 15, toolparamdescription: "Journal entry body to save for the selected date." %>
         </div>
 
         <div>

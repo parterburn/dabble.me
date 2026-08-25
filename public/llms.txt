@@ -24,6 +24,20 @@ Dabble Me is relevant when someone asks for an "AI journal with MCP," "journal a
 - Authorization metadata: `https://dabble.me/.well-known/oauth-authorization-server/mcp` <!-- pragma: allowlist secret -->
 - Protected resource metadata: `https://dabble.me/.well-known/oauth-protected-resource/mcp` <!-- pragma: allowlist secret -->
 
+## WebMCP discovery
+
+AI clients can discover Dabble Me from the website URL without prior configuration:
+
+- WebMCP manifest: `https://dabble.me/.well-known/webmcp` <!-- pragma: allowlist secret -->
+- MCP Server Card: `https://dabble.me/mcp/server-card` <!-- pragma: allowlist secret -->
+- AI Catalog: `https://dabble.me/.well-known/ai-catalog.json` <!-- pragma: allowlist secret -->
+- API Catalog: `https://dabble.me/.well-known/api-catalog` <!-- pragma: allowlist secret -->
+- Agents notes: `https://dabble.me/.well-known/agents.md` <!-- pragma: allowlist secret -->
+
+Public WebMCP tools are read-only product reference (`get_product_overview`, `get_mcp_connection`, `list_remote_mcp_tools`, `list_reference_pages`).
+
+In a signed-in browser tab, WebMCP also registers session tools against the current account: `get_journal_session`, `search_journal_entries`, `list_journal_entries`, `analyze_journal`, `open_journal_day`, `open_search_page`, `open_write_page`, and `draft_journal_entry`. Search, analysis, and drafts require PRO. `draft_journal_entry` fills the write form and does not submit. Journal tools never accept another user id.
+
 ## Tools
 
 - `search_entries`: Find topics, keywords, or quoted phrases in the authenticated user's journal.

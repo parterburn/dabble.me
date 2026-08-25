@@ -66,6 +66,9 @@ describe 'Pages' do
     canonical = page.find('link[rel="canonical"]', visible: false)['href']
     expect(description).to include('ChatGPT, Claude')
     expect(canonical).to end_with('/mcp-server')
+    expect(page).to have_css('link[rel="webmcp"]', visible: false)
+    expect(page).to have_css('script#dabble-webmcp-config', visible: false)
+    expect(page).to have_content('WebMCP manifest')
   end
 
   it 'publishes an accurate Day One AI journaling comparison' do

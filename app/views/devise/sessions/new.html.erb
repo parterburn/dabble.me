@@ -9,7 +9,7 @@
 
     <!-- Login form -->
     <div class="card p-6 sm:p-8">
-      <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "space-y-5" }) do |f| %>
+      <%= form_for(resource, as: resource_name, url: session_path(resource_name), html: { class: "space-y-5", toolname: "log_in", tooldescription: "Fill the Dabble Me login form for the current user. Leave the form for the user to review and submit. Do not submit automatically." }) do |f| %>
         
         <%= render "devise/shared/error_messages", resource: resource %>
 
@@ -20,6 +20,7 @@
               required: true,
               value: params[:user].try(:[], "email") || resource.email,
               placeholder: "you@example.com",
+              toolparamdescription: "Email address for the existing Dabble Me account.",
               class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
         </div>
 
@@ -28,6 +29,7 @@
           <%= f.password_field :password, 
               autocomplete: "current-password", 
               required: true,
+              toolparamdescription: "Account password. Leave empty unless the user provided one.",
               class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
         </div>
 
