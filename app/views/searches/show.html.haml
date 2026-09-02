@@ -36,24 +36,20 @@
         %mark= @search.term
         (#{pluralize(found_entries_count, "entry")})
         %br
-      .col-md-12
-        .center
-          = paginate search_entries
+      .center
+        = paginate search_entries
 
       - search_entries.each do |entry|
-        .row
-          .col-md-12.well.entry{:id => "entry-#{entry.id}"}
-            = render partial: 'entries/entry', locals: { entry: entry }
+        .well.entry{:id => "entry-#{entry.id}"}
+          = render partial: 'entries/entry', locals: { entry: entry }
 
-      .col-md-12
-        .center
-          = paginate search_entries
+      .center
+        = paginate search_entries
 
-      .col-md-12
-        .center
-          = link_to export_entries_path(search: { term: @search.term }, format: :txt), class: "btn btn-default", style: "margin: 15px auto;" do
-            %i.fa.fa-download
-            Export Search Entries
+      .center.s-search-export
+        = link_to export_entries_path(search: { term: @search.term }, format: :txt), class: "btn btn-default" do
+          %i.fa.fa-download
+          Export Search Entries
 
     - elsif @search.term.present?
       %p
@@ -80,15 +76,10 @@
           hashtags throughout your entries and you'll see a tag cloud appear here making it easy to search for posts containing those hashtags.
 
     .email-post-card
-      .email-post-flex
-        .email-post-content
-          %h3 Ask ChatGPT or Claude about your journal
-          %p.text-muted
-            Connect Dabble Me once, then ask things like “What was I writing about last spring?” or “When did I mention burnout?”
-          .email-address-box
-            %code AI connector
-            = link_to mcp_server_docs_path, class: "email-post-cta", style: "text-decoration: none; display: inline-block;" do
-              %i.fa.fa-external-link
-              How to connect
-          .email-post-footer
-            You approve access each time an app connects. Nothing runs until you choose to. PRO feature.
+      .email-post-content
+        %h3 Ask ChatGPT or Claude about your journal
+        %p.text-muted
+          Connect Dabble Me once, then ask things like “What was I writing about last spring?” or “When did I mention burnout?”
+        = link_to "How to use the AI Connector", mcp_server_docs_path, class: "btn btn-primary"
+        .email-post-footer
+          You approve access each time an app connects. Nothing runs until you choose to. PRO feature.

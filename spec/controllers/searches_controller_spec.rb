@@ -34,5 +34,20 @@ RSpec.describe SearchesController, type: :controller do
       expect(response.body).to have_content("Tip: Use")
       expect(response.body).to have_content("hashtags throughout your entries and you'll see a tag cloud appear here")
     end
+
+    it 'shows matching entries, export, and an AI connector CTA for a paid user' do
+      sign_in paid_user
+      paid_entry.update!(body: 'Katelyn got so drunk she does not remember a thing.')
+
+      get :show, params: { search: { term: 'a thing' } }
+
+      expect(response.status).to eq 200
+      expect(response.body).to have_content('remember a thing')
+      expect(response.body).to have_content('Export Search Entries')
+      expect(response.body).to have_link('How to use the AI Connector', href: mcp_server_docs_path)
+      expect(response.body).not_to have_selector('code', text: 'AI connector')
+      expect(response.body).not_to have_css('.email-address-box')
+      expect(response.body).not_to have_css('.email-post-card a', text: 'Export Search Entries')
+    end
   end
 end
