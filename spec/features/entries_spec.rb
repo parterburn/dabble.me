@@ -164,6 +164,33 @@ describe 'Day Entries' do
       visit entries_calendar_path
       expect(page).to have_content ActionController::Base.helpers.strip_tags(paid_entry.sanitized_body&.gsub(/\n/, '') )&.truncate(50, separator: ' ')
     end
+
+    it 'jumps to a selected month and year', js: true do
+      FactoryBot.create(:entry, user: paid_user, date: Date.new(2016, 3, 11), body: '<p>Old calendar entry</p>')
+      sign_in paid_user
+      visit entries_calendar_path
+
+      expect(page).to have_css('.fc-toolbar h2')
+      expect(page).to have_select('calendar-month')
+      expect(page).to have_select('calendar-year')
+      expect(page).to have_css('#calendar-year option[value="2016"]')
+      expect(page).not_to have_css('#calendar-year option[value="2015"]')
+
+      select 'March', from: 'calendar-month'
+      select '2016', from: 'calendar-year'
+
+      expect(page).to have_css('.fc-toolbar h2', text: 'March 2016')
+      expect(page).to have_current_path(entries_calendar_path(day: '2016-03-01'), ignore_query: false)
+
+      find('.fc-next-button').click
+      expect(page).to have_css('.fc-toolbar h2', text: 'April 2016')
+      expect(page).to have_select('calendar-month', selected: 'April')
+      expect(page).to have_current_path(entries_calendar_path(day: '2016-04-01'), ignore_query: false)
+
+      find('.fc-today-button').click
+      expect(page).to have_css('.fc-toolbar h2', text: Time.now.in_time_zone(paid_user.send_timezone).strftime('%B %Y'))
+      expect(page).to have_current_path(/day=\d{4}-\d{2}-\d{2}/)
+    end
   end
 
   describe 'edit' do

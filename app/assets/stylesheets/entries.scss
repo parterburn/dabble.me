@@ -42,6 +42,41 @@
   }
 }
 
+.s-calendar-jump {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 20px;
+  @media screen and (max-width: 767px) {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+}
+
+.s-calendar-jump-label {
+  margin: 0;
+  font-weight: 600;
+  color: $olive-800;
+  font-size: 14px;
+}
+
+.s-calendar-jump-select {
+  height: 34px;
+  padding: 4px 10px;
+  border: 1px solid rgba($olive-400, 0.8);
+  border-radius: 6px;
+  background: white;
+  color: $olive-800;
+  font-size: 14px;
+  font-family: inherit;
+  min-width: 88px;
+}
+
+#calendar-month.s-calendar-jump-select {
+  min-width: 130px;
+}
+
 .s-toggle-calendar {
   float:right;
   i {

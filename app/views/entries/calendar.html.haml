@@ -13,11 +13,20 @@
         for $4/mo unlocks the ability to see your entries on the calendar.
   .clearfix
 
+.s-calendar-jump
+  %label.s-calendar-jump-label{for: "calendar-month"} Jump to
+  %select#calendar-month.s-calendar-jump-select{name: "calendar_month", "aria-label": "Month"}
+    - Date::MONTHNAMES[1..12].each_with_index do |name, index|
+      %option{value: index, selected: ('selected' if index == @calendar_date.month - 1)}= name
+  %select#calendar-year.s-calendar-jump-select{name: "calendar_year", "aria-label": "Year"}
+    - @calendar_years.each do |year|
+      %option{value: year, selected: ('selected' if year == @calendar_date.year)}= year
+
 #calendar
 
 :css
   #calendar {
-    margin-top:25px;
+    margin-top:15px;
   }
   .fc-widget-content {
     cursor:pointer;
@@ -29,25 +38,75 @@
 
 :javascript
   $(document).ready(function() {
-      $('#calendar').fullCalendar({
-        header: {
-          right: 'prev,next today',
-          center: '',
-          left: 'title'
-        },
-        height: 450,
-        selectable: true,
-        selectHelper: true,
-        select: function(start, end, allDay) {
-          $(".navbar-brand i.fa-spinner").addClass("fa-spin");
-          window.location.href = "#{new_entry_url}?day="+start.format('YYYY-MM-DD');
-        },
-        events: "#{entries_path(format:'json')}"
-      })
-  });
+    var $calendar = $('#calendar');
+    var $month = $('#calendar-month');
+    var $year = $('#calendar-year');
+    var calendarPath = '#{entries_calendar_path}';
+    var earliestYear = #{@calendar_years.min.to_i};
+    var syncingJump = false;
 
-- if params[:day].present?
-  :javascript
-    $(document).ready(function() {
-      $('#calendar').fullCalendar('gotoDate', "#{params[:day]}");
+    function ensureYearOption(year) {
+      if (year < earliestYear || $year.find('option[value="' + year + '"]').length) {
+        return;
+      }
+      var $option = $('<option>').attr('value', year).text(year);
+      var placed = false;
+      $year.children('option').each(function() {
+        if (parseInt($(this).val(), 10) < year) {
+          $(this).before($option);
+          placed = true;
+          return false;
+        }
+      });
+      if (!placed) {
+        $year.append($option);
+      }
+    }
+
+    function syncJumpSelects(date) {
+      var year = date.year();
+      var month = date.month();
+      syncingJump = true;
+      if (year >= earliestYear) {
+        ensureYearOption(year);
+        $year.val(String(year));
+      }
+      $month.val(String(month));
+      syncingJump = false;
+    }
+
+    $calendar.fullCalendar({
+      header: {
+        right: 'prev,next today',
+        center: '',
+        left: 'title'
+      },
+      defaultDate: '#{@calendar_date.strftime('%Y-%m-%d')}',
+      height: 450,
+      selectable: true,
+      selectHelper: true,
+      select: function(start, end, allDay) {
+        $(".navbar-brand i.fa-spinner").addClass("fa-spin");
+        window.location.href = "#{new_entry_url}?day=" + start.format('YYYY-MM-DD');
+      },
+      events: "#{entries_path(format: 'json')}",
+      viewRender: function(view) {
+        var date = view.intervalStart;
+        syncJumpSelects(date);
+        if (window.history && history.replaceState) {
+          history.replaceState(null, '', calendarPath + '?day=' + date.format('YYYY-MM-DD'));
+        }
+      }
     });
+
+    function jumpToSelectedMonth() {
+      if (syncingJump) {
+        return;
+      }
+      var year = parseInt($year.val(), 10);
+      var month = parseInt($month.val(), 10);
+      $calendar.fullCalendar('gotoDate', year + '-' + ('0' + (month + 1)).slice(-2) + '-01');
+    }
+
+    $month.add($year).on('change', jumpToSelectedMonth);
+  });
