@@ -98,9 +98,10 @@
       }
       var year = parseInt($year.val(), 10);
       var month = parseInt($month.val(), 10);
-      $calendar.fullCalendar('gotoDate', year, month, 1);
+      var day = year + '-' + ('0' + (month + 1)).slice(-2) + '-01';
+      $calendar.fullCalendar('gotoDate', day);
       if (window.history && history.replaceState) {
-        history.replaceState(null, '', calendarPath + '?day=' + year + '-' + ('0' + (month + 1)).slice(-2) + '-01');
+        history.replaceState(null, '', calendarPath + '?day=' + day);
       }
     }
 

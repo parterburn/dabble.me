@@ -169,13 +169,14 @@ describe 'Day Entries' do
       sign_in paid_user
       visit entries_calendar_path
 
+      expect(page).to have_css('.fc-toolbar h2')
       expect(page).to have_select('calendar-month')
       expect(page).to have_select('calendar-year')
 
       select 'March', from: 'calendar-month'
       select '2016', from: 'calendar-year'
 
-      expect(page).to have_css('.fc-header-title', text: 'March 2016')
+      expect(page).to have_css('.fc-toolbar h2', text: 'March 2016')
       expect(page).to have_current_path(entries_calendar_path(day: '2016-03-01'), ignore_query: false)
     end
   end

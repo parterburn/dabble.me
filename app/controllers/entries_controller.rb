@@ -573,10 +573,14 @@ class EntriesController < ApplicationController
   # Calendar deep links use YYYY-MM or YYYY-MM-DD (from the entries sidebar).
   def parse_calendar_date(value)
     return if value.blank?
-    return unless value.to_s.match?(/\A\d{4}-\d{2}(?:-\d{2})?\z/)
 
-    Date.parse(value.to_s)
-  rescue Date::Error, ArgumentError
+    str = value.to_s
+    if str.match?(/\A\d{4}-\d{2}-\d{2}\z/)
+      Date.iso8601(str)
+    elsif str.match?(/\A\d{4}-\d{2}\z/)
+      Date.strptime(str, '%Y-%m')
+    end
+  rescue Date::Error, ArgumentError, TypeError
     nil
   end
 
