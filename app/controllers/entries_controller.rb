@@ -107,6 +107,12 @@ class EntriesController < ApplicationController
   end
 
   def calendar
+    @calendar_date = parse_calendar_date(params[:day]) || @user_today
+    min_entry_year = current_user.entries.minimum(:date)&.year
+    max_entry_year = current_user.entries.maximum(:date)&.year
+    start_year = [min_entry_year, current_user.created_at.year, @calendar_date.year, Date.current.year - 20].compact.min
+    end_year = [max_entry_year, @calendar_date.year, Date.current.year].compact.max
+    @calendar_years = (start_year..end_year).to_a.reverse
   end
 
   def spotify
@@ -561,6 +567,16 @@ class EntriesController < ApplicationController
 
     Date.iso8601(value.to_s)
   rescue ArgumentError, TypeError
+    nil
+  end
+
+  # Calendar deep links use YYYY-MM or YYYY-MM-DD (from the entries sidebar).
+  def parse_calendar_date(value)
+    return if value.blank?
+    return unless value.to_s.match?(/\A\d{4}-\d{2}(?:-\d{2})?\z/)
+
+    Date.parse(value.to_s)
+  rescue Date::Error, ArgumentError
     nil
   end
 

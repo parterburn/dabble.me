@@ -164,6 +164,20 @@ describe 'Day Entries' do
       visit entries_calendar_path
       expect(page).to have_content ActionController::Base.helpers.strip_tags(paid_entry.sanitized_body&.gsub(/\n/, '') )&.truncate(50, separator: ' ')
     end
+
+    it 'jumps to a selected month and year', js: true do
+      sign_in paid_user
+      visit entries_calendar_path
+
+      expect(page).to have_select('Month')
+      expect(page).to have_select('Year')
+
+      select 'March', from: 'Month'
+      select '2016', from: 'Year'
+
+      expect(page).to have_css('.fc-header-title', text: 'March 2016')
+      expect(page).to have_current_path(entries_calendar_path(day: '2016-03-01'), ignore_query: false)
+    end
   end
 
   describe 'edit' do

@@ -186,6 +186,32 @@ RSpec.describe EntriesController, type: :controller do
       expect(response.status).to eq 200
       expect(response.body).to have_content('Calendar View')
     end
+
+    it 'renders month and year jump controls for the current month' do
+      sign_in user
+      today = Time.now.in_time_zone(user.send_timezone).to_date
+      get :calendar
+      expect(response.body).to have_select('Month', selected: today.strftime('%B'))
+      expect(response.body).to have_select('Year', selected: today.year.to_s)
+      expect(response.body).to include("defaultDate: '#{today.strftime('%Y-%m-%d')}'")
+    end
+
+    it 'opens a requested month from the day param' do
+      sign_in user
+      get :calendar, params: { day: '2016-03' }
+      expect(response.status).to eq 200
+      expect(response.body).to have_select('Month', selected: 'March')
+      expect(response.body).to have_select('Year', selected: '2016')
+      expect(response.body).to include("defaultDate: '2016-03-01'")
+    end
+
+    it 'ignores an invalid day param' do
+      sign_in user
+      today = Time.now.in_time_zone(user.send_timezone).to_date
+      get :calendar, params: { day: 'not-a-date' }
+      expect(response.status).to eq 200
+      expect(response.body).to include("defaultDate: '#{today.strftime('%Y-%m-%d')}'")
+    end
   end
 
   describe 'latest' do
