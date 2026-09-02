@@ -396,6 +396,10 @@ strong {
     }
   }
 
+  .btn {
+    margin-top: 8px;
+  }
+
   .email-post-footer {
     margin-top: 15px;
     font-size: 13px;
@@ -411,6 +415,10 @@ strong {
       color: $olive;
     }
   }
+}
+
+.s-search-export {
+  margin: 15px auto 25px;
 }
 
 .dark {
