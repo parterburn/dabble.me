@@ -178,6 +178,15 @@ describe 'Day Entries' do
 
       expect(page).to have_css('.fc-toolbar h2', text: 'March 2016')
       expect(page).to have_current_path(entries_calendar_path(day: '2016-03-01'), ignore_query: false)
+
+      find('.fc-next-button').click
+      expect(page).to have_css('.fc-toolbar h2', text: 'April 2016')
+      expect(page).to have_select('calendar-month', selected: 'April')
+      expect(page).to have_current_path(entries_calendar_path(day: '2016-04-01'), ignore_query: false)
+
+      find('.fc-today-button').click
+      expect(page).to have_css('.fc-toolbar h2', text: Time.now.in_time_zone(paid_user.send_timezone).strftime('%B %Y'))
+      expect(page).to have_current_path(/day=\d{4}-\d{2}-\d{2}/)
     end
   end
 

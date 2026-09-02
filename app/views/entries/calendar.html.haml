@@ -88,7 +88,11 @@
       },
       events: "#{entries_path(format: 'json')}",
       viewRender: function(view) {
-        syncJumpSelects(view.intervalStart);
+        var date = view.intervalStart;
+        syncJumpSelects(date);
+        if (window.history && history.replaceState) {
+          history.replaceState(null, '', calendarPath + '?day=' + date.format('YYYY-MM-DD'));
+        }
       }
     });
 
@@ -98,11 +102,7 @@
       }
       var year = parseInt($year.val(), 10);
       var month = parseInt($month.val(), 10);
-      var day = year + '-' + ('0' + (month + 1)).slice(-2) + '-01';
-      $calendar.fullCalendar('gotoDate', day);
-      if (window.history && history.replaceState) {
-        history.replaceState(null, '', calendarPath + '?day=' + day);
-      }
+      $calendar.fullCalendar('gotoDate', year + '-' + ('0' + (month + 1)).slice(-2) + '-01');
     }
 
     $month.add($year).on('change', jumpToSelectedMonth);
