@@ -60,6 +60,7 @@ class EmailProcessor
           next if @user.id == 20829 && attachment.content_type == "application/octet-stream"
 
           next if attachment&.original_filename.to_s.downcase.include?("linkedin_icon_circle.svg.png")
+          next if ignored_attachment_domain?(attachment&.original_filename)
 
           if (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|webp|gif|heic|heif)$/i || attachment&.original_filename.to_s =~ /^(.+\.(heic|heif))$/i) && file_size > 20_000
             valid_attachments << attachment
@@ -82,6 +83,8 @@ class EmailProcessor
         if @user.is_pro? && image_urls.present? && image_urls.any?
           valid_attachment_urls = []
           image_urls.each do |image_url|
+            next if ignored_attachment_domain?(image_url)
+
             image_type = FastImage.type(image_url)
 
             if image_type.in?([:gif, :jpeg, :png])
@@ -490,7 +493,7 @@ class EmailProcessor
   def collage_from_urls(urls)
     return nil unless urls.present?
 
-    urls.reject! { |url| url&.include?("googleusercontent.com/mail-sig/") }
+    urls.reject! { |url| url&.include?("googleusercontent.com/mail-sig/") || ignored_attachment_domain?(url) }
     urls.compact!
 
     if urls.size == 1 && urls.first.starts_with?("http")
@@ -512,6 +515,15 @@ class EmailProcessor
 
   def mobile_signature_pattern
     /sent from my (?:iphone|ipad|android|mobile device|phone|galaxy|pixel)/i
+  end
+
+  IGNORED_ATTACHMENT_DOMAINS = %w[wisestamp.com ytimg.com].freeze
+
+  def ignored_attachment_domain?(value)
+    return false if value.blank?
+
+    text = value.to_s.downcase
+    IGNORED_ATTACHMENT_DOMAINS.any? { |domain| text.include?(domain) }
   end
 
   HTML_BLOCK_ELEMENTS = %w[blockquote br div hr li ol p ul].freeze

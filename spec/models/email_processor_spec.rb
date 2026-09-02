@@ -382,6 +382,34 @@ describe EmailProcessor do
       EmailProcessor.new(email).process
       expect(user.entries.reload.first.body).to eq("Today was good")
     end
+
+    it "ignores inline images hosted on wisestamp.com or ytimg.com" do
+      paid_user.entries.destroy_all
+      expect(FastImage).not_to receive(:type)
+
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}"}],
+        body: "Today was good",
+        vendor_specific: {
+          stripped_html: '<div>Today was good</div><img src="https://image.wisestamp.com/sig.png"><img src="https://i.ytimg.com/vi/abc123/hqdefault.jpg">'
+        }
+      )
+
+      EmailProcessor.new(email).process
+      expect(paid_user.entries.reload.first.image.file).to be_blank
+    end
+  end
+
+  describe '#ignored_attachment_domain?' do
+    subject(:processor) { described_class.allocate }
+
+    it 'matches wisestamp.com and ytimg.com hosts and subdomains' do
+      expect(processor.send(:ignored_attachment_domain?, 'https://image.wisestamp.com/sig.png')).to eq(true)
+      expect(processor.send(:ignored_attachment_domain?, 'https://i.ytimg.com/vi/abc123/hqdefault.jpg')).to eq(true)
+      expect(processor.send(:ignored_attachment_domain?, 'https://photos.example.com/day.jpg')).to eq(false)
+      expect(processor.send(:ignored_attachment_domain?, nil)).to eq(false)
+    end
   end
 
   describe '#clean_html_version' do
