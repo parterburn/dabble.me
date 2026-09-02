@@ -10,10 +10,49 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2026_08_10_030000) do
+ActiveRecord::Schema.define(version: 2026_09_02_180000) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "business_metric_snapshots", force: :cascade do |t|
+    t.date "captured_on", null: false
+    t.integer "mrr_cents", default: 0, null: false
+    t.integer "arr_cents", default: 0, null: false
+    t.integer "gross_new_mrr_cents", default: 0, null: false
+    t.integer "churned_mrr_cents", default: 0, null: false
+    t.integer "cash_collected_cents", default: 0, null: false
+    t.integer "recurring_subscriber_count", default: 0, null: false
+    t.integer "new_subscriber_count", default: 0, null: false
+    t.integer "canceled_subscriber_count", default: 0, null: false
+    t.integer "lifetime_subscriber_count", default: 0, null: false
+    t.integer "active_pro_7d", default: 0, null: false
+    t.integer "active_pro_30d", default: 0, null: false
+    t.integer "active_pro_90d", default: 0, null: false
+    t.integer "active_pro_365d", default: 0, null: false
+    t.integer "active_free_7d", default: 0, null: false
+    t.integer "active_free_30d", default: 0, null: false
+    t.integer "active_free_90d", default: 0, null: false
+    t.integer "active_free_365d", default: 0, null: false
+    t.integer "paid_inactive_30d", default: 0, null: false
+    t.integer "paid_inactive_90d", default: 0, null: false
+    t.integer "signups_30d", default: 0, null: false
+    t.integer "first_entry_72h_30d", default: 0, null: false
+    t.integer "three_entry_14d_30d", default: 0, null: false
+    t.decimal "first_entry_activation_rate", precision: 6, scale: 4
+    t.decimal "three_entry_activation_rate", precision: 6, scale: 4
+    t.integer "email_sent_count", default: 0, null: false
+    t.integer "email_failed_count", default: 0, null: false
+    t.integer "email_replies_count", default: 0, null: false
+    t.decimal "email_delivery_rate", precision: 6, scale: 4
+    t.decimal "email_reply_rate", precision: 6, scale: 4
+    t.jsonb "plan_breakdown", default: {}, null: false
+    t.jsonb "acquisition_breakdown", default: {}, null: false
+    t.jsonb "subscriber_map", default: {}, null: false
+    t.datetime "created_at", precision: 6, null: false
+    t.datetime "updated_at", precision: 6, null: false
+    t.index ["captured_on"], name: "index_business_metric_snapshots_on_captured_on", unique: true
+  end
 
   create_table "entries", id: :serial, force: :cascade do |t|
     t.datetime "date", null: false

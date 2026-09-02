@@ -1,0 +1,58 @@
+<%
+  d = @dashboard
+  r = d.revenue
+%>
+<p>
+  Needs attention: <strong><%= d.headline_item %></strong>
+</p>
+
+<table cellpadding="6" cellspacing="0" border="0">
+  <tr>
+    <td>ARR</td>
+    <td><%= d.format_cents(r.arr_cents) %> of $20,000 (<%= d.arr_progress_percent %>%)</td>
+  </tr>
+  <tr>
+    <td>Week-over-week ARR</td>
+    <td><%= d.format_delta(d.arr_delta_week_cents) %></td>
+  </tr>
+  <tr>
+    <td>MRR</td>
+    <td><%= d.format_cents(r.mrr_cents) %> (<%= d.format_delta(d.mrr_delta_cents) %> vs yesterday)</td>
+  </tr>
+  <tr>
+    <td>Subscribers</td>
+    <td><%= number_with_delimiter(r.recurring_subscriber_count) %> recurring + <%= number_with_delimiter(r.lifetime_subscriber_count) %> lifetime</td>
+  </tr>
+  <% if d.latest_snapshot %>
+    <tr>
+      <td>Latest snapshot</td>
+      <td><%= d.latest_snapshot.captured_on.strftime("%b %-d") %>: <%= d.latest_snapshot.new_subscriber_count %> gained, <%= d.latest_snapshot.canceled_subscriber_count %> lost</td>
+    </tr>
+  <% end %>
+  <tr>
+    <td>72h first-entry activation</td>
+    <td><%= d.format_rate(d.first_entry_activation_rate) %></td>
+  </tr>
+  <tr>
+    <td>3 entries in 14 days</td>
+    <td><%= d.format_rate(d.three_entry_activation_rate) %></td>
+  </tr>
+  <tr>
+    <td>Email reply rate</td>
+    <td><%= d.format_rate(d.email_health[:reply_rate]) %></td>
+  </tr>
+  <tr>
+    <td>PRO inactive 30d</td>
+    <td><%= number_with_delimiter(d.paid_inactive_30d) %></td>
+  </tr>
+  <% if d.month_annual_equivalent %>
+    <tr>
+      <td>This month vs $40/yr</td>
+      <td><%= d.month_annual_equivalent %> net annual-equivalent customers</td>
+    </tr>
+  <% end %>
+</table>
+
+<p>
+  <%= link_to "Open Admin Stats", @stats_url %>
+</p>

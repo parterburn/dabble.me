@@ -1,0 +1,18 @@
+Needs attention: <%= @dashboard.headline_item %>
+
+ARR: <%= @dashboard.format_cents(@dashboard.revenue.arr_cents) %> of $20,000 (<%= @dashboard.arr_progress_percent %>%)
+Week-over-week ARR: <%= @dashboard.format_delta(@dashboard.arr_delta_week_cents) %>
+MRR: <%= @dashboard.format_cents(@dashboard.revenue.mrr_cents) %> (<%= @dashboard.format_delta(@dashboard.mrr_delta_cents) %> vs yesterday)
+Subscribers: <%= @dashboard.revenue.recurring_subscriber_count %> recurring + <%= @dashboard.revenue.lifetime_subscriber_count %> lifetime
+<% if @dashboard.latest_snapshot %>
+Latest snapshot (<%= @dashboard.latest_snapshot.captured_on %>): <%= @dashboard.latest_snapshot.new_subscriber_count %> gained, <%= @dashboard.latest_snapshot.canceled_subscriber_count %> lost
+<% end %>
+72h first-entry activation: <%= @dashboard.format_rate(@dashboard.first_entry_activation_rate) %>
+3 entries in 14 days: <%= @dashboard.format_rate(@dashboard.three_entry_activation_rate) %>
+Email reply rate: <%= @dashboard.format_rate(@dashboard.email_health[:reply_rate]) %>
+PRO inactive 30d: <%= @dashboard.paid_inactive_30d %>
+<% if @dashboard.month_annual_equivalent %>
+This month vs $40/yr: <%= @dashboard.month_annual_equivalent %> net annual-equivalent customers
+<% end %>
+
+Open Admin Stats: <%= @stats_url %>

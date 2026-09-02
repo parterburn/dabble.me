@@ -7,24 +7,10 @@ class PaymentsController < ApplicationController
   skip_before_action :verify_authenticity_token, only: [:success, :checkout, :billing, :payment_notify]
 
   def index
-    @monthlys = User.pro_only.monthly
-    @yearlys =  User.pro_only.yearly
-
-    @monthly_recurring = 0
-    @monthlys.includes(:payments).each do |user|
-      @monthly_recurring += user.payments.last&.amount.to_f
-    end
-
-    @annual_recurring = 0
-    @yearlys.includes(:payments).each do |user|
-      @annual_recurring += user.payments.last&.amount.to_f
-    end
-
-    @mrr = @monthly_recurring.to_i + (@annual_recurring.to_i/12)
-
-    @payments = Payment.includes(:user).all.order("date DESC, id DESC")
+    @payments = Payment.includes(:user).order("date DESC, id DESC")
     params[:per] ||= 100
-    @paginated_payments = Kaminari.paginate_array(@payments).page(params[:page]).per(params[:per])
+    @paginated_payments = Kaminari.paginate_array(@payments.to_a).page(params[:page]).per(params[:per])
+    @cash_total = Payment.sum(:amount)
   end
 
   def new
