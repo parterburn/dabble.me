@@ -21,6 +21,30 @@ RSpec.describe Admin::Dashboard do
     end
   end
 
+  it "flags churned MRR without waiting for a week-old snapshot" do
+    create_pro(plan: "PRO Monthly PayHere", amount: 4)
+    allow(BusinessMetrics::MailgunStats).to receive(:fetch).and_return(
+      BusinessMetrics::MailgunStats::Result.new(sent: 0, failed: 0, opened: 0, complained: 0)
+    )
+    BusinessMetrics::Capture.call(on: Date.yesterday)
+    User.pro_only.update_all(plan: "Free")
+    BusinessMetrics::Capture.call(on: Date.current)
+
+    items = described_class.new.attention_items
+
+    expect(items.first).to eq("Churned MRR exceeded new MRR on the latest snapshot.")
+  end
+
+  it "hides empty unknown and lifetime cohorts" do
+    create_pro(plan: "PRO Monthly PayHere", amount: 4)
+
+    labels = described_class.new.pricing_cohorts.map { |row| row[:label] }
+
+    expect(labels).to include("New monthly ($4)")
+    expect(labels).not_to include("Monthly (unknown price)")
+    expect(labels).not_to include("Lifetime (excluded from MRR)")
+  end
+
   it "counts PRO users with no entry in 30 days as inactive" do
     writer = create_pro(plan: "PRO Monthly PayHere", amount: 4)
     create(:entry, user: writer, date: 2.days.ago, body: "today")

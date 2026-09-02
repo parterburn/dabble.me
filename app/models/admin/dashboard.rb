@@ -52,10 +52,11 @@ module Admin
     def attention_items
       items = []
 
+      if latest_snapshot && latest_snapshot.churned_mrr_cents > latest_snapshot.gross_new_mrr_cents
+        items << "Churned MRR exceeded new MRR on the latest snapshot."
+      end
+
       if comparable_snapshots?
-        if latest_snapshot.churned_mrr_cents > latest_snapshot.gross_new_mrr_cents
-          items << "Churned MRR exceeded new MRR on the latest snapshot."
-        end
         if rate_fell?(:first_entry_activation_rate)
           items << "72-hour first-entry activation fell versus last week."
         end
@@ -123,8 +124,8 @@ module Admin
 
     def pricing_cohorts
       revenue.plan_breakdown.map do |key, data|
-        next if key == "lifetime" && data["count"].to_i.zero? && !COHORT_LABELS.key?(key)
         next unless COHORT_LABELS.key?(key)
+        next if data["count"].to_i.zero? && key.start_with?("unknown", "lifetime")
 
         {
           key: key,
