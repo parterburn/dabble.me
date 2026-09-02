@@ -42,10 +42,11 @@
     var $month = $('#calendar-month');
     var $year = $('#calendar-year');
     var calendarPath = '#{entries_calendar_path}';
+    var earliestYear = #{@calendar_years.min.to_i};
     var syncingJump = false;
 
     function ensureYearOption(year) {
-      if ($year.find('option[value="' + year + '"]').length) {
+      if (year < earliestYear || $year.find('option[value="' + year + '"]').length) {
         return;
       }
       var $option = $('<option>').attr('value', year).text(year);
@@ -66,8 +67,10 @@
       var year = date.year();
       var month = date.month();
       syncingJump = true;
-      ensureYearOption(year);
-      $year.val(String(year));
+      if (year >= earliestYear) {
+        ensureYearOption(year);
+        $year.val(String(year));
+      }
       $month.val(String(month));
       syncingJump = false;
     }

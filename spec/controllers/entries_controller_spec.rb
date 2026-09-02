@@ -198,6 +198,7 @@ RSpec.describe EntriesController, type: :controller do
 
     it 'opens a requested month from the day param' do
       sign_in user
+      entry.update_columns(date: Time.utc(2016, 3, 11))
       get :calendar, params: { day: '2016-03' }
       expect(response.status).to eq 200
       expect(response.body).to have_select('calendar-month', selected: 'March')
@@ -207,11 +208,20 @@ RSpec.describe EntriesController, type: :controller do
 
     it 'opens a requested day from a full ISO date param' do
       sign_in user
+      entry.update_columns(date: Time.utc(2016, 3, 11))
       get :calendar, params: { day: '2016-03-11' }
       expect(response.status).to eq 200
       expect(response.body).to have_select('calendar-month', selected: 'March')
       expect(response.body).to have_select('calendar-year', selected: '2016')
       expect(response.body).to include("defaultDate: '2016-03-11'")
+    end
+
+    it 'limits the year selector to the earliest entry year' do
+      sign_in user
+      entry.update_columns(date: Time.utc(2019, 6, 15))
+      get :calendar
+      expect(response.body).to have_css('#calendar-year option[value="2019"]')
+      expect(response.body).not_to have_css('#calendar-year option[value="2018"]')
     end
 
     it 'ignores an invalid day param' do

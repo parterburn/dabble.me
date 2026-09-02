@@ -110,8 +110,8 @@ class EntriesController < ApplicationController
     @calendar_date = parse_calendar_date(params[:day]) || @user_today
     min_entry_year = current_user.entries.minimum(:date)&.year
     max_entry_year = current_user.entries.maximum(:date)&.year
-    start_year = [min_entry_year, current_user.created_at.year, @calendar_date.year, Date.current.year - 20].compact.min
-    end_year = [max_entry_year, @calendar_date.year, Date.current.year].compact.max
+    start_year = min_entry_year || @calendar_date.year
+    end_year = [max_entry_year, @calendar_date.year, @user_today.year].compact.max
     @calendar_years = (start_year..end_year).to_a.reverse
   end
 

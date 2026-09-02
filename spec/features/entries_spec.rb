@@ -166,12 +166,15 @@ describe 'Day Entries' do
     end
 
     it 'jumps to a selected month and year', js: true do
+      FactoryBot.create(:entry, user: paid_user, date: Date.new(2016, 3, 11), body: '<p>Old calendar entry</p>')
       sign_in paid_user
       visit entries_calendar_path
 
       expect(page).to have_css('.fc-toolbar h2')
       expect(page).to have_select('calendar-month')
       expect(page).to have_select('calendar-year')
+      expect(page).to have_css('#calendar-year option[value="2016"]')
+      expect(page).not_to have_css('#calendar-year option[value="2015"]')
 
       select 'March', from: 'calendar-month'
       select '2016', from: 'calendar-year'
