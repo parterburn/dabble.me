@@ -191,8 +191,8 @@ RSpec.describe EntriesController, type: :controller do
       sign_in user
       today = Time.now.in_time_zone(user.send_timezone).to_date
       get :calendar
-      expect(response.body).to have_select('Month', selected: today.strftime('%B'))
-      expect(response.body).to have_select('Year', selected: today.year.to_s)
+      expect(response.body).to have_select('calendar-month', selected: today.strftime('%B'))
+      expect(response.body).to have_select('calendar-year', selected: today.year.to_s)
       expect(response.body).to include("defaultDate: '#{today.strftime('%Y-%m-%d')}'")
     end
 
@@ -200,8 +200,8 @@ RSpec.describe EntriesController, type: :controller do
       sign_in user
       get :calendar, params: { day: '2016-03' }
       expect(response.status).to eq 200
-      expect(response.body).to have_select('Month', selected: 'March')
-      expect(response.body).to have_select('Year', selected: '2016')
+      expect(response.body).to have_select('calendar-month', selected: 'March')
+      expect(response.body).to have_select('calendar-year', selected: '2016')
       expect(response.body).to include("defaultDate: '2016-03-01'")
     end
 

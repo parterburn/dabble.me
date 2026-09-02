@@ -41,7 +41,7 @@
     var $calendar = $('#calendar');
     var $month = $('#calendar-month');
     var $year = $('#calendar-year');
-    var calendarPath = #{entries_calendar_path.to_json};
+    var calendarPath = '#{entries_calendar_path}';
     var syncingJump = false;
 
     function ensureYearOption(year) {
@@ -78,15 +78,15 @@
         center: '',
         left: 'title'
       },
-      defaultDate: #{@calendar_date.strftime('%Y-%m-%d').to_json},
+      defaultDate: '#{@calendar_date.strftime('%Y-%m-%d')}',
       height: 450,
       selectable: true,
       selectHelper: true,
       select: function(start, end, allDay) {
         $(".navbar-brand i.fa-spinner").addClass("fa-spin");
-        window.location.href = #{new_entry_url.to_json} + "?day=" + start.format('YYYY-MM-DD');
+        window.location.href = "#{new_entry_url}?day=" + start.format('YYYY-MM-DD');
       },
-      events: #{entries_path(format: 'json').to_json},
+      events: "#{entries_path(format: 'json')}",
       viewRender: function(view) {
         syncJumpSelects(view.intervalStart);
       }
