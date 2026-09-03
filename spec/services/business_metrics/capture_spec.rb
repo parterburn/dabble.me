@@ -85,7 +85,7 @@ RSpec.describe BusinessMetrics::Capture do
   end
 
   it "records a full day of cash when capturing yesterday after midnight" do
-    travel_to Time.zone.parse("2026-09-02 06:00:00") do
+    travel_to Time.zone.parse("2026-09-02 00:05:00") do
       user = create(:user, plan: "PRO Yearly PayHere")
       create(:payment, user: user, amount: 40, date: Time.zone.parse("2026-09-01 23:00:00"))
 
