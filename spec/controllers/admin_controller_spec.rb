@@ -82,6 +82,7 @@ RSpec.describe AdminController, type: :controller do
     it 'snapshots metrics for superusers' do
       sign_in superuser
       expect { post :capture_stats }.to change(BusinessMetricSnapshot, :count).by(1)
+      expect(BusinessMetricSnapshot.last.captured_on).to eq(Date.current)
       expect(response).to redirect_to(admin_stats_path)
     end
   end

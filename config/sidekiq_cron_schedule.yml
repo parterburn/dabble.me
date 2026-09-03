@@ -22,4 +22,4 @@ entry_maintenance:
 capture_business_metrics:
   cron: "0 6 * * *"
   class: "CaptureBusinessMetricsWorker"
-  description: "Daily at 6:00 AM UTC. Snapshots founder metrics; sends the weekly digest on Mondays."
+  description: "Daily at 6:00 AM UTC. Snapshots yesterday's founder metrics; sends the weekly digest on Mondays."

@@ -16,6 +16,7 @@ RSpec.describe CaptureBusinessMetricsWorker do
 
     travel_to Time.zone.parse("2026-09-02 06:00:00") do # Wednesday
       expect { described_class.new.perform }.to change(BusinessMetricSnapshot, :count).by(1)
+      expect(BusinessMetricSnapshot.last.captured_on).to eq(Date.parse("2026-09-01"))
       expect(ActionMailer::Base.deliveries).to be_empty
     end
   end

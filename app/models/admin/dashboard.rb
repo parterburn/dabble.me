@@ -319,14 +319,16 @@ module Admin
     end
 
     def chart_upgrades
-      first_payments = Payment.where("date >= ?", 90.days.ago).group(:user_id).minimum(:date)
-      grouped = Hash.new(0)
+      cutoff = 90.days.ago
+      first_payments = Payment.group(:user_id).having("MIN(date) >= ?", cutoff).minimum(:date)
+      counts_by_week = Hash.new(0)
       first_payments.each_value do |paid_at|
-        next if paid_at.blank?
+        next if paid_at.blank? || paid_at < cutoff
 
-        grouped[paid_at.to_date.beginning_of_week(:sunday).strftime("%b %d")] += 1
+        week_start = paid_at.to_date.beginning_of_week(:sunday)
+        counts_by_week[week_start] += 1
       end
-      grouped.sort.to_h
+      counts_by_week.sort.to_h.transform_keys { |week_start| week_start.strftime("%b %d") }
     end
 
     def chart_net_mrr

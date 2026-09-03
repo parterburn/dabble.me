@@ -27,11 +27,24 @@ module Mcp
           user_id: server_context && server_context[:user_id],
           tool_name: tool_name,
           source: source,
-          success: response.respond_to?(:error?) ? !response.error? : true,
+          success: success_from(response),
           result_count: result_count_from(response),
           duration_ms: duration_ms,
           oauth_application_id: server_context && server_context[:oauth_application_id]
         )
+      end
+
+      def success_from(response)
+        return false if response.respond_to?(:error?) && response.error?
+
+        content = if response.respond_to?(:structured_content)
+          response.structured_content
+        elsif response.is_a?(Hash)
+          response
+        end
+        return false if content.is_a?(Hash) && content.with_indifferent_access[:success] == false
+
+        true
       end
 
       def result_count_from(payload)

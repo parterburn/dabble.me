@@ -9,7 +9,7 @@
     %div
       %h3 Admin Stats
       %p.s-stats-sub
-        Live numbers for a five-minute check. History comes from a daily 6:00 UTC snapshot.
+        Live numbers for a five-minute check. The 6:00 UTC job snapshots yesterday so cash and email cover a full day. Snapshot now captures today.
         Weekly digest emails go to admin accounts on Monday.
     .s-stats-header__actions
       - if d.latest_snapshot
@@ -387,7 +387,7 @@
     %h5.s-stats-h5 Entries over the last 90 days
     = line_chart d.chart_entries, discrete: true
     %h5.s-stats-h5 First upgrades over the last 90 days
-    %p.s-stats-sub Includes people who later canceled. Previously this chart dropped churned upgrades.
+    %p.s-stats-sub Includes people who later canceled. Renewals are not counted.
     = line_chart d.chart_upgrades, discrete: true
     %h5.s-stats-h5 MCP tool calls over the last 90 days
     = line_chart d.chart_mcp_calls, discrete: true

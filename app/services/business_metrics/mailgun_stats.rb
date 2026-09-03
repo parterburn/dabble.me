@@ -19,6 +19,19 @@ module BusinessMetrics
       def fetch(date:)
         new(date: date).fetch
       end
+
+      # Mailgun puts a numeric `total` on accepted/opened/complained, but failures
+      # only expose totals under `failed.permanent` and `failed.temporary`.
+      def event_total(event)
+        return event.to_i if event.is_a?(Numeric)
+        return 0 unless event.is_a?(Hash)
+
+        if event["total"].is_a?(Numeric)
+          event["total"].to_i
+        else
+          %w[permanent temporary].sum { |kind| event.dig(kind, "total").to_i }
+        end
+      end
     end
 
     def initialize(date:)
@@ -32,10 +45,10 @@ module BusinessMetrics
       return Result.new(sent: 0, failed: 0, opened: 0, complained: 0) if stats.blank?
 
       Result.new(
-        sent: stat_total(stats, "accepted"),
-        failed: stat_total(stats, "failed"),
-        opened: stat_total(stats, "opened"),
-        complained: stat_total(stats, "complained")
+        sent: self.class.event_total(stats["accepted"]),
+        failed: self.class.event_total(stats["failed"]),
+        opened: self.class.event_total(stats["opened"]),
+        complained: self.class.event_total(stats["complained"])
       )
     rescue StandardError => e
       Sentry.capture_exception(e, extra: { mailgun_stats_date: date.to_s })
@@ -74,13 +87,6 @@ module BusinessMetrics
       rescue ArgumentError, TypeError
         false
       end
-    end
-
-    def stat_total(stats, key)
-      value = stats[key]
-      return 0 unless value.is_a?(Hash)
-
-      value["total"].to_i
     end
   end
 end

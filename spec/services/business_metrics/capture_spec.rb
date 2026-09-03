@@ -1,6 +1,8 @@
 require "rails_helper"
 
 RSpec.describe BusinessMetrics::Capture do
+  include ActiveSupport::Testing::TimeHelpers
+
   before do
     allow(BusinessMetrics::MailgunStats).to receive(:fetch).and_return(
       BusinessMetrics::MailgunStats::Result.new(sent: 10, failed: 1, opened: 4, complained: 0)
@@ -80,5 +82,17 @@ RSpec.describe BusinessMetrics::Capture do
     expect(snapshot.mcp_active_users_7d).to eq(1)
     expect(snapshot.mcp_tool_calls).to eq(1)
     expect(snapshot.mcp_tool_breakdown["search_entries"]).to eq(1)
+  end
+
+  it "records a full day of cash when capturing yesterday after midnight" do
+    travel_to Time.zone.parse("2026-09-02 06:00:00") do
+      user = create(:user, plan: "PRO Yearly PayHere")
+      create(:payment, user: user, amount: 40, date: Time.zone.parse("2026-09-01 23:00:00"))
+
+      snapshot = described_class.call(on: Date.yesterday)
+
+      expect(snapshot.captured_on).to eq(Date.parse("2026-09-01"))
+      expect(snapshot.cash_collected_cents).to eq(4000)
+    end
   end
 end

@@ -89,4 +89,29 @@ RSpec.describe Admin::Dashboard do
     expect(mcp[:calls_30d]).to eq(1)
     expect(mcp[:tools].first[:name]).to eq("analyze_entries")
   end
+
+  it "counts first payments ever and orders upgrade weeks by calendar date" do
+    travel_to Time.zone.parse("2026-09-02 12:00:00") do
+      july_upgrade = create(:user, plan: "PRO Monthly PayHere")
+      create(:payment, user: july_upgrade, amount: 4, date: Time.zone.parse("2026-07-28 10:00:00"))
+
+      august_upgrade = create(:user, plan: "PRO Monthly PayHere")
+      create(:payment, user: august_upgrade, amount: 4, date: Time.zone.parse("2026-08-12 10:00:00"))
+
+      canceled = create(:user, plan: "Free")
+      create(:payment, user: canceled, amount: 4, date: Time.zone.parse("2026-08-20 10:00:00"))
+
+      veteran = create(:user, plan: "PRO Monthly PayHere")
+      create(:payment, user: veteran, amount: 3, date: Time.zone.parse("2026-01-10 10:00:00"))
+      create(:payment, user: veteran, amount: 4, date: Time.zone.parse("2026-08-15 10:00:00"))
+
+      chart = described_class.new.chart_upgrades
+
+      expect(chart.values.sum).to eq(3)
+      expect(chart.keys).to eq(["Jul 26", "Aug 09", "Aug 16"])
+      expect(chart["Jul 26"]).to eq(1)
+      expect(chart["Aug 09"]).to eq(1)
+      expect(chart["Aug 16"]).to eq(1)
+    end
+  end
 end
