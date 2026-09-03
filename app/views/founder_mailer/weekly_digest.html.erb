@@ -45,6 +45,10 @@
     <td>PRO inactive 30d</td>
     <td><%= number_with_delimiter(d.paid_inactive_30d) %></td>
   </tr>
+  <tr>
+    <td>MCP</td>
+    <td><%= number_with_delimiter(d.mcp[:connected_now]) %> connected · <%= number_with_delimiter(d.mcp[:calls_7d]) %> calls this week</td>
+  </tr>
   <% if d.month_annual_equivalent %>
     <tr>
       <td>This month vs $40/yr</td>

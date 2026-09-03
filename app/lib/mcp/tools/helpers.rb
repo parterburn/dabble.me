@@ -15,6 +15,33 @@ module Mcp
         User.find(user_id)
       end
 
+      def with_logged_invocation(tool_name, server_context, source: 'oauth')
+        started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+        response = yield
+        Mcp::InvocationLogger.record_from_response(
+          tool_name: tool_name,
+          server_context: server_context,
+          source: source,
+          response: response,
+          duration_ms: elapsed_ms(started)
+        )
+        response
+      rescue StandardError
+        Mcp::InvocationLogger.record(
+          user_id: server_context && server_context[:user_id],
+          tool_name: tool_name,
+          source: source,
+          success: false,
+          duration_ms: elapsed_ms(started),
+          oauth_application_id: server_context && server_context[:oauth_application_id]
+        )
+        raise
+      end
+
+      def elapsed_ms(started)
+        ((Process.clock_gettime(Process::CLOCK_MONOTONIC) - started) * 1000).round
+      end
+
       def journal_access_response(user)
         return nil if user.is_pro? && !user.deletion_pending? && user.mcp_security_requirements_met?
 

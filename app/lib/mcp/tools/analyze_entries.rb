@@ -22,29 +22,31 @@ module Mcp
       )
 
       def self.call(server_context:, start_date: nil, end_date: nil)
-        user = Helpers.scoped_user!(server_context)
-        denied = Helpers.journal_access_response(user)
-        return denied if denied
+        Helpers.with_logged_invocation('analyze_entries', server_context) do
+          user = Helpers.scoped_user!(server_context)
+          denied = Helpers.journal_access_response(user)
+          next denied if denied
 
-        result = Mcp::EntrySearch.new(user: user).analyze(
-          query: nil,
-          since: start_date,
-          until_date: end_date
-        )
+          result = Mcp::EntrySearch.new(user: user).analyze(
+            query: nil,
+            since: start_date,
+            until_date: end_date
+          )
 
-        data = {
-          total_entries: result[:total_matches],
-          date_range: result[:date_range],
-          entry_count_by_year: result[:entry_count_by_year],
-          top_hashtags: result[:most_used_hashtags].map { |tag| { hashtag: tag[:tag], count: tag[:count] } },
-          average_words_per_entry: result[:average_entry_length_words],
-          sample_entries: result[:sample_highlights]
-        }
+          data = {
+            total_entries: result[:total_matches],
+            date_range: result[:date_range],
+            entry_count_by_year: result[:entry_count_by_year],
+            top_hashtags: result[:most_used_hashtags].map { |tag| { hashtag: tag[:tag], count: tag[:count] } },
+            average_words_per_entry: result[:average_entry_length_words],
+            sample_entries: result[:sample_highlights]
+          }
 
-        MCP::Tool::Response.new(
-          [{ type: 'text', text: JSON.pretty_generate(data) }],
-          structured_content: data
-        )
+          MCP::Tool::Response.new(
+            [{ type: 'text', text: JSON.pretty_generate(data) }],
+            structured_content: data
+          )
+        end
       end
     end
   end

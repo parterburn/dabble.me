@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2026_09_02_180000) do
+ActiveRecord::Schema.define(version: 2026_09_03_030000) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
@@ -51,6 +51,11 @@ ActiveRecord::Schema.define(version: 2026_09_02_180000) do
     t.jsonb "subscriber_map", default: {}, null: false
     t.datetime "created_at", precision: 6, null: false
     t.datetime "updated_at", precision: 6, null: false
+    t.integer "mcp_connected_users", default: 0, null: false
+    t.integer "mcp_active_users_7d", default: 0, null: false
+    t.integer "mcp_active_users_30d", default: 0, null: false
+    t.integer "mcp_tool_calls", default: 0, null: false
+    t.jsonb "mcp_tool_breakdown", default: {}, null: false
     t.index ["captured_on"], name: "index_business_metric_snapshots_on_captured_on", unique: true
   end
 
@@ -86,6 +91,23 @@ ActiveRecord::Schema.define(version: 2026_09_02_180000) do
     t.text "body"
     t.datetime "created_at"
     t.datetime "updated_at"
+  end
+
+  create_table "mcp_tool_invocations", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "tool_name", null: false
+    t.string "source", default: "oauth", null: false
+    t.boolean "success", default: true, null: false
+    t.integer "result_count"
+    t.integer "duration_ms"
+    t.bigint "oauth_application_id"
+    t.datetime "created_at", null: false
+    t.index ["created_at"], name: "index_mcp_tool_invocations_on_created_at"
+    t.index ["oauth_application_id"], name: "index_mcp_tool_invocations_on_oauth_application_id"
+    t.index ["source", "created_at"], name: "index_mcp_tool_invocations_on_source_and_created_at"
+    t.index ["tool_name", "created_at"], name: "index_mcp_tool_invocations_on_tool_name_and_created_at"
+    t.index ["user_id", "created_at"], name: "index_mcp_tool_invocations_on_user_id_and_created_at"
+    t.index ["user_id"], name: "index_mcp_tool_invocations_on_user_id"
   end
 
   create_table "oauth_access_grants", force: :cascade do |t|
@@ -215,6 +237,7 @@ ActiveRecord::Schema.define(version: 2026_09_02_180000) do
     t.index ["user_id"], name: "index_webauthn_credentials_on_user_id"
   end
 
+  add_foreign_key "mcp_tool_invocations", "users", on_delete: :cascade
   add_foreign_key "oauth_access_grants", "oauth_applications", column: "application_id"
   add_foreign_key "oauth_access_grants", "users", column: "resource_owner_id"
   add_foreign_key "oauth_access_tokens", "oauth_applications", column: "application_id"

@@ -54,6 +54,8 @@ RSpec.describe AdminController, type: :controller do
       expect(response.body).to have_content('MRR')
       expect(response.body).to have_content('Pricing cohorts')
       expect(response.body).to have_content('PRO / Free')
+      expect(response.body).to have_content('MCP')
+      expect(response.body).to have_content('Connected now')
     end
 
     it 'does not call Mailgun while rendering the page' do

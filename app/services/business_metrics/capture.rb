@@ -32,6 +32,8 @@ module BusinessMetrics
       activity = activity_metrics
       email = email_metrics
       cash_cents = cash_collected_cents
+      mcp_usage = Mcp::Usage.new(as_of: [as_of, Time.current].min)
+      mcp = mcp_usage.summary
 
       {
         mrr_cents: revenue.mrr_cents,
@@ -65,7 +67,12 @@ module BusinessMetrics
         email_reply_rate: email[:reply_rate],
         plan_breakdown: revenue.plan_breakdown,
         acquisition_breakdown: acquisition_breakdown(revenue),
-        subscriber_map: revenue.subscriber_map
+        subscriber_map: revenue.subscriber_map,
+        mcp_connected_users: mcp[:connected_now],
+        mcp_active_users_7d: mcp[:active_users_7d],
+        mcp_active_users_30d: mcp[:active_users_30d],
+        mcp_tool_calls: mcp_usage.calls_on(date),
+        mcp_tool_breakdown: mcp_usage.tool_breakdown_on(date)
       }
     end
 

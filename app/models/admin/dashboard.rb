@@ -213,6 +213,17 @@ module Admin
       }
     end
 
+    def mcp
+      @mcp ||= Mcp::Usage.new(as_of: as_of).summary
+    end
+
+    def mcp_calls_per_active_30d
+      users = mcp[:active_users_30d].to_i
+      return nil if users.zero?
+
+      (mcp[:calls_30d].to_f / users).round(1)
+    end
+
     def cash_collected_month_cents
       amount = Payment.where("date >= ?", as_of.to_date.beginning_of_month).sum(:amount)
       (BigDecimal(amount.to_s) * 100).round
@@ -323,6 +334,10 @@ module Admin
         { name: "New MRR", data: snapshot_series { |snap| (snap.gross_new_mrr_cents / 100.0).round(2) } },
         { name: "Churned MRR", data: snapshot_series { |snap| (snap.churned_mrr_cents / 100.0).round(2) } }
       ]
+    end
+
+    def chart_mcp_calls
+      Mcp::Usage.new(as_of: as_of).calls_by_day(since: 90.days.ago)
     end
 
     def format_cents(cents)

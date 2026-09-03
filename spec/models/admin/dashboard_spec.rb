@@ -65,4 +65,28 @@ RSpec.describe Admin::Dashboard do
       expect(described_class.new.first_entry_activation_rate).to eq(1.0)
     end
   end
+
+  it "reports live MCP connected users and call volume" do
+    user = create_pro(plan: "PRO Monthly PayHere", amount: 4)
+    app = Doorkeeper::Application.create!(
+      name: "Inspector",
+      uid: "dashboard-mcp-client",
+      redirect_uri: "http://127.0.0.1/cb",
+      scopes: "mcp:access",
+      confidential: false
+    )
+    Doorkeeper::AccessToken.create!(
+      resource_owner_id: user.id,
+      application_id: app.id,
+      scopes: "mcp:access",
+      expires_in: 2.hours
+    )
+    create(:mcp_tool_invocation, user: user, tool_name: "analyze_entries")
+
+    mcp = described_class.new.mcp
+
+    expect(mcp[:connected_now]).to eq(1)
+    expect(mcp[:calls_30d]).to eq(1)
+    expect(mcp[:tools].first[:name]).to eq("analyze_entries")
+  end
 end

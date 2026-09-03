@@ -225,6 +225,77 @@
             %span.s-stats-meta= d.format_rate(d.lifetime_reply_rate)
 
   %section.s-stats-section
+    %h4 MCP
+    %p.s-stats-sub
+      Connected is a live OAuth token with mcp:access that is not revoked or expired.
+      Usage is tool calls (search, list, analyze, create, image upload) from the remote connector and in-browser WebMCP.
+      Query text is not stored.
+    - mcp = d.mcp
+    %table.table.table-striped.s-stats-table
+      %tbody
+        %tr
+          %th Connected now
+          %td
+            = number_with_delimiter(mcp[:connected_now])
+            %span.s-stats-meta
+              = number_with_delimiter(mcp[:connected_ever])
+              ever authorized
+        %tr
+          %th Active users
+          %td
+            = number_with_delimiter(mcp[:active_users_7d])
+            in 7 days /
+            = number_with_delimiter(mcp[:active_users_30d])
+            in 30 days
+        %tr
+          %th Tool calls
+          %td
+            = number_with_delimiter(mcp[:calls_today])
+            today /
+            = number_with_delimiter(mcp[:calls_7d])
+            in 7 days /
+            = number_with_delimiter(mcp[:calls_30d])
+            in 30 days
+        %tr
+          %th OAuth / WebMCP (30d)
+          %td
+            = number_with_delimiter(mcp[:oauth_calls_30d])
+            \/
+            = number_with_delimiter(mcp[:webmcp_calls_30d])
+        %tr
+          %th Calls per active user (30d)
+          %td= d.mcp_calls_per_active_30d || "—"
+        %tr
+          %th Success rate (30d)
+          %td= d.format_rate(mcp[:success_rate_30d])
+    - if mcp[:tools].any?
+      %h5.s-stats-h5 Tools (30 days)
+      %table.table.table-striped.s-stats-table
+        %thead
+          %tr
+            %th Tool
+            %th Calls
+            %th Users
+        %tbody
+          - mcp[:tools].each do |row|
+            %tr
+              %td= row[:name]
+              %td= number_with_delimiter(row[:calls])
+              %td= number_with_delimiter(row[:users])
+    - if mcp[:clients].any?
+      %h5.s-stats-h5 Connected clients
+      %table.table.table-striped.s-stats-table
+        %thead
+          %tr
+            %th Client
+            %th Users
+        %tbody
+          - mcp[:clients].each do |row|
+            %tr
+              %td= row[:name]
+              %td= number_with_delimiter(row[:users])
+
+  %section.s-stats-section
     %h4 Cash vs recurring
     %p.s-stats-sub Payments by month are cash collected, not MRR. Recurring run rate is the decision-bar ARR above.
     %table.table.table-striped.s-stats-table
@@ -318,5 +389,7 @@
     %h5.s-stats-h5 First upgrades over the last 90 days
     %p.s-stats-sub Includes people who later canceled. Previously this chart dropped churned upgrades.
     = line_chart d.chart_upgrades, discrete: true
+    %h5.s-stats-h5 MCP tool calls over the last 90 days
+    = line_chart d.chart_mcp_calls, discrete: true
     %h5.s-stats-h5 Cash collected by month
     = column_chart d.chart_cash, discrete: true, prefix: "$"

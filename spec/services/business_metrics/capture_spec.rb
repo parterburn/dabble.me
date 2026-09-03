@@ -56,4 +56,29 @@ RSpec.describe BusinessMetrics::Capture do
     expect(snapshot.email_replies_count).to eq(1)
     expect(snapshot.email_reply_rate.to_f).to eq(0.1)
   end
+
+  it "snapshots MCP connection and usage counts" do
+    user = create_pro(plan: "PRO Monthly PayHere", amount: 4)
+    app = Doorkeeper::Application.create!(
+      name: "Claude",
+      uid: "capture-mcp-client",
+      redirect_uri: "http://127.0.0.1/cb",
+      scopes: "mcp:access",
+      confidential: false
+    )
+    Doorkeeper::AccessToken.create!(
+      resource_owner_id: user.id,
+      application_id: app.id,
+      scopes: "mcp:access",
+      expires_in: 2.hours
+    )
+    create(:mcp_tool_invocation, user: user, tool_name: "search_entries", created_at: Time.current)
+
+    snapshot = described_class.call(on: Date.current)
+
+    expect(snapshot.mcp_connected_users).to eq(1)
+    expect(snapshot.mcp_active_users_7d).to eq(1)
+    expect(snapshot.mcp_tool_calls).to eq(1)
+    expect(snapshot.mcp_tool_breakdown["search_entries"]).to eq(1)
+  end
 end

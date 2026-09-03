@@ -13,5 +13,6 @@ RSpec.describe FounderMailer do
     expect(email.subject).to include("ARR")
     expect(email.body.encoded).to include("Needs attention")
     expect(email.body.encoded).to include("/admin/stats")
+    expect(email.body.encoded).to include("MCP")
   end
 end

@@ -11,6 +11,7 @@ Latest snapshot (<%= @dashboard.latest_snapshot.captured_on %>): <%= @dashboard.
 3 entries in 14 days: <%= @dashboard.format_rate(@dashboard.three_entry_activation_rate) %>
 Email reply rate: <%= @dashboard.format_rate(@dashboard.email_health[:reply_rate]) %>
 PRO inactive 30d: <%= @dashboard.paid_inactive_30d %>
+MCP: <%= @dashboard.mcp[:connected_now] %> connected · <%= @dashboard.mcp[:calls_7d] %> calls this week
 <% if @dashboard.month_annual_equivalent %>
 This month vs $40/yr: <%= @dashboard.month_annual_equivalent %> net annual-equivalent customers
 <% end %>
