@@ -29,19 +29,21 @@ module Mcp
       )
 
       def self.call(server_context:, filename: nil, content_type: nil)
-        user = Helpers.scoped_user!(server_context)
-        denied = Helpers.journal_access_response(user)
-        return denied if denied
+        Helpers.with_logged_invocation('get_image_upload_url', server_context) do
+          user = Helpers.scoped_user!(server_context)
+          denied = Helpers.journal_access_response(user)
+          next denied if denied
 
-        data = Mcp::PresignedImageUpload.new(user: user).call(
-          filename: filename,
-          content_type: content_type
-        )
+          data = Mcp::PresignedImageUpload.new(user: user).call(
+            filename: filename,
+            content_type: content_type
+          )
 
-        MCP::Tool::Response.new(
-          [{ type: 'text', text: JSON.pretty_generate(data) }],
-          structured_content: data
-        )
+          MCP::Tool::Response.new(
+            [{ type: 'text', text: JSON.pretty_generate(data) }],
+            structured_content: data
+          )
+        end
       end
     end
   end

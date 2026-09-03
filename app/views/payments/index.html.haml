@@ -4,33 +4,18 @@
   .col-md-2
     %p
       =link_to "Add new payment", new_payment_path, class: "btn btn-info"
-  .col-md-5
+  .col-md-6
     %p
       %strong
         Total Payments:
         = number_with_delimiter(@payments.length)
         for
-        =number_to_currency(@payments.sum(:amount))
-    %p
-      %strong
-        MRR:
-        = number_to_currency(@mrr)
-        = "(" + number_to_currency(@mrr * 12) + ")"
-  .col-md-5
-    %p
-      %strong
-        Monthly Subs:
-        = number_with_delimiter(@monthlys.count)
-        for
-        = number_to_currency(@monthly_recurring.to_i)
-        per month
-    %p
-      %strong
-        Annual Subs:
-        = number_with_delimiter(@yearlys.count)
-        for
-        =number_to_currency(@annual_recurring.to_i)
-        per year
+        = number_to_currency(@cash_total)
+    %p.text-muted
+      This page is the payment ledger.
+      Recurring revenue (MRR / ARR) is on
+      = succeed "." do
+        = link_to "Admin Stats", admin_stats_path
 
 .row
   .col-md-1

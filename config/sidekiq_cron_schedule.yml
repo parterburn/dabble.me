@@ -18,3 +18,13 @@ entry_maintenance:
   cron: "0 15 * * 3"
   class: "EntryMaintenanceWorker"
   description: "Weekly on Wednesday at 3:00 PM UTC"
+
+capture_business_metrics:
+  cron: "5 0 * * *"
+  class: "CaptureBusinessMetricsWorker"
+  description: "Daily at 12:05 AM UTC, before expired-plan downgrades at 12:30 AM. Snapshots yesterday's founder metrics."
+
+founder_weekly_digest:
+  cron: "0 6 * * 1"
+  class: "FounderWeeklyDigestWorker"
+  description: "Mondays at 6:00 AM UTC. Emails the weekly founder digest."

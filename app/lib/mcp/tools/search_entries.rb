@@ -34,27 +34,29 @@ module Mcp
       )
 
       def self.call(query:, server_context:, start_date: nil, end_date: nil, limit: nil)
-        user = Helpers.scoped_user!(server_context)
-        denied = Helpers.journal_access_response(user)
-        return denied if denied
+        Helpers.with_logged_invocation('search_entries', server_context) do
+          user = Helpers.scoped_user!(server_context)
+          denied = Helpers.journal_access_response(user)
+          next denied if denied
 
-        result = Mcp::EntrySearch.new(user: user).search(
-          query: query,
-          limit: limit || 50,
-          since: start_date,
-          until_date: end_date
-        )
+          result = Mcp::EntrySearch.new(user: user).search(
+            query: query,
+            limit: limit || 50,
+            since: start_date,
+            until_date: end_date
+          )
 
-        data = {
-          query: query,
-          total_matches: result[:total_matches],
-          entries: result[:entries].map { |e| Helpers.normalize_entry_row(e) }
-        }
+          data = {
+            query: query,
+            total_matches: result[:total_matches],
+            entries: result[:entries].map { |e| Helpers.normalize_entry_row(e) }
+          }
 
-        MCP::Tool::Response.new(
-          [{ type: 'text', text: JSON.pretty_generate(data) }],
-          structured_content: data
-        )
+          MCP::Tool::Response.new(
+            [{ type: 'text', text: JSON.pretty_generate(data) }],
+            structured_content: data
+          )
+        end
       end
     end
   end

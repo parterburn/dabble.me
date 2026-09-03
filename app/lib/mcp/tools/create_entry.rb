@@ -46,27 +46,29 @@ module Mcp
       )
 
       def self.call(server_context:, body: nil, date: nil, merge_with_existing: true, image_url: nil, image_base64: nil, image_mime_type: nil, uploaded_image_key: nil)
-        user = Helpers.scoped_user!(server_context)
-        denied = Helpers.journal_access_response(user)
-        return denied if denied
+        Helpers.with_logged_invocation('create_entry', server_context) do
+          user = Helpers.scoped_user!(server_context)
+          denied = Helpers.journal_access_response(user)
+          next denied if denied
 
-        merge = merge_with_existing != false
-        date_str = date.to_s.strip.presence || Helpers.default_entry_date_iso8601(user)
+          merge = merge_with_existing != false
+          date_str = date.to_s.strip.presence || Helpers.default_entry_date_iso8601(user)
 
-        data = Mcp::EntryCreator.new(user: user).create(
-          date_string: date_str,
-          body_text: body,
-          merge_with_existing: merge,
-          image_url: image_url,
-          image_base64: image_base64,
-          image_mime_type: image_mime_type,
-          uploaded_image_key: uploaded_image_key
-        )
+          data = Mcp::EntryCreator.new(user: user).create(
+            date_string: date_str,
+            body_text: body,
+            merge_with_existing: merge,
+            image_url: image_url,
+            image_base64: image_base64,
+            image_mime_type: image_mime_type,
+            uploaded_image_key: uploaded_image_key
+          )
 
-        MCP::Tool::Response.new(
-          [{ type: 'text', text: JSON.pretty_generate(data) }],
-          structured_content: data
-        )
+          MCP::Tool::Response.new(
+            [{ type: 'text', text: JSON.pretty_generate(data) }],
+            structured_content: data
+          )
+        end
       end
     end
   end

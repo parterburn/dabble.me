@@ -44,7 +44,9 @@ RSpec.describe McpController, type: :controller do
       end
 
       it "initializes the MCP server" do
-        post :invoke, params: { jsonrpc: "2.0", id: 1, method: "initialize", params: {} }, as: :json
+        expect {
+          post :invoke, params: { jsonrpc: "2.0", id: 1, method: "initialize", params: {} }, as: :json
+        }.not_to change(McpToolInvocation, :count)
 
         expect(response).to have_http_status(:ok)
         body = JSON.parse(response.body)
@@ -98,6 +100,14 @@ RSpec.describe McpController, type: :controller do
         expect(entries.length).to eq(1)
         expect(entries.first["id"]).to eq(paid_entry.id)
         expect(entries.first["excerpt"]).to include("northern lights")
+        log = McpToolInvocation.last
+        expect(log.user_id).to eq(paid_user.id)
+        expect(log.tool_name).to eq("search_entries")
+        expect(log.source).to eq("oauth")
+        expect(log.success).to eq(true)
+        expect(log.result_count).to eq(1)
+        expect(log.oauth_application_id).to be_present
+        expect(log.attributes.values.map(&:to_s).join).not_to include("northern lights")
       end
 
       it "returns aggregate analysis" do

@@ -17,7 +17,10 @@ class McpController < ApplicationController
     payload = request.raw_post
     payload = request.body.read if payload.blank?
 
-    response_json = Mcp::DabbleServer.build_for_user(user).handle_json(payload)
+    response_json = Mcp::DabbleServer.build_for_user(
+      user,
+      oauth_application_id: doorkeeper_token.application_id
+    ).handle_json(payload)
 
     if response_json.present?
       render json: response_json, content_type: 'application/json'

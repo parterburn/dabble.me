@@ -46,28 +46,44 @@ RSpec.describe AdminController, type: :controller do
     end
 
     it 'should show Admin Stats to superusers' do
-      # Stub Mailgun API requests
-      stub_request(:get, /api\.mailgun\.net\/v3\/.+\/stats\/total/)
-        .to_return(
-          status: 200,
-          body: {
-            stats: [
-              {
-                time: Time.now.strftime('%Y-%m-%d'),
-                accepted: { total: 100 },
-                failed: { total: 5 },
-                opened: { total: 80 },
-                delivered: { total: 95 }
-              }
-            ]
-          }.to_json,
-          headers: { 'Content-Type' => 'application/json' }
-        )
-
       sign_in superuser
       get :stats
       expect(response.status).to eq 200
       expect(response.body).to have_content('Admin Stats')
+      expect(response.body).to have_content('ARR')
+      expect(response.body).to have_content('MRR')
+      expect(response.body).to have_content('Pricing cohorts')
+      expect(response.body).to have_content('PRO / Free')
+      expect(response.body).to have_content('MCP')
+      expect(response.body).to have_content('Connected now')
+    end
+
+    it 'does not call Mailgun while rendering the page' do
+      expect(BusinessMetrics::MailgunStats).not_to receive(:fetch)
+      sign_in superuser
+      get :stats
+      expect(response.status).to eq 200
+    end
+  end
+
+  describe 'capture_stats' do
+    before do
+      allow(BusinessMetrics::MailgunStats).to receive(:fetch).and_return(
+        BusinessMetrics::MailgunStats::Result.new(sent: 0, failed: 0, opened: 0, complained: 0)
+      )
+    end
+
+    it 'redirects non-admins' do
+      sign_in user
+      post :capture_stats
+      expect(response).to redirect_to(entries_path)
+    end
+
+    it 'snapshots metrics for superusers' do
+      sign_in superuser
+      expect { post :capture_stats }.to change(BusinessMetricSnapshot, :count).by(1)
+      expect(BusinessMetricSnapshot.last.captured_on).to eq(Date.current)
+      expect(response).to redirect_to(admin_stats_path)
     end
   end
 end

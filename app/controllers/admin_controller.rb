@@ -27,7 +27,13 @@ class AdminController < ApplicationController
   end
 
   def stats
-    @dashboard = AdminStats.new
+    @dashboard = Admin::Dashboard.new
+  end
+
+  def capture_stats
+    snapshot = BusinessMetrics::Capture.call
+    flash[:notice] = "Snapshot saved for #{snapshot.captured_on}."
+    redirect_to admin_stats_path
   end
 
   private

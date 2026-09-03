@@ -26,6 +26,11 @@ RSpec.describe 'WebMCP journal session tools', type: :request do
     expect(excerpts.join).to include('burnout after the long week')
     expect(excerpts.join).not_to include('someone else')
     expect(payload.dig('data', 'entries').first['url']).to match(%r{\A/entries/\d+/\d+/\d+\z})
+    log = McpToolInvocation.last
+    expect(log.user_id).to eq(paid_user.id)
+    expect(log.tool_name).to eq('search_entries')
+    expect(log.source).to eq('webmcp')
+    expect(log.success).to eq(true)
   end
 
   it 'lets any signed-in user list their own entries' do
@@ -53,7 +58,9 @@ RSpec.describe 'WebMCP journal session tools', type: :request do
     expect(paid_user.mcp_security_requirements_met?).to eq(false)
     sign_in paid_user
 
-    get '/webmcp/journal/session'
+    expect {
+      get '/webmcp/journal/session'
+    }.not_to change(McpToolInvocation, :count)
 
     expect(response).to have_http_status(:ok)
     expect(JSON.parse(response.body).dig('data', 'is_pro')).to eq(true)

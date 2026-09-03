@@ -10,7 +10,7 @@ module Mcp
       Tools::CreateEntry
     ].freeze
 
-    def self.build_for_user(user)
+    def self.build_for_user(user, oauth_application_id: nil)
       site = ApplicationHelper.site_public_base_url
       MCP::Server.new(
         name: 'dabble-me',
@@ -38,7 +38,7 @@ module Mcp
                       "When linking to a day in the web app, use #{site}/entries/YYYY/M/D with unpadded month and day " \
                       "(example: #{site}/entries/2026/4/21). The compose page for new entries is #{site}/write .",
         tools: TOOLS,
-        server_context: { user_id: user.id }
+        server_context: { user_id: user.id, oauth_application_id: oauth_application_id }
       )
     end
   end

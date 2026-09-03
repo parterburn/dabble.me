@@ -38,6 +38,7 @@ Rails.application.routes.draw do
     resources :payments, path: '/admin/payments'
     get 'admin/users' => 'admin#users', as: 'admin_users'
     get 'admin/stats' => 'admin#stats', as: 'admin_stats'
+    post 'admin/stats/capture' => 'admin#capture_stats', as: 'capture_admin_stats'
     get 'admin/photos' => 'admin#photos', as: 'admin_photos'
     mount Sidekiq::Web => "/sidekiq"
   end

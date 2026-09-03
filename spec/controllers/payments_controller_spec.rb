@@ -32,6 +32,9 @@ RSpec.describe PaymentsController, type: :controller do
       get :index
       expect(response.status).to eq 200
       expect(response.body).to have_content(paid_user.email)
+      expect(response.body).to have_content("payment ledger")
+      expect(response.body).to have_content("Admin Stats")
+      expect(response.body).not_to have_content("Monthly Subs:")
     end
   end
 
