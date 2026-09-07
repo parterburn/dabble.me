@@ -55,4 +55,29 @@ RSpec.describe RevenueMetrics do
       expect(described_class.current.recurring_subscriber_count).to eq(0)
     end
   end
+
+  describe "#at_risk" do
+    include ActiveSupport::Testing::TimeHelpers
+
+    it "waits 15 days past the expected renewal before flagging Stripe-style dunning" do
+      travel_to Time.zone.parse("2026-09-07 12:00:00") do
+        monthly_in_grace = create_pro(plan: "PRO Monthly PayHere", amount: 4)
+        monthly_in_grace.payments.last.update_columns(date: 45.days.ago)
+        monthly_overdue = create_pro(plan: "PRO Monthly PayHere", amount: 4)
+        monthly_overdue.payments.last.update_columns(date: 46.days.ago)
+
+        yearly_approaching = create_pro(plan: "PRO Yearly PayHere", amount: 40)
+        yearly_approaching.payments.last.update_columns(date: 340.days.ago)
+        yearly_in_grace = create_pro(plan: "PRO Yearly PayHere", amount: 40)
+        yearly_in_grace.payments.last.update_columns(date: 380.days.ago)
+        yearly_overdue = create_pro(plan: "PRO Yearly PayHere", amount: 40)
+        yearly_overdue.payments.last.update_columns(date: 381.days.ago)
+
+        risk = described_class.current.at_risk
+
+        expect(risk[:monthly_count]).to eq(1)
+        expect(risk[:yearly_count]).to eq(1)
+      end
+    end
+  end
 end

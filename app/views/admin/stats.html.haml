@@ -323,7 +323,9 @@
             monthly /
             = number_with_delimiter(d.at_risk[:yearly_count])
             yearly
-            %span.s-stats-meta= d.format_cents(d.at_risk[:mrr_cents])
+            %span.s-stats-meta
+              = d.format_cents(d.at_risk[:mrr_cents])
+              · more than 15 days past the expected renewal
 
   %section.s-stats-section
     %h4 Inventory

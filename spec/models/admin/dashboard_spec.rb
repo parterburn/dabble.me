@@ -12,12 +12,23 @@ RSpec.describe Admin::Dashboard do
   it "puts overdue renewals ahead of the standing $20k ARR gap" do
     travel_to Time.zone.parse("2026-09-02 12:00:00") do
       create_pro(plan: "PRO Monthly PayHere", amount: 4, created_at: 60.days.ago)
-      Payment.last.update_columns(date: 40.days.ago)
+      Payment.last.update_columns(date: 50.days.ago)
 
       items = described_class.new.attention_items
 
       expect(items.first).to include("overdue for a renewal payment")
       expect(items).to include(a_string_matching(/ARR is .+ below the \$20k target/))
+    end
+  end
+
+  it "does not flag a yearly subscriber before 15 days past the renewal date" do
+    travel_to Time.zone.parse("2026-09-07 12:00:00") do
+      create_pro(plan: "PRO Yearly PayHere", amount: 40, created_at: 2.years.ago)
+      Payment.last.update_columns(date: 340.days.ago)
+
+      items = described_class.new.attention_items
+
+      expect(items).not_to include(a_string_matching(/overdue for a renewal payment/))
     end
   end
 

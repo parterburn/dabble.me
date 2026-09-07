@@ -21,6 +21,14 @@ class RevenueMetrics
   ANNUAL_EQUIVALENT_CENTS = 4_000 # public $40/year
   MONTHLY_LEGACY_MAX_CENTS = 350 # $3.00 vs $4.00
   YEARLY_LEGACY_MAX_CENTS = 3_500 # $30.00 vs $40.00
+  # Stripe auto-charges on the anniversary and retries failed payments for
+  # several days. Only surface a subscriber once they are more than 15 days
+  # past the expected renewal (30 + 15 monthly, 365 + 15 yearly).
+  AT_RISK_GRACE_DAYS = 15
+  MONTHLY_PERIOD_DAYS = 30
+  YEARLY_PERIOD_DAYS = 365
+  MONTHLY_AT_RISK_AFTER_DAYS = MONTHLY_PERIOD_DAYS + AT_RISK_GRACE_DAYS
+  YEARLY_AT_RISK_AFTER_DAYS = YEARLY_PERIOD_DAYS + AT_RISK_GRACE_DAYS
   COHORT_KEYS = %w[
     legacy_monthly
     new_monthly
@@ -130,10 +138,10 @@ class RevenueMetrics
 
   def at_risk(as_of_date: as_of.to_date)
     monthly_risk = recurring.select do |s|
-      s.interval == :monthly && s.last_paid_on.present? && s.last_paid_on.to_date < as_of_date - 32.days
+      past_due_renewal?(s, :monthly, as_of_date)
     end
     yearly_risk = recurring.select do |s|
-      s.interval == :yearly && s.last_paid_on.present? && s.last_paid_on.to_date < as_of_date - 340.days
+      past_due_renewal?(s, :yearly, as_of_date)
     end
     {
       monthly_count: monthly_risk.size,
@@ -235,5 +243,16 @@ class RevenueMetrics
 
   def dollars_to_cents(amount)
     (BigDecimal(amount.to_s) * 100).round
+  end
+
+  def past_due_renewal?(subscriber, interval, as_of_date)
+    return false unless subscriber.interval == interval && subscriber.last_paid_on.present?
+
+    grace_after = as_of_date - at_risk_after_days(interval).days
+    subscriber.last_paid_on.to_date < grace_after
+  end
+
+  def at_risk_after_days(interval)
+    interval == :yearly ? YEARLY_AT_RISK_AFTER_DAYS : MONTHLY_AT_RISK_AFTER_DAYS
   end
 end
