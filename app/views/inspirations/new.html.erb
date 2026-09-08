@@ -1,0 +1,36 @@
+<% title "New Inspirations — Dabble me." %>
+
+<div class="row">
+  <br>
+  <div class="col-md-8 col-md-offset-2 well">
+
+    <%= form_for :inspiration, url: inspirations_path do |f| %>
+
+      <% if @inspiration.errors.any? %>
+        <div id="error_explanation">
+          <div class="alert alert-danger">
+            <% @inspiration.errors.full_messages.each do |msg| %>
+              <p><%= msg %></p>
+            <% end %>
+          </div>
+        </div>
+      <% end %>
+
+      <div>
+        <%= f.label :category %>
+        <%= f.select(:category, Inspiration.order(:category).all.pluck(:category).uniq, {}, { class: 'form-control' }) %>
+        <br>
+      </div>
+
+      <div>
+        <%= f.label :body %>
+        <%= f.text_area :body, class: "form-control", rows: 2 %>
+        <br>
+      </div>
+
+      <div>
+        <%= f.submit "Create Inspiration", class: "form-control btn btn-primary" %>
+      </div>
+    <% end %>
+  </div>
+</div>

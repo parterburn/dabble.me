@@ -1,0 +1,12 @@
+<% title "Authorization code — Dabble me." %>
+
+<div class="row">
+  <div class="col-md-8 col-md-offset-2">
+    <p class="text-muted" style="margin-bottom: 4px;">Dabble Me</p>
+    <h3 style="margin-top: 0;"><%= "#{t('doorkeeper.authorizations.show.title')}:" %></h3>
+
+    <div class="well" style="background-color: #E8E8E2; padding: 15px 20px; margin-top: 16px;">
+      <code id="authorization_code"><%= params[:code] %></code>
+    </div>
+  </div>
+</div>

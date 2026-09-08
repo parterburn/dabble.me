@@ -1,0 +1,124 @@
+<% title "Calendar View — Dabble me." %>
+<%= javascript_include_tag "//cdnjs.cloudflare.com/ajax/libs/moment.js/2.8.4/moment.min.js" %>
+<%= javascript_include_tag "//cdnjs.cloudflare.com/ajax/libs/fullcalendar/2.2.3/fullcalendar.min.js" %>
+<%= stylesheet_link_tag "//cdnjs.cloudflare.com/ajax/libs/fullcalendar/2.2.3/fullcalendar.min.css" %>
+
+<% if current_user.is_free? %>
+  <div class="row">
+    <div class="col-md-8 col-md-offset-2">
+      <div class="alert alert-warning" style="min-height: 45px;">
+        <%= link_to subscribe_path, class: "float-left", style: "margin-top: -7px;" do %>
+          <button class="btn btn-warning">Subscribe Now</button>
+        <% end %>
+        <strong>Dabble Me PRO</strong>
+        for $4/mo unlocks the ability to see your entries on the calendar.
+      </div>
+    </div>
+  </div>
+  <div class="clearfix"></div>
+<% end %>
+
+<div class="s-calendar-jump">
+  <label class="s-calendar-jump-label" for="calendar-month">Jump to</label>
+  <select id="calendar-month" class="s-calendar-jump-select" name="calendar_month" aria-label="Month">
+    <% Date::MONTHNAMES[1..12].each_with_index do |name, index| %>
+      <option value="<%= index %>"<%= ' selected="selected"' if index == @calendar_date.month - 1 %>><%= name %></option>
+    <% end %>
+  </select>
+  <select id="calendar-year" class="s-calendar-jump-select" name="calendar_year" aria-label="Year">
+    <% @calendar_years.each do |year| %>
+      <option value="<%= year %>"<%= ' selected="selected"' if year == @calendar_date.year %>><%= year %></option>
+    <% end %>
+  </select>
+</div>
+
+<div id="calendar"></div>
+
+<style>
+  #calendar {
+    margin-top:15px;
+  }
+  .fc-widget-content {
+    cursor:pointer;
+  }
+
+  #calendar .fc-button {
+    outline: none;
+  }
+</style>
+
+<script>
+  $(document).ready(function() {
+    var $calendar = $('#calendar');
+    var $month = $('#calendar-month');
+    var $year = $('#calendar-year');
+    var calendarPath = '<%= entries_calendar_path %>';
+    var earliestYear = <%= @calendar_years.min.to_i %>;
+    var syncingJump = false;
+
+    function ensureYearOption(year) {
+      if (year < earliestYear || $year.find('option[value="' + year + '"]').length) {
+        return;
+      }
+      var $option = $('<option>').attr('value', year).text(year);
+      var placed = false;
+      $year.children('option').each(function() {
+        if (parseInt($(this).val(), 10) < year) {
+          $(this).before($option);
+          placed = true;
+          return false;
+        }
+      });
+      if (!placed) {
+        $year.append($option);
+      }
+    }
+
+    function syncJumpSelects(date) {
+      var year = date.year();
+      var month = date.month();
+      syncingJump = true;
+      if (year >= earliestYear) {
+        ensureYearOption(year);
+        $year.val(String(year));
+      }
+      $month.val(String(month));
+      syncingJump = false;
+    }
+
+    $calendar.fullCalendar({
+      header: {
+        right: 'prev,next today',
+        center: '',
+        left: 'title'
+      },
+      defaultDate: '<%= @calendar_date.strftime('%Y-%m-%d') %>',
+      height: 450,
+      selectable: true,
+      selectHelper: true,
+      select: function(start, end, allDay) {
+        $(".navbar-brand i.fa-spinner").addClass("fa-spin");
+        window.location.href = "<%= new_entry_url %>?day=" + start.format('YYYY-MM-DD');
+      },
+      events: "<%= entries_path(format: 'json') %>",
+      viewRender: function(view) {
+        var date = view.intervalStart;
+        syncJumpSelects(date);
+        if (window.history && history.replaceState) {
+          history.replaceState(null, '', calendarPath + '?day=' + date.format('YYYY-MM-DD'));
+        }
+      }
+    });
+
+    function jumpToSelectedMonth() {
+      if (syncingJump) {
+        return;
+      }
+      var year = parseInt($year.val(), 10);
+      var month = parseInt($month.val(), 10);
+      $calendar.fullCalendar('gotoDate', year + '-' + ('0' + (month + 1)).slice(-2) + '-01');
+    }
+
+    $month.add($year).on('change', jumpToSelectedMonth);
+  });
+</script>

@@ -1,0 +1,49 @@
+<% title "#{@title} — Dabble me." %>
+<div class="row">
+  <%= render "sidebar" %>
+  <%= render "search" %>
+
+  <% if spotify_entries.present? %>
+    <% entries = Kaminari.paginate_array(spotify_entries).page(params[:page]).per(params[:per]) %>
+    <% entries.each do |entry| %>
+      <div class="col-md-8 col-md-offset-1 well entry" id="entry-<%= entry.id %>">
+        <div class="center">
+          <% if entry.exactly_past_years(current_user) %>
+            <% year_back = Time.now.in_time_zone(current_user.send_timezone).year - entry.date.year %>
+            <div class="label label-past-years"><%= pluralize(year_back,"year").upcase %> AGO</div>
+          <% end %>
+          <div class="s-entry-date">
+            <h2>
+              <%= link_to entry.date_format_short, day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day), rel: "tooltip-mobile-friendly", title: "#{tag_relative_date(entry.date, Date.today)}" %>
+            </h2>
+          </div>
+        </div>
+        <div class="s-scrollable">
+          <%= entry.spotify_embed %>
+        </div>
+      </div>
+    <% end %>
+
+    <div class="col-md-8 col-md-offset-2">
+      <div class="center">
+        <%= paginate entries %>
+      </div>
+    </div>
+  <% else %>
+    <div class="col-md-8 col-md-offset-1 well s-faqs">
+      <div class="s-entry-date">
+        <h2 class="center"><%= @title %></h2>
+      </div>
+      <p class="center">
+        <br>
+        Add links to songs from Spotify to your entries and you'll see them here, ready to listen to!
+        <br>
+        <br>
+        <%= link_to "How To Copy Song Link on All Devices »", "https://support.spotify.com/us/using_spotify/share_music/sharing-music/", target: "_blank" %>
+      </p>
+      <p>
+        <%= link_to image_tag("copy-spotify-link.gif", style: "width: 100%;"), "https://support.spotify.com/us/using_spotify/share_music/sharing-music/", target: "_blank" %>
+      </p>
+    </div>
+  <% end %>
+</div>

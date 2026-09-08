@@ -1,0 +1,14 @@
+<% title "Authorization — Dabble me." %>
+
+<div class="row">
+  <div class="col-md-8 col-md-offset-2">
+    <p class="text-muted" style="margin-bottom: 4px;">Dabble Me</p>
+    <h3 style="margin-top: 0;"><%= t("doorkeeper.authorizations.error.title") %></h3>
+
+    <div class="well" style="background-color: #E8E8E2; padding: 15px 20px; margin-top: 16px;">
+      <pre style="white-space: pre-wrap; border: none; background: transparent; padding: 0;">
+        <%= (local_assigns[:error_response] ? error_response : @pre_auth.error_response).body[:error_description] %>
+      </pre>
+    </div>
+  </div>
+</div>

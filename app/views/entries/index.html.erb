@@ -1,0 +1,34 @@
+<% title "#{@title} — Dabble me." %>
+<div class="row">
+  <%= render "sidebar" %>
+  <%= render "search" %>
+
+  <div class="col-md-8 col-md-offset-1">
+    <div class="center">
+      <%= paginate @entries %>
+    </div>
+  </div>
+
+  <% @entries.each do |entry| %>
+    <div class="col-md-8 col-md-offset-1 well entry" id="entry-<%= entry.id %>">
+      <%= render partial: 'entries/entry', locals: { entry: entry } %>
+    </div>
+  <% end %>
+
+  <div class="col-md-8 col-md-offset-1">
+    <div class="center">
+      <%= paginate @entries %>
+    </div>
+  </div>
+
+  <% if current_user.is_pro? && params[:group] && params[:group] =~ /\A(19|20)\d{2}\z/ %>
+    <div class="col-md-8 col-md-offset-1">
+      <div class="center">
+        <%= link_to export_entries_path(year: params[:group], format: :txt), class: "btn btn-default", style: "margin: 15px auto;" do %>
+          <i class="fa fa-download"></i>
+          Export Entries from <%= params[:group] %>
+        <% end %>
+      </div>
+    </div>
+  <% end %>
+</div>

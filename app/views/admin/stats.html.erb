@@ -1,0 +1,531 @@
+<% title "Admin Stats" %>
+<% d = @dashboard %>
+<% r = d.revenue %>
+<% inv = d.inventory %>
+<%= javascript_include_tag "//www.gstatic.com/charts/loader.js", "chartkick" %>
+
+<div class="s-stats">
+  <div class="s-stats-header">
+    <div>
+      <h3>Admin Stats</h3>
+      <p class="s-stats-sub">
+        Live numbers for a five-minute check. A 00:05 UTC job snapshots yesterday before 00:30 UTC expired-plan downgrades, so cash, email, and MRR share one calendar day. Snapshot now captures today.
+        Weekly digest emails go to admin accounts on Monday.
+      </p>
+    </div>
+    <div class="s-stats-header__actions">
+      <% if d.latest_snapshot %>
+        <span class="s-stats-meta">Latest snapshot <%= d.latest_snapshot.captured_on.strftime("%b %-d, %Y") %></span>
+      <% else %>
+        <span class="s-stats-meta">No snapshots yet</span>
+      <% end %>
+      <%= button_to "Snapshot now", capture_admin_stats_path, method: :post, class: "btn btn-default btn-sm", form_class: "s-stats-snapshot" %>
+    </div>
+  </div>
+
+  <% if d.attention_items.any? %>
+    <div class="s-stats-attention">
+      <h4>Needs attention</h4>
+      <ul>
+        <% d.attention_items.each do |item| %>
+          <li><%= item %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <section class="s-stats-section">
+    <h4>Decision bar</h4>
+    <div class="s-stats-kpis">
+      <div class="s-stats-kpi">
+        <div class="s-stats-kpi__label">ARR</div>
+        <div class="s-stats-kpi__value"><%= d.format_cents(r.arr_cents) %></div>
+        <div class="s-stats-kpi__delta is-<%= d.delta_direction(d.arr_delta_week_cents) %>">
+          <%= d.format_delta(d.arr_delta_week_cents) %> vs last week
+        </div>
+      </div>
+      <div class="s-stats-kpi">
+        <div class="s-stats-kpi__label">Toward $20k</div>
+        <div class="s-stats-kpi__value"><%= "#{d.arr_progress_percent}%" %></div>
+        <div class="s-stats-kpi__delta">
+          <%= d.format_cents([RevenueMetrics::TARGET_ARR_CENTS - r.arr_cents, 0].max) %> to go
+        </div>
+      </div>
+      <div class="s-stats-kpi">
+        <div class="s-stats-kpi__label">MRR</div>
+        <div class="s-stats-kpi__value"><%= d.format_cents(r.mrr_cents) %></div>
+        <div class="s-stats-kpi__delta is-<%= d.delta_direction(d.mrr_delta_cents) %>">
+          <%= d.format_delta(d.mrr_delta_cents) %> vs yesterday
+        </div>
+      </div>
+      <div class="s-stats-kpi">
+        <div class="s-stats-kpi__label">Recurring subs</div>
+        <div class="s-stats-kpi__value"><%= number_with_delimiter(r.recurring_subscriber_count) %></div>
+        <div class="s-stats-kpi__delta">
+          <%= number_with_delimiter(r.monthly_count) %> monthly · <%= number_with_delimiter(r.yearly_count) %> yearly
+        </div>
+      </div>
+      <div class="s-stats-kpi">
+        <div class="s-stats-kpi__label">New MRR</div>
+        <div class="s-stats-kpi__value"><%= d.latest_snapshot ? d.format_cents(d.latest_snapshot.gross_new_mrr_cents) : "—" %></div>
+        <div class="s-stats-kpi__delta">Latest snapshot</div>
+      </div>
+      <div class="s-stats-kpi">
+        <div class="s-stats-kpi__label">Churned MRR</div>
+        <div class="s-stats-kpi__value"><%= d.latest_snapshot ? d.format_cents(d.latest_snapshot.churned_mrr_cents) : "—" %></div>
+        <div class="s-stats-kpi__delta">Latest snapshot</div>
+      </div>
+      <div class="s-stats-kpi">
+        <div class="s-stats-kpi__label">Net MRR</div>
+        <div class="s-stats-kpi__value"><%= d.net_new_mrr_cents ? d.format_cents(d.net_new_mrr_cents) : "—" %></div>
+        <div class="s-stats-kpi__delta is-<%= d.delta_direction(d.net_new_mrr_cents) %>">
+          New minus churned
+        </div>
+      </div>
+      <div class="s-stats-kpi">
+        <div class="s-stats-kpi__label">This month ≈ $40/yr</div>
+        <div class="s-stats-kpi__value"><%= d.month_annual_equivalent.nil? ? "—" : d.month_annual_equivalent %></div>
+        <div class="s-stats-kpi__delta">
+          <%= d.format_delta(d.month_net_arr_cents) %> ARR this month
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="s-stats-section">
+    <h4>Pricing cohorts</h4>
+    <p class="s-stats-sub">
+      Legacy $3 / $30 plans stay grandfathered. New subscribers are $4 / $40. Lifetime is excluded from MRR.
+    </p>
+    <table class="table table-striped s-stats-table">
+      <thead>
+        <tr>
+          <th>Cohort</th>
+          <th>Count</th>
+          <th>MRR</th>
+          <th>ARR</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% d.pricing_cohorts.each do |cohort| %>
+          <tr>
+            <td><%= cohort[:label] %></td>
+            <td><%= number_with_delimiter(cohort[:count]) %></td>
+            <td><%= d.format_cents(cohort[:mrr_cents]) %></td>
+            <td><%= d.format_cents(cohort[:arr_cents]) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="s-stats-section">
+    <h4>Acquisition funnel</h4>
+    <p class="s-stats-sub">Last 30 days of signups. 72-hour and 14-day rates use mature cohorts so they are not inflated by brand-new accounts.</p>
+    <table class="table table-striped s-stats-table">
+      <thead>
+        <tr>
+          <th>Step</th>
+          <th>Count</th>
+          <th>Of signups</th>
+          <th>Of previous step</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% d.funnel_rows.each do |row| %>
+          <tr>
+            <td><%= row[:label] %></td>
+            <td><%= number_with_delimiter(row[:count]) %></td>
+            <td><%= d.format_rate(row[:of_signups]) %></td>
+            <td><%= row[:of_previous] ? d.format_rate(row[:of_previous]) : "—" %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <p class="s-stats-sub">
+      72h first-entry activation: <%= d.format_rate(d.first_entry_activation_rate) %>.
+      3 entries in 14 days: <%= d.format_rate(d.three_entry_activation_rate) %>.
+    </p>
+  </section>
+
+  <section class="s-stats-section">
+    <h4>Retention</h4>
+    <p class="s-stats-sub">Wrote at least one entry in the window. This is standard WAU/MAU-style activity, not a full-year streak.</p>
+    <table class="table table-striped s-stats-table">
+      <thead>
+        <tr>
+          <th>Window</th>
+          <th>PRO</th>
+          <th>Free</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>7 days</td>
+          <td><%= number_with_delimiter(d.retention[:pro_7d]) %></td>
+          <td><%= number_with_delimiter(d.retention[:free_7d]) %></td>
+        </tr>
+        <tr>
+          <td>30 days</td>
+          <td><%= number_with_delimiter(d.retention[:pro_30d]) %></td>
+          <td><%= number_with_delimiter(d.retention[:free_30d]) %></td>
+        </tr>
+        <tr>
+          <td>90 days</td>
+          <td><%= number_with_delimiter(d.retention[:pro_90d]) %></td>
+          <td><%= number_with_delimiter(d.retention[:free_90d]) %></td>
+        </tr>
+        <tr>
+          <td>365 days</td>
+          <td><%= number_with_delimiter(d.retention[:pro_365d]) %></td>
+          <td><%= number_with_delimiter(d.retention[:free_365d]) %></td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="s-stats-sub">
+      PRO with no entry in 30 days: <%= number_with_delimiter(d.paid_inactive_30d) %>.
+      In 90 days: <%= number_with_delimiter(d.paid_inactive_90d) %>.
+    </p>
+
+    <h5 class="s-stats-h5">Loyalty milestones (past year)</h5>
+    <p class="s-stats-sub">
+      These require writing in almost every month / week / day of the year. Useful as a super-user count, not as a retention rate.
+    </p>
+    <% loyalty = d.loyalty %>
+    <table class="table table-striped s-stats-table">
+      <thead>
+        <tr>
+          <th>Milestone</th>
+          <th>All</th>
+          <th>PRO</th>
+          <th>Free</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>≥1 entry</td>
+          <td><%= number_with_delimiter(loyalty[:all][:yearly_count]) %></td>
+          <td>
+            <%= number_with_delimiter(loyalty[:pro][:yearly_count]) %>
+            <span class="s-stats-meta"><%= d.format_rate(d.share_rate(loyalty[:pro][:yearly_count], inv[:pro])) %></span>
+          </td>
+          <td><%= number_with_delimiter(loyalty[:free][:yearly_count]) %></td>
+        </tr>
+        <tr>
+          <td>≥11 months with an entry</td>
+          <td><%= number_with_delimiter(loyalty[:all][:monthly_count]) %></td>
+          <td><%= number_with_delimiter(loyalty[:pro][:monthly_count]) %></td>
+          <td><%= number_with_delimiter(loyalty[:free][:monthly_count]) %></td>
+        </tr>
+        <tr>
+          <td>≥51 weeks with an entry</td>
+          <td><%= number_with_delimiter(loyalty[:all][:weekly_count]) %></td>
+          <td><%= number_with_delimiter(loyalty[:pro][:weekly_count]) %></td>
+          <td><%= number_with_delimiter(loyalty[:free][:weekly_count]) %></td>
+        </tr>
+        <tr>
+          <td>≥364 days with an entry</td>
+          <td><%= number_with_delimiter(loyalty[:all][:daily_count]) %></td>
+          <td><%= number_with_delimiter(loyalty[:pro][:daily_count]) %></td>
+          <td><%= number_with_delimiter(loyalty[:free][:daily_count]) %></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="s-stats-section">
+    <h4>Acquisition sources</h4>
+    <p class="s-stats-sub">First-touch referrer. MRR is current recurring revenue from that source, not 30-day only.</p>
+    <table class="table table-striped s-stats-table">
+      <thead>
+        <tr>
+          <th>Source</th>
+          <th>Signups (30d)</th>
+          <th>First entry (30d)</th>
+          <th>PRO (30d)</th>
+          <th>Activation</th>
+          <th>Conversion</th>
+          <th>Current MRR</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% d.sources.each do |row| %>
+          <tr>
+            <td><%= row[:source] %></td>
+            <td><%= number_with_delimiter(row[:signups_30d]) %></td>
+            <td><%= number_with_delimiter(row[:first_entries_30d]) %></td>
+            <td><%= number_with_delimiter(row[:upgrades_30d]) %></td>
+            <td><%= d.format_rate(row[:activation_rate]) %></td>
+            <td><%= d.format_rate(row[:conversion_rate]) %></td>
+            <td><%= d.format_cents(row[:mrr_cents]) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="s-stats-section">
+    <h4>Email health</h4>
+    <p class="s-stats-sub">Daily send/fail/reply figures come from the snapshot (Mailgun + inbound entries). Lifetime totals are live.</p>
+    <table class="table table-striped s-stats-table">
+      <tbody>
+        <tr>
+          <th>Latest snapshot sent</th>
+          <td><%= d.email_health[:sent] ? number_with_delimiter(d.email_health[:sent]) : "—" %></td>
+        </tr>
+        <tr>
+          <th>Failed</th>
+          <td><%= d.email_health[:failed] ? number_with_delimiter(d.email_health[:failed]) : "—" %></td>
+        </tr>
+        <tr>
+          <th>Inbound replies that day</th>
+          <td><%= d.email_health[:replies] ? number_with_delimiter(d.email_health[:replies]) : "—" %></td>
+        </tr>
+        <tr>
+          <th>Delivery rate</th>
+          <td><%= d.format_rate(d.email_health[:delivery_rate]) %></td>
+        </tr>
+        <tr>
+          <th>Reply rate that day</th>
+          <td><%= d.format_rate(d.email_health[:reply_rate]) %></td>
+        </tr>
+        <tr>
+          <th>Lifetime sent / received</th>
+          <td>
+            <%= number_with_delimiter(d.email_health[:lifetime_sent]) %>
+            /
+            <%= number_with_delimiter(d.email_health[:lifetime_received]) %>
+            <span class="s-stats-meta"><%= d.format_rate(d.lifetime_reply_rate) %></span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="s-stats-section">
+    <h4>MCP</h4>
+    <p class="s-stats-sub">
+      Connected is a live OAuth token with mcp:access that is not revoked or expired.
+      Usage is tool calls (search, list, analyze, create, image upload) from the remote connector and in-browser WebMCP.
+      Query text is not stored.
+    </p>
+    <% mcp = d.mcp %>
+    <table class="table table-striped s-stats-table">
+      <tbody>
+        <tr>
+          <th>Connected now</th>
+          <td>
+            <%= number_with_delimiter(mcp[:connected_now]) %>
+            <span class="s-stats-meta">
+              <%= number_with_delimiter(mcp[:connected_ever]) %>
+              ever authorized
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <th>Active users</th>
+          <td>
+            <%= number_with_delimiter(mcp[:active_users_7d]) %>
+            in 7 days /
+            <%= number_with_delimiter(mcp[:active_users_30d]) %>
+            in 30 days
+          </td>
+        </tr>
+        <tr>
+          <th>Tool calls</th>
+          <td>
+            <%= number_with_delimiter(mcp[:calls_today]) %>
+            today /
+            <%= number_with_delimiter(mcp[:calls_7d]) %>
+            in 7 days /
+            <%= number_with_delimiter(mcp[:calls_30d]) %>
+            in 30 days
+          </td>
+        </tr>
+        <tr>
+          <th>OAuth / WebMCP (30d)</th>
+          <td>
+            <%= number_with_delimiter(mcp[:oauth_calls_30d]) %>
+            /
+            <%= number_with_delimiter(mcp[:webmcp_calls_30d]) %>
+          </td>
+        </tr>
+        <tr>
+          <th>Calls per active user (30d)</th>
+          <td><%= d.mcp_calls_per_active_30d || "—" %></td>
+        </tr>
+        <tr>
+          <th>Success rate (30d)</th>
+          <td><%= d.format_rate(mcp[:success_rate_30d]) %></td>
+        </tr>
+      </tbody>
+    </table>
+    <% if mcp[:tools].any? %>
+      <h5 class="s-stats-h5">Tools (30 days)</h5>
+      <table class="table table-striped s-stats-table">
+        <thead>
+          <tr>
+            <th>Tool</th>
+            <th>Calls</th>
+            <th>Users</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% mcp[:tools].each do |row| %>
+            <tr>
+              <td><%= row[:name] %></td>
+              <td><%= number_with_delimiter(row[:calls]) %></td>
+              <td><%= number_with_delimiter(row[:users]) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+    <% if mcp[:clients].any? %>
+      <h5 class="s-stats-h5">Connected clients</h5>
+      <table class="table table-striped s-stats-table">
+        <thead>
+          <tr>
+            <th>Client</th>
+            <th>Users</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% mcp[:clients].each do |row| %>
+            <tr>
+              <td><%= row[:name] %></td>
+              <td><%= number_with_delimiter(row[:users]) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% end %>
+  </section>
+
+  <section class="s-stats-section">
+    <h4>Cash vs recurring</h4>
+    <p class="s-stats-sub">Payments by month are cash collected, not MRR. Recurring run rate is the decision-bar ARR above.</p>
+    <table class="table table-striped s-stats-table">
+      <tbody>
+        <tr>
+          <th>Cash this month</th>
+          <td><%= d.format_cents(d.cash_collected_month_cents) %></td>
+        </tr>
+        <tr>
+          <th>Cash this year</th>
+          <td><%= d.format_cents(d.cash_collected_year_cents) %></td>
+        </tr>
+        <tr>
+          <th>Cash all time</th>
+          <td>
+            <%= d.format_cents(d.cash_collected_all_time_cents) %>
+            <span class="s-stats-meta">
+              <%= link_to "#{number_with_delimiter(d.payment_count)} payments", payments_path %>.
+            </span>
+          </td>
+        </tr>
+        <tr>
+          <th>Annual renewals in next 30 days</th>
+          <td><%= number_with_delimiter(d.upcoming_renewals_count) %></td>
+        </tr>
+        <tr>
+          <th>At-risk renewals</th>
+          <td>
+            <%= number_with_delimiter(d.at_risk[:monthly_count]) %>
+            monthly /
+            <%= number_with_delimiter(d.at_risk[:yearly_count]) %>
+            yearly
+            <span class="s-stats-meta">
+              <%= d.format_cents(d.at_risk[:mrr_cents]) %>
+              · more than 15 days past the expected renewal
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="s-stats-section">
+    <h4>Inventory</h4>
+    <p class="s-stats-sub">PRO % is of registered users, not of entries.</p>
+    <table class="table table-striped s-stats-table">
+      <tbody>
+        <tr>
+          <th>Entries</th>
+          <td><%= number_with_delimiter(inv[:entries]) %></td>
+        </tr>
+        <tr>
+          <th>Entries with photos</th>
+          <td>
+            <%= link_to number_with_delimiter(inv[:photos]), admin_photos_path %>.
+            <span class="s-stats-meta"><%= d.format_rate(d.share_rate(inv[:photos], inv[:entries])) %></span>
+          </td>
+        </tr>
+        <tr>
+          <th>Users</th>
+          <td><%= number_with_delimiter(inv[:users]) %></td>
+        </tr>
+        <tr>
+          <th>PRO / Free</th>
+          <td>
+            <%= number_with_delimiter(inv[:pro]) %>
+            /
+            <%= number_with_delimiter(inv[:free]) %>
+            <span class="s-stats-meta"><%= d.format_rate(d.pro_share_of_users) %></span>
+          </td>
+        </tr>
+        <tr>
+          <th>Monthly / Yearly / Lifetime</th>
+          <td>
+            <%= number_with_delimiter(inv[:monthly]) %>
+            /
+            <%= number_with_delimiter(inv[:yearly]) %>
+            /
+            <%= number_with_delimiter(inv[:forever]) %>
+            <span class="s-stats-meta"><%= d.format_rate(d.yearly_share_of_pro) %></span>
+          </td>
+        </tr>
+        <tr>
+          <th>Stripe / Gumroad / PayPal</th>
+          <td>
+            <%= number_with_delimiter(inv[:stripe]) %>
+            /
+            <%= number_with_delimiter(inv[:gumroad]) %>
+            /
+            <%= number_with_delimiter(inv[:paypal]) %>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="s-stats-section">
+    <h4>Trends</h4>
+    <% if d.snapshot_count.zero? %>
+      <p class="s-stats-sub">
+        MRR / activation history starts after the first snapshot. Signups, entries, upgrades, and cash still use live records.
+      </p>
+    <% else %>
+      <h5 class="s-stats-h5">MRR</h5>
+      <%= line_chart d.chart_mrr, discrete: true, prefix: "$" %>
+      <h5 class="s-stats-h5">New vs churned MRR</h5>
+      <%= line_chart d.chart_net_mrr, discrete: true, prefix: "$" %>
+      <h5 class="s-stats-h5">72-hour first-entry activation</h5>
+      <%= line_chart d.chart_activation, discrete: true, suffix: "%" %>
+      <h5 class="s-stats-h5">Email reply rate</h5>
+      <%= line_chart d.chart_reply_rate, discrete: true, suffix: "%" %>
+    <% end %>
+
+    <h5 class="s-stats-h5">Signups over the last 90 days</h5>
+    <%= line_chart d.chart_signups, discrete: true %>
+    <h5 class="s-stats-h5">Entries over the last 90 days</h5>
+    <%= line_chart d.chart_entries, discrete: true %>
+    <h5 class="s-stats-h5">First upgrades over the last 90 days</h5>
+    <p class="s-stats-sub">Includes people who later canceled. Renewals are not counted.</p>
+    <%= line_chart d.chart_upgrades, discrete: true %>
+    <h5 class="s-stats-h5">MCP tool calls over the last 90 days</h5>
+    <%= line_chart d.chart_mcp_calls, discrete: true %>
+    <h5 class="s-stats-h5">Cash collected by month</h5>
+    <%= column_chart d.chart_cash, discrete: true, prefix: "$" %>
+  </section>
+</div>

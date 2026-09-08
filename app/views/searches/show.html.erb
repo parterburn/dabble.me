@@ -1,0 +1,115 @@
+<% title "Search — Dabble me." %>
+<% add_class = 'blur' if current_user.is_free? %>
+
+<div class="row">
+  <% if @search.term.blank? && current_user.is_free? %>
+    <div class="col-md-8 col-md-offset-2">
+      <div class="alert alert-warning" style="min-height: 45px;">
+        <%= link_to subscribe_path, class: "float-left", style: "margin-top: -7px;" do %>
+          <button class="btn btn-warning">Subscribe Now</button>
+        <% end %>
+        <strong>Dabble Me PRO</strong>
+        for $4/mo unlocks search and to see which tags are used most.
+      </div>
+    </div>
+    <div class="clearfix"></div>
+  <% end %>
+
+  <div class="col-md-8 col-md-offset-2">
+    <br>
+    <%= form_for @search, url: search_path, method: :get, html: { class: "form-horizontal" } do |f| %>
+      <div class="form-group">
+        <div class="col-xs-8 col-sm-9" style="padding-right: 0px;">
+          <%= f.text_field :term, class: "form-control input-lg s-search-with-clear", autofocus: true, placeholder: "What are you looking for?" %>
+          <% if @search.term.present? %>
+            <%= link_to search_path, class: "s-clear-search", rel: "tooltip", title: "Clear search" do %>
+              <i class="fa fa-times-circle"></i>
+            <% end %>
+          <% end %>
+        </div>
+        <div class="col-xs-4 col-sm-3">
+          <%= f.submit "Search", class: "btn btn-primary btn-lg" %>
+        </div>
+      </div>
+    <% end %>
+
+    <% if @search.term.present? && current_user.is_free? %>
+      <div class="alert alert-danger">
+        You must be subscribed to PRO to use search.
+      </div>
+      <%= render "entries/pro_upgrade" %>
+    <% elsif @entries.present? %>
+      <% search_entries = Kaminari.paginate_array(@entries).page(params[:page]).per(params[:per]) %>
+      <p>
+        <% all_entries_count = current_user.entries.count %>
+        <% found_entries_count = @entries.count %>
+        <%= number_to_percentage(found_entries_count.to_f/all_entries_count.to_f*100, precision: 0) %> of <%= params[:admin].present? ? "ALL" : "your" %> entries mention
+        <mark><%= @search.term %></mark>
+        (<%= pluralize(found_entries_count, "entry") %>)
+        <br>
+      </p>
+      <div class="center">
+        <%= paginate search_entries %>
+      </div>
+
+      <% search_entries.each do |entry| %>
+        <div class="well entry" id="entry-<%= entry.id %>">
+          <%= render partial: 'entries/entry', locals: { entry: entry } %>
+        </div>
+      <% end %>
+
+      <div class="center">
+        <%= paginate search_entries %>
+      </div>
+
+      <div class="center s-search-export">
+        <%= link_to export_entries_path(search: { term: @search.term }, format: :txt), class: "btn btn-default" do %>
+          <i class="fa fa-download"></i>
+          Export Search Entries
+        <% end %>
+      </div>
+
+    <% elsif @search.term.present? %>
+      <p>
+        Sorry, no entries include
+        <mark><%= @search.term %></mark>.
+      </p>
+    <% end %>
+
+    <% if @search.term.blank? %>
+      <div class="alert alert-info">
+        <% if @hashtags.length > 0 %>
+          <div style="margin-bottom: 5px;">
+            <small>
+              <strong>YOUR TAGS</strong>
+            </small>
+          </div>
+          <div class="hashtags">
+            <% @hashtags.each do |k, v| %>
+              <% class_size = (v.to_f / @hashtags.count * (3 - 1)).round %>
+              <% add_class = current_user.is_free? ? "s-hashtag-size-0" : "s-hashtag-size-#{class_size}" %>
+              <%= link_to k, search_path(search: { term: "##{k}" }), class: "s-hashtag #{add_class}" %>
+            <% end %>
+          </div>
+        <% else %>
+          <% if current_user.is_free? %>
+            Pro users can use
+          <% else %>
+            <i>Tip: Use</i>
+          <% end %>
+          hashtags throughout your entries and you'll see a tag cloud appear here making it easy to search for posts containing those hashtags.
+        <% end %>
+      </div>
+    <% end %>
+
+    <div class="email-post-card">
+      <div class="email-post-content">
+        <h3>Ask ChatGPT or Claude about your journal</h3>
+        <p class="text-muted">
+          Connect Dabble Me once, then ask things like “What was I writing about last spring?” or “When did I mention burnout?”
+        </p>
+        <%= link_to "How to use the AI Connector", mcp_server_docs_path, class: "btn btn-primary" %>
+      </div>
+    </div>
+  </div>
+</div>

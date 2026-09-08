@@ -63,7 +63,6 @@ gem 'fastimage'
 # Miscellanea
 # gem 'staccato' # server side tracking for Google Analytics
 gem 'tilt', '~> 2.0', '>= 2.0.10'
-gem 'haml'
 gem 'rack-affiliates' # for tracking referrers
 gem 'rinku' # linkify urls & emails in entries
 

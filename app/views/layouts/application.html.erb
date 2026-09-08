@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="<%= I18n.locale.to_s %>">
+  <head>
+    <title><%= yield_or_default :title, action_name.titlecase %></title>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
+    <meta content="IE=edge" http-equiv="X-UA-Compatible">
+    <%= csrf_meta_tags %>
+    <%= yield :head %>
+    <%= render 'shared/favicons_and_metatags' %>
+    <%= stylesheet_link_tag 'application', media: 'all' %>
+    <% if controller_path == 'oauth/authorizations' %>
+      <%= stylesheet_link_tag 'oauth_consent_bundle', media: 'all' %>
+    <% end %>
+    <%= javascript_include_tag 'application' %>
+
+    <script>
+      window.action = '<%= @js_action %>';
+    </script>
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <%= javascript_include_tag '//oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js', 'respond.js' %>
+    <![endif]-->
+
+    <% if Rails.env.production? %>
+      <%= javascript_include_tag "https://www.googletagmanager.com/gtag/js?id=#{ENV['GOOGLE_ANALYTICS_4_ID']}", async: true %>
+      <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+
+        gtag('config', "<%= ENV['GOOGLE_ANALYTICS_4_ID'] %>", {
+          'anonymize_ip': true
+        });
+      </script>
+    <% end %>
+  </head>
+
+  <body class="<%= @body_class %>">
+    <div id="wrap">
+      <%= render 'shared/navbar' %>
+
+      <div id="main-container" class="clear-top <%= params[:controller].in?(['admin', 'payments', 'inspirations']) ? 'container-fluid' : 'container' %>">
+        <% if notice %>
+          <div class="col-md-8 col-md-offset-2 alert alert-success"><%= notice.html_safe %></div>
+          <div class="clearfix"></div>
+        <% end %>
+        <% if alert && alert.class == Array %>
+          <% alert.each do |message| %>
+            <div class="col-md-8 col-md-offset-2">
+              <div class="alert alert-danger"><%= message %></div>
+            </div>
+          <% end %>
+        <% elsif alert %>
+          <div class="col-md-8 col-md-offset-2 alert alert-danger"><%= alert.html_safe %></div>
+          <div class="clearfix"></div>
+        <% end %>
+
+        <%= yield %>
+      </div>
+    </div>
+
+    <%= render 'shared/footer' %>
+  </body>
+</html>

@@ -1,0 +1,118 @@
+<nav class="navbar navbar-default navbar-fixed-top" role="navigation" style="font-family: 'Instrument Sans', sans-serif;">
+  <div class="container">
+    <div class="navbar-header">
+      <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".navbar-collapse">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <% if user_signed_in? && current_user.is_pro? %>
+        <%= link_to "Write", new_entry_path, class: "s-write-icon visible-xs #{'active' if params[:controller] == 'entries' && params[:action].in?(['new', 'create'])}" %>
+      <% end %>
+      <%= link_to root_path, class: 'navbar-brand', title: "Dabble me." do %>
+        <span>
+          Dabble me.
+        </span>
+      <% end %>
+    </div>
+
+    <div class="collapse navbar-collapse">
+      <ul class="nav navbar-nav">
+        <li class="<%= 'hidden-xs' if user_signed_in? && current_user.is_pro? %> <%= 'active' if params[:controller] == 'entries' && params[:action].in?(['new', 'create']) %>">
+          <%= link_to new_entry_path do %>
+            <span>Write</span>
+          <% end %>
+        </li>
+
+        <li class="<%= 'active' if params[:controller] == 'entries' && params[:action] == 'index' %>">
+          <%= link_to entries_path do %>
+            <span>Entries</span>
+          <% end %>
+        </li>
+
+        <li class="<%= 'active' if params[:action] == "review" %>">
+          <%= link_to review_path(Date.today.year), title: "Analytics" do %>
+            <span>Stats</span>
+          <% end %>
+        </li>
+
+        <li class="<%= 'active' if current_page?(entries_calendar_path) %>">
+          <%= link_to entries_calendar_path, title: "Calendar View" do %>
+            <i class="fa fa-calendar hidden-xs"></i>
+            <span class="visible-xs-inline-block">Calendar</span>
+          <% end %>
+        </li>
+
+        <li class="<%= 'active' if current_page?(search_path) %>">
+          <%= link_to search_path, title: "Search" do %>
+            <i class="fa fa-search hidden-xs"></i>
+            <span class="visible-xs-inline-block">Search</span>
+          <% end %>
+        </li>
+
+        <% if user_signed_in? && current_user.admin? %>
+          <li class="dropdown <%= 'active' if params[:controller].in?(['admin', 'inspirations', 'payments']) %>">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#">
+              <i class="fa fa-lock hidden-xs"></i>
+              <span class="visible-xs-inline-block">Admin</span>
+            </a>
+            <ul class="dropdown-menu" role="menu">
+              <li class="<%= 'active' if current_page?(inspirations_path) %>">
+                <%= link_to inspirations_path, title: "Inspirations" do %>
+                  <i class="fa fa-lightbulb-o"></i>
+                  &nbsp;Inspirations
+                <% end %>
+              </li>
+              <li class="<%= 'active' if current_page?(payments_path) %>">
+                <%= link_to payments_path, title: "Payments" do %>
+                  <i class="fa fa-usd"></i>
+                  &nbsp;Payments
+                <% end %>
+              </li>
+              <li class="<%= 'active' if current_page?(admin_stats_path) %>">
+                <%= link_to admin_stats_path, title: "Admin Stats" do %>
+                  <i class="fa fa-bar-chart"></i>
+                  &nbsp;Stats
+                <% end %>
+              </li>
+              <li class="<%= 'active' if current_page?(admin_photos_path) %>">
+                <%= link_to admin_photos_path, title: "Admin Photos" do %>
+                  <i class="fa fa-picture-o"></i>
+                  &nbsp;Photos
+                <% end %>
+              </li>
+              <li class="<%= 'active' if current_page?(admin_users_path) %>">
+                <%= link_to admin_users_path, title: "Admin Users" do %>
+                  <i class="fa fa-users"></i>
+                  &nbsp;Users
+                <% end %>
+              </li>
+            </ul>
+          </li>
+        <% end %>
+      </ul>
+
+      <ul class="nav navbar-nav navbar-right">
+        <% if user_signed_in? && current_user.sign_in_count < 10 && !cookies[:viewed_settings] && (current_page?(entries_path) || current_page?(root_path)) %>
+          <% add_popover = "popover_settings" %>
+          <% if current_user.frequency.count > 0 %>
+            <% current_settings = "You will be emailed at <strong>#{current_user.send_time.strftime("%-I %P")} #{current_user.send_timezone}</strong> on <strong>#{current_user.frequencies}</strong>." %>
+          <% else %>
+            <% current_settings = "Email reminders are currently <strong>disabled</strong>." %>
+          <% end %>
+        <% end %>
+        <li class="<%= 'active' if current_page?(edit_user_registration_path) %>" rel="<%= add_popover %>" title="" data-content="<%= current_settings %>" data-placement="bottom">
+          <%= link_to edit_user_registration_path do %>
+            <span>Settings</span>
+          <% end %>
+        </li>
+        <li>
+          <%= link_to destroy_user_session_path, method: :delete, title: "Logout" do %>
+            <i class="fa fa-sign-out hidden-xs"></i>
+            <span class="visible-xs-inline-block">Logout</span>
+          <% end %>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>

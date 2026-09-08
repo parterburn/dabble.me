@@ -1,0 +1,116 @@
+<% title "Connect an app — Dabble me." %>
+<% client_name = @pre_auth.client.name %>
+<% client_logo = oauth_application_logo(client_name) %>
+<% client_initials = oauth_application_initials(client_name) %>
+<% mcp_access = @pre_auth.scopes.map(&:to_s).include?("mcp:access") %>
+
+<div class="row oauth-consent" id="oauth-consent-root">
+  <div class="col-xs-12 oauth-consent__column" style="max-width: 800px;">
+    <h1 class="oauth-consent__title"><%= t("doorkeeper.authorizations.new.title") %></h1>
+    <p class="oauth-consent__subtitle">
+      Link an AI tool to your account. You can disconnect anytime.
+    </p>
+
+    <div class="oauth-consent__panel">
+      <div class="oauth-consent__flow">
+        <div class="oauth-consent__flow-node">
+          <div class="oauth-consent__avatar" style="font-size: 35px; background: #1D1D16; color: #fff;line-height: 59px;align-items: baseline;">me</div>
+          <span class="oauth-consent__flow-name">Dabble Me</span>
+          <span class="oauth-consent__flow-caption"><%= t("doorkeeper.authorizations.new.flow_you_label") %></span>
+        </div>
+        <div class="oauth-consent__flow-arrows">
+          <i class="fa fa-long-arrow-right" aria-hidden="true"></i>
+          <i class="fa fa-long-arrow-left" aria-hidden="true"></i>
+        </div>
+        <div class="oauth-consent__flow-node">
+          <% if client_logo %>
+            <div class="oauth-consent__avatar oauth-consent__avatar--logo oauth-consent__avatar--<%= client_logo[:fit] %>">
+              <%= image_tag client_logo[:src], alt: client_logo[:alt], class: "oauth-consent__avatar-img" %>
+            </div>
+          <% else %>
+            <div class="oauth-consent__avatar" style="font-size: 35px; background: #fff; color: #1D1D16;line-height: 59px;align-items: baseline;"><%= client_initials.downcase %></div>
+          <% end %>
+          <span class="oauth-consent__flow-name"><%= client_name %></span>
+          <span class="oauth-consent__flow-caption"><%= t("doorkeeper.authorizations.new.flow_app_label") %></span>
+        </div>
+      </div>
+
+      <div class="oauth-consent__identity">
+        <p class="oauth-consent__identity-text">
+          <%= t("doorkeeper.authorizations.new.signed_in_as") %>
+          <strong><%= current_user.email %></strong>
+        </p>
+        <%= link_to t("doorkeeper.authorizations.new.change_account"), destroy_user_session_path, method: :delete, class: "oauth-consent__change-account" %>
+      </div>
+
+      <p class="oauth-consent__prompt">
+        <%= t("doorkeeper.authorizations.new.prompt", client_name: content_tag(:strong, client_name)).html_safe %>
+      </p>
+
+      <p class="oauth-consent__trust-note"><%= t("doorkeeper.authorizations.new.trust_note") %></p>
+
+      <div class="oauth-consent__permissions">
+        <p class="oauth-consent__permissions-title">
+          <i class="fa fa-lock" aria-hidden="true"></i>
+          <%= t("doorkeeper.authorizations.new.able_to") %>
+        </p>
+        <% if mcp_access %>
+          <ul class="oauth-consent__permissions-list">
+            <li class="oauth-consent__permission-item">
+              <i class="fa fa-check" aria-hidden="true"></i>
+              <%= t("doorkeeper.authorizations.new.permission_read") %>
+            </li>
+            <li class="oauth-consent__permission-item">
+              <i class="fa fa-check" aria-hidden="true"></i>
+              <%= t("doorkeeper.authorizations.new.permission_write") %>
+            </li>
+          </ul>
+        <% elsif @pre_auth.scopes.any? %>
+          <ul class="oauth-consent__permissions-list">
+            <% @pre_auth.scopes.each do |scope| %>
+              <li class="oauth-consent__permission-item">
+                <i class="fa fa-check" aria-hidden="true"></i>
+                <%= t scope, scope: %i[doorkeeper scopes] %>
+              </li>
+            <% end %>
+          </ul>
+        <% end %>
+      </div>
+
+      <p class="oauth-consent__privacy">
+        <i class="fa fa-shield" aria-hidden="true"></i>
+        <%= t("doorkeeper.authorizations.new.privacy_intro") %>
+        <%= t("doorkeeper.authorizations.new.privacy_access", client_name: client_name) %>
+        <%= t("doorkeeper.authorizations.new.privacy_revoke") %>
+        <%= link_to t("doorkeeper.authorizations.new.privacy_settings_link"), security_path(anchor: "connected-apps") %>
+        .
+      </p>
+
+      <div class="oauth-consent__actions">
+        <%= form_tag oauth_authorization_path, method: :post do %>
+          <%= hidden_field_tag :client_id, @pre_auth.client.uid, id: nil %>
+          <%= hidden_field_tag :redirect_uri, @pre_auth.redirect_uri, id: nil %>
+          <%= hidden_field_tag :state, @pre_auth.state, id: nil %>
+          <%= hidden_field_tag :response_type, @pre_auth.response_type, id: nil %>
+          <%= hidden_field_tag :response_mode, @pre_auth.response_mode, id: nil %>
+          <%= hidden_field_tag :scope, @pre_auth.scope, id: nil %>
+          <%= hidden_field_tag :code_challenge, @pre_auth.code_challenge, id: nil %>
+          <%= hidden_field_tag :code_challenge_method, @pre_auth.code_challenge_method, id: nil %>
+          <%= submit_tag t("doorkeeper.authorizations.buttons.authorize"), class: "oauth-consent__submit--allow" %>
+        <% end %>
+
+        <%= form_tag oauth_authorization_path, method: :delete do %>
+          <%= hidden_field_tag :client_id, @pre_auth.client.uid, id: nil %>
+          <%= hidden_field_tag :redirect_uri, @pre_auth.redirect_uri, id: nil %>
+          <%= hidden_field_tag :state, @pre_auth.state, id: nil %>
+          <%= hidden_field_tag :response_type, @pre_auth.response_type, id: nil %>
+          <%= hidden_field_tag :response_mode, @pre_auth.response_mode, id: nil %>
+          <%= hidden_field_tag :scope, @pre_auth.scope, id: nil %>
+          <%= hidden_field_tag :code_challenge, @pre_auth.code_challenge, id: nil %>
+          <%= hidden_field_tag :code_challenge_method, @pre_auth.code_challenge_method, id: nil %>
+          <%= submit_tag t("doorkeeper.authorizations.buttons.deny"), class: "oauth-consent__submit--deny" %>
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>

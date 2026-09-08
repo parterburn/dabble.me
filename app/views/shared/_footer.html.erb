@@ -1,0 +1,54 @@
+<footer class="footer">
+  <div class="container">
+    <hr>
+    <div class="flex">
+      <% two_factor_marketing = user_signed_in? && !(current_user.otp_enabled? || current_user.webauthn_credentials.any?) && current_user.created_at < 1.day.ago && Date.today.between?(Date.parse("2024-01-15"), Date.parse("2024-02-15")) %>
+      <div style="flex: none;">
+        <p class="muted float-left">
+          <%= link_to "Features", root_path(s: 0, anchor: "features"), title: "Features", style: "font-size: 15px;" %>
+          &nbsp;&middot;&nbsp;
+          <%= link_to "Support", support_path, title: "Support & FAQs", style: "font-size: 15px;" %>
+          <% if user_signed_in? %>
+            &nbsp;&middot;&nbsp;
+            <%= link_to "AI Connector", mcp_server_docs_path, title: "Connect ChatGPT or Claude to your journal", style: "font-size: 15px;" %>
+          <% end %>
+          &nbsp;&middot;&nbsp;
+          <%= link_to "Privacy", privacy_path, title: "Privacy Policy", style: "font-size: 15px;" %>
+          &nbsp;&middot;&nbsp;
+          <%= link_to "Terms", terms_path, title: "Terms of Service", style: "font-size: 15px;" %>
+          <% if current_user && current_user.is_free? %>
+            &nbsp;&middot;&nbsp;
+            <%= link_to "Subscribe to Pro", subscribe_path, title: "Subscribe Now", style: "font-size: 15px;" %>
+          <% end %>
+        </p>
+      </div>
+      <div class="muted footer__flex-center" style="font-size: 13px; flex: 1 1 0%; text-align: center;">
+        <% if two_factor_marketing %>
+          <div class="footer__2fa-promo">
+            <span class="label label-default" style="margin-right: 4px; position: relative;top:-2px;font-weight: normal; font-size: 10px; font-family: sans-serif;padding: 3px 5px;">NEW</span>
+            Protect your account by setting up
+            <%= link_to("two-factor authentication", user_otp_token_path, style: "color: #649cc7") + "." %>
+          </div>
+        <% end %>
+      </div>
+      <div style="flex: none;">
+        <p class="muted float-right">
+          &nbsp;&nbsp;
+          <%= link_to 'https://paularterburn.com/', title: "Made by Paul Arterburn", style: "font-size: 15px;" do %>
+            © <%= Time.now.year %> Dabble Dev LLC
+          <% end %>
+        </p>
+      </div>
+    </div>
+  </div>
+</footer>
+
+
+<div class="j-back-to-top s-back-to-top">
+  <%= link_to "#" do %>
+    <span class="fa-stack fa-sm">
+      <i class="fa fa-square fa-stack-2x"></i>
+      <i class="fa fa-arrow-up fa-stack-1x fa-inverse"></i>
+    </span>
+  <% end %>
+</div>

@@ -386,7 +386,7 @@ class EntriesController < ApplicationController
 
   # Clear the image_error banner that ImageCollageJob / ProcessEntryImageJob
   # writes to `entries.image_error` when async image processing fails. Called
-  # via the × on the alert in `_entry.html.haml`.
+  # via the × on the alert in `_entry.html.erb`.
   def dismiss_image_error
     @entry.update(image_error: nil)
     redirect_back fallback_location: day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day)

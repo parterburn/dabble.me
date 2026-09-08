@@ -1,0 +1,75 @@
+<% title "Admin Users" %>
+
+<div class="container-fluid">
+  <div class="row s-admin-container">
+    <div class="col-md-12">
+      <h3>
+        Admin Users
+      </h3>
+    </div>
+
+    <div class="col-md-12">
+      <hr>
+    </div>
+
+    <div class="col-md-12">
+      <div class="row">
+        <div class="col-md-12">
+          <form class="row">
+            <div class="col-md-4">
+              <input type="text" name="email" placeholder="Filter by Email" value="<%= params[:email] %>" class="form-control">
+            </div>
+            <div class="col-md-4">
+              <input type="text" name="user_key" placeholder="Filter by User Key" value="<%= params[:user_key] %>" class="form-control  col-md-6">
+            </div>
+            <div class="col-md-4">
+              <button type="submit" name="submit" value="Search" class="btn btn-primary">Search</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="clearfix">
+        <hr>
+      </div>
+      <div class="row">
+        <div class="col-md-12">
+          <table class="table table-bordered table-striped well sortable">
+            <thead>
+              <tr>
+                <th style="width: 14%" data-mainsort="true">Created</th>
+                <th style="width: auto" data-firstsort="asc">Email</th>
+                <th style="width: 20%" data-firstsort="asc">Name</th>
+                <th style="width: 8%" data-firstsort="asc">Entries</th>
+                <th style="width: 8%" data-firstsort="asc">Images</th>
+                <th style="width: 8%" data-firstsort="asc">Paid</th>
+                <th style="width: auto" data-firstsort="asc">Plan</th>
+                <th style="width: auto" data-firstsort="asc">Ref</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% @user_list.each do |user| %>
+                <tr>
+                  <td><%= user.created_at.strftime('%Y-%m-%d') %></td>
+                  <td title="<%= user.user_key %>@<%= ENV['SMTP_DOMAIN'] %>"><%= user.email %></td>
+                  <td><%= user.full_name %></td>
+                  <% user_entries_count = user.entries.count %>
+                  <% user_images_count = user.entries.only_images.count %>
+                  <td data-value="<%= user_entries_count %>"><%= number_with_delimiter(user_entries_count) %></td>
+                  <td data-value="<%= user_images_count %>"><%= number_with_delimiter(user_images_count) %></td>
+                  <td><%= user.payments.sum(:amount) %></td>
+                  <td title="<%= user.frequencies %>"><%= user.plan %></td>
+                  <td><%= user.referrer %></td>
+                </tr>
+              <% end %>
+            </tbody>
+          </table>
+          <div class="center">
+            <%= paginate @user_list %>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="clearfix"></div>

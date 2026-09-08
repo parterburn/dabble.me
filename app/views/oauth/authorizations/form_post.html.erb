@@ -1,0 +1,22 @@
+<% title "Continue — Dabble me." %>
+
+<div class="row">
+  <div class="col-md-8 col-md-offset-2">
+    <p class="text-muted" style="margin-bottom: 4px;">Dabble Me</p>
+    <h3 style="margin-top: 0;"><%= t("doorkeeper.authorizations.form_post.title") %></h3>
+
+    <p>Continuing to your app…</p>
+  </div>
+</div>
+
+<%= form_tag @pre_auth.redirect_uri, method: :post, name: :redirect_form, authenticity_token: false do %>
+  <% auth.body.compact.each do |key, value| %>
+    <%= hidden_field_tag key, value %>
+  <% end %>
+<% end %>
+
+<script>
+  window.onload = function () {
+    document.forms['redirect_form'].submit();
+  };
+</script>

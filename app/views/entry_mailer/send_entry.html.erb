@@ -106,7 +106,7 @@
         <% end %>
         <% if @user.is_pro? && @random_entry_image_url.present? %>
           <div style="line-height: 0 !important;">
-            <%= link_to image_tag(@random_entry_image_url, style: 'max-width: 100%; border-radius: 4px;'), @random_entry_image_url, style: "display: inline-block; line-height: 0 !important;" %>
+            <%= link_to image_tag(@random_entry_image_url, style: 'max-width: 100%; border-radius: 4px;'), @random_entry_image_link, style: "display: inline-block; line-height: 0 !important;" %>
           </div>
         <% end %>
       </div>

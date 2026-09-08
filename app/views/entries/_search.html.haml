@@ -1,8 +1,0 @@
-.col-md-8.col-md-offset-1
-  %br
-  = form_for Search.new(), url: search_path, method: :get, html: { class: "form-horizontal", toolname: "search_journal", tooldescription: "Search the signed-in user's private Dabble Me journal. Fill the query and leave the form for the user to submit." } do |f|
-    .form-group
-      .col-xs-8.col-sm-9{style: "padding-right: 0px;"}
-        = f.text_field :term, class: "form-control input-lg s-search-with-clear", autofocus: true, placeholder: "Search your entries...", toolparamdescription: "Keyword, topic, or quoted phrase to find in journal entries."
-      .col-xs-4.col-sm-3
-        = f.submit "Search", class: "btn btn-primary btn-lg"

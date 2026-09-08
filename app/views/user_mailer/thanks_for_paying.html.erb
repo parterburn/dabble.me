@@ -1,0 +1,65 @@
+<p>Hey <%= @user.first_name_or_fallback %>,</p>
+
+<p>
+  Thanks for subscribing to
+  <%= link_to("Dabble Me PRO", entries_url)+"." %>
+  The premium features have now been unlocked for your account at <%= @user.email %>.
+</p>
+
+<% if @user.frequencies == "Sun" %>
+  <p>
+    <strong>Your days to receive emails are set to: <%= @user.frequencies %>.</strong>
+    If you subscribed to increase the frequency of emails being sent, please make sure to edit your
+    <%= link_to("User Settings", "https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}") %>
+    and check the boxes on the days you want to receive emails.
+  </p>
+<% end %>
+
+<p>
+  You'll now have access to:
+  <ul>
+    <li>
+      <%= link_to "Change the frequency", "https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}" %>
+      of your emails
+    </li>
+    <li>Add/edit entries via the web</li>
+    <li>Attach photos with your entry (up to <%= CollageGenerator::MAX_IMAGES %> per entry)</li>
+    <li>Rich text formatting through the web interface</li>
+    <li>
+      <%= link_to "Calendar View", entries_calendar_url %>
+      of your past entries to know you've written every day
+    </li>
+    <li>
+      <%= link_to "Search", search_url %>
+      all of your past entries with support for hashtags
+    </li>
+    <li>
+      <%= link_to "Import", import_url %>
+      entries from other services
+    </li>
+  </ul>
+</p>
+<p>
+  <br>
+  Thanks,
+  <br>
+  <%= link_to "Paul Arterburn","https://paularterburn.com/" %>
+  <br>
+  Creator of Dabble Me
+  <br>
+  For support, email
+  <%= mail_to("hello@#{ENV['MAIN_DOMAIN']}", "hello@#{ENV['MAIN_DOMAIN']}") %>
+</p>
+
+
+<p>
+  <i>
+    P.S. You can
+    <%= link_to "manage your subscription", "https://#{ENV['MAIN_DOMAIN']}/billing" %>
+    <% if @user.plan_frequency == "Monthly" %>
+      to upgrade to the annual plan (with 2 months free) or cancel at anytime.
+    <% else %>
+      to cancel at anytime.
+    <% end %>
+  </i>
+</p>

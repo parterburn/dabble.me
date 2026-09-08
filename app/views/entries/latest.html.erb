@@ -1,0 +1,100 @@
+<% if @lastest_entry.present? %>
+  <% title "Latest Entry — Dabble me." %>
+  <% graph_year = @user_today.year %>
+  <% review_year = @user_today.month > 11 ? @user_today.year : @user_today.year - 1 %>
+  <% highlight_year_in_review = @user_today > Date.parse("#{review_year}-12-1") && @user_today < Date.parse("#{review_year + 1}-01-15") %>
+
+  <div class="row">
+    <div class="col-md-8 col-md-offset-1 hidden-sm hidden-xs">
+      <h3>
+        <% if current_user.first_name.present? %>
+          Welcome back, <%= current_user.first_name %>.
+        <% else %>
+          Welcome back.
+        <% end %>
+      </h3>
+    </div>
+
+    <%= render "sidebar", dashboard: true %>
+
+    <div class="col-md-8 col-md-offset-1" style="margin-top: 30px;">
+      <%= form_for Search.new(), url: search_path, method: :get, html: { class: "form-horizontal" } do |f| %>
+        <div class="form-group">
+          <div class="col-xs-8 col-sm-9" style="padding-right: 0px;">
+            <%= f.text_field :term, class: "form-control input-lg s-search-with-clear", autofocus: true, placeholder: "Search your entries..." %>
+          </div>
+          <div class="col-xs-4 col-sm-3">
+            <%= f.submit "Search", class: "btn btn-primary btn-lg" %>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <% year_entries = current_user.entries.where("date >= '#{graph_year}-01-01'::DATE AND date <= '#{graph_year}-12-31'::DATE") %>
+    <%= javascript_include_tag "//www.gstatic.com/charts/loader.js", "chartkick" %>
+    <% total_count = year_entries.count %>
+    <% percent_complete = graph_year < @user_today.year ? 100 : (@user_today.yday.to_f / Date.new(graph_year, 12, 31).yday * 100).round %>
+    <% days_with_entries = year_entries.where("date <= ?", @user_today).distinct.count(:date) %>
+    <% percent_with_entries = (days_with_entries.to_f / elapsed_days_in_year(graph_year) * 100).round %>
+
+    <div class="col-md-8 well col-md-offset-1" id="year-in-review" style="padding-top: 0; padding-left: 0; padding-right: 0;">
+      <div class="center">
+        <div class="s-entry-date">
+          <h2>
+            <%= link_to "Year in Progress", review_path %>
+          </h2>
+          <h3>
+            <span rel="tooltip" title="<%= percent_with_entries %>% of days so far in <%= graph_year %> have entries."><%= "#{total_count} entries in #{graph_year}" %></span>
+          </h3>
+        </div>
+        <div class="s-review-details">
+          <% streak = current_user.writing_streak %>
+          <% if streak > 1 %>
+            <div style="display: block; margin: 10px auto; font-size: 16px; font-weight: 500;"><%= "You're on a #{format_number(streak)} day writing streak!" %></div>
+          <% end %>
+          <%= render 'contribution_graph', data: contribution_calendar_data(year_entries, graph_year), year: graph_year %>
+          <div class="clearfix"></div>
+          <% if highlight_year_in_review %>
+            <h4 style="font-size: 16px; margin-top: 10px; font-weight: 600;">
+              <span>See more stats in your </span>
+              <%= link_to "Year in Review", review_path, style: "color: #649cc7;" %><span>!</span>
+            </h4>
+          <% else %>
+            <h4 style="font-size: 16px; margin-top: 10px; font-weight: 500;">
+              <span><%= "#{percent_complete}% of the year completed. " %></span>
+              <%= link_to "Write your memories down", new_entry_path, style: "color: #5B6554;" %>
+              <span> so you can remember them later.</span>
+            </h4>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <% unless @lastest_entry.date == @user_today %>
+      <div class="col-md-8 well col-md-offset-1 entry">
+        <div class="center">
+          <div class="label label-past-years" style="text-transform: uppercase;"><%= @user_today.strftime("%A, %B %-d") %></div>
+        </div>
+        <div class="text-center" style="margin: 0 0 20px;">
+          <%= link_to "Write today's entry »", new_entry_path, class: "btn btn-link btn-lg" %>
+        </div>
+      </div>
+    <% end %>
+
+    <div class="col-md-8 well entry col-md-offset-1" id="entry-<%= @lastest_entry.id %>">
+      <div class="label label-past-years">LATEST ENTRY</div>
+      <%= render partial: 'entries/entry', locals: { entry: @lastest_entry } %>
+    </div>
+
+    <% if current_user.is_pro? && @years_ago_entries.present? %>
+      <% @years_ago_entries.sort.each do |year_back, back_year_entry| %>
+        <div class="col-md-8 col-md-offset-1 well entry" id="entry-<%= back_year_entry.id %>">
+          <%= render partial: 'entries/entry', locals: { entry: back_year_entry } %>
+        </div>
+      <% end %>
+    <% end %>
+  </div>
+
+<% else %>
+  <%= render partial: 'no_entries' %>
+<% end %>

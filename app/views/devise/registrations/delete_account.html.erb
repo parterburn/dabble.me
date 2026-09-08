@@ -1,0 +1,57 @@
+<% title "Delete account — Dabble me." %>
+<% entry_count = current_user.entries.count %>
+<% pro_cancel_warning = current_user.is_pro? && (current_user.plan_type_unlinked != "Stripe" || current_user.stripe_id.blank?) %>
+
+<div class="row">
+  <div class="col-md-8 col-md-offset-2">
+    <h3>DELETE YOUR ACCOUNT</h3>
+    <p class="lead" style="margin-bottom: 1rem;">
+      This cannot be undone. Your account and
+      <span style="font-weight: 500;"><%= pluralize(entry_count, "journal entry") %></span>
+      will be permanently deleted.
+    </p>
+    <p class="lead">
+      Before deleting your account, you can export your entries as
+      <strong><%= link_to "TXT", export_entries_path(:txt), style: "text-decoration: underline;" %></strong>
+      (plain text)
+      or
+      <strong><%= link_to "JSON", export_entries_path(:json), style: "text-decoration: underline;" %></strong>
+      (rich formatting).
+      <% if current_user.is_pro? && current_user.entries.only_images.any? %>
+        Export a
+        <strong>
+          <%= link_to "list of your Image URLs", export_entries_path(:txt, only_images: true), style: "text-decoration: underline;" %>.
+        </strong>
+        You can use a script or app to download these to your computer.
+      <% end %>
+    </p>
+
+    <% if pro_cancel_warning %>
+      <div class="alert alert-warning">
+        You will need to cancel your paid subscription separately at
+        <strong><%= current_user.plan_type_unlinked %></strong>
+        if billing is active there.
+      </div>
+    <% end %>
+
+    <%= form_for(current_user, as: :user, url: user_registration_path, html: { method: :delete }) do |f| %>
+      <div class="well" style="background-color: #E8E8E2; padding: 15px 20px; margin-top: 1rem;">
+        <%= f.label :current_password, "Type your current password to confirm" %>
+        <%= f.password_field :current_password, autocomplete: "current-password", class: "form-control", required: true %>
+      </div>
+
+      <div class="checkbox" style="margin-top: 1rem;">
+        <label>
+          <%= check_box_tag :account_deletion_ack, "1", false, required: true %>
+          I understand my account and <%= pluralize(entry_count, "entry") %> will be permanently deleted.
+        </label>
+      </div>
+
+      <%= f.submit "Permanently delete my account", class: "btn btn-danger btn-block j-delete-user", style: "margin-top: 1rem;", data: { confirm: "Last chance: delete this account and #{pluralize(entry_count, 'entry')}? This cannot be undone." } %>
+    <% end %>
+
+    <p style="margin-top: 1.5rem;">
+      <%= link_to "← Back to Account security", security_path, class: "text-muted" %>
+    </p>
+  </div>
+</div>

@@ -1,0 +1,100 @@
+<% title 'Account Settings — Dabble me.' %>
+
+<div class="row">
+  <div class="col-md-8 col-md-offset-2">
+    <h3>ACCOUNT SECURITY</h3>
+    <br>
+  </div>
+
+  <%= form_for(user, url: registration_path(user), html: { method: :put }) do |f| %>
+    <div class="col-md-8 col-md-offset-2">
+      <%= f.label :email %>
+      <%= f.email_field :email, class: "form-control" %>
+      <br>
+    </div>
+
+    <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
+      <div class="col-md-8 col-md-offset-2">
+        Currently waiting confirmation for: <%= resource.unconfirmed_email %>
+      </div>
+    <% end %>
+
+    <div class="col-md-4 col-md-offset-2">
+      <%= f.label :password, "New Password" %>
+      <%= f.password_field :password, autocomplete: "off", class: "form-control" %>
+      <br>
+    </div>
+
+    <div class="col-md-4">
+      <%= f.label :password_confirmation, "New Password Confirmation" %>
+      <%= f.password_field :password_confirmation, autocomplete: "off", class: "form-control" %>
+      <br>
+    </div>
+
+    <div class="col-md-8 col-md-offset-2">
+      <label style="margin-bottom: 10px;">Additional Security</label>
+      <br>
+      <div style="margin-bottom: 15px;">
+        <button class="btn btn-default btn-sm" id="add-passkey" type="button">
+          Add Passkey
+        </button>
+
+        <%= link_to user_otp_token_path do %>
+          <button class="btn btn-default btn-sm" id="add-two-factor" type="button">
+            <% if current_user.otp_enabled? %>
+              <span class="text-success">
+                ✅ Change Two-Factor Authentication
+              </span>
+            <% else %>
+              Setup Two-Factor Authentication
+            <% end %>
+          </button>
+        <% end %>
+      </div>
+
+      <% if current_user.webauthn_credentials.any? %>
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Passkey</th>
+              <th>Added</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% current_user.webauthn_credentials.each do |credential| %>
+              <tr>
+                <td><%= credential.nickname %></td>
+                <td><%= credential.created_at.strftime("%b %d, %Y") %></td>
+                <td class="text-right"><%= link_to "Remove", passkeys_registration_path(credential), method: :delete, data: { confirm: "Are you sure?" }, class: "text-danger" %></td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    </div>
+
+    <%= render "oauth_connected_apps" %>
+
+    <div class="col-md-8 col-md-offset-2" style="margin-top: 1.5rem;">
+      <div class="well" style="background-color: #E8E8E2; padding: 15px 20px;">
+        <%= f.label :current_password %>
+        to confirm email or password changes above
+        <%= f.password_field :current_password, autocomplete: "off", class: "form-control" %>
+      </div>
+    </div>
+
+    <div class="col-md-8 col-md-offset-2" style="margin-top: 1rem;">
+      <%= f.submit "Update Security", class: "btn btn-primary form-control j-edit-security", name: "submit_method", type: :submit %>
+    </div>
+
+    <div class="clearfix"></div>
+
+    <div class="col-md-8 col-md-offset-2">
+      <p class="text-center text-muted" style="margin-top: 1.5rem;">
+        To permanently delete your account and <%= pluralize(current_user.entries.count, "entry") %>,
+        <%= link_to "use the delete account page", delete_account_path, class: "text-danger" %>.
+      </p>
+    </div>
+  <% end %>
+</div>

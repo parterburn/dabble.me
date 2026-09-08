@@ -10,6 +10,7 @@ class EntryMailer < ActionMailer::Base
     @user.update_columns(last_sent_at: Time.now)
     @random_entry = user.random_entry(@send_day.strftime('%Y-%m-%d'))
     if @random_entry.present?
+      @random_entry_image_link = @random_entry.image_url_cdn(cloudflare: false)
       @random_entry_image_url = @random_entry.image_url_cdn
     end
 

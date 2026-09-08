@@ -1,0 +1,10 @@
+<% if current_user.is_free? %>
+  <div class="alert alert-warning hidden-xs">
+    <%= link_to subscribe_path, class: "float-left" do %>
+      <button class="btn btn-warning">Subscribe Now</button>
+    <% end %>
+    <strong>Dabble Me PRO</strong>
+    for $4/mo unlocks changing frequency of emails, adding/editing entries via the web, attaching photos to entries, search, and more.
+  </div>
+  <div class="clearfix"></div>
+<% end %>

@@ -1,0 +1,34 @@
+<div class="col-md-8 col-md-offset-2">
+  <label style="margin-bottom: 10px;">Connected Apps</label>
+  <% if @oauth_applications.any? %>
+    <p class="small text-muted" style="margin-bottom: 12px;">
+      These tools can call Dabble Me on your behalf until you revoke them.
+    </p>
+    <div class="table-responsive">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Application</th>
+            <th>Added</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @oauth_applications.each do |application| %>
+            <tr>
+              <td><%= application.name %></td>
+              <td><%= application.created_at.strftime("%b %d, %Y") %></td>
+              <td class="text-right">
+                <%= link_to "Remove", oauth_authorized_application_path(application), method: :delete, data: { confirm: "Are you sure?" }, class: "text-danger" %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% else %>
+    <p class="text-muted" style="margin-bottom: 12px;">
+      Connect to apps like Claude or ChatGPT using the <%= link_to "Dabble Me MCP server", mcp_server_docs_path, class: "text-accent hover:text-primary underline font-semibold" %>.
+    </p>
+  <% end %>
+</div>

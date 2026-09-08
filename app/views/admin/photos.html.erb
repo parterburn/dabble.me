@@ -1,0 +1,41 @@
+<% title "Admin Photos" %>
+
+<style>
+  .col-md-3 img {
+    width: 100%;
+  }
+</style>
+
+<div class="row s-admin-container">
+  <div class="col-md-12">
+    <h3>
+      Admin Photos
+    </h3>
+  </div>
+
+  <div class="col-md-12">
+    <hr>
+  </div>
+
+  <div class="col-md-12">
+    <div class="row">
+      <div class="center">
+        <%= paginate @entries %>
+      </div>
+    </div>
+    <div class="row">
+      <% @entries.each do |entry| %>
+        <div class="pictureFrame col-xs-2 col-md-3">
+          <%= link_to entry.image_url_cdn(cloudflare: false), target: "_blank", style: "border: 1px solid black; display: inline-block;" do %>
+            <%= image_code(entry) %>
+          <% end %>
+        </div>
+      <% end %>
+    </div>
+    <div class="row">
+      <div class="center">
+        <%= paginate @entries %>
+      </div>
+    </div>
+  </div>
+</div>
