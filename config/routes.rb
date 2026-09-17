@@ -101,6 +101,10 @@ Rails.application.routes.draw do
   get 'pricing',                        to: redirect('/#pricing')
   get 'subscribe',                      to: "welcome#subscribe"
   get 'pro',                            to: redirect('/subscribe')
+  get 'pay',                            to: redirect { ENV['PAYMENT_LINK'] }
+  get 'pay/:amount',                    to: redirect { |params, _req|
+    "#{ENV['PAYMENT_LINK']}?prefilled_amount=#{params[:amount].to_i * 100}"
+  }, constraints: { amount: /\d+/ }
   match 'payment_notify',               to: 'payments#payment_notify', via: [:post]
   get 'ohlife-alternative',             to: 'welcome#ohlife_alternative'
   post 'email_processor',               to: 'griddler/emails#create'
