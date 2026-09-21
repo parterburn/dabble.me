@@ -19,6 +19,9 @@
 <meta content="Dabble me." name="application-name">
 <meta content="<%= page_description %>" name="description">
 <meta content="<%= page_keywords %>" name="keywords">
+<% if content_for?(:robots) %>
+<meta content="<%= content_for(:robots) %>" name="robots">
+<% end %>
 <link href="<%= canonical_url %>" rel="canonical">
 <link href="Dabble Me" rel="author">
 <meta content="summary_large_image" name="twitter:card">

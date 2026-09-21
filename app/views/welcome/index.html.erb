@@ -1,3 +1,6 @@
+<% content_for :head do %>
+  <%= json_ld_script_tag organization_json_ld, website_json_ld, web_application_json_ld %>
+<% end %>
 <% 
 sample_entries = [
   {

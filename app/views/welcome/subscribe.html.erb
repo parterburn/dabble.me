@@ -1,4 +1,8 @@
 <% content_for :title, "Pricing" %>
+<% content_for :description, "Dabble Me is free to start. Upgrade to PRO for $4/month or $40/year: custom email schedule, photo attachments, search, imports, and the AI connector." %>
+<% content_for :head do %>
+  <%= json_ld_script_tag organization_json_ld, web_application_json_ld %>
+<% end %>
 <main>
   <section class="py-20 lg:py-28">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">      

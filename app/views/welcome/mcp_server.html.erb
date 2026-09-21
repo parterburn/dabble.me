@@ -35,19 +35,19 @@ faq_items = [
 structured_data = {
   "@context": "https://schema.org",
   "@graph": [
-    {
-      "@type": "TechArticle",
+    article_json_ld(
+      type: "TechArticle",
       headline: "Dabble Me MCP Server: Connect Your Journal to ChatGPT and Claude",
-      description: content_for(:description),
-      url: "#{base_url}/mcp-server",
-      author: { "@type": "Organization", name: "Dabble Dev LLC" },
+      path: "/mcp-server",
+      published: "2026-07-23",
+      modified: "2026-07-23",
       about: [
         "Model Context Protocol",
         "AI journaling",
         "ChatGPT journal integration",
         "Claude journal integration"
       ]
-    },
+    ),
     {
       "@type": "FAQPage",
       mainEntity: faq_items.map do |item|
@@ -63,7 +63,7 @@ structured_data = {
 %>
 
 <% content_for :head do %>
-  <script type="application/ld+json"><%= raw(json_escape(structured_data.to_json)) %></script>
+  <%= json_ld_script_tag structured_data[:"@graph"] %>
 <% end %>
 
 <section class="py-12 lg:py-20">

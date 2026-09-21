@@ -19,8 +19,10 @@
 
     <link rel="stylesheet" href="/marketing.css?v=<%= File.mtime(Rails.root.join('public', 'marketing.css')).to_i rescue Time.now.to_i %>" media="all">
 
-    <!-- jQuery (needed for webauthn/passkey) -->
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <%# jQuery blocks rendering, so only pages that call it opt in (content_for :jquery, true): the passkey login/sign-up forms. %>
+    <% if content_for?(:jquery) %>
+      <script src="https://code.jquery.com/jquery-3.7.1.min.js" integrity="sha256-/JqT3SQfawRcv/BIHPThkBvs0OEvtFFmqPF/lYI/Cxo=" crossorigin="anonymous"></script>
+    <% end %>
 
     <%= yield :head %>
 

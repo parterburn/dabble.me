@@ -4,15 +4,12 @@
 <% content_for :keywords, "best journaling apps with MCP,Claude ChatGPT connectors,AI journal with MCP,personal journal MCP server,journal app for ChatGPT,Claude journal integration,journal app for AI reflection" %>
 
 <% content_for :head do %>
-  <script type="application/ld+json"><%= raw(json_escape({
-    "@context": "https://schema.org",
-    "@type": "Article",
+  <%= json_ld_script_tag article_json_ld(
     headline: "Best Journaling Apps with MCP / Claude and ChatGPT Connectors",
-    description: content_for(:description),
-    url: "#{ApplicationHelper.site_public_base_url}/best-journaling-apps-with-mcp",
-    dateModified: "2026-07-24",
-    author: { "@type": "Organization", name: "Dabble Dev LLC" }
-  }.to_json)) %></script>
+    path: "/best-journaling-apps-with-mcp",
+    published: "2026-07-23",
+    modified: "2026-07-24"
+  ) %>
 <% end %>
 
 <section class="py-12 lg:py-20">

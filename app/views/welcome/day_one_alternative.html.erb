@@ -4,15 +4,12 @@
 <% content_for :keywords, "Day One alternative,import Day One journal,Day One JSON export,switch from Day One,email journaling alternative,Day One to Dabble Me" %>
 
 <% content_for :head do %>
-  <script type="application/ld+json"><%= raw(json_escape({
-    "@context": "https://schema.org",
-    "@type": "Article",
+  <%= json_ld_script_tag article_json_ld(
     headline: "Day One Alternative: Import Your Journal into Dabble Me",
-    description: content_for(:description),
-    url: "#{ApplicationHelper.site_public_base_url}/day-one-alternative",
-    dateModified: "2026-08-02",
-    author: { "@type": "Organization", name: "Dabble Dev LLC" }
-  }.to_json)) %></script>
+    path: "/day-one-alternative",
+    published: "2026-08-02",
+    modified: "2026-09-21"
+  ) %>
 <% end %>
 
 <section class="py-12 lg:py-20">
@@ -110,6 +107,60 @@
         <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span>You prefer local MCP on a Mac over a hosted email-first journal.</span></li>
         <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span>You do not want to change your daily capture workflow.</span></li>
       </ul>
+    </section>
+
+    <section class="mt-16">
+      <h2 class="font-serif text-3xl text-primary">What comes across from Day One</h2>
+      <p class="mt-4 text-muted leading-relaxed">
+        The importer reads the JSON journal inside your Day One export ZIP and creates one Dabble Me entry per calendar day.
+        Your text and dates carry over, and photos come with them when you included media in the export.
+      </p>
+      <ul class="mt-5 space-y-3 text-muted">
+        <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span><strong class="text-primary">Same-day entries are merged.</strong> Dabble Me keeps one entry per day, so several Day One entries from one date are combined in time order, separated by a horizontal line.</span></li>
+        <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span><strong class="text-primary">Nothing is overwritten.</strong> If you already have a Dabble Me entry for a date, that day is skipped and your existing entry stays as it is.</span></li>
+        <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span><strong class="text-primary">Photos are supported in common formats.</strong> JPEG, PNG, GIF, HEIC/HEIF, and WebP. Each day gets one image: a single photo, or a collage when several were attached.</span></li>
+        <li class="flex gap-3"><span aria-hidden="true" class="text-accent">✓</span><span><strong class="text-primary">Empty entries are left out.</strong> Days with no text and no photos are skipped rather than imported as blanks.</span></li>
+      </ul>
+      <p class="mt-5 text-sm text-subtle">
+        Importing only reads the ZIP you upload. Your Day One journal is not changed, so you can keep it while you try Dabble Me.
+      </p>
+    </section>
+
+    <section class="mt-14">
+      <h2 class="font-serif text-3xl text-primary">What a day looks like after you switch</h2>
+      <p class="mt-4 text-muted leading-relaxed">
+        In the evening you get an email asking how your day went. Reply with a few sentences, or a photo, and that reply is saved as
+        the day’s entry. The next prompt email brings back a past entry, which now includes the years you imported from Day One.
+        With PRO you can also browse a calendar, search everything you have written including #hashtags, and choose exactly which
+        days and hours the prompts arrive.
+      </p>
+    </section>
+
+    <section class="mt-14">
+      <h2 class="font-serif text-3xl text-primary">Pricing for importing</h2>
+      <p class="mt-4 text-muted leading-relaxed">
+        Importing is part of Dabble Me PRO, which is $4/month or $40/year. The free plan ($0, no time limit) covers reply-by-email
+        journaling, reading your entries online, past entries in your emails, and export, so you can try the email habit first.
+        See the <a href="<%= subscribe_path %>" class="text-accent hover:text-primary underline">pricing page</a> for details.
+      </p>
+    </section>
+
+    <section class="mt-14">
+      <h2 class="font-serif text-3xl text-primary">Day One import FAQ</h2>
+      <div class="mt-6 space-y-6">
+        <div>
+          <h3 class="font-semibold text-primary">Do I need to export from Day One as JSON?</h3>
+          <p class="mt-2 text-muted leading-relaxed">Yes. Choose JSON as the export format and include media if you want photos. Upload the ZIP that Day One creates without unzipping it.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-primary">Can I import more than one Day One journal?</h3>
+          <p class="mt-2 text-muted leading-relaxed">A ZIP can contain several journal JSON files, and every one is imported. All entries land in the same Dabble Me journal, one entry per day.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-primary">How do I know the import finished?</h3>
+          <p class="mt-2 text-muted leading-relaxed">The import runs in the background and Dabble Me emails you when it is done, so you can close the page after uploading.</p>
+        </div>
+      </div>
     </section>
 
     <section class="mt-14 card p-6 bg-accent/5 border-accent/20">

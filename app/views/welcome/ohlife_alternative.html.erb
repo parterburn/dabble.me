@@ -1,4 +1,5 @@
 <% content_for :title, "The OhLife.com Alternative" %>
+<% content_for :description, "Looking for an OhLife replacement? Dabble Me keeps the daily email prompt and reply-to-write habit, and lets you import your OhLife entries and photos." %>
 
 <section class="py-12 lg:py-20">
   <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
@@ -85,6 +86,123 @@
         </ul>
       </div>
     </div>
+
+    <section class="mt-16">
+      <h2 class="font-serif text-3xl text-primary">Why OhLife fans feel at home</h2>
+      <p class="mt-4 text-muted leading-relaxed">
+        OhLife worked because it asked for almost nothing: an email arrived, you replied, and the entry was saved.
+        Dabble Me keeps that loop exactly as it was. A “How was your day?” email lands in your inbox, your reply becomes
+        that day’s private entry, and there is no app to open, install, or remember.
+      </p>
+      <p class="mt-4 text-muted leading-relaxed">
+        Every prompt email also brings back one of your own past entries under “Remember this?”, so writing today is also a
+        chance to run into an older day. The longer you write, the more there is to rediscover. Entries stay private: there are
+        no followers, no sharing, and no public profile.
+      </p>
+    </section>
+
+    <section class="mt-16">
+      <h2 class="font-serif text-3xl text-primary">Move your OhLife archive in three steps</h2>
+      <ol class="mt-6 space-y-5 text-muted">
+        <li class="flex gap-4">
+          <span class="font-serif text-2xl text-accent leading-none">1</span>
+          <span><strong class="text-primary">Create your account and upgrade to PRO.</strong>
+            Importing is a PRO feature ($4/month or $40/year). Starting free lets you look around first.</span>
+        </li>
+        <li class="flex gap-4">
+          <span class="font-serif text-2xl text-accent leading-none">2</span>
+          <span><strong class="text-primary">Paste your entries.</strong>
+            Open <a href="<%= import_path('ohlife') %>" class="text-accent hover:text-primary underline">Entries → Import → OhLife</a>
+            and paste the text from your OhLife export. Each entry starts with its date as <code>YYYY-MM-DD</code>,
+            followed by a blank line and then the entry text, so every day lands on the right date.</span>
+        </li>
+        <li class="flex gap-4">
+          <span class="font-serif text-2xl text-accent leading-none">3</span>
+          <span><strong class="text-primary">Add your photos.</strong>
+            Upload the ZIP of photos you downloaded from OhLife on the
+            <a href="<%= import_path('photos') %>" class="text-accent hover:text-primary underline">photo importer</a>.
+            Filenames like <code>img_2014-10-22-0.jpg</code> tell Dabble Me which day each photo belongs to.
+            Large archives import best as smaller ZIP files (under 20 MB and 20 files each).</span>
+        </li>
+      </ol>
+      <pre class="mt-6 card p-5 text-sm text-muted overflow-x-auto whitespace-pre-wrap">2014-10-02
+
+Here's my first entry!
+
+2014-10-03
+
+Entry text starts two line-breaks after the date.</pre>
+      <p class="mt-4 text-sm text-subtle">
+        Coming from somewhere else? Dabble Me also imports
+        <a href="<%= day_one_alternative_path %>" class="text-accent hover:text-primary underline">Day One JSON exports</a>,
+        Ahhlife, and Trailmix.life entries.
+      </p>
+    </section>
+
+    <section class="mt-16 overflow-x-auto card">
+      <table class="w-full text-left text-sm">
+        <thead class="border-b border-subtle">
+          <tr>
+            <th class="p-4 font-semibold text-primary">The OhLife habit</th>
+            <th class="p-4 font-semibold text-primary">How it works in Dabble Me</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-subtle">
+          <tr>
+            <td class="p-4 font-medium text-primary">A daily prompt in your inbox</td>
+            <td class="p-4 text-muted">Free accounts get a prompt every other Sunday. PRO lets you pick the days and the hour, from daily to weekly.</td>
+          </tr>
+          <tr>
+            <td class="p-4 font-medium text-primary">Reply to write</td>
+            <td class="p-4 text-muted">Reply to the email from any email provider. The reply is saved as that day’s entry.</td>
+          </tr>
+          <tr>
+            <td class="p-4 font-medium text-primary">Looking back</td>
+            <td class="p-4 text-muted">A past entry in every prompt email, plus calendar view, search, and #hashtags with PRO.</td>
+          </tr>
+          <tr>
+            <td class="p-4 font-medium text-primary">Photos</td>
+            <td class="p-4 text-muted">Attach photos to an entry by email or on the web (PRO).</td>
+          </tr>
+          <tr>
+            <td class="p-4 font-medium text-primary">Owning your writing</td>
+            <td class="p-4 text-muted">Export your entries any time, on the free plan too.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="mt-16">
+      <h2 class="font-serif text-3xl text-primary">Free to start, PRO for the full journal</h2>
+      <p class="mt-4 text-muted leading-relaxed">
+        The free plan ($0, no time limit) includes email prompts every other Sunday, reply-by-email journaling, reading your entries
+        online, past entries in your emails, and export. PRO ($4/month or $40/year) adds a custom email schedule, photo attachments,
+        calendar view and search, tagging, the web editor, insights, importing, and an optional connector for ChatGPT and Claude.
+        See the <a href="<%= subscribe_path %>" class="text-accent hover:text-primary underline">full pricing</a>.
+      </p>
+    </section>
+
+    <section class="mt-16">
+      <h2 class="font-serif text-3xl text-primary">OhLife replacement FAQ</h2>
+      <div class="mt-6 space-y-6">
+        <div>
+          <h3 class="font-semibold text-primary">Can I import my OhLife entries for free?</h3>
+          <p class="mt-2 text-muted leading-relaxed">Importing requires PRO. You can start on the free plan, write by email, and upgrade when you are ready to bring your archive over.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-primary">Will my imported entries stay private?</h3>
+          <p class="mt-2 text-muted leading-relaxed">Yes. Imported entries go into your private journal like any other entry. Dabble Me has no public profiles or sharing.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-primary">Do I need to install an app?</h3>
+          <p class="mt-2 text-muted leading-relaxed">No. Journaling happens by replying to an email, and it works with any email provider. The website is there for browsing, searching, and importing.</p>
+        </div>
+        <div>
+          <h3 class="font-semibold text-primary">What if I want out later?</h3>
+          <p class="mt-2 text-muted leading-relaxed">You can export your entries at any time from your settings, on both the free and PRO plans.</p>
+        </div>
+      </div>
+    </section>
 
     <!-- CTA -->
     <div class="mt-12 text-center">

@@ -6,66 +6,56 @@
             http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
 <url>
   <loc>https://dabble.me/</loc>
-  <lastmod>2014-02-06T05:42:42+00:00</lastmod>
+  <lastmod>2026-08-02</lastmod>
   <changefreq>weekly</changefreq>
 </url>
 <url>
   <loc>https://dabble.me/ohlife-alternative</loc>
-  <lastmod>2026-07-23</lastmod>
+  <lastmod>2026-09-21</lastmod>
   <changefreq>weekly</changefreq>
 </url>
 <url>
-  <loc>https://dabble&#46;me/mcp-server</loc>
+  <loc>https://dabble.me/mcp-server</loc>
   <lastmod>2026-07-23</lastmod>
   <changefreq>monthly</changefreq>
   <priority>0.9</priority>
 </url>
 <url>
-  <loc>https://dabble&#46;me/dabble-me-vs-day-one-ai-journaling</loc>
+  <loc>https://dabble.me/dabble-me-vs-day-one-ai-journaling</loc>
   <lastmod>2026-08-02</lastmod>
   <changefreq>monthly</changefreq>
   <priority>0.7</priority>
 </url>
 <url>
-  <loc>https://dabble&#46;me/day-one-alternative</loc>
-  <lastmod>2026-08-02</lastmod>
+  <loc>https://dabble.me/day-one-alternative</loc>
+  <lastmod>2026-09-21</lastmod>
   <changefreq>monthly</changefreq>
   <priority>0.8</priority>
 </url>
 <url>
-  <loc>https://dabble&#46;me/best-journaling-apps-with-mcp</loc>
-  <lastmod>2026-07-23</lastmod>
+  <loc>https://dabble.me/best-journaling-apps-with-mcp</loc>
+  <lastmod>2026-07-24</lastmod>
   <changefreq>monthly</changefreq>
   <priority>0.7</priority>
 </url>
 <url>
-  <loc>https://dabble.me/users/sign_up</loc>
-  <lastmod>2014-02-06T05:42:42+00:00</lastmod>
-  <changefreq>weekly</changefreq>
-</url>
-<url>
-  <loc>https://dabble.me/users/sign_in</loc>
-  <lastmod>2014-02-06T05:42:42+00:00</lastmod>
-  <changefreq>weekly</changefreq>
-</url>
-<url>
   <loc>https://dabble.me/support</loc>
-  <lastmod>2014-02-06T05:42:42+00:00</lastmod>
+  <lastmod>2026-09-21</lastmod>
   <changefreq>weekly</changefreq>
 </url>
 <url>
   <loc>https://dabble.me/subscribe</loc>
-  <lastmod>2014-02-06T05:42:42+00:00</lastmod>
+  <lastmod>2026-09-21</lastmod>
   <changefreq>weekly</changefreq>
 </url>
 <url>
   <loc>https://dabble.me/privacy</loc>
-  <lastmod>2014-02-06T05:42:42+00:00</lastmod>
+  <lastmod>2026-07-23</lastmod>
   <changefreq>weekly</changefreq>
 </url>
 <url>
   <loc>https://dabble.me/terms</loc>
-  <lastmod>2014-02-06T05:42:42+00:00</lastmod>
+  <lastmod>2026-01-08</lastmod>
   <changefreq>weekly</changefreq>
 </url>
 </urlset>

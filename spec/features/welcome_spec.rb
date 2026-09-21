@@ -18,7 +18,7 @@ describe 'Pages' do
 
   it 'has correct title for FAQs page' do
     visit support_path
-    expect(page).to have_title 'Support — Dabble me.'
+    expect(page).to have_title 'Support and FAQs — Dabble me.'
   end
 
   it 'explains mobile journaling through MCP AI connectors' do
@@ -113,5 +113,111 @@ describe 'Pages' do
 
     page_text = page.text
     expect(page_text.index('Prompts that show why MCP matters')).to be < page_text.index('1. Dabble Me')
+  end
+
+  describe 'SEO metadata' do
+    DEFAULT_DESCRIPTION = 'The simple, private journal that helps you actually write.'.freeze
+
+    def json_ld_nodes
+      page.all('script[type="application/ld+json"]', visible: false).flat_map do |script|
+        data = JSON.parse(script.native.text)
+        data['@graph'] || [data]
+      end
+    end
+
+    def meta_description
+      page.find('meta[name="description"]', visible: false)['content']
+    end
+
+    it 'describes the organization, website, and app on the homepage' do
+      visit root_path
+
+      types = json_ld_nodes.map { |node| node['@type'] }
+      expect(types).to contain_exactly('Organization', 'WebSite', 'WebApplication')
+
+      organization = json_ld_nodes.find { |node| node['@type'] == 'Organization' }
+      expect(organization['name']).to eq 'Dabble Me'
+      expect(organization['legalName']).to eq 'Dabble Dev LLC'
+      expect(organization['sameAs']).to include('https://github.com/parterburn/dabble.me')
+
+      application = json_ld_nodes.find { |node| node['@type'] == 'WebApplication' }
+      expect(application['offers'].map { |offer| offer['price'] }).to eq %w[0.00 4.00 40.00]
+      expect(application).not_to have_key('aggregateRating')
+    end
+
+    it 'publishes pricing schema and a unique description on the Subscribe page' do
+      visit subscribe_path
+
+      expect(json_ld_nodes.map { |node| node['@type'] }).to contain_exactly('Organization', 'WebApplication')
+      expect(meta_description).to include('$4/month or $40/year')
+      expect(meta_description).not_to start_with(DEFAULT_DESCRIPTION)
+    end
+
+    it 'has unique descriptions for Support and the OhLife alternative page' do
+      visit support_path
+      support_description = meta_description
+      visit ohlife_alternative_path
+      ohlife_description = meta_description
+
+      expect([support_description, ohlife_description]).to all(satisfy { |text| !text.start_with?(DEFAULT_DESCRIPTION) })
+      expect(support_description).not_to eq ohlife_description
+      expect([support_description, ohlife_description]).to all(satisfy { |text| text.length <= 165 })
+    end
+
+    it 'gives the OhLife and Day One alternative pages at least 600 words of content' do
+      visit ohlife_alternative_path
+      expect(page.find('main').text.split.size).to be >= 600
+      expect(page).to have_link('Entries → Import → OhLife', href: import_path('ohlife'))
+      expect(page).to have_link('photo importer', href: import_path('photos'))
+
+      visit day_one_alternative_path
+      expect(page.find('main').text.split.size).to be >= 600
+    end
+
+    it 'gives every article the properties Google recommends' do
+      [day_one_alternative_path, day_one_ai_journaling_path, best_journaling_apps_with_mcp_path, mcp_server_docs_path].each do |path|
+        visit path
+
+        article = json_ld_nodes.find { |node| %w[Article TechArticle].include?(node['@type']) }
+        expect(article).to be_present, "no Article schema on #{path}"
+        expect(article['datePublished']).to match(/\A\d{4}-\d{2}-\d{2}\z/)
+        expect(article['dateModified']).to match(/\A\d{4}-\d{2}-\d{2}\z/)
+        expect(article['image']).to end_with('/dabble_logo_ogimage.jpg')
+        expect(article.dig('publisher', 'name')).to eq 'Dabble Me'
+        expect(article.dig('mainEntityOfPage', '@id')).to eq article['url']
+      end
+    end
+
+    it 'keeps the FAQ markup on the MCP page next to the TechArticle' do
+      visit mcp_server_docs_path
+
+      expect(json_ld_nodes.map { |node| node['@type'] }).to contain_exactly('TechArticle', 'FAQPage')
+    end
+
+    it 'noindexes login, sign-up, and password pages' do
+      [new_user_session_path, new_user_registration_path, new_user_password_path].each do |path|
+        visit path
+        expect(page).to have_css('meta[name="robots"][content="noindex, follow"]', visible: false), "#{path} is indexable"
+      end
+    end
+
+    it 'leaves marketing pages indexable' do
+      [root_path, support_path, subscribe_path, ohlife_alternative_path].each do |path|
+        visit path
+        expect(page).not_to have_css('meta[name="robots"]', visible: false), "#{path} has a robots meta tag"
+      end
+    end
+
+    it 'loads jQuery only on the passkey forms' do
+      [new_user_session_path, new_user_registration_path].each do |path|
+        visit path
+        expect(page).to have_css('script[src*="jquery"]', visible: false)
+      end
+
+      [root_path, support_path, subscribe_path, ohlife_alternative_path, day_one_alternative_path].each do |path|
+        visit path
+        expect(page).not_to have_css('script[src*="jquery"]', visible: false), "#{path} still loads jQuery"
+      end
+    end
   end
 end
