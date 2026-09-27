@@ -31,6 +31,21 @@ RSpec.describe EntriesController, type: :controller do
       expect(response.status).to eq 200
       expect(controller.send(:index_per_page)).to eq 50
     end
+
+    it 'rejects a multi-line subgroup instead of interpolating it into SQL' do
+      sign_in user
+      get :index, params: { group: 'emotion', subgroup: "2020\n' OR '1'='1" }
+      expect(response).to redirect_to(entries_path)
+      expect(flash[:alert]).to eq('Invalid date format')
+    end
+
+    it 'filters sentiment entries by year using a bound date' do
+      sign_in user
+      entry.update_columns(sentiment: ['joy'], date: Date.new(2021, 3, 1))
+      get :index, params: { group: 'emotion', subgroup: '2021' }
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to have_content('Entries tagged with Sentiment in 2021')
+    end
   end
 
   describe 'show' do

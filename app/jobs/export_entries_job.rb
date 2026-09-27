@@ -30,20 +30,7 @@ class ExportEntriesJob < ActiveJob::Base
     if only_images
       user.entries.only_images.reorder(:date)
     elsif search_term.present?
-      if search_term.include?(' OR ')
-        filter_names = search_term.split(' OR ')
-        sanitized_terms = filter_names.map { |term| ActiveRecord::Base.sanitize_sql_like(term.downcase) }
-        base_scope = user.entries
-        conditions = sanitized_terms.map { |term| base_scope.where("LOWER(entries.body) LIKE ?", "%#{term}%") }
-        conditions.reduce(:or).reorder(:date)
-      elsif search_term.include?('"')
-        exact_phrase = search_term.delete('"')
-        sanitized_phrase = Regexp.escape(exact_phrase)
-        user.entries.where("entries.body ~* ?", "\\m#{sanitized_phrase}\\M").reorder(:date)
-      else
-        search = Search.new(term: search_term, user: user)
-        search.entries.reorder(:date)
-      end
+      Search.new(term: search_term, user: user).entries.reorder(:date)
     elsif year.present?
       start_date = Date.new(year.to_i, 1, 1)
       end_date = Date.new(year.to_i, 12, 31)

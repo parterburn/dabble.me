@@ -15,8 +15,8 @@ class EntriesController < ApplicationController
     if params[:emotion].present?
       @entries = @entries.where("sentiment::text LIKE ?", "%#{params[:emotion]}%")
       @title = "Entries tagged with #{params[:emotion].titleize}"
-    elsif params[:group] == "emotion" && params[:subgroup].present? && params[:subgroup] =~ /^\d+$/
-      @entries = @entries.where("date >= '#{params[:subgroup]}-01-01'::DATE").where.not(sentiment: []).where.not(sentiment: ["unknown"]).reorder(date: :asc)
+    elsif params[:group] == "emotion" && params[:subgroup].to_s.match?(/\A\d{4}\z/)
+      @entries = @entries.where("date >= ?", Date.new(params[:subgroup].to_i, 1, 1)).where.not(sentiment: []).where.not(sentiment: ["unknown"]).reorder(date: :asc)
       @title = "Entries tagged with Sentiment in #{params[:subgroup]}"
     elsif params[:group] == 'photos'
       @entries = @entries.only_images
@@ -24,7 +24,7 @@ class EntriesController < ApplicationController
     elsif params[:group] == 'ai'
       @entries = @entries.with_ai_responses
       @title = 'AI Entries'
-    elsif params[:subgroup].present? && params[:group].present? && params[:subgroup] =~ /^\d+$/ && params[:group] =~ /^\d+$/
+    elsif params[:subgroup].present? && params[:group].present? && params[:subgroup].to_s.match?(/\A\d+\z/) && params[:group].to_s.match?(/\A\d+\z/)
       begin
         from_date = Date.new(params[:group].to_i, params[:subgroup].to_i, 1)
         to_date = from_date.end_of_month
@@ -602,20 +602,7 @@ class EntriesController < ApplicationController
     if only_images
       current_user.entries.only_images.reorder(:date)
     elsif search_term.present?
-      if search_term.include?(' OR ')
-        filter_names = search_term.split(' OR ')
-        sanitized_terms = filter_names.map { |term| ActiveRecord::Base.sanitize_sql_like(term.downcase) }
-        base_scope = current_user.entries
-        conditions = sanitized_terms.map { |term| base_scope.where("LOWER(entries.body) LIKE ?", "%#{term}%") }
-        conditions.reduce(:or).reorder(:date)
-      elsif search_term.include?('"')
-        exact_phrase = search_term.delete('"')
-        sanitized_phrase = Regexp.escape(exact_phrase)
-        current_user.entries.where("entries.body ~* ?", "\\m#{sanitized_phrase}\\M").reorder(:date)
-      else
-        @search = Search.new(search_params)
-        @search.entries.reorder(:date)
-      end
+      Search.new(term: search_term, user: current_user).entries.reorder(:date)
     elsif year.present?
       start_date = Date.new(year.to_i, 1, 1)
       end_date = Date.new(year.to_i, 12, 31)
