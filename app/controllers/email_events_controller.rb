@@ -40,9 +40,10 @@ class EmailEventsController < ApplicationController
   # AUTHENTICATION
   # ========================================
 
-  # Mailgun rejects webhooks older than this in its own SDKs; mirror that so a
+  # Reject signatures older than Mailgun's webhook retry window (10m, 10m, 15m,
+  # 30m, 1h, 2h, 4h ~= 8h10m, plus margin) so late retries still land but a
   # captured payload can't be replayed indefinitely.
-  MAX_SIGNATURE_AGE = 15.minutes
+  MAX_SIGNATURE_AGE = 9.hours
 
   def mailgun_auth_params
     params.permit(signature: [:signature, :timestamp, :token])

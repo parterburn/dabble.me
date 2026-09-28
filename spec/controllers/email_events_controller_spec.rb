@@ -37,8 +37,14 @@ RSpec.describe EmailEventsController, type: :controller do
     expect(response).to have_http_status(:forbidden)
   end
 
-  it 'rejects a stale timestamp' do
-    old = 1.hour.ago.to_i.to_s
+  it 'accepts a retry signed within the retry window' do
+    late = 8.hours.ago.to_i.to_s
+    post_event(ts: late, sig: OpenSSL::HMAC.hexdigest('SHA256', signing_key, "#{late}#{token}"))
+    expect(response).to have_http_status(:ok)
+  end
+
+  it 'rejects a timestamp older than the retry window' do
+    old = 10.hours.ago.to_i.to_s
     post_event(ts: old, sig: OpenSSL::HMAC.hexdigest('SHA256', signing_key, "#{old}#{token}"))
     expect(response).to have_http_status(:forbidden)
   end
