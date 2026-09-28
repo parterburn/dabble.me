@@ -40,39 +40,48 @@ class EmailEventsController < ApplicationController
   # AUTHENTICATION
   # ========================================
 
+  # Reject signatures older than Mailgun's webhook retry window (10m, 10m, 15m,
+  # 30m, 1h, 2h, 4h ~= 8h10m, plus margin) so late retries still land but a
+  # captured payload can't be replayed indefinitely.
+  MAX_SIGNATURE_AGE = 9.hours
+
   def mailgun_auth_params
     params.permit(signature: [:signature, :timestamp, :token])
   end
 
   def event_params
-    mailgun_auth_params[:signature].to_hash
+    mailgun_auth_params[:signature]&.to_h || {}
   end
 
   def timestamp
-    event_params.fetch('timestamp')
+    event_params['timestamp'].to_s
   end
 
   def token
-    event_params.fetch('token')
+    event_params['token'].to_s
   end
 
   def actual_signature
-    event_params.fetch('signature')
+    event_params['signature'].to_s
+  end
+
+  def fresh_timestamp?
+    timestamp.match?(/\A\d+\z/) && (Time.now.to_i - timestamp.to_i).abs <= MAX_SIGNATURE_AGE
   end
 
   def legit_request?
-    digest = OpenSSL::Digest::SHA256.new
-    data = [timestamp, token].join
-    actual_signature == OpenSSL::HMAC.hexdigest(digest, ENV['MAILGUN_SIGNING_KEY'], data)
+    signing_key = ENV['MAILGUN_SIGNING_KEY']
+    return false if signing_key.blank? || token.blank? || actual_signature.blank? || !fresh_timestamp?
+
+    expected = OpenSSL::HMAC.hexdigest(OpenSSL::Digest::SHA256.new, signing_key, "#{timestamp}#{token}")
+    ActiveSupport::SecurityUtils.secure_compare(actual_signature, expected)
   end
 
   def authenticate_mailgun_request!
-    if legit_request?
-      true
-    else
-      Sentry.capture_message("Mailgun signature did not match.", level: :info, extra: { actual_signature: actual_signature, data: data, timestamp: timestamp, token: token })
-      head(:forbidden, text: 'Mailgun signature did not match.')
-      false
-    end
+    return true if legit_request?
+
+    Sentry.capture_message("Mailgun signature did not match.", level: :info, extra: { timestamp: timestamp, token: token })
+    head(:forbidden)
+    false
   end
 end

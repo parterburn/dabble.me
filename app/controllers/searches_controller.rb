@@ -2,22 +2,8 @@ class SearchesController < ApplicationController
   before_action :authenticate_user!
 
   def show
-    if current_user.is_free?
-      @search = Search.new(search_params)
-    elsif search_params[:term].present? && search_params[:term].include?(" OR ")
-      @search = Search.new(search_params)
-      filter_names = search_params[:term].split(' OR ')
-      cond_text = filter_names.map{|w| "LOWER(entries.body) like ?"}.join(" OR ")
-      cond_values = filter_names.map{|w| "%#{w.downcase}%"}
-      @entries = current_user.entries.where(cond_text, *cond_values)
-    elsif search_params[:term].present? && search_params[:term].include?('"')
-      @search = Search.new(search_params)
-      exact_phrase = search_params[:term].delete('"')
-      @entries = current_user.entries.where("entries.body ~* ?", "\\m#{exact_phrase}\\M")
-    else
-      @search = Search.new(search_params)
-      @entries = @search.entries
-    end
+    @search = Search.new(search_params)
+    @entries = @search.entries unless current_user.is_free?
 
     if search_params[:term].blank?
       user_tags = current_user.used_hashtags(current_user.entries, false)
