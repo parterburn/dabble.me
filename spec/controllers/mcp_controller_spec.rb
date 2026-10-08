@@ -71,6 +71,11 @@ RSpec.describe McpController, type: :controller do
           "get_image_upload_url",
           "create_entry"
         )
+        tools.each_value do |tool|
+          expect(tool.dig("annotations", "title")).to eq(tool.fetch("title"))
+          expect(tool.dig("annotations", "title")).to be_present
+        end
+        expect(tools.dig("create_entry", "description")).to include("https://dabble.me/mcp-server#tool-create-entry")
         expect(tools.dig("search_entries", "description")).to include("find every time I mentioned burnout")
         expect(tools.dig("search_entries", "inputSchema", "properties", "query", "description")).to include("keyword")
         expect(tools.dig("list_entries", "inputSchema", "properties", "limit", "maximum")).to eq(Mcp::EntrySearch::MAX_LIMIT)

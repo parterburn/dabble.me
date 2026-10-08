@@ -7,6 +7,7 @@ module Mcp
       title 'Prepare a journal image upload'
       description 'Prepare one local image for a new Dabble Me journal entry when you do not already have a public https URL. Returns a short-lived presigned PUT URL, required headers, and an uploaded_image_key. PUT the user-provided bytes to that URL, then pass the key to create_entry. If you already have a public https image URL, skip this tool and pass image_url to create_entry instead. Prefer this flow over base64 for local images.'
       annotations(
+        title: 'Prepare a journal image upload',
         read_only_hint: false,
         destructive_hint: false,
         idempotent_hint: false,

@@ -7,6 +7,7 @@ module Mcp
       title 'Search journal entries'
       description 'Find text in the signed-in user’s private Dabble Me journal. Use for requests such as “find every time I mentioned burnout,” searching a quoted phrase, or finding a topic within an inclusive date range. Returns matching entry dates, excerpts, hashtags, and image presence; never searches another user’s journal.'
       annotations(
+        title: 'Search journal entries',
         read_only_hint: true,
         destructive_hint: false,
         idempotent_hint: true,
