@@ -1,0 +1,27 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "dabble",
+  "version": "0.1.0",
+  "description": "Search, reflect on, and write your private Dabble Me journal using its existing OAuth MCP server.",
+  "author": {
+    "name": "Dabble Me"
+  },
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Dabble",
+        "shortDescription": "Your journal, remembered",
+        "longDescription": "Find past memories, reflect on a week, month, or year, and save new journal entries with optional photos. Connect your Dabble Me PRO account using OAuth; a passkey or two-factor authentication is required.",
+        "developerName": "Dabble Me",
+        "category": "Productivity",
+        "logo": "./assets/icon.png",
+        "composerIcon": "./assets/icon.png",
+        "defaultPrompt": [
+          "Find a memory in my Dabble Me journal.",
+          "Help me reflect on my journal from last month.",
+          "Help me write an entry in my Dabble Me journal."
+        ]
+      }
+    }
+  }
+}

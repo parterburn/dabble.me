@@ -7,6 +7,7 @@ module Mcp
       title 'List journal entries'
       description 'Read the signed-in user’s private Dabble Me journal entries newest first, optionally within an inclusive date range. Use when the user asks to review a period such as last week or last month without requiring a keyword.'
       annotations(
+        title: 'List journal entries',
         read_only_hint: true,
         destructive_hint: false,
         idempotent_hint: true,
