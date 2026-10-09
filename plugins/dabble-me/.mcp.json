@@ -1,6 +1,6 @@
 {
   "mcpServers": {
-    "dabble": {
+    "dabble-me": {
       "type": "http",
       "url": "https://dabble.me/mcp"
     }
