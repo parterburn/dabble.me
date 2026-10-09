@@ -13,10 +13,13 @@ describe User do
   end
 
   before :each do
-    user.entries.create(body: "hi.", date: 2.days.ago)
-    user.entries.create(body: "hi.", date: 3.days.ago)
-    user.entries.create(body: "hi.", date: 4.days.ago)
-    user.entries.create(body: "hi.", date: 5.days.ago)
+    # Keep these recent (for pure-random examples) but avoid landing on the 5th or
+    # Feb 29 — several examples use entry_date on Oct 5 / Feb 29, and with
+    # way_back_past_entries defaulting to true those would match first.
+    recent_dates = (2..20).map { |n| n.days.ago.to_date }
+                           .reject { |d| d.day == 5 || (d.month == 2 && d.day == 29) }
+                           .first(4)
+    recent_dates.each { |date| user.entries.create(body: 'hi.', date: date) }
   end
 
   describe "#random_entry" do
@@ -42,6 +45,7 @@ describe User do
     end
 
     it "returns 1 month ago" do
+      user.way_back_past_entries = false
       user.emails_sent = 3
       entry_date = Date.parse("2019-10-5")
       past_entry = user.entries.create(date: Date.parse("2019-9-5"), body: "Hi from 1 month back.")
