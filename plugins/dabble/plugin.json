@@ -20,7 +20,11 @@
           "Find a memory in my Dabble Me journal.",
           "Help me reflect on my journal from last month.",
           "Help me write an entry in my Dabble Me journal."
-        ]
+        ],
+        "websiteURL": "https://dabble.me",
+        "supportURL": "https://dabble.me/support",
+        "privacyPolicyURL": "https://dabble.me/privacy",
+        "termsOfServiceURL": "https://dabble.me/terms"
       }
     }
   }
