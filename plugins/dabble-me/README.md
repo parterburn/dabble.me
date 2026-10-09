@@ -8,10 +8,10 @@ Public server-card and OAuth metadata were verified on 2026-10-08. Tool contract
 
 After installation, connect Dabble Me through the host, ask for one recent entry, then try a dated memory search and a period review. Test saving only with an explicitly requested entry; confirm the returned success and URL. Do not create test entries merely to validate authentication.
 
-Package from the plugins directory with: `python3 -m zipfile -c /tmp/dabble-plugin.zip dabble`
+Package from the plugins directory with: `python3 -m zipfile -c /tmp/dabble-me-plugin.zip dabble-me`
 
 ## Claude directory submission
 
-Use repository `https://github.com/parterburn/dabble.me` and plugin path `plugins/dabble`. Track `main` after the compatibility changes merge. Claude reads `.claude-plugin/plugin.json` and `.mcp.json`; portable clients read the root `plugin.json` and `mcp.json`. Both use the same existing OAuth server and skills. Claude uses the transport name `http` for Streamable HTTP.
+Use repository `https://github.com/parterburn/dabble.me` and plugin path `plugins/dabble-me`. Track `main` after the compatibility changes merge. Claude reads `.claude-plugin/plugin.json` and `.mcp.json`; portable clients read the root `plugin.json` and `mcp.json`. Both use the same existing OAuth server and skills. Claude uses the transport name `http` for Streamable HTTP.
 
-Validate locally with `claude plugin validate ./plugins/dabble`. Keep the identity, version, descriptions, and connection synchronized across formats when releasing updates.
+Validate locally with `claude plugin validate ./plugins/dabble-me`. Keep the identity, version, descriptions, and connection synchronized across formats when releasing updates.

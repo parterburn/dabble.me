@@ -1,6 +1,6 @@
 {
-  "name": "dabble",
-  "version": "0.1.2",
+  "name": "dabble-me",
+  "version": "0.1.3",
   "description": "Search, reflect on, and write your private Dabble Me journal using its existing OAuth MCP server.",
   "author": {
     "name": "Dabble Me"
