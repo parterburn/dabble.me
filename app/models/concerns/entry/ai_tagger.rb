@@ -1,8 +1,7 @@
 class Entry::AiTagger
-  SCORE_THRESHOLD = 0.35 # higher = higher confidence in match
-  BASE_URL = "https://router.huggingface.co".freeze
-  AI_MODEL = "/hf-inference/models/j-hartmann/emotion-english-distilroberta-base".freeze
-  MAX_ENTRY_SIZE = 512
+  OPENAI_MODEL = "gpt-6-luna".freeze
+  MAX_ENTRY_SIZE = 5000
+  MAX_EMOTIONS = 2
 
   EMOTIONS = {
     "anger" => "🤬",
@@ -15,77 +14,82 @@ class Entry::AiTagger
     "unknown" => "unknown"
   }.freeze
 
-  def tag(entry_ids)
-    all_entries = Entry.where(id: entry_ids)
+  TAGGABLE_EMOTIONS = (EMOTIONS.keys - ["unknown"]).freeze
 
-    if all_entries.count > 100
-      all_entries.each_slice(100) do |entries_slice|
-        process_entries(entries_slice)
-      end
-    else
-      process_entries(all_entries)
+  def tag(entry_ids)
+    Entry.where(id: entry_ids).find_each do |entry|
+      entry_text = entry.text_bodies_for_ai&.first
+      next unless entry_text.present?
+
+      emotions = sentiment_tags(entry_text)
+      next if emotions.nil?
+
+      entry.sentiment = emotions
+      entry.save
     end
   end
 
   private
 
-  def process_entries(entries)
-    entries = entries.select { |e| e.text_bodies_for_ai&.first.present? }
-    return unless entries.present?
+  def sentiment_tags(entry_text)
+    resp = client.responses.create(parameters: openai_params(entry_text))
+    content = resp["output"]&.find { |o| o["type"] == "message" }&.dig("content", 0)
 
-    emotion_hash = sentiment_tags(entries)
-    return unless emotion_hash.present?
-
-    emotion_hash.each do |entry_id, tags|
-      entry = entries.find { |e| e.id == entry_id }
-      next unless entry.present?
-
-      entry.sentiment = tags
-      entry.save
+    if content&.dig("type") != "output_text"
+      Sentry.capture_message("OpenAI Tagging Error", level: :info, extra: {error: content || resp})
+      return nil
     end
+
+    emotions = JSON.parse(content["text"])["emotions"] & TAGGABLE_EMOTIONS
+    emotions -= ["neutral"] if emotions.size > 1
+    emotions.presence&.first(MAX_EMOTIONS) || ["unknown"]
+  rescue Faraday::Error, JSON::ParserError => e
+    Sentry.capture_exception(e, level: :info)
+    nil
   end
 
-  def sentiment_tags(entries)
-    body = {
-      options: {
-        wait_for_model: true
-      },
-      inputs: entries.map { |e| e.text_bodies_for_ai&.first&.first(MAX_ENTRY_SIZE) }
+  def openai_params(entry_text)
+    {
+      model: OPENAI_MODEL,
+      input: [
+        {role: "developer", content: tagging_instructions},
+        {role: "user", content: entry_text.gsub("||DabbleMeGPT||", "").truncate(MAX_ENTRY_SIZE, omission: "...")}
+      ],
+      reasoning: {effort: "low"},
+      store: false,
+      text: {
+        format: {
+          type: "json_schema",
+          name: "entry_emotions",
+          strict: true,
+          schema: {
+            type: "object",
+            properties: {
+              emotions: {
+                type: "array",
+                items: {type: "string", enum: TAGGABLE_EMOTIONS}
+              }
+            },
+            required: ["emotions"],
+            additionalProperties: false
+          }
+        }
+      }
     }
-    response = connection.post(AI_MODEL, body)
-
-    if response.body.is_a?(Hash) && response.body["error"].present?
-      Sentry.capture_message("Hugging Face Error", level: :info, extra: { error: response.body["error"] })
-      return nil
-    elsif !response.body.is_a?(Hash) && !response.body.is_a?(Array)
-      Sentry.capture_message("Hugging Face Error", level: :info, extra: { error: response.body })
-      return nil
-    end
-
-    emotion_hash = {}
-    response.body.each_with_index do |entry_emotions, i|
-      emotion_hash[entries[i].id] ||= []
-      error = false
-      entry_emotions.each do |emotion|
-        if emotion.is_a?(Hash) && emotion["score"] && emotion["score"].to_f > SCORE_THRESHOLD
-          emotion_hash[entries[i].id] << emotion["label"]
-        elsif !emotion.is_a?(Hash) || (emotion.is_a?(Hash) && emotion["score"].blank?)
-          error = true
-          Sentry.capture_message("Hugging Face Error", level: :info, extra: { error: emotion })
-        end
-      end
-
-      emotion_hash[entries[i].id] << "unknown" if error # only add unknown if no emotions are higher than threshold
-    end
-    emotion_hash
   end
 
-  def connection
-    @connection ||= Faraday.new(BASE_URL) do |f|
-      f.options[:timeout] = 110
-      f.request :json
-      f.response :json
-      f.request :authorization, "Bearer", ENV["HUGGING_FACE_API_KEY"]
-    end
+  def tagging_instructions
+    %(You classify the emotions expressed in a personal journal entry.
+
+Return the #{MAX_EMOTIONS} or fewer most prominent emotions the writer expresses, ordered from strongest to weakest, chosen only from: #{TAGGABLE_EMOTIONS.join(", ")}.
+
+- Only include an emotion if it is clearly expressed, not merely mentioned in passing.
+- Use "neutral" alone when the entry is mostly factual or no emotion stands out.
+- Never combine "neutral" with another emotion.
+- The entry may be written in any language; classify it the same way.)
+  end
+
+  def client
+    @client ||= OpenAI::Client.new(log_errors: true)
   end
 end
