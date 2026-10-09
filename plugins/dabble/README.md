@@ -1,4 +1,4 @@
-# Dabble plugin
+# Dabble Me plugin
 
 Connects to the existing Dabble Me Streamable HTTP server at https://dabble.me/mcp using host-managed OAuth (PKCE S256, scope mcp:access). No API keys or server deployment are needed. Requires a Dabble Me PRO account with a passkey or two-factor authentication.
 
