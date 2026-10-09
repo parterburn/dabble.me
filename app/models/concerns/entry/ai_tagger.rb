@@ -36,7 +36,7 @@ class Entry::AiTagger
     content = resp["output"]&.find { |o| o["type"] == "message" }&.dig("content", 0)
 
     if content&.dig("type") != "output_text"
-      Sentry.capture_message("OpenAI Tagging Error", level: :info, extra: { error: content || resp })
+      Sentry.capture_message("OpenAI Tagging Error", level: :info, extra: {error: content || resp})
       return nil
     end
 
@@ -52,10 +52,10 @@ class Entry::AiTagger
     {
       model: OPENAI_MODEL,
       input: [
-        { role: "developer", content: tagging_instructions },
-        { role: "user", content: entry_text.gsub("||DabbleMeGPT||", "").truncate(MAX_ENTRY_SIZE, omission: "...") }
+        {role: "developer", content: tagging_instructions},
+        {role: "user", content: entry_text.gsub("||DabbleMeGPT||", "").truncate(MAX_ENTRY_SIZE, omission: "...")}
       ],
-      reasoning: { effort: "low" },
+      reasoning: {effort: "low"},
       store: false,
       text: {
         format: {
@@ -67,7 +67,7 @@ class Entry::AiTagger
             properties: {
               emotions: {
                 type: "array",
-                items: { type: "string", enum: TAGGABLE_EMOTIONS }
+                items: {type: "string", enum: TAGGABLE_EMOTIONS}
               }
             },
             required: ["emotions"],
@@ -81,7 +81,7 @@ class Entry::AiTagger
   def tagging_instructions
     %(You classify the emotions expressed in a personal journal entry.
 
-Return the #{MAX_EMOTIONS} or fewer most prominent emotions the writer expresses, ordered from strongest to weakest, chosen only from: #{TAGGABLE_EMOTIONS.join(', ')}.
+Return the #{MAX_EMOTIONS} or fewer most prominent emotions the writer expresses, ordered from strongest to weakest, chosen only from: #{TAGGABLE_EMOTIONS.join(", ")}.
 
 - Only include an emotion if it is clearly expressed, not merely mentioned in passing.
 - Use "neutral" alone when the entry is mostly factual or no emotion stands out.
