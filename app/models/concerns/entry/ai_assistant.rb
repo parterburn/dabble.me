@@ -17,7 +17,7 @@ class Entry
     private
 
     def model
-      "gpt-5.6-sol"
+      "gpt-6.1-sol"
     end
 
     def openai_params

@@ -312,7 +312,7 @@ class Entry < ActiveRecord::Base
   end
 
   def tag_for_sentiment
-    return unless user.ai_opt_in? && ENV["HUGGING_FACE_API_KEY"].present?
+    return unless user.ai_opt_in? && ENV["OPENAI_ACCESS_TOKEN"].present?
     return unless text_body.present?
 
     AiTaggingJob.perform_later(id)
