@@ -51,7 +51,7 @@ module ApplicationHelper
   OAUTH_KNOWN_APPLICATION_LOGOS = [
     { pattern: /\bnotion\b/i, asset: "oauth/notion.png", alt: "Notion", fit: :contain },
     { pattern: /\b(claude|anthropic)\b/i, asset: "oauth/anthropic.png", alt: "Claude", fit: :cover },
-    { pattern: /\b(chatgpt|chat\s*gpt|openai)\b/i, asset: "oauth/openai.png", alt: "ChatGPT", fit: :contain }
+    { pattern: /\b(chatgpt|chat\s*gpt|openai|codex)\b/i, asset: "oauth/openai.png", alt: "ChatGPT", fit: :contain }
   ].freeze
 
   # Brand logo metadata for major OAuth clients, or nil for letter initials.

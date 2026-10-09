@@ -42,6 +42,13 @@ RSpec.describe "OAuth authorization screen", type: :request do
     end
   end
 
+  it "renders the OpenAI logo for Codex" do
+    get_consent_screen(create_application("Codex"))
+
+    expect(response).to have_http_status(:ok)
+    expect(response.body).to include(ActionController::Base.helpers.image_path("oauth/openai.png"))
+  end
+
   it "renders the consent screen with initials for an unrecognized client" do
     get_consent_screen(create_application("MCP Inspector"))
 
