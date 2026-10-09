@@ -15,3 +15,9 @@ Package from the plugins directory with: `python3 -m zipfile -c /tmp/dabble-me-p
 Use repository `https://github.com/parterburn/dabble.me` and plugin path `plugins/dabble-me`. Track `main` after the compatibility changes merge. Claude reads `.claude-plugin/plugin.json` and `.mcp.json`; portable clients read the root `plugin.json` and `mcp.json`. Both use the same existing OAuth server and skills. Claude uses the transport name `http` for Streamable HTTP.
 
 Validate locally with `claude plugin validate ./plugins/dabble-me`. Keep the identity, version, descriptions, and connection synchronized across formats when releasing updates.
+
+## OpenAI review materials
+
+The portable manifest includes five positive and three negative review cases, the demo link (https://urg.ai/dbl-mcp), and release notes. The demo link resolves to a public Loom page; video playback has not been verified. These cases are drafted and have not been run against the reviewer account. Prepare the dated sample entries described in the cases before running them. Run read cases before write cases, and supply reviewer credentials only through the portal's secure fields.
+
+The logo asset and manifest references are verified in private plugin v0.1.5. Rendering on the signed-in ChatGPT plugin page remains unverified.
