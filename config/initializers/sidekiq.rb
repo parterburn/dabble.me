@@ -4,6 +4,16 @@ Rails.application.config.to_prepare do
   Sidekiq.strict_args!(false)
 end
 
+# Client path (rake, web enqueue). Slightly longer network timeout helps Railway
+# private-network cold starts for the cron reload service without raising Sidekiq's
+# server reconnect aggressiveness (which can risk duplicate LPUSH on jobs).
+Sidekiq.configure_client do |config|
+  config.redis = {
+    network_timeout: 5,
+    reconnect_attempts: 2
+  }
+end
+
 Sidekiq.configure_server do |config|
   # Dead set: jobs that exhausted retries. Capped so Redis does not grow without bound.
   # Sidekiq removes oldest dead jobs when over count or age. Option is dead_timeout_in_seconds
