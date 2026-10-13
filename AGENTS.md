@@ -79,4 +79,4 @@ Schedule file: `config/sidekiq_cron_schedule.yml`. With `SIDEKIQ_CRON_ENABLED` s
 |----------|---------|
 | `SIDEKIQ_CRON_ENABLED` | Set on worker environments so Sidekiq registers cron + loads the schedule at boot. Omit locally unless you want cron in dev. |
 
-If Redis loses cron keys while Sidekiq stays up, reload from disk without restarting Sidekiq: **`bundle exec rake sidekiq_cron:reload`** (same semantics as boot: `load_from_hash!` / `load_from_array!` with `source: "schedule"`). On **Railway**, add a **Cron** service every 10 minutes with that command (same env vars / Redis URL as the web app).
+If Redis loses cron keys while Sidekiq stays up, reload from disk without restarting Sidekiq: **`bundle exec rake sidekiq_cron:reload`** (same semantics as boot: `load_from_hash!` / `load_from_array!` with `source: "schedule"`). On **Railway**, add a **Cron** service every 15 minutes with that command (same env vars / Redis URL as the web app). The rake task retries transient Redis connect timeouts (common on private-network cold starts).
