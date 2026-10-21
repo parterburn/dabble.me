@@ -82,15 +82,16 @@ class CollageGenerator
     nil
   end
 
-  # Builds the collage, uploads the JPEG to S3, and returns the public URL.
+  # Builds the collage, uploads the JPEG under uploads/tmp/ on S3, and returns
+  # its public URL. Callers must copy the image elsewhere; tmp objects expire.
   # Returns nil on failure.
-  def s3_url
+  def tmp_s3_url
     tf = tempfile
     return nil unless tf
 
     add_dev = "/development" unless Rails.env.production?
     user_segment = @user ? "#{@user.id}/" : ""
-    folder = "uploads#{add_dev}/#{user_segment}collages/#{Date.today.strftime('%Y-%m-%d')}/"
+    folder = "uploads#{add_dev}/tmp/#{user_segment}collages/#{Date.today.strftime('%Y-%m-%d')}/"
     file_key = "#{folder}#{SecureRandom.uuid}.jpg"
     UploadToS3.new(file_key: file_key, body: File.binread(tf.path)).call.public_url
   ensure

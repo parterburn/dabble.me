@@ -14,7 +14,7 @@ class ImageConverter
                          .call
   end
 
-  def s3_url
+  def tmp_s3_url
     tempfile = call
     filename = "#{SecureRandom.uuid}.jpg"
     jpeg_file = ActionDispatch::Http::UploadedFile.new(
@@ -27,7 +27,7 @@ class ImageConverter
     )
 
     add_dev = "/development" unless Rails.env.production?
-    folder = "uploads#{add_dev}/#{@user.id}/collages/#{Date.today.strftime("%Y-%m-%d")}/"
+    folder = "uploads#{add_dev}/tmp/#{@user.id}/collages/#{Date.today.strftime("%Y-%m-%d")}/"
     file_key = "#{folder}#{filename}"
     file = UploadToS3.new(file_key: file_key, body: jpeg_file.read).call
     jpeg_file.tempfile.close

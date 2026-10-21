@@ -222,13 +222,13 @@ class ImageCollageJob < ActiveJob::Base
             tempfile.binmode
             tempfile.write(response.body)
             tempfile.rewind
-            result = ImageConverter.new(tempfile: tempfile, width: 1200, user: @user).s3_url
+            result = ImageConverter.new(tempfile: tempfile, width: 1200, user: @user).tmp_s3_url
             tempfile.close
             tempfile.unlink
             result
           else
             file = URI.parse(url).open
-            ImageConverter.new(tempfile: file, width: 1200, user: @user).s3_url
+            ImageConverter.new(tempfile: file, width: 1200, user: @user).tmp_s3_url
           end
         rescue => e
           Sentry.capture_exception(e)
@@ -242,7 +242,7 @@ class ImageCollageJob < ActiveJob::Base
     if urls.size == 1 && urls.first.starts_with?("http")
       urls.first
     elsif urls.any?
-      CollageGenerator.new(urls: urls, user: @user).s3_url
+      CollageGenerator.new(urls: urls, user: @user).tmp_s3_url
     end
   end
 

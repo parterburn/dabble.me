@@ -499,7 +499,7 @@ class EmailProcessor
     if urls.size == 1 && urls.first.starts_with?("http")
       urls.first
     elsif urls.any?
-      CollageGenerator.new(urls: urls, user: @user).s3_url
+      CollageGenerator.new(urls: urls, user: @user).tmp_s3_url
     end
   end
 
