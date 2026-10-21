@@ -44,7 +44,7 @@ gem 'groupdate' # Admin Stats
 gem 'rack-utf8_sanitizer', '~> 1.8'
 gem 'randomized_field', '~> 1.0' # builds user_keys
 gem 'rest-client' # RESTClient
-gem 'rubyzip', '~> 3.0'
+gem 'rubyzip', '~> 3.4'
 gem 'summernote-rails', '~> 0.8.20.0', git: "https://github.com/parterburn/summernote-rails"
 gem 'words_counted', '~> 1.0', '>= 1.0.3' # Year in Review
 # zip-zip shim removed - rubyzip 3.x uses modern Zip::File API
