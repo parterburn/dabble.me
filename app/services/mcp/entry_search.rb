@@ -93,7 +93,19 @@ module Mcp
     end
 
     def normalized_limit(limit)
-      [[limit.to_i, 1].max, MAX_LIMIT].min
+      numeric = case limit
+                when Integer
+                  limit
+                when Numeric
+                  limit.to_i
+                when String
+                  raise ArgumentError, 'limit must be an integer' unless limit.match?(/\A\d+\z/)
+
+                  limit.to_i
+                else
+                  raise ArgumentError, 'limit must be an integer'
+                end
+      [[numeric, 1].max, MAX_LIMIT].min
     end
 
     def parse_date!(value)

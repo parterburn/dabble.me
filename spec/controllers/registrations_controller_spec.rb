@@ -232,6 +232,17 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(response.status).to eq 200
     end
 
+    it 'rejects signup from a blocked email domain' do
+      new_password = Faker::Internet.password(min_length: 8)
+
+      expect {
+        post :create, params: { user: { email: 'probe@pentest2bot.ink', password: new_password, password_confirmation: new_password } }
+      }.not_to change(User, :count)
+
+      expect(response.status).to eq 200
+      expect(response.body).to include('is not allowed')
+    end
+
     it 'should be able to create free user and send that user an email' do
       email = Faker::Internet.email
       new_password = Faker::Internet.password(min_length: 8)

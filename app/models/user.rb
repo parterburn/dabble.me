@@ -2,7 +2,11 @@ class User < ActiveRecord::Base
   include RandomizedField
 
   VALID_EMAIL_REGEX = /\A[A-Z0-9._%'+-]+@[A-Z0-9.-]+\.[A-Z]{2,63}\z/i
+  # Scanner infrastructure. Reject the domain and any subdomain on signup and email change.
+  BLOCKED_EMAIL_DOMAINS = %w[pentest2bot.ink].freeze
+
   validates :email, format: { with: VALID_EMAIL_REGEX }, allow_blank: true
+  validate :email_domain_not_blocked
 
   # Include default devise modules. Others available are:
   # :confirmable, :timeoutable and :omniauthable, :lockable
@@ -48,6 +52,11 @@ class User < ActiveRecord::Base
   end
   after_commit :send_welcome_email, on: :create
 
+  def self.blocked_email_domain?(domain)
+    normalized = domain.to_s.downcase.sub(/\.\z/, '')
+    BLOCKED_EMAIL_DOMAINS.any? { |blocked| normalized == blocked || normalized.end_with?(".#{blocked}") }
+  end
+
   def full_name
     "#{first_name} #{last_name}" if first_name.present? || last_name.present?
   end
@@ -62,6 +71,15 @@ class User < ActiveRecord::Base
 
   def full_name_or_email
     first_name.present? ? "#{first_name} #{last_name}" : email
+  end
+
+  def email_domain_not_blocked
+    return if email.blank?
+
+    domain = email.split('@', 2).last
+    return unless self.class.blocked_email_domain?(domain)
+
+    errors.add(:email, 'is not allowed')
   end
 
   def first_name_or_fallback(fallback='there')

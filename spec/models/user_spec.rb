@@ -3,6 +3,42 @@ require 'rails_helper'
 describe User do
   let(:user) { User.create(email: Faker::Internet.email, password: Faker::Internet.password(min_length: 8), first_name: Faker::Name.first_name, last_name: Faker::Name.last_name) }
 
+  describe 'blocked email domains' do
+    let(:password) { 'password1' }
+
+    def build_user(email)
+      User.new(email: email, password: password, password_confirmation: password)
+    end
+
+    it 'rejects a blocked domain on signup' do
+      record = build_user('probe@pentest2bot.ink')
+
+      expect(record).not_to be_valid
+      expect(record.errors[:email]).to include('is not allowed')
+    end
+
+    it 'rejects a subdomain and ignores case' do
+      record = build_user('Probe@mail.Pentest2Bot.ink')
+
+      expect(record).not_to be_valid
+      expect(record.errors[:email]).to include('is not allowed')
+    end
+
+    it 'allows an address that only shares a suffix' do
+      record = build_user('person@notpentest2bot.ink')
+
+      record.validate
+      expect(record.errors[:email]).to be_empty
+    end
+
+    it 'rejects changing an existing account onto a blocked domain' do
+      user.email = 'probe@pentest2bot.ink'
+
+      expect(user).not_to be_valid
+      expect(user.errors[:email]).to include('is not allowed')
+    end
+  end
+
   let(:doorkeeper_app) do
     Doorkeeper::Application.find_or_create_by!(uid: 'rspec-oauth-app') do |a|
       a.name = 'RSpec OAuth'

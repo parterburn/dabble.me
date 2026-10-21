@@ -33,6 +33,17 @@ RSpec.describe 'WebMCP journal session tools', type: :request do
     expect(log.success).to eq(true)
   end
 
+  it 'rejects a nested limit instead of raising' do
+    sign_in user
+
+    post '/webmcp/journal/list',
+      params: { limit: { nested: 1 } }.to_json,
+      headers: { 'CONTENT_TYPE' => 'application/json' }
+
+    expect(response).to have_http_status(:unprocessable_entity)
+    expect(JSON.parse(response.body)['isError']).to eq(true)
+  end
+
   it 'lets any signed-in user list their own entries' do
     sign_in user
 

@@ -34,7 +34,7 @@ class EntriesController < ApplicationController
         raise InvalidDateError
       end
     elsif params[:group].present?
-      if params[:group] =~ /\A(19|20)\d{2}\z/
+      if params[:group].to_s.match?(/\A(19|20)\d{2}\z/)
         start_date = Date.new(params[:group].to_i, 1, 1)
         end_date = Date.new(params[:group].to_i, 12, 31)
         @entries = @entries.where(date: start_date..end_date)
@@ -416,7 +416,10 @@ class EntriesController < ApplicationController
 
   def set_entry
     if params[:day].present?
-      date = Date.new(params[:year].to_i, params[:month].to_i, params[:day].to_i)
+      year, month, day = [params[:year], params[:month], params[:day]].map(&:to_s)
+      raise ArgumentError unless [year, month, day].all? { |part| part.match?(/\A\d{1,4}\z/) }
+
+      date = Date.new(year.to_i, month.to_i, day.to_i)
       # entries.date is datetime; match the whole calendar day (see User#existing_entry)
       @entry = current_user.entries.includes(:inspiration).where(date: date.all_day).first
     else
@@ -435,8 +438,11 @@ class EntriesController < ApplicationController
   end
 
   def index_per_page
-    per = params[:per].presence&.to_i
-    return Kaminari.config.default_per_page if per.blank? || per <= 0
+    raw = params[:per]
+    per = if raw.is_a?(String) || raw.is_a?(Numeric)
+      raw.to_s.match?(/\A\d+\z/) ? raw.to_i : nil
+    end
+    return Kaminari.config.default_per_page if per.nil? || per <= 0
 
     per.clamp(1, 50)
   end

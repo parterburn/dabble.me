@@ -32,6 +32,20 @@ RSpec.describe EntriesController, type: :controller do
       expect(controller.send(:index_per_page)).to eq 50
     end
 
+    it 'ignores a nested per param instead of erroring' do
+      sign_in user
+      get :index, params: { per: { nested: '1' } }
+      expect(response.status).to eq 200
+      expect(controller.send(:index_per_page)).to eq Kaminari.config.default_per_page
+    end
+
+    it 'rejects a nested group param instead of erroring' do
+      sign_in user
+      get :index, params: { group: { nested: '1' } }
+      expect(response).to redirect_to(entries_path)
+      expect(flash[:alert]).to eq('Invalid date format')
+    end
+
     it 'rejects a multi-line subgroup instead of interpolating it into SQL' do
       sign_in user
       get :index, params: { group: 'emotion', subgroup: "2020\n' OR '1'='1" }
