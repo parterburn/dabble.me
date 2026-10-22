@@ -11,6 +11,7 @@ en:
         submit: 'Submit Token'
         recovery_link: "I don't have my device, I want to use a recovery code"
       otp_credentials:
+        otp_session_invalid: 'Session invalid. Please start again.'
         token_invalid: 'The token you provided was invalid.'
         token_blank: 'You need to type in the token you generated with your device.'
         need_to_refresh_credentials: 'We need to check your credentials before you can change these settings.'
@@ -35,6 +36,9 @@ en:
         status: 'Enable Two-factor Authentication.'
         submit: 'Save'
         successfully_updated: 'Your two-factor authentication settings have been updated.'
+        could_not_confirm: 'The Confirmation Code you entered did not match the QR code shown below.'
+        successfully_disabled_otp: 'Your two-factor credentials have been reset.'
+        successfully_reset_otp: 'Your token secret has been reset. Please confirm your new token secret below.'
         successfully_reset_creds: 'Your two-factor credentials has been reset.'
         successfully_set_persistence: 'Your device is now trusted.'
         successfully_cleared_persistence: 'Your device has been removed from the list of trusted devices.'

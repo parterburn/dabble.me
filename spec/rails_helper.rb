@@ -2,6 +2,7 @@
 ENV['RAILS_ENV'] ||= 'test'
 require File.expand_path('../../config/environment', __FILE__)
 require 'rspec/rails'
+require 'database_cleaner/active_record'
 
 # Add additional requires below this line. Rails is not loaded until this point!
 
@@ -26,6 +27,14 @@ Dir[Rails.root.join('spec/support/**/*.rb')].each { |f| require f }
 # If you are not using ActiveRecord, you can remove this line.
 ActiveRecord::Migration.maintain_test_schema!
 
+module ActiveJobTestHelperAdapter
+  def queue_adapter_for_test
+    ActiveJob::QueueAdapters::TestAdapter.new
+  end
+end
+
+ActiveJob::TestHelper.prepend(ActiveJobTestHelperAdapter)
+
 RSpec.configure do |config|
   config.infer_spec_type_from_file_location!
   config.filter_run focus: true
@@ -40,7 +49,7 @@ RSpec.configure do |config|
   end
 
   # Remove this line if you're not using ActiveRecord or ActiveRecord fixtures
-  config.fixture_path = "#{::Rails.root}/spec/fixtures"
+  config.fixture_paths = ["#{::Rails.root}/spec/fixtures"]
 
   # If you're not using ActiveRecord, or you'd prefer not to run each of your
   # examples within a transaction, remove the following line or assign false
@@ -65,7 +74,7 @@ RSpec.configure do |config|
   end
 
   # Hooks
-  config.before(:all) do
+  config.before(:suite) do
     Rails.application.eager_load!
     DatabaseCleaner.clean_with :truncation
     DatabaseCleaner.strategy = :truncation

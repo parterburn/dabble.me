@@ -124,7 +124,7 @@ RSpec.describe 'Rack::Attack', type: :request do
   def with_production_exceptions
     env_config = Rails.application.env_config
     previous = env_config['action_dispatch.show_exceptions']
-    env_config['action_dispatch.show_exceptions'] = true
+    env_config['action_dispatch.show_exceptions'] = :all
     yield
   ensure
     env_config['action_dispatch.show_exceptions'] = previous

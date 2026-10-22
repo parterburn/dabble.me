@@ -1,14 +1,12 @@
 source 'https://rubygems.org'
 
 ruby File.read(File.expand_path '../.ruby-version', __FILE__).strip.sub /\-p[0-9]+$/, '' # Read the rbenv version file
-gem 'rails', '~> 6.1.7.10'
+gem 'rails', '~> 7.2.2'
 
-gem "concurrent-ruby", "1.3.7" # needed until https://github.com/rails/rails/pull/54264 is in Rails 7.0.8.8
 gem "csv"                      # Ruby 3.4 stdlib extraction - required by ActiveSupport
 gem "drb"                      # Ruby 3.4 stdlib extraction - required by ActiveSupport
 gem "irb"                      # Ruby 3.4 stdlib extraction - required by `rails console`
 gem "logger"                   # Ruby 3.4 stdlib extraction - required by ActiveSupport, see config/boot.rb
-gem "mutex_m"                  # Ruby 3.4 stdlib extraction - required by Rails 6.1
 gem "ostruct"                  # Ruby 3.4 stdlib extraction - required by file_validators
 gem "rdoc"                     # Ruby 3.4 stdlib extraction - required by irb
 
@@ -19,7 +17,7 @@ gem 'pg', '~> 1.6'
 # users
 gem "devise"
 gem 'devise-security'
-gem "devise-otp"
+gem "devise-otp", "~> 0.8"
 gem "webauthn"
 gem "turnstile-captcha", require: "turnstile"
 
@@ -71,11 +69,11 @@ gem 'autoprefixer-rails'
 # gem 'haml_assets'
 gem 'i18n-js'
 gem 'jquery-rails'
-gem 'sass-rails'
-gem 'twbs_sass_rails'
+gem 'sassc-rails'
 gem 'uglifier'
 
-# Sidekiq 8.x requires Rack 3.2+ (Rails 7+). Rails 6.1 stays on Rack 2.x — use latest Sidekiq 7.3.x.
+# Sidekiq 8.x requires Rack 3.2+. Stay on Sidekiq 7.3.x and Rack 2.2.x.
+gem "rack", "~> 2.2"
 gem "sidekiq", "~> 7.3"
 gem "sidekiq-cron", "~> 2.4"
 gem "connection_pool", "~> 2.4"
@@ -83,8 +81,8 @@ gem "redis"
 gem "sentry-ruby"
 gem "sentry-rails"
 gem "sentry-sidekiq"
-gem "rack-attack" # Request blocking & throttling
-gem "cloudflare-rails"
+gem "rack-attack", ">= 6.7" # Request blocking & throttling
+gem "cloudflare-rails", "~> 7.0"
 gem "stripe"
 gem "stripe_event"
 gem "reverse_markdown" # text export conversion html->txt
@@ -95,7 +93,7 @@ group :development, :test do
   gem 'delorean'
   gem 'factory_bot_rails'
   gem 'faker'
-  gem "rspec-rails"
+  gem "rspec-rails", "~> 7.1"
   gem 'listen'
 end
 
@@ -105,8 +103,6 @@ group :development do
   gem 'binding_of_caller'
   gem 'bullet'
   gem 'meta_request'
-  gem 'spring'
-  gem 'spring-commands-rspec'
 
   # USE_SERVER=puma bundle exec derailed exec perf:mem
   # USE_SERVER=puma bundle exec derailed exec perf:mem_over_time
@@ -116,7 +112,7 @@ end
 
 group :test do
   gem 'capybara'
-  gem 'database_cleaner'
+  gem 'database_cleaner-active_record'
   gem 'email_spec', require: false
   gem "rspec-retry"                       # Automatically retry failed tests that timeout
   gem "selenium-webdriver", ">= 4.20"  # 4.11+ has built-in Selenium Manager for driver downloads
@@ -124,7 +120,7 @@ group :test do
   gem 'webmock', require: false
 end
 
-gem 'rack-timeout'
+gem 'rack-timeout', '~> 0.7'
 
 gem "mcp", "~> 0.23.0"
 gem "doorkeeper", "~> 5.9"
