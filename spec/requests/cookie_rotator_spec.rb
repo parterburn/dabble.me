@@ -60,10 +60,10 @@ RSpec.describe 'SHA-1 to SHA-256 cookie rotation', type: :request do
     )
 
     payload = 'trusted-device-token'.to_json
-    legacy_signed = legacy_verifier.generate(payload, purpose: 'cookie.otp_TrustedDevice')
+    legacy_signed = legacy_verifier.generate(payload, purpose: 'cookie.otp_user_device_trusted')
 
-    jar = build_CookieJar('otp_TrustedDevice' => legacy_signed)
-    expect(jar.signed['otp_TrustedDevice']).to eq('trusted-device-token')
+    jar = build_CookieJar('otp_user_device_trusted' => legacy_signed)
+    expect(jar.signed['otp_user_device_trusted']).to eq('trusted-device-token')
 
     sha256_secret = Rails.application.key_generator.generate_key(salt)
     sha256_verifier = ActiveSupport::MessageVerifier.new(
@@ -71,8 +71,8 @@ RSpec.describe 'SHA-1 to SHA-256 cookie rotation', type: :request do
       digest: 'SHA1',
       serializer: ActiveSupport::MessageEncryptor::NullSerializer
     )
-    rotated_raw = jar['otp_TrustedDevice']
+    rotated_raw = jar['otp_user_device_trusted']
     expect(rotated_raw).not_to eq(legacy_signed)
-    expect(JSON.parse(sha256_verifier.verified(rotated_raw, purpose: 'cookie.otp_TrustedDevice'))).to eq('trusted-device-token')
+    expect(JSON.parse(sha256_verifier.verified(rotated_raw, purpose: 'cookie.otp_user_device_trusted'))).to eq('trusted-device-token')
   end
 end
