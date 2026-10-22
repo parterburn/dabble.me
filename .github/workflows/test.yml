@@ -5,6 +5,7 @@ on: [push]
 jobs:
   vm-job:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       RAILS_ENV: test
       NODE_ENV: test
@@ -32,11 +33,15 @@ jobs:
     steps:
     - uses: actions/checkout@v6
 
-    - name: Install libvips
+    # ruby-vips loads libvips via FFI, so only the runtime library is needed.
+    # libpq-dev compiles the pg gem; libicu-dev pulls the distro ICU
+    # runtime (libicu78 on Ubuntu 26.04) that charlock_holmes links against.
+    - name: Install system packages
+      timeout-minutes: 10
       run: |
         sudo rm -f /etc/apt/sources.list.d/microsoft*
         sudo apt-get update
-        sudo apt-get install -y libvips-dev
+        sudo apt-get install -y --no-install-recommends libvips42t64 libpq-dev libicu-dev
 
     - name: Set up Ruby
       uses: ruby/setup-ruby@v1
@@ -56,14 +61,6 @@ jobs:
         key: ${{ runner.os }}-assets-${{ steps.extract_branch.outputs.branch }}
         restore-keys: |
           ${{ runner.os }}-assets-
-
-    # libpq-dev compiles the pg gem; libicu-dev pulls the distro ICU
-    # runtime (libicu78 on Ubuntu 26.04) that charlock_holmes links against.
-    - name: Install PostgreSQL client and ICU
-      run: |
-        sudo rm -f /etc/apt/sources.list.d/microsoft*
-        sudo apt-get update
-        sudo apt-get install -y libpq-dev libicu-dev
 
     - name: Build and create DB
       env:
