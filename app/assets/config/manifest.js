@@ -1,6 +1,3 @@
-//= link dabble_me_pencil_400.png
-//= link dabble_me_pencil_800.png
-//= link dabble_me_pencil_logo.png
 //= link caste.jpg
 //= link untamed.jpg
 //= link ohlifelogo.gif
@@ -8,7 +5,6 @@
 //= link bg_pattern.gif
 //= link tom-hanks-nice.gif
 //= link bg_h3.gif
-//= link broken_pencil.png
 //= link copy-spotify-link.gif
 //= link baby.jpg
 //= link first-date.jpg
