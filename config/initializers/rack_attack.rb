@@ -73,7 +73,10 @@ class Rack::Attack
   # Counting happens in ProbeResponseCounter, after the status is known.
   # This blocklist only checks whether that counter has already banned the IP.
   blocklist('probe-responses') do |req|
-    Allow2Ban.filter(probe_discriminator(req.ip), probe_ban_options) { false }
+    ip = probe_ip(req)
+    next false unless bannable_probe_ip?(ip)
+
+    Allow2Ban.filter(probe_discriminator(ip), probe_ban_options) { false }
   end
 
   def self.submitted_email(req)
@@ -85,6 +88,19 @@ class Rack::Attack
     email.strip.downcase.presence
   end
 
+  # Prefer CF-Connecting-IP (real browser behind Cloudflare), then Rails'
+  # trusted-proxy remote_ip. Plain req.ip alone is unsafe here: traffic is
+  # Client → Cloudflare → Railway → app, so REMOTE_ADDR is often a shared
+  # hop; banning that IP 403s the whole site.
+  def self.probe_ip(req)
+    cf = req.get_header('HTTP_CF_CONNECTING_IP').to_s.strip.presence
+    return cf if cf
+
+    ActionDispatch::Request.new(req.env).remote_ip.presence || req.ip
+  rescue StandardError
+    req.ip
+  end
+
   def self.probe_discriminator(ip)
     "probe:#{ip}"
   end
@@ -93,11 +109,34 @@ class Rack::Attack
     { maxretry: PROBE_BAN_MAXRETRY, findtime: PROBE_BAN_FINDTIME, bantime: PROBE_BAN_TIME }
   end
 
-  # Counts 404s and 500s from inside the stack, then Allow2Ban blocks the IP
-  # on the following request. Assets and the health check are ignored so a
-  # missing font or a deploy probe cannot ban a client.
+  # Never Allow2Ban a private/loopback/link-local address or a Cloudflare edge
+  # range — those are shared hops, not individual scanners.
+  def self.bannable_probe_ip?(ip)
+    return false if ip.blank?
+
+    addr = IPAddr.new(ip)
+    return false if addr.loopback? || addr.private? || addr.link_local?
+    return false if cloudflare_edge_ip?(addr)
+
+    true
+  rescue IPAddr::Error
+    false
+  end
+
+  def self.cloudflare_edge_ip?(addr)
+    return false unless defined?(CloudflareRails::Importer)
+
+    CloudflareRails::Importer.cloudflare_ips.any? { |range| range === addr }
+  rescue StandardError
+    false
+  end
+
+  # Counts 404s from inside the stack, then Allow2Ban blocks the IP on the
+  # following request. Assets and the health check are ignored so a missing
+  # font or a deploy probe cannot ban a client. 500s are not counted — a
+  # deploy/DB blip must not ban real users.
   class ProbeResponseCounter
-    PROBE_STATUSES = [404, 500].freeze
+    PROBE_STATUSES = [404].freeze
     SKIP_PREFIXES = ['/assets', '/health_check'].freeze
 
     def initialize(app)
@@ -118,7 +157,10 @@ class Rack::Attack
       req = Rack::Request.new(env)
       return if SKIP_PREFIXES.any? { |prefix| req.path.start_with?(prefix) }
 
-      Rack::Attack::Allow2Ban.filter(Rack::Attack.probe_discriminator(req.ip), Rack::Attack.probe_ban_options) { true }
+      ip = Rack::Attack.probe_ip(req)
+      return unless Rack::Attack.bannable_probe_ip?(ip)
+
+      Rack::Attack::Allow2Ban.filter(Rack::Attack.probe_discriminator(ip), Rack::Attack.probe_ban_options) { true }
     rescue StandardError
       # The response is already decided. A cache failure must not replace it with a 500.
       nil

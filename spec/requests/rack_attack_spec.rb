@@ -70,6 +70,46 @@ RSpec.describe 'Rack::Attack', type: :request do
     end
   end
 
+  it 'bans using CF-Connecting-IP when REMOTE_ADDR is a shared proxy hop' do
+    with_production_exceptions do
+      proxy = '10.0.0.5'
+      client = '203.0.113.60'
+
+      Rack::Attack::PROBE_BAN_MAXRETRY.times do |index|
+        get "/zzz-cf-missing-#{index}",
+          env: {
+            'REMOTE_ADDR' => proxy,
+            'HTTP_CF_CONNECTING_IP' => client
+          }
+        expect(response).to have_http_status(:not_found)
+      end
+
+      get '/zzz-cf-missing-final',
+        env: {
+          'REMOTE_ADDR' => proxy,
+          'HTTP_CF_CONNECTING_IP' => client
+        }
+      expect(response).to have_http_status(:forbidden)
+
+      # Same proxy hop, different real client — must stay unblocked.
+      get '/',
+        env: {
+          'REMOTE_ADDR' => proxy,
+          'HTTP_CF_CONNECTING_IP' => '203.0.113.61'
+        }
+      expect(response).not_to have_http_status(:forbidden)
+    end
+  end
+
+  it 'does not ban when only a private REMOTE_ADDR is visible' do
+    with_production_exceptions do
+      (Rack::Attack::PROBE_BAN_MAXRETRY + 1).times do |index|
+        get "/zzz-private-missing-#{index}", env: { 'REMOTE_ADDR' => '10.0.0.8' }
+        expect(response).not_to have_http_status(:forbidden)
+      end
+    end
+  end
+
   it 'does not count asset misses toward the probe ban' do
     with_production_exceptions do
       Rack::Attack::PROBE_BAN_MAXRETRY.times do |index|
