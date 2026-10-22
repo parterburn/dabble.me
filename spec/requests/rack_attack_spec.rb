@@ -55,6 +55,20 @@ RSpec.describe 'Rack::Attack', type: :request do
     expect(statuses.last).to eq(429)
   end
 
+  it 'throttles OTP challenge guesses per challenge across rotating IPs' do
+    challenge = SecureRandom.hex(16)
+
+    statuses = Array.new(6) do |index|
+      put '/users/otp/credentials',
+        params: { user: { challenge: challenge, token: '000000' } },
+        env: { 'REMOTE_ADDR' => "198.51.100.#{index + 1}" }
+      response.status
+    end
+
+    expect(statuses.first(5)).to all(be < 429)
+    expect(statuses.last).to eq(429)
+  end
+
   it 'bans an IP after repeated missing paths' do
     with_production_exceptions do
       Rack::Attack::PROBE_BAN_MAXRETRY.times do |index|

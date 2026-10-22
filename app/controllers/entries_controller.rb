@@ -5,6 +5,7 @@ class EntriesController < ApplicationController
   include ActionView::Helpers::SanitizeHelper
 
   before_action :authenticate_user!
+  before_action :authenticate_admin!, only: [:email_replies_test]
   before_action :set_entry, :require_entry_permission, only: [:show, :edit, :update, :destroy, :process_as_ai, :respond_to_ai, :dismiss_image_error]
 
   rescue_from InvalidDateError, with: :handle_invalid_date

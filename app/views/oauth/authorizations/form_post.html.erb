@@ -9,14 +9,22 @@
   </div>
 </div>
 
-<%= form_tag @pre_auth.redirect_uri, method: :post, name: :redirect_form, authenticity_token: false do %>
-  <% auth.body.compact.each do |key, value| %>
-    <%= hidden_field_tag key, value %>
+<% safe_redirect_uri = begin
+  parsed = URI.parse(@pre_auth.redirect_uri.to_s)
+  %w[http https].include?(parsed.scheme.to_s.downcase) && parsed.host.present? ? @pre_auth.redirect_uri : nil
+rescue URI::InvalidURIError
+  nil
+end %>
+<% if safe_redirect_uri %>
+  <%= form_tag safe_redirect_uri, method: :post, name: :redirect_form, authenticity_token: false do %>
+    <% auth.body.compact.each do |key, value| %>
+      <%= hidden_field_tag key, value %>
+    <% end %>
   <% end %>
-<% end %>
 
-<script>
-  window.onload = function () {
-    document.forms['redirect_form'].submit();
-  };
-</script>
+  <script>
+    window.onload = function () {
+      document.forms['redirect_form'].submit();
+    };
+  </script>
+<% end %>

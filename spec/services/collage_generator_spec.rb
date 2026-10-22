@@ -74,5 +74,21 @@ RSpec.describe CollageGenerator do
       # wider than the tall one.
       expect(row.height).to be > 0
     end
+
+    it "refuses local filesystem paths unless allow_local_paths is true" do
+      tmp = Tempfile.new(["collage_local_test", ".png"])
+      tmp.binmode
+      tmp.write(Vips::Image.black(120, 120, bands: 3).write_to_buffer(".png"))
+      tmp.rewind
+
+      default_gen = described_class.new(urls: [tmp.path])
+      expect(default_gen.send(:fetch_bytes, tmp.path)).to be_nil
+
+      explicit_gen = described_class.new(urls: [tmp.path], allow_local_paths: true)
+      expect(explicit_gen.send(:fetch_bytes, tmp.path)).to be_present
+    ensure
+      tmp&.close
+      tmp&.unlink
+    end
   end
 end

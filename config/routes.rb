@@ -40,6 +40,7 @@ Rails.application.routes.draw do
     get 'admin/stats' => 'admin#stats', as: 'admin_stats'
     post 'admin/stats/capture' => 'admin#capture_stats', as: 'capture_admin_stats'
     get 'admin/photos' => 'admin#photos', as: 'admin_photos'
+    get 'email_replies_test', to: 'entries#email_replies_test'
     mount Sidekiq::Web => "/sidekiq"
   end
 
@@ -68,8 +69,6 @@ Rails.application.routes.draw do
   match '/entries/import/ohlife/upload'  => 'import#process_ohlife_images', via: [:post], :as => 'import_ohlife_images'
   get 'entries/export'   => 'entries#export', as: 'export_entries'
   get 'entries/calendar' => 'entries#calendar', as: 'entries_calendar'
-
-  get "email_replies_test", to: "entries#email_replies_test"
 
   get 'past(/:anything)',               to: redirect('/entries')
   get 'entries/emotion/:emotion',       to: 'entries#index', as: 'entries_emotion'
@@ -107,7 +106,7 @@ Rails.application.routes.draw do
   }, constraints: { amount: /\d+/ }
   match 'payment_notify',               to: 'payments#payment_notify', via: [:post]
   get 'ohlife-alternative',             to: 'welcome#ohlife_alternative'
-  post 'email_processor',               to: 'griddler/emails#create'
+  post 'email_processor',               to: 'inbound_emails#create'
   post 'email_events',                  to: 'email_events#create'
 
   post "checkout", to: "payments#checkout", as: "checkout"

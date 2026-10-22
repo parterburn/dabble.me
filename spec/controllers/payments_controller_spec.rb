@@ -203,6 +203,17 @@ RSpec.describe PaymentsController, type: :controller do
   end
 
   describe 'payment_notify with Gumroad' do
+    around do |example|
+      orig_seller = ENV['GUMROAD_SELLER_ID']
+      orig_product = ENV['GUMROAD_PRODUCT_ID']
+      ENV['GUMROAD_SELLER_ID'] = orig_seller.presence || 'test_gumroad_seller'
+      ENV['GUMROAD_PRODUCT_ID'] = orig_product.presence || 'test_gumroad_product'
+      example.run
+    ensure
+      ENV['GUMROAD_SELLER_ID'] = orig_seller
+      ENV['GUMROAD_PRODUCT_ID'] = orig_product
+    end
+
     let(:gumroad_params) do
       {
         seller_id: ENV['GUMROAD_SELLER_ID'],
@@ -244,9 +255,26 @@ RSpec.describe PaymentsController, type: :controller do
       expect(paid_user.reload.plan).to eq paid_user.plan
       expect(ActionMailer::Base.deliveries.last.subject).to eq '[REFUND REQUIRED] Payment Without a User'
     end
+
+    it 'rejects Gumroad notifications when GUMROAD_SELLER_ID or GUMROAD_PRODUCT_ID are unset' do
+      ENV['GUMROAD_SELLER_ID'] = nil
+      ENV['GUMROAD_PRODUCT_ID'] = nil
+      expect do
+        post :payment_notify, params: { email: user.email, price: '3600', recurrence: 'yearly' }, as: :json
+      end.not_to change { Payment.count }
+      expect(user.reload.plan).to eq 'Free'
+    end
   end
 
   describe 'payment_notify with PayPal' do
+    around do |example|
+      orig_paypal = ENV['PAYPAL_SELLER_ID']
+      ENV['PAYPAL_SELLER_ID'] = orig_paypal.presence || 'test_paypal_seller'
+      example.run
+    ensure
+      ENV['PAYPAL_SELLER_ID'] = orig_paypal
+    end
+
     let(:paypal_params) do
       {
         payment_status: 'Completed',
@@ -267,6 +295,62 @@ RSpec.describe PaymentsController, type: :controller do
       expect { post :payment_notify, params: paypal_params, as: :json }.not_to change { Payment.count }
       expect(paid_user.reload.plan).to eq paid_user.plan
       expect(ActionMailer::Base.deliveries.last.subject).to eq '[REFUND REQUIRED] Payment Without a User'
+    end
+  end
+
+  describe 'GET #success' do
+    it 'does not upgrade the user when the Stripe Checkout Session is unpaid' do
+      sign_in user
+      unpaid_session = OpenStruct.new(
+        id: 'cs_test_unpaid',
+        status: 'open',
+        payment_status: 'unpaid',
+        client_reference_id: user.id.to_s,
+        customer: 'cus_test_123',
+        amount_total: 3600
+      )
+      allow(Stripe::Checkout::Session).to receive(:retrieve).with('cs_test_unpaid').and_return(unpaid_session)
+
+      get :success, params: { session_id: 'cs_test_unpaid' }
+
+      expect(response).to redirect_to(root_path)
+      expect(user.reload.plan).to eq('Free')
+      expect(user.stripe_id).to be_nil
+    end
+
+    it 'does not upgrade when client_reference_id belongs to a different user' do
+      sign_in user
+      other_session = OpenStruct.new(
+        id: 'cs_test_other',
+        status: 'complete',
+        payment_status: 'paid',
+        client_reference_id: paid_user.id.to_s,
+        customer: 'cus_test_other',
+        amount_total: 3600
+      )
+      allow(Stripe::Checkout::Session).to receive(:retrieve).with('cs_test_other').and_return(other_session)
+
+      get :success, params: { session_id: 'cs_test_other' }
+
+      expect(user.reload.plan).to eq('Free')
+    end
+
+    it 'upgrades current_user when the Checkout Session is complete and paid' do
+      sign_in user
+      paid_session = OpenStruct.new(
+        id: 'cs_test_paid',
+        status: 'complete',
+        payment_status: 'paid',
+        client_reference_id: user.id.to_s,
+        customer: 'cus_test_paid',
+        amount_total: 3600
+      )
+      allow(Stripe::Checkout::Session).to receive(:retrieve).with('cs_test_paid').and_return(paid_session)
+
+      get :success, params: { session_id: 'cs_test_paid' }
+
+      expect(user.reload.plan).to eq('PRO Yearly PayHere')
+      expect(user.stripe_id).to eq('cus_test_paid')
     end
   end
 end

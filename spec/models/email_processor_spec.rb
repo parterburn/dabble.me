@@ -29,6 +29,23 @@ describe EmailProcessor do
       expect(user.entries.reload.first.body).to eq("I am great")
     end
 
+    it "rejects a From-address fallback when SPF/DKIM fail or spam flag is set" do
+      user.entries.destroy_all
+      spoofed_email = FactoryBot.build(
+        :email,
+        from: { email: user.email },
+        to: [{ token: "WRONG", host: ENV['SMTP_DOMAIN'], email: "WRONG@#{ENV['SMTP_DOMAIN']}" }],
+        headers: {
+          "X-Mailgun-Spf" => "Fail",
+          "X-Mailgun-Dkim-Check-Result" => "Fail",
+          "X-Mailgun-Sflag" => "Yes"
+        },
+        body: "Spoofed entry"
+      )
+
+      expect { EmailProcessor.new(spoofed_email).process }.not_to change { user.entries.reload.count }
+    end
+
     it "creates an more complex entry based on the email token for free user" do
       user.entries.destroy_all
       email = FactoryBot.build(
@@ -393,6 +410,23 @@ describe EmailProcessor do
         body: "Today was good",
         vendor_specific: {
           stripped_html: '<div>Today was good</div><img src="https://image.wisestamp.com/sig.png"><img src="https://i.ytimg.com/vi/abc123/hqdefault.jpg">'
+        }
+      )
+
+      EmailProcessor.new(email).process
+      expect(paid_user.entries.reload.first.image.file).to be_blank
+    end
+
+    it "ignores local filesystem paths and private/internal IPs in inline <img> tags" do
+      paid_user.entries.destroy_all
+      expect(FastImage).not_to receive(:type)
+
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}" }],
+        body: "Today was good",
+        vendor_specific: {
+          stripped_html: '<div>Today was good</div><img src="/etc/passwd"><img src="http://169.254.169.254/latest/meta-data"><img src="http://192.168.1.1/router.png">'
         }
       )
 

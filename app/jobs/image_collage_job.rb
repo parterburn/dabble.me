@@ -123,7 +123,7 @@ class ImageCollageJob < ActiveJob::Base
       else
         ['The images could not be generated or saved after several attempts. Please try uploading again via the web interface.']
       end
-      sentry_extra = { url: collage_url }
+      sentry_extra = { url: sanitize_url(collage_url) }
       sentry_extra[:mailgun_lookup_attempts] = @mailgun_event_lookup_log if @mailgun_event_lookup_log.present?
       sentry_extra[:message_id] = @message_id if @message_id.present?
       self.class.record_image_failure(entry, @user, error_messages, sentry_extra)
@@ -153,7 +153,7 @@ class ImageCollageJob < ActiveJob::Base
     tempfile.rewind
     tempfile
   rescue URI::InvalidURIError, StandardError => e
-    Sentry.capture_exception(e, extra: { url: url })
+    Sentry.capture_exception(e, extra: { url: sanitize_url(url) })
     nil
   end
 
@@ -324,5 +324,11 @@ class ImageCollageJob < ActiveJob::Base
   def heic_temp_extension(url)
     base = url.to_s.downcase.split('?', 2).last
     base.end_with?('.heif') ? '.heif' : '.heic'
+  end
+
+  def sanitize_url(url)
+    return nil if url.blank?
+
+    SentrySensitiveScrubber.scrub_string(url.to_s)
   end
 end

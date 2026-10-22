@@ -16,5 +16,7 @@ Rails.application.config.filter_parameters += [
   :stripped_html,
   :original_email_body,
   :original_email,
-  :text_body
+  :text_body,
+  :ai_response,
+  /\Aentry\z/i
 ]

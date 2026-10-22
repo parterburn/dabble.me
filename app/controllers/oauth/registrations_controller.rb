@@ -8,13 +8,22 @@ module Oauth
 
     # POST /oauth/registrations — RFC 7591-style dynamic client registration for MCP clients.
     def create
-      redirect_uri = normalize_redirect_uris(registration_params[:redirect_uris])
-      if redirect_uri.blank?
+      uris = extract_redirect_uris(registration_params[:redirect_uris])
+      if uris.empty?
         return render json: {
           error: 'invalid_client_metadata',
           error_description: 'redirect_uris is required'
         }, status: :bad_request
       end
+
+      unless uris.all? { |uri| allowed_redirect_uri?(uri) }
+        return render json: {
+          error: 'invalid_redirect_uri',
+          error_description: 'redirect_uris must use https (or http for loopback hosts)'
+        }, status: :bad_request
+      end
+
+      redirect_uri = uris.join("\n")
 
       application = Doorkeeper::Application.new(
         name: registration_params[:client_name].presence || 'MCP client',
@@ -48,11 +57,25 @@ module Oauth
       end
     end
 
-    def normalize_redirect_uris(uris)
-      list = Array(uris).flatten.compact.map(&:strip).reject(&:blank?)
-      return '' if list.empty?
+    def extract_redirect_uris(uris)
+      Array(uris).flatten.compact.map(&:strip).reject(&:blank?)
+    end
 
-      list.join("\n")
+    def allowed_redirect_uri?(raw_uri)
+      uri = URI.parse(raw_uri.to_s)
+      scheme = uri.scheme.to_s.downcase
+      host = uri.host.to_s.downcase
+      return false if host.blank? || uri.fragment.present?
+
+      if scheme == 'https'
+        true
+      elsif scheme == 'http'
+        %w[localhost 127.0.0.1 ::1 [::1]].include?(host)
+      else
+        false
+      end
+    rescue URI::InvalidURIError
+      false
     end
   end
 end

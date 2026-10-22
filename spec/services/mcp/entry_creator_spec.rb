@@ -89,14 +89,38 @@ RSpec.describe Mcp::EntryCreator do
       expect(result[:errors].first).to include("not valid for this account")
     end
 
-    it "rejects private-host image URLs before fetching" do
+    it "rejects private-host, unspecified, CGNAT, and IPv4-mapped image URLs before fetching" do
+      %w[
+        http://127.0.0.1/secret.png
+        http://0.0.0.0:3000/secret.png
+        http://100.64.0.1/secret.png
+        http://[::ffff:169.254.169.254]/latest/meta-data
+      ].each do |blocked_url|
+        result = Mcp::EntryCreator.new(user: paid_user).create(
+          date_string: "2099-01-03",
+          body_text: "hello",
+          image_url: blocked_url
+        )
+        expect(result[:success]).to eq(false)
+        expect(result[:errors].first).to include("not allowed")
+      end
+    end
+
+    it "rejects redirects from https to http in production" do
+      allow(Rails.env).to receive(:production?).and_return(true)
+      allow(Resolv).to receive(:getaddresses).with("public.example.com").and_return(["93.184.216.34"])
+
+      stub_request(:get, "https://public.example.com/start.png")
+        .to_return(status: 302, headers: { "Location" => "http://public.example.com/insecure.png" })
+
       result = Mcp::EntryCreator.new(user: paid_user).create(
-        date_string: "2099-01-03",
+        date_string: "2099-01-04",
         body_text: "hello",
-        image_url: "http://127.0.0.1/secret.png"
+        image_url: "https://public.example.com/start.png"
       )
+
       expect(result[:success]).to eq(false)
-      expect(result[:errors].first).to include("not allowed")
+      expect(result[:errors].first).to include("https in production")
     end
 
     it "downloads image_url and saves an entry with an image", :aggregate_failures do

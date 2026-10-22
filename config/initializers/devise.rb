@@ -191,6 +191,10 @@ Devise.setup do |config|
   # change their passwords.
   config.reset_password_within = 6.hours
 
+  # Do not sign in automatically after resetting a password so OTP-enabled
+  # accounts must still complete the second-factor challenge on sign-in.
+  config.sign_in_after_reset_password = false
+
   # ==> Configuration for :encryptable
   # Allow you to use another encryption algorithm besides bcrypt (default). You can use
   # :sha1, :sha512 or encryptors from others authentication tools as :clearance_sha1,
@@ -268,7 +272,7 @@ Devise.setup do |config|
   # Drift: a window which provides allowance for drift between a user's token device clock
   # (and therefore their OTP tokens) and the authentication server's clock.
   # Expressed in minutes centered at the current time. (Note: it's a number, *NOT* 3.minutes )
-  #config.otp_drift_window = 3
+  config.otp_drift_window = 2
 
   # Users that have logged in longer than this time ago, are going to be asked their password
   # (and an OTP challenge, if enabled) before they can see or change their otp informations.

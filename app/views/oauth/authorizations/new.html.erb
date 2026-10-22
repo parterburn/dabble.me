@@ -1,7 +1,8 @@
 <% title "Connect an app — Dabble me." %>
 <% client_name = @pre_auth.client.name %>
-<% client_logo = oauth_application_logo(client_name) %>
+<% client_logo = oauth_application_logo(@pre_auth.client, redirect_uri: @pre_auth.redirect_uri) %>
 <% client_initials = oauth_application_initials(client_name) %>
+<% redirect_host = oauth_redirect_host(@pre_auth.redirect_uri) %>
 <% mcp_access = @pre_auth.scopes.map(&:to_s).include?("mcp:access") %>
 
 <div class="row oauth-consent" id="oauth-consent-root">
@@ -47,7 +48,13 @@
         <%= t("doorkeeper.authorizations.new.prompt", client_name: content_tag(:strong, client_name)).html_safe %>
       </p>
 
-      <p class="oauth-consent__trust-note"><%= t("doorkeeper.authorizations.new.trust_note") %></p>
+      <p class="oauth-consent__trust-note">
+        <%= t("doorkeeper.authorizations.new.trust_note") %>
+        <% if redirect_host.present? %>
+          <br>
+          <span>After approval, you will be redirected to <strong><%= redirect_host %></strong><%= " (unverified app)" unless client_logo %>.</span>
+        <% end %>
+      </p>
 
       <div class="oauth-consent__permissions">
         <p class="oauth-consent__permissions-title">

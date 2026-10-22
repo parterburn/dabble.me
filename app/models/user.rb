@@ -44,6 +44,7 @@ class User < ActiveRecord::Base
 
   after_commit :notify_stripe
   after_update :revoke_doorkeeper_oauth_if_downgraded_from_pro
+  after_update :revoke_doorkeeper_oauth_if_credentials_changed
 
   before_save { email&.gsub!(",",".")&.gsub!(".@", "@")&.downcase! }
   before_save { send_timezone.gsub!("&amp;", "&") }
@@ -363,5 +364,63 @@ class User < ActiveRecord::Base
 
     revoke_doorkeeper_access_tokens!
   end
+
+  def revoke_doorkeeper_oauth_if_credentials_changed
+    return unless saved_change_to_encrypted_password? ||
+                  saved_change_to_email? ||
+                  saved_change_to_otp_auth_secret? ||
+                  (saved_change_to_otp_enabled? && !otp_enabled?)
+
+    revoke_doorkeeper_access_tokens!
+  end
+
+  public
+
+  OTP_MAX_CHALLENGE_FAILURES = 5
+  OTP_MAX_USER_FAILURES = 10
+  OTP_USER_LOCKOUT_WINDOW = 15.minutes
+
+  def validate_otp_token(token, recovery = false)
+    user_cache_key = "otp_user_failures:#{id}"
+    if Rails.cache.read(user_cache_key).to_i >= OTP_MAX_USER_FAILURES
+      update_columns(otp_session_challenge: nil, otp_challenge_expires: nil) if otp_session_challenge.present?
+      return false
+    end
+
+    valid = super(token, recovery)
+    challenge_cache_key = otp_session_challenge.present? ? "otp_challenge_failures:#{otp_session_challenge}" : nil
+
+    if valid
+      Rails.cache.delete(challenge_cache_key) if challenge_cache_key
+      Rails.cache.delete(user_cache_key)
+      if otp_session_challenge.present? || otp_challenge_expires.present?
+        update_columns(otp_session_challenge: nil, otp_challenge_expires: nil)
+      end
+    else
+      user_failures = Rails.cache.read(user_cache_key).to_i + 1
+      Rails.cache.write(user_cache_key, user_failures, expires_in: OTP_USER_LOCKOUT_WINDOW)
+
+      if challenge_cache_key
+        failures = Rails.cache.read(challenge_cache_key).to_i + 1
+        Rails.cache.write(challenge_cache_key, failures, expires_in: 5.minutes)
+        if failures >= OTP_MAX_CHALLENGE_FAILURES || user_failures >= OTP_MAX_USER_FAILURES
+          update_columns(otp_session_challenge: nil, otp_challenge_expires: nil)
+        end
+      end
+    end
+    valid
+  end
+
+  def validate_otp_recovery_token(token)
+    return false if token.blank?
+
+    verified = recovery_otp.verify(token, otp_recovery_counter)
+    if verified
+      self.otp_recovery_counter += 1
+      save!
+    end
+    verified
+  end
+  alias_method :valid_otp_recovery_token?, :validate_otp_recovery_token
 
 end

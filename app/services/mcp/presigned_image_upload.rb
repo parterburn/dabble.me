@@ -44,7 +44,12 @@ module Mcp
 
     def self.key_prefix_for(user)
       add_dev = '/development' unless Rails.env.production?
-      "uploads#{add_dev}/#{user.user_key}/mcp-temp/"
+      storage_token = OpenSSL::HMAC.hexdigest(
+        'SHA256',
+        Rails.application.secret_key_base.to_s,
+        "mcp-presigned-upload:#{user.id}:#{user.user_key}"
+      ).first(24)
+      "uploads#{add_dev}/tmp/mcp/#{storage_token}/"
     end
 
     private

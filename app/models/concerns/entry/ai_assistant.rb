@@ -10,8 +10,9 @@ class Entry
         entry_for_ai
       ].flatten.compact_blank
       response = respond_as_ai
-      markdown = Redcarpet::Markdown.new(Redcarpet::Render::HTML, autolink: true, tables: true, no_intra_emphasis: true, underline: true, footnotes: true)
-      markdown.render(response)
+      renderer = Redcarpet::Render::HTML.new(filter_html: true, no_images: true, safe_links_only: true)
+      markdown = Redcarpet::Markdown.new(renderer, autolink: true, tables: true, no_intra_emphasis: true, underline: true, footnotes: true)
+      markdown.render(response.to_s)
     end
 
     private

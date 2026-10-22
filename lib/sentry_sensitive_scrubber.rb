@@ -23,6 +23,8 @@ module SentrySensitiveScrubber
     original_email_body
     original_email
     text_body
+    entry
+    ai_response
   ].freeze
 
   module_function
@@ -107,7 +109,7 @@ module SentrySensitiveScrubber
       obj.each_with_object({}) do |(k, v), memo|
         key_s = k.to_s.downcase
         memo[k] =
-          if sensitive_param_key?(key_s)
+          if sensitive_param_key?(key_s, v)
             FILTERED
           else
             scrub_value(v)
@@ -128,6 +130,7 @@ module SentrySensitiveScrubber
     out = str.dup
     out.gsub!(/Bearer\s+\S+/i, "Bearer #{FILTERED}")
     out.gsub!(/([?&]access_token=)[^&\s"']+/i, "\\1#{FILTERED}")
+    out.gsub!(%r{(https?://)[^/@\s]+@}i, "\\1#{FILTERED}@")
     out
   end
 
@@ -141,7 +144,9 @@ module SentrySensitiveScrubber
     scrub_string(val.to_s)
   end
 
-  def sensitive_param_key?(key_s)
+  def sensitive_param_key?(key_s, value = nil)
+    return false if key_s == "entry" && value.is_a?(Hash)
+
     SENSITIVE_PARAM_KEYS.include?(key_s) ||
       PRIVATE_CONTENT_KEYS.include?(key_s) ||
       key_s.include?("password") ||

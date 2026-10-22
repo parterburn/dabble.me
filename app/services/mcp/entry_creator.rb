@@ -279,17 +279,46 @@ module Mcp
       false
     end
 
-    def public_ip?(ip)
-      addr = IPAddr.new(ip)
-      return false if addr.loopback?
-      return false if addr.private?
-      return false if addr.ipv4? && addr.to_s.start_with?('169.254.')
-      if addr.ipv6?
-        return false if addr.to_s.match?(/\Afe80:/i)
-        return false if addr.to_s.match?(/\Afc00:/i) || addr.to_s.match?(/\Afd[0-9a-f]{2}:/i)
-      end
+    IPV4_BLOCKED_RANGES = [
+      IPAddr.new('0.0.0.0/8'),
+      IPAddr.new('10.0.0.0/8'),
+      IPAddr.new('100.64.0.0/10'),
+      IPAddr.new('127.0.0.0/8'),
+      IPAddr.new('169.254.0.0/16'),
+      IPAddr.new('172.16.0.0/12'),
+      IPAddr.new('192.0.0.0/24'),
+      IPAddr.new('192.0.2.0/24'),
+      IPAddr.new('192.168.0.0/16'),
+      IPAddr.new('198.18.0.0/15'),
+      IPAddr.new('198.51.100.0/24'),
+      IPAddr.new('203.0.113.0/24'),
+      IPAddr.new('224.0.0.0/4'),
+      IPAddr.new('240.0.0.0/4')
+    ].freeze
 
-      true
+    IPV6_BLOCKED_RANGES = [
+      IPAddr.new('::/128'),
+      IPAddr.new('::1/128'),
+      IPAddr.new('::ffff:0:0/96'),
+      IPAddr.new('64:ff9b::/96'),
+      IPAddr.new('100::/64'),
+      IPAddr.new('2001:db8::/32'),
+      IPAddr.new('fc00::/7'),
+      IPAddr.new('fe80::/10'),
+      IPAddr.new('ff00::/8')
+    ].freeze
+
+    def public_ip?(ip)
+      addr = IPAddr.new(ip.to_s)
+      return false if addr.loopback? || addr.private? || addr.link_local?
+
+      if addr.ipv4?
+        IPV4_BLOCKED_RANGES.none? { |range| range.include?(addr) }
+      elsif addr.ipv6?
+        IPV6_BLOCKED_RANGES.none? { |range| range.include?(addr) }
+      else
+        false
+      end
     rescue IPAddr::InvalidAddressError
       false
     end
@@ -297,16 +326,19 @@ module Mcp
     def http_download_image(uri, redirects_left = MAX_REDIRECTS)
       return { success: false, errors: ['Too many redirects when fetching image_url'] } if redirects_left.negative?
 
-      unless safe_fetch_host?(uri)
+      validated_uri = parse_public_http_uri(uri.to_s)
+      return validated_uri if validated_uri.is_a?(Hash)
+
+      unless safe_fetch_host?(validated_uri)
         return { success: false, errors: ['Redirect target host is not allowed'] }
       end
 
-      http = Net::HTTP.new(uri.host, uri.port)
-      http.use_ssl = uri.is_a?(URI::HTTPS)
+      http = Net::HTTP.new(validated_uri.host, validated_uri.port)
+      http.use_ssl = validated_uri.is_a?(URI::HTTPS)
       http.open_timeout = HTTP_OPEN_TIMEOUT
       http.read_timeout = HTTP_READ_TIMEOUT
 
-      request = Net::HTTP::Get.new(uri.request_uri)
+      request = Net::HTTP::Get.new(validated_uri.request_uri)
       response = http.request(request)
 
       case response
@@ -317,15 +349,15 @@ module Mcp
         end
 
         ct = response['content-type'].to_s.split(';').first&.strip
-        [body, ct, File.basename(uri.path)]
+        [body, ct, File.basename(validated_uri.path)]
       when Net::HTTPRedirection
         location = response['location'].to_s
         return { success: false, errors: ['Redirect location missing'] } if location.blank?
 
-        next_uri = URI.join(uri.to_s, location)
+        next_uri = URI.join(validated_uri.to_s, location)
         http_download_image(next_uri, redirects_left - 1)
       else
-        { success: false, errors: ["image_url HTTP #{response.code}"] }
+        { success: false, errors: ['Could not download image from URL'] }
       end
     end
 

@@ -131,5 +131,37 @@ RSpec.describe DayOneImporter do
         described_class.new(user: paid_user, zip_path: path.to_s).import!
       }.to raise_error(ArgumentError, /No JSON/)
     end
+
+    it "blocks path traversal via photo['type'] outside the import tmpdir" do
+      md5 = "0123456789abcdef0123456789abcdef"
+      outside_file = Rails.root.join("tmp", "day_one_outside_secret_#{SecureRandom.hex}")
+      File.write(outside_file, "OUTSIDE_SECRET_BYTES\n")
+
+      begin
+        rel_traversal = "x/#{'../' * 25}#{outside_file.to_s.sub(%r{\A/}, '')}"
+        zip = build_zip(
+          entries: [
+            {
+              "creationDate" => "2021-03-04T10:00:00Z",
+              "timeZone" => "UTC",
+              "text" => "Traversal attempt",
+              "photos" => [
+                { "md5" => md5, "type" => rel_traversal, "orderInEntry" => 0 }
+              ]
+            }
+          ],
+          photos: { "#{md5}.x/keep" => "placeholder" }
+        )
+
+        result = described_class.new(user: paid_user, zip_path: zip).import!
+
+        expect(result.imported).to eq(1)
+        entry = paid_user.existing_entry("2021-03-04")
+        expect(entry).to be_present
+        expect(entry.image.file).to be_nil
+      ensure
+        FileUtils.rm_f(outside_file)
+      end
+    end
   end
 end

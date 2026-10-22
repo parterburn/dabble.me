@@ -40,6 +40,18 @@ Doorkeeper.configure do
     !loopback_hosts.include?(uri.host)
   end
 
+  forbid_redirect_uri do |uri|
+    scheme = uri.scheme.to_s.downcase
+    loopback_hosts = %w[localhost 127.0.0.1 ::1]
+    if scheme == 'https'
+      uri.host.blank?
+    elsif scheme == 'http'
+      !loopback_hosts.include?(uri.host)
+    else
+      true
+    end
+  end
+
   grant_flows %w[authorization_code]
 
   realm 'OAuth'

@@ -56,10 +56,11 @@ class CollageGenerator
   # canvas and reintroduce cropping, which we never want.
   MAX_ROW_HEIGHT_RATIO = 1.0
 
-  def initialize(urls:, size: DEFAULT_SIZE, user: nil)
+  def initialize(urls:, size: DEFAULT_SIZE, user: nil, allow_local_paths: false)
     @urls = Array(urls).compact_blank.uniq.first(MAX_IMAGES)
     @size = size
     @user = user
+    @allow_local_paths = allow_local_paths
   end
 
   # Builds the collage and returns a Tempfile. Caller must close/unlink.
@@ -285,9 +286,11 @@ class CollageGenerator
     return nil if redirects_left.negative?
     return nil if url.blank?
 
-    # Local filesystem paths (used by Day One ZIP import) bypass HTTP.
+    # Local filesystem paths (used by Day One ZIP import) bypass HTTP only when explicitly enabled.
     local_path = local_image_path(url)
     if local_path
+      return nil unless @allow_local_paths
+
       return File.binread(local_path) if File.file?(local_path)
 
       return nil
@@ -303,6 +306,7 @@ class CollageGenerator
       return nil
     end
     return nil unless uri.is_a?(URI::HTTP) || uri.is_a?(URI::HTTPS)
+    return nil unless safe_remote_uri?(uri)
 
     http = Net::HTTP.new(uri.host, uri.port)
     http.use_ssl = uri.is_a?(URI::HTTPS)
@@ -358,5 +362,28 @@ class CollageGenerator
 
   def sanitize_url(url)
     url.to_s.gsub(%r{//[^/@]+@}, "//***@")[0, 200]
+  end
+
+  def safe_remote_uri?(uri)
+    host = uri.host.to_s.downcase
+    return false if host.blank? || host == "localhost" || host.end_with?(".local") || host == "metadata.google.internal"
+
+    addrs = Resolv.getaddresses(host)
+    return false if addrs.empty?
+
+    addrs.all? do |ip|
+      addr = IPAddr.new(ip.to_s)
+      next false if addr.loopback? || addr.private? || addr.link_local?
+
+      if addr.ipv4?
+        Mcp::EntryCreator::IPV4_BLOCKED_RANGES.none? { |range| range.include?(addr) }
+      elsif addr.ipv6?
+        Mcp::EntryCreator::IPV6_BLOCKED_RANGES.none? { |range| range.include?(addr) }
+      else
+        false
+      end
+    end
+  rescue Resolv::ResolvError, IPAddr::InvalidAddressError
+    false
   end
 end

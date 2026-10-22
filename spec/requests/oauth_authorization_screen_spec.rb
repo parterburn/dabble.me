@@ -9,10 +9,10 @@ RSpec.describe "OAuth authorization screen", type: :request do
     Base64.urlsafe_encode64(Digest::SHA256.digest(code_verifier), padding: false)
   end
 
-  def create_application(name)
+  def create_application(name, redirect_uri: "https://example.com/callback")
     Doorkeeper::Application.create!(
       name: name,
-      redirect_uri: "https://example.com/callback",
+      redirect_uri: redirect_uri,
       confidential: false,
       scopes: "mcp:access"
     )
@@ -34,16 +34,30 @@ RSpec.describe "OAuth authorization screen", type: :request do
   # Brand logos must be linked in app/assets/config/manifest.js; an unlinked
   # asset previously raised AssetNotFound and 500'd the whole consent screen.
   ApplicationHelper::OAUTH_KNOWN_APPLICATION_LOGOS.each do |logo|
-    it "renders the consent screen with the #{logo[:alt]} brand logo" do
-      get_consent_screen(create_application(logo[:alt]))
+    it "renders the consent screen with the #{logo[:alt]} brand logo when redirect_uri is on a verified domain" do
+      verified_host = logo[:verified_domains].first
+      app = create_application(logo[:alt], redirect_uri: "https://#{verified_host}/callback")
+      get_consent_screen(app)
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(ActionController::Base.helpers.image_path(logo[:asset]))
+      expect(response.body).to include(verified_host)
+      expect(response.body).not_to include("(unverified app)")
+    end
+
+    it "does not render the #{logo[:alt]} brand logo when redirect_uri is on an unverified domain" do
+      app = create_application(logo[:alt], redirect_uri: "https://attacker.example/callback")
+      get_consent_screen(app)
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).not_to include(ActionController::Base.helpers.image_path(logo[:asset]))
+      expect(response.body).to include("attacker.example")
+      expect(response.body).to include("(unverified app)")
     end
   end
 
-  it "renders the OpenAI logo for Codex" do
-    get_consent_screen(create_application("Codex"))
+  it "renders the OpenAI logo for Codex when redirect_uri is on a verified OpenAI domain" do
+    get_consent_screen(create_application("Codex", redirect_uri: "https://chatgpt.com/callback"))
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to include(ActionController::Base.helpers.image_path("oauth/openai.png"))
@@ -54,5 +68,24 @@ RSpec.describe "OAuth authorization screen", type: :request do
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to include("mi")
+    expect(response.body).to include("example.com")
+    expect(response.body).to include("(unverified app)")
+  end
+
+  it "rejects DCR registration with javascript: or non-https redirect_uri schemes" do
+    post "/oauth/registrations",
+      params: { client_name: "Evil", redirect_uris: ["javascript://x/%0aalert(1)"] },
+      as: :json
+    expect(response).to have_http_status(:bad_request)
+
+    post "/oauth/registrations",
+      params: { client_name: "Evil HTTP", redirect_uris: ["http://evil.example/cb"] },
+      as: :json
+    expect(response).to have_http_status(:bad_request)
+
+    post "/oauth/registrations",
+      params: { client_name: "Local Inspector", redirect_uris: ["http://127.0.0.1/cb"] },
+      as: :json
+    expect(response).to have_http_status(:created)
   end
 end
