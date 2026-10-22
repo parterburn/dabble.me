@@ -36,10 +36,11 @@ RSpec.describe Mcp::PresignedImageUpload do
   end
 
   describe ".key_allowed_for_user?" do
-    it "allows only the user's temporary MCP upload prefix" do
+    it "allows only the user's temporary MCP upload prefix and does not embed user_key" do
       allowed = described_class.build_key(user: paid_user, filename: "photo.png", content_type: "image/png")
-      other_user_key = allowed.sub(paid_user.user_key, free_ai.user_key)
+      other_user_key = described_class.build_key(user: free_ai, filename: "photo.png", content_type: "image/png")
 
+      expect(allowed).not_to include(paid_user.user_key)
       expect(described_class.key_allowed_for_user?(paid_user, allowed)).to eq(true)
       expect(described_class.key_allowed_for_user?(paid_user, other_user_key)).to eq(false)
       expect(described_class.key_allowed_for_user?(paid_user, "#{described_class.key_prefix_for(paid_user)}../photo.png")).to eq(false)

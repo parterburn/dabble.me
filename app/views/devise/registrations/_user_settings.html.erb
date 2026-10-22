@@ -3,7 +3,8 @@
     <div class="col-md-8 col-md-offset-2">
       <%= f.label :email %>
       <%= link_to "Login to change email and other settings", edit_user_registration_path, class: "s-delete", style: "opacity: 100%;margin-left: 5px;" %>
-      <%= f.email_field :email, class: "form-control disabled", disabled: 'disabled' %>
+      <% masked_email = user.email.to_s.sub(/\A(.)[^@]*(?=@)/, '\1***') %>
+      <%= f.email_field :email, value: masked_email, class: "form-control disabled", disabled: 'disabled' %>
       <br>
     </div>
   <% else %>

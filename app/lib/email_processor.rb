@@ -85,6 +85,7 @@ class EmailProcessor
           valid_attachment_urls = []
           image_urls.each do |image_url|
             next if ignored_attachment_domain?(image_url)
+            next unless safe_inline_image_url?(image_url)
 
             image_type = FastImage.type(image_url)
 
@@ -549,6 +550,16 @@ class EmailProcessor
 
     text = value.to_s.downcase
     IGNORED_ATTACHMENT_DOMAINS.any? { |domain| text.include?(domain) }
+  end
+
+  def safe_inline_image_url?(raw_url)
+    uri = URI.parse(raw_url.to_s.strip)
+    return false unless uri.is_a?(URI::HTTPS) || (!Rails.env.production? && uri.is_a?(URI::HTTP))
+    return false if uri.userinfo.present?
+
+    CollageGenerator.allocate.send(:safe_remote_uri?, uri)
+  rescue URI::InvalidURIError
+    false
   end
 
   HTML_BLOCK_ELEMENTS = %w[blockquote br div hr li ol p ul].freeze

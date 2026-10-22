@@ -416,6 +416,23 @@ describe EmailProcessor do
       EmailProcessor.new(email).process
       expect(paid_user.entries.reload.first.image.file).to be_blank
     end
+
+    it "ignores local filesystem paths and private/internal IPs in inline <img> tags" do
+      paid_user.entries.destroy_all
+      expect(FastImage).not_to receive(:type)
+
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}" }],
+        body: "Today was good",
+        vendor_specific: {
+          stripped_html: '<div>Today was good</div><img src="/etc/passwd"><img src="http://169.254.169.254/latest/meta-data"><img src="http://192.168.1.1/router.png">'
+        }
+      )
+
+      EmailProcessor.new(email).process
+      expect(paid_user.entries.reload.first.image.file).to be_blank
+    end
   end
 
   describe '#ignored_attachment_domain?' do

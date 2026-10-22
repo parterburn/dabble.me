@@ -199,7 +199,7 @@ class DayOneImporter
       return
     end
 
-    collage = CollageGenerator.new(urls: photo_paths, user: @user).tempfile
+    collage = CollageGenerator.new(urls: photo_paths, user: @user, allow_local_paths: true).tempfile
     if collage
       entry.image = collage
     else
