@@ -433,6 +433,7 @@ class EmailProcessor
     normalize_html_text_nodes(fragment)
     normalize_html_block_edge_breaks(fragment)
     trim_html_edge_breaks(fragment)
+    remove_list_separator_breaks(fragment)
     fragment.css('a[href]').each { |link| link['target'] = '_blank' }
 
     html = to_utf8(fragment.to_html.strip)
@@ -704,8 +705,11 @@ class EmailProcessor
   # Gmail can encode the same blank line either as an empty block between
   # paragraphs or as a <br> at the edge of a content block. Move edge breaks
   # between block siblings so both representations render identically.
+  # List items are excluded: email clients often end an <li> with <br>, and
+  # promoting that break between siblings inserts invalid <ul>/<ol> children
+  # that render as blank lines between bullets.
   def normalize_html_block_edge_breaks(fragment)
-    fragment.css('blockquote,div,li,p').each do |block|
+    fragment.css('blockquote,div,p').each do |block|
       normalize_html_block_edge_break(block, :previous)
       normalize_html_block_edge_break(block, :next)
     end
@@ -735,6 +739,12 @@ class EmailProcessor
       first_content_child(parent)&.remove while first_content_child(parent)&.name == 'br'
       last_content_child(parent)&.remove while last_content_child(parent)&.name == 'br'
     end
+  end
+
+  # <br> is not a valid direct child of <ul>/<ol>; email clients and older
+  # cleaners sometimes leave them between <li>s, which browsers render as gaps.
+  def remove_list_separator_breaks(fragment)
+    fragment.css('ul > br, ol > br').each(&:remove)
   end
 
   def first_content_child(parent)

@@ -530,6 +530,24 @@ describe EmailProcessor do
       end
     end
 
+    it 'does not promote trailing list-item breaks into gaps between bullets' do
+      html = '<ul><li>does<br></li><li><a href="http://google.com">it</a><br></li><li>work</li></ul>'
+
+      expect(clean(html)).to eq(
+        '<ul><li>does</li><li><a href="http://google.com" target="_blank">it</a></li><li>work</li></ul>'
+      )
+    end
+
+    it 'strips invalid br separators already between list items' do
+      html = '<ul><li>does</li><br><li>it</li><br><li>work</li></ul>'
+
+      expect(clean(html)).to eq('<ul><li>does</li><li>it</li><li>work</li></ul>')
+    end
+
+    it 'preserves authored line breaks inside a list item' do
+      expect(clean('<ul><li>line one<br>line two</li></ul>')).to eq('<ul><li>line one<br>line two</li></ul>')
+    end
+
     it 'removes leading and trailing empty blocks' do
       html = '<p><br></p><div>Content</div><p>&nbsp;</p>'
 
