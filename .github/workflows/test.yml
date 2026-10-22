@@ -34,6 +34,7 @@ jobs:
 
     - name: Install libvips
       run: |
+        sudo rm -f /etc/apt/sources.list.d/microsoft*
         sudo apt-get update
         sudo apt-get install -y libvips-dev
 
@@ -60,6 +61,7 @@ jobs:
     # runtime (libicu78 on Ubuntu 26.04) that charlock_holmes links against.
     - name: Install PostgreSQL client and ICU
       run: |
+        sudo rm -f /etc/apt/sources.list.d/microsoft*
         sudo apt-get update
         sudo apt-get install -y libpq-dev libicu-dev
 
