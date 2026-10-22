@@ -102,7 +102,6 @@ group :development do
   gem 'better_errors'
   gem 'binding_of_caller'
   gem 'bullet'
-  gem 'meta_request'
 
   # USE_SERVER=puma bundle exec derailed exec perf:mem
   # USE_SERVER=puma bundle exec derailed exec perf:mem_over_time
