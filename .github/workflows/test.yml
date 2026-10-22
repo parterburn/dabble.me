@@ -56,12 +56,12 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-assets-
 
-    # required to compile pg ruby gem and charlock_holmes
+    # libpq-dev compiles the pg gem; libicu-dev pulls the distro ICU
+    # runtime (libicu78 on Ubuntu 26.04) that charlock_holmes links against.
     - name: Install PostgreSQL client and ICU
       run: |
         sudo apt-get update
         sudo apt-get install -y libpq-dev libicu-dev
-        sudo apt-get install -y libicu74
 
     - name: Build and create DB
       env:
