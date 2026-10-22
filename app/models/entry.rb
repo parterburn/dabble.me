@@ -177,7 +177,7 @@ class Entry < ActiveRecord::Base
   def hashtags
     return nil unless body.present?
     @hashtags_memo ||= begin
-      normalized_body = body.gsub(%r{</p>|<br\s*/?>}i, "\\0\n").gsub(/<(?=[^<>]*(?:<|\z))/, '&lt;')
+      normalized_body = body.gsub(%r{</p>|<br\s*/?>}i, "\\0\n")
       h_body = ActionController::Base.helpers.strip_tags(normalized_body)
       return nil unless h_body.present?
       h_body.scan(/#([0-9]+[a-zA-Z_]+\w*|[a-zA-Z_]+\w*)/).map { |m| m[0] }.uniq

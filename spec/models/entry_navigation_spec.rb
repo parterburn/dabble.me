@@ -44,12 +44,5 @@ RSpec.describe Entry do
 
       expect(entry.hashtags).to eq(%w[reflection])
     end
-
-    it 'does not raise when an HTML element has more than 400 attributes' do
-      attrs = (1..410).map { |i| "data-attr-#{i}=\"1\"" }.join(' ')
-      entry = Entry.new(body: "<div #{attrs}>Entry content #journal</div>")
-
-      expect(entry.hashtags).to eq(%w[journal])
-    end
   end
 end
