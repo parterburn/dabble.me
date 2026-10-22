@@ -25,7 +25,7 @@ module Dabbleme
     # Settings in config/environments/* take precedence over those specified here.
     # Application configuration should go into files in config/initializers
     # -- all .rb files in that directory are automatically loaded.
-    config.load_defaults 6.1
+    config.load_defaults 7.2
 
     lib = Rails.root.join('app/lib')
     config.autoload_paths << lib
@@ -40,9 +40,6 @@ module Dabbleme
     # config.i18n.default_locale = :de
 
     # config.autoload_paths << "#{config.root}/lib"
-
-    # Devise
-    config.assets.initialize_on_precompile = false
 
     config.active_job.queue_adapter = :sidekiq
     if ENV["REDIS_URL"].present?

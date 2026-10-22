@@ -4,12 +4,12 @@
 
 ### Product overview
 
-Dabble Me is a private journaling-over-email Rails 6.1 application. Users receive email prompts and reply to create journal entries. See `README.md` for full feature list.
+Dabble Me is a private journaling-over-email Rails 7.2 application. Users receive email prompts and reply to create journal entries. See `README.md` for full feature list.
 
 ### Tech stack
 
-- Ruby 3.4.10 and Node.js 22.x (managed via asdf), Rails 6.1, PostgreSQL, Redis, Sidekiq, Puma
-- Sidekiq is pinned to **7.3.x** (`Gemfile`): Sidekiq **8+** needs **Rack 3.2+** (Rails 7+). **sidekiq-cron** is **2.4.x** (current release line).
+- Ruby 3.4.11 and Node.js 22.x (managed via asdf), Rails 7.2, PostgreSQL, Redis, Sidekiq, Puma
+- Sidekiq is pinned to **7.3.x** and Rack to **2.2.x** (`Gemfile`): Sidekiq **8+** needs **Rack 3.2+** (deferred while the app stays on Rack 2.2.x). **sidekiq-cron** is **2.4.x** (current release line).
 - Tests: RSpec with Capybara + headless Chrome
 
 ### Shell initialization

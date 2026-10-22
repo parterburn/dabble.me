@@ -90,7 +90,7 @@ class PaymentsController < ApplicationController
         end
       end
     elsif processed_params && params[:event] != "subscription.cancelled"
-      UserMailer.no_user_here(params.permit!).deliver_later
+      UserMailer.no_user_here(params.permit!.to_h).deliver_later
     else
       Sentry.capture_message("Payment notification not processed", level: :info, extra: { params: params })
     end
@@ -118,7 +118,7 @@ class PaymentsController < ApplicationController
       }
       stripe_params = current_user.stripe_id? ? stripe_params.merge(customer: current_user.stripe_id) : stripe_params.merge(customer_email: current_user.email)
       session = Stripe::Checkout::Session.create(stripe_params)
-      redirect_to session.url
+      redirect_to session.url, allow_other_host: true
     end
   end
 
@@ -147,16 +147,16 @@ class PaymentsController < ApplicationController
       })
 
       if session.present?
-        redirect_to session.url
+        redirect_to session.url, allow_other_host: true
       else
-        redirect_to "https://billing.stripe.com/p/login/3cs3fp4T0gl2cik7ss?prefilled_email=#{current_user.email}"
+        redirect_to "https://billing.stripe.com/p/login/3cs3fp4T0gl2cik7ss?prefilled_email=#{current_user.email}", allow_other_host: true
       end
     elsif current_user && current_user.plan_type_unlinked == "Stripe"
-      redirect_to "https://billing.stripe.com/p/login/3cs3fp4T0gl2cik7ss?prefilled_email=#{current_user.email}"
+      redirect_to "https://billing.stripe.com/p/login/3cs3fp4T0gl2cik7ss?prefilled_email=#{current_user.email}", allow_other_host: true
     elsif current_user && current_user.plan_type_unlinked == "Gumroad"
-      redirect_to "https://gumroad.com/login"
+      redirect_to "https://gumroad.com/login", allow_other_host: true
     elsif current_user && current_user.plan_type_unlinked == "PayPal"
-      redirect_to "https://www.paypal.com/myaccount/autopay/"
+      redirect_to "https://www.paypal.com/myaccount/autopay/", allow_other_host: true
     else
       redirect_to "https://dabble.me/subscribe", notice: "You are not subscribed to a plan that can be managed here."
     end

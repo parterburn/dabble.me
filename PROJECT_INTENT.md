@@ -63,11 +63,11 @@ These aren't written down anywhere but the code clearly reflects them.
 3. **Resilience over throughput.** [SendHourlyEntriesWorker](app/workers/send_hourly_entries_worker.rb) explicitly swallows per-user errors so one bad user doesn't break everyone else's prompt. The "uploading image" placeholder has a 30-minute timeout so a crashed worker can't permanently break an entry's UI. The system is biased toward "keep working for the other users" over "fail loudly."
 4. **Solo-operator friendly.** One Sentry cron monitor (matches the plan limit). Sidekiq-Cron instead of an external scheduler. Free-tier-friendly third-party services listed in the README. The architecture assumes a single maintainer on a small budget.
 5. **Years of data matter.** The earliest migration is from 2014. Users have over a decade of entries. Migrations and model changes need to assume that history is precious and irreplaceable.
-6. **Don't over-modernize.** Rails 6.1 / Sidekiq 7.3 / sidekiq-cron 2.4 are pinned deliberately ([AGENTS.md](AGENTS.md)) — Sidekiq 8 would force a Rails 7 upgrade. Don't bump major versions casually.
+6. **Don't over-modernize.** Rails 7.2 / Rack 2.2 / Sidekiq 7.3 / sidekiq-cron 2.4 are pinned deliberately ([AGENTS.md](AGENTS.md)) — Sidekiq 8 requires Rack 3.2+. Don't bump major versions casually.
 
 ## 6. Things that look weird but are intentional
 
-- **Sidekiq pinned to 7.3.x.** See above. Don't "upgrade" without a Rails 7 plan.
+- **Sidekiq pinned to 7.3.x (and Rack to 2.2.x).** See above. Sidekiq 8 requires Rack 3.2+; don't upgrade without a Rack 3 migration plan.
 - **Rubocop config exists but rubocop is not in the Gemfile.** Not part of the workflow ([AGENTS.md](AGENTS.md)).
 - **Hourly worker's cron schedule is duplicated** in both [config/sidekiq_cron_schedule.yml](config/sidekiq_cron_schedule.yml) and [the worker file itself](app/workers/send_hourly_entries_worker.rb) (for Sentry monitor registration). Keep them in sync.
 - **`Inspiration` row with category "OhLife"** is load-bearing for the OhLife importer — it's the FK target for imported entries.

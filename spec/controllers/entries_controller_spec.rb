@@ -177,6 +177,34 @@ RSpec.describe EntriesController, type: :controller do
     end
   end
 
+  describe 'update with a blank body' do
+    let(:blank_params) do
+      { id: paid_entry.id, entry: { entry: '', date: paid_entry.date.strftime('%B %-d, %Y') } }
+    end
+
+    before do
+      paid_entry
+      sign_in paid_user
+    end
+
+    it 'deletes the entry and returns to the page the edit started from' do
+      return_to = entries_calendar_url
+      expect { put :update, params: blank_params, session: { return_to: return_to } }.to change { Entry.count }.by(-1)
+      expect(response).to redirect_to(return_to)
+      expect(flash[:notice]).to eq('Entry deleted!')
+    end
+
+    it 'falls back to entries when the stored location is another host' do
+      put :update, params: blank_params, session: { return_to: 'https://evil.example/phish' }
+      expect(response).to redirect_to(entries_path)
+    end
+
+    it 'falls back to entries when no location was stored' do
+      put :update, params: blank_params
+      expect(response).to redirect_to(entries_path)
+    end
+  end
+
   describe 'destroy' do
     it 'should redirect to sign in if not logged in' do
       delete :destroy, params: { id: entry.id }

@@ -322,6 +322,11 @@ class User < ActiveRecord::Base
     )
   end
 
+  def disable_otp!
+    clear_otp_fields!
+    super
+  end
+
   private
 
   def restrict_free_frequency

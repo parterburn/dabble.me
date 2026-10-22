@@ -221,7 +221,7 @@ class EntriesController < ApplicationController
     elsif params[:entry][:entry].blank?
       @entry.destroy
       flash[:notice] = 'Entry deleted!'
-      redirect_back_or_to entries_path
+      redirect_to url_from(session.delete(:return_to)) || entries_path
     else
       # Do not re-download / re-assign the existing image on every edit. That
       # old remote_image_url workaround wiped photos when the CDN fetch failed

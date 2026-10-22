@@ -24,5 +24,6 @@
 //= link application.css
 //= link oauth_consent_bundle.css
 //= link application.js
+//= link respond.js
 
 //= link chartkick.js
