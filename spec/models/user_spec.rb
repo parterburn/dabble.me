@@ -248,6 +248,18 @@ describe User do
       expect(user.reload.otp_session_challenge).to be_nil
       expect(user.otp_challenge_expires).to be_nil
     end
+
+    it 'clears otp_session_challenge immediately when a valid OTP code is verified' do
+      user.generate_otp_secret
+      user.update!(otp_enabled: true, otp_enabled_on: Time.current)
+      challenge = user.generate_otp_challenge!
+      expect(challenge).to be_present
+
+      valid_code = ROTP::TOTP.new(user.otp_auth_secret).now
+      expect(user.validate_otp_token(valid_code)).to be_truthy
+      expect(user.reload.otp_session_challenge).to be_nil
+      expect(user.otp_challenge_expires).to be_nil
+    end
   end
 
   describe '#cancel_pending_deletion!' do

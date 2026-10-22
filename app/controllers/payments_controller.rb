@@ -128,7 +128,7 @@ class PaymentsController < ApplicationController
       session = Stripe::Checkout::Session.retrieve(params[:session_id])
       paid = session.present? &&
              session.status == 'complete' &&
-             %w[paid no_payment_required].include?(session.payment_status)
+             session.payment_status == 'paid'
       if paid && session.client_reference_id.present? && session.client_reference_id.to_s == current_user.id.to_s
         plan = session.amount_total.to_i > 1000 ? 'PRO Yearly PayHere' : 'PRO Monthly PayHere'
         current_user.update(stripe_id: session.customer, plan: plan)

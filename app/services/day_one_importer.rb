@@ -187,7 +187,10 @@ class DayOneImporter
       next false if path.include?("__MACOSX/") || path.include?("..")
       next false unless File.file?(path) && !File.symlink?(path)
 
-      File.realpath(path).start_with?(root)
+      real = File.realpath(path)
+      real.start_with?(root) && real == File.expand_path(path, root)
+    rescue SystemCallError
+      false
     end
   end
 

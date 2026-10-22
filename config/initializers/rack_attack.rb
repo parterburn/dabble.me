@@ -102,9 +102,8 @@ class Rack::Attack
     user_params = req.params['user']
     challenge = user_params['challenge'] if user_params.is_a?(Hash)
     challenge = req.params['challenge'] unless challenge.is_a?(String)
-    return unless challenge.is_a?(String)
-
-    challenge.strip.presence
+    token = challenge.is_a?(String) ? challenge.strip.presence : nil
+    token || "missing:#{req.ip}"
   end
 
   # Prefer CF-Connecting-IP (real browser behind Cloudflare), then Rails'

@@ -372,17 +372,33 @@ class User < ActiveRecord::Base
   public
 
   OTP_MAX_CHALLENGE_FAILURES = 5
+  OTP_MAX_USER_FAILURES = 10
+  OTP_USER_LOCKOUT_WINDOW = 15.minutes
 
   def validate_otp_token(token, recovery = false)
+    user_cache_key = "otp_user_failures:#{id}"
+    if Rails.cache.read(user_cache_key).to_i >= OTP_MAX_USER_FAILURES
+      update_columns(otp_session_challenge: nil, otp_challenge_expires: nil) if otp_session_challenge.present?
+      return false
+    end
+
     valid = super(token, recovery)
-    if otp_session_challenge.present?
-      cache_key = "otp_challenge_failures:#{otp_session_challenge}"
-      if valid
-        Rails.cache.delete(cache_key)
-      else
-        failures = Rails.cache.read(cache_key).to_i + 1
-        Rails.cache.write(cache_key, failures, expires_in: 5.minutes)
-        if failures >= OTP_MAX_CHALLENGE_FAILURES
+    challenge_cache_key = otp_session_challenge.present? ? "otp_challenge_failures:#{otp_session_challenge}" : nil
+
+    if valid
+      Rails.cache.delete(challenge_cache_key) if challenge_cache_key
+      Rails.cache.delete(user_cache_key)
+      if otp_session_challenge.present? || otp_challenge_expires.present?
+        update_columns(otp_session_challenge: nil, otp_challenge_expires: nil)
+      end
+    else
+      user_failures = Rails.cache.read(user_cache_key).to_i + 1
+      Rails.cache.write(user_cache_key, user_failures, expires_in: OTP_USER_LOCKOUT_WINDOW)
+
+      if challenge_cache_key
+        failures = Rails.cache.read(challenge_cache_key).to_i + 1
+        Rails.cache.write(challenge_cache_key, failures, expires_in: 5.minutes)
+        if failures >= OTP_MAX_CHALLENGE_FAILURES || user_failures >= OTP_MAX_USER_FAILURES
           update_columns(otp_session_challenge: nil, otp_challenge_expires: nil)
         end
       end

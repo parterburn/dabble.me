@@ -272,7 +272,7 @@ Devise.setup do |config|
   # Drift: a window which provides allowance for drift between a user's token device clock
   # (and therefore their OTP tokens) and the authentication server's clock.
   # Expressed in minutes centered at the current time. (Note: it's a number, *NOT* 3.minutes )
-  config.otp_drift_window = 1
+  config.otp_drift_window = 2
 
   # Users that have logged in longer than this time ago, are going to be asked their password
   # (and an OTP challenge, if enabled) before they can see or change their otp informations.
@@ -297,13 +297,7 @@ Devise.setup do |config|
 end
 
 Warden::Manager.after_authentication do |user, auth, _opts|
-  next unless user.is_a?(User)
-
-  if user.otp_session_challenge.present? || user.otp_challenge_expires.present?
-    user.update_columns(otp_session_challenge: nil, otp_challenge_expires: nil)
-  end
-
-  next unless user.cancel_pending_deletion!
+  next unless user.is_a?(User) && user.cancel_pending_deletion!
 
   auth.request.flash[:notice] = I18n.t('devise.sessions.deletion_cancelled')
 end
