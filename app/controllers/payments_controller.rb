@@ -126,12 +126,12 @@ class PaymentsController < ApplicationController
     if params[:session_id].present?
       Stripe.api_key = ENV['STRIPE_API_KEY']
       session = Stripe::Checkout::Session.retrieve(params[:session_id])
-      if session.present? && session.client_reference_id.present?
-        user = User.find(session.client_reference_id)
-        if user.present?
-          plan = session.amount_total > 10 ? "PRO Yearly PayHere" : "PRO Monthly PayHere"
-          user.update(stripe_id: session.customer, plan: plan)
-        end
+      paid = session.present? &&
+             session.status == 'complete' &&
+             %w[paid no_payment_required].include?(session.payment_status)
+      if paid && session.client_reference_id.present? && session.client_reference_id.to_s == current_user.id.to_s
+        plan = session.amount_total.to_i > 1000 ? 'PRO Yearly PayHere' : 'PRO Monthly PayHere'
+        current_user.update(stripe_id: session.customer, plan: plan)
       end
     end
     redirect_to root_path
@@ -166,8 +166,10 @@ class PaymentsController < ApplicationController
 
   def gumroad?
     params[:email].present? &&
-      params[:seller_id] == ENV['GUMROAD_SELLER_ID'] &&
-      params[:product_id] == ENV['GUMROAD_PRODUCT_ID']
+      ENV['GUMROAD_SELLER_ID'].present? &&
+      ENV['GUMROAD_PRODUCT_ID'].present? &&
+      ActiveSupport::SecurityUtils.secure_compare(params[:seller_id].to_s, ENV['GUMROAD_SELLER_ID'].to_s) &&
+      ActiveSupport::SecurityUtils.secure_compare(params[:product_id].to_s, ENV['GUMROAD_PRODUCT_ID'].to_s)
   end
 
   def paypal?
@@ -175,7 +177,8 @@ class PaymentsController < ApplicationController
       params[:item_name].include?('Dabble Me') &&
       params[:payment_status].present? &&
       params[:payment_status] == "Completed" &&
-      params[:receiver_id] == ENV['PAYPAL_SELLER_ID']
+      ENV['PAYPAL_SELLER_ID'].present? &&
+      ActiveSupport::SecurityUtils.secure_compare(params[:receiver_id].to_s, ENV['PAYPAL_SELLER_ID'].to_s)
   end
 
   def payhere?
@@ -253,9 +256,13 @@ class PaymentsController < ApplicationController
   def valid_payhere_signature?
     return true if Rails.env.test?
 
-    digest = OpenSSL::Digest.new("sha1")
-    expected = OpenSSL::HMAC.hexdigest(digest, ENV["PAYHERE_SHARED_SECRET"].to_s, request.raw_post)
+    secret = ENV["PAYHERE_SHARED_SECRET"].to_s
+    signature = request.headers["HTTP_X_SIGNATURE"].to_s
+    return false if secret.blank? || signature.blank?
 
-    Rack::Utils.secure_compare(expected, request.headers["HTTP_X_SIGNATURE"])
+    digest = OpenSSL::Digest.new("sha1")
+    expected = OpenSSL::HMAC.hexdigest(digest, secret, request.raw_post)
+
+    ActiveSupport::SecurityUtils.secure_compare(expected, signature)
   end
 end

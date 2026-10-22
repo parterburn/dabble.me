@@ -29,6 +29,23 @@ describe EmailProcessor do
       expect(user.entries.reload.first.body).to eq("I am great")
     end
 
+    it "rejects a From-address fallback when SPF/DKIM fail or spam flag is set" do
+      user.entries.destroy_all
+      spoofed_email = FactoryBot.build(
+        :email,
+        from: { email: user.email },
+        to: [{ token: "WRONG", host: ENV['SMTP_DOMAIN'], email: "WRONG@#{ENV['SMTP_DOMAIN']}" }],
+        headers: {
+          "X-Mailgun-Spf" => "Fail",
+          "X-Mailgun-Dkim-Check-Result" => "Fail",
+          "X-Mailgun-Sflag" => "Yes"
+        },
+        body: "Spoofed entry"
+      )
+
+      expect { EmailProcessor.new(spoofed_email).process }.not_to change { user.entries.reload.count }
+    end
+
     it "creates an more complex entry based on the email token for free user" do
       user.entries.destroy_all
       email = FactoryBot.build(

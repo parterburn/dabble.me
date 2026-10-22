@@ -48,6 +48,7 @@ FactoryBot.define do
     subject { nil }
     body { Faker::Lorem.paragraph }
     attachments {[]}
+    headers { { 'X-Mailgun-Spf' => 'Pass' } }
     vendor_specific { {} }
   end
 end

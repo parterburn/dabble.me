@@ -21,7 +21,8 @@ class EmailProcessor
 
     @html = clean_html_version(@stripped_html)
     @authored_indentation_html = clean_authored_indentation_html(@raw_html, @griddler_body)
-    @message_id = email.headers&.dig("Message-ID")&.gsub("<", "")&.gsub(">", "")
+    @headers = email.headers
+    @message_id = @headers&.dig("Message-ID")&.gsub("<", "")&.gsub(">", "")
 
     @raw_body = to_utf8(email.raw_body)
     @attachments = email.attachments
@@ -251,21 +252,45 @@ class EmailProcessor
   end
 
   def pick_meaningful_recipient(to_recipients, cc_recipients)
-    host_to = to_recipients.select {|k| k[:host] =~ /^(email|post|ai)?\.?#{ENV['MAIN_DOMAIN'].gsub(".","\.")}$/i }.first
+    escaped_domain = Regexp.escape(ENV['MAIN_DOMAIN'].to_s)
+    host_to = to_recipients.select {|k| k[:host] =~ /^(email|post|ai)?\.?#{escaped_domain}$/i }.first
     if host_to.present?
       host_to[:token]
     elsif cc_recipients.present?
       # try CC's
-      host_cc = cc_recipients.select {|k| k[:host] =~ /^(email|post|ai)?\.?#{ENV['MAIN_DOMAIN'].gsub(".","\.")}$/i }.first
+      host_cc = cc_recipients.select {|k| k[:host] =~ /^(email|post|ai)?\.?#{escaped_domain}$/i }.first
       host_cc[:token] if host_cc.present?
     end
   end
 
   def find_user_from_user_key(to_token, from_email)
-    begin
-      User.where(user_key: to_token).or(User.where(email: from_email)).first
-    rescue JSON::ParserError => _e
-    end
+    user = User.find_by(user_key: to_token) if to_token.present?
+    return user if user.present?
+    return nil unless from_email.present? && authenticated_from_sender?
+
+    User.find_by(email: from_email)
+  rescue JSON::ParserError => _e
+    nil
+  end
+
+  def authenticated_from_sender?
+    return false unless @headers.is_a?(Hash)
+
+    sflag = header_value('X-Mailgun-Sflag')
+    return false if sflag&.casecmp?('yes')
+
+    spf = header_value('X-Mailgun-Spf')
+    dkim = header_value('X-Mailgun-Dkim-Check-Result')
+    return false if spf&.casecmp?('fail') || spf&.casecmp?('softfail') || dkim&.casecmp?('fail')
+
+    spf&.casecmp?('pass') || dkim&.casecmp?('pass')
+  end
+
+  def header_value(name)
+    return nil unless @headers.is_a?(Hash)
+
+    pair = @headers.find { |k, _v| k.to_s.casecmp?(name) }
+    pair&.last.to_s.strip.presence
   end
 
   def parse_subject_for_date(subject)

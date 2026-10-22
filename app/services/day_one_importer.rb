@@ -177,19 +177,17 @@ class DayOneImporter
     return nil if md5.blank? || md5.include?("..") || md5.include?("/")
 
     type = photo["type"].to_s.downcase.presence || "jpeg"
-    extensions = PHOTO_TYPES[type] || [".#{type}", ".jpeg", ".jpg", ".png"]
+    extensions = PHOTO_TYPES[type] || (PHOTO_TYPES["jpeg"] + PHOTO_TYPES["png"])
+    root = File.realpath(tmpdir) + File::SEPARATOR
 
-    extensions.each do |ext|
-      candidate = File.join(tmpdir, "photos", "#{md5}#{ext}")
-      return candidate if File.file?(candidate)
-    end
+    candidates = extensions.map { |ext| File.join(tmpdir, "photos", "#{md5}#{ext}") } +
+                 Dir.glob(File.join(tmpdir, "**", "#{md5}.*"))
 
-    # Some exports nest media under a journal folder or use unexpected extensions.
-    Dir.glob(File.join(tmpdir, "**", "#{md5}.*")).find do |path|
-      next if path.include?("__MACOSX/")
-      next if path.include?("..")
+    candidates.find do |path|
+      next false if path.include?("__MACOSX/") || path.include?("..")
+      next false unless File.file?(path) && !File.symlink?(path)
 
-      File.file?(path)
+      File.realpath(path).start_with?(root)
     end
   end
 

@@ -107,7 +107,7 @@ Rails.application.routes.draw do
   }, constraints: { amount: /\d+/ }
   match 'payment_notify',               to: 'payments#payment_notify', via: [:post]
   get 'ohlife-alternative',             to: 'welcome#ohlife_alternative'
-  post 'email_processor',               to: 'griddler/emails#create'
+  post 'email_processor',               to: 'inbound_emails#create'
   post 'email_events',                  to: 'email_events#create'
 
   post "checkout", to: "payments#checkout", as: "checkout"

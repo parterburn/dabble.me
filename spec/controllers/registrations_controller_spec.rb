@@ -88,6 +88,31 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(user.send_time.hour).to eq 16
       expect(user.send_past_entry).to eq true
     end
+
+    it 'does not allow changing email or password via unsubscribe user_key endpoint' do
+      original_email = user.email
+      original_password_hash = user.encrypted_password
+
+      put :unsubscribe, params: {
+        user_key: user.user_key,
+        user: {
+          email: 'attacker@example.net',
+          password: 'NewPassword123!',
+          password_confirmation: 'NewPassword123!',
+          'send_time(5i)': '09:00:00',
+          send_timezone: 'UTC'
+        }
+      }
+
+      expect(response.status).to eq 302
+      user.reload
+      expect(user.email).to eq original_email
+      expect(user.encrypted_password).to eq original_password_hash
+    end
+
+    it 'disables automatic sign-in after password reset so OTP cannot be bypassed' do
+      expect(Devise.sign_in_after_reset_password).to eq false
+    end
   end
 
   describe 'update' do

@@ -95,7 +95,8 @@ class RegistrationsController < Devise::RegistrationsController
       params[:user].parse_time_select! :send_time
     end
 
-    if user.update_without_password(devise_parameter_sanitizer.sanitize(:preferences))
+    prefs = devise_parameter_sanitizer.sanitize(:preferences).except(:email, :password, :password_confirmation, :current_password)
+    if user.update_without_password(prefs)
       if user.frequency.present?
         set_flash_message :notice, :updated
       else
