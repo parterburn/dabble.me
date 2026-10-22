@@ -162,6 +162,92 @@ describe User do
 
       expect(token.reload.revoked_at).to be_nil
     end
+
+    it 'revokes access tokens and grants when password, email, or OTP secret changes' do
+      u = FactoryBot.create(:user, plan: 'PRO Monthly PayHere', payhere_id: '999', gumroad_id: '999999999999')
+      u.generate_otp_secret
+      u.update!(otp_enabled: true, otp_enabled_on: Time.current)
+
+      token = Doorkeeper::AccessToken.create!(
+        resource_owner_id: u.id,
+        application_id: doorkeeper_app.id,
+        scopes: 'mcp:access',
+        expires_in: 7200,
+        use_refresh_token: true
+      )
+      grant = Doorkeeper::AccessGrant.create!(
+        resource_owner_id: u.id,
+        application_id: doorkeeper_app.id,
+        token: SecureRandom.hex(32),
+        expires_in: 600,
+        redirect_uri: 'http://127.0.0.1/cb',
+        scopes: 'mcp:access',
+        created_at: Time.current
+      )
+
+      u.update!(password: 'NewSecurePass123!', password_confirmation: 'NewSecurePass123!')
+      expect(token.reload.revoked_at).to be_present
+      expect(grant.reload.revoked_at).to be_present
+
+      token2 = Doorkeeper::AccessToken.create!(
+        resource_owner_id: u.id,
+        application_id: doorkeeper_app.id,
+        scopes: 'mcp:access',
+        expires_in: 7200
+      )
+      u.update!(email: "updated-#{Faker::Internet.email}")
+      expect(token2.reload.revoked_at).to be_present
+
+      token3 = Doorkeeper::AccessToken.create!(
+        resource_owner_id: u.id,
+        application_id: doorkeeper_app.id,
+        scopes: 'mcp:access',
+        expires_in: 7200
+      )
+      u.disable_otp!
+      expect(token3.reload.revoked_at).to be_present
+    end
+  end
+
+  describe 'OTP challenge and recovery token protections' do
+    around do |example|
+      original_cache = Rails.cache
+      Rails.cache = ActiveSupport::Cache::MemoryStore.new
+      example.run
+    ensure
+      Rails.cache = original_cache
+    end
+
+    it 'does not advance otp_recovery_counter on failed recovery guesses' do
+      user.generate_otp_secret
+      user.update!(otp_enabled: true, otp_enabled_on: Time.current)
+      initial_counter = user.otp_recovery_counter
+      first_recovery_code = user.next_otp_recovery_tokens(1)[initial_counter]
+
+      3.times do
+        expect(user.validate_otp_recovery_token('000000')).to be_falsey
+      end
+
+      expect(user.reload.otp_recovery_counter).to eq(initial_counter)
+      expect(user.validate_otp_recovery_token(first_recovery_code)).to be_truthy
+      expect(user.reload.otp_recovery_counter).to eq(initial_counter + 1)
+    end
+
+    it 'clears otp_session_challenge after OTP_MAX_CHALLENGE_FAILURES wrong attempts' do
+      user.generate_otp_secret
+      user.update!(otp_enabled: true, otp_enabled_on: Time.current)
+      challenge = user.generate_otp_challenge!
+      expect(challenge).to be_present
+
+      (User::OTP_MAX_CHALLENGE_FAILURES - 1).times do
+        expect(user.validate_otp_token('000000')).to be_falsey
+        expect(user.reload.otp_session_challenge).to eq(challenge)
+      end
+
+      expect(user.validate_otp_token('000000')).to be_falsey
+      expect(user.reload.otp_session_challenge).to be_nil
+      expect(user.otp_challenge_expires).to be_nil
+    end
   end
 
   describe '#cancel_pending_deletion!' do

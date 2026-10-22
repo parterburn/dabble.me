@@ -18,10 +18,14 @@ class DeleteUserJob < ActiveJob::Base
     # Destroy entries in batches to avoid memory issues and trigger CarrierWave cleanup
     Entry.where(user_id: user_id).find_each(batch_size: 100, &:destroy)
 
-    # Destroy remaining associations and the user
-    user.original_hashtags.delete_all
-    user.webauthn_credentials.delete_all
-    user.delete
+    # Destroy remaining associations (including Doorkeeper OAuth rows) and the user atomically
+    ActiveRecord::Base.transaction do
+      Doorkeeper::AccessGrant.where(resource_owner_id: user_id).delete_all
+      Doorkeeper::AccessToken.where(resource_owner_id: user_id).delete_all
+      user.original_hashtags.delete_all
+      user.webauthn_credentials.delete_all
+      user.delete
+    end
 
     # Log the deletion
     if user_plan.present? && user_plan.match(/pro/i)

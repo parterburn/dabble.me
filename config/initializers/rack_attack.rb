@@ -1,5 +1,6 @@
 class Rack::Attack
   MCP_PATH = '/mcp'.freeze
+  OTP_CREDENTIALS_PATH = '/users/otp/credentials'.freeze
   PROBE_BAN_MAXRETRY = 15
   PROBE_BAN_FINDTIME = 5.minutes
   PROBE_BAN_TIME = 1.hour
@@ -7,6 +8,15 @@ class Rack::Attack
   # Throttle high volumes of requests by IP address
   throttle('req/ip', limit: 20, period: 20.seconds) do |req|
     req.ip unless req.path.starts_with?('/assets')
+  end
+
+  # Throttle OTP second-factor challenge attempts per challenge token and per IP
+  throttle('otp/challenge', limit: 5, period: 5.minutes) do |req|
+    submitted_otp_challenge(req) if req.path == OTP_CREDENTIALS_PATH && !req.get?
+  end
+
+  throttle('otp/ip', limit: 10, period: 10.minutes) do |req|
+    req.ip if req.path == OTP_CREDENTIALS_PATH && !req.get?
   end
 
   # Throttle login attempts by IP address
@@ -86,6 +96,15 @@ class Rack::Attack
     return unless email.is_a?(String)
 
     email.strip.downcase.presence
+  end
+
+  def self.submitted_otp_challenge(req)
+    user_params = req.params['user']
+    challenge = user_params['challenge'] if user_params.is_a?(Hash)
+    challenge = req.params['challenge'] unless challenge.is_a?(String)
+    return unless challenge.is_a?(String)
+
+    challenge.strip.presence
   end
 
   # Prefer CF-Connecting-IP (real browser behind Cloudflare), then Rails'

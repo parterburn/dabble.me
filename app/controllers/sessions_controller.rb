@@ -1,6 +1,7 @@
 # Devise Override Controller
 class SessionsController < Devise::SessionsController
   layout 'marketing', only: [:new, :create]
+  before_action :authenticate_user!, only: [:validate_otp]
 
   def validate_otp
     if current_user.validate_otp_token(params[:user][:token].gsub(/\D/, ''))

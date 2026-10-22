@@ -48,20 +48,46 @@ module ApplicationHelper
   end
 
   # Known third-party apps shown with brand logos on the OAuth consent screen.
+  # Brand logos are only shown when all redirect URIs for the client resolve to
+  # the vendor's verified domain(s), preventing DCR brand impersonation.
   OAUTH_KNOWN_APPLICATION_LOGOS = [
-    { pattern: /\bnotion\b/i, asset: "oauth/notion.png", alt: "Notion", fit: :contain },
-    { pattern: /\b(claude|anthropic)\b/i, asset: "oauth/anthropic.png", alt: "Claude", fit: :cover },
-    { pattern: /\b(chatgpt|chat\s*gpt|openai|codex)\b/i, asset: "oauth/openai.png", alt: "ChatGPT", fit: :contain }
+    {
+      pattern: /\bnotion\b/i,
+      verified_domains: %w[notion.so notion.com makenotion.com],
+      asset: "oauth/notion.png",
+      alt: "Notion",
+      fit: :contain
+    },
+    {
+      pattern: /\b(claude|anthropic)\b/i,
+      verified_domains: %w[claude.ai claude.com anthropic.com],
+      asset: "oauth/anthropic.png",
+      alt: "Claude",
+      fit: :cover
+    },
+    {
+      pattern: /\b(chatgpt|chat\s*gpt|openai|codex)\b/i,
+      verified_domains: %w[chatgpt.com openai.com],
+      asset: "oauth/openai.png",
+      alt: "ChatGPT",
+      fit: :contain
+    }
   ].freeze
 
   # Brand logo metadata for major OAuth clients, or nil for letter initials.
+  # Requires both the client name AND all registered/requested redirect URI hosts
+  # to match the brand's verified_domains.
   # Returns nil when the image is missing from the asset pipeline so a broken
   # logo can never block the consent screen.
-  def oauth_application_logo(name)
+  def oauth_application_logo(client_or_name, redirect_uri: nil)
+    name = client_or_name.respond_to?(:name) ? client_or_name.name.to_s : client_or_name.to_s
     return nil if name.blank?
 
     logo = OAUTH_KNOWN_APPLICATION_LOGOS.find { |candidate| name.match?(candidate[:pattern]) }
     return nil if logo.blank?
+
+    uris = extract_oauth_redirect_uris(client_or_name, redirect_uri)
+    return nil if uris.empty? || !uris.all? { |u| oauth_uri_matches_domains?(u, logo[:verified_domains]) }
 
     begin
       logo.merge(src: image_path(logo[:asset]))
@@ -69,6 +95,40 @@ module ApplicationHelper
       Sentry.capture_exception(e)
       nil
     end
+  end
+
+  def oauth_redirect_host(redirect_uri)
+    uri = URI.parse(redirect_uri.to_s.strip)
+    uri.host.presence
+  rescue URI::InvalidURIError
+    nil
+  end
+
+  def extract_oauth_redirect_uris(client_or_name, redirect_uri)
+    app_uris =
+      if client_or_name.respond_to?(:application) && client_or_name.application.respond_to?(:redirect_uri)
+        client_or_name.application.redirect_uri.to_s.split
+      elsif client_or_name.respond_to?(:redirect_uri)
+        client_or_name.redirect_uri.to_s.split
+      else
+        []
+      end
+    (app_uris + Array(redirect_uri).flat_map { |u| u.to_s.split }).map(&:strip).reject(&:blank?).uniq
+  end
+
+  def oauth_uri_matches_domains?(raw_uri, verified_domains)
+    uri = URI.parse(raw_uri.to_s)
+    return false unless uri.scheme.to_s.downcase == "https"
+
+    host = uri.host.to_s.downcase.sub(/\.\z/, "")
+    return false if host.blank?
+
+    Array(verified_domains).any? do |domain|
+      d = domain.to_s.downcase
+      host == d || host.end_with?(".#{d}")
+    end
+  rescue URI::InvalidURIError
+    false
   end
 
   # Two-letter initials for OAuth consent (e.g. "MCP Inspector" -> "MI").

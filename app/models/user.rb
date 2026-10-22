@@ -44,6 +44,7 @@ class User < ActiveRecord::Base
 
   after_commit :notify_stripe
   after_update :revoke_doorkeeper_oauth_if_downgraded_from_pro
+  after_update :revoke_doorkeeper_oauth_if_credentials_changed
 
   before_save { email&.gsub!(",",".")&.gsub!(".@", "@")&.downcase! }
   before_save { send_timezone.gsub!("&amp;", "&") }
@@ -358,5 +359,47 @@ class User < ActiveRecord::Base
 
     revoke_doorkeeper_access_tokens!
   end
+
+  def revoke_doorkeeper_oauth_if_credentials_changed
+    return unless saved_change_to_encrypted_password? ||
+                  saved_change_to_email? ||
+                  saved_change_to_otp_auth_secret? ||
+                  (saved_change_to_otp_enabled? && !otp_enabled?)
+
+    revoke_doorkeeper_access_tokens!
+  end
+
+  public
+
+  OTP_MAX_CHALLENGE_FAILURES = 5
+
+  def validate_otp_token(token, recovery = false)
+    valid = super(token, recovery)
+    if otp_session_challenge.present?
+      cache_key = "otp_challenge_failures:#{otp_session_challenge}"
+      if valid
+        Rails.cache.delete(cache_key)
+      else
+        failures = Rails.cache.read(cache_key).to_i + 1
+        Rails.cache.write(cache_key, failures, expires_in: 5.minutes)
+        if failures >= OTP_MAX_CHALLENGE_FAILURES
+          update_columns(otp_session_challenge: nil, otp_challenge_expires: nil)
+        end
+      end
+    end
+    valid
+  end
+
+  def validate_otp_recovery_token(token)
+    return false if token.blank?
+
+    verified = recovery_otp.verify(token, otp_recovery_counter)
+    if verified
+      self.otp_recovery_counter += 1
+      save!
+    end
+    verified
+  end
+  alias_method :valid_otp_recovery_token?, :validate_otp_recovery_token
 
 end
