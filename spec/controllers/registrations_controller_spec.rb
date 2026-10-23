@@ -23,6 +23,17 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(response.body).to have_content("#{user.user_key}@#{ENV['SMTP_DOMAIN']}")
     end
 
+    it 'renders edit when a user entry has an unclosed angle bracket followed by 400+ words and a hashtag' do
+      filler = (1..410).map { |i| "word#{i}<br>" }.join(' ')
+      paid_user.entries.create!(date: Time.current, body: "<p>Note <sigh #{filler} #resilience</p>")
+      sign_in paid_user
+
+      get :edit
+
+      expect(response.status).to eq 200
+      expect(response.body).to include('resilience')
+    end
+
     it 'should let user edit if visiting /settings/user_key without signing in' do
       get :settings, params: { user_key: user.user_key }
       expect(response.status).to eq 200

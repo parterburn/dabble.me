@@ -15,4 +15,34 @@ RSpec.describe Entry do
       expect(newer.next).to be_nil
     end
   end
+
+  describe '#hashtags' do
+    it 'extracts unique hashtags across paragraph and line-break tags without concatenating adjacent words' do
+      entry = Entry.new(body: '<p>First #morning<br>word</p><p>Second #gratitude<br/>#morning #focus</p>')
+
+      expect(entry.hashtags).to eq(%w[morning gratitude focus])
+    end
+
+    it 'ignores hashes inside HTML attributes and numeric character references' do
+      entry = Entry.new(
+        body: '<p> Don&#39;t&#x27;t click <a href="https://example.com#anchor" style="color: #ff0000">here</a> #valid_tag</p>'
+      )
+
+      expect(entry.hashtags).to eq(%w[valid_tag])
+    end
+
+    it 'does not raise or drop hashtags when an unclosed angle bracket precedes 400+ words across line breaks' do
+      filler = (1..410).map { |i| "word#{i}<br>" }.join(' ')
+      entry = Entry.new(body: "<p>Started writing <note #{filler} #reflection</p>")
+
+      expect(entry.hashtags).to eq(%w[reflection])
+    end
+
+    it 'does not raise or drop hashtags when an unclosed angle bracket precedes 400+ words in a single paragraph' do
+      filler = (1..410).map { |i| "word#{i}" }.join(' ')
+      entry = Entry.new(body: "<p>Started writing <note #{filler} #reflection</p>")
+
+      expect(entry.hashtags).to eq(%w[reflection])
+    end
+  end
 end
