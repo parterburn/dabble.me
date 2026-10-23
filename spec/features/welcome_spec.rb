@@ -71,6 +71,18 @@ describe 'Pages' do
     expect(page).to have_content('WebMCP manifest')
   end
 
+  it 'offers a copyable agent setup prompt and per-app setup on the MCP page' do
+    visit mcp_server_docs_path
+
+    mcp_endpoint = ApplicationHelper.mcp_server_url
+    prompt_button = page.find('button[data-copy-prompt]')
+    expect(prompt_button['data-copy-prompt']).to include('/mcp-server#setup', mcp_endpoint)
+    expect(prompt_button).to have_content('Then start the Dabble Me MCP authentication flow so I can sign in.')
+
+    expect(page).to have_content('Instructions for AI agents')
+    expect(page).to have_link('Dabble Me in the Claude plugin directory', href: ApplicationHelper.claude_plugin_directory_url)
+  end
+
   it 'publishes an accurate Day One AI journaling comparison' do
     visit day_one_ai_journaling_path
 

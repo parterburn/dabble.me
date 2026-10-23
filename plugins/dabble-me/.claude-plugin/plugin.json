@@ -1,12 +1,23 @@
 {
   "name": "dabble-me",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Search, reflect on, and write your private Dabble Me journal using its existing OAuth MCP server.",
   "author": {
     "name": "Dabble Me"
   },
   "homepage": "https://dabble.me",
   "repository": "https://github.com/parterburn/dabble.me",
+  "keywords": [
+    "journal",
+    "journaling",
+    "diary",
+    "memories",
+    "reflection",
+    "writing",
+    "self-reflection",
+    "personal",
+    "productivity"
+  ],
   "icon": "https://dabble.me/favicon-96x96.png",
   "documentationUrl": "https://dabble.me/mcp-server",
   "supportUrl": "https://dabble.me/support",

@@ -5,6 +5,8 @@
 ## MCP documentation
 
 - [Dabble Me MCP Server](https://dabble.me/mcp-server): Supported clients, setup, OAuth authentication, permissions, live tool reference, technical metadata, privacy notes, and example prompts. <!-- pragma: allowlist secret -->
+- [Setup instructions for AI agents](https://dabble.me/mcp-server#agent-instructions): Steps an agent follows to add the Dabble Me MCP server and start OAuth sign-in, or point the user to the right connector for their app. <!-- pragma: allowlist secret -->
+- [Dabble Me plugin for Claude](https://claude.ai/customize/plugins/id/6b2f67b8-6341-42d1-a2f1-d63df3107efe%40anthropic-plugin-directory): Official Claude directory plugin with the MCP connection and journaling skills. <!-- pragma: allowlist secret -->
 - [Dabble Me vs. Day One for AI journaling](https://dabble.me/dabble-me-vs-day-one-ai-journaling): A balanced remote-vs-local MCP comparison. <!-- pragma: allowlist secret -->
 - [Day One alternative](https://dabble.me/day-one-alternative): Import a Day One JSON export into Dabble Me and journal by email. <!-- pragma: allowlist secret -->
 - [Best journaling apps with MCP / Claude & ChatGPT Connectors](https://dabble.me/best-journaling-apps-with-mcp): Evaluation criteria, example prompts, and current vendor-supported options. <!-- pragma: allowlist secret -->
