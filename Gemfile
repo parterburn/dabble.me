@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 ruby File.read(File.expand_path '../.ruby-version', __FILE__).strip.sub /\-p[0-9]+$/, '' # Read the rbenv version file
-gem 'rails', '~> 7.2.2'
+gem 'rails', '~> 7.2.4'
 
 gem "csv"                      # Ruby 3.4 stdlib extraction - required by ActiveSupport
 gem "drb"                      # Ruby 3.4 stdlib extraction - required by ActiveSupport
