@@ -8,6 +8,10 @@ module ApplicationHelper
     "https://claude.ai/customize/plugins/id/6b2f67b8-6341-42d1-a2f1-d63df3107efe%40anthropic-plugin-directory"
   end
 
+  def self.chatgpt_plugin_directory_url
+    "https://chatgpt.com/plugins/plugin_asdk_app_6ac8451cdf78819190a3a26f21bfe561"
+  end
+
   # Full MCP endpoint URL for docs and client config (outside a web request).
   # Host comes from the app’s primary domain env var.
   def self.mcp_server_url

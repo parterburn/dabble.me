@@ -20,4 +20,6 @@ Validate locally with `claude plugin validate ./plugins/dabble-me`. Keep the ide
 
 The portable manifest includes five positive and three negative review cases, the demo link (https://urg.ai/dbl-mcp), and release notes. The demo link resolves to a public Loom page; video playback has not been verified. These cases are drafted and have not been run against the reviewer account. Prepare the dated sample entries described in the cases before running them. Run read cases before write cases, and supply reviewer credentials only through the portal's secure fields.
 
-The logo asset and manifest references are verified in private plugin v0.1.5. Rendering on the signed-in ChatGPT plugin page remains unverified.
+Public ChatGPT directory listing: https://chatgpt.com/plugins/plugin_asdk_app_6ac8451cdf78819190a3a26f21bfe561
+
+The logo asset and manifest references are verified in private plugin v0.1.5 and the public ChatGPT directory listing.

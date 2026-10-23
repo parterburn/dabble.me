@@ -83,6 +83,7 @@ describe 'Pages' do
 
     expect(page).to have_content('Instructions for AI agents')
     expect(page).to have_link('Dabble Me in the Claude plugin directory', href: ApplicationHelper.claude_plugin_directory_url)
+    expect(page).to have_link('Dabble Me in the ChatGPT plugin directory', href: ApplicationHelper.chatgpt_plugin_directory_url)
   end
 
   it 'publishes an accurate Day One AI journaling comparison' do

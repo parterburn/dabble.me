@@ -8,6 +8,7 @@ base_url = ApplicationHelper.site_public_base_url
 mcp_endpoint = ApplicationHelper.mcp_server_url
 setup_guide_url = "#{base_url}/mcp-server#setup"
 claude_plugin_url = ApplicationHelper.claude_plugin_directory_url
+chatgpt_plugin_url = ApplicationHelper.chatgpt_plugin_directory_url
 agent_setup_prompt = "Set up the Dabble Me MCP server for this agent using the official setup guide at #{setup_guide_url} " \
   "and the MCP server URL #{mcp_endpoint}. Then start the Dabble Me MCP authentication flow so I can sign in."
 faq_items = [
@@ -17,12 +18,13 @@ faq_items = [
   },
   {
     question: "Can ChatGPT connect to Dabble Me?",
-    answer: "Yes. ChatGPT paid plans that include Developer mode can add Dabble Me as a remote MCP app using the Dabble Me MCP endpoint."
+    answer: "Yes. Install the Dabble Me plugin from the ChatGPT directory, or add Dabble Me as a custom remote MCP app in Developer mode, then complete the Dabble Me OAuth approval flow."
   },
   {
     question: "Can Claude connect to Dabble Me?",
     answer: "Yes. Install the Dabble Me plugin from the Claude directory, or add Dabble Me as a custom remote connector, then complete the Dabble Me OAuth approval flow."
   },
+
   {
     question: "How should an AI assistant attach a photo to a journal entry?",
     answer: "Prefer create_entry with image_url when a public https image URL is already available—Dabble Me fetches and attaches it server-side. That path avoids client sandbox egress allowlists and large base64 payloads. Only for local bytes without a public URL, call get_image_upload_url, upload with the returned PUT URL, then pass uploaded_image_key to create_entry. Use image_base64 only as a small last resort."
@@ -161,7 +163,7 @@ structured_data = {
           <li>Find the section below that matches the app you are running in.</li>
           <li>If you can change your own MCP configuration, add a remote HTTP MCP server named <code>dabble-me</code> with the URL <code><%= mcp_endpoint %></code>. Do not add an API key, client secret, or custom headers.</li>
           <li>Then start your client’s OAuth sign-in so the user can sign in to Dabble Me and approve access. Never ask the user to paste a password, two-factor code, passkey, or token into the chat.</li>
-          <li>If you cannot add MCP servers yourself (Claude on claude.ai or the Claude apps, or ChatGPT), do not look for a workaround. Give the user the steps for their app below. In Claude, recommend the <a href="<%= claude_plugin_url %>" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">Dabble Me plugin</a>.</li>
+          <li>If you cannot add MCP servers yourself (Claude on claude.ai or the Claude apps, or ChatGPT), do not look for a workaround. Give the user the steps for their app below. In Claude, recommend the <a href="<%= claude_plugin_url %>" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">Dabble Me Claude plugin</a>. In ChatGPT, recommend the <a href="<%= chatgpt_plugin_url %>" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">Dabble Me ChatGPT plugin</a>.</li>
           <li>After sign-in, confirm the connection with a read-only tool such as <code>list_entries</code> or <code>analyze_entries</code> for a recent date range. Do not create a test entry. Some clients only load new tools after a reload or in a new chat.</li>
           <li>Only Dabble Me PRO accounts with a passkey or two-factor authentication can use the tools. The connection acts as the user who approved it and only reads and writes that user’s journal.</li>
         </ol>
@@ -184,16 +186,24 @@ structured_data = {
 
       <div class="mt-8 card p-6" id="setup-chatgpt">
         <h3 class="font-serif text-2xl text-primary">Connect ChatGPT</h3>
+        <p class="mt-3 text-muted">
+          Install the official Dabble Me plugin from the ChatGPT directory. It connects the Dabble Me MCP server and adds
+          skills for finding memories, reflecting on your journal, and writing entries. ChatGPT cannot add plugins from
+          inside a chat.
+        </p>
         <ol class="mt-4 list-decimal pl-5 space-y-2 text-muted">
-          <li>In ChatGPT on the web, open <strong class="text-primary">Settings → Security and login</strong> and enable <strong class="text-primary">Developer mode</strong>.</li>
-          <li>Open <strong class="text-primary">Settings → Plugins</strong> (called apps or connectors in some interfaces) and create a developer-mode app.</li>
-          <li>Use <strong class="text-primary">Dabble Me</strong> as the name, explain that it reads and writes the signed-in user’s private journal, and paste <code><%= mcp_endpoint %></code> as the MCP server URL.</li>
-          <li>Choose OAuth when asked, complete the browser sign-in, and approve access.</li>
-          <li>Start a conversation in Developer mode with the Dabble Me app enabled.</li>
+          <li>Open <a href="<%= chatgpt_plugin_url %>" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">Dabble Me in the ChatGPT plugin directory</a> and install it.</li>
+          <li>When ChatGPT asks you to connect Dabble Me, sign in to Dabble Me in the browser window.</li>
+          <li>Review the requested read/write permission and approve access.</li>
+          <li>Enable Dabble Me in a conversation, then try one of the prompts on this page.</li>
         </ol>
         <p class="mt-4 text-sm text-muted">
-          Custom MCP apps require an eligible paid ChatGPT plan, and organization administrators may disable them.
-          See <a href="https://developers.openai.com/api/docs/guides/developer-mode" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">OpenAI’s current Developer mode guide</a>.
+          Prefer the directory plugin. To add Dabble Me manually instead, enable
+          <strong class="text-primary">Developer mode</strong> under
+          <strong class="text-primary">Settings → Security and login</strong>, create a developer-mode app with
+          MCP URL <code><%= mcp_endpoint %></code>, choose OAuth, and approve access. Custom MCP apps require an
+          eligible paid ChatGPT plan, and organization administrators may disable them. See
+          <a href="https://developers.openai.com/api/docs/guides/developer-mode" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">OpenAI’s current Developer mode guide</a>.
         </p>
       </div>
 
