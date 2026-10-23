@@ -96,13 +96,10 @@ structured_data = {
     <nav aria-label="On this page" class="card p-6 mt-12">
       <h2 class="font-serif text-xl text-primary">On this page</h2>
       <ul class="mt-3 grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-        <li><a class="text-accent hover:text-primary underline" href="#supported-clients">Supported clients</a></li>
         <li><a class="text-accent hover:text-primary underline" href="#setup">Setup instructions</a></li>
         <li><a class="text-accent hover:text-primary underline" href="#authentication">Authentication and privacy</a></li>
-        <li><a class="text-accent hover:text-primary underline" href="#tools">Available MCP tools</a></li>
-        <li><a class="text-accent hover:text-primary underline" href="#permissions">Permissions</a></li>
         <li><a class="text-accent hover:text-primary underline" href="#example-prompts">Example prompts</a></li>
-        <li><a class="text-accent hover:text-primary underline" href="#technical-details">Technical metadata</a></li>
+        <li><a class="text-accent hover:text-primary underline" href="#tools">Available MCP tools</a></li>
         <li><a class="text-accent hover:text-primary underline" href="#faq">Frequently asked questions</a></li>
       </ul>
     </nav>
@@ -121,47 +118,6 @@ structured_data = {
           When you ask a connected AI assistant to read entries, the requested content is sent to that AI provider for
           processing under its terms and privacy policy. Connect only clients you trust and revoke access at any time.
         </p>
-      </div>
-    </section>
-
-    <section class="mt-16" id="supported-clients">
-      <h2 class="font-serif text-3xl text-primary">Supported clients</h2>
-      <p class="mt-3 text-muted">
-        Dabble Me uses remote Streamable HTTP plus OAuth 2.0. It works with clients that support that MCP transport,
-        OAuth authorization-code flow with PKCE, and dynamic client registration.
-      </p>
-      <div class="mt-6 overflow-x-auto card">
-        <table class="w-full text-left text-sm">
-          <thead class="border-b border-subtle">
-            <tr>
-              <th class="p-4 font-semibold text-primary">Client</th>
-              <th class="p-4 font-semibold text-primary">Connection</th>
-              <th class="p-4 font-semibold text-primary">Notes</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-subtle">
-            <tr>
-              <td class="p-4 text-primary font-medium">Claude</td>
-              <td class="p-4 text-muted"><a href="<%= claude_plugin_url %>" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">Claude directory plugin</a> or custom remote connector</td>
-              <td class="p-4 text-muted">Claude web, Desktop, mobile, and Cowork use the same cloud-hosted connection. The plugin also adds journaling skills.</td>
-            </tr>
-            <tr>
-              <td class="p-4 text-primary font-medium">ChatGPT</td>
-              <td class="p-4 text-muted">Developer-mode app</td>
-              <td class="p-4 text-muted">Available on paid ChatGPT plans with Developer mode enabled; workspace policies may restrict it.</td>
-            </tr>
-            <tr>
-              <td class="p-4 text-primary font-medium">MCP Inspector</td>
-              <td class="p-4 text-muted">Streamable HTTP</td>
-              <td class="p-4 text-muted">Useful for developers testing discovery, OAuth, and tool calls.</td>
-            </tr>
-            <tr>
-              <td class="p-4 text-primary font-medium">Other MCP clients</td>
-              <td class="p-4 text-muted">Remote Streamable HTTP</td>
-              <td class="p-4 text-muted">The client must support OAuth-protected remote MCP servers.</td>
-            </tr>
-          </tbody>
-        </table>
       </div>
     </section>
 
@@ -271,6 +227,29 @@ structured_data = {
       </div>
     </section>
 
+    <section class="mt-16" id="example-prompts">
+      <h2 class="font-serif text-3xl text-primary">Real example prompts</h2>
+      <p class="mt-3 text-muted">Ask naturally. The client decides which Dabble Me tools to call.</p>
+      <div class="mt-6 grid sm:grid-cols-2 gap-5">
+        <% [
+          ["Reflect on a month", "Summarize my journal entries from last month. What themes kept coming up?"],
+          ["Find a recurring topic", "Find every time I mentioned burnout and show how the language changed over time."],
+          ["Review a year", "How often did I journal this year? What hashtags did I use most?"],
+          ["Recall a memory", "What did I write about my trip to Iceland? Include dates and short excerpts."],
+          ["Look for progress", "Search my journal for running and summarize the milestones I recorded."],
+          ["Compare periods", "List entries from January and June, then compare what I was focused on."],
+          ["Save a reflection", "Add this to today's journal: I felt calmer after taking a long walk."],
+          ["Attach a photo by URL", "Save this photo to today's journal entry using its https URL, and add a short caption about the moment."],
+          ["Create a dated entry", "Create a journal entry for July 17, 2026: Dinner with old friends reminded me how much I value staying connected."]
+        ].each do |title, prompt| %>
+          <div class="card p-5">
+            <h3 class="font-sans font-semibold text-base tracking-tight text-primary"><%= title %></h3>
+            <blockquote class="mt-2 text-sm leading-relaxed text-muted">“<%= prompt %>”</blockquote>
+          </div>
+        <% end %>
+      </div>
+    </section>
+
     <section class="mt-16" id="tools">
       <h2 class="font-serif text-3xl text-primary">Available MCP tools</h2>
       <p class="mt-3 text-muted">
@@ -298,77 +277,6 @@ structured_data = {
           </article>
         <% end %>
       </div>
-    </section>
-
-    <section class="mt-16" id="permissions">
-      <h2 class="font-serif text-3xl text-primary">Permissions and behavior</h2>
-      <div class="mt-6 overflow-x-auto card">
-        <table class="w-full text-left text-sm">
-          <thead class="border-b border-subtle">
-            <tr>
-              <th class="p-4 font-semibold text-primary">Capability</th>
-              <th class="p-4 font-semibold text-primary">Read or write</th>
-              <th class="p-4 font-semibold text-primary">What happens</th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-subtle">
-            <tr><td class="p-4 font-mono text-primary">search_entries</td><td class="p-4 text-muted">Read</td><td class="p-4 text-muted">Returns matching excerpts, dates, hashtags, and image presence.</td></tr>
-            <tr><td class="p-4 font-mono text-primary">list_entries</td><td class="p-4 text-muted">Read</td><td class="p-4 text-muted">Returns entries in a requested date range, newest first.</td></tr>
-            <tr><td class="p-4 font-mono text-primary">analyze_entries</td><td class="p-4 text-muted">Read</td><td class="p-4 text-muted">Computes counts, date coverage, top hashtags, and writing-volume summaries.</td></tr>
-            <tr><td class="p-4 font-mono text-primary">get_image_upload_url</td><td class="p-4 text-muted">Prepare write</td><td class="p-4 text-muted">Creates a short-lived PUT URL for local image bytes when no public https URL is available.</td></tr>
-            <tr><td class="p-4 font-mono text-primary">create_entry</td><td class="p-4 text-muted">Write</td><td class="p-4 text-muted">Creates or appends an entry; optional image via image_url (preferred when a public URL exists), uploaded_image_key, or small base64.</td></tr>
-          </tbody>
-        </table>
-      </div>
-      <p class="mt-4 text-sm text-muted">
-        There is no delete-entry tool. Dabble Me marks tools with MCP read-only, destructive, idempotent, and
-        open-world annotations so compatible clients can present appropriate confirmation behavior.
-      </p>
-    </section>
-
-    <section class="mt-16" id="example-prompts">
-      <h2 class="font-serif text-3xl text-primary">Real example prompts</h2>
-      <p class="mt-3 text-muted">Ask naturally. The client decides which Dabble Me tools to call.</p>
-      <div class="mt-6 grid sm:grid-cols-2 gap-5">
-        <% [
-          ["Reflect on a month", "Summarize my journal entries from last month. What themes kept coming up?"],
-          ["Find a recurring topic", "Find every time I mentioned burnout and show how the language changed over time."],
-          ["Review a year", "How often did I journal this year? What hashtags did I use most?"],
-          ["Recall a memory", "What did I write about my trip to Iceland? Include dates and short excerpts."],
-          ["Look for progress", "Search my journal for running and summarize the milestones I recorded."],
-          ["Compare periods", "List entries from January and June, then compare what I was focused on."],
-          ["Save a reflection", "Add this to today's journal: I felt calmer after taking a long walk."],
-          ["Attach a photo by URL", "Save this photo to today's journal entry using its https URL, and add a short caption about the moment."],
-          ["Create a dated entry", "Create a journal entry for July 17, 2026: Dinner with old friends reminded me how much I value staying connected."]
-        ].each do |title, prompt| %>
-          <div class="card p-5">
-            <h3 class="font-sans font-semibold text-base tracking-tight text-primary"><%= title %></h3>
-            <blockquote class="mt-2 text-sm leading-relaxed text-muted">“<%= prompt %>”</blockquote>
-          </div>
-        <% end %>
-      </div>
-    </section>
-
-    <section class="mt-16" id="technical-details">
-      <h2 class="font-serif text-3xl text-primary">Technical metadata</h2>
-      <dl class="mt-6 card divide-y divide-subtle text-sm">
-        <div class="p-4 sm:grid sm:grid-cols-3 gap-4"><dt class="font-semibold text-primary">Server name</dt><dd class="mt-1 sm:mt-0 sm:col-span-2 text-muted"><code>dabble-me</code></dd></div>
-        <div class="p-4 sm:grid sm:grid-cols-3 gap-4"><dt class="font-semibold text-primary">Endpoint</dt><dd class="mt-1 sm:mt-0 sm:col-span-2 text-muted break-all"><code><%= mcp_endpoint %></code></dd></div>
-        <div class="p-4 sm:grid sm:grid-cols-3 gap-4"><dt class="font-semibold text-primary">Transport</dt><dd class="mt-1 sm:mt-0 sm:col-span-2 text-muted">Streamable HTTP; JSON-RPC requests use POST</dd></div>
-        <div class="p-4 sm:grid sm:grid-cols-3 gap-4"><dt class="font-semibold text-primary">Authentication</dt><dd class="mt-1 sm:mt-0 sm:col-span-2 text-muted">OAuth 2.0 authorization code, PKCE S256, public clients, refresh tokens</dd></div>
-        <div class="p-4 sm:grid sm:grid-cols-3 gap-4"><dt class="font-semibold text-primary">OAuth scope</dt><dd class="mt-1 sm:mt-0 sm:col-span-2 text-muted"><code>mcp:access</code> — read and create journal entries on your behalf</dd></div>
-        <div class="p-4 sm:grid sm:grid-cols-3 gap-4"><dt class="font-semibold text-primary">Protected-resource metadata</dt><dd class="mt-1 sm:mt-0 sm:col-span-2 text-muted break-all"><a class="text-accent hover:text-primary underline" href="<%= base_url %>/.well-known/oauth-protected-resource/mcp"><%= base_url %>/.well-known/oauth-protected-resource/mcp</a></dd></div>
-        <div class="p-4 sm:grid sm:grid-cols-3 gap-4"><dt class="font-semibold text-primary">Authorization-server metadata</dt><dd class="mt-1 sm:mt-0 sm:col-span-2 text-muted break-all"><a class="text-accent hover:text-primary underline" href="<%= base_url %>/.well-known/oauth-authorization-server/mcp"><%= base_url %>/.well-known/oauth-authorization-server/mcp</a></dd></div>
-        <div class="p-4 sm:grid sm:grid-cols-3 gap-4"><dt class="font-semibold text-primary">WebMCP manifest</dt><dd class="mt-1 sm:mt-0 sm:col-span-2 text-muted break-all"><a class="text-accent hover:text-primary underline" href="<%= base_url %>/.well-known/webmcp"><%= base_url %>/.well-known/webmcp</a></dd></div>
-        <div class="p-4 sm:grid sm:grid-cols-3 gap-4"><dt class="font-semibold text-primary">MCP Server Card</dt><dd class="mt-1 sm:mt-0 sm:col-span-2 text-muted break-all"><a class="text-accent hover:text-primary underline" href="<%= base_url %>/mcp/server-card"><%= base_url %>/mcp/server-card</a></dd></div>
-        <div class="p-4 sm:grid sm:grid-cols-3 gap-4"><dt class="font-semibold text-primary">AI Catalog</dt><dd class="mt-1 sm:mt-0 sm:col-span-2 text-muted break-all"><a class="text-accent hover:text-primary underline" href="<%= base_url %>/.well-known/ai-catalog.json"><%= base_url %>/.well-known/ai-catalog.json</a></dd></div>
-        <div class="p-4 sm:grid sm:grid-cols-3 gap-4"><dt class="font-semibold text-primary">Tool result limit</dt><dd class="mt-1 sm:mt-0 sm:col-span-2 text-muted">Up to <%= Mcp::EntrySearch::MAX_LIMIT %> entries per search/list call; aggregate analysis samples up to 500 entries</dd></div>
-        <div class="p-4 sm:grid sm:grid-cols-3 gap-4"><dt class="font-semibold text-primary">Write behavior</dt><dd class="mt-1 sm:mt-0 sm:col-span-2 text-muted">Create or append only; no MCP delete tool</dd></div>
-      </dl>
-      <p class="mt-4 text-sm text-muted">
-        The official registry manifest is maintained as <code>server.json</code> in the
-        <a href="https://github.com/parterburn/<%= %w[dabble me].join(".") %>" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">public source repository</a>.
-      </p>
     </section>
 
     <section class="mt-16" id="faq">

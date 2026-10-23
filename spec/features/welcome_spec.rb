@@ -68,7 +68,9 @@ describe 'Pages' do
     expect(canonical).to end_with('/mcp-server')
     expect(page).to have_css('link[rel="webmcp"]', visible: false)
     expect(page).to have_css('script#dabble-webmcp-config', visible: false)
-    expect(page).to have_content('WebMCP manifest')
+
+    tool_ids = page.all('article[id^="tool-"]').map { |article| article[:id] }
+    expect(tool_ids.last).to eq('tool-get-image-upload-url')
   end
 
   it 'offers a copyable agent setup prompt and per-app setup on the MCP page' do
