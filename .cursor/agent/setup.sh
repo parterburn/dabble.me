@@ -59,6 +59,12 @@ install_asdf_runtimes() {
   load_asdf
   install_asdf_plugins
 
+  # Keep plugins current so newly released Ruby/Node patch versions in
+  # .tool-versions resolve (stale asdf-ruby fails with "Version not found").
+  log 'Updating asdf Ruby and Node.js plugins'
+  asdf plugin update ruby || true
+  asdf plugin update nodejs || true
+
   log 'Installing Ruby and Node.js from .tool-versions'
   cd "$APP_ROOT"
   asdf install
