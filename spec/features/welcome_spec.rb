@@ -78,8 +78,12 @@ describe 'Pages' do
 
     mcp_endpoint = ApplicationHelper.mcp_server_url
     prompt_button = page.find('button[data-copy-prompt]')
-    expect(prompt_button['data-copy-prompt']).to include('/mcp-server#setup', mcp_endpoint)
-    expect(prompt_button).to have_content('Then start the Dabble Me MCP authentication flow so I can sign in.')
+    expect(prompt_button['data-copy-prompt']).to include(
+      '/mcp-server#setup',
+      mcp_endpoint,
+      'Prefer the official Dabble Me plugin from this app’s plugin directory when one exists'
+    )
+    expect(prompt_button).to have_content('Then start the Dabble Me OAuth flow so I can sign in.')
 
     expect(page).to have_content('Instructions for AI agents')
     expect(page).to have_link('Dabble Me in the Claude plugin directory', href: ApplicationHelper.claude_plugin_directory_url)

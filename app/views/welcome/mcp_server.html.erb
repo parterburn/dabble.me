@@ -9,8 +9,10 @@ mcp_endpoint = ApplicationHelper.mcp_server_url
 setup_guide_url = "#{base_url}/mcp-server#setup"
 claude_plugin_url = ApplicationHelper.claude_plugin_directory_url
 chatgpt_plugin_url = ApplicationHelper.chatgpt_plugin_directory_url
-agent_setup_prompt = "Set up the Dabble Me MCP server for this agent using the official setup guide at #{setup_guide_url} " \
-  "and the MCP server URL #{mcp_endpoint}. Then start the Dabble Me MCP authentication flow so I can sign in."
+agent_setup_prompt = "Set up Dabble Me for this agent using the official guide at #{setup_guide_url}. " \
+  "Prefer the official Dabble Me plugin from this app’s plugin directory when one exists; " \
+  "otherwise add the remote MCP server at #{mcp_endpoint}. " \
+  "Then start the Dabble Me OAuth flow so I can sign in."
 faq_items = [
   {
     question: "What can the Dabble Me MCP server do?",
