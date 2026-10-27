@@ -184,6 +184,10 @@ GEM
       unf (>= 0.0.5, < 1.0.0)
     doorkeeper (5.9.0)
       railties (>= 5)
+    dotenv (3.2.0)
+    dotenv-rails (3.2.0)
+      dotenv (= 3.2.0)
+      railties (>= 6.1)
     drb (2.2.3)
     email_reply_trimmer (0.1.13)
     email_spec (2.2.1)
@@ -617,6 +621,7 @@ DEPENDENCIES
   devise-otp (~> 0.8)
   devise-security
   doorkeeper (~> 5.9)
+  dotenv-rails (~> 3.1)
   drb
   email_reply_trimmer
   email_spec

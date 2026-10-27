@@ -68,8 +68,16 @@ brakeman.html
 # Ignore sensitive data
 /config/settings/local.rb
 
+# Local secrets. 1Password Environments mounts .env at the repo root.
+# .env.example stays tracked.
+.env
+.env.local
+.env.*.local
+
+# Legacy plaintext secrets file, replaced by .env.
 config/local_env.yml
 .vscode
 .rubocop
 .trunk
 .cursor/environment.json
+.1password/environments.toml

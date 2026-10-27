@@ -89,6 +89,10 @@ gem "reverse_markdown" # text export conversion html->txt
 gem "redcarpet" # markdown rendering
 
 group :development, :test do
+  # Loads .env in development and test. Does not override variables already set
+  # in the environment. Compatible with a 1Password Environments mount at .env.
+  gem "dotenv-rails", "~> 3.1"
+
   gem "byebug", platforms: [:mri, :mingw, :x64_mingw] # Call "byebug" anywhere in the code to stop execution and get a debugger console
   gem 'delorean'
   gem 'factory_bot_rails'

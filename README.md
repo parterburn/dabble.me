@@ -16,22 +16,31 @@ You will need to setup Mailgun to receive incoming emails and point them to your
 
 Scheduled jobs (including hourly email sending) are run by [sidekiq-cron](https://github.com/sidekiq-cron/sidekiq-cron) inside the Sidekiq worker process. The schedule lives in `config/schedule.yml`. No external scheduler is required.
 
-Your local environment variables at ```config/local_env.yml``` (and on Railway) will need to be something like this (```rake db:seed``` will create the admin@dabble.ex account for you):
+Local secrets live in a `.env` file at the repo root. [`dotenv-rails`](https://github.com/bkeepers/dotenv) loads it in development and test and does not override variables already set in the shell or in CI. Production on Railway uses the same variable names from the host environment. There is no `.env` file on Railway. `rake db:seed` creates the admin@dabble.ex account.
 
-```yaml
-MAIN_DOMAIN: yourdomain.com
-SECRET_KEY_BASE: 1234..1234
-DEVISE_SECRET_KEY: 1234..1234
-SMTP_DOMAIN: post.yourdomain.com
-MAILGUN_API_KEY: api-key
-TURNSTILE_SITE_KEY: 6Lc6BAAAAAAAAChqRbQZcn_yyyyyyyyyyyyyyyyy
-TURNSTILE_SECRET_KEY: 6Lc6BAAAAAAAAKN3DRm6VA_xxxxxxxxxxxxxxxxx
-GOOGLE_ANALYTICS_4_ID: UA-12345-67 ## ONLY FOR PRODUCTION
-SENTRY_DSN: https://dsn.sentry.io/1234
-OPENAI_ACCESS_TOKEN: sk-1234
-OPENAI_ORGANIZATION_ID: org-1234
-STRIPE_API_KEY: sk_test_1234
-STRIPE_SIGNING_SECRET: whsec_1234
+[1Password Environments](https://www.1password.dev/environments/local-env-file) can mount that path so the secrets are not stored as plaintext. `.1password/environments.toml` tells the 1Password Cursor hook to validate the mount.
+
+1. In the 1Password app, open Developer, then Environments, and create an environment. Import this repo's `.env`, or add the names from `.env.example`.
+2. Delete the plaintext `.env` after the import so 1Password can mount in its place.
+3. Under Connect to, choose Local .env file, select this repo's `.env`, and mount it.
+4. Keep 1Password unlocked while you boot Rails. The first read of `.env` asks you to authorize.
+
+Variable names are listed in `.env.example`. A short version:
+
+```dotenv
+MAIN_DOMAIN=yourdomain.com
+SECRET_KEY_BASE=1234..1234
+DEVISE_SECRET_KEY=1234..1234
+SMTP_DOMAIN=post.yourdomain.com
+MAILGUN_API_KEY=api-key
+TURNSTILE_SITE_KEY=6Lc6BAAAAAAAAChqRbQZcn_yyyyyyyyyyyyyyyyy
+TURNSTILE_SECRET_KEY=6Lc6BAAAAAAAAKN3DRm6VA_xxxxxxxxxxxxxxxxx
+GOOGLE_ANALYTICS_4_ID=UA-12345-67
+SENTRY_DSN=https://dsn.sentry.io/1234
+OPENAI_ACCESS_TOKEN=sk-1234
+OPENAI_ORGANIZATION_ID=org-1234
+STRIPE_API_KEY=sk_test_1234
+STRIPE_SIGNING_SECRET=whsec_1234
 ```
 
 ### Things you may want to rip out
@@ -44,7 +53,7 @@ PRO accounts can use Dabble Me as a **remote MCP server** so compatible clients 
 
 **Requirements:** PRO subscription, plus a passkey or two-factor authentication on Account security (`/security`). Connected OAuth apps can be reviewed and revoked on the same page under **Connected apps** (shown only when something is connected).
 
-**Endpoint:** Streamable HTTP at `https://<MAIN_DOMAIN>/mcp` (see `MAIN_DOMAIN` in `config/local_env.yml`). The client should use OAuth: authorization metadata is published under `/.well-known/oauth-authorization-server` and `/.well-known/oauth-protected-resource` (see `Oauth::MetadataController`).
+**Endpoint:** Streamable HTTP at `https://<MAIN_DOMAIN>/mcp` (see `MAIN_DOMAIN` in `.env`). The client should use OAuth: authorization metadata is published under `/.well-known/oauth-authorization-server` and `/.well-known/oauth-protected-resource` (see `Oauth::MetadataController`).
 
 **User-facing instructions:** Dabble Me MCP Server at `/mcp-server` on your host.
 

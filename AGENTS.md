@@ -47,6 +47,8 @@ Then create/seed the dev DB with the dev env vars: `bundle exec rails db:create 
 
 ### Running the dev server
 
+Development and test load a gitignored `.env` via `dotenv-rails` (see `.env.example`). A 1Password Environments mount at `.env` is the expected local source. Variables already set in the shell win over `.env`.
+
 ```bash
 mkdir -p tmp/pids
 MAIN_DOMAIN=localhost SECRET_KEY_BASE=dev_secret_key_base_1234567890 DEVISE_SECRET_KEY=dev_devise_secret_1234567890 bundle exec puma -p 3000 -C config/puma.rb

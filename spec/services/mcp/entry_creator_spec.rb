@@ -10,7 +10,7 @@ RSpec.describe Mcp::EntryCreator do
   end
 
   before do
-    # CI sets AWS_BUCKET=test (see .github/workflows/test.yml); dev machines may use dabble-me from local_env.yml.
+    # CI sets AWS_BUCKET=test (see .github/workflows/test.yml); dev machines may use dabble-me from .env.
     # Stub whatever host/path Fog uses for this app's configured bucket (virtual-hosted and path-style S3 URLs).
     bucket = CarrierWave::Uploader::Base.fog_directory
     s3_patterns = [

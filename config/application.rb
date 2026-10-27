@@ -42,8 +42,14 @@ module Dabbleme
     # config.autoload_paths << "#{config.root}/lib"
 
     config.active_job.queue_adapter = :sidekiq
-    if ENV["REDIS_URL"].present?
-      config.cache_store = :redis_cache_store, {
+    # dotenv-rails loads .env from the before_configuration hook registered
+    # when the gem is required. `inherited` runs that hook before this class
+    # body, so a mounted .env is visible here. The block is yielded the
+    # application class (the hook uses `yield: true`).
+    config.before_configuration do |app|
+      next unless ENV["REDIS_URL"].present?
+
+      app.config.cache_store = :redis_cache_store, {
         url: ENV["REDIS_URL"],
         ssl_params: {verify_mode: OpenSSL::SSL::VERIFY_NONE},
         expires_in: 8.hours,
@@ -53,13 +59,6 @@ module Dabbleme
     end
 
     config.assets.version = '1.0'
-    #loads the local_env.yml configuration file
-    config.before_configuration do
-      env_file = File.join(Rails.root, 'config', 'local_env.yml')
-      YAML.load(File.open(env_file)).each do |key, value|
-        ENV[key.to_s] = value.to_s
-      end if File.exist?(env_file)
-    end
 
     config.assets.precompile += %w(*.png *.jpg *.jpeg *.gif, *.css, *.svg *.woff *.ttf *.eot *.js)
     config.assets.precompile += %w( i18n.js i18n/translations.js )
