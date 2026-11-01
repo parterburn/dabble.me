@@ -35,6 +35,18 @@ RSpec.describe ImageCollageJob, type: :job do
     end
   end
 
+  describe 'retry_on MailgunStoredEventNotFound' do
+    it 're-enqueues with polynomial backoff instead of raising on wait calculation' do
+      allow_any_instance_of(described_class).to receive(:collage_from_mailgun_attachments)
+        .and_raise(described_class::MailgunStoredEventNotFound.new(message_id))
+
+      described_class.perform_later(paid_entry.id, message_id: message_id)
+
+      expect { perform_enqueued_jobs(only: described_class) }.not_to raise_error
+      expect(enqueued_jobs.count { |job| job['job_class'] == described_class.name }).to eq(1)
+    end
+  end
+
   describe '.record_mailgun_lookup_failure' do
     before do
       allow(Sentry).to receive(:capture_message)

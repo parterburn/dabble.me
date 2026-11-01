@@ -20,11 +20,11 @@ class ImageCollageJob < ActiveJob::Base
   # so we can control retry timing and attempts for transient network issues.
   retry_on Net::ReadTimeout,
            Faraday::TimeoutError,
-           wait: :exponentially_longer,
+           wait: :polynomially_longer,
            attempts: 6
 
   retry_on MailgunStoredEventNotFound,
-           wait: :exponentially_longer,
+           wait: :polynomially_longer,
            attempts: MAILGUN_LOOKUP_JOB_ATTEMPTS do |job, error|
     record_mailgun_lookup_failure(job, error)
   end

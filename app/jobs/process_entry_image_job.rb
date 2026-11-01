@@ -4,7 +4,7 @@ class ProcessEntryImageJob < ActiveJob::Base
   retry_on Net::ReadTimeout,
            Net::OpenTimeout,
            Faraday::TimeoutError,
-           wait: :exponentially_longer,
+           wait: :polynomially_longer,
            attempts: 5
 
   def perform(entry_id, s3_file_key)
