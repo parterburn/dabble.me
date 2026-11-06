@@ -1,8 +1,6 @@
 en:
   devise:
     otp:
-      general:
-        remember: Remember me
       submit_token:
         title: 'Two-Factor Authentication Token'
         explain: "You're getting this because you enabled two-factor authentication on your account"
@@ -40,9 +38,6 @@ en:
         successfully_disabled_otp: 'Your two-factor credentials have been reset.'
         successfully_reset_otp: 'Your token secret has been reset. Please confirm your new token secret below.'
         successfully_reset_creds: 'Your two-factor credentials has been reset.'
-        successfully_set_persistence: 'Your device is now trusted.'
-        successfully_cleared_persistence: 'Your device has been removed from the list of trusted devices.'
-        successfully_reset_persistence: 'Your list of trusted devices has been cleared.'
         need_to_refresh_credentials: 'We need to check your credentials before you can change these settings.'
         recovery:
           title: 'Your Emergency Recovery Codes'
@@ -51,6 +46,10 @@ en:
           code: 'Recovery Code'
           codes_list: 'Show your recovery codes'
           download_codes: 'Download recovery codes'
+      otp_persistence:
+        successfully_set_persistence: 'Your device is now trusted.'
+        successfully_cleared_persistence: 'Your device has been removed from the list of trusted devices.'
+        successfully_reset_persistence: 'Your list of trusted devices has been cleared.'
       trusted_browsers:
         title: 'Trusted Browsers'
         explain: 'If you set your browser as trusted, you will not be asked to provide a Two-factor authentication token when logging in from that browser.'
