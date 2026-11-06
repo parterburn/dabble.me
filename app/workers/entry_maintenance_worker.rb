@@ -1,5 +1,5 @@
 class EntryMaintenanceWorker
-  include Sidekiq::Worker
+  include Sidekiq::Job
 
   sidekiq_options retry: false, queue: :default
 

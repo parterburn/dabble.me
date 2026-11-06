@@ -83,21 +83,19 @@ module Dabbleme
     config.action_mailer.delivery_job = "ActionMailer::MailDeliveryJob"
 
     # Translate malformed-body exceptions raised by Rack's multipart/query parsers
-    # into a clean 400 response. `rack-affiliates` calls `req.params` very early
-    # (before Rails routing), so a truncated multipart upload or a bot probe with
-    # a bogus `Content-Type: multipart/form-data; boundary=…` header and an empty
-    # body would otherwise raise `EOFError: multipart boundary not found within
-    # limit` straight out of middleware as a 500 — and page us in Sentry for what
-    # is unambiguously a client-side fault. Placed at the top of the custom
-    # stack so it wraps Rack::Attack and Rack::Affiliates both.
-    config.middleware.use(Class.new do
-      BAD_REQUEST_ERRORS = [
-        EOFError,
-        Rack::QueryParser::InvalidParameterError,
-        Rack::QueryParser::ParameterTypeError,
-        Rack::Utils::ParameterTypeError,
-        Rack::Utils::InvalidParameterError
-      ].freeze
+    # into a clean 400 response instead of a 500 that pages us in Sentry for what
+    # is unambiguously a client-side fault (truncated uploads, bot probes with a
+    # bogus `Content-Type: multipart/form-data; boundary=…`). Rack 3 tags these
+    # errors with Rack::BadRequest.
+    #
+    # Installed twice:
+    # - before Rack::MethodOverride, which parses POST bodies ahead of Rails'
+    #   exception handling and does not rescue every Rack 3 parser error
+    #   (e.g. Rack::Multipart::BoundaryTooLongError);
+    # - after the Rails stack, wrapping Rack::Attack and Rack::Affiliates, which
+    #   calls `req.params` before routing.
+    bad_request_guard = Class.new do
+      BAD_REQUEST_ERRORS = [Rack::BadRequest, EOFError].freeze
 
       def initialize(app)
         @app = app
@@ -106,9 +104,11 @@ module Dabbleme
       def call(env)
         @app.call(env)
       rescue *BAD_REQUEST_ERRORS => e
-        [400, { "Content-Type" => "text/plain" }, ["Bad Request: #{e.class}"]]
+        [400, { "content-type" => "text/plain" }, ["Bad Request: #{e.class}"]]
       end
-    end)
+    end
+    config.middleware.insert_before Rack::MethodOverride, bad_request_guard
+    config.middleware.use bad_request_guard
     config.middleware.use Rack::Attack
     config.middleware.use Rack::Affiliates
   end

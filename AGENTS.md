@@ -9,7 +9,7 @@ Dabble Me is a private journaling-over-email Rails 8.1 application. Users receiv
 ### Tech stack
 
 - Ruby 4.0.9 and Node.js 22.x (managed via asdf), Rails 8.1, PostgreSQL, Redis, Sidekiq, Puma
-- Sidekiq is pinned to **7.3.x** and Rack to **2.2.x** (`Gemfile`): Sidekiq **8+** needs **Rack 3.2+** (deferred while the app stays on Rack 2.2.x). **sidekiq-cron** is **2.4.x** (current release line).
+- Sidekiq **8.1.x** on Rack **3.2.x** with connection_pool **3.x** (`Gemfile`). Sidekiq 8 needs Redis **7+** (Railway runs Redis 8). **sidekiq-cron** is **2.4.x** (current release line).
 - Tests: RSpec with Capybara + headless Chrome
 
 ### Shell initialization

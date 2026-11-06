@@ -83,7 +83,7 @@ module Webmcp
       render_tool_error(e.message, e.status)
     rescue ArgumentError => e
       log_journal_invocation(tool_name, success: false, started: started) if tool_name
-      render_tool_error(e.message, :unprocessable_entity)
+      render_tool_error(e.message, :unprocessable_content)
     end
 
     def log_journal_invocation(tool_name, success:, started:, payload: nil)
