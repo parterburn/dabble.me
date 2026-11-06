@@ -227,10 +227,6 @@ class User < ActiveRecord::Base
     @random_entries ||= entries.where.not(id: past_filter_entry_ids)
   end
 
-  def remember_me
-    super.present? ? super : true
-  end
-
   def send_devise_notification(notification, *args)
     devise_mailer.send(notification, self, *args).deliver_later
   end
