@@ -15,9 +15,8 @@ gem 'pg', '~> 1.6'
 # gem 'barnes'
 
 # users
-gem "devise"
-gem 'devise-security'
-gem "devise-otp", "~> 1.1" # 2.x moves trusted-browser routes; our overridden otp_tokens views need reworking first
+gem "devise", "~> 5.0"
+gem "devise-otp", "~> 2.1"
 gem "webauthn"
 gem "turnstile-captcha", require: "turnstile"
 
