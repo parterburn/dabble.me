@@ -55,6 +55,16 @@ RSpec.describe 'Rack::Attack', type: :request do
     expect(statuses.last).to eq(429)
   end
 
+  it 'throttles passkey sign-in posts from one IP' do
+    statuses = Array.new(11) do
+      post '/passkeys/sessions', params: {}, as: :json, env: { 'REMOTE_ADDR' => '203.0.113.40' }
+      response.status
+    end
+
+    expect(statuses.first(10)).to all(be < 429)
+    expect(statuses.last).to eq(429)
+  end
+
   it 'throttles OTP challenge guesses per challenge across rotating IPs' do
     challenge = SecureRandom.hex(16)
 

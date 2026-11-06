@@ -116,15 +116,12 @@ RSpec.describe "Stay logged in (remember me)", type: :request do
   end
 
   context "with a passkey" do
-    let!(:credential) { create(:webauthn_credential, user: user) }
+    before { register_passkey(user) }
 
     def sign_in_with_passkey(extra_params)
-      get new_passkeys_session_path, params: { email: user.email }, as: :json
-      assertion = instance_double(::WebAuthn::PublicKeyCredentialWithAssertion,
-                                  id: credential.external_id, sign_count: credential.sign_count + 1)
-      allow(assertion).to receive(:verify).and_return(true)
-      allow(::WebAuthn::Credential).to receive(:from_get).and_return(assertion)
-      post passkeys_sessions_path, params: { id: credential.external_id }.merge(extra_params), as: :json
+      get new_passkeys_session_path, as: :json
+      assertion = passkey_assertion(challenge: JSON.parse(response.body)["challenge"], user_handle: user.id.to_s)
+      post passkeys_sessions_path, params: assertion.merge(extra_params), as: :json
     end
 
     it "honors an unticked box on the sign-in page" do

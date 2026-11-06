@@ -227,16 +227,16 @@ describe 'Pages' do
       end
     end
 
-    it 'loads jQuery only on the passkey forms' do
-      [new_user_session_path, new_user_registration_path].each do |path|
-        visit path
-        expect(page).to have_css('script[src*="jquery"]', visible: false)
-      end
-
-      [root_path, support_path, subscribe_path, ohlife_alternative_path, day_one_alternative_path].each do |path|
+    it 'does not load jQuery on marketing pages, including the passkey sign-in form' do
+      [new_user_session_path, new_user_registration_path, root_path, support_path, subscribe_path,
+       ohlife_alternative_path, day_one_alternative_path].each do |path|
         visit path
         expect(page).not_to have_css('script[src*="jquery"]', visible: false), "#{path} still loads jQuery"
       end
+
+      visit new_user_session_path
+      expect(page).to have_css('script[src*="webauthn"]', visible: false)
+      expect(page).to have_css('input#user_email[autocomplete="username webauthn"]')
     end
   end
 end
