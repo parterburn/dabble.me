@@ -257,19 +257,10 @@ RSpec.describe McpController, type: :controller do
       end
     end
 
-    context "when the user loses strong auth after OAuth (token still valid)" do
+    context "when the user loses strong auth after OAuth" do
       let(:token) { doorkeeper_plain_token_for(paid_user) }
 
-      before do
-        paid_user.generate_otp_secret
-        paid_user.update!(otp_enabled: true, otp_enabled_on: Time.current)
-        request.env["HTTP_AUTHORIZATION"] = "Bearer #{token}"
-      end
-
-      it "returns a tool error for journal operations",
-         skip: "MCP strong-auth gate temporarily off during Claude/ChatGPT connector review" do
-        paid_user.update!(otp_enabled: false)
-
+      def search_entries_call
         post :invoke, params: {
           jsonrpc: "2.0",
           id: 4,
@@ -279,10 +270,33 @@ RSpec.describe McpController, type: :controller do
             arguments: { query: "x" }
           }
         }, as: :json
+      end
+
+      before do
+        paid_user.generate_otp_secret
+        paid_user.update!(otp_enabled: true, otp_enabled_on: Time.current)
+        request.env["HTTP_AUTHORIZATION"] = "Bearer #{token}"
+      end
+
+      it "revokes the token when 2FA is turned off" do
+        paid_user.update!(otp_enabled: false)
+
+        search_entries_call
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      # Defense in depth: the per-call gate still blocks journal access if the
+      # token survives (e.g. strong auth removed without running callbacks).
+      it "returns a tool error for journal operations while the token is still valid" do
+        paid_user.update_columns(otp_enabled: false)
+
+        search_entries_call
 
         expect(response).to have_http_status(:ok)
         body = JSON.parse(response.body)
         expect(body.dig("result", "isError")).to eq(true)
+        expect(body.dig("result", "content", 0, "text")).to include("passkey or two-factor authentication")
       end
     end
   end
