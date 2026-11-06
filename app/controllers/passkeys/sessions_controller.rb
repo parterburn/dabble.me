@@ -41,9 +41,8 @@ class Passkeys::SessionsController < ApplicationController
       )
 
       credential.update!(sign_count: webauthn_credential.sign_count)
-      # The sign-in page sends its "Stay logged in" checkbox; other passkey
-      # entry points have none and keep the default of staying signed in.
-      user.remember_me = params.key?(:remember_me) ? ActiveModel::Type::Boolean.new.cast(params[:remember_me]) : true
+      # Remembered only when the sign-in page's "Stay logged in" box is ticked.
+      user.remember_me = ActiveModel::Type::Boolean.new.cast(params[:remember_me])
       sign_in(user)
 
       render json: { status: "ok", redirect_url: root_path }, status: :ok

@@ -111,13 +111,6 @@ class RegistrationsController < Devise::RegistrationsController
 
   private
 
-  # The sign-up form has no "Stay logged in" checkbox; keep new accounts
-  # signed in for the remember period, matching the sign-in page default.
-  def sign_up(resource_name, resource)
-    resource.remember_me = true
-    super
-  end
-
   def choose_layout
     if action_name == 'new' || action_name == 'create'
       'marketing'

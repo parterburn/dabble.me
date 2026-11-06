@@ -2,9 +2,11 @@
 
 require "rails_helper"
 
-# "Stay logged in for 2 weeks" must actually be optional: unticked sign-ins get
-# a browser-session cookie only; ticked ones also get Devise's remember cookie.
+# "Stay logged in" is opt-in: unticked sign-ins get a browser-session cookie
+# only; ticked ones also get Devise's 30-day remember cookie.
 RSpec.describe "Stay logged in (remember me)", type: :request do
+  include ActiveSupport::Testing::TimeHelpers
+
   let(:password) { "correct-horse-battery" }
   let(:user) { create(:user, password: password) }
 
@@ -19,21 +21,42 @@ RSpec.describe "Stay logged in (remember me)", type: :request do
     set_cookie_header.match?(/^remember_user_token=[^;]+;/)
   end
 
+  def remember_cookie_expires_at
+    line = set_cookie_header.lines.find { |l| l.start_with?("remember_user_token=") }
+    Time.httpdate(line[/expires=([^;]+)/i, 1])
+  end
+
   def sign_in_with_password(remember)
     post user_session_path, params: { user: { email: user.email, password: password, remember_me: remember } }
   end
 
-  it "ticks the checkbox by default on the sign-in page" do
+  it "leaves the checkbox unticked by default on the sign-in page" do
     get new_user_session_path
 
-    expect(response.body).to match(/<input[^>]*type="checkbox"[^>]*checked="checked"[^>]*name="user\[remember_me\]"/)
+    checkbox = response.body[/<input[^>]*type="checkbox"[^>]*name="user\[remember_me\]"[^>]*>/]
+    expect(checkbox).to be_present
+    expect(checkbox).not_to include("checked")
+    expect(response.body).to include("Stay logged in<")
   end
 
-  it "remembers a password sign-in when the box is ticked" do
+  it "remembers a password sign-in for 30 days when the box is ticked" do
     sign_in_with_password("1")
 
     expect(response).to have_http_status(:found)
     expect(remember_cookie_set?).to be(true)
+    expect(remember_cookie_expires_at).to be_within(1.minute).of(30.days.from_now)
+  end
+
+  it "renews the 30 days when the remember cookie signs you back in" do
+    sign_in_with_password("1")
+    # Simulate a browser restart: the session cookie is gone, the remember cookie stays.
+    cookies.delete("_dabbleme_session")
+
+    travel 10.days do
+      get entries_path
+      expect(response.location.to_s).not_to include("sign_in") # signed back in, not bounced to login
+      expect(remember_cookie_expires_at).to be_within(1.minute).of(30.days.from_now)
+    end
   end
 
   it "does not remember a password sign-in when the box is unticked" do
@@ -51,13 +74,13 @@ RSpec.describe "Stay logged in (remember me)", type: :request do
     expect(session_cookie).not_to match(/expires=/i)
   end
 
-  it "keeps a new sign-up signed in (the sign-up form has no checkbox)" do
+  it "does not remember a new sign-up (the sign-up form has no checkbox)" do
     post user_registration_path, params: {
       user: { email: "new-#{SecureRandom.hex(4)}@example.com", password: password, password_confirmation: password }
     }
 
     expect(response).to have_http_status(:found)
-    expect(remember_cookie_set?).to be(true)
+    expect(remember_cookie_set?).to be(false)
   end
 
   context "with two-factor authentication" do
@@ -111,13 +134,13 @@ RSpec.describe "Stay logged in (remember me)", type: :request do
       expect(remember_cookie_set?).to be(false)
     end
 
-    it "remembers when the box is ticked or not sent" do
+    it "remembers only when the box is ticked" do
       sign_in_with_passkey(remember_me: true)
       expect(remember_cookie_set?).to be(true)
 
       delete destroy_user_session_path
       sign_in_with_passkey({})
-      expect(remember_cookie_set?).to be(true)
+      expect(remember_cookie_set?).to be(false)
     end
   end
 end
