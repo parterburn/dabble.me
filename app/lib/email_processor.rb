@@ -312,7 +312,7 @@ class EmailProcessor
 
   def unfold_paragraphs(body)
     return nil unless body.present?
-    text  = ''
+    text = +''
     body.split(/\n/).each do |line|
       if /\S/ !~ line
         text << "\n\n"
@@ -402,7 +402,7 @@ class EmailProcessor
 
   def to_utf8(content)
     return unless content.present?
-    content.gsub!("\0", "") # remove null characters
+    content = content.gsub("\0", "") # remove null characters
     begin
       detection = CharlockHolmes::EncodingDetector.detect(content)
       if detection[:confidence] > 95

@@ -5,6 +5,7 @@
 
       <%= hidden_field_tag :challenge, @challenge %>
       <%= hidden_field_tag :recovery, @recovery %>
+      <%= hidden_field_tag :remember_me, @remember_me %>
 
       <% if @recovery %>
         <p>
@@ -18,12 +19,6 @@
       <% end %>
 
       <%= text_field_tag :token, nil, :autocomplete => :off, :autofocus => true, :size => 6, class: "form-control" %><br>
-
-      <!--
-      <%= label_tag :enable_persistence do %>
-        <%= check_box_tag :enable_persistence, true, false %> <%= I18n.t('remember', :scope => 'devise.otp.general') %>
-      <% end %>
-      -->
 
       <p><%= f.submit I18n.t('submit', :scope => 'devise.otp.submit_token'), class: "btn btn-primary form-control" %></p>
 

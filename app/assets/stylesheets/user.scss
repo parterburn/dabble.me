@@ -13,3 +13,17 @@ input[type="checkbox"] {
   font-size: 15px;
   top: -1px;
 }
+
+// devise-otp renders the 2FA QR code as an inline SVG with no intrinsic size.
+// Keep it at the 256px the old JS renderer used, on white for reliable scanning.
+.qrcode-container {
+  max-width: 256px;
+  padding: 12px;
+  background: #fff;
+
+  svg {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+}

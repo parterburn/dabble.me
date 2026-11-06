@@ -1,7 +1,7 @@
 source 'https://rubygems.org'
 
 ruby File.read(File.expand_path '../.ruby-version', __FILE__).strip.sub /\-p[0-9]+$/, '' # Read the rbenv version file
-gem 'rails', '~> 7.2.4'
+gem 'rails', '~> 8.1.4'
 
 gem "csv"                      # Ruby 3.4 stdlib extraction - required by ActiveSupport
 gem "drb"                      # Ruby 3.4 stdlib extraction - required by ActiveSupport
@@ -15,9 +15,8 @@ gem 'pg', '~> 1.6'
 # gem 'barnes'
 
 # users
-gem "devise"
-gem 'devise-security'
-gem "devise-otp", "~> 0.8"
+gem "devise", "~> 5.0"
+gem "devise-otp", "~> 2.1"
 gem "webauthn"
 gem "turnstile-captcha", require: "turnstile"
 
@@ -65,6 +64,7 @@ gem 'rack-affiliates' # for tracking referrers
 gem 'rinku' # linkify urls & emails in entries
 
 # Assets
+gem 'sprockets-rails' # no longer a dependency of `rails` since 8.0
 gem 'autoprefixer-rails'
 # gem 'haml_assets'
 gem 'i18n-js'
@@ -97,7 +97,7 @@ group :development, :test do
   gem 'delorean'
   gem 'factory_bot_rails'
   gem 'faker'
-  gem "rspec-rails", "~> 7.1"
+  gem "rspec-rails", "~> 8.0"
   gem 'listen'
 end
 
