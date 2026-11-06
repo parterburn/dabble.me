@@ -129,11 +129,7 @@ class User < ActiveRecord::Base
   end
 
   def mcp_security_requirements_met?
-    otp_enabled? || webauthn_credentials.exists? || demo_mode?
-  end
-
-  def demo_mode?
-    email == 'demo@dabble.ex' && id == 123769
+    otp_enabled? || webauthn_credentials.exists?
   end
 
   # OAuth MCP tokens and in-flight auth codes (Doorkeeper). Call when the user loses passkey/2FA or PRO access.
