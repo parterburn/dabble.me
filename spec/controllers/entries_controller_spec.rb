@@ -327,8 +327,12 @@ RSpec.describe EntriesController, type: :controller do
       sign_in user
       get :export, format: 'txt'
       expect(response.status).to eq 200
-      expect(response.body).to have_content(entry.formatted_body)
-      expect(response.body).not_to have_content(not_my_entry.formatted_body)
+      # The export streams an Enumerator. On Rails 8.1, response.body in a controller
+      # spec returns it unread, so read it the way Rack does.
+      body = +''
+      response.each { |chunk| body << chunk }
+      expect(body).to have_content(entry.formatted_body)
+      expect(body).not_to have_content(not_my_entry.formatted_body)
     end
   end
 end

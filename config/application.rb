@@ -25,7 +25,7 @@ module Dabbleme
     # Settings in config/environments/* take precedence over those specified here.
     # Application configuration should go into files in config/initializers
     # -- all .rb files in that directory are automatically loaded.
-    config.load_defaults 7.2
+    config.load_defaults 8.1
 
     lib = Rails.root.join('app/lib')
     config.autoload_paths << lib
