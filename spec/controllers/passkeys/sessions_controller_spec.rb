@@ -44,7 +44,7 @@ RSpec.describe Passkeys::SessionsController, type: :controller do
 
       post :create, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)).to eq('errors' => ['Authentication failed'])
     end
 
@@ -55,7 +55,7 @@ RSpec.describe Passkeys::SessionsController, type: :controller do
 
       post :create, as: :json
 
-      expect(response).to have_http_status(:unprocessable_entity)
+      expect(response).to have_http_status(:unprocessable_content)
       expect(JSON.parse(response.body)).to eq('errors' => ['Authentication failed'])
       expect(session[:webauthn_authentication_user_id]).to be_nil
     end

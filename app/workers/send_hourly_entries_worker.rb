@@ -1,5 +1,5 @@
 class SendHourlyEntriesWorker
-  include Sidekiq::Worker
+  include Sidekiq::Job
   include Sentry::Cron::MonitorCheckIns
 
   sidekiq_options retry: false, queue: :default

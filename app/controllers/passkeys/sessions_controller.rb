@@ -26,13 +26,13 @@ class Passkeys::SessionsController < ApplicationController
     challenge = session[:webauthn_authentication_challenge]
 
     begin
-      return render json: AUTH_FAILED, status: :unprocessable_entity unless user_id
+      return render json: AUTH_FAILED, status: :unprocessable_content unless user_id
 
       user = User.find_by(id: user_id)
-      return render json: AUTH_FAILED, status: :unprocessable_entity unless user
+      return render json: AUTH_FAILED, status: :unprocessable_content unless user
 
       credential = user.webauthn_credentials.find_by(external_id: webauthn_credential.id)
-      return render json: AUTH_FAILED, status: :unprocessable_entity unless credential
+      return render json: AUTH_FAILED, status: :unprocessable_content unless credential
 
       webauthn_credential.verify(
         challenge,
@@ -47,7 +47,7 @@ class Passkeys::SessionsController < ApplicationController
 
       render json: { status: "ok", redirect_url: root_path }, status: :ok
     rescue WebAuthn::VerificationError
-      render json: AUTH_FAILED, status: :unprocessable_entity
+      render json: AUTH_FAILED, status: :unprocessable_content
     ensure
       session.delete(:webauthn_authentication_challenge)
       session.delete(:webauthn_authentication_user_id)

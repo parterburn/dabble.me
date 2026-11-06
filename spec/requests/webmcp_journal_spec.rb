@@ -40,7 +40,7 @@ RSpec.describe 'WebMCP journal session tools', type: :request do
       params: { limit: { nested: 1 } }.to_json,
       headers: { 'CONTENT_TYPE' => 'application/json' }
 
-    expect(response).to have_http_status(:unprocessable_entity)
+    expect(response).to have_http_status(:unprocessable_content)
     expect(JSON.parse(response.body)['isError']).to eq(true)
   end
 

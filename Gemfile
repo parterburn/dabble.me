@@ -72,11 +72,11 @@ gem 'jquery-rails'
 gem 'sassc-rails'
 gem 'uglifier'
 
-# Sidekiq 8.x requires Rack 3.2+. Stay on Sidekiq 7.3.x and Rack 2.2.x.
-gem "rack", "~> 2.2"
-gem "sidekiq", "~> 7.3"
+# Sidekiq 8 needs Rack 3.2+, connection_pool 3 and Redis 7+ (Railway runs Redis 8).
+gem "rack", "~> 3.2"
+gem "sidekiq", "~> 8.1"
 gem "sidekiq-cron", "~> 2.4"
-gem "connection_pool", "~> 2.4"
+gem "connection_pool", "~> 3.0"
 gem "redis"
 gem "sentry-ruby"
 gem "sentry-rails"

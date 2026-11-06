@@ -7,7 +7,7 @@ module Mcp
     class Error < StandardError
       attr_reader :status
 
-      def initialize(message, status: :unprocessable_entity)
+      def initialize(message, status: :unprocessable_content)
         super(message)
         @status = status
       end

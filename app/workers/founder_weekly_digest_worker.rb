@@ -1,5 +1,5 @@
 class FounderWeeklyDigestWorker
-  include Sidekiq::Worker
+  include Sidekiq::Job
 
   sidekiq_options retry: 3, queue: :default
 

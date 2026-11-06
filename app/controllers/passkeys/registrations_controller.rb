@@ -20,7 +20,7 @@ class Passkeys::RegistrationsController < ApplicationController
 
   def create
     unless current_user.valid_password?(params[:current_password])
-      render json: { errors: ["Incorrect current password."] }, status: :unprocessable_entity
+      render json: { errors: ["Incorrect current password."] }, status: :unprocessable_content
       return
     end
 
@@ -40,10 +40,10 @@ class Passkeys::RegistrationsController < ApplicationController
         UserMailer.passkey_added(current_user, credential.nickname).deliver_later
         render json: { status: "ok" }, status: :ok
       else
-        render json: { errors: credential.errors.full_messages }, status: :unprocessable_entity
+        render json: { errors: credential.errors.full_messages }, status: :unprocessable_content
       end
     rescue WebAuthn::VerificationError => e
-      render json: { errors: [e.message] }, status: :unprocessable_entity
+      render json: { errors: [e.message] }, status: :unprocessable_content
     ensure
       session.delete(:webauthn_registration_challenge)
     end
