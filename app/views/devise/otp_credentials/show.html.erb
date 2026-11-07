@@ -26,5 +26,20 @@
         <p class="text-center"><%= link_to I18n.t('recovery_link', :scope => 'devise.otp.submit_token'), otp_credential_path_for(resource_name, :challenge => @challenge, :recovery => true) %></p>
       <% end %>
     <% end %>
+
+    <% if !@recovery && resource.webauthn_credentials.exists? %>
+      <p class="text-center">
+        <button type="button" id="otp-use-passkey" class="btn btn-link">Use a passkey instead</button>
+      </p>
+      <script>
+        DABBLE.webauthn.setupSignIn({
+          buttonId: "otp-use-passkey",
+          rememberMe: function() {
+            var field = document.getElementById("remember_me");
+            return field ? field.value : false;
+          }
+        });
+      </script>
+    <% end %>
   </div>
 </div>

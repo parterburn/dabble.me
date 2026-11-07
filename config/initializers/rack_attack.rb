@@ -37,6 +37,16 @@ class Rack::Attack
     submitted_email(req) if req.path == '/users/sign_in' && req.post?
   end
 
+  # Passkey sign-in. The sign-in page asks for a challenge on load (autofill)
+  # and again after each attempt, so the GET limit is looser than the POST one.
+  throttle('passkeys/challenge/ip', limit: 30, period: 1.minute) do |req|
+    req.ip if req.path == '/passkeys/sessions/new' && req.get?
+  end
+
+  throttle('passkeys/sign-in/ip', limit: 10, period: 1.minute) do |req|
+    req.ip if req.path == '/passkeys/sessions' && req.post?
+  end
+
   throttle('passwords/ip', limit: 5, period: 1.hour) do |req|
     req.ip if req.path == '/users/password' && req.post?
   end

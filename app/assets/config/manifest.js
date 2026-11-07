@@ -24,6 +24,7 @@
 //= link application.css
 //= link oauth_consent_bundle.css
 //= link application.js
+//= link webauthn.js
 //= link respond.js
 
 //= link chartkick.js

@@ -10,7 +10,10 @@ class Passkeys::RegistrationsController < ApplicationController
         name: current_user.email,
         display_name: current_user.full_name_or_email
       },
-      exclude_credentials: current_user.webauthn_credentials.pluck(:external_id)
+      exclude_credentials: current_user.webauthn_credentials.pluck(:external_id),
+      # Discoverable ("resident") credentials can be offered by email-field
+      # autofill and sign in without an email lookup; see Passkeys::SessionsController.
+      authenticator_selection: { resident_key: "required", user_verification: "required" }
     )
 
     session[:webauthn_registration_challenge] = options.challenge
@@ -27,7 +30,7 @@ class Passkeys::RegistrationsController < ApplicationController
     webauthn_credential = ::WebAuthn::Credential.from_create(params)
 
     begin
-      webauthn_credential.verify(session[:webauthn_registration_challenge])
+      webauthn_credential.verify(session[:webauthn_registration_challenge], user_verification: true)
 
       credential = current_user.webauthn_credentials.build(
         external_id: webauthn_credential.id,
@@ -54,7 +57,6 @@ class Passkeys::RegistrationsController < ApplicationController
     credential.destroy
     current_user.reload
     current_user.revoke_doorkeeper_access_tokens! unless current_user.mcp_security_requirements_met?
-    cookies.delete(:dabble_passkey_user_hint) if current_user.webauthn_credentials.none?
     redirect_to security_path, notice: "Passkey removed."
   end
 end
