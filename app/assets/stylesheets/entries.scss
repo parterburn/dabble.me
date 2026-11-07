@@ -570,3 +570,231 @@ mark {
     transform: scale(1.1);
   }
 }
+
+// Photo field on the new and edit entry forms (entries/_photo_picker).
+// The inspiration lightbulb floats above the date field; keep the field
+// below it now that the field has no visible label.
+.s-new-edit-entry .input-group.date {
+  clear: both;
+}
+
+.photo-picker {
+  margin: 4px 0 20px;
+
+  [hidden] {
+    display: none !important;
+  }
+}
+
+.photo-picker__input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}
+
+.photo-picker__drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  max-width: 100%;
+  min-height: 140px;
+  margin: 0;
+  padding: 20px;
+  border: 2px dashed $light-gray;
+  border-radius: 8px;
+  background: #fafaf8;
+  color: $mid-gray;
+  font-weight: normal;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+
+  .fa {
+    font-size: 28px;
+    color: $olive;
+  }
+
+  &:hover,
+  &:focus-within,
+  &.is-dragging {
+    border-color: $olive;
+    background: rgba($olive, 0.06);
+  }
+
+  &.is-dragging {
+    border-style: solid;
+  }
+
+  &.is-compact {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-height: 0;
+    margin-top: 12px;
+    padding: 12px;
+
+    .fa {
+      font-size: 20px;
+    }
+
+    .photo-picker__hint,
+    .photo-picker__max {
+      display: none;
+    }
+
+    .photo-picker__count {
+      display: inline;
+    }
+  }
+}
+
+.photo-picker__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+.photo-picker__hint {
+  font-size: 13px;
+}
+
+.photo-picker__max {
+  font-size: 12px;
+  visibility: hidden;
+}
+
+.photo-picker__drop:hover .photo-picker__max,
+.photo-picker__drop:focus-within .photo-picker__max {
+  visibility: visible;
+}
+
+.photo-picker__count {
+  display: none;
+  font-size: 13px;
+}
+
+.photo-picker__hint--touch {
+  display: none;
+}
+
+// Phones and tablets: no drag and drop or hover, so say "tap" and always
+// show the photo limit.
+@media (hover: none) {
+  .photo-picker__hint--pointer {
+    display: none;
+  }
+
+  .photo-picker__hint--touch {
+    display: inline;
+  }
+
+  .photo-picker__max {
+    visibility: visible;
+  }
+}
+
+.photo-picker__thumbs {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+
+  &:empty {
+    display: none;
+  }
+}
+
+.photo-picker__thumb {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 6px;
+  background: #eeeeea;
+
+  img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.photo-picker__placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 100%;
+  color: $mid-gray;
+  font-size: 12px;
+
+  .fa {
+    font-size: 22px;
+  }
+}
+
+.photo-picker__remove {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  font-size: 20px;
+  line-height: 28px;
+  text-align: center;
+  cursor: pointer;
+
+  &:hover,
+  &:focus {
+    background: rgba(0, 0, 0, 0.85);
+    outline: none;
+  }
+}
+
+.photo-picker__current {
+  text-align: center;
+}
+
+.photo-picker__current-frame {
+  position: relative;
+  display: inline-block;
+
+  img {
+    display: block;
+  }
+}
+
+.photo-picker__removed {
+  margin: 0 0 4px;
+  color: $mid-gray;
+  text-align: center;
+
+  .btn-link {
+    padding: 0 0 0 4px;
+    vertical-align: baseline;
+  }
+}
+
+.photo-picker__message {
+  margin: 8px 0 0;
+  color: $red;
+  font-size: 13px;
+
+  &:empty {
+    display: none;
+  }
+}

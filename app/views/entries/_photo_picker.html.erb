@@ -1,0 +1,37 @@
+<%# Photo field for the new and edit entry forms. JavaScript in
+    photo_picker.js adds drag and drop, thumbnails and remove buttons; without
+    it this is still a working file input. %>
+<% max_photos = CollageGenerator::MAX_IMAGES %>
+<% has_photo = entry.present? && (entry.image_stored? || entry.image.cached?) %>
+
+<div class="photo-picker j-photo-picker" data-max="<%= max_photos %>">
+  <% if has_photo %>
+    <%= f.hidden_field :remove_image, value: "0", class: "j-photo-remove-flag" %>
+    <div class="photo-picker__current j-photo-current">
+      <div class="pictureFrame editable photo-picker__current-frame">
+        <%= link_to entry.display_image_url(cloudflare: false), target: "_blank", rel: "noopener" do %>
+          <%= image_code(entry) %>
+        <% end %>
+        <button type="button" class="photo-picker__remove j-photo-remove-current" aria-label="Remove photo" title="Remove photo">&times;</button>
+      </div>
+    </div>
+    <p class="photo-picker__removed j-photo-removed" hidden>
+      Photo will be removed when you save.
+      <button type="button" class="btn-link j-photo-undo">Undo</button>
+    </p>
+  <% end %>
+
+  <ul class="photo-picker__thumbs j-photo-thumbs" aria-label="Photos to upload"></ul>
+
+  <label for="entry_image" class="photo-picker__drop j-photo-drop" <%= "hidden" if has_photo %>>
+    <%= f.file_field :image, accept: Entry::ALLOWED_IMAGE_TYPES.join(","), multiple: true, class: "photo-picker__input" %>
+    <i class="fa fa-camera" aria-hidden="true"></i>
+    <span class="photo-picker__title j-photo-title">Add photo(s)</span>
+    <span class="photo-picker__hint photo-picker__hint--pointer">Drag photos here or click to browse</span>
+    <span class="photo-picker__hint photo-picker__hint--touch">Tap to choose photos</span>
+    <span class="photo-picker__max">Up to <%= max_photos %> photos per entry</span>
+    <span class="photo-picker__count j-photo-count"></span>
+  </label>
+
+  <p class="photo-picker__message j-photo-message" role="status" aria-live="polite"></p>
+</div>
