@@ -3,6 +3,7 @@
   <head>
     <title><%= yield(:title).present? ? "#{yield(:title)} — Dabble me." : "Dabble me. Private email journaling & daily reflection." %></title>
     <meta charset="utf-8">
+    <%= render "shared/web_app_class" %>
     <%# Defer fragment scroll until marketing.js expands accordions + scrolls with scroll-padding-top %>
     <script>
       (function(){var h=location.hash;if(!h||h==="#")return;history.replaceState(null,"",location.pathname+location.search);window.__marketingPendingHash=h;})();

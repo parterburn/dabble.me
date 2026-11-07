@@ -1,0 +1,8 @@
+<%# Marks a Home Screen web app before the page paints. Both layouts keep a
+    solid navbar fixed to the top for it: iOS 26 and later blur the top of a
+    web app unless an opaque bar is fixed to the top edge. %>
+<script>
+  if (window.navigator.standalone === true || window.matchMedia("(display-mode: standalone)").matches) {
+    document.documentElement.classList.add("web-app");
+  }
+</script>

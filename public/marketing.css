@@ -690,9 +690,6 @@
   .gap-x-12 {
     column-gap: calc(var(--spacing) * 12);
   }
-  .gap-y-2 {
-    row-gap: calc(var(--spacing) * 2);
-  }
   .gap-y-10 {
     row-gap: calc(var(--spacing) * 10);
   }
@@ -1819,6 +1816,10 @@
       opacity: 0;
     }
   }
+}
+.web-app [data-navbar] {
+  background-color: var(--color-bg);
+  backdrop-filter: none;
 }
 .twitter-tweet-rendered {
   margin-top: 40px;
