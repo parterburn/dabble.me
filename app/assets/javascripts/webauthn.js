@@ -12,8 +12,9 @@
     return meta ? meta.getAttribute("content") : "";
   }
 
+  // Challenges are single use, so never let a cache answer for the server.
   function getJSON(url) {
-    return fetch(url, { headers: { Accept: "application/json" }, credentials: "same-origin" })
+    return fetch(url, { headers: { Accept: "application/json" }, credentials: "same-origin", cache: "no-store" })
       .then(function(response) {
         if (!response.ok) { throw new Error("Request failed: " + response.status); }
         return response.json();
@@ -99,6 +100,7 @@
     // opts.mediation  "conditional" or undefined
     // opts.signal     AbortSignal, to cancel a waiting conditional request
     // opts.rememberMe function returning the "Stay logged in" choice
+    // opts.onChallengeRequest  called with the challenge fetch's promise
     //
     // Resolves true once the browser is sent to the signed-in page, false if
     // the prompt was dismissed or aborted. Rejects on other errors: with
@@ -106,8 +108,14 @@
     signIn: function(opts) {
       opts = opts || {};
 
-      return getJSON("/passkeys/sessions/new")
+      var challengeRequest = getJSON("/passkeys/sessions/new");
+      if (opts.onChallengeRequest) { opts.onChallengeRequest(challengeRequest); }
+
+      return challengeRequest
         .then(function(options) {
+          if (opts.signal && opts.signal.aborted) {
+            throw new DOMException("Passkey request was cancelled", "AbortError");
+          }
           options.challenge = webauthn.bufferDecode(options.challenge);
           options.allowCredentials = credentialDescriptors(options.allowCredentials || options.allow_credentials);
           delete options.allow_credentials;
@@ -152,6 +160,11 @@
       }
 
       var pending = null;
+      // The session holds one challenge, and the last challenge response to
+      // arrive wins. Aborting autofill does not stop its challenge fetch, so
+      // the button waits for that fetch before asking for its own.
+      var autofillChallenge = null;
+      var buttonBusy = false;
       // Autofill restarts after a dismissed or refused passkey; the cap keeps
       // a misbehaving browser from looping on challenge requests.
       var autofillStarts = 0;
@@ -177,7 +190,16 @@
           var controller = new AbortController();
           pending = controller;
 
-          webauthn.signIn({ mediation: "conditional", signal: controller.signal, rememberMe: config.rememberMe })
+          webauthn.signIn({
+            mediation: "conditional",
+            signal: controller.signal,
+            rememberMe: config.rememberMe,
+            onChallengeRequest: function(request) {
+              var settled = function() { if (autofillChallenge === request) { autofillChallenge = null; } };
+              autofillChallenge = request;
+              request.then(settled, settled);
+            }
+          })
             .then(function(signedIn) {
               if (pending === controller) { pending = null; }
               if (!signedIn && !controller.signal.aborted) { startAutofill(); }
@@ -196,12 +218,20 @@
       if (button) {
         button.addEventListener("click", function(e) {
           e.preventDefault();
+          if (buttonBusy) { return; }
+          buttonBusy = true;
           if (pending) { pending.abort(); pending = null; }
-          webauthn.signIn({ rememberMe: config.rememberMe })
+
+          var ready = autofillChallenge ? autofillChallenge.catch(function() {}) : Promise.resolve();
+          ready
+            .then(function() { return webauthn.signIn({ rememberMe: config.rememberMe }); })
             .then(function(signedIn) {
-              if (!signedIn) { startAutofill(); }
+              if (signedIn) { return; }
+              buttonBusy = false;
+              startAutofill();
             })
             .catch(function(err) {
+              buttonBusy = false;
               reportFailure(err);
               startAutofill();
             });

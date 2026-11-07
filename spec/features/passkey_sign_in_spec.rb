@@ -2,6 +2,23 @@
 
 require "rails_helper"
 
+# Lets a spec make the next passkey challenge answer late. A no-op unless a
+# delay is queued.
+module SlowPasskeyChallenge
+  DELAYS = Queue.new
+
+  def new
+    delay = begin
+      DELAYS.pop(true)
+    rescue ThreadError
+      nil
+    end
+    sleep(delay) if delay
+    super
+  end
+end
+Passkeys::SessionsController.prepend(SlowPasskeyChallenge)
+
 # Drives the passkey JavaScript in Chrome with a virtual authenticator, which
 # answers WebAuthn prompts the way a phone or laptop would after Face ID/PIN.
 # It also answers a waiting autofill request at once, standing in for the user
@@ -33,6 +50,19 @@ RSpec.describe "Passkey sign-in in the browser", type: :feature, js: true do
       navigator.credentials.get = function(options) {
         localStorage.setItem("passkeyMediation", (options && options.mediation) || "dialog");
         return get(options);
+      };
+    })();
+  JS
+
+  # Holds the passkey dialog open for two seconds, like a user on Face ID.
+  SLOW_DIALOG = <<~JS
+    (function() {
+      if (!navigator.credentials) { return; }
+      var get = navigator.credentials.get.bind(navigator.credentials);
+      navigator.credentials.get = function(options) {
+        if (options && options.mediation === "conditional") { return get(options); }
+        return new Promise(function(resolve) { setTimeout(resolve, 2000); })
+          .then(function() { return get(options); });
       };
     })();
   JS
@@ -99,6 +129,26 @@ RSpec.describe "Passkey sign-in in the browser", type: :feature, js: true do
     expect_signed_in
     expect(passkey_used?).to be(true)
     expect(mediation_used).to eq("conditional")
+  end
+
+  context "when autofill's challenge answers late" do
+    after { SlowPasskeyChallenge::DELAYS.clear }
+
+    it "keeps the button's challenge" do
+      add_passkey_on_security_page
+      Capybara.reset_sessions!
+
+      # Autofill's challenge lands while the button's passkey dialog is open:
+      # a slow network plus a Face ID prompt.
+      SlowPasskeyChallenge::DELAYS << 1.0
+      run_on_every_page(SLOW_DIALOG)
+
+      visit new_user_session_path
+      click_button "Log in with Passkey"
+
+      expect_signed_in
+      expect(mediation_used).to eq("dialog")
+    end
   end
 
   context "without autofill" do
