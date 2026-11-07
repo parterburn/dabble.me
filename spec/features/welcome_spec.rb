@@ -45,10 +45,46 @@ describe 'Pages' do
     expect(page).to have_content 'You\'ll have access to every premium feature.'
   end
 
-  it 'publishes detailed, crawlable MCP documentation' do
+  it 'publishes a plain-language AI Connector guide' do
     visit mcp_server_docs_path
 
-    expect(page).to have_title 'Dabble Me MCP Server: Connect Your Journal to ChatGPT and Claude — Dabble me.'
+    expect(page).to have_title 'Dabble Me AI Connector: Use Your Journal with ChatGPT and Claude — Dabble me.'
+    expect(page).to have_css('h1', text: 'Dabble Me AI Connector')
+    expect(page).to have_link('Add to Claude', href: ApplicationHelper.claude_plugin_directory_url)
+    expect(page).to have_link('Add to ChatGPT', href: ApplicationHelper.chatgpt_plugin_directory_url)
+    expect(page).to have_link('Dabble Me in the Claude plugin directory', href: ApplicationHelper.claude_plugin_directory_url)
+    expect(page).to have_link('Dabble Me in the ChatGPT plugin directory', href: ApplicationHelper.chatgpt_plugin_directory_url)
+    expect(page).to have_content 'Summarize my journal entries from last month'
+    expect(page).to have_link('technical details', href: mcp_server_developer_docs_path)
+
+    within('#setup-other') { expect(page).to have_content(ApplicationHelper.mcp_server_url) }
+
+    # Written for journalers: no protocol jargon, no manual developer setup.
+    expect(page.text).not_to include('MCP')
+    expect(page).not_to have_content('Developer mode')
+    expect(page).not_to have_content('OAuth')
+    expect(page).not_to have_css('article[id^="tool-"]')
+
+    expect(page).to have_css('script[type="application/ld+json"]', visible: false)
+    description = page.find('meta[name="description"]', visible: false)['content']
+    canonical = page.find('link[rel="canonical"]', visible: false)['href']
+    expect(description).to include('ChatGPT or Claude')
+    expect(canonical).to end_with('/mcp-server')
+    expect(page).to have_css('link[rel="webmcp"]', visible: false)
+    expect(page).to have_css('script#dabble-webmcp-config', visible: false)
+  end
+
+  it 'forwards old technical deep links on the AI Connector guide to the developer page' do
+    visit mcp_server_docs_path
+
+    forwarder = page.html[/<script>[^<]*location\.replace[^<]*<\/script>/m]
+    expect(forwarder).to include(mcp_server_developer_docs_path, 'tool-', 'agent-instructions')
+  end
+
+  it 'publishes detailed, crawlable MCP technical reference' do
+    visit mcp_server_developer_docs_path
+
+    expect(page).to have_title 'Dabble Me MCP Server: Technical Reference — Dabble me.'
     expect(page).to have_content 'AI journal with MCP'
     expect(page).to have_content 'journal app for ChatGPT'
     expect(page).to have_content 'Claude journal integration'
@@ -56,38 +92,36 @@ describe 'Pages' do
     expect(page).to have_content 'journal app for AI reflection'
     expect(page).to have_content 'search_entries'
     expect(page).to have_content 'get_image_upload_url'
-    expect(page).to have_content 'Summarize my journal entries from last month'
     expect(page).to have_content 'How should an AI assistant attach a photo'
     expect(page).to have_content 'Prefer create_entry with image_url'
     expect(page).to have_content 'Claude can’t upload a photo'
+    expect(page).not_to have_content('Developer mode')
     expect(page).to have_css('script[type="application/ld+json"]', visible: false)
+    expect(page).to have_link('AI Connector guide', href: mcp_server_docs_path)
 
-    description = page.find('meta[name="description"]', visible: false)['content']
     canonical = page.find('link[rel="canonical"]', visible: false)['href']
-    expect(description).to include('ChatGPT, Claude')
-    expect(canonical).to end_with('/mcp-server')
-    expect(page).to have_css('link[rel="webmcp"]', visible: false)
-    expect(page).to have_css('script#dabble-webmcp-config', visible: false)
+    expect(canonical).to end_with('/mcp-server/developers')
 
     tool_ids = page.all('article[id^="tool-"]').map { |article| article[:id] }
+    expect(tool_ids).to include('tool-create-entry')
     expect(tool_ids.last).to eq('tool-get-image-upload-url')
   end
 
-  it 'offers a copyable agent setup prompt and per-app setup on the MCP page' do
-    visit mcp_server_docs_path
+  it 'offers a copyable agent setup prompt and agent instructions on the developer page' do
+    visit mcp_server_developer_docs_path
 
     mcp_endpoint = ApplicationHelper.mcp_server_url
     prompt_button = page.find('button[data-copy-prompt]')
     expect(prompt_button['data-copy-prompt']).to include(
-      '/mcp-server#setup',
+      '/mcp-server/developers#agent-instructions',
       mcp_endpoint,
       'Prefer the official Dabble Me plugin from this app’s plugin directory when one exists'
     )
     expect(prompt_button).to have_content('Then start the Dabble Me OAuth flow so I can sign in.')
 
-    expect(page).to have_content('Instructions for AI agents')
-    expect(page).to have_link('Dabble Me in the Claude plugin directory', href: ApplicationHelper.claude_plugin_directory_url)
-    expect(page).to have_link('Dabble Me in the ChatGPT plugin directory', href: ApplicationHelper.chatgpt_plugin_directory_url)
+    expect(page).to have_css('#agent-instructions', text: 'Instructions for AI agents')
+    expect(page).to have_link('Dabble Me Claude plugin', href: ApplicationHelper.claude_plugin_directory_url)
+    expect(page).to have_link('Dabble Me ChatGPT plugin', href: ApplicationHelper.chatgpt_plugin_directory_url)
   end
 
   it 'publishes an accurate Day One AI journaling comparison' do
@@ -207,9 +241,11 @@ describe 'Pages' do
       end
     end
 
-    it 'keeps the FAQ markup on the MCP page next to the TechArticle' do
+    it 'keeps FAQ markup next to the article on both AI Connector pages' do
       visit mcp_server_docs_path
+      expect(json_ld_nodes.map { |node| node['@type'] }).to contain_exactly('Article', 'FAQPage')
 
+      visit mcp_server_developer_docs_path
       expect(json_ld_nodes.map { |node| node['@type'] }).to contain_exactly('TechArticle', 'FAQPage')
     end
 

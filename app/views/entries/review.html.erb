@@ -48,135 +48,38 @@
   <% end %>
 
   <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
-    <div class=" <%= add_class %>">
+    <div class="<%= add_class %>">
       <div class="s-entry-date">
-        <h2>Ask AI</h2>
+        <h2>AI Reflection</h2>
         <h3>
-          <span>Reflections and insights</span>
+          <span>Ask ChatGPT or Claude</span>
         </h3>
       </div>
       <div class="s-review-details">
-        <p style="margin-top: 20px; margin-bottom: 0px;">Analyze your journal with your preferred AI tool to get insights on how you journaled and what <%= @year %> looked like.</p>
-        <div class="alert alert-info" style="text-align: left; margin-top: 20px; max-width: 100%; display: inline-block;">
-          <p style="margin-bottom: 10px;"><strong>Dabble Me MCP connector</strong> (most secure)</p>
-          <p style="margin-bottom: 12px;">If your app supports the Model Context Protocol, add the <%= link_to "Dabble Me MCP connector", mcp_server_docs_path, target: :_blank, style: "font-weight: bold" %>. Your tool reaches your journal over a secure OAuth connection instead of you copying full exports into chat or the clipboard.</p>
-          <ol style="margin: 0; padding-left: 20px;">
-            <li style="margin-top: 6px;"><%= current_user.mcp_security_requirements_met? ? "✅" : "❌" %> Setup <%= link_to "passkey or two-factor authentication", security_path, style: "font-weight: bold" %></li>
-            <li style="margin-top: 6px;">Add the remote MCP connector in your AI app using <code style="cursor: pointer; font-size: 13px;" onclick="copyToClipboard(this)" title="Click to copy">http://dabble.me/mcp</code> as the endpoint and follow the OAuth steps.</li>
-            <li style="margin-top: 6px;">Ask for a <%= @year %> retrospective or any of the example prompts below.
-              <pre style="margin-top: 10px; max-width: 95%; max-height: 40px; overflow: scroll; cursor: pointer; position: relative;" onclick="copyToClipboard(this)" title="Click to copy">
-You are an insightful, non-therapeutic expert life coach. Your job is to produce a retrospective summary from my journal entries.
-  
-INPUT
-I will paste (or attach) journal entries (or get them from the Dabble Me MCP if available). If attached, each entry starts with a date line like YYYY-MM-DD, followed by text until the next date. Each entry may include:
-- a date (YYYY-MM-DD or similar)
-- freeform text
-- occasional lists, photos captions, or short fragments
-
-RULES
-- Use ONLY the journal text as evidence. Do not invent events, motives, diagnoses, or facts.
-- If the data is thin or uneven (e.g., only a few entries), say so explicitly and scale your confidence down.
-- Quote short snippets (5–20 words) from the journal to support key claims when helpful (max 6 quotes total).
-- Be kind but direct. Avoid clichés, generic self-help, or “you should” lecturing.
-- No clinical language. No mental health diagnosing.
-- If there are contradictions, note them neutrally.
-- If entries span multiple years, focus on the requested timeframe and call out spillover patterns separately.
-
-OUTPUT FORMAT (match these headings exactly)
-Your <%= @year %> retrospective
-Key Themes
-Sentiment Analysis
-Significant Events
-Personal Growth
-Behavioral Patterns
-Recommendations
-Life Advice
-
-CONTENT REQUIREMENTS PER SECTION
-Key Themes:
-- 3–7 themes with 1–2 sentences each.
-- For each theme, include (a) what it is, (b) how it shows up, and optionally (c) a short quote.
-
-Sentiment Analysis:
-- Describe overall tone (e.g., steady, volatile, rising/falling).
-- Call out major shifts and what seems associated with them (only if supported).
-- If too little data, say what you can and can’t infer.
-
-Significant Events:
-- Bullet list of notable events/milestones mentioned (if any).
-- If no clear events, say “No specific events identified” and why.
-
-Personal Growth:
-- 2–6 observations about skills, mindset, relationships, health habits, or work patterns.
-- Distinguish “explicit growth reflections” vs “implicit signals.”
-
-Behavioral Patterns:
-- 3–6 patterns across time (triggers, routines, recurring conflicts, energy cycles, productivity, social connection).
-- Include 1–2 “pattern loops” in plain language: “When X happens, I tend to do Y, which leads to Z.”
-
-Recommendations:
-- 5–10 practical suggestions grounded in what the journal reveals.
-- Make them specific and small enough to try this week.
-- Include 1 “tracking idea” (what to notice or measure) and 1 “writing prompt” tailored to my patterns.
-
-Life Advice:
-- 3–6 sentences.
-- Should feel like a grounded, encouraging closing note.
-- Can include one memorable line or question (like “How’s this feeling?”), but don’t overdo it.
-
-TIMEFRAME
-Assume the timeframe is: <%= @year %>. If I don’t specify, infer from the entries’ dates and state what you inferred.
-
-STYLE: concise, structured, slightly clinical-but-warm. When evidence is limited, say “More data would be needed to confirm patterns.”
-
-Now, ask me to paste my journal entries into the chat if I haven't already attached them.</pre>              
-            </li>
-          </ol>
-        </div>
-        <p style="margin-bottom: 12px;">
-          <strong>Some example prompts:</strong>
+        <p style="margin-top: 20px;">Connect your journal with the Dabble Me AI Connector, then ask for a look back at your year.</p>
+        <p>
+          <%= link_to "Add to Claude", ApplicationHelper.claude_plugin_directory_url, class: "btn btn-default", style: "margin: 4px;", target: "_blank", rel: "noopener noreferrer" %>
+          <%= link_to "Add to ChatGPT", ApplicationHelper.chatgpt_plugin_directory_url, class: "btn btn-default", style: "margin: 4px;", target: "_blank", rel: "noopener noreferrer" %>
+          <%= link_to "Other AI apps", mcp_server_docs_path, class: "btn btn-default", style: "margin: 4px;" %>
         </p>
-        <ul style="display: block; text-align: left;">
-          <li style="margin-top: 10px;"><pre style="display: block; max-width: 95%; max-height: 25px; overflow: hidden; position: relative; background: none; border: none; padding: 0; font-size: inherit; color: inherit; font-family: inherit;" onclick="copyToClipboard(this)" title="Click to copy">Based on my journal entries, what advice do you have for me?</pre></li>
-          <li style="margin-top: 10px;"><pre style="display: block; max-width: 95%; max-height: 25px; overflow: hidden; position: relative; background: none; border: none; padding: 0; font-size: inherit; color: inherit; font-family: inherit;" onclick="copyToClipboard(this)" title="Click to copy">Based on my journal entries, what was I most grateful for this year?</pre></li>
-          <li style="margin-top: 10px;"><pre style="display: block; max-width: 95%; max-height: 25px; overflow: hidden; position: relative; background: none; border: none; padding: 0; font-size: inherit; color: inherit; font-family: inherit;" onclick="copyToClipboard(this)" title="Click to copy">Based on my journal entries, what are the key reflections of the year?</pre></li>
-          <li style="margin-top: 10px;"><pre style="display: block; max-width: 95%; max-height: 25px; overflow: hidden; position: relative; background: none; border: none; padding: 0; font-size: inherit; color: inherit; font-family: inherit;" onclick="copyToClipboard(this)" title="Click to copy">Based on my journal entries, what values do I live my life through?</pre></li>
-          <li style="margin-top: 10px;">
-            <pre style="display: block; max-width: 95%; max-height: 25px; overflow: hidden; position: relative; background: none; border: none; padding: 0; font-size: inherit; color: inherit; font-family: inherit;" onclick="copyToClipboard(this)" title="Click to copy">
-Review the sentiment of my journal entries.
+        <% unless current_user.mcp_security_requirements_met? %>
+          <p style="font-size: 14px;">First, turn on a <%= link_to "passkey or two-factor authentication", security_path, style: "font-weight: bold;" %> to keep your journal safe when an AI app connects.</p>
+        <% end %>
 
-I will paste (or attach) journal entries (or get them from the Dabble Me MCP if available). If attached, each entry starts with a date line like YYYY-MM-DD, followed by text until the next date.
-
-Goal:
-1) Tag each entry with ONE primary sentiment label: happy, sad, angry, fearful/anxious, neutral, surprised, disgusted.
-2) Show how often each sentiment occurs over time so I can quickly see which periods skew happy/sad/etc.
-
-Output:
-- A table with columns: date, sentiment
-- A monthly summary table showing counts of each sentiment per month (include months with zeroes)
-- A short, plain-English takeaway describing the main shifts and the months that stand out
-
-Rules:
-- Use only the text as evidence. Don’t infer extra context.
-- If an entry is mixed, pick the strongest emotion.
-- If unclear, use neutral.
-- Keep it concise. No long explanations. No bullet lists of tips.
-
-Now analyze the attached/pasted entries.</pre>
-          </li>
+        <p style="margin-top: 20px; margin-bottom: 6px;"><strong>Then try asking</strong> <span class="text-muted" style="font-size: 13px;">(click to copy)</span></p>
+        <ul style="display: inline-block; text-align: left; max-width: 100%;">
+          <% [
+            "Write a year-in-review of my #{@year} journal: the big themes, the highs and lows, and how I changed.",
+            "Based on my #{@year} journal entries, what was I most grateful for?",
+            "Based on my journal, what advice do you have for me going into #{@year + 1}?"
+          ].each do |prompt| %>
+            <li style="margin-top: 8px; cursor: pointer;" onclick="copyToClipboard(this)" title="Click to copy"><%= prompt %></li>
+          <% end %>
         </ul>
-        <p style="margin-top: 12px; margin-bottom: 6px; text-align: left; display: inline-block; max-width: 100%;">
-          <strong>Backup option: export and paste</strong>
-          <p style="font-style: italic; font-size: 14px;">You may want to turn off "train the model" when using this backup method.</p>
+
+        <p style="margin-top: 15px; font-size: 14px;">
+          Rather not connect? <%= link_to "Export your #{@year} entries", export_entries_path(year: @year, format: :txt) %> and upload them to your AI app instead.
         </p>
-        <ol style="display: inline-block; text-align: left; max-width: 100%; margin-top: 0;">
-          <li style="margin-top: 10px;">
-            <%= link_to "Export your #{pluralize(@total_count, 'entry')} from #{@year}", export_entries_path(year: @year, format: :txt) %>
-          </li>
-          <li style="margin-top: 10px;">
-            Upload your entries to your preferred ai tool and begin chatting.
-          </li>
-        </ol>
       </div>
     </div>
   </div>

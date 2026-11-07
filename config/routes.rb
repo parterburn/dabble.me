@@ -89,6 +89,7 @@ Rails.application.routes.draw do
   get 'terms',                          to: 'welcome#terms'
   get 'support',                        to: 'welcome#support'
   get 'mcp-server',                     to: 'welcome#mcp_server', as: :mcp_server_docs
+  get 'mcp-server/developers',          to: 'welcome#mcp_server_developers', as: :mcp_server_developer_docs
   get 'dabble-me-vs-day-one-ai-journaling', to: 'welcome#day_one_ai_journaling', as: :day_one_ai_journaling
   get 'day-one-alternative',            to: 'welcome#day_one_alternative', as: :day_one_alternative
   get 'best-journaling-apps-with-mcp',  to: 'welcome#best_journaling_apps_with_mcp', as: :best_journaling_apps_with_mcp

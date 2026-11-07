@@ -55,7 +55,7 @@ PRO accounts can use Dabble Me as a **remote MCP server** so compatible clients 
 
 **Endpoint:** Streamable HTTP at `https://<MAIN_DOMAIN>/mcp` (see `MAIN_DOMAIN` in `.env`). The client should use OAuth: authorization metadata is published under `/.well-known/oauth-authorization-server` and `/.well-known/oauth-protected-resource` (see `Oauth::MetadataController`).
 
-**User-facing instructions:** Dabble Me MCP Server at `/mcp-server` on your host.
+**User-facing instructions:** the AI Connector guide at `/mcp-server` on your host. Endpoint, OAuth, agent steps and the tool reference are at `/mcp-server/developers`.
 
 **Deep links for assistants:** a single day opens at `https://<MAIN_DOMAIN>/entries/YYYY/M/D` with **unpadded** month and day (example: `https://dabble.me/entries/2026/4/21`). The web compose URL is `https://<MAIN_DOMAIN>/write`.
 
