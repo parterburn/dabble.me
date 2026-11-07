@@ -437,7 +437,7 @@ module Mcp
         url: Tools::Helpers.entry_public_url(entry),
         excerpt: entry.text_body.to_s.squish.truncate(5000),
         hashtags: entry.hashtags,
-        has_image: entry.image.present?,
+        has_image: entry.image_stored?,
         image_processing: entry.uploading_image?
       }
     end

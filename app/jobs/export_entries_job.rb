@@ -71,7 +71,7 @@ class ExportEntriesJob < ActiveJob::Base
       tempfile.write(",\n") unless first
       first = false
       entry_hash = { date: entry.date, body: entry.body }
-      entry_hash[:image] = entry.image_url_cdn(cloudflare: false) if entry.image.present?
+      entry_hash[:image] = entry.image_url_cdn(cloudflare: false) if entry.image_stored?
       tempfile.write(JSON.pretty_generate(entry_hash))
     end
     tempfile.write("\n]")

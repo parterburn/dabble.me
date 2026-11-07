@@ -121,8 +121,16 @@ class Entry < ActiveRecord::Base
     fix_encoding(ensure_utf8(body_sanitized))
   end
 
+  # Whether an image is stored for this entry, read from the image column.
+  # Asking the uploader instead (image.present?) makes CarrierWave send S3 a
+  # HEAD request to check the file exists: about 0.3s per photo, one after
+  # another, on every page that lists entries.
+  def image_stored?
+    self[:image].present?
+  end
+
   def image_url_cdn(cloudflare: true)
-    if image.present?
+    if image_stored?
       "#{'https://dabble.me/cdn-cgi/image/quality=95/' if cloudflare }#{image.url.gsub('dabble-me.s3.amazonaws.com/uploads', 'd10r8m94hrfowu.cloudfront.net')}"
     elsif uploading_image?
       UPLOADING_PLACEHOLDER_URL

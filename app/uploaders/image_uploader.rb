@@ -60,8 +60,17 @@ class ImageUploader < CarrierWave::Uploader::Base
     # Avoid ActiveSupport blank? on Fog files — that calls exists? and HEADs S3.
     return false if new_file.nil?
 
+    # A stored file's content type costs an S3 HEAD request, and this runs
+    # every time a stored image's URL is built. Stored HEIC originals keep
+    # their .heic/.heif name, so the extension below is enough for them.
     content_type = begin
-      new_file.respond_to?(:content_type) ? new_file.content_type.to_s : ''
+      if new_file.is_a?(CarrierWave::Storage::Fog::File)
+        ''
+      elsif new_file.respond_to?(:content_type)
+        new_file.content_type.to_s
+      else
+        ''
+      end
     rescue StandardError
       ''
     end
