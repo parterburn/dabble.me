@@ -16,9 +16,15 @@
 </url>
 <url>
   <loc>https://dabble.me/mcp-server</loc>
-  <lastmod>2026-07-23</lastmod>
+  <lastmod>2026-11-07</lastmod>
   <changefreq>monthly</changefreq>
   <priority>0.9</priority>
+</url>
+<url>
+  <loc>https://dabble.me/mcp-server/developers</loc>
+  <lastmod>2026-11-07</lastmod>
+  <changefreq>monthly</changefreq>
+  <priority>0.6</priority>
 </url>
 <url>
   <loc>https://dabble.me/dabble-me-vs-day-one-ai-journaling</loc>

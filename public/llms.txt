@@ -4,8 +4,9 @@
 
 ## MCP documentation
 
-- [Dabble Me MCP Server](https://dabble.me/mcp-server): Setup, OAuth authentication, permissions, live tool reference, technical metadata, privacy notes, and example prompts. <!-- pragma: allowlist secret -->
-- [Setup instructions for AI agents](https://dabble.me/mcp-server#agent-instructions): Steps an agent follows to add the Dabble Me MCP server and start OAuth sign-in, or point the user to the right connector for their app. <!-- pragma: allowlist secret -->
+- [Dabble Me AI Connector](https://dabble.me/mcp-server): Plain-language setup for Claude, ChatGPT, and other AI apps, privacy notes, and example prompts. <!-- pragma: allowlist secret -->
+- [Dabble Me MCP Server technical reference](https://dabble.me/mcp-server/developers): Endpoint, OAuth authentication, permissions, and the live tool reference. <!-- pragma: allowlist secret -->
+- [Setup instructions for AI agents](https://dabble.me/mcp-server/developers#agent-instructions): Steps an agent follows to add the Dabble Me MCP server and start OAuth sign-in, or point the user to the right connector for their app. <!-- pragma: allowlist secret -->
 - [Dabble Me plugin for Claude](https://claude.ai/customize/plugins/id/6b2f67b8-6341-42d1-a2f1-d63df3107efe%40anthropic-plugin-directory): Official Claude directory plugin with the MCP connection and journaling skills. <!-- pragma: allowlist secret -->
 - [Dabble Me vs. Day One for AI journaling](https://dabble.me/dabble-me-vs-day-one-ai-journaling): A balanced remote-vs-local MCP comparison. <!-- pragma: allowlist secret -->
 - [Day One alternative](https://dabble.me/day-one-alternative): Import a Day One JSON export into Dabble Me and journal by email. <!-- pragma: allowlist secret -->

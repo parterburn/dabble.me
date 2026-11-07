@@ -21,13 +21,22 @@ RSpec.describe WelcomeController, type: :controller do
   end
 
   describe 'mcp_server' do
-    it 'renders documentation from the MCP tool schemas' do
+    it 'renders the plain-language AI Connector guide' do
       get :mcp_server
 
       expect(response).to have_http_status(:ok)
       expect(response.body).to include(
-        '<title>Dabble Me MCP Server: Connect Your Journal to ChatGPT and Claude — Dabble me.</title>'
+        '<title>Dabble Me AI Connector: Use Your Journal with ChatGPT and Claude — Dabble me.</title>'
       )
+    end
+  end
+
+  describe 'mcp_server_developers' do
+    it 'renders documentation from the MCP tool schemas' do
+      get :mcp_server_developers
+
+      expect(response).to have_http_status(:ok)
+      expect(response.body).to include('<title>Dabble Me MCP Server: Technical Reference — Dabble me.</title>')
       expect(response.body).to have_content('search_entries')
       expect(response.body).to have_content('query (required)')
     end

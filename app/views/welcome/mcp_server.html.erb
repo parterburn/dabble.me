@@ -1,77 +1,59 @@
-<% content_for :title, "Dabble Me MCP Server: Connect Your Journal to ChatGPT and Claude" %>
-<% content_for :social_title, "Dabble Me MCP Server — A private journal for ChatGPT and Claude" %>
-<% content_for :description, "Connect your private Dabble Me journal to ChatGPT, Claude, and other MCP clients. Setup, OAuth security, supported tools, permissions, and real prompt examples." %>
-<% content_for :keywords, "AI journal with MCP,journal app for ChatGPT,Claude journal integration,personal journal MCP server,journal app for AI reflection,Dabble Me MCP" %>
+<% content_for :title, "Dabble Me AI Connector: Use Your Journal with ChatGPT and Claude" %>
+<% content_for :social_title, "Dabble Me AI Connector — Your private journal in ChatGPT and Claude" %>
+<% content_for :description, "Connect your private Dabble Me journal to ChatGPT or Claude. Ask about past entries, look back on a month or a year, and save new reflections. You stay in control." %>
+<% content_for :keywords, "journal app for ChatGPT,Claude journal integration,AI journal,journal app for AI reflection,Dabble Me AI Connector" %>
 
 <%
-base_url = ApplicationHelper.site_public_base_url
-mcp_endpoint = ApplicationHelper.mcp_server_url
-setup_guide_url = "#{base_url}/mcp-server#setup"
 claude_plugin_url = ApplicationHelper.claude_plugin_directory_url
 chatgpt_plugin_url = ApplicationHelper.chatgpt_plugin_directory_url
-agent_setup_prompt = "Set up Dabble Me for this agent using the official guide at #{setup_guide_url}. " \
-  "Prefer the official Dabble Me plugin from this app’s plugin directory when one exists; " \
-  "otherwise add the remote MCP server at #{mcp_endpoint}. " \
-  "Then start the Dabble Me OAuth flow so I can sign in."
+connector_address = ApplicationHelper.mcp_server_url
 faq_items = [
   {
-    question: "What can the Dabble Me MCP server do?",
-    answer: "It lets an MCP-compatible AI assistant search, list, analyze, and create entries in the journal belonging to the person who approved OAuth access."
+    question: "What can the AI Connector do?",
+    answer: "It lets ChatGPT, Claude, or another AI app you connect search and read your journal, spot patterns over time, and save new entries for you. It only works on your journal, and only after you approve it."
   },
   {
-    question: "Can ChatGPT connect to Dabble Me?",
-    answer: "Yes. Install the Dabble Me plugin from the ChatGPT directory, or add Dabble Me as a custom remote MCP app in Developer mode, then complete the Dabble Me OAuth approval flow."
+    question: "Does it work with ChatGPT?",
+    answer: "Yes. Add Dabble Me from the ChatGPT plugin directory, then sign in to Dabble Me when ChatGPT asks."
   },
   {
-    question: "Can Claude connect to Dabble Me?",
-    answer: "Yes. Install the Dabble Me plugin from the Claude directory, or add Dabble Me as a custom remote connector, then complete the Dabble Me OAuth approval flow."
-  },
-
-  {
-    question: "How should an AI assistant attach a photo to a journal entry?",
-    answer: "Prefer create_entry with image_url when a public https image URL is already available—Dabble Me fetches and attaches it server-side. That path avoids client sandbox egress allowlists and large base64 payloads. Only for local bytes without a public URL, call get_image_upload_url, upload with the returned PUT URL, then pass uploaded_image_key to create_entry. Use image_base64 only as a small last resort."
+    question: "Does it work with Claude?",
+    answer: "Yes. Add Dabble Me from the Claude plugin directory, then sign in to Dabble Me when Claude asks."
   },
   {
-    question: "Claude can’t upload a photo to Dabble Me—what should I check?",
-    answer: "If Claude is using get_image_upload_url, its code-execution sandbox must allow HTTPS egress to the Amazon S3 host in the returned upload URL (often a bucket like dabble-me.s3.amazonaws.com). In Claude settings → Capabilities, enable Code execution and file creation, then either allow that specific domain or choose All domains. On Team/Enterprise plans, org owners may control this under Organization settings → Capabilities. If domain allowlist entries under “Package managers only” do not stick, switching to All domains is a known workaround. Prefer create_entry image_url whenever Claude already has a public https image URL—that sidesteps the S3 allowlist entirely."
+    question: "Can the AI app see anyone else's journal?",
+    answer: "No. A connection only ever reaches the journal of the person who approved it."
   },
   {
-    question: "Can the connector read another user's journal?",
-    answer: "No. OAuth binds every tool call to the signed-in Dabble Me account. Tool arguments cannot select another user."
+    question: "How do I disconnect an AI app?",
+    answer: "Go to Account security → Connected apps on Dabble Me and remove it. It loses access right away."
   }
 ]
-structured_data = {
-  "@context": "https://schema.org",
-  "@graph": [
-    article_json_ld(
-      type: "TechArticle",
-      headline: "Dabble Me MCP Server: Connect Your Journal to ChatGPT and Claude",
-      path: "/mcp-server",
-      published: "2026-07-23",
-      modified: "2026-10-23",
-      about: [
-        "Model Context Protocol",
-        "AI journaling",
-        "ChatGPT journal integration",
-        "Claude journal integration"
-      ]
-    ),
-    {
-      "@type": "FAQPage",
-      mainEntity: faq_items.map do |item|
-        {
-          "@type": "Question",
-          name: item[:question],
-          acceptedAnswer: { "@type": "Answer", text: item[:answer] }
-        }
-      end
-    }
-  ]
-}
+structured_data = [
+  article_json_ld(
+    headline: "Dabble Me AI Connector: Use Your Journal with ChatGPT and Claude",
+    path: mcp_server_docs_path,
+    published: "2026-07-23",
+    modified: "2026-11-07",
+    about: ["AI journaling", "ChatGPT journal integration", "Claude journal integration"]
+  ),
+  {
+    "@type": "FAQPage",
+    mainEntity: faq_items.map do |item|
+      { "@type": "Question", name: item[:question], acceptedAnswer: { "@type": "Answer", text: item[:answer] } }
+    end
+  }
+]
 %>
 
 <% content_for :head do %>
-  <%= json_ld_script_tag structured_data[:"@graph"] %>
+  <%= json_ld_script_tag structured_data %>
+  <script>
+    // Technical sections moved to the developer page; keep old deep links working.
+    if (/^#(tool-|tools$|agent-instructions$|agent-prompt$)/.test(location.hash)) {
+      location.replace("<%= mcp_server_developer_docs_path %>" + location.hash);
+    }
+  </script>
 <% end %>
 
 <section class="py-12 lg:py-20">
@@ -79,180 +61,37 @@ structured_data = {
     <header class="text-center">
       <span class="badge badge-accent text-sm font-semibold dark:text-olive-800">DABBLE ME PRO</span>
       <h1 class="mt-5 font-serif text-4xl sm:text-5xl tracking-tight">
-        Dabble Me MCP Server
+        Dabble Me AI Connector
       </h1>
       <p class="mt-4 text-xl text-primary max-w-3xl mx-auto">
-        Connect your private journal to ChatGPT, Claude, and other MCP-compatible AI assistants.
+        Use your private journal with ChatGPT and Claude.
       </p>
-      <p class="mt-4 text-base leading-relaxed text-muted max-w-3xl mx-auto">
-        Dabble Me is an <strong class="text-primary">AI journal with MCP</strong>: a remote Model Context Protocol server
-        for people looking for a <strong class="text-primary">journal app for ChatGPT</strong>, a
-        <strong class="text-primary">Claude journal integration</strong>, a
-        <strong class="text-primary">personal journal MCP server</strong>, or a
-        <strong class="text-primary">journal app for AI reflection</strong>.
+      <p class="mt-4 text-base leading-relaxed text-muted max-w-2xl mx-auto">
+        Ask about past entries, look back on a month or a year, or save a new reflection, just by chatting.
       </p>
       <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
-        <a href="<%= new_user_registration_path %>" class="btn btn-primary">Start journaling</a>
-        <a href="#setup" class="btn btn-secondary">Connect an AI assistant</a>
+        <a href="<%= claude_plugin_url %>" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Add to Claude</a>
+        <a href="<%= chatgpt_plugin_url %>" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Add to ChatGPT</a>
+        <a href="#setup-other" class="btn btn-secondary">Other AI apps</a>
       </div>
+      <% unless user_signed_in? %>
+        <p class="mt-4 text-sm text-muted">
+          New to Dabble Me? <a href="<%= new_user_registration_path %>" class="text-accent hover:text-primary underline">Start journaling</a>
+        </p>
+      <% end %>
     </header>
 
-    <nav aria-label="On this page" class="card p-6 mt-12">
-      <h2 class="font-serif text-xl text-primary">On this page</h2>
-      <ul class="mt-3 grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-        <li><a class="text-accent hover:text-primary underline" href="#setup">Setup instructions</a></li>
-        <li><a class="text-accent hover:text-primary underline" href="#authentication">Authentication and privacy</a></li>
-        <li><a class="text-accent hover:text-primary underline" href="#example-prompts">Example prompts</a></li>
-        <li><a class="text-accent hover:text-primary underline" href="#tools">Available MCP tools</a></li>
-        <li><a class="text-accent hover:text-primary underline" href="#faq">Frequently asked questions</a></li>
-      </ul>
-    </nav>
-
-    <section class="mt-16" id="what-is-mcp">
-      <h2 class="font-serif text-3xl text-primary">Your journal, available when you ask</h2>
-      <p class="mt-4 text-muted leading-relaxed">
-        Model Context Protocol (MCP) is an open standard that lets an AI client use narrowly defined tools from another
-        service. After you connect Dabble Me, you can ask your AI assistant to retrieve selected journal entries,
-        look for themes, summarize a period, or save a new reflection. The assistant chooses a Dabble Me tool, and
-        Dabble Me applies it only to the account you authorized.
-      </p>
-      <div class="mt-6 card p-6 bg-accent/5 border-accent/20">
-        <p class="text-primary font-medium">Dabble Me does not train an AI model on your journal.</p>
-        <p class="mt-2 text-sm text-muted">
-          When you ask a connected AI assistant to read entries, the requested content is sent to that AI provider for
-          processing under its terms and privacy policy. Connect only clients you trust and revoke access at any time.
-        </p>
-      </div>
-    </section>
-
-    <section class="mt-16" id="setup">
-      <h2 class="font-serif text-3xl text-primary">Setup instructions</h2>
-
-      <div class="mt-6 card p-6" id="agent-prompt">
-        <h3 class="font-serif text-2xl text-primary">Quick setup via agent prompt</h3>
-        <p class="mt-3 text-muted">
-          Click to copy this prompt, then paste it into Claude, ChatGPT, or any AI assistant. It reads this guide and
-          either connects Dabble Me itself or tells you which connector to add.
-        </p>
-        <button
-          type="button"
-          class="mt-4 w-full text-left cursor-pointer rounded border-2 border-olive-300 bg-olive-200 px-4 py-3 text-olive-900 hover:border-olive-500 transition-colors"
-          data-copy-prompt="<%= agent_setup_prompt %>"
-          aria-describedby="agent-prompt-status"
-        >
-          <span class="block text-base leading-relaxed"><%= agent_setup_prompt %></span>
-          <span class="mt-2 block text-sm font-semibold text-olive-600" id="agent-prompt-status" aria-live="polite" data-copy-prompt-status>Click to copy</span>
-        </button>
-        <p class="mt-4 text-sm text-muted">
-          MCP server URL: <code class="break-all"><%= mcp_endpoint %></code>
-        </p>
-      </div>
-
-      <div class="mt-8 card p-6">
-        <h3 class="font-serif text-2xl text-primary">Before connecting</h3>
-        <ol class="mt-4 list-decimal pl-5 space-y-2 text-muted">
-          <li>Sign in to a Dabble Me account with an active PRO subscription.</li>
-          <li>Enable a passkey or two-factor authentication in <a href="<%= security_path %>" class="text-accent hover:text-primary underline">Account security</a>.</li>
-          <li>Copy the remote MCP endpoint:</li>
-        </ol>
-        <p class="mt-4"><code class="block text-base select-all break-all bg-olive-200 px-4 py-3 rounded text-olive-900"><%= mcp_endpoint %></code></p>
-      </div>
-
-      <div class="mt-8 card p-6" id="agent-instructions">
-        <h3 class="font-serif text-2xl text-primary">Instructions for AI agents</h3>
-        <p class="mt-3 text-muted">If you are an AI agent setting up Dabble Me for a user, follow these steps.</p>
-        <ol class="mt-4 list-decimal pl-5 space-y-2 text-muted">
-          <li>Find the section below that matches the app you are running in.</li>
-          <li>If you can change your own MCP configuration, add a remote HTTP MCP server named <code>dabble-me</code> with the URL <code><%= mcp_endpoint %></code>. Do not add an API key, client secret, or custom headers.</li>
-          <li>Then start your client’s OAuth sign-in so the user can sign in to Dabble Me and approve access. Never ask the user to paste a password, two-factor code, passkey, or token into the chat.</li>
-          <li>If you cannot add MCP servers yourself (Claude on claude.ai or the Claude apps, or ChatGPT), do not look for a workaround. Give the user the steps for their app below. In Claude, recommend the <a href="<%= claude_plugin_url %>" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">Dabble Me Claude plugin</a>. In ChatGPT, recommend the <a href="<%= chatgpt_plugin_url %>" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">Dabble Me ChatGPT plugin</a>.</li>
-          <li>After sign-in, confirm the connection with a read-only tool such as <code>list_entries</code> or <code>analyze_entries</code> for a recent date range. Do not create a test entry. Some clients only load new tools after a reload or in a new chat.</li>
-          <li>Only Dabble Me PRO accounts with a passkey or two-factor authentication can use the tools. The connection acts as the user who approved it and only reads and writes that user’s journal.</li>
-        </ol>
-      </div>
-
-      <div class="mt-8 card p-6" id="setup-claude">
-        <h3 class="font-serif text-2xl text-primary">Connect Claude</h3>
-        <p class="mt-3 text-muted">
-          Install the official Dabble Me plugin from the Claude directory. It connects the Dabble Me MCP server and adds
-          skills for finding memories, reflecting on your journal, and writing entries. Claude cannot add plugins or
-          connectors from inside a chat.
-        </p>
-        <ol class="mt-4 list-decimal pl-5 space-y-2 text-muted">
-          <li>Open <a href="<%= claude_plugin_url %>" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">Dabble Me in the Claude plugin directory</a> and install it.</li>
-          <li>When Claude asks you to connect Dabble Me, sign in to Dabble Me in the browser window.</li>
-          <li>Review the requested read/write permission and approve access.</li>
-          <li>Enable Dabble Me in a conversation, then try one of the prompts on this page.</li>
-        </ol>
-      </div>
-
-      <div class="mt-8 card p-6" id="setup-chatgpt">
-        <h3 class="font-serif text-2xl text-primary">Connect ChatGPT</h3>
-        <p class="mt-3 text-muted">
-          Install the official Dabble Me plugin from the ChatGPT directory. It connects the Dabble Me MCP server and adds
-          skills for finding memories, reflecting on your journal, and writing entries. ChatGPT cannot add plugins from
-          inside a chat.
-        </p>
-        <ol class="mt-4 list-decimal pl-5 space-y-2 text-muted">
-          <li>Open <a href="<%= chatgpt_plugin_url %>" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">Dabble Me in the ChatGPT plugin directory</a> and install it.</li>
-          <li>When ChatGPT asks you to connect Dabble Me, sign in to Dabble Me in the browser window.</li>
-          <li>Review the requested read/write permission and approve access.</li>
-          <li>Enable Dabble Me in a conversation, then try one of the prompts on this page.</li>
-        </ol>
-        <p class="mt-4 text-sm text-muted">
-          Prefer the directory plugin. To add Dabble Me manually instead, enable
-          <strong class="text-primary">Developer mode</strong> under
-          <strong class="text-primary">Settings → Security and login</strong>, create a developer-mode app with
-          MCP URL <code><%= mcp_endpoint %></code>, choose OAuth, and approve access. Custom MCP apps require an
-          eligible paid ChatGPT plan, and organization administrators may disable them. See
-          <a href="https://developers.openai.com/api/docs/guides/developer-mode" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">OpenAI’s current Developer mode guide</a>.
-        </p>
-      </div>
-
-      <div class="mt-8 card p-6" id="setup-other">
-        <h3 class="font-serif text-2xl text-primary">Connect another MCP client</h3>
-        <p class="mt-3 text-muted">
-          Add <code><%= mcp_endpoint %></code> as a remote <strong class="text-primary">Streamable HTTP</strong> server.
-          Let the client discover the OAuth metadata, register as a public client, open the authorization page, and
-          exchange the authorization code using PKCE. No API key or client secret is required.
-        </p>
-      </div>
-    </section>
-
-    <section class="mt-16" id="authentication">
-      <h2 class="font-serif text-3xl text-primary">Authentication and privacy</h2>
-      <div class="mt-6 grid sm:grid-cols-2 gap-6">
-        <div class="card p-6">
-          <h3 class="font-serif text-xl text-primary">OAuth 2.0 + PKCE</h3>
-          <p class="mt-3 text-sm text-muted">
-            You sign in on Dabble Me’s own domain and approve the <code>mcp:access</code> scope. Dabble Me never asks
-            you to paste your password into the AI client.
-          </p>
-        </div>
-        <div class="card p-6">
-          <h3 class="font-serif text-xl text-primary">Strong account security</h3>
-          <p class="mt-3 text-sm text-muted">
-            Tool calls require Dabble Me PRO plus a passkey or two-factor authentication. Review and disconnect clients under
-            <a href="<%= security_path(anchor: "connected-apps") %>" class="text-accent hover:text-primary underline">Account security → Connected apps</a>.
-          </p>
-        </div>
-      </div>
-    </section>
-
-    <section class="mt-16" id="example-prompts">
-      <h2 class="font-serif text-3xl text-primary">Real example prompts</h2>
-      <p class="mt-3 text-muted">Ask naturally. The client decides which Dabble Me tools to call.</p>
+    <section class="mt-16" id="examples">
+      <h2 class="font-serif text-3xl text-primary">What you can ask</h2>
+      <p class="mt-3 text-muted">Talk to your AI app like you would to a friend who has read your journal.</p>
       <div class="mt-6 grid sm:grid-cols-2 gap-5">
         <% [
           ["Reflect on a month", "Summarize my journal entries from last month. What themes kept coming up?"],
-          ["Find a recurring topic", "Find every time I mentioned burnout and show how the language changed over time."],
-          ["Review a year", "How often did I journal this year? What hashtags did I use most?"],
+          ["Find a recurring topic", "Find every time I mentioned burnout and show how I wrote about it over time."],
+          ["Review a year", "How often did I journal this year? What did I write about most?"],
           ["Recall a memory", "What did I write about my trip to Iceland? Include dates and short excerpts."],
           ["Look for progress", "Search my journal for running and summarize the milestones I recorded."],
-          ["Compare periods", "List entries from January and June, then compare what I was focused on."],
-          ["Save a reflection", "Add this to today's journal: I felt calmer after taking a long walk."],
-          ["Attach a photo by URL", "Save this photo to today's journal entry using its https URL, and add a short caption about the moment."],
-          ["Create a dated entry", "Create a journal entry for July 17, 2026: Dinner with old friends reminded me how much I value staying connected."]
+          ["Save a reflection", "Add this to today's journal: I felt calmer after taking a long walk."]
         ].each do |title, prompt| %>
           <div class="card p-5">
             <h3 class="font-sans font-semibold text-base tracking-tight text-primary"><%= title %></h3>
@@ -262,37 +101,75 @@ structured_data = {
       </div>
     </section>
 
-    <section class="mt-16" id="tools">
-      <h2 class="font-serif text-3xl text-primary">Available MCP tools</h2>
-      <p class="mt-3 text-muted">
-        These names and descriptions come from the same metadata exposed to MCP clients.
-      </p>
-      <div class="mt-6 space-y-5">
-        <% @mcp_tools.each do |tool| %>
-          <article class="card p-6" id="tool-<%= tool[:name].tr("_", "-") %>">
-            <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
-              <h3 class="font-serif text-2xl text-primary"><%= tool[:title] %></h3>
-              <code class="text-sm bg-olive-200 text-olive-900 px-2 py-1 rounded"><%= tool[:name] %></code>
-            </div>
-            <p class="mt-3 text-sm leading-relaxed text-muted"><%= tool[:description] %></p>
-            <% if tool[:properties].present? %>
-              <h4 class="mt-5 font-semibold text-sm text-primary">Arguments</h4>
-              <dl class="mt-2 space-y-2 text-sm">
-                <% tool[:properties].each do |name, details| %>
-                  <div>
-                    <dt class="inline font-mono text-primary"><%= name %><%= " (required)" if tool[:required].include?(name.to_s) %></dt>
-                    <dd class="inline text-muted"> — <%= details[:description].presence || details["description"].presence || details[:type] || details["type"] %></dd>
-                  </div>
-                <% end %>
-              </dl>
-            <% end %>
-          </article>
-        <% end %>
+    <section class="mt-16" id="setup">
+      <h2 class="font-serif text-3xl text-primary">How to connect</h2>
+
+      <div class="mt-6 card p-6" id="before-connecting">
+        <h3 class="font-serif text-2xl text-primary">Before you start</h3>
+        <ol class="mt-4 list-decimal pl-5 space-y-2 text-muted">
+          <li>You need a Dabble Me PRO subscription.</li>
+          <li>Turn on a passkey or two-factor authentication in <a href="<%= security_path %>" class="text-accent hover:text-primary underline">Account security</a>. It keeps your journal safe when an AI app connects.</li>
+        </ol>
+      </div>
+
+      <div class="mt-8 card p-6" id="setup-claude">
+        <h3 class="font-serif text-2xl text-primary">Claude</h3>
+        <ol class="mt-4 list-decimal pl-5 space-y-2 text-muted">
+          <li>Open <a href="<%= claude_plugin_url %>" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">Dabble Me in the Claude plugin directory</a> and add it.</li>
+          <li>When Claude asks you to connect, sign in to Dabble Me and approve access.</li>
+          <li>Turn on Dabble Me in a chat, then try one of the questions above.</li>
+        </ol>
+      </div>
+
+      <div class="mt-8 card p-6" id="setup-chatgpt">
+        <h3 class="font-serif text-2xl text-primary">ChatGPT</h3>
+        <ol class="mt-4 list-decimal pl-5 space-y-2 text-muted">
+          <li>Open <a href="<%= chatgpt_plugin_url %>" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">Dabble Me in the ChatGPT plugin directory</a> and add it.</li>
+          <li>When ChatGPT asks you to connect, sign in to Dabble Me and approve access.</li>
+          <li>Turn on Dabble Me in a chat, then try one of the questions above.</li>
+        </ol>
+      </div>
+
+      <div class="mt-8 card p-6" id="setup-other">
+        <h3 class="font-serif text-2xl text-primary">Other AI apps</h3>
+        <p class="mt-3 text-muted">
+          If your AI app lets you add a custom connector, add one with this address, then sign in to Dabble Me when it asks:
+        </p>
+        <p class="mt-4"><code class="block text-base select-all break-all bg-olive-200 px-4 py-3 rounded text-olive-900"><%= connector_address %></code></p>
+        <p class="mt-4 text-sm text-muted">
+          Setting this up in a developer tool or an AI agent? See the <a href="<%= mcp_server_developer_docs_path %>" class="text-accent hover:text-primary underline">technical details</a>.
+        </p>
+      </div>
+    </section>
+
+    <section class="mt-16" id="privacy">
+      <h2 class="font-serif text-3xl text-primary">Private, and in your control</h2>
+      <div class="mt-6 grid sm:grid-cols-2 gap-6">
+        <div class="card p-6">
+          <h3 class="font-serif text-xl text-primary">You sign in on Dabble Me</h3>
+          <p class="mt-3 text-sm text-muted">
+            You approve access on Dabble Me’s own site. You never type your password into the chat.
+          </p>
+        </div>
+        <div class="card p-6">
+          <h3 class="font-serif text-xl text-primary">Disconnect any time</h3>
+          <p class="mt-3 text-sm text-muted">
+            See and remove connected apps under
+            <a href="<%= security_path(anchor: "connected-apps") %>" class="text-accent hover:text-primary underline">Account security → Connected apps</a>.
+          </p>
+        </div>
+      </div>
+      <div class="mt-6 card p-6 bg-accent/5 border-accent/20">
+        <p class="text-primary font-medium">Dabble Me does not train an AI model on your journal.</p>
+        <p class="mt-2 text-sm text-muted">
+          When you ask a connected AI app about your entries, the entries it reads are sent to that app’s company under
+          its own terms and privacy policy. Connect only apps you trust.
+        </p>
       </div>
     </section>
 
     <section class="mt-16" id="faq">
-      <h2 class="font-serif text-3xl text-primary">Frequently asked questions</h2>
+      <h2 class="font-serif text-3xl text-primary">Questions</h2>
       <div class="mt-6 space-y-5">
         <% faq_items.each do |item| %>
           <article class="card p-6">
@@ -304,49 +181,14 @@ structured_data = {
     </section>
 
     <section class="mt-16 card p-8 text-center">
-      <h2 class="font-serif text-3xl text-primary">Choose the journal workflow that fits</h2>
+      <h2 class="font-serif text-3xl text-primary">Choose the journal that fits</h2>
       <p class="mt-3 text-muted">
-        Compare remote, email-first Dabble Me with a local Mac journal, or review the current MCP journaling options.
+        See how Dabble Me compares with other journals that work with ChatGPT and Claude.
       </p>
       <div class="mt-6 flex flex-col sm:flex-row justify-center gap-3">
         <a class="btn btn-secondary" href="<%= day_one_ai_journaling_path %>">Dabble Me vs. Day One</a>
-        <a class="btn btn-secondary" href="<%= best_journaling_apps_with_mcp_path %>">Best journaling apps with MCP / Claude &amp; ChatGPT</a>
+        <a class="btn btn-secondary" href="<%= best_journaling_apps_with_mcp_path %>">Best journaling apps for ChatGPT &amp; Claude</a>
       </div>
     </section>
   </div>
 </section>
-
-<% content_for :scripts do %>
-  <script>
-    document.querySelectorAll('[data-copy-prompt]').forEach(function(button) {
-      var status = button.querySelector('[data-copy-prompt-status]');
-      var originalStatus = status.textContent;
-
-      function showCopied() {
-        status.textContent = 'Copied! Paste it into your AI assistant.';
-        setTimeout(function() { status.textContent = originalStatus; }, 2500);
-      }
-
-      function copyWithSelection(text) {
-        var textarea = document.createElement('textarea');
-        textarea.value = text;
-        textarea.setAttribute('readonly', '');
-        textarea.className = 'sr-only';
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        textarea.remove();
-        showCopied();
-      }
-
-      button.addEventListener('click', function() {
-        var text = button.dataset.copyPrompt;
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(text).then(showCopied).catch(function() { copyWithSelection(text); });
-        } else {
-          copyWithSelection(text);
-        }
-      });
-    });
-  </script>
-<% end %>
