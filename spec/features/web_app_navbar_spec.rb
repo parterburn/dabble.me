@@ -3,7 +3,7 @@
 require "rails_helper"
 
 # iOS 26 and later blur the top of a Home Screen web app unless a solid bar is
-# fixed to the top edge, so the navbar stays pinned there on phones.
+# fixed to the top edge, so the navbar stays pinned and solid there on phones.
 RSpec.describe "Navbar in a Home Screen web app", type: :feature, js: true do
   include_context "has all objects"
 
@@ -48,6 +48,35 @@ RSpec.describe "Navbar in a Home Screen web app", type: :feature, js: true do
 
       expect(page).to have_no_css("html.web-app", visible: :all)
       expect(navbar_position).to eq("absolute")
+    end
+  end
+
+  describe "on marketing pages" do
+    def marketing_navbar_background
+      page.evaluate_script("getComputedStyle(document.querySelector('[data-navbar]')).backgroundColor")
+    end
+
+    it "keeps the navbar solid in a phone web app, even after scrolling" do
+      on_phone do
+        as_home_screen_app do
+          visit mcp_server_docs_path
+          expect(page).to have_css("html.web-app", visible: :all)
+          expect(marketing_navbar_background).not_to eq("rgba(0, 0, 0, 0)")
+
+          page.execute_script("window.scrollTo(0, 600)")
+          expect(page).to have_css("[data-navbar].backdrop-blur-sm")
+          expect(marketing_navbar_background).not_to match(/rgba\(.*, 0(\.\d+)?\)|\/ 0?\.\d+\)/)
+        end
+      end
+    end
+
+    it "leaves the navbar see-through at the top of a phone browser" do
+      on_phone do
+        visit mcp_server_docs_path
+
+        expect(page).to have_no_css("html.web-app", visible: :all)
+        expect(marketing_navbar_background).to eq("rgba(0, 0, 0, 0)")
+      end
     end
   end
 end

@@ -353,6 +353,14 @@
   }
 }
 
+/* iOS 26 and later blur the top of a Home Screen web app unless an opaque bar
+   is fixed to the top edge, so keep the navbar solid there. Unlayered, so it
+   wins over the translucent classes the navbar script adds on scroll. */
+.web-app [data-navbar] {
+  background-color: var(--color-bg);
+  backdrop-filter: none;
+}
+
 .twitter-tweet-rendered {
   margin-top: 40px;
   margin-left: auto;
