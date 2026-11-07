@@ -120,7 +120,7 @@ module Mcp
         date: entry.date.to_date.iso8601,
         text_body: entry.text_body.to_s,
         hashtags: entry.hashtags || [],
-        has_image: entry.image.present?
+        has_image: entry.image_stored?
       }
     end
 

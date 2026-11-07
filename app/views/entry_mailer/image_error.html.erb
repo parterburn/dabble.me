@@ -60,7 +60,7 @@
       The image for the <strong><a href='<%= day_entry_url(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day) %>'>Entry on <%= @entry.date.strftime('%B %d, %Y') %></a></strong> could not be saved. Try using the <a href='<%= edit_entry_url(@entry) %>'>web interface</a> to re-upload it or try converting it to a lower resolution JPG image.
     </p>
 
-    <% if @entry.image.present? %>
+    <% if @entry.image_stored? %>
       <p>
         Entry Image URL: <a href='<%= @entry.image_url_cdn(cloudflare: false) %>'><%= @entry.image_url_cdn(cloudflare: false) %></a>
       </p>

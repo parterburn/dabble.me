@@ -53,7 +53,7 @@
 
         <div class="<%= add_class %>">
 
-          <% if @entry.image.present? %>
+          <% if @entry.image_stored? || @entry.image.cached? %>
             <label>
               <%= f.check_box :remove_image, class: 'j-image-remove' %>
               &nbsp;Remove Photo
