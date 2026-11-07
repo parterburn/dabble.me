@@ -26,6 +26,9 @@ Capybara.register_driver :selenium_chrome_headless do |app|
   chrome_options.add_argument("--disable-dev-shm-usage")
   chrome_options.add_argument("--disable-gpu")
   chrome_options.add_argument("--window-size=1400,1400")
+  # Behave like a desktop with a mouse. Without a pointing device, headless
+  # Chrome matches the (hover: none) media query, as a phone does.
+  chrome_options.add_argument("--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4")
   chrome_options.add_argument("--disable-web-security")
   chrome_options.add_argument("--disable-features=VizDisplayCompositor")
   chrome_options.add_argument("--disable-background-timer-throttling")
