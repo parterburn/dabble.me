@@ -30,8 +30,11 @@
         // If they scrolled down and are past the navbar, add class .nav-up.
         // This is necessary so you never see what is "behind" the navbar.
         if (st > lastScrollTop && st > navbarHeight && $(window).width() > 768){
-            // Scroll Down
-            $('.navbar-fixed-top').addClass('nav-up');
+            // Scroll Down. Web apps keep the navbar in place, since iOS blurs
+            // the top edge without it.
+            if (!document.documentElement.classList.contains('web-app')) {
+                $('.navbar-fixed-top').addClass('nav-up');
+            }
             $(".j-back-to-top").fadeOut();
         } else {
             // Scroll Up
