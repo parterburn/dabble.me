@@ -643,8 +643,7 @@ mark {
       font-size: 20px;
     }
 
-    .photo-picker__hint,
-    .photo-picker__max {
+    .photo-picker__hint {
       display: none;
     }
 
@@ -664,38 +663,15 @@ mark {
   font-size: 13px;
 }
 
-.photo-picker__max {
-  font-size: 12px;
-  visibility: hidden;
-}
-
-.photo-picker__drop:hover .photo-picker__max,
-.photo-picker__drop:focus-within .photo-picker__max {
-  visibility: visible;
-}
-
 .photo-picker__count {
   display: none;
   font-size: 13px;
 }
 
-.photo-picker__hint--touch {
-  display: none;
-}
-
-// Phones and tablets: no drag and drop or hover, so say "tap" and always
-// show the photo limit.
+// Touch screens can't drag photos in, and tapping the box needs no hint.
 @media (hover: none) {
-  .photo-picker__hint--pointer {
+  .photo-picker__hint {
     display: none;
-  }
-
-  .photo-picker__hint--touch {
-    display: inline;
-  }
-
-  .photo-picker__max {
-    visibility: visible;
   }
 }
 

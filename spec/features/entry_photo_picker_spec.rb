@@ -58,25 +58,19 @@ RSpec.describe "Entry photo picker", type: :feature, js: true do
       expect(page).to have_no_css("label:not(.sr-only)", text: /\A(Date|Entry|Photo)\z/, visible: :all)
     end
 
-    it "shows the photo limit on hover with a mouse" do
+    it "says to drag or click with a mouse" do
       visit new_entry_path
 
-      expect(page).to have_css(".photo-picker__hint--pointer", text: "Drag photos here or click to browse")
-      max_hint = find(".photo-picker__max", visible: :all)
-      expect(max_hint.text(:all)).to eq("Up to #{CollageGenerator::MAX_IMAGES} photos per entry")
-      expect(max_hint).not_to be_visible
-
-      find(".photo-picker__drop").hover
-      expect(max_hint).to be_visible
+      expect(page).to have_css(".photo-picker__hint", text: "Drag photos here or click to browse")
+      expect(page).to have_no_content("photos per entry")
     end
 
-    it "says tap and always shows the photo limit on a touch screen" do
+    it "shows only the title on a touch screen" do
       with_touch_screen do
         visit new_entry_path
 
-        expect(page).to have_css(".photo-picker__hint--touch", text: "Tap to choose photos")
-        expect(page).to have_no_css(".photo-picker__hint--pointer", visible: true)
-        expect(page).to have_css(".photo-picker__max", text: "Up to #{CollageGenerator::MAX_IMAGES} photos per entry")
+        expect(page).to have_css(".photo-picker__drop", text: "Add photo(s)")
+        expect(page).to have_no_css(".photo-picker__hint", visible: true)
       end
     end
 
