@@ -1,0 +1,269 @@
+# frozen_string_literal: true
+
+require "rails_helper"
+
+RSpec.describe "iOS app API (/api/v1)", type: :request do
+  let(:free_user) { create(:user) }
+  let(:pro_user) { create(:user, plan: "PRO Monthly") }
+  let(:mobile_app) { MobileApp.ensure_application! }
+
+  def token_for(user, application: mobile_app, scopes: MobileApp::SCOPE)
+    Doorkeeper::AccessToken.create!(application: application, resource_owner_id: user.id, scopes: scopes).plaintext_token
+  end
+
+  def auth(user)
+    { "Authorization" => "Bearer #{token_for(user)}" }
+  end
+
+  def json
+    JSON.parse(response.body)
+  end
+
+  describe "authentication" do
+    it "rejects requests without a token" do
+      get "/api/v1/me"
+      expect(response).to have_http_status(:unauthorized)
+      expect(json["error"]).to eq("unauthorized")
+    end
+
+    it "rejects MCP tokens" do
+      mcp_app = Doorkeeper::Application.create!(name: "Claude", redirect_uri: "https://claude.ai/callback", confidential: false, scopes: "mcp:access")
+      get "/api/v1/me", headers: { "Authorization" => "Bearer #{token_for(pro_user, application: mcp_app, scopes: 'mcp:access')}" }
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "does not let app tokens call the MCP endpoint" do
+      post "/mcp", params: { jsonrpc: "2.0", id: 1, method: "tools/list" }.to_json,
+                   headers: auth(pro_user).merge("Content-Type" => "application/json")
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "blocks accounts pending deletion" do
+      free_user.update_column(:deleted_at, Time.current)
+      get "/api/v1/me", headers: auth(free_user)
+      expect(response).to have_http_status(:forbidden)
+      expect(json["error"]).to eq("account_pending_deletion")
+    end
+  end
+
+  describe "GET /api/v1/me" do
+    it "describes a free account" do
+      get "/api/v1/me", headers: auth(free_user)
+      expect(response).to have_http_status(:ok)
+      expect(json).to include("email" => free_user.email, "plan" => "free", "can_write" => false, "can_search" => false)
+      expect(json["today"]).to match(/\A\d{4}-\d{2}-\d{2}\z/)
+    end
+
+    it "describes a PRO account" do
+      get "/api/v1/me", headers: auth(pro_user)
+      expect(json).to include("plan" => "pro", "can_write" => true, "can_search" => true)
+    end
+  end
+
+  describe "reading entries" do
+    let!(:mine) { create(:entry, user: free_user, date: Time.zone.local(2025, 3, 4), body: "<p>Hello <b>there</b> #coffee</p>") }
+    let!(:older) { create(:entry, user: free_user, date: Time.zone.local(2024, 1, 2), body: "<p>Older</p>") }
+    let!(:theirs) { create(:entry, user: pro_user, body: "<p>Not yours</p>") }
+
+    it "lists only the user's entries, newest first, for free users too" do
+      get "/api/v1/entries", headers: auth(free_user)
+      expect(response).to have_http_status(:ok)
+      expect(json["entries"].map { |e| e["id"] }).to eq([mine.id, older.id])
+      expect(json["entries"].first).to include("date" => "2025-03-04", "hashtags" => ["coffee"])
+      expect(json).to include("page" => 1, "next_page" => nil, "total_count" => 2)
+    end
+
+    it "paginates" do
+      get "/api/v1/entries", params: { per: 1 }, headers: auth(free_user)
+      expect(json["entries"].size).to eq(1)
+      expect(json["next_page"]).to eq(2)
+    end
+
+    it "filters by year and month" do
+      get "/api/v1/entries", params: { year: 2024, month: 1 }, headers: auth(free_user)
+      expect(json["entries"].map { |e| e["id"] }).to eq([older.id])
+    end
+
+    it "rejects a malformed year" do
+      get "/api/v1/entries", params: { year: "abc" }, headers: auth(free_user)
+      expect(response).to have_http_status(:unprocessable_content)
+    end
+
+    it "shows a single entry with text body" do
+      get "/api/v1/entries/#{mine.id}", headers: auth(free_user)
+      expect(response).to have_http_status(:ok)
+      expect(json["entry"]["body_text"]).to include("Hello")
+      expect(json["entry"]["web_url"]).to end_with("/entries/2025/3/4")
+    end
+
+    it "does not show other users' entries" do
+      get "/api/v1/entries/#{theirs.id}", headers: auth(free_user)
+      expect(response).to have_http_status(:not_found)
+    end
+
+    it "returns a random entry" do
+      get "/api/v1/entries/random", headers: auth(free_user)
+      expect(response).to have_http_status(:ok)
+      expect([mine.id, older.id]).to include(json["entry"]["id"])
+    end
+  end
+
+  describe "editable_text" do
+    it "round-trips plain paragraphs and line breaks" do
+      entry = create(:entry, user: pro_user, body: Api::EntrySerializer.html_from_plain("Line one\nline two\n\nIt's a new paragraph & more"))
+      expect(Api::EntrySerializer.full(entry)[:editable_text]).to eq("Line one\nline two\n\nIt's a new paragraph & more")
+    end
+
+    it "is nil when the body has formatting the app can't edit" do
+      ["<p><a href='https://x.test'>link</a></p>", "<p>one</p><hr><p>two</p>", "<div data-content='dabblemegpt'>ai</div>"].each do |body|
+        entry = create(:entry, user: pro_user, body: body)
+        expect(Api::EntrySerializer.full(entry)[:editable_text]).to be_nil, body
+      end
+    end
+  end
+
+  describe "writing entries" do
+    it "requires PRO to create" do
+      post "/api/v1/entries", params: { date: "2026-01-02", body: "Hi" }, headers: auth(free_user)
+      expect(response).to have_http_status(:forbidden)
+      expect(json["error"]).to eq("pro_required")
+      expect(free_user.entries.count).to eq(0)
+    end
+
+    it "creates an entry, then merges a second one on the same day" do
+      post "/api/v1/entries", params: { date: "2026-01-02", body: "First" }, headers: auth(pro_user)
+      expect(response).to have_http_status(:created)
+      expect(json["entry"]).to include("date" => "2026-01-02", "editable_text" => "First")
+
+      post "/api/v1/entries", params: { date: "2026-01-02", body: "Second" }, headers: auth(pro_user)
+      expect(response).to have_http_status(:ok)
+      expect(json["merged"]).to be(true)
+      expect(pro_user.entries.count).to eq(1)
+      expect(pro_user.entries.first.body).to include("<hr>")
+    end
+
+    it "rejects a blank entry" do
+      post "/api/v1/entries", params: { date: "2026-01-02", body: " " }, headers: auth(pro_user)
+      expect(response).to have_http_status(:unprocessable_content)
+    end
+
+    it "updates a simple entry" do
+      entry = create(:entry, user: pro_user, body: "<p>Old</p>")
+      patch "/api/v1/entries/#{entry.id}", params: { body: "New text" }, headers: auth(pro_user)
+      expect(response).to have_http_status(:ok)
+      expect(entry.reload.body).to eq("<p>New text</p>")
+    end
+
+    it "refuses to edit entries with rich formatting" do
+      entry = create(:entry, user: pro_user, body: "<p><strong>Bold</strong></p>")
+      patch "/api/v1/entries/#{entry.id}", params: { body: "Flattened" }, headers: auth(pro_user)
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(json["error"]).to eq("not_editable")
+      expect(entry.reload.body).to eq("<p><strong>Bold</strong></p>")
+    end
+
+    it "requires PRO to edit or delete" do
+      entry = create(:entry, user: free_user, body: "<p>Mine</p>")
+      patch "/api/v1/entries/#{entry.id}", params: { body: "x" }, headers: auth(free_user)
+      expect(response).to have_http_status(:forbidden)
+      delete "/api/v1/entries/#{entry.id}", headers: auth(free_user)
+      expect(response).to have_http_status(:forbidden)
+      expect(entry.reload.body).to eq("<p>Mine</p>")
+    end
+
+    it "deletes an entry" do
+      entry = create(:entry, user: pro_user, body: "<p>Bye</p>")
+      delete "/api/v1/entries/#{entry.id}", headers: auth(pro_user)
+      expect(response).to have_http_status(:no_content)
+      expect(Entry.exists?(entry.id)).to be(false)
+    end
+
+    it "cannot delete another user's entry" do
+      entry = create(:entry, user: free_user, body: "<p>Not yours</p>")
+      delete "/api/v1/entries/#{entry.id}", headers: auth(pro_user)
+      expect(response).to have_http_status(:not_found)
+      expect(Entry.exists?(entry.id)).to be(true)
+    end
+  end
+
+  describe "GET /api/v1/search" do
+    before do
+      create(:entry, user: pro_user, body: "<p>Went hiking today</p>")
+      create(:entry, user: pro_user, body: "<p>Rainy</p>")
+    end
+
+    it "requires PRO" do
+      get "/api/v1/search", params: { q: "hiking" }, headers: auth(free_user)
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "returns matches" do
+      get "/api/v1/search", params: { q: "hiking" }, headers: auth(pro_user)
+      expect(json["total_count"]).to eq(1)
+      expect(json["entries"].first["excerpt"]).to include("hiking")
+    end
+  end
+
+  describe "OAuth sign-in for the iOS app" do
+    let(:code_verifier) { SecureRandom.urlsafe_base64(48) }
+    let(:code_challenge) { Base64.urlsafe_encode64(Digest::SHA256.digest(code_verifier), padding: false) }
+
+    it "skips the consent screen and issues an app:journal token to a free user" do
+      sign_in free_user
+      get oauth_authorization_path(
+        response_type: "code",
+        client_id: mobile_app.uid,
+        redirect_uri: MobileApp::REDIRECT_URI,
+        scope: MobileApp::SCOPE,
+        state: "xyz",
+        code_challenge: code_challenge,
+        code_challenge_method: "S256"
+      )
+      expect(response).to have_http_status(:redirect)
+      location = URI.parse(response.location)
+      expect("#{location.scheme}:#{location.path}").to eq(MobileApp::REDIRECT_URI)
+      query = Rack::Utils.parse_query(location.query)
+      expect(query["state"]).to eq("xyz")
+
+      post oauth_token_path, params: {
+        grant_type: "authorization_code",
+        code: query["code"],
+        client_id: mobile_app.uid,
+        redirect_uri: MobileApp::REDIRECT_URI,
+        code_verifier: code_verifier
+      }
+      expect(response).to have_http_status(:ok)
+      expect(json["scope"]).to eq(MobileApp::SCOPE)
+      expect(json["refresh_token"]).to be_present
+
+      get "/api/v1/me", headers: { "Authorization" => "Bearer #{json['access_token']}" }
+      expect(response).to have_http_status(:ok)
+    end
+
+    it "does not let MCP clients register the app's redirect scheme for a different scope" do
+      app = Doorkeeper::Application.new(name: "Sneaky", redirect_uri: MobileApp::REDIRECT_URI, confidential: false, scopes: "mcp:access")
+      expect(app).to be_valid # scheme is allowed, but the token would still only carry mcp:access
+      expect(MobileApp.client?(app)).to be(false)
+    end
+  end
+
+  describe "token revocation" do
+    let(:mcp_app) { Doorkeeper::Application.create!(name: "Claude", redirect_uri: "https://claude.ai/callback", confidential: false, scopes: "mcp:access") }
+
+    it "keeps the app signed in when PRO lapses but revokes MCP" do
+      app_token = Doorkeeper::AccessToken.create!(application: mobile_app, resource_owner_id: pro_user.id, scopes: MobileApp::SCOPE)
+      mcp_token = Doorkeeper::AccessToken.create!(application: mcp_app, resource_owner_id: pro_user.id, scopes: "mcp:access")
+
+      pro_user.update!(plan: "Free")
+
+      expect(app_token.reload.revoked_at).to be_nil
+      expect(mcp_token.reload.revoked_at).to be_present
+    end
+
+    it "signs the app out when the password changes" do
+      app_token = Doorkeeper::AccessToken.create!(application: mobile_app, resource_owner_id: free_user.id, scopes: MobileApp::SCOPE)
+      free_user.update!(password: "a-brand-new-password-123")
+      expect(app_token.reload.revoked_at).to be_present
+    end
+  end
+end

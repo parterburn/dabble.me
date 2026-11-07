@@ -133,10 +133,17 @@ class User < ActiveRecord::Base
   end
 
   # OAuth MCP tokens and in-flight auth codes (Doorkeeper). Call when the user loses passkey/2FA or PRO access.
-  def revoke_doorkeeper_access_tokens!
+  # Pass keep_mobile_app: true when only MCP eligibility changed — the iOS app isn't gated on PRO or passkeys.
+  def revoke_doorkeeper_access_tokens!(keep_mobile_app: false)
     now = Time.current.utc
-    Doorkeeper::AccessToken.where(resource_owner_id: id, revoked_at: nil).update_all(revoked_at: now)
-    Doorkeeper::AccessGrant.where(resource_owner_id: id, revoked_at: nil).update_all(revoked_at: now)
+    tokens = Doorkeeper::AccessToken.where(resource_owner_id: id, revoked_at: nil)
+    grants = Doorkeeper::AccessGrant.where(resource_owner_id: id, revoked_at: nil)
+    if keep_mobile_app && (mobile_app_id = MobileApp.application_id)
+      tokens = tokens.where.not(application_id: mobile_app_id)
+      grants = grants.where.not(application_id: mobile_app_id)
+    end
+    tokens.update_all(revoked_at: now)
+    grants.update_all(revoked_at: now)
   end
 
   def deletion_pending?
@@ -354,7 +361,7 @@ class User < ActiveRecord::Base
     return unless previous_plan.match?(/pro/i)
     return if current_plan.match?(/pro/i)
 
-    revoke_doorkeeper_access_tokens!
+    revoke_doorkeeper_access_tokens!(keep_mobile_app: true)
   end
 
   def revoke_doorkeeper_oauth_if_credentials_changed

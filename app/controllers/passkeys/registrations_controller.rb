@@ -56,7 +56,7 @@ class Passkeys::RegistrationsController < ApplicationController
     credential = current_user.webauthn_credentials.find(params[:id])
     credential.destroy
     current_user.reload
-    current_user.revoke_doorkeeper_access_tokens! unless current_user.mcp_security_requirements_met?
+    current_user.revoke_doorkeeper_access_tokens!(keep_mobile_app: true) unless current_user.mcp_security_requirements_met?
     redirect_to security_path, notice: "Passkey removed."
   end
 end

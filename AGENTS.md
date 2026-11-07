@@ -82,3 +82,7 @@ Schedule file: `config/sidekiq_cron_schedule.yml`. With `SIDEKIQ_CRON_ENABLED` s
 | `SIDEKIQ_CRON_ENABLED` | Set on worker environments so Sidekiq registers cron + loads the schedule at boot. Omit locally unless you want cron in dev. |
 
 If Redis loses cron keys while Sidekiq stays up, reload from disk without restarting Sidekiq: **`bundle exec rake sidekiq_cron:reload`** (same semantics as boot: `load_from_hash!` / `load_from_array!` with `source: "schedule"`). On **Railway**, add a **Cron** service every 15 minutes with that command (same env vars / Redis URL as the web app). The rake task retries transient Redis connect timeouts (common on private-network cold starts).
+
+### iOS app
+
+SwiftUI app in `ios/` (see `ios/README.md`). Generate the project with `cd ios && xcodegen generate`; `DabbleMe.xcodeproj` is gitignored. It talks to `/api/v1` (`app/controllers/api/v1/`) with Doorkeeper tokens from the first-party `MobileApp` client, which `db:migrate` / `db:seed` register. The API specs are in `spec/requests/api_v1_spec.rb`.
