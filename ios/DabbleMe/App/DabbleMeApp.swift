@@ -12,6 +12,8 @@ struct DabbleMeApp: App {
         if let token = UserDefaults.standard.string(forKey: "DabbleDebugAccessToken"), !token.isEmpty {
             KeychainStore.save(OAuthTokens(accessToken: token, refreshToken: nil, expiresAt: nil))
         }
+        // -DabbleDebugSignedOut YES starts signed out (the welcome screens).
+        if UserDefaults.standard.bool(forKey: "DabbleDebugSignedOut") { KeychainStore.delete() }
         #endif
         let model = AppModel()
         _model = State(initialValue: model)
@@ -100,6 +102,7 @@ struct MainTabs: View {
             get: { model.selectedTab },
             set: { tab in
                 if tab == .search, model.selectedTab == .search { model.searchFocusRequest += 1 }
+                if tab == .journal, model.selectedTab == .journal { model.journalTopRequest += 1 }
                 model.selectedTab = tab
             }
         )

@@ -35,7 +35,9 @@ final class FlowTests: XCTestCase {
         let saved = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", "Testing the app after saving")).firstMatch
         XCTAssertTrue(saved.waitForExistence(timeout: 10), "New entry missing from the timeline")
-        saved.tap()
+        saved.tap() // expands in the timeline
+        sleep(1)
+        saved.tap() // opens
         XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10), "Entry detail never opened")
         app.navigationBars.buttons.element(boundBy: 0).tap()
         XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 10), "Could not get back to the journal")
@@ -54,7 +56,9 @@ final class FlowTests: XCTestCase {
         let entry = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
         XCTAssertTrue(entry.waitForExistence(timeout: 10))
-        entry.tap()
+        entry.tap() // expands in the timeline
+        sleep(1)
+        entry.tap() // opens
         XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
         sleep(1)
         snap("text-size-entry")
@@ -94,32 +98,6 @@ final class FlowTests: XCTestCase {
         snap("today")
     }
 
-    func testPullUpOpensPreviousDays() throws {
-        openJournal()
-        let entry = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label CONTAINS %@", "Biscuit has discovered the heated blanket")).firstMatch
-        XCTAssertTrue(entry.waitForExistence(timeout: 10))
-        entry.tap()
-        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
-
-        // Each pull up past the bottom should open the previous day with an entry, every time.
-        // The last one is a quick flick that lets go early, like a thumb, and relies on the bounce.
-        for (index, expected) in ["Ran 5 miles", "Rainy day", "Hard conversation"].enumerated() {
-            sleep(1)
-            let scroll = app.scrollViews.firstMatch
-            if index == 2 {
-                scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.62))
-                    .press(forDuration: 0.01, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.52)),
-                           withVelocity: 2500, thenHoldForDuration: 0)
-            } else {
-                scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
-                    .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1)))
-            }
-            let previous = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", expected)).firstMatch
-            XCTAssertTrue(previous.waitForExistence(timeout: 5), "Pulling up should open the entry with \"\(expected)\"")
-        }
-    }
-
     func testScrubberJumpsToOldestMonth() throws {
         openJournal()
         let scroll = app.collectionViews.firstMatch
@@ -135,24 +113,6 @@ final class FlowTests: XCTestCase {
             .matching(NSPredicate(format: "label CONTAINS %@", "Moved into the new apartment")).firstMatch
         XCTAssertTrue(loaded.waitForExistence(timeout: 3), "The month the scrubber lands on should load right away")
         snap("journal-scrubbed")
-    }
-
-    func testPullDownOpensNextDay() throws {
-        openJournal()
-        let entry = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label CONTAINS %@", "Biscuit has discovered the heated blanket")).firstMatch
-        XCTAssertTrue(entry.waitForExistence(timeout: 10))
-        entry.tap()
-        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
-
-        let scroll = app.scrollViews.firstMatch
-        let start = scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
-        start.press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95)))
-
-        // The next (newer) day in the demo journal is the presentation entry.
-        let next = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Big presentation went well")).firstMatch
-        XCTAssertTrue(next.waitForExistence(timeout: 5), "Pulling down past the top should open the next day's entry")
-        snap("pulled-next-day")
     }
 
     func testRefreshPicksUpChangesInOlderMonths() throws {

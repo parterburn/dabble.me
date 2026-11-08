@@ -11,7 +11,10 @@ struct SearchView: View {
     @State private var error: String?
     @State private var hashtags: [HashtagCount] = []
     @State private var isSearchActive = false
+    @FocusState private var isSearchFocused: Bool
     @State private var path = NavigationPath()
+    @State private var expanded: Set<Int> = []
+    @State private var actions = EntryActions()
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -23,7 +26,12 @@ struct SearchView: View {
                         // Always visible at the top, not tucked away when the results scroll.
                         .searchable(text: $query, isPresented: $isSearchActive,
                                     placement: .navigationBarDrawer(displayMode: .always), prompt: "Search your journal")
-                        .onChange(of: model.searchFocusRequest) { isSearchActive = true }
+                        .searchFocused($isSearchFocused)
+                        // With results showing, search is already "active", so focus the field itself.
+                        .onChange(of: model.searchFocusRequest) {
+                            isSearchActive = true
+                            isSearchFocused = true
+                        }
                         .onSubmit(of: .search) { Task { await search(reset: true) } }
                         .onChange(of: query) { _, newValue in
                             if newValue.isEmpty { clear() }
@@ -40,7 +48,8 @@ struct SearchView: View {
             .navigationTitle("Search")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(removing: .title) // the tab says where you are
-            .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id, sequence: $0.sequence) }
+            .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
+            .entryActionSheets(actions)
         }
     }
 
@@ -85,11 +94,14 @@ struct SearchView: View {
             List {
                 Section {
                     ForEach(results) { entry in
-                        let route = EntryRoute(id: entry.id, sequence: results.map { EntryNeighbour(id: $0.id, date: $0.date) })
-                        NavigationLink(value: route) {
-                            EntryRow(entry: entry, showsYear: true)
+                        TimelineEntryRow(entry: entry, showsYear: true, isExpanded: expanded.contains(entry.id), actions: actions) {
+                            if expanded.contains(entry.id) {
+                                path.append(EntryRoute(id: entry.id))
+                            } else {
+                                withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(entry.id) }
+                            }
                         }
-                        .entryPreview(entry) { path.append(route) }
+                        .entryPreview(entry) { path.append(EntryRoute(id: entry.id)) }
                         .task {
                             if entry.id == results.last?.id { await search(reset: false) }
                         }

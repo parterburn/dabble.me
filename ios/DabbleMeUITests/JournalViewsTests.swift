@@ -83,6 +83,14 @@ final class JournalViewsTests: XCTestCase {
         app.swipeUp()
         XCTAssertTrue(app.searchFields.firstMatch.isHittable)
         snap("search-sticky")
+        // With a search submitted (keyboard gone, search still active), tapping Search again
+        // still focuses the field.
+        let field = app.searchFields.firstMatch
+        field.tap()
+        field.typeText("trail\n")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        tab(app, "Search").tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "Search tab focuses the field with a search showing")
     }
 
     /// Lists hang in the editor; PRO gets on-device hashtag suggestions (when Apple Intelligence is available).
@@ -139,7 +147,9 @@ final class JournalViewsTests: XCTestCase {
         let firstEntry = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
         XCTAssertTrue(firstEntry.waitForExistence(timeout: 10))
-        firstEntry.tap()
+        firstEntry.tap() // expands in the timeline
+        sleep(1)
+        firstEntry.tap() // opens
         XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
         sleep(1)
         snap("entry-lists")
@@ -183,28 +193,62 @@ final class JournalViewsTests: XCTestCase {
             .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1)))
     }
 
-    /// From search results, pulling moves through the results (not by date), and tapping a
-    /// #hashtag in the entry goes back to the results for that tag.
-    func testSearchResultsScopeEntryNavigation() throws {
+    /// Tapping a #hashtag in an entry opened from search results goes back to the results for it.
+    func testHashtagFromSearchResultEntry() throws {
         let app = launch()
         tab(app, "Search").tap()
         XCTAssertTrue(app.buttons["#hiking"].waitForExistence(timeout: 10))
         app.buttons["#hiking"].tap()
         let yosemite = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
         XCTAssertTrue(yosemite.waitForExistence(timeout: 10))
-        yosemite.tap()
+        yosemite.tap() // expands
+        yosemite.tap() // opens
         XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
-        sleep(1)
-        pullUp(app)
-        // The next #hiking result (Oct 15), not the next day by date (Nov 6, "Slow Saturday").
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Day trip to the falls")).firstMatch.waitForExistence(timeout: 5))
-        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Slow Saturday")).firstMatch.exists)
-
         let tag = app.links["#hiking"].firstMatch
         XCTAssertTrue(tag.waitForExistence(timeout: 5))
         tag.tap()
         XCTAssertTrue(app.staticTexts["2 entries"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.buttons["Entry Actions"].exists, "The entry should close to show the results")
+    }
+
+    /// First tap expands an entry in the timeline; a second opens it. Swipes reveal Reflect and
+    /// Edit; on the entry, swiping left shows its actions.
+    func testTimelineExpandSwipeAndEntryActions() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Big presentation went well")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.tap()
+        // Expanded: the rest of the entry shows in place.
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Taking that one with me")).firstMatch.waitForExistence(timeout: 5))
+        sleep(1)
+        snap("timeline-expanded")
+
+        row.swipeLeft()
+        XCTAssertTrue(app.buttons["Edit"].waitForExistence(timeout: 3))
+        app.buttons["Edit"].tap()
+        XCTAssertTrue(app.textViews["Entry"].waitForExistence(timeout: 10))
+        app.buttons["Cancel"].tap()
+        XCTAssertTrue(app.textViews["Entry"].waitForNonExistence(timeout: 10))
+
+        row.swipeRight()
+        let reflect = app.buttons["Reflect"]
+        if reflect.waitForExistence(timeout: 3) {
+            snap("timeline-swipe-reflect")
+            reflect.tap()
+            XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 90))
+            app.buttons["Done"].tap()
+        }
+
+        let expanded = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Big presentation went well")).firstMatch
+        expanded.tap() // second tap opens
+        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+        app.scrollViews.firstMatch.swipeLeft()
+        XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout: 5), "Swiping left on the entry shows its actions")
+        snap("entry-swipe-actions")
+        app.buttons["Edit"].tap()
+        XCTAssertTrue(app.textViews["Entry"].waitForExistence(timeout: 10))
+        app.buttons["Cancel"].tap()
     }
 
     /// Long-press an entry to preview it; long-press a dated #hashtag to see how old it was.
@@ -292,5 +336,42 @@ final class JournalViewsTests: XCTestCase {
             XCTAssertTrue(another.waitForExistence(timeout: 60))
         }
         snap("ai-prompt-dated")
+    }
+
+    /// Tapping Journal again from Stats (or deep in the list) goes back to the list's newest entry.
+    func testJournalTabRetapReturnsToTopOfList() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        switchJournal(app, from: "Journal", to: "Stats")
+        XCTAssertTrue(app.staticTexts["Current Streak"].waitForExistence(timeout: 10))
+        tab(app, "Journal").tap()
+        let newest = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
+        XCTAssertTrue(newest.waitForExistence(timeout: 10))
+        XCTAssertFalse(app.staticTexts["Current Streak"].exists)
+
+        app.swipeUp(); app.swipeUp(); app.swipeUp()
+        XCTAssertFalse(newest.isHittable)
+        tab(app, "Journal").tap()
+        sleep(1)
+        XCTAssertTrue(newest.isHittable, "Back at the top")
+    }
+
+    /// Pulling down on an entry asks Apple Intelligence for a reflection.
+    func testPullDownOnEntryReflects() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.tap(); sleep(1); row.tap()
+        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+        let scroll = app.scrollViews.firstMatch
+        scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
+            .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.85)))
+        guard app.buttons["Done"].waitForExistence(timeout: 90) else {
+            throw XCTSkip("Apple Intelligence isn't available here")
+        }
+        XCTAssertTrue(app.navigationBars["Reflection"].exists || app.staticTexts["Reflection"].exists)
+        snap("pull-reflection")
+        app.buttons["Done"].tap()
     }
 }

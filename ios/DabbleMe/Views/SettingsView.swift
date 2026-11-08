@@ -99,8 +99,20 @@ struct SettingsView: View {
                 }
 
                 Section {
+                    // Each dialog is attached to its button so it appears next to it, not at the top.
                     Button("Sign Out", role: .destructive) { confirmingSignOut = true }
+                        .confirmationDialog("Sign out of Dabble Me?", isPresented: $confirmingSignOut, titleVisibility: .visible) {
+                            Button("Sign Out", role: .destructive) { Task { await model.signOut() } }
+                        }
                     Button("Delete Account…", role: .destructive) { confirmingDeletion = true }
+                        // Deleting takes three deliberate steps: confirm here, open the emailed link, then
+                        // confirm with your password on dabble.me (and it can still be undone for an hour).
+                        .confirmationDialog("Delete your Dabble Me account?", isPresented: $confirmingDeletion, titleVisibility: .visible) {
+                            Button("Email Me a Deletion Link", role: .destructive) { Task { await requestDeletion() } }
+                            Button("Cancel", role: .cancel) {}
+                        } message: {
+                            Text("We'll email you a link to finish on dabble.me, where you'll confirm with your password. You can export your entries there first.")
+                        }
                 } footer: {
                     if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
                         Text("Dabble Me for iOS \(version)")
@@ -116,17 +128,6 @@ struct SettingsView: View {
             .onChange(of: memoriesReminder) { _, on in Task { await remindersChanged(turnedOn: on) } }
             .onChange(of: writingTime) { Task { await ReminderScheduler.shared.reschedule(for: model) } }
             .onChange(of: memoriesTime) { Task { await ReminderScheduler.shared.reschedule(for: model) } }
-            .confirmationDialog("Sign out of Dabble Me?", isPresented: $confirmingSignOut, titleVisibility: .visible) {
-                Button("Sign Out", role: .destructive) { Task { await model.signOut() } }
-            }
-            // Deleting takes three deliberate steps: confirm here, open the emailed link, then
-            // confirm with your password on dabble.me (and it can still be undone for an hour).
-            .confirmationDialog("Delete your Dabble Me account?", isPresented: $confirmingDeletion, titleVisibility: .visible) {
-                Button("Email Me a Deletion Link", role: .destructive) { Task { await requestDeletion() } }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("We'll email you a link to finish on dabble.me, where you'll confirm with your password. You can export your entries there first.")
-            }
             .alert("Check your email", isPresented: .present($deletionEmail)) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -219,7 +220,12 @@ private extension SettingsView {
         Section {
             Toggle("Require \(lock.methodName)", isOn: Binding(
                 get: { lock.isEnabled },
-                set: { enabled in Task { await lock.setEnabled(enabled) } }
+                set: { enabled in
+                    Task {
+                        await lock.setEnabled(enabled)
+                        WidgetSync.update(from: model) // the personal prompt leaves the widget while locked
+                    }
+                }
             ))
             .disabled(!lock.isAvailable)
             if model.me?.isPro == true {

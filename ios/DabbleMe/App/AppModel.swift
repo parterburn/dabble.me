@@ -17,6 +17,8 @@ final class AppModel {
     var composeRequest = false
     /// Bumped when the Search tab is tapped while already showing, to focus the search field.
     var searchFocusRequest = 0
+    /// Bumped when the Journal tab is tapped while already showing: back to the list, at the top.
+    var journalTopRequest = 0
     let lock = AppLock()
 
     func search(hashtag: String) {
@@ -236,28 +238,7 @@ final class AppModel {
     /// Photos go straight to S3 in parallel; `onProgress` reports how many have finished.
     func createEntry(day: JournalDay, document: [DocumentBlock], photos: [PreparedPhoto],
                      onProgress: @escaping @MainActor (Int) -> Void = { _ in }) async throws -> EntryEnvelope {
-        var imageKeys: [String] = []
-        if !photos.isEmpty {
-            let batch: ImageUploadBatch = try await api.post(
-                "api/v1/image_uploads",
-                ImageUploadRequest(photos: photos.map { .init(filename: $0.filename, contentType: $0.contentType) })
-            )
-            guard batch.uploads.count == photos.count else { throw APIError.decoding }
-
-            let api = api
-            try await withThrowingTaskGroup(of: Void.self) { group in
-                for (photo, target) in zip(photos, batch.uploads) {
-                    group.addTask { try await api.upload(photo.data, to: target) }
-                }
-                var finished = 0
-                for try await _ in group {
-                    finished += 1
-                    onProgress(finished)
-                }
-            }
-            imageKeys = batch.uploads.map(\.uploadedImageKey)
-        }
-
+        let imageKeys = try await uploadPhotos(photos, onProgress: onProgress)
         let envelope: EntryEnvelope = try await api.post("api/v1/entries",
                                                         NewEntryRequest(date: day.iso, document: document, uploadedImageKeys: imageKeys))
         upsert(envelope.entry.summary)
@@ -266,6 +247,29 @@ final class AppModel {
         // Today's writing reminder isn't needed once there's an entry.
         await ReminderScheduler.shared.reschedule(for: self)
         return envelope
+    }
+
+    /// Uploads photos straight to S3 in parallel (presigned) and returns their keys for the entry request.
+    private func uploadPhotos(_ photos: [PreparedPhoto], onProgress: @escaping @MainActor (Int) -> Void) async throws -> [String] {
+        guard !photos.isEmpty else { return [] }
+        let batch: ImageUploadBatch = try await api.post(
+            "api/v1/image_uploads",
+            ImageUploadRequest(photos: photos.map { .init(filename: $0.filename, contentType: $0.contentType) })
+        )
+        guard batch.uploads.count == photos.count else { throw APIError.decoding }
+
+        let api = api
+        try await withThrowingTaskGroup(of: Void.self) { group in
+            for (photo, target) in zip(photos, batch.uploads) {
+                group.addTask { try await api.upload(photo.data, to: target) }
+            }
+            var finished = 0
+            for try await _ in group {
+                finished += 1
+                onProgress(finished)
+            }
+        }
+        return batch.uploads.map(\.uploadedImageKey)
     }
 
     /// Re-fetches an entry until its photo or collage finishes processing, so the timeline's
@@ -284,9 +288,14 @@ final class AppModel {
         }
     }
 
-    func updateEntry(id: Int, document: [DocumentBlock]) async throws -> EntryDetail {
-        let envelope: EntryEnvelope = try await api.patch("api/v1/entries/\(id)", UpdateEntryRequest(document: document))
+    func updateEntry(id: Int, document: [DocumentBlock], photos: [PreparedPhoto] = [], removeImage: Bool = false,
+                     onProgress: @escaping @MainActor (Int) -> Void = { _ in }) async throws -> EntryDetail {
+        let keys = try await uploadPhotos(photos, onProgress: onProgress)
+        let request = UpdateEntryRequest(document: document, uploadedImageKeys: keys.isEmpty ? nil : keys,
+                                         removeImage: removeImage ? true : nil)
+        let envelope: EntryEnvelope = try await api.patch("api/v1/entries/\(id)", request)
         upsert(envelope.entry.summary)
+        if envelope.entry.imageProcessing { watchProcessing(id: envelope.entry.id) }
         if envelope.entry.id == today?.entry?.id { await loadToday() }
         return envelope.entry
     }
@@ -314,6 +323,14 @@ final class AppModel {
     func recentEntries() async throws -> [EntrySummary] {
         let page: EntryPage = try await api.get("api/v1/entries", query: ["per": "5"])
         return page.entries
+    }
+
+    /// An on-device Apple Intelligence reflection on an entry (PRO). Only the entry itself: with other
+    /// entries as context, the small model kept mixing their details in.
+    func reflection(on entry: EntryDetail) async throws -> EntryReflection {
+        let text = try await JournalIntelligence.reflection(on: entry.bodyText, date: entry.day?.long ?? entry.date,
+                                                            firstName: me?.firstName, recent: [])
+        return EntryReflection(date: entry.day?.long ?? entry.date, text: text)
     }
 
     func stats() async throws -> JournalStats {

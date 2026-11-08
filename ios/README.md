@@ -46,7 +46,7 @@ The simulator reaches `localhost` directly. On a phone, "localhost" is the phone
 | GET | `/api/v1/entries/random` | |
 | GET | `/api/v1/entries/on_this_day` | PRO |
 | POST | `/api/v1/entries` | PRO. `{date, document \| body, uploaded_image_keys?}`; merges into an existing entry on that day, like the web. One photo is stored as-is; 2–8 (or any added to a day with a photo) become a collage, and the entry reports `image_processing: true` from the moment the job is queued |
-| PATCH | `/api/v1/entries/:id` | PRO. `{document}`; only when the entry's `document` is non-null |
+| PATCH | `/api/v1/entries/:id` | PRO. Any of `{document, remove_image, uploaded_image_keys}`. `document` only when the entry's `document` is non-null; new photos join the entry's photo in a collage, or replace it with `remove_image` |
 | DELETE | `/api/v1/entries/:id` | PRO |
 | GET | `/api/v1/search?q=&page=` | PRO, same syntax as web search |
 | GET | `/api/v1/today` | Today tab: entry, On This Day (PRO), daily prompt, `current_streak` |
@@ -58,7 +58,7 @@ The simulator reaches `localhost` directly. On a phone, "localhost" is the phone
 
 **Rich text editing.** The app never parses or sends raw HTML. `Api::EntryDocument` turns stored HTML into a `document`: a list of paragraph / bullet / number / rule blocks made of text runs that may be bold, italic, underlined or linked. That covers what the web editor (Summernote) and email ingestion produce, including `<div>` lines from email and `<hr>` between merged replies. The app edits the document in a native text view (bold, italic and underline from the text's Format menu; typing "- ", "* " or "1. " starts a list; the bar has "+" for photos and hashtag suggestions, and link; dictation is the keyboard's own) and sends it back, and the server rebuilds clean HTML from it (`to_html`). Entries with anything the document can't represent — inline styles, blockquotes, images, DabbleMeGPT replies, nested lists — come back with `document: null` and show "Edit on dabble.me", so an in-app edit can never drop formatting.
 
-**Widget.** `DabbleMeWidget` (WidgetKit) reads a `WidgetSnapshot` the app writes to the `group.me.dabble.ios` App Group after each refresh: streak, whether today is written, today's prompt and (only if turned on in Settings → Privacy) a count of On This Day memories. Never entry text. Tapping it opens `me.dabble.app:/write` or `:/today`.
+**Widget.** `DabbleMeWidget` (WidgetKit) reads a `WidgetSnapshot` the app writes to the `group.me.dabble.ios` App Group after each refresh: streak, whether today is written, today's prompt (the personal Apple Intelligence one when there is one, unless the Face ID lock is on) and (only if turned on in Settings → Privacy) a count of On This Day memories. Never entry text. Tapping it opens `me.dabble.app:/write` or `:/today`.
 
 **On device only.** Hashtag suggestions, "Reflect on This Entry" (the on-device version of the web's DabbleMeGPT life-coach reply) and Today's "Prompt from My Recent Entries" use Apple Intelligence's on-device model (`FoundationModels`, iOS 26+, hidden where unavailable). Reminders, the Face ID lock and drafts are local too.
 

@@ -40,7 +40,9 @@ final class ScreenshotTests: XCTestCase {
         let entry = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
         XCTAssertTrue(entry.waitForExistence(timeout: 10))
-        entry.tap()
+        entry.tap() // expands in the timeline
+        sleep(1)
+        entry.tap() // opens
         XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
         shot("03-entry")
         app.navigationBars.buttons.element(boundBy: 0).tap()

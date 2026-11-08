@@ -42,7 +42,7 @@ struct TodayView: View {
             }
             .navigationTitle("Today") // back-button label on entries opened from here
             .toolbarVisibility(.hidden, for: .navigationBar)
-            .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id, sequence: $0.sequence) }
+            .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
             .refreshable { await model.loadToday() }
             .onChange(of: model.composeRequest, initial: true) { _, requested in
                 guard requested else { return }
@@ -153,6 +153,7 @@ struct TodayView: View {
                 aiPromptDay = today.date
                 aiPromptText = text
             }
+            WidgetSync.update(from: model)
         } catch is CancellationError {
         } catch {
             if !quietly { promptError = error.localizedDescription }

@@ -2,9 +2,6 @@ import SwiftUI
 
 struct EntryRoute: Hashable {
     let id: Int
-    /// Set when opened from search results: pulling to the next or previous entry moves through
-    /// these (in their order) instead of by date.
-    var sequence: [EntryNeighbour]? = nil
 }
 
 /// The Journal tab's views, picked from the menu on its title.
@@ -28,6 +25,10 @@ struct JournalView: View {
     @Environment(AppModel.self) private var model
     @SceneStorage("journal.mode") private var mode = JournalMode.list
     @State private var path = NavigationPath()
+    @State private var expanded: Set<Int> = []
+    /// Bumped to scroll the timeline to its newest entry (after the List view is back on screen).
+    @State private var scrollToTop = 0
+    @State private var actions = EntryActions()
     @State private var composing = false
     @State private var showingProInfo = false
     @State private var randomError: String?
@@ -46,7 +47,7 @@ struct JournalView: View {
                         }
                     }
                 }
-                .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id, sequence: $0.sequence) }
+                .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         Button("Random Entry", systemImage: "shuffle") { Task { await openRandom() } }
@@ -57,6 +58,15 @@ struct JournalView: View {
                     }
                 }
                 .sheet(isPresented: $composing) { ComposeView(mode: .new) }
+                .entryActionSheets(actions)
+                .onChange(of: model.journalTopRequest) {
+                    path = NavigationPath()
+                    mode = .list
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(80))
+                        scrollToTop += 1
+                    }
+                }
                 .sheet(isPresented: $showingProInfo) { ProInfoView(feature: .writing) }
                 .alert("Couldn't open an entry", isPresented: .present($randomError)) {
                     Button("OK", role: .cancel) {}
@@ -127,6 +137,16 @@ struct JournalView: View {
             .scrollIndicators(.hidden) // the timeline scrubber replaces the standard indicator
             .contentMargins(.trailing, 20, for: .scrollContent) // room for the scrubber
             .refreshable { await model.refresh() }
+            .onChange(of: scrollToTop) {
+                guard let month = model.months.first else { return }
+                withAnimation {
+                    if let first = model.monthEntries[month.key]?.first {
+                        proxy.scrollTo(first.id, anchor: .top)
+                    } else {
+                        proxy.scrollTo(PlaceholderID(month: month.key, index: 0), anchor: .top)
+                    }
+                }
+            }
             .onScrollGeometryChange(for: CGFloat.self) { geometry in
                 let scrollable = geometry.contentSize.height - geometry.containerSize.height
                 return scrollable > 0 ? min(max((geometry.contentOffset.y + geometry.contentInsets.top) / scrollable, 0), 1) : 0
@@ -158,8 +178,8 @@ struct JournalView: View {
     private func monthRows(_ month: MonthCount) -> some View {
         if let entries = model.monthEntries[month.key] {
             ForEach(entries) { entry in
-                NavigationLink(value: EntryRoute(id: entry.id)) {
-                    EntryRow(entry: entry)
+                TimelineEntryRow(entry: entry, isExpanded: expanded.contains(entry.id), actions: actions) {
+                    open(entry)
                 }
                 .entryPreview(entry) { path.append(EntryRoute(id: entry.id)) }
             }
@@ -183,6 +203,15 @@ struct JournalView: View {
                 guard !Task.isCancelled else { return }
                 await model.loadMonth(month.key)
             }
+        }
+    }
+
+    /// First tap expands the entry in place; a second opens it.
+    private func open(_ entry: EntrySummary) {
+        if expanded.contains(entry.id) {
+            path.append(EntryRoute(id: entry.id))
+        } else {
+            withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(entry.id) }
         }
     }
 
@@ -216,7 +245,7 @@ private struct MonthHeader: View {
     var body: some View {
         Text(title)
             .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.primary.opacity(0.7))
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityAddTraits(.isHeader)
     }

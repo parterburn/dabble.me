@@ -391,6 +391,49 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       expect(existing.reload.uploading_image?).to be(true)
     end
 
+    describe "editing photos (PATCH)" do
+      let(:entry) { create(:entry, user: pro_user, date: Time.zone.local(2026, 3, 1, 12), body: "<p>Day</p>") }
+
+      it "adds a photo to an entry without one" do
+        key = photo_key(pro_user)
+        patch "/api/v1/entries/#{entry.id}", params: { uploaded_image_keys: [key] }, headers: auth(pro_user), as: :json
+        expect(response).to have_http_status(:ok)
+        expect(ProcessEntryImageJob).to have_received(:perform_later).with(entry.id, key)
+        expect(json["entry"]["image_processing"]).to be(true)
+        expect(entry.reload.body).to include("Day") # text untouched without a document
+      end
+
+      it "folds new photos into a collage with the entry's photo" do
+        give_photo(entry)
+        patch "/api/v1/entries/#{entry.id}", params: { uploaded_image_keys: [photo_key(pro_user)] }, headers: auth(pro_user), as: :json
+        expect(response).to have_http_status(:ok)
+        expect(ImageCollageJob).to have_received(:perform_later).with(entry.id, urls: [kind_of(String)])
+      end
+
+      it "removes the photo, or replaces it" do
+        give_photo(entry)
+        allow_any_instance_of(ImageUploader).to receive(:remove!)
+        patch "/api/v1/entries/#{entry.id}", params: { remove_image: true }, headers: auth(pro_user), as: :json
+        expect(response).to have_http_status(:ok)
+        expect(entry.reload[:image]).to be_blank
+
+        give_photo(entry)
+        key = photo_key(pro_user)
+        patch "/api/v1/entries/#{entry.id}", params: { remove_image: true, uploaded_image_keys: [key] }, headers: auth(pro_user), as: :json
+        expect(ProcessEntryImageJob).to have_received(:perform_later).with(entry.id, key)
+        expect(ImageCollageJob).not_to have_received(:perform_later)
+      end
+
+      it "refuses more photos than a collage holds, and other people's uploads" do
+        give_photo(entry)
+        patch "/api/v1/entries/#{entry.id}", params: { uploaded_image_keys: Array.new(8) { photo_key(pro_user) } }, headers: auth(pro_user), as: :json
+        expect(response).to have_http_status(:unprocessable_content)
+        patch "/api/v1/entries/#{entry.id}", params: { uploaded_image_keys: [photo_key(free_user)] }, headers: auth(pro_user), as: :json
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(ImageCollageJob).not_to have_received(:perform_later)
+      end
+    end
+
     it "refuses more photos than the collage can hold" do
       post "/api/v1/entries", params: { date: "2026-02-01", body: "x", uploaded_image_keys: Array.new(9) { photo_key(pro_user) } },
                               headers: auth(pro_user), as: :json

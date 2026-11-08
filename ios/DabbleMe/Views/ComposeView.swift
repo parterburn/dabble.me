@@ -32,6 +32,7 @@ struct ComposeView: View {
     @State private var isSuggestingTags = false
     @State private var suggestionError: String?
     @State private var pickingPhotos = false
+    @State private var removesExistingPhoto = false
     @Environment(\.scenePhase) private var scenePhase
     private let draftKey: String
     private let originalBlocks: [DocumentBlock]
@@ -62,11 +63,21 @@ struct ComposeView: View {
 
     /// In the order the user picked them.
     private var photos: [PreparedPhoto] { photoItems.compactMap { prepared[$0] } }
-    private var hasChanges: Bool { editor.isDirty || !photoItems.isEmpty || restoredDraft != nil }
+    private var hasChanges: Bool { editor.isDirty || !photoItems.isEmpty || restoredDraft != nil || removesExistingPhoto }
     private var canSave: Bool {
         guard !isSaving, !isLoadingPhotos else { return false }
-        return isNew ? (!editor.isEmpty || !photos.isEmpty) : (!editor.isEmpty && (editor.isDirty || restoredDraft != nil))
+        return isNew ? (!editor.isEmpty || !photos.isEmpty)
+            : (!editor.isEmpty && (editor.isDirty || restoredDraft != nil || !photos.isEmpty || removesExistingPhoto))
     }
+
+    /// Editing: the entry's photo (or collage) as it is now, unless removed. New photos join it in a collage.
+    private var existingPhotoURL: URL? {
+        guard case .edit(let entry) = mode, !removesExistingPhoto, !entry.imageProcessing else { return nil }
+        return entry.summary.thumbnailURL(width: 168)
+    }
+
+    /// How many more photos fit (a collage holds `AppModel.maxPhotos`, counting the entry's own).
+    private var photoLimit: Int { AppModel.maxPhotos - (existingPhotoURL == nil ? 0 : 1) }
 
     var body: some View {
         NavigationStack {
@@ -90,7 +101,7 @@ struct ComposeView: View {
                     Divider()
                     hashtagSuggestions
                 }
-                if isNew, !photoItems.isEmpty {
+                if !photoItems.isEmpty || existingPhotoURL != nil {
                     Divider()
                     photoBar
                 }
@@ -132,7 +143,7 @@ struct ComposeView: View {
                 Text(error ?? "")
             }
             .richTextLinkAlert(editor)
-            .photosPicker(isPresented: $pickingPhotos, selection: $photoItems, maxSelectionCount: AppModel.maxPhotos,
+            .photosPicker(isPresented: $pickingPhotos, selection: $photoItems, maxSelectionCount: photoLimit,
                           selectionBehavior: .ordered, matching: .images, preferredItemEncoding: .current)
             .alert("No hashtag suggestions", isPresented: .present($suggestionError)) {
                 Button("OK", role: .cancel) {}
@@ -177,14 +188,13 @@ struct ComposeView: View {
     /// The editor bar's "+" menu.
     private var insertItems: [EditorInsertItem] {
         var items: [EditorInsertItem] = []
-        if isNew {
-            if model.me?.canAddPhotos == true {
-                items.append(EditorInsertItem(title: photoItems.isEmpty ? "Add Photos" : "Add More Photos", systemImage: "photo.on.rectangle",
-                                              isEnabled: photoItems.count < AppModel.maxPhotos) { pickingPhotos = true })
-            } else {
-                items.append(EditorInsertItem(title: "Add Photos", systemImage: "photo.on.rectangle",
-                                              subtitle: "Part of Dabble Me PRO", isEnabled: false) {})
-            }
+        if model.me?.canAddPhotos == true {
+            let hasPhotos = !photoItems.isEmpty || existingPhotoURL != nil
+            items.append(EditorInsertItem(title: hasPhotos ? "Add More Photos" : "Add Photos", systemImage: "photo.on.rectangle",
+                                          isEnabled: photoItems.count < photoLimit) { pickingPhotos = true })
+        } else if isNew {
+            items.append(EditorInsertItem(title: "Add Photos", systemImage: "photo.on.rectangle",
+                                          subtitle: "Part of Dabble Me PRO", isEnabled: false) {})
         }
         if JournalIntelligence.isEnabled(for: model.me) {
             items.append(EditorInsertItem(title: "Suggest Hashtags", systemImage: "number",
@@ -274,26 +284,56 @@ struct ComposeView: View {
     private var photoBar: some View {
         ScrollView(.horizontal) {
             HStack(spacing: 10) {
+                if let existingPhotoURL {
+                    existingThumbnail(existingPhotoURL)
+                }
                 ForEach(photoItems, id: \.self) { item in
                     thumbnail(for: item)
                 }
-                if photoItems.count < AppModel.maxPhotos {
-                    PhotosPicker(selection: $photoItems, maxSelectionCount: AppModel.maxPhotos,
+                if photoItems.count < photoLimit {
+                    PhotosPicker(selection: $photoItems, maxSelectionCount: photoLimit,
                                  selectionBehavior: .ordered, matching: .images, preferredItemEncoding: .current) {
                         Label("Add More", systemImage: "photo.on.rectangle")
                             .frame(minHeight: 56)
                     }
                 }
-                Text("\(photoItems.count) of \(AppModel.maxPhotos)")
+                let count = photoItems.count + (existingPhotoURL == nil ? 0 : 1)
+                Text("\(count) of \(AppModel.maxPhotos)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
-                    .accessibilityLabel("\(photoItems.count) of \(AppModel.maxPhotos) photos")
+                    .accessibilityLabel("\(count) of \(AppModel.maxPhotos) photos")
             }
             .padding(.horizontal)
         }
         .scrollIndicators(.hidden)
         .padding(.vertical, 8)
+    }
+
+    /// The entry's current photo when editing; the X removes it on save.
+    private func existingThumbnail(_ url: URL) -> some View {
+        ZStack(alignment: .topTrailing) {
+            AsyncImage(url: url) { image in
+                image.resizable().scaledToFill()
+            } placeholder: {
+                Color.secondary.opacity(0.12)
+            }
+            .frame(width: 56, height: 56)
+            .clipShape(.rect(cornerRadius: 8))
+
+            Button {
+                removesExistingPhoto = true
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .symbolRenderingMode(.palette)
+                    .foregroundStyle(.white, .black.opacity(0.6))
+                    .padding(3)
+            }
+            .accessibilityLabel("Remove current photo")
+            .disabled(isSaving)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Current photo")
     }
 
     @ViewBuilder
@@ -331,7 +371,7 @@ struct ComposeView: View {
     /// UI tests and screenshots: `-DabbleDebugComposePhotoURLs "url1,url2"` attaches those images
     /// as if picked (the system photo picker runs out of process, out of a UI test's reach).
     private func attachDebugPhotos() async {
-        guard isNew, photoItems.isEmpty,
+        guard photoItems.isEmpty,
               let raw = UserDefaults.standard.string(forKey: "DabbleDebugComposePhotoURLs") else { return }
         isLoadingPhotos = true
         defer { isLoadingPhotos = false }
@@ -430,7 +470,10 @@ struct ComposeView: View {
                 }
                 onSaved(result.entry)
             case .edit(let entry):
-                onSaved(try await model.updateEntry(id: entry.id, document: editor.blocks))
+                uploadedCount = photos.isEmpty ? nil : 0
+                defer { uploadedCount = nil }
+                onSaved(try await model.updateEntry(id: entry.id, document: editor.blocks, photos: photos,
+                                                    removeImage: removesExistingPhoto) { uploadedCount = $0 })
             }
             draftSave?.cancel()
             DraftStore.clear(draftKey)

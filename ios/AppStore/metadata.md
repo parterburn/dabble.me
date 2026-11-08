@@ -32,6 +32,7 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 > WRITE YOUR WAY
 > • Bold, italic and underline, links, and lists that start as you type "- " or "1." 
 > • Add up to 8 photos. Several become a beautiful collage automatically
+> • Edit entries later, photos included
 > • A daily writing prompt, written just for you from your recent days (on devices with Apple Intelligence)
 > • Unfinished entries are saved as you type, even if the app closes
 > • Prefer email? Reply to Dabble Me's "How was your day?" email and it becomes an entry too
@@ -45,7 +46,8 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 > • Your whole journal by month, with a timeline scrubber to jump years back
 > • Photos view: every day you captured, in one grid
 > • Search every word you've ever written, or tap your #hashtags
-> • Pull down or up to move to the next or previous day; tap the date to see how long ago it was
+> • Tap an entry to read it right in the timeline; swipe to reflect or edit
+> • Tap an entry's date to see how long ago it was
 > • Long-press any entry to preview it
 > • Give a #hashtag a date (a birthday, an anniversary) and see how old your kids were, or how long it had been, in every entry
 > • Random entry: rediscover a moment you'd forgotten
@@ -53,7 +55,7 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 > • Pinch to make entries easier to read
 >
 > APPLE INTELLIGENCE, ON YOUR DEVICE
-> On supported iPhones and iPads, Dabble Me responds to an entry with a warm, thoughtful reflection and a question to keep you writing, suggests which of your hashtags fit as you write, and writes each day's prompt from your recent days. It all runs on your device; your journal isn't sent anywhere for it.
+> On supported iPhones and iPads, Dabble Me responds to an entry with a warm, thoughtful reflection and a question to keep you writing (just pull down on it), suggests which of your hashtags fit as you write, and writes each day's prompt from your recent days. It all runs on your device; your journal isn't sent anywhere for it.
 >
 > ASK AI ABOUT YOUR JOURNAL
 > Connect Claude or ChatGPT to your journal and ask things like "What made me happiest this year?" or "When did I last go camping?" You approve access, and you can remove it any time.
