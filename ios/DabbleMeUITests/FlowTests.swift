@@ -7,7 +7,9 @@ final class FlowTests: XCTestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        let token = try XCTUnwrap(ProcessInfo.processInfo.environment["DABBLE_TOKEN"], "Set TEST_RUNNER_DABBLE_TOKEN")
+        guard let token = ProcessInfo.processInfo.environment["DABBLE_TOKEN"] else {
+            throw XCTSkip("Needs a local server and TEST_RUNNER_DABBLE_TOKEN (rails ios:demo_account)")
+        }
         app = XCUIApplication()
         app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", "http://localhost:3000"]
         app.launch()

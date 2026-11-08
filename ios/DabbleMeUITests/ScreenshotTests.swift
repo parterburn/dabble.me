@@ -2,12 +2,13 @@ import XCTest
 
 /// App Store screenshots from the demo account (`rails ios:demo_account`; never a real journal).
 /// Run on the 6.9" iPhone and 13" iPad simulators with TEST_RUNNER_DABBLE_TOKEN and
-/// TEST_RUNNER_DABBLE_SCREENSHOT_DIR set. Not part of the regular suite's assertions.
+/// TEST_RUNNER_DABBLE_SCREENSHOT_DIR set; skipped otherwise, so regular test runs don't need it.
 final class ScreenshotTests: XCTestCase {
     func testAppStoreScreenshots() throws {
         let env = ProcessInfo.processInfo.environment
-        let token = try XCTUnwrap(env["DABBLE_TOKEN"])
-        let dir = try XCTUnwrap(env["DABBLE_SCREENSHOT_DIR"])
+        guard let dir = env["DABBLE_SCREENSHOT_DIR"], let token = env["DABBLE_TOKEN"] else {
+            throw XCTSkip("Screenshots are opt-in: set TEST_RUNNER_DABBLE_SCREENSHOT_DIR and TEST_RUNNER_DABBLE_TOKEN")
+        }
         let photos = [1043, 1060].map { "https://picsum.photos/id/\($0)/2400/1800" }.joined(separator: ",")
 
         let app = XCUIApplication()

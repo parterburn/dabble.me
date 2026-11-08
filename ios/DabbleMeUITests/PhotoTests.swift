@@ -34,7 +34,9 @@ final class PhotoTests: XCTestCase {
 /// the collage). This is the flow that froze in TestFlight build 1.
 final class PhotoEntryTests: XCTestCase {
     func testSavingSeveralPhotosStaysResponsiveAndShowsTheCollage() throws {
-        let token = try XCTUnwrap(ProcessInfo.processInfo.environment["DABBLE_TOKEN"])
+        guard let token = ProcessInfo.processInfo.environment["DABBLE_TOKEN"] else {
+            throw XCTSkip("Needs a local server and TEST_RUNNER_DABBLE_TOKEN (rails ios:demo_account)")
+        }
         let urls = [1043, 1015, 1039, 1060].map { "https://picsum.photos/id/\($0)/2400/1800" }.joined(separator: ",")
         let app = XCUIApplication()
         app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", "http://localhost:3000",
@@ -46,7 +48,10 @@ final class PhotoEntryTests: XCTestCase {
         app.buttons["New Entry"].tap()
         let editor = app.textViews["Entry"]
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Add More"].waitForExistence(timeout: 30), "The four photos should be attached")
+        // All four must attach (a single photo skips the collage path this test is for).
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "4 of 8 photos")).firstMatch
+            .waitForExistence(timeout: 60), "All four photos should be attached")
+        XCTAssertEqual(app.buttons.matching(identifier: "Remove photo").count, 4)
         editor.tap()
         editor.typeText("Four photos, one collage.")
         app.buttons["Save"].tap()
