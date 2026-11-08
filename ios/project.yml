@@ -14,6 +14,10 @@ settings:
     # Dabble Dev LLC. Change if you sign with a different Apple Developer team.
     DEVELOPMENT_TEAM: B79A4CAS56
     CODE_SIGN_STYLE: Automatic
+    # Xcode's recommended settings (so it stops offering to "update to recommended").
+    ENABLE_USER_SCRIPT_SANDBOXING: true
+    ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOL_EXTENSIONS: true
+    STRING_CATALOG_GENERATE_SYMBOLS: true
 targets:
   DabbleMe:
     type: application
