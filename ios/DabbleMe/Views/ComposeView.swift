@@ -214,18 +214,19 @@ struct ComposeView: View {
             }
             .scrollIndicators(.hidden)
 
-            Text(photoFooter)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal)
+            if let photoFooter {
+                Text(photoFooter)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+            }
         }
         .padding(.vertical, 10)
     }
 
-    private var photoFooter: String {
-        if photoItems.isEmpty {
-            return "Up to \(AppModel.maxPhotos) photos. Already wrote today? This adds to that entry."
-        }
+    /// Only once photos are picked, to keep the composer compact.
+    private var photoFooter: String? {
+        guard !photoItems.isEmpty else { return nil }
         let collage = photoItems.count > 1 ? " They'll be combined into a collage." : ""
         return "\(photoItems.count) of \(AppModel.maxPhotos) photos.\(collage) Location data is removed."
     }
