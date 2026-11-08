@@ -24,34 +24,42 @@ enum JournalIntelligence {
     }
 
     enum Failure: LocalizedError {
-        case unavailable, noAnswer
+        case unavailable, noAnswer, noHashtagsYet, noMatchingHashtags
 
         var errorDescription: String? {
             switch self {
             case .unavailable: "Apple Intelligence isn't available on this device right now."
             case .noAnswer: "Apple Intelligence couldn't come up with anything for this one."
+            case .noHashtagsYet: "Suggestions come from hashtags you already use. Add a #hashtag to an entry to get started."
+            case .noMatchingHashtags: "None of your hashtags fit this entry yet."
             }
         }
     }
 
-    /// 3–5 hashtags for an entry, preferring tags the writer already uses, minus ones already in it.
-    static func suggestHashtags(for text: String, preferring existing: [String]) async throws -> [String] {
-        let usual = existing.prefix(25).map { "#\($0)" }.joined(separator: " ")
+    /// Up to 3 of the writer's own hashtags that fit an entry, minus ones already in it. Never
+    /// invents new tags: the model picks from the list, and anything else it says is dropped.
+    static func suggestHashtags(for text: String, from existing: [String]) async throws -> [String] {
+        guard !existing.isEmpty else { throw Failure.noHashtagsYet }
+        let already = Set(hashtags(in: text).map { $0.lowercased() })
+        let candidates = existing.filter { !already.contains($0.lowercased()) }
+        guard !candidates.isEmpty else { throw Failure.noMatchingHashtags }
+        let list = candidates.prefix(150).map { "#\($0)" }.joined(separator: " ")
         let reply = try await respond(
             instructions: """
-            You suggest hashtags for a private journal entry. Reply with 3 to 5 hashtags separated by spaces \
-            and nothing else. Hashtags are single lowercase words or joinedwords with no spaces. Every hashtag \
-            must describe something the entry is actually about (a place, activity, person, feeling or theme). \
-            \(usual.isEmpty ? "" : "If one of the writer's usual hashtags clearly matches the entry, use that spelling: \(usual).")
+            You tag a private journal entry using only the writer's existing hashtags. Reply with the 1 to 3 \
+            hashtags from the list that directly describe what this entry is about (a person, pet, place, \
+            activity or theme it mentions), separated by spaces. Fewer is better: leave out any hashtag that \
+            only loosely relates. Never create a hashtag that isn't in the list. If none fit, reply with NONE.
             """,
-            prompt: "Journal entry:\n\(clipped(text))"
+            prompt: "Hashtags: \(list)\n\nJournal entry:\n\(clipped(text, limit: 2500))",
+            temperature: 0.2
         )
-        let already = Set(hashtags(in: text).map { $0.lowercased() })
+        // Keep only tags from the list, in the writer's own spelling.
+        let spelling = Dictionary(candidates.map { ($0.lowercased(), $0) }, uniquingKeysWith: { first, _ in first })
         var seen = Set<String>()
-        return hashtags(in: reply).filter { tag in
-            let key = tag.lowercased()
-            return !already.contains(key) && seen.insert(key).inserted
-        }.prefix(5).map { $0 }
+        let picked = hashtags(in: reply).compactMap { spelling[$0.lowercased()] }.filter { seen.insert($0.lowercased()).inserted }
+        guard !picked.isEmpty else { throw Failure.noMatchingHashtags }
+        return Array(picked.prefix(3))
     }
 
     /// A short, warm response to an entry, ending with a question: the on-device version of the
@@ -121,11 +129,12 @@ enum JournalIntelligence {
         text.count > limit ? String(text.prefix(limit)) + "…" : text
     }
 
-    private static func respond(instructions: String, prompt: String) async throws -> String {
+    private static func respond(instructions: String, prompt: String, temperature: Double? = nil) async throws -> String {
         #if canImport(FoundationModels)
         if #available(iOS 26.0, *), SystemLanguageModel.default.isAvailable {
             let session = LanguageModelSession(model: .default, instructions: instructions)
-            let reply = try await session.respond(to: prompt).content.trimmingCharacters(in: .whitespacesAndNewlines)
+            let reply = try await session.respond(to: prompt, options: GenerationOptions(temperature: temperature))
+                .content.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !reply.isEmpty else { throw Failure.noAnswer }
             return reply
         }

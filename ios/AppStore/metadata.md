@@ -33,7 +33,7 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 > • Bold, italic and underline, links, and lists that start as you type "- " or "1." 
 > • Add up to 8 photos. Several become a beautiful collage automatically
 > • Dictate instead of typing, transcribed on your device
-> • A daily writing prompt, or one written from your recent entries
+> • A daily writing prompt, written just for you from your recent days (on devices with Apple Intelligence)
 > • Unfinished entries are saved as you type, even if the app closes
 > • Prefer email? Reply to Dabble Me's "How was your day?" email and it becomes an entry too
 >
@@ -54,7 +54,7 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 > • Pinch to make entries easier to read
 >
 > APPLE INTELLIGENCE, ON YOUR DEVICE
-> On supported iPhones and iPads, Dabble Me responds to an entry with a warm, thoughtful reflection and a question to keep you writing, suggests hashtags as you write, and writes prompts from your recent days. It all runs on your device; your journal isn't sent anywhere for it.
+> On supported iPhones and iPads, Dabble Me responds to an entry with a warm, thoughtful reflection and a question to keep you writing, suggests which of your hashtags fit as you write, and writes each day's prompt from your recent days. It all runs on your device; your journal isn't sent anywhere for it.
 >
 > ASK AI ABOUT YOUR JOURNAL
 > Connect Claude or ChatGPT to your journal and ask things like "What made me happiest this year?" or "When did I last go camping?" You approve access, and you can remove it any time.

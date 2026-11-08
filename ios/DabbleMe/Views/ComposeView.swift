@@ -136,7 +136,7 @@ struct ComposeView: View {
             .richTextLinkAlert(editor)
             .photosPicker(isPresented: $pickingPhotos, selection: $photoItems, maxSelectionCount: AppModel.maxPhotos,
                           selectionBehavior: .ordered, matching: .images, preferredItemEncoding: .current)
-            .alert("Couldn't suggest hashtags", isPresented: .present($suggestionError)) {
+            .alert("No hashtag suggestions", isPresented: .present($suggestionError)) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(suggestionError ?? "")
@@ -265,10 +265,8 @@ struct ComposeView: View {
         isSuggestingTags = true
         defer { isSuggestingTags = false }
         do {
-            let usual = (try? await model.topHashtags().map(\.tag)) ?? []
-            let tags = try await JournalIntelligence.suggestHashtags(for: editor.plainText, preferring: usual)
-            if tags.isEmpty { throw JournalIntelligence.Failure.noAnswer }
-            suggestedTags = tags
+            let existing = try await model.allHashtags().map(\.tag)
+            suggestedTags = try await JournalIntelligence.suggestHashtags(for: editor.plainText, from: existing)
         } catch is CancellationError {
         } catch {
             suggestionError = error.localizedDescription

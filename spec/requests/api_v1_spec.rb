@@ -499,6 +499,15 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       end
       expect(json["hashtags"]).to eq([{ "tag" => "family", "count" => 2 }, { "tag" => "Cooking", "count" => 1 }])
     end
+
+    it "can go further back, and limit how many" do
+      travel_to Time.find_zone(pro_user.send_timezone).local(2026, 6, 20, 12) do
+        create(:entry, user: pro_user, date: Time.zone.local(2026, 6, 1), body: "<p>#family #Cooking</p>")
+        create(:entry, user: pro_user, date: Time.zone.local(2024, 5, 1), body: "<p>#ancient</p>")
+        get "/api/v1/hashtags", params: { days: 3650, limit: 2 }, headers: auth(pro_user)
+      end
+      expect(json["hashtags"].map { |h| h["tag"] }).to eq(%w[ancient Cooking])
+    end
   end
 
   describe "GET /api/v1/search" do

@@ -13,9 +13,9 @@ final class JournalViewsTests: XCTestCase {
         self.token = token
     }
 
-    private func launch() -> XCUIApplication {
+    private func launch(_ extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", "http://localhost:3000"] + extra
         app.launch()
         return app
     }
@@ -118,15 +118,16 @@ final class JournalViewsTests: XCTestCase {
 
     func testTodayPromptEntrySummaryAndSettings() throws {
         let app = launch()
-        let prompt = app.buttons["Prompt from My Recent Entries"]
-        if prompt.waitForExistence(timeout: 15) {
-            prompt.tap()
-            let personal = app.buttons["Another Prompt"]
-            let deadline = Date().addingTimeInterval(60)
-            while !personal.exists, !app.alerts.firstMatch.exists, Date() < deadline { sleep(1) }
+        // With Apple Intelligence on, Today writes its own prompt (no button to ask for one).
+        XCTAssertTrue(app.staticTexts["On This Day"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.buttons["Prompt from My Recent Entries"].exists)
+        let another = app.buttons["Another Prompt"]
+        if another.waitForExistence(timeout: 60) {
             snap("today-ai-prompt")
-            if app.alerts.firstMatch.exists { print("PROMPT_ALERT=\(app.alerts.firstMatch.debugDescription)") }
-            XCTAssertTrue(personal.exists)
+            another.tap()
+            XCTAssertTrue(another.waitForExistence(timeout: 60))
+        } else {
+            print("AI_UNAVAILABLE_OR_ENTRY_WRITTEN")
         }
 
         tab(app, "Journal").tap()
@@ -220,5 +221,34 @@ final class JournalViewsTests: XCTestCase {
         chip.press(forDuration: 1.2)
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "since entry")).firstMatch.waitForExistence(timeout: 5))
         snap("hashtag-age")
+    }
+
+    /// Tapping the mic asks for speech and microphone access and starts listening, without crashing.
+    func testDictationButtonStartsListening() throws {
+        let app = launch(["-DabbleDictationSkipAudio", "YES"])
+        let write = app.buttons["Write Today's Entry"].waitForExistence(timeout: 15) ? app.buttons["Write Today's Entry"] : app.buttons["Add to Today's Entry"]
+        XCTAssertTrue(write.waitForExistence(timeout: 5))
+        write.tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        editor.tap()
+        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+        let mic = app.toolbars.buttons["Dictate"].firstMatch // not the keyboard's own dictation key
+        guard mic.waitForExistence(timeout: 3) else { throw XCTSkip("On-device speech isn't available on this simulator") }
+        mic.tap()
+        // Permission prompts (speech, then microphone) come from SpringBoard.
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        for _ in 0..<2 {
+            let allow = springboard.buttons.matching(NSPredicate(format: "label IN {'Allow', 'OK'}")).firstMatch
+            if allow.waitForExistence(timeout: 4) { allow.tap() }
+        }
+        sleep(3)
+        XCTAssertEqual(app.state, .runningForeground, "The app should still be running after tapping the mic")
+        XCTAssertTrue(app.toolbars.buttons["Stop Dictating"].firstMatch.waitForExistence(timeout: 5), "Listening after permission")
+        snap("dictation")
+        let stop = app.toolbars.buttons["Stop Dictating"].firstMatch
+        if stop.exists { stop.tap() }
+        sleep(1)
+        XCTAssertEqual(app.state, .runningForeground)
     }
 }

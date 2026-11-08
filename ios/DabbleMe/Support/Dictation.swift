@@ -33,14 +33,22 @@ final class Dictation {
 
     func start() async throws {
         guard !isListening else { return }
-        let speech = await withCheckedContinuation { continuation in
-            SFSpeechRecognizer.requestAuthorization { continuation.resume(returning: $0) }
-        }
+        let speech = await Self.requestSpeechAuthorization()
         guard speech == .authorized else { throw Failure.speechDenied }
         guard await AVAudioApplication.requestRecordPermission() else { throw Failure.microphoneDenied }
         guard let recognizer = SFSpeechRecognizer(), recognizer.isAvailable, recognizer.supportsOnDeviceRecognition else {
             throw Failure.unavailable
         }
+
+        #if DEBUG
+        // UI tests: the simulator often can't reach the Mac's microphone (the audio engine then
+        // aborts), so -DabbleDictationSkipAudio YES stops after the permission checks.
+        if UserDefaults.standard.bool(forKey: "DabbleDictationSkipAudio") {
+            isListening = true
+            onStateChange(true)
+            return
+        }
+        #endif
 
         let session = AVAudioSession.sharedInstance()
         try session.setCategory(.record, mode: .measurement, options: .duckOthers)
@@ -74,6 +82,13 @@ final class Dictation {
     /// Stops listening; the last words still come through `onTranscript`.
     func stop() {
         guard isListening else { return }
+        #if DEBUG
+        if UserDefaults.standard.bool(forKey: "DabbleDictationSkipAudio") {
+            isListening = false
+            onStateChange(false)
+            return
+        }
+        #endif
         engine.stop()
         engine.inputNode.removeTap(onBus: 0)
         request?.endAudio()
@@ -88,8 +103,14 @@ final class Dictation {
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
     }
 
-    // Audio and recognition callbacks arrive on background threads, so they're set up outside
-    // the main actor.
+    // Permission, audio and recognition callbacks arrive on background threads, so they're set up
+    // outside the main actor (a closure written on the main actor would trap when called there).
+    nonisolated private static func requestSpeechAuthorization() async -> SFSpeechRecognizerAuthorizationStatus {
+        await withCheckedContinuation { continuation in
+            SFSpeechRecognizer.requestAuthorization { continuation.resume(returning: $0) }
+        }
+    }
+
     nonisolated private static func installTap(on input: AVAudioInputNode, feeding request: SFSpeechAudioBufferRecognitionRequest) {
         input.installTap(onBus: 0, bufferSize: 1024, format: input.outputFormat(forBus: 0)) { buffer, _ in
             request.append(buffer)

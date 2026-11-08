@@ -95,6 +95,9 @@ final class AppModel {
         ReminderScheduler.shared.removeAll()
         DraftStore.clearAll()
         WidgetSync.clear()
+        // Today's on-device prompt is written from the journal; don't leave it behind.
+        UserDefaults.standard.removeObject(forKey: "ai.prompt.day")
+        UserDefaults.standard.removeObject(forKey: "ai.prompt.text")
         lock.reset()
         resetSession()
     }
@@ -319,6 +322,12 @@ final class AppModel {
 
     func photoEntries(page: Int) async throws -> EntryPage {
         try await api.get("api/v1/entries", query: ["photos": "1", "page": String(page), "per": "48"])
+    }
+
+    /// Every hashtag the writer has used (most used first), the vocabulary for suggestions.
+    func allHashtags() async throws -> [HashtagCount] {
+        let list: HashtagList = try await api.get("api/v1/hashtags", query: ["days": "3650", "limit": "200"])
+        return list.hashtags
     }
 
     func topHashtags() async throws -> [HashtagCount] {
