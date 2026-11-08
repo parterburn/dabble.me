@@ -6,8 +6,15 @@ Doorkeeper.configure do
   # Share Devise session / Warden with the rest of the app (OAuth authorize screens).
   base_controller 'ApplicationController'
 
+  # Doorkeeper's documented pattern: send signed-out users to the login page and back here
+  # afterwards, without Devise's "You need to login or sign up" flash (the iOS app and AI
+  # connectors open this page right after the person chose to sign in).
   resource_owner_authenticator do
-    current_user || warden.authenticate!(scope: :user)
+    current_user || begin
+      store_location_for(:user, request.fullpath)
+      redirect_to(new_user_session_url)
+      nil
+    end
   end
 
   admin_authenticator do

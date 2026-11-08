@@ -38,15 +38,16 @@
     <%= render 'shared/marketing_navbar' %>
 
     <main>
+      <%# In the page flow (not a fixed overlay) so messages never cover page headings. %>
       <% if notice %>
-        <div class="fixed top-20 left-1/2 -translate-x-1/2 z-50 max-w-md w-full px-4">
+        <div class="mx-auto max-w-md w-full px-4 pt-6">
           <div class="bg-surface border border-subtle rounded-lg p-4 shadow-lg animate-fade-in">
             <p class="text-sm text-primary"><%= notice.html_safe %></p>
           </div>
         </div>
       <% end %>
       <% if alert %>
-        <div class="fixed top-20 left-1/2 -translate-x-1/2 z-50 max-w-md w-full px-4">
+        <div class="mx-auto max-w-md w-full px-4 pt-6">
           <div class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 shadow-lg animate-fade-in">
             <p class="text-sm text-red-600 dark:text-red-400"><%= alert.html_safe %></p>
           </div>

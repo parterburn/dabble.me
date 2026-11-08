@@ -45,6 +45,7 @@ Rails.application.routes.draw do
       end
       get 'search', to: 'searches#show'
       resources :image_uploads, only: :create
+      post 'account/deletion_request', to: 'accounts#deletion_request'
     end
   end
 

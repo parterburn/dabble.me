@@ -22,6 +22,12 @@ struct SearchView: View {
                         .onChange(of: query) { _, newValue in
                             if newValue.isEmpty { clear() }
                         }
+                        .onChange(of: model.searchRequest, initial: true) { _, request in
+                            guard let request else { return }
+                            model.searchRequest = nil
+                            query = request
+                            Task { await search(reset: true) }
+                        }
                 }
             }
             .navigationTitle("Search")

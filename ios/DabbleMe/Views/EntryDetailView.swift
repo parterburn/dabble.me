@@ -117,17 +117,13 @@ private struct EntryBody: View {
                 .font(.system(.title2, design: .serif, weight: .semibold))
                 .accessibilityAddTraits(.isHeader)
 
-            if entry.imageProcessing || entry.imageURL != nil {
-                EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing)
-            }
-
             if let document = entry.document {
-                Text(RichText.displayString(from: document))
+                Text(RichText.linkingHashtags(in: RichText.displayString(from: document)))
                     .font(.system(.body, design: .serif))
                     .lineSpacing(5)
                     .textSelection(.enabled)
             } else if !entry.bodyText.isEmpty {
-                Text(AttributedString.journal(entry.bodyText))
+                Text(RichText.linkingHashtags(in: AttributedString.journal(entry.bodyText)))
                     .font(.system(.body, design: .serif))
                     .lineSpacing(5)
                     .textSelection(.enabled)
@@ -143,6 +139,11 @@ private struct EntryBody: View {
                         }
                     }
                 }
+            }
+
+            // Text first: Dabble Me is about the writing; photos follow it.
+            if entry.imageProcessing || entry.imageURL != nil {
+                EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing)
             }
         }
     }

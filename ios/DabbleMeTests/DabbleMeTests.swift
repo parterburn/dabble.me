@@ -170,3 +170,18 @@ struct RichTextTests {
                 String(decoding: data, as: UTF8.self) == #"{"text":"hi","bold":true}"#)
     }
 }
+
+struct HashtagLinkTests {
+    @Test func linksHashtagsButNotLookalikes() {
+        let text = RichText.linkingHashtags(in: AttributedString("Great #hike today. C# and https://x.test/#top stay plain. #2026goals too"))
+        let links = text.runs.compactMap { run in run.link.map { (String(text[run.range].characters), $0) } }
+        #expect(links.map(\.0) == ["#hike", "#2026goals"])
+        #expect(links.compactMap { RichText.hashtag(from: $0.1) } == ["hike", "2026goals"])
+    }
+
+    @Test func leavesExistingLinksAlone() {
+        var text = AttributedString("#notatag")
+        text.link = URL(string: "https://example.com")
+        #expect(RichText.linkingHashtags(in: text).runs.first?.link == URL(string: "https://example.com"))
+    }
+}

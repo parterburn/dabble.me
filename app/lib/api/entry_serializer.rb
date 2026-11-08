@@ -32,7 +32,7 @@ module Api
 
     def full
       summary.merge(
-        body_text: entry.text_body.to_s.strip,
+        body_text: display_text(entry.text_body),
         # Structured, editable copy of the body (see EntryDocument), or nil when it's web-only.
         document: EntryDocument.from_html(entry.body),
         songs: songs,
@@ -43,6 +43,13 @@ module Api
     private
 
     attr_reader :entry
+
+    # Entry#text_body is Markdown from ReverseMarkdown, which turns email blank lines
+    # (<div><br></div>) into "  \n\n" sequences. Trim line ends and collapse blank-line runs
+    # so the app shows one blank line between paragraphs, like the web.
+    def display_text(text)
+      text.to_s.gsub(/[ \t]+$/, '').gsub(/\n{3,}/, "\n\n").strip
+    end
 
     def songs
       Array(entry.songs).filter_map do |song|

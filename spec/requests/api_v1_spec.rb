@@ -321,6 +321,34 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
     end
   end
 
+  describe "POST /api/v1/account/deletion_request" do
+    include ActiveJob::TestHelper
+
+    it "emails a link to the web deletion page without deleting anything, at most once per window" do
+      allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new) # test env uses :null_store
+      expect {
+        post "/api/v1/account/deletion_request", headers: auth(free_user)
+        post "/api/v1/account/deletion_request", headers: auth(free_user)
+      }.to have_enqueued_mail(UserMailer, :account_deletion_requested).once
+      expect(response).to have_http_status(:accepted)
+      expect(json["email"]).to eq(free_user.email)
+      expect(free_user.reload.deletion_pending?).to be(false)
+    end
+
+    it "builds an email that links to the web deletion page" do
+      mail = UserMailer.account_deletion_requested(free_user)
+      expect(mail.to).to eq([free_user.email])
+      expect(mail.body.encoded).to include("/settings/delete-account")
+    end
+  end
+
+  describe "body_text" do
+    it "shows one blank line between email paragraphs" do
+      entry = create(:entry, user: pro_user, body: "<div>One.</div><div><br></div><div>Two.</div><div><br></div><div>Three.</div>")
+      expect(Api::EntrySerializer.full(entry)[:body_text]).to eq("One.\n\nTwo.\n\nThree.")
+    end
+  end
+
   describe "GET /api/v1/search" do
     before do
       create(:entry, user: pro_user, body: "<p>Went hiking today</p>")
@@ -373,6 +401,17 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
 
       get "/api/v1/me", headers: { "Authorization" => "Bearer #{json['access_token']}" }
       expect(response).to have_http_status(:ok)
+    end
+
+    it "sends signed-out users to the login page without a flash, and remembers where to return" do
+      authorize_path = oauth_authorization_path(
+        response_type: "code", client_id: mobile_app.uid, redirect_uri: MobileApp::REDIRECT_URI,
+        scope: MobileApp::SCOPE, state: "xyz", code_challenge: code_challenge, code_challenge_method: "S256"
+      )
+      get authorize_path
+      expect(response).to redirect_to(new_user_session_path)
+      expect(flash[:alert]).to be_nil
+      expect(session["user_return_to"]).to eq(authorize_path)
     end
 
     it "does not let MCP clients register the app's redirect scheme for a different scope" do

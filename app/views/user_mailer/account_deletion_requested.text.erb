@@ -1,0 +1,11 @@
+Hey <%= @user.first_name_or_fallback %>,
+
+You asked to delete your Dabble Me account (<%= @user.email %>) from the iOS app. To finish, sign in on the web and confirm with your password:
+<%= delete_account_url %>
+
+Before you go, you can export your entries from that page. Deletion is permanent once it completes, and you'll have one hour to change your mind by signing back in.
+
+If you didn't ask for this, you can ignore this email. Nothing has been deleted.
+
+Thanks,
+Dabble Me

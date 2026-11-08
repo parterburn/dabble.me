@@ -6,6 +6,19 @@ import Observation
 @MainActor
 @Observable
 final class AppModel {
+    enum Tab: Hashable {
+        case journal, search, settings
+    }
+
+    /// Selected tab, and a search another screen asked for (e.g. tapping a #hashtag).
+    var selectedTab: Tab = .journal
+    var searchRequest: String?
+
+    func search(hashtag: String) {
+        searchRequest = "#\(hashtag)"
+        selectedTab = .search
+    }
+
     private(set) var isSignedIn: Bool
     private(set) var isSigningIn = false
     var signInError: String?
@@ -211,6 +224,13 @@ final class AppModel {
         try await api.delete("api/v1/entries/\(id)")
         entries.removeAll { $0.id == id }
         onThisDay.removeAll { $0.id == id }
+    }
+
+    /// Emails a link to the web deletion page. Nothing is deleted from the app itself.
+    func requestAccountDeletion() async throws -> String {
+        struct Empty: Encodable, Sendable {}
+        let response: AccountDeletionRequest = try await api.post("api/v1/account/deletion_request", Empty())
+        return response.email
     }
 
     func search(_ query: String, page: Int = 1) async throws -> EntryPage {

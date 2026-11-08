@@ -10,7 +10,7 @@ settings:
   base:
     SWIFT_VERSION: "6.0"
     MARKETING_VERSION: "1.0"
-    CURRENT_PROJECT_VERSION: "1"
+    CURRENT_PROJECT_VERSION: "2"
     # Dabble Dev LLC. Change if you sign with a different Apple Developer team.
     DEVELOPMENT_TEAM: B79A4CAS56
     CODE_SIGN_STYLE: Automatic
@@ -71,6 +71,18 @@ targets:
       base:
         GENERATE_INFOPLIST_FILE: true
         PRODUCT_BUNDLE_IDENTIFIER: me.dabble.ios.tests
+  DabbleMeUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    sources:
+      - DabbleMeUITests
+    dependencies:
+      - target: DabbleMe
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+        PRODUCT_BUNDLE_IDENTIFIER: me.dabble.ios.uitests
+        TEST_TARGET_NAME: DabbleMe
 schemes:
   DabbleMe:
     build:
@@ -79,3 +91,4 @@ schemes:
     test:
       targets:
         - DabbleMeTests
+        - DabbleMeUITests

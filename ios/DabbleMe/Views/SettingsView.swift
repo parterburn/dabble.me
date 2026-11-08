@@ -3,6 +3,9 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
     @State private var confirmingSignOut = false
+    @State private var confirmingDeletion = false
+    @State private var deletionEmail: String?
+    @State private var deletionError: String?
 
     var body: some View {
         NavigationStack {
@@ -42,10 +45,7 @@ struct SettingsView: View {
 
                 Section {
                     Button("Sign Out", role: .destructive) { confirmingSignOut = true }
-                    Link(destination: AppConfig.webURL("settings/delete-account")) {
-                        Text("Delete Account…")
-                            .foregroundStyle(.red)
-                    }
+                    Button("Delete Account…", role: .destructive) { confirmingDeletion = true }
                 } footer: {
                     if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
                         Text("Dabble Me for iOS \(version)")
@@ -56,6 +56,34 @@ struct SettingsView: View {
             .confirmationDialog("Sign out of Dabble Me?", isPresented: $confirmingSignOut, titleVisibility: .visible) {
                 Button("Sign Out", role: .destructive) { Task { await model.signOut() } }
             }
+            // Deleting takes three deliberate steps: confirm here, open the emailed link, then
+            // confirm with your password on dabble.me (and it can still be undone for an hour).
+            .confirmationDialog("Delete your Dabble Me account?", isPresented: $confirmingDeletion, titleVisibility: .visible) {
+                Button("Email Me a Deletion Link", role: .destructive) { Task { await requestDeletion() } }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("We'll email you a link to finish on dabble.me, where you'll confirm with your password. You can export your entries there first.")
+            }
+            .alert("Check your email", isPresented: .present($deletionEmail)) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("We sent a link to \(deletionEmail ?? "your email") to finish deleting your account. Nothing has been deleted yet.")
+            }
+            .alert("Couldn't send the email", isPresented: .present($deletionError)) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(deletionError ?? "")
+            }
+        }
+    }
+}
+
+private extension SettingsView {
+    func requestDeletion() async {
+        do {
+            deletionEmail = try await model.requestAccountDeletion()
+        } catch {
+            deletionError = error.localizedDescription
         }
     }
 }

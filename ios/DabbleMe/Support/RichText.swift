@@ -159,6 +159,32 @@ enum RichText {
         return blocks
     }
 
+    // MARK: - Hashtags
+
+    static let hashtagScheme = "dabbleme-hashtag"
+
+    /// Turns #hashtags into links (handled in-app to search for the tag). Skips text that's
+    /// already a link and things like "C#" or URL fragments that aren't at a word start.
+    static func linkingHashtags(in text: AttributedString) -> AttributedString {
+        var result = text
+        let string = String(result.characters)
+        let regex = try! NSRegularExpression(pattern: "(?<![\\w&/#])#([0-9]*[A-Za-z_][A-Za-z0-9_]*)")
+        for match in regex.matches(in: string, range: NSRange(string.startIndex..., in: string)) {
+            guard let range = Range(match.range, in: result),
+                  result[range].link == nil,
+                  let tagRange = Range(match.range(at: 1), in: string),
+                  let url = URL(string: "\(hashtagScheme):\(string[tagRange])") else { continue }
+            result[range].link = url
+        }
+        return result
+    }
+
+    static func hashtag(from url: URL) -> String? {
+        guard url.scheme == hashtagScheme else { return nil }
+        let tag = url.absoluteString.dropFirst(hashtagScheme.count + 1)
+        return tag.isEmpty ? nil : String(tag)
+    }
+
     struct ListPrefix: Equatable {
         let kind: DocumentBlock.Kind
         /// UTF-16 length, for NSRange math.

@@ -18,6 +18,8 @@ struct ComposeView: View {
     @State private var photoItems: [PhotosPickerItem] = []
     /// Prepared photos keyed by picker item, so re-selecting doesn't redo the work.
     @State private var prepared: [PhotosPickerItem: PreparedPhoto] = [:]
+    /// Decoded once from each photo's small thumbnail, never from the full-size data.
+    @State private var previews: [PhotosPickerItem: Image] = [:]
     @State private var isLoadingPhotos = false
     @State private var isSaving = false
     @State private var uploadedCount: Int?
@@ -65,6 +67,9 @@ struct ComposeView: View {
                     photoBar
                 }
             }
+            .overlay {
+                if isSaving { savingOverlay }
+            }
             .navigationTitle(isNew ? "New Entry" : "Edit Entry")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -75,17 +80,7 @@ struct ComposeView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if isSaving {
-                        HStack(spacing: 6) {
-                            ProgressView()
-                            if let uploadedCount, photos.count > 0 {
-                                Text("\(uploadedCount) of \(photos.count)")
-                                    .font(.footnote)
-                                    .monospacedDigit()
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                        .accessibilityElement(children: .combine)
-                        .accessibilityLabel(uploadedCount.map { "Uploading photo \($0) of \(photos.count)" } ?? "Saving")
+                        ProgressView()
                     } else {
                         Button("Save") { Task { await save() } }
                             .disabled(!canSave)
@@ -131,6 +126,34 @@ struct ComposeView: View {
         .padding(.vertical, 10)
     }
 
+    /// Makes it obvious the app is working (photo uploads can take a while on cellular).
+    private var savingOverlay: some View {
+        ZStack {
+            Color.black.opacity(0.25).ignoresSafeArea()
+            VStack(spacing: 12) {
+                ProgressView()
+                    .controlSize(.large)
+                Text(savingMessage)
+                    .font(.headline)
+                    .monospacedDigit()
+                if !photos.isEmpty {
+                    Text("Keep the app open until this finishes.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(24)
+            .background(.regularMaterial, in: .rect(cornerRadius: 16))
+        }
+        .accessibilityElement(children: .combine)
+    }
+
+    private var savingMessage: String {
+        guard let uploadedCount, !photos.isEmpty else { return "Saving…" }
+        if uploadedCount >= photos.count { return "Saving entry…" }
+        return photos.count == 1 ? "Uploading photo…" : "Uploading photo \(uploadedCount + 1) of \(photos.count)…"
+    }
+
     private var photoBar: some View {
         VStack(alignment: .leading, spacing: 8) {
             ScrollView(.horizontal) {
@@ -170,8 +193,8 @@ struct ComposeView: View {
     private func thumbnail(for item: PhotosPickerItem) -> some View {
         ZStack(alignment: .topTrailing) {
             Group {
-                if let photo = prepared[item], let image = UIImage(data: photo.data) {
-                    Image(uiImage: image).resizable().scaledToFill()
+                if let preview = previews[item] {
+                    preview.resizable().scaledToFill()
                 } else {
                     ZStack {
                         Color.secondary.opacity(0.12)
@@ -201,6 +224,7 @@ struct ComposeView: View {
     private func preparePhotos() async {
         let current = Set(photoItems)
         prepared = prepared.filter { current.contains($0.key) }
+        previews = previews.filter { current.contains($0.key) }
         let pending = photoItems.filter { prepared[$0] == nil }
         guard !pending.isEmpty else { return }
 
@@ -211,7 +235,10 @@ struct ComposeView: View {
             do {
                 guard let data = try await item.loadTransferable(type: Data.self) else { throw PhotoError.unreadable }
                 let photo = try await Task.detached(priority: .userInitiated) { try PhotoPreparer.prepare(data) }.value
-                if photoItems.contains(item) { prepared[item] = photo }
+                if photoItems.contains(item) {
+                    prepared[item] = photo
+                    previews[item] = UIImage(data: photo.thumbnail).map(Image.init(uiImage:))
+                }
             } catch {
                 failed += 1
                 photoItems.removeAll { $0 == item }
