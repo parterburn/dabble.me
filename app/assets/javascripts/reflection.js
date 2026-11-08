@@ -16,7 +16,7 @@
       '<div class="s-reflection-content">' +
         '<p class="s-reflection-date"></p>' +
         '<div class="s-reflection-body" aria-live="polite"></div>' +
-        '<p class="s-reflection-note"><i class="fa fa-lock"></i> Written by AI from this entry. It isn\'t saved, and your entries aren\'t used to train AI models.</p>' +
+        '<p class="s-reflection-note"><span class="slab-icon slab-icon--lock" aria-hidden="true"></span> Written by AI from this entry. It isn\'t saved, and your entries aren\'t used to train AI models.</p>' +
       '</div>';
     document.body.appendChild(dialog);
 

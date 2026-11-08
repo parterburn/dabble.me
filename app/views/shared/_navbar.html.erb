@@ -38,14 +38,14 @@
 
         <li class="<%= 'active' if current_page?(entries_calendar_path) %>">
           <%= link_to entries_calendar_path, title: "Calendar View" do %>
-            <i class="fa fa-calendar hidden-xs"></i>
+            <span class="slab-icon slab-icon--calendar hidden-xs" aria-hidden="true"></span>
             <span class="visible-xs-inline-block">Calendar</span>
           <% end %>
         </li>
 
         <li class="<%= 'active' if current_page?(search_path) %>">
           <%= link_to search_path, title: "Search" do %>
-            <i class="fa fa-search hidden-xs"></i>
+            <span class="slab-icon slab-icon--search hidden-xs" aria-hidden="true"></span>
             <span class="visible-xs-inline-block">Search</span>
           <% end %>
         </li>
@@ -53,7 +53,7 @@
         <% if user_signed_in? && current_user.admin? %>
           <li class="dropdown <%= 'active' if params[:controller].in?(['admin', 'inspirations', 'payments']) %>">
             <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-              <i class="fa fa-lock hidden-xs"></i>
+              <span class="slab-icon slab-icon--lock hidden-xs" aria-hidden="true"></span>
               <span class="visible-xs-inline-block">Admin</span>
             </a>
             <ul class="dropdown-menu" role="menu">
@@ -93,7 +93,7 @@
         </li>
         <li>
           <%= link_to destroy_user_session_path, method: :delete, title: "Logout" do %>
-            <i class="fa fa-sign-out hidden-xs"></i>
+            <span class="slab-icon slab-icon--sign-out hidden-xs" aria-hidden="true"></span>
             <span class="visible-xs-inline-block">Logout</span>
           <% end %>
         </li>

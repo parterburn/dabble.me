@@ -16,11 +16,11 @@
       <div class="float-right s-edit-entry">
         <% if can_reflect %>
           <%= link_to "#", class: "j-reflect", style: "margin-right: 15px;", role: "button", "aria-label": "Reflect on this entry", data: { url: entry_reflection_path(entry), date: entry.date_format_long } do %>
-            <span rel="tooltip" title="Reflect on this entry" class="s-process-ai"><i class="fa fa-magic"></i></span>
+            <span rel="tooltip" title="Reflect on this entry" class="s-process-ai"><span class="slab-icon slab-icon--reflect" aria-hidden="true"></span></span>
           <% end %>
         <% end %>
         <%= link_to edit_entry_path(entry), rel: "tooltip", title: "Edit Entry" do %>
-          <i class="fa fa-pencil-square-o"></i>
+          <span class="slab-icon slab-icon--edit" aria-hidden="true"></span>
         <% end %>
       </div>
       <h2>

@@ -756,37 +756,6 @@ mark {
   }
 }
 
-// Close buttons on dialogs (Summernote's link dialog, the reflection dialog).
-// Bootstrap 3's faint 21px × is hard to see and hit, so show Font Awesome's
-// ✕ in a 44px target.
-.modal-header .close,
-.s-reflection-dialog .close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  margin: -9px -9px -9px 0;
-  border-radius: 50%;
-  color: $olive-800;
-  font-size: 0; // hides the &times; text; the button keeps aria-label="Close"
-  opacity: 0.75;
-  text-shadow: none;
-  &::before {
-    content: "\f00d"; // fa-times
-    font-family: "FontAwesome";
-    font-size: 22px;
-    font-weight: normal;
-    line-height: 1;
-  }
-  &:hover,
-  &:focus-visible {
-    background: rgba(0, 0, 0, 0.06);
-    color: $olive-950;
-    opacity: 1;
-  }
-}
-
 // "Reflect on this entry" dialog (reflection.js)
 .s-reflection-dialog {
   width: calc(100% - 32px);

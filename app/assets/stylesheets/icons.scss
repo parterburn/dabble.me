@@ -1,0 +1,66 @@
+@import 'vars';
+
+// Font Awesome Pro "Slab" icons. The license lets the site use them but not
+// publish them in this public repo, so they live on S3 and are drawn as CSS
+// masks in the current text color. Masks load with CORS, so the bucket needs
+// a CORS rule allowing GET from the site's origin.
+$slab-icons-url: "https://dabble-me.s3.amazonaws.com/uploads/icons/slab";
+
+@mixin slab-mask($name) {
+  background-color: currentColor;
+  -webkit-mask: url("#{$slab-icons-url}/#{$name}.svg") center / contain no-repeat;
+  mask: url("#{$slab-icons-url}/#{$name}.svg") center / contain no-repeat;
+}
+
+// <span class="slab-icon slab-icon--edit" aria-hidden="true"></span>
+.slab-icon {
+  display: inline-block;
+  width: 1.15em;
+  height: 1.15em;
+  vertical-align: -0.2em;
+}
+
+@each $name in calendar, close, edit, lock, reflect, search, sign-out {
+  .slab-icon--#{$name} {
+    @include slab-mask($name);
+  }
+}
+
+// Close buttons on dialogs (Summernote's link dialog, the reflection dialog).
+// Both are built in JS with a &times; label, so the icon goes in ::before.
+.modal-header .close,
+.s-reflection-dialog .close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -9px -9px -9px 0;
+  border-radius: 50%;
+  color: $olive-800;
+  font-size: 0; // hides the &times; text; the button keeps aria-label="Close"
+  opacity: 0.75;
+  text-shadow: none;
+  &::before {
+    content: "";
+    width: 20px;
+    height: 20px;
+    @include slab-mask(close);
+  }
+  &:hover,
+  &:focus-visible {
+    background: rgba(0, 0, 0, 0.06);
+    color: $olive-950;
+    opacity: 1;
+  }
+}
+
+// High contrast modes drop background colors, which would hide every icon.
+@media (forced-colors: active) {
+  .slab-icon,
+  .modal-header .close::before,
+  .s-reflection-dialog .close::before {
+    background-color: CanvasText;
+    forced-color-adjust: none;
+  }
+}
