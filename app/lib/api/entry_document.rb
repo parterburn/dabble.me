@@ -10,7 +10,7 @@ module Api
   #
   # Only the formatting the web editor (Summernote) and email ingestion produce is
   # editable: p, div, span, br, b/strong, i/em, u, a, ul/ol/li and hr (merged replies).
-  # Anything else — inline styles, blockquotes, images, AI replies (data-content),
+  # Anything else — inline styles, blockquotes, images, unknown attributes,
   # nested lists — makes from_html return nil and the entry stays web-only, so an app
   # edit can never silently drop formatting.
   module EntryDocument

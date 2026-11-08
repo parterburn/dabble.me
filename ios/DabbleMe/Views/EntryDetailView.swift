@@ -186,7 +186,7 @@ struct EntryDetailView: View {
                 if entry.document != nil {
                     Button("Edit", systemImage: "pencil") { editing = true }
                 } else {
-                    // Formatting the app can't represent (styles, quotes, AI replies) stays web-only so nothing gets lost.
+                    // Formatting the app can't represent (styles, quotes, images) stays web-only so nothing gets lost.
                     Button("Edit on dabble.me", systemImage: "safari") { openURL(entry.webUrl) }
                 }
                 Button("Delete", systemImage: "trash", role: .destructive) { confirmingDelete = true }

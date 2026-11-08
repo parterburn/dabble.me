@@ -30,7 +30,7 @@ RSpec.describe SentrySensitiveScrubber do
       expect(out["ok"]).to eq("plain")
     end
 
-    it "filters private journal content keys including entry[entry] and entry[ai_response]" do
+    it "filters private journal content keys including entry[entry]" do
       input = {
         "body" => "private journal text",
         "raw_body" => "full email body",
@@ -39,13 +39,11 @@ RSpec.describe SentrySensitiveScrubber do
         "original_email_body" => "original",
         "original_email" => { "body-plain" => "plain" },
         "text_body" => "mcp text",
-        "ai_response" => "top-level ai reply",
         "subject" => "Sunday journal",
         "params" => {
           "entry" => {
             "body" => "nested private",
             "entry" => "web form journal body",
-            "ai_response" => "nested ai reply",
             "date" => "2026-07-15"
           }
         }
@@ -58,11 +56,9 @@ RSpec.describe SentrySensitiveScrubber do
       expect(out["original_email_body"]).to eq(described_class::FILTERED)
       expect(out["original_email"]).to eq(described_class::FILTERED)
       expect(out["text_body"]).to eq(described_class::FILTERED)
-      expect(out["ai_response"]).to eq(described_class::FILTERED)
       expect(out["subject"]).to eq("Sunday journal")
       expect(out["params"]["entry"]["body"]).to eq(described_class::FILTERED)
       expect(out["params"]["entry"]["entry"]).to eq(described_class::FILTERED)
-      expect(out["params"]["entry"]["ai_response"]).to eq(described_class::FILTERED)
       expect(out["params"]["entry"]["date"]).to eq("2026-07-15")
     end
   end

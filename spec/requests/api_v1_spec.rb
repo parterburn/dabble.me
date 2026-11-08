@@ -187,7 +187,7 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
   describe "document" do
     it "is included for entries the app can edit, and nil otherwise" do
       editable = create(:entry, user: pro_user, body: "<p>Hi <b>there</b></p>")
-      web_only = create(:entry, user: pro_user, body: "<div data-content='dabblemegpt'>ai</div>")
+      web_only = create(:entry, user: pro_user, body: "<blockquote>quoted</blockquote>")
       expect(Api::EntrySerializer.full(editable)[:document]).to eq([
         { "type" => "paragraph", "runs" => [{ "text" => "Hi " }, { "text" => "there", "bold" => true }] }
       ])
