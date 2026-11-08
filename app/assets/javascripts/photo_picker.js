@@ -89,7 +89,7 @@
       var tile = document.createElement("div");
       tile.className = "photo-picker__placeholder";
       var ext = (file.name.split(".").pop() || "").toUpperCase();
-      tile.innerHTML = '<i class="fa fa-picture-o" aria-hidden="true"></i>';
+      tile.innerHTML = '<span class="slab-icon slab-icon--image" aria-hidden="true"></span>';
       var label = document.createElement("span");
       label.textContent = ext || "Photo";
       tile.appendChild(label);

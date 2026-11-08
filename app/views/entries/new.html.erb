@@ -51,7 +51,7 @@
           <%= f.label :date, class: "sr-only" %>
           <div class="input-group date">
             <span class="input-group-addon">
-              <i class="fa fa-calendar"></i>
+              <span class="slab-icon slab-icon--calendar" aria-hidden="true"></span>
             </span>
             <% entry_date = params[:day].present? ? Date.parse(params[:day]).strftime("%B %-d, %Y") : (@entry&.date.present? ? @entry.date_format_short : Time.now.in_time_zone(current_user.send_timezone).strftime("%B %-d, %Y")) %>
             <%= f.text_field :date, :value => entry_date, :placeholder=>"October 11 2014", :class => "form-control pickadate", toolparamdescription: "Entry date, such as July 17, 2026." %>
@@ -85,7 +85,7 @@
             <%= email_address %>
           </code>
           <button class="j-copy-to-clipboard" data-content="<%= email_address %>">
-            <i class="fa fa-copy"></i>
+            <span class="slab-icon slab-icon--copy" aria-hidden="true"></span>
             Copy
           </button>
         </div>

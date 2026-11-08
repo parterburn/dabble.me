@@ -100,10 +100,16 @@
             <%= image_tag "logos/me-avatar.png", alt: "Account", class: "s-avatar", width: 32, height: 32 %>
           </a>
           <ul class="dropdown-menu" role="menu">
-            <li class="<%= 'active' if on_settings %>"><%= link_to "Settings", edit_user_registration_path %></li>
-            <li class="<%= 'active' if on_security %>"><%= link_to "Account Security", security_path %></li>
+            <li class="<%= 'active' if on_settings %>">
+              <%= link_to edit_user_registration_path do %><span class="slab-icon slab-icon--gear" aria-hidden="true"></span>Settings<% end %>
+            </li>
+            <li class="<%= 'active' if on_security %>">
+              <%= link_to security_path do %><span class="slab-icon slab-icon--shield" aria-hidden="true"></span>Account Security<% end %>
+            </li>
             <li role="separator" class="divider"></li>
-            <li><%= link_to "Logout", destroy_user_session_path, method: :delete %></li>
+            <li>
+              <%= link_to destroy_user_session_path, method: :delete do %><span class="slab-icon slab-icon--sign-out" aria-hidden="true"></span>Logout<% end %>
+            </li>
           </ul>
         </li>
       </ul>

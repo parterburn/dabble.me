@@ -2,7 +2,7 @@
 
 .s-date-left {
   float: left;
-  .fa.fa-calendar {
+  .slab-icon--calendar {
     color: $light-gray;
     &:hover{
       color: #999;
@@ -342,8 +342,8 @@ mark {
   color:$light-gray;
   position: absolute;
   right: 25px;
-  top: 6px;
-  font-size: 25px;
+  top: 10px;
+  font-size: 20px;
   &:hover {
     color:$mid-gray;
   }
@@ -582,7 +582,7 @@ mark {
   cursor: pointer;
   transition: border-color 0.15s ease, background-color 0.15s ease;
 
-  .fa {
+  .slab-icon {
     font-size: 28px;
     color: $olive;
   }
@@ -606,7 +606,7 @@ mark {
     margin-top: 12px;
     padding: 12px;
 
-    .fa {
+    .slab-icon {
       font-size: 20px;
     }
 
@@ -680,7 +680,7 @@ mark {
   color: $mid-gray;
   font-size: 12px;
 
-  .fa {
+  .slab-icon {
     font-size: 22px;
   }
 }

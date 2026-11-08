@@ -104,7 +104,7 @@
         <% month_str = Date::ABBR_MONTHNAMES[month_num].upcase %>
         <div class="s-date-left">
           <%= link_to entries_calendar_path(day: year_str+"-"+month_num.to_s.rjust(2, '0')), class: "noline" do %>
-            <i class="fa fa-calendar"></i>
+            <span class="slab-icon slab-icon--calendar" aria-hidden="true"></span>
           <% end %>
           &nbsp;
         </div>

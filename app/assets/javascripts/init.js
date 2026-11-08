@@ -92,7 +92,7 @@
 
       navigator.clipboard.writeText(content).then(function() {
         var originalHtml = $btn.html();
-        $btn.html('<i class="fa fa-check"></i> Copied!');
+        $btn.html('<span class="slab-icon slab-icon--clipboard" aria-hidden="true"></span> Copied!');
         setTimeout(function() {
           $btn.html(originalHtml);
         }, 2000);

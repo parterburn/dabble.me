@@ -23,7 +23,7 @@
           <%= f.text_field :term, class: "form-control input-lg s-search-with-clear", autofocus: true, placeholder: "What are you looking for?" %>
           <% if @search.term.present? %>
             <%= link_to search_path, class: "s-clear-search", rel: "tooltip", title: "Clear search" do %>
-              <i class="fa fa-times-circle"></i>
+              <span class="slab-icon slab-icon--close" aria-hidden="true"></span>
             <% end %>
           <% end %>
         </div>

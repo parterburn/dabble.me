@@ -39,7 +39,7 @@
           <%= f.label :date, class: "sr-only" %>
           <div class="input-group date">
             <span class="input-group-addon">
-              <i class="fa fa-calendar"></i>
+              <span class="slab-icon slab-icon--calendar" aria-hidden="true"></span>
             </span>
             <%= f.text_field :date, value: @entry.date_format_short, placeholder: "October 11 2014", class: "form-control pickadate", toolparamdescription: "Entry date, such as July 17, 2026." %>
           </div>

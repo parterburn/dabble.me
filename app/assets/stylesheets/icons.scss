@@ -20,10 +20,31 @@ $slab-icons-url: "https://d10r8m94hrfowu.cloudfront.net/icons/slab";
   vertical-align: -0.2em;
 }
 
-@each $name in calendar, close, edit, lock, reflect, search {
+// Every icon on the CDN that the app uses.
+@each $name in arrow-up-from-line, arrows-rotate, calendar, clipboard, close, copy, edit, gear, image, images, lock, reflect, search, shield, sign-out {
   .slab-icon--#{$name} {
     @include slab-mask($name);
   }
+}
+
+.slab-icon--spin {
+  animation: slab-spin 1.2s linear infinite;
+}
+
+@keyframes slab-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slab-icon--spin {
+    animation-duration: 3s;
+  }
+}
+
+// Icons in navbar dropdown items (account menu).
+.navbar .dropdown-menu > li > a .slab-icon {
+  margin-right: 8px;
+  opacity: 0.7;
 }
 
 // Close buttons on dialogs (Summernote's link dialog, the reflection dialog).
