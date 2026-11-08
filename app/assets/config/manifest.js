@@ -21,6 +21,8 @@
 //= link oauth/notion.png
 //= link oauth/openai.png
 
+//= link logos/me-avatar.png
+
 //= link application.css
 //= link oauth_consent_bundle.css
 //= link application.js

@@ -54,11 +54,15 @@
     });
 
     if ($(window).width() > 768) {
-      $("[rel='popover_settings']").popover({
-        trigger: "hover",
+      // First-week hint about when emails arrive. It points at the account
+      // menu, so it goes away once that menu is opened.
+      var $settingsHint = $("[rel='popover_settings']");
+      $settingsHint.popover({
+        trigger: "manual",
         container: "body",
         html: true
       }).popover('show');
+      $settingsHint.on('show.bs.dropdown', function() { $settingsHint.popover('hide'); });
 
       $("[rel='tooltip']").tooltip({
         container: "body"

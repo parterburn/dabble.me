@@ -20,7 +20,7 @@ $slab-icons-url: "https://dabble-me.s3.amazonaws.com/icons/slab";
   vertical-align: -0.2em;
 }
 
-@each $name in calendar, close, edit, lock, reflect, search, sign-out {
+@each $name in calendar, close, edit, lock, reflect, search {
   .slab-icon--#{$name} {
     @include slab-mask($name);
   }

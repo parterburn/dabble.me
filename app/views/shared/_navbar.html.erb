@@ -86,16 +86,25 @@
             <% current_settings = "Email reminders are currently <strong>disabled</strong>." %>
           <% end %>
         <% end %>
-        <li class="<%= 'active' if current_page?(edit_user_registration_path) %>" rel="<%= add_popover %>" title="" data-content="<%= current_settings %>" data-placement="bottom">
-          <%= link_to edit_user_registration_path do %>
-            <span>Settings</span>
-          <% end %>
-        </li>
-        <li>
-          <%= link_to destroy_user_session_path, method: :delete, title: "Logout" do %>
-            <span class="slab-icon slab-icon--sign-out hidden-xs" aria-hidden="true"></span>
-            <span class="visible-xs-inline-block">Logout</span>
-          <% end %>
+        <% on_settings = current_page?(edit_user_registration_path) %>
+        <% on_security = current_page?(security_path) %>
+
+        <%# Phones: plain links in the collapsed menu. %>
+        <li class="visible-xs <%= 'active' if on_settings %>"><%= link_to "Settings", edit_user_registration_path %></li>
+        <li class="visible-xs <%= 'active' if on_security %>"><%= link_to "Account Security", security_path %></li>
+        <li class="visible-xs"><%= link_to "Logout", destroy_user_session_path, method: :delete %></li>
+
+        <%# Desktop: the same links behind the "me" avatar. %>
+        <li class="dropdown hidden-xs <%= 'active' if on_settings || on_security %>" rel="<%= add_popover %>" title="" data-content="<%= current_settings %>" data-placement="bottom">
+          <a class="dropdown-toggle s-avatar-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false" title="Account">
+            <%= image_tag "logos/me-avatar.png", alt: "Account", class: "s-avatar", width: 32, height: 32 %>
+          </a>
+          <ul class="dropdown-menu" role="menu">
+            <li class="<%= 'active' if on_settings %>"><%= link_to "Settings", edit_user_registration_path %></li>
+            <li class="<%= 'active' if on_security %>"><%= link_to "Account Security", security_path %></li>
+            <li role="separator" class="divider"></li>
+            <li><%= link_to "Logout", destroy_user_session_path, method: :delete %></li>
+          </ul>
         </li>
       </ul>
     </div>
