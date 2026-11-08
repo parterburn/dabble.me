@@ -7,6 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0">
     <meta content="IE=edge" http-equiv="X-UA-Compatible">
     <%= csrf_meta_tags %>
+    <%= render "shared/web_app_class" %>
     <%= yield :head %>
     <%= render 'shared/favicons_and_metatags' %>
     <%= stylesheet_link_tag 'application', media: 'all' %>

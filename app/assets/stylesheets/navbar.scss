@@ -148,6 +148,12 @@
     top:0;
   }  
 
+  // Keep the navbar pinned in a Home Screen web app. iOS 26 and later blur the
+  // top of the page there unless a solid bar stays fixed to the top edge.
+  .web-app .navbar-fixed-top {
+    position: fixed;
+  }
+
   .navbar-default {
     .navbar-nav > li > a {
       &:hover, &:active, &:focus {

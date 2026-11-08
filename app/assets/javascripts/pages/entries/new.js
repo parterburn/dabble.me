@@ -1,9 +1,7 @@
 (function(){
   window.DABBLE.pages.Entries_new = window.DABBLE.pages.Entries_create = function(){
 
-    $(".j-image-remove").click(function( event ) {
-      $(".j-image-preview").slideToggle();
-    });
+    DABBLE.photoPickers();
 
     $('form').submit(function(){
       $(this).find('input[type=submit]').prop('disabled', true);

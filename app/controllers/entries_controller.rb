@@ -295,7 +295,7 @@ class EntriesController < ApplicationController
             yielder << ",\n" unless first
             first = false
             entry_hash = { date: entry.date.strftime('%Y-%m-%d'), body: entry.body.strip }
-            entry_hash[:image] = entry.image_url_cdn(cloudflare: false) if entry.image.present?
+            entry_hash[:image] = entry.image_url_cdn(cloudflare: false) if entry.image_stored?
             yielder << JSON.pretty_generate(entry_hash)
           end
           yielder << "\n]"
@@ -459,7 +459,7 @@ class EntriesController < ApplicationController
     return false unless current_user.is_pro?
     json_hash = []
     entries.each do |entry|
-      if entry.image.present?
+      if entry.image_stored?
         title = "📸#{ActionController::Base.helpers.strip_tags(entry.sanitized_body&.gsub(/\n/, ''))&.truncate(40, separator: ' ')}"
       else
         title = ActionController::Base.helpers.strip_tags(entry.sanitized_body&.gsub(/\n/, ''))&.truncate(50, separator: ' ')

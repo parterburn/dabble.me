@@ -201,8 +201,9 @@ module ApplicationHelper
       <p class="mb-3"><code class="text-base select-all break-all bg-olive-200 px-2 py-1 text-olive-900">#{ERB::Util.html_escape(mcp_endpoint)}</code></p>
       <p class="text-muted mb-3">Complete the browser sign-in and approve access. For connector UI details, see
       <a href="#{ERB::Util.html_escape(claude_url)}" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">Anthropic’s guide to remote MCP connectors</a>.</p>
-      <p class="text-muted mb-3">For Claude and ChatGPT steps, authentication details, privacy notes, and the complete live tool reference, see the
-      <a href="#{routes.mcp_server_docs_path}" class="text-accent hover:text-primary underline">Dabble Me MCP Server documentation</a>.</p>
+      <p class="text-muted mb-3">For Claude and ChatGPT steps and privacy notes, see the
+      <a href="#{routes.mcp_server_docs_path}" class="text-accent hover:text-primary underline">AI Connector guide</a>. For authentication details and the complete live tool reference, see the
+      <a href="#{routes.mcp_server_developer_docs_path}" class="text-accent hover:text-primary underline">technical reference</a>.</p>
       <p class="text-muted mb-2"><span class="font-semibold">Example prompts</span> (plain language—the client calls tools for you):</p>
       <ul class="list-disc pl-5 space-y-1.5 text-muted text-sm mb-3">
         <li><span class="font-medium text-primary">Look back:</span> “What did I write about travel last year?” or “Show entries from March with #gratitude.”</li>

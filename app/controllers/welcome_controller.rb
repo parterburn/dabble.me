@@ -22,6 +22,10 @@ class WelcomeController < ApplicationController
   end
 
   def mcp_server
+    # Plain-language AI Connector guide for journalers.
+  end
+
+  def mcp_server_developers
     tools = Mcp::DabbleServer::TOOLS.partition { |tool| tool != Mcp::Tools::GetImageUploadUrl }.flatten
     @mcp_tools = tools.map do |tool|
       schema = tool.input_schema.to_h

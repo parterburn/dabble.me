@@ -29,8 +29,14 @@ module Mcp
       "#{@base_url}/mcp"
     end
 
+    # Plain-language setup for people.
     def docs_url
       "#{@base_url}/mcp-server"
+    end
+
+    # Endpoint, OAuth, agent steps and the tool reference.
+    def developer_docs_url
+      "#{@base_url}/mcp-server/developers"
     end
 
     def webmcp_url
@@ -154,7 +160,7 @@ module Mcp
 
         - Remote MCP: `#{mcp_url}` (OAuth, PRO + passkey or 2FA)
         - In-page WebMCP: register tools after sign-in; search/analyze/draft need PRO
-        - Docs: #{docs_url}
+        - Docs: #{developer_docs_url}
         - Server card: #{server_card_url}
 
         ## In-page WebMCP tools
@@ -476,7 +482,7 @@ module Mcp
         The core product is free. PRO ($4/month or $40/year) unlocks daily prompts, photos, search, web writing, and the remote MCP server. MCP access also requires a passkey or two-factor authentication.
 
         Homepage: #{@base_url}/
-        MCP documentation: #{docs_url}
+        MCP documentation: #{developer_docs_url}
       TEXT
     end
 
@@ -516,7 +522,8 @@ module Mcp
     def reference_pages
       [
         { title: 'Dabble Me', url: "#{@base_url}/", description: 'Homepage and product overview.' },
-        { title: 'Dabble Me MCP Server', url: docs_url, description: 'Setup, OAuth, tools, permissions, and example prompts.' },
+        { title: 'Dabble Me AI Connector', url: docs_url, description: 'Plain-language setup for Claude, ChatGPT, and other AI apps.' },
+        { title: 'Dabble Me MCP Server technical reference', url: developer_docs_url, description: 'Endpoint, OAuth, agent setup steps, and the live tool reference.' },
         { title: 'llms.txt', url: llms_txt_url, description: 'AI-readable product and MCP summary.' },
         { title: 'Dabble Me vs. Day One for AI journaling', url: "#{@base_url}/dabble-me-vs-day-one-ai-journaling", description: 'Remote-vs-local MCP comparison.' },
         { title: 'Day One alternative', url: "#{@base_url}/day-one-alternative", description: 'Import Day One and journal by email.' },

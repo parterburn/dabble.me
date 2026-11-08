@@ -51,7 +51,7 @@
         <% end %>
 
         <div>
-          <%= f.label :date %>
+          <%= f.label :date, class: "sr-only" %>
           <div class="input-group date">
             <span class="input-group-addon">
               <i class="fa fa-calendar"></i>
@@ -61,28 +61,11 @@
           </div>
           <br>
 
-          <div>
-            <% if @entry&.image.present? %>
-              <label>
-                <%= f.check_box :remove_image, class: 'j-image-remove' %>
-                &nbsp;Remove Photo
-              </label>
-              <br>
-              <div class="pictureFrame editable j-image-preview">
-                <%= link_to @entry.display_image_url(cloudflare: false), target: "_blank" do %>
-                  <%= image_code(@entry) %>
-                <% end %>
-              </div>
-            <% else %>
-              <%= f.label :image, "Photo" %>
-              <%= f.file_field :image, accept: Entry::ALLOWED_IMAGE_TYPES.join(","), multiple: true %>
-            <% end %>
-            <br>
-          </div>
+          <%= render "entries/photo_picker", f: f, entry: @entry %>
         </div>
 
         <div>
-          <%= f.label :entry %>
+          <%= f.label :entry, class: "sr-only" %>
           <%= f.text_area :entry, :class => "form-control summernote", :rows => 15, toolparamdescription: "Journal entry body to save for the selected date." %>
         </div>
 
@@ -141,10 +124,4 @@
     .done( function( instance ) {
       $(instance.elements).find('.pictureFrame img').css("background-image","none");
     });
-
-  $("#entry_image").on("change", function() {
-    if ($("#entry_image")[0].files.length > <%= CollageGenerator::MAX_IMAGES %>) {
-        alert("Photos are limited to <%= CollageGenerator::MAX_IMAGES %> per entry.");
-    }
-  });
 </script>

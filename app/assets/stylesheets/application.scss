@@ -394,6 +394,21 @@ strong {
         text-decoration: none;
       }
     }
+
+    // Copy is a helper, not the page's main action: keep it a quiet gray.
+    .j-copy-to-clipboard {
+      align-self: stretch;
+      background: $cream;
+      color: $olive-600;
+      border-left: 1px solid #e5e7eb;
+      @media screen and (max-width: 767px) {
+        border-left: none;
+      }
+      &:hover {
+        background: darken($cream, 5%);
+        color: $olive-800;
+      }
+    }
   }
 
   .btn {
@@ -428,6 +443,16 @@ strong {
     .email-address-box {
       background: #26291e;
       border-color: #3f4235;
+
+      .j-copy-to-clipboard {
+        background: #2f3227;
+        color: #c9cbbf;
+        border-color: #3f4235;
+        &:hover {
+          background: #3a3d31;
+          color: white;
+        }
+      }
     }
   }
 }
