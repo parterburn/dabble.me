@@ -18,6 +18,8 @@ final class RichTextEditorModel {
     let initialBlocks: [DocumentBlock]
     private(set) var isEmpty: Bool
     private(set) var isDirty = false
+    /// Bumped on every change, so the composer can autosave a draft.
+    private(set) var revision = 0
 
     /// Set while the link sheet is up; `linkText` is what the user is typing.
     var isEditingLink = false
@@ -40,8 +42,16 @@ final class RichTextEditorModel {
         textView?.becomeFirstResponder()
     }
 
+    /// Replaces everything in the editor (e.g. "Start Over" on a restored draft).
+    func replace(with blocks: [DocumentBlock]) {
+        textView?.attributedText = RichText.attributedString(from: blocks, style: .journal)
+        textView?.typingAttributes = RichText.Style.journal.baseAttributes
+        isEmpty = blocks.isEmpty
+    }
+
     fileprivate func textDidChange() {
         isDirty = true
+        revision += 1
         isEmpty = textView?.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true
     }
 
@@ -265,8 +275,12 @@ struct RichTextEditor: UIViewRepresentable {
             return model.handleReturn(in: textView, at: range)
         }
 
+        /// Bold/italic/underline also live in the system edit menu (select text, then Format), the
+        /// way Messages does it; this bar adds lists and links. It's taller than a classic 44pt
+        /// toolbar so the glass buttons clear the keyboard's top edge, and short enough to fit an
+        /// iPhone without spilling into a "…" menu (swipe down on the text to hide the keyboard).
         func makeToolbar() -> UIToolbar {
-            let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 44))
+            let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 60))
             func item(_ symbol: String, _ label: String, _ action: @escaping @MainActor (RichTextEditorModel) -> Void) -> UIBarButtonItem {
                 let button = UIBarButtonItem(image: UIImage(systemName: symbol), primaryAction: UIAction { [weak model] _ in
                     if let model { action(model) }
@@ -278,14 +292,11 @@ struct RichTextEditor: UIViewRepresentable {
                 item("bold", "Bold") { $0.toggle(.bold) },
                 item("italic", "Italic") { $0.toggle(.italic) },
                 item("underline", "Underline") { $0.toggleUnderline() },
-                .fixedSpace(12),
+                .flexibleSpace(),
                 item("list.bullet", "Bulleted List") { $0.toggleList(.bullet) },
                 item("list.number", "Numbered List") { $0.toggleList(.number) },
                 item("link", "Link") { $0.beginLink() },
-                .flexibleSpace(),
-                item("keyboard.chevron.compact.down", "Hide Keyboard") { $0.textView?.resignFirstResponder() },
             ]
-            toolbar.sizeToFit()
             return toolbar
         }
     }

@@ -13,6 +13,9 @@ final class AppModel {
     /// Selected tab, and a search another screen asked for (e.g. tapping a #hashtag).
     var selectedTab: Tab = .today
     var searchRequest: String?
+    /// Set when a writing reminder is tapped; Today opens the composer.
+    var composeRequest = false
+    let lock = AppLock()
 
     func search(hashtag: String) {
         searchRequest = "#\(hashtag)"
@@ -87,6 +90,9 @@ final class AppModel {
         if let token = await tokens.clear() {
             Task.detached { await OAuthEndpoints.revoke(token) }
         }
+        ReminderScheduler.shared.removeAll()
+        DraftStore.clearAll()
+        lock.reset()
         resetSession()
     }
 
@@ -129,6 +135,7 @@ final class AppModel {
             staleMonths = Set(monthEntries.keys)
             timelineError = nil
             hasLoaded = true
+            Task { await ReminderScheduler.shared.reschedule(for: self) }
             var reloadNow = visibleMonths.intersection(staleMonths)
             if let newest = months.first { reloadNow.insert(newest.key) }
             await withTaskGroup(of: Void.self) { group in
@@ -248,6 +255,8 @@ final class AppModel {
         upsert(envelope.entry.summary)
         if envelope.entry.imageProcessing { watchProcessing(id: envelope.entry.id) }
         await loadToday()
+        // Today's writing reminder isn't needed once there's an entry.
+        await ReminderScheduler.shared.reschedule(for: self)
         return envelope
     }
 

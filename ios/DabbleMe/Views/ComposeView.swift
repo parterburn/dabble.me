@@ -25,12 +25,31 @@ struct ComposeView: View {
     @State private var uploadedCount: Int?
     @State private var error: String?
     @State private var confirmingDiscard = false
+    /// An unsaved draft from an earlier session was put back in the editor.
+    @State private var restoredDraft: DraftStore.Draft?
+    @State private var draftSave: Task<Void, Never>?
+    @Environment(\.scenePhase) private var scenePhase
+    private let draftKey: String
+    private let originalBlocks: [DocumentBlock]
 
     init(mode: Mode, onSaved: @escaping (EntryDetail) -> Void = { _ in }) {
         self.mode = mode
         self.onSaved = onSaved
-        let blocks = if case .edit(let entry) = mode { entry.document ?? [] } else { [DocumentBlock]() }
-        _editor = State(initialValue: RichTextEditorModel(blocks: blocks))
+        let entry: EntryDetail? = if case .edit(let entry) = mode { entry } else { nil }
+        let original = entry?.document ?? []
+        let key = DraftStore.key(forEntry: entry?.id)
+        // Restore an unsaved draft, unless the entry has changed since (e.g. edited on the web).
+        var draft = DraftStore.load(key)
+        if let saved = draft, let entry,
+           let updated = try? Date(entry.updatedAt, strategy: .iso8601), updated > saved.savedAt {
+            draft = nil
+            DraftStore.clear(key)
+        }
+        draftKey = key
+        originalBlocks = original
+        _restoredDraft = State(initialValue: draft)
+        if let date = draft?.date.flatMap(JournalDay.init) { _date = State(initialValue: date.localDate) }
+        _editor = State(initialValue: RichTextEditorModel(blocks: draft?.blocks ?? original))
     }
 
     private var isNew: Bool {
@@ -39,16 +58,17 @@ struct ComposeView: View {
 
     /// In the order the user picked them.
     private var photos: [PreparedPhoto] { photoItems.compactMap { prepared[$0] } }
-    private var hasChanges: Bool { editor.isDirty || !photoItems.isEmpty }
+    private var hasChanges: Bool { editor.isDirty || !photoItems.isEmpty || restoredDraft != nil }
     private var canSave: Bool {
         guard !isSaving, !isLoadingPhotos else { return false }
-        return isNew ? (!editor.isEmpty || !photos.isEmpty) : (!editor.isEmpty && editor.isDirty)
+        return isNew ? (!editor.isEmpty || !photos.isEmpty) : (!editor.isEmpty && (editor.isDirty || restoredDraft != nil))
     }
 
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
                 header
+                if restoredDraft != nil { draftBanner }
                 Divider()
                 RichTextEditor(model: editor)
                     .overlay(alignment: .topLeading) {
@@ -84,7 +104,7 @@ struct ComposeView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
-                        if hasChanges { confirmingDiscard = true } else { dismiss() }
+                        if hasChanges { confirmingDiscard = true } else { DraftStore.clear(draftKey); dismiss() }
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
@@ -99,7 +119,10 @@ struct ComposeView: View {
             .interactiveDismissDisabled(hasChanges || isSaving)
             .confirmationDialog(isNew ? "Discard this entry?" : "Discard your changes?",
                                 isPresented: $confirmingDiscard, titleVisibility: .visible) {
-                Button("Discard", role: .destructive) { dismiss() }
+                Button("Discard", role: .destructive) {
+                    DraftStore.clear(draftKey)
+                    dismiss()
+                }
                 Button("Keep Writing", role: .cancel) {}
             }
             .alert("Couldn't save", isPresented: .present($error)) {
@@ -112,9 +135,14 @@ struct ComposeView: View {
             #if DEBUG
             .task { await attachDebugPhotos() }
             #endif
+            .onChange(of: editor.revision) { scheduleDraftSave() }
+            .onChange(of: date) { scheduleDraftSave() }
+            .onChange(of: scenePhase) { _, phase in
+                if phase != .active { saveDraftNow() }
+            }
             .onAppear {
                 // Today's date in the journal's time zone, preferring the freshest source.
-                if isNew, let today = model.today?.day ?? model.me.flatMap({ JournalDay($0.today) }) {
+                if isNew, restoredDraft?.date == nil, let today = model.today?.day ?? model.me.flatMap({ JournalDay($0.today) }) {
                     date = today.localDate
                 }
             }
@@ -186,18 +214,19 @@ struct ComposeView: View {
             }
             .scrollIndicators(.hidden)
 
-            Text(photoFooter)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal)
+            if let photoFooter {
+                Text(photoFooter)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .padding(.horizontal)
+            }
         }
         .padding(.vertical, 10)
     }
 
-    private var photoFooter: String {
-        if photoItems.isEmpty {
-            return "Up to \(AppModel.maxPhotos) photos. Already wrote today? This adds to that entry."
-        }
+    /// Only once photos are picked, to keep the composer compact.
+    private var photoFooter: String? {
+        guard !photoItems.isEmpty else { return nil }
         let collage = photoItems.count > 1 ? " They'll be combined into a collage." : ""
         return "\(photoItems.count) of \(AppModel.maxPhotos) photos.\(collage) Location data is removed."
     }
@@ -284,6 +313,45 @@ struct ComposeView: View {
         }
     }
 
+    // MARK: - Drafts
+
+    private var draftBanner: some View {
+        HStack(spacing: 12) {
+            Label("Restored your unsaved draft.", systemImage: "clock.arrow.circlepath")
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Button("Start Over") {
+                editor.replace(with: originalBlocks)
+                DraftStore.clear(draftKey)
+                restoredDraft = nil
+            }
+            .font(.footnote.weight(.semibold))
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(.quaternary.opacity(0.5))
+    }
+
+    private func scheduleDraftSave() {
+        draftSave?.cancel()
+        draftSave = Task {
+            try? await Task.sleep(for: .milliseconds(600))
+            guard !Task.isCancelled else { return }
+            saveDraftNow()
+        }
+    }
+
+    private func saveDraftNow() {
+        guard !isSaving, editor.isDirty || restoredDraft != nil else { return }
+        let blocks = editor.blocks
+        if blocks.isEmpty {
+            DraftStore.clear(draftKey)
+        } else {
+            DraftStore.save(.init(blocks: blocks, date: isNew ? JournalDay(localDate: date).iso : nil, savedAt: Date()), key: draftKey)
+        }
+    }
+
     private func save() async {
         isSaving = true
         defer { isSaving = false }
@@ -299,6 +367,8 @@ struct ComposeView: View {
             case .edit(let entry):
                 onSaved(try await model.updateEntry(id: entry.id, document: editor.blocks))
             }
+            draftSave?.cancel()
+            DraftStore.clear(draftKey)
             dismiss()
         } catch {
             self.error = error.localizedDescription

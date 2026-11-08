@@ -5,7 +5,7 @@ module Api
     class EntriesController < BaseController
       # Free accounts can write text entries (like free email replies); photos, editing,
       # deleting and On This Day are PRO.
-      before_action :require_pro!, only: %i[update destroy on_this_day]
+      before_action :require_pro!, only: %i[update destroy on_this_day memory_days]
       before_action :require_pro_for_photos!, only: :create
       before_action :set_entry, only: %i[show update destroy]
 
@@ -43,6 +43,28 @@ module Api
         months = counts.map { |(year, month), count| { year: year.to_i, month: month.to_i, count: count } }
                        .sort_by { |m| [-m[:year], -m[:month]] }
         render json: { months: months }
+      end
+
+      # GET /api/v1/entries/memory_days?days=30 — upcoming days (from today, in the journal's
+      # time zone) that have entries from earlier years, for the app's On This Day reminders.
+      # Counts only, never entry text: notifications can show up on a lock screen.
+      def memory_days
+        days = params[:days].to_s.match?(/\A\d+\z/) ? params[:days].to_i.clamp(1, 60) : 30
+        today = OnThisDay.today_for(current_user)
+        month = Arel.sql("DATE_PART('month', date)")
+        day = Arel.sql("DATE_PART('day', date)")
+        by_month_day = current_user.entries.unscope(:order)
+                                   .where('date < ?', today.beginning_of_day)
+                                   .group(month, day)
+                                   .pluck(month, day, Arel.sql('COUNT(*)'), Arel.sql("MIN(DATE_PART('year', date))"))
+                                   .to_h { |m, d, count, first_year| [[m.to_i, d.to_i], [count, first_year.to_i]] }
+
+        upcoming = (0...days).filter_map do |offset|
+          date = today + offset
+          count, first_year = by_month_day[[date.month, date.day]]
+          { date: date.iso8601, count: count, first_year: first_year } if count
+        end
+        render json: { days: upcoming }
       end
 
       def random

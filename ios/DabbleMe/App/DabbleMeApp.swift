@@ -1,4 +1,5 @@
 import SwiftUI
+import UserNotifications
 
 @main
 struct DabbleMeApp: App {
@@ -12,7 +13,10 @@ struct DabbleMeApp: App {
             KeychainStore.save(OAuthTokens(accessToken: token, refreshToken: nil, expiresAt: nil))
         }
         #endif
-        _model = State(initialValue: AppModel())
+        let model = AppModel()
+        _model = State(initialValue: model)
+        NotificationRouter.shared.model = model
+        UNUserNotificationCenter.current().delegate = NotificationRouter.shared
     }
 
     var body: some Scene {
@@ -44,9 +48,26 @@ struct RootView: View {
             if model.isSignedIn, !model.hasLoaded { await model.refresh() }
         }
         .onChange(of: scenePhase) { _, phase in
-            // Pick up entries that arrived by email while the app was in the background.
-            if phase == .active, model.isSignedIn, model.hasLoaded {
-                Task { await model.refresh() }
+            switch phase {
+            case .background:
+                model.lock.didEnterBackground()
+            case .active:
+                model.lock.willEnterForeground()
+                // Pick up entries that arrived by email while the app was in the background.
+                if model.isSignedIn, model.hasLoaded {
+                    Task { await model.refresh() }
+                }
+            default:
+                break
+            }
+        }
+        .overlay {
+            if model.isSignedIn, model.lock.isEnabled {
+                if model.lock.isLocked {
+                    LockScreen()
+                } else if scenePhase != .active {
+                    PrivacyCover() // hides the journal in the app switcher
+                }
             }
         }
     }

@@ -159,6 +159,17 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       end
     end
 
+    it "lists upcoming days that have memories, with counts and no entry text" do
+      travel_to Time.find_zone(pro_user.send_timezone).local(2026, 6, 18, 12) do
+        get "/api/v1/entries/memory_days", params: { days: 5 }, headers: auth(pro_user)
+        # middle (2024-06-20) falls on June 20, two days out; older (June 3) is outside the window.
+        expect(json["days"]).to eq([{ "date" => "2026-06-20", "count" => 1, "first_year" => 2024 }])
+      end
+
+      get "/api/v1/entries/memory_days", headers: auth(free_user)
+      expect(response).to have_http_status(:forbidden)
+    end
+
     it "keeps On This Day for PRO on the Today endpoint" do
       create(:entry, user: free_user, date: 1.year.ago, body: "<p>Last year</p>")
       get "/api/v1/today", headers: auth(free_user)

@@ -63,6 +63,19 @@ xcodebuild -project DabbleMe.xcodeproj -scheme DabbleMe -destination 'platform=i
 
 The tests cover PKCE, day handling across time zones, JSON decoding, rich text layout and round-trips, and GPS stripping. API behavior is covered by `spec/requests/api_v1_spec.rb` on the Rails side.
 
+### UI tests against a local server
+
+The UI tests that need a server skip unless you pass a token from `bundle exec rails ios:demo_account`:
+
+```bash
+TEST_RUNNER_DABBLE_TOKEN=<token> xcodebuild test -project DabbleMe.xcodeproj -scheme DabbleMe \
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro' -only-testing:DabbleMeUITests
+```
+
+- Start Puma before Sidekiq, a few seconds apart: `.env` is a 1Password pipe, and two processes opening it at once can leave one without AWS keys.
+- **Face ID lock test:** enroll Face ID on the simulator (`xcrun simctl spawn <device> notifyutil -s com.apple.BiometricKit.enrollmentChanged 1` and then `-p` the same name). Run a helper that sends one match (`xcrun simctl spawn <device> notifyutil -p com.apple.BiometricKit_Sim.pearl.match`) whenever `$TEST_RUNNER_DABBLE_DEBUG_DIR/faceid-match` appears, then deletes the file. Also set `TEST_RUNNER_DABBLE_FACE_ID=1`.
+- **App Store screenshots:** set `TEST_RUNNER_DABBLE_SCREENSHOT_DIR` and run `ScreenshotTests` on the iPhone 18 Pro (1206 × 2622) and iPad Pro 13" simulators.
+
 ## Shipping checklist
 
 - [ ] Deploy the Rails side first. The `CreateMobileAppOauthApplication` migration registers the `dabble-me-ios` OAuth client.

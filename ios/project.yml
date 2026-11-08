@@ -10,7 +10,7 @@ settings:
   base:
     SWIFT_VERSION: "6.0"
     MARKETING_VERSION: "1.0"
-    CURRENT_PROJECT_VERSION: "12"
+    CURRENT_PROJECT_VERSION: "14"
     # Dabble Dev LLC. Change if you sign with a different Apple Developer team.
     DEVELOPMENT_TEAM: B79A4CAS56
     CODE_SIGN_STYLE: Automatic
@@ -61,6 +61,7 @@ targets:
           NSAllowsLocalNetworking: true
         NSLocalNetworkUsageDescription: Connects to a Dabble Me development server on your network.
         NSPhotoLibraryAddUsageDescription: Save photos from your journal entries to your photo library.
+        NSFaceIDUsageDescription: Unlock your journal with Face ID.
   DabbleMeTests:
     type: bundle.unit-test
     platform: iOS
