@@ -95,6 +95,18 @@ RSpec.describe ImageUploader, '#filename' do
     Rack::Test::UploadedFile.new(path, 'image/png', original_filename: 'IMG_8880.png')
   end
 
+  # CarrierWave caches through fog too, so cache! PUTs the upload to
+  # uploads/tmp/ on S3. Same stubbing as spec/services/mcp/entry_creator_spec.rb.
+  before do
+    bucket = Regexp.escape(CarrierWave::Uploader::Base.fog_directory)
+    [
+      %r{\Ahttps://#{bucket}\.s3(?:\.[a-z0-9-]+)*\.amazonaws\.com/}i,
+      %r{\Ahttps://s3(?:\.[a-z0-9-]+)*\.amazonaws\.com/#{bucket}/}i
+    ].each do |s3|
+      stub_request(:put, s3).to_return(status: 200, body: '', headers: { 'ETag' => '"stub"' })
+    end
+  end
+
   after { FileUtils.rm_rf(dir) }
 
   it 'puts 8 random characters in front of the original name of a new upload' do
