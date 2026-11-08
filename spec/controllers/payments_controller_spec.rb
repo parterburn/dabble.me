@@ -283,11 +283,28 @@ RSpec.describe PaymentsController, type: :controller do
       }
     end
 
-    it 'should create a payment for an existing user with item_name match' do
-      paypal_params.merge!(payer_email: paid_user.email, item_name: "Dabble Me PRO for #{paid_user.user_key}")
+    let(:paypal_user) { FactoryBot.create(:user, plan: 'PRO Monthly PayPal') }
+
+    it 'records a renewal for a legacy PayPal user without changing their plan' do
+      paypal_params.merge!(payer_email: paypal_user.email, item_name: "Dabble Me PRO for #{paypal_user.user_key}")
       expect { post :payment_notify, params: paypal_params, as: :json }.to change { Payment.count }.by(1)
-      expect(paid_user.reload.plan).to eq 'PRO Yearly PayPal'
-      expect(ActionMailer::Base.deliveries.size).to eq 0
+      expect(paypal_user.reload.plan).to eq 'PRO Monthly PayPal'
+      expect(Payment.last.user_id).to eq paypal_user.id
+      # paypal_user is created inside this example, so its welcome email is in deliveries.
+      expect(ActionMailer::Base.deliveries.map(&:subject)).not_to include '[REFUND REQUIRED] Payment Without a User'
+    end
+
+    it 'does not upgrade a free user even when the user_key matches' do
+      paypal_params.merge!(payer_email: user.email, item_name: "Dabble Me PRO for #{user.user_key}")
+      expect { post :payment_notify, params: paypal_params, as: :json }.not_to change { Payment.count }
+      expect(user.reload.plan).to eq 'Free'
+      expect(ActionMailer::Base.deliveries.last.subject).to eq '[REFUND REQUIRED] Payment Without a User'
+    end
+
+    it 'does not record a payment for a PRO user on another plan' do
+      paypal_params.merge!(payer_email: paid_user.email, item_name: "Dabble Me PRO for #{paid_user.user_key}")
+      expect { post :payment_notify, params: paypal_params, as: :json }.not_to change { Payment.count }
+      expect(paid_user.reload.plan).to eq 'PRO Monthly PayHere'
     end
 
     it 'should not create a payment if no match' do
