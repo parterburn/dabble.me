@@ -70,11 +70,14 @@ struct DecodingTests {
         let json = """
         {"id":1,"email":"a@b.c","first_name":null,"plan":"free","is_pro":false,"timezone":"Mountain Time (US & Canada)",
         "today":"2026-11-07","entry_count":3,"can_write":false,"can_search":false,
-        "settings_url":"https://dabble.me/settings","security_url":"https://dabble.me/security"}
+        "settings_url":"https://dabble.me/settings","security_url":"https://dabble.me/security",
+        "ai_connectors":{"claude_url":"https://claude.ai/x","chatgpt_url":"https://chatgpt.com/x","guide_url":"https://dabble.me/mcp-server",
+        "requires_pro":true,"requires_security_setup":true}}
         """
         let me = try APIClient.decoder.decode(Me.self, from: Data(json.utf8))
         #expect(me.canWrite == false)
         #expect(me.today == "2026-11-07")
+        #expect(me.aiConnectors?.requiresSecuritySetup == true)
     }
 }
 

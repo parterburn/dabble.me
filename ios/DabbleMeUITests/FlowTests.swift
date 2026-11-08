@@ -68,6 +68,20 @@ final class FlowTests: XCTestCase {
         app.buttons["Default"].tap()
     }
 
+    func testAIConnectorsInSettings() throws {
+        XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 15))
+        app.tabBars.buttons["Settings"].tap()
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10))
+        let claude = app.links["Connect to Claude"]
+        for _ in 0..<4 where !claude.isHittable {
+            app.collectionViews.firstMatch.swipeUp(velocity: .slow)
+        }
+        XCTAssertTrue(claude.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.links["Connect to ChatGPT"].exists)
+        XCTAssertTrue(app.links["Set Up a Passkey First"].exists, "Demo account has no passkey/2FA yet")
+        snap("settings-ai")
+    }
+
     private func snap(_ name: String) {
         guard let dir = ProcessInfo.processInfo.environment["DABBLE_DEBUG_DIR"] else { return }
         try? XCUIScreen.main.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: "\(dir)/\(name).png"))

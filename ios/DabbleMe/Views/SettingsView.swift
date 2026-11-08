@@ -36,6 +36,10 @@ struct SettingsView: View {
                     Text("Changes the text size when reading entries. It adds to your iPhone's own text size setting.")
                 }
 
+                if let connectors = model.me?.aiConnectors {
+                    aiSection(connectors)
+                }
+
                 Section {
                     Link(destination: model.me?.settingsUrl ?? AppConfig.webURL("settings")) {
                         Label("Email Schedule & Preferences", systemImage: "envelope.badge")
@@ -97,6 +101,44 @@ struct SettingsView: View {
 }
 
 private extension SettingsView {
+    /// Links to the Dabble Me plugins in Claude's and ChatGPT's directories. Connecting happens
+    /// there (OAuth on dabble.me); it needs PRO plus a passkey or two-factor sign-in.
+    @ViewBuilder
+    func aiSection(_ connectors: Me.AIConnectors) -> some View {
+        Section {
+            if connectors.requiresPro {
+                Label("Connecting Claude or ChatGPT is part of Dabble Me PRO.", systemImage: "sparkles")
+                    .foregroundStyle(.secondary)
+            } else {
+                if connectors.requiresSecuritySetup {
+                    Link(destination: model.me?.securityUrl ?? AppConfig.webURL("security")) {
+                        Label("Set Up a Passkey First", systemImage: "person.badge.key")
+                    }
+                }
+                Link(destination: connectors.claudeUrl) {
+                    Label("Connect to Claude", systemImage: "sparkles")
+                }
+                Link(destination: connectors.chatgptUrl) {
+                    Label("Connect to ChatGPT", systemImage: "bubble.left.and.text.bubble.right")
+                }
+                Link(destination: connectors.guideUrl) {
+                    Label("How It Works", systemImage: "info.circle")
+                }
+            }
+        } header: {
+            Text("Ask AI About Your Journal")
+        } footer: {
+            if connectors.requiresPro {
+                EmptyView()
+            } else if connectors.requiresSecuritySetup {
+                Text("To keep your journal safe, connecting an AI assistant needs a passkey or two-factor sign-in on your account.")
+            } else {
+                Text("Ask questions about your entries, rediscover old memories, or save a new entry from a chat. You approve access on dabble.me and can remove it any time under Passkeys & Two-Factor → Connected Apps.")
+            }
+        }
+    }
+
+
     func requestDeletion() async {
         do {
             deletionEmail = try await model.requestAccountDeletion()

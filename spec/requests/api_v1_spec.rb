@@ -58,6 +58,19 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       get "/api/v1/me", headers: auth(pro_user)
       expect(json).to include("plan" => "pro", "can_write" => true, "can_search" => true)
     end
+
+    it "includes the Claude and ChatGPT connector links and what's still needed to use them" do
+      get "/api/v1/me", headers: auth(free_user)
+      expect(json["ai_connectors"]).to include(
+        "claude_url" => ApplicationHelper.claude_plugin_directory_url,
+        "chatgpt_url" => ApplicationHelper.chatgpt_plugin_directory_url,
+        "requires_pro" => true,
+        "requires_security_setup" => true
+      )
+      create(:webauthn_credential, user: pro_user)
+      get "/api/v1/me", headers: auth(pro_user)
+      expect(json["ai_connectors"]).to include("requires_pro" => false, "requires_security_setup" => false)
+    end
   end
 
   describe "reading entries" do

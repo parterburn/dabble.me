@@ -16,6 +16,16 @@ struct Me: Decodable, Sendable, Equatable {
     let canSearch: Bool
     let settingsUrl: URL
     let securityUrl: URL
+    let aiConnectors: AIConnectors?
+
+    struct AIConnectors: Decodable, Sendable, Equatable {
+        let claudeUrl: URL
+        let chatgptUrl: URL
+        let guideUrl: URL
+        /// What the account still needs before Claude/ChatGPT can connect.
+        let requiresPro: Bool
+        let requiresSecuritySetup: Bool
+    }
 }
 
 struct EntrySummary: Decodable, Sendable, Identifiable, Hashable {

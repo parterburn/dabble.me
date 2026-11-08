@@ -7,7 +7,7 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 | Field | Value |
 |---|---|
 | Name (30) | Dabble Me – Private Journal |
-| Subtitle (30) | Journal by replying to email |
+| Subtitle (30) | Daily diary, photos & memories |
 | Primary category | Lifestyle |
 | Secondary category | Productivity |
 | Content rights | Does not contain, show, or access third-party content |
@@ -18,41 +18,45 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 
 **Promotional text (170)**
 
-> Your private journal, wherever you are. Read back through years of entries, rediscover what happened on this day, and write with photos when the mood strikes.
+> Rediscover what you wrote on this day years ago, capture today with photos, and ask Claude or ChatGPT about your own journal. Private, and yours to keep.
 
 **Description (4,000)**
 
-> Dabble Me is a private journal that lives in your email. Pick the days you want a "How was your day?" email, reply to it, and your reply becomes a journal entry, with photos. Every prompt also brings back a random entry from your past, so writing today is a chance to revisit who you were.
+> Your life, written down and remembered.
 >
-> The Dabble Me app is the companion to that habit. Read your whole journal, going back years, and write whenever something is worth remembering.
+> Dabble Me is a private journal for the moments you don't want to forget. Write about your day with photos, then watch it turn into something priceless: years of memories you can read back through, search, and rediscover.
 >
-> READ BACK THROUGH THE YEARS
-> • Your journal, newest first, grouped by month
-> • On This Day: see what you wrote on today's date in past years
-> • Random entry: rediscover a moment you'd forgotten
-> • Photos and collages, full screen with pinch to zoom
-> • Tap any #hashtag to find every entry that uses it
+> ON THIS DAY
+> See what you wrote on today's date one, five, or ten years ago. It's the best part of keeping a journal.
 >
-> WRITE WITH PHOTOS
+> WRITE YOUR WAY
 > • Bold, italic, underline, lists and links
-> • Add up to 8 photos. Several become a collage automatically
-> • Location data is removed from photos before upload
-> • Already wrote today? New writing is added to that day's entry
+> • Add up to 8 photos. Several become a beautiful collage automatically
+> • Wrote earlier today? New writing is added to that day's entry
+> • Prefer email? Reply to Dabble Me's "How was your day?" email and it becomes an entry too
 >
-> SEARCH EVERYTHING YOU'VE WRITTEN
-> • Find words, exact phrases, or #hashtags across every entry
+> YEARS OF MEMORIES, ONE TAP AWAY
+> • Your whole journal, grouped by month
+> • Search every word you've ever written, or tap a #hashtag
+> • Random entry: rediscover a moment you'd forgotten
+> • Photos full screen with pinch to zoom; save or share the ones you love
+> • Comfortable reading with adjustable text size
+>
+> ASK AI ABOUT YOUR JOURNAL
+> Connect Claude or ChatGPT to your journal and ask things like "What made me happiest this year?" or "When did I last go camping?" You approve access, and you can remove it any time.
 >
 > PRIVATE BY DESIGN
-> • No social feed, no sharing, no ads, no tracking
-> • Sign in with your passkey, password, or two-factor code
-> • Export everything, any time, from dabble.me
+> • No social feed, no ads, no tracking
+> • Photo location data is removed before upload
+> • Sign in with a passkey, password, or two-factor code
+> • Export everything, any time
 >
-> Writing in the app, search, and On This Day are part of Dabble Me PRO. Every account can read its journal in the app and write by replying to email.
+> Writing in the app, search, On This Day, and AI connections are part of Dabble Me PRO.
 
-**Keywords (100)**: these don't repeat words already in the name, which Apple indexes anyway.
+**Keywords (100)**: these don't repeat words already in the name, which Apple indexes anyway, and use no third-party trademarks (guideline 2.3.7).
 
 ```
-diary,email,daily,reflection,gratitude,memories,on this day,prompts,writing,mood,notes,life log
+diary,daily,memories,on this day,reflection,gratitude,photo,writing,mood,notes,ai,life log,email
 ```
 
 **What's New**: leave blank for 1.0.
