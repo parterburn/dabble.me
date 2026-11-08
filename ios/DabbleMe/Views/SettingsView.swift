@@ -57,7 +57,7 @@ struct SettingsView: View {
                         }
                     }
                     Link(destination: model.me?.settingsUrl ?? AppConfig.webURL("settings")) {
-                        Label("Email Schedule & Preferences", systemImage: "envelope.badge")
+                        Label("Email Preferences", systemImage: "envelope.badge")
                     }
                     Link(destination: model.me?.securityUrl ?? AppConfig.webURL("security")) {
                         Label("Passkeys & Two-Factor", systemImage: "lock.shield")
@@ -134,6 +134,7 @@ private extension SettingsView {
             if model.me?.isPro != true {
                 Label("Reminders are part of Dabble Me PRO.", systemImage: "bell")
                     .foregroundStyle(.secondary)
+                EmailScheduleRow()
             } else {
                 Toggle("Daily Writing Reminder", isOn: $writingReminder)
                     #if DEBUG
@@ -155,6 +156,7 @@ private extension SettingsView {
                 if memoriesReminder {
                     DatePicker("Time", selection: minutesBinding($memoriesTime), displayedComponents: .hourAndMinute)
                 }
+                EmailScheduleRow()
                 if notificationsDenied {
                     Button("Turn On Notifications in Settings", systemImage: "bell.slash") {
                         if let url = URL(string: UIApplication.openNotificationSettingsURLString) { openURL(url) }

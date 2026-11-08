@@ -553,6 +553,47 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
     end
   end
 
+  describe "/api/v1/email_schedule" do
+    it "shows the schedule with time zones" do
+      get "/api/v1/email_schedule", headers: auth(free_user)
+      expect(response).to have_http_status(:ok)
+      expect(json).to include("days" => ["Sun"], "can_choose_days" => false, "timezone" => free_user.send_timezone)
+      expect(json["hour"]).to eq(free_user.send_time.hour)
+      expect(json["time_zones"]).to include(include("name" => "Pacific Time (US & Canada)", "iana" => "America/Los_Angeles"))
+    end
+
+    it "lets PRO choose days, hour and time zone" do
+      patch "/api/v1/email_schedule", params: { days: %w[Fri Mon Wed], hour: 7, timezone: "Pacific Time (US & Canada)" },
+                                      headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:ok)
+      expect(json).to include("days" => %w[Mon Wed Fri], "hour" => 7, "timezone" => "Pacific Time (US & Canada)")
+      pro_user.reload
+      expect(pro_user.frequency).to eq(%w[Mon Wed Fri])
+      expect(pro_user.send_time.hour).to eq(7)
+    end
+
+    it "keeps free accounts to Sunday, but lets them set the time, zone, or turn it off" do
+      patch "/api/v1/email_schedule", params: { days: %w[Sun Mon] }, headers: auth(free_user), as: :json
+      expect(response).to have_http_status(:forbidden)
+
+      patch "/api/v1/email_schedule", params: { hour: 6, timezone: "Eastern Time (US & Canada)" }, headers: auth(free_user), as: :json
+      expect(response).to have_http_status(:ok)
+      expect(json).to include("hour" => 6, "timezone" => "Eastern Time (US & Canada)", "days" => ["Sun"])
+
+      patch "/api/v1/email_schedule", params: { days: [] }, headers: auth(free_user), as: :json
+      expect(json["days"]).to eq([])
+    end
+
+    it "rejects nonsense" do
+      patch "/api/v1/email_schedule", params: { hour: 24 }, headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      patch "/api/v1/email_schedule", params: { timezone: "Mars/Olympus" }, headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      patch "/api/v1/email_schedule", params: { days: ["Funday"] }, headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+    end
+  end
+
   describe "GET /api/v1/search" do
     before do
       create(:entry, user: pro_user, body: "<p>Went hiking today</p>")

@@ -374,4 +374,73 @@ final class JournalViewsTests: XCTestCase {
         snap("pull-reflection")
         app.buttons["Done"].tap()
     }
+
+    private func openDailyEmail(_ app: XCUIApplication) {
+        tab(app, "Settings").tap()
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Daily Email'")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        for _ in 0..<3 where !row.isHittable { app.swipeUp() }
+        row.tap()
+        XCTAssertTrue(app.buttons["Monday"].waitForExistence(timeout: 10))
+    }
+
+    private func pickTimeZone(_ app: XCUIApplication, _ name: String) {
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Time Zone'")).firstMatch.tap()
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        search.tap()
+        search.typeText(name)
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch.tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS 'Time Zone' AND label CONTAINS %@", name)).firstMatch.waitForExistence(timeout: 10))
+    }
+
+    private func pickHour(_ app: XCUIApplication, _ prefix: String, _ meridiem: String) {
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Time,'")).firstMatch.tap()
+        // iOS writes "7:00 AM" with a narrow no-break space before AM.
+        let option = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@ AND label CONTAINS %@", prefix, meridiem)).firstMatch
+        XCTAssertTrue(option.waitForExistence(timeout: 3))
+        option.tap()
+        sleep(1)
+    }
+
+    /// Settings → Reminders → Daily Email: days, hour and time zone save to the account (PRO demo).
+    func testEmailScheduleSaves() throws {
+        var app = launch()
+        openDailyEmail(app)
+        let wasOn = (app.buttons["Monday"].value as? String) == "On"
+        app.buttons["Monday"].tap()
+        pickHour(app, "7:00", "PM") // the menu opens around the current 8 PM
+        pickTimeZone(app, "Hawaii")
+        sleep(1)
+        snap("email-schedule")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Daily Email' AND label CONTAINS '7:00'")).firstMatch.waitForExistence(timeout: 5))
+        snap("email-schedule-row")
+
+        // Saved on the server: a fresh launch shows the same.
+        app.terminate()
+        app = launch()
+        openDailyEmail(app)
+        XCTAssertEqual((app.buttons["Monday"].value as? String) == "On", !wasOn)
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS '7:00' AND label CONTAINS 'PM'")).firstMatch.exists)
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS 'Hawaii'")).firstMatch.exists)
+
+        // Put the demo account back (its time zone is the journal's "today" for other tests).
+        app.buttons["Monday"].tap()
+        pickHour(app, "8:00", "PM")
+        pickTimeZone(app, "Mountain")
+    }
+
+    /// A free account sees Daily Email greyed out with the rest of Reminders. TEST_RUNNER_DABBLE_FREE_TOKEN.
+    func testEmailScheduleFreeAccount() throws {
+        guard let free = ProcessInfo.processInfo.environment["DABBLE_FREE_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_FREE_TOKEN") }
+        let app = XCUIApplication()
+        app.launchArguments = ["-DabbleDebugAccessToken", free, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launch()
+        tab(app, "Settings").tap()
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Daily Email'")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        XCTAssertFalse(row.isEnabled)
+        snap("email-schedule-free")
+    }
 }

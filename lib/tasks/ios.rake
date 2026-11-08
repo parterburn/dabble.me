@@ -15,7 +15,8 @@ namespace :ios do
 
     user = User.find_or_initialize_by(email: "demo@dabble.ex")
     user.assign_attributes(password: "dabble-demo", first_name: "Alex", last_name: "Rivera",
-                           plan: "PRO Monthly", send_timezone: "Mountain Time (US & Canada)")
+                           plan: "PRO Monthly", send_timezone: "Mountain Time (US & Canada)",
+                           send_time: "20:00", frequency: %w[Sun])
     user.save!
     user.entries.destroy_all
 
@@ -114,6 +115,8 @@ namespace :ios do
 
   desc "PRO account with no entries or hashtags (UI test for first-time hashtag suggestions); prints a token"
   task empty_account: :environment do
+    abort "ios:empty_account only runs in development" unless Rails.env.development?
+
     user = User.find_or_initialize_by(email: "empty-demo@dabble.ex")
     user.password = "dabble-empty-demo" if user.new_record?
     user.plan = "PRO Monthly"
@@ -124,6 +127,21 @@ namespace :ios do
     app = MobileApp.ensure_application!
     token = Doorkeeper::AccessToken.create!(application: app, resource_owner_id: user.id, scopes: MobileApp::SCOPE, expires_in: 1.day)
     puts "Empty account: empty-demo@dabble.ex"
+    puts "Access token (1 day): #{token.plaintext_token}"
+  end
+
+  desc "Free account (UI tests for PRO-only controls); prints a token"
+  task free_account: :environment do
+    abort "ios:free_account only runs in development" unless Rails.env.development?
+
+    user = User.find_or_initialize_by(email: "free-demo@dabble.ex")
+    user.password = "dabble-free-demo" if user.new_record?
+    user.assign_attributes(plan: "Free", send_timezone: "Mountain Time (US & Canada)", send_time: "20:00", frequency: %w[Sun])
+    user.save!
+
+    app = MobileApp.ensure_application!
+    token = Doorkeeper::AccessToken.create!(application: app, resource_owner_id: user.id, scopes: MobileApp::SCOPE, expires_in: 1.day)
+    puts "Free account: free-demo@dabble.ex"
     puts "Access token (1 day): #{token.plaintext_token}"
   end
 end

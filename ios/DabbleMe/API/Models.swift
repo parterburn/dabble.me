@@ -299,3 +299,29 @@ struct HashtagCount: Decodable, Sendable, Hashable, Identifiable {
 struct HashtagList: Decodable, Sendable {
     let hashtags: [HashtagCount]
 }
+
+/// GET/PATCH /api/v1/email_schedule: when the "How was your day?" email arrives.
+struct EmailSchedule: Decodable, Sendable, Equatable {
+    var days: [String]
+    var hour: Int
+    var timezone: String
+    /// PRO: any days. Free: Sunday or nothing.
+    let canChooseDays: Bool
+    let timeZones: [TimeZoneOption]
+
+    static let allDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+    struct TimeZoneOption: Decodable, Sendable, Hashable, Identifiable {
+        let name: String
+        let iana: String
+        let offset: String
+
+        var id: String { name }
+    }
+}
+
+struct EmailScheduleUpdate: Encodable, Sendable {
+    var days: [String]? = nil
+    var hour: Int? = nil
+    var timezone: String? = nil
+}

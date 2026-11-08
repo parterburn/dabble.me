@@ -333,6 +333,17 @@ final class AppModel {
         return EntryReflection(date: entry.day?.long ?? entry.date, text: text)
     }
 
+    func emailSchedule() async throws -> EmailSchedule {
+        try await api.get("api/v1/email_schedule")
+    }
+
+    func updateEmailSchedule(_ update: EmailScheduleUpdate) async throws -> EmailSchedule {
+        let schedule: EmailSchedule = try await api.patch("api/v1/email_schedule", update)
+        // The time zone is also the journal's: "today" may have moved.
+        if update.timezone != nil { await loadToday() }
+        return schedule
+    }
+
     func stats() async throws -> JournalStats {
         try await api.get("api/v1/stats")
     }

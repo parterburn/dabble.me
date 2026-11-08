@@ -35,7 +35,7 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 > • Edit entries later, photos included
 > • A daily writing prompt, written just for you from your recent days (on devices with Apple Intelligence)
 > • Unfinished entries are saved as you type, even if the app closes
-> • Prefer email? Reply to Dabble Me's "How was your day?" email and it becomes an entry too
+> • Prefer email? Reply to Dabble Me's "How was your day?" email and it becomes an entry too. Choose its days, time and time zone right in the app
 >
 > BUILD THE HABIT
 > • A daily reminder to write, skipped on days you already have
