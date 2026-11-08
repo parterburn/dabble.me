@@ -8,6 +8,9 @@ Rails.application.routes.draw do
     )
   end
 
+  # Font Awesome Slab icons, proxied from S3 so CSS masks stay same-origin.
+  get 'icons/slab/:name', to: 'icons#show', as: :slab_icon, constraints: { name: /[a-z0-9-]+/, format: 'svg' }
+
   get '.well-known/oauth-protected-resource', to: 'oauth/metadata#protected_resource'
   get '.well-known/oauth-protected-resource/mcp', to: 'oauth/metadata#protected_resource'
   get '.well-known/oauth-authorization-server', to: 'oauth/metadata#authorization_server'

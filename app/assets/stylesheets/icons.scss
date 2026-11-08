@@ -1,10 +1,11 @@
 @import 'vars';
 
 // Font Awesome Pro "Slab" icons. The license lets the site use them but not
-// publish them in this public repo, so they're served from the CDN (S3 key
-// uploads/icons/slab/) and drawn as CSS masks in the current text color.
-// Masks load with CORS, so the CDN must send Access-Control-Allow-Origin.
-$slab-icons-url: "https://d10r8m94hrfowu.cloudfront.net/icons/slab";
+// publish them in this public repo, so the SVGs live on S3 (uploads/icons/slab/)
+// and IconsController serves them from our own origin. They're drawn as CSS
+// masks in the current text color. Masks load with CORS, which same-origin
+// URLs don't need.
+$slab-icons-url: "/icons/slab";
 
 // !important so container styles can't repaint the icon, like the card
 // headers' `h3 span { background-color: #fff; padding: 0 15px }`.
