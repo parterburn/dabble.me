@@ -1,8 +1,8 @@
 # Dabble Me for iOS
 
-Native SwiftUI companion to the email journal: Today (prompt + On This Day), the Journal timeline with List / Stats / Photos views, search with a hashtag cloud, writing and editing with rich text, photos and dictation, reminders, a Face ID lock, a home-screen widget, and on-device Apple Intelligence.
+Native SwiftUI companion to the email journal: Today (prompt + On This Day), the Journal timeline with List / Stats / Photos views, search with a hashtag cloud, writing and editing with rich text and photos, reminders, a Face ID lock, a home-screen widget, and on-device Apple Intelligence.
 
-Email is still the primary way people write. Plan rules (see `ios/AppStore/metadata.md` → Decisions): everyone can sign in, read, write text, and see Stats, Photos and the widget; photos, editing/deleting, search, On This Day, reminders, dictation and on-device AI are PRO.
+Email is still the primary way people write. Plan rules (see `ios/AppStore/metadata.md` → Decisions): everyone can sign in, read, write text, and see Stats, Photos and the widget; photos, editing/deleting, search, On This Day, reminders and on-device AI are PRO.
 
 ## Requirements
 
@@ -56,11 +56,11 @@ The simulator reaches `localhost` directly. On a phone, "localhost" is the phone
 | GET | `/api/v1/hashtags?days=365` | PRO. Hashtag counts for the Search tag cloud (`Api::HashtagCounts`) |
 | POST | `/api/v1/image_uploads` | PRO. `{photos: [{filename, content_type}]}` (max 8) → presigned S3 PUTs; the keys go to `POST /entries` |
 
-**Rich text editing.** The app never parses or sends raw HTML. `Api::EntryDocument` turns stored HTML into a `document`: a list of paragraph / bullet / number / rule blocks made of text runs that may be bold, italic, underlined or linked. That covers what the web editor (Summernote) and email ingestion produce, including `<div>` lines from email and `<hr>` between merged replies. The app edits the document in a native text view (bold, italic and underline from the text's Format menu; typing "- ", "* " or "1. " starts a list; the bar has "+" for photos and hashtag suggestions, link, and dictation) and sends it back, and the server rebuilds clean HTML from it (`to_html`). Entries with anything the document can't represent — inline styles, blockquotes, images, DabbleMeGPT replies, nested lists — come back with `document: null` and show "Edit on dabble.me", so an in-app edit can never drop formatting.
+**Rich text editing.** The app never parses or sends raw HTML. `Api::EntryDocument` turns stored HTML into a `document`: a list of paragraph / bullet / number / rule blocks made of text runs that may be bold, italic, underlined or linked. That covers what the web editor (Summernote) and email ingestion produce, including `<div>` lines from email and `<hr>` between merged replies. The app edits the document in a native text view (bold, italic and underline from the text's Format menu; typing "- ", "* " or "1. " starts a list; the bar has "+" for photos and hashtag suggestions, and link; dictation is the keyboard's own) and sends it back, and the server rebuilds clean HTML from it (`to_html`). Entries with anything the document can't represent — inline styles, blockquotes, images, DabbleMeGPT replies, nested lists — come back with `document: null` and show "Edit on dabble.me", so an in-app edit can never drop formatting.
 
 **Widget.** `DabbleMeWidget` (WidgetKit) reads a `WidgetSnapshot` the app writes to the `group.me.dabble.ios` App Group after each refresh: streak, whether today is written, today's prompt and (only if turned on in Settings → Privacy) a count of On This Day memories. Never entry text. Tapping it opens `me.dabble.app:/write` or `:/today`.
 
-**On device only.** Dictation uses `SFSpeechRecognizer` with `requiresOnDeviceRecognition`; hashtag suggestions, "Reflect on This Entry" (the on-device version of the web's DabbleMeGPT life-coach reply) and Today's "Prompt from My Recent Entries" use Apple Intelligence's on-device model (`FoundationModels`, iOS 26+, hidden where unavailable). Reminders, the Face ID lock and drafts are local too.
+**On device only.** Hashtag suggestions, "Reflect on This Entry" (the on-device version of the web's DabbleMeGPT life-coach reply) and Today's "Prompt from My Recent Entries" use Apple Intelligence's on-device model (`FoundationModels`, iOS 26+, hidden where unavailable). Reminders, the Face ID lock and drafts are local too.
 
 **Photos** are re-encoded on the device to a JPEG of at most 2400px, with all metadata removed (including GPS) before upload. The server then processes them the same way as MCP uploads (`ProcessEntryImageJob`).
 

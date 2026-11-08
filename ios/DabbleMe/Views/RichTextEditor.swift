@@ -59,62 +59,6 @@ final class RichTextEditorModel {
         textDidChange()
     }
 
-    // MARK: - Dictation (PRO, on device)
-
-    private(set) var isDictating = false
-    var dictationError: String?
-    @ObservationIgnored private lazy var dictation = Dictation()
-    /// Where the current dictation's words are, so each new transcript replaces the last.
-    @ObservationIgnored private var dictationRange = NSRange(location: 0, length: 0)
-    @ObservationIgnored private var dictationPrefix = ""
-
-    func toggleDictation() {
-        if isDictating {
-            dictation.stop()
-        } else {
-            Task { await startDictation() }
-        }
-    }
-
-    func stopDictation() {
-        dictation.stop()
-    }
-
-    private func startDictation() async {
-        guard let textView else { return }
-        let selection = textView.selectedRange
-        let string = textView.text as NSString
-        // Separate from the word before the cursor.
-        let before = selection.location > 0 ? string.substring(with: NSRange(location: selection.location - 1, length: 1)) : "\n"
-        dictationPrefix = before.rangeOfCharacter(from: .whitespacesAndNewlines) == nil ? " " : ""
-        dictationRange = selection
-        dictation.onTranscript = { [weak self] text in self?.insertTranscript(text) }
-        dictation.onStateChange = { [weak self] listening in
-            self?.isDictating = listening
-            self?.onDictationStateChange(listening)
-        }
-        do {
-            try await dictation.start()
-        } catch {
-            dictationError = error.localizedDescription
-        }
-    }
-
-    @ObservationIgnored fileprivate var onDictationStateChange: (Bool) -> Void = { _ in }
-
-    private func insertTranscript(_ transcript: String) {
-        guard let textView, !transcript.isEmpty else { return }
-        let storage = textView.textStorage
-        guard dictationRange.location + dictationRange.length <= storage.length else { return }
-        let text = dictationPrefix + transcript
-        let attributes = textView.typingAttributes
-        storage.replaceCharacters(in: dictationRange, with: NSAttributedString(string: text, attributes: attributes))
-        dictationRange = NSRange(location: dictationRange.location, length: (text as NSString).length)
-        textView.selectedRange = NSRange(location: dictationRange.location + dictationRange.length, length: 0)
-        textView.scrollRangeToVisible(textView.selectedRange)
-        textDidChange()
-    }
-
     /// Replaces everything in the editor (e.g. "Start Over" on a restored draft).
     func replace(with blocks: [DocumentBlock]) {
         textView?.attributedText = RichText.attributedString(from: blocks, style: .journal)
@@ -243,13 +187,11 @@ struct EditorInsertItem {
 
 struct RichTextEditor: UIViewRepresentable {
     let model: RichTextEditorModel
-    /// Shows the dictation (microphone) button in the bar.
-    var allowsDictation = false
     var insertItems: [EditorInsertItem] = []
 
     /// Changes when the bar's buttons need rebuilding.
     fileprivate var barKey: String {
-        "\(allowsDictation)|" + insertItems.map { "\($0.title)\($0.isEnabled)\($0.subtitle ?? "")" }.joined(separator: "|")
+        insertItems.map { "\($0.title)\($0.isEnabled)\($0.subtitle ?? "")" }.joined(separator: "|")
     }
 
     func makeUIView(context: Context) -> UITextView {
@@ -305,17 +247,15 @@ struct RichTextEditor: UIViewRepresentable {
         fileprivate var barKey = ""
         /// The latest menu actions (their closures change as the composer's state does).
         var insertItems: [EditorInsertItem] = []
-        private weak var micItem: UIBarButtonItem?
 
         func makeToolbar(for editor: RichTextEditor) -> UIToolbar {
             let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 60))
             configure(toolbar, for: editor)
-            model.onDictationStateChange = { [weak self] listening in self?.updateMic(listening: listening) }
             return toolbar
         }
 
-        /// "+" (photos, hashtag suggestions), link, and dictation. Bold, italic and underline are in
-        /// the text's edit menu (Format), and typing "- " or "1. " starts a list.
+        /// "+" (photos, hashtag suggestions) and link. Bold, italic and underline are in the text's
+        /// edit menu (Format), typing "- " or "1. " starts a list, and the keyboard has dictation.
         func configure(_ toolbar: UIToolbar, for editor: RichTextEditor) {
             barKey = editor.barKey
             insertItems = editor.insertItems
@@ -343,19 +283,7 @@ struct RichTextEditor: UIViewRepresentable {
             }
             items.append(.flexibleSpace())
             items.append(item("link", "Link") { $0.beginLink() })
-            if editor.allowsDictation {
-                let mic = item("mic", "Dictate") { $0.toggleDictation() }
-                micItem = mic
-                items.append(mic)
-            }
             toolbar.items = items
-            updateMic(listening: model.isDictating)
-        }
-
-        private func updateMic(listening: Bool) {
-            micItem?.image = UIImage(systemName: listening ? "stop.circle.fill" : "mic")
-            micItem?.tintColor = listening ? .systemRed : nil
-            micItem?.accessibilityLabel = listening ? "Stop Dictating" : "Dictate"
         }
     }
 }
@@ -376,11 +304,6 @@ extension View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Select text first to link it, or add a web address on its own.")
-        }
-        .alert("Can't dictate", isPresented: .present($model.dictationError)) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(model.dictationError ?? "")
         }
     }
 }

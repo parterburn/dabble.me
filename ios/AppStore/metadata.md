@@ -32,7 +32,6 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 > WRITE YOUR WAY
 > • Bold, italic and underline, links, and lists that start as you type "- " or "1." 
 > • Add up to 8 photos. Several become a beautiful collage automatically
-> • Dictate instead of typing, transcribed on your device
 > • A daily writing prompt, written just for you from your recent days (on devices with Apple Intelligence)
 > • Unfinished entries are saved as you type, even if the app closes
 > • Prefer email? Reply to Dabble Me's "How was your day?" email and it becomes an entry too
@@ -67,7 +66,7 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 > • Sign in with a passkey, password, or two-factor code
 > • Export everything, any time
 >
-> Free accounts can read their journal, write entries, and see their stats. Photos, search, On This Day, reminders, dictation, Apple Intelligence features, and AI connections are part of Dabble Me PRO.
+> Free accounts can read their journal, write entries, and see their stats. Photos, search, On This Day, reminders, Apple Intelligence features, and AI connections are part of Dabble Me PRO.
 
 **Keywords (100)**: these don't repeat words already in the name, which Apple indexes anyway, and use no third-party trademarks (guideline 2.3.7).
 
@@ -94,7 +93,7 @@ Data used to track you: **none**. Data linked to you, all for **App Functionalit
 | User Content → Photos or Videos | Photos attached to entries |
 | Identifiers → User ID | Account identity |
 
-The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resources/PrivacyInfo.xcprivacy`. Not collected: dictation audio and Apple Intelligence features run on the device; reminders, the Face ID setting and drafts stay on the device; the widget reads a streak count the app stores in its App Group.
+The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resources/PrivacyInfo.xcprivacy`. Not collected: Apple Intelligence features run on the device; reminders, the Face ID setting and drafts stay on the device; the widget reads a streak count the app stores in its App Group.
 
 ## App Review information
 
@@ -123,5 +122,5 @@ In `ios/App Store Screenshots/`: **iPhone 6.3"** at 1206 × 2622 (iPhone 18 Pro 
 ## Decisions
 
 - **In-app purchase:** ship as a free companion app (guideline 3.1.3(f)) with no purchasing and no links to buy. If App Review asks for in-app purchase for PRO, revisit.
-- **Free vs PRO in the app:** free accounts read and write text entries and see Stats, the Photos view and the widget; photos, editing/deleting, search (and its hashtag cloud), On This Day, reminders, dictation, AI connections and on-device AI features are PRO. Face ID lock and drafts are for everyone.
+- **Free vs PRO in the app:** free accounts read and write text entries and see Stats, the Photos view and the widget; photos, editing/deleting, search (and its hashtag cloud), On This Day, reminders, AI connections and on-device AI features are PRO. Dictation is the keyboard's own (no in-app mic). Face ID lock and drafts are for everyone.
 - **iPad:** supported in 1.0, so the submission needs the 13" iPad screenshot set too.

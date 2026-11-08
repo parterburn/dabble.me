@@ -20,7 +20,9 @@ struct SearchView: View {
                     ProInfoView(feature: .search, showsDoneButton: false)
                 } else {
                     resultsList
-                        .searchable(text: $query, isPresented: $isSearchActive, prompt: "Search your journal")
+                        // Always visible at the top, not tucked away when the results scroll.
+                        .searchable(text: $query, isPresented: $isSearchActive,
+                                    placement: .navigationBarDrawer(displayMode: .always), prompt: "Search your journal")
                         .onChange(of: model.searchFocusRequest) { isSearchActive = true }
                         .onSubmit(of: .search) { Task { await search(reset: true) } }
                         .onChange(of: query) { _, newValue in

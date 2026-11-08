@@ -73,8 +73,7 @@ struct ComposeView: View {
             VStack(spacing: 0) {
                 if restoredDraft != nil { draftBanner }
                 Divider()
-                RichTextEditor(model: editor, allowsDictation: model.me?.isPro == true && Dictation.isSupported,
-                               insertItems: insertItems)
+                RichTextEditor(model: editor, insertItems: insertItems)
                     .overlay(alignment: .topLeading) {
                         if editor.isEmpty {
                             Text("How was your day?")
@@ -122,7 +121,6 @@ struct ComposeView: View {
             .confirmationDialog(isNew ? "Discard this entry?" : "Discard your changes?",
                                 isPresented: $confirmingDiscard, titleVisibility: .visible) {
                 Button("Discard", role: .destructive) {
-                    editor.stopDictation()
                     DraftStore.clear(draftKey)
                     dismiss()
                 }
@@ -141,7 +139,6 @@ struct ComposeView: View {
             } message: {
                 Text(suggestionError ?? "")
             }
-            .onDisappear { editor.stopDictation() }
             .onChange(of: photoItems) { Task { await preparePhotos() } }
             #if DEBUG
             .task { await attachDebugPhotos() }
@@ -321,8 +318,8 @@ struct ComposeView: View {
                 Image(systemName: "xmark.circle.fill")
                     .symbolRenderingMode(.palette)
                     .foregroundStyle(.white, .black.opacity(0.6))
+                    .padding(3) // inside the corner: the photo strip clips anything outside it
             }
-            .offset(x: 6, y: -6)
             .accessibilityLabel("Remove photo")
             .disabled(isSaving)
         }
@@ -421,7 +418,6 @@ struct ComposeView: View {
     }
 
     private func save() async {
-        editor.stopDictation()
         isSaving = true
         defer { isSaving = false }
         do {

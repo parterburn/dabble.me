@@ -10,7 +10,7 @@ settings:
   base:
     SWIFT_VERSION: "6.0"
     MARKETING_VERSION: "1.0"
-    CURRENT_PROJECT_VERSION: "18"
+    CURRENT_PROJECT_VERSION: "19"
     # Dabble Dev LLC. Change if you sign with a different Apple Developer team.
     DEVELOPMENT_TEAM: B79A4CAS56
     CODE_SIGN_STYLE: Automatic
@@ -71,8 +71,6 @@ targets:
         NSLocalNetworkUsageDescription: Connects to a Dabble Me development server on your network.
         NSPhotoLibraryAddUsageDescription: Save photos from your journal entries to your photo library.
         NSFaceIDUsageDescription: Unlock your journal with Face ID.
-        NSMicrophoneUsageDescription: Dictate journal entries. Your voice is transcribed on this device and never leaves it.
-        NSSpeechRecognitionUsageDescription: Turn what you say into journal text, on this device.
   DabbleMeWidget:
     type: app-extension
     platform: iOS

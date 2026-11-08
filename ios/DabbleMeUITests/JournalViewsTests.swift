@@ -78,6 +78,11 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(tag.exists)
         tag.tap()
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ENDSWITH 'entries' OR label ENDSWITH 'entry'")).firstMatch.waitForExistence(timeout: 10))
+        // The search field stays at the top while the results scroll.
+        app.swipeUp()
+        app.swipeUp()
+        XCTAssertTrue(app.searchFields.firstMatch.isHittable)
+        snap("search-sticky")
     }
 
     /// Lists hang in the editor; PRO gets on-device hashtag suggestions (when Apple Intelligence is available).
@@ -98,7 +103,7 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(text.contains("• The rainbow"), text)
         XCTAssertTrue(text.contains("• Cold sandwiches"), text)
         XCTAssertFalse(app.buttons["Bold"].exists)
-        print("MIC_PRESENT=\(app.buttons["Dictate"].exists)")
+        XCTAssertFalse(app.toolbars.buttons["Dictate"].exists, "Dictation is the keyboard's own")
 
         app.buttons["Add"].tap()
         let suggest = app.buttons["Suggest Hashtags"]
@@ -221,34 +226,5 @@ final class JournalViewsTests: XCTestCase {
         chip.press(forDuration: 1.2)
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "since entry")).firstMatch.waitForExistence(timeout: 5))
         snap("hashtag-age")
-    }
-
-    /// Tapping the mic asks for speech and microphone access and starts listening, without crashing.
-    func testDictationButtonStartsListening() throws {
-        let app = launch(["-DabbleDictationSkipAudio", "YES"])
-        let write = app.buttons["Write Today's Entry"].waitForExistence(timeout: 15) ? app.buttons["Write Today's Entry"] : app.buttons["Add to Today's Entry"]
-        XCTAssertTrue(write.waitForExistence(timeout: 5))
-        write.tap()
-        let editor = app.textViews["Entry"]
-        XCTAssertTrue(editor.waitForExistence(timeout: 5))
-        editor.tap()
-        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
-        let mic = app.toolbars.buttons["Dictate"].firstMatch // not the keyboard's own dictation key
-        guard mic.waitForExistence(timeout: 3) else { throw XCTSkip("On-device speech isn't available on this simulator") }
-        mic.tap()
-        // Permission prompts (speech, then microphone) come from SpringBoard.
-        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
-        for _ in 0..<2 {
-            let allow = springboard.buttons.matching(NSPredicate(format: "label IN {'Allow', 'OK'}")).firstMatch
-            if allow.waitForExistence(timeout: 4) { allow.tap() }
-        }
-        sleep(3)
-        XCTAssertEqual(app.state, .runningForeground, "The app should still be running after tapping the mic")
-        XCTAssertTrue(app.toolbars.buttons["Stop Dictating"].firstMatch.waitForExistence(timeout: 5), "Listening after permission")
-        snap("dictation")
-        let stop = app.toolbars.buttons["Stop Dictating"].firstMatch
-        if stop.exists { stop.tap() }
-        sleep(1)
-        XCTAssertEqual(app.state, .runningForeground)
     }
 }
