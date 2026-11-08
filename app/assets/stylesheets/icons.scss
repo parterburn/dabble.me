@@ -24,7 +24,7 @@ $slab-icons-url: "https://d10r8m94hrfowu.cloudfront.net/icons/slab";
 }
 
 // Every icon on the CDN that the app uses.
-@each $name in arrow-down-to-line, arrow-left, arrow-right, arrow-up-from-line, arrows-rotate, calendar, check, circle-question, clipboard, close, cloud, compress, copy, edit, envelope, gear, hourglass, image, images, lock, music, reflect, search, shield, sign-out, trash, trophy {
+@each $name in arrow-down-to-line, arrow-left, arrow-right, arrow-up-from-line, arrows-rotate, calendar, check, clipboard, close, cloud, compress, copy, edit, gear, heart, hourglass, image, images, lightbulb, lock, music, search, shield, sign-out, thought-bubble, trash, trophy {
   .slab-icon--#{$name} {
     @include slab-mask($name);
   }
