@@ -58,34 +58,19 @@
             </a>
             <ul class="dropdown-menu" role="menu">
               <li class="<%= 'active' if current_page?(inspirations_path) %>">
-                <%= link_to inspirations_path, title: "Inspirations" do %>
-                  <i class="fa fa-lightbulb-o"></i>
-                  &nbsp;Inspirations
-                <% end %>
+                <%= link_to "Inspirations", inspirations_path, title: "Inspirations" %>
               </li>
               <li class="<%= 'active' if current_page?(payments_path) %>">
-                <%= link_to payments_path, title: "Payments" do %>
-                  <i class="fa fa-usd"></i>
-                  &nbsp;Payments
-                <% end %>
-              </li>
-              <li class="<%= 'active' if current_page?(admin_stats_path) %>">
-                <%= link_to admin_stats_path, title: "Admin Stats" do %>
-                  <i class="fa fa-bar-chart"></i>
-                  &nbsp;Stats
-                <% end %>
+                <%= link_to "Payments", payments_path, title: "Payments" %>
               </li>
               <li class="<%= 'active' if current_page?(admin_photos_path) %>">
-                <%= link_to admin_photos_path, title: "Admin Photos" do %>
-                  <i class="fa fa-picture-o"></i>
-                  &nbsp;Photos
-                <% end %>
+                <%= link_to "Photos", admin_photos_path, title: "Admin Photos" %>
+              </li>
+              <li class="<%= 'active' if current_page?(admin_stats_path) %>">
+                <%= link_to "Stats", admin_stats_path, title: "Admin Stats" %>
               </li>
               <li class="<%= 'active' if current_page?(admin_users_path) %>">
-                <%= link_to admin_users_path, title: "Admin Users" do %>
-                  <i class="fa fa-users"></i>
-                  &nbsp;Users
-                <% end %>
+                <%= link_to "Users", admin_users_path, title: "Admin Users" %>
               </li>
             </ul>
           </li>
