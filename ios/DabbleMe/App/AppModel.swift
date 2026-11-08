@@ -50,7 +50,7 @@ final class AppModel {
 
     // MARK: - Auth
 
-    func signIn() async {
+    func signIn(createAccount: Bool = false) async {
         guard !isSigningIn else { return }
         isSigningIn = true
         signInError = nil
@@ -59,7 +59,7 @@ final class AppModel {
         let pkce = PKCE()
         let state = PKCE.randomURLSafeString(byteCount: 16)
         do {
-            let callback = try await authenticator.authenticate(url: OAuthEndpoints.authorizeURL(pkce: pkce, state: state))
+            let callback = try await authenticator.authenticate(url: OAuthEndpoints.authorizeURL(pkce: pkce, state: state, createAccount: createAccount))
             let items = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems ?? []
             let value = { (name: String) in items.first { $0.name == name }?.value }
 

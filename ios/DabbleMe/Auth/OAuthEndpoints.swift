@@ -8,7 +8,9 @@ enum OAuthEndpoints {
         let expiresIn: Double?
     }
 
-    static func authorizeURL(pkce: PKCE, state: String) -> URL {
+    /// `createAccount` opens dabble.me's sign-up page (OIDC `prompt=create`); new users come
+    /// straight back to the app, signed in.
+    static func authorizeURL(pkce: PKCE, state: String, createAccount: Bool = false) -> URL {
         var components = URLComponents(url: AppConfig.webURL("oauth/authorize"), resolvingAgainstBaseURL: false)!
         components.queryItems = [
             URLQueryItem(name: "response_type", value: "code"),
@@ -18,7 +20,7 @@ enum OAuthEndpoints {
             URLQueryItem(name: "state", value: state),
             URLQueryItem(name: "code_challenge", value: pkce.challenge),
             URLQueryItem(name: "code_challenge_method", value: "S256"),
-        ]
+        ] + (createAccount ? [URLQueryItem(name: "prompt", value: "create")] : [])
         return components.url!
     }
 

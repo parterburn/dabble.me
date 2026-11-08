@@ -129,7 +129,7 @@ struct EntryDetailView: View {
 
     private func menu(for entry: EntryDetail) -> some View {
         Menu {
-            if model.me?.canWrite == true {
+            if model.me?.canEdit == true {
                 if entry.document != nil {
                     Button("Edit", systemImage: "pencil") { editing = true }
                 } else {

@@ -51,7 +51,7 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 > • Sign in with a passkey, password, or two-factor code
 > • Export everything, any time
 >
-> Writing in the app, search, On This Day, and AI connections are part of Dabble Me PRO.
+> Free accounts can read their journal and write entries. Photos, search, On This Day, and AI connections are part of Dabble Me PRO.
 
 **Keywords (100)**: these don't repeat words already in the name, which Apple indexes anyway, and use no third-party trademarks (guideline 2.3.7).
 
@@ -85,7 +85,7 @@ The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resour
 - **Sign-in required:** yes. Create a production demo account (for example `appreview@dabble.me`) on **PRO**, with a few entries that include photos and hashtags, and with password sign-in (no 2FA) so the reviewer can get in.
 - **Notes for the reviewer:**
 
-> Dabble Me is a journal people mainly write in by replying to a daily email; the app is its companion for reading and writing entries. Sign in with the demo account above on the sign-in page that opens. Writing, search and On This Day are PRO features; the demo account is PRO. Accounts can be created on the sign-in page and deleted in Settings → Delete Account (we email a link to finish deletion on dabble.me, where it's confirmed with the account password).
+> Dabble Me is a private journal; the app is a free companion to the dabble.me service, and it sells nothing in the app. Sign in with the demo account above on the sign-in page that opens. Photos, search, On This Day and AI connections are PRO features; the demo account is PRO. Accounts can be created with "Create a Free Account" on the first screen and deleted in Settings → Delete Account (we email a link to finish deletion on dabble.me, where it's confirmed with the account password).
 
 - **Export compliance:** the app uses only standard HTTPS (`ITSAppUsesNonExemptEncryption = NO`).
 
@@ -103,5 +103,5 @@ Required sizes: **6.9" iPhone** at 1320 × 2868, plus **13" iPad** at 2064 × 27
 
 ## Open decisions before submitting
 
-- **In-app purchase:** the app currently sells nothing (Apple guideline 3.1.3(f) "free companion" route). Review may still ask for in-app purchase for PRO; see the PR discussion.
+- **In-app purchase:** decided: ship as a free companion app (guideline 3.1.3(f)) with no purchasing and no links to buy. If App Review asks for in-app purchase for PRO, revisit.
 - **iPad:** keep it (needs iPad screenshots) or ship iPhone-only for 1.0.

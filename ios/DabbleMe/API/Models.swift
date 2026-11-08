@@ -13,6 +13,9 @@ struct Me: Decodable, Sendable, Equatable {
     let today: String
     let entryCount: Int
     let canWrite: Bool
+    /// PRO: photos, editing/deleting entries, search.
+    let canAddPhotos: Bool
+    let canEdit: Bool
     let canSearch: Bool
     let settingsUrl: URL
     let securityUrl: URL

@@ -50,13 +50,14 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
     it "describes a free account" do
       get "/api/v1/me", headers: auth(free_user)
       expect(response).to have_http_status(:ok)
-      expect(json).to include("email" => free_user.email, "plan" => "free", "can_write" => false, "can_search" => false)
+      expect(json).to include("email" => free_user.email, "plan" => "free", "can_write" => true,
+                              "can_add_photos" => false, "can_edit" => false, "can_search" => false)
       expect(json["today"]).to match(/\A\d{4}-\d{2}-\d{2}\z/)
     end
 
     it "describes a PRO account" do
       get "/api/v1/me", headers: auth(pro_user)
-      expect(json).to include("plan" => "pro", "can_write" => true, "can_search" => true)
+      expect(json).to include("plan" => "pro", "can_write" => true, "can_add_photos" => true, "can_edit" => true, "can_search" => true)
     end
 
     it "includes the Claude and ChatGPT connector links and what's still needed to use them" do
@@ -177,11 +178,19 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
   end
 
   describe "writing entries" do
-    it "requires PRO to create" do
+    it "lets free accounts write text entries but not add photos" do
       post "/api/v1/entries", params: { date: "2026-01-02", body: "Hi" }, headers: auth(free_user)
+      expect(response).to have_http_status(:created)
+      expect(free_user.entries.count).to eq(1)
+
+      key = "#{Mcp::PresignedImageUpload.key_prefix_for(free_user)}x.jpg"
+      post "/api/v1/entries", params: { date: "2026-01-03", body: "Pic", uploaded_image_keys: [key] }, headers: auth(free_user), as: :json
       expect(response).to have_http_status(:forbidden)
       expect(json["error"]).to eq("pro_required")
-      expect(free_user.entries.count).to eq(0)
+      expect(free_user.entries.count).to eq(1)
+
+      post "/api/v1/image_uploads", params: { photos: [{ filename: "p.jpg", content_type: "image/jpeg" }] }, headers: auth(free_user), as: :json
+      expect(response).to have_http_status(:forbidden)
     end
 
     it "creates an entry, then merges a second one on the same day" do
@@ -475,6 +484,16 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       get authorize_path
       expect(response).to redirect_to(new_user_session_path)
       expect(flash[:alert]).to be_nil
+      expect(session["user_return_to"]).to eq(authorize_path)
+    end
+
+    it "opens the sign-up page for prompt=create and returns there after signing up" do
+      authorize_path = oauth_authorization_path(
+        response_type: "code", client_id: mobile_app.uid, redirect_uri: MobileApp::REDIRECT_URI, scope: MobileApp::SCOPE,
+        state: "xyz", code_challenge: code_challenge, code_challenge_method: "S256", prompt: "create"
+      )
+      get authorize_path
+      expect(response).to redirect_to(new_user_registration_path)
       expect(session["user_return_to"]).to eq(authorize_path)
     end
 

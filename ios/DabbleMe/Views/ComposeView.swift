@@ -64,7 +64,16 @@ struct ComposeView: View {
                     }
                 if isNew {
                     Divider()
-                    photoBar
+                    if model.me?.canAddPhotos == true {
+                        photoBar
+                    } else {
+                        Label("Adding photos is part of Dabble Me PRO.", systemImage: "photo")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.horizontal)
+                            .padding(.vertical, 12)
+                    }
                 }
             }
             .overlay {

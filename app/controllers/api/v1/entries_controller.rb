@@ -3,7 +3,10 @@
 module Api
   module V1
     class EntriesController < BaseController
-      before_action :require_pro!, only: %i[create update destroy on_this_day]
+      # Free accounts can write text entries (like free email replies); photos, editing,
+      # deleting and On This Day are PRO.
+      before_action :require_pro!, only: %i[update destroy on_this_day]
+      before_action :require_pro_for_photos!, only: :create
       before_action :set_entry, only: %i[show update destroy]
 
       # GET /api/v1/entries?page=&per=&year=&month=
@@ -100,6 +103,12 @@ module Api
       end
 
       private
+
+      def require_pro_for_photos!
+        return if current_user.is_pro? || Array(params[:uploaded_image_keys]).compact_blank.empty?
+
+        render_error(:forbidden, 'pro_required', 'Adding photos is part of Dabble Me PRO.')
+      end
 
       def set_entry
         @entry = current_user.entries.find(params[:id])
