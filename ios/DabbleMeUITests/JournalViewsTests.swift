@@ -170,4 +170,55 @@ final class JournalViewsTests: XCTestCase {
         app.swipeUp()
         snap("settings-privacy")
     }
+
+    private func pullUp(_ app: XCUIApplication) {
+        let scroll = app.scrollViews.firstMatch
+        scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
+            .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1)))
+    }
+
+    /// From search results, pulling moves through the results (not by date), and tapping a
+    /// #hashtag in the entry goes back to the results for that tag.
+    func testSearchResultsScopeEntryNavigation() throws {
+        let app = launch()
+        tab(app, "Search").tap()
+        XCTAssertTrue(app.buttons["#hiking"].waitForExistence(timeout: 10))
+        app.buttons["#hiking"].tap()
+        let yosemite = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
+        XCTAssertTrue(yosemite.waitForExistence(timeout: 10))
+        yosemite.tap()
+        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+        sleep(1)
+        pullUp(app)
+        // The next #hiking result (Oct 15), not the next day by date (Nov 6, "Slow Saturday").
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Day trip to the falls")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Slow Saturday")).firstMatch.exists)
+
+        let tag = app.links["#hiking"].firstMatch
+        XCTAssertTrue(tag.waitForExistence(timeout: 5))
+        tag.tap()
+        XCTAssertTrue(app.staticTexts["2 entries"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["Entry Actions"].exists, "The entry should close to show the results")
+    }
+
+    /// Long-press an entry to preview it; long-press a dated #hashtag to see how old it was.
+    func testLongPressPreviewAndHashtagAge() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Biscuit has discovered")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.press(forDuration: 1.2)
+        let open = app.buttons["Open"]
+        XCTAssertTrue(open.waitForExistence(timeout: 5))
+        sleep(1)
+        snap("entry-preview")
+        open.tap()
+        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+
+        let chip = app.buttons["#Biscuit"].firstMatch
+        XCTAssertTrue(chip.waitForExistence(timeout: 5))
+        chip.press(forDuration: 1.2)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "since entry")).firstMatch.waitForExistence(timeout: 5))
+        snap("hashtag-age")
+    }
 }

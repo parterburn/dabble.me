@@ -36,6 +36,9 @@ module Api
         # Structured, editable copy of the body (see EntryDocument), or nil when it's web-only.
         document: EntryDocument.from_html(entry.body),
         songs: songs,
+        # Hashtags with a date set on dabble.me (birthdays, anniversaries), and how long it had
+        # been on this entry's day, worded like the web's tag tooltip.
+        dated_hashtags: dated_hashtags,
         # Neighbouring entries by date, for moving between days in the app.
         previous_entry: neighbour(entry.previous),
         next_entry: neighbour(entry.next),
@@ -63,6 +66,20 @@ module Api
 
     def neighbour(other)
       other && { id: other.id, date: other.date.to_date.iso8601 }
+    end
+
+    def dated_hashtags
+      tags = entry.hashtags || []
+      return [] if tags.empty?
+
+      dates = Hashtag.where(user_id: entry.user_id).where.not(date: nil).to_h { |hashtag| [hashtag.tag.downcase, hashtag.date.to_date] }
+      entry_date = entry.date.to_date
+      tags.filter_map do |tag|
+        date = dates[tag.downcase]
+        next unless date
+
+        { tag: tag, date: date.iso8601, age: ApplicationController.helpers.tag_relative_date(date, entry_date) }
+      end
     end
 
     def songs

@@ -105,6 +105,12 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       expect(response).to have_http_status(:unprocessable_content)
     end
 
+    it "includes dated hashtags with their age on the entry's day" do
+      free_user.original_hashtags.create!(tag: "Coffee", date: Date.new(2023, 11, 4))
+      get "/api/v1/entries/#{mine.id}", headers: auth(free_user)
+      expect(json["entry"]["dated_hashtags"]).to eq([{ "tag" => "coffee", "date" => "2023-11-04", "age" => "1 year and 4 months since entry" }])
+    end
+
     it "shows a single entry with text body" do
       get "/api/v1/entries/#{mine.id}", headers: auth(free_user)
       expect(response).to have_http_status(:ok)

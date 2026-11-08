@@ -47,6 +47,8 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 > • Photos view: every day you captured, in one grid
 > • Search every word you've ever written, or tap your #hashtags
 > • Pull down or up to move to the next or previous day; tap the date to see how long ago it was
+> • Long-press any entry to preview it
+> • Give a #hashtag a date (a birthday, an anniversary) and see how old your kids were, or how long it had been, in every entry
 > • Random entry: rediscover a moment you'd forgotten
 > • Photos full screen with pinch to zoom; save or share the ones you love
 > • Pinch to make entries easier to read
@@ -73,18 +75,7 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 diary,daily,memories,on this day,reflection,gratitude,photo,writing,mood,prompts,streak,widget,ai
 ```
 
-**What's New**: leave blank for 1.0. If these features ship as 1.1 instead (1.0 already in review with build 9), use:
-
-> • Journal now has Photos and Stats views: tap the title to switch
-> • Your hashtags from the past year on the Search tab
-> • A home-screen and Lock Screen widget with your writing streak
-> • Reminders to write, and On This Day reminders (PRO)
-> • Dictate entries, transcribed on your device (PRO)
-> • Apple Intelligence reflects on your entries, suggests hashtags and writes prompts, on your device (PRO)
-> • Lock the app with Face ID
-> • Unfinished entries are saved as you type
-> • A roomier editor: type "- " or "1." for lists; photos and hashtags live under "+"
-> • Bulleted and numbered lists line up neatly
+**What's New**: leave blank for 1.0 (submitted with build 17 or later; build 9 was never submitted).
 
 | Field | Value |
 |---|---|

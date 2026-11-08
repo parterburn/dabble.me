@@ -11,9 +11,10 @@ struct SearchView: View {
     @State private var error: String?
     @State private var hashtags: [HashtagCount] = []
     @State private var isSearchActive = false
+    @State private var path = NavigationPath()
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             Group {
                 if model.me?.canSearch == false {
                     ProInfoView(feature: .search, showsDoneButton: false)
@@ -28,6 +29,7 @@ struct SearchView: View {
                         .onChange(of: model.searchRequest, initial: true) { _, request in
                             guard let request else { return }
                             model.searchRequest = nil
+                            path = NavigationPath() // e.g. a #hashtag tapped in an entry opened from these results
                             query = request
                             Task { await search(reset: true) }
                         }
@@ -36,7 +38,7 @@ struct SearchView: View {
             .navigationTitle("Search")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(removing: .title) // the tab says where you are
-            .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
+            .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id, sequence: $0.sequence) }
         }
     }
 
@@ -81,9 +83,11 @@ struct SearchView: View {
             List {
                 Section {
                     ForEach(results) { entry in
-                        NavigationLink(value: EntryRoute(id: entry.id)) {
+                        let route = EntryRoute(id: entry.id, sequence: results.map { EntryNeighbour(id: $0.id, date: $0.date) })
+                        NavigationLink(value: route) {
                             EntryRow(entry: entry, showsYear: true)
                         }
+                        .entryPreview(entry) { path.append(route) }
                         .task {
                             if entry.id == results.last?.id { await search(reset: false) }
                         }

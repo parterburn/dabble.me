@@ -4,6 +4,7 @@ import SwiftUI
 /// bottom for the previous one, like pulling the days into view. Pinch to change text size.
 struct EntryDetailView: View {
     let entryID: Int
+    var sequence: [EntryNeighbour]? = nil
 
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
@@ -20,6 +21,11 @@ struct EntryDetailView: View {
     /// view starts bouncing back before the release reaches us, which disarms `pull`.
     @State private var armedPull = Pull.none
     @State private var isInteracting = false
+    /// Which edges the entry was resting at (both for a short entry), and so which ways a flick
+    /// that started there may move: if you let go early and the bounce carries past the
+    /// threshold, that still moves. A fast scroll that only hits the edge partway doesn't.
+    @State private var restingEdges: Edge.Set = []
+    @State private var flickEdges: Edge.Set = []
     @State private var arrivalEdge = Edge.bottom
     @State private var isMoving = false
     @State private var pinchStart: ReadingTextSize?
@@ -59,28 +65,44 @@ struct EntryDetailView: View {
                         ))
                 }
                 .scrollBounceBehavior(.always)
+                .onScrollGeometryChange(for: Edge.Set.self, of: Self.restingEdges(for:)) { _, edges in
+                    if !isInteracting { restingEdges = edges }
+                }
                 .onScrollGeometryChange(for: Pull.self, of: Self.pull(for:)) { _, newValue in
                     pull = newValue
                     // While the finger is down, track whether it's past the threshold right now.
-                    if isInteracting { armedPull = newValue.isArmed ? newValue : .none }
+                    // Once armed (you feel the tick), a drag stays armed unless it goes back to
+                    // the edge; easing off a little before letting go still moves.
+                    if isInteracting {
+                        if newValue.isArmed { armedPull = newValue } else if newValue == .none { armedPull = .none }
+                    } else if newValue.isArmed, flickEdges.contains(newValue.edge) {
+                        flickEdges = []
+                        armedPull = newValue
+                        releasePull(from: entry)
+                    }
                 }
                 .onScrollPhaseChange { oldPhase, newPhase in
                     if newPhase == .interacting {
                         isInteracting = true
                         armedPull = .none
+                        flickEdges = restingEdges
                     } else if oldPhase == .interacting {
                         isInteracting = false
                         releasePull(from: entry)
+                    } else if newPhase == .idle {
+                        flickEdges = []
                     }
                 }
                 .overlay(alignment: .top) {
                     if case .newer(let armed) = pull {
-                        PullHint(text: hintText(for: entry.nextEntry, armed: armed, newer: true), systemImage: "arrow.down", armed: armed)
+                        let armed = armed || armedPull.isArmed
+                        PullHint(text: hintText(for: neighbours(of: entry).newer, armed: armed, newer: true), systemImage: "arrow.down", armed: armed)
                     }
                 }
                 .overlay(alignment: .bottom) {
                     if case .older(let armed) = pull {
-                        PullHint(text: hintText(for: entry.previousEntry, armed: armed, newer: false), systemImage: "arrow.up", armed: armed)
+                        let armed = armed || armedPull.isArmed
+                        PullHint(text: hintText(for: neighbours(of: entry).older, armed: armed, newer: false), systemImage: "arrow.up", armed: armed)
                             .padding(.bottom, 70)
                     }
                 }
@@ -176,24 +198,38 @@ struct EntryDetailView: View {
         }
     }
 
+    /// Tap: the date or how long ago it was. Long-press: a reflection (PRO, Apple Intelligence).
     private func dateTitle(for entry: EntryDetail) -> some View {
         let full = entry.day?.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year()) ?? entry.date
         let today = model.today?.day ?? JournalDay(localDate: .now)
         let relative = entry.day.map { $0.relative(to: today) } ?? full
-        return Button {
-            showsRelativeDate.toggle()
-        } label: {
-            Text(showsRelativeDate ? relative : full)
-                .font(.headline)
-                .lineLimit(1)
-                .minimumScaleFactor(0.75)
-                .contentTransition(.opacity)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(entry.day?.long ?? entry.date)
-        .accessibilityValue(relative)
-        .accessibilityHint("Switches between the date and how long ago it was")
-        .animation(.easeOut(duration: 0.15), value: showsRelativeDate)
+        let canReflect = JournalIntelligence.isEnabled(for: model.me) && !entry.bodyText.isEmpty
+        return Text(showsRelativeDate ? relative : full)
+            .font(.headline)
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
+            .contentTransition(.opacity)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 6)
+            .contentShape(.rect)
+            .onTapGesture { showsRelativeDate.toggle() }
+            .onLongPressGesture(minimumDuration: 0.4) {
+                guard canReflect, !isReflecting else { return }
+                Task { await reflect(on: entry) }
+            }
+            .sensoryFeedback(.impact(weight: .medium), trigger: isReflecting) { _, started in started }
+            .accessibilityElement()
+            .accessibilityLabel(entry.day?.long ?? entry.date)
+            .accessibilityValue(relative)
+            .accessibilityAddTraits(.isButton)
+            .accessibilityHint("Switches between the date and how long ago it was")
+            .accessibilityAction { showsRelativeDate.toggle() }
+            .accessibilityActions {
+                if canReflect {
+                    Button("Reflect on This Entry") { Task { await reflect(on: entry) } }
+                }
+            }
+            .animation(.easeOut(duration: 0.15), value: showsRelativeDate)
     }
 
     private func reflect(on entry: EntryDetail) async {
@@ -212,6 +248,15 @@ struct EntryDetailView: View {
 
     // MARK: - Pulling between days
 
+    private static func restingEdges(for geometry: ScrollGeometry) -> Edge.Set {
+        let minOffset = -geometry.contentInsets.top
+        let maxOffset = max(minOffset, geometry.contentSize.height + geometry.contentInsets.bottom - geometry.containerSize.height)
+        var edges: Edge.Set = []
+        if geometry.contentOffset.y <= minOffset + 8 { edges.insert(.top) }
+        if geometry.contentOffset.y >= maxOffset - 8 { edges.insert(.bottom) }
+        return edges
+    }
+
     private static func pull(for geometry: ScrollGeometry) -> Pull {
         let top = -(geometry.contentOffset.y + geometry.contentInsets.top)
         let maxOffset = max(-geometry.contentInsets.top,
@@ -222,8 +267,19 @@ struct EntryDetailView: View {
         return .none
     }
 
+    /// The entries before and after this one: by date, or within the search results it was opened from.
+    private func neighbours(of entry: EntryDetail) -> (newer: EntryNeighbour?, older: EntryNeighbour?) {
+        guard let sequence, let index = sequence.firstIndex(where: { $0.id == entry.id }) else {
+            return (entry.nextEntry, entry.previousEntry)
+        }
+        return (index > 0 ? sequence[index - 1] : nil, index + 1 < sequence.count ? sequence[index + 1] : nil)
+    }
+
     private func hintText(for neighbour: EntryNeighbour?, armed: Bool, newer: Bool) -> String {
-        guard let day = neighbour?.day else { return newer ? "This is your newest entry" : "This is your first entry" }
+        guard let day = neighbour?.day else {
+            if sequence != nil { return newer ? "This is the first result" : "This is the last result" }
+            return newer ? "This is your newest entry" : "This is your first entry"
+        }
         let date = day.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year())
         return armed ? "Release for \(date)" : "Pull for \(date)"
     }
@@ -231,8 +287,8 @@ struct EntryDetailView: View {
     private func releasePull(from entry: EntryDetail) {
         defer { armedPull = .none }
         switch armedPull {
-        case .newer(armed: true): move(to: entry.nextEntry, arrivingFrom: .top)
-        case .older(armed: true): move(to: entry.previousEntry, arrivingFrom: .bottom)
+        case .newer(armed: true): move(to: neighbours(of: entry).newer, arrivingFrom: .top)
+        case .older(armed: true): move(to: neighbours(of: entry).older, arrivingFrom: .bottom)
         default: break
         }
     }
@@ -316,6 +372,15 @@ private extension EntryDetailView.Pull {
         case .none: false
         }
     }
+
+    /// Pulling down past the top shows newer entries; pulling up past the bottom, older ones.
+    var edge: Edge.Set {
+        switch self {
+        case .newer: .top
+        case .older: .bottom
+        case .none: []
+        }
+    }
 }
 
 private struct PullHint: View {
@@ -352,6 +417,10 @@ private struct EntryBody: View {
                     .font(bodyFont)
                     .lineSpacing(5 * textSize.scale)
                     .textSelection(.enabled)
+            }
+
+            if let dated = entry.datedHashtags, !dated.isEmpty {
+                DatedHashtagRow(hashtags: dated)
             }
 
             if !entry.songs.isEmpty {
@@ -485,5 +554,53 @@ private struct ReflectionSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
+    }
+}
+
+/// Hashtags with a date (like the web's "Tags:"): tap to search, long-press for how long it had
+/// been on this entry's day.
+private struct DatedHashtagRow: View {
+    let hashtags: [DatedHashtag]
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        FlowLayout(spacing: 8) {
+            ForEach(hashtags) { hashtag in
+                Button {
+                    search(hashtag)
+                } label: {
+                    Label("#\(hashtag.tag)", systemImage: "calendar")
+                        .font(.subheadline)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(.tint.opacity(0.12), in: .capsule)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.tint)
+                .contextMenu {
+                    Button("Search #\(hashtag.tag)", systemImage: "magnifyingglass") { search(hashtag) }
+                } preview: {
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text("#\(hashtag.tag)")
+                            .font(.headline)
+                        Text(hashtag.age.prefix(1).uppercased() + hashtag.age.dropFirst())
+                            .font(.system(.title3, design: .serif))
+                        if let day = hashtag.day {
+                            Text("#\(hashtag.tag) is dated \(day.formatted(.dateTime.month(.wide).day().year()))")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .padding()
+                    .frame(width: 280, alignment: .leading)
+                }
+                .accessibilityLabel("#\(hashtag.tag)")
+                .accessibilityValue(hashtag.age)
+            }
+        }
+    }
+
+    private func search(_ hashtag: DatedHashtag) {
+        if let url = URL(string: "\(RichText.hashtagScheme):\(hashtag.tag)") { openURL(url) }
     }
 }

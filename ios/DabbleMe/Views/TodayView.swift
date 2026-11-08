@@ -39,7 +39,7 @@ struct TodayView: View {
             }
             .navigationTitle("Today") // back-button label on entries opened from here
             .toolbarVisibility(.hidden, for: .navigationBar)
-            .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
+            .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id, sequence: $0.sequence) }
             .refreshable { await model.loadToday() }
             .onChange(of: model.composeRequest, initial: true) { _, requested in
                 guard requested else { return }
@@ -154,6 +154,7 @@ struct TodayView: View {
                         MemoryCard(entry: memory, caption: caption(for: memory))
                     }
                     .buttonStyle(.plain)
+                    .entryPreview(memory) { path.append(EntryRoute(id: memory.id)) }
                 }
             }
         }

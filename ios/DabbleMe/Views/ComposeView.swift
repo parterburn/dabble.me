@@ -71,7 +71,6 @@ struct ComposeView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                header
                 if restoredDraft != nil { draftBanner }
                 Divider()
                 RichTextEditor(model: editor, allowsDictation: model.me?.isPro == true && Dictation.isSupported,
@@ -103,6 +102,8 @@ struct ComposeView: View {
             .navigationTitle(isNew ? "New Entry" : "Edit Entry")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                // The date is the title, which leaves more room to write.
+                ToolbarItem(placement: .principal) { dateTitle }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
                         if hasChanges { confirmingDiscard = true } else { DraftStore.clear(draftKey); dismiss() }
@@ -165,19 +166,15 @@ struct ComposeView: View {
     }
 
     @ViewBuilder
-    private var header: some View {
-        Group {
-            if isNew {
-                DatePicker("Date", selection: $date, in: ...Date.now, displayedComponents: .date)
-                    .labelsHidden()
-            } else if case .edit(let entry) = mode {
-                Text(entry.day?.long ?? entry.date)
-                    .foregroundStyle(.secondary)
-            }
+    private var dateTitle: some View {
+        if isNew {
+            DatePicker("Date", selection: $date, in: ...Date.now, displayedComponents: .date)
+                .labelsHidden()
+                .accessibilityLabel("Entry date")
+        } else if case .edit(let entry) = mode {
+            Text(entry.day?.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().year()) ?? entry.date)
+                .font(.headline)
         }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal)
-        .padding(.vertical, 10)
     }
 
     /// The editor bar's "+" menu.

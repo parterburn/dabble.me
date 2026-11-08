@@ -116,6 +116,9 @@ struct EntryDetail: Decodable, Sendable, Identifiable, Hashable {
     /// Editable structured body, or nil when the entry has formatting only the web editor keeps.
     let document: [DocumentBlock]?
     let songs: [Song]
+    /// Hashtags in this entry that have a date on dabble.me (a birthday, an anniversary), with
+    /// how long it had been on this entry's day. Optional for older servers.
+    var datedHashtags: [DatedHashtag]? = nil
     let webUrl: URL
     let previousEntry: EntryNeighbour?
     let nextEntry: EntryNeighbour?
@@ -127,6 +130,16 @@ struct EntryDetail: Decodable, Sendable, Identifiable, Hashable {
         EntrySummary(id: id, date: date, excerpt: excerpt, imageUrl: imageUrl,
                      imageProcessing: imageProcessing, hashtags: hashtags, updatedAt: updatedAt)
     }
+}
+
+struct DatedHashtag: Decodable, Sendable, Hashable, Identifiable {
+    let tag: String
+    let date: String
+    /// e.g. "1 year and 4 months since entry".
+    let age: String
+
+    var id: String { tag.lowercased() }
+    var day: JournalDay? { JournalDay(date) }
 }
 
 struct EntryPage: Decodable, Sendable {
