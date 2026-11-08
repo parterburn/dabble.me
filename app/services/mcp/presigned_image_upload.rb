@@ -42,6 +42,16 @@ module Mcp
       "#{key_prefix_for(user)}#{SecureRandom.uuid}#{extension_for(filename, content_type.to_s.downcase)}"
     end
 
+    # Public URL of an uploaded key (uploads are public-read), e.g. for ImageCollageJob.
+    def self.public_url(key)
+      new(user: nil).public_url(key)
+    end
+
+    # Built locally: Fog::File#public_url makes a network call to check the ACL.
+    def public_url(key)
+      storage.request_url(bucket_name: bucket_name, object_name: key)
+    end
+
     def self.key_prefix_for(user)
       add_dev = '/development' unless Rails.env.production?
       storage_token = OpenSSL::HMAC.hexdigest(

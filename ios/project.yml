@@ -51,9 +51,11 @@ targets:
           - UIInterfaceOrientationPortraitUpsideDown
           - UIInterfaceOrientationLandscapeLeft
           - UIInterfaceOrientationLandscapeRight
-        # Debug builds talk to a local Rails server over http://localhost.
+        # Debug builds talk to a local Rails server: http://localhost in the simulator, or your
+        # Mac's http://<name>.local:3000 from a phone (Server menu on the sign-in screen).
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
+        NSLocalNetworkUsageDescription: Connects to a Dabble Me development server on your network.
   DabbleMeTests:
     type: bundle.unit-test
     platform: iOS

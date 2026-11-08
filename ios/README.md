@@ -25,7 +25,7 @@ bundle exec rails db:migrate    # or db:seed: registers the iOS OAuth client
 MAIN_DOMAIN=localhost ... bundle exec puma -p 3000 -C config/puma.rb   # see AGENTS.md
 ```
 
-The simulator reaches `localhost` directly. On a physical device, set `DABBLE_BASE_URL` to your Mac's LAN address, or to `https://dabble.me`.
+The simulator reaches `localhost` directly. On a phone, "localhost" is the phone itself: start Puma with your Mac's Bonjour name allowed (`RAILS_DEVELOPMENT_HOSTS=<name>.local`, see `scutil --get LocalHostName`), then in a Debug build tap **Server** on the sign-in screen → **Other…** and enter `http://<name>.local:3000`. Run `bundle exec sidekiq` too if you want photos and collages to finish processing. The seeded `admin@dabble.ex` / `dabble` account is PRO.
 
 ## How sign-in works
 
@@ -42,16 +42,16 @@ The simulator reaches `localhost` directly. On a physical device, set `DABBLE_BA
 |---|---|---|
 | GET | `/api/v1/me` | account, plan, `today` in the user's journal time zone |
 | GET | `/api/v1/entries?page=&per=&year=&month=` | newest first, 20 per page by default (max 50) |
-| GET | `/api/v1/entries/:id` | full entry: `body_text` (light Markdown), `editable_text`, songs, `web_url` |
+| GET | `/api/v1/entries/:id` | full entry: `body_text` (light Markdown), `document` (editable structure or null), songs, `web_url` |
 | GET | `/api/v1/entries/random` | |
 | GET | `/api/v1/entries/on_this_day` | PRO |
-| POST | `/api/v1/entries` | PRO. `{date, body, uploaded_image_key?}`; merges into an existing entry on that day, like the web |
-| PATCH | `/api/v1/entries/:id` | PRO. `{body}`; only when `editable_text` is non-null |
+| POST | `/api/v1/entries` | PRO. `{date, document \| body, uploaded_image_keys?}`; merges into an existing entry on that day, like the web. One photo is stored as-is; 2–8 (or any added to a day with a photo) become a collage, and the entry reports `image_processing: true` from the moment the job is queued |
+| PATCH | `/api/v1/entries/:id` | PRO. `{document}`; only when the entry's `document` is non-null |
 | DELETE | `/api/v1/entries/:id` | PRO |
 | GET | `/api/v1/search?q=&page=` | PRO, same syntax as web search |
-| POST | `/api/v1/image_uploads` | PRO. Presigned S3 PUT; the key goes to `POST /entries` |
+| POST | `/api/v1/image_uploads` | PRO. `{photos: [{filename, content_type}]}` (max 8) → presigned S3 PUTs; the keys go to `POST /entries` |
 
-**Editing is deliberately narrow.** `editable_text` is non-null only when the stored HTML is plain `<p>`/`<br>`, so an in-app edit can never flatten links, bold text, merged `<hr>` sections, or DabbleMeGPT replies. For any other entry, the app shows "Edit on dabble.me" instead.
+**Rich text editing.** The app never parses or sends raw HTML. `Api::EntryDocument` turns stored HTML into a `document`: a list of paragraph / bullet / number / rule blocks made of text runs that may be bold, italic, underlined or linked. That covers what the web editor (Summernote) and email ingestion produce, including `<div>` lines from email and `<hr>` between merged replies. The app edits the document in a native text view with a formatting bar (bold, italic, underline, lists, link) and sends it back, and the server rebuilds clean HTML from it (`to_html`). Entries with anything the document can't represent — inline styles, blockquotes, images, DabbleMeGPT replies, nested lists — come back with `document: null` and show "Edit on dabble.me", so an in-app edit can never drop formatting.
 
 **Photos** are re-encoded on the device to a JPEG of at most 2400px, with all metadata removed (including GPS) before upload. The server then processes them the same way as MCP uploads (`ProcessEntryImageJob`).
 
@@ -61,7 +61,7 @@ The simulator reaches `localhost` directly. On a physical device, set `DABBLE_BA
 xcodebuild -project DabbleMe.xcodeproj -scheme DabbleMe -destination 'platform=iOS Simulator,name=iPhone 17' test
 ```
 
-The tests cover PKCE, day handling across time zones, JSON decoding, and GPS stripping. API behavior is covered by `spec/requests/api_v1_spec.rb` on the Rails side.
+The tests cover PKCE, day handling across time zones, JSON decoding, rich text layout and round-trips, and GPS stripping. API behavior is covered by `spec/requests/api_v1_spec.rb` on the Rails side.
 
 ## Shipping checklist
 

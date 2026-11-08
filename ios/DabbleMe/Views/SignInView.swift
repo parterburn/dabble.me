@@ -53,6 +53,11 @@ struct SignInView: View {
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
+
+                #if DEBUG
+                ServerPicker()
+                    .padding(.top, 4)
+                #endif
             }
             .padding(.horizontal, 24)
             .padding(.bottom, 24)

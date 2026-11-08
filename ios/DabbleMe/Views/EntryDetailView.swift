@@ -59,15 +59,22 @@ struct EntryDetailView: View {
         }
         .disabled(isDeleting)
         .task { await load() }
+        .task(id: entry?.imageProcessing) {
+            // Swap the placeholder for the finished photo/collage as soon as it's ready.
+            while entry?.imageProcessing == true, !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(4))
+                await load()
+            }
+        }
     }
 
     private func menu(for entry: EntryDetail) -> some View {
         Menu {
             if model.me?.canWrite == true {
-                if entry.editableText != nil {
+                if entry.document != nil {
                     Button("Edit", systemImage: "pencil") { editing = true }
                 } else {
-                    // Rich formatting (links, bold, AI replies, merged sections) is web-only so nothing gets lost.
+                    // Formatting the app can't represent (styles, quotes, AI replies) stays web-only so nothing gets lost.
                     Button("Edit on dabble.me", systemImage: "safari") { openURL(entry.webUrl) }
                 }
                 Button("Delete", systemImage: "trash", role: .destructive) { confirmingDelete = true }
@@ -110,28 +117,16 @@ private struct EntryBody: View {
                 .font(.system(.title2, design: .serif, weight: .semibold))
                 .accessibilityAddTraits(.isHeader)
 
-            if let url = entry.imageURL {
-                AsyncImage(url: url) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image.resizable().scaledToFit()
-                    case .failure:
-                        Label("Photo unavailable", systemImage: "photo")
-                            .foregroundStyle(.secondary)
-                    default:
-                        Color.secondary.opacity(0.12).frame(height: 240)
-                    }
-                }
-                .clipShape(.rect(cornerRadius: 12))
-                .accessibilityLabel(entry.imageProcessing ? "Photo still processing" : "Entry photo")
-                if entry.imageProcessing {
-                    Text("Your photo is still processing. Pull down to refresh.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                }
+            if entry.imageProcessing || entry.imageURL != nil {
+                EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing)
             }
 
-            if !entry.bodyText.isEmpty {
+            if let document = entry.document {
+                Text(RichText.displayString(from: document))
+                    .font(.system(.body, design: .serif))
+                    .lineSpacing(5)
+                    .textSelection(.enabled)
+            } else if !entry.bodyText.isEmpty {
                 Text(AttributedString.journal(entry.bodyText))
                     .font(.system(.body, design: .serif))
                     .lineSpacing(5)

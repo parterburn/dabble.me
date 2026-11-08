@@ -48,14 +48,18 @@ module Api
         render json: { entries: entries.map { |entry| EntrySerializer.summary(entry) } }
       end
 
-      # POST /api/v1/entries { date: "YYYY-MM-DD", body: "...", uploaded_image_key: "..." }
+      # POST /api/v1/entries { date: "YYYY-MM-DD", document: [...] | body: "plain text", uploaded_image_keys: [...] }
       # Appends to that day's entry if one exists, matching the web compose flow.
       def create
+        body_html = document_html if params.key?(:document)
+        return if performed?
+
         result = Mcp::EntryCreator.new(user: current_user).create(
           date_string: params[:date].presence || Mcp::Tools::Helpers.default_entry_date_iso8601(current_user),
           body_text: params[:body],
+          body_html: body_html,
           merge_with_existing: true,
-          uploaded_image_key: params[:uploaded_image_key]
+          uploaded_image_keys: Array(params[:uploaded_image_keys]).map(&:to_s)
         )
         return render_error(:unprocessable_content, 'invalid', 'Could not save the entry.', details: result[:errors]) unless result[:success]
 
@@ -64,17 +68,20 @@ module Api
                status: result[:merged] ? :ok : :created
       end
 
-      # PATCH /api/v1/entries/:id { body: "..." } — only for entries with editable_text.
+      # PATCH /api/v1/entries/:id { document: [...] } — only for entries whose `document` is non-null.
       def update
-        if EntrySerializer.editable_text(@entry).nil?
+        if EntryDocument.from_html(@entry.body).nil?
           return render_error(:unprocessable_content, 'not_editable',
                               'This entry has formatting the app cannot edit yet. Edit it on dabble.me instead.')
         end
 
-        plain = params[:body].to_s.strip
-        return render_error(:unprocessable_content, 'invalid', 'Body cannot be blank. Delete the entry instead.') if plain.blank?
+        html = document_html
+        return if performed?
+        if Rails::HTML5::FullSanitizer.new.sanitize(html).strip.blank?
+          return render_error(:unprocessable_content, 'invalid', 'Entry cannot be blank. Delete the entry instead.')
+        end
 
-        if @entry.update(body: EntrySerializer.html_from_plain(plain))
+        if @entry.update(body: html)
           render json: { entry: EntrySerializer.full(@entry) }
         else
           render_error(:unprocessable_content, 'invalid', 'Could not save the entry.', details: @entry.errors.full_messages)
@@ -90,6 +97,13 @@ module Api
 
       def set_entry
         @entry = current_user.entries.find(params[:id])
+      end
+
+      def document_html
+        EntryDocument.to_html(params[:document])
+      rescue EntryDocument::InvalidDocument => e
+        render_error(:unprocessable_content, 'invalid_document', e.message)
+        nil
       end
     end
   end

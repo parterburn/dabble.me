@@ -108,17 +108,14 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
     end
   end
 
-  describe "editable_text" do
-    it "round-trips plain paragraphs and line breaks" do
-      entry = create(:entry, user: pro_user, body: Api::EntrySerializer.html_from_plain("Line one\nline two\n\nIt's a new paragraph & more"))
-      expect(Api::EntrySerializer.full(entry)[:editable_text]).to eq("Line one\nline two\n\nIt's a new paragraph & more")
-    end
-
-    it "is nil when the body has formatting the app can't edit" do
-      ["<p><a href='https://x.test'>link</a></p>", "<p>one</p><hr><p>two</p>", "<div data-content='dabblemegpt'>ai</div>"].each do |body|
-        entry = create(:entry, user: pro_user, body: body)
-        expect(Api::EntrySerializer.full(entry)[:editable_text]).to be_nil, body
-      end
+  describe "document" do
+    it "is included for entries the app can edit, and nil otherwise" do
+      editable = create(:entry, user: pro_user, body: "<p>Hi <b>there</b></p>")
+      web_only = create(:entry, user: pro_user, body: "<div data-content='dabblemegpt'>ai</div>")
+      expect(Api::EntrySerializer.full(editable)[:document]).to eq([
+        { "type" => "paragraph", "runs" => [{ "text" => "Hi " }, { "text" => "there", "bold" => true }] }
+      ])
+      expect(Api::EntrySerializer.full(web_only)[:document]).to be_nil
     end
   end
 
@@ -133,7 +130,8 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
     it "creates an entry, then merges a second one on the same day" do
       post "/api/v1/entries", params: { date: "2026-01-02", body: "First" }, headers: auth(pro_user)
       expect(response).to have_http_status(:created)
-      expect(json["entry"]).to include("date" => "2026-01-02", "editable_text" => "First")
+      expect(json["entry"]).to include("date" => "2026-01-02")
+      expect(json["entry"]["document"]).to eq([{ "type" => "paragraph", "runs" => [{ "text" => "First" }] }])
 
       post "/api/v1/entries", params: { date: "2026-01-02", body: "Second" }, headers: auth(pro_user)
       expect(response).to have_http_status(:ok)
@@ -142,29 +140,63 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       expect(pro_user.entries.first.body).to include("<hr>")
     end
 
+    it "creates a formatted entry from a document" do
+      document = [
+        { type: "paragraph", runs: [{ text: "Great " }, { text: "hike", bold: true }] },
+        { type: "bullet", runs: [{ text: "Trail", link: "https://alltrails.test/x" }] }
+      ]
+      post "/api/v1/entries", params: { date: "2026-01-03", document: document }, headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:created)
+      expect(pro_user.entries.first.body).to eq(
+        "<p>Great <strong>hike</strong></p>\n<ul>\n" +
+        %(<li><a href="https://alltrails.test/x" target="_blank">Trail</a></li>\n</ul>)
+      )
+    end
+
+    it "rejects a malformed document" do
+      post "/api/v1/entries", params: { date: "2026-01-03", document: [{ type: "script" }] }, headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(json["error"]).to eq("invalid_document")
+      expect(pro_user.entries.count).to eq(0)
+    end
+
     it "rejects a blank entry" do
       post "/api/v1/entries", params: { date: "2026-01-02", body: " " }, headers: auth(pro_user)
       expect(response).to have_http_status(:unprocessable_content)
     end
 
-    it "updates a simple entry" do
-      entry = create(:entry, user: pro_user, body: "<p>Old</p>")
-      patch "/api/v1/entries/#{entry.id}", params: { body: "New text" }, headers: auth(pro_user)
+    it "updates a formatted entry" do
+      entry = create(:entry, user: pro_user, body: "<div>Old <b>bold</b></div><div><br></div><div>more</div>")
+      document = [{ type: "paragraph", runs: [{ text: "New " }, { text: "bold", bold: true }] }]
+      patch "/api/v1/entries/#{entry.id}", params: { document: document }, headers: auth(pro_user), as: :json
       expect(response).to have_http_status(:ok)
-      expect(entry.reload.body).to eq("<p>New text</p>")
+      expect(entry.reload.body).to eq("<p>New <strong>bold</strong></p>")
+      expect(json["entry"]["document"]).to eq([
+        { "type" => "paragraph", "runs" => [{ "text" => "New " }, { "text" => "bold", "bold" => true }] }
+      ])
     end
 
-    it "refuses to edit entries with rich formatting" do
-      entry = create(:entry, user: pro_user, body: "<p><strong>Bold</strong></p>")
-      patch "/api/v1/entries/#{entry.id}", params: { body: "Flattened" }, headers: auth(pro_user)
+    it "refuses an empty document" do
+      entry = create(:entry, user: pro_user, body: "<p>Old</p>")
+      patch "/api/v1/entries/#{entry.id}", params: { document: [{ type: "paragraph", runs: [{ text: " " }] }] },
+                                           headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(entry.reload.body).to eq("<p>Old</p>")
+    end
+
+    it "refuses to edit entries with formatting the app can't represent" do
+      entry = create(:entry, user: pro_user, body: %(<p><span style="color:red">Red</span></p>))
+      patch "/api/v1/entries/#{entry.id}", params: { document: [{ type: "paragraph", runs: [{ text: "Flat" }] }] },
+                                           headers: auth(pro_user), as: :json
       expect(response).to have_http_status(:unprocessable_content)
       expect(json["error"]).to eq("not_editable")
-      expect(entry.reload.body).to eq("<p><strong>Bold</strong></p>")
+      expect(entry.reload.body).to eq(%(<p><span style="color:red">Red</span></p>))
     end
 
     it "requires PRO to edit or delete" do
       entry = create(:entry, user: free_user, body: "<p>Mine</p>")
-      patch "/api/v1/entries/#{entry.id}", params: { body: "x" }, headers: auth(free_user)
+      patch "/api/v1/entries/#{entry.id}", params: { document: [{ type: "paragraph", runs: [{ text: "x" }] }] },
+                                           headers: auth(free_user), as: :json
       expect(response).to have_http_status(:forbidden)
       delete "/api/v1/entries/#{entry.id}", headers: auth(free_user)
       expect(response).to have_http_status(:forbidden)
@@ -183,6 +215,97 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       delete "/api/v1/entries/#{entry.id}", headers: auth(pro_user)
       expect(response).to have_http_status(:not_found)
       expect(Entry.exists?(entry.id)).to be(true)
+    end
+  end
+
+  describe "photos" do
+    # Same stubbing as spec/controllers/entries_controller_update_image_spec.rb: a stored photo without S3.
+    def give_photo(entry)
+      entry.update_column(:image, "existing.jpg")
+      allow_any_instance_of(ImageUploader).to receive(:blank?).and_return(false)
+      allow_any_instance_of(ImageUploader).to receive(:file).and_return(
+        instance_double(CarrierWave::Storage::Fog::File, content_type: "image/jpeg", filename: "existing.jpg",
+                                                         path: "uploads/existing.jpg", empty?: false, exists?: true, size: 10)
+      )
+    end
+
+    def photo_key(user, name = SecureRandom.hex(4))
+      "#{Mcp::PresignedImageUpload.key_prefix_for(user)}#{name}.jpg"
+    end
+
+    before do
+      pro_user.update_column(:user_key, "pro-user-key") # stored photo paths include it
+      allow(ProcessEntryImageJob).to receive(:perform_later)
+      allow(ImageCollageJob).to receive(:perform_later)
+    end
+
+    it "presigns several uploads at once" do
+      post "/api/v1/image_uploads", params: { photos: Array.new(3) { { filename: "photo.jpg", content_type: "image/jpeg" } } },
+                                    headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:created)
+      expect(json["uploads"].size).to eq(3)
+      expect(json["uploads"].map { |u| u["uploaded_image_key"] }.uniq.size).to eq(3)
+      expect(json["uploads"].first).to include("upload_method" => "PUT")
+    end
+
+    it "limits presigned uploads to the collage maximum" do
+      post "/api/v1/image_uploads", params: { photos: Array.new(9) { { filename: "p.jpg", content_type: "image/jpeg" } } },
+                                    headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+    end
+
+    it "processes a single photo directly and shows it as processing right away" do
+      key = photo_key(pro_user)
+      post "/api/v1/entries", params: { date: "2026-02-01", body: "Pic", uploaded_image_keys: [key] }, headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:created)
+      expect(json["entry"]["image_processing"]).to be(true)
+      expect(ProcessEntryImageJob).to have_received(:perform_later).with(json["entry"]["id"], key)
+      expect(ImageCollageJob).not_to have_received(:perform_later)
+    end
+
+    it "queues a collage for several photos and marks the entry processing before the job runs" do
+      keys = Array.new(3) { photo_key(pro_user) }
+      expect(ImageCollageJob).to receive(:perform_later) do |entry_id, urls:|
+        expect(Entry.find(entry_id).uploading_image?).to be(true)
+        expect(urls.size).to eq(3)
+        expect(urls).to all(include("/tmp/mcp/"))
+      end
+      post "/api/v1/entries", params: { date: "2026-02-01", body: "", uploaded_image_keys: keys }, headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:created)
+      expect(json["entry"]).to include("image_processing" => true)
+      expect(json["entry"]["image_url"]).to eq(Entry::UPLOADING_PLACEHOLDER_URL)
+    end
+
+    it "folds new photos into a collage with the day's existing photo" do
+      existing = create(:entry, user: pro_user, date: Time.zone.local(2026, 2, 1, 12), body: "<p>Earlier</p>")
+      give_photo(existing)
+      post "/api/v1/entries", params: { date: "2026-02-01", body: "More", uploaded_image_keys: [photo_key(pro_user)] },
+                              headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:ok)
+      expect(json["merged"]).to be(true)
+      expect(ImageCollageJob).to have_received(:perform_later).with(existing.id, urls: [kind_of(String)])
+      expect(existing.reload.uploading_image?).to be(true)
+    end
+
+    it "refuses more photos than the collage can hold" do
+      post "/api/v1/entries", params: { date: "2026-02-01", body: "x", uploaded_image_keys: Array.new(9) { photo_key(pro_user) } },
+                              headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+
+      existing = create(:entry, user: pro_user, date: Time.zone.local(2026, 2, 2, 12), body: "<p>Has photo</p>")
+      give_photo(existing)
+      post "/api/v1/entries", params: { date: "2026-02-02", body: "x", uploaded_image_keys: Array.new(8) { photo_key(pro_user) } },
+                              headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(json["details"].first).to include("up to 7 more")
+      expect(ImageCollageJob).not_to have_received(:perform_later)
+    end
+
+    it "rejects keys that belong to someone else" do
+      post "/api/v1/entries", params: { date: "2026-02-01", body: "x", uploaded_image_keys: [photo_key(free_user)] },
+                              headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(pro_user.entries.count).to eq(0)
     end
   end
 

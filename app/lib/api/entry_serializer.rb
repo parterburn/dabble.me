@@ -5,7 +5,6 @@ module Api
   # from Entry#text_body) so the client never has to render stored HTML.
   class EntrySerializer
     EXCERPT_LENGTH = 280
-    EDITABLE_TAGS = %w[p br].freeze
 
     def self.summary(entry)
       new(entry).summary
@@ -13,15 +12,6 @@ module Api
 
     def self.full(entry)
       new(entry).full
-    end
-
-    def self.editable_text(entry)
-      new(entry).editable_text
-    end
-
-    # Plain text -> the same HTML the web compose / MCP create paths store.
-    def self.html_from_plain(plain)
-      ActionController::Base.helpers.simple_format(ERB::Util.html_escape(plain.to_s.strip), {}, sanitize: false)
     end
 
     def initialize(entry)
@@ -43,51 +33,16 @@ module Api
     def full
       summary.merge(
         body_text: entry.text_body.to_s.strip,
-        editable_text: editable_text,
+        # Structured, editable copy of the body (see EntryDocument), or nil when it's web-only.
+        document: EntryDocument.from_html(entry.body),
         songs: songs,
         web_url: Mcp::Tools::Helpers.entry_public_url(entry)
       )
     end
 
-    # Plain text the app may edit and send back, or nil when the stored HTML has
-    # anything beyond <p>/<br> (links, formatting, merged <hr> sections, AI replies,
-    # email markup). Those stay web-only so an in-app edit can never drop formatting.
-    def editable_text
-      return nil if entry.body.blank?
-
-      fragment = Nokogiri::HTML5.fragment(entry.body)
-      nodes = []
-      fragment.traverse { |node| nodes << node unless node.equal?(fragment) }
-      simple = nodes.all? do |node|
-        node.text? || (node.element? && EDITABLE_TAGS.include?(node.name) && node.attributes.empty?)
-      end
-      return nil unless simple
-
-      blocks = []
-      loose = +''
-      fragment.children.each do |node|
-        if node.element? && node.name == 'p'
-          blocks << loose.strip if loose.strip.present?
-          loose = +''
-          blocks << paragraph_text(node)
-        elsif node.element? # top-level <br>
-          loose << "\n"
-        else
-          loose << node.text
-        end
-      end
-      blocks << loose.strip if loose.strip.present?
-      blocks.reject(&:blank?).join("\n\n").presence
-    end
-
     private
 
     attr_reader :entry
-
-    def paragraph_text(paragraph)
-      text = paragraph.children.map { |child| child.element? ? "\n" : child.text.gsub(/\s+/, ' ') }.join
-      text.split("\n", -1).map(&:strip).join("\n").strip
-    end
 
     def songs
       Array(entry.songs).filter_map do |song|

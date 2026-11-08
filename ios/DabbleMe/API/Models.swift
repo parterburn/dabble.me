@@ -50,8 +50,8 @@ struct EntryDetail: Decodable, Sendable, Identifiable, Hashable {
     let hashtags: [String]
     let updatedAt: String
     let bodyText: String
-    /// Plain text the app can edit, or nil when the entry has formatting only the web editor keeps.
-    let editableText: String?
+    /// Editable structured body, or nil when the entry has formatting only the web editor keeps.
+    let document: [DocumentBlock]?
     let songs: [Song]
     let webUrl: URL
 
@@ -80,6 +80,10 @@ struct EntryList: Decodable, Sendable {
     let entries: [EntrySummary]
 }
 
+struct ImageUploadBatch: Decodable, Sendable {
+    let uploads: [ImageUpload]
+}
+
 struct ImageUpload: Decodable, Sendable {
     let uploadMethod: String
     let uploadUrl: URL
@@ -98,17 +102,22 @@ struct APIErrorBody: Decodable, Sendable {
 
 struct NewEntryRequest: Encodable, Sendable {
     let date: String
-    let body: String
-    let uploadedImageKey: String?
+    let document: [DocumentBlock]
+    /// One photo is stored as-is; several (or adding to a day that has a photo) become a collage.
+    let uploadedImageKeys: [String]
 }
 
 struct UpdateEntryRequest: Encodable, Sendable {
-    let body: String
+    let document: [DocumentBlock]
 }
 
 struct ImageUploadRequest: Encodable, Sendable {
-    let filename: String
-    let contentType: String
+    let photos: [Photo]
+
+    struct Photo: Encodable, Sendable {
+        let filename: String
+        let contentType: String
+    }
 }
 
 /// A calendar day as the server sends it (YYYY-MM-DD). Kept in UTC so formatting never

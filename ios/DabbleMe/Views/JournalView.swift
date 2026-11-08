@@ -173,20 +173,14 @@ struct EntryRow: View {
 
             Spacer(minLength: 0)
 
-            if let url = entry.imageURL {
-                AsyncImage(url: url) { image in
-                    image.resizable().scaledToFill()
-                } placeholder: {
-                    Color.secondary.opacity(0.15)
-                }
-                .frame(width: 56, height: 56)
-                .clipShape(.rect(cornerRadius: 8))
-                .accessibilityHidden(true)
+            if entry.imageProcessing || entry.imageURL != nil {
+                EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing, size: .thumbnail)
+                    .accessibilityHidden(true)
             }
         }
         .padding(.vertical, 4)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text("\(entry.day?.long ?? entry.date). \(entry.excerpt)\(entry.imageURL != nil ? ". Has photo." : "")"))
+        .accessibilityLabel(Text("\(entry.day?.long ?? entry.date). \(entry.excerpt)\(entry.imageProcessing ? ". Photos processing." : entry.imageURL != nil ? ". Has photo." : "")"))
     }
 }
 

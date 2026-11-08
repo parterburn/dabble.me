@@ -25,7 +25,6 @@ enum APIError: LocalizedError, Equatable {
 /// Thin client for /api/v1. Retries once after a token refresh on 401.
 struct APIClient: Sendable {
     let tokens: TokenProvider
-    var baseURL: URL = AppConfig.baseURL
     var session: URLSession = .shared
 
     func get<T: Decodable & Sendable>(_ path: String, query: [String: String] = [:]) async throws -> T {
@@ -64,7 +63,7 @@ struct APIClient: Sendable {
     // MARK: - Plumbing
 
     private func send(_ method: String, _ path: String, query: [String: String] = [:], body: Data?, retrying: Bool = false) async throws -> Data {
-        var components = URLComponents(url: baseURL.appending(path: path), resolvingAgainstBaseURL: false)!
+        var components = URLComponents(url: AppConfig.baseURL.appending(path: path), resolvingAgainstBaseURL: false)!
         if !query.isEmpty {
             components.queryItems = query.sorted { $0.key < $1.key }.map { URLQueryItem(name: $0.key, value: $0.value) }
         }

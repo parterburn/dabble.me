@@ -44,15 +44,35 @@ module Mcp
     # Creates an entry for the given calendar day, or appends to that day's entry when
     # merge_with_existing is true (same behavior as the web "add to this day" flow).
     #
+    # body_html: already-safe HTML to store instead of formatting body_text (the iOS app
+    # builds it from a structured document via Api::EntryDocument). Never pass user HTML.
+    #
+    # uploaded_image_keys: up to CollageGenerator::MAX_IMAGES keys from presigned uploads
+    # (the iOS app). Two or more — or any when merging into a day that already has a
+    # photo — become a collage via ImageCollageJob, like multi-photo web/email entries.
+    # The entry is marked uploading_image before the job is queued so clients can show
+    # a "processing" placeholder right away.
+    #
     # Optional image (only one):
     # - image_url: https URL to an image (fetched server-side; blocks loopback/private hosts).
     # - uploaded_image_key: key returned by get_image_upload_url after the client uploads directly.
     # - image_base64: raw base64 or a data URL (data:image/png;base64,...). Callers should
     #   resize to fit within 800x800 before encoding; the server enforces that limit too.
     #   With raw base64, pass image_mime_type (e.g. image/png) or it defaults to image/jpeg.
-    def create(date_string:, body_text:, merge_with_existing: true, image_url: nil, image_base64: nil, image_mime_type: nil, uploaded_image_key: nil)
+    def create(date_string:, body_text:, body_html: nil, merge_with_existing: true, image_url: nil, image_base64: nil, image_mime_type: nil, uploaded_image_key: nil, uploaded_image_keys: nil)
       date = parse_date(date_string)
       return date if date.is_a?(Hash)
+
+      photo_keys = Array(uploaded_image_keys).map { |key| key.to_s.strip }.compact_blank.uniq
+      if photo_keys.any?
+        if [image_url, image_base64, uploaded_image_key].any?(&:present?)
+          return { success: false, errors: ['Provide uploaded_image_keys on its own, without another image option'] }
+        end
+        return { success: false, errors: ["Add up to #{CollageGenerator::MAX_IMAGES} photos per entry"] } if photo_keys.size > CollageGenerator::MAX_IMAGES
+        unless photo_keys.all? { |key| Mcp::PresignedImageUpload.key_allowed_for_user?(@user, key) }
+          return { success: false, errors: ['uploaded_image_keys has a key that is not valid for this account'] }
+        end
+      end
 
       uploaded_key = uploaded_image_key.to_s.strip.presence
       image_upload = resolve_image_upload(
@@ -63,14 +83,14 @@ module Mcp
       )
       return image_upload if image_upload.is_a?(Hash) && image_upload[:success] == false
 
-      plain = body_text.to_s.strip
-      has_image_input = image_upload.present? || uploaded_key.present?
+      plain = body_html.nil? ? body_text.to_s.strip : Rails::HTML5::FullSanitizer.new.sanitize(body_html).to_s.strip
+      has_image_input = image_upload.present? || uploaded_key.present? || photo_keys.any?
       if plain.blank? && !has_image_input
         return { success: false, errors: ['Body cannot be blank unless an image is provided'] }
       end
 
       html_body = if plain.present?
-        format_plain_body(plain)
+        body_html || format_plain_body(plain)
       elsif has_image_input
         '<p></p>'
       else
@@ -79,7 +99,15 @@ module Mcp
       existing = find_entry_on_calendar_day(date)
 
       if existing.present?
-        if existing.image.present? && has_image_input
+        if existing.image.present? && photo_keys.any?
+          # The collage job folds the day's current photo in with the new ones.
+          if photo_keys.size + 1 > CollageGenerator::MAX_IMAGES
+            return {
+              success: false,
+              errors: ["This day already has a photo, so you can add up to #{CollageGenerator::MAX_IMAGES - 1} more."]
+            }
+          end
+        elsif existing.image.present? && has_image_input
           return {
             success: false,
             errors: ['This day already has an image. Omit image_url / image_base64 / uploaded_image_key when merging, or use a day without a photo.']
@@ -89,7 +117,7 @@ module Mcp
         if merge_with_existing
           existing.body = plain.present? ? "#{existing.body}<hr>#{html_body}" : existing.body
           assign_entry_image!(existing, image_upload)
-          return persist(existing, merged: true, uploaded_image_key: uploaded_key)
+          return persist(existing, merged: true, uploaded_image_key: uploaded_key, photo_keys: photo_keys)
         end
 
         return {
@@ -102,7 +130,7 @@ module Mcp
 
       entry = @user.entries.build(date: calendar_day_start(date), body: html_body)
       assign_entry_image!(entry, image_upload)
-      persist(entry, merged: false, uploaded_image_key: uploaded_key)
+      persist(entry, merged: false, uploaded_image_key: uploaded_key, photo_keys: photo_keys)
     end
 
     private
@@ -409,11 +437,18 @@ module Mcp
       ActionController::Base.helpers.simple_format(escaped, {}, sanitize: false)
     end
 
-    def persist(entry, merged:, uploaded_image_key: nil)
-      entry.uploading_image = true if uploaded_image_key.present?
+    def persist(entry, merged:, uploaded_image_key: nil, photo_keys: [])
+      collage = photo_keys.size > 1 || (photo_keys.any? && entry.image.present?)
+      uploaded_image_key = photo_keys.first if photo_keys.any? && !collage
+      entry.uploading_image = true if uploaded_image_key.present? || collage
 
       if entry.save
-        ProcessEntryImageJob.perform_later(entry.id, uploaded_image_key) if uploaded_image_key.present?
+        if collage
+          urls = photo_keys.map { |key| Mcp::PresignedImageUpload.public_url(key) }
+          ImageCollageJob.perform_later(entry.id, urls: urls)
+        elsif uploaded_image_key.present?
+          ProcessEntryImageJob.perform_later(entry.id, uploaded_image_key)
+        end
         { success: true, merged: merged, entry: serialize(entry) }
       else
         { success: false, errors: entry.errors.full_messages }

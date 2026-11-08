@@ -56,12 +56,12 @@ struct DecodingTests {
         let json = """
         {"entry":{"id":7,"date":"2026-01-02","excerpt":"Hi","image_url":null,"image_processing":false,
         "hashtags":["coffee"],"updated_at":"2026-01-02T10:00:00Z","body_text":"Hi **there**",
-        "editable_text":null,"songs":[{"title":"Song","artists":["A","B"],"spotify_url":"https://open.spotify.com/track/1"}],
+        "document":[{"type":"paragraph","runs":[{"text":"Hi "},{"text":"there","bold":true}]},{"type":"rule"}],"songs":[{"title":"Song","artists":["A","B"],"spotify_url":"https://open.spotify.com/track/1"}],
         "web_url":"https://dabble.me/entries/2026/1/2"},"merged":true}
         """
         let envelope = try APIClient.decoder.decode(EntryEnvelope.self, from: Data(json.utf8))
         #expect(envelope.merged == true)
-        #expect(envelope.entry.editableText == nil)
+        #expect(envelope.entry.document == [.paragraph(DocumentRun("Hi "), DocumentRun("there", bold: true)), DocumentBlock(type: .rule)])
         #expect(envelope.entry.songs.first?.label == "A, B – Song")
         #expect(envelope.entry.summary.hashtags == ["coffee"])
     }
@@ -109,5 +109,64 @@ struct PhotoPreparerTests {
     private static func properties(of data: Data) -> [CFString: Any] {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { return [:] }
         return CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any] ?? [:]
+    }
+}
+
+struct RichTextTests {
+    #if canImport(UIKit)
+    static var style: RichText.Style { RichText.Style(baseFont: .systemFont(ofSize: 17), textColor: .label) }
+    #else
+    static var style: RichText.Style { RichText.Style(baseFont: .systemFont(ofSize: 14), textColor: .labelColor) }
+    #endif
+
+    static let sample: [DocumentBlock] = [
+        .paragraph(DocumentRun("Morning "), DocumentRun("run", bold: true), DocumentRun(", then "),
+                   DocumentRun("coffee", italic: true, underline: true), DocumentRun("\nwith "),
+                   DocumentRun("Sam", link: "https://example.com/sam")),
+        DocumentBlock(type: .bullet, runs: [DocumentRun("eggs")]),
+        DocumentBlock(type: .bullet, runs: [DocumentRun("toast", bold: true, italic: true)]),
+        .paragraph(DocumentRun("Afterwards")),
+        DocumentBlock(type: .rule),
+        DocumentBlock(type: .number, runs: [DocumentRun("one")]),
+        DocumentBlock(type: .number, runs: [DocumentRun("two")]),
+    ]
+
+    @Test func laysOutBlocksAsEditableText() {
+        let text = RichText.attributedString(from: Self.sample, style: Self.style).string
+        #expect(text == "Morning run, then coffee\nwith Sam\n\n• eggs\n• toast\n\nAfterwards\n\n⸻\n\n1. one\n2. two")
+    }
+
+    @Test func roundTripsFormatting() {
+        let text = RichText.attributedString(from: Self.sample, style: Self.style)
+        #expect(RichText.blocks(from: text) == Self.sample)
+    }
+
+    @Test func readsTypedListsAndDividers() {
+        let typed = NSAttributedString(string: "Shopping\n- milk\n2) bread\n---\n\n  Done  \n\n\n")
+        #expect(RichText.blocks(from: typed) == [
+            .paragraph(DocumentRun("Shopping")),
+            DocumentBlock(type: .bullet, runs: [DocumentRun("milk")]),
+            DocumentBlock(type: .number, runs: [DocumentRun("bread")]),
+            DocumentBlock(type: .rule),
+            .paragraph(DocumentRun("Done")),
+        ])
+    }
+
+    @Test func dropsEmptyItemsAndAttachments() {
+        let typed = NSAttributedString(string: "• \n\u{FFFC}\nHi\u{FFFC}")
+        #expect(RichText.blocks(from: typed) == [.paragraph(DocumentRun("Hi"))])
+    }
+
+    @Test func detectsListPrefixes() {
+        #expect(RichText.listPrefix(in: "• a") == RichText.ListPrefix(kind: .bullet, length: 2, number: 0))
+        #expect(RichText.listPrefix(in: "12. a") == RichText.ListPrefix(kind: .number, length: 4, number: 12))
+        #expect(RichText.listPrefix(in: "2026. a") == nil)
+        #expect(RichText.listPrefix(in: "3.14 is pi") == nil)
+    }
+
+    @Test func encodesOnlySetFormatting() throws {
+        let data = try JSONEncoder().encode(DocumentRun("hi", bold: true))
+        #expect(String(decoding: data, as: UTF8.self) == #"{"bold":true,"text":"hi"}"# ||
+                String(decoding: data, as: UTF8.self) == #"{"text":"hi","bold":true}"#)
     }
 }

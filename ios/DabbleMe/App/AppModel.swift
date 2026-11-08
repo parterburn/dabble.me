@@ -20,6 +20,7 @@ final class AppModel {
 
     let api: APIClient
     private let tokens: TokenProvider
+    private var processingWatches: Set<Int> = []
     private let authenticator = WebAuthenticator()
 
     init(tokens: TokenProvider = TokenProvider()) {
@@ -97,6 +98,7 @@ final class AppModel {
             self.me = me
             entries = page.entries
             nextPage = page.nextPage
+            for entry in page.entries where entry.imageProcessing { watchProcessing(id: entry.id) }
             timelineError = nil
             hasLoaded = true
             await loadOnThisDay()
@@ -147,23 +149,60 @@ final class AppModel {
         return envelope.entry
     }
 
-    /// Creates an entry (or appends to that day's entry, like the web) with an optional photo.
-    func createEntry(day: JournalDay, text: String, photo: PreparedPhoto?) async throws -> EntryEnvelope {
-        var imageKey: String?
-        if let photo {
-            let upload: ImageUpload = try await api.post("api/v1/image_uploads",
-                                                        ImageUploadRequest(filename: photo.filename, contentType: photo.contentType))
-            try await api.upload(photo.data, to: upload)
-            imageKey = upload.uploadedImageKey
+    /// Most photos an entry can hold; the server collages them (CollageGenerator::MAX_IMAGES).
+    static let maxPhotos = 8
+
+    /// Creates an entry (or appends to that day's entry, like the web) with up to `maxPhotos` photos.
+    /// Photos go straight to S3 in parallel; `onProgress` reports how many have finished.
+    func createEntry(day: JournalDay, document: [DocumentBlock], photos: [PreparedPhoto],
+                     onProgress: @escaping @MainActor (Int) -> Void = { _ in }) async throws -> EntryEnvelope {
+        var imageKeys: [String] = []
+        if !photos.isEmpty {
+            let batch: ImageUploadBatch = try await api.post(
+                "api/v1/image_uploads",
+                ImageUploadRequest(photos: photos.map { .init(filename: $0.filename, contentType: $0.contentType) })
+            )
+            guard batch.uploads.count == photos.count else { throw APIError.decoding }
+
+            let api = api
+            try await withThrowingTaskGroup(of: Void.self) { group in
+                for (photo, target) in zip(photos, batch.uploads) {
+                    group.addTask { try await api.upload(photo.data, to: target) }
+                }
+                var finished = 0
+                for try await _ in group {
+                    finished += 1
+                    onProgress(finished)
+                }
+            }
+            imageKeys = batch.uploads.map(\.uploadedImageKey)
         }
+
         let envelope: EntryEnvelope = try await api.post("api/v1/entries",
-                                                        NewEntryRequest(date: day.iso, body: text, uploadedImageKey: imageKey))
+                                                        NewEntryRequest(date: day.iso, document: document, uploadedImageKeys: imageKeys))
         upsert(envelope.entry.summary)
+        if envelope.entry.imageProcessing { watchProcessing(id: envelope.entry.id) }
         return envelope
     }
 
-    func updateEntry(id: Int, text: String) async throws -> EntryDetail {
-        let envelope: EntryEnvelope = try await api.patch("api/v1/entries/\(id)", UpdateEntryRequest(body: text))
+    /// Re-fetches an entry until its photo or collage finishes processing, so the timeline's
+    /// placeholder turns into the real image without a manual refresh.
+    func watchProcessing(id: Int) {
+        guard !processingWatches.contains(id) else { return }
+        processingWatches.insert(id)
+        Task { [weak self] in
+            defer { self?.processingWatches.remove(id) }
+            for _ in 0..<60 { // ~5 minutes
+                try? await Task.sleep(for: .seconds(5))
+                guard let self, self.isSignedIn else { return }
+                guard let entry = try? await self.entry(id: id) else { continue }
+                if !entry.imageProcessing { return }
+            }
+        }
+    }
+
+    func updateEntry(id: Int, document: [DocumentBlock]) async throws -> EntryDetail {
+        let envelope: EntryEnvelope = try await api.patch("api/v1/entries/\(id)", UpdateEntryRequest(document: document))
         upsert(envelope.entry.summary)
         return envelope.entry
     }
