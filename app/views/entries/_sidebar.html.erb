@@ -31,7 +31,7 @@
         <h4>
           <%= link_to "#entry-#{back_year_entry.id}", "data-id": "#{back_year_entry.id}", class: "j-entry-link", style: "color: #a41100;" do %>
             <div class="s-date-left">
-              <i class="fa fa-history"></i>
+              <span class="slab-icon slab-icon--backward" aria-hidden="true"></span>
               &nbsp;<%= pluralize(year_back, "year").upcase %> AGO
             </div>
             <div class="clearfix"></div>
@@ -62,7 +62,7 @@
     <h4 style="font-size: 15px;">
       <%= link_to group_entries_path('photos'), class: "#{'active' if current_page?(group_entries_path('photos'))}" do %>
         <div class="s-date-left">
-          <i class="fa fa-image" style="color: #cccccc;margin-right: 2px;"></i>
+          <span class="slab-icon slab-icon--image" aria-hidden="true" style="color: #cccccc; margin-right: 2px;"></span>
           PHOTOS
         </div>
         <div class="s-date-right">
@@ -76,7 +76,7 @@
   <h4 style="font-size: 15px;">
     <%= link_to spotify_path, class: "#{'active' if current_page?(spotify_path)}" do %>
       <div class="s-date-left">
-        <i class="fa fa-music" style="color: #cccccc;margin-right: 4px;"></i>
+        <span class="slab-icon slab-icon--music" aria-hidden="true" style="color: #cccccc; margin-right: 4px;"></span>
         SPOTIFY
       </div>
       <div class="s-date-right">

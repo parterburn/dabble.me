@@ -21,10 +21,15 @@ $slab-icons-url: "https://d10r8m94hrfowu.cloudfront.net/icons/slab";
 }
 
 // Every icon on the CDN that the app uses.
-@each $name in arrow-up-from-line, arrows-rotate, calendar, clipboard, close, copy, edit, gear, image, images, lock, reflect, search, shield, sign-out {
+@each $name in arrow-up-from-line, arrows-rotate, calendar, clipboard, close, copy, edit, gear, image, images, lock, music, reflect, search, shield, sign-out, tag, trash {
   .slab-icon--#{$name} {
     @include slab-mask($name);
   }
+}
+
+// Uploaded as backward-slab-regular-full.svg.
+.slab-icon--backward {
+  @include slab-mask(backward-slab-regular-full);
 }
 
 .slab-icon--spin {
