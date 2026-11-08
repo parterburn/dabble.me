@@ -230,6 +230,23 @@ struct JournalDay: Hashable, Sendable, Comparable {
 
     static func < (lhs: JournalDay, rhs: JournalDay) -> Bool { lhs.iso < rhs.iso }
 
+    /// "Today", "Yesterday", "345 days ago", "1 year, 35 days ago", "3 years ago".
+    func relative(to today: JournalDay) -> String {
+        let parts = Self.utc.dateComponents([.year, .day], from: date, to: today.date)
+        let years = parts.year ?? 0, days = parts.day ?? 0
+        guard date <= today.date else { return "In the future" }
+        if years == 0 {
+            switch days {
+            case 0: return "Today"
+            case 1: return "Yesterday"
+            default: return "\(days.formatted()) days ago"
+            }
+        }
+        let yearText = years == 1 ? "1 year" : "\(years) years"
+        if days == 0 { return "\(yearText) ago" }
+        return "\(yearText), \(days == 1 ? "1 day" : "\(days) days") ago"
+    }
+
     private static let utc: Calendar = {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = .gmt

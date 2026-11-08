@@ -24,8 +24,10 @@ struct EntryDetailView: View {
     @State private var isMoving = false
     @State private var pinchStart: ReadingTextSize?
     @State private var textSizeHUD: String?
-    @State private var summary: EntrySummaryText?
-    @State private var isSummarizing = false
+    @State private var reflection: EntryReflection?
+    @State private var isReflecting = false
+    /// Tapping the title switches between the date and how long ago it was (remembered).
+    @AppStorage("entry.showsRelativeDate") private var showsRelativeDate = false
     @State private var hideHUD: Task<Void, Never>?
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
 
@@ -106,10 +108,11 @@ struct EntryDetailView: View {
                 ProgressView()
             }
         }
-        .navigationTitle(entry?.day?.formatted(.dateTime.month(.abbreviated).day().year()) ?? "")
+        .navigationTitle(entry?.day?.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year()) ?? "")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             if let entry {
+                ToolbarItem(placement: .principal) { dateTitle(for: entry) }
                 ToolbarItem(placement: .primaryAction) { menu(for: entry) }
             }
         }
@@ -123,12 +126,12 @@ struct EntryDetailView: View {
                 ComposeView(mode: .edit(entry)) { self.entry = $0 }
             }
         }
-        .sheet(item: $summary) { summary in
-            SummarySheet(summary: summary)
+        .sheet(item: $reflection) { reflection in
+            ReflectionSheet(reflection: reflection)
         }
         .overlay {
-            if isSummarizing {
-                ProgressView("Summarizing…")
+            if isReflecting {
+                ProgressView("Reflecting…")
                     .padding(20)
                     .background(.regularMaterial, in: .rect(cornerRadius: 14))
             }
@@ -153,9 +156,9 @@ struct EntryDetailView: View {
 
     private func menu(for entry: EntryDetail) -> some View {
         Menu {
-            if JournalIntelligence.isEnabled(for: model.me), entry.bodyText.split(whereSeparator: \.isWhitespace).count >= 40 {
-                Button("Summarize", systemImage: "sparkles") { Task { await summarize(entry) } }
-                    .disabled(isSummarizing)
+            if JournalIntelligence.isEnabled(for: model.me), !entry.bodyText.isEmpty {
+                Button("Reflect on This Entry", systemImage: "sparkles") { Task { await reflect(on: entry) } }
+                    .disabled(isReflecting)
             }
             if model.me?.canEdit == true {
                 if entry.document != nil {
@@ -173,12 +176,34 @@ struct EntryDetailView: View {
         }
     }
 
-    private func summarize(_ entry: EntryDetail) async {
-        isSummarizing = true
-        defer { isSummarizing = false }
+    private func dateTitle(for entry: EntryDetail) -> some View {
+        let full = entry.day?.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year()) ?? entry.date
+        let today = model.today?.day ?? JournalDay(localDate: .now)
+        let relative = entry.day.map { $0.relative(to: today) } ?? full
+        return Button {
+            showsRelativeDate.toggle()
+        } label: {
+            Text(showsRelativeDate ? relative : full)
+                .font(.headline)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+                .contentTransition(.opacity)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(entry.day?.long ?? entry.date)
+        .accessibilityValue(relative)
+        .accessibilityHint("Switches between the date and how long ago it was")
+        .animation(.easeOut(duration: 0.15), value: showsRelativeDate)
+    }
+
+    private func reflect(on entry: EntryDetail) async {
+        isReflecting = true
+        defer { isReflecting = false }
         do {
-            let text = try await JournalIntelligence.summary(of: entry.bodyText)
-            summary = EntrySummaryText(date: entry.day?.long ?? entry.date, text: text)
+            let recent = (try? await model.recentEntries())?.filter { $0.id != entry.id }.prefix(3).map(\.excerpt) ?? []
+            let text = try await JournalIntelligence.reflection(on: entry.bodyText, date: entry.day?.long ?? entry.date,
+                                                                firstName: model.me?.firstName, recent: Array(recent))
+            reflection = EntryReflection(date: entry.day?.long ?? entry.date, text: text)
         } catch is CancellationError {
         } catch {
             actionError = error.localizedDescription
@@ -320,10 +345,6 @@ private struct EntryBody: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Text(entry.day?.long ?? entry.date)
-                .font(.system(.title2, design: .serif, weight: .semibold))
-                .accessibilityAddTraits(.isHeader)
-
             if let document = entry.document {
                 DocumentText(blocks: document, font: bodyFont, scale: textSize.scale, bodySize: bodySize)
             } else if !entry.bodyText.isEmpty {
@@ -427,38 +448,42 @@ struct DocumentText: View {
     }
 }
 
-struct EntrySummaryText: Identifiable {
+struct EntryReflection: Identifiable {
     let date: String
     let text: String
     var id: String { date + text }
 }
 
-private struct SummarySheet: View {
-    let summary: EntrySummaryText
+private struct ReflectionSheet: View {
+    let reflection: EntryReflection
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
-            VStack(alignment: .leading, spacing: 16) {
-                Text(summary.date)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                Text(summary.text)
-                    .font(.system(.title3, design: .serif))
-                    .textSelection(.enabled)
-                Spacer()
-                Label("Written on this device by Apple Intelligence. Your entry wasn't sent anywhere.", systemImage: "lock")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text(reflection.date)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    // Light Markdown: the reply bolds its closing question.
+                    Text(AttributedString.journal(reflection.text))
+                        .font(.system(.title3, design: .serif))
+                        .lineSpacing(4)
+                        .textSelection(.enabled)
+                    Label("Written on this device by Apple Intelligence. Your entry wasn't sent anywhere.", systemImage: "lock")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .padding(.top, 8)
+                }
+                .padding()
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .navigationTitle("Summary")
+            .navigationTitle("Reflection")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
             }
         }
-        .presentationDetents([.medium])
+        .presentationDetents([.medium, .large])
     }
 }

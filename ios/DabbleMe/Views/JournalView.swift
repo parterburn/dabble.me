@@ -6,7 +6,7 @@ struct EntryRoute: Hashable {
 
 /// The Journal tab's views, picked from the menu on its title.
 enum JournalMode: String, CaseIterable, Identifiable {
-    case list = "List"
+    case list = "Journal"
     case stats = "Stats"
     case photos = "Photos"
 
@@ -34,7 +34,7 @@ struct JournalView: View {
     var body: some View {
         NavigationStack(path: $path) {
             modeContent
-                .navigationTitle(mode == .list ? "Journal" : mode.rawValue)
+                .navigationTitle(mode.rawValue)
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbarTitleMenu {
                     Picker("View", selection: $mode) {

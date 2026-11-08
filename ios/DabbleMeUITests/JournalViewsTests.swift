@@ -33,7 +33,9 @@ final class JournalViewsTests: XCTestCase {
         let title = app.navigationBars.buttons[current].exists ? app.navigationBars.buttons[current] : app.navigationBars.staticTexts[current]
         XCTAssertTrue(title.waitForExistence(timeout: 10))
         title.tap()
-        let item = app.buttons[mode].firstMatch
+        // The menu's items, not the tab bar's buttons of the same name.
+        let inMenu = app.collectionViews.buttons[mode]
+        let item = inMenu.waitForExistence(timeout: 2) ? inMenu : app.buttons[mode].firstMatch
         XCTAssertTrue(item.waitForExistence(timeout: 5))
         item.tap()
     }
@@ -61,7 +63,7 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.navigationBars.buttons["Photos"].waitForExistence(timeout: 5) || app.navigationBars.buttons.firstMatch.exists)
         app.navigationBars.buttons.firstMatch.tap()
 
-        switchJournal(app, from: "Photos", to: "List")
+        switchJournal(app, from: "Photos", to: "Journal")
         XCTAssertTrue(app.navigationBars.staticTexts["Journal"].waitForExistence(timeout: 5) || app.navigationBars.buttons["Journal"].exists)
     }
 
@@ -91,10 +93,16 @@ final class JournalViewsTests: XCTestCase {
         editor.typeText("Hiked the Mist Trail at Yosemite with Sam before sunrise. Things to remember:\n- The rainbow in the spray halfway up the trail, which lasted much longer than either of us expected\nCold sandwiches at the top")
         sleep(1)
         snap("compose-lists")
+        // "- " became a bullet, and Return continued the list.
+        let text = editor.value as? String ?? ""
+        XCTAssertTrue(text.contains("• The rainbow"), text)
+        XCTAssertTrue(text.contains("• Cold sandwiches"), text)
+        XCTAssertFalse(app.buttons["Bold"].exists)
         print("MIC_PRESENT=\(app.buttons["Dictate"].exists)")
 
+        app.buttons["Add"].tap()
         let suggest = app.buttons["Suggest Hashtags"]
-        if suggest.exists {
+        if suggest.waitForExistence(timeout: 3) {
             suggest.tap()
             let chip = app.buttons.matching(NSPredicate(format: "label BEGINSWITH '#'")).firstMatch
             XCTAssertTrue(chip.waitForExistence(timeout: 60))
@@ -102,6 +110,7 @@ final class JournalViewsTests: XCTestCase {
             chip.tap()
         } else {
             print("AI_UNAVAILABLE")
+            app.tap() // close the menu
         }
         app.buttons["Cancel"].tap()
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
@@ -128,19 +137,36 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
         sleep(1)
         snap("entry-lists")
+        // The title is the date; tapping it shows how long ago it was, and back.
+        let title = app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", ", 2026")).firstMatch
+        XCTAssertTrue(title.exists)
+        title.tap()
+        sleep(1)
+        snap("entry-relative-date")
+        title.tap()
         app.buttons["Entry Actions"].tap()
-        let summarize = app.buttons["Summarize"]
-        if summarize.waitForExistence(timeout: 3) {
-            summarize.tap()
-            XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 60))
-            snap("entry-summary")
+        let reflect = app.buttons["Reflect on This Entry"]
+        if reflect.waitForExistence(timeout: 3) {
+            reflect.tap()
+            XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 90))
+            snap("entry-reflection")
             app.buttons["Done"].tap()
         } else {
             app.tap() // close the menu
         }
 
+        // Tapping Search again focuses the search field.
+        tab(app, "Search").tap()
+        XCTAssertTrue(app.searchFields.firstMatch.waitForExistence(timeout: 10))
+        tab(app, "Search").tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        let close = app.buttons.matching(NSPredicate(format: "label IN {'Close', 'Cancel'}")).firstMatch
+        XCTAssertTrue(close.exists)
+        close.tap()
+
         tab(app, "Settings").tap()
-        XCTAssertTrue(app.staticTexts["Reminders"].waitForExistence(timeout: 5) || app.staticTexts["REMINDERS"].exists)
+        XCTAssertTrue(app.staticTexts["Entry Text Size"].waitForExistence(timeout: 5))
+        snap("settings-top")
         app.swipeUp()
         snap("settings-privacy")
     }

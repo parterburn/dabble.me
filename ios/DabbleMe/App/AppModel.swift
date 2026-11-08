@@ -15,6 +15,8 @@ final class AppModel {
     var searchRequest: String?
     /// Set when a writing reminder is tapped; Today opens the composer.
     var composeRequest = false
+    /// Bumped when the Search tab is tapped while already showing, to focus the search field.
+    var searchFocusRequest = 0
     let lock = AppLock()
 
     func search(hashtag: String) {

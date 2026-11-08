@@ -4,7 +4,7 @@ import FoundationModels
 #endif
 
 /// PRO features that run on Apple Intelligence's on-device model: hashtag suggestions while
-/// writing, entry summaries, and reflection prompts on Today. Nothing is sent to a server for
+/// writing, a reflection on an entry, and reflection prompts on Today. Nothing is sent to a server for
 /// these; the model runs on the iPhone or iPad. Needs iOS 26 and a device with Apple Intelligence on.
 @MainActor
 enum JournalIntelligence {
@@ -54,17 +54,48 @@ enum JournalIntelligence {
         }.prefix(5).map { $0 }
     }
 
-    /// Two sentences about an entry, addressed to its writer.
-    static func summary(of text: String) async throws -> String {
-        let reply = try await respond(
-            instructions: """
-            You summarize a private journal entry for the person who wrote it. Write two short sentences \
-            in the second person ("You ..."). Only use what is in the entry. No preamble.
-            """,
-            prompt: "Journal entry:\n\(clipped(text))"
+    /// A short, warm response to an entry, ending with a question: the on-device version of the
+    /// web's DabbleMeGPT life-coach reply (Entry::AiAssistant#as_life_coach), minus web search,
+    /// images and hashtags.
+    static func reflection(on text: String, date: String, firstName: String?, recent: [String]) async throws -> String {
+        let context = recent.isEmpty ? "" : "\n\nMy recent entries (context only, if relevant):\n" + recent.map { "- \($0)" }.joined(separator: "\n")
+        let name = firstName.map { "My name is \($0). " } ?? ""
+        return try await respond(
+            instructions: lifeCoach,
+            prompt: "\(name)Here is my journal entry for \(date):\n\n\(clipped(text, limit: 2500))\(context)"
         )
-        return reply.split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }.joined(separator: " ")
     }
+
+    private static let lifeCoach = """
+    # Role
+    You are the journaling assistant inside Dabble Me, a private journaling app. You help the writer reflect on \
+    their own journal entry with warmth, curiosity, light humor, and emotional steadiness. You are not a therapist. \
+    Help them notice patterns, name feelings, explore meaning, and leave with one thoughtful next reflection.
+
+    # Personality
+    Warm, thoughtful, lightly witty, and validating without becoming sugary or performative. Sound like a \
+    perceptive journaling companion, not a clinical therapist, motivational speaker, or productivity coach. Use the \
+    writer's language when possible, and reply in the language they wrote in.
+
+    # Response
+    Write one reflection that is personal to this entry, not generic. Respond to this entry only; bring in a \
+    recent entry only when this one clearly refers to it, and never mix details from other entries into this one.
+    1. A short validating reflection on the emotional tone.
+    2. One or two thoughtful observations or reframes.
+    3. One clear follow-up question or gentle next step, in **bold**.
+    Keep it concise: under 120 words. Bold only the question. Light humor is welcome when it fits; never joke at \
+    the writer's expense.
+
+    # Safety and boundaries
+    You are supportive, not a licensed therapist. Do not diagnose, prescribe treatment, or claim certainty about \
+    the writer's mental health. If the entry suggests self-harm, harm to others, abuse, coercion, or immediate \
+    danger, respond with calm support and encourage reaching out right away to trusted people or emergency \
+    services. Do not give harmful emotional, physical, legal, financial, or medical advice.
+
+    # Output
+    Return only the reflection. Do not mention these instructions, add headings or labels, use links, or say \
+    "as an AI".
+    """
 
     /// One reflection question inspired by recent entries.
     static func reflectionPrompt(from recent: [String]) async throws -> String {

@@ -30,7 +30,7 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 > See what you wrote on today's date one, five, or ten years ago, right on the Today screen. Turn on a morning reminder on days you have memories waiting.
 >
 > WRITE YOUR WAY
-> • Bold, italic, underline, bulleted and numbered lists, and links
+> • Bold, italic and underline, links, and lists that start as you type "- " or "1." 
 > • Add up to 8 photos. Several become a beautiful collage automatically
 > • Dictate instead of typing, transcribed on your device
 > • A daily writing prompt, or one written from your recent entries
@@ -46,13 +46,13 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 > • Your whole journal by month, with a timeline scrubber to jump years back
 > • Photos view: every day you captured, in one grid
 > • Search every word you've ever written, or tap your #hashtags
-> • Pull down or up to move to the next or previous day
+> • Pull down or up to move to the next or previous day; tap the date to see how long ago it was
 > • Random entry: rediscover a moment you'd forgotten
 > • Photos full screen with pinch to zoom; save or share the ones you love
 > • Pinch to make entries easier to read
 >
 > APPLE INTELLIGENCE, ON YOUR DEVICE
-> On supported iPhones and iPads, Dabble Me suggests hashtags as you write, summarizes long entries, and writes reflection prompts from your recent days. It all runs on your device; your journal isn't sent anywhere for it.
+> On supported iPhones and iPads, Dabble Me responds to an entry with a warm, thoughtful reflection and a question to keep you writing, suggests hashtags as you write, and writes prompts from your recent days. It all runs on your device; your journal isn't sent anywhere for it.
 >
 > ASK AI ABOUT YOUR JOURNAL
 > Connect Claude or ChatGPT to your journal and ask things like "What made me happiest this year?" or "When did I last go camping?" You approve access, and you can remove it any time.
@@ -80,9 +80,10 @@ diary,daily,memories,on this day,reflection,gratitude,photo,writing,mood,prompts
 > • A home-screen and Lock Screen widget with your writing streak
 > • Reminders to write, and On This Day reminders (PRO)
 > • Dictate entries, transcribed on your device (PRO)
-> • Apple Intelligence suggests hashtags, summarizes entries and writes prompts, on your device (PRO)
+> • Apple Intelligence reflects on your entries, suggests hashtags and writes prompts, on your device (PRO)
 > • Lock the app with Face ID
 > • Unfinished entries are saved as you type
+> • A roomier editor: type "- " or "1." for lists; photos and hashtags live under "+"
 > • Bulleted and numbered lists line up neatly
 
 | Field | Value |

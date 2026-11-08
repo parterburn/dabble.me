@@ -10,6 +10,7 @@ struct SearchView: View {
     @State private var isSearching = false
     @State private var error: String?
     @State private var hashtags: [HashtagCount] = []
+    @State private var isSearchActive = false
 
     var body: some View {
         NavigationStack {
@@ -18,7 +19,8 @@ struct SearchView: View {
                     ProInfoView(feature: .search, showsDoneButton: false)
                 } else {
                     resultsList
-                        .searchable(text: $query, prompt: "Search your journal")
+                        .searchable(text: $query, isPresented: $isSearchActive, prompt: "Search your journal")
+                        .onChange(of: model.searchFocusRequest) { isSearchActive = true }
                         .onSubmit(of: .search) { Task { await search(reset: true) } }
                         .onChange(of: query) { _, newValue in
                             if newValue.isEmpty { clear() }
@@ -32,6 +34,8 @@ struct SearchView: View {
                 }
             }
             .navigationTitle("Search")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(removing: .title) // the tab says where you are
             .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
         }
     }

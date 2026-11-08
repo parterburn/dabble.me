@@ -6,7 +6,8 @@ extension RichText.Style {
     static var journal: RichText.Style {
         let body = UIFont.preferredFont(forTextStyle: .body)
         let serif = body.fontDescriptor.withDesign(.serif) ?? body.fontDescriptor
-        return RichText.Style(baseFont: UIFont(descriptor: serif, size: 0), textColor: .label)
+        // A little larger than body text (19pt at the default size), for comfortable writing.
+        return RichText.Style(baseFont: UIFont(descriptor: serif, size: (body.pointSize * 1.12).rounded()), textColor: .label)
     }
 }
 
@@ -137,105 +138,6 @@ final class RichTextEditorModel {
         characterCount = trimmed.count
     }
 
-    // MARK: - Formatting
-
-    enum Trait { case bold, italic }
-
-    func toggle(_ trait: Trait) {
-        guard let textView else { return }
-        let base = RichText.Style.journal.baseFont
-        let range = textView.selectedRange
-        let has: (UIFont) -> Bool = { trait == .bold ? $0.isBold : $0.isItalic }
-        let set: (UIFont, Bool) -> UIFont = { font, on in
-            trait == .bold ? font.with(bold: on, italic: font.isItalic) : font.with(bold: font.isBold, italic: on)
-        }
-
-        if range.length == 0 {
-            var attributes = textView.typingAttributes
-            let font = attributes[.font] as? UIFont ?? base
-            attributes[.font] = set(font, !has(font))
-            textView.typingAttributes = attributes
-            return
-        }
-
-        let storage = textView.textStorage
-        var fonts: [(NSRange, UIFont)] = []
-        storage.enumerateAttribute(.font, in: range) { value, subrange, _ in
-            fonts.append((subrange, value as? UIFont ?? base))
-        }
-        let turnOn = !fonts.allSatisfy { has($0.1) }
-        storage.beginEditing()
-        for (subrange, font) in fonts {
-            storage.addAttribute(.font, value: set(font, turnOn), range: subrange)
-        }
-        storage.endEditing()
-        textView.selectedRange = range
-        textDidChange()
-    }
-
-    func toggleUnderline() {
-        guard let textView else { return }
-        let range = textView.selectedRange
-        let key = NSAttributedString.Key.underlineStyle
-
-        if range.length == 0 {
-            var attributes = textView.typingAttributes
-            let on = (attributes[key] as? Int ?? 0) != 0
-            attributes[key] = on ? nil : NSUnderlineStyle.single.rawValue
-            textView.typingAttributes = attributes
-            return
-        }
-
-        let storage = textView.textStorage
-        var allUnderlined = true
-        storage.enumerateAttribute(key, in: range) { value, _, stop in
-            if (value as? Int ?? 0) == 0 {
-                allUnderlined = false
-                stop.pointee = true
-            }
-        }
-        if allUnderlined {
-            storage.removeAttribute(key, range: range)
-        } else {
-            storage.addAttribute(key, value: NSUnderlineStyle.single.rawValue, range: range)
-        }
-        textView.selectedRange = range
-        textDidChange()
-    }
-
-    /// Turns the selected lines into a list, or back into plain lines if they already are one.
-    func toggleList(_ kind: DocumentBlock.Kind) {
-        guard let textView else { return }
-        let storage = textView.textStorage
-        let string = storage.string as NSString
-        let selection = textView.selectedRange
-        let paragraphRange = string.paragraphRange(for: selection)
-
-        var lines: [NSRange] = []
-        string.enumerateSubstrings(in: paragraphRange, options: [.byLines, .substringNotRequired]) { _, lineRange, _, _ in
-            lines.append(lineRange)
-        }
-        if lines.isEmpty { lines = [NSRange(location: paragraphRange.location, length: 0)] }
-
-        let removing = lines.allSatisfy { RichText.listPrefix(in: string.substring(with: $0))?.kind == kind }
-        let plain = RichText.Style.journal.baseAttributes
-        var delta = 0
-        storage.beginEditing()
-        for (index, line) in lines.enumerated().reversed() {
-            let existing = RichText.listPrefix(in: string.substring(with: line))?.length ?? 0
-            let replacement = removing ? "" : (kind == .bullet ? RichText.bulletPrefix : "\(index + 1). ")
-            storage.replaceCharacters(in: NSRange(location: line.location, length: existing),
-                                      with: NSAttributedString(string: replacement, attributes: plain))
-            delta += replacement.utf16.count - existing
-        }
-        storage.endEditing()
-
-        let endsWithNewline = paragraphRange.length > 0 && string.character(at: NSMaxRange(paragraphRange) - 1) == 0x0A
-        let cursor = NSMaxRange(paragraphRange) + delta - (endsWithNewline ? 1 : 0)
-        textView.selectedRange = NSRange(location: max(0, min(cursor, storage.length)), length: 0)
-        textDidChange()
-    }
-
     // MARK: - Links
 
     func beginLink() {
@@ -309,15 +211,46 @@ final class RichTextEditorModel {
         return false
     }
 
+    /// Typing "- " or "* " at the start of a line starts a bulleted list ("1. " is already a
+    /// numbered one), so lists don't need buttons.
+    fileprivate func handleSpace(in textView: UITextView, at range: NSRange) -> Bool {
+        let storage = textView.textStorage
+        let string = storage.string as NSString
+        let lineStart = string.lineRange(for: NSRange(location: range.location, length: 0)).location
+        let typed = string.substring(with: NSRange(location: lineStart, length: range.location - lineStart))
+        guard typed == "-" || typed == "*" else { return true }
+        storage.replaceCharacters(in: NSRange(location: lineStart, length: range.location - lineStart),
+                                  with: NSAttributedString(string: RichText.bulletPrefix, attributes: RichText.Style.journal.baseAttributes))
+        textView.selectedRange = NSRange(location: lineStart + (RichText.bulletPrefix as NSString).length, length: 0)
+        textView.typingAttributes = RichText.Style.journal.baseAttributes
+        textDidChange()
+        return false
+    }
+
     fileprivate func attach(_ textView: UITextView) {
         self.textView = textView
     }
 }
 
+/// An item in the editor bar's "+" menu (photos, hashtag suggestions…), supplied by the composer.
+struct EditorInsertItem {
+    let title: String
+    let systemImage: String
+    var subtitle: String? = nil
+    var isEnabled = true
+    let action: @MainActor () -> Void
+}
+
 struct RichTextEditor: UIViewRepresentable {
     let model: RichTextEditorModel
-    /// Shows the dictation (microphone) button in the formatting bar.
+    /// Shows the dictation (microphone) button in the bar.
     var allowsDictation = false
+    var insertItems: [EditorInsertItem] = []
+
+    /// Changes when the bar's buttons need rebuilding.
+    fileprivate var barKey: String {
+        "\(allowsDictation)|" + insertItems.map { "\($0.title)\($0.isEnabled)\($0.subtitle ?? "")" }.joined(separator: "|")
+    }
 
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
@@ -330,16 +263,16 @@ struct RichTextEditor: UIViewRepresentable {
         textView.linkTextAttributes = [.foregroundColor: UIColor.tintColor, .underlineStyle: NSUnderlineStyle.single.rawValue]
         textView.attributedText = RichText.attributedString(from: model.initialBlocks, style: .journal)
         textView.typingAttributes = RichText.Style.journal.baseAttributes
-        textView.inputAccessoryView = context.coordinator.makeToolbar(allowsDictation: allowsDictation)
+        textView.inputAccessoryView = context.coordinator.makeToolbar(for: self)
         textView.accessibilityLabel = "Entry"
         model.attach(textView)
         return textView
     }
 
     func updateUIView(_ textView: UITextView, context: Context) {
-        guard context.coordinator.allowsDictation != allowsDictation,
-              let toolbar = textView.inputAccessoryView as? UIToolbar else { return }
-        context.coordinator.configure(toolbar, allowsDictation: allowsDictation)
+        context.coordinator.insertItems = insertItems
+        guard context.coordinator.barKey != barKey, let toolbar = textView.inputAccessoryView as? UIToolbar else { return }
+        context.coordinator.configure(toolbar, for: self)
     }
 
     func makeCoordinator() -> Coordinator {
@@ -359,26 +292,33 @@ struct RichTextEditor: UIViewRepresentable {
         }
 
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
-            guard text == "\n", range.length == 0 else { return true }
-            return model.handleReturn(in: textView, at: range)
+            guard range.length == 0 else { return true }
+            if text == "\n" { return model.handleReturn(in: textView, at: range) }
+            if text == " " { return model.handleSpace(in: textView, at: range) }
+            return true
         }
 
         /// Bold/italic/underline also live in the system edit menu (select text, then Format), the
         /// way Messages does it; this bar adds lists and links. It's taller than a classic 44pt
         /// toolbar so the glass buttons clear the keyboard's top edge, and short enough to fit an
         /// iPhone without spilling into a "…" menu (swipe down on the text to hide the keyboard).
-        private(set) var allowsDictation = false
+        fileprivate var barKey = ""
+        /// The latest menu actions (their closures change as the composer's state does).
+        var insertItems: [EditorInsertItem] = []
         private weak var micItem: UIBarButtonItem?
 
-        func makeToolbar(allowsDictation: Bool) -> UIToolbar {
+        func makeToolbar(for editor: RichTextEditor) -> UIToolbar {
             let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 60))
-            configure(toolbar, allowsDictation: allowsDictation)
+            configure(toolbar, for: editor)
             model.onDictationStateChange = { [weak self] listening in self?.updateMic(listening: listening) }
             return toolbar
         }
 
-        func configure(_ toolbar: UIToolbar, allowsDictation: Bool) {
-            self.allowsDictation = allowsDictation
+        /// "+" (photos, hashtag suggestions), link, and dictation. Bold, italic and underline are in
+        /// the text's edit menu (Format), and typing "- " or "1. " starts a list.
+        func configure(_ toolbar: UIToolbar, for editor: RichTextEditor) {
+            barKey = editor.barKey
+            insertItems = editor.insertItems
             func item(_ symbol: String, _ label: String, _ action: @escaping @MainActor (RichTextEditorModel) -> Void) -> UIBarButtonItem {
                 let button = UIBarButtonItem(image: UIImage(systemName: symbol), primaryAction: UIAction { [weak model] _ in
                     if let model { action(model) }
@@ -386,35 +326,30 @@ struct RichTextEditor: UIViewRepresentable {
                 button.accessibilityLabel = label
                 return button
             }
-            var items: [UIBarButtonItem] = [
-                item("bold", "Bold") { $0.toggle(.bold) },
-                item("italic", "Italic") { $0.toggle(.italic) },
-                item("underline", "Underline") { $0.toggleUnderline() },
-                .flexibleSpace(),
-                listItem(),
-                item("link", "Link") { $0.beginLink() },
-            ]
-            if allowsDictation {
+            var items: [UIBarButtonItem] = []
+            if !editor.insertItems.isEmpty {
+                let menu = UIMenu(children: editor.insertItems.indices.map { index in
+                    let entry = editor.insertItems[index]
+                    let action = UIAction(title: entry.title, subtitle: entry.subtitle, image: UIImage(systemName: entry.systemImage)) { [weak self] _ in
+                        guard let self, index < self.insertItems.count else { return }
+                        self.insertItems[index].action()
+                    }
+                    if !entry.isEnabled { action.attributes = .disabled }
+                    return action
+                })
+                let plus = UIBarButtonItem(image: UIImage(systemName: "plus"), menu: menu)
+                plus.accessibilityLabel = "Add"
+                items.append(plus)
+            }
+            items.append(.flexibleSpace())
+            items.append(item("link", "Link") { $0.beginLink() })
+            if editor.allowsDictation {
                 let mic = item("mic", "Dictate") { $0.toggleDictation() }
                 micItem = mic
                 items.append(mic)
             }
             toolbar.items = items
             updateMic(listening: model.isDictating)
-        }
-
-        /// Bulleted and numbered lists share one button (a menu), so the bar fits small iPhones.
-        private func listItem() -> UIBarButtonItem {
-            let model = model
-            let action = { (kind: DocumentBlock.Kind, title: String, symbol: String) in
-                UIAction(title: title, image: UIImage(systemName: symbol)) { [weak model] _ in model?.toggleList(kind) }
-            }
-            let button = UIBarButtonItem(image: UIImage(systemName: "list.bullet"), menu: UIMenu(children: [
-                action(.bullet, "Bulleted List", "list.bullet"),
-                action(.number, "Numbered List", "list.number"),
-            ]))
-            button.accessibilityLabel = "List"
-            return button
         }
 
         private func updateMic(listening: Bool) {
