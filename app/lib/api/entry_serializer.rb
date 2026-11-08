@@ -22,7 +22,7 @@ module Api
       {
         id: entry.id,
         date: entry.date.to_date.iso8601,
-        excerpt: entry.text_body.to_s.squish.truncate(EXCERPT_LENGTH, separator: ' '),
+        excerpt: plain_excerpt,
         image_url: entry.display_image_url,
         image_processing: entry.uploading_image?,
         hashtags: entry.hashtags || [],
@@ -43,6 +43,13 @@ module Api
     private
 
     attr_reader :entry
+
+    # Visible text only: text_body is Markdown, so it would show "**bold**" markers in the
+    # timeline. Block ends and line breaks become spaces so words don't run together.
+    def plain_excerpt
+      html = entry.formatted_body.to_s.gsub(%r{<br\s*/?>|</(?:p|div|li|h\d|blockquote)>|<hr\s*/?>}i, ' ')
+      Nokogiri::HTML5.fragment(html).text.squish.truncate(EXCERPT_LENGTH, separator: ' ')
+    end
 
     # Entry#text_body is Markdown from ReverseMarkdown, which turns email blank lines
     # (<div><br></div>) into "  \n\n" sequences. Trim line ends and collapse blank-line runs

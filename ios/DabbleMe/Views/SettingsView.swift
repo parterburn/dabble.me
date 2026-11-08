@@ -6,6 +6,8 @@ struct SettingsView: View {
     @State private var confirmingDeletion = false
     @State private var deletionEmail: String?
     @State private var deletionError: String?
+    @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
+    @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 17
 
     var body: some View {
         NavigationStack {
@@ -16,6 +18,22 @@ struct SettingsView: View {
                         LabeledContent("Plan", value: me.isPro ? "PRO" : "Free")
                         LabeledContent("Entries", value: me.entryCount.formatted())
                     }
+                }
+
+                Section {
+                    Picker("Entry Text Size", selection: $textSize) {
+                        ForEach(ReadingTextSize.allCases) { size in
+                            Text(size.label).tag(size)
+                        }
+                    }
+                    Text("How was your day? A little preview of how entries will read.")
+                        .font(.system(size: bodySize * textSize.scale, design: .serif))
+                        .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
+                } header: {
+                    Text("Reading")
+                } footer: {
+                    Text("Changes the text size when reading entries. It adds to your iPhone's own text size setting.")
                 }
 
                 Section {

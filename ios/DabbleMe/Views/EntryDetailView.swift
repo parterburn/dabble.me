@@ -12,6 +12,7 @@ struct EntryDetailView: View {
     @State private var editing = false
     @State private var confirmingDelete = false
     @State private var isDeleting = false
+    @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
 
     var body: some View {
         Group {
@@ -70,6 +71,16 @@ struct EntryDetailView: View {
 
     private func menu(for entry: EntryDetail) -> some View {
         Menu {
+            Section("Text Size") {
+                Button("Larger Text", systemImage: "textformat.size.larger") {
+                    if let larger = textSize.larger { textSize = larger }
+                }
+                .disabled(textSize.larger == nil)
+                Button("Smaller Text", systemImage: "textformat.size.smaller") {
+                    if let smaller = textSize.smaller { textSize = smaller }
+                }
+                .disabled(textSize.smaller == nil)
+            }
             if model.me?.canWrite == true {
                 if entry.document != nil {
                     Button("Edit", systemImage: "pencil") { editing = true }
@@ -110,6 +121,10 @@ struct EntryDetailView: View {
 
 private struct EntryBody: View {
     let entry: EntryDetail
+    @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
+    @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 17
+
+    private var bodyFont: Font { .system(size: bodySize * textSize.scale, design: .serif) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
@@ -119,13 +134,13 @@ private struct EntryBody: View {
 
             if let document = entry.document {
                 Text(RichText.linkingHashtags(in: RichText.displayString(from: document)))
-                    .font(.system(.body, design: .serif))
-                    .lineSpacing(5)
+                    .font(bodyFont)
+                    .lineSpacing(5 * textSize.scale)
                     .textSelection(.enabled)
             } else if !entry.bodyText.isEmpty {
                 Text(RichText.linkingHashtags(in: AttributedString.journal(entry.bodyText)))
-                    .font(.system(.body, design: .serif))
-                    .lineSpacing(5)
+                    .font(bodyFont)
+                    .lineSpacing(5 * textSize.scale)
                     .textSelection(.enabled)
             }
 

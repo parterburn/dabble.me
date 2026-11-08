@@ -342,6 +342,13 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
     end
   end
 
+  describe "excerpt" do
+    it "is plain text without Markdown markers, with spaces between blocks" do
+      entry = create(:entry, user: pro_user, body: "<p>Made it to <strong>Yosemite</strong> &amp; <em>back</em>.</p><ul><li>one</li><li>two</li></ul>")
+      expect(Api::EntrySerializer.summary(entry)[:excerpt]).to eq("Made it to Yosemite & back. one two")
+    end
+  end
+
   describe "body_text" do
     it "shows one blank line between email paragraphs" do
       entry = create(:entry, user: pro_user, body: "<div>One.</div><div><br></div><div>Two.</div><div><br></div><div>Three.</div>")
