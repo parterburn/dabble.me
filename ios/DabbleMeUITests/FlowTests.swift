@@ -84,8 +84,8 @@ final class FlowTests: XCTestCase {
     }
 
     func testTodayTab() throws {
-        XCTAssertTrue(app.navigationBars["Today"].waitForExistence(timeout: 15))
-        XCTAssertTrue(app.staticTexts["On This Day"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["On This Day"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.buttons["Random Entry"].isHittable, "Today has no random-entry button")
         XCTAssertTrue(app.staticTexts["1 year ago · 2025"].waitForExistence(timeout: 5), "Demo account has an entry from a year ago today")
         snap("today")
     }

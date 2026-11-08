@@ -6,16 +6,21 @@ struct TodayView: View {
     @State private var path = NavigationPath()
     @State private var composing = false
     @State private var showingProInfo = false
-    @State private var randomError: String?
 
     var body: some View {
         NavigationStack(path: $path) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 28) {
                     if let today = model.today {
-                        Text(today.day?.long ?? today.date)
-                            .font(.system(.title3, design: .serif))
-                            .foregroundStyle(.secondary)
+                        // The date is the page title (the nav bar is hidden here).
+                        // No year: it's always today. One line, shrinking a little for long dates.
+                        Text(today.day?.formatted(.dateTime.weekday(.wide).month(.wide).day()) ?? today.date)
+                            .font(.system(.largeTitle, design: .serif, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .accessibilityLabel(today.day?.long ?? today.date)
+                            .accessibilityAddTraits(.isHeader)
                         todaySection(today)
                         onThisDaySection(today)
                     } else if let error = model.timelineError {
@@ -28,21 +33,12 @@ struct TodayView: View {
                 .frame(maxWidth: 680, alignment: .leading)
                 .frame(maxWidth: .infinity)
             }
-            .navigationTitle("Today")
+            .navigationTitle("Today") // back-button label on entries opened from here
+            .toolbarVisibility(.hidden, for: .navigationBar)
             .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Random Entry", systemImage: "shuffle") { Task { await openRandom() } }
-                }
-            }
             .refreshable { await model.loadToday() }
             .sheet(isPresented: $composing) { ComposeView(mode: .new) }
             .sheet(isPresented: $showingProInfo) { ProInfoView(feature: .writing) }
-            .alert("Couldn't open an entry", isPresented: .present($randomError)) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(randomError ?? "")
-            }
         }
     }
 
@@ -125,16 +121,6 @@ struct TodayView: View {
         let years = memory.yearsAgo ?? 0
         let ago = years == 1 ? "1 year ago" : "\(years) years ago"
         return "\(ago) · \(memory.day?.year ?? "")"
-    }
-
-    private func openRandom() async {
-        do {
-            let entry = try await model.randomEntry()
-            path.append(EntryRoute(id: entry.id))
-        } catch is CancellationError {
-        } catch {
-            randomError = error.localizedDescription
-        }
     }
 }
 
