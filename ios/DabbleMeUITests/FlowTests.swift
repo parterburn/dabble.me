@@ -43,16 +43,9 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 10), "Could not get back to the journal")
     }
 
-    func testReadingTextSizeSetting() throws {
+    /// Text size is a pinch on the entry (there's no setting for it any more).
+    func testPinchChangesEntryTextSize() throws {
         openJournal()
-        app.tabBars.buttons["Settings"].tap()
-        let picker = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Entry Text Size")).firstMatch
-        XCTAssertTrue(picker.waitForExistence(timeout: 5))
-        picker.tap()
-        app.buttons["Largest"].tap()
-        snap("text-size-settings")
-
-        app.tabBars.buttons["Journal"].tap()
         let entry = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
         XCTAssertTrue(entry.waitForExistence(timeout: 10))
@@ -60,25 +53,29 @@ final class FlowTests: XCTestCase {
         sleep(1)
         entry.tap() // opens
         XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
-        sleep(1)
-        snap("text-size-entry")
 
-        // Pinching in on the entry steps the size down; then put it back to Default for other runs.
-        let body = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Things I want to remember")).firstMatch
-        XCTAssertTrue(body.waitForExistence(timeout: 5))
-        body.pinch(withScale: 0.6, velocity: -1)
+        // A multi-line paragraph: room for two fingers, and its height shows the text size.
+        let paragraph = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to")).firstMatch
+        XCTAssertTrue(paragraph.waitForExistence(timeout: 5))
+        // The size is remembered between runs: start from the smallest.
+        paragraph.pinch(withScale: 0.3, velocity: -2)
+        sleep(1)
+        let smallest = paragraph.frame.height
+        paragraph.pinch(withScale: 2.5, velocity: 2)
+        sleep(1)
+        XCTAssertGreaterThan(paragraph.frame.height, smallest + 10, "Pinching out makes the text larger")
         snap("text-size-pinched")
+        // Back down to Default (three steps from Largest) for other runs.
+        paragraph.pinch(withScale: 0.5, velocity: -2)
         app.tabBars.buttons["Settings"].tap()
-        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Largest")).firstMatch.waitForExistence(timeout: 3),
-                       "Pinching in on an entry should make the text smaller than Largest")
-        picker.tap()
-        app.buttons["Default"].tap()
+        XCTAssertFalse(app.staticTexts["Entry Text Size"].exists)
+        XCTAssertFalse(app.staticTexts["Entries"].exists)
     }
 
     func testAIConnectorsInSettings() throws {
         openJournal()
         app.tabBars.buttons["Settings"].tap()
-        XCTAssertTrue(app.staticTexts["Entry Text Size"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Email"].waitForExistence(timeout: 10))
         let connector = app.links["Claude/ChatGPT Connector"]
         for _ in 0..<4 where !connector.isHittable {
             app.collectionViews.firstMatch.swipeUp(velocity: .slow)
