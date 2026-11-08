@@ -28,6 +28,9 @@ struct ComposeView: View {
     /// An unsaved draft from an earlier session was put back in the editor.
     @State private var restoredDraft: DraftStore.Draft?
     @State private var draftSave: Task<Void, Never>?
+    @State private var suggestedTags: [String] = []
+    @State private var isSuggestingTags = false
+    @State private var suggestionError: String?
     @Environment(\.scenePhase) private var scenePhase
     private let draftKey: String
     private let originalBlocks: [DocumentBlock]
@@ -70,7 +73,7 @@ struct ComposeView: View {
                 header
                 if restoredDraft != nil { draftBanner }
                 Divider()
-                RichTextEditor(model: editor)
+                RichTextEditor(model: editor, allowsDictation: model.me?.isPro == true && Dictation.isSupported)
                     .overlay(alignment: .topLeading) {
                         if editor.isEmpty {
                             Text("How was your day?")
@@ -82,6 +85,10 @@ struct ComposeView: View {
                                 .accessibilityHidden(true)
                         }
                     }
+                if JournalIntelligence.isEnabled(for: model.me) {
+                    Divider()
+                    hashtagSuggestions
+                }
                 if isNew {
                     Divider()
                     if model.me?.canAddPhotos == true {
@@ -120,6 +127,7 @@ struct ComposeView: View {
             .confirmationDialog(isNew ? "Discard this entry?" : "Discard your changes?",
                                 isPresented: $confirmingDiscard, titleVisibility: .visible) {
                 Button("Discard", role: .destructive) {
+                    editor.stopDictation()
                     DraftStore.clear(draftKey)
                     dismiss()
                 }
@@ -131,6 +139,12 @@ struct ComposeView: View {
                 Text(error ?? "")
             }
             .richTextLinkAlert(editor)
+            .alert("Couldn't suggest hashtags", isPresented: .present($suggestionError)) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(suggestionError ?? "")
+            }
+            .onDisappear { editor.stopDictation() }
             .onChange(of: photoItems) { Task { await preparePhotos() } }
             #if DEBUG
             .task { await attachDebugPhotos() }
@@ -193,6 +207,51 @@ struct ComposeView: View {
         guard let uploadedCount, !photos.isEmpty else { return "Saving…" }
         if uploadedCount >= photos.count { return "Saving entry…" }
         return photos.count == 1 ? "Uploading photo…" : "Uploading photo \(uploadedCount + 1) of \(photos.count)…"
+    }
+
+    /// PRO, on-device (Apple Intelligence): hashtags for what's written so far. Tap one to add it.
+    private var hashtagSuggestions: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 8) {
+                Button {
+                    Task { await suggestHashtags() }
+                } label: {
+                    if isSuggestingTags {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        Label(suggestedTags.isEmpty ? "Suggest Hashtags" : "More", systemImage: "sparkles")
+                    }
+                }
+                .disabled(isSuggestingTags || editor.characterCount < 20)
+                ForEach(suggestedTags, id: \.self) { tag in
+                    Button("#\(tag)") {
+                        editor.appendHashtag(tag)
+                        suggestedTags.removeAll { $0 == tag }
+                    }
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.capsule)
+                    .accessibilityHint("Adds this hashtag to the entry")
+                }
+            }
+            .font(.subheadline)
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+        }
+        .scrollIndicators(.hidden)
+    }
+
+    private func suggestHashtags() async {
+        isSuggestingTags = true
+        defer { isSuggestingTags = false }
+        do {
+            let usual = (try? await model.topHashtags().map(\.tag)) ?? []
+            let tags = try await JournalIntelligence.suggestHashtags(for: editor.plainText, preferring: usual)
+            if tags.isEmpty { throw JournalIntelligence.Failure.noAnswer }
+            suggestedTags = tags
+        } catch is CancellationError {
+        } catch {
+            suggestionError = error.localizedDescription
+        }
     }
 
     private var photoBar: some View {
@@ -353,6 +412,7 @@ struct ComposeView: View {
     }
 
     private func save() async {
+        editor.stopDictation()
         isSaving = true
         defer { isSaving = false }
         do {

@@ -13,6 +13,8 @@ struct SettingsView: View {
     @AppStorage(ReminderSettings.memoriesEnabledKey) private var memoriesReminder = false
     @AppStorage(ReminderSettings.memoriesTimeKey) private var memoriesTime = ReminderSettings.defaultMemoriesTime
     @State private var notificationsDenied = false
+    @AppStorage(WidgetSnapshot.showMemoriesKey, store: WidgetSnapshot.defaults) private var widgetShowsMemories = false
+    @AppStorage(JournalIntelligence.enabledKey) private var onDeviceAI = true
     #if DEBUG
     @State private var pendingReminders = 0
     #endif
@@ -46,6 +48,7 @@ struct SettingsView: View {
                 }
 
                 remindersSection
+                intelligenceSection
                 privacySection
 
                 if let connectors = model.me?.aiConnectors {
@@ -175,6 +178,21 @@ private extension SettingsView {
         await ReminderScheduler.shared.reschedule(for: model)
     }
 
+    // MARK: - On-device AI
+
+    @ViewBuilder
+    var intelligenceSection: some View {
+        if model.me?.isPro == true, JournalIntelligence.isSupported {
+            Section {
+                Toggle("Apple Intelligence", isOn: $onDeviceAI)
+            } header: {
+                Text("On-Device AI")
+            } footer: {
+                Text("Hashtag suggestions while you write, entry summaries, and prompts from your recent entries. It all runs on this device; your journal isn't sent anywhere for it.")
+            }
+        }
+    }
+
     // MARK: - Privacy
 
     @ViewBuilder
@@ -186,12 +204,18 @@ private extension SettingsView {
                 set: { enabled in Task { await lock.setEnabled(enabled) } }
             ))
             .disabled(!lock.isAvailable)
+            if model.me?.isPro == true {
+                Toggle("On This Day in Widget", isOn: $widgetShowsMemories)
+                    .onChange(of: widgetShowsMemories) { _, shows in WidgetSync.setShowsMemories(shows) }
+            }
         } header: {
             Text("Privacy")
         } footer: {
-            Text(lock.isAvailable
-                 ? "Locks Dabble Me when you open it and after a minute away. Your journal is hidden in the app switcher."
-                 : "Set a passcode on this device to lock Dabble Me.")
+            Text((lock.isAvailable
+                  ? "Locks Dabble Me when you open it and after a minute away. Your journal is hidden in the app switcher."
+                  : "Set a passcode on this device to lock Dabble Me.")
+                 + " The home-screen widget shows your streak and never what you wrote"
+                 + (model.me?.isPro == true ? "; it can also say how many memories you have from this day." : "."))
         }
     }
 

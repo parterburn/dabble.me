@@ -9,9 +9,10 @@ module Api
       before_action :require_pro_for_photos!, only: :create
       before_action :set_entry, only: %i[show update destroy]
 
-      # GET /api/v1/entries?page=&per=&year=&month=
+      # GET /api/v1/entries?page=&per=&year=&month=&photos=1 (photos: only entries with a photo)
       def index
         entries = current_user.entries
+        entries = entries.where("image IS NOT NULL AND image != ''") if params[:photos] == '1'
         if params[:year].present?
           year = params[:year].to_s
           month = params[:month].to_s

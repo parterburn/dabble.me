@@ -20,6 +20,8 @@ final class RichTextEditorModel {
     private(set) var isDirty = false
     /// Bumped on every change, so the composer can autosave a draft.
     private(set) var revision = 0
+    /// Non-blank characters written so far.
+    private(set) var characterCount = 0
 
     /// Set while the link sheet is up; `linkText` is what the user is typing.
     var isEditingLink = false
@@ -31,6 +33,7 @@ final class RichTextEditorModel {
     init(blocks: [DocumentBlock] = []) {
         initialBlocks = blocks
         isEmpty = blocks.isEmpty
+        characterCount = RichText.segments(for: blocks).map(\.text).joined().count
     }
 
     var blocks: [DocumentBlock] {
@@ -42,6 +45,75 @@ final class RichTextEditorModel {
         textView?.becomeFirstResponder()
     }
 
+    /// The entry as plain text (for on-device suggestions).
+    var plainText: String { textView?.text ?? "" }
+
+    /// Adds "#tag" at the end of the entry.
+    func appendHashtag(_ tag: String) {
+        guard let textView else { return }
+        let storage = textView.textStorage
+        let needsSpace = storage.length > 0 && !(storage.string.last?.isWhitespace ?? true)
+        storage.append(NSAttributedString(string: (needsSpace ? " " : "") + "#\(tag)", attributes: RichText.Style.journal.baseAttributes))
+        textView.selectedRange = NSRange(location: storage.length, length: 0)
+        textDidChange()
+    }
+
+    // MARK: - Dictation (PRO, on device)
+
+    private(set) var isDictating = false
+    var dictationError: String?
+    @ObservationIgnored private lazy var dictation = Dictation()
+    /// Where the current dictation's words are, so each new transcript replaces the last.
+    @ObservationIgnored private var dictationRange = NSRange(location: 0, length: 0)
+    @ObservationIgnored private var dictationPrefix = ""
+
+    func toggleDictation() {
+        if isDictating {
+            dictation.stop()
+        } else {
+            Task { await startDictation() }
+        }
+    }
+
+    func stopDictation() {
+        dictation.stop()
+    }
+
+    private func startDictation() async {
+        guard let textView else { return }
+        let selection = textView.selectedRange
+        let string = textView.text as NSString
+        // Separate from the word before the cursor.
+        let before = selection.location > 0 ? string.substring(with: NSRange(location: selection.location - 1, length: 1)) : "\n"
+        dictationPrefix = before.rangeOfCharacter(from: .whitespacesAndNewlines) == nil ? " " : ""
+        dictationRange = selection
+        dictation.onTranscript = { [weak self] text in self?.insertTranscript(text) }
+        dictation.onStateChange = { [weak self] listening in
+            self?.isDictating = listening
+            self?.onDictationStateChange(listening)
+        }
+        do {
+            try await dictation.start()
+        } catch {
+            dictationError = error.localizedDescription
+        }
+    }
+
+    @ObservationIgnored fileprivate var onDictationStateChange: (Bool) -> Void = { _ in }
+
+    private func insertTranscript(_ transcript: String) {
+        guard let textView, !transcript.isEmpty else { return }
+        let storage = textView.textStorage
+        guard dictationRange.location + dictationRange.length <= storage.length else { return }
+        let text = dictationPrefix + transcript
+        let attributes = textView.typingAttributes
+        storage.replaceCharacters(in: dictationRange, with: NSAttributedString(string: text, attributes: attributes))
+        dictationRange = NSRange(location: dictationRange.location, length: (text as NSString).length)
+        textView.selectedRange = NSRange(location: dictationRange.location + dictationRange.length, length: 0)
+        textView.scrollRangeToVisible(textView.selectedRange)
+        textDidChange()
+    }
+
     /// Replaces everything in the editor (e.g. "Start Over" on a restored draft).
     func replace(with blocks: [DocumentBlock]) {
         textView?.attributedText = RichText.attributedString(from: blocks, style: .journal)
@@ -50,9 +122,19 @@ final class RichTextEditorModel {
     }
 
     fileprivate func textDidChange() {
+        if let textView {
+            let selection = textView.selectedRange
+            let storage = textView.textStorage
+            storage.beginEditing()
+            RichText.applyListIndents(to: storage, font: RichText.Style.journal.baseFont)
+            storage.endEditing()
+            textView.selectedRange = selection
+        }
         isDirty = true
         revision += 1
-        isEmpty = textView?.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true
+        let trimmed = textView?.text.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        isEmpty = trimmed.isEmpty
+        characterCount = trimmed.count
     }
 
     // MARK: - Formatting
@@ -234,6 +316,8 @@ final class RichTextEditorModel {
 
 struct RichTextEditor: UIViewRepresentable {
     let model: RichTextEditorModel
+    /// Shows the dictation (microphone) button in the formatting bar.
+    var allowsDictation = false
 
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
@@ -246,13 +330,17 @@ struct RichTextEditor: UIViewRepresentable {
         textView.linkTextAttributes = [.foregroundColor: UIColor.tintColor, .underlineStyle: NSUnderlineStyle.single.rawValue]
         textView.attributedText = RichText.attributedString(from: model.initialBlocks, style: .journal)
         textView.typingAttributes = RichText.Style.journal.baseAttributes
-        textView.inputAccessoryView = context.coordinator.makeToolbar()
+        textView.inputAccessoryView = context.coordinator.makeToolbar(allowsDictation: allowsDictation)
         textView.accessibilityLabel = "Entry"
         model.attach(textView)
         return textView
     }
 
-    func updateUIView(_ textView: UITextView, context: Context) {}
+    func updateUIView(_ textView: UITextView, context: Context) {
+        guard context.coordinator.allowsDictation != allowsDictation,
+              let toolbar = textView.inputAccessoryView as? UIToolbar else { return }
+        context.coordinator.configure(toolbar, allowsDictation: allowsDictation)
+    }
 
     func makeCoordinator() -> Coordinator {
         Coordinator(model: model)
@@ -279,8 +367,18 @@ struct RichTextEditor: UIViewRepresentable {
         /// way Messages does it; this bar adds lists and links. It's taller than a classic 44pt
         /// toolbar so the glass buttons clear the keyboard's top edge, and short enough to fit an
         /// iPhone without spilling into a "…" menu (swipe down on the text to hide the keyboard).
-        func makeToolbar() -> UIToolbar {
+        private(set) var allowsDictation = false
+        private weak var micItem: UIBarButtonItem?
+
+        func makeToolbar(allowsDictation: Bool) -> UIToolbar {
             let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 60))
+            configure(toolbar, allowsDictation: allowsDictation)
+            model.onDictationStateChange = { [weak self] listening in self?.updateMic(listening: listening) }
+            return toolbar
+        }
+
+        func configure(_ toolbar: UIToolbar, allowsDictation: Bool) {
+            self.allowsDictation = allowsDictation
             func item(_ symbol: String, _ label: String, _ action: @escaping @MainActor (RichTextEditorModel) -> Void) -> UIBarButtonItem {
                 let button = UIBarButtonItem(image: UIImage(systemName: symbol), primaryAction: UIAction { [weak model] _ in
                     if let model { action(model) }
@@ -288,16 +386,41 @@ struct RichTextEditor: UIViewRepresentable {
                 button.accessibilityLabel = label
                 return button
             }
-            toolbar.items = [
+            var items: [UIBarButtonItem] = [
                 item("bold", "Bold") { $0.toggle(.bold) },
                 item("italic", "Italic") { $0.toggle(.italic) },
                 item("underline", "Underline") { $0.toggleUnderline() },
                 .flexibleSpace(),
-                item("list.bullet", "Bulleted List") { $0.toggleList(.bullet) },
-                item("list.number", "Numbered List") { $0.toggleList(.number) },
+                listItem(),
                 item("link", "Link") { $0.beginLink() },
             ]
-            return toolbar
+            if allowsDictation {
+                let mic = item("mic", "Dictate") { $0.toggleDictation() }
+                micItem = mic
+                items.append(mic)
+            }
+            toolbar.items = items
+            updateMic(listening: model.isDictating)
+        }
+
+        /// Bulleted and numbered lists share one button (a menu), so the bar fits small iPhones.
+        private func listItem() -> UIBarButtonItem {
+            let model = model
+            let action = { (kind: DocumentBlock.Kind, title: String, symbol: String) in
+                UIAction(title: title, image: UIImage(systemName: symbol)) { [weak model] _ in model?.toggleList(kind) }
+            }
+            let button = UIBarButtonItem(image: UIImage(systemName: "list.bullet"), menu: UIMenu(children: [
+                action(.bullet, "Bulleted List", "list.bullet"),
+                action(.number, "Numbered List", "list.number"),
+            ]))
+            button.accessibilityLabel = "List"
+            return button
+        }
+
+        private func updateMic(listening: Bool) {
+            micItem?.image = UIImage(systemName: listening ? "stop.circle.fill" : "mic")
+            micItem?.tintColor = listening ? .systemRed : nil
+            micItem?.accessibilityLabel = listening ? "Stop Dictating" : "Dictate"
         }
     }
 }
@@ -318,6 +441,11 @@ extension View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Select text first to link it, or add a web address on its own.")
+        }
+        .alert("Can't dictate", isPresented: .present($model.dictationError)) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(model.dictationError ?? "")
         }
     }
 }

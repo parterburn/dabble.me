@@ -45,7 +45,7 @@ final class ScreenshotTests: XCTestCase {
         shot("03-entry")
         app.navigationBars.buttons.element(boundBy: 0).tap()
 
-        // 4. Writing, with the formatting bar and photos.
+        // 4. Writing, with the formatting bar, photos and on-device hashtag suggestions.
         app.buttons["New Entry"].tap()
         let editor = app.textViews["Entry"]
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
@@ -59,22 +59,42 @@ final class ScreenshotTests: XCTestCase {
         editor.typeText("quiet mornings")
         app.buttons["Bold"].tap()
         editor.typeText(".")
+        let suggest = app.buttons["Suggest Hashtags"]
+        if suggest.exists {
+            suggest.tap()
+            _ = app.buttons.matching(NSPredicate(format: "label BEGINSWITH '#'")).firstMatch.waitForExistence(timeout: 60)
+        }
         shot("04-write")
         app.buttons["Cancel"].tap()
         app.buttons["Discard"].tap()
         XCTAssertTrue(editor.waitForNonExistence(timeout: 10))
         sleep(1)
 
-        // 5. Search.
+        // 5–6. Journal's Photos and Stats views, from the title menu.
+        func journalView(_ current: String, _ mode: String) {
+            let title = app.navigationBars.buttons[current].exists ? app.navigationBars.buttons[current] : app.navigationBars.staticTexts[current]
+            XCTAssertTrue(title.waitForExistence(timeout: 10))
+            title.tap()
+            let item = app.buttons[mode].firstMatch
+            XCTAssertTrue(item.waitForExistence(timeout: 5))
+            item.tap()
+        }
+        journalView("Journal", "Photos")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Photo from'")).firstMatch.waitForExistence(timeout: 10))
+        shot("05-photos")
+        journalView("Photos", "Stats")
+        XCTAssertTrue(app.staticTexts["Current Streak"].waitForExistence(timeout: 10))
+        shot("06-stats")
+        journalView("Stats", "List")
+
+        // 7–8. Search: the hashtag cloud, then a hashtag's entries.
         tab("Search").tap()
-        XCTAssertTrue(app.navigationBars["Search"].waitForExistence(timeout: 10))
-        let field = app.searchFields.firstMatch
-        XCTAssertTrue(field.waitForExistence(timeout: 10))
-        field.tap()
-        field.typeText("#hiking\n")
+        XCTAssertTrue(app.staticTexts["Your Hashtags This Year"].waitForExistence(timeout: 10))
+        shot("07-hashtags")
+        app.buttons["#hiking"].tap()
         XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Yosemite")).firstMatch
             .waitForExistence(timeout: 10))
         if app.keyboards.count > 0 { app.swipeDown() }
-        shot("05-search")
+        shot("08-search")
     }
 }

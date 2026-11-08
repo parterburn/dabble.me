@@ -88,6 +88,8 @@ struct TodaySummary: Decodable, Sendable {
     let onThisDay: [EntrySummary]
     let onThisDayAvailable: Bool
     let prompt: String?
+    /// Days in a row with an entry, up to today (or yesterday while today is unwritten).
+    var currentStreak: Int? = nil
 
     var day: JournalDay? { JournalDay(date) }
 }
@@ -233,4 +235,34 @@ struct JournalDay: Hashable, Sendable, Comparable {
         calendar.timeZone = .gmt
         return calendar
     }()
+}
+
+/// GET /api/v1/stats (Api::JournalStats): the Journal tab's Stats view.
+struct JournalStats: Decodable, Sendable, Equatable {
+    let totalEntries: Int
+    let totalWords: Int
+    let photoEntries: Int
+    let firstEntryDate: String?
+    let currentStreak: Int
+    let longestStreak: Int
+    let entriesThisYear: Int
+    /// YYYY-MM-DD days with an entry in the past year, oldest first.
+    let writingDays: [String]
+    /// The last 12 months, oldest first (zero counts included).
+    let months: [MonthCount]
+    let busiestWeekday: String?
+    let topHashtags: [HashtagCount]
+
+    var firstEntryDay: JournalDay? { firstEntryDate.flatMap(JournalDay.init) }
+}
+
+struct HashtagCount: Decodable, Sendable, Hashable, Identifiable {
+    let tag: String
+    let count: Int
+
+    var id: String { tag.lowercased() }
+}
+
+struct HashtagList: Decodable, Sendable {
+    let hashtags: [HashtagCount]
 }

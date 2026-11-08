@@ -9,6 +9,7 @@ struct SearchView: View {
     @State private var totalCount = 0
     @State private var isSearching = false
     @State private var error: String?
+    @State private var hashtags: [HashtagCount] = []
 
     var body: some View {
         NavigationStack {
@@ -38,10 +39,33 @@ struct SearchView: View {
     @ViewBuilder
     private var resultsList: some View {
         if submitted.isEmpty {
-            ContentUnavailableView {
-                Label("Search your journal", systemImage: "text.magnifyingglass")
-            } description: {
-                Text("Find a word, a #hashtag, an \"exact phrase\", or either of two words with hiking OR camping.")
+            if hashtags.isEmpty {
+                ContentUnavailableView {
+                    Label("Search your journal", systemImage: "text.magnifyingglass")
+                } description: {
+                    Text("Find a word, a #hashtag, an \"exact phrase\", or either of two words with hiking OR camping.")
+                }
+                .task { await loadHashtags() }
+            } else {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 14) {
+                        Text("Your Hashtags This Year")
+                            .font(.headline)
+                            .accessibilityAddTraits(.isHeader)
+                        HashtagCloud(hashtags: hashtags) { tag in
+                            query = "#\(tag)"
+                            Task { await search(reset: true) }
+                        }
+                        Text("Search for a word, a #hashtag, an \"exact phrase\", or either of two words with hiking OR camping.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .padding(.top, 8)
+                    }
+                    .padding()
+                    .frame(maxWidth: 680, alignment: .leading)
+                    .frame(maxWidth: .infinity)
+                }
+                .refreshable { await loadHashtags() }
             }
         } else if isSearching && results.isEmpty {
             ProgressView()
@@ -69,6 +93,10 @@ struct SearchView: View {
             }
             .listStyle(.plain)
         }
+    }
+
+    private func loadHashtags() async {
+        if let tags = try? await model.topHashtags() { hashtags = tags }
     }
 
     private func clear() {
@@ -108,5 +136,86 @@ struct SearchView: View {
         } catch {
             self.error = error.localizedDescription
         }
+    }
+}
+
+/// The past year's hashtags, sized by how often they're used. Tap one to search for it.
+struct HashtagCloud: View {
+    let hashtags: [HashtagCount]
+    let onSelect: (String) -> Void
+
+    var body: some View {
+        let counts = hashtags.map(\.count)
+        let low = Double(counts.min() ?? 1)
+        let high = Double(counts.max() ?? 1)
+        FlowLayout(spacing: 8) {
+            ForEach(hashtags.sorted { $0.tag.localizedCaseInsensitiveCompare($1.tag) == .orderedAscending }) { hashtag in
+                // 0...1 by frequency, on a square-root scale so one huge tag doesn't flatten the rest.
+                let weight = high > low ? sqrt((Double(hashtag.count) - low) / (high - low)) : 0.5
+                Button {
+                    onSelect(hashtag.tag)
+                } label: {
+                    Text("#\(hashtag.tag)")
+                        .font(.system(size: 14 + 12 * weight, weight: weight > 0.6 ? .semibold : .regular, design: .serif))
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 5)
+                        .background(.tint.opacity(0.08 + 0.14 * weight), in: .capsule)
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(.tint)
+                .accessibilityLabel("#\(hashtag.tag)")
+                .accessibilityValue(hashtag.count == 1 ? "1 entry" : "\(hashtag.count) entries")
+                .accessibilityHint("Searches for this hashtag")
+            }
+        }
+    }
+}
+
+/// Lays out views left to right, wrapping onto new lines.
+struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let rows = arrange(width: proposal.width ?? .infinity, subviews: subviews)
+        let width = rows.map(\.width).max() ?? 0
+        let height = rows.map(\.height).reduce(0, +) + spacing * CGFloat(max(rows.count - 1, 0))
+        return CGSize(width: proposal.width ?? width, height: height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var y = bounds.minY
+        for row in arrange(width: bounds.width, subviews: subviews) {
+            var x = bounds.minX
+            for index in row.indices {
+                let size = subviews[index].sizeThatFits(.unspecified)
+                subviews[index].place(at: CGPoint(x: x, y: y + (row.height - size.height) / 2), proposal: ProposedViewSize(size))
+                x += size.width + spacing
+            }
+            y += row.height + spacing
+        }
+    }
+
+    private struct Row {
+        var indices: [Int] = []
+        var width: CGFloat = 0
+        var height: CGFloat = 0
+    }
+
+    private func arrange(width: CGFloat, subviews: Subviews) -> [Row] {
+        var rows: [Row] = []
+        var row = Row()
+        for index in subviews.indices {
+            let size = subviews[index].sizeThatFits(.unspecified)
+            let needed = row.indices.isEmpty ? size.width : row.width + spacing + size.width
+            if needed > width, !row.indices.isEmpty {
+                rows.append(row)
+                row = Row()
+            }
+            row.width = row.indices.isEmpty ? size.width : row.width + spacing + size.width
+            row.height = max(row.height, size.height)
+            row.indices.append(index)
+        }
+        if !row.indices.isEmpty { rows.append(row) }
+        return rows
     }
 }

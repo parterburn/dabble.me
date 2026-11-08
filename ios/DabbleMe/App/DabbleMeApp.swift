@@ -44,6 +44,13 @@ struct RootView: View {
             content
             #endif
         }
+        .onOpenURL { url in
+            // From the widget: me.dabble.app:/write or :/today. (Sign-in callbacks never get here;
+            // the web sign-in session handles them.)
+            guard model.isSignedIn, url.scheme == "me.dabble.app" else { return }
+            model.selectedTab = .today
+            if url.path == "/write" { model.composeRequest = true }
+        }
         .task(id: model.isSignedIn) {
             if model.isSignedIn, !model.hasLoaded { await model.refresh() }
         }

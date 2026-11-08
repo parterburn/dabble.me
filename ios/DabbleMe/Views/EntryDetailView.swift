@@ -24,6 +24,8 @@ struct EntryDetailView: View {
     @State private var isMoving = false
     @State private var pinchStart: ReadingTextSize?
     @State private var textSizeHUD: String?
+    @State private var summary: EntrySummaryText?
+    @State private var isSummarizing = false
     @State private var hideHUD: Task<Void, Never>?
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
 
@@ -121,6 +123,16 @@ struct EntryDetailView: View {
                 ComposeView(mode: .edit(entry)) { self.entry = $0 }
             }
         }
+        .sheet(item: $summary) { summary in
+            SummarySheet(summary: summary)
+        }
+        .overlay {
+            if isSummarizing {
+                ProgressView("Summarizing…")
+                    .padding(20)
+                    .background(.regularMaterial, in: .rect(cornerRadius: 14))
+            }
+        }
         .alert("Something went wrong", isPresented: .present($actionError)) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -141,6 +153,10 @@ struct EntryDetailView: View {
 
     private func menu(for entry: EntryDetail) -> some View {
         Menu {
+            if JournalIntelligence.isEnabled(for: model.me), entry.bodyText.split(whereSeparator: \.isWhitespace).count >= 40 {
+                Button("Summarize", systemImage: "sparkles") { Task { await summarize(entry) } }
+                    .disabled(isSummarizing)
+            }
             if model.me?.canEdit == true {
                 if entry.document != nil {
                     Button("Edit", systemImage: "pencil") { editing = true }
@@ -154,6 +170,18 @@ struct EntryDetailView: View {
             }
         } label: {
             Label("Entry Actions", systemImage: "ellipsis.circle")
+        }
+    }
+
+    private func summarize(_ entry: EntryDetail) async {
+        isSummarizing = true
+        defer { isSummarizing = false }
+        do {
+            let text = try await JournalIntelligence.summary(of: entry.bodyText)
+            summary = EntrySummaryText(date: entry.day?.long ?? entry.date, text: text)
+        } catch is CancellationError {
+        } catch {
+            actionError = error.localizedDescription
         }
     }
 
@@ -297,10 +325,7 @@ private struct EntryBody: View {
                 .accessibilityAddTraits(.isHeader)
 
             if let document = entry.document {
-                Text(RichText.linkingHashtags(in: RichText.displayString(from: document)))
-                    .font(bodyFont)
-                    .lineSpacing(5 * textSize.scale)
-                    .textSelection(.enabled)
+                DocumentText(blocks: document, font: bodyFont, scale: textSize.scale, bodySize: bodySize)
             } else if !entry.bodyText.isEmpty {
                 Text(RichText.linkingHashtags(in: AttributedString.journal(entry.bodyText)))
                     .font(bodyFont)
@@ -334,5 +359,106 @@ extension AttributedString {
     static func journal(_ text: String) -> AttributedString {
         (try? AttributedString(markdown: text, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
             ?? AttributedString(text)
+    }
+}
+
+/// An entry's blocks as text. Paragraphs are separated by a blank line's worth of space, and
+/// list items hang: wrapped lines line up with the item's text rather than its bullet or number.
+struct DocumentText: View {
+    let blocks: [DocumentBlock]
+    let font: Font
+    let scale: CGFloat
+    let bodySize: CGFloat
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(items.enumerated()), id: \.offset) { index, item in
+                block(item)
+                    .padding(.top, index == 0 ? 0 : spacing(before: index))
+            }
+        }
+        .font(font)
+        .textSelection(.enabled)
+    }
+
+    private struct Item {
+        let block: DocumentBlock
+        let marker: String?
+    }
+
+    private var items: [Item] {
+        var number = 0
+        return blocks.enumerated().map { index, block in
+            number = block.type == .number ? (index > 0 && blocks[index - 1].type == .number ? number + 1 : 1) : 0
+            switch block.type {
+            case .bullet: return Item(block: block, marker: "•")
+            case .number: return Item(block: block, marker: "\(number).")
+            default: return Item(block: block, marker: nil)
+            }
+        }
+    }
+
+    private func spacing(before index: Int) -> CGFloat {
+        let bothList = blocks[index - 1].type.isList && blocks[index].type.isList
+        return (bothList ? 6 : bodySize * 0.9) * scale
+    }
+
+    @ViewBuilder
+    private func block(_ item: Item) -> some View {
+        if item.block.type == .rule {
+            Divider().padding(.vertical, 6)
+        } else if let marker = item.marker {
+            HStack(alignment: .firstTextBaseline, spacing: 6 * scale) {
+                Text(marker)
+                    .monospacedDigit()
+                    .frame(minWidth: bodySize * 1.3 * scale, alignment: .trailing)
+                    .accessibilityHidden(item.block.type == .bullet)
+                text(for: item.block)
+            }
+        } else {
+            text(for: item.block)
+        }
+    }
+
+    private func text(for block: DocumentBlock) -> some View {
+        Text(RichText.linkingHashtags(in: RichText.displayString(from: [DocumentBlock(type: .paragraph, runs: block.runs)])))
+            .lineSpacing(5 * scale)
+            .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+struct EntrySummaryText: Identifiable {
+    let date: String
+    let text: String
+    var id: String { date + text }
+}
+
+private struct SummarySheet: View {
+    let summary: EntrySummaryText
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(summary.date)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Text(summary.text)
+                    .font(.system(.title3, design: .serif))
+                    .textSelection(.enabled)
+                Spacer()
+                Label("Written on this device by Apple Intelligence. Your entry wasn't sent anywhere.", systemImage: "lock")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            .padding()
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .navigationTitle("Summary")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+            }
+        }
+        .presentationDetents([.medium])
     }
 }

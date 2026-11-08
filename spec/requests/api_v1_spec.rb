@@ -3,6 +3,8 @@
 require "rails_helper"
 
 RSpec.describe "iOS app API (/api/v1)", type: :request do
+  include ActiveSupport::Testing::TimeHelpers
+
   let(:free_user) { create(:user) }
   let(:pro_user) { create(:user, plan: "PRO Monthly") }
   let(:mobile_app) { MobileApp.ensure_application! }
@@ -123,8 +125,6 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
   end
 
   describe "day navigation, months and today" do
-    include ActiveSupport::Testing::TimeHelpers
-
     let!(:older) { create(:entry, user: pro_user, date: Time.zone.local(2024, 6, 3), body: "<p>June</p>") }
     let!(:middle) { create(:entry, user: pro_user, date: Time.zone.local(2024, 6, 20), body: "<p>Later June</p>") }
     let!(:newer) { create(:entry, user: pro_user, date: Time.zone.local(2025, 1, 2), body: "<p>New year</p>") }
@@ -156,6 +156,7 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
         expect(json["on_this_day"].map { |e| [e["id"], e["years_ago"]] }).to eq([[middle.id, 2]])
         expect(json["on_this_day_available"]).to be(true)
         expect(json["prompt"]).to eq("What surprised you today?")
+        expect(json["current_streak"]).to eq(1)
       end
     end
 
@@ -318,6 +319,14 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       )
     end
 
+    it "lists only entries with photos when asked" do
+      with_photo = create(:entry, user: pro_user, date: Time.zone.local(2025, 2, 2), body: "<p>Beach</p>")
+      create(:entry, user: pro_user, date: Time.zone.local(2025, 2, 3), body: "<p>No photo</p>")
+      give_photo(with_photo)
+      get "/api/v1/entries", params: { photos: 1 }, headers: auth(pro_user)
+      expect(json["entries"].map { |e| e["id"] }).to eq([with_photo.id])
+    end
+
     def photo_key(user, name = SecureRandom.hex(4))
       "#{Mcp::PresignedImageUpload.key_prefix_for(user)}#{name}.jpg"
     end
@@ -430,6 +439,59 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
     it "shows one blank line between email paragraphs" do
       entry = create(:entry, user: pro_user, body: "<div>One.</div><div><br></div><div>Two.</div><div><br></div><div>Three.</div>")
       expect(Api::EntrySerializer.full(entry)[:body_text]).to eq("One.\n\nTwo.\n\nThree.")
+    end
+  end
+
+  describe "GET /api/v1/stats" do
+    it "counts entries, words, streaks, writing days and hashtags for free accounts too" do
+      zone = Time.find_zone(free_user.send_timezone)
+      travel_to zone.local(2026, 6, 20, 12) do
+        create(:entry, user: free_user, date: Time.zone.local(2026, 6, 20), body: "<p>Hiking with <b>Sam</b> #Outside</p>")
+        create(:entry, user: free_user, date: Time.zone.local(2026, 6, 19), body: "<p>Rain &amp; tea #outside</p>")
+        create(:entry, user: free_user, date: Time.zone.local(2026, 6, 18), body: "<p>#books</p>")
+        create(:entry, user: free_user, date: Time.zone.local(2026, 1, 1), body: "<p>One</p><p>two three</p>")
+        create(:entry, user: free_user, date: Time.zone.local(2026, 1, 2), body: "<div><br></div>")
+        create(:entry, user: pro_user, date: Time.zone.local(2026, 6, 20), body: "<p>Not counted #secret</p>")
+
+        get "/api/v1/stats", headers: auth(free_user)
+      end
+
+      expect(response).to have_http_status(:ok)
+      expect(json).to include(
+        "total_entries" => 5, "total_words" => 11, "current_streak" => 3, "longest_streak" => 3,
+        "entries_this_year" => 5, "first_entry_date" => "2026-01-01", "photo_entries" => 0
+      )
+      expect(json["writing_days"]).to eq(%w[2026-01-01 2026-01-02 2026-06-18 2026-06-19 2026-06-20])
+      expect(json["months"].size).to eq(12)
+      expect(json["months"].last).to eq("year" => 2026, "month" => 6, "count" => 3)
+      expect(json["months"].find { |m| m["month"] == 1 && m["year"] == 2026 }["count"]).to eq(2)
+      expect(json["top_hashtags"]).to eq([{ "tag" => "Outside", "count" => 2 }, { "tag" => "books", "count" => 1 }])
+    end
+
+    it "keeps a streak going while today is still unwritten" do
+      travel_to Time.find_zone(free_user.send_timezone).local(2026, 6, 20, 12) do
+        create(:entry, user: free_user, date: Time.zone.local(2026, 6, 19), body: "<p>a</p>")
+        create(:entry, user: free_user, date: Time.zone.local(2026, 6, 18), body: "<p>b</p>")
+        get "/api/v1/stats", headers: auth(free_user)
+      end
+      expect(json["current_streak"]).to eq(2)
+    end
+  end
+
+  describe "GET /api/v1/hashtags" do
+    it "requires PRO" do
+      get "/api/v1/hashtags", headers: auth(free_user)
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "counts the past year's hashtags, most used first" do
+      travel_to Time.find_zone(pro_user.send_timezone).local(2026, 6, 20, 12) do
+        create(:entry, user: pro_user, date: Time.zone.local(2026, 6, 1), body: "<p>#family dinner #Cooking</p>")
+        create(:entry, user: pro_user, date: Time.zone.local(2026, 5, 1), body: "<p>#family</p>")
+        create(:entry, user: pro_user, date: Time.zone.local(2024, 5, 1), body: "<p>#ancient</p>")
+        get "/api/v1/hashtags", headers: auth(pro_user)
+      end
+      expect(json["hashtags"]).to eq([{ "tag" => "family", "count" => 2 }, { "tag" => "Cooking", "count" => 1 }])
     end
   end
 
