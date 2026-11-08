@@ -18,6 +18,8 @@ final class RichTextEditorModel {
     let initialBlocks: [DocumentBlock]
     private(set) var isEmpty: Bool
     private(set) var isDirty = false
+    /// Bumped on every change, so the composer can autosave a draft.
+    private(set) var revision = 0
 
     /// Set while the link sheet is up; `linkText` is what the user is typing.
     var isEditingLink = false
@@ -40,8 +42,16 @@ final class RichTextEditorModel {
         textView?.becomeFirstResponder()
     }
 
+    /// Replaces everything in the editor (e.g. "Start Over" on a restored draft).
+    func replace(with blocks: [DocumentBlock]) {
+        textView?.attributedText = RichText.attributedString(from: blocks, style: .journal)
+        textView?.typingAttributes = RichText.Style.journal.baseAttributes
+        isEmpty = blocks.isEmpty
+    }
+
     fileprivate func textDidChange() {
         isDirty = true
+        revision += 1
         isEmpty = textView?.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true
     }
 

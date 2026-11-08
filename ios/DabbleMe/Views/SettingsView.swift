@@ -2,11 +2,20 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
+    @Environment(\.openURL) private var openURL
     @State private var confirmingSignOut = false
     @State private var confirmingDeletion = false
     @State private var deletionEmail: String?
     @State private var deletionError: String?
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
+    @AppStorage(ReminderSettings.writingEnabledKey) private var writingReminder = false
+    @AppStorage(ReminderSettings.writingTimeKey) private var writingTime = ReminderSettings.defaultWritingTime
+    @AppStorage(ReminderSettings.memoriesEnabledKey) private var memoriesReminder = false
+    @AppStorage(ReminderSettings.memoriesTimeKey) private var memoriesTime = ReminderSettings.defaultMemoriesTime
+    @State private var notificationsDenied = false
+    #if DEBUG
+    @State private var pendingReminders = 0
+    #endif
     @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 17
 
     var body: some View {
@@ -35,6 +44,9 @@ struct SettingsView: View {
                 } footer: {
                     Text("Changes the text size when reading entries. It adds to your iPhone's own text size setting.")
                 }
+
+                remindersSection
+                privacySection
 
                 if let connectors = model.me?.aiConnectors {
                     aiSection(connectors)
@@ -75,6 +87,11 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .task { notificationsDenied = await ReminderScheduler.shared.isDenied() }
+            .onChange(of: writingReminder) { _, on in Task { await remindersChanged(turnedOn: on) } }
+            .onChange(of: memoriesReminder) { _, on in Task { await remindersChanged(turnedOn: on) } }
+            .onChange(of: writingTime) { Task { await ReminderScheduler.shared.reschedule(for: model) } }
+            .onChange(of: memoriesTime) { Task { await ReminderScheduler.shared.reschedule(for: model) } }
             .confirmationDialog("Sign out of Dabble Me?", isPresented: $confirmingSignOut, titleVisibility: .visible) {
                 Button("Sign Out", role: .destructive) { Task { await model.signOut() } }
             }
@@ -101,6 +118,83 @@ struct SettingsView: View {
 }
 
 private extension SettingsView {
+    // MARK: - Reminders (PRO)
+
+    @ViewBuilder
+    var remindersSection: some View {
+        Section {
+            if model.me?.isPro != true {
+                Label("Reminders are part of Dabble Me PRO.", systemImage: "bell")
+                    .foregroundStyle(.secondary)
+            } else {
+                Toggle("Daily Writing Reminder", isOn: $writingReminder)
+                if writingReminder {
+                    DatePicker("Time", selection: minutesBinding($writingTime), displayedComponents: .hourAndMinute)
+                }
+                Toggle("On This Day Memories", isOn: $memoriesReminder)
+                if memoriesReminder {
+                    DatePicker("Time", selection: minutesBinding($memoriesTime), displayedComponents: .hourAndMinute)
+                }
+                #if DEBUG
+                Text("\(pendingReminders) reminders scheduled")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .task(id: "\(writingReminder)\(memoriesReminder)\(writingTime)\(memoriesTime)") {
+                        try? await Task.sleep(for: .seconds(2))
+                        pendingReminders = await ReminderScheduler.shared.pendingCount()
+                    }
+                #endif
+                if notificationsDenied {
+                    Button("Turn On Notifications in Settings", systemImage: "bell.slash") {
+                        if let url = URL(string: UIApplication.openNotificationSettingsURLString) { openURL(url) }
+                    }
+                }
+            }
+        } header: {
+            Text("Reminders")
+        } footer: {
+            if model.me?.isPro == true {
+                Text("Writing reminders skip days you've already written. Memory reminders only come on days you have entries from past years. Notifications never show what you wrote.")
+            }
+        }
+    }
+
+    func minutesBinding(_ minutes: Binding<Int>) -> Binding<Date> {
+        Binding(get: { ReminderSettings.date(fromMinutes: minutes.wrappedValue) },
+                set: { minutes.wrappedValue = ReminderSettings.minutes(from: $0) })
+    }
+
+    func remindersChanged(turnedOn: Bool) async {
+        if turnedOn, !(await ReminderScheduler.shared.requestPermission()) {
+            notificationsDenied = true
+            writingReminder = false
+            memoriesReminder = false
+            return
+        }
+        notificationsDenied = false
+        await ReminderScheduler.shared.reschedule(for: model)
+    }
+
+    // MARK: - Privacy
+
+    @ViewBuilder
+    var privacySection: some View {
+        let lock = model.lock
+        Section {
+            Toggle("Require \(lock.methodName)", isOn: Binding(
+                get: { lock.isEnabled },
+                set: { enabled in Task { await lock.setEnabled(enabled) } }
+            ))
+            .disabled(!lock.isAvailable)
+        } header: {
+            Text("Privacy")
+        } footer: {
+            Text(lock.isAvailable
+                 ? "Locks Dabble Me when you open it and after a minute away. Your journal is hidden in the app switcher."
+                 : "Set a passcode on this device to lock Dabble Me.")
+        }
+    }
+
     /// Links to the Dabble Me plugins in Claude's and ChatGPT's directories. Connecting happens
     /// there (OAuth on dabble.me); it needs PRO plus a passkey or two-factor sign-in.
     @ViewBuilder

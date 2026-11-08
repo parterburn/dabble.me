@@ -37,6 +37,11 @@ struct TodayView: View {
             .toolbarVisibility(.hidden, for: .navigationBar)
             .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
             .refreshable { await model.loadToday() }
+            .onChange(of: model.composeRequest, initial: true) { _, requested in
+                guard requested else { return }
+                model.composeRequest = false
+                composing = true
+            }
             .sheet(isPresented: $composing) { ComposeView(mode: .new) }
             .sheet(isPresented: $showingProInfo) { ProInfoView(feature: .writing) }
         }
