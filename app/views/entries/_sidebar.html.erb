@@ -58,24 +58,6 @@
     <% end %>
   </h3>
 
-  <% if params[:emotion].present? || params[:group] == "emotion" %>
-    <% @emotions_counts.sort_by { |emotion, count| emotion }.each do |emotion, count| %>
-      <h4 style="font-size: 15px;">
-        <%= link_to entries_emotion_path(emotion), class: ("active" if params[:emotion] == emotion) do %>
-          <div class="s-date-left">
-            <%= Entry::AiTagger::EMOTIONS[emotion] %>
-            <%= emotion.upcase %>
-          </div>
-          <div class="s-date-right">
-            <%= format_number(count) %>
-          </div>
-          <div class="clearfix"></div>
-        <% end %>
-      </h4>
-    <% end %>
-    <hr>
-  <% end %>
-
   <% if @only_images_count && @only_images_count > 0 %>
     <h4 style="font-size: 15px;">
       <%= link_to group_entries_path('photos'), class: "#{'active' if current_page?(group_entries_path('photos'))}" do %>
@@ -85,21 +67,6 @@
         </div>
         <div class="s-date-right">
           <%= format_number(@only_images_count) %>
-        </div>
-        <div class="clearfix"></div>
-      <% end %>
-    </h4>
-  <% end %>
-
-  <% if @with_ai_responses_count && @with_ai_responses_count > 0 %>
-    <h4 style="font-size: 15px;">
-      <%= link_to group_entries_path('ai'), class: "#{'active' if current_page?(group_entries_path('ai'))}" do %>
-        <div class="s-date-left">
-          <i class="fa fa-magic" style="color: #cccccc;margin-right: 2px;"></i>
-          AI
-        </div>
-        <div class="s-date-right">
-          <%= format_number(@with_ai_responses_count) %>
         </div>
         <div class="clearfix"></div>
       <% end %>

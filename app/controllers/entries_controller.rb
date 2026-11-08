@@ -6,25 +6,18 @@ class EntriesController < ApplicationController
 
   before_action :authenticate_user!
   before_action :authenticate_admin!, only: [:email_replies_test]
-  before_action :set_entry, :require_entry_permission, only: [:show, :edit, :update, :destroy, :process_as_ai, :respond_to_ai, :dismiss_image_error]
+  before_action :set_entry, :require_entry_permission, only: [:show, :edit, :update, :destroy, :reflection, :dismiss_image_error]
+
+  rate_limit to: 10, within: 10.minutes, only: :reflection, with: -> { render json: { error: "Too many reflections. Try again in a few minutes." }, status: :too_many_requests }
 
   rescue_from InvalidDateError, with: :handle_invalid_date
 
   def index
     @entries = current_user.entries.includes(:inspiration)
 
-    if params[:emotion].present?
-      @entries = @entries.where("sentiment::text LIKE ?", "%#{params[:emotion]}%")
-      @title = "Entries tagged with #{params[:emotion].titleize}"
-    elsif params[:group] == "emotion" && params[:subgroup].to_s.match?(/\A\d{4}\z/)
-      @entries = @entries.where("date >= ?", Date.new(params[:subgroup].to_i, 1, 1)).where.not(sentiment: []).where.not(sentiment: ["unknown"]).reorder(date: :asc)
-      @title = "Entries tagged with Sentiment in #{params[:subgroup]}"
-    elsif params[:group] == 'photos'
+    if params[:group] == 'photos'
       @entries = @entries.only_images
       @title = 'Photos'
-    elsif params[:group] == 'ai'
-      @entries = @entries.with_ai_responses
-      @title = 'AI Entries'
     elsif params[:subgroup].present? && params[:group].present? && params[:subgroup].to_s.match?(/\A\d+\z/) && params[:group].to_s.match?(/\A\d+\z/)
       begin
         from_date = Date.new(params[:group].to_i, params[:subgroup].to_i, 1)
@@ -50,7 +43,7 @@ class EntriesController < ApplicationController
     @entries = @entries.page(params[:page]).per(index_per_page)
 
     if @entries.empty? && params[:format] != "json"
-      flash[:alert] = "No entries found." if params[:emotion].present? || params[:group].present? || params[:subgroup].present?
+      flash[:alert] = "No entries found." if params[:group].present? || params[:subgroup].present?
       redirect_to latest_entry_path and return
     end
 
@@ -335,21 +328,6 @@ class EntriesController < ApplicationController
         all_user_entry_count = Entry.where(date: year_range).group(:user_id).reorder("count_all").count.values
         @pctile = (((all_user_entry_count.find_index(@total_count) + 1).to_f / all_user_entry_count.count) * 100).round
       end
-
-      @entries_with_sentiment = @entries.select { |e| e.sentiment.present? && e.sentiment != ["unknown"] }
-      if @entries_with_sentiment.count.positive?
-        @sentiment_count = @entries_with_sentiment.map(&:sentiment).flatten.group_by(&:itself).transform_keys { |sentiment| "#{Entry::AiTagger::EMOTIONS[sentiment]} #{sentiment.titleize}" }.transform_values(&:count).sort_by { |_k, v| v }.reverse.to_h
-
-        @users_sentiment_list = @entries_with_sentiment.map { |e| e.sentiment }.flatten.uniq.reject { |k, _v| k.blank? }
-
-        months = %w[Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec]
-        base_data = months.map { |month| [month, 0] }.to_h
-
-        @sentiment_by_month_data = (Entry::AiTagger::EMOTIONS.keys - ["unknown"]).map do |sentiment|
-          data = @entries_with_sentiment.sort_by { |e| e.date }.select { |e| e.sentiment.include?(sentiment) }.map { |e| [e.date.strftime('%b'), 1] }.group_by(&:first).transform_values(&:count)
-          { name: sentiment.titleize, data: base_data.merge(data) }
-        end
-      end
     elsif current_user.entries.any?
       prev_year = current_user.entries.first.date.year.to_s
       flash[:alert] = "No entries in #{@year} - sending you back to #{prev_year}"
@@ -360,29 +338,20 @@ class EntriesController < ApplicationController
     end
   end
 
-  def process_as_ai
-    if current_user.can_ai?
-      AiEntryJob.perform_later(current_user.id, @entry.id, email: false)
-      flash[:notice] = "AI assistant is generating a response."
-    else
-      flash[:alert] = "AI assistant is not available to you."
-    end
-    redirect_to day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day, ai: "generating", anchor: "generating-ai")
-  end
+  # A one-off AI reflection on this entry, shown in a modal. Not saved.
+  def reflection
+    return render(json: { error: "AI reflections aren't available on your account." }, status: :forbidden) unless current_user.can_ai?
+    return render(json: { error: "This entry has no text to reflect on." }, status: :unprocessable_content) if @entry.text_body.blank?
 
-  def respond_to_ai
-    if current_user.can_ai?
-      @entry.body += "<hr><strong>👤 You:</strong><br/>#{ActionController::Base.helpers.simple_format(params[:entry][:ai_response])}"
-      if params[:entry][:ai_response].present? && @entry.save
-        AiEntryJob.perform_later(current_user.id, @entry.id, email: false)
-        flash[:notice] = "AI assistant is generating a response."
-      else
-        flash[:alert] = "Error saving response"
-      end
+    html = @entry.ai_reflection
+    if html.present?
+      render json: { html: helpers.sanitize(html, tags: %w[p strong em b i ul ol li br]) }
     else
-      flash[:alert] = "AI assistant is not available to you."
+      render json: { error: "The AI couldn't come up with anything for this one. Try again." }, status: :bad_gateway
     end
-    redirect_to day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day, anchor: "generating-ai")
+  rescue Faraday::Error => e
+    Sentry.capture_exception(e, level: :info)
+    render json: { error: "The AI service didn't respond. Try again in a minute." }, status: :bad_gateway
   end
 
   # Clear the image_error banner that ImageCollageJob / ProcessEntryImageJob
@@ -531,25 +500,13 @@ class EntriesController < ApplicationController
       @all_entries.unscope(:order).select(
         "count(*) as total",
         "count(*) FILTER (WHERE image IS NOT NULL AND image != '') as images",
-        "count(*) FILTER (WHERE body LIKE '%🤖 DabbleMeGPT:%') as ai",
         "count(*) FILTER (WHERE songs::text NOT IN ('[]', '{}')) as spotify"
-      ).take.attributes.slice("total", "images", "ai", "spotify")
+      ).take.attributes.slice("total", "images", "spotify")
     end
 
     @total_entries_count = stats["total"].to_i
     @only_images_count = stats["images"].to_i
-    @with_ai_responses_count = stats["ai"].to_i
     @only_spotify_count = stats["spotify"].to_i
-
-    # Use SQL for emotions counts to avoid loading all entries into memory
-    @emotions_counts = Rails.cache.fetch("user_#{current_user.id}_emotions_counts_#{all_entries_size}", expires_in: 1.hour) do
-      # Since sentiment is jsonb[], we use unnest() to expand the array
-      @all_entries.unscope(:order)
-                  .where.not(sentiment: [])
-                  .where.not(sentiment: ["unknown"])
-                  .group("unnest(sentiment)")
-                  .count
-    end
 
     @entries_by_year = Rails.cache.fetch("user_#{current_user.id}_entries_by_year_#{all_entries_size}", expires_in: 1.hour) do
       @all_entries.unscope(:order).group("DATE_PART('year', date)").count.transform_keys { |k| k.to_i.to_s }.sort.reverse.to_h

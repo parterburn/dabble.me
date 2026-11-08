@@ -63,8 +63,7 @@ enum JournalIntelligence {
     }
 
     /// A short, warm response to an entry, ending with a question: the on-device version of the
-    /// web's DabbleMeGPT life-coach reply (Entry::AiAssistant#as_life_coach), minus web search,
-    /// images and hashtags.
+    /// web's reflection (Entry::AiAssistant#as_life_coach), minus images.
     static func reflection(on text: String, date: String, firstName: String?, recent: [String]) async throws -> String {
         let context = recent.isEmpty ? "" : "\n\nMy recent entries (context only, if relevant):\n" + recent.map { "- \($0)" }.joined(separator: "\n")
         let name = firstName.map { "My name is \($0). " } ?? ""

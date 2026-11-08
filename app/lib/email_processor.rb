@@ -40,6 +40,11 @@ class EmailProcessor
   end
 
   def process
+    if sent_to_retired_ai_address?
+      Sentry.capture_message("Dropped inbound email sent to the retired AI address", level: :info)
+      return
+    end
+
     if @user.present?
       Sentry.set_user(id: @user.id, email: @user.email)
       Sentry.set_tags(plan: @user.plan)
@@ -125,9 +130,7 @@ class EmailProcessor
       if existing_entry.present?
         existing_entry.original_email = @inbound_email_params
 
-        if respond_as_ai? && existing_entry.body.present?
-          existing_entry.body += "<hr><strong>👤 You:</strong><br/>#{@body}"
-        elsif existing_entry.body.present?
+        if existing_entry.body.present?
           existing_entry.body += "<hr>#{@body}"
         else
           existing_entry.body = @body
@@ -167,13 +170,7 @@ class EmailProcessor
           end
         end
 
-        if existing_entry.save
-
-          if respond_as_ai? && @user && @user.can_ai?
-            AiEntryJob.perform_later(@user.id, existing_entry.id)
-          end
-        else
-          # error saving entry
+        unless existing_entry.save
           Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save existing entry", subject: @subject, entry_id: existing_entry&.id, errors: existing_entry&.errors&.full_messages })
           UserMailer.failed_entry(@user, existing_entry.errors.full_messages.to_sentence, date, @body).deliver_later
           raise "Failed entry" # for mailgun to retry
@@ -230,10 +227,6 @@ class EmailProcessor
       rescue StandardError => _e
         Sentry.capture_message("Error sending email", level: :error, extra: { email_type: "Second Welcome Email" })
       end
-
-      if entry.present? && respond_as_ai? && @user && @user.can_ai?
-        AiEntryJob.perform_later(@user.id, entry.id)
-      end
     else # no user found
       Sentry.set_user(id: @token, email: @from)
       Sentry.capture_message("Inbound entry not associated to user", level: :error, extra: { subject: @subject, from: @from })
@@ -248,18 +241,24 @@ class EmailProcessor
     (to.to_a + cc.to_a + bcc.to_a)
   end
 
-  def respond_as_ai?
-    all_recipients.select { |k| k[:host] == ENV['SMTP_DOMAIN'].gsub('post', 'ai') }.any?
+  # Mail to <user_key>@ai.<domain> used to get a reply from the AI assistant.
+  # That address is retired: drop the email rather than fall back to finding
+  # the user by sender and saving it as a normal entry.
+  def sent_to_retired_ai_address?
+    return false if @token.present?
+
+    ai_host = "ai.#{ENV['MAIN_DOMAIN']}"
+    all_recipients.any? { |recipient| recipient[:host].to_s.casecmp?(ai_host) }
   end
 
   def pick_meaningful_recipient(to_recipients, cc_recipients)
     escaped_domain = Regexp.escape(ENV['MAIN_DOMAIN'].to_s)
-    host_to = to_recipients.select {|k| k[:host] =~ /^(email|post|ai)?\.?#{escaped_domain}$/i }.first
+    host_to = to_recipients.select {|k| k[:host] =~ /^(email|post)?\.?#{escaped_domain}$/i }.first
     if host_to.present?
       host_to[:token]
     elsif cc_recipients.present?
       # try CC's
-      host_cc = cc_recipients.select {|k| k[:host] =~ /^(email|post|ai)?\.?#{escaped_domain}$/i }.first
+      host_cc = cc_recipients.select {|k| k[:host] =~ /^(email|post)?\.?#{escaped_domain}$/i }.first
       host_cc[:token] if host_cc.present?
     end
   end

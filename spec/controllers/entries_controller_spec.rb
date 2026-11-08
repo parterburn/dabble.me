@@ -52,13 +52,59 @@ RSpec.describe EntriesController, type: :controller do
       expect(response).to redirect_to(entries_path)
       expect(flash[:alert]).to eq('Invalid date format')
     end
+  end
 
-    it 'filters sentiment entries by year using a bound date' do
+  describe 'reflection' do
+    let(:responses_url) { 'https://api.openai.com/v1/responses' }
+    let(:ai_entry) { FactoryBot.create(:entry, user: paid_user_ai, body: '<p>Ran my first mile today.</p>', date: 2.days.ago) }
+
+    def stub_openai(text)
+      stub_request(:post, responses_url).to_return(
+        status: 200,
+        headers: { 'Content-Type' => 'application/json' },
+        body: { output: [{ type: 'reasoning', summary: [] }, { type: 'message', content: [{ type: 'output_text', text: text }] }] }.to_json
+      )
+    end
+
+    it 'is not available without AI enabled' do
       sign_in user
-      entry.update_columns(sentiment: ['joy'], date: Date.new(2021, 3, 1))
-      get :index, params: { group: 'emotion', subgroup: '2021' }
+      post :reflection, params: { id: entry.id }
+      expect(response).to have_http_status(:forbidden)
+      expect(WebMock).not_to have_requested(:post, responses_url)
+    end
+
+    it "won't reflect on someone else's entry" do
+      sign_in paid_user_ai
+      post :reflection, params: { id: entry.id }
+      expect(response).to redirect_to(entries_path)
+      expect(WebMock).not_to have_requested(:post, responses_url)
+    end
+
+    it 'returns the reflection as sanitized HTML and leaves the entry alone' do
+      sign_in paid_user_ai
+      stub_openai("That's a milestone.\n\n**What made today the day it clicked?** <script>alert(1)</script>")
+
+      expect { post :reflection, params: { id: ai_entry.id } }.not_to(change { ai_entry.reload.body })
+
       expect(response).to have_http_status(:ok)
-      expect(response.body).to have_content('Entries tagged with Sentiment in 2021')
+      html = JSON.parse(response.body)['html']
+      expect(html).to include('<strong>What made today the day it clicked?</strong>')
+      expect(html).not_to include('<script')
+      expect(WebMock).to(have_requested(:post, responses_url).with do |req|
+        body = JSON.parse(req.body)
+        body['store'] == false && !body.key?('tools') && body['input'].last['content'].include?('Ran my first mile today.')
+      end)
+    end
+
+    it 'says so when OpenAI fails' do
+      sign_in paid_user_ai
+      allow(Sentry).to receive(:capture_exception)
+      stub_request(:post, responses_url).to_return(status: 500, body: '{}')
+
+      post :reflection, params: { id: ai_entry.id }
+
+      expect(response).to have_http_status(:bad_gateway)
+      expect(JSON.parse(response.body)['error']).to be_present
     end
   end
 

@@ -501,10 +501,6 @@ mark {
   div[data-content=dabblemegpt] + p.tags {
     margin-top: 30px;
   }
-
-  form.respond-to-gpt + img {
-    margin-top: 20px;
-  }
 }
 
 .s-new-edit-entry.well {
@@ -555,21 +551,6 @@ mark {
 }
 
 .note-editor .note-dropzone { opacity: 0 !important; }
-
-.emotion-link {
-  margin-top: 10px;
-  font-size: 15px !important;
-  display: inline-block;
-  text-decoration: none !important;
-  margin-left: 3px;
-  margin-right: 3px;
-  color: black;
-  transition: transform 0.3s ease; /* Smooth transition */
-  &:hover {
-    text-decoration: none !important;
-    transform: scale(1.1);
-  }
-}
 
 // Photo field on the new and edit entry forms (entries/_photo_picker).
 // The inspiration lightbulb floats above the date field; keep the field
@@ -772,5 +753,39 @@ mark {
 
   &:empty {
     display: none;
+  }
+}
+
+// "Reflect on this entry" modal (reflection.js)
+.s-reflection-modal {
+  .modal-content {
+    border-radius: 8px;
+  }
+  .modal-title {
+    font-weight: 600;
+  }
+  .s-reflection-date {
+    color: $olive-500;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .s-reflection-body {
+    color: $olive-950;
+    font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+    font-size: 18px;
+    line-height: 1.6;
+    p, li {
+      margin-bottom: 0.8em;
+    }
+  }
+  .s-reflection-loading {
+    color: $olive-500;
+  }
+  .s-reflection-note {
+    margin: 20px 0 0;
+    color: $olive-500;
+    font-size: 12px;
   }
 }

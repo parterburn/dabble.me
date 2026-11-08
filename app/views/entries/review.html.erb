@@ -84,37 +84,6 @@
     </div>
   </div>
 
-  <% if @entries_with_sentiment.count.positive? %>
-    <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
-      <div class="center <%= add_class %>">
-        <div class="s-entry-date">
-          <h2>Sentiment</h2>
-          <h3>
-            <span><%= "#{pluralize(@entries_with_sentiment.size, 'entry')} tagged" %></span>
-          </h3>
-        </div>
-        <div class="s-review-details">
-          <% @entries_with_sentiment.map(&:sentiment).flatten.uniq.reject { |s| s == "unknown" }.sort.each do |sentiment| %>
-            <%= link_to "#{Entry::AiTagger::EMOTIONS[sentiment]} #{sentiment.titleize}", entries_emotion_path(sentiment), class: "emotion-link", title: "View entries tagged with #{sentiment}" %>
-          <% end %>
-          <%= pie_chart(@sentiment_count, height: "230px", library: { backgroundColor: "#ffffff" }) %>
-        </div>
-      </div>
-    </div>
-
-    <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
-      <div class="center <%= add_class %>">
-        <div class="s-entry-date">
-          <h2>Sentiment over Time</h2>
-        </div>
-        <div class="s-review-details">
-          <%= line_chart @sentiment_by_month_data, ytitle: "Posts", min: 0, round: 0, precision: 0 %>
-          <div class="clearfix"></div>
-        </div>
-      </div>
-    </div>
-  <% end %>
-
   <% entry_dates = @entries.pluck(:date) %>
   <div class="col-md-8 col-md-offset-2 well" style="padding-top: 0;">
     <div class="center <%= add_class %>">

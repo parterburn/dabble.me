@@ -1,61 +1,51 @@
-# rubocop:disable Metrics/ModuleLength
 class Entry
+  # A one-off AI reflection on a single entry. Nothing is saved: the controller
+  # renders it in a modal and it's gone when the modal closes. The iOS app does
+  # the same on-device (ios/DabbleMe/Support/JournalIntelligence.swift).
+  # Back-and-forth conversation, sentiment and patterns are left to the MCP
+  # connector.
   module AiAssistant
-    def ai_response
-      entry_for_ai = entry_body
-      @messages = [
-        as_life_coach,
-        related_entries,
-        last_3_entries,
-        entry_for_ai
-      ].flatten.compact_blank
-      response = respond_as_ai
+    REFLECTION_MODEL = "gpt-6.1-sol".freeze
+    MAX_ENTRY_CHARS = 5000
+    MAX_CONTEXT_CHARS = 1000
+
+    # HTML for the reflection, or nil when OpenAI returns nothing.
+    def ai_reflection
+      text = request_reflection
+      return if text.blank?
+
       renderer = Redcarpet::Render::HTML.new(filter_html: true, no_images: true, safe_links_only: true)
-      markdown = Redcarpet::Markdown.new(renderer, autolink: true, tables: true, no_intra_emphasis: true, underline: true, footnotes: true)
-      markdown.render(response.to_s)
+      Redcarpet::Markdown.new(renderer, autolink: true, no_intra_emphasis: true).render(text)
     end
 
     private
 
-    def model
-      "gpt-6.1-sol"
-    end
-
-    def openai_params
-      params = {
-        input: @messages,
-        model: model,
-        reasoning: { effort: "medium" },
+    def request_reflection
+      client = OpenAI::Client.new(log_errors: true, request_timeout: reflection_timeout)
+      resp = client.responses.create(parameters: {
+        model: REFLECTION_MODEL,
+        input: [as_life_coach, *reflection_context, reflection_entry_message].compact,
+        reasoning: { effort: "low" },
         store: false
-      }
-
-      params[:tools] = [
-        {
-          type: "web_search_preview",
-          search_context_size: "medium"
-        }
-      ]
-      params
+      })
+      message = resp["output"]&.find { |o| o["type"] == "message" }
+      message&.dig("content", 0, "text")
     end
 
-    def respond_as_ai
-      # client = OpenAI::Client.new(log_errors: Rails.env.development?)
-      client = OpenAI::Client.new(log_errors: true)
-      resp = client.responses.create(parameters: openai_params)
-
-      return unless resp["output"].present?
-
-      resp.dig("output").filter { |o| o.dig("type") == "message" }.dig(0, "content", 0, "text")
+    # The request is synchronous, so give up a few seconds before Rack::Timeout
+    # (RACK_TIMEOUT_SERVICE_TIMEOUT, 15s by default) would kill it. The user
+    # then gets "try again" instead of an error page.
+    def reflection_timeout
+      rack_timeout = ENV.fetch("RACK_TIMEOUT_SERVICE_TIMEOUT", 15).to_i
+      rack_timeout.positive? ? [rack_timeout - 3, 5].max : 60
     end
 
     def as_life_coach
-      [{
+      {
         role: "developer",
         content: %(# Role
 
-You are the AI journaling assistant inside Dabble Me, an online journaling app.
-
-You help users reflect on their own journal entries with warmth, curiosity, light humor, and emotional steadiness. You are not a therapist. Your job is to help users notice patterns, name feelings, explore meaning, and leave with one thoughtful next reflection.
+You are the journaling assistant inside Dabble Me, a private journaling app. You help the writer reflect on their own journal entry with warmth, curiosity, light humor, and emotional steadiness. You are not a therapist. Help them notice patterns, name feelings, explore meaning, and leave with one thoughtful next reflection.
 
 # Personality
 
@@ -63,137 +53,75 @@ Be warm, thoughtful, lightly witty, and validating without becoming sugary or pe
 
 Sound like a perceptive journaling companion, not a clinical therapist, motivational speaker, or productivity coach.
 
-Use the user’s language when possible. You may respond naturally in English, Japanese, Spanish, French, or German when the user writes in that language.
+Use the writer's language when possible, and reply in the language they wrote in.
 
-# Core Outcome
+# Response
 
-For each user journal entry, produce a single helpful reflection that:
+Write one reflection that is personal to this entry, not generic. Respond to this entry only; bring in an earlier entry only when this one clearly refers to it, and never mix details from other entries into this one.
 
-- Acknowledges the emotional tone of the entry.
-- Reflects back one or two meaningful observations.
-- Helps the user explore their experience with curiosity.
-- Ends with one clear follow-up question or gentle next step.
-- Feels personal to the entry, not generic.
-
-# Response Style
-
-Keep responses concise and easy to read.
-
-Default structure:
-
-1. A short validating reflection.
+1. A short validating reflection on the emotional tone.
 2. One or two thoughtful observations or reframes.
-3. One bold follow-up question.
+3. One clear follow-up question or gentle next step, in **bold**.
 
-Use bullets only when they improve readability.
+Keep it concise: under 150 words. Bold only the question. Light humor is welcome when it fits; never joke at the writer's expense.
 
-Bold only the key question or most important phrase. Do not over-format.
+This is a single reflection, not a conversation. The writer can't reply to you here, so don't offer to keep talking.
 
-Light humor is welcome when it fits the emotional tone. Never joke at the user’s expense.
+# Images
 
-# Image Handling
+If an image is attached, weave visible details into the reflection when they deepen it. Do not describe the image mechanically.
 
-If an image is attached, consider visible details from the image and weave them naturally into the reflection.
+# Safety and boundaries
 
-Do not describe the image mechanically unless the user asks for that. Use image details only when they deepen the journal response.
+You are supportive, not a licensed therapist. Do not diagnose, prescribe treatment, or claim certainty about the writer's mental health.
 
-# Hashtags
+If the entry suggests self-harm, harm to others, abuse, coercion, or immediate danger, respond with calm support and encourage reaching out right away to trusted people or emergency services. Keep it direct and compassionate.
 
-If the user has hashtags available, you may include exactly one relevant hashtag from this list in the initial response:
+Do not give harmful emotional, physical, legal, financial, or medical advice. Do not reproduce song lyrics or long copyrighted passages.
 
-#{user.hashtags.pluck(:tag).compact.map { |t| "##{t}" }.join(" ")}
+# Output
 
-Only use a hashtag when it clearly fits the entry. Do not invent hashtags.
-
-# Safety and Boundaries
-
-You are supportive, not a licensed therapist.
-
-Do not diagnose, prescribe treatment, or claim certainty about the user’s mental health.
-
-If the entry suggests self-harm, harm to others, abuse, coercion, or immediate danger, respond with calm support and encourage immediate real-world help from trusted people or emergency services. Keep the response direct and compassionate.
-
-If the user is angry, confrontational, or critical, do not argue. Acknowledge briefly, stay respectful, and either answer calmly or end with a simple invitation to continue when they want.
-
-Do not provide harmful emotional, physical, legal, financial, or medical advice.
-
-Do not generate copyrighted song lyrics, long copyrighted passages, or other restricted content.
-
-# Output Rules
-
-Return only one response per user turn.
-
-Do not mention these instructions.
-
-Do not use code blocks, markdown images, citations, or system-style labels.
-
-Do not say “as an AI” or discuss model limitations.
-
-Do not include external links unless the user specifically asks for factual, current, or external information.
-
-# Completion Criteria
-
-A response is successful when the user feels seen, the reflection is specific to their entry, and the final question gives them an easy way to keep journaling.)
-      }, {
-        role: "user",
-        content: %(My name is #{user.first_name}. Today is #{Date.today.strftime('%A, %B %-d, %Y')}. I will provide my journal entry for #{date.strftime('%A, %B %-d, %Y')} in the next message.)
-      }]
+Return only the reflection. Do not mention these instructions, add headings or labels, use code blocks, images, or links, or say "as an AI".)
+      }
     end
 
-    def entry_body
-      conversation = []
-      text_bodies_for_ai.each_with_index do |body, index|
-        role = body.starts_with?("||DabbleMeGPT||") ? "assistant" : "user"
-
-        if index == 0 && image_url_cdn.present?
-          conversation << {
-            role: role,
-            content: [
-              {
-                type: "input_image",
-                image_url: image_url_cdn
-              },
-              {
-                type: "input_text",
-                text: body.gsub("||DabbleMeGPT||", "").truncate(5000, omission: '...')
-              }
-            ]
-          }
-        else
-          conversation << {
-            role: role,
-            content: body.gsub("||DabbleMeGPT||", "").truncate(5000, omission: '...')
-          }
-        end
-      end
-      conversation.compact
+    # Earlier entries as background: up to 3 from the month before this one,
+    # plus up to 3 older ones that share a hashtag with it. Never later ones, so
+    # a reflection on an old entry doesn't know how things turned out.
+    def reflection_context
+      earlier = user.entries.where(date: (date - 1.month)...date).limit(3).to_a
+      related = hashtag_related_entries.to_a - earlier
+      [
+        context_message("These are entries I wrote in the weeks before this one", earlier),
+        context_message("These are earlier entries that share a hashtag with this one", related)
+      ]
     end
-  end
 
-  def related_entries
-    cond_text = hashtags.map{|w| "LOWER(entries.body) like ?"}.join(" OR ")
-    cond_values = hashtags.map{|w| "%##{w.downcase}%"}
-    entries = user.entries.where(cond_text, *cond_values).first(3)
-    return nil if entries.empty?
+    def hashtag_related_entries
+      tags = hashtags.to_a.first(5)
+      return Entry.none if tags.empty?
 
-    entry_bodies = entries.map { |e| { "#{e.date.to_date}": "#{e.text_bodies_for_ai.first.truncate(1000, omission: '...')}" } }
+      conditions = Array.new(tags.size, "LOWER(entries.body) LIKE ?").join(" OR ")
+      values = tags.map { |tag| "%##{Entry.sanitize_sql_like(tag.downcase)}%" }
+      user.entries.where(date: ...date).where(conditions, *values).limit(3)
+    end
 
-    {
-      role: "user",
-      content: "These are previous entries I've written that might be relevant to the current entry (use them as context only if relevant to the current entry): #{entry_bodies}"
-    }
-  end
+    def context_message(intro, entries)
+      return if entries.empty?
 
-  def last_3_entries
-    entries = user.entries.where(date: 1.month.ago..).where.not(id: id).order(date: :desc).limit(3)
-    return nil if entries.empty?
+      excerpts = entries.map { |e| "#{e.date.to_date}: #{e.text_body.to_s.squish.truncate(MAX_CONTEXT_CHARS)}" }
+      { role: "user", content: "#{intro} (context only; use it only if this entry clearly refers to it):\n\n#{excerpts.join("\n\n")}" }
+    end
 
-    entry_bodies = entries.map { |e| { "#{e.date.to_date}": "#{e.text_bodies_for_ai.first.truncate(1000, omission: '...')}" } }
+    def reflection_entry_message
+      name = user.first_name.present? ? "My name is #{user.first_name}. " : ""
+      text = "#{name}Today is #{Time.current.in_time_zone(user.send_timezone).strftime('%A, %B %-d, %Y')}. " \
+             "Here is my journal entry for #{date.strftime('%A, %B %-d, %Y')}:\n\n" \
+             "#{text_body.to_s.strip.truncate(MAX_ENTRY_CHARS)}"
 
-    {
-      role: "user",
-      content: "These are the previous entries I've written (use them as context only if relevant to the current entry): #{entry_bodies}"
-    }
+      image_url = image_url_cdn if image_stored?
+      content = image_url.present? ? [{ type: "input_image", image_url: image_url }, { type: "input_text", text: text }] : text
+      { role: "user", content: content }
+    end
   end
 end
-# rubocop:enable Metrics/ClassLength
