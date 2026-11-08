@@ -8,6 +8,8 @@ struct TimelineScrubber: View {
     let progress: CGFloat
     let isScrolling: Bool
     let onSelect: (MonthCount) -> Void
+    /// The month the scrubber was released on, so its entries can load right away.
+    var onRelease: (MonthCount) -> Void = { _ in }
 
     @State private var dragFraction: CGFloat?
     @State private var selected: MonthCount?
@@ -129,6 +131,7 @@ struct TimelineScrubber: View {
                 }
             }
             .onEnded { _ in
+                if let selected { onRelease(selected) }
                 dragFraction = nil
                 selected = nil
                 scheduleHide()

@@ -168,6 +168,17 @@ final class AppModel {
         staleMonths.contains(key)
     }
 
+    /// The month at `key` and the next couple of older ones (what fills the screen after a jump).
+    func loadMonths(around key: String) async {
+        guard let index = months.firstIndex(where: { $0.key == key }) else { return }
+        let keys = months[index..<min(index + 3, months.count)].map(\.key)
+        await withTaskGroup(of: Void.self) { group in
+            for key in keys {
+                group.addTask { await self.loadMonth(key) }
+            }
+        }
+    }
+
     func loadMonth(_ key: String, force: Bool = false) async {
         guard force || monthEntries[key] == nil || staleMonths.contains(key), !loadingMonths.contains(key),
               let month = months.first(where: { $0.key == key }) else { return }
