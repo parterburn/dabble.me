@@ -1,0 +1,81 @@
+# Generate DabbleMe.xcodeproj with `xcodegen` (brew install xcodegen). The .xcodeproj is
+# not checked in; this file is the source of truth.
+name: DabbleMe
+options:
+  bundleIdPrefix: me.dabble
+  deploymentTarget:
+    iOS: "18.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    # Dabble Dev LLC. Change if you sign with a different Apple Developer team.
+    DEVELOPMENT_TEAM: B79A4CAS56
+    CODE_SIGN_STYLE: Automatic
+    # Xcode's recommended settings (so it stops offering to "update to recommended").
+    ENABLE_USER_SCRIPT_SANDBOXING: true
+    ASSETCATALOG_COMPILER_GENERATE_ASSET_SYMBOL_EXTENSIONS: true
+    STRING_CATALOG_GENERATE_SYMBOLS: true
+targets:
+  DabbleMe:
+    type: application
+    platform: iOS
+    sources:
+      - DabbleMe
+    settings:
+      base:
+        PRODUCT_NAME: DabbleMe
+        PRODUCT_BUNDLE_IDENTIFIER: me.dabble.ios
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ENABLE_PREVIEWS: true
+      configs:
+        Debug:
+          DABBLE_BASE_URL: http://localhost:3000
+        Release:
+          DABBLE_BASE_URL: https://dabble.me
+    info:
+      path: DabbleMe/Info.plist
+      properties:
+        CFBundleDisplayName: Dabble Me
+        DabbleBaseURL: $(DABBLE_BASE_URL)
+        ITSAppUsesNonExemptEncryption: false
+        LSApplicationCategoryType: public.app-category.lifestyle
+        UILaunchScreen:
+          UIColorName: Paper
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: false
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        # Debug builds talk to a local Rails server: http://localhost in the simulator, or your
+        # Mac's http://<name>.local:3000 from a phone (Server menu on the sign-in screen).
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true
+        NSLocalNetworkUsageDescription: Connects to a Dabble Me development server on your network.
+  DabbleMeTests:
+    type: bundle.unit-test
+    platform: iOS
+    sources:
+      - DabbleMeTests
+    dependencies:
+      - target: DabbleMe
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: true
+        PRODUCT_BUNDLE_IDENTIFIER: me.dabble.ios.tests
+schemes:
+  DabbleMe:
+    build:
+      targets:
+        DabbleMe: all
+    test:
+      targets:
+        - DabbleMeTests

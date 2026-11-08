@@ -10,10 +10,9 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 2026_09_03_030000) do
-
+ActiveRecord::Schema[8.1].define(version: 2026_11_07_000000) do
   # These are extensions that must be enabled in order to support this database
-  enable_extension "plpgsql"
+  enable_extension "pg_catalog.plpgsql"
 
   create_table "business_metric_snapshots", force: :cascade do |t|
     t.date "captured_on", null: false
@@ -49,8 +48,8 @@ ActiveRecord::Schema.define(version: 2026_09_03_030000) do
     t.jsonb "plan_breakdown", default: {}, null: false
     t.jsonb "acquisition_breakdown", default: {}, null: false
     t.jsonb "subscriber_map", default: {}, null: false
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.integer "mcp_connected_users", default: 0, null: false
     t.integer "mcp_active_users_7d", default: 0, null: false
     t.integer "mcp_active_users_30d", default: 0, null: false
@@ -60,18 +59,18 @@ ActiveRecord::Schema.define(version: 2026_09_03_030000) do
   end
 
   create_table "entries", id: :serial, force: :cascade do |t|
-    t.datetime "date", null: false
+    t.datetime "date", precision: nil, null: false
     t.text "body"
     t.text "original_email_body"
     t.integer "inspiration_id"
     t.integer "user_id"
-    t.datetime "created_at"
-    t.datetime "updated_at"
+    t.datetime "created_at", precision: nil
+    t.datetime "updated_at", precision: nil
     t.string "image"
     t.jsonb "songs", default: [], array: true
     t.jsonb "original_email", default: {}
     t.jsonb "sentiment", default: [], array: true
-    t.datetime "uploading_image_at"
+    t.datetime "uploading_image_at", precision: nil
     t.text "image_error"
     t.index ["user_id", "date"], name: "index_entries_on_user_id_and_date", order: { date: :desc }
     t.index ["user_id"], name: "index_entries_on_user_id"
@@ -81,16 +80,16 @@ ActiveRecord::Schema.define(version: 2026_09_03_030000) do
     t.bigint "user_id"
     t.string "tag"
     t.date "date"
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_hashtags_on_user_id"
   end
 
   create_table "inspirations", id: :serial, force: :cascade do |t|
     t.string "category"
     t.text "body"
-    t.datetime "created_at"
-    t.datetime "updated_at"
+    t.datetime "created_at", precision: nil
+    t.datetime "updated_at", precision: nil
   end
 
   create_table "mcp_tool_invocations", force: :cascade do |t|
@@ -101,7 +100,7 @@ ActiveRecord::Schema.define(version: 2026_09_03_030000) do
     t.integer "result_count"
     t.integer "duration_ms"
     t.bigint "oauth_application_id"
-    t.datetime "created_at", null: false
+    t.datetime "created_at", precision: nil, null: false
     t.index ["created_at"], name: "index_mcp_tool_invocations_on_created_at"
     t.index ["oauth_application_id"], name: "index_mcp_tool_invocations_on_oauth_application_id"
     t.index ["source", "created_at"], name: "index_mcp_tool_invocations_on_source_and_created_at"
@@ -117,8 +116,8 @@ ActiveRecord::Schema.define(version: 2026_09_03_030000) do
     t.integer "expires_in", null: false
     t.text "redirect_uri", null: false
     t.string "scopes", default: "", null: false
-    t.datetime "created_at", null: false
-    t.datetime "revoked_at"
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "revoked_at", precision: nil
     t.string "code_challenge"
     t.string "code_challenge_method"
     t.index ["application_id"], name: "index_oauth_access_grants_on_application_id"
@@ -133,8 +132,8 @@ ActiveRecord::Schema.define(version: 2026_09_03_030000) do
     t.string "refresh_token"
     t.integer "expires_in"
     t.string "scopes"
-    t.datetime "created_at", null: false
-    t.datetime "revoked_at"
+    t.datetime "created_at", precision: nil, null: false
+    t.datetime "revoked_at", precision: nil
     t.index ["application_id"], name: "index_oauth_access_tokens_on_application_id"
     t.index ["refresh_token"], name: "index_oauth_access_tokens_on_refresh_token", unique: true
     t.index ["resource_owner_id"], name: "index_oauth_access_tokens_on_resource_owner_id"
@@ -148,8 +147,8 @@ ActiveRecord::Schema.define(version: 2026_09_03_030000) do
     t.text "redirect_uri", null: false
     t.string "scopes", default: "", null: false
     t.boolean "confidential", default: true, null: false
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.bigint "owner_id"
     t.string "owner_type"
     t.index ["owner_id", "owner_type"], name: "index_oauth_applications_on_owner_id_and_owner_type"
@@ -160,9 +159,9 @@ ActiveRecord::Schema.define(version: 2026_09_03_030000) do
     t.integer "user_id"
     t.decimal "amount", precision: 8, scale: 2, default: "0.0"
     t.text "comments"
-    t.datetime "date"
-    t.datetime "created_at"
-    t.datetime "updated_at"
+    t.datetime "date", precision: nil
+    t.datetime "created_at", precision: nil
+    t.datetime "updated_at", precision: nil
     t.string "stripe_invoice_id"
     t.index ["stripe_invoice_id"], name: "index_payments_on_stripe_invoice_id", unique: true, where: "(stripe_invoice_id IS NOT NULL)"
     t.index ["user_id"], name: "index_payments_on_user_id"
@@ -172,15 +171,15 @@ ActiveRecord::Schema.define(version: 2026_09_03_030000) do
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
     t.string "reset_password_token"
-    t.datetime "reset_password_sent_at"
-    t.datetime "remember_created_at"
+    t.datetime "reset_password_sent_at", precision: nil
+    t.datetime "remember_created_at", precision: nil
     t.integer "sign_in_count", default: 0, null: false
-    t.datetime "current_sign_in_at"
-    t.datetime "last_sign_in_at"
+    t.datetime "current_sign_in_at", precision: nil
+    t.datetime "last_sign_in_at", precision: nil
     t.inet "current_sign_in_ip"
     t.inet "last_sign_in_ip"
-    t.datetime "created_at"
-    t.datetime "updated_at"
+    t.datetime "created_at", precision: nil
+    t.datetime "updated_at", precision: nil
     t.string "first_name"
     t.string "last_name"
     t.string "send_timezone", default: "Mountain Time (US & Canada)"
@@ -198,11 +197,11 @@ ActiveRecord::Schema.define(version: 2026_09_03_030000) do
     t.string "stripe_id"
     t.string "failed_attempts", default: "0", null: false
     t.string "unlock_token"
-    t.datetime "locked_at"
+    t.datetime "locked_at", precision: nil
     t.integer "emails_bounced", default: 0
     t.text "frequency", default: ["Sun"], array: true
     t.text "previous_frequency", default: [], array: true
-    t.datetime "last_sent_at"
+    t.datetime "last_sent_at", precision: nil
     t.boolean "admin", default: false
     t.boolean "ai_opt_in", default: false
     t.boolean "send_as_ai", default: false
@@ -210,13 +209,13 @@ ActiveRecord::Schema.define(version: 2026_09_03_030000) do
     t.string "otp_recovery_secret"
     t.boolean "otp_enabled", default: false, null: false
     t.boolean "otp_mandatory", default: false, null: false
-    t.datetime "otp_enabled_on"
+    t.datetime "otp_enabled_on", precision: nil
     t.integer "otp_failed_attempts", default: 0, null: false
     t.integer "otp_recovery_counter", default: 0, null: false
     t.string "otp_persistence_seed"
     t.string "otp_session_challenge"
-    t.datetime "otp_challenge_expires"
-    t.datetime "deleted_at"
+    t.datetime "otp_challenge_expires", precision: nil
+    t.datetime "deleted_at", precision: nil
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["otp_challenge_expires"], name: "index_users_on_otp_challenge_expires"
     t.index ["otp_session_challenge"], name: "index_users_on_otp_session_challenge", unique: true
@@ -231,8 +230,8 @@ ActiveRecord::Schema.define(version: 2026_09_03_030000) do
     t.string "public_key"
     t.string "nickname"
     t.bigint "sign_count"
-    t.datetime "created_at", precision: 6, null: false
-    t.datetime "updated_at", precision: 6, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
     t.index ["external_id"], name: "index_webauthn_credentials_on_external_id"
     t.index ["user_id"], name: "index_webauthn_credentials_on_user_id"
   end

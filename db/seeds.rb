@@ -56,3 +56,6 @@ admin_user.save
 end
 
 puts "Created admin user: admin@dabble.ex (with a password of 'dabble')"
+
+MobileApp.ensure_application!
+puts "Registered OAuth client for the iOS app (#{MobileApp::CLIENT_ID})"

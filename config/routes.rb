@@ -33,6 +33,21 @@ Rails.application.routes.draw do
     resources :registrations, only: :create
   end
 
+  # iOS app API (see MobileApp, Api::V1::BaseController).
+  namespace :api, defaults: { format: :json } do
+    namespace :v1 do
+      get 'me', to: 'me#show'
+      resources :entries, only: %i[index show create update destroy] do
+        collection do
+          get :random
+          get :on_this_day
+        end
+      end
+      get 'search', to: 'searches#show'
+      resources :image_uploads, only: :create
+    end
+  end
+
   authenticate :user, ->(u) { u.admin? } do
     resources :inspirations, path: '/admin/inspirations'
     resources :payments, path: '/admin/payments'

@@ -33,7 +33,15 @@ Doorkeeper.configure do
   enable_application_owner confirmation: false
 
   default_scopes 'mcp:access'
+  # First-party iOS app only (see MobileApp). Not advertised in OAuth metadata, and
+  # dynamic client registration always assigns mcp:access.
+  optional_scopes 'app:journal'
   enforce_configured_scopes
+
+  # Our own iOS app doesn't need a consent screen for access to its own account.
+  skip_authorization do |_resource_owner, client|
+    MobileApp.client?(client.application)
+  end
 
   force_ssl_in_redirect_uri do |uri|
     loopback_hosts = %w[localhost 127.0.0.1 ::1]
@@ -48,7 +56,7 @@ Doorkeeper.configure do
     elsif scheme == 'http'
       !loopback_hosts.include?(uri.host)
     else
-      true
+      !MobileApp.redirect_uri?(uri)
     end
   end
 
