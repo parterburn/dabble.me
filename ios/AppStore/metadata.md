@@ -101,7 +101,8 @@ Required sizes: **6.9" iPhone** at 1320 × 2868, plus **13" iPad** at 2064 × 27
 
 `bundle exec rails ios:demo_account` seeds that account locally. It needs valid AWS credentials in `.env` for the photos.
 
-## Open decisions before submitting
+## Decisions
 
-- **In-app purchase:** decided: ship as a free companion app (guideline 3.1.3(f)) with no purchasing and no links to buy. If App Review asks for in-app purchase for PRO, revisit.
-- **iPad:** keep it (needs iPad screenshots) or ship iPhone-only for 1.0.
+- **In-app purchase:** ship as a free companion app (guideline 3.1.3(f)) with no purchasing and no links to buy. If App Review asks for in-app purchase for PRO, revisit.
+- **Free vs PRO in the app:** free accounts read and write text entries; photos, editing/deleting, search, On This Day, reminders, AI connections and on-device AI features are PRO.
+- **iPad:** supported in 1.0, so the submission needs the 13" iPad screenshot set too.
