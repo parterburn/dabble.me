@@ -50,13 +50,27 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
     it "describes a free account" do
       get "/api/v1/me", headers: auth(free_user)
       expect(response).to have_http_status(:ok)
-      expect(json).to include("email" => free_user.email, "plan" => "free", "can_write" => false, "can_search" => false)
+      expect(json).to include("email" => free_user.email, "plan" => "free", "can_write" => true,
+                              "can_add_photos" => false, "can_edit" => false, "can_search" => false)
       expect(json["today"]).to match(/\A\d{4}-\d{2}-\d{2}\z/)
     end
 
     it "describes a PRO account" do
       get "/api/v1/me", headers: auth(pro_user)
-      expect(json).to include("plan" => "pro", "can_write" => true, "can_search" => true)
+      expect(json).to include("plan" => "pro", "can_write" => true, "can_add_photos" => true, "can_edit" => true, "can_search" => true)
+    end
+
+    it "includes the Claude and ChatGPT connector links and what's still needed to use them" do
+      get "/api/v1/me", headers: auth(free_user)
+      expect(json["ai_connectors"]).to include(
+        "claude_url" => ApplicationHelper.claude_plugin_directory_url,
+        "chatgpt_url" => ApplicationHelper.chatgpt_plugin_directory_url,
+        "requires_pro" => true,
+        "requires_security_setup" => true
+      )
+      create(:webauthn_credential, user: pro_user)
+      get "/api/v1/me", headers: auth(pro_user)
+      expect(json["ai_connectors"]).to include("requires_pro" => false, "requires_security_setup" => false)
     end
   end
 
@@ -108,6 +122,50 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
     end
   end
 
+  describe "day navigation, months and today" do
+    include ActiveSupport::Testing::TimeHelpers
+
+    let!(:older) { create(:entry, user: pro_user, date: Time.zone.local(2024, 6, 3), body: "<p>June</p>") }
+    let!(:middle) { create(:entry, user: pro_user, date: Time.zone.local(2024, 6, 20), body: "<p>Later June</p>") }
+    let!(:newer) { create(:entry, user: pro_user, date: Time.zone.local(2025, 1, 2), body: "<p>New year</p>") }
+
+    it "includes the previous and next entries by date" do
+      get "/api/v1/entries/#{middle.id}", headers: auth(pro_user)
+      expect(json["entry"]["previous_entry"]).to eq("id" => older.id, "date" => "2024-06-03")
+      expect(json["entry"]["next_entry"]).to eq("id" => newer.id, "date" => "2025-01-02")
+
+      get "/api/v1/entries/#{newer.id}", headers: auth(pro_user)
+      expect(json["entry"]["next_entry"]).to be_nil
+    end
+
+    it "lists months with entry counts, newest first" do
+      get "/api/v1/entries/months", headers: auth(pro_user)
+      expect(json["months"]).to eq([
+        { "year" => 2025, "month" => 1, "count" => 1 },
+        { "year" => 2024, "month" => 6, "count" => 2 }
+      ])
+    end
+
+    it "summarizes today: today's entry, On This Day with years ago, and a prompt" do
+      Inspiration.create!(category: "Question", body: "What surprised you today?")
+      travel_to Time.find_zone(pro_user.send_timezone).local(2026, 6, 20, 12) do
+        todays = create(:entry, user: pro_user, date: Date.new(2026, 6, 20).to_s, body: "<p>Today</p>")
+        get "/api/v1/today", headers: auth(pro_user)
+        expect(json["date"]).to eq("2026-06-20")
+        expect(json["entry"]["id"]).to eq(todays.id)
+        expect(json["on_this_day"].map { |e| [e["id"], e["years_ago"]] }).to eq([[middle.id, 2]])
+        expect(json["on_this_day_available"]).to be(true)
+        expect(json["prompt"]).to eq("What surprised you today?")
+      end
+    end
+
+    it "keeps On This Day for PRO on the Today endpoint" do
+      create(:entry, user: free_user, date: 1.year.ago, body: "<p>Last year</p>")
+      get "/api/v1/today", headers: auth(free_user)
+      expect(json).to include("on_this_day" => [], "on_this_day_available" => false, "entry" => nil)
+    end
+  end
+
   describe "document" do
     it "is included for entries the app can edit, and nil otherwise" do
       editable = create(:entry, user: pro_user, body: "<p>Hi <b>there</b></p>")
@@ -120,11 +178,19 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
   end
 
   describe "writing entries" do
-    it "requires PRO to create" do
+    it "lets free accounts write text entries but not add photos" do
       post "/api/v1/entries", params: { date: "2026-01-02", body: "Hi" }, headers: auth(free_user)
+      expect(response).to have_http_status(:created)
+      expect(free_user.entries.count).to eq(1)
+
+      key = "#{Mcp::PresignedImageUpload.key_prefix_for(free_user)}x.jpg"
+      post "/api/v1/entries", params: { date: "2026-01-03", body: "Pic", uploaded_image_keys: [key] }, headers: auth(free_user), as: :json
       expect(response).to have_http_status(:forbidden)
       expect(json["error"]).to eq("pro_required")
-      expect(free_user.entries.count).to eq(0)
+      expect(free_user.entries.count).to eq(1)
+
+      post "/api/v1/image_uploads", params: { photos: [{ filename: "p.jpg", content_type: "image/jpeg" }] }, headers: auth(free_user), as: :json
+      expect(response).to have_http_status(:forbidden)
     end
 
     it "creates an entry, then merges a second one on the same day" do
@@ -321,6 +387,41 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
     end
   end
 
+  describe "POST /api/v1/account/deletion_request" do
+    include ActiveJob::TestHelper
+
+    it "emails a link to the web deletion page without deleting anything, at most once per window" do
+      allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new) # test env uses :null_store
+      expect {
+        post "/api/v1/account/deletion_request", headers: auth(free_user)
+        post "/api/v1/account/deletion_request", headers: auth(free_user)
+      }.to have_enqueued_mail(UserMailer, :account_deletion_requested).once
+      expect(response).to have_http_status(:accepted)
+      expect(json["email"]).to eq(free_user.email)
+      expect(free_user.reload.deletion_pending?).to be(false)
+    end
+
+    it "builds an email that links to the web deletion page" do
+      mail = UserMailer.account_deletion_requested(free_user)
+      expect(mail.to).to eq([free_user.email])
+      expect(mail.body.encoded).to include("/settings/delete-account")
+    end
+  end
+
+  describe "excerpt" do
+    it "is plain text without Markdown markers, with spaces between blocks" do
+      entry = create(:entry, user: pro_user, body: "<p>Made it to <strong>Yosemite</strong> &amp; <em>back</em>.</p><ul><li>one</li><li>two</li></ul>")
+      expect(Api::EntrySerializer.summary(entry)[:excerpt]).to eq("Made it to Yosemite & back. one two")
+    end
+  end
+
+  describe "body_text" do
+    it "shows one blank line between email paragraphs" do
+      entry = create(:entry, user: pro_user, body: "<div>One.</div><div><br></div><div>Two.</div><div><br></div><div>Three.</div>")
+      expect(Api::EntrySerializer.full(entry)[:body_text]).to eq("One.\n\nTwo.\n\nThree.")
+    end
+  end
+
   describe "GET /api/v1/search" do
     before do
       create(:entry, user: pro_user, body: "<p>Went hiking today</p>")
@@ -373,6 +474,27 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
 
       get "/api/v1/me", headers: { "Authorization" => "Bearer #{json['access_token']}" }
       expect(response).to have_http_status(:ok)
+    end
+
+    it "sends signed-out users to the login page without a flash, and remembers where to return" do
+      authorize_path = oauth_authorization_path(
+        response_type: "code", client_id: mobile_app.uid, redirect_uri: MobileApp::REDIRECT_URI,
+        scope: MobileApp::SCOPE, state: "xyz", code_challenge: code_challenge, code_challenge_method: "S256"
+      )
+      get authorize_path
+      expect(response).to redirect_to(new_user_session_path)
+      expect(flash[:alert]).to be_nil
+      expect(session["user_return_to"]).to eq(authorize_path)
+    end
+
+    it "opens the sign-up page for prompt=create and returns there after signing up" do
+      authorize_path = oauth_authorization_path(
+        response_type: "code", client_id: mobile_app.uid, redirect_uri: MobileApp::REDIRECT_URI, scope: MobileApp::SCOPE,
+        state: "xyz", code_challenge: code_challenge, code_challenge_method: "S256", prompt: "create"
+      )
+      get authorize_path
+      expect(response).to redirect_to(new_user_registration_path)
+      expect(session["user_return_to"]).to eq(authorize_path)
     end
 
     it "does not let MCP clients register the app's redirect scheme for a different scope" do

@@ -1,20 +1,40 @@
 import Foundation
 import Observation
 
-/// App-wide state: auth, the signed-in account, and the journal timeline. Detail,
-/// compose and search screens call through here so edits show up in the timeline.
+/// App-wide state: auth, the signed-in account, Today, and the journal timeline. Detail,
+/// compose and search screens call through here so edits show up everywhere.
 @MainActor
 @Observable
 final class AppModel {
+    enum Tab: Hashable {
+        case today, journal, search, settings
+    }
+
+    /// Selected tab, and a search another screen asked for (e.g. tapping a #hashtag).
+    var selectedTab: Tab = .today
+    var searchRequest: String?
+
+    func search(hashtag: String) {
+        searchRequest = "#\(hashtag)"
+        selectedTab = .search
+    }
+
     private(set) var isSignedIn: Bool
     private(set) var isSigningIn = false
     var signInError: String?
 
     private(set) var me: Me?
-    private(set) var entries: [EntrySummary] = []
-    private(set) var onThisDay: [EntrySummary] = []
-    private(set) var nextPage: Int? = 1
-    private(set) var isLoadingPage = false
+    private(set) var today: TodaySummary?
+
+    /// The journal is one section per month (newest first). Months load their entries when they
+    /// scroll into view, so the scrubber can jump years back without loading everything between.
+    private(set) var months: [MonthCount] = []
+    private(set) var monthEntries: [String: [EntrySummary]] = [:]
+    private var loadingMonths: Set<String> = []
+    /// Cached months a refresh hasn't reloaded yet (they reload when they scroll into view),
+    /// and the months currently on screen (reloaded right away on refresh).
+    private var staleMonths: Set<String> = []
+    private var visibleMonths: Set<String> = []
     private(set) var hasLoaded = false
     var timelineError: String?
 
@@ -34,7 +54,7 @@ final class AppModel {
 
     // MARK: - Auth
 
-    func signIn() async {
+    func signIn(createAccount: Bool = false) async {
         guard !isSigningIn else { return }
         isSigningIn = true
         signInError = nil
@@ -43,7 +63,7 @@ final class AppModel {
         let pkce = PKCE()
         let state = PKCE.randomURLSafeString(byteCount: 16)
         do {
-            let callback = try await authenticator.authenticate(url: OAuthEndpoints.authorizeURL(pkce: pkce, state: state))
+            let callback = try await authenticator.authenticate(url: OAuthEndpoints.authorizeURL(pkce: pkce, state: state, createAccount: createAccount))
             let items = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems ?? []
             let value = { (name: String) in items.first { $0.name == name }?.value }
 
@@ -79,56 +99,90 @@ final class AppModel {
     private func resetSession() {
         isSignedIn = false
         me = nil
-        entries = []
-        onThisDay = []
-        nextPage = 1
+        today = nil
+        months = []
+        monthEntries = [:]
+        loadingMonths = []
+        staleMonths = []
+        visibleMonths = []
         hasLoaded = false
+        selectedTab = .today
         timelineError = nil
     }
 
     // MARK: - Timeline
 
-    /// Reloads the account and the first page (pull to refresh, app foreground).
+    /// Reloads the account, Today, and the month index (pull to refresh, app foreground).
     func refresh() async {
         guard isSignedIn else { return }
         do {
             async let meRequest: Me = api.get("api/v1/me")
-            async let pageRequest: EntryPage = api.get("api/v1/entries", query: ["page": "1"])
-            let (me, page) = try await (meRequest, pageRequest)
+            async let monthsRequest: MonthList = api.get("api/v1/entries/months")
+            async let todayRequest: TodaySummary = api.get("api/v1/today")
+            let (me, monthList, today) = try await (meRequest, monthsRequest, todayRequest)
             self.me = me
-            entries = page.entries
-            nextPage = page.nextPage
-            for entry in page.entries where entry.imageProcessing { watchProcessing(id: entry.id) }
+            self.today = today
+            months = monthList.months
+            // Entries can change by email or on the web: keep cached months on screen, reload the
+            // visible ones (and the newest) now, and the rest when they scroll back into view.
+            monthEntries = monthEntries.filter { key, _ in months.contains { $0.key == key } }
+            staleMonths = Set(monthEntries.keys)
             timelineError = nil
             hasLoaded = true
-            await loadOnThisDay()
+            var reloadNow = visibleMonths.intersection(staleMonths)
+            if let newest = months.first { reloadNow.insert(newest.key) }
+            await withTaskGroup(of: Void.self) { group in
+                for key in reloadNow {
+                    group.addTask { await self.loadMonth(key, force: true) }
+                }
+            }
         } catch is CancellationError {
         } catch {
             report(error)
         }
     }
 
-    func loadMoreIfNeeded(after entry: EntrySummary) async {
-        guard entry.id == entries.last?.id, let page = nextPage, !isLoadingPage else { return }
-        isLoadingPage = true
-        defer { isLoadingPage = false }
+    /// Refreshes Today and the account together, so "today" (in the journal's time zone) stays
+    /// in step everywhere, e.g. when the app stays open past midnight.
+    func loadToday() async {
+        guard isSignedIn else { return }
         do {
-            let result: EntryPage = try await api.get("api/v1/entries", query: ["page": String(page)])
-            let known = Set(entries.map(\.id))
-            entries += result.entries.filter { !known.contains($0.id) }
-            nextPage = result.nextPage
+            async let todayRequest: TodaySummary = api.get("api/v1/today")
+            async let meRequest: Me = api.get("api/v1/me")
+            (today, me) = try await (todayRequest, meRequest)
         } catch is CancellationError {
         } catch {
             report(error)
         }
     }
 
-    private func loadOnThisDay() async {
-        guard me?.isPro == true else {
-            onThisDay = []
-            return
+    func monthAppeared(_ key: String) {
+        visibleMonths.insert(key)
+    }
+
+    func monthDisappeared(_ key: String) {
+        visibleMonths.remove(key)
+    }
+
+    func isStale(_ key: String) -> Bool {
+        staleMonths.contains(key)
+    }
+
+    func loadMonth(_ key: String, force: Bool = false) async {
+        guard force || monthEntries[key] == nil || staleMonths.contains(key), !loadingMonths.contains(key),
+              let month = months.first(where: { $0.key == key }) else { return }
+        loadingMonths.insert(key)
+        defer { loadingMonths.remove(key) }
+        do {
+            let page: EntryPage = try await api.get("api/v1/entries",
+                                                    query: ["year": String(month.year), "month": String(month.month), "per": "50"])
+            monthEntries[key] = page.entries
+            staleMonths.remove(key)
+            for entry in page.entries where entry.imageProcessing { watchProcessing(id: entry.id) }
+        } catch is CancellationError {
+        } catch {
+            report(error)
         }
-        onThisDay = (try? await api.get("api/v1/entries/on_this_day") as EntryList)?.entries ?? []
     }
 
     private func report(_ error: Error) {
@@ -182,6 +236,7 @@ final class AppModel {
                                                         NewEntryRequest(date: day.iso, document: document, uploadedImageKeys: imageKeys))
         upsert(envelope.entry.summary)
         if envelope.entry.imageProcessing { watchProcessing(id: envelope.entry.id) }
+        await loadToday()
         return envelope
     }
 
@@ -204,26 +259,53 @@ final class AppModel {
     func updateEntry(id: Int, document: [DocumentBlock]) async throws -> EntryDetail {
         let envelope: EntryEnvelope = try await api.patch("api/v1/entries/\(id)", UpdateEntryRequest(document: document))
         upsert(envelope.entry.summary)
+        if envelope.entry.id == today?.entry?.id { await loadToday() }
         return envelope.entry
     }
 
     func deleteEntry(id: Int) async throws {
         try await api.delete("api/v1/entries/\(id)")
-        entries.removeAll { $0.id == id }
-        onThisDay.removeAll { $0.id == id }
+        for (key, entries) in monthEntries where entries.contains(where: { $0.id == id }) {
+            monthEntries[key] = entries.filter { $0.id != id }
+            if let index = months.firstIndex(where: { $0.key == key }) {
+                months[index].count -= 1
+                if months[index].count <= 0 { months.remove(at: index) }
+            }
+        }
+        await loadToday()
+    }
+
+    /// Emails a link to the web deletion page. Nothing is deleted from the app itself.
+    func requestAccountDeletion() async throws -> String {
+        struct Empty: Encodable, Sendable {}
+        let response: AccountDeletionRequest = try await api.post("api/v1/account/deletion_request", Empty())
+        return response.email
     }
 
     func search(_ query: String, page: Int = 1) async throws -> EntryPage {
         try await api.get("api/v1/search", query: ["q": query, "page": String(page)])
     }
 
-    /// Keeps the timeline sorted newest first without refetching.
+    /// Keeps month sections (and their counts) current without refetching.
     private func upsert(_ summary: EntrySummary) {
-        if let index = entries.firstIndex(where: { $0.id == summary.id }) {
-            entries[index] = summary
-        } else if hasLoaded {
-            let insertAt = entries.firstIndex { $0.date < summary.date } ?? (nextPage == nil ? entries.endIndex : nil)
-            if let insertAt { entries.insert(summary, at: insertAt) }
+        guard hasLoaded, let day = summary.day else { return }
+        let key = day.monthKey
+        // An entry can move months when its date changes; drop it from anywhere else first.
+        for (otherKey, entries) in monthEntries where otherKey != key && entries.contains(where: { $0.id == summary.id }) {
+            monthEntries[otherKey] = entries.filter { $0.id != summary.id }
+        }
+        if let index = months.firstIndex(where: { $0.key == key }) {
+            guard var entries = monthEntries[key] else { return } // loads fresh when scrolled to
+            if let existing = entries.firstIndex(where: { $0.id == summary.id }) {
+                entries[existing] = summary
+            } else {
+                entries.insert(summary, at: entries.firstIndex { $0.date < summary.date } ?? entries.endIndex)
+                months[index].count += 1
+            }
+            monthEntries[key] = entries
+        } else if let month = MonthCount(key: key, count: 1) {
+            months.insert(month, at: months.firstIndex { $0.key < key } ?? months.endIndex)
+            monthEntries[key] = [summary]
         }
     }
 }

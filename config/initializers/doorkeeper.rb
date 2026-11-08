@@ -6,8 +6,17 @@ Doorkeeper.configure do
   # Share Devise session / Warden with the rest of the app (OAuth authorize screens).
   base_controller 'ApplicationController'
 
+  # Doorkeeper's documented pattern: send signed-out users to the login page and back here
+  # afterwards, without Devise's "You need to login or sign up" flash (the iOS app and AI
+  # connectors open this page right after the person chose to sign in).
+  # `prompt=create` (OpenID Connect's standard hint) opens the sign-up page instead, for the
+  # iOS app's "Create Account" button; Devise returns new users here after signing up.
   resource_owner_authenticator do
-    current_user || warden.authenticate!(scope: :user)
+    current_user || begin
+      store_location_for(:user, request.fullpath)
+      redirect_to(params[:prompt] == 'create' ? new_user_registration_url : new_user_session_url)
+      nil
+    end
   end
 
   admin_authenticator do

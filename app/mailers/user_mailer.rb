@@ -70,4 +70,14 @@ class UserMailer < ActionMailer::Base
     email.mailgun_options = { tag: "Security" }
   end
 
+  # Sent when someone taps "Delete Account" in the iOS app. Deletion itself still happens on
+  # the web (signed in + current password, then a 1-hour grace period), so this adds a step
+  # that proves mailbox access and can't be completed by an accidental tap.
+  def account_deletion_requested(user)
+    @user = user
+    @user.increment!(:emails_sent)
+    email = mail(to: user.cleaned_to_address, subject: "Finish deleting your Dabble Me account")
+    email.mailgun_options = { tag: "Security" }
+  end
+
 end

@@ -30,12 +30,12 @@ module Api
                      'This account is scheduled for deletion. Sign in at dabble.me to keep it.')
       end
 
-      # Same plan rules as the web app: free accounts read their journal and write by
-      # replying to email; writing, editing and search in the app are PRO.
+      # PRO-only features (see each controller for which). Free accounts read and write
+      # text entries; the app shows these as PRO without linking to a purchase.
       def require_pro!
         return if current_user.is_pro?
 
-        render_error(:forbidden, 'pro_required', 'This is part of Dabble Me PRO. You can always reply to your Dabble Me email to write an entry.')
+        render_error(:forbidden, 'pro_required', 'This is part of Dabble Me PRO.')
       end
 
       def render_error(status, code, message, details: nil)

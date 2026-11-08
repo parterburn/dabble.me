@@ -42,6 +42,16 @@ struct SignInView: View {
                 .controlSize(.large)
                 .disabled(model.isSigningIn)
 
+                Button {
+                    Task { await model.signIn(createAccount: true) }
+                } label: {
+                    Text("Create a Free Account")
+                        .frame(maxWidth: .infinity, minHeight: 28)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+                .disabled(model.isSigningIn)
+
                 if let error = model.signInError {
                     Text(error)
                         .font(.footnote)
@@ -49,7 +59,7 @@ struct SignInView: View {
                         .multilineTextAlignment(.center)
                 }
 
-                Text("Sign in with your passkey, password, or two-factor code on dabble.me. New here? You can create a free account on the sign-in page.")
+                Text("Sign in with your passkey, password, or two-factor code. Your journal stays private: no ads, no tracking.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)

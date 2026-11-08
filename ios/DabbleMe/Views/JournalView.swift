@@ -10,6 +10,8 @@ struct JournalView: View {
     @State private var composing = false
     @State private var showingProInfo = false
     @State private var randomError: String?
+    @State private var scrollProgress: CGFloat = 0
+    @State private var isScrolling = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -19,7 +21,7 @@ struct JournalView: View {
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         Button("Random Entry", systemImage: "shuffle") { Task { await openRandom() } }
-                            .disabled(model.entries.isEmpty)
+                            .disabled(model.months.isEmpty)
                     }
                     ToolbarItem(placement: .primaryAction) {
                         Button("New Entry", systemImage: "square.and.pencil") { startWriting() }
@@ -37,7 +39,7 @@ struct JournalView: View {
 
     @ViewBuilder
     private var content: some View {
-        if model.entries.isEmpty {
+        if model.months.isEmpty {
             if !model.hasLoaded && model.timelineError == nil {
                 ProgressView()
             } else if let error = model.timelineError {
@@ -61,56 +63,84 @@ struct JournalView: View {
                 .refreshable { await model.refresh() }
             }
         } else {
+            timeline
+        }
+    }
+
+    private var timeline: some View {
+        ScrollViewReader { proxy in
             List {
                 if let error = model.timelineError {
                     Label(error, systemImage: "exclamationmark.triangle")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
-
-                if !model.onThisDay.isEmpty {
-                    Section("On This Day") {
-                        ForEach(model.onThisDay) { entry in
-                            NavigationLink(value: EntryRoute(id: entry.id)) {
-                                EntryRow(entry: entry, showsYear: true)
-                            }
-                        }
+                ForEach(model.months) { month in
+                    Section {
+                        monthRows(month)
+                    } header: {
+                        MonthHeader(title: month.title)
+                            .onAppear { model.monthAppeared(month.key) }
+                            .onDisappear { model.monthDisappeared(month.key) }
                     }
-                }
-
-                ForEach(sections) { section in
-                    Section(section.title) {
-                        ForEach(section.entries) { entry in
-                            NavigationLink(value: EntryRoute(id: entry.id)) {
-                                EntryRow(entry: entry)
-                            }
-                            .task { await model.loadMoreIfNeeded(after: entry) }
-                        }
-                    }
-                }
-
-                if model.nextPage != nil {
-                    ProgressView()
-                        .frame(maxWidth: .infinity)
-                        .listRowSeparator(.hidden)
                 }
             }
             .listStyle(.plain)
+            .contentMargins(.trailing, 20, for: .scrollContent) // room for the scrubber
             .refreshable { await model.refresh() }
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                let scrollable = geometry.contentSize.height - geometry.containerSize.height
+                return scrollable > 0 ? min(max((geometry.contentOffset.y + geometry.contentInsets.top) / scrollable, 0), 1) : 0
+            } action: { _, progress in
+                scrollProgress = progress
+            }
+            .onScrollPhaseChange { _, phase in
+                isScrolling = phase.isScrolling
+            }
+            .overlay(alignment: .trailing) {
+                if model.months.count >= 3 {
+                    TimelineScrubber(months: model.months, progress: scrollProgress, isScrolling: isScrolling) { month in
+                        // Jump to the month's first row: its first entry if loaded, else its first placeholder.
+                        if let first = model.monthEntries[month.key]?.first {
+                            proxy.scrollTo(first.id, anchor: .top)
+                        } else {
+                            proxy.scrollTo(PlaceholderID(month: month.key, index: 0), anchor: .top)
+                        }
+                    }
+                }
+            }
         }
     }
 
-    private var sections: [MonthSection] {
-        var result: [MonthSection] = []
-        for entry in model.entries {
-            let key = String(entry.date.prefix(7))
-            if result.last?.id == key {
-                result[result.count - 1].entries.append(entry)
-            } else {
-                result.append(MonthSection(id: key, title: entry.day?.monthTitle ?? key, entries: [entry]))
+    @ViewBuilder
+    private func monthRows(_ month: MonthCount) -> some View {
+        if let entries = model.monthEntries[month.key] {
+            ForEach(entries) { entry in
+                NavigationLink(value: EntryRoute(id: entry.id)) {
+                    EntryRow(entry: entry)
+                }
+            }
+            .task {
+                // Reload a month a refresh marked stale once it's back on screen.
+                guard model.isStale(month.key) else { return }
+                try? await Task.sleep(for: .milliseconds(250))
+                guard !Task.isCancelled else { return }
+                await model.loadMonth(month.key)
+            }
+        } else {
+            // Placeholders sized like real rows keep scrolling (and the scrubber) proportional.
+            ForEach(0..<month.count, id: \.self) { index in
+                EntryRowPlaceholder()
+                    .id(PlaceholderID(month: month.key, index: index))
+            }
+            .task {
+                // Wait until the month settles on screen, so flicking or scrubbing past it
+                // doesn't fire a request for every month along the way.
+                try? await Task.sleep(for: .milliseconds(250))
+                guard !Task.isCancelled else { return }
+                await model.loadMonth(month.key)
             }
         }
-        return result
     }
 
     private func startWriting() {
@@ -132,10 +162,37 @@ struct JournalView: View {
     }
 }
 
-private struct MonthSection: Identifiable {
-    let id: String
+private struct PlaceholderID: Hashable {
+    let month: String
+    let index: Int
+}
+
+private struct MonthHeader: View {
     let title: String
-    var entries: [EntrySummary]
+
+    var body: some View {
+        Text(title)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityAddTraits(.isHeader)
+    }
+}
+
+private struct EntryRowPlaceholder: View {
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            RoundedRectangle(cornerRadius: 6).fill(.quaternary).frame(width: 42, height: 40)
+            VStack(alignment: .leading, spacing: 8) {
+                RoundedRectangle(cornerRadius: 4).fill(.quaternary).frame(height: 14)
+                RoundedRectangle(cornerRadius: 4).fill(.quaternary).frame(width: 180, height: 14)
+            }
+        }
+        .padding(.vertical, 4)
+        .frame(height: 72, alignment: .top)
+        .redacted(reason: .placeholder)
+        .accessibilityHidden(true)
+    }
 }
 
 struct EntryRow: View {
@@ -163,6 +220,7 @@ struct EntryRow: View {
                 Text(entry.excerpt.isEmpty ? "📷 Photo" : entry.excerpt)
                     .font(.system(.body, design: .serif))
                     .lineLimit(3)
+                    .multilineTextAlignment(.leading)
                 if !entry.hashtags.isEmpty {
                     Text(entry.hashtags.map { "#\($0)" }.joined(separator: " "))
                         .font(.caption)

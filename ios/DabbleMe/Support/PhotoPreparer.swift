@@ -6,6 +6,8 @@ struct PreparedPhoto: Sendable, Equatable {
     let data: Data
     let contentType: String
     let filename: String
+    /// Small JPEG for previews, so the compose screen never decodes full-size photos on the main thread.
+    let thumbnail: Data
 }
 
 enum PhotoError: Error {
@@ -17,10 +19,20 @@ enum PhotoError: Error {
 /// location out of the uploaded file (it's a private journal).
 enum PhotoPreparer {
     static let maxPixelSize = 2400
+    static let thumbnailPixelSize = 240
     static let jpegQuality = 0.88
 
     static func prepare(_ data: Data) throws -> PreparedPhoto {
         guard let source = CGImageSourceCreateWithData(data as CFData, nil) else { throw PhotoError.unreadable }
+        return PreparedPhoto(
+            data: try jpeg(from: source, maxPixelSize: maxPixelSize, quality: jpegQuality),
+            contentType: "image/jpeg",
+            filename: "photo.jpg",
+            thumbnail: try jpeg(from: source, maxPixelSize: thumbnailPixelSize, quality: 0.8)
+        )
+    }
+
+    private static func jpeg(from source: CGImageSource, maxPixelSize: Int, quality: Double) throws -> Data {
         let options: [CFString: Any] = [
             kCGImageSourceCreateThumbnailFromImageAlways: true,
             kCGImageSourceCreateThumbnailWithTransform: true, // bake in EXIF orientation
@@ -34,9 +46,8 @@ enum PhotoPreparer {
         guard let destination = CGImageDestinationCreateWithData(output, UTType.jpeg.identifier as CFString, 1, nil) else {
             throw PhotoError.unreadable
         }
-        CGImageDestinationAddImage(destination, image, [kCGImageDestinationLossyCompressionQuality: jpegQuality] as CFDictionary)
+        CGImageDestinationAddImage(destination, image, [kCGImageDestinationLossyCompressionQuality: quality] as CFDictionary)
         guard CGImageDestinationFinalize(destination) else { throw PhotoError.unreadable }
-
-        return PreparedPhoto(data: output as Data, contentType: "image/jpeg", filename: "photo.jpg")
+        return output as Data
     }
 }
