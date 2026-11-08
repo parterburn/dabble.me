@@ -50,6 +50,9 @@ final class ScreenshotTests: XCTestCase {
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["Add More"].waitForExistence(timeout: 30))
         editor.tap()
+        // A fresh simulator shows the one-time "slide to type" tip over the keyboard.
+        let tip = app.buttons["Continue"]
+        if tip.waitForExistence(timeout: 2) { tip.tap() }
         editor.typeText("Slow Saturday. Made pour-over with the beans from the farmers market and read on the porch until noon.\n\nGrateful for ")
         app.buttons["Bold"].tap()
         editor.typeText("quiet mornings")
