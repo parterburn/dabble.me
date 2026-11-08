@@ -110,7 +110,8 @@ struct ComposeView: View {
             .richTextLinkAlert(editor)
             .onChange(of: photoItems) { Task { await preparePhotos() } }
             .onAppear {
-                if isNew, let today = model.me.flatMap({ JournalDay($0.today) }) {
+                // Today's date in the journal's time zone, preferring the freshest source.
+                if isNew, let today = model.today?.day ?? model.me.flatMap({ JournalDay($0.today) }) {
                     date = today.localDate
                 }
             }

@@ -92,7 +92,7 @@ final class FlowTests: XCTestCase {
 
     func testScrubberJumpsToOldestMonth() throws {
         openJournal()
-        let scroll = app.scrollViews.firstMatch
+        let scroll = app.collectionViews.firstMatch
         scroll.swipeUp(velocity: .slow) // the scrubber appears while scrolling
         let scrubber = app.otherElements["Timeline scrubber"]
         XCTAssertTrue(scrubber.waitForExistence(timeout: 5))
@@ -120,6 +120,81 @@ final class FlowTests: XCTestCase {
         let next = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Big presentation went well")).firstMatch
         XCTAssertTrue(next.waitForExistence(timeout: 5), "Pulling down past the top should open the next day's entry")
         snap("pulled-next-day")
+    }
+
+    func testRefreshPicksUpChangesInOlderMonths() throws {
+        openJournal()
+        scrubToBottom()
+        sleep(2)
+        snap("stale-before")
+        if let dir = ProcessInfo.processInfo.environment["DABBLE_DEBUG_DIR"] {
+            try? app.debugDescription.write(toFile: dir + "/stale-before.txt", atomically: true, encoding: .utf8)
+        }
+        XCTAssertTrue(app.staticTexts["November 2023"].waitForExistence(timeout: 10))
+        sleep(1) // let the month's entries load so it's cached before the change
+
+        // Change that entry behind the app's back, as an email reply or the website would.
+        let marker = "Edited elsewhere \(Int(Date().timeIntervalSince1970))"
+        try api("PATCH", "entries/\(try entryID(year: 2023, month: 11))",
+                body: ["document": [["type": "paragraph", "runs": [["text": marker]]]]])
+
+        // Back to the top, then a deliberate pull to refresh.
+        let timeline = app.collectionViews.firstMatch
+        for _ in 0..<4 { timeline.swipeDown(velocity: .fast) }
+        sleep(1)
+        timeline.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
+            .press(forDuration: 0.1, thenDragTo: timeline.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.9)))
+        sleep(3)
+        scrubToBottom()
+        sleep(3)
+        snap("stale-after")
+        if let dir = ProcessInfo.processInfo.environment["DABBLE_DEBUG_DIR"] {
+            try? app.debugDescription.write(toFile: dir + "/stale-after.txt", atomically: true, encoding: .utf8)
+        }
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", marker)).firstMatch.waitForExistence(timeout: 10),
+                      "A cached older month should reload after a refresh")
+
+        // Put the demo entry back.
+        try api("PATCH", "entries/\(try entryID(year: 2023, month: 11))", body: ["document": [["type": "paragraph", "runs": [
+            ["text": "Moved into the new apartment today. Boxes everywhere, no curtains yet, pizza on the floor. It already feels like home."],
+        ]]]])
+    }
+
+    private func scrubToBottom() {
+        let scroll = app.collectionViews.firstMatch
+        scroll.swipeUp(velocity: .slow)
+        let scrubber = app.otherElements["Timeline scrubber"]
+        XCTAssertTrue(scrubber.waitForExistence(timeout: 5))
+        let bottom = app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.88))
+        scrubber.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).press(forDuration: 0.3, thenDragTo: bottom)
+    }
+
+    // MARK: - Direct API calls (to simulate changes made outside the app)
+
+    private func entryID(year: Int, month: Int) throws -> Int {
+        let json = try api("GET", "entries?year=\(year)&month=\(month)")
+        let entries = try XCTUnwrap(json["entries"] as? [[String: Any]])
+        return try XCTUnwrap(entries.first?["id"] as? Int)
+    }
+
+    @discardableResult
+    private func api(_ method: String, _ path: String, body: [String: Any]? = nil) throws -> [String: Any] {
+        let token = try XCTUnwrap(ProcessInfo.processInfo.environment["DABBLE_TOKEN"])
+        var request = URLRequest(url: URL(string: "http://localhost:3000/api/v1/\(path)")!)
+        request.httpMethod = method
+        request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+        if let body {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        }
+        let done = expectation(description: "\(method) \(path)")
+        nonisolated(unsafe) var result: Data?
+        URLSession.shared.dataTask(with: request) { data, _, _ in
+            result = data
+            done.fulfill()
+        }.resume()
+        wait(for: [done], timeout: 10)
+        return (try? JSONSerialization.jsonObject(with: result ?? Data())) as? [String: Any] ?? [:]
     }
 
     private func openJournal() {

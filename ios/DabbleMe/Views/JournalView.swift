@@ -69,25 +69,24 @@ struct JournalView: View {
 
     private var timeline: some View {
         ScrollViewReader { proxy in
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 0, pinnedViews: [.sectionHeaders]) {
-                    if let error = model.timelineError {
-                        Label(error, systemImage: "exclamationmark.triangle")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .padding()
-                    }
-                    ForEach(model.months) { month in
-                        Section {
-                            monthRows(month)
-                        } header: {
-                            MonthHeader(title: month.title)
-                                .id(month.key)
-                        }
+            List {
+                if let error = model.timelineError {
+                    Label(error, systemImage: "exclamationmark.triangle")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
+                ForEach(model.months) { month in
+                    Section {
+                        monthRows(month)
+                    } header: {
+                        MonthHeader(title: month.title)
+                            .onAppear { model.monthAppeared(month.key) }
+                            .onDisappear { model.monthDisappeared(month.key) }
                     }
                 }
-                .padding(.trailing, 20) // room for the scrubber
             }
+            .listStyle(.plain)
+            .contentMargins(.trailing, 20, for: .scrollContent) // room for the scrubber
             .refreshable { await model.refresh() }
             .onScrollGeometryChange(for: CGFloat.self) { geometry in
                 let scrollable = geometry.contentSize.height - geometry.containerSize.height
@@ -101,7 +100,12 @@ struct JournalView: View {
             .overlay(alignment: .trailing) {
                 if model.months.count >= 3 {
                     TimelineScrubber(months: model.months, progress: scrollProgress, isScrolling: isScrolling) { month in
-                        proxy.scrollTo(month.key, anchor: .top)
+                        // Jump to the month's first row: its first entry if loaded, else its first placeholder.
+                        if let first = model.monthEntries[month.key]?.first {
+                            proxy.scrollTo(first.id, anchor: .top)
+                        } else {
+                            proxy.scrollTo(PlaceholderID(month: month.key, index: 0), anchor: .top)
+                        }
                     }
                 }
             }
@@ -114,17 +118,20 @@ struct JournalView: View {
             ForEach(entries) { entry in
                 NavigationLink(value: EntryRoute(id: entry.id)) {
                     EntryRow(entry: entry)
-                        .padding(.horizontal)
-                        .padding(.vertical, 6)
-                        .contentShape(.rect)
                 }
-                .buttonStyle(.plain)
-                Divider().padding(.leading, 72)
+            }
+            .task {
+                // Reload a month a refresh marked stale once it's back on screen.
+                guard model.isStale(month.key) else { return }
+                try? await Task.sleep(for: .milliseconds(250))
+                guard !Task.isCancelled else { return }
+                await model.loadMonth(month.key)
             }
         } else {
             // Placeholders sized like real rows keep scrolling (and the scrubber) proportional.
-            ForEach(0..<month.count, id: \.self) { _ in
+            ForEach(0..<month.count, id: \.self) { index in
                 EntryRowPlaceholder()
+                    .id(PlaceholderID(month: month.key, index: index))
             }
             .task {
                 // Wait until the month settles on screen, so flicking or scrubbing past it
@@ -155,6 +162,11 @@ struct JournalView: View {
     }
 }
 
+private struct PlaceholderID: Hashable {
+    let month: String
+    let index: Int
+}
+
 private struct MonthHeader: View {
     let title: String
 
@@ -163,9 +175,6 @@ private struct MonthHeader: View {
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal)
-            .padding(.vertical, 8)
-            .background(.bar)
             .accessibilityAddTraits(.isHeader)
     }
 }
@@ -179,9 +188,8 @@ private struct EntryRowPlaceholder: View {
                 RoundedRectangle(cornerRadius: 4).fill(.quaternary).frame(width: 180, height: 14)
             }
         }
-        .padding(.horizontal)
-        .padding(.vertical, 6)
-        .frame(height: 84, alignment: .top)
+        .padding(.vertical, 4)
+        .frame(height: 72, alignment: .top)
         .redacted(reason: .placeholder)
         .accessibilityHidden(true)
     }

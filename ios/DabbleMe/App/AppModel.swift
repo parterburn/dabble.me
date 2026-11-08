@@ -31,6 +31,10 @@ final class AppModel {
     private(set) var months: [MonthCount] = []
     private(set) var monthEntries: [String: [EntrySummary]] = [:]
     private var loadingMonths: Set<String> = []
+    /// Cached months a refresh hasn't reloaded yet (they reload when they scroll into view),
+    /// and the months currently on screen (reloaded right away on refresh).
+    private var staleMonths: Set<String> = []
+    private var visibleMonths: Set<String> = []
     private(set) var hasLoaded = false
     var timelineError: String?
 
@@ -99,6 +103,8 @@ final class AppModel {
         months = []
         monthEntries = [:]
         loadingMonths = []
+        staleMonths = []
+        visibleMonths = []
         hasLoaded = false
         selectedTab = .today
         timelineError = nil
@@ -117,30 +123,53 @@ final class AppModel {
             self.me = me
             self.today = today
             months = monthList.months
-            // Months reload as they come back into view; keep what's on screen until then.
+            // Entries can change by email or on the web: keep cached months on screen, reload the
+            // visible ones (and the newest) now, and the rest when they scroll back into view.
             monthEntries = monthEntries.filter { key, _ in months.contains { $0.key == key } }
-            loadingMonths = []
+            staleMonths = Set(monthEntries.keys)
             timelineError = nil
             hasLoaded = true
-            if let newest = months.first { await loadMonth(newest.key, force: true) }
+            var reloadNow = visibleMonths.intersection(staleMonths)
+            if let newest = months.first { reloadNow.insert(newest.key) }
+            await withTaskGroup(of: Void.self) { group in
+                for key in reloadNow {
+                    group.addTask { await self.loadMonth(key, force: true) }
+                }
+            }
         } catch is CancellationError {
         } catch {
             report(error)
         }
     }
 
+    /// Refreshes Today and the account together, so "today" (in the journal's time zone) stays
+    /// in step everywhere, e.g. when the app stays open past midnight.
     func loadToday() async {
         guard isSignedIn else { return }
         do {
-            today = try await api.get("api/v1/today")
+            async let todayRequest: TodaySummary = api.get("api/v1/today")
+            async let meRequest: Me = api.get("api/v1/me")
+            (today, me) = try await (todayRequest, meRequest)
         } catch is CancellationError {
         } catch {
             report(error)
         }
     }
 
+    func monthAppeared(_ key: String) {
+        visibleMonths.insert(key)
+    }
+
+    func monthDisappeared(_ key: String) {
+        visibleMonths.remove(key)
+    }
+
+    func isStale(_ key: String) -> Bool {
+        staleMonths.contains(key)
+    }
+
     func loadMonth(_ key: String, force: Bool = false) async {
-        guard force || monthEntries[key] == nil, !loadingMonths.contains(key),
+        guard force || monthEntries[key] == nil || staleMonths.contains(key), !loadingMonths.contains(key),
               let month = months.first(where: { $0.key == key }) else { return }
         loadingMonths.insert(key)
         defer { loadingMonths.remove(key) }
@@ -148,6 +177,7 @@ final class AppModel {
             let page: EntryPage = try await api.get("api/v1/entries",
                                                     query: ["year": String(month.year), "month": String(month.month), "per": "50"])
             monthEntries[key] = page.entries
+            staleMonths.remove(key)
             for entry in page.entries where entry.imageProcessing { watchProcessing(id: entry.id) }
         } catch is CancellationError {
         } catch {
