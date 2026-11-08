@@ -4,7 +4,7 @@
 // publish them in this public repo, so they live on S3 and are drawn as CSS
 // masks in the current text color. Masks load with CORS, so the bucket needs
 // a CORS rule allowing GET from the site's origin.
-$slab-icons-url: "https://dabble-me.s3.amazonaws.com/uploads/icons/slab";
+$slab-icons-url: "https://dabble-me.s3.amazonaws.com/icons/slab";
 
 @mixin slab-mask($name) {
   background-color: currentColor;
