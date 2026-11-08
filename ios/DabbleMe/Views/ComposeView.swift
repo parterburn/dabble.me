@@ -109,6 +109,9 @@ struct ComposeView: View {
             }
             .richTextLinkAlert(editor)
             .onChange(of: photoItems) { Task { await preparePhotos() } }
+            #if DEBUG
+            .task { await attachDebugPhotos() }
+            #endif
             .onAppear {
                 // Today's date in the journal's time zone, preferring the freshest source.
                 if isNew, let today = model.today?.day ?? model.me.flatMap({ JournalDay($0.today) }) {
@@ -229,6 +232,28 @@ struct ComposeView: View {
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Selected photo")
     }
+
+    #if DEBUG
+    /// UI tests and screenshots: `-DabbleDebugComposePhotoURLs "url1,url2"` attaches those images
+    /// as if picked (the system photo picker runs out of process, out of a UI test's reach).
+    private func attachDebugPhotos() async {
+        guard isNew, photoItems.isEmpty,
+              let raw = UserDefaults.standard.string(forKey: "DabbleDebugComposePhotoURLs") else { return }
+        isLoadingPhotos = true
+        defer { isLoadingPhotos = false }
+        var items: [PhotosPickerItem] = []
+        for (index, string) in raw.split(separator: ",").enumerated() {
+            guard let url = URL(string: String(string)),
+                  let (data, _) = try? await URLSession.shared.data(from: url),
+                  let photo = try? PhotoPreparer.prepare(data) else { continue }
+            let item = PhotosPickerItem(itemIdentifier: "debug-\(index)")
+            prepared[item] = photo
+            previews[item] = UIImage(data: photo.thumbnail).map(Image.init(uiImage:))
+            items.append(item)
+        }
+        photoItems = items
+    }
+    #endif
 
     /// Prepares newly picked photos (downscale, strip location) and forgets removed ones.
     private func preparePhotos() async {

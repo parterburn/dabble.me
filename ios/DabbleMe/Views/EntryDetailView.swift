@@ -16,6 +16,10 @@ struct EntryDetailView: View {
     @State private var confirmingDelete = false
     @State private var isDeleting = false
     @State private var pull = Pull.none
+    /// The pull that was armed while the finger was down. Kept separately because the scroll
+    /// view starts bouncing back before the release reaches us, which disarms `pull`.
+    @State private var armedPull = Pull.none
+    @State private var isInteracting = false
     @State private var arrivalEdge = Edge.bottom
     @State private var isMoving = false
     @State private var pinchStart: ReadingTextSize?
@@ -32,7 +36,7 @@ struct EntryDetailView: View {
         case older(armed: Bool)
     }
 
-    private static let pullThreshold: CGFloat = 90
+    private static let pullThreshold: CGFloat = 70
 
     var body: some View {
         Group {
@@ -53,9 +57,17 @@ struct EntryDetailView: View {
                 .scrollBounceBehavior(.always)
                 .onScrollGeometryChange(for: Pull.self, of: Self.pull(for:)) { _, newValue in
                     pull = newValue
+                    // While the finger is down, track whether it's past the threshold right now.
+                    if isInteracting { armedPull = newValue.isArmed ? newValue : .none }
                 }
                 .onScrollPhaseChange { oldPhase, newPhase in
-                    if oldPhase == .interacting, newPhase != .interacting { releasePull(from: entry) }
+                    if newPhase == .interacting {
+                        isInteracting = true
+                        armedPull = .none
+                    } else if oldPhase == .interacting {
+                        isInteracting = false
+                        releasePull(from: entry)
+                    }
                 }
                 .overlay(alignment: .top) {
                     if case .newer(let armed) = pull {
@@ -164,7 +176,8 @@ struct EntryDetailView: View {
     }
 
     private func releasePull(from entry: EntryDetail) {
-        switch pull {
+        defer { armedPull = .none }
+        switch armedPull {
         case .newer(armed: true): move(to: entry.nextEntry, arrivingFrom: .top)
         case .older(armed: true): move(to: entry.previousEntry, arrivingFrom: .bottom)
         default: break

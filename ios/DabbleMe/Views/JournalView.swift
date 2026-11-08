@@ -86,6 +86,7 @@ struct JournalView: View {
                 }
             }
             .listStyle(.plain)
+            .scrollIndicators(.hidden) // the timeline scrubber replaces the standard indicator
             .contentMargins(.trailing, 20, for: .scrollContent) // room for the scrubber
             .refreshable { await model.refresh() }
             .onScrollGeometryChange(for: CGFloat.self) { geometry in
@@ -99,14 +100,17 @@ struct JournalView: View {
             }
             .overlay(alignment: .trailing) {
                 if model.months.count >= 3 {
-                    TimelineScrubber(months: model.months, progress: scrollProgress, isScrolling: isScrolling) { month in
+                    TimelineScrubber(months: model.months, progress: scrollProgress, isScrolling: isScrolling, onSelect: { month in
                         // Jump to the month's first row: its first entry if loaded, else its first placeholder.
                         if let first = model.monthEntries[month.key]?.first {
                             proxy.scrollTo(first.id, anchor: .top)
                         } else {
                             proxy.scrollTo(PlaceholderID(month: month.key, index: 0), anchor: .top)
                         }
-                    }
+                    }, onRelease: { month in
+                        // Load where the scrubber landed now, rather than waiting for rows to settle.
+                        Task { await model.loadMonths(around: month.key) }
+                    })
                 }
             }
         }
@@ -123,7 +127,7 @@ struct JournalView: View {
             .task {
                 // Reload a month a refresh marked stale once it's back on screen.
                 guard model.isStale(month.key) else { return }
-                try? await Task.sleep(for: .milliseconds(250))
+                try? await Task.sleep(for: .milliseconds(150))
                 guard !Task.isCancelled else { return }
                 await model.loadMonth(month.key)
             }
@@ -136,7 +140,7 @@ struct JournalView: View {
             .task {
                 // Wait until the month settles on screen, so flicking or scrubbing past it
                 // doesn't fire a request for every month along the way.
-                try? await Task.sleep(for: .milliseconds(250))
+                try? await Task.sleep(for: .milliseconds(150))
                 guard !Task.isCancelled else { return }
                 await model.loadMonth(month.key)
             }

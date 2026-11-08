@@ -7,7 +7,9 @@ final class FlowTests: XCTestCase {
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        let token = try XCTUnwrap(ProcessInfo.processInfo.environment["DABBLE_TOKEN"], "Set TEST_RUNNER_DABBLE_TOKEN")
+        guard let token = ProcessInfo.processInfo.environment["DABBLE_TOKEN"] else {
+            throw XCTSkip("Needs a local server and TEST_RUNNER_DABBLE_TOKEN (rails ios:demo_account)")
+        }
         app = XCUIApplication()
         app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", "http://localhost:3000"]
         app.launch()
@@ -90,6 +92,25 @@ final class FlowTests: XCTestCase {
         snap("today")
     }
 
+    func testPullUpOpensPreviousDays() throws {
+        openJournal()
+        let entry = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS %@", "Biscuit has discovered the heated blanket")).firstMatch
+        XCTAssertTrue(entry.waitForExistence(timeout: 10))
+        entry.tap()
+        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+
+        // Each pull up past the bottom should open the previous day with an entry, every time.
+        for expected in ["Ran 5 miles", "Rainy day", "Hard conversation"] {
+            sleep(1)
+            let scroll = app.scrollViews.firstMatch
+            scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
+                .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1)))
+            let previous = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", expected)).firstMatch
+            XCTAssertTrue(previous.waitForExistence(timeout: 5), "Pulling up should open the entry with \"\(expected)\"")
+        }
+    }
+
     func testScrubberJumpsToOldestMonth() throws {
         openJournal()
         let scroll = app.collectionViews.firstMatch
@@ -101,6 +122,9 @@ final class FlowTests: XCTestCase {
         let oldest = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "November 2023")).firstMatch
         XCTAssertTrue(oldest.waitForExistence(timeout: 5), "Dragging to the bottom should jump to the oldest month")
         XCTAssertTrue(oldest.isHittable)
+        let loaded = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS %@", "Moved into the new apartment")).firstMatch
+        XCTAssertTrue(loaded.waitForExistence(timeout: 3), "The month the scrubber lands on should load right away")
         snap("journal-scrubbed")
     }
 
