@@ -756,13 +756,32 @@ mark {
   }
 }
 
-// "Reflect on this entry" modal (reflection.js)
-.s-reflection-modal {
-  .modal-content {
-    border-radius: 8px;
+// "Reflect on this entry" dialog (reflection.js)
+.s-reflection-dialog {
+  width: calc(100% - 32px);
+  max-width: 600px;
+  max-height: calc(100% - 32px);
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  color: $olive-950;
+  &::backdrop {
+    background: rgba(0, 0, 0, 0.5);
   }
-  .modal-title {
-    font-weight: 600;
+  .s-reflection-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    border-bottom: 1px solid #e5e5e5;
+    h4 {
+      margin: 0;
+      font-weight: 600;
+    }
+  }
+  .s-reflection-content {
+    padding: 15px;
   }
   .s-reflection-date {
     color: $olive-500;
@@ -772,7 +791,6 @@ mark {
     letter-spacing: 0.04em;
   }
   .s-reflection-body {
-    color: $olive-950;
     font-family: Georgia, Cambria, "Times New Roman", Times, serif;
     font-size: 18px;
     line-height: 1.6;
@@ -788,4 +806,9 @@ mark {
     color: $olive-500;
     font-size: 12px;
   }
+}
+
+// Keep the page behind the dialog from scrolling.
+body:has(.s-reflection-dialog[open]) {
+  overflow: hidden;
 }
