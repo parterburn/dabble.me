@@ -70,6 +70,7 @@ struct TodayView: View {
                     MemoryCard(entry: entry.summary, caption: nil)
                 }
                 .buttonStyle(.plain)
+                .entryPreview(entry.summary) { path.append(EntryRoute(id: entry.id)) }
                 if model.me?.canWrite == true {
                     Button("Add to Today's Entry", systemImage: "plus") { composing = true }
                         .buttonStyle(.bordered)
@@ -144,9 +145,10 @@ struct TodayView: View {
         guard !isWritingPrompt else { return }
         isWritingPrompt = true
         defer { isWritingPrompt = false }
-        let recent = (try? await model.recentEntries())?.map(\.excerpt).filter { !$0.isEmpty } ?? []
+        let day = today.day ?? JournalDay(localDate: .now)
+        let recent = JournalIntelligence.dated((try? await model.recentEntries()) ?? [], today: day)
         do {
-            let text = try await JournalIntelligence.reflectionPrompt(from: recent)
+            let text = try await JournalIntelligence.reflectionPrompt(from: recent, today: day)
             withAnimation {
                 aiPromptDay = today.date
                 aiPromptText = text

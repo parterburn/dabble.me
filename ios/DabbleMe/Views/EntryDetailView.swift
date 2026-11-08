@@ -236,7 +236,9 @@ struct EntryDetailView: View {
         isReflecting = true
         defer { isReflecting = false }
         do {
-            let recent = (try? await model.recentEntries())?.filter { $0.id != entry.id }.prefix(3).map(\.excerpt) ?? []
+            let today = model.today?.day ?? JournalDay(localDate: .now)
+            let others = (try? await model.recentEntries())?.filter { $0.id != entry.id }.prefix(3) ?? []
+            let recent = JournalIntelligence.dated(Array(others), today: today)
             let text = try await JournalIntelligence.reflection(on: entry.bodyText, date: entry.day?.long ?? entry.date,
                                                                 firstName: model.me?.firstName, recent: Array(recent))
             reflection = EntryReflection(date: entry.day?.long ?? entry.date, text: text)

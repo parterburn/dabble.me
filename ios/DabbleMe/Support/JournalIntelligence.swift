@@ -86,7 +86,7 @@ enum JournalIntelligence {
     /// web's DabbleMeGPT life-coach reply (Entry::AiAssistant#as_life_coach), minus web search,
     /// images and hashtags.
     static func reflection(on text: String, date: String, firstName: String?, recent: [String]) async throws -> String {
-        let context = recent.isEmpty ? "" : "\n\nMy recent entries (context only, if relevant):\n" + recent.map { "- \($0)" }.joined(separator: "\n")
+        let context = recent.isEmpty ? "" : "\n\nMy other recent entries, with their dates (context only, if relevant):\n" + recent.joined(separator: "\n")
         let name = firstName.map { "My name is \($0). " } ?? ""
         return try await respond(
             instructions: lifeCoach,
@@ -126,15 +126,30 @@ enum JournalIntelligence {
     """
 
     /// One reflection question inspired by recent entries.
-    static func reflectionPrompt(from recent: [String]) async throws -> String {
-        let context = recent.prefix(5).enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n")
+    /// `recent` are dated lines from `dated(_:today:)`: the model needs to know those things happened
+    /// on earlier days, or it asks about "today's" game that was yesterday.
+    static func reflectionPrompt(from recent: [String], today: JournalDay) async throws -> String {
+        let context = recent.prefix(5).joined(separator: "\n")
+        let todayText = today.formatted(.dateTime.weekday(.wide).month(.wide).day())
         return try await respond(
             instructions: """
-            You write one gentle journaling prompt: a single question under 20 words that invites the writer \
-            to reflect on today, building on themes from their recent entries. Reply with only the question.
+            You write one gentle journaling prompt for today: a single question under 20 words. Recent entries \
+            are given with their dates; everything in them happened on those earlier days, not today. If the \
+            question mentions something from them, put it in the past ("yesterday's game", "last week's trip") \
+            and ask how it connects to today. Never describe a past event as happening today. Reply with only \
+            the question.
             """,
-            prompt: context.isEmpty ? "No recent entries yet." : "Recent entries:\n\(clipped(context))"
+            prompt: "Today is \(todayText).\n" + (context.isEmpty ? "No recent entries yet." : "Recent entries:\n\(clipped(context))")
         )
+    }
+
+    /// "- Yesterday (Saturday, Nov 7): The basketball win was fun!"
+    static func dated(_ entries: [EntrySummary], today: JournalDay) -> [String] {
+        entries.filter { !$0.excerpt.isEmpty }.map { entry in
+            guard let day = entry.day else { return "- \(entry.excerpt)" }
+            let date = day.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
+            return "- \(day.relative(to: today)) (\(date)): \(entry.excerpt)"
+        }
     }
 
     static func hashtags(in text: String) -> [String] {

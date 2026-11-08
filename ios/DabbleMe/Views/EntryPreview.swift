@@ -34,13 +34,23 @@ struct EntryPreview: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(summary.day?.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year()) ?? summary.date)
                 .font(.headline)
-            if let document = entry?.document {
-                DocumentText(blocks: document, font: .system(size: bodySize, design: .serif), scale: 1, bodySize: bodySize)
-                    .lineLimit(14)
-            } else {
-                Text(entry.map { AttributedString.journal($0.bodyText) } ?? AttributedString(summary.excerpt))
-                    .font(.system(size: bodySize, design: .serif))
-                    .lineLimit(14)
+            // The same rendering as the entry screen, whether or not the entry is editable in the app
+            // (older email entries often aren't); long entries fade out at the bottom of the preview.
+            Group {
+                if let document = entry?.document {
+                    DocumentText(blocks: document, font: .system(size: bodySize, design: .serif), scale: 1, bodySize: bodySize)
+                } else {
+                    Text(entry.map { AttributedString.journal($0.bodyText) } ?? AttributedString(summary.excerpt))
+                        .font(.system(size: bodySize, design: .serif))
+                        .lineSpacing(5)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .frame(maxHeight: summary.imageURL == nil ? 440 : 280, alignment: .top)
+            .clipped()
+            .mask {
+                LinearGradient(stops: [.init(color: .black, location: 0.85), .init(color: .clear, location: 1)],
+                               startPoint: .top, endPoint: .bottom)
             }
             if summary.imageURL != nil, !summary.imageProcessing {
                 AsyncImage(url: summary.thumbnailURL(width: 700)) { image in

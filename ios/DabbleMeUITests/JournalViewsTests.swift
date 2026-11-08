@@ -263,4 +263,34 @@ final class JournalViewsTests: XCTestCase {
         print("PLAN_LINK=\(app.links.matching(NSPredicate(format: "label CONTAINS 'Plan'")).firstMatch.exists)")
         snap("settings-plan")
     }
+
+    /// On This Day cards preview like entries elsewhere: the whole entry, not just the card's excerpt.
+    func testOnThisDayPreview() throws {
+        let app = launch()
+        let card = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Bruges!")).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 15))
+        card.press(forDuration: 1.2)
+        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 5))
+        sleep(2)
+        snap("today-preview")
+    }
+
+    /// Today's AI prompt treats earlier entries as earlier (EMPTY token account seeded with a
+    /// "yesterday" basketball entry). Prints each prompt for review.
+    func testAIPromptKeepsPastInThePast() throws {
+        guard let token = ProcessInfo.processInfo.environment["DABBLE_EMPTY_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_EMPTY_TOKEN") }
+        let app = XCUIApplication()
+        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launch()
+        let another = app.buttons["Another Prompt"]
+        guard another.waitForExistence(timeout: 60) else { throw XCTSkip("Apple Intelligence isn't available here") }
+        for round in 0..<4 {
+            let prompt = app.staticTexts.matching(NSPredicate(format: "label ENDSWITH '?'")).firstMatch
+            print("PROMPT\(round)=\(prompt.label)")
+            another.tap()
+            sleep(1)
+            XCTAssertTrue(another.waitForExistence(timeout: 60))
+        }
+        snap("ai-prompt-dated")
+    }
 }
