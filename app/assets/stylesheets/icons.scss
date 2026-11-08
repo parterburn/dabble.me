@@ -1,10 +1,10 @@
 @import 'vars';
 
 // Font Awesome Pro "Slab" icons. The license lets the site use them but not
-// publish them in this public repo, so they live on S3 and are drawn as CSS
-// masks in the current text color. Masks load with CORS, so the bucket needs
-// a CORS rule allowing GET from the site's origin.
-$slab-icons-url: "https://dabble-me.s3.amazonaws.com/icons/slab";
+// publish them in this public repo, so they're served from the CDN (S3 key
+// uploads/icons/slab/) and drawn as CSS masks in the current text color.
+// Masks load with CORS, so the CDN must send Access-Control-Allow-Origin.
+$slab-icons-url: "https://d10r8m94hrfowu.cloudfront.net/icons/slab";
 
 @mixin slab-mask($name) {
   background-color: currentColor;
