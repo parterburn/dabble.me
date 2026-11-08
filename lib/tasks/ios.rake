@@ -38,7 +38,7 @@ namespace :ios do
         <p>Maya pulled me aside afterwards and said it was the clearest version of the plan she's heard. Taking that one with me. #work #gratitude</p>
       HTML
       [today - 5, <<~HTML, 1062],
-        <p>Biscuit has discovered the heated blanket and will not be leaving it until spring.</p>
+        <p>Biscuit has discovered the heated blanket and will not be leaving it until spring. #Biscuit</p>
       HTML
       [today - 7, <<~HTML, nil],
         <p>Ran 5 miles without stopping for the first time since the injury. Slow, but steady.</p>
@@ -99,6 +99,10 @@ namespace :ios do
         entry.reload
       end
     end
+
+    # A dated hashtag (like a pet's or kid's birthday): the app shows how old Biscuit was on each entry.
+    user.original_hashtags.destroy_all
+    user.original_hashtags.create!(tag: "Biscuit", date: today - 3.years - 5.months)
 
     app = MobileApp.ensure_application!
     Doorkeeper::AccessToken.where(resource_owner_id: user.id, application_id: app.id).update_all(revoked_at: Time.current)

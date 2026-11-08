@@ -63,7 +63,7 @@ final class HabitTests: XCTestCase {
         let memories = app.switches["On This Day Memories"]
         if (memories.value as? String) != "1" { memories.switches.firstMatch.tap() }
 
-        let scheduled = app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "[1-9][0-9]* reminders scheduled")).firstMatch
+        let scheduled = app.descendants(matching: .any).matching(NSPredicate(format: "label MATCHES %@", "[1-9][0-9]* reminders scheduled")).firstMatch
         XCTAssertTrue(scheduled.waitForExistence(timeout: 15), "Turning reminders on should schedule notifications")
         snap("reminders-settings")
     }

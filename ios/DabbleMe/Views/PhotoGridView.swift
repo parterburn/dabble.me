@@ -2,6 +2,8 @@ import SwiftUI
 
 /// Journal > Photos: every entry with a photo, newest first. Tap one to open that day.
 struct PhotoGridView: View {
+    /// Opens an entry (long-press → Open).
+    var open: (EntryRoute) -> Void = { _ in }
     @Environment(AppModel.self) private var model
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var entries: [EntrySummary] = []
@@ -34,6 +36,7 @@ struct PhotoGridView: View {
                                 PhotoCell(entry: entry)
                             }
                             .buttonStyle(.plain)
+                            .entryPreview(entry) { open(EntryRoute(id: entry.id)) }
                             .task {
                                 if entry.id == entries.last?.id { await load(reset: false) }
                             }

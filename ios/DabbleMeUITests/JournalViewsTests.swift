@@ -13,9 +13,9 @@ final class JournalViewsTests: XCTestCase {
         self.token = token
     }
 
-    private func launch() -> XCUIApplication {
+    private func launch(_ extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", "http://localhost:3000"] + extra
         app.launch()
         return app
     }
@@ -118,15 +118,16 @@ final class JournalViewsTests: XCTestCase {
 
     func testTodayPromptEntrySummaryAndSettings() throws {
         let app = launch()
-        let prompt = app.buttons["Prompt from My Recent Entries"]
-        if prompt.waitForExistence(timeout: 15) {
-            prompt.tap()
-            let personal = app.buttons["Another Prompt"]
-            let deadline = Date().addingTimeInterval(60)
-            while !personal.exists, !app.alerts.firstMatch.exists, Date() < deadline { sleep(1) }
+        // With Apple Intelligence on, Today writes its own prompt (no button to ask for one).
+        XCTAssertTrue(app.staticTexts["On This Day"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.buttons["Prompt from My Recent Entries"].exists)
+        let another = app.buttons["Another Prompt"]
+        if another.waitForExistence(timeout: 60) {
             snap("today-ai-prompt")
-            if app.alerts.firstMatch.exists { print("PROMPT_ALERT=\(app.alerts.firstMatch.debugDescription)") }
-            XCTAssertTrue(personal.exists)
+            another.tap()
+            XCTAssertTrue(another.waitForExistence(timeout: 60))
+        } else {
+            print("AI_UNAVAILABLE_OR_ENTRY_WRITTEN")
         }
 
         tab(app, "Journal").tap()
@@ -169,5 +170,85 @@ final class JournalViewsTests: XCTestCase {
         snap("settings-top")
         app.swipeUp()
         snap("settings-privacy")
+    }
+
+    private func pullUp(_ app: XCUIApplication) {
+        let scroll = app.scrollViews.firstMatch
+        scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
+            .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1)))
+    }
+
+    /// From search results, pulling moves through the results (not by date), and tapping a
+    /// #hashtag in the entry goes back to the results for that tag.
+    func testSearchResultsScopeEntryNavigation() throws {
+        let app = launch()
+        tab(app, "Search").tap()
+        XCTAssertTrue(app.buttons["#hiking"].waitForExistence(timeout: 10))
+        app.buttons["#hiking"].tap()
+        let yosemite = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
+        XCTAssertTrue(yosemite.waitForExistence(timeout: 10))
+        yosemite.tap()
+        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+        sleep(1)
+        pullUp(app)
+        // The next #hiking result (Oct 15), not the next day by date (Nov 6, "Slow Saturday").
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Day trip to the falls")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Slow Saturday")).firstMatch.exists)
+
+        let tag = app.links["#hiking"].firstMatch
+        XCTAssertTrue(tag.waitForExistence(timeout: 5))
+        tag.tap()
+        XCTAssertTrue(app.staticTexts["2 entries"].waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["Entry Actions"].exists, "The entry should close to show the results")
+    }
+
+    /// Long-press an entry to preview it; long-press a dated #hashtag to see how old it was.
+    func testLongPressPreviewAndHashtagAge() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Biscuit has discovered")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.press(forDuration: 1.2)
+        let open = app.buttons["Open"]
+        XCTAssertTrue(open.waitForExistence(timeout: 5))
+        sleep(1)
+        snap("entry-preview")
+        open.tap()
+        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+
+        let chip = app.buttons["#Biscuit"].firstMatch
+        XCTAssertTrue(chip.waitForExistence(timeout: 5))
+        chip.press(forDuration: 1.2)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "since entry")).firstMatch.waitForExistence(timeout: 5))
+        snap("hashtag-age")
+    }
+
+    /// Tapping the mic asks for speech and microphone access and starts listening, without crashing.
+    func testDictationButtonStartsListening() throws {
+        let app = launch(["-DabbleDictationSkipAudio", "YES"])
+        let write = app.buttons["Write Today's Entry"].waitForExistence(timeout: 15) ? app.buttons["Write Today's Entry"] : app.buttons["Add to Today's Entry"]
+        XCTAssertTrue(write.waitForExistence(timeout: 5))
+        write.tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        editor.tap()
+        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+        let mic = app.toolbars.buttons["Dictate"].firstMatch // not the keyboard's own dictation key
+        guard mic.waitForExistence(timeout: 3) else { throw XCTSkip("On-device speech isn't available on this simulator") }
+        mic.tap()
+        // Permission prompts (speech, then microphone) come from SpringBoard.
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        for _ in 0..<2 {
+            let allow = springboard.buttons.matching(NSPredicate(format: "label IN {'Allow', 'OK'}")).firstMatch
+            if allow.waitForExistence(timeout: 4) { allow.tap() }
+        }
+        sleep(3)
+        XCTAssertEqual(app.state, .runningForeground, "The app should still be running after tapping the mic")
+        XCTAssertTrue(app.toolbars.buttons["Stop Dictating"].firstMatch.waitForExistence(timeout: 5), "Listening after permission")
+        snap("dictation")
+        let stop = app.toolbars.buttons["Stop Dictating"].firstMatch
+        if stop.exists { stop.tap() }
+        sleep(1)
+        XCTAssertEqual(app.state, .runningForeground)
     }
 }

@@ -105,6 +105,12 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       expect(response).to have_http_status(:unprocessable_content)
     end
 
+    it "includes dated hashtags with their age on the entry's day" do
+      free_user.original_hashtags.create!(tag: "Coffee", date: Date.new(2023, 11, 4))
+      get "/api/v1/entries/#{mine.id}", headers: auth(free_user)
+      expect(json["entry"]["dated_hashtags"]).to eq([{ "tag" => "coffee", "date" => "2023-11-04", "age" => "1 year and 4 months since entry" }])
+    end
+
     it "shows a single entry with text body" do
       get "/api/v1/entries/#{mine.id}", headers: auth(free_user)
       expect(response).to have_http_status(:ok)
@@ -492,6 +498,15 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
         get "/api/v1/hashtags", headers: auth(pro_user)
       end
       expect(json["hashtags"]).to eq([{ "tag" => "family", "count" => 2 }, { "tag" => "Cooking", "count" => 1 }])
+    end
+
+    it "can go further back, and limit how many" do
+      travel_to Time.find_zone(pro_user.send_timezone).local(2026, 6, 20, 12) do
+        create(:entry, user: pro_user, date: Time.zone.local(2026, 6, 1), body: "<p>#family #Cooking</p>")
+        create(:entry, user: pro_user, date: Time.zone.local(2024, 5, 1), body: "<p>#ancient</p>")
+        get "/api/v1/hashtags", params: { days: 3650, limit: 2 }, headers: auth(pro_user)
+      end
+      expect(json["hashtags"].map { |h| h["tag"] }).to eq(%w[ancient Cooking])
     end
   end
 

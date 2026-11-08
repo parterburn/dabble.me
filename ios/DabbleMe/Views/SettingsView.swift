@@ -50,6 +50,13 @@ struct SettingsView: View {
                 privacySection
 
                 Section {
+                    // Connecting happens on the web (OAuth on dabble.me, PRO plus a passkey or 2FA);
+                    // the guide links to Claude's and ChatGPT's directories.
+                    if let connectors = model.me?.aiConnectors {
+                        Link(destination: connectors.guideUrl) {
+                            Label("Claude/ChatGPT Connector", systemImage: "sparkles")
+                        }
+                    }
                     Link(destination: model.me?.settingsUrl ?? AppConfig.webURL("settings")) {
                         Label("Email Schedule & Preferences", systemImage: "envelope.badge")
                     }
@@ -58,13 +65,6 @@ struct SettingsView: View {
                     }
                     Link(destination: AppConfig.webURL("entries/export")) {
                         Label("Export Entries", systemImage: "square.and.arrow.up")
-                    }
-                    // Connecting happens on the web (OAuth on dabble.me, PRO plus a passkey or 2FA);
-                    // the guide links to Claude's and ChatGPT's directories.
-                    if let connectors = model.me?.aiConnectors {
-                        Link(destination: connectors.guideUrl) {
-                            Label("Claude/ChatGPT Connector", systemImage: "sparkles")
-                        }
                     }
                 } header: {
                     Text("On dabble.me")
@@ -135,6 +135,18 @@ private extension SettingsView {
                     .foregroundStyle(.secondary)
             } else {
                 Toggle("Daily Writing Reminder", isOn: $writingReminder)
+                    #if DEBUG
+                    // For the reminders UI test only: an invisible count of what's scheduled.
+                    .background {
+                        Color.clear.frame(width: 1, height: 1)
+                            .accessibilityElement()
+                            .accessibilityLabel("\(pendingReminders) reminders scheduled")
+                            .task(id: "\(writingReminder)\(memoriesReminder)\(writingTime)\(memoriesTime)") {
+                                try? await Task.sleep(for: .seconds(2))
+                                pendingReminders = await ReminderScheduler.shared.pendingCount()
+                            }
+                    }
+                    #endif
                 if writingReminder {
                     DatePicker("Time", selection: minutesBinding($writingTime), displayedComponents: .hourAndMinute)
                 }
@@ -142,15 +154,6 @@ private extension SettingsView {
                 if memoriesReminder {
                     DatePicker("Time", selection: minutesBinding($memoriesTime), displayedComponents: .hourAndMinute)
                 }
-                #if DEBUG
-                Text("\(pendingReminders) reminders scheduled")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .task(id: "\(writingReminder)\(memoriesReminder)\(writingTime)\(memoriesTime)") {
-                        try? await Task.sleep(for: .seconds(2))
-                        pendingReminders = await ReminderScheduler.shared.pendingCount()
-                    }
-                #endif
                 if notificationsDenied {
                     Button("Turn On Notifications in Settings", systemImage: "bell.slash") {
                         if let url = URL(string: UIApplication.openNotificationSettingsURLString) { openURL(url) }

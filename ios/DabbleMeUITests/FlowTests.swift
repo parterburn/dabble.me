@@ -103,11 +103,18 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
 
         // Each pull up past the bottom should open the previous day with an entry, every time.
-        for expected in ["Ran 5 miles", "Rainy day", "Hard conversation"] {
+        // The last one is a quick flick that lets go early, like a thumb, and relies on the bounce.
+        for (index, expected) in ["Ran 5 miles", "Rainy day", "Hard conversation"].enumerated() {
             sleep(1)
             let scroll = app.scrollViews.firstMatch
-            scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
-                .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1)))
+            if index == 2 {
+                scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.62))
+                    .press(forDuration: 0.01, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.52)),
+                           withVelocity: 2500, thenHoldForDuration: 0)
+            } else {
+                scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
+                    .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1)))
+            }
             let previous = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", expected)).firstMatch
             XCTAssertTrue(previous.waitForExistence(timeout: 5), "Pulling up should open the entry with \"\(expected)\"")
         }

@@ -2,6 +2,9 @@ import SwiftUI
 
 struct EntryRoute: Hashable {
     let id: Int
+    /// Set when opened from search results: pulling to the next or previous entry moves through
+    /// these (in their order) instead of by date.
+    var sequence: [EntryNeighbour]? = nil
 }
 
 /// The Journal tab's views, picked from the menu on its title.
@@ -43,7 +46,7 @@ struct JournalView: View {
                         }
                     }
                 }
-                .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
+                .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id, sequence: $0.sequence) }
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         Button("Random Entry", systemImage: "shuffle") { Task { await openRandom() } }
@@ -68,7 +71,7 @@ struct JournalView: View {
         switch mode {
         case .list: content
         case .stats: StatsView()
-        case .photos: PhotoGridView()
+        case .photos: PhotoGridView { path.append($0) }
         }
     }
 
@@ -158,6 +161,7 @@ struct JournalView: View {
                 NavigationLink(value: EntryRoute(id: entry.id)) {
                     EntryRow(entry: entry)
                 }
+                .entryPreview(entry) { path.append(EntryRoute(id: entry.id)) }
             }
             .task {
                 // Reload a month a refresh marked stale once it's back on screen.

@@ -7,7 +7,10 @@ struct TodayView: View {
     @State private var composing = false
     @State private var showingProInfo = false
     /// A prompt Apple Intelligence wrote from recent entries (PRO, on device), for this day only.
-    @State private var aiPrompt: (day: String, text: String)?
+    /// With Apple Intelligence on (PRO), Today's prompt is written from recent entries on the device,
+    /// once a day (kept for that day), instead of the general daily prompt.
+    @AppStorage("ai.prompt.day") private var aiPromptDay = ""
+    @AppStorage("ai.prompt.text") private var aiPromptText = ""
     @State private var isWritingPrompt = false
     @State private var promptError: String?
 
@@ -39,7 +42,7 @@ struct TodayView: View {
             }
             .navigationTitle("Today") // back-button label on entries opened from here
             .toolbarVisibility(.hidden, for: .navigationBar)
-            .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
+            .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id, sequence: $0.sequence) }
             .refreshable { await model.loadToday() }
             .onChange(of: model.composeRequest, initial: true) { _, requested in
                 guard requested else { return }
@@ -74,8 +77,19 @@ struct TodayView: View {
             }
         } else {
             VStack(alignment: .leading, spacing: 14) {
-                let personal = aiPrompt?.day == today.date ? aiPrompt?.text : nil
-                if let prompt = personal ?? today.prompt {
+                let usesAI = JournalIntelligence.isEnabled(for: model.me)
+                let personal = usesAI && aiPromptDay == today.date && !aiPromptText.isEmpty ? aiPromptText : nil
+                if usesAI, personal == nil, isWritingPrompt {
+                    // Writing today's prompt; the general one would just flash and change.
+                    Text("A prompt for you")
+                        .font(.caption.weight(.semibold))
+                        .textCase(.uppercase)
+                        .foregroundStyle(.tint)
+                    Text("What stood out to you about today, and why?")
+                        .font(.system(.title2, design: .serif))
+                        .redacted(reason: .placeholder)
+                        .accessibilityLabel("Writing a prompt for you")
+                } else if let prompt = personal ?? today.prompt {
                     Text(personal != nil ? "A prompt for you" : "Today's prompt")
                         .font(.caption.weight(.semibold))
                         .textCase(.uppercase)
@@ -87,14 +101,14 @@ struct TodayView: View {
                     Text("How was your day?")
                         .font(.system(.title2, design: .serif))
                 }
-                if JournalIntelligence.isEnabled(for: model.me) {
+                if usesAI, personal != nil {
                     Button {
                         Task { await writePrompt(for: today) }
                     } label: {
                         if isWritingPrompt {
                             ProgressView().controlSize(.small)
                         } else {
-                            Label(personal == nil ? "Prompt from My Recent Entries" : "Another Prompt", systemImage: "sparkles")
+                            Label("Another Prompt", systemImage: "sparkles")
                         }
                     }
                     .font(.subheadline)
@@ -118,19 +132,28 @@ struct TodayView: View {
             .padding(20)
             .background(Color("Paper"), in: .rect(cornerRadius: 16))
             .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.quaternary))
+            .task(id: "\(today.date)|\(JournalIntelligence.isEnabled(for: model.me))") {
+                guard JournalIntelligence.isEnabled(for: model.me), aiPromptDay != today.date else { return }
+                await writePrompt(for: today, quietly: true)
+            }
         }
     }
 
-    private func writePrompt(for today: TodaySummary) async {
+    /// `quietly`: the automatic one when Today opens; if it fails, the general prompt stays.
+    private func writePrompt(for today: TodaySummary, quietly: Bool = false) async {
+        guard !isWritingPrompt else { return }
         isWritingPrompt = true
         defer { isWritingPrompt = false }
         let recent = (try? await model.recentEntries())?.map(\.excerpt).filter { !$0.isEmpty } ?? []
         do {
             let text = try await JournalIntelligence.reflectionPrompt(from: recent)
-            withAnimation { aiPrompt = (today.date, text) }
+            withAnimation {
+                aiPromptDay = today.date
+                aiPromptText = text
+            }
         } catch is CancellationError {
         } catch {
-            promptError = error.localizedDescription
+            if !quietly { promptError = error.localizedDescription }
         }
     }
 
@@ -154,6 +177,7 @@ struct TodayView: View {
                         MemoryCard(entry: memory, caption: caption(for: memory))
                     }
                     .buttonStyle(.plain)
+                    .entryPreview(memory) { path.append(EntryRoute(id: memory.id)) }
                 }
             }
         }
