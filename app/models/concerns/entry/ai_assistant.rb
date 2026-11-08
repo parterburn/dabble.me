@@ -8,6 +8,10 @@ class Entry
     REFLECTION_MODEL = "gpt-6.1-sol".freeze
     MAX_ENTRY_CHARS = 5000
     MAX_CONTEXT_CHARS = 1000
+    # The request is synchronous. Give up long before Rack::Timeout
+    # (RACK_TIMEOUT_SERVICE_TIMEOUT, 110s in production) so the user gets
+    # "try again" instead of an error page.
+    REQUEST_TIMEOUT = 60
 
     # HTML for the reflection, or nil when OpenAI returns nothing.
     def ai_reflection
@@ -21,7 +25,7 @@ class Entry
     private
 
     def request_reflection
-      client = OpenAI::Client.new(log_errors: true, request_timeout: reflection_timeout)
+      client = OpenAI::Client.new(log_errors: true, request_timeout: REQUEST_TIMEOUT)
       resp = client.responses.create(parameters: {
         model: REFLECTION_MODEL,
         input: [as_life_coach, *reflection_context, reflection_entry_message].compact,
@@ -30,14 +34,6 @@ class Entry
       })
       message = resp["output"]&.find { |o| o["type"] == "message" }
       message&.dig("content", 0, "text")
-    end
-
-    # The request is synchronous, so give up a few seconds before Rack::Timeout
-    # (RACK_TIMEOUT_SERVICE_TIMEOUT, 15s by default) would kill it. The user
-    # then gets "try again" instead of an error page.
-    def reflection_timeout
-      rack_timeout = ENV.fetch("RACK_TIMEOUT_SERVICE_TIMEOUT", 15).to_i
-      rack_timeout.positive? ? [rack_timeout - 3, 5].max : 60
     end
 
     def as_life_coach
