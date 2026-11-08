@@ -53,7 +53,7 @@ final class AppModel {
             guard value("state") == state, let code = value("code") else {
                 throw WebAuthError.invalidCallback(nil)
             }
-            await tokens.store(try await OAuthEndpoints.exchange(code: code, pkce: pkce))
+            await tokens.signIn(with: try await OAuthEndpoints.exchange(code: code, pkce: pkce))
             isSignedIn = true
             await refresh()
         } catch WebAuthError.cancelled {

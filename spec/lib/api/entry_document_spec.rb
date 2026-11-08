@@ -57,6 +57,8 @@ RSpec.describe Api::EntryDocument do
       "<blockquote>quoted</blockquote>",
       %(<div data-content="dabblemegpt">AI reply</div>),
       %(<p><img src="https://x.test/a.png"></p>),
+      %(<p>My day</p><div><img src="https://x.test/a.png"></div>),
+      %(<div>Text</div><div><span><img src="https://x.test/a.png"></span></div>),
       "<ul><li>outer<ul><li>nested</li></ul></li></ul>",
       %(<p><a href="javascript:alert(1)">x</a></p>),
       "<h1>Heading</h1>"

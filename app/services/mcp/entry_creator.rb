@@ -415,15 +415,15 @@ module Mcp
       '.jpg'
     end
 
-    # Entries store a datetime; match the user's calendar day (same idea as date-range filters elsewhere).
+    # Entry dates are midnight of the journal day in the app zone (UTC), as the web form and
+    # email ingestion store them, so `entry.date.to_date` is the journal day everywhere.
+    # (Storing midnight in the user's zone put entries a day early for users east of UTC.)
     def find_entry_on_calendar_day(date)
-      day_start = calendar_day_start(date)
-      @user.entries.where(date: day_start..day_start.end_of_day).first
+      @user.entries.where(date: date.all_day).first
     end
 
     def calendar_day_start(date)
-      tz = ActiveSupport::TimeZone[@user.send_timezone] || Time.zone
-      tz.local(date.year, date.month, date.day).beginning_of_day
+      date.in_time_zone.beginning_of_day
     end
 
     def parse_date(value)

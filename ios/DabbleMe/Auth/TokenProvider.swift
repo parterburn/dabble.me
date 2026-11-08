@@ -5,6 +5,9 @@ import Foundation
 actor TokenProvider {
     private var tokens: OAuthTokens?
     private var refreshTask: Task<OAuthTokens, Error>?
+    /// Bumped on sign-in and sign-out. A refresh that started in an earlier session must not
+    /// write its result back (that would restore a signed-out session or clobber a new one).
+    private var generation = 0
     private var onSignedOut: (@MainActor @Sendable () -> Void)?
 
     init() {
@@ -32,30 +35,44 @@ actor TokenProvider {
             throw APIError.signedOut
         }
 
+        let startedIn = generation
         let task = Task { try await OAuthEndpoints.refresh(refreshToken) }
         refreshTask = task
-        defer { refreshTask = nil }
+        defer { if generation == startedIn { refreshTask = nil } }
         do {
             let fresh = try await task.value
-            store(fresh)
+            guard generation == startedIn else { throw APIError.signedOut }
+            save(fresh)
             return fresh
         } catch APIError.signedOut {
-            expire()
+            if generation == startedIn { expire() }
             throw APIError.signedOut
         }
     }
 
-    func store(_ fresh: OAuthTokens) {
-        tokens = fresh
-        KeychainStore.save(fresh)
+    /// Starts a new session with tokens from sign-in.
+    func signIn(with fresh: OAuthTokens) {
+        startNewGeneration()
+        save(fresh)
     }
 
     /// Clears tokens locally and returns the access token so the caller can revoke it.
     func clear() -> String? {
+        startNewGeneration()
         let old = tokens?.accessToken
         tokens = nil
         KeychainStore.delete()
         return old
+    }
+
+    private func save(_ fresh: OAuthTokens) {
+        tokens = fresh
+        KeychainStore.save(fresh)
+    }
+
+    private func startNewGeneration() {
+        generation += 1
+        refreshTask = nil
     }
 
     /// The server no longer accepts our tokens (password changed, app revoked on /security, ...).

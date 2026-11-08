@@ -106,10 +106,15 @@ module Api
             if node.element_children.any? { |child| %w[p div ul ol hr].include?(child.name) }
               flush.call
               blocks.concat(parse_blocks(node.children))
-            elsif node.text.strip.empty?
-              flush.call # <div><br></div> is the blank line between paragraphs in email HTML
             else
-              append.call(inline_children(node, {}), new_line: true)
+              # inline_children raises NotEditable for anything unsupported (e.g. an <img>
+              # in an otherwise empty div), so check it before treating the div as blank.
+              runs = inline_children(node, {})
+              if runs.all? { |run| run['text'].strip.empty? }
+                flush.call # <div><br></div> is the blank line between paragraphs in email HTML
+              else
+                append.call(runs, new_line: true)
+              end
             end
           when 'ul', 'ol'
             flush.call

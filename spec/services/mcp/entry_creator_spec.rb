@@ -38,9 +38,7 @@ RSpec.describe Mcp::EntryCreator do
   end
 
   def clear_calendar_day!(user, date)
-    tz = ActiveSupport::TimeZone[user.send_timezone] || Time.zone
-    day_start = tz.local(date.year, date.month, date.day).beginning_of_day
-    user.entries.where(date: day_start..day_start.end_of_day).delete_all
+    user.entries.where(date: date.all_day).delete_all
   end
 
   # 1x1 transparent PNG

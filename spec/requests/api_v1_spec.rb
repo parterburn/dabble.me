@@ -140,6 +140,18 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       expect(pro_user.entries.first.body).to include("<hr>")
     end
 
+    it "keeps the journal day for users east of UTC" do
+      pro_user.update!(send_timezone: "Tokyo")
+      post "/api/v1/entries", params: { date: "2026-11-08", body: "Konbanwa" }, headers: auth(pro_user)
+      expect(json["entry"]["date"]).to eq("2026-11-08")
+
+      get "/api/v1/entries", params: { year: 2026, month: 11 }, headers: auth(pro_user)
+      expect(json["entries"].map { |e| e["date"] }).to eq(["2026-11-08"])
+
+      post "/api/v1/entries", params: { date: "2026-11-08", body: "Again" }, headers: auth(pro_user)
+      expect(json["merged"]).to be(true)
+    end
+
     it "creates a formatted entry from a document" do
       document = [
         { type: "paragraph", runs: [{ text: "Great " }, { text: "hike", bold: true }] },
