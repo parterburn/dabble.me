@@ -120,6 +120,13 @@
   }
 }
 
+// Icon-only links (reflect, edit) have no text to underline on hover.
+.s-edit-entry a,
+.s-edit-entry a:hover,
+.s-edit-entry a:focus {
+  text-decoration: none;
+}
+
 .s-process-ai {
   top: -2px;
   position: relative;
