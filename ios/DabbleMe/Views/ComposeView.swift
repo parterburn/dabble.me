@@ -28,6 +28,10 @@ struct ComposeView: View {
     /// An unsaved draft from an earlier session was put back in the editor.
     @State private var restoredDraft: DraftStore.Draft?
     @State private var draftSave: Task<Void, Never>?
+    @State private var suggestedTags: [String] = []
+    @State private var isSuggestingTags = false
+    @State private var suggestionError: String?
+    @State private var pickingPhotos = false
     @Environment(\.scenePhase) private var scenePhase
     private let draftKey: String
     private let originalBlocks: [DocumentBlock]
@@ -70,11 +74,12 @@ struct ComposeView: View {
                 header
                 if restoredDraft != nil { draftBanner }
                 Divider()
-                RichTextEditor(model: editor)
+                RichTextEditor(model: editor, allowsDictation: model.me?.isPro == true && Dictation.isSupported,
+                               insertItems: insertItems)
                     .overlay(alignment: .topLeading) {
                         if editor.isEmpty {
                             Text("How was your day?")
-                                .font(.system(.body, design: .serif))
+                                .font(Font(RichText.Style.journal.baseFont))
                                 .foregroundStyle(.tertiary)
                                 .padding(.top, 16)
                                 .padding(.leading, 17)
@@ -82,18 +87,14 @@ struct ComposeView: View {
                                 .accessibilityHidden(true)
                         }
                     }
-                if isNew {
+                // Only once used (from the bar's "+"), so the writing area stays as large as it can.
+                if isSuggestingTags || !suggestedTags.isEmpty {
                     Divider()
-                    if model.me?.canAddPhotos == true {
-                        photoBar
-                    } else {
-                        Label("Adding photos is part of Dabble Me PRO.", systemImage: "photo")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(.horizontal)
-                            .padding(.vertical, 12)
-                    }
+                    hashtagSuggestions
+                }
+                if isNew, !photoItems.isEmpty {
+                    Divider()
+                    photoBar
                 }
             }
             .overlay {
@@ -120,6 +121,7 @@ struct ComposeView: View {
             .confirmationDialog(isNew ? "Discard this entry?" : "Discard your changes?",
                                 isPresented: $confirmingDiscard, titleVisibility: .visible) {
                 Button("Discard", role: .destructive) {
+                    editor.stopDictation()
                     DraftStore.clear(draftKey)
                     dismiss()
                 }
@@ -131,6 +133,14 @@ struct ComposeView: View {
                 Text(error ?? "")
             }
             .richTextLinkAlert(editor)
+            .photosPicker(isPresented: $pickingPhotos, selection: $photoItems, maxSelectionCount: AppModel.maxPhotos,
+                          selectionBehavior: .ordered, matching: .images, preferredItemEncoding: .current)
+            .alert("Couldn't suggest hashtags", isPresented: .present($suggestionError)) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(suggestionError ?? "")
+            }
+            .onDisappear { editor.stopDictation() }
             .onChange(of: photoItems) { Task { await preparePhotos() } }
             #if DEBUG
             .task { await attachDebugPhotos() }
@@ -159,12 +169,37 @@ struct ComposeView: View {
         Group {
             if isNew {
                 DatePicker("Date", selection: $date, in: ...Date.now, displayedComponents: .date)
+                    .labelsHidden()
             } else if case .edit(let entry) = mode {
-                LabeledContent("Date", value: entry.day?.long ?? entry.date)
+                Text(entry.day?.long ?? entry.date)
+                    .foregroundStyle(.secondary)
             }
         }
+        .frame(maxWidth: .infinity)
         .padding(.horizontal)
         .padding(.vertical, 10)
+    }
+
+    /// The editor bar's "+" menu.
+    private var insertItems: [EditorInsertItem] {
+        var items: [EditorInsertItem] = []
+        if isNew {
+            if model.me?.canAddPhotos == true {
+                items.append(EditorInsertItem(title: photoItems.isEmpty ? "Add Photos" : "Add More Photos", systemImage: "photo.on.rectangle",
+                                              isEnabled: photoItems.count < AppModel.maxPhotos) { pickingPhotos = true })
+            } else {
+                items.append(EditorInsertItem(title: "Add Photos", systemImage: "photo.on.rectangle",
+                                              subtitle: "Part of Dabble Me PRO", isEnabled: false) {})
+            }
+        }
+        if JournalIntelligence.isEnabled(for: model.me) {
+            items.append(EditorInsertItem(title: "Suggest Hashtags", systemImage: "number",
+                                          subtitle: editor.characterCount < 20 ? "Write a little more first" : nil,
+                                          isEnabled: editor.characterCount >= 20 && !isSuggestingTags) {
+                Task { await suggestHashtags() }
+            })
+        }
+        return items
     }
 
     /// Makes it obvious the app is working (photo uploads can take a while on cellular).
@@ -195,40 +230,78 @@ struct ComposeView: View {
         return photos.count == 1 ? "Uploading photo…" : "Uploading photo \(uploadedCount + 1) of \(photos.count)…"
     }
 
-    private var photoBar: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            ScrollView(.horizontal) {
-                HStack(spacing: 10) {
-                    ForEach(photoItems, id: \.self) { item in
-                        thumbnail(for: item)
-                    }
-                    if photoItems.count < AppModel.maxPhotos {
-                        PhotosPicker(selection: $photoItems, maxSelectionCount: AppModel.maxPhotos,
-                                     selectionBehavior: .ordered, matching: .images, preferredItemEncoding: .current) {
-                            Label(photoItems.isEmpty ? "Add Photos" : "Add More", systemImage: "photo.on.rectangle")
-                                .frame(minHeight: 56)
-                        }
-                    }
+    /// PRO, on-device (Apple Intelligence): hashtags for what's written so far. Tap one to add it.
+    private var hashtagSuggestions: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 8) {
+                Button {
+                    suggestedTags = []
+                } label: {
+                    Image(systemName: "xmark")
                 }
-                .padding(.horizontal)
+                .accessibilityLabel("Hide Suggestions")
+                .disabled(isSuggestingTags)
+                if isSuggestingTags {
+                    ProgressView().controlSize(.small)
+                    Text("Suggesting hashtags…").foregroundStyle(.secondary)
+                } else {
+                    Button("More", systemImage: "sparkles") { Task { await suggestHashtags() } }
+                }
+                ForEach(suggestedTags, id: \.self) { tag in
+                    Button("#\(tag)") {
+                        editor.appendHashtag(tag)
+                        suggestedTags.removeAll { $0 == tag }
+                    }
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.capsule)
+                    .accessibilityHint("Adds this hashtag to the entry")
+                }
             }
-            .scrollIndicators(.hidden)
-
-            if let photoFooter {
-                Text(photoFooter)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.horizontal)
-            }
+            .font(.subheadline)
+            .padding(.horizontal)
+            .padding(.vertical, 8)
         }
-        .padding(.vertical, 10)
+        .scrollIndicators(.hidden)
     }
 
-    /// Only once photos are picked, to keep the composer compact.
-    private var photoFooter: String? {
-        guard !photoItems.isEmpty else { return nil }
-        let collage = photoItems.count > 1 ? " They'll be combined into a collage." : ""
-        return "\(photoItems.count) of \(AppModel.maxPhotos) photos.\(collage) Location data is removed."
+    private func suggestHashtags() async {
+        isSuggestingTags = true
+        defer { isSuggestingTags = false }
+        do {
+            let usual = (try? await model.topHashtags().map(\.tag)) ?? []
+            let tags = try await JournalIntelligence.suggestHashtags(for: editor.plainText, preferring: usual)
+            if tags.isEmpty { throw JournalIntelligence.Failure.noAnswer }
+            suggestedTags = tags
+        } catch is CancellationError {
+        } catch {
+            suggestionError = error.localizedDescription
+        }
+    }
+
+    /// One compact row: thumbnails, "Add More", and the count (several photos become a collage).
+    private var photoBar: some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 10) {
+                ForEach(photoItems, id: \.self) { item in
+                    thumbnail(for: item)
+                }
+                if photoItems.count < AppModel.maxPhotos {
+                    PhotosPicker(selection: $photoItems, maxSelectionCount: AppModel.maxPhotos,
+                                 selectionBehavior: .ordered, matching: .images, preferredItemEncoding: .current) {
+                        Label("Add More", systemImage: "photo.on.rectangle")
+                            .frame(minHeight: 56)
+                    }
+                }
+                Text("\(photoItems.count) of \(AppModel.maxPhotos)")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
+                    .accessibilityLabel("\(photoItems.count) of \(AppModel.maxPhotos) photos")
+            }
+            .padding(.horizontal)
+        }
+        .scrollIndicators(.hidden)
+        .padding(.vertical, 8)
     }
 
     @ViewBuilder
@@ -353,6 +426,7 @@ struct ComposeView: View {
     }
 
     private func save() async {
+        editor.stopDictation()
         isSaving = true
         defer { isSaving = false }
         do {

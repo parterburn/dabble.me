@@ -115,7 +115,24 @@ enum RichText {
             let attributes = segment.run.map(style.attributes(for:)) ?? style.baseAttributes
             result.append(NSAttributedString(string: segment.text, attributes: attributes))
         }
+        applyListIndents(to: result, font: style.baseFont)
         return result
+    }
+
+    /// Hangs list items: wrapped lines of a "• " or "1. " item line up with its text, not the marker.
+    static func applyListIndents(to text: NSMutableAttributedString, font: PlatformFont) {
+        let string = text.string as NSString
+        string.enumerateSubstrings(in: NSRange(location: 0, length: string.length), options: [.byParagraphs, .substringNotRequired]) { _, range, enclosing, _ in
+            let line = string.substring(with: range)
+            let indent = listPrefix(in: line).map {
+                (string.substring(with: NSRange(location: range.location, length: $0.length)) as NSString).size(withAttributes: [.font: font]).width
+            } ?? 0
+            let current = text.attribute(.paragraphStyle, at: enclosing.location, effectiveRange: nil) as? NSParagraphStyle
+            guard enclosing.length > 0, abs((current?.headIndent ?? 0) - indent) > 0.5 else { return }
+            let style = NSMutableParagraphStyle()
+            style.headIndent = indent
+            text.addAttribute(.paragraphStyle, value: style, range: enclosing)
+        }
     }
 
     static func blocks(from text: NSAttributedString) -> [DocumentBlock] {

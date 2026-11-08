@@ -44,6 +44,13 @@ struct RootView: View {
             content
             #endif
         }
+        .onOpenURL { url in
+            // From the widget: me.dabble.app:/write or :/today. (Sign-in callbacks never get here;
+            // the web sign-in session handles them.)
+            guard model.isSignedIn, url.scheme == "me.dabble.app" else { return }
+            model.selectedTab = .today
+            if url.path == "/write" { model.composeRequest = true }
+        }
         .task(id: model.isSignedIn) {
             if model.isSignedIn, !model.hasLoaded { await model.refresh() }
         }
@@ -88,7 +95,15 @@ struct MainTabs: View {
     var body: some View {
         @Bindable var model = model
         // No `.search` role: it pins Search to the far right, and Settings belongs there.
-        TabView(selection: $model.selectedTab) {
+        // Tapping the Search tab again focuses its search field.
+        let selection = Binding<AppModel.Tab>(
+            get: { model.selectedTab },
+            set: { tab in
+                if tab == .search, model.selectedTab == .search { model.searchFocusRequest += 1 }
+                model.selectedTab = tab
+            }
+        )
+        TabView(selection: selection) {
             Tab("Today", systemImage: "sun.max", value: AppModel.Tab.today) {
                 TodayView()
             }

@@ -4,8 +4,26 @@ struct EntryRoute: Hashable {
     let id: Int
 }
 
+/// The Journal tab's views, picked from the menu on its title.
+enum JournalMode: String, CaseIterable, Identifiable {
+    case list = "Journal"
+    case stats = "Stats"
+    case photos = "Photos"
+
+    var id: Self { self }
+
+    var systemImage: String {
+        switch self {
+        case .list: "list.bullet"
+        case .stats: "chart.bar"
+        case .photos: "photo.on.rectangle"
+        }
+    }
+}
+
 struct JournalView: View {
     @Environment(AppModel.self) private var model
+    @SceneStorage("journal.mode") private var mode = JournalMode.list
     @State private var path = NavigationPath()
     @State private var composing = false
     @State private var showingProInfo = false
@@ -15,8 +33,16 @@ struct JournalView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            content
-                .navigationTitle("Journal")
+            modeContent
+                .navigationTitle(mode.rawValue)
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbarTitleMenu {
+                    Picker("View", selection: $mode) {
+                        ForEach(JournalMode.allCases) { mode in
+                            Label(mode.rawValue, systemImage: mode.systemImage).tag(mode)
+                        }
+                    }
+                }
                 .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
@@ -34,6 +60,15 @@ struct JournalView: View {
                 } message: {
                     Text(randomError ?? "")
                 }
+        }
+    }
+
+    @ViewBuilder
+    private var modeContent: some View {
+        switch mode {
+        case .list: content
+        case .stats: StatsView()
+        case .photos: PhotoGridView()
         }
     }
 
@@ -236,7 +271,7 @@ struct EntryRow: View {
             Spacer(minLength: 0)
 
             if entry.imageProcessing || entry.imageURL != nil {
-                EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing, size: .thumbnail)
+                EntryPhoto(url: entry.thumbnailURL(width: 168), isProcessing: entry.imageProcessing, size: .thumbnail)
                     .accessibilityHidden(true)
             }
         }

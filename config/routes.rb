@@ -47,6 +47,8 @@ Rails.application.routes.draw do
         end
       end
       get 'search', to: 'searches#show'
+      get 'stats', to: 'stats#show'
+      get 'hashtags', to: 'hashtags#index'
       resources :image_uploads, only: :create
       post 'account/deletion_request', to: 'accounts#deletion_request'
     end

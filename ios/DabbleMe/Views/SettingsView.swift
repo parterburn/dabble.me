@@ -13,6 +13,8 @@ struct SettingsView: View {
     @AppStorage(ReminderSettings.memoriesEnabledKey) private var memoriesReminder = false
     @AppStorage(ReminderSettings.memoriesTimeKey) private var memoriesTime = ReminderSettings.defaultMemoriesTime
     @State private var notificationsDenied = false
+    @AppStorage(WidgetSnapshot.showMemoriesKey, store: WidgetSnapshot.defaults) private var widgetShowsMemories = false
+    @AppStorage(JournalIntelligence.enabledKey) private var onDeviceAI = true
     #if DEBUG
     @State private var pendingReminders = 0
     #endif
@@ -41,16 +43,11 @@ struct SettingsView: View {
                         .accessibilityHidden(true)
                 } header: {
                     Text("Reading")
-                } footer: {
-                    Text("Changes the text size when reading entries. It adds to your iPhone's own text size setting.")
                 }
 
                 remindersSection
+                intelligenceSection
                 privacySection
-
-                if let connectors = model.me?.aiConnectors {
-                    aiSection(connectors)
-                }
 
                 Section {
                     Link(destination: model.me?.settingsUrl ?? AppConfig.webURL("settings")) {
@@ -59,10 +56,18 @@ struct SettingsView: View {
                     Link(destination: model.me?.securityUrl ?? AppConfig.webURL("security")) {
                         Label("Passkeys & Two-Factor", systemImage: "lock.shield")
                     }
+                    Link(destination: AppConfig.webURL("entries/export")) {
+                        Label("Export Entries", systemImage: "square.and.arrow.up")
+                    }
+                    // Connecting happens on the web (OAuth on dabble.me, PRO plus a passkey or 2FA);
+                    // the guide links to Claude's and ChatGPT's directories.
+                    if let connectors = model.me?.aiConnectors {
+                        Link(destination: connectors.guideUrl) {
+                            Label("Claude/ChatGPT Connector", systemImage: "sparkles")
+                        }
+                    }
                 } header: {
                     Text("On dabble.me")
-                } footer: {
-                    Text("Choose which days and what time your \u{201C}How was your day?\u{201D} email arrives.")
                 }
 
                 Section {
@@ -87,6 +92,8 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar(removing: .title) // the tab says where you are
             .task { notificationsDenied = await ReminderScheduler.shared.isDenied() }
             .onChange(of: writingReminder) { _, on in Task { await remindersChanged(turnedOn: on) } }
             .onChange(of: memoriesReminder) { _, on in Task { await remindersChanged(turnedOn: on) } }
@@ -152,10 +159,6 @@ private extension SettingsView {
             }
         } header: {
             Text("Reminders")
-        } footer: {
-            if model.me?.isPro == true {
-                Text("Writing reminders skip days you've already written. Memory reminders only come on days you have entries from past years. Notifications never show what you wrote.")
-            }
         }
     }
 
@@ -175,6 +178,19 @@ private extension SettingsView {
         await ReminderScheduler.shared.reschedule(for: model)
     }
 
+    // MARK: - On-device AI
+
+    @ViewBuilder
+    var intelligenceSection: some View {
+        if model.me?.isPro == true, JournalIntelligence.isSupported {
+            Section {
+                Toggle("Apple Intelligence", isOn: $onDeviceAI)
+            } header: {
+                Text("On-Device AI")
+            }
+        }
+    }
+
     // MARK: - Privacy
 
     @ViewBuilder
@@ -186,52 +202,14 @@ private extension SettingsView {
                 set: { enabled in Task { await lock.setEnabled(enabled) } }
             ))
             .disabled(!lock.isAvailable)
+            if model.me?.isPro == true {
+                Toggle("On This Day in Widget", isOn: $widgetShowsMemories)
+                    .onChange(of: widgetShowsMemories) { _, shows in WidgetSync.setShowsMemories(shows) }
+            }
         } header: {
             Text("Privacy")
-        } footer: {
-            Text(lock.isAvailable
-                 ? "Locks Dabble Me when you open it and after a minute away. Your journal is hidden in the app switcher."
-                 : "Set a passcode on this device to lock Dabble Me.")
         }
     }
-
-    /// Links to the Dabble Me plugins in Claude's and ChatGPT's directories. Connecting happens
-    /// there (OAuth on dabble.me); it needs PRO plus a passkey or two-factor sign-in.
-    @ViewBuilder
-    func aiSection(_ connectors: Me.AIConnectors) -> some View {
-        Section {
-            if connectors.requiresPro {
-                Label("Connecting Claude or ChatGPT is part of Dabble Me PRO.", systemImage: "sparkles")
-                    .foregroundStyle(.secondary)
-            } else {
-                if connectors.requiresSecuritySetup {
-                    Link(destination: model.me?.securityUrl ?? AppConfig.webURL("security")) {
-                        Label("Set Up a Passkey First", systemImage: "person.badge.key")
-                    }
-                }
-                Link(destination: connectors.claudeUrl) {
-                    Label("Connect to Claude", systemImage: "sparkles")
-                }
-                Link(destination: connectors.chatgptUrl) {
-                    Label("Connect to ChatGPT", systemImage: "bubble.left.and.text.bubble.right")
-                }
-                Link(destination: connectors.guideUrl) {
-                    Label("How It Works", systemImage: "info.circle")
-                }
-            }
-        } header: {
-            Text("Ask AI About Your Journal")
-        } footer: {
-            if connectors.requiresPro {
-                EmptyView()
-            } else if connectors.requiresSecuritySetup {
-                Text("To keep your journal safe, connecting an AI assistant needs a passkey or two-factor sign-in on your account.")
-            } else {
-                Text("Ask questions about your entries, rediscover old memories, or save a new entry from a chat. You approve access on dabble.me and can remove it any time under Passkeys & Two-Factor → Connected Apps.")
-            }
-        }
-    }
-
 
     func requestDeletion() async {
         do {

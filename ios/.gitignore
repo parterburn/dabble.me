@@ -4,3 +4,4 @@ build/
 DerivedData/
 *.xcuserstate
 xcuserdata/
+DabbleMeWidget/Info.plist

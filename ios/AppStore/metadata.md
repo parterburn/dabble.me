@@ -18,48 +18,73 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 
 **Promotional text (170)**
 
-> Rediscover what you wrote on this day years ago, capture today with photos, and ask Claude or ChatGPT about your own journal. Private, and yours to keep.
+> Rediscover what you wrote on this day years ago, keep your writing streak going, and see your year in photos and stats. Private, and yours to keep.
 
 **Description (4,000)**
 
 > Your life, written down and remembered.
 >
-> Dabble Me is a private journal for the moments you don't want to forget. Write about your day with photos, then watch it turn into something priceless: years of memories you can read back through, search, and rediscover.
+> Dabble Me is a private journal for the moments you don't want to forget. Write about your day, add photos, and watch it turn into something priceless: years of memories you can read back through, search, and rediscover.
 >
 > ON THIS DAY
-> See what you wrote on today's date one, five, or ten years ago. It's the best part of keeping a journal.
+> See what you wrote on today's date one, five, or ten years ago, right on the Today screen. Turn on a morning reminder on days you have memories waiting.
 >
 > WRITE YOUR WAY
-> • Bold, italic, underline, lists and links
+> • Bold, italic and underline, links, and lists that start as you type "- " or "1." 
 > • Add up to 8 photos. Several become a beautiful collage automatically
-> • Wrote earlier today? New writing is added to that day's entry
+> • Dictate instead of typing, transcribed on your device
+> • A daily writing prompt, or one written from your recent entries
+> • Unfinished entries are saved as you type, even if the app closes
 > • Prefer email? Reply to Dabble Me's "How was your day?" email and it becomes an entry too
 >
+> BUILD THE HABIT
+> • A daily reminder to write, skipped on days you already have
+> • A home-screen and Lock Screen widget with your writing streak
+> • Stats: entries, words, current and longest streak, a year of writing at a glance, and your most-used hashtags
+>
 > YEARS OF MEMORIES, ONE TAP AWAY
-> • Your whole journal, grouped by month
-> • Search every word you've ever written, or tap a #hashtag
+> • Your whole journal by month, with a timeline scrubber to jump years back
+> • Photos view: every day you captured, in one grid
+> • Search every word you've ever written, or tap your #hashtags
+> • Pull down or up to move to the next or previous day; tap the date to see how long ago it was
 > • Random entry: rediscover a moment you'd forgotten
 > • Photos full screen with pinch to zoom; save or share the ones you love
-> • Comfortable reading with adjustable text size
+> • Pinch to make entries easier to read
+>
+> APPLE INTELLIGENCE, ON YOUR DEVICE
+> On supported iPhones and iPads, Dabble Me responds to an entry with a warm, thoughtful reflection and a question to keep you writing, suggests hashtags as you write, and writes prompts from your recent days. It all runs on your device; your journal isn't sent anywhere for it.
 >
 > ASK AI ABOUT YOUR JOURNAL
 > Connect Claude or ChatGPT to your journal and ask things like "What made me happiest this year?" or "When did I last go camping?" You approve access, and you can remove it any time.
 >
 > PRIVATE BY DESIGN
 > • No social feed, no ads, no tracking
+> • Lock the app with Face ID; your journal is hidden in the app switcher
+> • Reminders and widgets never show what you wrote
 > • Photo location data is removed before upload
 > • Sign in with a passkey, password, or two-factor code
 > • Export everything, any time
 >
-> Free accounts can read their journal and write entries. Photos, search, On This Day, and AI connections are part of Dabble Me PRO.
+> Free accounts can read their journal, write entries, and see their stats. Photos, search, On This Day, reminders, dictation, Apple Intelligence features, and AI connections are part of Dabble Me PRO.
 
 **Keywords (100)**: these don't repeat words already in the name, which Apple indexes anyway, and use no third-party trademarks (guideline 2.3.7).
 
 ```
-diary,daily,memories,on this day,reflection,gratitude,photo,writing,mood,notes,ai,life log,email
+diary,daily,memories,on this day,reflection,gratitude,photo,writing,mood,prompts,streak,widget,ai
 ```
 
-**What's New**: leave blank for 1.0.
+**What's New**: leave blank for 1.0. If these features ship as 1.1 instead (1.0 already in review with build 9), use:
+
+> • Journal now has Photos and Stats views: tap the title to switch
+> • Your hashtags from the past year on the Search tab
+> • A home-screen and Lock Screen widget with your writing streak
+> • Reminders to write, and On This Day reminders (PRO)
+> • Dictate entries, transcribed on your device (PRO)
+> • Apple Intelligence reflects on your entries, suggests hashtags and writes prompts, on your device (PRO)
+> • Lock the app with Face ID
+> • Unfinished entries are saved as you type
+> • A roomier editor: type "- " or "1." for lists; photos and hashtags live under "+"
+> • Bulleted and numbered lists line up neatly
 
 | Field | Value |
 |---|---|
@@ -78,7 +103,7 @@ Data used to track you: **none**. Data linked to you, all for **App Functionalit
 | User Content → Photos or Videos | Photos attached to entries |
 | Identifiers → User ID | Account identity |
 
-The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resources/PrivacyInfo.xcprivacy`.
+The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resources/PrivacyInfo.xcprivacy`. Not collected: dictation audio and Apple Intelligence features run on the device; reminders, the Face ID setting and drafts stay on the device; the widget reads a streak count the app stores in its App Group.
 
 ## App Review information
 
@@ -89,20 +114,23 @@ The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resour
 
 - **Export compliance:** the app uses only standard HTTPS (`ITSAppUsesNonExemptEncryption = NO`).
 
-## Screenshots (still to do)
+## Screenshots
 
-Required sizes: **6.9" iPhone** at 1320 × 2868, plus **13" iPad** at 2064 × 2752 while the app supports iPad. Planned screens, using the made-up demo account only (never a real journal):
+In `ios/App Store Screenshots/`: **iPhone 6.3"** at 1206 × 2622 (iPhone 18 Pro simulator) and **13" iPad** at 2064 × 2752, both from the made-up demo account (never a real journal), via `ScreenshotTests` (see `ios/README.md`):
 
-1. Journal timeline with photos and month sections
-2. An entry with formatting and a collage
-3. Writing an entry with the formatting bar and photos
-4. On This Day
-5. Search results for a #hashtag
+1. Today: the date, today's prompt, and On This Day
+2. Journal timeline with photos and month sections
+3. An entry with formatting, a list and a photo
+4. Writing an entry with the formatting bar, photos and on-device hashtag suggestions
+5. Journal > Photos
+6. Journal > Stats
+7. Search: your hashtags this year
+8. Search results for #hiking
 
-`bundle exec rails ios:demo_account` seeds that account locally. It needs valid AWS credentials in `.env` for the photos.
+`bundle exec rails ios:demo_account` seeds that account locally. It needs valid AWS credentials in `.env` for the photos. Hashtag suggestions need a simulator on a Mac with Apple Intelligence turned on; without it, shot 4 just has no suggestions row.
 
 ## Decisions
 
 - **In-app purchase:** ship as a free companion app (guideline 3.1.3(f)) with no purchasing and no links to buy. If App Review asks for in-app purchase for PRO, revisit.
-- **Free vs PRO in the app:** free accounts read and write text entries; photos, editing/deleting, search, On This Day, reminders, AI connections and on-device AI features are PRO.
+- **Free vs PRO in the app:** free accounts read and write text entries and see Stats, the Photos view and the widget; photos, editing/deleting, search (and its hashtag cloud), On This Day, reminders, dictation, AI connections and on-device AI features are PRO. Face ID lock and drafts are for everyone.
 - **iPad:** supported in 1.0, so the submission needs the 13" iPad screenshot set too.

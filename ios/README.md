@@ -1,8 +1,8 @@
 # Dabble Me for iOS
 
-Native SwiftUI companion to the email journal: browse the timeline, read entries (with photos and songs), "On This Day", random entry, search, and write or edit entries with a photo.
+Native SwiftUI companion to the email journal: Today (prompt + On This Day), the Journal timeline with List / Stats / Photos views, search with a hashtag cloud, writing and editing with rich text, photos and dictation, reminders, a Face ID lock, a home-screen widget, and on-device Apple Intelligence.
 
-Email is still the primary way people write. The app follows the web's plan rules: everyone can sign in and read; writing, editing, deleting, search and On This Day are PRO.
+Email is still the primary way people write. Plan rules (see `ios/AppStore/metadata.md` → Decisions): everyone can sign in, read, write text, and see Stats, Photos and the widget; photos, editing/deleting, search, On This Day, reminders, dictation and on-device AI are PRO.
 
 ## Requirements
 
@@ -41,7 +41,7 @@ The simulator reaches `localhost` directly. On a phone, "localhost" is the phone
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/api/v1/me` | account, plan, `today` in the user's journal time zone |
-| GET | `/api/v1/entries?page=&per=&year=&month=` | newest first, 20 per page by default (max 50) |
+| GET | `/api/v1/entries?page=&per=&year=&month=&photos=1` | newest first, 20 per page by default (max 50); `photos=1` lists only entries with a photo (Journal > Photos) |
 | GET | `/api/v1/entries/:id` | full entry: `body_text` (light Markdown), `document` (editable structure or null), songs, `web_url` |
 | GET | `/api/v1/entries/random` | |
 | GET | `/api/v1/entries/on_this_day` | PRO |
@@ -49,9 +49,18 @@ The simulator reaches `localhost` directly. On a phone, "localhost" is the phone
 | PATCH | `/api/v1/entries/:id` | PRO. `{document}`; only when the entry's `document` is non-null |
 | DELETE | `/api/v1/entries/:id` | PRO |
 | GET | `/api/v1/search?q=&page=` | PRO, same syntax as web search |
+| GET | `/api/v1/today` | Today tab: entry, On This Day (PRO), daily prompt, `current_streak` |
+| GET | `/api/v1/entries/months` | month index for the timeline and scrubber |
+| GET | `/api/v1/entries/memory_days?days=30` | PRO. Upcoming days with memories (counts only) for On This Day reminders |
+| GET | `/api/v1/stats` | Journal > Stats: totals, streaks, writing days in the past year, 12 months, top hashtags (`Api::JournalStats`) |
+| GET | `/api/v1/hashtags?days=365` | PRO. Hashtag counts for the Search tag cloud (`Api::HashtagCounts`) |
 | POST | `/api/v1/image_uploads` | PRO. `{photos: [{filename, content_type}]}` (max 8) → presigned S3 PUTs; the keys go to `POST /entries` |
 
-**Rich text editing.** The app never parses or sends raw HTML. `Api::EntryDocument` turns stored HTML into a `document`: a list of paragraph / bullet / number / rule blocks made of text runs that may be bold, italic, underlined or linked. That covers what the web editor (Summernote) and email ingestion produce, including `<div>` lines from email and `<hr>` between merged replies. The app edits the document in a native text view with a formatting bar (bold, italic, underline, lists, link) and sends it back, and the server rebuilds clean HTML from it (`to_html`). Entries with anything the document can't represent — inline styles, blockquotes, images, DabbleMeGPT replies, nested lists — come back with `document: null` and show "Edit on dabble.me", so an in-app edit can never drop formatting.
+**Rich text editing.** The app never parses or sends raw HTML. `Api::EntryDocument` turns stored HTML into a `document`: a list of paragraph / bullet / number / rule blocks made of text runs that may be bold, italic, underlined or linked. That covers what the web editor (Summernote) and email ingestion produce, including `<div>` lines from email and `<hr>` between merged replies. The app edits the document in a native text view (bold, italic and underline from the text's Format menu; typing "- ", "* " or "1. " starts a list; the bar has "+" for photos and hashtag suggestions, link, and dictation) and sends it back, and the server rebuilds clean HTML from it (`to_html`). Entries with anything the document can't represent — inline styles, blockquotes, images, DabbleMeGPT replies, nested lists — come back with `document: null` and show "Edit on dabble.me", so an in-app edit can never drop formatting.
+
+**Widget.** `DabbleMeWidget` (WidgetKit) reads a `WidgetSnapshot` the app writes to the `group.me.dabble.ios` App Group after each refresh: streak, whether today is written, today's prompt and (only if turned on in Settings → Privacy) a count of On This Day memories. Never entry text. Tapping it opens `me.dabble.app:/write` or `:/today`.
+
+**On device only.** Dictation uses `SFSpeechRecognizer` with `requiresOnDeviceRecognition`; hashtag suggestions, "Reflect on This Entry" (the on-device version of the web's DabbleMeGPT life-coach reply) and Today's "Prompt from My Recent Entries" use Apple Intelligence's on-device model (`FoundationModels`, iOS 26+, hidden where unavailable). Reminders, the Face ID lock and drafts are local too.
 
 **Photos** are re-encoded on the device to a JPEG of at most 2400px, with all metadata removed (including GPS) before upload. The server then processes them the same way as MCP uploads (`ProcessEntryImageJob`).
 
@@ -61,7 +70,7 @@ The simulator reaches `localhost` directly. On a phone, "localhost" is the phone
 xcodebuild -project DabbleMe.xcodeproj -scheme DabbleMe -destination 'platform=iOS Simulator,name=iPhone 17' test
 ```
 
-The tests cover PKCE, day handling across time zones, JSON decoding, rich text layout and round-trips, and GPS stripping. API behavior is covered by `spec/requests/api_v1_spec.rb` on the Rails side.
+The tests cover PKCE, day handling across time zones, JSON decoding, rich text layout, round-trips and list indents, GPS stripping, the widget's day/streak rollover, and reading hashtags from model replies. API behavior is covered by `spec/requests/api_v1_spec.rb` on the Rails side.
 
 ### UI tests against a local server
 
@@ -74,12 +83,14 @@ TEST_RUNNER_DABBLE_TOKEN=<token> xcodebuild test -project DabbleMe.xcodeproj -sc
 
 - Start Puma before Sidekiq, a few seconds apart: `.env` is a 1Password pipe, and two processes opening it at once can leave one without AWS keys.
 - **Face ID lock test:** enroll Face ID on the simulator (`xcrun simctl spawn <device> notifyutil -s com.apple.BiometricKit.enrollmentChanged 1` and then `-p` the same name). Run a helper that sends one match (`xcrun simctl spawn <device> notifyutil -p com.apple.BiometricKit_Sim.pearl.match`) whenever `$TEST_RUNNER_DABBLE_DEBUG_DIR/faceid-match` appears, then deletes the file. Also set `TEST_RUNNER_DABBLE_FACE_ID=1`.
-- **App Store screenshots:** set `TEST_RUNNER_DABBLE_SCREENSHOT_DIR` and run `ScreenshotTests` on the iPhone 18 Pro (1206 × 2622) and iPad Pro 13" simulators.
+- **App Store screenshots:** set `TEST_RUNNER_DABBLE_SCREENSHOT_DIR` and run `ScreenshotTests` on the iPhone 18 Pro (1206 × 2622) and iPad Pro 13" simulators. Reset the demo account first so Today has no entry yet.
+- **Widget test:** `WidgetTests` adds the widget to the simulator's home screen and screenshots it; set `TEST_RUNNER_DABBLE_WIDGET=1`.
+- **Apple Intelligence** works in the simulator when the Mac has it turned on; the tests that use it skip those steps otherwise.
 
 ## Shipping checklist
 
 - [ ] Deploy the Rails side first. The `CreateMobileAppOauthApplication` migration registers the `dabble-me-ios` OAuth client.
 - [ ] Register the App ID `me.dabble.ios` under team B79A4CAS56 (Xcode's automatic signing does this on first device run or archive).
-- [ ] Create the App Store Connect record. Privacy labels: email address, user content, photos. All are linked to the user, used for app functionality, and not used for tracking (matches `PrivacyInfo.xcprivacy`).
+- [ ] Create the App Store Connect record. Privacy labels: email address, user ID, other user content, photos. All are linked to the user, used for app functionality, and not used for tracking (matches `PrivacyInfo.xcprivacy`).
 - [ ] App Review notes: provide a demo PRO account. Explain that new accounts can be created on the sign-in page and deleted under Settings → Delete Account.
 - [ ] Keep purchase links out of the app (guideline 3.1.1). The PRO explainers only point people to email journaling.

@@ -6,6 +6,10 @@ struct TodayView: View {
     @State private var path = NavigationPath()
     @State private var composing = false
     @State private var showingProInfo = false
+    /// A prompt Apple Intelligence wrote from recent entries (PRO, on device), for this day only.
+    @State private var aiPrompt: (day: String, text: String)?
+    @State private var isWritingPrompt = false
+    @State private var promptError: String?
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -44,6 +48,11 @@ struct TodayView: View {
             }
             .sheet(isPresented: $composing) { ComposeView(mode: .new) }
             .sheet(isPresented: $showingProInfo) { ProInfoView(feature: .writing) }
+            .alert("Couldn't write a prompt", isPresented: .present($promptError)) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(promptError ?? "")
+            }
         }
     }
 
@@ -65,16 +74,31 @@ struct TodayView: View {
             }
         } else {
             VStack(alignment: .leading, spacing: 14) {
-                if let prompt = today.prompt {
-                    Text("Today's prompt")
+                let personal = aiPrompt?.day == today.date ? aiPrompt?.text : nil
+                if let prompt = personal ?? today.prompt {
+                    Text(personal != nil ? "A prompt for you" : "Today's prompt")
                         .font(.caption.weight(.semibold))
                         .textCase(.uppercase)
                         .foregroundStyle(.tint)
                     Text(prompt)
                         .font(.system(.title2, design: .serif))
+                        .contentTransition(.opacity)
                 } else {
                     Text("How was your day?")
                         .font(.system(.title2, design: .serif))
+                }
+                if JournalIntelligence.isEnabled(for: model.me) {
+                    Button {
+                        Task { await writePrompt(for: today) }
+                    } label: {
+                        if isWritingPrompt {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Label(personal == nil ? "Prompt from My Recent Entries" : "Another Prompt", systemImage: "sparkles")
+                        }
+                    }
+                    .font(.subheadline)
+                    .disabled(isWritingPrompt)
                 }
                 if model.me?.canWrite == false {
                     Text("Reply to today's Dabble Me email and it'll show up here as your entry.")
@@ -94,6 +118,19 @@ struct TodayView: View {
             .padding(20)
             .background(Color("Paper"), in: .rect(cornerRadius: 16))
             .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.quaternary))
+        }
+    }
+
+    private func writePrompt(for today: TodaySummary) async {
+        isWritingPrompt = true
+        defer { isWritingPrompt = false }
+        let recent = (try? await model.recentEntries())?.map(\.excerpt).filter { !$0.isEmpty } ?? []
+        do {
+            let text = try await JournalIntelligence.reflectionPrompt(from: recent)
+            withAnimation { aiPrompt = (today.date, text) }
+        } catch is CancellationError {
+        } catch {
+            promptError = error.localizedDescription
         }
     }
 
@@ -162,7 +199,7 @@ private struct MemoryCard: View {
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 if entry.imageProcessing || entry.imageURL != nil {
-                    EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing, size: .thumbnail)
+                    EntryPhoto(url: entry.thumbnailURL(width: 168), isProcessing: entry.imageProcessing, size: .thumbnail)
                         .accessibilityHidden(true)
                 }
             }

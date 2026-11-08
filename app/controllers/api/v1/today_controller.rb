@@ -14,7 +14,8 @@ module Api
           entry: entry && EntrySerializer.full(entry),
           on_this_day: memories.map { |memory| EntrySerializer.summary(memory).merge(years_ago: today.year - memory.date.year) },
           on_this_day_available: current_user.is_pro?,
-          prompt: daily_prompt(today)
+          prompt: daily_prompt(today),
+          current_streak: JournalStats.new(current_user, today: today).current_streak
         }
       end
 

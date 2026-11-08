@@ -15,6 +15,8 @@ final class AppModel {
     var searchRequest: String?
     /// Set when a writing reminder is tapped; Today opens the composer.
     var composeRequest = false
+    /// Bumped when the Search tab is tapped while already showing, to focus the search field.
+    var searchFocusRequest = 0
     let lock = AppLock()
 
     func search(hashtag: String) {
@@ -92,6 +94,7 @@ final class AppModel {
         }
         ReminderScheduler.shared.removeAll()
         DraftStore.clearAll()
+        WidgetSync.clear()
         lock.reset()
         resetSession()
     }
@@ -135,6 +138,7 @@ final class AppModel {
             staleMonths = Set(monthEntries.keys)
             timelineError = nil
             hasLoaded = true
+            WidgetSync.update(from: self)
             Task { await ReminderScheduler.shared.reschedule(for: self) }
             var reloadNow = visibleMonths.intersection(staleMonths)
             if let newest = months.first { reloadNow.insert(newest.key) }
@@ -157,6 +161,7 @@ final class AppModel {
             async let todayRequest: TodaySummary = api.get("api/v1/today")
             async let meRequest: Me = api.get("api/v1/me")
             (today, me) = try await (todayRequest, meRequest)
+            WidgetSync.update(from: self)
         } catch is CancellationError {
         } catch {
             report(error)
@@ -300,6 +305,25 @@ final class AppModel {
         struct Empty: Encodable, Sendable {}
         let response: AccountDeletionRequest = try await api.post("api/v1/account/deletion_request", Empty())
         return response.email
+    }
+
+    /// The newest few entries (for on-device reflection prompts).
+    func recentEntries() async throws -> [EntrySummary] {
+        let page: EntryPage = try await api.get("api/v1/entries", query: ["per": "5"])
+        return page.entries
+    }
+
+    func stats() async throws -> JournalStats {
+        try await api.get("api/v1/stats")
+    }
+
+    func photoEntries(page: Int) async throws -> EntryPage {
+        try await api.get("api/v1/entries", query: ["photos": "1", "page": String(page), "per": "48"])
+    }
+
+    func topHashtags() async throws -> [HashtagCount] {
+        let list: HashtagList = try await api.get("api/v1/hashtags", query: ["days": "365"])
+        return list.hashtags
     }
 
     func search(_ query: String, page: Int = 1) async throws -> EntryPage {

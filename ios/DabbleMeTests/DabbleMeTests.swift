@@ -1,5 +1,6 @@
 import Foundation
 import ImageIO
+import UIKit
 import Testing
 import UniformTypeIdentifiers
 @testable import DabbleMe
@@ -187,5 +188,57 @@ struct HashtagLinkTests {
         var text = AttributedString("#notatag")
         text.link = URL(string: "https://example.com")
         #expect(RichText.linkingHashtags(in: text).runs.first?.link == URL(string: "https://example.com"))
+    }
+}
+
+struct WidgetSnapshotTests {
+    private var calendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Denver")!
+        return calendar
+    }
+
+    private func date(_ day: Int) -> Date {
+        calendar.date(from: DateComponents(year: 2026, month: 11, day: day, hour: 12))!
+    }
+
+    private func snapshot(day: String, wrote: Bool, streak: Int, memories: Int = 0) -> WidgetSnapshot {
+        WidgetSnapshot(day: day, wroteToday: wrote, streak: streak, memories: memories, memoriesFirstYear: nil, prompt: "Hi")
+    }
+
+    @Test func sameDayShowsTheSnapshot() {
+        let state = snapshot(day: "2026-11-08", wrote: true, streak: 4, memories: 2).state(on: date(8), calendar: calendar)
+        #expect(state.wroteToday && state.streak == 4 && state.memories == 2)
+    }
+
+    @Test func aStreakSurvivesTheNextDayUntilItsWritten() {
+        let state = snapshot(day: "2026-11-07", wrote: true, streak: 4, memories: 2).state(on: date(8), calendar: calendar)
+        #expect(!state.wroteToday && state.streak == 4 && state.memories == nil)
+    }
+
+    @Test func anUnwrittenDayEndsTheStreak() {
+        #expect(snapshot(day: "2026-11-07", wrote: false, streak: 3).state(on: date(8), calendar: calendar).streak == 0)
+        #expect(snapshot(day: "2026-11-05", wrote: true, streak: 9).state(on: date(8), calendar: calendar).streak == 0)
+    }
+}
+
+@MainActor
+struct JournalIntelligenceTests {
+    @Test func readsHashtagsFromAReply() {
+        #expect(JournalIntelligence.hashtags(in: "#hiking #Yosemite, #2026trip and C# code") == ["hiking", "Yosemite", "2026trip"])
+    }
+}
+
+struct ListIndentTests {
+    @Test func listItemsHangAndParagraphsDont() {
+        let blocks = [DocumentBlock.paragraph(DocumentRun("Intro")), DocumentBlock(type: .bullet, runs: [DocumentRun("Item")])]
+        let font = PlatformFont.systemFont(ofSize: 17)
+        let text = RichText.attributedString(from: blocks, style: RichText.Style(baseFont: font, textColor: .black))
+        let string = text.string as NSString
+        let bullet = string.range(of: "Item").location
+        let indent = (text.attribute(.paragraphStyle, at: bullet, effectiveRange: nil) as? NSParagraphStyle)?.headIndent ?? 0
+        let paragraph = (text.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle)?.headIndent ?? 0
+        #expect(indent > 5)
+        #expect(paragraph == 0)
     }
 }

@@ -74,14 +74,13 @@ final class FlowTests: XCTestCase {
     func testAIConnectorsInSettings() throws {
         openJournal()
         app.tabBars.buttons["Settings"].tap()
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10))
-        let claude = app.links["Connect to Claude"]
-        for _ in 0..<4 where !claude.isHittable {
+        XCTAssertTrue(app.staticTexts["Entry Text Size"].waitForExistence(timeout: 10))
+        let connector = app.links["Claude/ChatGPT Connector"]
+        for _ in 0..<4 where !connector.isHittable {
             app.collectionViews.firstMatch.swipeUp(velocity: .slow)
         }
-        XCTAssertTrue(claude.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.links["Connect to ChatGPT"].exists)
-        XCTAssertTrue(app.links["Set Up a Passkey First"].exists, "Demo account has no passkey/2FA yet")
+        XCTAssertTrue(connector.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.links["Export Entries"].exists)
         snap("settings-ai")
     }
 
