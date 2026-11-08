@@ -338,7 +338,7 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
     end
 
     before do
-      pro_user.update_column(:user_key, "pro-user-key") # stored photo paths include it
+      pro_user.update_column(:image_key, "pro-image-key") # stored photo paths include it
       allow(ProcessEntryImageJob).to receive(:perform_later)
       allow(ImageCollageJob).to receive(:perform_later)
     end
