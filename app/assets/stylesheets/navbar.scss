@@ -30,6 +30,30 @@
       text-shadow: 0px 0px 3px darken($olive,40);
     }
   }
+  // The "me" avatar that opens the account menu (desktop). Fixed padding so it
+  // doesn't shift on hover like the text links do.
+  .navbar-nav > li > a.s-avatar-toggle,
+  li.dropdown.open > a.s-avatar-toggle {
+    padding-top: 9px;
+    padding-bottom: 9px;
+    &:hover, &:active, &:focus {
+      padding-top: 9px;
+      padding-bottom: 9px;
+    }
+  }
+  .s-avatar {
+    display: block;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.25);
+    transition: box-shadow 0.2s;
+  }
+  .s-avatar-toggle:hover .s-avatar,
+  .s-avatar-toggle:focus-visible .s-avatar,
+  .open > .s-avatar-toggle .s-avatar {
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
+  }
   .navbar-nav > .active >a {
     color: whiteSmoke;
     background-color: darken($olive,10);

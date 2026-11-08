@@ -34,8 +34,7 @@ If you're modifying behavior around imports, scheduling, or the email reply form
 | **Hourly cron + per-user schedule** ([SendHourlyEntriesWorker](app/workers/send_hourly_entries_worker.rb)) | The single most important job in the system. If this misses a run, users don't get their journal prompt. It's the *only* job wired up to Sentry cron monitoring (the Sentry plan only allows one monitor — that's the one). |
 | **Email reply ingestion** (Mailgun → `email_processor` → Griddler) | The primary way entries are created. Reply-to-post must keep working; web compose is secondary. |
 | **Web app** (`/entries`, `/write`, `/search`, `/review/:year`) | For browsing, searching, and the more involved features (Year in Review, calendar, songs view). Treat the web UI as a companion to email, not the primary surface. |
-| **AI Assistant ("DabbleMeGPT")** ([Entry::AiAssistant](app/models/concerns/entry/ai_assistant.rb), [AiEntryJob](app/jobs/ai_entry_job.rb)) | **PRO-only, closed beta.** No UI to opt in — a handful of "super friendlies" are flagged on manually. The intent is a low-key journaling partner, not a chatbot. Treat the gating as deliberate; do not add a self-serve opt-in unless asked. |
-| **Auto-tagging / sentiment** ([AiTaggingJob](app/jobs/ai_tagging_job.rb), `entries.sentiment` jsonb column) | Same PRO-only beta cohort as DabbleMeGPT. Quietly enriches entries so search and "emotion" filtering work without manual tagging. |
+| **AI reflection** ([Entry::AiAssistant](app/models/concerns/entry/ai_assistant.rb), `EntriesController#reflection`) | **Closed beta** (`users.ai_opt_in`). No UI to opt in — a handful of "super friendlies" are flagged on manually. The wand on an entry asks OpenAI for one reflection and shows it in a modal; nothing is saved. The iOS app does the same on-device. Conversations, sentiment, and patterns across entries are deliberately left to the MCP connector: don't bring back stored AI replies, reply-to-AI email, or auto-tagging unless asked. Treat the gating as deliberate; do not add a self-serve opt-in unless asked. |
 | **Hashtag support** | User-driven tagging for entries they want to find later. |
 | **Spotify songs** | Entries can carry a list of songs; the UI embeds Spotify players. Adds a "what was I listening to" dimension to memory. |
 | **Image upload (S3 + CloudFront + libvips/libheif)** | One image per entry. HEIC/HEIF is explicitly supported because that's what iPhones produce by default. Conversion happens async via [ProcessEntryImageJob](app/jobs/process_entry_image_job.rb) with a placeholder image while it works. |
@@ -72,7 +71,7 @@ These aren't written down anywhere but the code clearly reflects them.
 - **Rubocop config exists but rubocop is not in the Gemfile.** Not part of the workflow ([AGENTS.md](AGENTS.md)).
 - **Hourly worker's cron schedule is duplicated** in both [config/sidekiq_cron_schedule.yml](config/sidekiq_cron_schedule.yml) and [the worker file itself](app/workers/send_hourly_entries_worker.rb) (for Sentry monitor registration). Keep them in sync.
 - **`Inspiration` row with category "OhLife"** is load-bearing for the OhLife importer — it's the FK target for imported entries.
-- **Body field stores HTML, including embedded `<div data-content='dabblemegpt'>` AI responses.** The DOM-ish markers are how AI replies are detected and re-rendered. Don't strip them.
+- **Body field stores HTML.** It's only ever the writer's own words: AI reflections are shown, never saved into the body.
 - **Default S3 image domain in the model is a CloudFront URL** (`d10r8m94hrfowu.cloudfront.net`). That's a real prod CDN — don't accidentally hardcode it elsewhere.
 
 ## 7. Hosting & operational context

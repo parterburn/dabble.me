@@ -23,27 +23,6 @@ class EntryMailer < ActionMailer::Base
     email.mailgun_options = { tag: 'Entry' }
   end
 
-  def respond_as_ai(user, entry)
-    @user = user
-
-    # do the AI thing
-    @ai_answer = entry.ai_response
-    return unless @ai_answer.present?
-
-    entry.body = "#{entry.body}<hr><div data-content='dabblemegpt'><strong>🤖 DabbleMeGPT:</strong><br/>#{ActionController::Base.helpers.simple_format(@ai_answer.gsub(/<hr\/?>/, "").gsub(/\A\n*/, ""), {}, sanitize: false)}</div>"
-    entry.save
-    @entry = entry
-
-    set_reply_headers(entry)
-    email = mail  from: "AI Dabble me. <#{user.user_key}@#{ENV['SMTP_DOMAIN'].gsub('post', 'ai')}>",
-                  to: "#{user.cleaned_to_address}",
-                  subject: "Re: #{subject(entry)}",
-                  html: render_to_string('entry_mailer/respond_as_ai', formats: [:html]).to_str,
-                  text: render_to_string('entry_mailer/respond_as_ai', formats: [:text]).to_str
-
-    email.mailgun_options = { tag: 'AI Entry' }
-  end
-
   def image_error(user, entry, type, errors)
     @entry = entry
     @user = user

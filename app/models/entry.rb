@@ -6,6 +6,10 @@ class Entry < ActiveRecord::Base
   include Entry::AiAssistant
   mount_uploader :image, ImageUploader
 
+  # Sentiment tagging was removed. Drop the column in a follow-up migration once
+  # no running code still writes it.
+  self.ignored_columns += %w[sentiment]
+
   ALLOWED_IMAGE_TYPES = %w[image/jpg image/jpeg image/png image/gif image/webp image/heic image/heif image/heic-sequence image/heif-sequence application/octet-stream]
 
   # Placeholder image shown in the UI while an entry's image is being processed
@@ -18,7 +22,7 @@ class Entry < ActiveRecord::Base
   UPLOADING_IMAGE_TIMEOUT = 30.minutes
 
   WORDS_NOT_TO_COUNT = ['s', 'amp', '-', 'p', 'br', 'div', 'img', 'span', 'hr', '<', '>']
-  COMMON_WORDS = WORDS_NOT_TO_COUNT + ['has', 'did', "you're", 'your', 'we', 'i', "it's", 'dabblemegpt', 'like', 'these', 'you', 'so', 'went', 'while', 's', 'amp', '-', 'p', 'br', 'div', 'img', 'span', 'the', 'of', 'and', 'a', 'to', 'in', 'is', 'that', 'it', 'was', 'for', 'on', 'are', 'as', 'with', 'at', 'be', 'this', 'have', 'from', 'or', 'had', 'by', 'but', 'not', 'what', 'all', 'were', 'when', 'can', 'said', 'there', 'use', 'an', 'each', 'which', 'do', 'how', 'if']
+  COMMON_WORDS = WORDS_NOT_TO_COUNT + ['has', 'did', "you're", 'your', 'we', 'i', "it's", 'like', 'these', 'you', 'so', 'went', 'while', 's', 'amp', '-', 'p', 'br', 'div', 'img', 'span', 'the', 'of', 'and', 'a', 'to', 'in', 'is', 'that', 'it', 'was', 'for', 'on', 'are', 'as', 'with', 'at', 'be', 'this', 'have', 'from', 'or', 'had', 'by', 'but', 'not', 'what', 'all', 'were', 'when', 'can', 'said', 'there', 'use', 'an', 'each', 'which', 'do', 'how', 'if']
 
   belongs_to :user
   belongs_to :inspiration, optional: true
@@ -35,14 +39,11 @@ class Entry < ActiveRecord::Base
   scope :only_ohlife, -> { includes(:inspiration).where("inspirations.category = 'OhLife'").references(:inspiration).order('date DESC') }
   scope :only_email, -> { where("original_email_body IS NOT null").order('date DESC') }
   scope :only_spotify, -> { where("songs::text NOT IN ('[]', '{}')").order('date DESC') }
-  scope :with_ai_responses, -> { where("body LIKE '%🤖 DabbleMeGPT:%'").order('date DESC') }
 
   before_save :associate_inspiration
   before_save :strip_out_base64
   before_save :find_songs
   before_update :relocate_image_on_date_change
-
-  after_commit :tag_for_sentiment, if: :saved_change_to_body?, on: [:create, :update]
 
   def date_format_long
     # Friday, Feb 3, 2014
@@ -91,19 +92,6 @@ class Entry < ActiveRecord::Base
     @formatted_body ||= begin
       formatted = ensure_utf8(body)
       fix_encoding(formatted)
-    end
-  end
-
-  def split_for_ai
-    formatted_body&.split("<hr>")
-  end
-
-  def text_bodies_for_ai
-    return [] unless split_for_ai.present?
-
-    split_for_ai.map do |formatted_split_body|
-      clean_chunk = formatted_split_body.gsub("👤 You:", "").gsub("🤖 DabbleMeGPT:", "||DabbleMeGPT||")
-      Nokogiri::HTML.parse(ReverseMarkdown.convert(clean_chunk, unknown_tags: :bypass)).text
     end
   end
 
@@ -190,14 +178,6 @@ class Entry < ActiveRecord::Base
       return nil unless h_body.present?
       h_body.scan(/#([0-9]+[a-zA-Z_]+\w*|[a-zA-Z_]+\w*)/).map { |m| m[0] }.uniq
     end
-  end
-
-  def ai_waiting_for_user_response
-    @ai_waiting_for_user_response ||= split_for_ai&.last&.include?("🤖 DabbleMeGPT:")
-  end
-
-  def ai_waiting_for_ai_response
-    @ai_waiting_for_ai_response ||= updated_at > 1.minute.ago && split_for_ai&.last&.include?("👤 You:")
   end
 
   private
@@ -288,12 +268,5 @@ class Entry < ActiveRecord::Base
     rescue Encoding::UndefinedConversionError
       string
     end
-  end
-
-  def tag_for_sentiment
-    return unless user.ai_opt_in? && ENV["OPENAI_ACCESS_TOKEN"].present?
-    return unless text_body.present?
-
-    AiTaggingJob.perform_later(id)
   end
 end

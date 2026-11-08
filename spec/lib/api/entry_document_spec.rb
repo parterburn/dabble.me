@@ -55,7 +55,7 @@ RSpec.describe Api::EntryDocument do
     [
       %(<p><span style="color: red">red</span></p>),
       "<blockquote>quoted</blockquote>",
-      %(<div data-content="dabblemegpt">AI reply</div>),
+      %(<div data-foo="bar">Unknown attribute</div>),
       %(<p><img src="https://x.test/a.png"></p>),
       %(<p>My day</p><div><img src="https://x.test/a.png"></div>),
       %(<div>Text</div><div><span><img src="https://x.test/a.png"></span></div>),

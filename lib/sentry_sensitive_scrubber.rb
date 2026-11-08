@@ -24,7 +24,6 @@ module SentrySensitiveScrubber
     original_email
     text_body
     entry
-    ai_response
   ].freeze
 
   module_function

@@ -115,6 +115,23 @@ RSpec.describe McpController, type: :controller do
         expect(log.attributes.values.map(&:to_s).join).not_to include("northern lights")
       end
 
+      # Entries remember which emailed prompt they answered, but the link is
+      # unreliable, so it stays out of what AI clients see.
+      { "list_entries" => {}, "search_entries" => { query: "garden shed" } }.each do |tool, arguments|
+        it "leaves the entry's inspiration prompt out of #{tool}" do
+          prompt = Inspiration.create!(category: "Question", body: "What was the biggest thing you completed this year?")
+          paid_entry.update!(body: "Finished the garden shed #projects")
+          paid_entry.update_columns(inspiration_id: prompt.id)
+
+          post :invoke, params: { jsonrpc: "2.0", id: 9, method: "tools/call", params: { name: tool, arguments: arguments } }, as: :json
+
+          expect(response).to have_http_status(:ok)
+          expect(response.body).to include("garden shed")
+          expect(response.body).not_to include("biggest thing you completed")
+          expect(response.body).not_to include("Question")
+        end
+      end
+
       it "returns aggregate analysis" do
         paid_entry.update!(body: "First #gratitude note")
         paid_user.entries.create!(body: "Second #gratitude note", date: 1.day.ago)

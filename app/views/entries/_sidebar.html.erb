@@ -31,7 +31,7 @@
         <h4>
           <%= link_to "#entry-#{back_year_entry.id}", "data-id": "#{back_year_entry.id}", class: "j-entry-link", style: "color: #a41100;" do %>
             <div class="s-date-left">
-              <i class="fa fa-history"></i>
+              <span class="slab-icon slab-icon--backward" aria-hidden="true"></span>
               &nbsp;<%= pluralize(year_back, "year").upcase %> AGO
             </div>
             <div class="clearfix"></div>
@@ -58,29 +58,11 @@
     <% end %>
   </h3>
 
-  <% if params[:emotion].present? || params[:group] == "emotion" %>
-    <% @emotions_counts.sort_by { |emotion, count| emotion }.each do |emotion, count| %>
-      <h4 style="font-size: 15px;">
-        <%= link_to entries_emotion_path(emotion), class: ("active" if params[:emotion] == emotion) do %>
-          <div class="s-date-left">
-            <%= Entry::AiTagger::EMOTIONS[emotion] %>
-            <%= emotion.upcase %>
-          </div>
-          <div class="s-date-right">
-            <%= format_number(count) %>
-          </div>
-          <div class="clearfix"></div>
-        <% end %>
-      </h4>
-    <% end %>
-    <hr>
-  <% end %>
-
   <% if @only_images_count && @only_images_count > 0 %>
     <h4 style="font-size: 15px;">
       <%= link_to group_entries_path('photos'), class: "#{'active' if current_page?(group_entries_path('photos'))}" do %>
         <div class="s-date-left">
-          <i class="fa fa-image" style="color: #cccccc;margin-right: 2px;"></i>
+          <span class="slab-icon slab-icon--image" aria-hidden="true" style="color: #cccccc; margin-right: 2px;"></span>
           PHOTOS
         </div>
         <div class="s-date-right">
@@ -91,25 +73,10 @@
     </h4>
   <% end %>
 
-  <% if @with_ai_responses_count && @with_ai_responses_count > 0 %>
-    <h4 style="font-size: 15px;">
-      <%= link_to group_entries_path('ai'), class: "#{'active' if current_page?(group_entries_path('ai'))}" do %>
-        <div class="s-date-left">
-          <i class="fa fa-magic" style="color: #cccccc;margin-right: 2px;"></i>
-          AI
-        </div>
-        <div class="s-date-right">
-          <%= format_number(@with_ai_responses_count) %>
-        </div>
-        <div class="clearfix"></div>
-      <% end %>
-    </h4>
-  <% end %>
-
   <h4 style="font-size: 15px;">
     <%= link_to spotify_path, class: "#{'active' if current_page?(spotify_path)}" do %>
       <div class="s-date-left">
-        <i class="fa fa-music" style="color: #cccccc;margin-right: 4px;"></i>
+        <span class="slab-icon slab-icon--music" aria-hidden="true" style="color: #cccccc; margin-right: 4px;"></span>
         SPOTIFY
       </div>
       <div class="s-date-right">
@@ -137,7 +104,7 @@
         <% month_str = Date::ABBR_MONTHNAMES[month_num].upcase %>
         <div class="s-date-left">
           <%= link_to entries_calendar_path(day: year_str+"-"+month_num.to_s.rjust(2, '0')), class: "noline" do %>
-            <i class="fa fa-calendar"></i>
+            <span class="slab-icon slab-icon--calendar" aria-hidden="true"></span>
           <% end %>
           &nbsp;
         </div>

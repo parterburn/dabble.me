@@ -2,7 +2,7 @@
 
 .s-date-left {
   float: left;
-  .fa.fa-calendar {
+  .slab-icon--calendar {
     color: $light-gray;
     &:hover{
       color: #999;
@@ -118,6 +118,13 @@
       color: darken($olive, 20);
     }
   }
+}
+
+// Icon-only links (reflect, edit) have no text to underline on hover.
+.s-edit-entry a,
+.s-edit-entry a:hover,
+.s-edit-entry a:focus {
+  text-decoration: none;
 }
 
 .s-process-ai {
@@ -335,8 +342,8 @@ mark {
   color:$light-gray;
   position: absolute;
   right: 25px;
-  top: 6px;
-  font-size: 25px;
+  top: 10px;
+  font-size: 20px;
   &:hover {
     color:$mid-gray;
   }
@@ -487,24 +494,6 @@ mark {
     border-left: 0px;
     border-right: 0px;
   }
-
-  div[data-content=dabblemegpt] {
-    background: oklch(93% 0.007 106.5);
-    padding: 20px;
-    margin: -22px -20px 0;
-  }
-
-  div[data-content=dabblemegpt] + hr {
-    margin-top: -2px;
-  }
-
-  div[data-content=dabblemegpt] + p.tags {
-    margin-top: 30px;
-  }
-
-  form.respond-to-gpt + img {
-    margin-top: 20px;
-  }
 }
 
 .s-new-edit-entry.well {
@@ -556,28 +545,6 @@ mark {
 
 .note-editor .note-dropzone { opacity: 0 !important; }
 
-.emotion-link {
-  margin-top: 10px;
-  font-size: 15px !important;
-  display: inline-block;
-  text-decoration: none !important;
-  margin-left: 3px;
-  margin-right: 3px;
-  color: black;
-  transition: transform 0.3s ease; /* Smooth transition */
-  &:hover {
-    text-decoration: none !important;
-    transform: scale(1.1);
-  }
-}
-
-// Photo field on the new and edit entry forms (entries/_photo_picker).
-// The inspiration lightbulb floats above the date field; keep the field
-// below it now that the field has no visible label.
-.s-new-edit-entry .input-group.date {
-  clear: both;
-}
-
 .photo-picker {
   margin: 4px 0 20px;
 
@@ -615,7 +582,7 @@ mark {
   cursor: pointer;
   transition: border-color 0.15s ease, background-color 0.15s ease;
 
-  .fa {
+  .slab-icon {
     font-size: 28px;
     color: $olive;
   }
@@ -639,7 +606,7 @@ mark {
     margin-top: 12px;
     padding: 12px;
 
-    .fa {
+    .slab-icon {
       font-size: 20px;
     }
 
@@ -713,7 +680,7 @@ mark {
   color: $mid-gray;
   font-size: 12px;
 
-  .fa {
+  .slab-icon {
     font-size: 22px;
   }
 }
@@ -773,4 +740,61 @@ mark {
   &:empty {
     display: none;
   }
+}
+
+// "Reflect on this entry" dialog (reflection.js)
+.s-reflection-dialog {
+  width: calc(100% - 32px);
+  max-width: 600px;
+  max-height: calc(100% - 32px);
+  padding: 0;
+  border: 0;
+  border-radius: 8px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+  color: $olive-950;
+  &::backdrop {
+    background: rgba(0, 0, 0, 0.5);
+  }
+  .s-reflection-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px;
+    border-bottom: 1px solid #e5e5e5;
+    h4 {
+      margin: 0;
+      font-weight: 600;
+    }
+  }
+  .s-reflection-content {
+    padding: 15px;
+  }
+  .s-reflection-date {
+    color: $olive-500;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .s-reflection-body {
+    font-family: Georgia, Cambria, "Times New Roman", Times, serif;
+    font-size: 18px;
+    line-height: 1.6;
+    p, li {
+      margin-bottom: 0.8em;
+    }
+  }
+  .s-reflection-loading {
+    color: $olive-500;
+  }
+  .s-reflection-note {
+    margin: 20px 0 0;
+    color: $olive-500;
+    font-size: 12px;
+  }
+}
+
+// Keep the page behind the dialog from scrolling.
+body:has(.s-reflection-dialog[open]) {
+  overflow: hidden;
 }

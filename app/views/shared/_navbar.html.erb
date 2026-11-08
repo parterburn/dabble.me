@@ -38,14 +38,14 @@
 
         <li class="<%= 'active' if current_page?(entries_calendar_path) %>">
           <%= link_to entries_calendar_path, title: "Calendar View" do %>
-            <i class="fa fa-calendar hidden-xs"></i>
+            <span class="slab-icon slab-icon--calendar hidden-xs" aria-hidden="true"></span>
             <span class="visible-xs-inline-block">Calendar</span>
           <% end %>
         </li>
 
         <li class="<%= 'active' if current_page?(search_path) %>">
           <%= link_to search_path, title: "Search" do %>
-            <i class="fa fa-search hidden-xs"></i>
+            <span class="slab-icon slab-icon--search hidden-xs" aria-hidden="true"></span>
             <span class="visible-xs-inline-block">Search</span>
           <% end %>
         </li>
@@ -53,39 +53,24 @@
         <% if user_signed_in? && current_user.admin? %>
           <li class="dropdown <%= 'active' if params[:controller].in?(['admin', 'inspirations', 'payments']) %>">
             <a class="dropdown-toggle" data-toggle="dropdown" href="#">
-              <i class="fa fa-lock hidden-xs"></i>
+              <span class="slab-icon slab-icon--lock hidden-xs" aria-hidden="true"></span>
               <span class="visible-xs-inline-block">Admin</span>
             </a>
             <ul class="dropdown-menu" role="menu">
               <li class="<%= 'active' if current_page?(inspirations_path) %>">
-                <%= link_to inspirations_path, title: "Inspirations" do %>
-                  <i class="fa fa-lightbulb-o"></i>
-                  &nbsp;Inspirations
-                <% end %>
+                <%= link_to "Inspirations", inspirations_path, title: "Inspirations" %>
               </li>
               <li class="<%= 'active' if current_page?(payments_path) %>">
-                <%= link_to payments_path, title: "Payments" do %>
-                  <i class="fa fa-usd"></i>
-                  &nbsp;Payments
-                <% end %>
-              </li>
-              <li class="<%= 'active' if current_page?(admin_stats_path) %>">
-                <%= link_to admin_stats_path, title: "Admin Stats" do %>
-                  <i class="fa fa-bar-chart"></i>
-                  &nbsp;Stats
-                <% end %>
+                <%= link_to "Payments", payments_path, title: "Payments" %>
               </li>
               <li class="<%= 'active' if current_page?(admin_photos_path) %>">
-                <%= link_to admin_photos_path, title: "Admin Photos" do %>
-                  <i class="fa fa-picture-o"></i>
-                  &nbsp;Photos
-                <% end %>
+                <%= link_to "Photos", admin_photos_path, title: "Admin Photos" %>
+              </li>
+              <li class="<%= 'active' if current_page?(admin_stats_path) %>">
+                <%= link_to "Stats", admin_stats_path, title: "Admin Stats" %>
               </li>
               <li class="<%= 'active' if current_page?(admin_users_path) %>">
-                <%= link_to admin_users_path, title: "Admin Users" do %>
-                  <i class="fa fa-users"></i>
-                  &nbsp;Users
-                <% end %>
+                <%= link_to "Users", admin_users_path, title: "Admin Users" %>
               </li>
             </ul>
           </li>
@@ -101,16 +86,31 @@
             <% current_settings = "Email reminders are currently <strong>disabled</strong>." %>
           <% end %>
         <% end %>
-        <li class="<%= 'active' if current_page?(edit_user_registration_path) %>" rel="<%= add_popover %>" title="" data-content="<%= current_settings %>" data-placement="bottom">
-          <%= link_to edit_user_registration_path do %>
-            <span>Settings</span>
-          <% end %>
-        </li>
-        <li>
-          <%= link_to destroy_user_session_path, method: :delete, title: "Logout" do %>
-            <i class="fa fa-sign-out hidden-xs"></i>
-            <span class="visible-xs-inline-block">Logout</span>
-          <% end %>
+        <% on_settings = current_page?(edit_user_registration_path) %>
+        <% on_security = current_page?(security_path) %>
+
+        <%# Phones: plain links in the collapsed menu. %>
+        <li class="visible-xs <%= 'active' if on_settings %>"><%= link_to "Settings", edit_user_registration_path %></li>
+        <li class="visible-xs <%= 'active' if on_security %>"><%= link_to "Account Security", security_path %></li>
+        <li class="visible-xs"><%= link_to "Logout", destroy_user_session_path, method: :delete %></li>
+
+        <%# Desktop: the same links behind the "me" avatar. %>
+        <li class="dropdown hidden-xs <%= 'active' if on_settings || on_security %>" rel="<%= add_popover %>" title="" data-content="<%= current_settings %>" data-placement="bottom">
+          <a class="dropdown-toggle s-avatar-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false" title="Account">
+            <%= image_tag "logos/me-avatar.png", alt: "Account", class: "s-avatar", width: 32, height: 32 %>
+          </a>
+          <ul class="dropdown-menu" role="menu">
+            <li class="<%= 'active' if on_settings %>">
+              <%= link_to edit_user_registration_path do %><span class="slab-icon slab-icon--gear" aria-hidden="true"></span>Settings<% end %>
+            </li>
+            <li class="<%= 'active' if on_security %>">
+              <%= link_to security_path do %><span class="slab-icon slab-icon--shield" aria-hidden="true"></span>Account Security<% end %>
+            </li>
+            <li role="separator" class="divider"></li>
+            <li>
+              <%= link_to destroy_user_session_path, method: :delete do %><span class="slab-icon slab-icon--sign-out" aria-hidden="true"></span>Logout<% end %>
+            </li>
+          </ul>
         </li>
       </ul>
     </div>
