@@ -36,6 +36,9 @@ module Api
         # Structured, editable copy of the body (see EntryDocument), or nil when it's web-only.
         document: EntryDocument.from_html(entry.body),
         songs: songs,
+        # Neighbouring entries by date, for moving between days in the app.
+        previous_entry: neighbour(entry.previous),
+        next_entry: neighbour(entry.next),
         web_url: Mcp::Tools::Helpers.entry_public_url(entry)
       )
     end
@@ -56,6 +59,10 @@ module Api
     # so the app shows one blank line between paragraphs, like the web.
     def display_text(text)
       text.to_s.gsub(/[ \t]+$/, '').gsub(/\n{3,}/, "\n\n").strip
+    end
+
+    def neighbour(other)
+      other && { id: other.id, date: other.date.to_date.iso8601 }
     end
 
     def songs

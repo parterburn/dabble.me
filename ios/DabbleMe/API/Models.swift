@@ -36,9 +36,57 @@ struct EntrySummary: Decodable, Sendable, Identifiable, Hashable {
     let imageProcessing: Bool
     let hashtags: [String]
     let updatedAt: String
+    /// Only on Today's "On This Day" memories.
+    var yearsAgo: Int? = nil
 
     var day: JournalDay? { JournalDay(date) }
     var imageURL: URL? { imageUrl.flatMap(URL.init(string:)) }
+}
+
+struct EntryNeighbour: Decodable, Sendable, Hashable {
+    let id: Int
+    let date: String
+
+    var day: JournalDay? { JournalDay(date) }
+}
+
+/// A month that has entries, for the Journal tab's sections and scrubber.
+struct MonthCount: Decodable, Sendable, Hashable, Identifiable {
+    let year: Int
+    let month: Int
+    var count: Int
+
+    var id: String { key }
+    /// "2026-11", the same as `JournalDay.monthKey`.
+    var key: String { String(format: "%04d-%02d", year, month) }
+    var title: String { JournalDay(key + "-01")?.monthTitle ?? key }
+    var shortTitle: String { JournalDay(key + "-01")?.formatted(.dateTime.month(.abbreviated).year()) ?? key }
+
+    init(year: Int, month: Int, count: Int) {
+        self.year = year
+        self.month = month
+        self.count = count
+    }
+
+    init?(key: String, count: Int) {
+        let parts = key.split(separator: "-").compactMap { Int($0) }
+        guard parts.count == 2 else { return nil }
+        self.init(year: parts[0], month: parts[1], count: count)
+    }
+}
+
+struct MonthList: Decodable, Sendable {
+    let months: [MonthCount]
+}
+
+struct TodaySummary: Decodable, Sendable {
+    let date: String
+    let entry: EntryDetail?
+    let onThisDay: [EntrySummary]
+    let onThisDayAvailable: Bool
+    let prompt: String?
+
+    var day: JournalDay? { JournalDay(date) }
 }
 
 struct Song: Decodable, Sendable, Hashable {
@@ -64,6 +112,8 @@ struct EntryDetail: Decodable, Sendable, Identifiable, Hashable {
     let document: [DocumentBlock]?
     let songs: [Song]
     let webUrl: URL
+    let previousEntry: EntryNeighbour?
+    let nextEntry: EntryNeighbour?
 
     var day: JournalDay? { JournalDay(date) }
     var imageURL: URL? { imageUrl.flatMap(URL.init(string:)) }

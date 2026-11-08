@@ -37,10 +37,12 @@ Rails.application.routes.draw do
   namespace :api, defaults: { format: :json } do
     namespace :v1 do
       get 'me', to: 'me#show'
+      get 'today', to: 'today#show'
       resources :entries, only: %i[index show create update destroy] do
         collection do
           get :random
           get :on_this_day
+          get :months
         end
       end
       get 'search', to: 'searches#show'

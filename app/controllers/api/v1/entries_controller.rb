@@ -31,6 +31,17 @@ module Api
         render json: { entry: EntrySerializer.full(@entry) }
       end
 
+      # GET /api/v1/entries/months: every month with entries, newest first, for the
+      # Journal tab's month sections and year/month scrubber.
+      def months
+        counts = current_user.entries.unscope(:order)
+                             .group(Arel.sql("DATE_PART('year', date)"), Arel.sql("DATE_PART('month', date)"))
+                             .count
+        months = counts.map { |(year, month), count| { year: year.to_i, month: month.to_i, count: count } }
+                       .sort_by { |m| [-m[:year], -m[:month]] }
+        render json: { months: months }
+      end
+
       def random
         entry = current_user.random_entry
         return render_error(:not_found, 'not_found', 'No entries yet.') unless entry
@@ -40,12 +51,7 @@ module Api
 
       # Entries from this calendar day in earlier years (PRO on the web too).
       def on_this_day
-        user_time = Time.current.in_time_zone(current_user.send_timezone)
-        first_year = current_user.entries.minimum(:date)&.year || user_time.year
-        day_ranges = (1..(user_time.year - first_year)).map { |y| (user_time - y.years).to_date.all_day }
-        scope = day_ranges.map { |range| current_user.entries.where(date: range) }.reduce(:or)
-        entries = scope ? scope.to_a : []
-        render json: { entries: entries.map { |entry| EntrySerializer.summary(entry) } }
+        render json: { entries: OnThisDay.entries(current_user).map { |entry| EntrySerializer.summary(entry) } }
       end
 
       # POST /api/v1/entries { date: "YYYY-MM-DD", document: [...] | body: "plain text", uploaded_image_keys: [...] }

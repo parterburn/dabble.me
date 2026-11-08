@@ -121,6 +121,50 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
     end
   end
 
+  describe "day navigation, months and today" do
+    include ActiveSupport::Testing::TimeHelpers
+
+    let!(:older) { create(:entry, user: pro_user, date: Time.zone.local(2024, 6, 3), body: "<p>June</p>") }
+    let!(:middle) { create(:entry, user: pro_user, date: Time.zone.local(2024, 6, 20), body: "<p>Later June</p>") }
+    let!(:newer) { create(:entry, user: pro_user, date: Time.zone.local(2025, 1, 2), body: "<p>New year</p>") }
+
+    it "includes the previous and next entries by date" do
+      get "/api/v1/entries/#{middle.id}", headers: auth(pro_user)
+      expect(json["entry"]["previous_entry"]).to eq("id" => older.id, "date" => "2024-06-03")
+      expect(json["entry"]["next_entry"]).to eq("id" => newer.id, "date" => "2025-01-02")
+
+      get "/api/v1/entries/#{newer.id}", headers: auth(pro_user)
+      expect(json["entry"]["next_entry"]).to be_nil
+    end
+
+    it "lists months with entry counts, newest first" do
+      get "/api/v1/entries/months", headers: auth(pro_user)
+      expect(json["months"]).to eq([
+        { "year" => 2025, "month" => 1, "count" => 1 },
+        { "year" => 2024, "month" => 6, "count" => 2 }
+      ])
+    end
+
+    it "summarizes today: today's entry, On This Day with years ago, and a prompt" do
+      Inspiration.create!(category: "Question", body: "What surprised you today?")
+      travel_to Time.find_zone(pro_user.send_timezone).local(2026, 6, 20, 12) do
+        todays = create(:entry, user: pro_user, date: Date.new(2026, 6, 20).to_s, body: "<p>Today</p>")
+        get "/api/v1/today", headers: auth(pro_user)
+        expect(json["date"]).to eq("2026-06-20")
+        expect(json["entry"]["id"]).to eq(todays.id)
+        expect(json["on_this_day"].map { |e| [e["id"], e["years_ago"]] }).to eq([[middle.id, 2]])
+        expect(json["on_this_day_available"]).to be(true)
+        expect(json["prompt"]).to eq("What surprised you today?")
+      end
+    end
+
+    it "keeps On This Day for PRO on the Today endpoint" do
+      create(:entry, user: free_user, date: 1.year.ago, body: "<p>Last year</p>")
+      get "/api/v1/today", headers: auth(free_user)
+      expect(json).to include("on_this_day" => [], "on_this_day_available" => false, "entry" => nil)
+    end
+  end
+
   describe "document" do
     it "is included for entries the app can edit, and nil otherwise" do
       editable = create(:entry, user: pro_user, body: "<p>Hi <b>there</b></p>")

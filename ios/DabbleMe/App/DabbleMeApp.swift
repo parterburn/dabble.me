@@ -68,6 +68,9 @@ struct MainTabs: View {
         @Bindable var model = model
         // No `.search` role: it pins Search to the far right, and Settings belongs there.
         TabView(selection: $model.selectedTab) {
+            Tab("Today", systemImage: "sun.max", value: AppModel.Tab.today) {
+                TodayView()
+            }
             Tab("Journal", systemImage: "book.closed", value: AppModel.Tab.journal) {
                 JournalView()
             }
