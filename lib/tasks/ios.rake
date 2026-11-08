@@ -111,4 +111,19 @@ namespace :ios do
     puts "Demo account: demo@dabble.ex / dabble-demo (#{user.entries.count} entries, #{user.entries.only_images.count} with photos)"
     puts "Access token (1 day): #{token.plaintext_token}"
   end
+
+  desc "PRO account with no entries or hashtags (UI test for first-time hashtag suggestions); prints a token"
+  task empty_account: :environment do
+    user = User.find_or_initialize_by(email: "empty-demo@dabble.ex")
+    user.password = "dabble-empty-demo" if user.new_record?
+    user.plan = "PRO Monthly"
+    user.save!
+    user.entries.destroy_all
+    user.original_hashtags.destroy_all
+
+    app = MobileApp.ensure_application!
+    token = Doorkeeper::AccessToken.create!(application: app, resource_owner_id: user.id, scopes: MobileApp::SCOPE, expires_in: 1.day)
+    puts "Empty account: empty-demo@dabble.ex"
+    puts "Access token (1 day): #{token.plaintext_token}"
+  end
 end

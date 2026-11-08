@@ -1,3 +1,4 @@
+import StoreKit
 import SwiftUI
 
 struct SettingsView: View {
@@ -15,6 +16,9 @@ struct SettingsView: View {
     @State private var notificationsDenied = false
     @AppStorage(WidgetSnapshot.showMemoriesKey, store: WidgetSnapshot.defaults) private var widgetShowsMemories = false
     @AppStorage(JournalIntelligence.enabledKey) private var onDeviceAI = true
+    /// The plan links to dabble.me/subscribe only on the US App Store, where Apple allows links to
+    /// buy outside the app (guideline 3.1.1(a), US storefront). Elsewhere it's plain text.
+    @State private var canLinkToSubscribe = false
     #if DEBUG
     @State private var pendingReminders = 0
     #endif
@@ -26,7 +30,19 @@ struct SettingsView: View {
                 if let me = model.me {
                     Section("Account") {
                         LabeledContent("Email", value: me.email)
-                        LabeledContent("Plan", value: me.isPro ? "PRO" : "Free")
+                        if canLinkToSubscribe {
+                            Link(destination: AppConfig.webURL("subscribe")) {
+                                LabeledContent("Plan") {
+                                    HStack(spacing: 4) {
+                                        Text(me.isPro ? "PRO" : "Free")
+                                        Image(systemName: "arrow.up.forward").font(.caption)
+                                    }
+                                }
+                            }
+                            .foregroundStyle(.primary)
+                        } else {
+                            LabeledContent("Plan", value: me.isPro ? "PRO" : "Free")
+                        }
                         LabeledContent("Entries", value: me.entryCount.formatted())
                     }
                 }
@@ -95,6 +111,7 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(removing: .title) // the tab says where you are
             .task { notificationsDenied = await ReminderScheduler.shared.isDenied() }
+            .task { canLinkToSubscribe = await Storefront.current?.countryCode == "USA" }
             .onChange(of: writingReminder) { _, on in Task { await remindersChanged(turnedOn: on) } }
             .onChange(of: memoriesReminder) { _, on in Task { await remindersChanged(turnedOn: on) } }
             .onChange(of: writingTime) { Task { await ReminderScheduler.shared.reschedule(for: model) } }

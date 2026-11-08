@@ -24,22 +24,22 @@ enum JournalIntelligence {
     }
 
     enum Failure: LocalizedError {
-        case unavailable, noAnswer, noHashtagsYet, noMatchingHashtags
+        case unavailable, noAnswer, noMatchingHashtags
 
         var errorDescription: String? {
             switch self {
             case .unavailable: "Apple Intelligence isn't available on this device right now."
             case .noAnswer: "Apple Intelligence couldn't come up with anything for this one."
-            case .noHashtagsYet: "Suggestions come from hashtags you already use. Add a #hashtag to an entry to get started."
             case .noMatchingHashtags: "None of your hashtags fit this entry yet."
             }
         }
     }
 
-    /// Up to 3 of the writer's own hashtags that fit an entry, minus ones already in it. Never
-    /// invents new tags: the model picks from the list, and anything else it says is dropped.
+    /// Up to 3 hashtags for an entry, minus ones already in it. Once the writer has hashtags, only
+    /// from those (the model picks from the list; anything else it says is dropped). With none yet,
+    /// it suggests new ones.
     static func suggestHashtags(for text: String, from existing: [String]) async throws -> [String] {
-        guard !existing.isEmpty else { throw Failure.noHashtagsYet }
+        guard !existing.isEmpty else { return try await suggestNewHashtags(for: text) }
         let already = Set(hashtags(in: text).map { $0.lowercased() })
         let candidates = existing.filter { !already.contains($0.lowercased()) }
         guard !candidates.isEmpty else { throw Failure.noMatchingHashtags }
@@ -59,6 +59,26 @@ enum JournalIntelligence {
         var seen = Set<String>()
         let picked = hashtags(in: reply).compactMap { spelling[$0.lowercased()] }.filter { seen.insert($0.lowercased()).inserted }
         guard !picked.isEmpty else { throw Failure.noMatchingHashtags }
+        return Array(picked.prefix(3))
+    }
+
+    private static func suggestNewHashtags(for text: String) async throws -> [String] {
+        let reply = try await respond(
+            instructions: """
+            You suggest hashtags for a private journal entry. Reply with 1 to 3 hashtags that directly describe \
+            what the entry is about (a person, pet, place, activity or theme), separated by spaces, and nothing \
+            else. Each starts with # and is a single lowercase word or joinedword, like #climbing #family.
+            """,
+            prompt: "Journal entry:\n\(clipped(text, limit: 2500))",
+            temperature: 0.2
+        )
+        let already = Set(hashtags(in: text).map { $0.lowercased() })
+        var seen = Set<String>()
+        // Usually "#a #b"; tolerate bare words too.
+        let found = hashtags(in: reply)
+        let words = found.isEmpty ? reply.split(whereSeparator: { !$0.isLetter && !$0.isNumber && $0 != "_" }).map(String.init).filter { $0.first?.isLetter == true } : found
+        let picked = words.map { $0.lowercased() }.filter { !already.contains($0) && seen.insert($0).inserted }
+        guard !picked.isEmpty else { throw Failure.noAnswer }
         return Array(picked.prefix(3))
     }
 

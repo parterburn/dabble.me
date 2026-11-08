@@ -227,4 +227,40 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "since entry")).firstMatch.waitForExistence(timeout: 5))
         snap("hashtag-age")
     }
+
+    /// With no hashtags yet, suggestions aren't limited to (an empty) vocabulary. Needs a PRO
+    /// account with no entries: TEST_RUNNER_DABBLE_EMPTY_TOKEN.
+    func testHashtagSuggestionsForNewWriter() throws {
+        guard let empty = ProcessInfo.processInfo.environment["DABBLE_EMPTY_TOKEN"] else {
+            throw XCTSkip("Set TEST_RUNNER_DABBLE_EMPTY_TOKEN to a PRO account with no hashtags")
+        }
+        let app = XCUIApplication()
+        app.launchArguments = ["-DabbleDebugAccessToken", empty, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launch()
+        let write = app.buttons["Write Today's Entry"]
+        XCTAssertTrue(write.waitForExistence(timeout: 15))
+        write.tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        editor.tap()
+        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+        editor.typeText("Took the kids to the climbing gym after school. Maya made it to the top of the blue wall.")
+        app.buttons["Add"].tap()
+        let suggest = app.buttons["Suggest Hashtags"]
+        guard suggest.waitForExistence(timeout: 3) else { throw XCTSkip("Apple Intelligence isn't available here") }
+        suggest.tap()
+        let chip = app.buttons.matching(NSPredicate(format: "label BEGINSWITH '#'")).firstMatch
+        let found = chip.waitForExistence(timeout: 60)
+        snap("hashtags-new-writer")
+        XCTAssertTrue(found, app.alerts.firstMatch.exists ? app.alerts.firstMatch.debugDescription : "no suggestions")
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+        XCTAssertTrue(editor.waitForNonExistence(timeout: 10))
+
+        tab(app, "Settings").tap()
+        if !app.staticTexts["Entry Text Size"].waitForExistence(timeout: 5) { tab(app, "Settings").tap() }
+        XCTAssertTrue(app.staticTexts["Entry Text Size"].waitForExistence(timeout: 10))
+        print("PLAN_LINK=\(app.links.matching(NSPredicate(format: "label CONTAINS 'Plan'")).firstMatch.exists)")
+        snap("settings-plan")
+    }
 }

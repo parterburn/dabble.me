@@ -121,6 +121,6 @@ In `ios/App Store Screenshots/`: **iPhone 6.3"** at 1206 × 2622 (iPhone 18 Pro 
 
 ## Decisions
 
-- **In-app purchase:** ship as a free companion app (guideline 3.1.3(f)) with no purchasing and no links to buy. If App Review asks for in-app purchase for PRO, revisit.
+- **In-app purchase:** ship as a free companion app (guideline 3.1.3(f)) with no in-app purchasing. On the **US App Store only**, Settings → Plan links to dabble.me/subscribe (US storefront exception in guideline 3.1.1(a), May 2025), detected with StoreKit's `Storefront.current`; elsewhere the plan is plain text. If App Review objects, drop the link.
 - **Free vs PRO in the app:** free accounts read and write text entries and see Stats, the Photos view and the widget; photos, editing/deleting, search (and its hashtag cloud), On This Day, reminders, AI connections and on-device AI features are PRO. Dictation is the keyboard's own (no in-app mic). Face ID lock and drafts are for everyone.
 - **iPad:** supported in 1.0, so the submission needs the 13" iPad screenshot set too.

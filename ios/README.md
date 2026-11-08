@@ -84,6 +84,7 @@ TEST_RUNNER_DABBLE_TOKEN=<token> xcodebuild test -project DabbleMe.xcodeproj -sc
 - Start Puma before Sidekiq, a few seconds apart: `.env` is a 1Password pipe, and two processes opening it at once can leave one without AWS keys.
 - **Face ID lock test:** enroll Face ID on the simulator (`xcrun simctl spawn <device> notifyutil -s com.apple.BiometricKit.enrollmentChanged 1` and then `-p` the same name). Run a helper that sends one match (`xcrun simctl spawn <device> notifyutil -p com.apple.BiometricKit_Sim.pearl.match`) whenever `$TEST_RUNNER_DABBLE_DEBUG_DIR/faceid-match` appears, then deletes the file. Also set `TEST_RUNNER_DABBLE_FACE_ID=1`.
 - **App Store screenshots:** set `TEST_RUNNER_DABBLE_SCREENSHOT_DIR` and run `ScreenshotTests` on the iPhone 18 Pro (1206 × 2622) and iPad Pro 13" simulators. Reset the demo account first so Today has no entry yet.
+- **First-time hashtag suggestions:** `bundle exec rails ios:empty_account` prints a token for a PRO account with no hashtags; pass it as `TEST_RUNNER_DABBLE_EMPTY_TOKEN`.
 - **Widget test:** `WidgetTests` adds the widget to the simulator's home screen and screenshots it; set `TEST_RUNNER_DABBLE_WIDGET=1`.
 - **Apple Intelligence** works in the simulator when the Mac has it turned on; the tests that use it skip those steps otherwise.
 
@@ -93,4 +94,4 @@ TEST_RUNNER_DABBLE_TOKEN=<token> xcodebuild test -project DabbleMe.xcodeproj -sc
 - [ ] Register the App ID `me.dabble.ios` under team B79A4CAS56 (Xcode's automatic signing does this on first device run or archive).
 - [ ] Create the App Store Connect record. Privacy labels: email address, user ID, other user content, photos. All are linked to the user, used for app functionality, and not used for tracking (matches `PrivacyInfo.xcprivacy`).
 - [ ] App Review notes: provide a demo PRO account. Explain that new accounts can be created on the sign-in page and deleted under Settings → Delete Account.
-- [ ] Keep purchase links out of the app (guideline 3.1.1). The PRO explainers only point people to email journaling.
+- [ ] Purchase links: only Settings → Plan, and only on the US App Store (`Storefront.current`); nowhere else in the app.
