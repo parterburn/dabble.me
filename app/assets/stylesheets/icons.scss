@@ -6,8 +6,10 @@
 // Masks load with CORS, so the CDN must send Access-Control-Allow-Origin.
 $slab-icons-url: "https://d10r8m94hrfowu.cloudfront.net/icons/slab";
 
+// !important so container styles can't repaint the icon, like the card
+// headers' `h3 span { background-color: #fff; padding: 0 15px }`.
 @mixin slab-mask($name) {
-  background-color: currentColor;
+  background-color: currentColor !important;
   -webkit-mask: url("#{$slab-icons-url}/#{$name}.svg") center / contain no-repeat;
   mask: url("#{$slab-icons-url}/#{$name}.svg") center / contain no-repeat;
 }
@@ -17,11 +19,12 @@ $slab-icons-url: "https://d10r8m94hrfowu.cloudfront.net/icons/slab";
   display: inline-block;
   width: 1.15em;
   height: 1.15em;
+  padding: 0 !important;
   vertical-align: -0.2em;
 }
 
 // Every icon on the CDN that the app uses.
-@each $name in arrow-up-from-line, arrows-rotate, calendar, clipboard, close, copy, edit, gear, image, images, lock, music, reflect, search, shield, sign-out, tag, trash {
+@each $name in arrow-down-to-line, arrow-left, arrow-right, arrow-up-from-line, arrows-rotate, calendar, check, circle-question, clipboard, close, cloud, compress, copy, edit, envelope, gear, hourglass, image, images, lock, music, reflect, search, shield, sign-out, trash, trophy {
   .slab-icon--#{$name} {
     @include slab-mask($name);
   }
@@ -86,7 +89,7 @@ $slab-icons-url: "https://d10r8m94hrfowu.cloudfront.net/icons/slab";
   .slab-icon,
   .modal-header .close::before,
   .s-reflection-dialog .close::before {
-    background-color: CanvasText;
+    background-color: CanvasText !important;
     forced-color-adjust: none;
   }
 }

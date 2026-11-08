@@ -64,7 +64,7 @@
 
       <div class="center s-search-export">
         <%= link_to export_entries_path(search: { term: @search.term }, format: :txt), class: "btn btn-default" do %>
-          <i class="fa fa-download"></i>
+          <span class="slab-icon slab-icon--arrow-down-to-line" aria-hidden="true"></span>
           Export Search Entries
         <% end %>
       </div>
@@ -81,7 +81,7 @@
         <% if @hashtags.length > 0 %>
           <div style="margin-bottom: 5px;">
             <small>
-              <strong><span class="slab-icon slab-icon--tag" aria-hidden="true"></span> YOUR TAGS</strong>
+              <strong><span class="slab-icon slab-icon--compress" aria-hidden="true"></span> YOUR TAGS</strong>
             </small>
           </div>
           <div class="hashtags">
@@ -104,7 +104,7 @@
 
     <div class="email-post-card">
       <div class="email-post-content">
-        <h3>Ask ChatGPT or Claude about your journal</h3>
+        <h3><span class="slab-icon slab-icon--cloud" aria-hidden="true"></span> Ask ChatGPT or Claude about your journal</h3>
         <p class="text-muted">
           Connect Dabble Me once, then ask things like “What was I writing about last spring?” or “When did I mention burnout?”
         </p>
