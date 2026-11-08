@@ -71,7 +71,7 @@ These aren't written down anywhere but the code clearly reflects them.
 - **Rubocop config exists but rubocop is not in the Gemfile.** Not part of the workflow ([AGENTS.md](AGENTS.md)).
 - **Hourly worker's cron schedule is duplicated** in both [config/sidekiq_cron_schedule.yml](config/sidekiq_cron_schedule.yml) and [the worker file itself](app/workers/send_hourly_entries_worker.rb) (for Sentry monitor registration). Keep them in sync.
 - **`Inspiration` row with category "OhLife"** is load-bearing for the OhLife importer — it's the FK target for imported entries.
-- **Body field stores HTML.** Older entries may still hold `<div data-content='dabblemegpt'>` AI replies from the retired conversation feature (see [script/cleanup_ai_conversations.rb](script/cleanup_ai_conversations.rb)). The CSS and `format_body` keep rendering them; new code shouldn't add any.
+- **Body field stores HTML.** Older entries may still hold `<div data-content='dabblemegpt'>` AI replies from the retired conversation feature. The CSS and `format_body` keep rendering them; new code shouldn't add any.
 - **Default S3 image domain in the model is a CloudFront URL** (`d10r8m94hrfowu.cloudfront.net`). That's a real prod CDN — don't accidentally hardcode it elsewhere.
 
 ## 7. Hosting & operational context
