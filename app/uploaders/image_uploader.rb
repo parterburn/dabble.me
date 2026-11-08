@@ -89,6 +89,19 @@ class ImageUploader < CarrierWave::Uploader::Base
     content_type.in?(%w[image/heic image/heif]) || ext.in?(%w[.heic .heif])
   end
 
+  # New uploads get 8 random characters in front of the original name
+  # (k3x9q2mf-IMG_8880.jpeg), so one leaked photo URL doesn't make the user's
+  # other photos guessable from the date and camera numbering. Stored photos
+  # keep their names, since the image column already holds each one. The
+  # prefix lives on the model for the whole upload, so the jpeg version
+  # (jpeg_<filename>) gets the same one.
+  def filename
+    name = super
+    return name if name.blank?
+
+    "#{upload_prefix}-#{name}"
+  end
+
   def store_dir
     store_dir_for(model.date)
   end
@@ -117,6 +130,12 @@ class ImageUploader < CarrierWave::Uploader::Base
   end
 
   private
+
+  def upload_prefix
+    ivar = :"@#{mounted_as}_upload_prefix"
+    model.instance_variable_get(ivar) ||
+      model.instance_variable_set(ivar, SecureRandom.alphanumeric(8, chars: User::KEY_CHARACTERS))
+  end
 
   def filenames_to_move(filename)
     names = [filename]

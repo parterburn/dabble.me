@@ -82,3 +82,42 @@ RSpec.describe ImageUploader, '#store_dir' do
     expect(paid_entry.reload.image.store_dir).to eq("uploads/development/#{paid_user.user_key}/2026-07-17")
   end
 end
+
+RSpec.describe ImageUploader, '#filename' do
+  include_context 'has all objects'
+
+  # 1x1 transparent PNG
+  let(:png_bytes) { Base64.decode64('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==') }
+  let(:dir) { Dir.mktmpdir }
+  let(:upload) do
+    path = File.join(dir, 'upload.png')
+    File.binwrite(path, png_bytes)
+    Rack::Test::UploadedFile.new(path, 'image/png', original_filename: 'IMG_8880.png')
+  end
+
+  after { FileUtils.rm_rf(dir) }
+
+  it 'puts 8 random characters in front of the original name of a new upload' do
+    uploader = paid_entry.image
+    uploader.cache!(upload)
+
+    expect(uploader.filename).to match(/\A[0-9a-z]{8}-IMG_8880\.png\z/)
+    expect(uploader.filename).to eq(uploader.filename)
+  end
+
+  it 'uses a different prefix for a different upload' do
+    first = paid_entry.image.tap { |u| u.cache!(upload) }.filename
+    second = Entry.find(paid_entry.id).image.tap { |u| u.cache!(upload) }.filename
+
+    expect(first).not_to eq(second)
+  end
+
+  it 'keeps the name of a photo that is already stored' do
+    paid_entry.update_columns(date: Date.new(2026, 7, 17), image: 'IMG_0001.jpeg')
+    uploader = paid_entry.reload.image
+
+    expect(uploader.filename).to be_nil
+    expect(uploader.identifier).to eq('IMG_0001.jpeg')
+    expect(uploader.store_path).to end_with('/2026-07-17/IMG_0001.jpeg')
+  end
+end
