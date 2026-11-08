@@ -179,7 +179,8 @@ final class RichTextEditorModel {
 /// An item in the editor bar's "+" menu (photos, hashtag suggestions…), supplied by the composer.
 struct EditorInsertItem {
     let title: String
-    let systemImage: String
+    /// "slab-…" or an SF Symbol name.
+    let icon: String
     var subtitle: String? = nil
     var isEnabled = true
     let action: @MainActor () -> Void
@@ -260,7 +261,7 @@ struct RichTextEditor: UIViewRepresentable {
             barKey = editor.barKey
             insertItems = editor.insertItems
             func item(_ symbol: String, _ label: String, _ action: @escaping @MainActor (RichTextEditorModel) -> Void) -> UIBarButtonItem {
-                let button = UIBarButtonItem(image: UIImage(systemName: symbol), primaryAction: UIAction { [weak model] _ in
+                let button = UIBarButtonItem(image: appUIIcon(symbol), primaryAction: UIAction { [weak model] _ in
                     if let model { action(model) }
                 })
                 button.accessibilityLabel = label
@@ -270,19 +271,19 @@ struct RichTextEditor: UIViewRepresentable {
             if !editor.insertItems.isEmpty {
                 let menu = UIMenu(children: editor.insertItems.indices.map { index in
                     let entry = editor.insertItems[index]
-                    let action = UIAction(title: entry.title, subtitle: entry.subtitle, image: UIImage(systemName: entry.systemImage)) { [weak self] _ in
+                    let action = UIAction(title: entry.title, subtitle: entry.subtitle, image: appUIIcon(entry.icon)) { [weak self] _ in
                         guard let self, index < self.insertItems.count else { return }
                         self.insertItems[index].action()
                     }
                     if !entry.isEnabled { action.attributes = .disabled }
                     return action
                 })
-                let plus = UIBarButtonItem(image: UIImage(systemName: "plus"), menu: menu)
+                let plus = UIBarButtonItem(image: appUIIcon("slab-plus"), menu: menu)
                 plus.accessibilityLabel = "Add"
                 items.append(plus)
             }
             items.append(.flexibleSpace())
-            items.append(item("link", "Link") { $0.beginLink() })
+            items.append(item("slab-link", "Link") { $0.beginLink() })
             toolbar.items = items
         }
     }

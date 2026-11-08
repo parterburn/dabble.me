@@ -86,6 +86,7 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       expect(response).to have_http_status(:ok)
       expect(json["entries"].map { |e| e["id"] }).to eq([mine.id, older.id])
       expect(json["entries"].first).to include("date" => "2025-03-04", "hashtags" => ["coffee"])
+      expect(json["entries"].first["preview_text"]).to eq("Hello **there** #coffee")
       expect(json).to include("page" => 1, "next_page" => nil, "total_count" => 2)
     end
 

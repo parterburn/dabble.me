@@ -18,7 +18,7 @@ struct EntryPhoto: View {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .success(let image): image.resizable().scaledToFill()
-                    case .failure: Image(systemName: "photo").foregroundStyle(.secondary)
+                    case .failure: appIcon("slab-image").foregroundStyle(.secondary)
                     default: Color.secondary.opacity(0.12)
                     }
                 }
@@ -77,7 +77,7 @@ private struct FullEntryPhoto: View {
                 Button {
                     Task { await photo.load() }
                 } label: {
-                    Label("Photo unavailable. Tap to retry.", systemImage: "photo")
+                    Label("Photo unavailable. Tap to retry.", icon: "slab-image")
                         .frame(maxWidth: .infinity, minHeight: 120)
                 }
                 .foregroundStyle(.secondary)

@@ -53,17 +53,17 @@ struct SettingsView: View {
                     // the guide links to Claude's and ChatGPT's directories.
                     if let connectors = model.me?.aiConnectors {
                         Link(destination: connectors.guideUrl) {
-                            Label("Claude/ChatGPT Connector", systemImage: "sparkles")
+                            Label("Claude/ChatGPT Connector", icon: "slab-cloud")
                         }
                     }
                     Link(destination: model.me?.settingsUrl ?? AppConfig.webURL("settings")) {
-                        Label("Email Preferences", systemImage: "envelope.badge")
+                        Label("Email Preferences", icon: "slab-envelope")
                     }
                     Link(destination: model.me?.securityUrl ?? AppConfig.webURL("security")) {
-                        Label("Passkeys & Two-Factor", systemImage: "lock.shield")
+                        Label("Passkeys & Two-Factor", icon: "slab-shield")
                     }
                     Link(destination: AppConfig.webURL("entries/export")) {
-                        Label("Export Entries", systemImage: "square.and.arrow.up")
+                        Label("Export Entries", icon: "slab-arrow-up-from-line")
                     }
                 } header: {
                     Text("On dabble.me")
@@ -71,13 +71,13 @@ struct SettingsView: View {
 
                 Section {
                     Link(destination: AppConfig.webURL("support")) {
-                        Label("Help & Support", systemImage: "questionmark.circle")
+                        Label("Help & Support", icon: "slab-circle-question")
                     }
                     Link(destination: AppConfig.webURL("privacy")) {
-                        Label("Privacy Policy", systemImage: "hand.raised")
+                        Label("Privacy Policy", icon: "slab-hand")
                     }
                     Link(destination: AppConfig.webURL("terms")) {
-                        Label("Terms", systemImage: "doc.text")
+                        Label("Terms", icon: "slab-anchor")
                     }
                 }
 

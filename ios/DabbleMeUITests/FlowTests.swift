@@ -104,6 +104,11 @@ final class FlowTests: XCTestCase {
         let bottom = app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.88))
         scrubber.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).press(forDuration: 0.3, thenDragTo: bottom)
         let oldest = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "November 2023")).firstMatch
+        if !oldest.waitForExistence(timeout: 5) {
+            // The scrubber fades in while scrolling; a drag that starts as it appears can miss it.
+            scroll.swipeUp(velocity: .slow)
+            scrubber.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).press(forDuration: 0.3, thenDragTo: bottom)
+        }
         XCTAssertTrue(oldest.waitForExistence(timeout: 5), "Dragging to the bottom should jump to the oldest month")
         XCTAssertTrue(oldest.isHittable)
         let loaded = app.descendants(matching: .any)

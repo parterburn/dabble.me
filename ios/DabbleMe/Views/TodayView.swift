@@ -72,7 +72,7 @@ struct TodayView: View {
                 .buttonStyle(.plain)
                 .entryPreview(entry.summary) { path.append(EntryRoute(id: entry.id)) }
                 if model.me?.canWrite == true {
-                    Button("Add to Today's Entry", systemImage: "plus") { composing = true }
+                    Button { composing = true } label: { Label("Add to Today's Entry", icon: "slab-plus") }
                         .buttonStyle(.bordered)
                 }
             }
@@ -109,7 +109,7 @@ struct TodayView: View {
                         if isWritingPrompt {
                             ProgressView().controlSize(.small)
                         } else {
-                            Label("Another Prompt", systemImage: "sparkles")
+                            Label("Another Prompt", icon: "slab-arrows-rotate")
                         }
                     }
                     .font(.subheadline)
@@ -123,7 +123,7 @@ struct TodayView: View {
                     Button {
                         composing = true
                     } label: {
-                        Label("Write Today's Entry", systemImage: "square.and.pencil")
+                        Text("Write Today's Entry")
                             .frame(maxWidth: .infinity, minHeight: 30)
                     }
                     .buttonStyle(.borderedProminent)
@@ -165,7 +165,7 @@ struct TodayView: View {
     @ViewBuilder
     private func onThisDaySection(_ today: TodaySummary) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionTitle("On This Day")
+            SectionTitle("On This Day", icon: "slab-backward")
             if !today.onThisDayAvailable {
                 Text("See what you wrote on this date in past years with Dabble Me PRO.")
                     .font(.callout)
@@ -195,15 +195,24 @@ struct TodayView: View {
 
 private struct SectionTitle: View {
     let title: String
+    var icon: String?
 
-    init(_ title: String) {
+    init(_ title: String, icon: String? = nil) {
         self.title = title
+        self.icon = icon
     }
 
     var body: some View {
-        Text(title)
-            .font(.system(.title3, design: .serif, weight: .semibold))
-            .accessibilityAddTraits(.isHeader)
+        HStack(spacing: 8) {
+            if let icon {
+                appIcon(icon)
+                    .foregroundStyle(.tint)
+                    .accessibilityHidden(true)
+            }
+            Text(title)
+                .font(.system(.title3, design: .serif, weight: .semibold))
+                .accessibilityAddTraits(.isHeader)
+        }
     }
 }
 

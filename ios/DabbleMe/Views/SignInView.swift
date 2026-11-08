@@ -5,20 +5,20 @@ import SwiftUI
 struct SignInView: View {
     var body: some View {
         TabView {
-            Tab("Today", systemImage: "sun.max") { WelcomeView() }
-            Tab("Journal", systemImage: "book.closed") {
+            Tab("Today", image: "slab-calendar") { WelcomeView() }
+            Tab("Journal", image: "slab-book") {
                 LockedGlimpse(title: "Your whole journal, by month",
                               message: "Every entry you've written, with photos, Stats and a timeline to jump years back.") {
                     SampleJournal()
                 }
             }
-            Tab("Search", systemImage: "magnifyingglass") {
+            Tab("Search", image: "slab-search") {
                 LockedGlimpse(title: "Find any moment",
                               message: "Search every word you've ever written, or tap one of your #hashtags.") {
                     SampleHashtags()
                 }
             }
-            Tab("Settings", systemImage: "gearshape") { GuestSettings() }
+            Tab("Settings", image: "slab-gear") { GuestSettings() }
         }
     }
 }
@@ -203,7 +203,7 @@ private struct LockedGlimpse<Content: View>: View {
                 .allowsHitTesting(false)
                 .accessibilityHidden(true)
             VStack(spacing: 14) {
-                Image(systemName: "lock.fill")
+                appIcon("slab-lock")
                     .font(.title2)
                     .foregroundStyle(.tint)
                 Text(title)
@@ -285,14 +285,14 @@ private struct GuestSettings: View {
         NavigationStack {
             List {
                 Section {
-                    Button("Start Your Journal", systemImage: "square.and.pencil") { Task { await model.signIn(createAccount: true) } }
+                    Button { Task { await model.signIn(createAccount: true) } } label: { Label("Start Your Journal", icon: "slab-plus") }
                     Button("Sign In", systemImage: "person.crop.circle") { Task { await model.signIn() } }
                 }
                 .disabled(model.isSigningIn)
                 Section {
-                    Link(destination: AppConfig.webURL("support")) { Label("Help & Support", systemImage: "questionmark.circle") }
-                    Link(destination: AppConfig.webURL("privacy")) { Label("Privacy Policy", systemImage: "hand.raised") }
-                    Link(destination: AppConfig.webURL("terms")) { Label("Terms", systemImage: "doc.text") }
+                    Link(destination: AppConfig.webURL("support")) { Label("Help & Support", icon: "slab-circle-question") }
+                    Link(destination: AppConfig.webURL("privacy")) { Label("Privacy Policy", icon: "slab-hand") }
+                    Link(destination: AppConfig.webURL("terms")) { Label("Terms", icon: "slab-anchor") }
                 }
                 #if DEBUG
                 Section("Development") { ServerPicker() }

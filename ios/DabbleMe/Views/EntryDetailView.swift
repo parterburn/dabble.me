@@ -127,7 +127,7 @@ struct EntryDetailView: View {
         Menu {
             actionButtons(for: entry)
         } label: {
-            Label("Entry Actions", systemImage: "ellipsis.circle")
+            Label("Entry Actions", icon: "slab-edit")
         }
     }
 
@@ -142,18 +142,15 @@ struct EntryDetailView: View {
 
     @ViewBuilder
     private func actionButtons(for entry: EntryDetail) -> some View {
-            if JournalIntelligence.isEnabled(for: model.me), !entry.bodyText.isEmpty {
-                Button("Reflect on This Entry", systemImage: "sparkles") { Task { await reflect(on: entry) } }
-                    .disabled(isReflecting)
-            }
+            // Reflect is pull-down (and the swipe-left sheet), not in this menu.
             if model.me?.canEdit == true {
                 if entry.document != nil {
-                    Button("Edit", systemImage: "pencil") { editing = true }
+                    Button { editing = true } label: { Label("Edit", icon: "slab-edit") }
                 } else {
                     // Formatting the app can't represent (styles, quotes, AI replies) stays web-only so nothing gets lost.
                     Button("Edit on dabble.me", systemImage: "safari") { openURL(entry.webUrl) }
                 }
-                Button("Delete", systemImage: "trash", role: .destructive) { confirmingDelete = true }
+                Button(role: .destructive) { confirmingDelete = true } label: { Label("Delete", icon: "slab-trash") }
             } else {
                 Button("Open on dabble.me", systemImage: "safari") { openURL(entry.webUrl) }
             }
@@ -279,7 +276,7 @@ private struct EntryBody: View {
                         .font(.headline)
                     ForEach(entry.songs, id: \.self) { song in
                         Link(destination: song.spotifyUrl) {
-                            Label(song.label, systemImage: "music.note")
+                            Label(song.label, icon: "slab-music")
                         }
                     }
                 }
@@ -389,7 +386,7 @@ struct ReflectionSheet: View {
                         .font(.system(.title3, design: .serif))
                         .lineSpacing(4)
                         .textSelection(.enabled)
-                    Label("Written on this device by Apple Intelligence. Your entry wasn't sent anywhere.", systemImage: "lock")
+                    Label("Written on this device by Apple Intelligence. Your entry wasn't sent anywhere.", icon: "slab-lock")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                         .padding(.top, 8)
@@ -419,7 +416,7 @@ private struct DatedHashtagRow: View {
                 Button {
                     search(hashtag)
                 } label: {
-                    Label("#\(hashtag.tag)", systemImage: "calendar")
+                    Label("#\(hashtag.tag)", icon: "slab-hourglass")
                         .font(.subheadline)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 5)
@@ -428,7 +425,7 @@ private struct DatedHashtagRow: View {
                 .buttonStyle(.plain)
                 .foregroundStyle(.tint)
                 .contextMenu {
-                    Button("Search #\(hashtag.tag)", systemImage: "magnifyingglass") { search(hashtag) }
+                    Button { search(hashtag) } label: { Label("Search #\(hashtag.tag)", icon: "slab-search") }
                 } preview: {
                     VStack(alignment: .leading, spacing: 6) {
                         Text("#\(hashtag.tag)")
@@ -471,11 +468,11 @@ private struct EntryActionsSheet: View {
                 .foregroundStyle(.secondary)
                 .padding(.bottom, 4)
             if canReflect {
-                row("Reflect on This Entry", "sparkles", .reflect)
+                row("Reflect on This Entry", "slab-thought-bubble", .reflect)
             }
             if canEdit {
-                row(entry.document != nil ? "Edit" : "Edit on dabble.me", "pencil", .edit)
-                row("Delete", "trash", .delete, role: .destructive)
+                row(entry.document != nil ? "Edit" : "Edit on dabble.me", "slab-edit", .edit)
+                row("Delete", "slab-trash", .delete, role: .destructive)
             } else {
                 row("Open on dabble.me", "safari", .web)
             }
@@ -491,7 +488,7 @@ private struct EntryActionsSheet: View {
         Button(role: role) {
             perform(action)
         } label: {
-            Label(title, systemImage: symbol)
+            Label(title, icon: symbol)
                 .frame(maxWidth: .infinity, minHeight: 34, alignment: .leading)
         }
         .buttonStyle(.bordered)

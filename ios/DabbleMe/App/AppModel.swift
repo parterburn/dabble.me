@@ -19,6 +19,9 @@ final class AppModel {
     var searchFocusRequest = 0
     /// Bumped when the Journal tab is tapped while already showing: back to the list, at the top.
     var journalTopRequest = 0
+    /// Shake the phone for a random memory (a preview sheet); `openEntryRequest` opens it in Journal.
+    var showsRandomEntry = false
+    var openEntryRequest: Int?
     let lock = AppLock()
 
     func search(hashtag: String) {

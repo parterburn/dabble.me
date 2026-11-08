@@ -257,6 +257,19 @@ final class JournalViewsTests: XCTestCase {
         tab(app, "Journal").tap()
         let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Biscuit has discovered")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10))
+        // Text and a photo: the preview shows the whole entry, not a truncated start.
+        let yosemite = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
+        XCTAssertTrue(yosemite.waitForExistence(timeout: 10))
+        yosemite.press(forDuration: 1.2)
+        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Sam singing badly")).firstMatch.exists,
+                      "The preview shows the entry's text, not just the start")
+        sleep(1)
+        snap("preview-yosemite")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.8)).tap() // dismiss, away from the preview and menu
+        XCTAssertTrue(app.buttons["Open"].waitForNonExistence(timeout: 5))
+        sleep(1)
+
         row.press(forDuration: 1.2)
         let open = app.buttons["Open"]
         XCTAssertTrue(open.waitForExistence(timeout: 5))
@@ -442,5 +455,35 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(row.waitForExistence(timeout: 10))
         XCTAssertFalse(row.isEnabled)
         snap("email-schedule-free")
+    }
+
+    /// Shaking shows a random entry as a preview over what you're reading; Open goes to it.
+    func testShakeForRandomMemory() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        XCTAssertFalse(app.buttons["Random Entry"].exists, "No shuffle button")
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Big presentation went well")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.tap(); sleep(1); row.tap()
+        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+
+        XCUIDevice.shared.system.open(URL(string: "me.dabble.app:/shake")!) // Debug stand-in for a shake
+        XCTAssertTrue(app.staticTexts["A Random Memory"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
+        sleep(1)
+        snap("shake-memory")
+        app.buttons["Another"].tap()
+        sleep(1)
+        // Close: still reading the same entry underneath.
+        app.buttons["Close"].tap()
+        XCTAssertTrue(app.staticTexts["A Random Memory"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Taking that one with me")).firstMatch.exists)
+
+        XCUIDevice.shared.system.open(URL(string: "me.dabble.app:/shake")!)
+        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
+        sleep(1)
+        app.buttons["Open"].tap()
+        XCTAssertTrue(app.staticTexts["A Random Memory"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
     }
 }

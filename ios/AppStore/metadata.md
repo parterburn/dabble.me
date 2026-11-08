@@ -50,7 +50,7 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 > • Tap an entry's date to see how long ago it was
 > • Long-press any entry to preview it
 > • Give a #hashtag a date (a birthday, an anniversary) and see how old your kids were, or how long it had been, in every entry
-> • Random entry: rediscover a moment you'd forgotten
+> • Shake your phone for a random memory you'd forgotten
 > • Photos full screen with pinch to zoom; save or share the ones you love
 > • Pinch to make entries easier to read
 >

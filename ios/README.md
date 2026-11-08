@@ -63,6 +63,10 @@ The simulator reaches `localhost` directly. On a phone, "localhost" is the phone
 
 **On device only.** Hashtag suggestions, "Reflect on This Entry" (the on-device version of the web's DabbleMeGPT life-coach reply) and Today's "Prompt from My Recent Entries" use Apple Intelligence's on-device model (`FoundationModels`, iOS 26+, hidden where unavailable). Reminders, the Face ID lock and drafts are local too.
 
+**Icons** are the Slab set (Font Awesome Pro, as on dabble.me), as template vector assets in `Assets.xcassets/Slab` (`slab-…`), sized 24pt. `appIcon(_:)` / `Label(_:icon:)` take a `slab-…` name or fall back to an SF Symbol for anything the set doesn't cover. `slab-thought-bubble` (Reflection) is our own, drawn to match.
+
+**Shake** the phone for a random memory: a preview sheet (Another / Open) over whatever you're reading. Not while typing, where shaking is iOS's Undo.
+
 **Photos** are re-encoded on the device to a JPEG of at most 2400px, with all metadata removed (including GPS) before upload. The server then processes them the same way as MCP uploads (`ProcessEntryImageJob`).
 
 ## Tests

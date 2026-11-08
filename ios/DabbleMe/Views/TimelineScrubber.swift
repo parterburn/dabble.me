@@ -47,7 +47,7 @@ struct TimelineScrubber: View {
                 // It stays grabbable after fading out, like Google Photos.
                 Capsule()
                     .fill(.regularMaterial)
-                    .overlay(Image(systemName: "chevron.up.chevron.down").font(.caption.weight(.bold)).foregroundStyle(.secondary))
+                    .overlay(appIcon("slab-sort").resizable().scaledToFit().frame(width: 14, height: 14).foregroundStyle(.secondary))
                     .frame(width: 26, height: thumbHeight)
                     .shadow(color: .black.opacity(0.15), radius: 4, y: 1)
                     .opacity(visible || dragFraction != nil ? 1 : 0.001)

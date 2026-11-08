@@ -39,6 +39,8 @@ struct EntrySummary: Decodable, Sendable, Identifiable, Hashable {
     let imageProcessing: Bool
     let hashtags: [String]
     let updatedAt: String
+    /// The entry's text (light Markdown, capped) for long-press previews. Optional for older servers.
+    var previewText: String? = nil
     /// Only on Today's "On This Day" memories.
     var yearsAgo: Int? = nil
 
@@ -128,7 +130,7 @@ struct EntryDetail: Decodable, Sendable, Identifiable, Hashable {
 
     var summary: EntrySummary {
         EntrySummary(id: id, date: date, excerpt: excerpt, imageUrl: imageUrl,
-                     imageProcessing: imageProcessing, hashtags: hashtags, updatedAt: updatedAt)
+                     imageProcessing: imageProcessing, hashtags: hashtags, updatedAt: updatedAt, previewText: bodyText)
     }
 }
 

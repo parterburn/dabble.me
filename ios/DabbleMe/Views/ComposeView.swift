@@ -190,14 +190,14 @@ struct ComposeView: View {
         var items: [EditorInsertItem] = []
         if model.me?.canAddPhotos == true {
             let hasPhotos = !photoItems.isEmpty || existingPhotoURL != nil
-            items.append(EditorInsertItem(title: hasPhotos ? "Add More Photos" : "Add Photos", systemImage: "photo.on.rectangle",
+            items.append(EditorInsertItem(title: hasPhotos ? "Add More Photos" : "Add Photos", icon: "slab-images",
                                           isEnabled: photoItems.count < photoLimit) { pickingPhotos = true })
         } else if isNew {
-            items.append(EditorInsertItem(title: "Add Photos", systemImage: "photo.on.rectangle",
+            items.append(EditorInsertItem(title: "Add Photos", icon: "slab-images",
                                           subtitle: "Part of Dabble Me PRO", isEnabled: false) {})
         }
         if JournalIntelligence.isEnabled(for: model.me) {
-            items.append(EditorInsertItem(title: "Suggest Hashtags", systemImage: "number",
+            items.append(EditorInsertItem(title: "Suggest Hashtags", icon: "slab-compress",
                                           subtitle: editor.characterCount < 20 ? "Write a little more first" : nil,
                                           isEnabled: editor.characterCount >= 20 && !isSuggestingTags) {
                 Task { await suggestHashtags() }
@@ -241,7 +241,7 @@ struct ComposeView: View {
                 Button {
                     suggestedTags = []
                 } label: {
-                    Image(systemName: "xmark")
+                    appIcon("slab-close")
                 }
                 .accessibilityLabel("Hide Suggestions")
                 .disabled(isSuggestingTags)
@@ -249,7 +249,7 @@ struct ComposeView: View {
                     ProgressView().controlSize(.small)
                     Text("Suggesting hashtags…").foregroundStyle(.secondary)
                 } else {
-                    Button("More", systemImage: "sparkles") { Task { await suggestHashtags() } }
+                    Button { Task { await suggestHashtags() } } label: { Label("More", icon: "slab-compress") }
                 }
                 ForEach(suggestedTags, id: \.self) { tag in
                     Button("#\(tag)") {
@@ -293,7 +293,7 @@ struct ComposeView: View {
                 if photoItems.count < photoLimit {
                     PhotosPicker(selection: $photoItems, maxSelectionCount: photoLimit,
                                  selectionBehavior: .ordered, matching: .images, preferredItemEncoding: .current) {
-                        Label("Add More", systemImage: "photo.on.rectangle")
+                        Label("Add More", icon: "slab-images")
                             .frame(minHeight: 56)
                     }
                 }

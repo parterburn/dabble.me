@@ -58,7 +58,7 @@ struct SearchView: View {
         if submitted.isEmpty {
             if hashtags.isEmpty {
                 ContentUnavailableView {
-                    Label("Search your journal", systemImage: "text.magnifyingglass")
+                    Label("Search your journal", icon: "slab-search")
                 } description: {
                     Text("Find a word, a #hashtag, an \"exact phrase\", or either of two words with hiking OR camping.")
                 }

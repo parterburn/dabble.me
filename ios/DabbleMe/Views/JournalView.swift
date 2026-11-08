@@ -12,11 +12,11 @@ enum JournalMode: String, CaseIterable, Identifiable {
 
     var id: Self { self }
 
-    var systemImage: String {
+    var icon: String {
         switch self {
-        case .list: "list.bullet"
-        case .stats: "chart.bar"
-        case .photos: "photo.on.rectangle"
+        case .list: "slab-list"
+        case .stats: "slab-signal-bars"
+        case .photos: "slab-images"
         }
     }
 }
@@ -31,7 +31,6 @@ struct JournalView: View {
     @State private var actions = EntryActions()
     @State private var composing = false
     @State private var showingProInfo = false
-    @State private var randomError: String?
     @State private var scrollProgress: CGFloat = 0
     @State private var isScrolling = false
 
@@ -43,22 +42,25 @@ struct JournalView: View {
                 .toolbarTitleMenu {
                     Picker("View", selection: $mode) {
                         ForEach(JournalMode.allCases) { mode in
-                            Label(mode.rawValue, systemImage: mode.systemImage).tag(mode)
+                            Label(mode.rawValue, icon: mode.icon).tag(mode)
                         }
                     }
                 }
                 .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
                 .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
-                        Button("Random Entry", systemImage: "shuffle") { Task { await openRandom() } }
-                            .disabled(model.months.isEmpty)
-                    }
                     ToolbarItem(placement: .primaryAction) {
-                        Button("New Entry", systemImage: "square.and.pencil") { startWriting() }
+                        Button { startWriting() } label: { Label("New Entry", icon: "slab-plus") }
                     }
                 }
                 .sheet(isPresented: $composing) { ComposeView(mode: .new) }
                 .entryActionSheets(actions)
+                .onChange(of: model.openEntryRequest) { _, id in
+                    // "Open" from the shake-for-a-memory sheet.
+                    guard let id else { return }
+                    model.openEntryRequest = nil
+                    mode = .list
+                    path.append(EntryRoute(id: id))
+                }
                 .onChange(of: model.journalTopRequest) {
                     path = NavigationPath()
                     mode = .list
@@ -68,11 +70,6 @@ struct JournalView: View {
                     }
                 }
                 .sheet(isPresented: $showingProInfo) { ProInfoView(feature: .writing) }
-                .alert("Couldn't open an entry", isPresented: .present($randomError)) {
-                    Button("OK", role: .cancel) {}
-                } message: {
-                    Text(randomError ?? "")
-                }
         }
     }
 
@@ -100,7 +97,7 @@ struct JournalView: View {
                 }
             } else {
                 ContentUnavailableView {
-                    Label("No entries yet", systemImage: "envelope.open")
+                    Label("No entries yet", icon: "slab-envelope")
                 } description: {
                     Text("Reply to your Dabble Me email and your entry will show up here.")
                 } actions: {
@@ -223,15 +220,6 @@ struct JournalView: View {
         }
     }
 
-    private func openRandom() async {
-        do {
-            let entry = try await model.randomEntry()
-            path.append(EntryRoute(id: entry.id))
-        } catch is CancellationError {
-        } catch {
-            randomError = error.localizedDescription
-        }
-    }
 }
 
 private struct PlaceholderID: Hashable {

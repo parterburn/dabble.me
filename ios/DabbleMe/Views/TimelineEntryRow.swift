@@ -32,7 +32,7 @@ struct TimelineEntryRow: View {
                 Button {
                     Task { await actions.reflect(on: entry.id, model: model) }
                 } label: {
-                    Label("Reflect", systemImage: "sparkles")
+                    Label("Reflect", icon: "slab-thought-bubble")
                 }
                 .tint(.accentColor)
             }
@@ -42,7 +42,7 @@ struct TimelineEntryRow: View {
                 Button {
                     Task { await actions.edit(entry.id, model: model, openURL: openURL) }
                 } label: {
-                    Label("Edit", systemImage: "pencil")
+                    Label("Edit", icon: "slab-edit")
                 }
                 .tint(.gray)
             }
@@ -60,7 +60,10 @@ struct TimelineEntryRow: View {
                 Spacer()
                 HStack(spacing: 3) {
                     Text("Open")
-                    Image(systemName: "chevron.right")
+                    appIcon("slab-expand")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 12, height: 12)
                 }
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.tint)

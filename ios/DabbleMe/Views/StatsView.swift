@@ -38,7 +38,7 @@ struct StatsView: View {
                 }
             } else if let error {
                 ContentUnavailableView {
-                    Label("Couldn't load your stats", systemImage: "chart.bar.xaxis")
+                    Label("Couldn't load your stats", icon: "slab-signal-bars")
                 } description: {
                     Text(error)
                 } actions: {
@@ -54,12 +54,12 @@ struct StatsView: View {
 
     private func tiles(_ stats: JournalStats) -> some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-            StatTile(value: stats.totalEntries.formatted(), label: stats.totalEntries == 1 ? "Entry" : "Entries", systemImage: "book.closed")
-            StatTile(value: stats.totalWords.formatted(.number.notation(.compactName)), label: "Words", systemImage: "text.word.spacing")
-            StatTile(value: days(stats.currentStreak), label: "Current Streak", systemImage: "flame")
-            StatTile(value: days(stats.longestStreak), label: "Longest Streak", systemImage: "trophy")
-            StatTile(value: stats.entriesThisYear.formatted(), label: "Entries This Year", systemImage: "calendar")
-            StatTile(value: stats.photoEntries.formatted(), label: "Days with Photos", systemImage: "photo.on.rectangle")
+            StatTile(value: stats.totalEntries.formatted(), label: stats.totalEntries == 1 ? "Entry" : "Entries", icon: "slab-book")
+            StatTile(value: stats.totalWords.formatted(.number.notation(.compactName)), label: "Words", icon: "slab-language")
+            StatTile(value: days(stats.currentStreak), label: "Current Streak", icon: "slab-fire")
+            StatTile(value: days(stats.longestStreak), label: "Longest Streak", icon: "slab-trophy")
+            StatTile(value: stats.entriesThisYear.formatted(), label: "Entries This Year", icon: "slab-calendar")
+            StatTile(value: stats.photoEntries.formatted(), label: "Days with Photos", icon: "slab-images")
         }
     }
 
@@ -109,12 +109,14 @@ private struct StatsCard<Content: View>: View {
 private struct StatTile: View {
     let value: String
     let label: String
-    let systemImage: String
+    let icon: String
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Image(systemName: systemImage)
-                .font(.subheadline)
+            appIcon(icon)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 20, height: 20)
                 .foregroundStyle(.tint)
             Text(value)
                 .font(.system(.title, design: .serif, weight: .semibold))
