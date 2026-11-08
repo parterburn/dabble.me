@@ -290,7 +290,8 @@ RSpec.describe PaymentsController, type: :controller do
       expect { post :payment_notify, params: paypal_params, as: :json }.to change { Payment.count }.by(1)
       expect(paypal_user.reload.plan).to eq 'PRO Monthly PayPal'
       expect(Payment.last.user_id).to eq paypal_user.id
-      expect(ActionMailer::Base.deliveries.size).to eq 0
+      # paypal_user is created inside this example, so its welcome email is in deliveries.
+      expect(ActionMailer::Base.deliveries.map(&:subject)).not_to include '[REFUND REQUIRED] Payment Without a User'
     end
 
     it 'does not upgrade a free user even when the user_key matches' do
