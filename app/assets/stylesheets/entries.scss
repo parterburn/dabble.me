@@ -552,13 +552,6 @@ mark {
 
 .note-editor .note-dropzone { opacity: 0 !important; }
 
-// Photo field on the new and edit entry forms (entries/_photo_picker).
-// The inspiration lightbulb floats above the date field; keep the field
-// below it now that the field has no visible label.
-.s-new-edit-entry .input-group.date {
-  clear: both;
-}
-
 .photo-picker {
   margin: 4px 0 20px;
 
@@ -753,6 +746,37 @@ mark {
 
   &:empty {
     display: none;
+  }
+}
+
+// Close buttons on dialogs (Summernote's link dialog, the reflection dialog).
+// Bootstrap 3's faint 21px × is hard to see and hit, so show Font Awesome's
+// ✕ in a 44px target.
+.modal-header .close,
+.s-reflection-dialog .close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -9px -9px -9px 0;
+  border-radius: 50%;
+  color: $olive-800;
+  font-size: 0; // hides the &times; text; the button keeps aria-label="Close"
+  opacity: 0.75;
+  text-shadow: none;
+  &::before {
+    content: "\f00d"; // fa-times
+    font-family: "FontAwesome";
+    font-size: 22px;
+    font-weight: normal;
+    line-height: 1;
+  }
+  &:hover,
+  &:focus-visible {
+    background: rgba(0, 0, 0, 0.06);
+    color: $olive-950;
+    opacity: 1;
   }
 }
 

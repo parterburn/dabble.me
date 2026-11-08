@@ -6,21 +6,13 @@
       <div class="label label-past-years"><%= pluralize(year_back,"year").upcase %> AGO</div>
     <% end %>
     <div class="s-entry-date">
-      <% if entry.inspiration.present? %>
-        <div class="float-left s-edit-entry" rel="popover" title="<%= entry.inspiration.inspired_by %>" data-content="<%= entry.inspiration.body %>">
-          <i class="fa fa-lightbulb-o"></i>
-          <% if can_reflect %>
-            <div style="width: 43px;"></div>
-          <% end %>
-        </div>
-      <% else %>
-        <div class="float-left s-edit-entry">
-          <div style="width: 20px;"></div>
-          <% if can_reflect %>
-            <div style="width: 43px;"></div>
-          <% end %>
-        </div>
-      <% end %>
+      <%# Balances the icons on the right so the date stays centered. %>
+      <div class="float-left s-edit-entry">
+        <div style="width: 20px;"></div>
+        <% if can_reflect %>
+          <div style="width: 43px;"></div>
+        <% end %>
+      </div>
       <div class="float-right s-edit-entry">
         <% if can_reflect %>
           <%= link_to "#", class: "j-reflect", style: "margin-right: 15px;", role: "button", "aria-label": "Reflect on this entry", data: { url: entry_reflection_path(entry), date: entry.date_format_long } do %>

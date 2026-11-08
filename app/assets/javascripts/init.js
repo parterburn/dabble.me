@@ -49,12 +49,6 @@
         lastScrollTop = st;
     }
 
-    $("[rel='popover']").popover({
-      trigger: "hover",
-      container: "body",
-      html: true
-    });
-
     $("[rel='tooltip-mobile-friendly']").tooltip({
       container: "body"
     });
@@ -70,11 +64,6 @@
         container: "body"
       });
     }
-
-    $("[rel='popover']").click(function (e) {
-        //e.stopPropagation();
-        $(this).popover('hide');
-    });
 
     $(".j-entry-link").click(function(e) {
       var $entry = $("#entry-"+$(this).attr('data-id'));
