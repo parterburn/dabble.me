@@ -29,11 +29,16 @@ struct RootView: View {
 
     var body: some View {
         Group {
-            if model.isSignedIn {
-                MainTabs()
+            #if DEBUG
+            // UI tests: -DabbleDebugPhotoURL <url> shows a single entry photo (viewer + menu checks).
+            if let raw = UserDefaults.standard.string(forKey: "DabbleDebugPhotoURL"), let url = URL(string: raw) {
+                ScrollView { EntryPhoto(url: url, isProcessing: false).padding() }
             } else {
-                SignInView()
+                content
             }
+            #else
+            content
+            #endif
         }
         .task(id: model.isSignedIn) {
             if model.isSignedIn, !model.hasLoaded { await model.refresh() }
@@ -43,6 +48,15 @@ struct RootView: View {
             if phase == .active, model.isSignedIn, model.hasLoaded {
                 Task { await model.refresh() }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var content: some View {
+        if model.isSignedIn {
+            MainTabs()
+        } else {
+            SignInView()
         }
     }
 }

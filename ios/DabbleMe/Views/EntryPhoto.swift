@@ -13,25 +13,21 @@ struct EntryPhoto: View {
         if isProcessing {
             placeholder
         } else if let url {
-            AsyncImage(url: url) { phase in
-                switch phase {
-                case .success(let image):
-                    if size == .thumbnail {
-                        image.resizable().scaledToFill()
-                    } else {
-                        image.resizable().scaledToFit()
+            switch size {
+            case .thumbnail:
+                AsyncImage(url: url) { phase in
+                    switch phase {
+                    case .success(let image): image.resizable().scaledToFill()
+                    case .failure: Image(systemName: "photo").foregroundStyle(.secondary)
+                    default: Color.secondary.opacity(0.12)
                     }
-                case .failure:
-                    Image(systemName: "photo")
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, minHeight: size == .full ? 120 : nil)
-                default:
-                    Color.secondary.opacity(0.12)
-                        .frame(height: size == .full ? 240 : nil)
                 }
+                .frame(width: 56, height: 56)
+                .clipShape(.rect(cornerRadius: 8))
+            case .full:
+                FullEntryPhoto(url: url)
+                    .id(url)
             }
-            .modifier(Frame(size: size))
-            .accessibilityLabel("Entry photo")
         }
     }
 
@@ -54,22 +50,58 @@ struct EntryPhoto: View {
                 ProgressView().controlSize(.small)
             }
         }
-        .frame(height: size == .full ? 220 : nil)
-        .modifier(Frame(size: size))
+        .frame(width: size == .thumbnail ? 56 : nil, height: size == .full ? 220 : 56)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Photos processing")
     }
+}
 
-    private struct Frame: ViewModifier {
-        let size: Size
+/// Tap to view full screen (pinch/double-tap to zoom); long-press for Save, Share and Copy.
+private struct FullEntryPhoto: View {
+    @State private var photo: RemotePhoto
+    @State private var showingViewer = false
+    @State private var saveResult: PhotoSaveResult?
+    @Namespace private var zoom
 
-        func body(content: Content) -> some View {
-            switch size {
-            case .thumbnail:
-                content.frame(width: 56, height: 56).clipShape(.rect(cornerRadius: 8))
-            case .full:
-                content.clipShape(.rect(cornerRadius: 12))
+    init(url: URL) {
+        _photo = State(initialValue: RemotePhoto(url: url))
+    }
+
+    var body: some View {
+        Group {
+            if let image = photo.image {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+            } else if photo.failed {
+                Button {
+                    Task { await photo.load() }
+                } label: {
+                    Label("Photo unavailable. Tap to retry.", systemImage: "photo")
+                        .frame(maxWidth: .infinity, minHeight: 120)
+                }
+                .foregroundStyle(.secondary)
+            } else {
+                Color.secondary.opacity(0.12).frame(height: 240)
             }
         }
+        .clipShape(.rect(cornerRadius: 12))
+        .contentShape(.rect(cornerRadius: 12))
+        .matchedTransitionSource(id: "photo", in: zoom)
+        .onTapGesture { if photo.image != nil { showingViewer = true } }
+        .contextMenu {
+            PhotoMenu(photo: photo, saveResult: $saveResult)
+        }
+        .fullScreenCover(isPresented: $showingViewer) {
+            PhotoViewer(photo: photo)
+                .navigationTransition(.zoom(sourceID: "photo", in: zoom))
+        }
+        .alert(saveResult?.message ?? "", isPresented: .present($saveResult)) {
+            Button("OK", role: .cancel) {}
+        }
+        .accessibilityLabel("Entry photo")
+        .accessibilityHint("Double-tap to view full screen. Touch and hold for options.")
+        .accessibilityAddTraits(.isButton)
+        .task { await photo.load() }
     }
 }
