@@ -29,8 +29,13 @@ class ImageCollageJob < ActiveJob::Base
     record_mailgun_lookup_failure(job, error)
   end
 
-  def self.perform_later_for_mailgun(entry_id, message_id:)
-    set(wait: MAILGUN_INDEX_DELAY).perform_later(entry_id, message_id: message_id)
+  # recipient_key is the posting address EmailProcessor accepted the email on.
+  # Passing it keeps a queued collage working if the user resets their
+  # address before the job runs.
+  def self.perform_later_for_mailgun(entry_id, message_id:, recipient_key: nil)
+    args = { message_id: message_id }
+    args[:recipient_key] = recipient_key if recipient_key.present?
+    set(wait: MAILGUN_INDEX_DELAY).perform_later(entry_id, **args)
   end
 
   def self.record_mailgun_lookup_failure(job, error)
@@ -77,12 +82,13 @@ class ImageCollageJob < ActiveJob::Base
     end
   end
 
-  def perform(entry_id, urls: nil, message_id: nil)
+  def perform(entry_id, urls: nil, message_id: nil, recipient_key: nil)
     entry = Entry.where(id: entry_id).first
     @error = nil
     return nil unless entry.present?
 
     @message_id = message_id
+    @recipient_key = recipient_key
     @user = entry.user
 
     @existing_url = entry.image.present? ? entry.image_url_cdn(cloudflare: false) : nil
@@ -157,6 +163,15 @@ class ImageCollageJob < ActiveJob::Base
     nil
   end
 
+  # The stored message must belong to this user. Besides the account email,
+  # accept the posting address the email was accepted on (recipient_key) and
+  # the current one, so a reset between ingestion and this job doesn't drop it.
+  def message_from_user?(message)
+    recipients = message["recipients"].to_s
+    keys = [@recipient_key, @user.user_key].compact_blank
+    keys.any? { |key| recipients.include?(key) } || message["from"].to_s.include?(@user.email)
+  end
+
   def collage_from_mailgun_attachments
     @error = "No message ID found" unless @message_id.present?
     return unless @message_id.present?
@@ -183,8 +198,8 @@ class ImageCollageJob < ActiveJob::Base
       sleep(10 * (2**attempt)) if attempt < 4
     end
     @error = "No message found" unless message.present?
-    @error = "Message not from user" unless message["recipients"].to_s.include?(@user.user_key) || message["from"].to_s.include?(@user.email)
-    return unless message.present? && message["recipients"].to_s.include?(@user.user_key) || message["from"].to_s.include?(@user.email)
+    @error = "Message not from user" unless message.present? && message_from_user?(message)
+    return unless message.present? && message_from_user?(message)
 
     attachment_urls = message["attachments"].map do |att|
       next unless Entry::ALLOWED_IMAGE_TYPES.include?(att["content-type"]&.downcase)

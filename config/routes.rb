@@ -83,6 +83,9 @@ Rails.application.routes.draw do
   devise_scope :user do
     get 'settings/mcp', to: redirect { |_params, req| "#{req.protocol}#{req.host_with_port}/mcp-server" }
     get 'settings/delete-account'  => 'registrations#delete_account', as: 'delete_account'
+    # Before settings/(:user_key), which would otherwise match this path.
+    get 'settings/posting-address' => 'registrations#posting_address', as: 'posting_address'
+    post 'settings/posting-address/reset' => 'registrations#reset_posting_address', as: 'reset_posting_address'
     get 'settings/(:user_key)'     => 'registrations#settings', as: 'settings'
     get 'security'                 => 'registrations#security', as: 'security'
     match 'unsubscribe/:user_key'  => 'registrations#unsubscribe', as: 'unsubscribe', via: [:put]

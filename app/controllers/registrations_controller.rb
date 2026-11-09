@@ -1,7 +1,7 @@
 # Devise Override Controller
 class RegistrationsController < Devise::RegistrationsController
   layout :choose_layout
-  before_action :require_user, only: [:security, :delete_account, :update, :edit]
+  before_action :require_user, only: [:security, :delete_account, :update, :edit, :posting_address, :reset_posting_address]
   prepend_before_action :check_captcha, only: [:create]
 
   def edit
@@ -77,6 +77,26 @@ class RegistrationsController < Devise::RegistrationsController
   def security
     @oauth_applications = Doorkeeper::Application.authorized_for(current_user)
     render 'devise/registrations/security'
+  end
+
+  # Explains what a reset does and asks the user to confirm.
+  def posting_address
+    render 'devise/registrations/posting_address'
+  end
+
+  # Resets only after the user ticks the confirmation box. The check is
+  # server-side so a reset can't happen without it, even if JavaScript or
+  # the browser's required-field check is skipped.
+  def reset_posting_address
+    unless params[:confirm_reset] == '1'
+      redirect_to posting_address_path, alert: 'Tick the box to confirm you want a new posting address.'
+      return
+    end
+
+    current_user.rotate_user_key!
+    UserMailer.posting_address_changed(current_user).deliver_later
+    redirect_to edit_user_registration_path,
+                notice: "Your new posting address is #{current_user.user_key}@#{ENV['SMTP_DOMAIN']}. Your old one no longer accepts entries."
   end
 
   def unsubscribe

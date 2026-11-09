@@ -96,11 +96,14 @@ class User < ActiveRecord::Base
     errors.add(:email, 'is not allowed')
   end
 
-  # S3 folder for this user's photos. The user_key fallback covers accounts
-  # created by old code while the image_key migration deployed; for them the
-  # two values were always the same.
-  def photo_storage_key
-    image_key.presence || user_key
+  # Gives the user a new posting address. Only the user (from the settings
+  # page, after confirming) or an admin acting for them calls this; nothing
+  # resets addresses automatically. Mail to the old address no longer matches
+  # anyone, so EmailProcessor only accepts it from the account email with
+  # SPF/DKIM passing. Photos stay put: they live under image_key, which never
+  # changes. The image_key guard keeps that true even for a record missing one.
+  def rotate_user_key!
+    update!(image_key: image_key.presence || user_key, user_key: self.class.generate_unique_key)
   end
 
   def first_name_or_fallback(fallback='there')

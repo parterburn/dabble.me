@@ -4,6 +4,47 @@ describe EmailProcessor do
   include_context 'has all objects'
 
   describe "#process" do
+    describe "after the posting address is reset" do
+      let(:old_key) { user.user_key }
+
+      before do
+        old_key
+        user.rotate_user_key!
+        user.entries.destroy_all
+        allow(Sentry).to receive(:capture_message)
+      end
+
+      def email_to(token, from:, spf: "Pass")
+        FactoryBot.build(
+          :email,
+          from: { email: from },
+          to: [{ token: token, host: ENV['SMTP_DOMAIN'], email: "#{token}@#{ENV['SMTP_DOMAIN']}" }],
+          headers: { "X-Mailgun-Spf" => spf },
+          body: "Hello"
+        )
+      end
+
+      it "ignores mail to the old address from anyone else, without alerting" do
+        expect { EmailProcessor.new(email_to(old_key, from: "stranger@example.com")).process }.not_to change { user.entries.reload.count }
+        expect(Sentry).not_to have_received(:capture_message).with("Inbound entry not associated to user", anything)
+      end
+
+      it "still accepts a reply to the old address from the account email" do
+        expect { EmailProcessor.new(email_to(old_key, from: user.email)).process }.to change { user.entries.reload.count }.by(1)
+      end
+
+      it "alerts when the account email's reply to the old address fails SPF" do
+        email = email_to(old_key, from: user.email, spf: "Fail")
+
+        expect { EmailProcessor.new(email).process }.not_to change { user.entries.reload.count }
+        expect(Sentry).to have_received(:capture_message).with("Inbound entry not associated to user", hash_including(level: :warning))
+      end
+
+      it "accepts mail to the new address" do
+        expect { EmailProcessor.new(email_to(user.user_key, from: "other@example.com")).process }.to change { user.entries.reload.count }.by(1)
+      end
+    end
+
     it "creates an entry based on the email token" do
       user.entries.destroy_all
       email = FactoryBot.build(

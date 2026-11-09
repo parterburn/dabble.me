@@ -1,0 +1,14 @@
+Hey <%= @user.first_name_or_fallback %>,
+
+You asked for a new Dabble Me posting address. Here it is:
+
+<%= @user.user_key %>@<%= ENV['SMTP_DOMAIN'] %>
+
+This email came from that address, so you can save it to your contacts from here. Your old address no longer accepts entries, except replies you send from <%= @user.email %> to older Dabble Me emails. Update the address anywhere you've saved it.
+
+If you didn't ask for this, change your password and check Account Security right away:
+<%= edit_user_registration_url %>
+<%= security_url %>
+
+Thanks,
+Dabble Me

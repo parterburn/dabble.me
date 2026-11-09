@@ -1,0 +1,43 @@
+<% title "New posting address — Dabble me." %>
+<% current_address = "#{current_user.user_key}@#{ENV['SMTP_DOMAIN']}" %>
+
+<div class="row">
+  <div class="col-md-8 col-md-offset-2">
+    <h3>GET A NEW POSTING ADDRESS</h3>
+    <br>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-8 col-md-offset-2">
+    <div class="well s-posting-address-reset">
+      <p>
+        Your current posting address is <code><%= current_address %></code>.
+        If it got out and you're getting entries you didn't write, you can replace it.
+      </p>
+
+      <ul>
+        <li>You get a new address right away. We'll email it to you from that address, so you can save it to your contacts.</li>
+        <li>Your current address stops accepting entries from anyone else. Replies you send from <strong><%= current_user.email %></strong> to older Dabble Me emails still post.</li>
+        <li>If you send entries from any other email address, send them to the new address from now on.</li>
+        <li>Update the address anywhere you've saved it, like your contacts.</li>
+        <li>Your entries and photos don't change.</li>
+      </ul>
+
+      <%= form_with url: reset_posting_address_path, method: :post do %>
+        <div class="checkbox" style="margin-top: 1.25rem;">
+          <label>
+            <%= check_box_tag :confirm_reset, "1", false, required: true %>
+            I understand <%= current_address %> will stop accepting entries.
+          </label>
+        </div>
+
+        <%= submit_tag "Get a new posting address", class: "btn btn-warning btn-block", style: "margin-top: 1rem;" %>
+      <% end %>
+    </div>
+
+    <p style="margin-top: 1.5rem;">
+      <%= link_to "← Keep my current address", edit_user_registration_path, class: "text-muted" %>
+    </p>
+  </div>
+</div>

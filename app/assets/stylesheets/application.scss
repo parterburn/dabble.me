@@ -404,6 +404,40 @@ strong {
       }
     }
 
+    // The reset link and Copy sit side by side; on phones, where the box
+    // stacks, they share one full-width row.
+    .s-address-actions {
+      display: flex;
+      align-self: stretch;
+      @media screen and (max-width: 767px) {
+        width: 100%;
+        .j-copy-to-clipboard {
+          flex: 1;
+        }
+      }
+    }
+
+    // Icon-only link to the reset page, styled like Copy.
+    .s-reset-address {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 16px;
+      background: $cream;
+      color: $olive-600;
+      border-left: 1px solid #e5e7eb;
+      transition: background 0.2s;
+      @media screen and (max-width: 767px) {
+        border-left: none;
+        border-right: 1px solid #e5e7eb;
+      }
+      &:hover, &:focus {
+        background: darken($cream, 5%);
+        color: $olive-800;
+        text-decoration: none;
+      }
+    }
+
     // Copy is a helper, not the page's main action: keep it a quiet gray.
     .j-copy-to-clipboard {
       align-self: stretch;
@@ -453,7 +487,8 @@ strong {
       background: #26291e;
       border-color: #3f4235;
 
-      .j-copy-to-clipboard {
+      .j-copy-to-clipboard,
+      .s-reset-address {
         background: #2f3227;
         color: #c9cbbf;
         border-color: #3f4235;

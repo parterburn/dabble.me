@@ -69,17 +69,11 @@ RSpec.describe ImageUploader, '#store_dir' do
     expect(paid_entry.reload.image.store_dir).to eq('uploads/development/uphotofolder123456789/2026-07-17')
   end
 
-  it 'does not move when the posting key changes' do
+  it 'does not move when the posting address is reset' do
     store_dir = paid_entry.image.store_dir
-    paid_user.update_column(:user_key, User.generate_unique_key)
+    paid_user.rotate_user_key!
 
     expect(paid_entry.reload.image.store_dir).to eq(store_dir)
-  end
-
-  it 'falls back to user_key for an account created before image_key existed' do
-    paid_user.update_column(:image_key, nil)
-
-    expect(paid_entry.reload.image.store_dir).to eq("uploads/development/#{paid_user.user_key}/2026-07-17")
   end
 end
 

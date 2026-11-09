@@ -9,6 +9,51 @@ RSpec.describe RegistrationsController, type: :controller do
     user
   end
 
+  describe 'posting address reset' do
+    it 'requires login to see the confirmation page' do
+      get :posting_address
+      expect(response).to redirect_to(new_user_session_url)
+    end
+
+    it 'requires login to reset' do
+      expect { post :reset_posting_address, params: { confirm_reset: '1' } }.not_to change { user.reload.user_key }
+      expect(response).to redirect_to(new_user_session_url)
+    end
+
+    it 'shows the current address and what a reset does' do
+      sign_in user
+      get :posting_address
+
+      expect(response.status).to eq 200
+      expect(response.body).to include("#{user.user_key}@#{ENV['SMTP_DOMAIN']}")
+      expect(response.body).to include('confirm_reset')
+    end
+
+    it 'does nothing until the user ticks the confirmation box' do
+      sign_in user
+
+      expect { post :reset_posting_address }.not_to change { user.reload.user_key }
+      expect(response).to redirect_to(posting_address_url)
+    end
+
+    it 'resets after confirmation, keeps the photo folder, and emails the new address' do
+      sign_in user
+      old_key = user.user_key
+      image_key = user.image_key
+      ActionMailer::Base.deliveries.clear
+
+      post :reset_posting_address, params: { confirm_reset: '1' }
+      user.reload
+
+      expect(user.user_key).not_to eq(old_key)
+      expect(user.image_key).to eq(image_key)
+      expect(response).to redirect_to(edit_user_registration_url)
+      email = ActionMailer::Base.deliveries.last
+      expect(email.subject).to eq('Your new Dabble Me posting address')
+      expect(email.from).to eq(["#{user.user_key}@#{ENV['SMTP_DOMAIN']}"])
+    end
+  end
+
   describe 'edit' do
     it 'should redirect to root url if not logged in' do
       get :edit

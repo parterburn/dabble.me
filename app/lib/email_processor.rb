@@ -145,7 +145,7 @@ class EmailProcessor
             existing_entry.update(uploading_image: true)
             process_single_image(existing_entry, best_attachment)
           elsif best_attachment_url.present? && best_attachment_url.starts_with?("mailgun_collage:")
-            ImageCollageJob.perform_later_for_mailgun(existing_entry.id, message_id: best_attachment_url.gsub("mailgun_collage:", ""))
+            ImageCollageJob.perform_later_for_mailgun(existing_entry.id, message_id: best_attachment_url.gsub("mailgun_collage:", ""), recipient_key: collage_recipient_key)
           elsif best_attachment_url.present?
             existing_entry.remote_image_url = best_attachment_url
           end
@@ -161,7 +161,7 @@ class EmailProcessor
             # fell into the `elsif` below and passed the literal "mailgun_collage:…"
             # marker into CollageGenerator as a URL, which blew up with
             # URI::InvalidURIError.
-            ImageCollageJob.perform_later_for_mailgun(existing_entry.id, message_id: best_attachment_url.gsub("mailgun_collage:", ""))
+            ImageCollageJob.perform_later_for_mailgun(existing_entry.id, message_id: best_attachment_url.gsub("mailgun_collage:", ""), recipient_key: collage_recipient_key)
           elsif best_attachment_url.present?
             existing_image = existing_entry.image_url_cdn(cloudflare: false) if existing_entry.image.present?
             existing_entry.update(uploading_image: true)
@@ -183,7 +183,7 @@ class EmailProcessor
           if best_attachment.present?
             process_single_image(entry, best_attachment)
           elsif best_attachment_url.present? && best_attachment_url.starts_with?("mailgun_collage:")
-            ImageCollageJob.perform_later_for_mailgun(entry.id, message_id: best_attachment_url.gsub("mailgun_collage:", ""))
+            ImageCollageJob.perform_later_for_mailgun(entry.id, message_id: best_attachment_url.gsub("mailgun_collage:", ""), recipient_key: collage_recipient_key)
           elsif best_attachment_url.present?
             entry.update(uploading_image: true)
             entry.remote_image_url = best_attachment_url
@@ -228,14 +228,29 @@ class EmailProcessor
         Sentry.capture_message("Error sending email", level: :error, extra: { email_type: "Second Welcome Email" })
       end
     else # no user found
-      Sentry.set_user(id: @token, email: @from)
-      Sentry.capture_message("Inbound entry not associated to user", level: :error, extra: { subject: @subject, from: @from })
+      # Mail to a reset (retired) posting address lands here, spam included,
+      # so only alert when the sender is one of our users: that's someone
+      # whose entry was dropped, e.g. a reply to an old address that failed
+      # SPF/DKIM. Everything else is just logged.
+      if @from.present? && User.exists?(email: @from)
+        Sentry.set_user(id: @token, email: @from)
+        Sentry.capture_message("Inbound entry not associated to user", level: :warning, extra: { subject: @subject, from: @from })
+      else
+        Rails.logger.info("Inbound email matched no user (token: #{@token.inspect})")
+      end
     end
   end
 
   private
 
   attr_reader :to, :cc, :bcc
+
+  # Only when the email matched the user's posting address. A user found by
+  # their verified From address may have sent to any token, and the collage
+  # job's recipient check is a substring match.
+  def collage_recipient_key
+    @token if @token.present? && @token == @user&.user_key
+  end
 
   def all_recipients
     (to.to_a + cc.to_a + bcc.to_a)
