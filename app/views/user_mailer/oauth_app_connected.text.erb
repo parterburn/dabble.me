@@ -1,0 +1,14 @@
+Hey <%= @user.first_name_or_fallback %>,
+
+"<%= @app_name %>" was just connected to your Dabble Me account (<%= @user.email %>). It can read your journal entries and create new ones until you remove it. If this was you, you can ignore this message.
+<% if @redirect_host.present? %>
+
+This app signs in through <%= @redirect_host %><%= " (unverified app)" unless @verified %>.
+<% end %>
+
+If you did not connect this app, remove it from Connected apps and change your password right away:
+<%= security_url(anchor: "connected-apps") %>
+<%= edit_user_registration_url %>
+
+Thanks,
+Dabble Me

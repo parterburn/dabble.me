@@ -5,8 +5,8 @@
 # then calls /api/v1 with a token scoped to SCOPE.
 #
 # Unlike MCP clients it is open to free and PRO users alike, skips the consent
-# screen (it's our own app), and its tokens are kept when a user loses PRO or
-# removes their last passkey — those only gate MCP. Password / email / 2FA changes
+# screen (it's our own app), and its tokens are kept when a user loses PRO —
+# that only gates MCP. Password / email / 2FA changes
 # still sign the app out (see User#revoke_doorkeeper_oauth_if_credentials_changed).
 module MobileApp
   CLIENT_ID = 'dabble-me-ios'

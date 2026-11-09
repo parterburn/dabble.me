@@ -33,8 +33,6 @@ RSpec.describe McpController, type: :controller do
       let(:token) { doorkeeper_plain_token_for(paid_user) }
 
       before do
-        paid_user.generate_otp_secret
-        paid_user.update!(otp_enabled: true, otp_enabled_on: Time.current)
         request.env["HTTP_AUTHORIZATION"] = "Bearer #{token}"
       end
 
@@ -274,10 +272,9 @@ RSpec.describe McpController, type: :controller do
       end
     end
 
-    context "when the user loses strong auth after OAuth" do
-      let(:token) { doorkeeper_plain_token_for(paid_user) }
-
-      def search_entries_call
+    context "journal access requirements" do
+      def search_entries_call(user)
+        request.env["HTTP_AUTHORIZATION"] = "Bearer #{doorkeeper_plain_token_for(user)}"
         post :invoke, params: {
           jsonrpc: "2.0",
           id: 4,
@@ -289,31 +286,35 @@ RSpec.describe McpController, type: :controller do
         }, as: :json
       end
 
-      before do
-        paid_user.generate_otp_secret
-        paid_user.update!(otp_enabled: true, otp_enabled_on: Time.current)
-        request.env["HTTP_AUTHORIZATION"] = "Bearer #{token}"
+      it "allows PRO accounts without a passkey or 2FA" do
+        expect(paid_user.otp_enabled?).to be(false)
+        expect(paid_user.webauthn_credentials).to be_empty
+
+        search_entries_call(paid_user)
+
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body).dig("result", "isError")).to be_falsey
       end
 
-      it "revokes the token when 2FA is turned off" do
-        paid_user.update!(otp_enabled: false)
-
-        search_entries_call
-
-        expect(response).to have_http_status(:unauthorized)
-      end
-
-      # Defense in depth: the per-call gate still blocks journal access if the
-      # token survives (e.g. strong auth removed without running callbacks).
-      it "returns a tool error for journal operations while the token is still valid" do
-        paid_user.update_columns(otp_enabled: false)
-
-        search_entries_call
+      it "returns a PRO tool error for free accounts" do
+        search_entries_call(free_ai)
 
         expect(response).to have_http_status(:ok)
         body = JSON.parse(response.body)
         expect(body.dig("result", "isError")).to eq(true)
-        expect(body.dig("result", "content", 0, "text")).to include("passkey or two-factor authentication")
+        expect(body.dig("result", "content", 0, "text")).to include("Dabble Me PRO")
+      end
+
+      it "revokes the token when 2FA is turned off" do
+        paid_user.generate_otp_secret
+        paid_user.update!(otp_enabled: true, otp_enabled_on: Time.current)
+        token = doorkeeper_plain_token_for(paid_user)
+        paid_user.update!(otp_enabled: false)
+
+        request.env["HTTP_AUTHORIZATION"] = "Bearer #{token}"
+        post :invoke, params: { jsonrpc: "2.0", id: 5, method: "tools/call", params: { name: "search_entries", arguments: { query: "x" } } }, as: :json
+
+        expect(response).to have_http_status(:unauthorized)
       end
     end
   end

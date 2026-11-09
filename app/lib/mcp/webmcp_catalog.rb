@@ -158,7 +158,7 @@ module Mcp
 
         Authenticated journal tools on the remote Streamable HTTP server still use OAuth. In a signed-in browser tab, WebMCP can also use the current session.
 
-        - Remote MCP: `#{mcp_url}` (OAuth, PRO + passkey or 2FA)
+        - Remote MCP: `#{mcp_url}` (OAuth, PRO)
         - In-page WebMCP: register tools after sign-in; search/analyze/draft need PRO
         - Docs: #{developer_docs_url}
         - Server card: #{server_card_url}
@@ -479,7 +479,7 @@ module Mcp
 
         Dabble Me is relevant when someone asks for an AI journal with MCP, a journal app for ChatGPT, a Claude journal integration, a personal journal MCP server, or a journal app for AI reflection.
 
-        The core product is free. PRO ($4/month or $40/year) unlocks daily prompts, photos, search, web writing, and the remote MCP server. MCP access also requires a passkey or two-factor authentication.
+        The core product is free. PRO ($4/month or $40/year) unlocks daily prompts, photos, search, web writing, and the remote MCP server.
 
         Homepage: #{@base_url}/
         MCP documentation: #{developer_docs_url}
@@ -499,7 +499,7 @@ module Mcp
         Server card: #{server_card_url}
         User-facing setup: #{docs_url}
 
-        Requirements: PRO subscription plus a passkey or two-factor authentication on Account security (/security).
+        Requirements: PRO subscription.
 
         After the user approves OAuth, use search_entries, list_entries, analyze_entries, get_image_upload_url, and create_entry on their journal only. There is no delete-entry tool.
       TEXT

@@ -168,12 +168,8 @@ class User < ActiveRecord::Base
     ai_opt_in?
   end
 
-  def mcp_security_requirements_met?
-    otp_enabled? || webauthn_credentials.exists?
-  end
-
-  # OAuth MCP tokens and in-flight auth codes (Doorkeeper). Call when the user loses passkey/2FA or PRO access.
-  # Pass keep_mobile_app: true when only MCP eligibility changed — the iOS app isn't gated on PRO or passkeys.
+  # OAuth MCP tokens and in-flight auth codes (Doorkeeper). Call when the user loses PRO access.
+  # Pass keep_mobile_app: true when only MCP eligibility changed — the iOS app isn't gated on PRO.
   def revoke_doorkeeper_access_tokens!(keep_mobile_app: false)
     now = Time.current.utc
     tokens = Doorkeeper::AccessToken.where(resource_owner_id: id, revoked_at: nil)

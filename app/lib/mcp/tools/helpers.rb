@@ -43,12 +43,12 @@ module Mcp
       end
 
       def journal_access_response(user)
-        return nil if user.is_pro? && !user.deletion_pending? && user.mcp_security_requirements_met?
+        return nil if user.is_pro? && !user.deletion_pending?
 
         MCP::Tool::Response.new(
           [{
             type: 'text',
-            text: 'The Dabble Me connector requires a paid Dabble Me PRO account, and either a passkey or two-factor authentication setup on the [Account Security page](https://dabble.me/security).'
+            text: 'The Dabble Me connector requires a paid [Dabble Me PRO](https://dabble.me/subscribe) account.'
           }],
           error: true
         )

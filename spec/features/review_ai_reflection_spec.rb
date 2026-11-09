@@ -24,16 +24,7 @@ RSpec.describe "Year in review AI Reflection", type: :feature do
     expect(page).not_to have_content("Ask AI")
   end
 
-  it "asks for a passkey or two-factor authentication first when neither is set up" do
-    visit review_path(2026)
-
-    expect(page).to have_link("passkey or two-factor authentication", href: security_path)
-  end
-
-  it "skips the security step once two-factor authentication is on" do
-    paid_user.generate_otp_secret
-    paid_user.update!(otp_enabled: true, otp_enabled_on: Time.current)
-
+  it "does not ask for a passkey or two-factor authentication before connecting" do
     visit review_path(2026)
 
     expect(page).not_to have_link("passkey or two-factor authentication")

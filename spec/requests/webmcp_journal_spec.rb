@@ -66,7 +66,8 @@ RSpec.describe 'WebMCP journal session tools', type: :request do
   end
 
   it 'does not require passkey or 2FA for in-page session tools' do
-    expect(paid_user.mcp_security_requirements_met?).to eq(false)
+    expect(paid_user.otp_enabled?).to eq(false)
+    expect(paid_user.webauthn_credentials).to be_empty
     sign_in paid_user
 
     expect {

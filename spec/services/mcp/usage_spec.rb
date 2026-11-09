@@ -48,4 +48,13 @@ RSpec.describe Mcp::Usage do
     expect(described_class.new.connected_now).to eq(0)
     expect(described_class.new.connected_ever).to eq(2)
   end
+
+  it "counts an expired access token that can still be refreshed as connected" do
+    user = create(:user)
+    token = grant_mcp!(user)
+    token.update_columns(created_at: 2.days.ago, expires_in: 1.day.to_i, refresh_token: "rspec-refresh")
+
+    expect(described_class.new.connected_now).to eq(1)
+    expect(described_class.new.summary[:clients]).to eq([{ name: "Claude", users: 1 }])
+  end
 end

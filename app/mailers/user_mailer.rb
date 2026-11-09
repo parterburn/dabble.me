@@ -79,6 +79,18 @@ class UserMailer < ActionMailer::Base
     email.mailgun_options = { tag: "Security" }
   end
 
+  # Sent when the user approves a new third-party OAuth app (Claude, ChatGPT, other MCP
+  # clients), so a consent-phishing approval doesn't go unnoticed.
+  def oauth_app_connected(user, app_name, redirect_host: nil, verified: false)
+    @user = user
+    @app_name = app_name
+    @redirect_host = redirect_host
+    @verified = verified
+    @user.increment!(:emails_sent)
+    email = mail(to: user.cleaned_to_address, subject: "New app connected to your Dabble Me account")
+    email.mailgun_options = { tag: "Security" }
+  end
+
   # Sent when someone taps "Delete Account" in the iOS app. Deletion itself still happens on
   # the web (signed in + current password, then a 1-hour grace period), so this adds a step
   # that proves mailbox access and can't be completed by an accidental tap.

@@ -72,6 +72,60 @@ RSpec.describe "OAuth authorization screen", type: :request do
     expect(response.body).to include("(unverified app)")
   end
 
+  describe "approving the consent screen" do
+    include ActiveJob::TestHelper
+
+    def approve(application)
+      post oauth_authorization_path, params: {
+        response_type: "code",
+        client_id: application.uid,
+        redirect_uri: application.redirect_uri,
+        scope: "mcp:access",
+        code_challenge: code_challenge,
+        code_challenge_method: "S256"
+      }
+    end
+
+    it "emails the user when a new app is connected" do
+      app = create_application("MCP Inspector")
+
+      expect { approve(app) }
+        .to have_enqueued_mail(UserMailer, :oauth_app_connected)
+        .with(user, "MCP Inspector", redirect_host: "example.com", verified: false)
+      expect(response).to redirect_to(a_string_starting_with("https://example.com/callback?code="))
+    end
+
+    it "does not email again when an already-connected app re-authorizes" do
+      app = create_application("MCP Inspector")
+      Doorkeeper::AccessToken.create!(resource_owner_id: user.id, application_id: app.id, scopes: "mcp:access", expires_in: 1.day)
+
+      expect { approve(app) }.not_to have_enqueued_mail(UserMailer, :oauth_app_connected)
+    end
+
+    it "emails again after the app was removed from Connected apps" do
+      app = create_application("MCP Inspector")
+      Doorkeeper::AccessToken.create!(resource_owner_id: user.id, application_id: app.id, scopes: "mcp:access", expires_in: 1.day, revoked_at: 1.minute.ago)
+
+      expect { approve(app) }.to have_enqueued_mail(UserMailer, :oauth_app_connected)
+    end
+
+    it "does not email the user when the iOS app signs in" do
+      app = MobileApp.ensure_application!
+
+      expect {
+        get oauth_authorization_path(
+          response_type: "code",
+          client_id: app.uid,
+          redirect_uri: MobileApp::REDIRECT_URI,
+          scope: MobileApp::SCOPE,
+          code_challenge: code_challenge,
+          code_challenge_method: "S256"
+        )
+      }.not_to have_enqueued_mail(UserMailer, :oauth_app_connected)
+      expect(response).to redirect_to(a_string_starting_with("#{MobileApp::REDIRECT_URI}?code="))
+    end
+  end
+
   it "rejects DCR registration with javascript: or non-https redirect_uri schemes" do
     post "/oauth/registrations",
       params: { client_name: "Evil", redirect_uris: ["javascript://x/%0aalert(1)"] },

@@ -23,13 +23,14 @@ module Api
           can_see_stats: user.is_pro?,
           settings_url: "#{ApplicationHelper.site_public_base_url}/settings",
           security_url: "#{ApplicationHelper.site_public_base_url}/security",
-          # Connecting Claude/ChatGPT (MCP) needs PRO plus a passkey or 2FA on the account.
+          # Connecting Claude/ChatGPT (MCP) needs PRO.
           ai_connectors: {
             claude_url: ApplicationHelper.claude_plugin_directory_url,
             chatgpt_url: ApplicationHelper.chatgpt_plugin_directory_url,
             guide_url: "#{ApplicationHelper.site_public_base_url}/mcp-server",
             requires_pro: !user.is_pro?,
-            requires_security_setup: !user.mcp_security_requirements_met?
+            # Dabble Me for iOS 1.0 decodes this as a required Bool.
+            requires_security_setup: false
           }
         }
       end

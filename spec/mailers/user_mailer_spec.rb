@@ -34,4 +34,22 @@ RSpec.describe UserMailer do
       expect(email.body.encoded).to include("Work laptop")
     end
   end
+
+  describe "#oauth_app_connected" do
+    it "names the app and links to Connected apps" do
+      email = described_class.oauth_app_connected(user, "Claude", redirect_host: "claude.ai", verified: true)
+      body = email.html_part.body.decoded + email.text_part.body.decoded
+
+      expect(email.to).to eq([user.email])
+      expect(email.subject).to eq("New app connected to your Dabble Me account")
+      expect(body).to include("Claude", "claude.ai", "/security#connected-apps")
+      expect(body).not_to include("unverified")
+    end
+
+    it "flags unverified apps" do
+      email = described_class.oauth_app_connected(user, "Claude", redirect_host: "attacker.example")
+
+      expect(email.text_part.body.decoded).to include("attacker.example (unverified app)")
+    end
+  end
 end

@@ -75,7 +75,7 @@ module Mcp
                 .where.not(resource_owner_id: nil)
                 .where('scopes LIKE ?', '%mcp:access%')
       scope.where(
-        'expires_in IS NULL OR created_at + (expires_in * interval \'1 second\') > ?',
+        'expires_in IS NULL OR refresh_token IS NOT NULL OR created_at + (expires_in * interval \'1 second\') > ?',
         as_of
       )
     end
@@ -108,6 +108,7 @@ module Mcp
             AND oauth_access_tokens.scopes LIKE '%mcp:access%'
             AND (
               oauth_access_tokens.expires_in IS NULL
+              OR oauth_access_tokens.refresh_token IS NOT NULL
               OR oauth_access_tokens.created_at + (oauth_access_tokens.expires_in * interval '1 second') > ?
             )
           GROUP BY oauth_applications.name

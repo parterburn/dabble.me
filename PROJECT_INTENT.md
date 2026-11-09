@@ -48,7 +48,7 @@ If you're modifying behavior around imports, scheduling, or the email reply form
 - **Free** users get journaling with restricted email frequency.
 - **PRO** users (Stripe Monthly/Yearly, plus legacy Forever via PayPal/Gumroad/Payhere) get the full feature set, including:
   - Unlimited daily emails
-  - **MCP access** (PRO-only and additionally gated behind passkey or 2FA — see `Oauth::*` controllers and the `/security` page)
+  - **MCP access** (PRO-only — see `Oauth::*` controllers and the `/security` page). There is deliberately no passkey/2FA gate: anyone who can approve the OAuth consent screen is already signed in and can read the journal on the web, so the gate added friction without protection. Users get an `oauth_app_connected` email for each newly connected app instead (the defense against consent phishing).
   - AI features
 - Downgrades are real: [`User#revoke_doorkeeper_oauth_if_downgraded_from_pro`](app/models/user.rb) revokes MCP access when someone leaves PRO, and [UserDowngradeExpiredWorker](app/workers/user_downgrade_expired_worker.rb) handles plan expiry daily.
 
@@ -102,5 +102,5 @@ These are the bits Paul would be upset to discover an agent had quietly broken �
 - **PRO downgrade flow.** OAuth/MCP access must be revoked when a user leaves PRO ([User#revoke_doorkeeper_oauth_if_downgraded_from_pro](app/models/user.rb), [UserDowngradeExpiredWorker](app/workers/user_downgrade_expired_worker.rb)).
 - **Legacy payment paths (PayPal / Gumroad / Payhere).** Don't strip them — there are still "Forever" plan users from those eras.
 - **The marketing page.** Just refreshed; treat as a live, load-bearing growth surface.
-- **iOS app tokens vs. MCP gating.** `User#revoke_doorkeeper_access_tokens!(keep_mobile_app: true)` is for MCP-only eligibility changes (PRO downgrade, last passkey removed). Credential changes must still revoke everything, app included.
+- **iOS app tokens vs. MCP gating.** `User#revoke_doorkeeper_access_tokens!(keep_mobile_app: true)` is for MCP-only eligibility changes (PRO downgrade). Credential changes must still revoke everything, app included.
 - **MCP scopes, OAuth metadata, and tool descriptions.** These will be read by the OpenAI/Claude connector stores' review processes. Sloppy scope names or vague tool docs could block listing.

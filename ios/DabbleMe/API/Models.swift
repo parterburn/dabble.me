@@ -34,9 +34,8 @@ struct Me: Decodable, Sendable, Equatable {
         let claudeUrl: URL
         let chatgptUrl: URL
         let guideUrl: URL
-        /// What the account still needs before Claude/ChatGPT can connect.
+        /// The account needs PRO before Claude/ChatGPT can connect.
         let requiresPro: Bool
-        let requiresSecuritySetup: Bool
     }
 }
 

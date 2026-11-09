@@ -11,7 +11,7 @@
       "interface": {
         "displayName": "Dabble Me",
         "shortDescription": "Your journal, remembered",
-        "longDescription": "Find past memories, reflect on a week, month, or year, and save new journal entries with optional photos. Connect your Dabble Me PRO account using OAuth; a passkey or two-factor authentication is required.",
+        "longDescription": "Find past memories, reflect on a week, month, or year, and save new journal entries with optional photos. Connect your Dabble Me PRO account using OAuth.",
         "developerName": "Dabble Me",
         "category": "Productivity",
         "logo": "./assets/logo.png",

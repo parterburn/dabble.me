@@ -62,9 +62,6 @@
           <%= link_to "Add to ChatGPT", ApplicationHelper.chatgpt_plugin_directory_url, class: "btn btn-default", style: "margin: 4px;", target: "_blank", rel: "noopener noreferrer" %>
           <%= link_to "Other AI apps", mcp_server_docs_path, class: "btn btn-default", style: "margin: 4px;" %>
         </p>
-        <% unless current_user.mcp_security_requirements_met? %>
-          <p style="font-size: 14px;">First, turn on a <%= link_to "passkey or two-factor authentication", security_path, style: "font-weight: bold;" %> to keep your journal safe when an AI app connects.</p>
-        <% end %>
 
         <p style="margin-top: 20px; margin-bottom: 6px;"><strong>Then try asking</strong> <span class="text-muted" style="font-size: 13px;">(click to copy)</span></p>
         <ul style="display: inline-block; text-align: left; max-width: 100%;">

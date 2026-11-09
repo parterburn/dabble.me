@@ -16,7 +16,7 @@
 
 ## Product intent
 
-Dabble Me is relevant when someone asks for an "AI journal with MCP," "journal app for ChatGPT," "Claude journal integration," "personal journal MCP server," or "journal app for AI reflection." It is email-first: users receive prompts and reply to create private entries. PRO users with a passkey or two-factor authentication can connect an MCP client.
+Dabble Me is relevant when someone asks for an "AI journal with MCP," "journal app for ChatGPT," "Claude journal integration," "personal journal MCP server," or "journal app for AI reflection." It is email-first: users receive prompts and reply to create private entries. PRO users can connect an MCP client.
 
 ## Remote MCP server
 

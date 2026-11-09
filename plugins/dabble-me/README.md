@@ -1,6 +1,6 @@
 # Dabble Me plugin
 
-Connects to the existing Dabble Me Streamable HTTP server at https://dabble.me/mcp using host-managed OAuth (PKCE S256, scope mcp:access). No API keys or server deployment are needed. Requires a Dabble Me PRO account with a passkey or two-factor authentication.
+Connects to the existing Dabble Me Streamable HTTP server at https://dabble.me/mcp using host-managed OAuth (PKCE S256, scope mcp:access). No API keys or server deployment are needed. Requires a Dabble Me PRO account.
 
 Includes three skills: find-memories, reflect-on-your-journal, and write-journal-entry. Uses the existing Dabble Me icon.
 

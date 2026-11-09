@@ -88,7 +88,7 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    // Connecting happens on the web (OAuth on dabble.me, PRO plus a passkey or 2FA);
+                    // Connecting happens on the web (OAuth on dabble.me, PRO only);
                     // the guide links to Claude's and ChatGPT's directories.
                     if let connectors = model.me?.aiConnectors {
                         Link(destination: connectors.guideUrl) {

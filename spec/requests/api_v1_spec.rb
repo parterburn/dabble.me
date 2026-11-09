@@ -70,9 +70,8 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
         "claude_url" => ApplicationHelper.claude_plugin_directory_url,
         "chatgpt_url" => ApplicationHelper.chatgpt_plugin_directory_url,
         "requires_pro" => true,
-        "requires_security_setup" => true
+        "requires_security_setup" => false
       )
-      create(:webauthn_credential, user: pro_user)
       get "/api/v1/me", headers: auth(pro_user)
       expect(json["ai_connectors"]).to include("requires_pro" => false, "requires_security_setup" => false)
     end

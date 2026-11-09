@@ -72,7 +72,7 @@ structured_data = [
       <h2 class="font-serif text-2xl text-primary">Server URL</h2>
       <p class="mt-3 text-muted">Remote Streamable HTTP server. OAuth 2.0 with PKCE; no API key or client secret.</p>
       <p class="mt-4"><code class="block text-base select-all break-all bg-olive-200 px-4 py-3 rounded text-olive-900"><%= mcp_endpoint %></code></p>
-      <p class="mt-4 text-sm text-muted">Tool calls require a Dabble Me PRO account with a passkey or two-factor authentication.</p>
+      <p class="mt-4 text-sm text-muted">Tool calls require a Dabble Me PRO account.</p>
     </section>
 
     <section class="mt-8 card p-6" id="agent-prompt">
@@ -100,7 +100,7 @@ structured_data = [
         <li>Then start your client’s OAuth sign-in so the user can sign in to Dabble Me and approve access. Never ask the user to paste a password, two-factor code, passkey, or token into the chat.</li>
         <li>If you cannot add MCP servers yourself (Claude on claude.ai or the Claude apps, or ChatGPT), do not look for a workaround. In Claude, send the user to the <a href="<%= claude_plugin_url %>" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">Dabble Me Claude plugin</a>. In ChatGPT, send them to the <a href="<%= chatgpt_plugin_url %>" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">Dabble Me ChatGPT plugin</a>. Step-by-step instructions for people are in the <a href="<%= mcp_server_docs_path %>#setup" class="text-accent hover:text-primary underline">AI Connector guide</a>.</li>
         <li>After sign-in, confirm the connection with a read-only tool such as <code>list_entries</code> or <code>analyze_entries</code> for a recent date range. Do not create a test entry. Some clients only load new tools after a reload or in a new chat.</li>
-        <li>Only Dabble Me PRO accounts with a passkey or two-factor authentication can use the tools. The connection acts as the user who approved it and only reads and writes that user’s journal.</li>
+        <li>Only Dabble Me PRO accounts can use the tools. The connection acts as the user who approved it and only reads and writes that user’s journal.</li>
       </ol>
     </section>
 
@@ -126,7 +126,7 @@ structured_data = [
         <div class="card p-6">
           <h3 class="font-serif text-xl text-primary">Strong account security</h3>
           <p class="mt-3 text-sm text-muted">
-            Tool calls require Dabble Me PRO plus a passkey or two-factor authentication. Users review and disconnect clients under
+            Tool calls require Dabble Me PRO. Users get an email whenever a new app connects, and review and disconnect clients under
             <a href="<%= security_path(anchor: "connected-apps") %>" class="text-accent hover:text-primary underline">Account security → Connected apps</a>.
           </p>
         </div>
