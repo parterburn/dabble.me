@@ -130,17 +130,27 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate, @unc
     static let shared = NotificationRouter()
     @MainActor weak var model: AppModel?
 
-    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse) async {
+    // Completion-handler versions, not `async`: Swift runs an async delegate method off the main
+    // thread and calls the system's completion handler from there, which crashed on tapping a
+    // notification. These hop to the main queue and finish there.
+    func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
+                                withCompletionHandler completionHandler: @escaping () -> Void) {
         let destination = response.notification.request.content.userInfo["destination"] as? String
-        await MainActor.run {
-            guard let model else { return }
-            model.selectedTab = .today
-            if destination == "write" { model.composeRequest = true }
+        nonisolated(unsafe) let done = completionHandler
+        DispatchQueue.main.async {
+            MainActor.assumeIsolated {
+                if let model = self.model {
+                    model.selectedTab = .today
+                    if destination == "write" { model.composeRequest = true }
+                }
+            }
+            done()
         }
     }
 
-    func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                willPresent notification: UNNotification) async -> UNNotificationPresentationOptions {
-        [.banner, .sound]
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        nonisolated(unsafe) let done = completionHandler
+        DispatchQueue.main.async { done([.banner, .sound]) }
     }
 }

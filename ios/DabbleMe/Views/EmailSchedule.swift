@@ -40,20 +40,25 @@ struct EmailScheduleView: View {
     @Binding var schedule: EmailSchedule?
     @Environment(AppModel.self) private var model
     @State private var error: String?
+    /// The schedule as the server last confirmed it (to roll back to), and the save queue.
+    @State private var confirmed: EmailSchedule?
+    @State private var generation = 0
+    @State private var isSaving = false
+    @State private var needsSave = false
 
     var body: some View {
         Form {
             if let schedule {
                 Section {
                     DayPicker(days: schedule.days, canChooseAll: schedule.canChooseDays) { days in
-                        save(EmailScheduleUpdate(days: days)) { $0.days = days }
+                        save { $0.days = days }
                     }
                 } header: {
                     Text("Days")
                 }
                 Section {
                     Picker("Time", selection: Binding(get: { schedule.hour }, set: { hour in
-                        save(EmailScheduleUpdate(hour: hour)) { $0.hour = hour }
+                        save { $0.hour = hour }
                     })) {
                         ForEach(0..<24, id: \.self) { hour in
                             Text(Self.hourLabel(hour)).tag(hour)
@@ -61,7 +66,7 @@ struct EmailScheduleView: View {
                     }
                     NavigationLink {
                         TimeZonePicker(zones: schedule.timeZones, selected: schedule.timezone) { zone in
-                            save(EmailScheduleUpdate(timezone: zone)) { $0.timezone = zone }
+                            save { $0.timezone = zone }
                         }
                     } label: {
                         LabeledContent("Time Zone", value: Self.shortName(schedule.timezone))
@@ -79,19 +84,38 @@ struct EmailScheduleView: View {
         }
     }
 
-    /// Shows the change right away and puts it back if the server says no.
-    private func save(_ update: EmailScheduleUpdate, apply: (inout EmailSchedule) -> Void) {
+    /// Shows the change right away, then saves. One request at a time, always sending the latest
+    /// whole schedule: taps made while a save is in flight are sent together once it returns, so
+    /// requests can't land out of order and an older response never overwrites a newer choice.
+    private func save(_ apply: (inout EmailSchedule) -> Void) {
         guard var changed = schedule else { return }
-        let previous = changed
+        if confirmed == nil { confirmed = changed }
         apply(&changed)
         schedule = changed
-        Task {
+        generation += 1
+        needsSave = true
+        if !isSaving { Task { await flush() } }
+    }
+
+    private func flush() async {
+        isSaving = true
+        defer { isSaving = false }
+        while needsSave, let current = schedule {
+            needsSave = false
+            let sent = generation
             do {
-                schedule = try await model.updateEmailSchedule(update)
+                let saved = try await model.updateEmailSchedule(
+                    EmailScheduleUpdate(days: current.days, hour: current.hour, timezone: current.timezone))
+                confirmed = saved
+                if sent == generation { schedule = saved } // nothing newer is waiting
             } catch is CancellationError {
+                return
             } catch {
-                schedule = previous
-                self.error = error.localizedDescription
+                // Back to what the server last confirmed, unless a newer change will be sent anyway.
+                if sent == generation, !needsSave {
+                    schedule = confirmed
+                    self.error = error.localizedDescription
+                }
             }
         }
     }
@@ -172,7 +196,7 @@ private struct TimeZonePicker: View {
                         Spacer()
                         Text("GMT\(zone.offset)").foregroundStyle(.secondary).monospacedDigit()
                         if zone.name == selected {
-                            Image(systemName: "checkmark").foregroundStyle(.tint)
+                            appIcon("slab-check").foregroundStyle(.tint)
                         }
                     }
                 }

@@ -331,8 +331,10 @@ final class AppModel {
     /// An on-device Apple Intelligence reflection on an entry (PRO). Only the entry itself: with other
     /// entries as context, the small model kept mixing their details in.
     func reflection(on entry: EntryDetail) async throws -> EntryReflection {
+        let today = today?.day ?? JournalDay(localDate: .now)
         let text = try await JournalIntelligence.reflection(on: entry.bodyText, date: entry.day?.long ?? entry.date,
-                                                            firstName: me?.firstName, recent: [])
+                                                            ago: entry.day?.relative(to: today) ?? "",
+                                                            today: today.long, firstName: me?.firstName, recent: [])
         return EntryReflection(date: entry.day?.long ?? entry.date, text: text)
     }
 

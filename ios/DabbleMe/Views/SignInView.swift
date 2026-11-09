@@ -286,7 +286,7 @@ private struct GuestSettings: View {
             List {
                 Section {
                     Button { Task { await model.signIn(createAccount: true) } } label: { Label("Start Your Journal", icon: "slab-plus") }
-                    Button("Sign In", systemImage: "person.crop.circle") { Task { await model.signIn() } }
+                    Button { Task { await model.signIn() } } label: { Label("Sign In", icon: "slab-arrow-right-to-bracket") }
                 }
                 .disabled(model.isSigningIn)
                 Section {

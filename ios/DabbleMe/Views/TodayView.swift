@@ -13,33 +13,40 @@ struct TodayView: View {
     @AppStorage("ai.prompt.text") private var aiPromptText = ""
     @State private var isWritingPrompt = false
     @State private var promptError: String?
+    @State private var expanded: Set<Int> = []
+    @State private var actions = EntryActions()
 
     var body: some View {
         NavigationStack(path: $path) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
-                    if let today = model.today {
-                        // The date is the page title (the nav bar is hidden here).
-                        // No year: it's always today. One line, shrinking a little for long dates.
-                        Text(today.day?.formatted(.dateTime.weekday(.wide).month(.wide).day()) ?? today.date)
-                            .font(.system(.largeTitle, design: .serif, weight: .semibold))
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                            .accessibilityLabel(today.day?.long ?? today.date)
-                            .accessibilityAddTraits(.isHeader)
-                        todaySection(today)
-                        onThisDaySection(today)
-                    } else if let error = model.timelineError {
-                        ContentUnavailableView("Couldn't load today", systemImage: "wifi.exclamationmark", description: Text(error))
-                    } else {
-                        ProgressView().frame(maxWidth: .infinity, minHeight: 200)
-                    }
+            // A list (not a plain scroll view) so On This Day rows swipe like the Journal's.
+            List {
+                if let today = model.today {
+                    // The date is the page title (the nav bar is hidden here).
+                    // No year: it's always today. One line, shrinking a little for long dates.
+                    Text(today.day?.formatted(.dateTime.weekday(.wide).month(.wide).day()) ?? today.date)
+                        .font(.system(.largeTitle, design: .serif, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .accessibilityLabel(today.day?.long ?? today.date)
+                        .accessibilityAddTraits(.isHeader)
+                        .plainRow()
+                    todaySection(today)
+                        .padding(.vertical, 8)
+                        .plainRow()
+                    onThisDaySection(today)
+                } else if let error = model.timelineError {
+                    ContentUnavailableView("Couldn't load today", systemImage: "wifi.exclamationmark", description: Text(error))
+                        .plainRow()
+                } else {
+                    ProgressView().frame(maxWidth: .infinity, minHeight: 200)
+                        .plainRow()
                 }
-                .padding()
-                .frame(maxWidth: 680, alignment: .leading)
-                .frame(maxWidth: .infinity)
             }
+            .listStyle(.plain)
+            .frame(maxWidth: 680)
+            .frame(maxWidth: .infinity)
+            .entryActionSheets(actions)
             .navigationTitle("Today") // back-button label on entries opened from here
             .toolbarVisibility(.hidden, for: .navigationBar)
             .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
@@ -164,32 +171,42 @@ struct TodayView: View {
 
     @ViewBuilder
     private func onThisDaySection(_ today: TodaySummary) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionTitle("On This Day", icon: "slab-backward")
-            if !today.onThisDayAvailable {
-                Text("See what you wrote on this date in past years with Dabble Me PRO.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            } else if today.onThisDay.isEmpty {
-                Text("Nothing from this date in earlier years yet. Write today, and next year it'll be waiting for you here.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(today.onThisDay) { memory in
-                    NavigationLink(value: EntryRoute(id: memory.id)) {
-                        MemoryCard(entry: memory, caption: caption(for: memory))
-                    }
-                    .buttonStyle(.plain)
+        SectionTitle("On This Day", icon: "slab-backward")
+            .padding(.top, 12)
+            .plainRow()
+        if !today.onThisDayAvailable {
+            Text("See what you wrote on this date in past years with Dabble Me PRO.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .plainRow()
+        } else if today.onThisDay.isEmpty {
+            Text("Nothing from this date in earlier years yet. Write today, and next year it'll be waiting for you here.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .plainRow()
+        } else {
+            // The same rows as the Journal: tap to expand, again to open; swipe for Reflect, Open, Actions.
+            ForEach(today.onThisDay) { memory in
+                TimelineEntryRow(entry: memory, showsYear: true, isExpanded: expanded.contains(memory.id), actions: actions,
+                                 onTap: {
+                                     if expanded.contains(memory.id) {
+                                         path.append(EntryRoute(id: memory.id))
+                                     } else {
+                                         withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(memory.id) }
+                                     }
+                                 },
+                                 onOpen: { path.append(EntryRoute(id: memory.id)) })
                     .entryPreview(memory) { path.append(EntryRoute(id: memory.id)) }
-                }
             }
         }
     }
+}
 
-    private func caption(for memory: EntrySummary) -> String {
-        let years = memory.yearsAgo ?? 0
-        let ago = years == 1 ? "1 year ago" : "\(years) years ago"
-        return "\(ago) · \(memory.day?.year ?? "")"
+private extension View {
+    /// A list row that's just page content: no separator, no row background.
+    func plainRow() -> some View {
+        listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
     }
 }
 

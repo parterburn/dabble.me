@@ -19,6 +19,9 @@ struct EntryDetailView: View {
     @State private var reflection: EntryReflection?
     @State private var isReflecting = false
     @State private var showingActions = false
+    /// How far the entry follows a swipe left (≤ 0); past `swipeThreshold` it opens the actions.
+    @State private var swipeOffset: CGFloat = 0
+    private let swipeThreshold: CGFloat = 80
     /// Tapping the title switches between the date and how long ago it was (remembered).
     @AppStorage("entry.showsRelativeDate") private var showsRelativeDate = false
     @State private var hideHUD: Task<Void, Never>?
@@ -36,9 +39,11 @@ struct EntryDetailView: View {
                         .frame(maxWidth: .infinity)
                         .contentShape(.rect)
                         .simultaneousGesture(pinchToResize)
+                        .offset(x: swipeOffset)
                 }
                 .simultaneousGesture(swipeForActions)
-                .modifier(PullToReflect(action: canReflect(entry) ? { await reflect(on: entry, showsProgress: false) } : nil))
+                .overlay(alignment: .trailing) { swipeHint }
+                .modifier(PullToReflect(action: canReflect(entry) ? { await reflect(on: entry) } : nil))
                 .overlay {
                     if let textSizeHUD {
                         Text(textSizeHUD)
@@ -81,6 +86,7 @@ struct EntryDetailView: View {
                     case .edit: if entry.document != nil { editing = true } else { openURL(entry.webUrl) }
                     case .delete: confirmingDelete = true
                     case .web: openURL(entry.webUrl)
+                    case .search(let tag): if let url = URL(string: "\(RichText.hashtagScheme):\(tag)") { openURL(url) }
                     }
                 }
             }
@@ -110,7 +116,7 @@ struct EntryDetailView: View {
         } message: {
             Text(actionError ?? "")
         }
-        .sensoryFeedback(.impact(weight: .light), trigger: showingActions) { _, showing in showing }
+        .sensoryFeedback(.impact(weight: .light), trigger: swipeArmed) { _, armed in armed }
         .sensoryFeedback(.selection, trigger: textSize)
         .disabled(isDeleting)
         .task { await load() }
@@ -131,13 +137,54 @@ struct EntryDetailView: View {
         }
     }
 
-    /// Swipe left anywhere on the entry for its actions (a right swipe is iOS's "go back").
+    /// Swipe left anywhere on the entry for its actions (a right swipe is iOS's "go back"). The
+    /// text follows your finger and the Actions bolt comes in from the right; let go past the
+    /// threshold to open them.
     private var swipeForActions: some Gesture {
         DragGesture(minimumDistance: 30)
+            .onChanged { value in
+                let dx = value.translation.width, dy = value.translation.height
+                guard dx < 0, abs(dy) < abs(dx) * 0.5 else {
+                    if swipeOffset != 0 { withAnimation(.spring(duration: 0.25)) { swipeOffset = 0 } }
+                    return
+                }
+                // 1:1 up to the threshold, then it resists.
+                let pull = -dx
+                swipeOffset = -(pull <= swipeThreshold ? pull : swipeThreshold + (pull - swipeThreshold) * 0.35)
+            }
             .onEnded { value in
                 let dx = value.translation.width, dy = value.translation.height
-                if dx < -80, abs(dy) < abs(dx) * 0.5 { showingActions = true }
+                if dx < -swipeThreshold, abs(dy) < abs(dx) * 0.5 { showingActions = true }
+                withAnimation(.spring(duration: 0.3)) { swipeOffset = 0 }
             }
+    }
+
+    private var swipeArmed: Bool { -swipeOffset >= swipeThreshold }
+
+    /// The bolt that slides in from the right edge as the entry is swiped.
+    @ViewBuilder
+    private var swipeHint: some View {
+        if swipeOffset < -4 {
+            let progress = min(1, -swipeOffset / swipeThreshold)
+            VStack(spacing: 6) {
+                appIcon("slab-bolt")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 22, height: 22)
+                    .foregroundStyle(swipeArmed ? AnyShapeStyle(.white) : AnyShapeStyle(.secondary))
+                    .frame(width: 44, height: 44)
+                    .background(swipeArmed ? AnyShapeStyle(.tint) : AnyShapeStyle(Color.secondary.opacity(0.15)), in: .circle)
+                Text("Actions")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(swipeArmed ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+            }
+            .scaleEffect(0.6 + 0.4 * progress)
+            .opacity(progress)
+            .frame(width: max(0, min(-swipeOffset, 120)))
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+            .animation(.easeOut(duration: 0.15), value: swipeArmed)
+        }
     }
 
     @ViewBuilder
@@ -183,9 +230,8 @@ struct EntryDetailView: View {
         JournalIntelligence.isEnabled(for: model.me) && !entry.bodyText.isEmpty
     }
 
-    /// `showsProgress`: false when pulled down, where the refresh spinner already shows it's working.
-    private func reflect(on entry: EntryDetail, showsProgress: Bool = true) async {
-        isReflecting = showsProgress
+    private func reflect(on entry: EntryDetail) async {
+        isReflecting = true
         defer { isReflecting = false }
         do {
             reflection = try await model.reflection(on: entry)
@@ -386,10 +432,19 @@ struct ReflectionSheet: View {
                         .font(.system(.title3, design: .serif))
                         .lineSpacing(4)
                         .textSelection(.enabled)
-                    Label("Written on this device by Apple Intelligence. Your entry wasn't sent anywhere.", icon: "slab-lock")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
-                        .padding(.top, 8)
+                    // Two short lines with the lock centered beside both.
+                    HStack(spacing: 12) {
+                        appIcon("slab-lock")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 18, height: 18)
+                        Text("Written on this device by Apple Intelligence.\nYour entry wasn't sent anywhere.")
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .accessibilityElement(children: .combine)
+                    .padding(.top, 8)
                 }
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -452,58 +507,47 @@ private struct DatedHashtagRow: View {
     }
 }
 
-/// Swipe left on an entry: its actions as big buttons in a short sheet from the bottom.
-private struct EntryActionsSheet: View {
-    enum Action { case reflect, edit, delete, web }
-
-    let entry: EntryDetail
-    let canReflect: Bool
-    let canEdit: Bool
-    let perform: (Action) -> Void
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(entry.day?.long ?? entry.date)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
-                .padding(.bottom, 4)
-            if canReflect {
-                row("Reflect on This Entry", "slab-thought-bubble", .reflect)
-            }
-            if canEdit {
-                row(entry.document != nil ? "Edit" : "Edit on dabble.me", "slab-edit", .edit)
-                row("Delete", "slab-trash", .delete, role: .destructive)
-            } else {
-                row("Open on dabble.me", "safari", .web)
-            }
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 30)
-        .padding(.bottom, 12)
-        .presentationDetents([.height(canEdit && canReflect ? 280 : 230)])
-        .presentationDragIndicator(.visible)
-    }
-
-    private func row(_ title: String, _ symbol: String, _ action: Action, role: ButtonRole? = nil) -> some View {
-        Button(role: role) {
-            perform(action)
-        } label: {
-            Label(title, icon: symbol)
-                .frame(maxWidth: .infinity, minHeight: 34, alignment: .leading)
-        }
-        .buttonStyle(.bordered)
-        .controlSize(.large)
-        .tint(role == .destructive ? .red : nil)
-    }
-}
 
 /// Pull down on an entry to get a reflection; without Apple Intelligence there's nothing to pull for.
+/// Not `.refreshable`: its bare spinner reads as "reload". The pull says what it does ("Pull to
+/// reflect…", then "Release to reflect" with a tap of haptics) and fires when you let go.
 private struct PullToReflect: ViewModifier {
     let action: (() async -> Void)?
+    @State private var pull: CGFloat = 0
+    @State private var isRunning = false
+    private let threshold: CGFloat = 90
+
+    private var armed: Bool { pull >= threshold }
 
     func body(content: Content) -> some View {
         if let action {
-            content.refreshable { await action() }
+            content
+                .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                    -(geometry.contentOffset.y + geometry.contentInsets.top)
+                } action: { _, overscroll in
+                    pull = max(0, overscroll)
+                }
+                .onScrollPhaseChange { old, new in
+                    guard old == .interacting, new != .interacting, armed, !isRunning else { return }
+                    isRunning = true
+                    Task {
+                        await action()
+                        isRunning = false
+                    }
+                }
+                .overlay(alignment: .top) {
+                    if pull > 8, !isRunning {
+                        Label(armed ? "Release to reflect" : "Pull to reflect on this entry", icon: "slab-thought-bubble")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(armed ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+                            .opacity(min(1, (pull - 8) / 40))
+                            .frame(height: min(pull, threshold))
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                }
+                .sensoryFeedback(.impact(weight: .light), trigger: armed) { _, isArmed in isArmed }
+                .animation(.easeOut(duration: 0.15), value: armed)
         } else {
             content
         }

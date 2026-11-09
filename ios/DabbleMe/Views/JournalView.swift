@@ -121,13 +121,7 @@ struct JournalView: View {
                         .foregroundStyle(.secondary)
                 }
                 ForEach(model.months) { month in
-                    Section {
-                        monthRows(month)
-                    } header: {
-                        MonthHeader(title: month.title)
-                            .onAppear { model.monthAppeared(month.key) }
-                            .onDisappear { model.monthDisappeared(month.key) }
-                    }
+                    monthSections(month)
                 }
             }
             .listStyle(.plain)
@@ -171,14 +165,29 @@ struct JournalView: View {
         }
     }
 
+    /// A month's rows under its sticky "Month YYYY" header. An expanded entry gets its own
+    /// section, so while you read it the sticky header is its date; the month header picks up again
+    /// after it.
     @ViewBuilder
-    private func monthRows(_ month: MonthCount) -> some View {
+    private func monthSections(_ month: MonthCount) -> some View {
         if let entries = model.monthEntries[month.key] {
-            ForEach(entries) { entry in
-                TimelineEntryRow(entry: entry, isExpanded: expanded.contains(entry.id), actions: actions) {
-                    open(entry)
+            ForEach(segments(of: entries, in: month)) { segment in
+                Section {
+                    ForEach(segment.entries) { entry in
+                        TimelineEntryRow(entry: entry, isExpanded: expanded.contains(entry.id), showsDateWhenExpanded: false,
+                                         actions: actions, onTap: { open(entry) }, onOpen: { path.append(EntryRoute(id: entry.id)) })
+                            .entryPreview(entry) { path.append(EntryRoute(id: entry.id)) }
+                    }
+                } header: {
+                    switch segment.header {
+                    case .month(let first):
+                        MonthHeader(title: month.title)
+                            .onAppear { if first { model.monthAppeared(month.key) } }
+                            .onDisappear { if first { model.monthDisappeared(month.key) } }
+                    case .day(let entry):
+                        MonthHeader(title: entry.day?.formatted(.dateTime.weekday(.wide).month(.wide).day().year()) ?? entry.date, isDay: true)
+                    }
                 }
-                .entryPreview(entry) { path.append(EntryRoute(id: entry.id)) }
             }
             .task {
                 // Reload a month a refresh marked stale once it's back on screen.
@@ -188,19 +197,53 @@ struct JournalView: View {
                 await model.loadMonth(month.key)
             }
         } else {
-            // Placeholders sized like real rows keep scrolling (and the scrubber) proportional.
-            ForEach(0..<month.count, id: \.self) { index in
-                EntryRowPlaceholder()
-                    .id(PlaceholderID(month: month.key, index: index))
-            }
-            .task {
-                // Wait until the month settles on screen, so flicking or scrubbing past it
-                // doesn't fire a request for every month along the way.
-                try? await Task.sleep(for: .milliseconds(150))
-                guard !Task.isCancelled else { return }
-                await model.loadMonth(month.key)
+            Section {
+                // Placeholders sized like real rows keep scrolling (and the scrubber) proportional.
+                ForEach(0..<month.count, id: \.self) { index in
+                    EntryRowPlaceholder()
+                        .id(PlaceholderID(month: month.key, index: index))
+                }
+                .task {
+                    // Wait until the month settles on screen, so flicking or scrubbing past it
+                    // doesn't fire a request for every month along the way.
+                    try? await Task.sleep(for: .milliseconds(150))
+                    guard !Task.isCancelled else { return }
+                    await model.loadMonth(month.key)
+                }
+            } header: {
+                MonthHeader(title: month.title)
+                    .onAppear { model.monthAppeared(month.key) }
+                    .onDisappear { model.monthDisappeared(month.key) }
             }
         }
+    }
+
+    private struct Segment: Identifiable {
+        enum Header { case month(first: Bool), day(EntrySummary) }
+        let id: String
+        let header: Header
+        let entries: [EntrySummary]
+    }
+
+    /// Splits a month around its expanded entries: [month: rows…] [day: expanded] [month: rows…].
+    private func segments(of entries: [EntrySummary], in month: MonthCount) -> [Segment] {
+        var segments: [Segment] = []
+        var run: [EntrySummary] = []
+        func flushRun() {
+            guard !run.isEmpty || segments.isEmpty else { return }
+            segments.append(Segment(id: "\(month.key)-m\(segments.count)", header: .month(first: segments.isEmpty), entries: run))
+            run = []
+        }
+        for entry in entries {
+            if expanded.contains(entry.id) {
+                flushRun()
+                segments.append(Segment(id: "\(month.key)-d\(entry.id)", header: .day(entry), entries: [entry]))
+            } else {
+                run.append(entry)
+            }
+        }
+        if !run.isEmpty { flushRun() }
+        return segments
     }
 
     /// First tap expands the entry in place; a second opens it.
@@ -229,11 +272,13 @@ private struct PlaceholderID: Hashable {
 
 private struct MonthHeader: View {
     let title: String
+    /// An expanded entry's date (pinned while reading it), a little stronger than a month.
+    var isDay = false
 
     var body: some View {
         Text(title)
             .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.primary.opacity(0.7))
+            .foregroundStyle(.primary.opacity(isDay ? 0.85 : 0.7))
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityAddTraits(.isHeader)
     }
@@ -273,7 +318,8 @@ struct EntryRow: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 if showsYear, let year = entry.day?.year {
-                    Text(year)
+                    // On This Day: "1 year ago · 2025".
+                    Text(entry.yearsAgo.map { "\($0 == 1 ? "1 year" : "\($0) years") ago · \(year)" } ?? year)
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.tint)
                 }

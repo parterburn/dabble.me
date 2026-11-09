@@ -94,13 +94,13 @@ struct SearchView: View {
             List {
                 Section {
                     ForEach(results) { entry in
-                        TimelineEntryRow(entry: entry, showsYear: true, isExpanded: expanded.contains(entry.id), actions: actions) {
+                        TimelineEntryRow(entry: entry, showsYear: true, isExpanded: expanded.contains(entry.id), actions: actions, onTap: {
                             if expanded.contains(entry.id) {
                                 path.append(EntryRoute(id: entry.id))
                             } else {
                                 withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(entry.id) }
                             }
-                        }
+                        }, onOpen: { path.append(EntryRoute(id: entry.id)) })
                         .entryPreview(entry) { path.append(EntryRoute(id: entry.id)) }
                         .task {
                             if entry.id == results.last?.id { await search(reset: false) }

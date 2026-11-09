@@ -70,8 +70,10 @@ struct PhotoMenu: View {
 
     var body: some View {
         if let image = photo.image, let data = photo.data {
-            Button("Save to Photos", systemImage: "square.and.arrow.down") {
+            Button {
                 Task { saveResult = await PhotoActions.save(data) }
+            } label: {
+                Label("Save to Photos", icon: "slab-arrow-down-to-line")
             }
             ShareLink(item: Image(uiImage: image), preview: SharePreview("Photo", image: Image(uiImage: image))) {
                 Label("Share…", icon: "slab-arrow-up-from-line")

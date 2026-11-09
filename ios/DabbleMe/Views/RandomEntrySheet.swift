@@ -71,6 +71,7 @@ struct RandomEntrySheet: View {
             .controlSize(.large)
         }
         .padding(20)
+        .frame(maxHeight: .infinity, alignment: .top)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .task { await load() }
@@ -80,12 +81,14 @@ struct RandomEntrySheet: View {
         .sensoryFeedback(.impact(weight: .medium), trigger: entry?.id)
     }
 
+    /// The whole entry, scrollable inside the sheet (drag the sheet up for more room). Links in it
+    /// don't navigate from here; Open goes to the entry.
     private func preview(_ entry: EntryDetail) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(entry.day.map { "\($0.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year())) · \($0.relative(to: model.today?.day ?? JournalDay(localDate: .now)))" } ?? entry.date)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.tint)
-            Group {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(entry.day.map { "\($0.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year())) · \($0.relative(to: model.today?.day ?? JournalDay(localDate: .now)))" } ?? entry.date)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.tint)
                 if let document = entry.document {
                     DocumentText(blocks: document, font: .system(size: bodySize, design: .serif), scale: 1, bodySize: bodySize)
                 } else {
@@ -94,26 +97,16 @@ struct RandomEntrySheet: View {
                         .lineSpacing(5)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
-            }
-            .frame(maxHeight: entry.imageURL == nil ? 260 : 150, alignment: .top)
-            .clipped()
-            .mask {
-                LinearGradient(stops: [.init(color: .black, location: 0.8), .init(color: .clear, location: 1)],
-                               startPoint: .top, endPoint: .bottom)
-            }
-            if entry.imageURL != nil, !entry.imageProcessing {
-                AsyncImage(url: entry.summary.thumbnailURL(width: 700)) { image in
-                    image.resizable().scaledToFill()
-                } placeholder: {
-                    Color.secondary.opacity(0.12)
+                if entry.imageProcessing || entry.imageURL != nil {
+                    EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing)
                 }
-                .frame(height: 110)
-                .frame(maxWidth: .infinity)
-                .clipShape(.rect(cornerRadius: 10))
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.bottom, 8)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .allowsHitTesting(false)
+        .scrollIndicators(.automatic)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .environment(\.openURL, OpenURLAction { _ in .discarded })
     }
 
     private func load() async {

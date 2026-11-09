@@ -221,11 +221,19 @@ final class JournalViewsTests: XCTestCase {
         row.tap()
         // Expanded: the rest of the entry shows in place.
         XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Taking that one with me")).firstMatch.waitForExistence(timeout: 5))
+        // While it's expanded, the sticky header is the entry's date (not just the month).
+        XCTAssertTrue(app.staticTexts[Calendar.current.date(byAdding: .day, value: -4, to: .now)!.formatted(.dateTime.weekday(.wide).month(.wide).day().year())].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Open"].exists, "No Open link on the expanded row")
         sleep(1)
         snap("timeline-expanded")
 
+        // Swipe left: Open and Actions; Actions has Edit (and the entry's tags).
         row.swipeLeft()
-        XCTAssertTrue(app.buttons["Edit"].waitForExistence(timeout: 3))
+        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 3))
+        app.buttons["Actions"].tap()
+        XCTAssertTrue(app.buttons["Edit"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["#work"].exists, "The entry's tags are in the Actions sheet")
+        snap("timeline-actions-sheet")
         app.buttons["Edit"].tap()
         XCTAssertTrue(app.textViews["Entry"].waitForExistence(timeout: 10))
         app.buttons["Cancel"].tap()
@@ -484,6 +492,77 @@ final class JournalViewsTests: XCTestCase {
         sleep(1)
         app.buttons["Open"].tap()
         XCTAssertTrue(app.staticTexts["A Random Memory"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+    }
+
+    /// Quick taps on several days all stick: saves go one at a time with the latest selection.
+    func testEmailScheduleRapidTapsAllSave() throws {
+        var app = launch()
+        openDailyEmail(app)
+        let days = ["Monday", "Tuesday", "Wednesday", "Thursday"]
+        let before = days.map { (app.buttons[$0].value as? String) == "On" }
+        for day in days { app.buttons[day].tap() } // as fast as XCUITest taps
+        sleep(3)
+
+        app.terminate()
+        app = launch()
+        openDailyEmail(app)
+        for (day, wasOn) in zip(days, before) {
+            XCTAssertEqual((app.buttons[day].value as? String) == "On", !wasOn, "\(day) should have flipped and been saved")
+        }
+        // Put them back.
+        for day in days { app.buttons[day].tap() }
+        sleep(3)
+    }
+
+    /// An expanded timeline row shows the edited text right after saving an edit.
+    func testExpandedRowShowsEdits() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Big presentation went well")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.tap() // expand
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Taking that one with me")).firstMatch.waitForExistence(timeout: 5))
+
+        row.swipeLeft()
+        app.buttons["Actions"].tap()
+        XCTAssertTrue(app.buttons["Edit"].waitForExistence(timeout: 10))
+        app.buttons["Edit"].tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        editor.tap()
+        editor.typeText(" Edited from the timeline.")
+        app.buttons["Save"].tap()
+        XCTAssertTrue(editor.waitForNonExistence(timeout: 15))
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Edited from the timeline")).firstMatch.waitForExistence(timeout: 10),
+                      "The expanded row should show the edit")
+    }
+
+    /// Swipe left → Actions lists the entry's tags; a dated tag shows its age right there.
+    func testActionsSheetShowsDatedTagAge() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Biscuit has discovered")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.swipeLeft()
+        app.buttons["Actions"].tap()
+        let tag = app.buttons["#Biscuit"]
+        XCTAssertTrue(tag.waitForExistence(timeout: 10))
+        XCTAssertTrue((tag.value as? String ?? "").contains("since entry"), "Dated tag shows its age")
+        snap("actions-dated-tag")
+        tag.tap() // searches it
+        XCTAssertTrue(app.staticTexts["1 entry"].waitForExistence(timeout: 10))
+    }
+
+    /// On This Day rows are the Journal's rows: swipe left offers Open and Actions.
+    func testOnThisDayRowsSwipe() throws {
+        let app = launch()
+        let memory = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Bruges!")).firstMatch
+        XCTAssertTrue(memory.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "1 year ago")).firstMatch.exists)
+        memory.swipeLeft()
+        XCTAssertTrue(app.buttons["Actions"].waitForExistence(timeout: 3))
+        app.buttons["Open"].tap()
         XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
     }
 }

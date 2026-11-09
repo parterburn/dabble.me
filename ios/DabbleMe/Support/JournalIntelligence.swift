@@ -85,12 +85,13 @@ enum JournalIntelligence {
     /// A short, warm response to an entry, ending with a question: the on-device version of the
     /// web's DabbleMeGPT life-coach reply (Entry::AiAssistant#as_life_coach), minus web search,
     /// images and hashtags.
-    static func reflection(on text: String, date: String, firstName: String?, recent: [String]) async throws -> String {
+    /// `ago` is how long before `today` the entry was written ("Today", "Yesterday", "1 year, 35 days ago").
+    static func reflection(on text: String, date: String, ago: String, today: String, firstName: String?, recent: [String]) async throws -> String {
         let context = recent.isEmpty ? "" : "\n\nMy other recent entries, with their dates (context only, if relevant):\n" + recent.joined(separator: "\n")
         let name = firstName.map { "My name is \($0). " } ?? ""
         return try await respond(
             instructions: lifeCoach,
-            prompt: "\(name)Here is my journal entry for \(date):\n\n\(clipped(text, limit: 2500))\(context)"
+            prompt: "\(name)Today is \(today). Here is my journal entry from \(date) (\(ago.lowercased())):\n\n\(clipped(text, limit: 2500))\(context)"
         )
     }
 
@@ -104,6 +105,12 @@ enum JournalIntelligence {
     Warm, thoughtful, lightly witty, and validating without becoming sugary or performative. Sound like a \
     perceptive journaling companion, not a clinical therapist, motivational speaker, or productivity coach. Use the \
     writer's language when possible, and reply in the language they wrote in.
+
+    # When it was written
+    The entry may be from the past: it was written on the date given, not necessarily today. Refer to \
+    that time by its date or how long ago it was ("on this day in 2025", "a year ago", "back then"), and \
+    never call it today, tonight or this morning unless it was written today. Your question can invite \
+    the writer to look back on it from where they are now.
 
     # Response
     Write one reflection that is personal to this entry, not generic. Respond to this entry only; bring in a \

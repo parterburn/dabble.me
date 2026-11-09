@@ -17,8 +17,10 @@ struct TimelineScrubber: View {
     @State private var hideTask: Task<Void, Never>?
 
     private static let space = "TimelineScrubber"
-    private let thumbHeight: CGFloat = 44
-    private let stripWidth: CGFloat = 44
+    /// The thumb is a circle three-quarters on screen, tucked into the right edge.
+    private let thumbHeight: CGFloat = 52
+    private let stripWidth: CGFloat = 52
+    private var tucked: CGFloat { thumbHeight / 4 }
 
     var body: some View {
         GeometryReader { geometry in
@@ -39,21 +41,30 @@ struct TimelineScrubber: View {
                         .padding(.vertical, 8)
                         .background(.regularMaterial, in: .capsule)
                         .shadow(color: .black.opacity(0.15), radius: 6, y: 2)
-                        .offset(x: -stripWidth - 70, y: dragFraction * track + thumbHeight / 2 - 18)
+                        .offset(x: -stripWidth - 56, y: dragFraction * track + thumbHeight / 2 - 18)
                         .allowsHitTesting(false)
                 }
 
                 // Only the thumb takes touches, so scrolling near the edge still scrolls the list.
                 // It stays grabbable after fading out, like Google Photos.
-                Capsule()
+                Circle()
                     .fill(.regularMaterial)
-                    .overlay(appIcon("slab-sort").resizable().scaledToFit().frame(width: 14, height: 14).foregroundStyle(.secondary))
-                    .frame(width: 26, height: thumbHeight)
-                    .shadow(color: .black.opacity(0.15), radius: 4, y: 1)
+                    .overlay(alignment: .leading) {
+                        // Centered in the part that's on screen, as bold as the toolbar's +.
+                        appIcon("slab-sort")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 20, height: 20)
+                            .foregroundStyle(.primary)
+                            .frame(width: thumbHeight - tucked)
+                    }
+                    .overlay(Circle().strokeBorder(.separator, lineWidth: 0.5))
+                    .shadow(color: .black.opacity(0.18), radius: 6, x: -1, y: 2)
+                    .scaleEffect(dragFraction != nil ? 1.08 : 1, anchor: .trailing)
+                    .frame(width: thumbHeight, height: thumbHeight)
                     .opacity(visible || dragFraction != nil ? 1 : 0.001)
-                    .frame(width: stripWidth, height: thumbHeight, alignment: .trailing)
                     .contentShape(.rect)
-                    .offset(x: -6, y: fraction * track)
+                    .offset(x: tucked, y: fraction * track)
                     .gesture(drag(trackHeight: track))
                     .accessibilityElement()
                     .accessibilityLabel("Timeline scrubber")
