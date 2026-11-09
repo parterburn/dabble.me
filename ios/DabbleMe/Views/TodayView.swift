@@ -1,6 +1,8 @@
 import SwiftUI
 
-/// Today: write (or add to) today's entry, and look back at this date in earlier years.
+/// Today: write today's entry, and look back at this date in earlier years. Entries here are the
+/// Journal's rows (tap to expand, again to open; swipe right for Actions, left to Open), and each
+/// memory's date sticks at the top while you read it.
 struct TodayView: View {
     @Environment(AppModel.self) private var model
     @State private var path = NavigationPath()
@@ -13,36 +15,41 @@ struct TodayView: View {
     @AppStorage("ai.prompt.text") private var aiPromptText = ""
     @State private var isWritingPrompt = false
     @State private var promptError: String?
+    @State private var expanded: Set<Int> = []
+    @State private var actions = EntryActions()
 
     var body: some View {
         NavigationStack(path: $path) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 28) {
-                    if let today = model.today {
-                        // The date is the page title (the nav bar is hidden here).
-                        // No year: it's always today. One line, shrinking a little for long dates.
-                        Text(today.day?.formatted(.dateTime.weekday(.wide).month(.wide).day()) ?? today.date)
-                            .font(.system(.largeTitle, design: .serif, weight: .semibold))
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                            .accessibilityLabel(today.day?.long ?? today.date)
-                            .accessibilityAddTraits(.isHeader)
-                        todaySection(today)
-                        onThisDaySection(today)
-                    } else if let error = model.timelineError {
-                        ContentUnavailableView("Couldn't load today", systemImage: "wifi.exclamationmark", description: Text(error))
-                    } else {
-                        ProgressView().frame(maxWidth: .infinity, minHeight: 200)
-                    }
+            // A list (not a plain scroll view) so On This Day rows swipe like the Journal's.
+            List {
+                if let today = model.today {
+                    // The date is the page title (the nav bar is hidden here).
+                    // No year: it's always today. One line, shrinking a little for long dates.
+                    Text(today.day?.formatted(.dateTime.weekday(.wide).month(.wide).day()) ?? today.date)
+                        .font(.system(.largeTitle, design: .serif, weight: .semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.7)
+                        .accessibilityLabel(today.day?.long ?? today.date)
+                        .accessibilityAddTraits(.isHeader)
+                        .plainRow()
+                    todaySection(today)
+                    onThisDaySection(today)
+                } else if let error = model.timelineError {
+                    ContentUnavailableView("Couldn't load today", systemImage: "wifi.exclamationmark", description: Text(error))
+                        .plainRow()
+                } else {
+                    ProgressView().frame(maxWidth: .infinity, minHeight: 200)
+                        .plainRow()
                 }
-                .padding()
-                .frame(maxWidth: 680, alignment: .leading)
-                .frame(maxWidth: .infinity)
             }
+            .listStyle(.plain)
+            .frame(maxWidth: 680)
+            .frame(maxWidth: .infinity)
+            .entryActionSheets(actions)
             .navigationTitle("Today") // back-button label on entries opened from here
             .toolbarVisibility(.hidden, for: .navigationBar)
-            .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id, sequence: $0.sequence) }
+            .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
             .refreshable { await model.loadToday() }
             .onChange(of: model.composeRequest, initial: true) { _, requested in
                 guard requested else { return }
@@ -64,17 +71,9 @@ struct TodayView: View {
     @ViewBuilder
     private func todaySection(_ today: TodaySummary) -> some View {
         if let entry = today.entry {
-            VStack(alignment: .leading, spacing: 12) {
-                SectionTitle("Today's Entry")
-                NavigationLink(value: EntryRoute(id: entry.id)) {
-                    MemoryCard(entry: entry.summary, caption: nil)
-                }
-                .buttonStyle(.plain)
-                if model.me?.canWrite == true {
-                    Button("Add to Today's Entry", systemImage: "plus") { composing = true }
-                        .buttonStyle(.bordered)
-                }
-            }
+            SectionTitle("Today's Entry")
+                .plainRow()
+            row(entry.summary, showsDate: false)
         } else {
             VStack(alignment: .leading, spacing: 14) {
                 let usesAI = JournalIntelligence.isEnabled(for: model.me)
@@ -90,29 +89,41 @@ struct TodayView: View {
                         .redacted(reason: .placeholder)
                         .accessibilityLabel("Writing a prompt for you")
                 } else if let prompt = personal ?? today.prompt {
-                    Text(personal != nil ? "A prompt for you" : "Today's prompt")
-                        .font(.caption.weight(.semibold))
-                        .textCase(.uppercase)
-                        .foregroundStyle(.tint)
+                    HStack {
+                        Text(personal != nil ? "A prompt for you" : "Today's prompt")
+                            .font(.caption.weight(.semibold))
+                            .textCase(.uppercase)
+                            .foregroundStyle(.tint)
+                        Spacer()
+                        if usesAI, personal != nil {
+                            // Another prompt: an icon in the card's top-right corner.
+                            Button {
+                                Task { await writePrompt(for: today) }
+                            } label: {
+                                if isWritingPrompt {
+                                    ProgressView().controlSize(.small)
+                                } else {
+                                    appIcon("slab-arrows-rotate")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 16, height: 16)
+                                        .foregroundStyle(.tint)
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .frame(width: 32, height: 32) // the tap target stays comfortable
+                            .contentShape(.rect)
+                            .padding(.vertical, -8) // keep the label row's height
+                            .disabled(isWritingPrompt)
+                            .accessibilityLabel("Another Prompt")
+                        }
+                    }
                     Text(prompt)
                         .font(.system(.title2, design: .serif))
                         .contentTransition(.opacity)
                 } else {
                     Text("How was your day?")
                         .font(.system(.title2, design: .serif))
-                }
-                if usesAI, personal != nil {
-                    Button {
-                        Task { await writePrompt(for: today) }
-                    } label: {
-                        if isWritingPrompt {
-                            ProgressView().controlSize(.small)
-                        } else {
-                            Label("Another Prompt", systemImage: "sparkles")
-                        }
-                    }
-                    .font(.subheadline)
-                    .disabled(isWritingPrompt)
                 }
                 if model.me?.canWrite == false {
                     Text("Reply to today's Dabble Me email and it'll show up here as your entry.")
@@ -122,7 +133,7 @@ struct TodayView: View {
                     Button {
                         composing = true
                     } label: {
-                        Label("Write Today's Entry", systemImage: "square.and.pencil")
+                        Text("Write Today's Entry")
                             .frame(maxWidth: .infinity, minHeight: 30)
                     }
                     .buttonStyle(.borderedProminent)
@@ -132,6 +143,8 @@ struct TodayView: View {
             .padding(20)
             .background(Color("Paper"), in: .rect(cornerRadius: 16))
             .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.quaternary))
+            .padding(.vertical, 8)
+            .plainRow()
             .task(id: "\(today.date)|\(JournalIntelligence.isEnabled(for: model.me))") {
                 guard JournalIntelligence.isEnabled(for: model.me), aiPromptDay != today.date else { return }
                 await writePrompt(for: today, quietly: true)
@@ -144,13 +157,15 @@ struct TodayView: View {
         guard !isWritingPrompt else { return }
         isWritingPrompt = true
         defer { isWritingPrompt = false }
-        let recent = (try? await model.recentEntries())?.map(\.excerpt).filter { !$0.isEmpty } ?? []
+        let day = today.day ?? JournalDay(localDate: .now)
+        let recent = JournalIntelligence.dated((try? await model.recentEntries()) ?? [], today: day)
         do {
-            let text = try await JournalIntelligence.reflectionPrompt(from: recent)
+            let text = try await JournalIntelligence.reflectionPrompt(from: recent, today: day)
             withAnimation {
                 aiPromptDay = today.date
                 aiPromptText = text
             }
+            WidgetSync.update(from: model)
         } catch is CancellationError {
         } catch {
             if !quietly { promptError = error.localizedDescription }
@@ -161,77 +176,80 @@ struct TodayView: View {
 
     @ViewBuilder
     private func onThisDaySection(_ today: TodaySummary) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionTitle("On This Day")
-            if !today.onThisDayAvailable {
-                Text("See what you wrote on this date in past years with Dabble Me PRO.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            } else if today.onThisDay.isEmpty {
-                Text("Nothing from this date in earlier years yet. Write today, and next year it'll be waiting for you here.")
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(today.onThisDay) { memory in
-                    NavigationLink(value: EntryRoute(id: memory.id)) {
-                        MemoryCard(entry: memory, caption: caption(for: memory))
-                    }
-                    .buttonStyle(.plain)
-                    .entryPreview(memory) { path.append(EntryRoute(id: memory.id)) }
+        SectionTitle("On This Day", icon: "slab-backward")
+            .padding(.top, 12)
+            .plainRow()
+        if !today.onThisDayAvailable {
+            Text("See what you wrote on this date in past years with Dabble Me PRO.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .plainRow()
+        } else if today.onThisDay.isEmpty {
+            Text("Nothing from this date in earlier years yet. Write today, and next year it'll be waiting for you here.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .plainRow()
+        } else {
+            // One section per memory, so its date sticks at the top while you scroll through it.
+            ForEach(today.onThisDay) { memory in
+                Section {
+                    row(memory, showsDate: false)
+                } header: {
+                    MonthHeader(title: Self.memoryTitle(memory), isDay: true)
                 }
             }
         }
     }
 
-    private func caption(for memory: EntrySummary) -> String {
-        let years = memory.yearsAgo ?? 0
-        let ago = years == 1 ? "1 year ago" : "\(years) years ago"
-        return "\(ago) · \(memory.day?.year ?? "")"
+    /// "1 year ago · Saturday, November 8, 2025".
+    private static func memoryTitle(_ memory: EntrySummary) -> String {
+        let date = memory.day?.formatted(.dateTime.weekday(.wide).month(.wide).day().year()) ?? memory.date
+        guard let years = memory.yearsAgo else { return date }
+        return "\(years == 1 ? "1 year" : "\(years) years") ago · \(date)"
+    }
+
+    /// The Journal's row: tap to expand, again to open; swipe right for Actions, left to Open.
+    private func row(_ entry: EntrySummary, showsDate: Bool) -> some View {
+        TimelineEntryRow(entry: entry, isExpanded: expanded.contains(entry.id), showsDateWhenExpanded: showsDate, actions: actions,
+                         onTap: {
+                             if expanded.contains(entry.id) {
+                                 path.append(EntryRoute(id: entry.id))
+                             } else {
+                                 withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(entry.id) }
+                             }
+                         },
+                         onOpen: { path.append(EntryRoute(id: entry.id)) })
+            .entryPreview(entry) { path.append(EntryRoute(id: entry.id)) }
+    }
+}
+
+private extension View {
+    /// A list row that's just page content: no separator, no row background.
+    func plainRow() -> some View {
+        listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
     }
 }
 
 private struct SectionTitle: View {
     let title: String
+    var icon: String?
 
-    init(_ title: String) {
+    init(_ title: String, icon: String? = nil) {
         self.title = title
+        self.icon = icon
     }
 
     var body: some View {
-        Text(title)
-            .font(.system(.title3, design: .serif, weight: .semibold))
-            .accessibilityAddTraits(.isHeader)
-    }
-}
-
-/// A larger, card-style entry preview for Today (memories read better with room to breathe).
-private struct MemoryCard: View {
-    let entry: EntrySummary
-    let caption: String?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if let caption {
-                Text(caption)
-                    .font(.subheadline.weight(.semibold))
+        HStack(spacing: 8) {
+            if let icon {
+                appIcon(icon)
                     .foregroundStyle(.tint)
+                    .accessibilityHidden(true)
             }
-            HStack(alignment: .top, spacing: 12) {
-                Text(entry.excerpt.isEmpty ? "📷 Photo" : entry.excerpt)
-                    .font(.system(.body, design: .serif))
-                    .lineLimit(6)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                if entry.imageProcessing || entry.imageURL != nil {
-                    EntryPhoto(url: entry.thumbnailURL(width: 168), isProcessing: entry.imageProcessing, size: .thumbnail)
-                        .accessibilityHidden(true)
-                }
-            }
+            Text(title)
+                .font(.system(.title3, design: .serif, weight: .semibold))
+                .accessibilityAddTraits(.isHeader)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background.secondary, in: .rect(cornerRadius: 14))
-        .contentShape(.rect(cornerRadius: 14))
-        .accessibilityElement(children: .combine)
     }
 }

@@ -35,46 +35,47 @@ final class FlowTests: XCTestCase {
         let saved = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", "Testing the app after saving")).firstMatch
         XCTAssertTrue(saved.waitForExistence(timeout: 10), "New entry missing from the timeline")
-        saved.tap()
+        saved.tap() // expands in the timeline
+        sleep(1)
+        saved.tap() // opens
         XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10), "Entry detail never opened")
         app.navigationBars.buttons.element(boundBy: 0).tap()
         XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 10), "Could not get back to the journal")
     }
 
-    func testReadingTextSizeSetting() throws {
+    /// Text size is a pinch on the entry (there's no setting for it any more).
+    func testPinchChangesEntryTextSize() throws {
         openJournal()
-        app.tabBars.buttons["Settings"].tap()
-        let picker = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Entry Text Size")).firstMatch
-        XCTAssertTrue(picker.waitForExistence(timeout: 5))
-        picker.tap()
-        app.buttons["Largest"].tap()
-        snap("text-size-settings")
-
-        app.tabBars.buttons["Journal"].tap()
         let entry = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
         XCTAssertTrue(entry.waitForExistence(timeout: 10))
-        entry.tap()
-        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+        entry.tap() // expands in the timeline
         sleep(1)
-        snap("text-size-entry")
+        entry.tap() // opens
+        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
 
-        // Pinching in on the entry steps the size down; then put it back to Default for other runs.
-        let body = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Things I want to remember")).firstMatch
-        XCTAssertTrue(body.waitForExistence(timeout: 5))
-        body.pinch(withScale: 0.6, velocity: -1)
+        // A multi-line paragraph: room for two fingers, and its height shows the text size.
+        let paragraph = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to")).firstMatch
+        XCTAssertTrue(paragraph.waitForExistence(timeout: 5))
+        // The size is remembered between runs: start from the smallest.
+        paragraph.pinch(withScale: 0.3, velocity: -2)
+        sleep(1)
+        let smallest = paragraph.frame.height
+        paragraph.pinch(withScale: 2.5, velocity: 2)
+        sleep(1)
+        XCTAssertGreaterThan(paragraph.frame.height, smallest + 10, "Pinching out makes the text larger")
         snap("text-size-pinched")
+        // Back down to Default (three steps from Largest) for other runs.
+        paragraph.pinch(withScale: 0.5, velocity: -2)
         app.tabBars.buttons["Settings"].tap()
-        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Largest")).firstMatch.waitForExistence(timeout: 3),
-                       "Pinching in on an entry should make the text smaller than Largest")
-        picker.tap()
-        app.buttons["Default"].tap()
+        XCTAssertFalse(app.staticTexts["Entry Text Size"].exists)
+        XCTAssertFalse(app.staticTexts["Entries"].exists)
     }
 
     func testAIConnectorsInSettings() throws {
         openJournal()
         app.tabBars.buttons["Settings"].tap()
-        XCTAssertTrue(app.staticTexts["Entry Text Size"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Email"].waitForExistence(timeout: 10))
         let connector = app.links["Claude/ChatGPT Connector"]
         for _ in 0..<4 where !connector.isHittable {
             app.collectionViews.firstMatch.swipeUp(velocity: .slow)
@@ -94,32 +95,6 @@ final class FlowTests: XCTestCase {
         snap("today")
     }
 
-    func testPullUpOpensPreviousDays() throws {
-        openJournal()
-        let entry = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label CONTAINS %@", "Biscuit has discovered the heated blanket")).firstMatch
-        XCTAssertTrue(entry.waitForExistence(timeout: 10))
-        entry.tap()
-        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
-
-        // Each pull up past the bottom should open the previous day with an entry, every time.
-        // The last one is a quick flick that lets go early, like a thumb, and relies on the bounce.
-        for (index, expected) in ["Ran 5 miles", "Rainy day", "Hard conversation"].enumerated() {
-            sleep(1)
-            let scroll = app.scrollViews.firstMatch
-            if index == 2 {
-                scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.62))
-                    .press(forDuration: 0.01, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.52)),
-                           withVelocity: 2500, thenHoldForDuration: 0)
-            } else {
-                scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
-                    .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1)))
-            }
-            let previous = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", expected)).firstMatch
-            XCTAssertTrue(previous.waitForExistence(timeout: 5), "Pulling up should open the entry with \"\(expected)\"")
-        }
-    }
-
     func testScrubberJumpsToOldestMonth() throws {
         openJournal()
         let scroll = app.collectionViews.firstMatch
@@ -129,30 +104,17 @@ final class FlowTests: XCTestCase {
         let bottom = app.windows.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.97, dy: 0.88))
         scrubber.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).press(forDuration: 0.3, thenDragTo: bottom)
         let oldest = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "November 2023")).firstMatch
+        if !oldest.waitForExistence(timeout: 5) {
+            // The scrubber fades in while scrolling; a drag that starts as it appears can miss it.
+            scroll.swipeUp(velocity: .slow)
+            scrubber.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).press(forDuration: 0.3, thenDragTo: bottom)
+        }
         XCTAssertTrue(oldest.waitForExistence(timeout: 5), "Dragging to the bottom should jump to the oldest month")
         XCTAssertTrue(oldest.isHittable)
         let loaded = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", "Moved into the new apartment")).firstMatch
         XCTAssertTrue(loaded.waitForExistence(timeout: 3), "The month the scrubber lands on should load right away")
         snap("journal-scrubbed")
-    }
-
-    func testPullDownOpensNextDay() throws {
-        openJournal()
-        let entry = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label CONTAINS %@", "Biscuit has discovered the heated blanket")).firstMatch
-        XCTAssertTrue(entry.waitForExistence(timeout: 10))
-        entry.tap()
-        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
-
-        let scroll = app.scrollViews.firstMatch
-        let start = scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
-        start.press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.95)))
-
-        // The next (newer) day in the demo journal is the presentation entry.
-        let next = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Big presentation went well")).firstMatch
-        XCTAssertTrue(next.waitForExistence(timeout: 5), "Pulling down past the top should open the next day's entry")
-        snap("pulled-next-day")
     }
 
     func testRefreshPicksUpChangesInOlderMonths() throws {

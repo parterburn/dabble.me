@@ -62,7 +62,9 @@ final class PhotoEntryTests: XCTestCase {
         let saved = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", "Four photos, one collage")).firstMatch
         XCTAssertTrue(saved.waitForExistence(timeout: 10))
-        saved.tap()
+        saved.tap() // expands in the timeline
+        sleep(1)
+        saved.tap() // opens
         XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10), "The app froze after saving")
 
         // The processing placeholder turns into the collage once Sidekiq finishes.
@@ -74,3 +76,67 @@ final class PhotoEntryTests: XCTestCase {
         }
     }
 }
+
+/// Editing an entry's photos: add to the current photo (a collage), and remove it.
+final class PhotoEditTests: XCTestCase {
+    private func launch(photos: Bool) throws -> XCUIApplication {
+        guard let token = ProcessInfo.processInfo.environment["DABBLE_TOKEN"] else {
+            throw XCTSkip("Needs a local server, Sidekiq and TEST_RUNNER_DABBLE_TOKEN (rails ios:demo_account)")
+        }
+        let app = XCUIApplication()
+        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", "http://localhost:3000"]
+            + (photos ? ["-DabbleDebugComposePhotoURLs", "https://picsum.photos/id/1015/1600/1200"] : [])
+        app.launch()
+        return app
+    }
+
+    private func openEntry(_ app: XCUIApplication, containing text: String) {
+        app.tabBars.buttons["Journal"].tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.tap()
+        sleep(1)
+        // Tap the start of the text, away from any #hashtag link in it.
+        row.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.2)).tap()
+        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+    }
+
+    private func edit(_ app: XCUIApplication) {
+        app.buttons["Entry Actions"].tap()
+        app.buttons["Edit"].tap()
+        XCTAssertTrue(app.textViews["Entry"].waitForExistence(timeout: 10))
+    }
+
+    func testAddPhotoToEntryWithPhotoMakesCollage() throws {
+        let app = try launch(photos: true)
+        openEntry(app, containing: "Finally made it to Yosemite")
+        edit(app)
+        XCTAssertTrue(app.descendants(matching: .any)["Current photo"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "2 of 8 photos")).firstMatch.waitForExistence(timeout: 30))
+        snap("edit-photos")
+        app.buttons["Save"].tap()
+        XCTAssertTrue(app.textViews["Entry"].waitForNonExistence(timeout: 60), "Saving with a new photo should finish")
+        // The collage replaces the processing placeholder.
+        XCTAssertTrue(app.staticTexts["Processing photos…"].waitForExistence(timeout: 10) || app.images.firstMatch.exists)
+    }
+
+    func testRemovePhotoFromEntry() throws {
+        let app = try launch(photos: false)
+        openEntry(app, containing: "Biscuit has discovered")
+        edit(app)
+        let remove = app.buttons["Remove current photo"]
+        XCTAssertTrue(remove.waitForExistence(timeout: 10))
+        remove.tap()
+        XCTAssertFalse(app.descendants(matching: .any)["Current photo"].exists)
+        app.buttons["Save"].tap()
+        XCTAssertTrue(app.textViews["Entry"].waitForNonExistence(timeout: 30))
+        sleep(2)
+        snap("edit-photo-removed")
+    }
+
+    private func snap(_ name: String) {
+        guard let dir = ProcessInfo.processInfo.environment["DABBLE_DEBUG_DIR"] else { return }
+        try? XCUIScreen.main.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: "\(dir)/\(name).png"))
+    }
+}
+

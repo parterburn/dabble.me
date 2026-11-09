@@ -1,3 +1,4 @@
+import StoreKit
 import SwiftUI
 
 struct SettingsView: View {
@@ -7,7 +8,6 @@ struct SettingsView: View {
     @State private var confirmingDeletion = false
     @State private var deletionEmail: String?
     @State private var deletionError: String?
-    @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
     @AppStorage(ReminderSettings.writingEnabledKey) private var writingReminder = false
     @AppStorage(ReminderSettings.writingTimeKey) private var writingTime = ReminderSettings.defaultWritingTime
     @AppStorage(ReminderSettings.memoriesEnabledKey) private var memoriesReminder = false
@@ -15,10 +15,12 @@ struct SettingsView: View {
     @State private var notificationsDenied = false
     @AppStorage(WidgetSnapshot.showMemoriesKey, store: WidgetSnapshot.defaults) private var widgetShowsMemories = false
     @AppStorage(JournalIntelligence.enabledKey) private var onDeviceAI = true
+    /// The plan links to dabble.me/subscribe only on the US App Store, where Apple allows links to
+    /// buy outside the app (guideline 3.1.1(a), US storefront). Elsewhere it's plain text.
+    @State private var canLinkToSubscribe = false
     #if DEBUG
     @State private var pendingReminders = 0
     #endif
-    @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 17
 
     var body: some View {
         NavigationStack {
@@ -26,23 +28,20 @@ struct SettingsView: View {
                 if let me = model.me {
                     Section("Account") {
                         LabeledContent("Email", value: me.email)
-                        LabeledContent("Plan", value: me.isPro ? "PRO" : "Free")
-                        LabeledContent("Entries", value: me.entryCount.formatted())
-                    }
-                }
-
-                Section {
-                    Picker("Entry Text Size", selection: $textSize) {
-                        ForEach(ReadingTextSize.allCases) { size in
-                            Text(size.label).tag(size)
+                        if canLinkToSubscribe {
+                            Link(destination: AppConfig.webURL("subscribe")) {
+                                LabeledContent("Plan") {
+                                    HStack(spacing: 4) {
+                                        Text(me.isPro ? "PRO" : "Free")
+                                        Image(systemName: "arrow.up.forward").font(.caption)
+                                    }
+                                }
+                            }
+                            .foregroundStyle(.primary)
+                        } else {
+                            LabeledContent("Plan", value: me.isPro ? "PRO" : "Free")
                         }
                     }
-                    Text("How was your day? A little preview of how entries will read.")
-                        .font(.system(size: bodySize * textSize.scale, design: .serif))
-                        .foregroundStyle(.secondary)
-                        .accessibilityHidden(true)
-                } header: {
-                    Text("Reading")
                 }
 
                 remindersSection
@@ -54,17 +53,17 @@ struct SettingsView: View {
                     // the guide links to Claude's and ChatGPT's directories.
                     if let connectors = model.me?.aiConnectors {
                         Link(destination: connectors.guideUrl) {
-                            Label("Claude/ChatGPT Connector", systemImage: "sparkles")
+                            Label("Claude/ChatGPT Connector", icon: "slab-sparkles")
                         }
                     }
                     Link(destination: model.me?.settingsUrl ?? AppConfig.webURL("settings")) {
-                        Label("Email Schedule & Preferences", systemImage: "envelope.badge")
+                        Label("Email Preferences", icon: "slab-envelope")
                     }
                     Link(destination: model.me?.securityUrl ?? AppConfig.webURL("security")) {
-                        Label("Passkeys & Two-Factor", systemImage: "lock.shield")
+                        Label("Passkeys & Two-Factor", icon: "slab-shield")
                     }
                     Link(destination: AppConfig.webURL("entries/export")) {
-                        Label("Export Entries", systemImage: "square.and.arrow.up")
+                        Label("Export Entries", icon: "slab-arrow-up-from-line")
                     }
                 } header: {
                     Text("On dabble.me")
@@ -72,19 +71,31 @@ struct SettingsView: View {
 
                 Section {
                     Link(destination: AppConfig.webURL("support")) {
-                        Label("Help & Support", systemImage: "questionmark.circle")
+                        Label("Help & Support", icon: "slab-circle-question")
                     }
                     Link(destination: AppConfig.webURL("privacy")) {
-                        Label("Privacy Policy", systemImage: "hand.raised")
+                        Label("Privacy Policy", icon: "slab-hand")
                     }
                     Link(destination: AppConfig.webURL("terms")) {
-                        Label("Terms", systemImage: "doc.text")
+                        Label("Terms", icon: "slab-anchor")
                     }
                 }
 
                 Section {
+                    // Each dialog is attached to its button so it appears next to it, not at the top.
                     Button("Sign Out", role: .destructive) { confirmingSignOut = true }
+                        .confirmationDialog("Sign out of Dabble Me?", isPresented: $confirmingSignOut, titleVisibility: .visible) {
+                            Button("Sign Out", role: .destructive) { Task { await model.signOut() } }
+                        }
                     Button("Delete Account…", role: .destructive) { confirmingDeletion = true }
+                        // Deleting takes three deliberate steps: confirm here, open the emailed link, then
+                        // confirm with your password on dabble.me (and it can still be undone for an hour).
+                        .confirmationDialog("Delete your Dabble Me account?", isPresented: $confirmingDeletion, titleVisibility: .visible) {
+                            Button("Email Me a Deletion Link", role: .destructive) { Task { await requestDeletion() } }
+                            Button("Cancel", role: .cancel) {}
+                        } message: {
+                            Text("We'll email you a link to finish on dabble.me, where you'll confirm with your password. You can export your entries there first.")
+                        }
                 } footer: {
                     if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
                         Text("Dabble Me for iOS \(version)")
@@ -95,21 +106,11 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(removing: .title) // the tab says where you are
             .task { notificationsDenied = await ReminderScheduler.shared.isDenied() }
+            .task { canLinkToSubscribe = await Storefront.current?.countryCode == "USA" }
             .onChange(of: writingReminder) { _, on in Task { await remindersChanged(turnedOn: on) } }
             .onChange(of: memoriesReminder) { _, on in Task { await remindersChanged(turnedOn: on) } }
             .onChange(of: writingTime) { Task { await ReminderScheduler.shared.reschedule(for: model) } }
             .onChange(of: memoriesTime) { Task { await ReminderScheduler.shared.reschedule(for: model) } }
-            .confirmationDialog("Sign out of Dabble Me?", isPresented: $confirmingSignOut, titleVisibility: .visible) {
-                Button("Sign Out", role: .destructive) { Task { await model.signOut() } }
-            }
-            // Deleting takes three deliberate steps: confirm here, open the emailed link, then
-            // confirm with your password on dabble.me (and it can still be undone for an hour).
-            .confirmationDialog("Delete your Dabble Me account?", isPresented: $confirmingDeletion, titleVisibility: .visible) {
-                Button("Email Me a Deletion Link", role: .destructive) { Task { await requestDeletion() } }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("We'll email you a link to finish on dabble.me, where you'll confirm with your password. You can export your entries there first.")
-            }
             .alert("Check your email", isPresented: .present($deletionEmail)) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -133,6 +134,7 @@ private extension SettingsView {
             if model.me?.isPro != true {
                 Label("Reminders are part of Dabble Me PRO.", systemImage: "bell")
                     .foregroundStyle(.secondary)
+                EmailScheduleRow()
             } else {
                 Toggle("Daily Writing Reminder", isOn: $writingReminder)
                     #if DEBUG
@@ -154,6 +156,7 @@ private extension SettingsView {
                 if memoriesReminder {
                     DatePicker("Time", selection: minutesBinding($memoriesTime), displayedComponents: .hourAndMinute)
                 }
+                EmailScheduleRow()
                 if notificationsDenied {
                     Button("Turn On Notifications in Settings", systemImage: "bell.slash") {
                         if let url = URL(string: UIApplication.openNotificationSettingsURLString) { openURL(url) }
@@ -202,7 +205,12 @@ private extension SettingsView {
         Section {
             Toggle("Require \(lock.methodName)", isOn: Binding(
                 get: { lock.isEnabled },
-                set: { enabled in Task { await lock.setEnabled(enabled) } }
+                set: { enabled in
+                    Task {
+                        await lock.setEnabled(enabled)
+                        WidgetSync.update(from: model) // the personal prompt leaves the widget while locked
+                    }
+                }
             ))
             .disabled(!lock.isAvailable)
             if model.me?.isPro == true {

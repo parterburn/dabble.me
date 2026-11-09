@@ -5,6 +5,7 @@ module Api
   # from Entry#text_body) so the client never has to render stored HTML.
   class EntrySerializer
     EXCERPT_LENGTH = 280
+    PREVIEW_LENGTH = 1500
 
     def self.summary(entry)
       new(entry).summary
@@ -23,6 +24,9 @@ module Api
         id: entry.id,
         date: entry.date.to_date.iso8601,
         excerpt: plain_excerpt,
+        # The text for long-press previews (light Markdown, capped), so the app can show the whole
+        # entry right away: iOS sizes a preview once, before anything could load.
+        preview_text: display_text(entry.text_body).truncate(PREVIEW_LENGTH, separator: ' '),
         image_url: entry.display_image_url,
         image_processing: entry.uploading_image?,
         hashtags: entry.hashtags || [],

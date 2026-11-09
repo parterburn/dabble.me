@@ -86,6 +86,7 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       expect(response).to have_http_status(:ok)
       expect(json["entries"].map { |e| e["id"] }).to eq([mine.id, older.id])
       expect(json["entries"].first).to include("date" => "2025-03-04", "hashtags" => ["coffee"])
+      expect(json["entries"].first["preview_text"]).to eq("Hello **there** #coffee")
       expect(json).to include("page" => 1, "next_page" => nil, "total_count" => 2)
     end
 
@@ -391,6 +392,49 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       expect(existing.reload.uploading_image?).to be(true)
     end
 
+    describe "editing photos (PATCH)" do
+      let(:entry) { create(:entry, user: pro_user, date: Time.zone.local(2026, 3, 1, 12), body: "<p>Day</p>") }
+
+      it "adds a photo to an entry without one" do
+        key = photo_key(pro_user)
+        patch "/api/v1/entries/#{entry.id}", params: { uploaded_image_keys: [key] }, headers: auth(pro_user), as: :json
+        expect(response).to have_http_status(:ok)
+        expect(ProcessEntryImageJob).to have_received(:perform_later).with(entry.id, key)
+        expect(json["entry"]["image_processing"]).to be(true)
+        expect(entry.reload.body).to include("Day") # text untouched without a document
+      end
+
+      it "folds new photos into a collage with the entry's photo" do
+        give_photo(entry)
+        patch "/api/v1/entries/#{entry.id}", params: { uploaded_image_keys: [photo_key(pro_user)] }, headers: auth(pro_user), as: :json
+        expect(response).to have_http_status(:ok)
+        expect(ImageCollageJob).to have_received(:perform_later).with(entry.id, urls: [kind_of(String)])
+      end
+
+      it "removes the photo, or replaces it" do
+        give_photo(entry)
+        allow_any_instance_of(ImageUploader).to receive(:remove!)
+        patch "/api/v1/entries/#{entry.id}", params: { remove_image: true }, headers: auth(pro_user), as: :json
+        expect(response).to have_http_status(:ok)
+        expect(entry.reload[:image]).to be_blank
+
+        give_photo(entry)
+        key = photo_key(pro_user)
+        patch "/api/v1/entries/#{entry.id}", params: { remove_image: true, uploaded_image_keys: [key] }, headers: auth(pro_user), as: :json
+        expect(ProcessEntryImageJob).to have_received(:perform_later).with(entry.id, key)
+        expect(ImageCollageJob).not_to have_received(:perform_later)
+      end
+
+      it "refuses more photos than a collage holds, and other people's uploads" do
+        give_photo(entry)
+        patch "/api/v1/entries/#{entry.id}", params: { uploaded_image_keys: Array.new(8) { photo_key(pro_user) } }, headers: auth(pro_user), as: :json
+        expect(response).to have_http_status(:unprocessable_content)
+        patch "/api/v1/entries/#{entry.id}", params: { uploaded_image_keys: [photo_key(free_user)] }, headers: auth(pro_user), as: :json
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(ImageCollageJob).not_to have_received(:perform_later)
+      end
+    end
+
     it "refuses more photos than the collage can hold" do
       post "/api/v1/entries", params: { date: "2026-02-01", body: "x", uploaded_image_keys: Array.new(9) { photo_key(pro_user) } },
                               headers: auth(pro_user), as: :json
@@ -507,6 +551,47 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
         get "/api/v1/hashtags", params: { days: 3650, limit: 2 }, headers: auth(pro_user)
       end
       expect(json["hashtags"].map { |h| h["tag"] }).to eq(%w[ancient Cooking])
+    end
+  end
+
+  describe "/api/v1/email_schedule" do
+    it "shows the schedule with time zones" do
+      get "/api/v1/email_schedule", headers: auth(free_user)
+      expect(response).to have_http_status(:ok)
+      expect(json).to include("days" => ["Sun"], "can_choose_days" => false, "timezone" => free_user.send_timezone)
+      expect(json["hour"]).to eq(free_user.send_time.hour)
+      expect(json["time_zones"]).to include(include("name" => "Pacific Time (US & Canada)", "iana" => "America/Los_Angeles"))
+    end
+
+    it "lets PRO choose days, hour and time zone" do
+      patch "/api/v1/email_schedule", params: { days: %w[Fri Mon Wed], hour: 7, timezone: "Pacific Time (US & Canada)" },
+                                      headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:ok)
+      expect(json).to include("days" => %w[Mon Wed Fri], "hour" => 7, "timezone" => "Pacific Time (US & Canada)")
+      pro_user.reload
+      expect(pro_user.frequency).to eq(%w[Mon Wed Fri])
+      expect(pro_user.send_time.hour).to eq(7)
+    end
+
+    it "keeps free accounts to Sunday, but lets them set the time, zone, or turn it off" do
+      patch "/api/v1/email_schedule", params: { days: %w[Sun Mon] }, headers: auth(free_user), as: :json
+      expect(response).to have_http_status(:forbidden)
+
+      patch "/api/v1/email_schedule", params: { hour: 6, timezone: "Eastern Time (US & Canada)" }, headers: auth(free_user), as: :json
+      expect(response).to have_http_status(:ok)
+      expect(json).to include("hour" => 6, "timezone" => "Eastern Time (US & Canada)", "days" => ["Sun"])
+
+      patch "/api/v1/email_schedule", params: { days: [] }, headers: auth(free_user), as: :json
+      expect(json["days"]).to eq([])
+    end
+
+    it "rejects nonsense" do
+      patch "/api/v1/email_schedule", params: { hour: 24 }, headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      patch "/api/v1/email_schedule", params: { timezone: "Mars/Olympus" }, headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      patch "/api/v1/email_schedule", params: { days: ["Funday"] }, headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:unprocessable_content)
     end
   end
 

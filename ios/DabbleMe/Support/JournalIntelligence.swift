@@ -24,22 +24,22 @@ enum JournalIntelligence {
     }
 
     enum Failure: LocalizedError {
-        case unavailable, noAnswer, noHashtagsYet, noMatchingHashtags
+        case unavailable, noAnswer, noMatchingHashtags
 
         var errorDescription: String? {
             switch self {
             case .unavailable: "Apple Intelligence isn't available on this device right now."
             case .noAnswer: "Apple Intelligence couldn't come up with anything for this one."
-            case .noHashtagsYet: "Suggestions come from hashtags you already use. Add a #hashtag to an entry to get started."
             case .noMatchingHashtags: "None of your hashtags fit this entry yet."
             }
         }
     }
 
-    /// Up to 3 of the writer's own hashtags that fit an entry, minus ones already in it. Never
-    /// invents new tags: the model picks from the list, and anything else it says is dropped.
+    /// Up to 3 hashtags for an entry, minus ones already in it. Once the writer has hashtags, only
+    /// from those (the model picks from the list; anything else it says is dropped). With none yet,
+    /// it suggests new ones.
     static func suggestHashtags(for text: String, from existing: [String]) async throws -> [String] {
-        guard !existing.isEmpty else { throw Failure.noHashtagsYet }
+        guard !existing.isEmpty else { return try await suggestNewHashtags(for: text) }
         let already = Set(hashtags(in: text).map { $0.lowercased() })
         let candidates = existing.filter { !already.contains($0.lowercased()) }
         guard !candidates.isEmpty else { throw Failure.noMatchingHashtags }
@@ -62,14 +62,35 @@ enum JournalIntelligence {
         return Array(picked.prefix(3))
     }
 
+    private static func suggestNewHashtags(for text: String) async throws -> [String] {
+        let reply = try await respond(
+            instructions: """
+            You suggest hashtags for a private journal entry. Reply with 1 to 3 hashtags that directly describe \
+            what the entry is about (a person, pet, place, activity or theme), separated by spaces, and nothing \
+            else. Each starts with # and is a single lowercase word or joinedword, like #climbing #family.
+            """,
+            prompt: "Journal entry:\n\(clipped(text, limit: 2500))",
+            temperature: 0.2
+        )
+        let already = Set(hashtags(in: text).map { $0.lowercased() })
+        var seen = Set<String>()
+        // Usually "#a #b"; tolerate bare words too.
+        let found = hashtags(in: reply)
+        let words = found.isEmpty ? reply.split(whereSeparator: { !$0.isLetter && !$0.isNumber && $0 != "_" }).map(String.init).filter { $0.first?.isLetter == true } : found
+        let picked = words.map { $0.lowercased() }.filter { !already.contains($0) && seen.insert($0).inserted }
+        guard !picked.isEmpty else { throw Failure.noAnswer }
+        return Array(picked.prefix(3))
+    }
+
     /// A short, warm response to an entry, ending with a question: the on-device version of the
     /// web's reflection (Entry::AiAssistant#as_life_coach), minus images.
-    static func reflection(on text: String, date: String, firstName: String?, recent: [String]) async throws -> String {
-        let context = recent.isEmpty ? "" : "\n\nMy recent entries (context only, if relevant):\n" + recent.map { "- \($0)" }.joined(separator: "\n")
+    /// `ago` is how long before `today` the entry was written ("Today", "Yesterday", "1 year, 35 days ago").
+    static func reflection(on text: String, date: String, ago: String, today: String, firstName: String?, recent: [String]) async throws -> String {
+        let context = recent.isEmpty ? "" : "\n\nMy other recent entries, with their dates (context only, if relevant):\n" + recent.joined(separator: "\n")
         let name = firstName.map { "My name is \($0). " } ?? ""
         return try await respond(
             instructions: lifeCoach,
-            prompt: "\(name)Here is my journal entry for \(date):\n\n\(clipped(text, limit: 2500))\(context)"
+            prompt: "\(name)Today is \(today). Here is my journal entry from \(date) (\(ago.lowercased())):\n\n\(clipped(text, limit: 2500))\(context)"
         )
     }
 
@@ -83,6 +104,12 @@ enum JournalIntelligence {
     Warm, thoughtful, lightly witty, and validating without becoming sugary or performative. Sound like a \
     perceptive journaling companion, not a clinical therapist, motivational speaker, or productivity coach. Use the \
     writer's language when possible, and reply in the language they wrote in.
+
+    # When it was written
+    The entry may be from the past: it was written on the date given, not necessarily today. Refer to \
+    that time by its date or how long ago it was ("on this day in 2025", "a year ago", "back then"), and \
+    never call it today, tonight or this morning unless it was written today. Your question can invite \
+    the writer to look back on it from where they are now.
 
     # Response
     Write one reflection that is personal to this entry, not generic. Respond to this entry only; bring in a \
@@ -105,15 +132,31 @@ enum JournalIntelligence {
     """
 
     /// One reflection question inspired by recent entries.
-    static func reflectionPrompt(from recent: [String]) async throws -> String {
-        let context = recent.prefix(5).enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n")
+    /// `recent` are dated lines from `dated(_:today:)`: the model needs to know those things happened
+    /// on earlier days, or it asks about "today's" game that was yesterday. (No concrete examples in
+    /// the instructions: the on-device model copies them, calling a hike "yesterday's game".)
+    static func reflectionPrompt(from recent: [String], today: JournalDay) async throws -> String {
+        let context = recent.prefix(5).joined(separator: "\n")
+        let todayText = today.formatted(.dateTime.weekday(.wide).month(.wide).day())
         return try await respond(
             instructions: """
-            You write one gentle journaling prompt: a single question under 20 words that invites the writer \
-            to reflect on today, building on themes from their recent entries. Reply with only the question.
+            You write one gentle journaling prompt for today: a single question under 20 words. Recent entries \
+            are given with their dates; everything in them happened on those earlier days, not today. If the \
+            question mentions something from them, use the entry's own words for it (a hike stays a hike), say \
+            when it was (yesterday, last week), and ask how it connects to today. Never mention anything the \
+            entries don't say, and never describe a past event as happening today. Reply with only the question.
             """,
-            prompt: context.isEmpty ? "No recent entries yet." : "Recent entries:\n\(clipped(context))"
+            prompt: "Today is \(todayText).\n" + (context.isEmpty ? "No recent entries yet." : "Recent entries:\n\(clipped(context))")
         )
+    }
+
+    /// "- Yesterday (Saturday, Nov 7): The basketball win was fun!"
+    static func dated(_ entries: [EntrySummary], today: JournalDay) -> [String] {
+        entries.filter { !$0.excerpt.isEmpty }.map { entry in
+            guard let day = entry.day else { return "- \(entry.excerpt)" }
+            let date = day.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
+            return "- \(day.relative(to: today)) (\(date)): \(entry.excerpt)"
+        }
     }
 
     static func hashtags(in text: String) -> [String] {

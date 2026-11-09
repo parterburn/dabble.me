@@ -32,10 +32,10 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 > WRITE YOUR WAY
 > • Bold, italic and underline, links, and lists that start as you type "- " or "1." 
 > • Add up to 8 photos. Several become a beautiful collage automatically
-> • Dictate instead of typing, transcribed on your device
+> • Edit entries later, photos included
 > • A daily writing prompt, written just for you from your recent days (on devices with Apple Intelligence)
 > • Unfinished entries are saved as you type, even if the app closes
-> • Prefer email? Reply to Dabble Me's "How was your day?" email and it becomes an entry too
+> • Prefer email? Reply to Dabble Me's "How was your day?" email and it becomes an entry too. Choose its days, time and time zone right in the app
 >
 > BUILD THE HABIT
 > • A daily reminder to write, skipped on days you already have
@@ -46,15 +46,16 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 > • Your whole journal by month, with a timeline scrubber to jump years back
 > • Photos view: every day you captured, in one grid
 > • Search every word you've ever written, or tap your #hashtags
-> • Pull down or up to move to the next or previous day; tap the date to see how long ago it was
+> • Tap an entry to read it right in the timeline; swipe to reflect or edit
+> • Tap an entry's date to see how long ago it was
 > • Long-press any entry to preview it
 > • Give a #hashtag a date (a birthday, an anniversary) and see how old your kids were, or how long it had been, in every entry
-> • Random entry: rediscover a moment you'd forgotten
+> • Shake your phone for a random memory you'd forgotten
 > • Photos full screen with pinch to zoom; save or share the ones you love
 > • Pinch to make entries easier to read
 >
 > APPLE INTELLIGENCE, ON YOUR DEVICE
-> On supported iPhones and iPads, Dabble Me responds to an entry with a warm, thoughtful reflection and a question to keep you writing, suggests which of your hashtags fit as you write, and writes each day's prompt from your recent days. It all runs on your device; your journal isn't sent anywhere for it.
+> On supported iPhones and iPads, Dabble Me responds to an entry with a warm, thoughtful reflection and a question to keep you writing (just pull down on it), suggests which of your hashtags fit as you write, and writes each day's prompt from your recent days. It all runs on your device; your journal isn't sent anywhere for it.
 >
 > ASK AI ABOUT YOUR JOURNAL
 > Connect Claude or ChatGPT to your journal and ask things like "What made me happiest this year?" or "When did I last go camping?" You approve access, and you can remove it any time.
@@ -67,7 +68,7 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 > • Sign in with a passkey, password, or two-factor code
 > • Export everything, any time
 >
-> Free accounts can read their journal, write entries, and see their stats. Photos, search, On This Day, reminders, dictation, Apple Intelligence features, and AI connections are part of Dabble Me PRO.
+> Free accounts can read their journal, write entries, and see their stats. Photos, search, On This Day, reminders, Apple Intelligence features, and AI connections are part of Dabble Me PRO.
 
 **Keywords (100)**: these don't repeat words already in the name, which Apple indexes anyway, and use no third-party trademarks (guideline 2.3.7).
 
@@ -94,7 +95,7 @@ Data used to track you: **none**. Data linked to you, all for **App Functionalit
 | User Content → Photos or Videos | Photos attached to entries |
 | Identifiers → User ID | Account identity |
 
-The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resources/PrivacyInfo.xcprivacy`. Not collected: dictation audio and Apple Intelligence features run on the device; reminders, the Face ID setting and drafts stay on the device; the widget reads a streak count the app stores in its App Group.
+The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resources/PrivacyInfo.xcprivacy`. Not collected: Apple Intelligence features run on the device; reminders, the Face ID setting and drafts stay on the device; the widget reads a streak count the app stores in its App Group.
 
 ## App Review information
 
@@ -122,6 +123,6 @@ In `ios/App Store Screenshots/`: **iPhone 6.3"** at 1206 × 2622 (iPhone 18 Pro 
 
 ## Decisions
 
-- **In-app purchase:** ship as a free companion app (guideline 3.1.3(f)) with no purchasing and no links to buy. If App Review asks for in-app purchase for PRO, revisit.
-- **Free vs PRO in the app:** free accounts read and write text entries and see Stats, the Photos view and the widget; photos, editing/deleting, search (and its hashtag cloud), On This Day, reminders, dictation, AI connections and on-device AI features are PRO. Face ID lock and drafts are for everyone.
+- **In-app purchase:** ship as a free companion app (guideline 3.1.3(f)) with no in-app purchasing. On the **US App Store only**, Settings → Plan links to dabble.me/subscribe (US storefront exception in guideline 3.1.1(a), May 2025), detected with StoreKit's `Storefront.current`; elsewhere the plan is plain text. If App Review objects, drop the link.
+- **Free vs PRO in the app:** free accounts read and write text entries and see Stats, the Photos view and the widget; photos, editing/deleting, search (and its hashtag cloud), On This Day, reminders, AI connections and on-device AI features are PRO. Dictation is the keyboard's own (no in-app mic). Face ID lock and drafts are for everyone.
 - **iPad:** supported in 1.0, so the submission needs the 13" iPad screenshot set too.

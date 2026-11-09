@@ -100,21 +100,46 @@ module Api
                status: result[:merged] ? :ok : :created
       end
 
-      # PATCH /api/v1/entries/:id { document: [...] } — only for entries whose `document` is non-null.
+      # PATCH /api/v1/entries/:id { document: [...], remove_image: true, uploaded_image_keys: [...] }
+      # Any of them. `document` only for entries whose `document` is non-null. New photos join the
+      # entry's photo in a collage (like adding to a day on create), or replace it with remove_image.
       def update
-        if EntryDocument.from_html(@entry.body).nil?
-          return render_error(:unprocessable_content, 'not_editable',
-                              'This entry has formatting the app cannot edit yet. Edit it on dabble.me instead.')
+        if params.key?(:document)
+          if EntryDocument.from_html(@entry.body).nil?
+            return render_error(:unprocessable_content, 'not_editable',
+                                'This entry has formatting the app cannot edit yet. Edit it on dabble.me instead.')
+          end
+
+          html = document_html
+          return if performed?
+          if Rails::HTML5::FullSanitizer.new.sanitize(html).strip.blank?
+            return render_error(:unprocessable_content, 'invalid', 'Entry cannot be blank. Delete the entry instead.')
+          end
+
+          @entry.body = html
         end
 
-        html = document_html
-        return if performed?
-        if Rails::HTML5::FullSanitizer.new.sanitize(html).strip.blank?
-          return render_error(:unprocessable_content, 'invalid', 'Entry cannot be blank. Delete the entry instead.')
+        photo_keys = Array(params[:uploaded_image_keys]).map { |key| key.to_s.strip }.compact_blank.uniq
+        unless photo_keys.all? { |key| Mcp::PresignedImageUpload.key_allowed_for_user?(current_user, key) }
+          return render_error(:unprocessable_content, 'invalid', 'A photo upload is not valid for this account.')
         end
 
-        if @entry.update(body: html)
-          render json: { entry: EntrySerializer.full(@entry) }
+        remove_image = ActiveModel::Type::Boolean.new.cast(params[:remove_image])
+        @entry.remove_image = true if remove_image && @entry.image_stored?
+        keeps_photo = @entry.image_stored? && !remove_image
+        if photo_keys.size + (keeps_photo ? 1 : 0) > CollageGenerator::MAX_IMAGES
+          return render_error(:unprocessable_content, 'invalid', "An entry can have up to #{CollageGenerator::MAX_IMAGES} photos.")
+        end
+
+        collage = photo_keys.size > 1 || (photo_keys.any? && keeps_photo)
+        @entry.uploading_image = true if photo_keys.any?
+        if @entry.save
+          if collage
+            ImageCollageJob.perform_later(@entry.id, urls: photo_keys.map { |key| Mcp::PresignedImageUpload.public_url(key) })
+          elsif photo_keys.any?
+            ProcessEntryImageJob.perform_later(@entry.id, photo_keys.first)
+          end
+          render json: { entry: EntrySerializer.full(@entry.reload) }
         else
           render_error(:unprocessable_content, 'invalid', 'Could not save the entry.', details: @entry.errors.full_messages)
         end

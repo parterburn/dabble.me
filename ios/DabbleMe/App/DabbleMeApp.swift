@@ -12,6 +12,8 @@ struct DabbleMeApp: App {
         if let token = UserDefaults.standard.string(forKey: "DabbleDebugAccessToken"), !token.isEmpty {
             KeychainStore.save(OAuthTokens(accessToken: token, refreshToken: nil, expiresAt: nil))
         }
+        // -DabbleDebugSignedOut YES starts signed out (the welcome screens).
+        if UserDefaults.standard.bool(forKey: "DabbleDebugSignedOut") { KeychainStore.delete() }
         #endif
         let model = AppModel()
         _model = State(initialValue: model)
@@ -48,6 +50,13 @@ struct RootView: View {
             // From the widget: me.dabble.app:/write or :/today. (Sign-in callbacks never get here;
             // the web sign-in session handles them.)
             guard model.isSignedIn, url.scheme == "me.dabble.app" else { return }
+            #if DEBUG
+            // UI tests can't shake the simulator: me.dabble.app:/shake does the same.
+            if url.path == "/shake" {
+                NotificationCenter.default.post(name: .deviceDidShake, object: nil)
+                return
+            }
+            #endif
             model.selectedTab = .today
             if url.path == "/write" { model.composeRequest = true }
         }
@@ -100,21 +109,33 @@ struct MainTabs: View {
             get: { model.selectedTab },
             set: { tab in
                 if tab == .search, model.selectedTab == .search { model.searchFocusRequest += 1 }
+                if tab == .journal, model.selectedTab == .journal { model.journalTopRequest += 1 }
                 model.selectedTab = tab
             }
         )
         TabView(selection: selection) {
-            Tab("Today", systemImage: "sun.max", value: AppModel.Tab.today) {
+            Tab("Today", image: "slab-calendar", value: AppModel.Tab.today) {
                 TodayView()
             }
-            Tab("Journal", systemImage: "book.closed", value: AppModel.Tab.journal) {
+            Tab("Journal", image: "slab-book", value: AppModel.Tab.journal) {
                 JournalView()
             }
-            Tab("Search", systemImage: "magnifyingglass", value: AppModel.Tab.search) {
+            Tab("Search", image: "slab-search", value: AppModel.Tab.search) {
                 SearchView()
             }
-            Tab("Settings", systemImage: "gearshape", value: AppModel.Tab.settings) {
+            Tab("Settings", image: "slab-gear", value: AppModel.Tab.settings) {
                 SettingsView()
+            }
+        }
+        .sheet(isPresented: $model.showsRandomEntry) { RandomEntrySheet() }
+        .onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in
+            // The open sheet picks another itself; otherwise show one. Not while locked.
+            guard !model.showsRandomEntry, !model.lock.isLocked else { return }
+            Task {
+                // Right after launch the journal may still be loading.
+                for _ in 0..<20 where !model.hasLoaded { try? await Task.sleep(for: .milliseconds(250)) }
+                guard model.hasLoaded, !model.months.isEmpty else { return }
+                model.showsRandomEntry = true
             }
         }
         .environment(\.openURL, OpenURLAction { url in

@@ -78,14 +78,30 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(tag.exists)
         tag.tap()
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ENDSWITH 'entries' OR label ENDSWITH 'entry'")).firstMatch.waitForExistence(timeout: 10))
+        // The search field stays at the top while the results scroll.
+        app.swipeUp()
+        app.swipeUp()
+        XCTAssertTrue(app.searchFields.firstMatch.isHittable)
+        snap("search-sticky")
+        // With a search submitted (keyboard gone, search still active), tapping Search again
+        // still focuses the field.
+        let field = app.searchFields.firstMatch
+        field.tap()
+        field.typeText("trail\n")
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        tab(app, "Search").tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "Search tab focuses the field with a search showing")
     }
 
     /// Lists hang in the editor; PRO gets on-device hashtag suggestions (when Apple Intelligence is available).
     func testComposerListsAndSuggestions() throws {
         let app = launch()
-        let write = app.buttons["Write Today's Entry"].waitForExistence(timeout: 15) ? app.buttons["Write Today's Entry"] : app.buttons["Add to Today's Entry"]
-        XCTAssertTrue(write.waitForExistence(timeout: 5))
-        write.tap()
+        if app.buttons["Write Today's Entry"].waitForExistence(timeout: 15) {
+            app.buttons["Write Today's Entry"].tap()
+        } else {
+            tab(app, "Journal").tap()
+            app.buttons["New Entry"].tap()
+        }
         let editor = app.textViews["Entry"]
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
         editor.tap()
@@ -98,7 +114,7 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(text.contains("• The rainbow"), text)
         XCTAssertTrue(text.contains("• Cold sandwiches"), text)
         XCTAssertFalse(app.buttons["Bold"].exists)
-        print("MIC_PRESENT=\(app.buttons["Dictate"].exists)")
+        XCTAssertFalse(app.toolbars.buttons["Dictate"].exists, "Dictation is the keyboard's own")
 
         app.buttons["Add"].tap()
         let suggest = app.buttons["Suggest Hashtags"]
@@ -134,7 +150,9 @@ final class JournalViewsTests: XCTestCase {
         let firstEntry = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
         XCTAssertTrue(firstEntry.waitForExistence(timeout: 10))
-        firstEntry.tap()
+        firstEntry.tap() // expands in the timeline
+        sleep(1)
+        firstEntry.tap() // opens
         XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
         sleep(1)
         snap("entry-lists")
@@ -166,7 +184,7 @@ final class JournalViewsTests: XCTestCase {
         close.tap()
 
         tab(app, "Settings").tap()
-        XCTAssertTrue(app.staticTexts["Entry Text Size"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Email"].waitForExistence(timeout: 5))
         snap("settings-top")
         app.swipeUp()
         snap("settings-privacy")
@@ -178,28 +196,75 @@ final class JournalViewsTests: XCTestCase {
             .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.1)))
     }
 
-    /// From search results, pulling moves through the results (not by date), and tapping a
-    /// #hashtag in the entry goes back to the results for that tag.
-    func testSearchResultsScopeEntryNavigation() throws {
+    /// Tapping a #hashtag in an entry opened from search results goes back to the results for it.
+    func testHashtagFromSearchResultEntry() throws {
         let app = launch()
         tab(app, "Search").tap()
         XCTAssertTrue(app.buttons["#hiking"].waitForExistence(timeout: 10))
         app.buttons["#hiking"].tap()
         let yosemite = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
         XCTAssertTrue(yosemite.waitForExistence(timeout: 10))
-        yosemite.tap()
+        yosemite.tap() // expands
+        yosemite.tap() // opens
         XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
-        sleep(1)
-        pullUp(app)
-        // The next #hiking result (Oct 15), not the next day by date (Nov 6, "Slow Saturday").
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Day trip to the falls")).firstMatch.waitForExistence(timeout: 5))
-        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Slow Saturday")).firstMatch.exists)
-
         let tag = app.links["#hiking"].firstMatch
         XCTAssertTrue(tag.waitForExistence(timeout: 5))
         tag.tap()
         XCTAssertTrue(app.staticTexts["2 entries"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.buttons["Entry Actions"].exists, "The entry should close to show the results")
+    }
+
+    /// First tap expands an entry in the timeline; a second opens it. Swipes reveal Reflect and
+    /// Edit; on the entry, swiping left shows its actions.
+    func testTimelineExpandSwipeAndEntryActions() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Big presentation went well")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.tap()
+        // Expanded: the rest of the entry shows in place.
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Taking that one with me")).firstMatch.waitForExistence(timeout: 5))
+        // While it's expanded, the sticky header is the entry's date (not just the month).
+        XCTAssertTrue(app.staticTexts[Calendar.current.date(byAdding: .day, value: -4, to: .now)!.formatted(.dateTime.weekday(.wide).month(.wide).day().year())].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Open"].exists, "No Open link on the expanded row")
+        sleep(1)
+        snap("timeline-expanded")
+
+        // Dated #tags show as pills (with their age) once the row is expanded.
+        // Swipe left: Open. Swipe right: Actions, with Edit (and the entry's tags).
+        row.swipeLeft()
+        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 3))
+        XCTAssertFalse(app.buttons["Actions"].exists, "Actions is the right swipe now")
+        row.swipeRight() // closes Open
+        row.swipeRight()
+        app.buttons["Actions"].tap()
+        XCTAssertTrue(app.buttons["Edit"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons.matching(identifier: "ActionsSheetTag").matching(NSPredicate(format: "label == %@", "#work")).firstMatch.exists, "The entry's tags are in the Actions sheet")
+        snap("timeline-actions-sheet")
+        app.buttons["Edit"].tap()
+        XCTAssertTrue(app.textViews["Entry"].waitForExistence(timeout: 10))
+        app.buttons["Cancel"].tap()
+        XCTAssertTrue(app.textViews["Entry"].waitForNonExistence(timeout: 10))
+
+        row.swipeRight()
+        app.buttons["Actions"].tap()
+        let reflect = app.buttons["Reflect on This Entry"]
+        if reflect.waitForExistence(timeout: 10) {
+            snap("timeline-actions-reflect")
+            reflect.tap()
+            XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 90))
+            app.buttons["Done"].tap()
+        }
+
+        let expanded = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Big presentation went well")).firstMatch
+        expanded.tap() // second tap opens
+        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+        app.scrollViews.firstMatch.swipeLeft()
+        XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout: 5), "Swiping left on the entry shows its actions")
+        snap("entry-swipe-actions")
+        app.buttons["Edit"].tap()
+        XCTAssertTrue(app.textViews["Entry"].waitForExistence(timeout: 10))
+        app.buttons["Cancel"].tap()
     }
 
     /// Long-press an entry to preview it; long-press a dated #hashtag to see how old it was.
@@ -208,6 +273,19 @@ final class JournalViewsTests: XCTestCase {
         tab(app, "Journal").tap()
         let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Biscuit has discovered")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10))
+        // Text and a photo: the preview shows the whole entry, not a truncated start.
+        let yosemite = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
+        XCTAssertTrue(yosemite.waitForExistence(timeout: 10))
+        yosemite.press(forDuration: 1.2)
+        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Sam singing badly")).firstMatch.exists,
+                      "The preview shows the entry's text, not just the start")
+        sleep(1)
+        snap("preview-yosemite")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.8)).tap() // dismiss, away from the preview and menu
+        XCTAssertTrue(app.buttons["Open"].waitForNonExistence(timeout: 5))
+        sleep(1)
+
         row.press(forDuration: 1.2)
         let open = app.buttons["Open"]
         XCTAssertTrue(open.waitForExistence(timeout: 5))
@@ -223,32 +301,282 @@ final class JournalViewsTests: XCTestCase {
         snap("hashtag-age")
     }
 
-    /// Tapping the mic asks for speech and microphone access and starts listening, without crashing.
-    func testDictationButtonStartsListening() throws {
-        let app = launch(["-DabbleDictationSkipAudio", "YES"])
-        let write = app.buttons["Write Today's Entry"].waitForExistence(timeout: 15) ? app.buttons["Write Today's Entry"] : app.buttons["Add to Today's Entry"]
-        XCTAssertTrue(write.waitForExistence(timeout: 5))
+    /// With no hashtags yet, suggestions aren't limited to (an empty) vocabulary. Needs a PRO
+    /// account with no entries: TEST_RUNNER_DABBLE_EMPTY_TOKEN.
+    func testHashtagSuggestionsForNewWriter() throws {
+        guard let empty = ProcessInfo.processInfo.environment["DABBLE_EMPTY_TOKEN"] else {
+            throw XCTSkip("Set TEST_RUNNER_DABBLE_EMPTY_TOKEN to a PRO account with no hashtags")
+        }
+        let app = XCUIApplication()
+        app.launchArguments = ["-DabbleDebugAccessToken", empty, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launch()
+        let write = app.buttons["Write Today's Entry"]
+        XCTAssertTrue(write.waitForExistence(timeout: 15))
         write.tap()
         let editor = app.textViews["Entry"]
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
         editor.tap()
         if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
-        let mic = app.toolbars.buttons["Dictate"].firstMatch // not the keyboard's own dictation key
-        guard mic.waitForExistence(timeout: 3) else { throw XCTSkip("On-device speech isn't available on this simulator") }
-        mic.tap()
-        // Permission prompts (speech, then microphone) come from SpringBoard.
-        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
-        for _ in 0..<2 {
-            let allow = springboard.buttons.matching(NSPredicate(format: "label IN {'Allow', 'OK'}")).firstMatch
-            if allow.waitForExistence(timeout: 4) { allow.tap() }
+        editor.typeText("Took the kids to the climbing gym after school. Maya made it to the top of the blue wall.")
+        app.buttons["Add"].tap()
+        let suggest = app.buttons["Suggest Hashtags"]
+        guard suggest.waitForExistence(timeout: 3) else { throw XCTSkip("Apple Intelligence isn't available here") }
+        suggest.tap()
+        let chip = app.buttons.matching(NSPredicate(format: "label BEGINSWITH '#'")).firstMatch
+        let found = chip.waitForExistence(timeout: 60)
+        snap("hashtags-new-writer")
+        XCTAssertTrue(found, app.alerts.firstMatch.exists ? app.alerts.firstMatch.debugDescription : "no suggestions")
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+        XCTAssertTrue(editor.waitForNonExistence(timeout: 10))
+
+        tab(app, "Settings").tap()
+        if !app.staticTexts["Email"].waitForExistence(timeout: 5) { tab(app, "Settings").tap() }
+        XCTAssertTrue(app.staticTexts["Email"].waitForExistence(timeout: 10))
+        print("PLAN_LINK=\(app.links.matching(NSPredicate(format: "label CONTAINS 'Plan'")).firstMatch.exists)")
+        snap("settings-plan")
+    }
+
+    /// On This Day cards preview like entries elsewhere: the whole entry, not just the card's excerpt.
+    func testOnThisDayPreview() throws {
+        let app = launch()
+        let card = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Bruges!")).firstMatch
+        XCTAssertTrue(card.waitForExistence(timeout: 15))
+        card.press(forDuration: 1.2)
+        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 5))
+        sleep(2)
+        snap("today-preview")
+    }
+
+    /// Today's AI prompt treats earlier entries as earlier (EMPTY token account seeded with a
+    /// "yesterday" basketball entry). Prints each prompt for review.
+    func testAIPromptKeepsPastInThePast() throws {
+        guard let token = ProcessInfo.processInfo.environment["DABBLE_EMPTY_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_EMPTY_TOKEN") }
+        let app = XCUIApplication()
+        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launch()
+        let another = app.buttons["Another Prompt"]
+        guard another.waitForExistence(timeout: 60) else { throw XCTSkip("Apple Intelligence isn't available here") }
+        for round in 0..<4 {
+            let prompt = app.staticTexts.matching(NSPredicate(format: "label ENDSWITH '?'")).firstMatch
+            print("PROMPT\(round)=\(prompt.label)")
+            another.tap()
+            sleep(1)
+            XCTAssertTrue(another.waitForExistence(timeout: 60))
         }
-        sleep(3)
-        XCTAssertEqual(app.state, .runningForeground, "The app should still be running after tapping the mic")
-        XCTAssertTrue(app.toolbars.buttons["Stop Dictating"].firstMatch.waitForExistence(timeout: 5), "Listening after permission")
-        snap("dictation")
-        let stop = app.toolbars.buttons["Stop Dictating"].firstMatch
-        if stop.exists { stop.tap() }
+        snap("ai-prompt-dated")
+    }
+
+    /// Tapping Journal again from Stats (or deep in the list) goes back to the list's newest entry.
+    func testJournalTabRetapReturnsToTopOfList() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        switchJournal(app, from: "Journal", to: "Stats")
+        XCTAssertTrue(app.staticTexts["Current Streak"].waitForExistence(timeout: 10))
+        tab(app, "Journal").tap()
+        let newest = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
+        XCTAssertTrue(newest.waitForExistence(timeout: 10))
+        XCTAssertFalse(app.staticTexts["Current Streak"].exists)
+
+        app.swipeUp(); app.swipeUp(); app.swipeUp()
+        XCTAssertFalse(newest.isHittable)
+        tab(app, "Journal").tap()
         sleep(1)
-        XCTAssertEqual(app.state, .runningForeground)
+        XCTAssertTrue(newest.isHittable, "Back at the top")
+    }
+
+    /// Pulling down on an entry asks Apple Intelligence for a reflection.
+    func testPullDownOnEntryReflects() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.tap(); sleep(1); row.tap()
+        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+        let scroll = app.scrollViews.firstMatch
+        scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
+            .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.85)))
+        guard app.buttons["Done"].waitForExistence(timeout: 90) else {
+            throw XCTSkip("Apple Intelligence isn't available here")
+        }
+        XCTAssertTrue(app.navigationBars["Reflection"].exists || app.staticTexts["Reflection"].exists)
+        snap("pull-reflection")
+        app.buttons["Done"].tap()
+    }
+
+    private func openDailyEmail(_ app: XCUIApplication) {
+        tab(app, "Settings").tap()
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Daily Email'")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        for _ in 0..<3 where !row.isHittable { app.swipeUp() }
+        row.tap()
+        XCTAssertTrue(app.buttons["Monday"].waitForExistence(timeout: 10))
+    }
+
+    private func pickTimeZone(_ app: XCUIApplication, _ name: String) {
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Time Zone'")).firstMatch.tap()
+        let search = app.searchFields.firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        search.tap()
+        search.typeText(name)
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", name)).firstMatch.tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS 'Time Zone' AND label CONTAINS %@", name)).firstMatch.waitForExistence(timeout: 10))
+    }
+
+    private func pickHour(_ app: XCUIApplication, _ prefix: String, _ meridiem: String) {
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Time,'")).firstMatch.tap()
+        // iOS writes "7:00 AM" with a narrow no-break space before AM.
+        let option = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@ AND label CONTAINS %@", prefix, meridiem)).firstMatch
+        XCTAssertTrue(option.waitForExistence(timeout: 3))
+        option.tap()
+        sleep(1)
+    }
+
+    /// Settings → Reminders → Daily Email: days, hour and time zone save to the account (PRO demo).
+    func testEmailScheduleSaves() throws {
+        var app = launch()
+        openDailyEmail(app)
+        let wasOn = (app.buttons["Monday"].value as? String) == "On"
+        app.buttons["Monday"].tap()
+        pickHour(app, "7:00", "PM") // the menu opens around the current 8 PM
+        pickTimeZone(app, "Hawaii")
+        sleep(1)
+        snap("email-schedule")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Daily Email' AND label CONTAINS '7:00'")).firstMatch.waitForExistence(timeout: 5))
+        snap("email-schedule-row")
+
+        // Saved on the server: a fresh launch shows the same.
+        app.terminate()
+        app = launch()
+        openDailyEmail(app)
+        XCTAssertEqual((app.buttons["Monday"].value as? String) == "On", !wasOn)
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS '7:00' AND label CONTAINS 'PM'")).firstMatch.exists)
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS 'Hawaii'")).firstMatch.exists)
+
+        // Put the demo account back (its time zone is the journal's "today" for other tests).
+        app.buttons["Monday"].tap()
+        pickHour(app, "8:00", "PM")
+        pickTimeZone(app, "Mountain")
+    }
+
+    /// A free account sees Daily Email greyed out with the rest of Reminders. TEST_RUNNER_DABBLE_FREE_TOKEN.
+    func testEmailScheduleFreeAccount() throws {
+        guard let free = ProcessInfo.processInfo.environment["DABBLE_FREE_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_FREE_TOKEN") }
+        let app = XCUIApplication()
+        app.launchArguments = ["-DabbleDebugAccessToken", free, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launch()
+        tab(app, "Settings").tap()
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Daily Email'")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        XCTAssertFalse(row.isEnabled)
+        snap("email-schedule-free")
+    }
+
+    /// Shaking shows a random entry as a preview over what you're reading; Open goes to it.
+    func testShakeForRandomMemory() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        XCTAssertFalse(app.buttons["Random Entry"].exists, "No shuffle button")
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Big presentation went well")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.tap(); sleep(1); row.tap()
+        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+
+        XCUIDevice.shared.system.open(URL(string: "me.dabble.app:/shake")!) // Debug stand-in for a shake
+        XCTAssertTrue(app.staticTexts["A Random Memory"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
+        sleep(1)
+        snap("shake-memory")
+        app.buttons["Another"].tap()
+        sleep(1)
+        // Close: still reading the same entry underneath.
+        app.buttons["Close"].tap()
+        XCTAssertTrue(app.staticTexts["A Random Memory"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Taking that one with me")).firstMatch.exists)
+
+        XCUIDevice.shared.system.open(URL(string: "me.dabble.app:/shake")!)
+        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
+        sleep(1)
+        app.buttons["Open"].tap()
+        XCTAssertTrue(app.staticTexts["A Random Memory"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+    }
+
+    /// Quick taps on several days all stick: saves go one at a time with the latest selection.
+    func testEmailScheduleRapidTapsAllSave() throws {
+        var app = launch()
+        openDailyEmail(app)
+        let days = ["Monday", "Tuesday", "Wednesday", "Thursday"]
+        let before = days.map { (app.buttons[$0].value as? String) == "On" }
+        for day in days { app.buttons[day].tap() } // as fast as XCUITest taps
+        sleep(3)
+
+        app.terminate()
+        app = launch()
+        openDailyEmail(app)
+        for (day, wasOn) in zip(days, before) {
+            XCTAssertEqual((app.buttons[day].value as? String) == "On", !wasOn, "\(day) should have flipped and been saved")
+        }
+        // Put them back.
+        for day in days { app.buttons[day].tap() }
+        sleep(3)
+    }
+
+    /// An expanded timeline row shows the edited text right after saving an edit.
+    func testExpandedRowShowsEdits() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Big presentation went well")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.tap() // expand
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Taking that one with me")).firstMatch.waitForExistence(timeout: 5))
+
+        row.swipeRight()
+        app.buttons["Actions"].tap()
+        XCTAssertTrue(app.buttons["Edit"].waitForExistence(timeout: 10))
+        app.buttons["Edit"].tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        editor.tap()
+        editor.typeText(" Edited from the timeline.")
+        app.buttons["Save"].tap()
+        XCTAssertTrue(editor.waitForNonExistence(timeout: 15))
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Edited from the timeline")).firstMatch.waitForExistence(timeout: 10),
+                      "The expanded row should show the edit")
+    }
+
+    /// Swipe left → Actions lists the entry's tags; a dated tag shows its age right there.
+    func testActionsSheetShowsDatedTagAge() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Biscuit has discovered")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.tap() // expand: the dated tag shows as a pill with its age
+        let pill = app.buttons.matching(NSPredicate(format: "label == %@ AND value CONTAINS %@", "#Biscuit", "since entry")).firstMatch
+        XCTAssertTrue(pill.waitForExistence(timeout: 10))
+        snap("expanded-dated-pill")
+        row.swipeRight()
+        app.buttons["Actions"].tap()
+        let tag = app.buttons.matching(identifier: "ActionsSheetTag").matching(NSPredicate(format: "label == %@", "#Biscuit")).firstMatch
+        XCTAssertTrue(tag.waitForExistence(timeout: 10))
+        XCTAssertTrue((tag.value as? String ?? "").contains("since entry"), "Dated tag shows its age")
+        snap("actions-dated-tag")
+        tag.tap() // searches it
+        XCTAssertTrue(app.staticTexts["1 entry"].waitForExistence(timeout: 10))
+    }
+
+    /// On This Day rows are the Journal's rows: swipe left offers Open and Actions.
+    func testOnThisDayRowsSwipe() throws {
+        let app = launch()
+        let memory = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Bruges!")).firstMatch
+        XCTAssertTrue(memory.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "1 year ago")).firstMatch.exists)
+        memory.swipeRight()
+        XCTAssertTrue(app.buttons["Actions"].waitForExistence(timeout: 3))
+        memory.swipeLeft() // closes the Actions swipe
+        memory.swipeLeft()
+        app.buttons["Open"].tap()
+        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
     }
 }

@@ -39,6 +39,8 @@ struct EntrySummary: Decodable, Sendable, Identifiable, Hashable {
     let imageProcessing: Bool
     let hashtags: [String]
     let updatedAt: String
+    /// The entry's text (light Markdown, capped) for long-press previews. Optional for older servers.
+    var previewText: String? = nil
     /// Only on Today's "On This Day" memories.
     var yearsAgo: Int? = nil
 
@@ -128,7 +130,7 @@ struct EntryDetail: Decodable, Sendable, Identifiable, Hashable {
 
     var summary: EntrySummary {
         EntrySummary(id: id, date: date, excerpt: excerpt, imageUrl: imageUrl,
-                     imageProcessing: imageProcessing, hashtags: hashtags, updatedAt: updatedAt)
+                     imageProcessing: imageProcessing, hashtags: hashtags, updatedAt: updatedAt, previewText: bodyText)
     }
 }
 
@@ -191,6 +193,9 @@ struct NewEntryRequest: Encodable, Sendable {
 
 struct UpdateEntryRequest: Encodable, Sendable {
     let document: [DocumentBlock]
+    /// New photos: they join the entry's photo in a collage, or replace it with `removeImage`.
+    var uploadedImageKeys: [String]? = nil
+    var removeImage: Bool? = nil
 }
 
 struct ImageUploadRequest: Encodable, Sendable {
@@ -295,4 +300,30 @@ struct HashtagCount: Decodable, Sendable, Hashable, Identifiable {
 
 struct HashtagList: Decodable, Sendable {
     let hashtags: [HashtagCount]
+}
+
+/// GET/PATCH /api/v1/email_schedule: when the "How was your day?" email arrives.
+struct EmailSchedule: Decodable, Sendable, Equatable {
+    var days: [String]
+    var hour: Int
+    var timezone: String
+    /// PRO: any days. Free: Sunday or nothing.
+    let canChooseDays: Bool
+    let timeZones: [TimeZoneOption]
+
+    static let allDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+
+    struct TimeZoneOption: Decodable, Sendable, Hashable, Identifiable {
+        let name: String
+        let iana: String
+        let offset: String
+
+        var id: String { name }
+    }
+}
+
+struct EmailScheduleUpdate: Encodable, Sendable {
+    var days: [String]? = nil
+    var hour: Int? = nil
+    var timezone: String? = nil
 }

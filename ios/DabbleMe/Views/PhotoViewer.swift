@@ -70,14 +70,18 @@ struct PhotoMenu: View {
 
     var body: some View {
         if let image = photo.image, let data = photo.data {
-            Button("Save to Photos", systemImage: "square.and.arrow.down") {
+            Button {
                 Task { saveResult = await PhotoActions.save(data) }
+            } label: {
+                Label("Save to Photos", icon: "slab-arrow-down-to-line")
             }
             ShareLink(item: Image(uiImage: image), preview: SharePreview("Photo", image: Image(uiImage: image))) {
-                Label("Share…", systemImage: "square.and.arrow.up")
+                Label("Share…", icon: "slab-arrow-up-from-line")
             }
-            Button("Copy", systemImage: "doc.on.doc") {
+            Button {
                 UIPasteboard.general.image = image
+            } label: {
+                Label("Copy", icon: "slab-copy")
             }
         } else {
             Text("Loading photo…")
@@ -107,7 +111,7 @@ struct PhotoViewer: View {
                     .accessibilityLabel("Entry photo")
                     .accessibilityHint("Pinch or double-tap to zoom")
             } else if photo.failed {
-                Label("Photo unavailable", systemImage: "photo").foregroundStyle(.white)
+                Label("Photo unavailable", icon: "slab-image").foregroundStyle(.white)
             } else {
                 ProgressView().tint(.white)
             }
@@ -122,7 +126,7 @@ struct PhotoViewer: View {
 
     private var toolbar: some View {
         HStack {
-            Button("Close", systemImage: "xmark") { dismiss() }
+            Button { dismiss() } label: { Label("Close", icon: "slab-close") }
             Spacer()
             if photo.image != nil {
                 Menu {

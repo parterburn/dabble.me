@@ -16,7 +16,7 @@ struct PhotoGridView: View {
             if entries.isEmpty {
                 if let error {
                     ContentUnavailableView {
-                        Label("Couldn't load your photos", systemImage: "photo.on.rectangle")
+                        Label("Couldn't load your photos", icon: "slab-images")
                     } description: {
                         Text(error)
                     } actions: {
@@ -25,8 +25,11 @@ struct PhotoGridView: View {
                 } else if isLoading || nextPage != nil {
                     ProgressView()
                 } else {
-                    ContentUnavailableView("No photos yet", systemImage: "photo.on.rectangle",
-                                           description: Text("Entries with photos will show up here."))
+                    ContentUnavailableView {
+                        Label("No photos yet", icon: "slab-images")
+                    } description: {
+                        Text("Entries with photos will show up here.")
+                    }
                 }
             } else {
                 ScrollView {
@@ -83,7 +86,7 @@ private struct PhotoCell: View {
                     AsyncImage(url: url) { phase in
                         switch phase {
                         case .success(let image): image.resizable().scaledToFill()
-                        case .failure: Image(systemName: "photo").foregroundStyle(.secondary)
+                        case .failure: appIcon("slab-image").foregroundStyle(.secondary)
                         default: EmptyView()
                         }
                     }
