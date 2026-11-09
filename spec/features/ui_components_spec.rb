@@ -63,6 +63,14 @@ RSpec.describe "Navbar menus, tooltips and the entry editor", type: :feature, js
     tip_target.hover
 
     expect(page).to have_css(".tooltip.in .tooltip-inner", text: title)
+    # Screen readers announce it through aria-describedby while it shows.
+    tooltip_id = find(".tooltip.in")["id"]
+    expect(tooltip_id).to be_present
+    expect(tip_target["aria-describedby"]).to eq(tooltip_id)
+
+    find(".navbar-brand").hover
+    expect(page).to have_no_css(".tooltip")
+    expect(tip_target["aria-describedby"]).to be_nil
   end
 
   it "inserts a link from the editor's link dialog" do

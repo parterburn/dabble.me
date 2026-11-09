@@ -110,6 +110,16 @@
     $tip.find(".tooltip-arrow, .arrow").css("left", arrowDelta ? 50 * (1 - arrowDelta / $tip[0].offsetWidth) + "%" : "");
   }
 
+  // Tips get an id, and the element they describe points at it with
+  // aria-describedby while they show, so screen readers announce the text.
+  var tipCount = 0;
+  function describe($el, $tip, prefix) {
+    tipCount += 1;
+    var id = prefix + "-" + tipCount;
+    $tip.attr("id", id);
+    $el.attr("aria-describedby", id);
+  }
+
   // Tooltips: the element's title, shown on hover or focus.
   UI.tooltips = function (selector) {
     $(selector).each(function () {
@@ -125,13 +135,18 @@
         if (!text || $tip) return;
         $tip = $('<div class="tooltip fade" role="tooltip"><div class="tooltip-arrow"></div><div class="tooltip-inner"></div></div>');
         $tip.find(".tooltip-inner").text(text);
+        describe($el, $tip, "tooltip");
         place($tip, $el, "top");
         $tip.addClass("in");
       });
       // Not on click: a tap on a phone fires mouseenter and then click, and the
       // "mobile-friendly" tooltips are meant to show on tap.
       $el.on("mouseleave focusout", function () {
-        if ($tip) { $tip.remove(); $tip = null; }
+        if ($tip) {
+          $tip.remove();
+          $tip = null;
+          $el.removeAttr("aria-describedby");
+        }
       });
     });
   };
@@ -142,6 +157,7 @@
     if (!$el.length || $el.data("ui-popover")) return;
     var $tip = $('<div class="popover fade" role="tooltip"><div class="arrow"></div><div class="popover-content"></div></div>');
     $tip.find(".popover-content").html($el.attr("data-content"));
+    describe($el, $tip, "popover");
     place($tip, $el, $el.attr("data-placement") || "bottom");
     $tip.addClass("in");
     $el.data("ui-popover", $tip);
@@ -152,6 +168,6 @@
     if (!$tip) return;
     $tip.removeClass("in");
     setTimeout(function () { $tip.remove(); }, 150);
-    $el.removeData("ui-popover");
+    $el.removeData("ui-popover").removeAttr("aria-describedby");
   };
 })(jQuery);
