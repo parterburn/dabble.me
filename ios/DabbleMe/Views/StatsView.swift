@@ -330,7 +330,7 @@ private struct DayEntriesSheet: View {
                                     DatedHashtagRow(hashtags: dated)
                                 }
                                 if entry.imageProcessing || entry.imageURL != nil {
-                                    EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing)
+                                    EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing, day: entry.day)
                                 }
                                 Button {
                                     model.openEntryRequest = entry.id

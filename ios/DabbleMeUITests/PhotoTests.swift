@@ -19,14 +19,26 @@ final class PhotoTests: XCTestCase {
         photo.tap()
         let close = app.buttons["Close"]
         XCTAssertTrue(close.waitForExistence(timeout: 5), "Tapping the photo should open the full-screen viewer")
+        XCTAssertTrue(app.buttons["Save to Photos"].exists, "Save is its own button in the viewer")
         snap("photo-viewer")
+        // Share opens the share sheet every time (it sometimes did nothing from the old menu).
+        let shareSheet = app.otherElements["ActivityListView"]
+        for attempt in 1...3 {
+            app.buttons["Share"].tap()
+            XCTAssertTrue(shareSheet.waitForExistence(timeout: 5), "Share opened the share sheet (try \(attempt))")
+            if attempt == 1 { sleep(1); snap("photo-share-sheet") }
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)).tap() // above the sheet closes it
+            XCTAssertTrue(shareSheet.waitForNonExistence(timeout: 5))
+        }
         close.tap()
         XCTAssertTrue(close.waitForNonExistence(timeout: 5))
 
         photo.press(forDuration: 1.2)
         XCTAssertTrue(app.buttons["Save to Photos"].waitForExistence(timeout: 5), "Long-press should show photo actions")
-        XCTAssertTrue(app.buttons["Copy"].exists)
+        XCTAssertFalse(app.buttons["Copy"].exists, "Copy is in the share sheet instead")
         snap("photo-menu")
+        app.buttons["Share…"].tap()
+        XCTAssertTrue(shareSheet.waitForExistence(timeout: 5), "Share from the long-press menu opens the share sheet")
     }
 }
 

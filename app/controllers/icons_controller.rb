@@ -2,13 +2,13 @@
 
 # Serves the Font Awesome Pro "Slab" icons from our own origin.
 #
-# The SVGs live in S3 (uploads/icons/slab/) because the Pro license doesn't
+# The SVGs live in S3 (icons/slab/) because the Pro license doesn't
 # allow publishing them in this public repo. icons.scss draws them as CSS
 # masks, and browsers fetch mask images with CORS, so loading them straight
 # from the CDN needs it to send Access-Control-Allow-Origin. Proxying them
 # through dabble.me keeps them same-origin, so CORS never comes into it.
 class IconsController < ActionController::Base
-  SOURCE_URL = "https://dabble-me.s3.amazonaws.com/uploads/icons/slab"
+  SOURCE_URL = "https://dabble-me.s3.us-east-1.amazonaws.com/icons/slab"
   NAME = /\A[a-z0-9-]+\z/
   MAX_BYTES = 50_000
 

@@ -12,7 +12,6 @@ struct EntryDetailView: View {
     @State private var loadError: String?
     @State private var actionError: String?
     @State private var editing = false
-    @State private var confirmingDelete = false
     @State private var isDeleting = false
     @State private var pinchStart: ReadingTextSize?
     @State private var textSizeHUD: String?
@@ -85,17 +84,12 @@ struct EntryDetailView: View {
                     switch action {
                     case .reflect: Task { await reflect(on: entry) }
                     case .edit: if entry.document != nil { editing = true } else { openURL(entry.webUrl) }
-                    case .delete: confirmingDelete = true
+                    case .delete: Task { await delete() }
                     case .web: openURL(entry.webUrl)
                     case .search(let tag): if let url = URL(string: "\(RichText.hashtagScheme):\(tag)") { openURL(url) }
                     }
                 }
             }
-        }
-        .confirmationDialog("Delete this entry?", isPresented: $confirmingDelete, titleVisibility: .visible) {
-            Button("Delete Entry", role: .destructive) { Task { await delete() } }
-        } message: {
-            Text("This can't be undone.")
         }
         .sheet(isPresented: $editing) {
             if let entry {
@@ -312,7 +306,7 @@ private struct EntryBody: View {
 
             // Text first: Dabble Me is about the writing; photos follow it.
             if entry.imageProcessing || entry.imageURL != nil {
-                EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing)
+                EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing, day: entry.day)
             }
         }
     }
@@ -401,16 +395,23 @@ struct EntryReflection: Identifiable {
 
 struct ReflectionSheet: View {
     let reflection: EntryReflection
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        NavigationStack {
+        // Laid out like Random Memory: the title and the X across the top, then the text.
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Label("Reflection", icon: "slab-sparkles")
+                    .font(.headline)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer()
+                SheetCloseButton()
+            }
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     if !reflection.date.isEmpty {
                         Text(reflection.date)
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.tint)
                     }
                     if let text = reflection.text {
                         // Light Markdown: the reply bolds its closing question.
@@ -433,18 +434,15 @@ struct ReflectionSheet: View {
                         privacyNote("Apple Intelligence is writing this on your device.\nYour entry isn't sent anywhere.")
                     }
                 }
-                .padding()
+                .padding(.bottom)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             // A short reflection doesn't bounce, so pulling down drags the sheet closed.
             .scrollBounceBehavior(.basedOnSize)
             .animation(.easeOut(duration: 0.25), value: reflection.text)
-            .navigationTitle("Reflection")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
-            }
         }
+        .padding([.horizontal, .top], 20)
+        .presentationDragIndicator(.visible)
         .presentationDetents([.medium, .large])
     }
 
@@ -483,7 +481,7 @@ struct DatedHashtagRow: View {
                             .foregroundStyle(.tint)
                         Text(Self.shortAge(hashtag.age))
                             .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.primary.opacity(0.72)) // stronger than .secondary on the tint
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 7)

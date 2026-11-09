@@ -8,12 +8,15 @@ import UIKit
 @Observable
 final class RemotePhoto {
     let url: URL
+    /// The entry's day, for the band on a shared photo ("3 years ago").
+    let day: JournalDay?
     private(set) var image: UIImage?
     private(set) var data: Data?
     private(set) var failed = false
 
-    init(url: URL) {
+    init(url: URL, day: JournalDay? = nil) {
         self.url = url
+        self.day = day
     }
 
     func load() async {
@@ -47,7 +50,35 @@ enum PhotoSaveResult: Identifiable {
     }
 }
 
+@MainActor
 enum PhotoActions {
+    /// Shares the photo as a card: an olive band with the "me" mark and how long ago it was, above
+    /// the photo (like Timehop's, without a watermark). Made on the device, only when you share.
+    /// Presented from UIKit, after the menu that asked for it has gone: SwiftUI's ShareLink in a
+    /// menu over a full-screen cover sometimes did nothing.
+    static func share(_ photo: RemotePhoto) async {
+        guard let image = photo.image else { return }
+        let label = photo.day?.shareLabel(to: JournalDay(localDate: .now))
+        let card = label.map { ShareCard.render(image, label: $0) } ?? image
+        // As a JPEG file: the share sheet then shows the card itself and a sensible name.
+        let file = FileManager.default.temporaryDirectory.appending(path: "Dabble Me – \(label ?? "Photo").jpg")
+        let item: Any
+        if let data = card.jpegData(compressionQuality: 0.9), (try? data.write(to: file, options: .atomic)) != nil {
+            item = file
+        } else {
+            item = card
+        }
+        try? await Task.sleep(for: .milliseconds(350)) // let a context menu finish closing
+        guard var top = UIApplication.shared.connectedScenes.compactMap({ ($0 as? UIWindowScene)?.keyWindow }).first?.rootViewController
+        else { return }
+        while let presented = top.presentedViewController, !presented.isBeingDismissed { top = presented }
+        let sheet = UIActivityViewController(activityItems: [item], applicationActivities: nil)
+        sheet.popoverPresentationController?.sourceView = top.view
+        sheet.popoverPresentationController?.sourceRect = CGRect(x: top.view.bounds.midX, y: top.view.bounds.midY, width: 0, height: 0)
+        sheet.popoverPresentationController?.permittedArrowDirections = []
+        top.present(sheet, animated: true)
+    }
+
     /// Uses add-only access: Dabble Me never asks to read your photo library.
     static func save(_ data: Data) async -> PhotoSaveResult {
         let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
@@ -69,19 +100,17 @@ struct PhotoMenu: View {
     @Binding var saveResult: PhotoSaveResult?
 
     var body: some View {
-        if let image = photo.image, let data = photo.data {
+        // No Copy: the share sheet has it.
+        if photo.image != nil, let data = photo.data {
             Button {
                 Task { saveResult = await PhotoActions.save(data) }
             } label: {
                 Label("Save to Photos", icon: "slab-arrow-down-to-line")
             }
-            ShareLink(item: Image(uiImage: image), preview: SharePreview("Photo", image: Image(uiImage: image))) {
-                Label("Share…", icon: "slab-arrow-up-from-line")
-            }
             Button {
-                UIPasteboard.general.image = image
+                Task { await PhotoActions.share(photo) }
             } label: {
-                Label("Copy", icon: "slab-copy")
+                Label("Share…", icon: "slab-arrow-up-from-line")
             }
         } else {
             Text("Loading photo…")
@@ -116,7 +145,8 @@ struct PhotoViewer: View {
                 ProgressView().tint(.white)
             }
         }
-        .overlay(alignment: .top) { toolbar }
+        .overlay(alignment: .top) { closeBar }
+        .overlay(alignment: .bottom) { actionBar }
         .statusBarHidden()
         .alert(saveResult?.message ?? "", isPresented: .present($saveResult)) {
             Button("OK", role: .cancel) {}
@@ -124,26 +154,51 @@ struct PhotoViewer: View {
         .task { await photo.load() }
     }
 
-    private var toolbar: some View {
+    /// The X at the top right, where it is on the app's other sheets.
+    private var closeBar: some View {
         HStack {
-            Button { dismiss() } label: { Label("Close", icon: "slab-close") }
             Spacer()
-            if photo.image != nil {
-                Menu {
-                    PhotoMenu(photo: photo, saveResult: $saveResult)
-                } label: {
-                    Label("Photo Actions", systemImage: "ellipsis")
-                }
-            }
+            SheetCloseButton(onDark: true)
         }
-        .labelStyle(.iconOnly)
-        .font(.title3.weight(.semibold))
-        .foregroundStyle(.white)
-        .buttonStyle(.bordered)
-        .buttonBorderShape(.circle)
-        .tint(.white.opacity(0.25))
         .padding(.horizontal)
         .opacity(dragOffset == 0 ? 1 : 0)
+    }
+
+    /// Save and Share, labelled, at the bottom center (as in Photos), rather than a ⋯ menu (which
+    /// sometimes didn't open) or bare icons (easy to miss).
+    @ViewBuilder
+    private var actionBar: some View {
+        if photo.image != nil, let data = photo.data {
+            HStack(spacing: 12) {
+                Button {
+                    Task { saveResult = await PhotoActions.save(data) }
+                } label: {
+                    pill(Label("Save", icon: "slab-arrow-down-to-line"))
+                }
+                .accessibilityLabel("Save to Photos")
+                Button {
+                    Task { await PhotoActions.share(photo) }
+                } label: {
+                    pill(Label("Share", icon: "slab-arrow-up-from-line"))
+                }
+            }
+            .buttonStyle(.plain)
+            .padding(.bottom, 12)
+            .opacity(dragOffset == 0 ? 1 : 0)
+        }
+    }
+
+    /// White text and icon on a dark translucent capsule, readable over any photo.
+    private func pill(_ label: Label<Text, Image>) -> some View {
+        label
+            .font(.body.weight(.semibold))
+            .foregroundStyle(.white)
+            .padding(.horizontal, 20)
+            .frame(minHeight: 48)
+            .background(.black.opacity(0.45), in: .capsule)
+            .background(.ultraThinMaterial.opacity(0.6), in: .capsule)
+            .overlay(Capsule().strokeBorder(.white.opacity(0.18)))
+            .contentShape(.capsule)
     }
 
     private var dismissDrag: some Gesture {
@@ -224,5 +279,41 @@ private struct ZoomableImage: UIViewRepresentable {
                 scrollView.zoom(to: CGRect(origin: CGPoint(x: point.x - size.width / 2, y: point.y - size.height / 2), size: size), animated: true)
             }
         }
+    }
+}
+
+/// The shared photo's band: the "me" mark and "3 years ago" in semibold white serif on olive,
+/// across the top of the photo at its own width.
+enum ShareCard {
+    @MainActor
+    static func render(_ photo: UIImage, label: String) -> UIImage {
+        // Big enough to look sharp anywhere, small enough to share quickly.
+        let width = min(photo.size.width * photo.scale, 2400)
+        let photoHeight = width * photo.size.height / max(photo.size.width, 1)
+        let band = (width * 0.11).rounded()
+        let card = VStack(spacing: 0) {
+            HStack(spacing: band * 0.22) {
+                Image("Logo")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: band * 0.6, height: band * 0.6)
+                    .clipShape(.circle)
+                Text(label)
+                    .font(.system(size: band * 0.36, weight: .semibold, design: .serif))
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.5)
+            }
+            .frame(width: width, height: band)
+            .background(Color("AccentColor"))
+            Image(uiImage: photo)
+                .resizable()
+                .frame(width: width, height: photoHeight)
+        }
+        .environment(\.colorScheme, .light)
+        let renderer = ImageRenderer(content: card)
+        renderer.scale = 1
+        renderer.isOpaque = true
+        return renderer.uiImage ?? photo
     }
 }

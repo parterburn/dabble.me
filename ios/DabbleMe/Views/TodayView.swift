@@ -183,6 +183,7 @@ struct TodayView: View {
                         composing = true
                     } label: {
                         Text("Write Today's Entry")
+                            .fontWeight(.medium) // the main call to action
                             .frame(maxWidth: .infinity, minHeight: 30)
                     }
                     .buttonStyle(.borderedProminent)
@@ -244,26 +245,37 @@ struct TodayView: View {
         .accessibilityHint("Shows your stats")
     }
 
+    /// On This Day when there's something from this date in past years; otherwise a Throwback
+    /// (any past entry, as in the daily email), or, with nothing to look back on yet, a nudge to write.
+    /// Free accounts see On This Day as a PRO feature instead.
     @ViewBuilder
     private func onThisDaySection(_ today: TodaySummary) -> some View {
-        if today.onThisDay.isEmpty, let throwback = today.throwback {
-            throwbackSection(throwback, today: today)
+        if !today.onThisDayAvailable {
+            memoriesSection(today)
+        } else if today.onThisDay.isEmpty {
+            throwbackSection(today.throwback, today: today)
         } else {
             memoriesSection(today)
         }
     }
 
-    /// Nothing on this date in earlier years: a past entry instead, like the daily email's.
     @ViewBuilder
-    private func throwbackSection(_ throwback: EntrySummary, today: TodaySummary) -> some View {
-        SectionTitle("Throwback", icon: "slab-hourglass")
+    private func throwbackSection(_ throwback: EntrySummary?, today: TodaySummary) -> some View {
+        SectionTitle("Throwback", icon: "slab-backward")
             .padding(.top, 12)
             .plainRow()
-        Section {
-            row(throwback)
-                .timelineRowLayout()
-        } header: {
-            MonthHeader(title: Self.throwbackTitle(throwback, today: today), isDay: true)
+        if let throwback {
+            Section {
+                row(throwback)
+                    .timelineRowLayout()
+            } header: {
+                MonthHeader(title: Self.throwbackTitle(throwback, today: today), isDay: true)
+            }
+        } else {
+            Text("This is where your past entries come back to you. Write a little today, and one day you'll find it waiting here.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .plainRow()
         }
     }
 
@@ -284,20 +296,14 @@ struct TodayView: View {
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .plainRow()
-        } else if today.onThisDay.isEmpty {
-            Text("Nothing from this date in earlier years yet. Write today, and next year it'll be waiting for you here.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .plainRow()
-        } else {
-            // One section per memory, so its date sticks at the top while you scroll through it.
-            ForEach(today.onThisDay) { memory in
-                Section {
-                    row(memory)
-                        .timelineRowLayout()
-                } header: {
-                    MonthHeader(title: Self.memoryTitle(memory), isDay: true)
-                }
+        }
+        // One section per memory, so its date sticks at the top while you scroll through it.
+        ForEach(today.onThisDay) { memory in
+            Section {
+                row(memory)
+                    .timelineRowLayout()
+            } header: {
+                MonthHeader(title: Self.memoryTitle(memory), isDay: true)
             }
         }
     }

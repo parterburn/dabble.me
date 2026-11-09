@@ -165,10 +165,10 @@ final class JournalViewsTests: XCTestCase {
         let reflect = app.buttons["Reflect on This Entry"]
         if reflect.waitForExistence(timeout: 3) {
             reflect.tap()
-            XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 5), "The reflection's sheet opens right away")
+            XCTAssertTrue(app.buttons["Close"].waitForExistence(timeout: 5), "The reflection's sheet opens right away")
             XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Written on this device")).firstMatch.waitForExistence(timeout: 90))
             snap("entry-reflection")
-            app.buttons["Done"].tap()
+            app.buttons["Close"].tap()
         } else {
             app.tap() // close the menu
         }
@@ -255,8 +255,8 @@ final class JournalViewsTests: XCTestCase {
         if reflect.waitForExistence(timeout: 10) {
             snap("timeline-actions-reflect")
             reflect.tap()
-            XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 90))
-            app.buttons["Done"].tap()
+            XCTAssertTrue(app.buttons["Close"].waitForExistence(timeout: 90))
+            app.buttons["Close"].tap()
         }
 
         app.openTimelineEntry(row)
@@ -312,6 +312,21 @@ final class JournalViewsTests: XCTestCase {
     }
 
     /// With no hashtags yet, suggestions aren't limited to (an empty) vocabulary. Needs a PRO
+    /// With nothing on this date in past years and no earlier entries, Today shows Throwback with
+    /// a nudge to write. TEST_RUNNER_DABBLE_EMPTY_TOKEN (an account with no past entries).
+    func testThrowbackNudgeWithoutPastEntries() throws {
+        guard let empty = ProcessInfo.processInfo.environment["DABBLE_EMPTY_TOKEN"] else {
+            throw XCTSkip("Set TEST_RUNNER_DABBLE_EMPTY_TOKEN to an account with no entries")
+        }
+        let app = XCUIApplication()
+        app.launchArguments = ["-DabbleDebugAccessToken", empty, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["Throwback"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.staticTexts["On This Day"].exists)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "This is where your past entries come back")).firstMatch.exists)
+        snap("today-throwback-empty")
+    }
+
     /// account with no entries: TEST_RUNNER_DABBLE_EMPTY_TOKEN.
     func testHashtagSuggestionsForNewWriter() throws {
         guard let empty = ProcessInfo.processInfo.environment["DABBLE_EMPTY_TOKEN"] else {
@@ -418,7 +433,7 @@ final class JournalViewsTests: XCTestCase {
         let scroll = app.scrollViews.firstMatch
         scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
             .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.85)))
-        guard app.buttons["Done"].waitForExistence(timeout: 5) else {
+        guard app.buttons["Close"].waitForExistence(timeout: 5) else {
             throw XCTSkip("Apple Intelligence isn't available here")
         }
         // The sheet opens first, reflecting inside it, then the text arrives.
@@ -428,7 +443,7 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Written on this device")).firstMatch.waitForExistence(timeout: 90))
         XCTAssertFalse(app.staticTexts["Reflecting…"].exists)
         snap("pull-reflection")
-        app.buttons["Done"].tap()
+        app.buttons["Close"].tap()
     }
 
     /// From Today: an entry's reflection closes with a pull down (Today's pull to reset doesn't
@@ -442,7 +457,7 @@ final class JournalViewsTests: XCTestCase {
         let scroll = app.scrollViews.firstMatch
         scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
             .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.85)))
-        guard app.buttons["Done"].waitForExistence(timeout: 5) else {
+        guard app.buttons["Close"].waitForExistence(timeout: 5) else {
             throw XCTSkip("Apple Intelligence isn't available here")
         }
         XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Written on this device")).firstMatch.waitForExistence(timeout: 90))
@@ -452,7 +467,7 @@ final class JournalViewsTests: XCTestCase {
             .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.98)),
                    withVelocity: .fast, thenHoldForDuration: 0)
         snap("reflection-after-pull")
-        XCTAssertTrue(app.buttons["Done"].waitForNonExistence(timeout: 5), "Pulling down closes the reflection")
+        XCTAssertTrue(app.buttons["Close"].waitForNonExistence(timeout: 5), "Pulling down closes the reflection")
     }
 
     private func openDailyEmail(_ app: XCUIApplication) {
@@ -673,6 +688,7 @@ final class JournalViewsTests: XCTestCase {
         let app = launch()
         tab(app, "Journal").tap()
         let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "The Overstory")).firstMatch
+        app.scrollTo(row, maxSwipes: 20) // a few months back
         app.openTimelineEntry(row)
         let link = app.links.matching(NSPredicate(format: "label CONTAINS %@", "goodreads.com")).firstMatch
         XCTAssertTrue(link.waitForExistence(timeout: 10), "The web address is a link")
@@ -758,6 +774,33 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Past Year"].waitForExistence(timeout: 10), "Stats, in the Journal tab")
     }
 
+    /// Settings → Home Screen Widget: choosing what shows beside the streak updates the preview.
+    func testWidgetSettingsPreview() throws {
+        let app = launch()
+        tab(app, "Settings").tap()
+        XCTAssertTrue(app.staticTexts["Settings"].waitForExistence(timeout: 10), "Settings has its heading")
+        snap("settings-top")
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Home Screen Widget'")).firstMatch
+        for _ in 0..<4 where !row.exists { app.swipeUp() } // below Reminders and Privacy
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.tap()
+        XCTAssertTrue(app.buttons["On This Day Entry"].waitForExistence(timeout: 5) || app.staticTexts["On This Day Entry"].exists)
+
+        app.staticTexts["On This Day Entry"].tap()
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Bruges!")).firstMatch.waitForExistence(timeout: 5),
+                      "The preview shows the start of a memory")
+        snap("widget-entry")
+
+        app.staticTexts["On This Day Count"].tap()
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "memories from this day")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Bruges!")).firstMatch.exists, "No entry text")
+        snap("widget-count")
+
+        app.staticTexts["Today's Prompt"].tap()
+        XCTAssertFalse(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "memories from this day")).firstMatch.exists)
+        snap("widget-prompt")
+    }
+
     /// A free account writes without photos or links, can delete but not edit, and has no Stats.
     /// TEST_RUNNER_DABBLE_FREE_TOKEN.
     func testFreeAccountLimits() throws {
@@ -766,10 +809,11 @@ final class JournalViewsTests: XCTestCase {
         app.launchArguments = ["-DabbleDebugAccessToken", free, "-DabbleServerOverride", "http://localhost:3000"]
         app.launch()
 
-        // No memories on this date (On This Day is PRO): a throwback instead.
-        XCTAssertTrue(app.staticTexts["Throwback"].waitForExistence(timeout: 15))
-        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "A quiet walk after dinner")).firstMatch.exists)
-        snap("free-throwback")
+        // On This Day is PRO: Today says so (no throwback in its place).
+        XCTAssertTrue(app.staticTexts["On This Day"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["See what you wrote on this date in past years with Dabble Me PRO."].exists)
+        XCTAssertFalse(app.staticTexts["Throwback"].exists)
+        snap("free-on-this-day")
 
         // Writing: no photos, no link button.
         tab(app, "Journal").tap()
@@ -793,8 +837,19 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.buttons["Edit"].exists)
         snap("free-actions")
-        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12)).tap() // close the sheet (above it)
-        XCTAssertTrue(app.buttons["Delete"].waitForNonExistence(timeout: 5))
+        // Delete confirms in its button: a tap turns it into "Hold to Delete", and holding it deletes.
+        app.buttons["Delete"].tap()
+        let hold = app.buttons["Hold to Delete"]
+        XCTAssertTrue(hold.waitForExistence(timeout: 3))
+        XCTAssertTrue(row.exists, "A tap alone doesn't delete")
+        hold.press(forDuration: 0.6) // let go early: nothing happens
+        XCTAssertTrue(hold.exists)
+        sleep(1)
+        snap("free-hold-released") // the red fill has emptied again
+        hold.press(forDuration: 2.6)
+        XCTAssertTrue(hold.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(row.waitForNonExistence(timeout: 10), "Holding deletes the entry")
+        XCTAssertFalse(app.alerts.firstMatch.exists, "No alert after deleting")
 
         // Stats (from the Journal title's menu): a PRO screen.
         app.navigationBars.buttons["Journal"].tap()
@@ -918,7 +973,7 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue((tag.value as? String ?? "").contains("since entry"), "Dated tag shows its age")
         snap("actions-dated-tag")
         tag.tap() // searches it
-        XCTAssertTrue(app.staticTexts["1 matching entry"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["2 matching entries"].waitForExistence(timeout: 10)) // #Biscuit is on two
     }
 
     /// On This Day rows are the Journal's rows: swipe left for Actions.
