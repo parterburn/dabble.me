@@ -97,11 +97,11 @@ struct TodayWidgetContent: View {
         }
     }
 
-    /// "Dabble me." as on dabble.me: Instrument Serif with an olive period.
+    /// "Dabble me." in the logo's colors: Instrument Serif, near-black with an olive period (white
+    /// with a lighter sage period in dark mode).
     private var wordmark: some View {
-        (Text("Dabble me") + Text(".").foregroundStyle(Color.sage))
-            .font(.custom("InstrumentSerif-Regular", size: 19))
-            .foregroundStyle(.primary)
+        (Text("Dabble me").foregroundStyle(Color.logoInk) + Text(".").foregroundStyle(Color.logoPeriod))
+            .font(.custom("InstrumentSerif-Regular", size: 23))
             .accessibilityLabel("Dabble Me")
     }
 
@@ -198,6 +198,15 @@ struct TodayWidgetContent: View {
 }
 
 extension Color {
+    /// The dabble.me logo's colors.
+    static let logoInk = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? .white : UIColor(red: 0x11 / 255, green: 0x11 / 255, blue: 0x11 / 255, alpha: 1)
+    })
+    static let logoPeriod = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark
+            ? UIColor(red: 0xA9 / 255, green: 0xAD / 255, blue: 0x9B / 255, alpha: 1)
+            : UIColor(red: 0x5C / 255, green: 0x66 / 255, blue: 0x54 / 255, alpha: 1)
+    })
     static let sage = Color(red: 0x5C / 255, green: 0x66 / 255, blue: 0x54 / 255)
     static let paper = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark
