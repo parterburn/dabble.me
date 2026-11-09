@@ -344,8 +344,9 @@ private struct SectionTitle: View {
     var body: some View {
         HStack(spacing: 8) {
             if let icon {
+                // Light grey: a label's icon, not a button (Today's other icons are tappable).
                 appIcon(icon)
-                    .foregroundStyle(.tint)
+                    .foregroundStyle(.tertiary)
                     .accessibilityHidden(true)
             }
             Text(title)

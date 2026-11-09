@@ -178,6 +178,12 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       ])
     end
 
+    it "lists every day with an entry, newest first, once each" do
+      create(:entry, user: pro_user, date: Time.zone.local(2024, 6, 3, 18), body: "<p>Same day</p>")
+      get "/api/v1/entries/days", headers: auth(pro_user)
+      expect(json["days"]).to eq(%w[2025-01-02 2024-06-20 2024-06-03])
+    end
+
     it "summarizes today: today's entry, On This Day with years ago, and a prompt" do
       Inspiration.create!(category: "Question", body: "What surprised you today?")
       travel_to Time.find_zone(pro_user.send_timezone).local(2026, 6, 20, 12) do

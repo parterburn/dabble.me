@@ -114,6 +114,30 @@ final class FlowTests: XCTestCase {
         snap("journal-scrubbed")
     }
 
+    /// Tapping (not dragging) the scrubber opens a calendar of written days; picking one scrolls
+    /// the timeline to it.
+    func testTappingScrubberJumpsToADay() throws {
+        openJournal()
+        scrubToBottom() // start far from the day picked below
+        let scrubber = app.otherElements["Timeline scrubber"]
+        XCTAssertTrue(scrubber.waitForExistence(timeout: 5))
+        scrubber.tap()
+        XCTAssertTrue(app.staticTexts["Jump to a Day"].waitForExistence(timeout: 5), "A tap opens the calendar")
+        sleep(1)
+        snap("day-picker")
+        // The demo's Biscuit entry is five days ago, in the month the calendar opens on.
+        let date = Calendar.current.date(byAdding: .day, value: -5, to: .now)!
+        let label = date.formatted(.dateTime.month(.wide).day())
+        let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", label)).firstMatch
+        XCTAssertTrue(day.waitForExistence(timeout: 10), "\(label) is in the calendar")
+        day.tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Biscuit has discovered")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        sleep(1)
+        XCTAssertTrue(row.isHittable, "The timeline jumped to the day")
+        snap("day-picked")
+    }
+
     func testRefreshPicksUpChangesInOlderMonths() throws {
         openJournal()
         scrubToBottom()

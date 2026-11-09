@@ -34,6 +34,9 @@ struct JournalView: View {
     @State private var handledStatsRequest = 0
     /// Bumped to scroll the timeline to its newest entry (after the List view is back on screen).
     @State private var scrollToTop = 0
+    /// Tapping the timeline scrubber: a calendar of written days, and the day picked from it.
+    @State private var pickingDay = false
+    @State private var jumpDay: JournalDay?
     @State private var actions = EntryActions()
     @State private var composing = false
     @State private var showingProInfo = false
@@ -189,8 +192,16 @@ struct JournalView: View {
                     }, onRelease: { month in
                         // Load where the scrubber landed now, rather than waiting for rows to settle.
                         Task { await model.loadMonths(around: month.key) }
+                    }, onTap: {
+                        pickingDay = true
                     })
                 }
+            }
+            .sheet(isPresented: $pickingDay) { DayPickerSheet { jumpDay = $0 } }
+            .onChange(of: jumpDay) { _, day in
+                guard let day else { return }
+                jumpDay = nil
+                Task { await jump(to: day, proxy: proxy) }
             }
             // Only the month header stays while reading down; the title bar comes back on the
             // way up (or at the top).
@@ -287,6 +298,26 @@ struct JournalView: View {
             .frame(width: 44, height: 44) // the size of the + button opposite
             .clipShape(.circle)
             .accessibilityHidden(true)
+    }
+
+    /// Scrolls the timeline to a day's entry: to its month at once, then, once the month has
+    /// loaded and its rows are laid out, to the entry itself.
+    private func jump(to day: JournalDay, proxy: ScrollViewProxy) async {
+        let key = day.monthKey
+        if let first = model.monthEntries[key]?.first {
+            proxy.scrollTo(first.id, anchor: .top)
+        } else {
+            proxy.scrollTo(PlaceholderID(month: key, index: 0), anchor: .top)
+        }
+        await model.loadMonths(around: key)
+        for _ in 0..<30 {
+            if let entry = model.monthEntries[key]?.first(where: { $0.date == day.iso }) {
+                try? await Task.sleep(for: .milliseconds(150))
+                withAnimation { proxy.scrollTo(entry.id, anchor: .top) }
+                return
+            }
+            try? await Task.sleep(for: .milliseconds(150))
+        }
     }
 
     private func startWriting() {

@@ -2,7 +2,8 @@ import SwiftUI
 
 /// Google Photos-style fast scroller for the Journal: a tab on the right edge (rounded on its
 /// left, flush with the screen) that appears while scrolling; drag it to see the years and the
-/// month you're on, and jump to any month. Positions are proportional to entry counts, which matches the timeline's layout (rows and
+/// month you're on, and jump to any month, or tap it for a calendar of the days you wrote.
+/// Positions are proportional to entry counts, which matches the timeline's layout (rows and
 /// placeholders are similar heights).
 struct TimelineScrubber: View {
     let months: [MonthCount]
@@ -11,6 +12,8 @@ struct TimelineScrubber: View {
     let onSelect: (MonthCount) -> Void
     /// The month the scrubber was released on, so its entries can load right away.
     var onRelease: (MonthCount) -> Void = { _ in }
+    /// A tap on the thumb (no drag): jump to a day from a calendar.
+    var onTap: () -> Void = {}
 
     @State private var dragFraction: CGFloat?
     @State private var selected: MonthCount?
@@ -70,6 +73,7 @@ struct TimelineScrubber: View {
                     .accessibilityAdjustableAction { direction in
                         adjust(direction)
                     }
+                    .accessibilityAction(named: "Jump to a Day") { onTap() }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
         }
@@ -134,6 +138,9 @@ struct TimelineScrubber: View {
         DragGesture(minimumDistance: 0, coordinateSpace: .named(Self.space))
             .onChanged { value in
                 hideTask?.cancel()
+                show()
+                // Scrubbing starts once the finger moves, so a tap doesn't jump the list.
+                guard dragFraction != nil || abs(value.translation.height) > 5 else { return }
                 let fraction = min(max((value.location.y - thumbHeight / 2) / trackHeight, 0), 1)
                 dragFraction = fraction
                 if let month = month(at: fraction), month != selected {
@@ -142,6 +149,11 @@ struct TimelineScrubber: View {
                 }
             }
             .onEnded { _ in
+                if dragFraction == nil {
+                    onTap() // it never moved: a tap
+                    scheduleHide()
+                    return
+                }
                 if let selected { onRelease(selected) }
                 dragFraction = nil
                 selected = nil

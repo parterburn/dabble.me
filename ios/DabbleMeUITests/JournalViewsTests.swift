@@ -41,7 +41,8 @@ final class JournalViewsTests: XCTestCase {
     }
 
     func testJournalStatsAndPhotos() throws {
-        let app = launch()
+        // The default square size, whatever an earlier run pinched it to (the tap below is measured).
+        let app = launch(["-stats.heatmapCell", "13"])
         let journal = tab(app, "Journal")
         XCTAssertTrue(journal.waitForExistence(timeout: 15))
         journal.tap()
@@ -51,6 +52,31 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Entries per Month"].exists)
         sleep(1)
         snap("journal-stats")
+
+        // Past Year: tapping yesterday's square (the demo always wrote yesterday) opens its entries
+        // in the drawer, every time. Today is in the newest column at its weekday's row (Sunday on
+        // top), so yesterday is the row above, or the bottom of the column before on a Sunday.
+        let heatmap = app.otherElements["Writing days in the past year"]
+        XCTAssertTrue(heatmap.waitForExistence(timeout: 5))
+        let pitch: CGFloat = 13 + 3, monthRow: CGFloat = 2 + 16 + 4
+        let todayRow = Calendar(identifier: .gregorian).component(.weekday, from: .now) - 1
+        let (column, row) = todayRow == 0 ? (1, 6) : (0, todayRow - 1)
+        let yesterday = CGVector(dx: heatmap.frame.width - 6.5 - CGFloat(column) * pitch,
+                                 dy: monthRow + CGFloat(row) * pitch + 6.5)
+        for attempt in 1...3 {
+            heatmap.coordinate(withNormalizedOffset: .zero).withOffset(yesterday).tap()
+            XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10), "The day's entries open (try \(attempt))")
+            if attempt == 1 { sleep(1); snap("stats-day-sheet") }
+            app.buttons["Close"].tap()
+            XCTAssertTrue(app.buttons["Open"].waitForNonExistence(timeout: 5))
+        }
+
+        // Pinch out for bigger squares (kept for next time), then back.
+        heatmap.pinch(withScale: 2, velocity: 1)
+        sleep(1)
+        snap("stats-heatmap-zoomed")
+        heatmap.pinch(withScale: 0.5, velocity: -1)
+
         app.swipeUp()
         snap("journal-stats-2")
 

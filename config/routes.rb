@@ -46,6 +46,7 @@ Rails.application.routes.draw do
           get :random
           get :on_this_day
           get :months
+          get :days
           get :memory_days
         end
       end
