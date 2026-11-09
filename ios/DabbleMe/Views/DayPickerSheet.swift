@@ -61,8 +61,11 @@ private struct EntryCalendar: UIViewRepresentable {
         view.selectionBehavior = UICalendarSelectionSingleDate(delegate: context.coordinator)
         let sorted = days.sorted()
         let calendar = view.calendar
+        // From the first entry to today or the latest entry, whichever is later: a day can be
+        // ahead of the phone's (a journal time zone ahead of it, or an entry dated forward).
         if let first = sorted.first.flatMap(JournalDay.init)?.components, let start = calendar.date(from: first) {
-            view.availableDateRange = DateInterval(start: start, end: max(start, .now))
+            let latest = sorted.last.flatMap(JournalDay.init)?.components.flatMap { calendar.date(from: $0) } ?? start
+            view.availableDateRange = DateInterval(start: start, end: max(start, latest, .now))
         }
         // Open on the month of the latest entry.
         if let latest = sorted.last.flatMap(JournalDay.init)?.components {
