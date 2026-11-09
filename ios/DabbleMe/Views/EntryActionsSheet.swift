@@ -57,7 +57,7 @@ struct EntryActionsSheet: View {
                                     if let age = item.age {
                                         Text(age.prefix(1).uppercased() + age.dropFirst())
                                             .font(.footnote)
-                                            .foregroundStyle(.secondary)
+                                            .foregroundStyle(.primary.opacity(0.72)) // stronger than .secondary
                                     }
                                 }
                                 Spacer()

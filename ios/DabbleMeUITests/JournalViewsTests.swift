@@ -778,6 +778,8 @@ final class JournalViewsTests: XCTestCase {
     func testWidgetSettingsPreview() throws {
         let app = launch()
         tab(app, "Settings").tap()
+        XCTAssertTrue(app.staticTexts["Settings"].waitForExistence(timeout: 10), "Settings has its heading")
+        snap("settings-top")
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Home Screen Widget'")).firstMatch
         for _ in 0..<4 where !row.exists { app.swipeUp() } // below Reminders and Privacy
         XCTAssertTrue(row.waitForExistence(timeout: 10))

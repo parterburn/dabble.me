@@ -26,6 +26,12 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             List {
+                // The page title, set like Today's date (the nav bar shows none).
+                Text("Settings")
+                    .font(.system(.title, design: .serif, weight: .semibold))
+                    .accessibilityAddTraits(.isHeader)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 0))
                 if let me = model.me {
                     Section("Account") {
                         LabeledContent("Email", value: me.email)
@@ -60,10 +66,14 @@ struct SettingsView: View {
                     NavigationLink {
                         WidgetSettingsView()
                     } label: {
-                        LabeledContent {
-                            Text(WidgetSnapshot.content.title)
-                        } label: {
-                            Label("Home Screen Widget", systemImage: "widget.medium")
+                        Label {
+                            Text("Home Screen Widget")
+                        } icon: {
+                            // No Slab widget icon: an SF Symbol, sized like the Slab ones.
+                            Image(systemName: "widget.small")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 22, height: 22)
                         }
                     }
                     NavigationLink {
@@ -72,7 +82,7 @@ struct SettingsView: View {
                         LabeledContent {
                             Text("\(textSize.label), \(fontStyle.label)")
                         } label: {
-                            Label("Accessibility", systemImage: "textformat.size")
+                            Label("Accessibility", icon: "slab-universal-access")
                         }
                     }
                 }
@@ -130,7 +140,8 @@ struct SettingsView: View {
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar(removing: .title) // the tab says where you are
+            .toolbar(removing: .title) // the heading in the list is the title
+            .toolbarVisibility(.hidden, for: .navigationBar) // like Today: no empty bar above it
             .task { notificationsDenied = await ReminderScheduler.shared.isDenied() }
             .task { canLinkToSubscribe = await Storefront.current?.countryCode == "USA" }
             .onChange(of: writingReminder) { _, on in Task { await remindersChanged(turnedOn: on) } }

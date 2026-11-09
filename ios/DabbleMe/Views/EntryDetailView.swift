@@ -476,7 +476,7 @@ struct DatedHashtagRow: View {
                             .foregroundStyle(.tint)
                         Text(Self.shortAge(hashtag.age))
                             .font(.footnote)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.primary.opacity(0.72)) // stronger than .secondary on the tint
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 7)
