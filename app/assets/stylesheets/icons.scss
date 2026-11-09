@@ -9,14 +9,10 @@ $slab-icons-url: "/icons/slab";
 
 // !important so container styles can't repaint the icon, like the card
 // headers' `h3 span { background-color: #fff; padding: 0 15px }`.
-@mixin icon-mask($url) {
-  background-color: currentColor !important;
-  -webkit-mask: $url center / contain no-repeat;
-  mask: $url center / contain no-repeat;
-}
-
 @mixin slab-mask($name) {
-  @include icon-mask(url("#{$slab-icons-url}/#{$name}.svg"));
+  background-color: currentColor !important;
+  -webkit-mask: url("#{$slab-icons-url}/#{$name}.svg") center / contain no-repeat;
+  mask: url("#{$slab-icons-url}/#{$name}.svg") center / contain no-repeat;
 }
 
 // <span class="slab-icon slab-icon--edit" aria-hidden="true"></span>
@@ -29,7 +25,7 @@ $slab-icons-url: "/icons/slab";
 }
 
 // Every icon on the CDN that the app uses.
-@each $name in arrow-down-to-line, arrow-left, arrow-right, arrow-up-from-line, arrows-rotate, calendar, check, clipboard, close, cloud, compress, copy, edit, gear, heart, hourglass, image, images, lightbulb, lock, music, search, shield, sign-out, trash, trophy {
+@each $name in arrow-down-to-line, arrow-left, arrow-right, arrow-up-from-line, arrows-rotate, calendar, check, clipboard, close, cloud, compress, copy, edit, gear, heart, hourglass, image, images, lightbulb, lock, music, search, shield, sign-out, sparkles, trash, trophy {
   .slab-icon--#{$name} {
     @include slab-mask($name);
   }
@@ -38,12 +34,6 @@ $slab-icons-url: "/icons/slab";
 // Uploaded as backward-slab-regular-full.svg.
 .slab-icon--backward {
   @include slab-mask(backward-slab-regular-full);
-}
-
-// Drawn for Dabble Me rather than taken from Font Awesome, so it can live in
-// the repo (app/assets/images/icons/).
-.slab-icon--sparkles {
-  @include icon-mask(image-url("icons/sparkles.svg"));
 }
 
 .slab-icon--spin {

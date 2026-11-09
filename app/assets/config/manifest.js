@@ -22,7 +22,6 @@
 //= link oauth/openai.png
 
 //= link logos/me-avatar.png
-//= link icons/sparkles.svg
 
 //= link application.css
 //= link oauth_consent_bundle.css
