@@ -67,19 +67,15 @@ RSpec.describe "Navbar menus, tooltips and the entry editor", type: :feature, js
 
   it "inserts a link from the editor's link dialog" do
     visit new_entry_path
-    find(".note-editable").click
-    page.execute_script(<<~JS)
-      $('#entry_entry').summernote('code', '<p>see example</p>');
-      var node = document.querySelector('.note-editable p');
-      var range = document.createRange();
-      range.selectNodeContents(node);
-      var selection = window.getSelection();
-      selection.removeAllRanges();
-      selection.addRange(range);
-    JS
+    # Type and select with the keyboard: Summernote only records a selection
+    # from key and mouse events, not one set from script.
+    editor = find(".note-editable")
+    editor.click
+    editor.send_keys("see example", [:shift, :home])
 
     find(".note-toolbar button[aria-label^='Link']").click
     within(".note-modal.link-dialog") do
+      expect(find(".note-link-text").value).to eq("see example")
       find(".note-link-url").set("example.com")
       find(".note-link-btn").click
     end
