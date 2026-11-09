@@ -64,7 +64,7 @@ The simulator reaches `localhost` directly. On a phone, "localhost" is the phone
 
 **Launch.** The launch screen is the Paper color; then `SplashView` types "me." in the icon's square with a blinking cursor until the journal has loaded (at most about 2.5 seconds; just the icon with Reduce Motion). The Face ID lock is only the Face ID symbol, which tries again when tapped.
 
-**On device only.** Hashtag suggestions, "Reflect on This Entry" (the on-device version of the web's AI reflection) and Today's "Prompt from My Recent Entries" use Apple Intelligence's on-device model (`FoundationModels`, iOS 26+, hidden where unavailable). Reminders, the Face ID lock and drafts are local too.
+**On device only.** Hashtag suggestions, "Reflect on This Entry" (the on-device version of the web's AI reflection) and Today's "Prompt from My Recent Entries" use Apple Intelligence's on-device model (`FoundationModels`, iOS 26+, hidden where unavailable). Prompts made from entry text use the `permissiveContentTransformations` guardrails: the default ones refuse ordinary hard journal entries (a fight, a rough night with the kids). To check one that's refused, run `reflectsOnAHardEntry()` with `TEST_RUNNER_DABBLE_REFLECT_FILE` pointing at its text (keep it out of the repo). Reminders, the Face ID lock and drafts are local too.
 
 **Icons** are the Slab set (Font Awesome Pro, as on dabble.me), as template vector assets in `Assets.xcassets/Slab` (`slab-…`), sized 24pt. `appIcon(_:)` / `Label(_:icon:)` take a `slab-…` name or fall back to an SF Symbol for anything the set doesn't cover. `slab-sparkles` (Reflect, the AI Connector) and `slab-bolt` (Actions) are our own, drawn to match.
 

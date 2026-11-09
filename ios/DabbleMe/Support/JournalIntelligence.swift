@@ -24,12 +24,14 @@ enum JournalIntelligence {
     }
 
     enum Failure: LocalizedError {
-        case unavailable, noAnswer, noMatchingHashtags
+        case unavailable, noAnswer, noMatchingHashtags, declined
 
         var errorDescription: String? {
             switch self {
             case .unavailable: "Apple Intelligence isn't available on this device right now."
             case .noAnswer: "Apple Intelligence couldn't come up with anything for this one."
+            // Apple's on-device safety filters, which an app can't turn off.
+            case .declined: "Apple Intelligence's on-device safety filters wouldn't respond to this entry. They can be cautious with hard moments; your entry is fine."
             case .noMatchingHashtags: "None of your hashtags fit this entry yet."
             }
         }
@@ -90,6 +92,7 @@ enum JournalIntelligence {
         let name = firstName.map { "My name is \($0). " } ?? ""
         return try await respond(
             instructions: lifeCoach,
+            journalText: true,
             prompt: "\(name)Today is \(today). Here is my journal entry from \(date) (\(ago.lowercased())):\n\n\(clipped(text, limit: 2500))\(context)"
         )
     }
@@ -99,6 +102,12 @@ enum JournalIntelligence {
     You are the journaling assistant inside Dabble Me, a private journaling app. You help the writer reflect on \
     their own journal entry with warmth, curiosity, light humor, and emotional steadiness. You are not a therapist. \
     Help them notice patterns, name feelings, explore meaning, and leave with one thoughtful next reflection.
+
+    # Context
+    This is the writer's own private journal, written for themselves. Journals are where people work through \
+    the hard parts of everyday life: arguments, parenting frustrations, anger, conflict with a partner or family, \
+    grief, stress and regret. Writing about these is healthy self-reflection, not harmful content. Engage with \
+    the entry as written, supportively and without judgment.
 
     # Personality
     Warm, thoughtful, lightly witty, and validating without becoming sugary or performative. Sound like a \
@@ -171,12 +180,26 @@ enum JournalIntelligence {
         text.count > limit ? String(text.prefix(limit)) + "…" : text
     }
 
-    private static func respond(instructions: String, prompt: String, temperature: Double? = nil) async throws -> String {
+    /// `journalText`: the prompt is the writer's own entry, which can be about hard things (a fight,
+    /// a frustrating night with the kids). Apple's default guardrails reject much of that outright, so
+    /// those use the guardrails Apple provides for working with the user's own, possibly sensitive,
+    /// text. The model's own safety behavior still applies.
+    private static func respond(instructions: String, journalText: Bool = false, prompt: String,
+                                temperature: Double? = nil) async throws -> String {
         #if canImport(FoundationModels)
         if #available(iOS 26.0, *), SystemLanguageModel.default.isAvailable {
-            let session = LanguageModelSession(model: .default, instructions: instructions)
-            let reply = try await session.respond(to: prompt, options: GenerationOptions(temperature: temperature))
-                .content.trimmingCharacters(in: .whitespacesAndNewlines)
+            let model = journalText ? SystemLanguageModel(guardrails: .permissiveContentTransformations) : .default
+            let session = LanguageModelSession(model: model, instructions: instructions)
+            let reply: String
+            do {
+                reply = try await session.respond(to: prompt, options: GenerationOptions(temperature: temperature))
+                    .content.trimmingCharacters(in: .whitespacesAndNewlines)
+            } catch let error as LanguageModelSession.GenerationError {
+                switch error {
+                case .guardrailViolation, .refusal: throw Failure.declined
+                default: throw error
+                }
+            }
             guard !reply.isEmpty else { throw Failure.noAnswer }
             return reply
         }

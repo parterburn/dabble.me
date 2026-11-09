@@ -508,6 +508,76 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(leo.waitForNonExistence(timeout: 10))
     }
 
+    /// Pulling down far enough resets a tab: expanded entries collapse (Journal and Search).
+    func testPullToResetCollapsesEntries() throws {
+        let app = launch()
+        func pullDown(_ list: XCUIElement) {
+            let start = list.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.15))
+            start.press(forDuration: 0.05, thenDragTo: list.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.85)))
+        }
+        // Only an expanded entry shows its full date: the sticky header in Journal, a line in Search.
+        let day = Calendar.current.date(byAdding: .day, value: -4, to: .now)!
+        let header = app.staticTexts[day.formatted(.dateTime.weekday(.wide).month(.wide).day().year())]
+        let dateLine = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@",
+            day.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year()))).firstMatch
+
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Big presentation went well")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.tap()
+        XCTAssertTrue(header.waitForExistence(timeout: 5), "Expanded")
+        pullDown(app.collectionViews.firstMatch)
+        XCTAssertTrue(header.waitForNonExistence(timeout: 10), "Pulling down collapses it")
+
+        tab(app, "Search").tap()
+        let field = app.searchFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        field.typeText("presentation\n")
+        let result = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Big presentation went well")).firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout: 10))
+        result.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.2)).tap() // away from #hashtag links
+        XCTAssertTrue(dateLine.waitForExistence(timeout: 5), "Expanded in the results")
+        pullDown(app.collectionViews.firstMatch)
+        XCTAssertTrue(dateLine.waitForNonExistence(timeout: 10), "Pulling down collapses it")
+        XCTAssertTrue(result.exists, "The results stay")
+    }
+
+    /// Quick date changes save in order, and the last pick wins, even going back to the original
+    /// date (which used to be skipped, leaving the earlier change saved).
+    func testTagDateRapidChangesKeepTheLastPick() throws {
+        // The demo dates #Biscuit 3 years and 5 months back.
+        let original = Calendar.current.date(byAdding: DateComponents(year: -3, month: -5), to: .now)!
+        let step = Calendar.current.component(.day, from: original) <= 26 ? 1 : -1
+        func day(_ offset: Int) -> String {
+            Calendar.current.date(byAdding: .day, value: offset * step, to: original)!.formatted(.dateTime.weekday(.wide).month(.wide).day())
+        }
+        func openBiscuit(_ app: XCUIApplication) -> XCUIElement {
+            tab(app, "Settings").tap()
+            app.buttons["Manage Hashtags"].tap()
+            let cell = app.cells.containing(.staticText, identifier: "#Biscuit").firstMatch
+            XCTAssertTrue(cell.waitForExistence(timeout: 10))
+            return cell.buttons.firstMatch
+        }
+
+        // Slow saves, so the picks overlap requests still in flight.
+        var app = launch(["-DabbleDebugSlowWrites", "2500"])
+        openBiscuit(app).tap()
+        XCTAssertTrue(app.buttons[day(1)].waitForExistence(timeout: 5))
+        app.buttons[day(1)].tap()
+        app.buttons[day(2)].tap()
+        app.buttons[day(0)].tap()
+        app.buttons["dismiss popup"].tap()
+        sleep(10) // let the saves finish
+
+        app.terminate()
+        app = launch()
+        let picker = openBiscuit(app)
+        let shown = original.formatted(.dateTime.month(.abbreviated).day().year())
+        XCTAssertTrue(picker.label.contains(shown) || (picker.value as? String ?? "").contains(shown),
+                      "Expected \(shown), got \(picker.label) \(picker.value ?? "")")
+    }
+
     /// A free account sees Daily Email greyed out with the rest of Reminders. TEST_RUNNER_DABBLE_FREE_TOKEN.
     func testEmailScheduleFreeAccount() throws {
         guard let free = ProcessInfo.processInfo.environment["DABBLE_FREE_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_FREE_TOKEN") }

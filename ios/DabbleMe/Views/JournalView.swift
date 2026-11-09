@@ -127,7 +127,11 @@ struct JournalView: View {
             .listStyle(.plain)
             .scrollIndicators(.hidden) // the timeline scrubber replaces the standard indicator
             .contentMargins(.trailing, 20, for: .scrollContent) // room for the scrubber
-            .refreshable { await model.refresh() }
+            // Pull to reset: collapses expanded entries and picks up new ones.
+            .refreshable {
+                withAnimation(.snappy(duration: 0.25)) { expanded = [] }
+                await model.refresh()
+            }
             .onChange(of: scrollToTop) {
                 guard let month = model.months.first else { return }
                 withAnimation {

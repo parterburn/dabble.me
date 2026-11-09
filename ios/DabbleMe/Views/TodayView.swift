@@ -50,7 +50,11 @@ struct TodayView: View {
             .navigationTitle("Today") // back-button label on entries opened from here
             .toolbarVisibility(.hidden, for: .navigationBar)
             .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
-            .refreshable { await model.loadToday() }
+            // Pull to reset: collapses expanded entries and reloads today.
+            .refreshable {
+                withAnimation(.snappy(duration: 0.25)) { expanded = [] }
+                await model.loadToday()
+            }
             .onChange(of: model.composeRequest, initial: true) { _, requested in
                 guard requested else { return }
                 model.composeRequest = false

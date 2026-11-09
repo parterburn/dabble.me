@@ -114,6 +114,12 @@ struct SearchView: View {
                 }
             }
             .listStyle(.plain)
+            // Pull to reset: collapses expanded results and runs the search again.
+            .refreshable {
+                withAnimation(.snappy(duration: 0.25)) { expanded = [] }
+                query = submitted
+                await search(reset: true, keepingResults: true)
+            }
         }
     }
 
@@ -129,7 +135,8 @@ struct SearchView: View {
         error = nil
     }
 
-    private func search(reset: Bool) async {
+    /// `keepingResults`: a pull to reset keeps the list up (and its pull running) until the new results come.
+    private func search(reset: Bool, keepingResults: Bool = false) async {
         let term = reset ? query.trimmingCharacters(in: .whitespaces) : submitted
         guard !term.isEmpty, !isSearching else { return }
         let page: Int
@@ -145,12 +152,12 @@ struct SearchView: View {
         defer { isSearching = false }
         if reset {
             submitted = term
-            results = []
+            if !keepingResults { results = [] }
         }
         do {
             let result = try await model.search(term, page: page)
             guard term == submitted else { return } // a newer search started meanwhile
-            results += result.entries
+            results = reset ? result.entries : results + result.entries
             nextPage = result.nextPage
             totalCount = result.totalCount
             error = nil

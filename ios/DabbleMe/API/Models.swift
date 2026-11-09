@@ -348,7 +348,7 @@ struct TagDate: Codable, Sendable, Hashable, Identifiable {
 }
 
 struct TagDateList: Decodable, Sendable {
-    let hashtags: [TagDate]
+    var hashtags: [TagDate]
     /// Tags used lately that don't have a date yet.
     let suggestions: [String]
 }

@@ -9,6 +9,10 @@ struct TagDatesView: View {
     @State private var loadError: String?
     @State private var error: String?
     @State private var adding: String?
+    /// Dates picked but not saved yet (by tag id), and the tags with a save in flight: one save at a
+    /// time per tag, always sending the latest pick, so the last date chosen is the one that sticks.
+    @State private var picked: [Int: String] = [:]
+    @State private var saving: Set<Int> = []
 
     var body: some View {
         Group {
@@ -20,8 +24,8 @@ struct TagDatesView: View {
                                 .foregroundStyle(.secondary)
                         }
                         ForEach(list.hashtags) { item in
-                            DatePicker(selection: Binding(get: { item.day?.localDate ?? .now }, set: { date in
-                                Task { await change(item, to: date) }
+                            DatePicker(selection: Binding(get: { JournalDay(picked[item.id] ?? item.date)?.localDate ?? .now }, set: { date in
+                                pick(item, date)
                             }), displayedComponents: .date) {
                                 Text("#\(item.tag)")
                             }
@@ -95,15 +99,29 @@ struct TagDatesView: View {
         }
     }
 
-    private func change(_ item: TagDate, to date: Date) async {
-        let iso = JournalDay(localDate: date).iso
-        guard iso != item.date else { return }
-        do {
-            _ = try await model.updateTagDate(id: item.id, date: iso)
-            await load()
-        } catch {
-            self.error = error.localizedDescription
+    private func pick(_ item: TagDate, _ date: Date) {
+        picked[item.id] = JournalDay(localDate: date).iso
+        if !saving.contains(item.id) { Task { await save(item.id) } }
+    }
+
+    private func savedDate(_ id: Int) -> String? {
+        list?.hashtags.first { $0.id == id }?.date
+    }
+
+    private func save(_ id: Int) async {
+        saving.insert(id)
+        defer { saving.remove(id) }
+        while let want = picked[id], want != savedDate(id) {
+            do {
+                let saved = try await model.updateTagDate(id: id, date: want)
+                if let index = list?.hashtags.firstIndex(where: { $0.id == id }) { list?.hashtags[index] = saved }
+            } catch {
+                picked[id] = nil // back to the saved date
+                self.error = error.localizedDescription
+                return
+            }
         }
+        picked[id] = nil // the picker now matches what's saved
     }
 
     private func remove(_ item: TagDate) async {
