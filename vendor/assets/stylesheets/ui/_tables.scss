@@ -1,0 +1,111 @@
+table {
+  background-color: transparent;
+  td,
+  th {
+    &[class*="col-"] {
+      position: static;
+      display: table-cell;
+      float: none;
+    }
+  }
+}
+
+caption {
+  padding-top: 8px;
+  padding-bottom: 8px;
+  color: $text-muted;
+  text-align: left;
+}
+
+th {
+  text-align: left;
+}
+
+.table {
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: $line-height-computed;
+  > thead,
+  > tbody,
+  > tfoot {
+    > tr {
+      > th,
+      > td {
+        padding: 8px;
+        line-height: $line-height-base;
+        vertical-align: top;
+        border-top: 1px solid #ddd;
+      }
+    }
+  }
+  > thead > tr > th {
+    vertical-align: bottom;
+    border-bottom: 2px solid #ddd;
+  }
+  > caption + thead,
+  > colgroup + thead,
+  > thead:first-child {
+    > tr:first-child {
+      > th,
+      > td {
+        border-top: 0;
+      }
+    }
+  }
+  > tbody + tbody {
+    border-top: 2px solid #ddd;
+  }
+  .table {
+    background-color: $body-bg;
+  }
+}
+
+.table-bordered {
+  border: 1px solid #ddd;
+  > thead,
+  > tbody,
+  > tfoot {
+    > tr {
+      > th,
+      > td {
+        border: 1px solid #ddd;
+      }
+    }
+  }
+  > thead > tr {
+    > th,
+    > td {
+      border-bottom-width: 2px;
+    }
+  }
+}
+
+.table-striped {
+  > tbody > tr:nth-of-type(odd) {
+    background-color: #f9f9f9;
+  }
+}
+
+.table-responsive {
+  min-height: .01%;
+  overflow-x: auto;
+  @media screen and (max-width: $screen-xs-max) {
+    width: 100%;
+    margin-bottom: ($line-height-computed * .75);
+    overflow-y: hidden;
+    border: 1px solid #ddd;
+    > .table {
+      margin-bottom: 0;
+      > thead,
+      > tbody,
+      > tfoot {
+        > tr {
+          > th,
+          > td {
+            white-space: nowrap;
+          }
+        }
+      }
+    }
+  }
+}

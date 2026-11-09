@@ -25,26 +25,5 @@ $brand-danger: $red;
 $brand-primary: $olive;
 $brand-success: $olive-800;
 
-.text-olive-700 {
-  color: $olive-700;
-}
-
-.alert-warning {
-  background-color: $olive-300;
-  border-color: $olive-400;
-  color: $olive-800;
-}
-
-.alert-danger {
-  background-color: $red-800;
-  border-color: $red-900;
-  color: $cream;
-}
-
-.alert-danger .alert-link {
-  color: $cream;
-}
-
-.font-semibold {
-  font-weight: 600;
-}
+// Variables only: this file is @imported by many stylesheets, so any rule here
+// would be repeated in the compiled CSS. Rules go in ui/ instead.

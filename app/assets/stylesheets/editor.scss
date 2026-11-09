@@ -1,0 +1,116 @@
+@import 'vars';
+
+// The entry editor uses Summernote's "lite" build, which needs no Bootstrap.
+// These rules give it the look the Bootstrap 3 build had: the page font,
+// small toolbar buttons, a 20px gap below the editor, and a link dialog laid
+// out like a Bootstrap modal.
+
+.note-editor.note-frame {
+  margin-bottom: 20px;
+  font-family: inherit;
+  color: #333;
+  background-color: #fff;
+
+  .note-toolbar .note-btn {
+    font-size: 12px;
+    line-height: 1.5;
+    border-color: #ccc;
+    &:hover,
+    &:focus,
+    &.active {
+      background-color: #e6e6e6;
+      border-color: #adadad;
+    }
+    &.active {
+      box-shadow: inset 0 3px 5px rgba(0, 0, 0, .125);
+    }
+  }
+}
+
+// Toolbar button tooltips, in the same type the rest of the app's tooltips use.
+.note-tooltip {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 12px;
+}
+
+.note-modal {
+  font-family: inherit;
+  color: #333;
+
+  .note-modal-content {
+    border-radius: 6px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, .5);
+  }
+
+  .note-modal-header {
+    padding: 15px;
+    border: 0;
+    border-bottom: 1px solid #e5e5e5;
+  }
+
+  .note-modal-title {
+    font-size: 18px;
+    line-height: 1.428571429;
+    color: inherit;
+  }
+
+  .note-modal-body {
+    padding: 15px;
+  }
+
+  .note-form-group {
+    padding-bottom: 0;
+  }
+
+  .note-form-label {
+    display: inline-block;
+    width: auto;
+    font-size: 14px;
+    color: #444;
+  }
+
+  .note-modal-body label {
+    padding: 0;
+    margin-bottom: 5px;
+  }
+
+  .note-input {
+    padding: 6px 12px;
+  }
+
+  .note-modal-body .checkbox label {
+    padding: 0 0 0 20px;
+    margin-bottom: 0;
+  }
+
+  .note-modal-footer {
+    height: auto;
+    padding: 15px;
+    text-align: right;
+    border-top: 1px solid #e5e5e5;
+  }
+
+  // "Insert Link": the olive primary button, inline rather than floated so the
+  // footer keeps its height.
+  .note-modal-footer .note-btn.note-btn-primary {
+    float: none;
+    padding: 6px 12px;
+    font-size: 14px;
+    line-height: 1.428571429;
+    color: #fff;
+    background-color: $brand-primary;
+    border-color: darken($brand-primary, 5%);
+    border-radius: 4px;
+    &:hover,
+    &:focus {
+      background-color: darken($brand-primary, 10%);
+      border-color: darken($brand-primary, 17%);
+    }
+    &.disabled,
+    &[disabled] {
+      background-color: $brand-primary;
+      border-color: darken($brand-primary, 5%);
+      opacity: .65;
+    }
+  }
+}
