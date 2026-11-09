@@ -92,7 +92,7 @@ struct EntryActionsSheet: View {
     }
 }
 
-/// The Actions sheet's buttons: black text and icon, semibold, on a light capsule.
+/// The Actions sheet's buttons: black text and icon, medium weight, on a light capsule.
 private struct ActionRowStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
@@ -103,7 +103,7 @@ private struct ActionRowStyle: ButtonStyle {
 private extension View {
     /// `fill` (0–1) fills the capsule red from the left, turning the text white once it's past half.
     func actionRow(pressed: Bool = false, fill: CGFloat = 0) -> some View {
-        font(.body.weight(.semibold))
+        font(.body.weight(.medium))
             .foregroundStyle(fill > 0.5 ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
             .frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
             .padding(.horizontal, 20)

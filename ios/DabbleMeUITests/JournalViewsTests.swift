@@ -312,6 +312,21 @@ final class JournalViewsTests: XCTestCase {
     }
 
     /// With no hashtags yet, suggestions aren't limited to (an empty) vocabulary. Needs a PRO
+    /// With nothing on this date in past years and no earlier entries, Today shows Throwback with
+    /// a nudge to write. TEST_RUNNER_DABBLE_EMPTY_TOKEN (an account with no past entries).
+    func testThrowbackNudgeWithoutPastEntries() throws {
+        guard let empty = ProcessInfo.processInfo.environment["DABBLE_EMPTY_TOKEN"] else {
+            throw XCTSkip("Set TEST_RUNNER_DABBLE_EMPTY_TOKEN to an account with no entries")
+        }
+        let app = XCUIApplication()
+        app.launchArguments = ["-DabbleDebugAccessToken", empty, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launch()
+        XCTAssertTrue(app.staticTexts["Throwback"].waitForExistence(timeout: 15))
+        XCTAssertFalse(app.staticTexts["On This Day"].exists)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "This is where your past entries come back")).firstMatch.exists)
+        snap("today-throwback-empty")
+    }
+
     /// account with no entries: TEST_RUNNER_DABBLE_EMPTY_TOKEN.
     func testHashtagSuggestionsForNewWriter() throws {
         guard let empty = ProcessInfo.processInfo.environment["DABBLE_EMPTY_TOKEN"] else {

@@ -223,6 +223,29 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       end
     end
 
+    it "falls back to an older entry when the past year has none, even the only one" do
+      travel_to Time.find_zone(free_user.send_timezone).local(2026, 6, 20, 12) do
+        free_user.update!(way_back_past_entries: false)
+        only = create(:entry, user: free_user, date: Date.new(2023, 1, 5).to_s, body: "<p>Long ago</p>")
+        get "/api/v1/today", headers: auth(free_user)
+        expect(json["throwback"]).to include("id" => only.id)
+
+        # Once the past year has one, that's the pool again.
+        recent = create(:entry, user: free_user, date: Date.new(2026, 2, 3).to_s, body: "<p>This year</p>")
+        get "/api/v1/today", headers: auth(free_user)
+        expect(json["throwback"]).to include("id" => recent.id)
+      end
+    end
+
+    it "picks the last leap day's entry on Feb 29" do
+      travel_to Time.find_zone(free_user.send_timezone).local(2028, 2, 29, 12) do
+        leap = create(:entry, user: free_user, date: Date.new(2024, 2, 29).to_s, body: "<p>Leap day</p>")
+        create(:entry, user: free_user, date: Date.new(2028, 1, 10).to_s, body: "<p>January</p>")
+        get "/api/v1/today", headers: auth(free_user)
+        expect(json["throwback"]).to include("id" => leap.id)
+      end
+    end
+
     it "keeps On This Day for PRO on the Today endpoint" do
       create(:entry, user: free_user, date: 1.year.ago, body: "<p>Last year</p>")
       get "/api/v1/today", headers: auth(free_user)
