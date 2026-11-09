@@ -228,6 +228,13 @@ final class AppModel {
 
     // MARK: - Entries
 
+    /// Every day with an entry (YYYY-MM-DD), for the Journal's jump-to-a-day calendar.
+    func entryDays() async throws -> [String] {
+        struct DayList: Decodable { let days: [String] }
+        let list: DayList = try await api.get("api/v1/entries/days")
+        return list.days
+    }
+
     /// A day's entries in full (Stats → Past Year). Fetched directly rather than through the
     /// timeline's month cache, which can be mid-load or not loaded yet.
     func entries(on day: JournalDay) async throws -> [EntryDetail] {

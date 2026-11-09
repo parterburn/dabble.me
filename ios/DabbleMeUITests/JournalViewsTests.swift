@@ -52,18 +52,24 @@ final class JournalViewsTests: XCTestCase {
         sleep(1)
         snap("journal-stats")
 
-        // Past Year: tapping yesterday's square (top of the newest column: the demo wrote on it)
-        // opens its entries in the drawer, every time.
+        // Past Year: tapping yesterday's square (top of the newest column, under the month names:
+        // the demo wrote on it) opens its entries in the drawer, every time.
         let heatmap = app.otherElements["Writing days in the past year"]
         XCTAssertTrue(heatmap.waitForExistence(timeout: 5))
         for attempt in 1...3 {
             heatmap.coordinate(withNormalizedOffset: .zero)
-                .withOffset(CGVector(dx: heatmap.frame.width - 7, dy: 8)).tap()
+                .withOffset(CGVector(dx: heatmap.frame.width - 7, dy: 2 + 16 + 4 + 6)).tap()
             XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10), "The day's entries open (try \(attempt))")
             if attempt == 1 { sleep(1); snap("stats-day-sheet") }
             app.buttons["Close"].tap()
             XCTAssertTrue(app.buttons["Open"].waitForNonExistence(timeout: 5))
         }
+
+        // Pinch out for bigger squares (kept for next time), then back.
+        heatmap.pinch(withScale: 2, velocity: 1)
+        sleep(1)
+        snap("stats-heatmap-zoomed")
+        heatmap.pinch(withScale: 0.5, velocity: -1)
 
         app.swipeUp()
         snap("journal-stats-2")

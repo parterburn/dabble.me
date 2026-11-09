@@ -47,6 +47,13 @@ module Api
         render json: { months: months }
       end
 
+      # GET /api/v1/entries/days — every date with an entry (YYYY-MM-DD, newest first), for the
+      # Journal's jump-to-a-day calendar. Dates only.
+      def days
+        dates = current_user.entries.unscope(:order).distinct.pluck(Arel.sql("DATE(date)"))
+        render json: { days: dates.compact.sort.reverse.map(&:iso8601) }
+      end
+
       # GET /api/v1/entries/memory_days?days=30 — upcoming days (from today, in the journal's
       # time zone) that have entries from earlier years, for the app's On This Day reminders.
       # Counts only, never entry text: notifications can show up on a lock screen.

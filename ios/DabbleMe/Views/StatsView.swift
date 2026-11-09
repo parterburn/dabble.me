@@ -141,15 +141,22 @@ private struct StatTile: View {
     }
 }
 
-/// A year of days as week columns (Sunday on top), newest on the right, like a contribution graph.
+/// A year of days as week columns (Sunday on top), newest on the right, like a contribution graph
+/// and the web's: month names along the top, Mon / Wed / Fri down the side. Pinch to make the
+/// squares bigger (easier to tap a day) or smaller (more of the year at once); the size is kept.
 private struct WritingHeatmap: View {
     let days: Set<String>
     let today: JournalDay
     /// A day with an entry was tapped.
     let onSelect: (JournalDay) -> Void
 
-    private let cell: CGFloat = 11
-    private let gap: CGFloat = 3
+    @AppStorage("stats.heatmapCell") private var cellSize: Double = 13
+    @State private var pinchStart: Double?
+    private static let sizes = 9.0...32.0
+    private let labelRow: CGFloat = 16
+
+    private var cell: CGFloat { CGFloat(cellSize) }
+    private var gap: CGFloat { max(3, (cell * 0.25).rounded()) }
 
     private var weeks: [[JournalDay?]] {
         var calendar = Calendar(identifier: .gregorian)
@@ -172,38 +179,99 @@ private struct WritingHeatmap: View {
         return weeks
     }
 
+    /// "JAN" over the first column of each month (the first column only if the month has room).
+    private func monthLabels(_ weeks: [[JournalDay?]]) -> [String?] {
+        let months = weeks.map { week in week.compactMap { $0 }.first.map { String($0.iso.dropFirst(5).prefix(2)) } }
+        return months.indices.map { index in
+            guard let month = months[index] else { return nil }
+            if index == 0 {
+                // Skip a sliver of a month at the start: its label would run into the next one.
+                return months.prefix(3).allSatisfy { $0 == month } ? Self.monthName(month) : nil
+            }
+            return months[index - 1] == month ? nil : Self.monthName(month)
+        }
+    }
+
+    private static func monthName(_ number: String) -> String? {
+        guard let index = Int(number), (1...12).contains(index) else { return nil }
+        return Calendar.current.shortMonthSymbols[index - 1].uppercased() // the reader's language
+    }
+
     var body: some View {
-        ScrollView(.horizontal) {
-            HStack(alignment: .top, spacing: gap) {
-                ForEach(Array(weeks.enumerated()), id: \.offset) { _, week in
-                    VStack(spacing: gap) {
-                        ForEach(0..<7, id: \.self) { index in
-                            RoundedRectangle(cornerRadius: 2.5)
-                                .fill(fill(for: week[index]))
-                                .frame(width: cell, height: cell)
+        let weeks = weeks
+        HStack(alignment: .top, spacing: 6) {
+            weekdayLabels
+            ScrollViewReader { proxy in
+            ScrollView(.horizontal) {
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: gap) {
+                        ForEach(Array(monthLabels(weeks).enumerated()), id: \.offset) { _, label in
+                            Text(label ?? "")
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(.secondary)
+                                .fixedSize()
+                                .frame(width: cell, height: labelRow, alignment: .leading)
                         }
                     }
+                    HStack(alignment: .top, spacing: gap) {
+                        ForEach(Array(weeks.enumerated()), id: \.offset) { column, week in
+                            VStack(spacing: gap) {
+                                ForEach(0..<7, id: \.self) { index in
+                                    RoundedRectangle(cornerRadius: cell * 0.23)
+                                        .fill(fill(for: week[index]))
+                                        .frame(width: cell, height: cell)
+                                }
+                            }
+                            .id(column)
+                        }
+                    }
+                    // One tap handler for the grid: the squares are small, so a tap a little off a
+                    // written day (on an empty neighbor or a gap) still opens the nearest one.
+                    .contentShape(.rect)
+                    .gesture(SpatialTapGesture().onEnded { tap in
+                        if let day = writtenDay(near: tap.location, in: weeks) { onSelect(day) }
+                    })
                 }
+                .padding(.vertical, 2)
             }
-            // One tap handler for the grid: the squares are small, so a tap a little off a written
-            // day (on an empty neighbor or a gap) still opens the nearest written one next to it.
-            .contentShape(.rect)
-            .gesture(SpatialTapGesture().onEnded { tap in
-                if let day = writtenDay(near: tap.location) { onSelect(day) }
-            })
-            .padding(.vertical, 2)
+            .defaultScrollAnchor(.trailing)
+            .scrollIndicators(.hidden)
+            // Resizing keeps the newest weeks in view (otherwise it jumps to last year's start).
+            .onChange(of: cellSize) { proxy.scrollTo(weeks.count - 1, anchor: .trailing) }
+            }
         }
-        .defaultScrollAnchor(.trailing)
-        .scrollIndicators(.hidden)
+        .simultaneousGesture(
+            MagnifyGesture()
+                .onChanged { value in
+                    let start = pinchStart ?? cellSize
+                    pinchStart = start
+                    cellSize = min(max(start * value.magnification, Self.sizes.lowerBound), Self.sizes.upperBound)
+                }
+                .onEnded { _ in pinchStart = nil }
+        )
         .accessibilityElement()
         .accessibilityLabel("Writing days in the past year")
         .accessibilityValue("\(days.count) days with an entry")
     }
 
+    /// Mon, Wed and Fri beside their rows, like the web.
+    private var weekdayLabels: some View {
+        VStack(alignment: .trailing, spacing: gap) {
+            ForEach(0..<7, id: \.self) { row in
+                Text(row == 1 ? "Mon" : row == 3 ? "Wed" : row == 5 ? "Fri" : "")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .fixedSize()
+                    .frame(height: cell)
+            }
+        }
+        .padding(.top, labelRow + 4 + 2)
+        .accessibilityHidden(true)
+    }
+
     /// The written day under `point`, or else the closest written one within a square of it.
-    private func writtenDay(near point: CGPoint) -> JournalDay? {
+    private func writtenDay(near point: CGPoint, in weeks: [[JournalDay?]]) -> JournalDay? {
         let pitch = cell + gap
-        let weeks = weeks
         var best: (day: JournalDay, distance: CGFloat)?
         let column = Int(point.x / pitch), row = Int(point.y / pitch)
         for c in (column - 1)...(column + 1) where weeks.indices.contains(c) {
