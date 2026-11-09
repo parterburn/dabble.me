@@ -49,24 +49,16 @@
         lastScrollTop = st;
     }
 
-    $("[rel='tooltip-mobile-friendly']").tooltip({
-      container: "body"
-    });
+    UI.tooltips("[rel='tooltip-mobile-friendly']");
 
     if ($(window).width() > 768) {
       // First-week hint about when emails arrive. It points at the account
       // menu, so it goes away once that menu is opened, by click or hover.
       var $settingsHint = $("[rel='popover_settings']");
-      $settingsHint.popover({
-        trigger: "manual",
-        container: "body",
-        html: true
-      }).popover('show');
-      $settingsHint.on('show.bs.dropdown mouseenter', function() { $settingsHint.popover('hide'); });
+      UI.popover($settingsHint);
+      $settingsHint.on('show.dropdown mouseenter', function() { UI.hidePopover($settingsHint); });
 
-      $("[rel='tooltip']").tooltip({
-        container: "body"
-      });
+      UI.tooltips("[rel='tooltip']");
     }
 
     $(".j-entry-link").click(function(e) {

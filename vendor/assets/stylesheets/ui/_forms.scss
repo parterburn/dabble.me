@@ -1,0 +1,257 @@
+fieldset {
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+legend {
+  display: block;
+  width: 100%;
+  padding: 0;
+  margin-bottom: $line-height-computed;
+  font-size: ($font-size-base * 1.5);
+  line-height: inherit;
+  color: $gray-dark;
+  border: 0;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+label {
+  display: inline-block;
+  max-width: 100%;
+  margin-bottom: 5px;
+  font-weight: 700;
+}
+
+input[type="search"] {
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+input[type="radio"],
+input[type="checkbox"] {
+  margin: 4px 0 0;
+  line-height: normal;
+  &[disabled],
+  &.disabled {
+    cursor: not-allowed;
+  }
+}
+
+input[type="file"] {
+  display: block;
+}
+
+input[type="range"] {
+  display: block;
+  width: 100%;
+}
+
+select[multiple],
+select[size] {
+  height: auto;
+}
+
+input[type="file"]:focus,
+input[type="radio"]:focus,
+input[type="checkbox"]:focus {
+  @include tab-focus;
+}
+
+output {
+  display: block;
+  padding-top: ($padding-base-vertical + 1);
+  font-size: $font-size-base;
+  line-height: $line-height-base;
+  color: $gray;
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  height: $input-height-base;
+  padding: $padding-base-vertical $padding-base-horizontal;
+  font-size: $font-size-base;
+  line-height: $line-height-base;
+  color: $gray;
+  background-color: #fff;
+  background-image: none;
+  border: 1px solid #ccc;
+  border-radius: $border-radius-base;
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+  transition: border-color ease-in-out .15s, box-shadow ease-in-out .15s;
+  &:focus {
+    border-color: $input-border-focus;
+    outline: 0;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 8px rgba(102, 175, 233, .6);
+  }
+  &::placeholder {
+    color: #999;
+    opacity: 1;
+  }
+  &[disabled],
+  &[readonly] {
+    background-color: $gray-lighter;
+    opacity: 1;
+  }
+  &[disabled] {
+    cursor: not-allowed;
+  }
+}
+
+textarea.form-control {
+  height: auto;
+}
+
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  input[type="date"],
+  input[type="time"],
+  input[type="datetime-local"],
+  input[type="month"] {
+    &.form-control {
+      line-height: $input-height-base;
+    }
+    &.input-lg {
+      line-height: $input-height-large;
+    }
+  }
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+.checkbox {
+  position: relative;
+  display: block;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  label {
+    min-height: $line-height-computed;
+    padding-left: 20px;
+    margin-bottom: 0;
+    font-weight: 400;
+    cursor: pointer;
+  }
+}
+.checkbox input[type="checkbox"] {
+  position: absolute;
+  margin-left: -20px;
+}
+.checkbox + .checkbox {
+  margin-top: -5px;
+}
+
+.input-lg {
+  height: $input-height-large;
+  padding: $padding-large-vertical $padding-large-horizontal;
+  font-size: $font-size-large;
+  line-height: $line-height-large;
+  border-radius: $border-radius-large;
+}
+select.input-lg {
+  height: $input-height-large;
+  line-height: $input-height-large;
+}
+textarea.input-lg {
+  height: auto;
+}
+
+.form-horizontal {
+  .checkbox {
+    min-height: ($line-height-computed + ($padding-base-vertical + 1));
+    padding-top: ($padding-base-vertical + 1);
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+  .form-group {
+    margin-right: floor(($grid-gutter-width / -2));
+    margin-left: ceil(($grid-gutter-width / -2));
+    @include clearfix;
+  }
+}
+
+// Rails wraps invalid fields in .field_with_errors.
+.has-error,
+.field_with_errors {
+  .checkbox {
+    color: $state-danger-text;
+  }
+  .form-control {
+    border-color: $state-danger-text;
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075);
+    &:focus {
+      border-color: darken($state-danger-text, 10%);
+      box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 6px lighten($state-danger-text, 20%);
+    }
+  }
+  .input-group-addon {
+    color: $state-danger-text;
+    background-color: $state-danger-bg;
+    border-color: $state-danger-text;
+  }
+}
+
+// Input groups (an input with a text add-on).
+.input-group {
+  position: relative;
+  display: table;
+  border-collapse: separate;
+  &[class*="col-"] {
+    float: none;
+    padding-right: 0;
+    padding-left: 0;
+  }
+  .form-control {
+    position: relative;
+    z-index: 2;
+    float: left;
+    width: 100%;
+    margin-bottom: 0;
+    &:focus {
+      z-index: 3;
+    }
+  }
+}
+
+.input-group-addon,
+.input-group .form-control {
+  display: table-cell;
+  &:not(:first-child):not(:last-child) {
+    border-radius: 0;
+  }
+}
+
+.input-group-addon {
+  width: 1%;
+  padding: $padding-base-vertical $padding-base-horizontal;
+  font-size: $font-size-base;
+  font-weight: 400;
+  line-height: 1;
+  color: $gray;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  background-color: $gray-lighter;
+  border: 1px solid #ccc;
+  border-radius: $border-radius-base;
+}
+
+.input-group .form-control:first-child,
+.input-group-addon:first-child {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+.input-group-addon:first-child {
+  border-right: 0;
+}
+.input-group .form-control:last-child,
+.input-group-addon:last-child {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+.input-group-addon:last-child {
+  border-left: 0;
+}

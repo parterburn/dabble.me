@@ -1,0 +1,51 @@
+.clearfix {
+  @include clearfix;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+.text-left { text-align: left; }
+.text-right { text-align: right; }
+.text-center { text-align: center; }
+
+.text-muted { color: $text-muted; }
+// The FAQ answers in ApplicationHelper.faqs are shared with the Tailwind pages
+// and use .text-primary, which app pages have always drawn in olive-950.
+.text-primary { color: $olive-950 !important; }
+.text-success { color: $state-success-text; }
+.text-danger { color: $state-danger-text; }
+.text-olive-700 { color: $olive-700; }
+.font-semibold { font-weight: 600; }
+
+// Responsive visibility. xs is below 768px, sm is 768–991px.
+.visible-xs,
+.visible-sm,
+.visible-xs-inline-block {
+  display: none !important;
+}
+@media (max-width: $screen-xs-max) {
+  .visible-xs { display: block !important; }
+  table.visible-xs { display: table !important; }
+  tr.visible-xs { display: table-row !important; }
+  th.visible-xs,
+  td.visible-xs { display: table-cell !important; }
+  .visible-xs-inline-block { display: inline-block !important; }
+  .hidden-xs { display: none !important; }
+}
+@media (min-width: $screen-sm-min) and (max-width: $screen-sm-max) {
+  .visible-sm { display: block !important; }
+  table.visible-sm { display: table !important; }
+  tr.visible-sm { display: table-row !important; }
+  th.visible-sm,
+  td.visible-sm { display: table-cell !important; }
+  .hidden-sm { display: none !important; }
+}

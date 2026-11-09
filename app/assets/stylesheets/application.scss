@@ -10,8 +10,7 @@
  * defined in the other CSS/SCSS files in this directory. It is generally better to create a new
  * file per style scope.
  *
- *= stub twbs-variables
- *= require twbs
+ *= require ui
  *= require_self
  *= require_tree ./lib
  *= require_tree .
@@ -21,7 +20,7 @@
 @import url(https://fonts.googleapis.com/css?family=Instrument+Sans:400,700,200);
 @import url(https://fonts.googleapis.com/css?family=Instrument+Serif:400,700,200);
 @import 'vars';
-@import "summernote";
+@import "summernote-lite";
 @import "contribution_graph";
 
 html, body {

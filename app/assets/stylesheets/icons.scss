@@ -57,8 +57,12 @@ $slab-icons-url: "/icons/slab";
 }
 
 // Close buttons on dialogs (Summernote's link dialog, the reflection dialog).
-// Both are built in JS with a &times; label, so the icon goes in ::before.
-.modal-header .close,
+// Both are built in JS, so the icon goes in ::before. Summernote's own icon
+// inside the button is hidden.
+.note-modal-header .close > i {
+  display: none;
+}
+.note-modal-header .close,
 .s-reflection-dialog .close {
   display: flex;
   align-items: center;
@@ -88,7 +92,7 @@ $slab-icons-url: "/icons/slab";
 // High contrast modes drop background colors, which would hide every icon.
 @media (forced-colors: active) {
   .slab-icon,
-  .modal-header .close::before,
+  .note-modal-header .close::before,
   .s-reflection-dialog .close::before {
     background-color: CanvasText !important;
     forced-color-adjust: none;

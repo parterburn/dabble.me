@@ -1,0 +1,30 @@
+/*
+ * Base styles for the logged-in app (layouts/application). This replaces
+ * Bootstrap 3, keeping only the parts the app's views use, under the same
+ * class names and with the same values, so pages look as they did.
+ *
+ * Adapted from Bootstrap v3.4.1 (https://getbootstrap.com/)
+ * Copyright 2011-2019 Twitter, Inc. Licensed under MIT
+ * (https://github.com/twbs/bootstrap/blob/v3.4.1/LICENSE).
+ *
+ * The partials live in vendor/assets/stylesheets/ui/ because `require_tree .`
+ * in application.scss would compile anything under app/assets/stylesheets on
+ * its own, and these only work imported together, here.
+ *
+ * As pages move to Tailwind, delete what they no longer use.
+ */
+
+@import "vars";
+@import "ui/variables";
+@import "ui/mixins";
+
+@import "ui/reset";
+@import "ui/grid";
+@import "ui/tables";
+@import "ui/forms";
+@import "ui/buttons";
+@import "ui/navbar";
+@import "ui/components";
+@import "ui/tooltips";
+@import "ui/utilities";
+@import "ui/print";

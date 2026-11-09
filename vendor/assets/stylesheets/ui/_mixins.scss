@@ -1,0 +1,94 @@
+@mixin clearfix {
+  &::before,
+  &::after {
+    display: table;
+    content: " ";
+  }
+  &::after {
+    clear: both;
+  }
+}
+
+@mixin tab-focus {
+  outline: 5px auto -webkit-focus-ring-color;
+  outline-offset: -2px;
+}
+
+@mixin button-variant($color, $background, $border) {
+  color: $color;
+  background-color: $background;
+  border-color: $border;
+  &:focus,
+  &.focus {
+    color: $color;
+    background-color: darken($background, 10%);
+    border-color: darken($border, 25%);
+  }
+  &:hover {
+    color: $color;
+    background-color: darken($background, 10%);
+    border-color: darken($border, 12%);
+  }
+  &:active,
+  &.active {
+    color: $color;
+    background-color: darken($background, 10%);
+    background-image: none;
+    border-color: darken($border, 12%);
+    &:hover,
+    &:focus,
+    &.focus {
+      color: $color;
+      background-color: darken($background, 17%);
+      border-color: darken($border, 25%);
+    }
+  }
+  &.disabled,
+  &[disabled] {
+    &:hover,
+    &:focus,
+    &.focus {
+      background-color: $background;
+      border-color: $border;
+    }
+  }
+}
+
+@mixin button-size($padding-vertical, $padding-horizontal, $font-size, $line-height, $border-radius) {
+  padding: $padding-vertical $padding-horizontal;
+  font-size: $font-size;
+  line-height: $line-height;
+  border-radius: $border-radius;
+}
+
+// $link-base is the text color the link shade is derived from. It differs from
+// $text where the app recolors an alert but keeps Bootstrap's link color.
+@mixin alert-variant($background, $border, $text, $link-base: $text) {
+  color: $text;
+  background-color: $background;
+  border-color: $border;
+  hr {
+    border-top-color: darken($border, 5%);
+  }
+  .alert-link {
+    color: darken($link-base, 10%);
+  }
+}
+
+@mixin reset-text {
+  font-family: $font-family-base;
+  font-style: normal;
+  font-weight: 400;
+  line-height: $line-height-base;
+  line-break: auto;
+  text-align: left;
+  text-align: start;
+  text-decoration: none;
+  text-shadow: none;
+  text-transform: none;
+  letter-spacing: normal;
+  word-break: normal;
+  word-spacing: normal;
+  word-wrap: normal;
+  white-space: normal;
+}

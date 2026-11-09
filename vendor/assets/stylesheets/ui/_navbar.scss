@@ -1,0 +1,368 @@
+// Base styles for the top navbar and its dropdowns. navbar.scss restyles them.
+
+// Collapsed content (the phone menu). ui.js toggles .in.
+.collapse {
+  display: none;
+  &.in {
+    display: block;
+  }
+}
+
+.dropdown {
+  position: relative;
+}
+
+.dropdown-toggle:focus {
+  outline: 0;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: $zindex-dropdown;
+  display: none;
+  float: left;
+  min-width: 160px;
+  padding: 5px 0;
+  margin: 2px 0 0;
+  font-size: $font-size-base;
+  text-align: left;
+  list-style: none;
+  background-color: #fff;
+  background-clip: padding-box;
+  border: 1px solid rgba(0, 0, 0, .15);
+  border-radius: $border-radius-base;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, .175);
+  .divider {
+    height: 1px;
+    margin: (($line-height-computed / 2) - 1) 0;
+    overflow: hidden;
+    background-color: #e5e5e5;
+  }
+  > li > a {
+    display: block;
+    padding: 3px 20px;
+    clear: both;
+    font-weight: 400;
+    line-height: $line-height-base;
+    color: $gray-dark;
+    white-space: nowrap;
+    &:hover,
+    &:focus {
+      color: darken($gray-dark, 5%);
+      text-decoration: none;
+      background-color: #f5f5f5;
+    }
+  }
+}
+
+.dropdown-menu > .active > a {
+  &,
+  &:hover,
+  &:focus {
+    color: #fff;
+    text-decoration: none;
+    background-color: $brand-primary;
+    outline: 0;
+  }
+}
+
+.open {
+  > .dropdown-menu {
+    display: block;
+  }
+  > a {
+    outline: 0;
+  }
+}
+
+// Navs
+
+.nav {
+  padding-left: 0;
+  margin-bottom: 0;
+  list-style: none;
+  @include clearfix;
+  > li {
+    position: relative;
+    display: block;
+    > a {
+      position: relative;
+      display: block;
+      padding: 10px 15px;
+      &:hover,
+      &:focus {
+        text-decoration: none;
+        background-color: $gray-lighter;
+      }
+    }
+  }
+  .open > a {
+    &,
+    &:hover,
+    &:focus {
+      background-color: $gray-lighter;
+      border-color: $link-color;
+    }
+  }
+  > li > a > img {
+    max-width: none;
+  }
+}
+
+// Navbar
+
+.navbar {
+  position: relative;
+  min-height: $navbar-height;
+  margin-bottom: $line-height-computed;
+  border: 1px solid transparent;
+  @include clearfix;
+  @media (min-width: $screen-sm-min) {
+    border-radius: $border-radius-base;
+  }
+}
+
+.navbar-header {
+  @include clearfix;
+  @media (min-width: $screen-sm-min) {
+    float: left;
+  }
+}
+
+.navbar-collapse {
+  padding-right: $navbar-padding-horizontal;
+  padding-left: $navbar-padding-horizontal;
+  overflow-x: visible;
+  border-top: 1px solid transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1);
+  @include clearfix;
+  -webkit-overflow-scrolling: touch;
+  &.in {
+    overflow-y: auto;
+  }
+  @media (min-width: $screen-sm-min) {
+    width: auto;
+    border-top: 0;
+    box-shadow: none;
+    &.collapse {
+      display: block !important;
+      height: auto !important;
+      padding-bottom: 0;
+      overflow: visible !important;
+    }
+    &.in {
+      overflow-y: visible;
+    }
+    .navbar-fixed-top & {
+      padding-right: 0;
+      padding-left: 0;
+    }
+  }
+}
+
+.navbar-fixed-top {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: $zindex-navbar-fixed;
+  border-width: 0 0 1px;
+  .navbar-collapse {
+    max-height: 340px;
+    @media (max-device-width: 480px) and (orientation: landscape) {
+      max-height: 200px;
+    }
+  }
+  @media (min-width: $screen-sm-min) {
+    border-radius: 0;
+  }
+}
+
+.container,
+.container-fluid {
+  > .navbar-header,
+  > .navbar-collapse {
+    margin-right: -$navbar-padding-horizontal;
+    margin-left: -$navbar-padding-horizontal;
+    @media (min-width: $screen-sm-min) {
+      margin-right: 0;
+      margin-left: 0;
+    }
+  }
+}
+
+.navbar-brand {
+  float: left;
+  height: $navbar-height;
+  padding: $navbar-padding-vertical $navbar-padding-horizontal;
+  font-size: $font-size-large;
+  line-height: $line-height-computed;
+  &:hover,
+  &:focus {
+    text-decoration: none;
+  }
+  > img {
+    display: block;
+  }
+  @media (min-width: $screen-sm-min) {
+    .navbar > .container &,
+    .navbar > .container-fluid & {
+      margin-left: -$navbar-padding-horizontal;
+    }
+  }
+}
+
+.navbar-toggle {
+  position: relative;
+  float: right;
+  padding: 9px 10px;
+  margin-right: $navbar-padding-horizontal;
+  margin-top: (($navbar-height - 34px) / 2);
+  margin-bottom: (($navbar-height - 34px) / 2);
+  background-color: transparent;
+  background-image: none;
+  border: 1px solid transparent;
+  border-radius: $border-radius-base;
+  &:focus {
+    outline: 0;
+  }
+  .icon-bar {
+    display: block;
+    width: 22px;
+    height: 2px;
+    border-radius: 1px;
+  }
+  .icon-bar + .icon-bar {
+    margin-top: 4px;
+  }
+  @media (min-width: $screen-sm-min) {
+    display: none;
+  }
+}
+
+.navbar-nav {
+  margin: ($navbar-padding-vertical / 2) (-$navbar-padding-horizontal);
+  > li > a {
+    padding-top: 10px;
+    padding-bottom: 10px;
+    line-height: $line-height-computed;
+  }
+  @media (max-width: $screen-xs-max) {
+    .open .dropdown-menu {
+      position: static;
+      float: none;
+      width: auto;
+      margin-top: 0;
+      background-color: transparent;
+      border: 0;
+      box-shadow: none;
+      > li > a {
+        padding: 5px 15px 5px 25px;
+        line-height: $line-height-computed;
+        &:hover,
+        &:focus {
+          background-image: none;
+        }
+      }
+    }
+  }
+  @media (min-width: $screen-sm-min) {
+    float: left;
+    margin: 0;
+    > li {
+      float: left;
+      > a {
+        padding-top: $navbar-padding-vertical;
+        padding-bottom: $navbar-padding-vertical;
+      }
+    }
+  }
+}
+
+.navbar-nav > li > .dropdown-menu {
+  margin-top: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+@media (min-width: $screen-sm-min) {
+  .navbar-right {
+    float: right !important;
+    margin-right: -$navbar-padding-horizontal;
+    ~ .navbar-right {
+      margin-right: 0;
+    }
+    .dropdown-menu {
+      right: 0;
+      left: auto;
+    }
+  }
+}
+
+// Default theme. navbar.scss recolors most of this.
+.navbar-default {
+  background-color: #f8f8f8;
+  border-color: darken(#f8f8f8, 6.5%);
+  .navbar-brand {
+    color: #777;
+    &:hover,
+    &:focus {
+      color: darken(#777, 10%);
+      background-color: transparent;
+    }
+  }
+  .navbar-nav {
+    > li > a {
+      color: #777;
+      &:hover,
+      &:focus {
+        color: #333;
+        background-color: transparent;
+      }
+    }
+    > .active > a,
+    > .open > a {
+      &,
+      &:hover,
+      &:focus {
+        color: #555;
+        background-color: darken(#f8f8f8, 6.5%);
+      }
+    }
+    @media (max-width: $screen-xs-max) {
+      .open .dropdown-menu {
+        > li > a {
+          color: #777;
+          &:hover,
+          &:focus {
+            color: #333;
+            background-color: transparent;
+          }
+        }
+        > .active > a {
+          &,
+          &:hover,
+          &:focus {
+            color: #555;
+            background-color: darken(#f8f8f8, 6.5%);
+          }
+        }
+      }
+    }
+  }
+  .navbar-toggle {
+    border-color: #ddd;
+    &:hover,
+    &:focus {
+      background-color: #ddd;
+    }
+    .icon-bar {
+      background-color: #888;
+    }
+  }
+  .navbar-collapse {
+    border-color: darken(#f8f8f8, 6.5%);
+  }
+}
