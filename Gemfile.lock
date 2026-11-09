@@ -422,8 +422,6 @@ GEM
       tsort (>= 0.2)
       zeitwerk (~> 2.6)
     rake (13.4.2)
-    randomized_field (1.0.0)
-      activerecord (>= 4.0.0)
     rb-fsevent (0.10.4)
     rb-inotify (0.10.1)
       ffi (~> 1.0)
@@ -654,7 +652,6 @@ DEPENDENCIES
   rack-utf8_sanitizer (~> 1.8)
   rails (~> 8.1.4)
   rails-html-sanitizer (~> 1.7)
-  randomized_field (~> 1.0)
   rdoc
   redcarpet
   redis

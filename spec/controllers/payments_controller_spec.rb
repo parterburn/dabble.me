@@ -283,7 +283,10 @@ RSpec.describe PaymentsController, type: :controller do
       }
     end
 
-    let(:paypal_user) { FactoryBot.create(:user, plan: 'PRO Monthly PayPal') }
+    # Legacy users had image_key copied from user_key by the migration.
+    let(:paypal_user) do
+      FactoryBot.create(:user, plan: 'PRO Monthly PayPal').tap { |u| u.update_column(:image_key, u.user_key) }
+    end
 
     it 'records a renewal for a legacy PayPal user without changing their plan' do
       paypal_params.merge!(payer_email: paypal_user.email, item_name: "Dabble Me PRO for #{paypal_user.user_key}")
@@ -294,15 +297,31 @@ RSpec.describe PaymentsController, type: :controller do
       expect(ActionMailer::Base.deliveries.map(&:subject)).not_to include '[REFUND REQUIRED] Payment Without a User'
     end
 
-    it 'does not upgrade a free user even when the user_key matches' do
-      paypal_params.merge!(payer_email: user.email, item_name: "Dabble Me PRO for #{user.user_key}")
+    it 'keeps matching a legacy PayPal user after they reset their posting address' do
+      subscription_key = paypal_user.user_key
+      paypal_user.update_column(:user_key, User.generate_unique_key)
+
+      paypal_params.merge!(payer_email: paypal_user.email, item_name: "Dabble Me PRO for #{subscription_key}")
+      expect { post :payment_notify, params: paypal_params, as: :json }.to change { Payment.count }.by(1)
+      expect(Payment.last.user_id).to eq paypal_user.id
+    end
+
+    it 'does not match on a posting address that differs from image_key' do
+      paypal_user.update_column(:image_key, User.generate_unique_key)
+
+      paypal_params.merge!(payer_email: paypal_user.email, item_name: "Dabble Me PRO for #{paypal_user.user_key}")
+      expect { post :payment_notify, params: paypal_params, as: :json }.not_to change { Payment.count }
+    end
+
+    it 'does not upgrade a free user even when the key matches' do
+      paypal_params.merge!(payer_email: user.email, item_name: "Dabble Me PRO for #{user.image_key}")
       expect { post :payment_notify, params: paypal_params, as: :json }.not_to change { Payment.count }
       expect(user.reload.plan).to eq 'Free'
       expect(ActionMailer::Base.deliveries.last.subject).to eq '[REFUND REQUIRED] Payment Without a User'
     end
 
     it 'does not record a payment for a PRO user on another plan' do
-      paypal_params.merge!(payer_email: paid_user.email, item_name: "Dabble Me PRO for #{paid_user.user_key}")
+      paypal_params.merge!(payer_email: paid_user.email, item_name: "Dabble Me PRO for #{paid_user.image_key}")
       expect { post :payment_notify, params: paypal_params, as: :json }.not_to change { Payment.count }
       expect(paid_user.reload.plan).to eq 'PRO Monthly PayHere'
     end

@@ -1,6 +1,4 @@
 class User < ActiveRecord::Base
-  include RandomizedField
-
   VALID_EMAIL_REGEX = /\A[A-Z0-9._%'+-]+@[A-Z0-9.-]+\.[A-Z]{2,63}\z/i
   # Scanner infrastructure. Reject the domain and any subdomain on signup and email change.
   BLOCKED_EMAIL_DOMAINS = %w[pentest2bot.ink].freeze
@@ -13,8 +11,23 @@ class User < ActiveRecord::Base
   devise :otp_authenticatable, :database_authenticatable, :registerable,
          :recoverable, :rememberable, :trackable, :validatable
 
-  randomized_field :user_key, length: 18 do |slug_value|
-    "u#{slug_value}"
+  # user_key is the posting address (<user_key>@post.dabble.me) and appears in
+  # every email we send. image_key names the user's S3 photo folder and never
+  # changes once set. Existing users have image_key == user_key; new users get
+  # two independent values so a photo URL never reveals the posting address.
+  KEY_CHARACTERS = [*"0".."9", *"a".."z"].freeze
+
+  validates :user_key, uniqueness: true
+  validates :image_key, uniqueness: true, allow_nil: true
+  before_create :assign_keys
+
+  # "u" + 18 random characters, the format user_keys have always had. A value
+  # already used in either column is never reused.
+  def self.generate_unique_key
+    loop do
+      key = "u#{SecureRandom.alphanumeric(18, chars: KEY_CHARACTERS)}"
+      return key unless where(user_key: key).or(where(image_key: key)).exists?
+    end
   end
 
   has_many :entries, dependent: :destroy
@@ -81,6 +94,13 @@ class User < ActiveRecord::Base
     return unless self.class.blocked_email_domain?(domain)
 
     errors.add(:email, 'is not allowed')
+  end
+
+  # S3 folder for this user's photos. The user_key fallback covers accounts
+  # created by old code while the image_key migration deployed; for them the
+  # two values were always the same.
+  def photo_storage_key
+    image_key.presence || user_key
   end
 
   def first_name_or_fallback(fallback='there')
@@ -327,6 +347,11 @@ class User < ActiveRecord::Base
   end
 
   private
+
+  def assign_keys
+    self.user_key ||= self.class.generate_unique_key
+    self.image_key ||= self.class.generate_unique_key
+  end
 
   def restrict_free_frequency
     if self.is_free? && self.frequency.present? && ENV['FREE_WEEK'] != 'true'

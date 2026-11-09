@@ -234,8 +234,11 @@ class PaymentsController < ApplicationController
   PAYPAL_LEGACY_PLAN = "PRO Monthly PayPal".freeze
 
   def process_paypal
-    user_key = params[:item_name].gsub('Dabble Me PRO for ','') if params[:item_name].present?
-    @user = User.find_by(user_key: user_key) if user_key.present?
+    # item_name carries the key the user had when they subscribed. image_key
+    # holds that value for every pre-existing user and never changes, so
+    # renewals keep matching after the user resets their posting address.
+    subscription_key = params[:item_name].gsub('Dabble Me PRO for ','') if params[:item_name].present?
+    @user = User.find_by(image_key: subscription_key) if subscription_key.present?
     @user = nil unless @user&.plan == PAYPAL_LEGACY_PLAN
 
     paid = params[:mc_gross]

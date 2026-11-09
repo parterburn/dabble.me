@@ -45,5 +45,12 @@ RSpec.describe Mcp::PresignedImageUpload do
       expect(described_class.key_allowed_for_user?(paid_user, other_user_key)).to eq(false)
       expect(described_class.key_allowed_for_user?(paid_user, "#{described_class.key_prefix_for(paid_user)}../photo.png")).to eq(false)
     end
+
+    it "keeps the same prefix when the posting key changes" do
+      prefix = described_class.key_prefix_for(paid_user)
+      paid_user.update_column(:user_key, User.generate_unique_key)
+
+      expect(described_class.key_prefix_for(paid_user)).to eq(prefix)
+    end
   end
 end

@@ -3,6 +3,35 @@ require 'rails_helper'
 describe User do
   let(:user) { User.create(email: Faker::Internet.email, password: Faker::Internet.password(min_length: 8), first_name: Faker::Name.first_name, last_name: Faker::Name.last_name) }
 
+  describe 'posting and photo keys' do
+    it 'gives a new user independent posting and photo keys in the usual format' do
+      expect(user.user_key).to match(/\Au[0-9a-z]{18}\z/)
+      expect(user.image_key).to match(/\Au[0-9a-z]{18}\z/)
+      expect(user.image_key).not_to eq(user.user_key)
+    end
+
+    it 'never reuses a value already taken in either column' do
+      taken_posting = user.user_key.delete_prefix('u')
+      taken_photo = user.image_key.delete_prefix('u')
+      allow(SecureRandom).to receive(:alphanumeric).and_return(taken_posting, taken_photo, 'freshkey1234567890')
+
+      expect(User.generate_unique_key).to eq('ufreshkey1234567890')
+    end
+
+    it 'keeps keys that were set explicitly' do
+      record = User.create!(email: Faker::Internet.email, password: 'password1', user_key: 'ucustomposting12345', image_key: 'ucustomphoto1234567')
+
+      expect(record.user_key).to eq('ucustomposting12345')
+      expect(record.image_key).to eq('ucustomphoto1234567')
+    end
+
+    it 'stores photos under user_key when image_key is missing' do
+      user.update_column(:image_key, nil)
+
+      expect(user.photo_storage_key).to eq(user.user_key)
+    end
+  end
+
   describe 'blocked email domains' do
     let(:password) { 'password1' }
 
