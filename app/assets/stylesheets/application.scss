@@ -314,7 +314,8 @@ strong {
   text-align: center;
 }
 
-.s-review-details a, .s-scrollable a { 
+// Text links here are underlined; links styled as buttons (.btn) aren't.
+.s-review-details a:not(.btn), .s-scrollable a:not(.btn) {
   text-decoration: underline;
   &.noline {
     text-decoration: none !important;

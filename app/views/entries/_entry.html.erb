@@ -51,7 +51,7 @@
     <% end %>
     <% if current_user.is_pro? && (hashtags = entry.hashtags).present? %>
       <p class="tags">
-        <strong class="small"><span class="slab-icon slab-icon--hourglass" aria-hidden="true"></span> Tags:</strong>
+        <span class="slab-icon slab-icon--tag" aria-hidden="true"></span><span class="sr-only">Tags:</span>
         <% hashtags.each do |tag| %>
           <% tag_obj = @hashtags.present? ? @hashtags[tag.downcase] : current_user.original_hashtags.find { |h| h.tag&.downcase == tag.downcase } %>
           <% if tag_obj&.date.present? %>

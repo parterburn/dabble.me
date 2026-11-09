@@ -36,8 +36,8 @@
       </h3>
     </div>
   </div>
+  <%# No .entry-panel wrapper here: it clamps the height until hovered, and every feature should show without a click. %>
   <div class="<%= add_class.include?('s-features') ? '' : 's-scrollable' %>" style="padding-top: 0;">
-    <div class="<%= add_class.include?('s-features') ? '' : 'entry-panel' %>">
       <div class="s-features">
         <ul>
           <li>
@@ -107,6 +107,5 @@
           </li>
         </ul>
       </div>
-    </div>
   </div>
 </div>
