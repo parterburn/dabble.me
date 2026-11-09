@@ -68,7 +68,6 @@ final class FlowTests: XCTestCase {
         // Back down to Default (three steps from Largest) for other runs.
         paragraph.pinch(withScale: 0.5, velocity: -2)
         app.tabBars.buttons["Settings"].tap()
-        XCTAssertFalse(app.staticTexts["Entry Text Size"].exists)
         XCTAssertFalse(app.staticTexts["Entries"].exists)
     }
 

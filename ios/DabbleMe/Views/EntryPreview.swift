@@ -26,6 +26,7 @@ private struct EntryPreviewMenu: ViewModifier {
 struct EntryPreview: View {
     let summary: EntrySummary
     @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 17
+    @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
 
     /// Light Markdown from the server; list lines ("- item") show as bullets.
     private var text: String {
@@ -75,7 +76,7 @@ struct EntryPreview: View {
 
     private var entryText: some View {
         Text(RichText.linkingHashtags(in: AttributedString.journal(text)))
-            .font(.system(size: bodySize, design: .serif))
+            .font(.system(size: bodySize * textSize.scale, design: .serif))
             .lineSpacing(4)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)

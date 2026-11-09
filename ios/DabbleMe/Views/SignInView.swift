@@ -5,42 +5,62 @@ import SwiftUI
 struct SignInView: View {
     var body: some View {
         TabView {
-            Tab("Today", image: "slab-calendar") { WelcomeView() }
+            Tab("Today", image: "slab-calendar") { WelcomeView().tabBarClearance() }
             Tab("Journal", image: "slab-book") {
                 LockedGlimpse(title: "Your whole journal, by month",
                               message: "Every entry you've written, with photos, Stats and a timeline to jump years back.") {
                     SampleJournal()
                 }
+                .tabBarClearance()
             }
             Tab("Search", image: "slab-search") {
                 LockedGlimpse(title: "Find any moment",
                               message: "Search every word you've ever written, or tap one of your #hashtags.") {
                     SampleHashtags()
                 }
+                .tabBarClearance()
             }
-            Tab("Settings", image: "slab-gear") { GuestSettings() }
+            Tab("Settings", image: "slab-gear") { GuestSettings().tabBarClearance() }
         }
     }
 }
 
 /// The "Dabble me." wordmark from dabble.me: Instrument Serif with an olive period and, like the
-/// site's header, a blinking grey cursor after it. `typed` shows only the first letters, for
-/// typing it out (the splash); the space it takes never changes, so it doesn't shift as it types.
+/// site's header, a blinking grey cursor after it. `typesOut` types it letter by letter when it
+/// appears (the splash and the welcome screen); the space it takes never changes, so nothing
+/// shifts as it types.
 struct Wordmark: View {
     var size: CGFloat = 64
-    var typed: Int? = nil
+    var typesOut = false
     var showsCursor = false
+    @State private var typed: Int?
     @State private var cursorOn = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     static let letters = Array("Dabble me.")
 
+    /// A pause, then a little unevenly, like someone typing, with a beat before the period.
+    private static let pauses: [Int] = (1...letters.count).map { index in
+        index == letters.count - 1 ? 180 : 55 + (index * 37) % 45
+    }
+    /// How long typing it out takes, in milliseconds.
+    static let typingDuration = 200 + pauses.reduce(0, +)
+
     var body: some View {
         line(Self.letters.count)
             .hidden()
-            .overlay(alignment: .leading) { line(min(typed ?? Self.letters.count, Self.letters.count)) }
+            .overlay(alignment: .leading) { line(typed ?? Self.letters.count) }
             .accessibilityElement()
             .accessibilityLabel("Dabble Me")
+            .onAppear { if typesOut, !reduceMotion, typed == nil { typed = 0 } }
+            .task {
+                guard typesOut, !reduceMotion else { return }
+                try? await Task.sleep(for: .milliseconds(200))
+                for (index, pause) in Self.pauses.enumerated() {
+                    typed = index + 1
+                    try? await Task.sleep(for: .milliseconds(pause))
+                }
+            }
             .task(id: showsCursor) {
                 // The site's blink: on and off every 0.65 seconds.
                 guard showsCursor, !reduceMotion else { return }
@@ -80,7 +100,7 @@ private struct WelcomeView: View {
         ScrollView {
             VStack(spacing: 28) {
                 VStack(spacing: 12) {
-                    Wordmark(size: 72, showsCursor: true)
+                    Wordmark(size: 72, typesOut: true, showsCursor: true)
                     Text("Your life, written down\nand remembered.")
                         .font(.custom("InstrumentSerif-Regular", size: 28))
                         .multilineTextAlignment(.center)

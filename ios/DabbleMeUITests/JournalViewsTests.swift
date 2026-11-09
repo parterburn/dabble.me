@@ -578,6 +578,32 @@ final class JournalViewsTests: XCTestCase {
                       "Expected \(shown), got \(picker.label) \(picker.value ?? "")")
     }
 
+    /// Settings → Entry Text Size changes entry text across the app, not just an open entry.
+    func testEntryTextSizeAppliesToTimeline() throws {
+        let app = launch()
+        func setSize(_ label: String) {
+            tab(app, "Settings").tap()
+            let picker = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Entry Text Size")).firstMatch
+            for _ in 0..<5 where !picker.isHittable { app.collectionViews.firstMatch.swipeUp() }
+            picker.tap()
+            app.buttons[label].tap()
+        }
+        let row = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Ran 5 miles without stopping")).firstMatch
+        setSize("Small")
+        tab(app, "Journal").tap()
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        let small = row.frame.width * row.frame.height
+
+        setSize("Largest")
+        snap("text-size-setting")
+        tab(app, "Journal").tap()
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        XCTAssertGreaterThan(row.frame.width * row.frame.height, small * 1.3, "The timeline's text is larger")
+        snap("text-size-timeline")
+
+        setSize("Default") // for other runs
+    }
+
     /// A free account sees Daily Email greyed out with the rest of Reminders. TEST_RUNNER_DABBLE_FREE_TOKEN.
     func testEmailScheduleFreeAccount() throws {
         guard let free = ProcessInfo.processInfo.environment["DABBLE_FREE_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_FREE_TOKEN") }

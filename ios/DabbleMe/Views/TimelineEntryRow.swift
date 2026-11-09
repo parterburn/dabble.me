@@ -17,6 +17,7 @@ struct TimelineEntryRow: View {
     @Environment(\.openURL) private var openURL
     @State private var full: EntryDetail?
     @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 17
+    @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
 
     var body: some View {
         Group {
@@ -60,10 +61,10 @@ struct TimelineEntryRow: View {
                     .foregroundStyle(.secondary)
             }
             if let document = full?.document {
-                DocumentText(blocks: document, font: .system(size: bodySize, design: .serif), scale: 1, bodySize: bodySize)
+                DocumentText(blocks: document, font: .system(size: bodySize * textSize.scale, design: .serif), scale: textSize.scale, bodySize: bodySize)
             } else {
                 Text(RichText.linkingHashtags(in: AttributedString.journal(full?.bodyText ?? entry.previewText ?? entry.excerpt)))
-                    .font(.system(size: bodySize, design: .serif))
+                    .font(.system(size: bodySize * textSize.scale, design: .serif))
                     .lineSpacing(5)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
