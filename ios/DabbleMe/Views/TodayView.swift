@@ -1,6 +1,8 @@
 import SwiftUI
 
-/// Today: write (or add to) today's entry, and look back at this date in earlier years.
+/// Today: write today's entry, and look back at this date in earlier years. Entries here are the
+/// Journal's rows (tap to expand, again to open; swipe right for Actions, left to Open), and each
+/// memory's date sticks at the top while you read it.
 struct TodayView: View {
     @Environment(AppModel.self) private var model
     @State private var path = NavigationPath()
@@ -32,8 +34,6 @@ struct TodayView: View {
                         .accessibilityAddTraits(.isHeader)
                         .plainRow()
                     todaySection(today)
-                        .padding(.vertical, 8)
-                        .plainRow()
                     onThisDaySection(today)
                 } else if let error = model.timelineError {
                     ContentUnavailableView("Couldn't load today", systemImage: "wifi.exclamationmark", description: Text(error))
@@ -71,18 +71,9 @@ struct TodayView: View {
     @ViewBuilder
     private func todaySection(_ today: TodaySummary) -> some View {
         if let entry = today.entry {
-            VStack(alignment: .leading, spacing: 12) {
-                SectionTitle("Today's Entry")
-                NavigationLink(value: EntryRoute(id: entry.id)) {
-                    MemoryCard(entry: entry.summary, caption: nil)
-                }
-                .buttonStyle(.plain)
-                .entryPreview(entry.summary) { path.append(EntryRoute(id: entry.id)) }
-                if model.me?.canWrite == true {
-                    Button { composing = true } label: { Label("Add to Today's Entry", icon: "slab-plus") }
-                        .buttonStyle(.bordered)
-                }
-            }
+            SectionTitle("Today's Entry")
+                .plainRow()
+            row(entry.summary, showsDate: false)
         } else {
             VStack(alignment: .leading, spacing: 14) {
                 let usesAI = JournalIntelligence.isEnabled(for: model.me)
@@ -152,6 +143,8 @@ struct TodayView: View {
             .padding(20)
             .background(Color("Paper"), in: .rect(cornerRadius: 16))
             .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.quaternary))
+            .padding(.vertical, 8)
+            .plainRow()
             .task(id: "\(today.date)|\(JournalIntelligence.isEnabled(for: model.me))") {
                 guard JournalIntelligence.isEnabled(for: model.me), aiPromptDay != today.date else { return }
                 await writePrompt(for: today, quietly: true)
@@ -197,20 +190,36 @@ struct TodayView: View {
                 .foregroundStyle(.secondary)
                 .plainRow()
         } else {
-            // The same rows as the Journal: tap to expand, again to open; swipe for Reflect, Open, Actions.
+            // One section per memory, so its date sticks at the top while you scroll through it.
             ForEach(today.onThisDay) { memory in
-                TimelineEntryRow(entry: memory, showsYear: true, isExpanded: expanded.contains(memory.id), actions: actions,
-                                 onTap: {
-                                     if expanded.contains(memory.id) {
-                                         path.append(EntryRoute(id: memory.id))
-                                     } else {
-                                         withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(memory.id) }
-                                     }
-                                 },
-                                 onOpen: { path.append(EntryRoute(id: memory.id)) })
-                    .entryPreview(memory) { path.append(EntryRoute(id: memory.id)) }
+                Section {
+                    row(memory, showsDate: false)
+                } header: {
+                    MonthHeader(title: Self.memoryTitle(memory), isDay: true)
+                }
             }
         }
+    }
+
+    /// "1 year ago · Saturday, November 8, 2025".
+    private static func memoryTitle(_ memory: EntrySummary) -> String {
+        let date = memory.day?.formatted(.dateTime.weekday(.wide).month(.wide).day().year()) ?? memory.date
+        guard let years = memory.yearsAgo else { return date }
+        return "\(years == 1 ? "1 year" : "\(years) years") ago · \(date)"
+    }
+
+    /// The Journal's row: tap to expand, again to open; swipe right for Actions, left to Open.
+    private func row(_ entry: EntrySummary, showsDate: Bool) -> some View {
+        TimelineEntryRow(entry: entry, isExpanded: expanded.contains(entry.id), showsDateWhenExpanded: showsDate, actions: actions,
+                         onTap: {
+                             if expanded.contains(entry.id) {
+                                 path.append(EntryRoute(id: entry.id))
+                             } else {
+                                 withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(entry.id) }
+                             }
+                         },
+                         onOpen: { path.append(EntryRoute(id: entry.id)) })
+            .entryPreview(entry) { path.append(EntryRoute(id: entry.id)) }
     }
 }
 
@@ -242,37 +251,5 @@ private struct SectionTitle: View {
                 .font(.system(.title3, design: .serif, weight: .semibold))
                 .accessibilityAddTraits(.isHeader)
         }
-    }
-}
-
-/// A larger, card-style entry preview for Today (memories read better with room to breathe).
-private struct MemoryCard: View {
-    let entry: EntrySummary
-    let caption: String?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if let caption {
-                Text(caption)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.tint)
-            }
-            HStack(alignment: .top, spacing: 12) {
-                Text(entry.excerpt.isEmpty ? "📷 Photo" : entry.excerpt)
-                    .font(.system(.body, design: .serif))
-                    .lineLimit(6)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                if entry.imageProcessing || entry.imageURL != nil {
-                    EntryPhoto(url: entry.thumbnailURL(width: 168), isProcessing: entry.imageProcessing, size: .thumbnail)
-                        .accessibilityHidden(true)
-                }
-            }
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background.secondary, in: .rect(cornerRadius: 14))
-        .contentShape(.rect(cornerRadius: 14))
-        .accessibilityElement(children: .combine)
     }
 }

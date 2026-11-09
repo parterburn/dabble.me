@@ -48,7 +48,7 @@ struct EntryActionsSheet: View {
                             perform(.search(item.tag))
                         } label: {
                             HStack(alignment: .firstTextBaseline, spacing: 10) {
-                                appIcon(item.age == nil ? "slab-compress" : "slab-hourglass")
+                                appIcon("slab-compress")
                                     .resizable()
                                     .scaledToFit()
                                     .frame(width: 16, height: 16)
@@ -68,6 +68,7 @@ struct EntryActionsSheet: View {
                             .contentShape(.rect)
                         }
                         .buttonStyle(.plain)
+                        .accessibilityIdentifier("ActionsSheetTag")
                         .accessibilityLabel("#\(item.tag)")
                         .accessibilityValue(item.age ?? "")
                         .accessibilityHint("Searches for this hashtag")

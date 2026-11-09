@@ -96,9 +96,12 @@ final class JournalViewsTests: XCTestCase {
     /// Lists hang in the editor; PRO gets on-device hashtag suggestions (when Apple Intelligence is available).
     func testComposerListsAndSuggestions() throws {
         let app = launch()
-        let write = app.buttons["Write Today's Entry"].waitForExistence(timeout: 15) ? app.buttons["Write Today's Entry"] : app.buttons["Add to Today's Entry"]
-        XCTAssertTrue(write.waitForExistence(timeout: 5))
-        write.tap()
+        if app.buttons["Write Today's Entry"].waitForExistence(timeout: 15) {
+            app.buttons["Write Today's Entry"].tap()
+        } else {
+            tab(app, "Journal").tap()
+            app.buttons["New Entry"].tap()
+        }
         let editor = app.textViews["Entry"]
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
         editor.tap()
@@ -227,12 +230,16 @@ final class JournalViewsTests: XCTestCase {
         sleep(1)
         snap("timeline-expanded")
 
-        // Swipe left: Open and Actions; Actions has Edit (and the entry's tags).
+        // Dated #tags show as pills (with their age) once the row is expanded.
+        // Swipe left: Open. Swipe right: Actions, with Edit (and the entry's tags).
         row.swipeLeft()
         XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 3))
+        XCTAssertFalse(app.buttons["Actions"].exists, "Actions is the right swipe now")
+        row.swipeRight() // closes Open
+        row.swipeRight()
         app.buttons["Actions"].tap()
         XCTAssertTrue(app.buttons["Edit"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons["#work"].exists, "The entry's tags are in the Actions sheet")
+        XCTAssertTrue(app.buttons.matching(identifier: "ActionsSheetTag").matching(NSPredicate(format: "label == %@", "#work")).firstMatch.exists, "The entry's tags are in the Actions sheet")
         snap("timeline-actions-sheet")
         app.buttons["Edit"].tap()
         XCTAssertTrue(app.textViews["Entry"].waitForExistence(timeout: 10))
@@ -240,9 +247,10 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.textViews["Entry"].waitForNonExistence(timeout: 10))
 
         row.swipeRight()
-        let reflect = app.buttons["Reflect"]
-        if reflect.waitForExistence(timeout: 3) {
-            snap("timeline-swipe-reflect")
+        app.buttons["Actions"].tap()
+        let reflect = app.buttons["Reflect on This Entry"]
+        if reflect.waitForExistence(timeout: 10) {
+            snap("timeline-actions-reflect")
             reflect.tap()
             XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 90))
             app.buttons["Done"].tap()
@@ -524,7 +532,7 @@ final class JournalViewsTests: XCTestCase {
         row.tap() // expand
         XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Taking that one with me")).firstMatch.waitForExistence(timeout: 5))
 
-        row.swipeLeft()
+        row.swipeRight()
         app.buttons["Actions"].tap()
         XCTAssertTrue(app.buttons["Edit"].waitForExistence(timeout: 10))
         app.buttons["Edit"].tap()
@@ -544,9 +552,13 @@ final class JournalViewsTests: XCTestCase {
         tab(app, "Journal").tap()
         let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Biscuit has discovered")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10))
-        row.swipeLeft()
+        row.tap() // expand: the dated tag shows as a pill with its age
+        let pill = app.buttons.matching(NSPredicate(format: "label == %@ AND value CONTAINS %@", "#Biscuit", "since entry")).firstMatch
+        XCTAssertTrue(pill.waitForExistence(timeout: 10))
+        snap("expanded-dated-pill")
+        row.swipeRight()
         app.buttons["Actions"].tap()
-        let tag = app.buttons["#Biscuit"]
+        let tag = app.buttons.matching(identifier: "ActionsSheetTag").matching(NSPredicate(format: "label == %@", "#Biscuit")).firstMatch
         XCTAssertTrue(tag.waitForExistence(timeout: 10))
         XCTAssertTrue((tag.value as? String ?? "").contains("since entry"), "Dated tag shows its age")
         snap("actions-dated-tag")
@@ -560,8 +572,10 @@ final class JournalViewsTests: XCTestCase {
         let memory = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Bruges!")).firstMatch
         XCTAssertTrue(memory.waitForExistence(timeout: 15))
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "1 year ago")).firstMatch.exists)
-        memory.swipeLeft()
+        memory.swipeRight()
         XCTAssertTrue(app.buttons["Actions"].waitForExistence(timeout: 3))
+        memory.swipeLeft() // closes the Actions swipe
+        memory.swipeLeft()
         app.buttons["Open"].tap()
         XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
     }

@@ -270,7 +270,7 @@ private struct PlaceholderID: Hashable {
     let index: Int
 }
 
-private struct MonthHeader: View {
+struct MonthHeader: View {
     let title: String
     /// An expanded entry's date (pinned while reading it), a little stronger than a month.
     var isDay = false

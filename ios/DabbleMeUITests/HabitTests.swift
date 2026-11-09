@@ -26,9 +26,16 @@ final class HabitTests: XCTestCase {
 
     func testDraftSurvivesQuittingTheApp() throws {
         var app = launch()
-        let write = app.buttons["Write Today's Entry"].exists ? app.buttons["Write Today's Entry"] : app.buttons["Add to Today's Entry"]
-        XCTAssertTrue(write.waitForExistence(timeout: 15))
-        write.tap()
+        // Today's button, or the Journal's + once today has an entry.
+        func startWriting() {
+            if app.buttons["Write Today's Entry"].waitForExistence(timeout: 15) {
+                app.buttons["Write Today's Entry"].tap()
+            } else {
+                app.tabBars.buttons["Journal"].tap()
+                app.buttons["New Entry"].tap()
+            }
+        }
+        startWriting()
         let editor = app.textViews["Entry"]
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
         editor.tap()
@@ -39,8 +46,7 @@ final class HabitTests: XCTestCase {
         app.terminate()
 
         app = launch()
-        XCTAssertTrue(write.waitForExistence(timeout: 15))
-        app.buttons[write.label].tap()
+        startWriting()
         XCTAssertTrue(app.staticTexts["Restored your unsaved draft."].waitForExistence(timeout: 5))
         XCTAssertTrue((app.textViews["Entry"].value as? String ?? "").contains("A draft that should survive."))
         snap("draft-restored")

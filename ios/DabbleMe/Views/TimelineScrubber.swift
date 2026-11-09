@@ -17,10 +17,10 @@ struct TimelineScrubber: View {
     @State private var hideTask: Task<Void, Never>?
 
     private static let space = "TimelineScrubber"
-    /// The thumb is a circle three-quarters on screen, tucked into the right edge.
+    /// The thumb is a circle a little over half on screen, tucked into the right edge.
     private let thumbHeight: CGFloat = 52
     private let stripWidth: CGFloat = 52
-    private var tucked: CGFloat { thumbHeight / 4 }
+    private var tucked: CGFloat { thumbHeight * 0.4 }
 
     var body: some View {
         GeometryReader { geometry in

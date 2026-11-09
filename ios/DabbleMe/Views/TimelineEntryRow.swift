@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// A timeline/search/On This Day row: first tap expands the whole entry inline (like a long post
-/// in a feed), a second tap opens it. Swipe right to reflect (PRO, Apple Intelligence); swipe left
-/// to Open, or for Actions (Reflect, Edit, Delete and the entry's tags).
+/// in a feed), a second tap opens it. Swipe right for Actions (Reflect, Edit, Delete and the
+/// entry's tags); swipe left to Open.
 struct TimelineEntryRow: View {
     let entry: EntrySummary
     var showsYear = false
@@ -35,27 +35,18 @@ struct TimelineEntryRow: View {
             if full?.updatedAt != entry.updatedAt { full = try? await model.entry(id: entry.id) }
         }
         .swipeActions(edge: .leading, allowsFullSwipe: true) {
-            if JournalIntelligence.isEnabled(for: model.me) {
-                Button {
-                    Task { await actions.reflect(on: entry.id, model: model) }
-                } label: {
-                    Label("Reflect", icon: "slab-sparkles")
-                }
-                .tint(.accentColor)
-            }
-        }
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            // The first is the full swipe.
-            Button(action: onOpen) {
-                Label("Open", icon: "slab-expand")
-            }
-            .tint(.accentColor)
             Button {
                 Task { await actions.showActions(for: entry.id, model: model) }
             } label: {
                 Label("Actions", icon: "slab-bolt")
             }
             .tint(.gray)
+        }
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button(action: onOpen) {
+                Label("Open", icon: "slab-expand")
+            }
+            .tint(.accentColor)
         }
         .accessibilityAddTraits(.isButton)
         .accessibilityHint(isExpanded ? "Opens the entry" : "Shows the whole entry")
@@ -80,6 +71,10 @@ struct TimelineEntryRow: View {
                 EntryPhoto(url: entry.thumbnailURL(width: 1000), isProcessing: entry.imageProcessing)
                     .frame(maxHeight: 320)
                     .clipShape(.rect(cornerRadius: 12))
+            }
+            // Dated #tags as on the entry itself, once the full entry has loaded.
+            if let dated = full?.datedHashtags, !dated.isEmpty {
+                DatedHashtagRow(hashtags: dated)
             }
         }
         .padding(.vertical, 6)

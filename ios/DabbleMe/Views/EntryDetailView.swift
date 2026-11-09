@@ -459,9 +459,9 @@ struct ReflectionSheet: View {
     }
 }
 
-/// Hashtags with a date (like the web's "Tags:"): tap to search, long-press for how long it had
-/// been on this entry's day.
-private struct DatedHashtagRow: View {
+/// Hashtags with a date (like the web's "Tags:"): each pill shows how long it had been on this
+/// entry's day ("3 years and 5 months"). Tap to search; long-press for the tag's date.
+struct DatedHashtagRow: View {
     let hashtags: [DatedHashtag]
     @Environment(\.openURL) private var openURL
 
@@ -471,11 +471,17 @@ private struct DatedHashtagRow: View {
                 Button {
                     search(hashtag)
                 } label: {
-                    Label("#\(hashtag.tag)", icon: "slab-hourglass")
-                        .font(.subheadline)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 5)
-                        .background(.tint.opacity(0.12), in: .capsule)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("#\(hashtag.tag)")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(.tint)
+                        Text(Self.shortAge(hashtag.age))
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(.tint.opacity(0.12), in: .rect(cornerRadius: 12))
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.tint)
@@ -504,6 +510,12 @@ private struct DatedHashtagRow: View {
 
     private func search(_ hashtag: DatedHashtag) {
         if let url = URL(string: "\(RichText.hashtagScheme):\(hashtag.tag)") { openURL(url) }
+    }
+
+    /// "3 years and 4 months since entry" → "3 years and 4 months" (the pill is under the entry).
+    static func shortAge(_ age: String) -> String {
+        let short = age.replacingOccurrences(of: " since entry", with: "")
+        return short.prefix(1).uppercased() + short.dropFirst()
     }
 }
 
