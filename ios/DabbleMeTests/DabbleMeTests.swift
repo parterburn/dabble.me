@@ -52,6 +52,28 @@ struct JournalDayTests {
     }
 }
 
+@MainActor
+struct WidgetPhotoTests {
+    /// Cleaning up old photo copies stays inside WidgetPhotos: the App Group's other files (its
+    /// shared settings) and the kept photo survive.
+    @Test func cleanupOnlyTouchesOtherPhotoCopies() throws {
+        let folder = try #require(WidgetSnapshot.photoFolder)
+        let root = folder.deletingLastPathComponent()
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let neighbor = root.appending(path: "test-neighbor.txt")
+        let keep = folder.appending(path: "entry-1.jpg"), old = folder.appending(path: "entry-2.jpg")
+        for file in [neighbor, keep, old] { try Data("x".utf8).write(to: file) }
+        defer { try? FileManager.default.removeItem(at: neighbor); try? FileManager.default.removeItem(at: keep) }
+
+        WidgetSync.removePhotos(except: "entry-1.jpg")
+
+        #expect(FileManager.default.fileExists(atPath: neighbor.path), "Files outside WidgetPhotos are left alone")
+        #expect(FileManager.default.fileExists(atPath: keep.path))
+        #expect(!FileManager.default.fileExists(atPath: old.path))
+        #expect(folder.lastPathComponent == "WidgetPhotos")
+    }
+}
+
 struct ShareCardTests {
     @Test func shareLabelRoundsDownToTheLargestUnit() throws {
         let today = try #require(JournalDay("2026-11-09"))

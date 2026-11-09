@@ -24,8 +24,21 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     var entryText: String? = nil
     /// The shown entry, so tapping it on the widget opens it.
     var entryID: Int? = nil
+    /// The shown entry's photo, a small copy saved in the App Group (`photoURL(named:)`).
+    var entryPhoto: String? = nil
 
     static var defaults: UserDefaults? { UserDefaults(suiteName: appGroup) }
+
+    /// The folder of the widget's photo copies, inside the App Group's shared folder (which also
+    /// holds the shared settings: clean up in here only).
+    static var photoFolder: URL? {
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup)?
+            .appending(path: "WidgetPhotos", directoryHint: .isDirectory)
+    }
+
+    static func photoURL(named name: String) -> URL? {
+        photoFolder?.appending(path: name)
+    }
 
     static func load() -> WidgetSnapshot? {
         guard let data = defaults?.data(forKey: storageKey) else { return nil }
@@ -100,7 +113,7 @@ enum WidgetContent: String, CaseIterable, Identifiable, Sendable {
         switch self {
         case .prompt: "A writing prompt for today. No entry text."
         case .memoryCount: "How many entries you wrote on this day in past years, without their text."
-        case .memoryEntry: "The start of an entry from this day in past years, or a throwback when there isn't one."
+        case .memoryEntry: "The start of an entry from this day in past years (with its photo), or a throwback when there isn't one."
         }
     }
 }

@@ -55,8 +55,12 @@ struct TimelineScrubber: View {
                 UnevenRoundedRectangle(topLeadingRadius: thumbHeight / 2, bottomLeadingRadius: thumbHeight / 2)
                     .fill(Color(uiColor: .tertiarySystemBackground))
                     .overlay {
-                        Image(systemName: "chevron.up.chevron.down")
-                            .font(.system(size: 17, weight: .semibold))
+                        // Slab's up and down angles, stacked (slab-scrub), drawn a little larger
+                        // than the 24pt icons so the chevrons read at a glance.
+                        appIcon("slab-scrub")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 33, height: 33)
                             .foregroundStyle(.primary)
                             .padding(.leading, 4)
                     }
