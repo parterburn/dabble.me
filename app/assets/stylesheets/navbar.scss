@@ -201,3 +201,43 @@
   }
 
 }
+
+// Desktop with a mouse: the navbar dropdowns (account and admin) open on
+// hover. Touch screens and keyboards still tap/click to open them, which
+// Bootstrap handles with .open.
+@media (min-width: 768px) and (hover: hover) and (pointer: fine) {
+  // The account menu hangs to the left of the avatar, so a diagonal move
+  // toward it leaves the <li> before reaching the menu. Hide the menu with
+  // visibility on a 0.3s delay instead of display: none, so it stays up long
+  // enough to catch.
+  .navbar-default .navbar-nav > li.dropdown {
+    > .dropdown-menu {
+      display: block;
+      visibility: hidden;
+      transition: visibility 0s linear 0.3s;
+    }
+    &:hover > .dropdown-menu,
+    &.open > .dropdown-menu {
+      visibility: visible;
+      transition-delay: 0s;
+    }
+  }
+  .navbar-default .navbar-nav > li.dropdown:hover {
+    // Same look as a menu opened by click (li.dropdown.open above), so the
+    // toggle stays highlighted while the mouse is in the menu.
+    > .dropdown-toggle {
+      color: white;
+      padding-top: 17px;
+      padding-bottom: 13px;
+      background-color: darken($olive, 20);
+      text-shadow: 0px 0px 3px darken($olive, 40);
+    }
+    > a.s-avatar-toggle {
+      padding-top: 9px;
+      padding-bottom: 9px;
+    }
+    > .s-avatar-toggle .s-avatar {
+      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.85);
+    }
+  }
+}
