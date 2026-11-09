@@ -10,7 +10,7 @@
   <p>
     <strong>Your days to receive emails are set to: <%= @user.frequencies %>.</strong>
     If you subscribed to increase the frequency of emails being sent, please make sure to edit your
-    <%= link_to("User Settings", "https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}") %>
+    <%= link_to("User Settings", settings_url(token: @user.email_settings_token)) %>
     and check the boxes on the days you want to receive emails.
   </p>
 <% end %>
@@ -19,7 +19,7 @@
   You'll now have access to:
   <ul>
     <li>
-      <%= link_to "Change the frequency", "https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}" %>
+      <%= link_to "Change the frequency", settings_url(token: @user.email_settings_token) %>
       of your emails
     </li>
     <li>Add/edit entries via the web</li>

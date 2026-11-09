@@ -22,4 +22,4 @@ You can always email <%= @user.user_key %>@<%= ENV['SMTP_DOMAIN'] %> to post new
 
 For reference, your username is: <%= @user.email %>
 
-Unsubscribe: <%= settings_url(user_key: @user.user_key) %>
+Unsubscribe: <%= settings_url(token: @user.email_settings_token) %>

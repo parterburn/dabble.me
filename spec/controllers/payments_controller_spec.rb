@@ -186,7 +186,9 @@ RSpec.describe PaymentsController, type: :controller do
     end
 
     it 'should create a payment if Free user is upgrading and email user thanks' do
-      payhere_params.deep_merge!(customer: { email: user.email }, payment: { price: 3 }, plan: { billing_interval: "month" })
+      # A 12-digit ID: the shared context gives three users random 3-digit
+      # payhere_ids, and the default 156 matched one of them about 1 run in 300.
+      payhere_params.deep_merge!(customer: { id: Faker::Number.number(digits: 12), email: user.email }, payment: { price: 3 }, plan: { billing_interval: "month" })
       expect { post :payment_notify, params: payhere_params, as: :json }.to change { Payment.count }.by(1)
       expect(user.reload.plan).to eq 'PRO Monthly PayHere'
       expect(user.reload.payhere_id).to eq payhere_params[:customer][:id].to_s

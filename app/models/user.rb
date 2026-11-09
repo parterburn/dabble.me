@@ -17,6 +17,14 @@ class User < ActiveRecord::Base
   # two independent values so a photo URL never reveals the posting address.
   KEY_CHARACTERS = [*"0".."9", *"a".."z"].freeze
 
+  # Signed token for the no-login settings and unsubscribe links in emails,
+  # so those links don't carry the posting address. Its payload is readable,
+  # so it holds a digest of user_key rather than the key: resetting the posting
+  # address also retires old settings links.
+  generates_token_for :email_settings do
+    Digest::SHA256.hexdigest(user_key.to_s).first(16)
+  end
+
   validates :user_key, uniqueness: true
   validates :image_key, uniqueness: true, allow_nil: true
   before_create :assign_keys
@@ -104,6 +112,15 @@ class User < ActiveRecord::Base
   # changes. The image_key guard keeps that true even for a record missing one.
   def rotate_user_key!
     update!(image_key: image_key.presence || user_key, user_key: self.class.generate_unique_key)
+  end
+
+  def email_settings_token
+    generate_token_for(:email_settings)
+  end
+
+  # p***@gmail.com, for pages shown without logging in.
+  def masked_email
+    email.to_s.sub(/\A(.)[^@]*(?=@)/, '\1***')
   end
 
   def first_name_or_fallback(fallback='there')

@@ -14,7 +14,7 @@
   Upgrade to PRO to have access to:
   <ul>
     <li>
-      <%= link_to "Change the frequency", "https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}" %>
+      <%= link_to "Change the frequency", settings_url(token: @user.email_settings_token) %>
       of your emails
     </li>
     <li>Add/edit entries via the web</li>
