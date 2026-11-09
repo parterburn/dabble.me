@@ -236,10 +236,11 @@ final class JournalViewsTests: XCTestCase {
         let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Big presentation went well")).firstMatch
         app.scrollTo(row)
         // Swipe left: Actions, with Edit (and the entry's tags). There's no right swipe.
-        row.swipeRight()
+        row.swipeRow(left: false)
         XCTAssertFalse(app.buttons["Actions"].waitForExistence(timeout: 2), "Nothing on a right swipe")
-        row.swipeLeft()
-        app.buttons["Actions"].tap()
+        row.swipeRow(left: true)
+        // A long swipe opens the sheet straight away; a shorter one shows the Actions button.
+        if app.buttons["Actions"].waitForExistence(timeout: 2) { app.buttons["Actions"].tap() }
         XCTAssertTrue(app.buttons["Edit"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons.matching(identifier: "ActionsSheetTag").matching(NSPredicate(format: "label == %@", "#work")).firstMatch.exists, "The entry's tags are in the Actions sheet")
         snap("timeline-actions-sheet")
@@ -403,6 +404,29 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Reflection"].exists || app.staticTexts["Reflection"].exists)
         snap("pull-reflection")
         app.buttons["Done"].tap()
+    }
+
+    /// From Today: an entry's reflection closes with a pull down (Today's pull to reset doesn't
+    /// leak into its sheets or entry pages).
+    func testPullDownClosesReflectionFromToday() throws {
+        let app = launch()
+        let memory = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Bruges!")).firstMatch
+        XCTAssertTrue(memory.waitForExistence(timeout: 15))
+        app.openTimelineEntry(memory)
+        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+        let scroll = app.scrollViews.firstMatch
+        scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
+            .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.85)))
+        guard app.buttons["Done"].waitForExistence(timeout: 90) else {
+            throw XCTSkip("Apple Intelligence isn't available here")
+        }
+        XCTAssertFalse(app.activityIndicators.firstMatch.exists, "No refresh spinner on the entry")
+        // Pull down on the reflection's text (the sheet opens half height, its text near the bottom).
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.72))
+            .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.98)),
+                   withVelocity: .fast, thenHoldForDuration: 0)
+        snap("reflection-after-pull")
+        XCTAssertTrue(app.buttons["Done"].waitForNonExistence(timeout: 5), "Pulling down closes the reflection")
     }
 
     private func openDailyEmail(_ app: XCUIApplication) {

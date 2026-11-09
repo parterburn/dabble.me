@@ -61,8 +61,11 @@ struct TimelineEntryRow: View {
         return result
     }
 
-    /// The server's preview stops at 1,500 characters; past that, expanding loads the rest.
-    private var previewIsCut: Bool { (entry.previewText?.count ?? 0) >= 1500 }
+    /// The server's preview stops at about 1,500 characters; past that, expanding loads the rest.
+    private var previewIsCut: Bool {
+        // The server says; an older one didn't, but its cut previews end in "...".
+        entry.previewTruncated ?? (entry.previewText?.hasSuffix("...") ?? false)
+    }
 
     /// More to read than the preview shows: cut off on screen, or longer than the server's preview.
     private var isTruncated: Bool {

@@ -451,6 +451,8 @@ struct ReflectionSheet: View {
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
+            // A short reflection doesn't bounce, so pulling down drags the sheet closed.
+            .scrollBounceBehavior(.basedOnSize)
             .navigationTitle("Reflection")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -52,6 +52,12 @@ struct TodayView: View {
                 }
             }
             .listStyle(.plain)
+            // Pull to reset: collapses expanded entries and reloads today. On the list itself,
+            // inside the sheets and entry pages below, so they don't inherit a pull-to-refresh.
+            .refreshable {
+                withAnimation(.snappy(duration: 0.25)) { expanded = [] }
+                await model.loadToday()
+            }
             .timelinePinsDates()
             .frame(maxWidth: 680)
             .frame(maxWidth: .infinity)
@@ -84,11 +90,6 @@ struct TodayView: View {
                 }
             }
             .sensoryFeedback(.impact(weight: .light), trigger: bottomPull >= randomMemoryPull) { _, armed in armed }
-            // Pull to reset: collapses expanded entries and reloads today.
-            .refreshable {
-                withAnimation(.snappy(duration: 0.25)) { expanded = [] }
-                await model.loadToday()
-            }
             .onChange(of: model.composeRequest, initial: true) { _, requested in
                 guard requested else { return }
                 model.composeRequest = false

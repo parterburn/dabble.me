@@ -56,6 +56,8 @@ struct EntrySummary: Decodable, Sendable, Identifiable, Hashable {
     var datedHashtags: [DatedHashtag]? = nil
     /// Spotify songs found in it.
     var songs: [Song]? = nil
+    /// `previewText` was cut short (the rest loads when the row is expanded).
+    var previewTruncated: Bool? = nil
 
     var day: JournalDay? { JournalDay(date) }
     var imageURL: URL? { imageUrl.flatMap(URL.init(string:)) }
@@ -145,8 +147,10 @@ struct EntryDetail: Decodable, Sendable, Identifiable, Hashable {
     var imageURL: URL? { imageUrl.flatMap(URL.init(string:)) }
 
     var summary: EntrySummary {
+        // The whole text as the preview, so nothing's left to load; songs and dated tags carry over.
         EntrySummary(id: id, date: date, excerpt: excerpt, imageUrl: imageUrl,
-                     imageProcessing: imageProcessing, hashtags: hashtags, updatedAt: updatedAt, previewText: bodyText)
+                     imageProcessing: imageProcessing, hashtags: hashtags, updatedAt: updatedAt, previewText: bodyText,
+                     datedHashtags: datedHashtags, songs: songs, previewTruncated: false)
     }
 }
 

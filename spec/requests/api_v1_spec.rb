@@ -113,6 +113,15 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
                          "spotify_url" => "https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC")
     end
 
+    it "says when an entry's preview text was cut short" do
+      long_entry = create(:entry, user: free_user, date: Time.zone.local(2025, 3, 10), body: "<p>#{(['word'] * 400).join(' ')}</p>")
+      get "/api/v1/entries", params: { year: 2025, month: 3 }, headers: auth(free_user)
+      long = json["entries"].find { |e| e["id"] == long_entry.id }
+      expect(long["preview_truncated"]).to be(true)
+      expect(long["preview_text"].length).to be < 1500 # it backs up to a word, so length alone doesn't tell
+      expect(json["entries"].find { |e| e["id"] == mine.id }["preview_truncated"]).to be(false)
+    end
+
     it "rejects a malformed year" do
       get "/api/v1/entries", params: { year: "abc" }, headers: auth(free_user)
       expect(response).to have_http_status(:unprocessable_content)

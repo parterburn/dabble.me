@@ -27,6 +27,9 @@ module Api
         # The text for long-press previews (light Markdown, capped), so the app can show the whole
         # entry right away: iOS sizes a preview once, before anything could load.
         preview_text: display_text(entry.text_body).truncate(PREVIEW_LENGTH, separator: ' '),
+        # Whether preview_text was cut short (it backs up to a word, so its length doesn't say):
+        # the app loads the rest when the row is expanded.
+        preview_truncated: display_text(entry.text_body).length > PREVIEW_LENGTH,
         image_url: entry.display_image_url,
         image_processing: entry.uploading_image?,
         hashtags: entry.hashtags || [],
