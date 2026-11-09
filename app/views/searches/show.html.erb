@@ -53,7 +53,7 @@
       </div>
 
       <% search_entries.each do |entry| %>
-        <div class="well entry" id="entry-<%= entry.id %>">
+        <div class="well entry entry--sticky-header" id="entry-<%= entry.id %>">
           <%= render partial: 'entries/entry', locals: { entry: entry } %>
         </div>
       <% end %>

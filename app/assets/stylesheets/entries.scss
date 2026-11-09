@@ -482,6 +482,39 @@ mark {
   // }
 }
 
+// Entries list and search results: an entry's header (date, day, actions)
+// sticks under the navbar while that entry scrolls past, then the next
+// entry's header takes over.
+.entry--sticky-header .s-entry-header {
+  position: sticky;
+  top: 51px; // height of the fixed navbar
+  transition: top 0.2s ease-out; // same slide as the navbar
+  z-index: 2;
+  // flow-root keeps .s-entry-date's top margin inside the header, so a stuck
+  // header keeps its spacing below the navbar instead of butting against it.
+  display: flow-root;
+  background-color: #fff;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+
+  @media screen and (max-width: 767px) {
+    top: 0; // the navbar scrolls away on phones
+  }
+}
+
+// On desktop the navbar slides out of view while scrolling down (init.js
+// adds .nav-up), so the header moves up to the top edge with it.
+.navbar-fixed-top.nav-up ~ #main-container .entry--sticky-header .s-entry-header {
+  top: 0;
+}
+
+@media screen and (max-width: 767px) {
+  // The navbar stays fixed in the Home Screen web app.
+  .web-app .entry--sticky-header .s-entry-header {
+    top: 51px;
+  }
+}
+
 .entry.well {
   padding: 0px;
   // box-shadow: none;
