@@ -49,7 +49,8 @@
           </div>
                 
           <div class="email-post-footer">
-            Emailing this address creates a new Dabble Me entry in your account — keep it secret! If it gets out, <%= link_to "get a new address", posting_address_path %>. If the subject line is blank, the entry is saved under the date the email is sent. To save it under a different date, put that date in the subject line as YYYY-MM-DD.
+            <%# One span: the footer is display: flex, so a bare link would become its own column. %>
+            <span>Emailing this address creates a new Dabble Me entry in your account — keep it secret! If it gets out, <%= link_to "get a new address", posting_address_path %>. If the subject line is blank, the entry is saved under the date the email is sent. To save it under a different date, put that date in the subject line as YYYY-MM-DD.</span>
           </div>
         </div>
       </div>
