@@ -38,6 +38,30 @@ describe User do
     end
   end
 
+  describe 'email settings token' do
+    it 'finds the user and leaves the posting address out of the token' do
+      token = user.email_settings_token
+
+      expect(User.find_by_token_for(:email_settings, token)).to eq(user)
+      expect(Base64.decode64(token.split('--').first)).not_to include(user.user_key)
+    end
+
+    it 'stops working after the posting address is reset' do
+      token = user.email_settings_token
+      user.rotate_user_key!
+
+      expect(User.find_by_token_for(:email_settings, token)).to be_nil
+    end
+  end
+
+  describe '#masked_email' do
+    it 'hides everything before the @ except the first character' do
+      user.update_column(:email, 'paul.example@gmail.com')
+
+      expect(user.masked_email).to eq('p***@gmail.com')
+    end
+  end
+
   describe 'blocked email domains' do
     let(:password) { 'password1' }
 

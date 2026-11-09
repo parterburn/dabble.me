@@ -55,4 +55,4 @@ Change the frequency of these emails &amp; unlock premium features, subscribe to
 <%= strip_tags(@random_inspiration.body.html_safe) %>
 <% end %>
 
-Unsubscribe: <%= settings_url(user_key: @user.user_key) %>
+Unsubscribe: <%= settings_url(token: @user.email_settings_token) %>

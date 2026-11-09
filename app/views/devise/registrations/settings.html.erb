@@ -2,9 +2,9 @@
 
 <div class="row">
   <div class="col-md-8 col-md-offset-2">
-    <h3>Email Settings for <%= user.full_name_or_email %></h3>
+    <h3>Email Settings for <%= user.first_name.presence || user.masked_email %></h3>
     <br>
   </div>
 
-  <%= render partial: 'user_settings', locals: { form_path: unsubscribe_path(@user.user_key) } %>
+  <%= render partial: 'user_settings', locals: { form_path: unsubscribe_path(token: @user.email_settings_token) } %>
 </div>

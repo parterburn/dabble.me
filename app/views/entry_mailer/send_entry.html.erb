@@ -119,7 +119,7 @@
         <%= link_to "All entries", entries_url %>
         &nbsp;&middot;&nbsp;
       <% end %>
-      <%= link_to "Unsubscribe", settings_url(user_key: @user.user_key) %>
+      <%= link_to "Unsubscribe", settings_url(token: @user.email_settings_token) %>
     </p>
     <% if @user.is_free? || (@random_inspiration.present? && @user.days_since_last_post.to_i <= 14) %>
       <hr style="margin-top: 20px;margin-bottom: 20px;border: 0;border-top: 2px solid whiteSmoke;"/>

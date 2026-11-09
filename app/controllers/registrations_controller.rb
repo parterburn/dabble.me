@@ -100,6 +100,11 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   def unsubscribe
+    unless user
+      redirect_to new_user_session_path, alert: 'That settings link no longer works. Log in to change your email settings.'
+      return
+    end
+
     if params[:frequency].present? && params[:unsub_all].blank?
       user.frequency = params[:frequency].select { |day, value| value == "1" }.keys.map { |day| day[0..2] }
     elsif params[:unsub_all].present?
@@ -126,7 +131,7 @@ class RegistrationsController < Devise::RegistrationsController
       set_flash_message :error, 'Could not update.'
     end
 
-    redirect_to settings_path(user.user_key)
+    redirect_to settings_path(token: user.email_settings_token)
   end
 
   private
@@ -170,7 +175,18 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   def user
-    @user ||= user_signed_in? ? current_user : User.find_by(user_key: params[:user_key])
+    @user ||= user_signed_in? ? current_user : user_from_email_link
+  end
+
+  # Settings links in emails carry ?token=. Emails sent before that put the
+  # posting address in the path instead; those keep working until the user
+  # resets their address. Drop the user_key lookup once those emails are old.
+  def user_from_email_link
+    if params[:token].present?
+      User.find_by_token_for(:email_settings, params[:token])
+    elsif params[:user_key].present?
+      User.find_by(user_key: params[:user_key])
+    end
   end
   helper_method :user
 

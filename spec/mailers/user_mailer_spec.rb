@@ -15,6 +15,16 @@ RSpec.describe UserMailer do
     end
   end
 
+  describe "#welcome_email" do
+    it "links to settings with a token instead of the posting address" do
+      email = described_class.welcome_email(user)
+      body = email.html_part.body.decoded + email.text_part.body.decoded
+
+      expect(body).to include("settings?token=")
+      expect(body).not_to include("/settings/#{user.user_key}")
+    end
+  end
+
   describe "#passkey_added" do
     it "sends a security notice with the passkey nickname" do
       email = described_class.passkey_added(user, "Work laptop")

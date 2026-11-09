@@ -86,9 +86,11 @@ Rails.application.routes.draw do
     # Before settings/(:user_key), which would otherwise match this path.
     get 'settings/posting-address' => 'registrations#posting_address', as: 'posting_address'
     post 'settings/posting-address/reset' => 'registrations#reset_posting_address', as: 'reset_posting_address'
+    # Emails link to settings?token=<signed token>. Older emails put the
+    # posting address in the path; those keep working until the user resets it.
     get 'settings/(:user_key)'     => 'registrations#settings', as: 'settings'
     get 'security'                 => 'registrations#security', as: 'security'
-    match 'unsubscribe/:user_key'  => 'registrations#unsubscribe', as: 'unsubscribe', via: [:put]
+    match 'unsubscribe(/:user_key)' => 'registrations#unsubscribe', as: 'unsubscribe', via: [:put]
   end
 
   get 'entries/import/(:type)'   => 'import#show', as: 'import'

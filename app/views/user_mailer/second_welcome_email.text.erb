@@ -10,8 +10,8 @@ Don't see your last entry here? You may have a formatting issue. Make sure your 
 <% if @user.frequencies.present? %>
 
 
-P.S. You'll receive emails every<%= " other" if @user.is_free? %> <%= @user.frequencies %> at <%= @user.send_time.strftime("%-I%P") %> <%= @user.send_timezone %>. Unsubscribe or change your settings here: https://<%= ENV['MAIN_DOMAIN'] %>/settings/<%= @user.user_key %>
+P.S. You'll receive emails every<%= " other" if @user.is_free? %> <%= @user.frequencies %> at <%= @user.send_time.strftime("%-I%P") %> <%= @user.send_timezone %>. Unsubscribe or change your settings here: <%= settings_url(token: @user.email_settings_token) %>
 <% else %>
 
-P.S. You have email reminders turned off, so you won't receive any further prompts to journal like this. Unsubscribe or change your settings here: https://<%= ENV['MAIN_DOMAIN'] %>/settings/<%= @user.user_key %>
+P.S. You have email reminders turned off, so you won't receive any further prompts to journal like this. Unsubscribe or change your settings here: <%= settings_url(token: @user.email_settings_token) %>
 <% end %>

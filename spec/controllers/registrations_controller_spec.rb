@@ -54,6 +54,67 @@ RSpec.describe RegistrationsController, type: :controller do
     end
   end
 
+  describe 'email settings links' do
+    it 'opens the no-login settings page from a token link' do
+      get :settings, params: { token: user.email_settings_token }
+
+      expect(response.status).to eq 200
+      expect(response.body).to include("unsubscribe?token=")
+      expect(response.body).not_to include(user.user_key)
+    end
+
+    it 'still opens from an old link with the posting address in the path' do
+      get :settings, params: { user_key: user.user_key }
+
+      expect(response.status).to eq 200
+    end
+
+    it 'turns away a token that does not match' do
+      get :settings, params: { token: 'not-a-token' }
+
+      expect(response).to redirect_to(edit_user_registration_url)
+    end
+
+    it 'retires both old and token links when the posting address is reset' do
+      token = user.email_settings_token
+      old_key = user.user_key
+      user.rotate_user_key!
+
+      get :settings, params: { token: token }
+      expect(response).to redirect_to(edit_user_registration_url)
+
+      get :settings, params: { user_key: old_key }
+      expect(response).to redirect_to(edit_user_registration_url)
+    end
+
+    it 'unsubscribes through a token link' do
+      params = {
+        token: user.email_settings_token,
+        unsub_all: 'yes',
+        user: { 'send_time(5i)': '16:00:00', send_timezone: 'Pacific Time (US & Canada)', send_past_entry: '1' }
+      }
+      post :unsubscribe, params: params, as: :json
+
+      expect(response).to redirect_to(settings_url(token: user.email_settings_token))
+      expect(user.reload.frequency).to be_empty
+    end
+
+    it 'sends a dead link to log in instead of erroring' do
+      post :unsubscribe, params: { token: 'not-a-token', unsub_all: 'yes', user: { 'send_time(5i)': '16:00:00' } }, as: :json
+
+      expect(response).to redirect_to(new_user_session_url)
+    end
+
+    it 'never shows the full email address, even without a name' do
+      user.update_columns(first_name: nil, last_name: nil)
+
+      get :settings, params: { token: user.email_settings_token }
+
+      expect(response.body).not_to include(user.email)
+      expect(response.body).to include(user.masked_email)
+    end
+  end
+
   describe 'edit' do
     it 'should redirect to root url if not logged in' do
       get :edit
@@ -103,7 +164,7 @@ RSpec.describe RegistrationsController, type: :controller do
       }
       post :unsubscribe, params: params, as: :json
       expect(response.status).to eq 302
-      expect(response).to redirect_to(settings_url(user.user_key))
+      expect(response).to redirect_to(settings_url(token: user.email_settings_token))
       expect(user.reload.frequency.count).to eq 0
     end
 
@@ -119,7 +180,7 @@ RSpec.describe RegistrationsController, type: :controller do
       }
       post :unsubscribe, params: params, as: :json
       expect(response.status).to eq 302
-      expect(response).to redirect_to(settings_url(paid_user.user_key))
+      expect(response).to redirect_to(settings_url(token: paid_user.email_settings_token))
       expect(paid_user.reload.frequency).to eq ['Mon', 'Wed', 'Fri']
       expect(paid_user.send_timezone).to eq 'Pacific Time (US & Canada)'
       expect(paid_user.send_time.hour).to eq 16
@@ -138,7 +199,7 @@ RSpec.describe RegistrationsController, type: :controller do
       }
       post :unsubscribe, params: params, as: :json
       expect(response.status).to eq 302
-      expect(response).to redirect_to(settings_url(user.user_key))
+      expect(response).to redirect_to(settings_url(token: user.email_settings_token))
       expect(user.reload.frequency).to eq ['Sun']
       expect(user.send_timezone).to eq 'Pacific Time (US & Canada)'
       expect(user.send_time.hour).to eq 16

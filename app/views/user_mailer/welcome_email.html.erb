@@ -48,7 +48,7 @@
 <p>
   <i>
     P.S. If you received this email by error, you can
-    <%= link_to "unsubscribe", "https://#{ENV['MAIN_DOMAIN']}/settings/#{@user.user_key}" %>
+    <%= link_to "unsubscribe", settings_url(token: @user.email_settings_token) %>
     to stop all future emails.
   </i>
 </p>
