@@ -27,9 +27,17 @@ module Api
         # The text for long-press previews (light Markdown, capped), so the app can show the whole
         # entry right away: iOS sizes a preview once, before anything could load.
         preview_text: display_text(entry.text_body).truncate(PREVIEW_LENGTH, separator: ' '),
+        # Whether preview_text was cut short (it backs up to a word, so its length doesn't say):
+        # the app loads the rest when the row is expanded.
+        preview_truncated: display_text(entry.text_body).length > PREVIEW_LENGTH,
         image_url: entry.display_image_url,
         image_processing: entry.uploading_image?,
         hashtags: entry.hashtags || [],
+        # Hashtags with a date set on dabble.me (birthdays, anniversaries), and how long it had
+        # been on this entry's day, worded like the web's tag tooltip. The timeline shows these.
+        dated_hashtags: dated_hashtags,
+        # Spotify songs found in the entry, for previews and expanded timeline rows.
+        songs: songs,
         updated_at: entry.updated_at.iso8601
       }
     end
@@ -39,10 +47,6 @@ module Api
         body_text: display_text(entry.text_body),
         # Structured, editable copy of the body (see EntryDocument), or nil when it's web-only.
         document: EntryDocument.from_html(entry.body),
-        songs: songs,
-        # Hashtags with a date set on dabble.me (birthdays, anniversaries), and how long it had
-        # been on this entry's day, worded like the web's tag tooltip.
-        dated_hashtags: dated_hashtags,
         # Neighbouring entries by date, for moving between days in the app.
         previous_entry: neighbour(entry.previous),
         next_entry: neighbour(entry.next),

@@ -80,7 +80,8 @@ struct EntryDetailView: View {
         .sheet(isPresented: $showingActions) {
             if let entry {
                 EntryActionsSheet(entry: entry, canReflect: JournalIntelligence.isEnabled(for: model.me) && !entry.bodyText.isEmpty,
-                                  canEdit: model.me?.canEdit == true) { action in
+                                  canEdit: model.me?.canEdit == true,
+                                  canDelete: model.me?.mayDelete == true) { action in
                     showingActions = false
                     switch action {
                     case .reflect: Task { await reflect(on: entry) }
@@ -198,9 +199,10 @@ struct EntryDetailView: View {
                     // Formatting the app can't represent (styles, quotes, images) stays web-only so nothing gets lost.
                     Button("Edit on dabble.me", systemImage: "safari") { openURL(entry.webUrl) }
                 }
+            }
+            // Free accounts can delete, not edit.
+            if model.me?.mayDelete == true {
                 Button(role: .destructive) { confirmingDelete = true } label: { Label("Delete", icon: "slab-trash") }
-            } else {
-                Button("Open on dabble.me", systemImage: "safari") { openURL(entry.webUrl) }
             }
     }
 
@@ -306,9 +308,11 @@ private struct EntryBody: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             if let document = entry.document {
-                DocumentText(blocks: document, font: bodyFont, scale: textSize.scale, bodySize: bodySize)
+                // Selectable across paragraphs (SwiftUI's selection stops at each paragraph).
+                SelectableDocumentText(blocks: document, fontSize: bodySize * textSize.scale,
+                                       design: fontStyle.uiDesign, lineSpacing: 5 * textSize.scale)
             } else if !entry.bodyText.isEmpty {
-                Text(RichText.linkingHashtags(in: AttributedString.journal(entry.bodyText)))
+                Text(RichText.linkingURLs(in: RichText.linkingHashtags(in: AttributedString.journal(entry.bodyText))))
                     .font(bodyFont)
                     .lineSpacing(5 * textSize.scale)
                     .textSelection(.enabled)
@@ -322,11 +326,7 @@ private struct EntryBody: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Songs")
                         .font(.headline)
-                    ForEach(entry.songs, id: \.self) { song in
-                        Link(destination: song.spotifyUrl) {
-                            Label(song.label, icon: "slab-music")
-                        }
-                    }
+                    SongList(songs: entry.songs)
                 }
             }
 
@@ -451,6 +451,8 @@ struct ReflectionSheet: View {
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
+            // A short reflection doesn't bounce, so pulling down drags the sheet closed.
+            .scrollBounceBehavior(.basedOnSize)
             .navigationTitle("Reflection")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

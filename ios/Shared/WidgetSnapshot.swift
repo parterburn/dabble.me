@@ -5,7 +5,8 @@ import Foundation
 struct WidgetSnapshot: Codable, Equatable, Sendable {
     static let appGroup = "group.me.dabble.ios"
     static let storageKey = "widget.snapshot"
-    /// Off by default: "On This Day" counts appear on the widget only if the user turns it on.
+    /// Off by default: entries (On This Day, or a throwback) appear on the widget only if the user
+    /// turns on "Show Entries in Widget".
     static let showMemoriesKey = "widget.showMemories"
 
     /// The journal day this snapshot describes (YYYY-MM-DD).
@@ -15,6 +16,10 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     var memories: Int
     var memoriesFirstYear: Int?
     var prompt: String?
+    /// With "Show Entries in Widget" on (and no Face ID lock): an entry to look back on, e.g.
+    /// "1 year ago · 2025" or "Throwback · 31 days ago", and the start of its text.
+    var entryTitle: String? = nil
+    var entryText: String? = nil
 
     static var defaults: UserDefaults? { UserDefaults(suiteName: appGroup) }
 

@@ -40,9 +40,7 @@ final class ScreenshotTests: XCTestCase {
         let entry = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
         XCTAssertTrue(entry.waitForExistence(timeout: 10))
-        entry.tap() // expands in the timeline
-        sleep(1)
-        entry.tap() // opens
+        app.openTimelineEntry(entry)
         XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
         shot("03-entry")
         app.navigationBars.buttons.element(boundBy: 0).tap()
@@ -51,13 +49,13 @@ final class ScreenshotTests: XCTestCase {
         app.buttons["New Entry"].tap()
         let editor = app.textViews["Entry"]
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Add More"].waitForExistence(timeout: 30))
         editor.tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label == 'Photos' AND value == '2 photos'")).firstMatch.waitForExistence(timeout: 30))
         // A fresh simulator shows the one-time "slide to type" tip over the keyboard.
         let tip = app.buttons["Continue"]
         if tip.waitForExistence(timeout: 2) { tip.tap() }
         editor.typeText("Slow Saturday. Made pour-over with the beans from the farmers market and read on the porch until noon.\n\nGrateful for:\n- Quiet mornings\nThe first cold brew of fall")
-        app.buttons["Add"].tap()
+        app.buttons["Hashtags"].tap() // the row: Suggest, then recent tags
         let suggest = app.buttons["Suggest Hashtags"]
         if suggest.waitForExistence(timeout: 3) {
             suggest.tap()
@@ -65,6 +63,8 @@ final class ScreenshotTests: XCTestCase {
         } else {
             app.tap()
         }
+        // Open the photo drawer from the stack, so the shot shows the photos.
+        app.buttons["Photos"].tap()
         // Drag the text down into the keyboard to hide it, so the whole entry shows.
         editor.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
             .press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.98)))

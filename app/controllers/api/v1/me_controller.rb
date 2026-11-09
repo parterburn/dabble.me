@@ -17,7 +17,10 @@ module Api
           can_write: true,
           can_add_photos: user.is_pro?,
           can_edit: user.is_pro?,
+          can_delete: true,
+          can_add_links: user.is_pro?,
           can_search: user.is_pro?,
+          can_see_stats: user.is_pro?,
           settings_url: "#{ApplicationHelper.site_public_base_url}/settings",
           security_url: "#{ApplicationHelper.site_public_base_url}/security",
           # Connecting Claude/ChatGPT (MCP) needs PRO plus a passkey or 2FA on the account.

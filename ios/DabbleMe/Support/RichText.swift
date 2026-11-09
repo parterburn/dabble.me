@@ -196,6 +196,20 @@ enum RichText {
         return result
     }
 
+    /// Web addresses written into an entry ("dabble.me", "https://…") as links. Text already linked
+    /// (Markdown links, #hashtags) is left alone.
+    static func linkingURLs(in text: AttributedString) -> AttributedString {
+        var result = text
+        let string = String(result.characters)
+        guard let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue) else { return result }
+        for match in detector.matches(in: string, range: NSRange(string.startIndex..., in: string)) {
+            guard let url = match.url, url.scheme?.hasPrefix("http") == true,
+                  let range = Range(match.range, in: result), result[range].link == nil else { continue }
+            result[range].link = url
+        }
+        return result
+    }
+
     static func hashtag(from url: URL) -> String? {
         guard url.scheme == hashtagScheme else { return nil }
         let tag = url.absoluteString.dropFirst(hashtagScheme.count + 1)

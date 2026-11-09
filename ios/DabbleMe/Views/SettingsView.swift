@@ -144,16 +144,13 @@ struct SettingsView: View {
 }
 
 private extension SettingsView {
-    // MARK: - Reminders (PRO)
+    // MARK: - Reminders (writing: everyone; On This Day: PRO)
 
     @ViewBuilder
     var remindersSection: some View {
+        let isPro = model.me?.isPro == true
         Section {
-            if model.me?.isPro != true {
-                Label("Reminders are part of Dabble Me PRO.", systemImage: "bell")
-                    .foregroundStyle(.secondary)
-                EmailScheduleRow()
-            } else {
+            do {
                 Toggle("Daily Writing Reminder", isOn: $writingReminder)
                     #if DEBUG
                     // For the reminders UI test only: an invisible count of what's scheduled.
@@ -170,8 +167,10 @@ private extension SettingsView {
                 if writingReminder {
                     DatePicker("Time", selection: minutesBinding($writingTime), displayedComponents: .hourAndMinute)
                 }
+                // On This Day is PRO, so its reminder is too (greyed out on a free plan).
                 Toggle("On This Day Memories", isOn: $memoriesReminder)
-                if memoriesReminder {
+                    .disabled(!isPro)
+                if memoriesReminder, isPro {
                     DatePicker("Time", selection: minutesBinding($memoriesTime), displayedComponents: .hourAndMinute)
                 }
                 EmailScheduleRow()
@@ -183,6 +182,10 @@ private extension SettingsView {
             }
         } header: {
             Text("Reminders")
+        } footer: {
+            if !isPro {
+                Text("On This Day reminders and choosing your email's days are part of Dabble Me PRO.")
+            }
         }
     }
 
@@ -206,11 +209,13 @@ private extension SettingsView {
 
     @ViewBuilder
     var intelligenceSection: some View {
-        if model.me?.isPro == true, JournalIntelligence.isSupported {
+        if JournalIntelligence.isSupported {
             Section {
                 Toggle("Apple Intelligence", isOn: $onDeviceAI)
             } header: {
                 Text("On-Device AI")
+            } footer: {
+                Text("Reflections on your entries, a daily writing prompt from your recent days, and hashtag suggestions as you write. They run on this device with Apple Intelligence; your journal isn't sent anywhere for them.")
             }
         }
     }
@@ -231,12 +236,12 @@ private extension SettingsView {
                 }
             ))
             .disabled(!lock.isAvailable)
-            if model.me?.isPro == true {
-                Toggle("On This Day in Widget", isOn: $widgetShowsMemories)
-                    .onChange(of: widgetShowsMemories) { _, shows in WidgetSync.setShowsMemories(shows) }
-            }
+            Toggle("Show Entries in Widget", isOn: $widgetShowsMemories)
+                .onChange(of: widgetShowsMemories) { _, shows in WidgetSync.setShowsMemories(shows, model: model) }
         } header: {
             Text("Privacy")
+        } footer: {
+            Text("Show Entries in Widget puts the start of an entry from this day in past years (or a throwback) on your home screen widget. Widgets show without unlocking, so it's hidden while Face ID is on.")
         }
     }
 
@@ -253,7 +258,7 @@ private extension SettingsView {
 /// App Store rules don't allow steering to outside purchases from inside the app.
 struct ProInfoView: View {
     enum Feature {
-        case writing, search
+        case writing, search, stats
     }
 
     let feature: Feature
@@ -263,7 +268,7 @@ struct ProInfoView: View {
     var body: some View {
         NavigationStack {
             ContentUnavailableView {
-                Label(title, systemImage: feature == .writing ? "square.and.pencil" : "magnifyingglass")
+                Label(title, systemImage: feature == .writing ? "square.and.pencil" : feature == .stats ? "chart.bar" : "magnifyingglass")
             } description: {
                 Text(message)
             }
@@ -279,7 +284,11 @@ struct ProInfoView: View {
     }
 
     private var title: String {
-        feature == .writing ? "Writing in the app is a PRO feature" : "Search is a PRO feature"
+        switch feature {
+        case .writing: "Writing in the app is a PRO feature"
+        case .search: "Search is a PRO feature"
+        case .stats: "Stats are a PRO feature"
+        }
     }
 
     private var message: String {
@@ -287,7 +296,9 @@ struct ProInfoView: View {
         case .writing:
             "You can always write for free by replying to your Dabble Me email. Your reply shows up here as an entry."
         case .search:
-            "With Dabble Me PRO you can search every entry you've ever written. Everything else in the app is free."
+            "With Dabble Me PRO you can search every entry you've ever written."
+        case .stats:
+            "With Dabble Me PRO you can see your streaks, writing days, words and top hashtags."
         }
     }
 }

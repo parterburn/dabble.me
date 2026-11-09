@@ -5,7 +5,8 @@ module Api
     class EntriesController < BaseController
       # Free accounts can write text entries (like free email replies); photos, editing,
       # deleting and On This Day are PRO.
-      before_action :require_pro!, only: %i[update destroy on_this_day memory_days]
+      # Free accounts can write and delete; editing, photos and links are PRO.
+      before_action :require_pro!, only: %i[update on_this_day memory_days]
       before_action :require_pro_for_photos!, only: :create
       before_action :set_entry, only: %i[show update destroy]
 
@@ -163,7 +164,7 @@ module Api
       end
 
       def document_html
-        EntryDocument.to_html(params[:document])
+        EntryDocument.to_html(params[:document], links: current_user.is_pro?)
       rescue EntryDocument::InvalidDocument => e
         render_error(:unprocessable_content, 'invalid_document', e.message)
         nil

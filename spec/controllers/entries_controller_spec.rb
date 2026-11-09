@@ -258,9 +258,11 @@ RSpec.describe EntriesController, type: :controller do
       expect(response).to redirect_to(new_user_session_url)
     end
 
-    it "should not delete entries unless user is pro" do
+    it "deletes a free user's own entries (editing is PRO, deleting isn't)" do
       sign_in user
-      expect { delete :destroy, params: { id: not_my_entry.id } }.not_to change { Entry.count }
+      expect(user).to be_is_free
+      expect { delete :destroy, params: { id: entry.id } }.to change { Entry.count }.by(-1)
+      expect(response).to redirect_to(entries_path)
     end
 
     it 'should delete pro user entries' do

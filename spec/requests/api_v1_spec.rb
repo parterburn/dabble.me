@@ -53,13 +53,15 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       get "/api/v1/me", headers: auth(free_user)
       expect(response).to have_http_status(:ok)
       expect(json).to include("email" => free_user.email, "plan" => "free", "can_write" => true,
-                              "can_add_photos" => false, "can_edit" => false, "can_search" => false)
+                              "can_add_photos" => false, "can_edit" => false, "can_search" => false,
+                              "can_delete" => true, "can_add_links" => false, "can_see_stats" => false)
       expect(json["today"]).to match(/\A\d{4}-\d{2}-\d{2}\z/)
     end
 
     it "describes a PRO account" do
       get "/api/v1/me", headers: auth(pro_user)
-      expect(json).to include("plan" => "pro", "can_write" => true, "can_add_photos" => true, "can_edit" => true, "can_search" => true)
+      expect(json).to include("plan" => "pro", "can_write" => true, "can_add_photos" => true, "can_edit" => true, "can_search" => true,
+                              "can_delete" => true, "can_add_links" => true, "can_see_stats" => true)
     end
 
     it "includes the Claude and ChatGPT connector links and what's still needed to use them" do
@@ -101,6 +103,25 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       expect(json["entries"].map { |e| e["id"] }).to eq([older.id])
     end
 
+    it "includes an entry's Spotify songs in the timeline and on the entry" do
+      entry = create(:entry, user: free_user, date: Time.zone.local(2025, 3, 9), body: "<p>On repeat</p>")
+      # Saving looks songs up on Spotify (Entry#find_songs); store one as it would.
+      entry.update_column(:songs, [{ "spotify_id" => "4uLU6hMCjMI75M1A2tKUQC", "title" => "Never Gonna Give You Up", "artists" => ["Rick Astley"] }])
+      get "/api/v1/entries", params: { year: 2025, month: 3 }, headers: auth(free_user)
+      song = json["entries"].find { |e| e["date"] == "2025-03-09" }["songs"].first
+      expect(song).to eq("title" => "Never Gonna Give You Up", "artists" => ["Rick Astley"],
+                         "spotify_url" => "https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC")
+    end
+
+    it "says when an entry's preview text was cut short" do
+      long_entry = create(:entry, user: free_user, date: Time.zone.local(2025, 3, 10), body: "<p>#{(['word'] * 400).join(' ')}</p>")
+      get "/api/v1/entries", params: { year: 2025, month: 3 }, headers: auth(free_user)
+      long = json["entries"].find { |e| e["id"] == long_entry.id }
+      expect(long["preview_truncated"]).to be(true)
+      expect(long["preview_text"].length).to be < 1500 # it backs up to a word, so length alone doesn't tell
+      expect(json["entries"].find { |e| e["id"] == mine.id }["preview_truncated"]).to be(false)
+    end
+
     it "rejects a malformed year" do
       get "/api/v1/entries", params: { year: "abc" }, headers: auth(free_user)
       expect(response).to have_http_status(:unprocessable_content)
@@ -110,6 +131,10 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       free_user.original_hashtags.create!(tag: "Coffee", date: Date.new(2023, 11, 4))
       get "/api/v1/entries/#{mine.id}", headers: auth(free_user)
       expect(json["entry"]["dated_hashtags"]).to eq([{ "tag" => "coffee", "date" => "2023-11-04", "age" => "1 year and 4 months since entry" }])
+
+      # The timeline's summaries carry them too.
+      get "/api/v1/entries", params: { year: 2025, month: 3 }, headers: auth(free_user)
+      expect(json["entries"].first["dated_hashtags"]).to eq([{ "tag" => "coffee", "date" => "2023-11-04", "age" => "1 year and 4 months since entry" }])
     end
 
     it "shows a single entry with text body" do
@@ -164,6 +189,7 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
         expect(json["on_this_day_available"]).to be(true)
         expect(json["prompt"]).to eq("What surprised you today?")
         expect(json["current_streak"]).to eq(1)
+        expect(json["throwback"]).to be_nil # On This Day has entries
       end
     end
 
@@ -176,6 +202,25 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
 
       get "/api/v1/entries/memory_days", headers: auth(free_user)
       expect(response).to have_http_status(:forbidden)
+    end
+
+    it "offers a throwback when nothing was written on this date in earlier years" do
+      travel_to Time.find_zone(free_user.send_timezone).local(2026, 6, 20, 12) do
+        get "/api/v1/today", headers: auth(free_user)
+        expect(json["throwback"]).to be_nil # nothing to look back on yet
+
+        month_ago = create(:entry, user: free_user, date: Date.new(2026, 5, 20).to_s, body: "<p>A month back</p>")
+        create(:entry, user: free_user, date: Date.new(2026, 6, 20).to_s, body: "<p>Today</p>")
+        get "/api/v1/today", headers: auth(free_user)
+        expect(json["throwback"]).to include("id" => month_ago.id, "days_ago" => 31)
+
+        # Otherwise any earlier entry, the same one all day, minus words left out of past entries.
+        month_ago.update!(date: Date.new(2026, 3, 2))
+        create(:entry, user: free_user, date: Date.new(2026, 4, 9).to_s, body: "<p>Doctor visit</p>")
+        free_user.update!(past_filter: "doctor")
+        picks = 3.times.map { get "/api/v1/today", headers: auth(free_user); json["throwback"]["id"] }
+        expect(picks.uniq).to eq([month_ago.id])
+      end
     end
 
     it "keeps On This Day for PRO on the Today endpoint" do
@@ -197,6 +242,17 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
   end
 
   describe "writing entries" do
+    it "keeps a link's text but drops the link for free accounts (links are PRO)" do
+      doc = [{ type: "paragraph", runs: [{ text: "See " }, { text: "this", link: "https://example.com" }] }]
+      post "/api/v1/entries", params: { date: "2026-01-04", document: doc }, headers: auth(free_user), as: :json
+      expect(response).to have_http_status(:created)
+      expect(free_user.entries.last.body).to include("See this")
+      expect(free_user.entries.last.body).not_to include("href")
+
+      post "/api/v1/entries", params: { date: "2026-01-04", document: doc }, headers: auth(pro_user), as: :json
+      expect(pro_user.entries.last.body).to include('href="https://example.com"')
+    end
+
     it "lets free accounts write text entries but not add photos" do
       post "/api/v1/entries", params: { date: "2026-01-02", body: "Hi" }, headers: auth(free_user)
       expect(response).to have_http_status(:created)
@@ -290,14 +346,15 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       expect(entry.reload.body).to eq(%(<p><span style="color:red">Red</span></p>))
     end
 
-    it "requires PRO to edit or delete" do
+    it "requires PRO to edit, but free accounts can delete" do
       entry = create(:entry, user: free_user, body: "<p>Mine</p>")
       patch "/api/v1/entries/#{entry.id}", params: { document: [{ type: "paragraph", runs: [{ text: "x" }] }] },
                                            headers: auth(free_user), as: :json
       expect(response).to have_http_status(:forbidden)
-      delete "/api/v1/entries/#{entry.id}", headers: auth(free_user)
-      expect(response).to have_http_status(:forbidden)
       expect(entry.reload.body).to eq("<p>Mine</p>")
+      delete "/api/v1/entries/#{entry.id}", headers: auth(free_user)
+      expect(response).to have_http_status(:no_content).or have_http_status(:ok)
+      expect(Entry.exists?(entry.id)).to be(false)
     end
 
     it "deletes an entry" do
@@ -493,17 +550,22 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
   end
 
   describe "GET /api/v1/stats" do
-    it "counts entries, words, streaks, writing days and hashtags for free accounts too" do
-      zone = Time.find_zone(free_user.send_timezone)
-      travel_to zone.local(2026, 6, 20, 12) do
-        create(:entry, user: free_user, date: Time.zone.local(2026, 6, 20), body: "<p>Hiking with <b>Sam</b> #Outside</p>")
-        create(:entry, user: free_user, date: Time.zone.local(2026, 6, 19), body: "<p>Rain &amp; tea #outside</p>")
-        create(:entry, user: free_user, date: Time.zone.local(2026, 6, 18), body: "<p>#books</p>")
-        create(:entry, user: free_user, date: Time.zone.local(2026, 1, 1), body: "<p>One</p><p>two three</p>")
-        create(:entry, user: free_user, date: Time.zone.local(2026, 1, 2), body: "<div><br></div>")
-        create(:entry, user: pro_user, date: Time.zone.local(2026, 6, 20), body: "<p>Not counted #secret</p>")
+    it "is PRO" do
+      get "/api/v1/stats", headers: auth(free_user)
+      expect(response).to have_http_status(:forbidden)
+    end
 
-        get "/api/v1/stats", headers: auth(free_user)
+    it "counts entries, words, streaks, writing days and hashtags for PRO accounts" do
+      zone = Time.find_zone(pro_user.send_timezone)
+      travel_to zone.local(2026, 6, 20, 12) do
+        create(:entry, user: pro_user, date: Time.zone.local(2026, 6, 20), body: "<p>Hiking with <b>Sam</b> #Outside</p>")
+        create(:entry, user: pro_user, date: Time.zone.local(2026, 6, 19), body: "<p>Rain &amp; tea #outside</p>")
+        create(:entry, user: pro_user, date: Time.zone.local(2026, 6, 18), body: "<p>#books</p>")
+        create(:entry, user: pro_user, date: Time.zone.local(2026, 1, 1), body: "<p>One</p><p>two three</p>")
+        create(:entry, user: pro_user, date: Time.zone.local(2026, 1, 2), body: "<div><br></div>")
+        create(:entry, user: free_user, date: Time.zone.local(2026, 6, 20), body: "<p>Not counted #secret</p>")
+
+        get "/api/v1/stats", headers: auth(pro_user)
       end
 
       expect(response).to have_http_status(:ok)
@@ -519,19 +581,28 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
     end
 
     it "keeps a streak going while today is still unwritten" do
-      travel_to Time.find_zone(free_user.send_timezone).local(2026, 6, 20, 12) do
-        create(:entry, user: free_user, date: Time.zone.local(2026, 6, 19), body: "<p>a</p>")
-        create(:entry, user: free_user, date: Time.zone.local(2026, 6, 18), body: "<p>b</p>")
-        get "/api/v1/stats", headers: auth(free_user)
+      travel_to Time.find_zone(pro_user.send_timezone).local(2026, 6, 20, 12) do
+        create(:entry, user: pro_user, date: Time.zone.local(2026, 6, 19), body: "<p>a</p>")
+        create(:entry, user: pro_user, date: Time.zone.local(2026, 6, 18), body: "<p>b</p>")
+        get "/api/v1/stats", headers: auth(pro_user)
       end
       expect(json["current_streak"]).to eq(2)
     end
   end
 
   describe "GET /api/v1/hashtags" do
-    it "requires PRO" do
+    it "lists the most recently used hashtags first with order=recent" do
+      create(:entry, user: free_user, date: 3.days.ago, body: "<p>#Coffee and #books</p>")
+      create(:entry, user: free_user, date: 1.day.ago, body: "<p>#hiking #coffee</p>")
+      get "/api/v1/hashtags", params: { order: "recent" }, headers: auth(free_user)
+      expect(json["hashtags"].map { |h| h["tag"] }).to eq(%w[hiking coffee books])
+    end
+
+    it "is open to free accounts (on-device hashtag suggestions pick from them)" do
+      create(:entry, user: free_user, body: "<p>#coffee</p>")
       get "/api/v1/hashtags", headers: auth(free_user)
-      expect(response).to have_http_status(:forbidden)
+      expect(response).to have_http_status(:ok)
+      expect(json["hashtags"]).to eq([{ "tag" => "coffee", "count" => 1 }])
     end
 
     it "counts the past year's hashtags, most used first" do

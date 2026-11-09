@@ -17,22 +17,30 @@ struct TodayView: View {
     @State private var promptError: String?
     @State private var expanded: Set<Int> = []
     @State private var actions = EntryActions()
+    /// How far past the bottom Today is pulled: far enough, and letting go opens a random memory.
+    @State private var bottomPull: CGFloat = 0
+    private let randomMemoryPull: CGFloat = 90
 
     var body: some View {
         NavigationStack(path: $path) {
             // A list (not a plain scroll view) so On This Day rows swipe like the Journal's.
             List {
                 if let today = model.today {
-                    // The date is the page title (the nav bar is hidden here).
-                    // No year: it's always today. One line, shrinking a little for long dates.
-                    Text(today.day?.formatted(.dateTime.weekday(.wide).month(.wide).day()) ?? today.date)
-                        .font(.system(.largeTitle, design: .serif, weight: .semibold))
-                        .foregroundStyle(.primary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.7)
-                        .accessibilityLabel(today.day?.long ?? today.date)
-                        .accessibilityAddTraits(.isHeader)
-                        .plainRow()
+                    // The date is the page title (the nav bar is hidden here), with the writing
+                    // streak beside it. No year: it's always today. One line, shrinking a little
+                    // for long dates.
+                    HStack(alignment: .firstTextBaseline) {
+                        Text(today.day?.formatted(.dateTime.weekday(.wide).month(.wide).day()) ?? today.date)
+                            .font(.system(.title, design: .serif, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.7)
+                            .accessibilityLabel(today.day?.long ?? today.date)
+                            .accessibilityAddTraits(.isHeader)
+                        Spacer(minLength: 8)
+                        streakButton(today.currentStreak ?? 0)
+                    }
+                    .plainRow()
                     todaySection(today)
                     onThisDaySection(today)
                 } else if let error = model.timelineError {
@@ -44,17 +52,44 @@ struct TodayView: View {
                 }
             }
             .listStyle(.plain)
+            // Pull to reset: collapses expanded entries and reloads today. On the list itself,
+            // inside the sheets and entry pages below, so they don't inherit a pull-to-refresh.
+            .refreshable {
+                withAnimation(.snappy(duration: 0.25)) { expanded = [] }
+                await model.loadToday()
+            }
+            .timelinePinsDates()
             .frame(maxWidth: 680)
             .frame(maxWidth: .infinity)
             .entryActionSheets(actions)
             .navigationTitle("Today") // back-button label on entries opened from here
             .toolbarVisibility(.hidden, for: .navigationBar)
             .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
-            // Pull to reset: collapses expanded entries and reloads today.
-            .refreshable {
-                withAnimation(.snappy(duration: 0.25)) { expanded = [] }
-                await model.loadToday()
+            // An easter egg: keep pulling up past the bottom and let go for a random memory, in the
+            // same sheet as a shake. Only on letting go of a drag (a flick that bounces doesn't count).
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                geometry.contentOffset.y + geometry.containerSize.height - geometry.contentInsets.bottom - geometry.contentSize.height
+            } action: { _, overscroll in
+                bottomPull = max(0, overscroll)
             }
+            .onScrollPhaseChange { old, new in
+                guard old == .interacting, new != .interacting, bottomPull >= randomMemoryPull,
+                      model.hasLoaded, !model.months.isEmpty, !model.showsRandomEntry else { return }
+                model.showsRandomEntry = true
+            }
+            .overlay(alignment: .bottom) {
+                if bottomPull > 12 {
+                    let armed = bottomPull >= randomMemoryPull
+                    Label(armed ? "Let go for a random memory" : "Keep pulling for a random memory", icon: "slab-arrows-rotate")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(armed ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+                        .opacity(min(1, (bottomPull - 12) / 40))
+                        .padding(.bottom, 12)
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
+            }
+            .sensoryFeedback(.impact(weight: .light), trigger: bottomPull >= randomMemoryPull) { _, armed in armed }
             .onChange(of: model.composeRequest, initial: true) { _, requested in
                 guard requested else { return }
                 model.composeRequest = false
@@ -80,7 +115,7 @@ struct TodayView: View {
                 .plainRow()
             // On the prompt box's Paper card, so today stands apart from On This Day. The card is
             // the row's background, so the entry keeps its swipes.
-            row(entry.summary, showsDate: false)
+            row(entry.summary)
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets(top: 16, leading: 32, bottom: 24, trailing: 32))
                 .listRowBackground(TodayCard())
@@ -184,8 +219,59 @@ struct TodayView: View {
 
     // MARK: - On This Day
 
+    /// "🔥 4": days in a row with an entry. Tapping it opens Stats.
+    private func streakButton(_ streak: Int) -> some View {
+        Button {
+            model.selectedTab = .journal
+            model.statsRequest += 1
+        } label: {
+            HStack(spacing: 4) {
+                appIcon("slab-fire")
+                Text(streak.formatted())
+                    .monospacedDigit()
+            }
+            .font(.headline)
+            .foregroundStyle(streak > 0 ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+            .padding(.vertical, 4)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.borderless)
+        .accessibilityLabel(streak == 1 ? "1 day streak" : "\(streak) day streak")
+        .accessibilityHint("Shows your stats")
+    }
+
     @ViewBuilder
     private func onThisDaySection(_ today: TodaySummary) -> some View {
+        if today.onThisDay.isEmpty, let throwback = today.throwback {
+            throwbackSection(throwback, today: today)
+        } else {
+            memoriesSection(today)
+        }
+    }
+
+    /// Nothing on this date in earlier years: a past entry instead, like the daily email's.
+    @ViewBuilder
+    private func throwbackSection(_ throwback: EntrySummary, today: TodaySummary) -> some View {
+        SectionTitle("Throwback", icon: "slab-hourglass")
+            .padding(.top, 12)
+            .plainRow()
+        Section {
+            row(throwback)
+                .timelineRowLayout()
+        } header: {
+            MonthHeader(title: Self.throwbackTitle(throwback, today: today), isDay: true)
+        }
+    }
+
+    /// "31 days ago · Wednesday, May 20, 2026".
+    private static func throwbackTitle(_ entry: EntrySummary, today: TodaySummary) -> String {
+        let date = entry.day?.formatted(.dateTime.weekday(.wide).month(.wide).day().year()) ?? entry.date
+        guard let day = entry.day, let now = today.day else { return date }
+        return "\(day.relative(to: now)) · \(date)"
+    }
+
+    @ViewBuilder
+    private func memoriesSection(_ today: TodaySummary) -> some View {
         SectionTitle("On This Day", icon: "slab-backward")
             .padding(.top, 12)
             .plainRow()
@@ -203,7 +289,8 @@ struct TodayView: View {
             // One section per memory, so its date sticks at the top while you scroll through it.
             ForEach(today.onThisDay) { memory in
                 Section {
-                    row(memory, showsDate: false)
+                    row(memory)
+                        .timelineRowLayout()
                 } header: {
                     MonthHeader(title: Self.memoryTitle(memory), isDay: true)
                 }
@@ -218,18 +305,12 @@ struct TodayView: View {
         return "\(years == 1 ? "1 year" : "\(years) years") ago · \(date)"
     }
 
-    /// The Journal's row: tap to expand, again to open; swipe right for Actions, left to Open.
-    private func row(_ entry: EntrySummary, showsDate: Bool) -> some View {
-        TimelineEntryRow(entry: entry, isExpanded: expanded.contains(entry.id), showsDateWhenExpanded: showsDate, actions: actions,
-                         onTap: {
-                             if expanded.contains(entry.id) {
-                                 path.append(EntryRoute(id: entry.id))
-                             } else {
-                                 withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(entry.id) }
-                             }
-                         },
+    /// The Journal's row: tap to expand a long one (or open it); swipe right for Actions, left to Open.
+    private func row(_ entry: EntrySummary) -> some View {
+        TimelineEntryRow(entry: entry, isExpanded: expanded.contains(entry.id), actions: actions,
+                         onExpand: { withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(entry.id) } },
                          onOpen: { path.append(EntryRoute(id: entry.id)) })
-            .entryPreview(entry) { path.append(EntryRoute(id: entry.id)) }
+            .entryRowMenu(entry, actions: actions) { path.append(EntryRoute(id: entry.id)) }
     }
 }
 

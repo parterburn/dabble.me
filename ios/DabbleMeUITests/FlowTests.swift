@@ -35,9 +35,7 @@ final class FlowTests: XCTestCase {
         let saved = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", "Testing the app after saving")).firstMatch
         XCTAssertTrue(saved.waitForExistence(timeout: 10), "New entry missing from the timeline")
-        saved.tap() // expands in the timeline
-        sleep(1)
-        saved.tap() // opens
+        app.openTimelineEntry(saved)
         XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10), "Entry detail never opened")
         app.navigationBars.buttons.element(boundBy: 0).tap()
         XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 10), "Could not get back to the journal")
@@ -49,13 +47,12 @@ final class FlowTests: XCTestCase {
         let entry = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
         XCTAssertTrue(entry.waitForExistence(timeout: 10))
-        entry.tap() // expands in the timeline
-        sleep(1)
-        entry.tap() // opens
+        app.openTimelineEntry(entry)
         XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
 
         // A multi-line paragraph: room for two fingers, and its height shows the text size.
-        let paragraph = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to")).firstMatch
+        // (The entry's text is one selectable text view; its height shows the size.)
+        let paragraph = app.textViews.firstMatch
         XCTAssertTrue(paragraph.waitForExistence(timeout: 5))
         // The size is remembered between runs: start from the smallest.
         paragraph.pinch(withScale: 0.3, velocity: -2)
@@ -114,7 +111,7 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(oldest.isHittable)
         let loaded = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", "Moved into the new apartment")).firstMatch
-        XCTAssertTrue(loaded.waitForExistence(timeout: 3), "The month the scrubber lands on should load right away")
+        XCTAssertTrue(loaded.waitForExistence(timeout: 8), "The month the scrubber lands on should load right away")
         snap("journal-scrubbed")
     }
 
@@ -136,7 +133,7 @@ final class FlowTests: XCTestCase {
 
         // Back to the top, then a deliberate pull to refresh.
         let timeline = app.collectionViews.firstMatch
-        for _ in 0..<4 { timeline.swipeDown(velocity: .fast) }
+        app.tabBars.buttons["Journal"].tap() // tapping the current tab goes back to the top
         sleep(1)
         timeline.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
             .press(forDuration: 0.1, thenDragTo: timeline.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.9)))

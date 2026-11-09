@@ -69,3 +69,29 @@ enum ReadingFontStyle: String, CaseIterable, Identifiable {
         UserDefaults.standard.string(forKey: storageKey).flatMap(ReadingFontStyle.init) ?? .serif
     }
 }
+
+/// Settings → Accessibility → Theme: follow the system, or always light (Day) or dark (Night).
+enum AppTheme: String, CaseIterable, Identifiable {
+    case system, day, night
+
+    static let storageKey = "appTheme"
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .system: "System"
+        case .day: "Day"
+        case .night: "Night"
+        }
+    }
+
+    /// For `.preferredColorScheme`: nil follows the system.
+    var colorScheme: ColorScheme? {
+        switch self {
+        case .system: nil
+        case .day: .light
+        case .night: .dark
+        }
+    }
+}

@@ -1,8 +1,9 @@
 import SwiftUI
 
-/// Google Photos-style fast scroller for the Journal: a thumb on the right edge that appears
-/// while scrolling; drag it to see the years and jump to any month. Positions are proportional
-/// to entry counts, which matches the timeline's layout (rows and placeholders are similar heights).
+/// Google Photos-style fast scroller for the Journal: a tab on the right edge (rounded on its
+/// left, flush with the screen) that appears while scrolling; drag it to see the years and jump to
+/// any month. Positions are proportional to entry counts, which matches the timeline's layout (rows and
+/// placeholders are similar heights).
 struct TimelineScrubber: View {
     let months: [MonthCount]
     let progress: CGFloat
@@ -17,10 +18,8 @@ struct TimelineScrubber: View {
     @State private var hideTask: Task<Void, Never>?
 
     private static let space = "TimelineScrubber"
-    /// The thumb is a circle a little over half on screen, tucked into the right edge.
-    private let thumbHeight: CGFloat = 52
-    private let stripWidth: CGFloat = 52
-    private var tucked: CGFloat { thumbHeight * 0.4 }
+    private let thumbHeight: CGFloat = 56
+    private let stripWidth: CGFloat = 46
 
     var body: some View {
         GeometryReader { geometry in
@@ -33,38 +32,22 @@ struct TimelineScrubber: View {
                         .transition(.opacity)
                 }
 
-                if let selected, let dragFraction {
-                    Text(selected.shortTitle)
-                        .font(.subheadline.weight(.semibold))
-                        .monospacedDigit()
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .background(.regularMaterial, in: .capsule)
-                        .shadow(color: .black.opacity(0.15), radius: 6, y: 2)
-                        .offset(x: -stripWidth - 56, y: dragFraction * track + thumbHeight / 2 - 18)
-                        .allowsHitTesting(false)
-                }
-
                 // Only the thumb takes touches, so scrolling near the edge still scrolls the list.
                 // It stays grabbable after fading out, like Google Photos.
-                Circle()
-                    .fill(.regularMaterial)
-                    .overlay(alignment: .leading) {
-                        // Centered in the part that's on screen, as bold as the toolbar's +.
-                        appIcon("slab-sort")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 20, height: 20)
+                UnevenRoundedRectangle(topLeadingRadius: thumbHeight / 2, bottomLeadingRadius: thumbHeight / 2)
+                    .fill(Color(uiColor: .tertiarySystemBackground))
+                    .overlay {
+                        Image(systemName: "chevron.up.chevron.down")
+                            .font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(.primary)
-                            .frame(width: thumbHeight - tucked)
+                            .padding(.leading, 4)
                     }
-                    .overlay(Circle().strokeBorder(.separator, lineWidth: 0.5))
-                    .shadow(color: .black.opacity(0.18), radius: 6, x: -1, y: 2)
-                    .scaleEffect(dragFraction != nil ? 1.08 : 1, anchor: .trailing)
-                    .frame(width: thumbHeight, height: thumbHeight)
+                    .shadow(color: .black.opacity(0.25), radius: 8, x: -1, y: 2)
+                    .scaleEffect(dragFraction != nil ? 1.06 : 1, anchor: .trailing)
+                    .frame(width: stripWidth, height: thumbHeight)
                     .opacity(visible || dragFraction != nil ? 1 : 0.001)
                     .contentShape(.rect)
-                    .offset(x: tucked, y: fraction * track)
+                    .offset(y: fraction * track)
                     .gesture(drag(trackHeight: track))
                     .accessibilityElement()
                     .accessibilityLabel("Timeline scrubber")
@@ -84,9 +67,11 @@ struct TimelineScrubber: View {
         .onChange(of: isScrolling) { _, scrolling in
             if scrolling { show() } else { scheduleHide() }
         }
+
     }
 
     // MARK: - Mapping
+
 
     /// Where each month starts, as a fraction of all entries (newest month at 0).
     private var starts: [CGFloat] {

@@ -7,6 +7,13 @@ struct StatsView: View {
     @Environment(AppModel.self) private var model
     @State private var stats: JournalStats?
     @State private var error: String?
+    /// A written day tapped in the Past Year chart: its entries come up in a sheet.
+    @State private var openDay: SelectedDay?
+
+    private struct SelectedDay: Identifiable {
+        let day: JournalDay
+        var id: String { day.iso }
+    }
 
     var body: some View {
         Group {
@@ -15,7 +22,9 @@ struct StatsView: View {
                     VStack(alignment: .leading, spacing: 28) {
                         tiles(stats)
                         StatsCard(title: "Past Year") {
-                            WritingHeatmap(days: Set(stats.writingDays), today: model.today?.day ?? JournalDay(localDate: .now))
+                            WritingHeatmap(days: Set(stats.writingDays), today: model.today?.day ?? JournalDay(localDate: .now)) { day in
+                                openDay = SelectedDay(day: day)
+                            }
                             Text(stats.writingDays.count == 1 ? "1 day written in the past year" : "\(stats.writingDays.count.formatted()) days written in the past year")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
@@ -50,6 +59,7 @@ struct StatsView: View {
         }
         .refreshable { await load() }
         .task { if stats == nil { await load() } }
+        .sheet(item: $openDay) { DayEntriesSheet(day: $0.day) }
     }
 
     private func tiles(_ stats: JournalStats) -> some View {
@@ -138,6 +148,8 @@ private struct StatTile: View {
 private struct WritingHeatmap: View {
     let days: Set<String>
     let today: JournalDay
+    /// A day with an entry was tapped.
+    let onSelect: (JournalDay) -> Void
 
     private let cell: CGFloat = 11
     private let gap: CGFloat = 3
@@ -172,6 +184,10 @@ private struct WritingHeatmap: View {
                             RoundedRectangle(cornerRadius: 2.5)
                                 .fill(fill(for: week[index]))
                                 .frame(width: cell, height: cell)
+                                .contentShape(.rect.inset(by: -gap / 2))
+                                .onTapGesture {
+                                    if let day = week[index], days.contains(day.iso) { onSelect(day) }
+                                }
                         }
                     }
                 }
@@ -266,6 +282,94 @@ private struct HashtagBars: View {
                 .disabled(!canSearch)
                 .accessibilityLabel("#\(hashtag.tag), \(hashtag.count) entries")
             }
+        }
+    }
+}
+
+/// A day's entries, from Stats → Past Year, in a sheet like A Random Memory: each one whole and
+/// scrollable, with Open to go to it in the Journal.
+private struct DayEntriesSheet: View {
+    let day: JournalDay
+    @Environment(AppModel.self) private var model
+    @Environment(\.dismiss) private var dismiss
+    @State private var entries: [EntryDetail]?
+    @State private var error: String?
+    @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 17
+    @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
+    @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text(day.formatted(.dateTime.weekday(.wide).month(.wide).day().year()))
+                    .font(.headline)
+                Spacer()
+                Button { dismiss() } label: { Label("Close", icon: "slab-close") }
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.circle)
+            }
+            if let entries {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 28) {
+                        ForEach(entries) { entry in
+                            VStack(alignment: .leading, spacing: 12) {
+                                if let document = entry.document {
+                                    DocumentText(blocks: document, font: .system(size: bodySize * textSize.scale, design: fontStyle.design),
+                                                 scale: textSize.scale, bodySize: bodySize)
+                                } else {
+                                    Text(AttributedString.journal(entry.bodyText))
+                                        .font(.system(size: bodySize * textSize.scale, design: fontStyle.design))
+                                        .lineSpacing(5)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
+                                if !entry.songs.isEmpty {
+                                    SongList(songs: entry.songs)
+                                }
+                                if let dated = entry.datedHashtags, !dated.isEmpty {
+                                    DatedHashtagRow(hashtags: dated)
+                                }
+                                if entry.imageProcessing || entry.imageURL != nil {
+                                    EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing)
+                                }
+                                Button {
+                                    model.openEntryRequest = entry.id
+                                    dismiss()
+                                } label: {
+                                    Label("Open", icon: "slab-expand").frame(maxWidth: .infinity, minHeight: 30)
+                                }
+                                .buttonStyle(.borderedProminent)
+                                .controlSize(.large)
+                            }
+                        }
+                    }
+                    .padding(.bottom, 8)
+                }
+                .environment(\.openURL, OpenURLAction { _ in .discarded })
+            } else if let error {
+                ContentUnavailableView("Couldn't load this day", systemImage: "exclamationmark.triangle", description: Text(error))
+            } else {
+                ProgressView().frame(maxWidth: .infinity, minHeight: 200)
+            }
+        }
+        .padding(20)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+        .task { await load() }
+    }
+
+    /// The day's entries from its month (loaded if it isn't yet), then each in full.
+    private func load() async {
+        do {
+            await model.loadMonth(day.monthKey)
+            let ids = (model.monthEntries[day.monthKey] ?? []).filter { $0.date == day.iso }.map(\.id)
+            var loaded: [EntryDetail] = []
+            for id in ids { loaded.append(try await model.entry(id: id)) }
+            if loaded.isEmpty { error = "No entries on this day." } else { entries = loaded }
+        } catch is CancellationError {
+        } catch {
+            self.error = error.localizedDescription
         }
     }
 }

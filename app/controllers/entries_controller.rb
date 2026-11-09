@@ -243,12 +243,8 @@ class EntriesController < ApplicationController
     end
   end
 
+  # Free accounts can delete their entries too (editing is PRO).
   def destroy
-    if current_user.is_free?
-      flash[:alert] = "<a href='#{subscribe_path}' class='alert-link'>Subscribe to PRO</a> to edit entries.".html_safe
-      redirect_to root_path and return
-    end
-
     @entry.destroy
     flash[:notice] = 'Entry deleted successfully.'
     redirect_to entries_path

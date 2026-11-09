@@ -26,6 +26,12 @@ struct JournalView: View {
     @SceneStorage("journal.mode") private var mode = JournalMode.list
     @State private var path = NavigationPath()
     @State private var expanded: Set<Int> = []
+    /// The title bar hides while scrolling down; `barAnchor` is where the current direction began.
+    @State private var barHidden = false
+    @State private var barAnchor: CGFloat = 0
+    @State private var barChanged = Date.distantPast
+    @State private var isDragging = false
+    @State private var handledStatsRequest = 0
     /// Bumped to scroll the timeline to its newest entry (after the List view is back on screen).
     @State private var scrollToTop = 0
     @State private var actions = EntryActions()
@@ -48,6 +54,13 @@ struct JournalView: View {
                 }
                 .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
                 .toolbar {
+                    // The "me" mark, always in view.
+                    if #available(iOS 26.0, *) {
+                        ToolbarItem(placement: .topBarLeading) { brandMark }
+                            .sharedBackgroundVisibility(.hidden)
+                    } else {
+                        ToolbarItem(placement: .topBarLeading) { brandMark }
+                    }
                     ToolbarItem(placement: .primaryAction) {
                         Button { startWriting() } label: { Label("New Entry", icon: "slab-plus") }
                     }
@@ -60,6 +73,13 @@ struct JournalView: View {
                     model.openEntryRequest = nil
                     mode = .list
                     path.append(EntryRoute(id: id))
+                }
+                // Also on first appearing: the Journal tab may not exist yet when Today asks.
+                .onChange(of: model.statsRequest, initial: true) { _, request in
+                    guard request != handledStatsRequest else { return }
+                    handledStatsRequest = request
+                    path = NavigationPath()
+                    mode = .stats
                 }
                 .onChange(of: model.journalTopRequest) {
                     path = NavigationPath()
@@ -77,7 +97,12 @@ struct JournalView: View {
     private var modeContent: some View {
         switch mode {
         case .list: content
-        case .stats: StatsView()
+        case .stats:
+            if model.me?.maySeeStats == false {
+                ProInfoView(feature: .stats, showsDoneButton: false)
+            } else {
+                StatsView()
+            }
         case .photos: PhotoGridView { path.append($0) }
         }
     }
@@ -126,7 +151,7 @@ struct JournalView: View {
             }
             .listStyle(.plain)
             .scrollIndicators(.hidden) // the timeline scrubber replaces the standard indicator
-            .contentMargins(.trailing, 20, for: .scrollContent) // room for the scrubber
+            .timelinePinsDates()
             // Pull to reset: collapses expanded entries and picks up new ones.
             .refreshable {
                 withAnimation(.snappy(duration: 0.25)) { expanded = [] }
@@ -150,6 +175,7 @@ struct JournalView: View {
             }
             .onScrollPhaseChange { _, phase in
                 isScrolling = phase.isScrolling
+                isDragging = phase == .interacting || phase == .decelerating
             }
             .overlay(alignment: .trailing) {
                 if model.months.count >= 3 {
@@ -166,32 +192,34 @@ struct JournalView: View {
                     })
                 }
             }
+            // Only the month header stays while reading down; the title bar comes back on the
+            // way up (or at the top).
+            // The content offset alone: the bar showing or hiding changes the top inset, which
+            // mustn't read as scrolling (that would flip it back and forth).
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, offset in
+                updateBar(for: offset)
+            }
+            .toolbarVisibility(barHidden ? .hidden : .visible, for: .navigationBar)
+            .animation(.easeInOut(duration: 0.2), value: barHidden)
         }
     }
 
-    /// A month's rows under its sticky "Month YYYY" header. An expanded entry gets its own
-    /// section, so while you read it the sticky header is its date; the month header picks up again
-    /// after it.
+    /// A month's rows under its sticky "Month YYYY" header (an expanded entry's date floats down
+    /// its left side, so the header stays the month).
     @ViewBuilder
     private func monthSections(_ month: MonthCount) -> some View {
         if let entries = model.monthEntries[month.key] {
-            ForEach(segments(of: entries, in: month)) { segment in
-                Section {
-                    ForEach(segment.entries) { entry in
-                        TimelineEntryRow(entry: entry, isExpanded: expanded.contains(entry.id), showsDateWhenExpanded: false,
-                                         actions: actions, onTap: { open(entry) }, onOpen: { path.append(EntryRoute(id: entry.id)) })
-                            .entryPreview(entry) { path.append(EntryRoute(id: entry.id)) }
-                    }
-                } header: {
-                    switch segment.header {
-                    case .month(let first):
-                        MonthHeader(title: month.title)
-                            .onAppear { if first { model.monthAppeared(month.key) } }
-                            .onDisappear { if first { model.monthDisappeared(month.key) } }
-                    case .day(let entry):
-                        MonthHeader(title: entry.day?.formatted(.dateTime.weekday(.wide).month(.wide).day().year()) ?? entry.date, isDay: true)
-                    }
+            Section {
+                ForEach(entries) { entry in
+                    TimelineEntryRow(entry: entry, isExpanded: expanded.contains(entry.id), actions: actions,
+                                     onExpand: { expand(entry) }, onOpen: { path.append(EntryRoute(id: entry.id)) })
+                        .entryRowMenu(entry, actions: actions) { path.append(EntryRoute(id: entry.id)) }
+                        .timelineRowLayout()
                 }
+            } header: {
+                MonthHeader(title: month.title)
+                    .onAppear { model.monthAppeared(month.key) }
+                    .onDisappear { model.monthDisappeared(month.key) }
             }
             .task {
                 // Reload a month a refresh marked stale once it's back on screen.
@@ -206,6 +234,7 @@ struct JournalView: View {
                 ForEach(0..<month.count, id: \.self) { index in
                     EntryRowPlaceholder()
                         .id(PlaceholderID(month: month.key, index: index))
+                        .timelineRowLayout()
                 }
                 .task {
                     // Wait until the month settles on screen, so flicking or scrubbing past it
@@ -222,41 +251,35 @@ struct JournalView: View {
         }
     }
 
-    private struct Segment: Identifiable {
-        enum Header { case month(first: Bool), day(EntrySummary) }
-        let id: String
-        let header: Header
-        let entries: [EntrySummary]
-    }
-
-    /// Splits a month around its expanded entries: [month: rows…] [day: expanded] [month: rows…].
-    private func segments(of entries: [EntrySummary], in month: MonthCount) -> [Segment] {
-        var segments: [Segment] = []
-        var run: [EntrySummary] = []
-        func flushRun() {
-            guard !run.isEmpty || segments.isEmpty else { return }
-            segments.append(Segment(id: "\(month.key)-m\(segments.count)", header: .month(first: segments.isEmpty), entries: run))
-            run = []
-        }
-        for entry in entries {
-            if expanded.contains(entry.id) {
-                flushRun()
-                segments.append(Segment(id: "\(month.key)-d\(entry.id)", header: .day(entry), entries: [entry]))
-            } else {
-                run.append(entry)
-            }
-        }
-        if !run.isEmpty { flushRun() }
-        return segments
-    }
-
-    /// First tap expands the entry in place; a second opens it.
-    private func open(_ entry: EntrySummary) {
-        if expanded.contains(entry.id) {
-            path.append(EntryRoute(id: entry.id))
+    /// Hides the bar after ~40pt of scrolling down and shows it after ~24pt up, only while the
+    /// person is scrolling, and not again for a moment after it changes.
+    private func updateBar(for offset: CGFloat) {
+        guard Date.now.timeIntervalSince(barChanged) > 0.35 else { barAnchor = offset; return }
+        let wasHidden = barHidden
+        defer { if barHidden != wasHidden { barChanged = .now } }
+        if offset < 0 {
+            barHidden = false
+            barAnchor = offset
+        } else if !isDragging {
+            barAnchor = offset
+        } else if barHidden {
+            if offset > barAnchor { barAnchor = offset } else if barAnchor - offset > 24 { barHidden = false; barAnchor = offset }
         } else {
-            withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(entry.id) }
+            if offset < barAnchor { barAnchor = offset } else if offset - barAnchor > 40 { barHidden = true; barAnchor = offset }
         }
+    }
+
+    private func expand(_ entry: EntrySummary) {
+        withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(entry.id) }
+    }
+
+    private var brandMark: some View {
+        Image("Logo")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 36, height: 36)
+            .clipShape(.circle)
+            .accessibilityHidden(true)
     }
 
     private func startWriting() {
@@ -293,65 +316,16 @@ private struct EntryRowPlaceholder: View {
         HStack(alignment: .top, spacing: 14) {
             RoundedRectangle(cornerRadius: 6).fill(.quaternary).frame(width: 42, height: 40)
             VStack(alignment: .leading, spacing: 8) {
-                RoundedRectangle(cornerRadius: 4).fill(.quaternary).frame(height: 14)
+                ForEach(0..<4, id: \.self) { _ in
+                    RoundedRectangle(cornerRadius: 4).fill(.quaternary).frame(height: 14)
+                }
                 RoundedRectangle(cornerRadius: 4).fill(.quaternary).frame(width: 180, height: 14)
             }
         }
         .padding(.vertical, 4)
-        .frame(height: 72, alignment: .top)
+        .frame(height: 150, alignment: .top) // about a real row with a few lines (some have photos)
         .redacted(reason: .placeholder)
         .accessibilityHidden(true)
-    }
-}
-
-struct EntryRow: View {
-    @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 17
-    @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
-    @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
-    let entry: EntrySummary
-    var showsYear = false
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            VStack(spacing: 0) {
-                Text(entry.day?.weekdayShort.uppercased() ?? "")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                Text(entry.day?.dayNumber ?? "")
-                    .font(.title2.weight(.semibold))
-                    .monospacedDigit()
-            }
-            .frame(width: 42)
-
-            VStack(alignment: .leading, spacing: 4) {
-                if showsYear, let year = entry.day?.year {
-                    // On This Day: "1 year ago · 2025".
-                    Text(entry.yearsAgo.map { "\($0 == 1 ? "1 year" : "\($0) years") ago · \(year)" } ?? year)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.tint)
-                }
-                Text(entry.excerpt.isEmpty ? "📷 Photo" : entry.excerpt)
-                    .font(.system(size: bodySize * textSize.scale, design: fontStyle.design))
-                    .lineLimit(3)
-                    .multilineTextAlignment(.leading)
-                if !entry.hashtags.isEmpty {
-                    Text(entry.hashtags.map { "#\($0)" }.joined(separator: " "))
-                        .font(.caption)
-                        .foregroundStyle(.tint)
-                        .lineLimit(1)
-                }
-            }
-
-            Spacer(minLength: 0)
-
-            if entry.imageProcessing || entry.imageURL != nil {
-                EntryPhoto(url: entry.thumbnailURL(width: 168), isProcessing: entry.imageProcessing, size: .thumbnail)
-                    .accessibilityHidden(true)
-            }
-        }
-        .padding(.vertical, 4)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel(Text("\(entry.day?.long ?? entry.date). \(entry.excerpt)\(entry.imageProcessing ? ". Photos processing." : entry.imageURL != nil ? ". Has photo." : "")"))
     }
 }
 

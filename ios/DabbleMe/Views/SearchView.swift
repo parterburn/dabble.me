@@ -23,6 +23,13 @@ struct SearchView: View {
                     ProInfoView(feature: .search, showsDoneButton: false)
                 } else {
                     resultsList
+                        // Swiping down (or scrolling the results) hides the keyboard, even on the
+                        // screens that don't scroll (no results yet, nothing found).
+                        .scrollDismissesKeyboard(.immediately)
+                        .contentShape(.rect)
+                        .simultaneousGesture(DragGesture(minimumDistance: 24).onEnded { value in
+                            if value.translation.height > 40 { isSearchFocused = false }
+                        })
                         // Always visible at the top, not tucked away when the results scroll.
                         .searchable(text: $query, isPresented: $isSearchActive,
                                     placement: .navigationBarDrawer(displayMode: .always), prompt: "Search your journal")
@@ -91,29 +98,38 @@ struct SearchView: View {
         } else if results.isEmpty {
             ContentUnavailableView.search(text: submitted)
         } else {
+            // The count scrolls away; each month's results sit under a sticky "Month YYYY"
+            // (pinned just under the search field), like the Journal.
             List {
-                Section {
-                    ForEach(results) { entry in
-                        TimelineEntryRow(entry: entry, showsYear: true, isExpanded: expanded.contains(entry.id), actions: actions, onTap: {
-                            if expanded.contains(entry.id) {
-                                path.append(EntryRoute(id: entry.id))
-                            } else {
-                                withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(entry.id) }
+                Text(totalCount == 1 ? "1 matching entry" : "\(totalCount.formatted()) matching entries")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 2, leading: 16, bottom: 2, trailing: 16))
+                ForEach(resultMonths, id: \.key) { month in
+                    Section {
+                        ForEach(month.entries) { entry in
+                            TimelineEntryRow(entry: entry, isExpanded: expanded.contains(entry.id), actions: actions,
+                                             onExpand: { withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(entry.id) } },
+                                             onOpen: { path.append(EntryRoute(id: entry.id)) })
+                            .entryRowMenu(entry, actions: actions) { path.append(EntryRoute(id: entry.id)) }
+                            .timelineRowLayout()
+                            .task {
+                                if entry.id == results.last?.id { await search(reset: false) }
                             }
-                        }, onOpen: { path.append(EntryRoute(id: entry.id)) })
-                        .entryPreview(entry) { path.append(EntryRoute(id: entry.id)) }
-                        .task {
-                            if entry.id == results.last?.id { await search(reset: false) }
                         }
+                    } header: {
+                        MonthHeader(title: month.title)
                     }
-                    if nextPage != nil {
-                        ProgressView().frame(maxWidth: .infinity)
-                    }
-                } header: {
-                    Text(totalCount == 1 ? "1 entry" : "\(totalCount.formatted()) entries")
+                }
+                if nextPage != nil {
+                    ProgressView().frame(maxWidth: .infinity)
+                        .listRowSeparator(.hidden)
                 }
             }
+            .contentMargins(.top, 0, for: .scrollContent)
             .listStyle(.plain)
+            .timelinePinsDates()
             // Pull to reset: collapses expanded results and runs the search again.
             .refreshable {
                 withAnimation(.snappy(duration: 0.25)) { expanded = [] }
@@ -121,6 +137,20 @@ struct SearchView: View {
                 await search(reset: true, keepingResults: true)
             }
         }
+    }
+
+    /// Results in their order (newest first), grouped by month for the sticky headers.
+    private var resultMonths: [(key: String, title: String, entries: [EntrySummary])] {
+        var months: [(key: String, title: String, entries: [EntrySummary])] = []
+        for entry in results {
+            let key = entry.day?.monthKey ?? String(entry.date.prefix(7))
+            if months.last?.key == key {
+                months[months.count - 1].entries.append(entry)
+            } else {
+                months.append((key, entry.day?.monthTitle ?? key, [entry]))
+            }
+        }
+        return months
     }
 
     private func loadHashtags() async {

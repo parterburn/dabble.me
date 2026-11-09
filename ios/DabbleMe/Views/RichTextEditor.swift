@@ -51,10 +51,20 @@ final class RichTextEditorModel {
     /// The entry as plain text (for on-device suggestions).
     var plainText: String { textView?.text ?? "" }
 
-    /// Adds "#tag" at the end of the entry.
-    func appendHashtag(_ tag: String) {
+    /// Tags the entry: the first time the word is already written ("Leo", "biscuit"), a "#" goes
+    /// in front of it, keeping the writer's capitalization; otherwise "#tag" is added at the end.
+    func addHashtag(_ tag: String) {
         guard let textView else { return }
         let storage = textView.textStorage
+        let pattern = "(?<![#\\w])" + NSRegularExpression.escapedPattern(for: tag) + "(?!\\w)"
+        if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
+           let match = regex.firstMatch(in: storage.string, range: NSRange(location: 0, length: storage.length)) {
+            let attributes = storage.attributes(at: match.range.location, effectiveRange: nil)
+            storage.insert(NSAttributedString(string: "#", attributes: attributes), at: match.range.location)
+            textView.selectedRange = NSRange(location: match.range.location + match.range.length + 1, length: 0)
+            textDidChange()
+            return
+        }
         let needsSpace = storage.length > 0 && !(storage.string.last?.isWhitespace ?? true)
         storage.append(NSAttributedString(string: (needsSpace ? " " : "") + "#\(tag)", attributes: RichText.Style.journal.baseAttributes))
         textView.selectedRange = NSRange(location: storage.length, length: 0)
@@ -178,24 +188,13 @@ final class RichTextEditorModel {
     }
 }
 
-/// An item in the editor bar's "+" menu (photos, hashtag suggestions…), supplied by the composer.
-struct EditorInsertItem {
-    let title: String
-    /// "slab-…" or an SF Symbol name.
-    let icon: String
-    var subtitle: String? = nil
-    var isEnabled = true
-    let action: @MainActor () -> Void
-}
-
 struct RichTextEditor: UIViewRepresentable {
     let model: RichTextEditorModel
-    var insertItems: [EditorInsertItem] = []
-
-    /// Changes when the bar's buttons need rebuilding.
-    fileprivate var barKey: String {
-        insertItems.map { "\($0.title)\($0.isEnabled)\($0.subtitle ?? "")" }.joined(separator: "|")
-    }
+    /// The bar over the keyboard: the composer's buttons at each end (photos on the left; tags
+    /// and link on the right), and a key for what they show, so the bar is rebuilt when it changes.
+    var leading: AnyView? = nil
+    var trailing: AnyView? = nil
+    var barKey = ""
 
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
@@ -215,7 +214,6 @@ struct RichTextEditor: UIViewRepresentable {
     }
 
     func updateUIView(_ textView: UITextView, context: Context) {
-        context.coordinator.insertItems = insertItems
         guard context.coordinator.barKey != barKey, let toolbar = textView.inputAccessoryView as? UIToolbar else { return }
         context.coordinator.configure(toolbar, for: self)
     }
@@ -248,8 +246,7 @@ struct RichTextEditor: UIViewRepresentable {
         /// toolbar so the glass buttons clear the keyboard's top edge, and short enough to fit an
         /// iPhone without spilling into a "…" menu (swipe down on the text to hide the keyboard).
         fileprivate var barKey = ""
-        /// The latest menu actions (their closures change as the composer's state does).
-        var insertItems: [EditorInsertItem] = []
+        private var hosts: [UIHostingController<AnyView>] = []
 
         func makeToolbar(for editor: RichTextEditor) -> UIToolbar {
             let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 60))
@@ -257,35 +254,23 @@ struct RichTextEditor: UIViewRepresentable {
             return toolbar
         }
 
-        /// "+" (photos, hashtag suggestions) and link. Bold, italic and underline are in the text's
-        /// edit menu (Format), typing "- " or "1. " starts a list, and the keyboard has dictation.
+        /// The composer's buttons, always in view: photos on the left, tags and link on the right.
+        /// Bold, italic and underline are in the text's edit menu (Format), typing "- " or "1. "
+        /// starts a list, and the keyboard has dictation.
         func configure(_ toolbar: UIToolbar, for editor: RichTextEditor) {
             barKey = editor.barKey
-            insertItems = editor.insertItems
-            func item(_ symbol: String, _ label: String, _ action: @escaping @MainActor (RichTextEditorModel) -> Void) -> UIBarButtonItem {
-                let button = UIBarButtonItem(image: appUIIcon(symbol), primaryAction: UIAction { [weak model] _ in
-                    if let model { action(model) }
-                })
-                button.accessibilityLabel = label
-                return button
+            hosts = []
+            func hosted(_ view: AnyView) -> UIBarButtonItem {
+                let host = UIHostingController(rootView: view)
+                host.view.backgroundColor = .clear
+                host.view.frame.size = host.sizeThatFits(in: CGSize(width: 240, height: 44))
+                hosts.append(host)
+                return UIBarButtonItem(customView: host.view)
             }
             var items: [UIBarButtonItem] = []
-            if !editor.insertItems.isEmpty {
-                let menu = UIMenu(children: editor.insertItems.indices.map { index in
-                    let entry = editor.insertItems[index]
-                    let action = UIAction(title: entry.title, subtitle: entry.subtitle, image: appUIIcon(entry.icon)) { [weak self] _ in
-                        guard let self, index < self.insertItems.count else { return }
-                        self.insertItems[index].action()
-                    }
-                    if !entry.isEnabled { action.attributes = .disabled }
-                    return action
-                })
-                let plus = UIBarButtonItem(image: appUIIcon("slab-plus"), menu: menu)
-                plus.accessibilityLabel = "Add"
-                items.append(plus)
-            }
+            if let leading = editor.leading { items.append(hosted(leading)) }
             items.append(.flexibleSpace())
-            items.append(item("slab-link", "Link") { $0.beginLink() })
+            if let trailing = editor.trailing { items.append(hosted(trailing)) }
             toolbar.items = items
         }
     }

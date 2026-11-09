@@ -18,10 +18,14 @@ enum JournalIntelligence {
         return false
     }
 
-    /// PRO, supported, and not turned off in Settings.
+    /// Reflections, Today's prompt and hashtag suggestions: every plan (it runs on the device, so
+    /// it costs nothing, and it gets people writing), where Apple Intelligence is supported and
+    /// not turned off in Settings.
     static func isEnabled(for me: Me?) -> Bool {
-        me?.isPro == true && isSupported && (UserDefaults.standard.object(forKey: enabledKey) as? Bool ?? true)
+        me != nil && isSupported && (UserDefaults.standard.object(forKey: enabledKey) as? Bool ?? true)
     }
+
+    static func canSuggestHashtags(for me: Me?) -> Bool { isEnabled(for: me) }
 
     enum Failure: LocalizedError {
         case unavailable, noAnswer, noMatchingHashtags, declined

@@ -48,9 +48,13 @@ final class PhotoEntryTests: XCTestCase {
         app.buttons["New Entry"].tap()
         let editor = app.textViews["Entry"]
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
-        // All four must attach (a single photo skips the collage path this test is for).
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "4 of 8 photos")).firstMatch
+        // All four must attach (a single photo skips the collage path this test is for). They
+        // stack at the bar's left; tapping the stack opens the drawer.
+        editor.tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label == 'Photos' AND value == '4 photos'")).firstMatch
             .waitForExistence(timeout: 60), "All four photos should be attached")
+        app.buttons["Photos"].tap()
+        XCTAssertTrue(app.buttons["Add More Photos"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.buttons.matching(identifier: "Remove photo").count, 4)
         editor.tap()
         editor.typeText("Four photos, one collage.")
@@ -62,9 +66,7 @@ final class PhotoEntryTests: XCTestCase {
         let saved = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", "Four photos, one collage")).firstMatch
         XCTAssertTrue(saved.waitForExistence(timeout: 10))
-        saved.tap() // expands in the timeline
-        sleep(1)
-        saved.tap() // opens
+        app.openTimelineEntry(saved)
         XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10), "The app froze after saving")
 
         // The processing placeholder turns into the collage once Sidekiq finishes.
@@ -93,26 +95,26 @@ final class PhotoEditTests: XCTestCase {
     private func openEntry(_ app: XCUIApplication, containing text: String) {
         app.tabBars.buttons["Journal"].tap()
         let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 10))
-        row.tap()
-        sleep(1)
-        // Tap the start of the text, away from any #hashtag link in it.
-        row.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.2)).tap()
+        app.openTimelineEntry(row)
         XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
     }
 
-    private func edit(_ app: XCUIApplication) {
+    private func edit(_ app: XCUIApplication, photos: String) {
         app.buttons["Entry Actions"].tap()
         app.buttons["Edit"].tap()
         XCTAssertTrue(app.textViews["Entry"].waitForExistence(timeout: 10))
+        // The entry's photos stack at the bar's left; tapping the stack opens the drawer.
+        app.textViews["Entry"].tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label == 'Photos' AND value == %@", photos)).firstMatch.waitForExistence(timeout: 30))
+        app.buttons["Photos"].tap()
     }
 
     func testAddPhotoToEntryWithPhotoMakesCollage() throws {
         let app = try launch(photos: true)
         openEntry(app, containing: "Finally made it to Yosemite")
-        edit(app)
+        edit(app, photos: "2 photos")
         XCTAssertTrue(app.descendants(matching: .any)["Current photo"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "2 of 8 photos")).firstMatch.waitForExistence(timeout: 30))
+        XCTAssertEqual(app.buttons.matching(identifier: "Remove photo").count, 1, "The new photo beside the current one")
         snap("edit-photos")
         app.buttons["Save"].tap()
         XCTAssertTrue(app.textViews["Entry"].waitForNonExistence(timeout: 60), "Saving with a new photo should finish")
@@ -123,7 +125,7 @@ final class PhotoEditTests: XCTestCase {
     func testRemovePhotoFromEntry() throws {
         let app = try launch(photos: false)
         openEntry(app, containing: "Biscuit has discovered")
-        edit(app)
+        edit(app, photos: "1 photo")
         let remove = app.buttons["Remove current photo"]
         XCTAssertTrue(remove.waitForExistence(timeout: 10))
         remove.tap()

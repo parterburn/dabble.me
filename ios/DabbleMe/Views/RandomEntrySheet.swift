@@ -99,6 +99,13 @@ struct RandomEntrySheet: View {
                         .lineSpacing(5)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                if !entry.songs.isEmpty {
+                    SongList(songs: entry.songs)
+                }
+                // Dated #tags with their age, above the photo, as in the timeline.
+                if let dated = entry.datedHashtags, !dated.isEmpty {
+                    DatedHashtagRow(hashtags: dated)
+                }
                 if entry.imageProcessing || entry.imageURL != nil {
                     EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing)
                 }

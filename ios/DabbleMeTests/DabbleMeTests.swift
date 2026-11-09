@@ -67,6 +67,22 @@ struct DecodingTests {
         #expect(envelope.entry.summary.hashtags == ["coffee"])
     }
 
+    /// An opened entry replaces its timeline row's data: songs and dated tags carry over, and the
+    /// whole text means nothing's left to load (PR #208 review).
+    @Test func summaryKeepsSongsAndDatedTags() throws {
+        let json = """
+        {"entry":{"id":8,"date":"2026-01-03","excerpt":"Hi","image_url":null,"image_processing":false,
+        "hashtags":["Biscuit"],"updated_at":"2026-01-03T10:00:00Z","body_text":"Hi #Biscuit","document":null,
+        "songs":[{"title":"Song","artists":["A"],"spotify_url":"https://open.spotify.com/track/1"}],
+        "dated_hashtags":[{"tag":"Biscuit","date":"2023-06-08","age":"2 years and 6 months since entry"}],
+        "preview_truncated":true,"web_url":"https://dabble.me/entries/2026/1/3"}}
+        """
+        let summary = try APIClient.decoder.decode(EntryEnvelope.self, from: Data(json.utf8)).entry.summary
+        #expect(summary.songs?.first?.title == "Song")
+        #expect(summary.datedHashtags?.first?.tag == "Biscuit")
+        #expect(summary.previewTruncated == false)
+    }
+
     @Test func decodesMe() throws {
         let json = """
         {"id":1,"email":"a@b.c","first_name":null,"plan":"free","is_pro":false,"timezone":"Mountain Time (US & Canada)",

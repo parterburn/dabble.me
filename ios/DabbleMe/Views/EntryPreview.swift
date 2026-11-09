@@ -5,6 +5,118 @@ extension View {
     func entryPreview(_ summary: EntrySummary, open: @escaping () -> Void) -> some View {
         modifier(EntryPreviewMenu(summary: summary, open: open))
     }
+
+    /// For a list row: long-press to preview the entry, with Reflect, Edit and Open; tapping the
+    /// preview opens it. UIKit's context menu on the row's cell, since SwiftUI's can't act on a
+    /// tap on the preview (it just closes).
+    func entryRowMenu(_ summary: EntrySummary, actions: EntryActions, open: @escaping () -> Void) -> some View {
+        modifier(EntryRowMenu(summary: summary, actions: actions, open: open))
+    }
+}
+
+private struct EntryRowMenu: ViewModifier {
+    let summary: EntrySummary
+    let actions: EntryActions
+    let open: () -> Void
+    @Environment(AppModel.self) private var model
+
+    func body(content: Content) -> some View {
+        content.background {
+            CellContextMenu(
+                preview: { EntryPreview(summary: summary) },
+                menu: {
+                    var items: [UIMenuElement] = []
+                    if JournalIntelligence.isEnabled(for: model.me) {
+                        items.append(UIAction(title: "Reflect on This Entry", image: UIImage(named: "slab-sparkles")) { _ in
+                            Task { await actions.reflect(on: summary.id, model: model) }
+                        })
+                    }
+                    if model.me?.canEdit == true {
+                        items.append(UIAction(title: "Edit", image: UIImage(named: "slab-edit")) { _ in
+                            Task { await actions.edit(summary.id, model: model) }
+                        })
+                    }
+                    items.append(UIAction(title: "Open", image: UIImage(named: "slab-expand")) { _ in open() })
+                    return UIMenu(children: items)
+                },
+                commit: open
+            )
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+        }
+    }
+}
+
+/// Puts a UIKit context menu on the list cell around it (the view itself takes no touches, so
+/// the row's taps and swipes work as before).
+private struct CellContextMenu<Preview: View>: UIViewRepresentable {
+    let preview: () -> Preview
+    let menu: () -> UIMenu
+    let commit: () -> Void
+
+    func makeUIView(context: Context) -> Anchor {
+        let anchor = Anchor()
+        anchor.coordinator = context.coordinator
+        anchor.isUserInteractionEnabled = false
+        return anchor
+    }
+
+    func updateUIView(_ view: Anchor, context: Context) {
+        context.coordinator.parent = self
+        view.attach()
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(parent: self) }
+
+    final class Anchor: UIView {
+        weak var coordinator: Coordinator?
+
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            attach()
+        }
+
+        /// Onto the nearest list cell, replacing whatever entry menu a reused cell had.
+        func attach() {
+            guard window != nil, let coordinator else { return }
+            var host = superview
+            while let view = host, !(view is UICollectionViewCell) { host = view.superview }
+            guard let cell = host else { return }
+            if cell.interactions.contains(where: { ($0 as? UIContextMenuInteraction)?.delegate === coordinator }) { return }
+            for interaction in cell.interactions where (interaction as? UIContextMenuInteraction)?.delegate is Coordinator {
+                cell.removeInteraction(interaction)
+            }
+            cell.addInteraction(UIContextMenuInteraction(delegate: coordinator))
+        }
+    }
+
+    final class Coordinator: NSObject, UIContextMenuInteractionDelegate {
+        var parent: CellContextMenu
+
+        init(parent: CellContextMenu) {
+            self.parent = parent
+        }
+
+        func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                    configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
+            let parent = parent
+            return UIContextMenuConfiguration(identifier: nil, previewProvider: {
+                let controller = UIHostingController(rootView: parent.preview())
+                controller.view.backgroundColor = .systemBackground
+                controller.preferredContentSize = controller.sizeThatFits(in: CGSize(width: 340, height: CGFloat.greatestFiniteMagnitude))
+                return controller
+            }, actionProvider: { _ in parent.menu() })
+        }
+
+        /// Tapping the preview opens the entry.
+        func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                    willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration,
+                                    animator: UIContextMenuInteractionCommitAnimating) {
+            animator.preferredCommitStyle = .dismiss
+            let commit = parent.commit
+            animator.addCompletion { commit() }
+        }
+    }
 }
 
 private struct EntryPreviewMenu: ViewModifier {
@@ -59,6 +171,9 @@ struct EntryPreview: View {
                     }
             }
             .frame(maxHeight: textLimit, alignment: .top)
+            if let songs = summary.songs, !songs.isEmpty {
+                SongList(songs: songs)
+            }
             if summary.imageURL != nil, !summary.imageProcessing {
                 // A fixed frame (the image loads after the preview is sized); the whole photo fits in it.
                 AsyncImage(url: summary.thumbnailURL(width: 900)) { image in

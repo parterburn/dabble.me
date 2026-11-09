@@ -17,9 +17,18 @@ struct Me: Decodable, Sendable, Equatable {
     let canAddPhotos: Bool
     let canEdit: Bool
     let canSearch: Bool
+    /// Newer flags (absent from an older server, so they fall back to the plan).
+    let canDelete: Bool?
+    let canAddLinks: Bool?
+    let canSeeStats: Bool?
     let settingsUrl: URL
     let securityUrl: URL
     let aiConnectors: AIConnectors?
+
+    /// Free accounts can write and delete; editing, photos, links, search and Stats are PRO.
+    var mayDelete: Bool { canDelete ?? canEdit }
+    var mayAddLinks: Bool { canAddLinks ?? isPro }
+    var maySeeStats: Bool { canSeeStats ?? isPro }
 
     struct AIConnectors: Decodable, Sendable, Equatable {
         let claudeUrl: URL
@@ -43,6 +52,12 @@ struct EntrySummary: Decodable, Sendable, Identifiable, Hashable {
     var previewText: String? = nil
     /// Only on Today's "On This Day" memories.
     var yearsAgo: Int? = nil
+    /// Its #tags with a date (birthdays, anniversaries), and how long it had been.
+    var datedHashtags: [DatedHashtag]? = nil
+    /// Spotify songs found in it.
+    var songs: [Song]? = nil
+    /// `previewText` was cut short (the rest loads when the row is expanded).
+    var previewTruncated: Bool? = nil
 
     var day: JournalDay? { JournalDay(date) }
     var imageURL: URL? { imageUrl.flatMap(URL.init(string:)) }
@@ -92,6 +107,8 @@ struct TodaySummary: Decodable, Sendable {
     let prompt: String?
     /// Days in a row with an entry, up to today (or yesterday while today is unwritten).
     var currentStreak: Int? = nil
+    /// A past entry when On This Day is empty, like the daily email's ("Throwback").
+    var throwback: EntrySummary? = nil
 
     var day: JournalDay? { JournalDay(date) }
 }
@@ -105,6 +122,7 @@ struct Song: Decodable, Sendable, Hashable {
         [artists.joined(separator: ", "), title].compactMap { $0?.isEmpty == false ? $0 : nil }.joined(separator: " – ")
     }
 }
+
 
 struct EntryDetail: Decodable, Sendable, Identifiable, Hashable {
     let id: Int
@@ -129,8 +147,10 @@ struct EntryDetail: Decodable, Sendable, Identifiable, Hashable {
     var imageURL: URL? { imageUrl.flatMap(URL.init(string:)) }
 
     var summary: EntrySummary {
+        // The whole text as the preview, so nothing's left to load; songs and dated tags carry over.
         EntrySummary(id: id, date: date, excerpt: excerpt, imageUrl: imageUrl,
-                     imageProcessing: imageProcessing, hashtags: hashtags, updatedAt: updatedAt, previewText: bodyText)
+                     imageProcessing: imageProcessing, hashtags: hashtags, updatedAt: updatedAt, previewText: bodyText,
+                     datedHashtags: datedHashtags, songs: songs, previewTruncated: false)
     }
 }
 
