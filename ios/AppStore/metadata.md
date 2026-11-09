@@ -27,7 +27,7 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 > Dabble Me is a private journal for the moments you don't want to forget. Write about your day, add photos, and watch it turn into something priceless: years of memories you can read back through, search, and rediscover.
 >
 > ON THIS DAY
-> See what you wrote on today's date one, five, or ten years ago, right on the Today screen. Turn on a morning reminder on days you have memories waiting.
+> See what you wrote on today's date one, five, or ten years ago, right on the Today screen. Nothing from this date yet? A throwback from your past entries comes back to you instead. Turn on a morning reminder on days you have memories waiting.
 >
 > WRITE YOUR WAY
 > • Bold, italic and underline, links, and lists that start as you type "- " or "1." 
@@ -39,19 +39,19 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 >
 > BUILD THE HABIT
 > • A daily reminder to write, skipped on days you already have
-> • A home-screen and Lock Screen widget with your writing streak
-> • Stats: entries, words, current and longest streak, a year of writing at a glance, and your most-used hashtags
+> • A home-screen and Lock Screen widget with your writing streak, plus today's prompt or a memory from this day: your choice, with a live preview
+> • Stats: entries, words, current and longest streak, a year of writing at a glance (tap any day to read it), and your most-used hashtags
 >
 > YEARS OF MEMORIES, ONE TAP AWAY
-> • Your whole journal by month, with a timeline scrubber to jump years back
+> • Your whole journal by month, with a timeline scrubber: drag to jump years back, or tap it to pick a day from a calendar
 > • Photos view: every day you captured, in one grid
 > • Search every word you've ever written, or tap your #hashtags
-> • Tap an entry to read it right in the timeline; swipe to reflect or edit
+> • Tap an entry to read it right in the timeline; swipe or touch and hold for a reflection, edit and more
 > • Tap an entry's date to see how long ago it was
 > • Long-press any entry to preview it
 > • Give a #hashtag a date (a birthday, an anniversary) and see how old your kids were, or how long it had been, in every entry
-> • Shake your phone for a random memory you'd forgotten
-> • Photos full screen with pinch to zoom; save or share the ones you love
+> • Shake your phone, or keep pulling at the bottom of Today, for a random memory you'd forgotten
+> • Photos full screen with pinch to zoom; save them, or share one as a card that says how long ago it was
 > • Pinch to make entries easier to read
 >
 > APPLE INTELLIGENCE, ON YOUR DEVICE
@@ -63,7 +63,7 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 > PRIVATE BY DESIGN
 > • No social feed, no ads, no tracking
 > • Lock the app with Face ID; your journal is hidden in the app switcher
-> • Reminders never show what you wrote, and the widget only shows an entry if you turn that on
+> • Reminders never show what you wrote, and the widget only shows an entry if you choose that
 > • Photo location data is removed before upload
 > • Sign in with a passkey, password, or two-factor code
 > • Export everything, any time
@@ -108,7 +108,7 @@ The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resour
 
 ## Screenshots
 
-In `ios/App Store Screenshots/`: **iPhone 6.3"** at 1206 × 2622 (iPhone 18 Pro simulator) and **13" iPad** at 2064 × 2752, both from the made-up demo account (never a real journal), via `ScreenshotTests` (see `ios/README.md`):
+In `ios/AppStore/Screenshots/` (`iPhone 6.3in`, `iPad 13in`, and the header and search-results images rendered from them): **iPhone 6.3"** at 1206 × 2622 (iPhone 18 Pro simulator) and **13" iPad** at 2064 × 2752, both from the made-up demo account (never a real journal), via `ScreenshotTests` (see `ios/README.md`):
 
 1. Today: the date, today's prompt, and On This Day
 2. Journal timeline with photos and month sections

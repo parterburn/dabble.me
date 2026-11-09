@@ -11,6 +11,7 @@ struct WidgetEntry: TimelineEntry {
     /// An entry to look back on (only with "On This Day Entry" chosen in the app).
     var entryTitle: String? = nil
     var entryText: String? = nil
+    var entryID: Int? = nil
 
     static let placeholder = WidgetEntry(date: .now, signedIn: true, wroteToday: false, streak: 12, memories: nil,
                                          prompt: "What made you smile today?")
@@ -74,10 +75,29 @@ struct TodayWidgetContent: View {
         }
     }
 
+    /// Two halves, each its own link: the streak side writes today's entry (or opens Today once
+    /// it's written), and an entry shown on the right opens that entry to read.
     private var medium: some View {
         HStack(alignment: .top, spacing: 16) {
-            small
-                .frame(maxWidth: 130)
+            Link(destination: entry.wroteToday ? WidgetSnapshot.todayURL : WidgetSnapshot.writeURL) {
+                small
+            }
+            .frame(maxWidth: 130)
+            mediumDetail
+        }
+    }
+
+    @ViewBuilder
+    private var mediumDetail: some View {
+        if let id = entry.entryID, entry.entryText != nil {
+            Link(destination: WidgetSnapshot.entryURL(id)) { mediumDetailContent }
+        } else {
+            mediumDetailContent
+        }
+    }
+
+    private var mediumDetailContent: some View {
+        HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 8) {
                 if let title = entry.entryTitle, let text = entry.entryText {
                     Label(title, systemImage: "clock.arrow.circlepath")

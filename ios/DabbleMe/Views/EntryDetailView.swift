@@ -121,12 +121,22 @@ struct EntryDetailView: View {
     @ViewBuilder
     private func editButton(for entry: EntryDetail) -> some View {
         if model.me?.canEdit == true {
-            Button {
-                // Formatting the app can't represent (styles, quotes, images) stays web-only so nothing gets lost.
-                if entry.document != nil { editing = true } else { openURL(entry.webUrl) }
-            } label: {
-                Label("Edit Entry", icon: "slab-edit")
-            }
+            // Tap to edit; touch and hold for the entry's Actions (Reflection, Delete, its tags).
+            // Not a Button: in the toolbar a Button becomes a UIKit bar button, which never sees a
+            // long press. This view keeps its own gestures (a hold doesn't also tap).
+            appIcon("slab-edit")
+                .frame(width: 44, height: 44)
+                .contentShape(.rect)
+                .onTapGesture {
+                    // Formatting the app can't represent (styles, quotes, images) stays web-only so nothing gets lost.
+                    if entry.document != nil { editing = true } else { openURL(entry.webUrl) }
+                }
+                .onLongPressGesture(minimumDuration: 0.45) { showingActions = true }
+                .accessibilityElement()
+                .accessibilityLabel("Edit Entry")
+                .accessibilityAddTraits(.isButton)
+                .accessibilityAction { if entry.document != nil { editing = true } else { openURL(entry.webUrl) } }
+                .accessibilityAction(named: "More Actions") { showingActions = true }
         }
     }
 
@@ -210,7 +220,7 @@ struct EntryDetailView: View {
     /// The reflection's sheet opens right away, reflecting inside it, so you can see where it'll appear.
     private func reflect(on entry: EntryDetail) async {
         guard reflection == nil else { return }
-        let pending = EntryReflection(date: entry.day?.long ?? entry.date)
+        let pending = EntryReflection(date: model.dateLine(for: entry.day, fallback: entry.date))
         reflection = pending
         do {
             let text = try await model.reflection(on: entry).text
@@ -425,7 +435,7 @@ struct ReflectionSheet: View {
                         VStack(spacing: 12) {
                             ProgressView()
                                 .controlSize(.large)
-                            Text("Reflecting…")
+                            Text("Generating…")
                                 .font(.headline)
                                 .foregroundStyle(.secondary)
                         }
@@ -475,17 +485,7 @@ struct DatedHashtagRow: View {
                 Button {
                     search(hashtag)
                 } label: {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("#\(hashtag.tag)")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(.tint)
-                        Text(Self.shortAge(hashtag.age))
-                            .font(.footnote)
-                            .foregroundStyle(.primary.opacity(0.72)) // stronger than .secondary on the tint
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    .background(.tint.opacity(0.12), in: .rect(cornerRadius: 12))
+                    HashtagPill(tag: hashtag.tag, age: hashtag.age)
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.tint)
@@ -514,6 +514,31 @@ struct DatedHashtagRow: View {
 
     private func search(_ hashtag: DatedHashtag) {
         if let url = URL(string: "\(RichText.hashtagScheme):\(hashtag.tag)") { openURL(url) }
+    }
+
+}
+
+/// The app's #tag pill: the tag in olive on a light olive card, with its age underneath for a
+/// dated tag ("3 years and 4 months"). Under entries, in the Actions sheet, and anywhere tags show.
+struct HashtagPill: View {
+    let tag: String
+    /// "3 years and 4 months since entry", or nil for a tag without a date.
+    var age: String?
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text("#\(tag)")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(.tint)
+            if let age {
+                Text(Self.shortAge(age))
+                    .font(.footnote)
+                    .foregroundStyle(.primary.opacity(0.72)) // stronger than .secondary on the tint
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 7)
+        .background(.tint.opacity(0.12), in: .rect(cornerRadius: 12))
     }
 
     /// "3 years and 4 months since entry" → "3 years and 4 months" (the pill is under the entry).

@@ -34,7 +34,7 @@ struct RandomEntrySheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Label("A Random Memory", systemImage: "dice")
+                Label("A Random Memory", icon: "slab-dice")
                     .font(.headline)
                 Spacer()
                 SheetCloseButton()
@@ -44,10 +44,15 @@ struct RandomEntrySheet: View {
                     .id(entry.id)
                     .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .opacity))
             } else if let error {
-                ContentUnavailableView("No memory to show", systemImage: "dice", description: Text(error))
+                ContentUnavailableView {
+                    Label("No memory to show", icon: "slab-dice")
+                } description: {
+                    Text(error)
+                }
             } else {
                 ProgressView().frame(maxWidth: .infinity, minHeight: 200)
             }
+            // Medium weight, like the app's other main buttons.
             HStack(spacing: 12) {
                 Button {
                     Task { await load() }
@@ -67,6 +72,7 @@ struct RandomEntrySheet: View {
                 .buttonStyle(.borderedProminent)
                 .disabled(entry == nil)
             }
+            .fontWeight(.medium)
             .controlSize(.large)
         }
         .padding(20)
@@ -85,7 +91,7 @@ struct RandomEntrySheet: View {
     private func preview(_ entry: EntryDetail) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
-                Text(entry.day.map { "\($0.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year())) · \($0.relative(to: model.today?.day ?? JournalDay(localDate: .now)))" } ?? entry.date)
+                Text(model.dateLine(for: entry.day, fallback: entry.date))
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.tint)
                 if let document = entry.document {

@@ -188,7 +188,7 @@ final class JournalViewsTests: XCTestCase {
         snap("entry-relative-date")
         title.tap()
         app.swipeLeft() // the entry's Actions
-        let reflect = app.buttons["Reflect on This Entry"]
+        let reflect = app.buttons["Reflection"]
         if reflect.waitForExistence(timeout: 3) {
             reflect.tap()
             XCTAssertTrue(app.buttons["Close"].waitForExistence(timeout: 5), "The reflection's sheet opens right away")
@@ -277,7 +277,7 @@ final class JournalViewsTests: XCTestCase {
 
         row.swipeLeft()
         app.buttons["Actions"].tap()
-        let reflect = app.buttons["Reflect on This Entry"]
+        let reflect = app.buttons["Reflection"]
         if reflect.waitForExistence(timeout: 10) {
             snap("timeline-actions-reflect")
             reflect.tap()
@@ -311,7 +311,7 @@ final class JournalViewsTests: XCTestCase {
         snap("preview-yosemite")
         // Tapping the preview grows it into the entry.
         // The preview sits just above its menu.
-        let menuTop = app.buttons.matching(NSPredicate(format: "label IN %@", ["Reflect on This Entry", "Edit", "Open"]))
+        let menuTop = app.buttons.matching(NSPredicate(format: "label IN %@", ["Reflection", "Edit", "Open"]))
             .allElementsBoundByIndex.map { $0.frame.minY }.min() ?? app.buttons["Open"].frame.minY
         app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: app.frame.midX, dy: menuTop - 150)).tap()
         XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10), "Tapping the preview opens the entry")
@@ -464,10 +464,10 @@ final class JournalViewsTests: XCTestCase {
         }
         // The sheet opens first, reflecting inside it, then the text arrives.
         XCTAssertTrue(app.navigationBars["Reflection"].exists || app.staticTexts["Reflection"].exists)
-        XCTAssertTrue(app.staticTexts["Reflecting…"].exists, "The sheet shows it's reflecting")
+        XCTAssertTrue(app.staticTexts["Generating…"].exists, "The sheet shows it's reflecting")
         snap("pull-reflecting")
         XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Written on this device")).firstMatch.waitForExistence(timeout: 90))
-        XCTAssertFalse(app.staticTexts["Reflecting…"].exists)
+        XCTAssertFalse(app.staticTexts["Generating…"].exists)
         snap("pull-reflection")
         app.buttons["Close"].tap()
     }
@@ -710,6 +710,37 @@ final class JournalViewsTests: XCTestCase {
     }
 
     /// A web address written into an entry is a link.
+    /// Long-pressing a row's preview offers More, which opens its Actions sheet; long-pressing
+    /// an entry's Edit button does the same (a tap still edits).
+    func testMoreActionsFromPreviewAndEditButton() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Biscuit has discovered")).firstMatch
+        app.scrollTo(row)
+        row.press(forDuration: 1.2)
+        let more = app.buttons["More"]
+        XCTAssertTrue(more.waitForExistence(timeout: 5), "The preview's menu has More")
+        snap("preview-more")
+        more.tap()
+        XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout: 10), "More opens the Actions sheet")
+        XCTAssertTrue(app.buttons.matching(identifier: "ActionsSheetTag").firstMatch.exists, "with the entry's tags as pills")
+        snap("actions-pills")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12)).tap() // close it (above the sheet)
+        XCTAssertTrue(app.buttons["Delete"].waitForNonExistence(timeout: 5))
+
+        app.openTimelineEntry(row)
+        let edit = app.buttons["Edit Entry"]
+        XCTAssertTrue(edit.waitForExistence(timeout: 10))
+        edit.press(forDuration: 1.0)
+        XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout: 5), "Holding Edit opens the Actions sheet")
+        XCTAssertFalse(app.textViews["Entry"].exists, "and doesn't start editing")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.12)).tap()
+        XCTAssertTrue(app.buttons["Delete"].waitForNonExistence(timeout: 5))
+        edit.tap()
+        XCTAssertTrue(app.textViews["Entry"].waitForExistence(timeout: 10), "A tap still edits")
+        app.buttons["Cancel"].tap()
+    }
+
     func testURLsInEntriesAreLinks() throws {
         let app = launch()
         tab(app, "Journal").tap()
@@ -840,6 +871,11 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["See what you wrote on this date in past years with Dabble Me PRO."].exists)
         XCTAssertFalse(app.staticTexts["Throwback"].exists)
         snap("free-on-this-day")
+        // Meanwhile, a random memory (free): the same sheet as shaking the phone.
+        app.buttons["Try a Random Memory"].tap()
+        XCTAssertTrue(app.staticTexts["A Random Memory"].waitForExistence(timeout: 5))
+        app.buttons["Close"].tap()
+        XCTAssertTrue(app.staticTexts["A Random Memory"].waitForNonExistence(timeout: 5))
 
         // Writing: no photos, no link button.
         tab(app, "Journal").tap()

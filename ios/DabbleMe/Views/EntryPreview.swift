@@ -6,7 +6,8 @@ extension View {
         modifier(EntryPreviewMenu(summary: summary, open: open))
     }
 
-    /// For a list row: long-press to preview the entry, with Reflect, Edit and Open; tapping the
+    /// For a list row: long-press to preview the entry, with Reflection, Edit, Open and More (the
+    /// Actions sheet); tapping the
     /// preview opens it. UIKit's context menu on the row's cell, since SwiftUI's can't act on a
     /// tap on the preview (it just closes).
     func entryRowMenu(_ summary: EntrySummary, actions: EntryActions, open: @escaping () -> Void) -> some View {
@@ -27,7 +28,7 @@ private struct EntryRowMenu: ViewModifier {
                 menu: {
                     var items: [UIMenuElement] = []
                     if JournalIntelligence.isEnabled(for: model.me) {
-                        items.append(UIAction(title: "Reflect on This Entry", image: UIImage(named: "slab-sparkles")) { _ in
+                        items.append(UIAction(title: "Reflection", image: UIImage(named: "slab-sparkles")) { _ in
                             Task { await actions.reflect(on: summary.id, model: model) }
                         })
                     }
@@ -37,6 +38,10 @@ private struct EntryRowMenu: ViewModifier {
                         })
                     }
                     items.append(UIAction(title: "Open", image: UIImage(named: "slab-expand")) { _ in open() })
+                    // The rest (Delete, the entry's tags): the Actions sheet.
+                    items.append(UIAction(title: "More", image: UIImage(named: "slab-more")) { _ in
+                        Task { await actions.showActions(for: summary.id, model: model) }
+                    })
                     return UIMenu(children: items)
                 },
                 commit: open

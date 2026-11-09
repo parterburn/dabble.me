@@ -45,7 +45,8 @@ struct Provider: TimelineProvider {
                            memories: content != .prompt ? state.memories : nil,
                            prompt: isToday ? snapshot.prompt : nil,
                            entryTitle: showsEntry ? snapshot.entryTitle : nil,
-                           entryText: showsEntry ? snapshot.entryText : nil)
+                           entryText: showsEntry ? snapshot.entryText : nil,
+                           entryID: showsEntry ? snapshot.entryID : nil)
     }
 }
 
