@@ -127,7 +127,11 @@ struct JournalView: View {
             .listStyle(.plain)
             .scrollIndicators(.hidden) // the timeline scrubber replaces the standard indicator
             .contentMargins(.trailing, 20, for: .scrollContent) // room for the scrubber
-            .refreshable { await model.refresh() }
+            // Pull to reset: collapses expanded entries and picks up new ones.
+            .refreshable {
+                withAnimation(.snappy(duration: 0.25)) { expanded = [] }
+                await model.refresh()
+            }
             .onChange(of: scrollToTop) {
                 guard let month = model.months.first else { return }
                 withAnimation {
@@ -301,6 +305,9 @@ private struct EntryRowPlaceholder: View {
 }
 
 struct EntryRow: View {
+    @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 17
+    @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
+    @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
     let entry: EntrySummary
     var showsYear = false
 
@@ -324,7 +331,7 @@ struct EntryRow: View {
                         .foregroundStyle(.tint)
                 }
                 Text(entry.excerpt.isEmpty ? "📷 Photo" : entry.excerpt)
-                    .font(.system(.body, design: .serif))
+                    .font(.system(size: bodySize * textSize.scale, design: fontStyle.design))
                     .lineLimit(3)
                     .multilineTextAlignment(.leading)
                 if !entry.hashtags.isEmpty {

@@ -8,6 +8,8 @@ struct SettingsView: View {
     @State private var confirmingDeletion = false
     @State private var deletionEmail: String?
     @State private var deletionError: String?
+    @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
+    @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
     @AppStorage(ReminderSettings.writingEnabledKey) private var writingReminder = false
     @AppStorage(ReminderSettings.writingTimeKey) private var writingTime = ReminderSettings.defaultWritingTime
     @AppStorage(ReminderSettings.memoriesEnabledKey) private var memoriesReminder = false
@@ -41,12 +43,31 @@ struct SettingsView: View {
                         } else {
                             LabeledContent("Plan", value: me.isPro ? "PRO" : "Free")
                         }
+                        // Dates for #tags (PRO, like the web settings); greyed out for free accounts.
+                        NavigationLink {
+                            TagDatesView()
+                        } label: {
+                            Label("Manage Hashtags", icon: "slab-tag")
+                        }
+                        .disabled(!me.isPro)
                     }
                 }
 
                 remindersSection
                 intelligenceSection
                 privacySection
+
+                Section {
+                    NavigationLink {
+                        AccessibilitySettingsView()
+                    } label: {
+                        LabeledContent {
+                            Text("\(textSize.label), \(fontStyle.label)")
+                        } label: {
+                            Label("Accessibility", systemImage: "textformat.size")
+                        }
+                    }
+                }
 
                 Section {
                     // Connecting happens on the web (OAuth on dabble.me, PRO plus a passkey or 2FA);
@@ -56,13 +77,10 @@ struct SettingsView: View {
                             Label("Claude/ChatGPT Connector", icon: "slab-sparkles")
                         }
                     }
-                    Link(destination: model.me?.settingsUrl ?? AppConfig.webURL("settings")) {
-                        Label("Email Preferences", icon: "slab-envelope")
-                    }
                     Link(destination: model.me?.securityUrl ?? AppConfig.webURL("security")) {
-                        Label("Passkeys & Two-Factor", icon: "slab-shield")
+                        Label("Account Security", icon: "slab-shield")
                     }
-                    Link(destination: AppConfig.webURL("entries/export")) {
+                    Link(destination: URL(string: "#export", relativeTo: AppConfig.webURL("users/edit"))!.absoluteURL) {
                         Label("Export Entries", icon: "slab-arrow-up-from-line")
                     }
                 } header: {

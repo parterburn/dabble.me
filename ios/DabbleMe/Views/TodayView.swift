@@ -50,7 +50,11 @@ struct TodayView: View {
             .navigationTitle("Today") // back-button label on entries opened from here
             .toolbarVisibility(.hidden, for: .navigationBar)
             .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
-            .refreshable { await model.loadToday() }
+            // Pull to reset: collapses expanded entries and reloads today.
+            .refreshable {
+                withAnimation(.snappy(duration: 0.25)) { expanded = [] }
+                await model.loadToday()
+            }
             .onChange(of: model.composeRequest, initial: true) { _, requested in
                 guard requested else { return }
                 model.composeRequest = false
@@ -71,9 +75,15 @@ struct TodayView: View {
     @ViewBuilder
     private func todaySection(_ today: TodaySummary) -> some View {
         if let entry = today.entry {
-            SectionTitle("Today's Entry")
+            SectionTitle("Today's Entry", icon: "slab-calendar")
+                .padding(.top, 6)
                 .plainRow()
+            // On the prompt box's Paper card, so today stands apart from On This Day. The card is
+            // the row's background, so the entry keeps its swipes.
             row(entry.summary, showsDate: false)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 16, leading: 32, bottom: 24, trailing: 32))
+                .listRowBackground(TodayCard())
         } else {
             VStack(alignment: .leading, spacing: 14) {
                 let usesAI = JournalIntelligence.isEnabled(for: model.me)
@@ -251,5 +261,18 @@ private struct SectionTitle: View {
                 .font(.system(.title3, design: .serif, weight: .semibold))
                 .accessibilityAddTraits(.isHeader)
         }
+    }
+}
+
+/// The Paper card behind Today's Entry, the same as the prompt box's.
+private struct TodayCard: View {
+    var body: some View {
+        RoundedRectangle(cornerRadius: 16)
+            .fill(Color("Paper"))
+            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.quaternary))
+            // Inset like the prompt box, which sits within the list's margins.
+            .padding(.horizontal, 16)
+            .padding(.top, 2)
+            .padding(.bottom, 10)
     }
 }

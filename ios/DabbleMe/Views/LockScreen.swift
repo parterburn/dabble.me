@@ -5,26 +5,18 @@ struct LockScreen: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        VStack(spacing: 24) {
-            Spacer()
-            Image("Logo")
-                .resizable()
-                .scaledToFit()
-                .frame(width: 88, height: 88)
-                .clipShape(.rect(cornerRadius: 20))
-                .accessibilityHidden(true)
-            Text("Dabble Me is locked")
-                .font(.system(.title2, design: .serif, weight: .semibold))
-            Button {
-                Task { await model.lock.authenticate() }
-            } label: {
-                Label("Unlock with \(model.lock.methodName)", systemImage: "lock.open")
-                    .frame(minHeight: 28)
-            }
-            .buttonStyle(.borderedProminent)
-            .controlSize(.large)
-            Spacer()
+        // Just the unlock symbol: tap it to try again after a cancel.
+        Button {
+            Task { await model.lock.authenticate() }
+        } label: {
+            Image(systemName: symbol)
+                .font(.system(size: 56, weight: .light))
+                .foregroundStyle(.tint)
+                .frame(width: 96, height: 96)
+                .contentShape(.rect)
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Unlock with \(model.lock.methodName)")
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color("Paper").ignoresSafeArea())
         .task {
@@ -32,6 +24,15 @@ struct LockScreen: View {
             // briefly inactive, so re-prompting on every activation would loop after a cancel.)
             try? await Task.sleep(for: .milliseconds(300))
             await model.lock.authenticate()
+        }
+    }
+
+    private var symbol: String {
+        switch model.lock.methodName {
+        case "Face ID": "faceid"
+        case "Touch ID": "touchid"
+        case "Optic ID": "opticid"
+        default: "lock"
         }
     }
 }

@@ -242,3 +242,16 @@ struct ListIndentTests {
         #expect(paragraph == 0)
     }
 }
+
+/// Reflects on a real entry with the on-device model (simulator or device with Apple Intelligence).
+/// Opt-in: TEST_RUNNER_DABBLE_REFLECT_FILE points at a text file outside the repo, so personal
+/// entries that trip the safety guardrails can be checked without committing them.
+@Test(.enabled(if: ProcessInfo.processInfo.environment["DABBLE_REFLECT_FILE"] != nil))
+func reflectsOnAHardEntry() async throws {
+    let path = try #require(ProcessInfo.processInfo.environment["DABBLE_REFLECT_FILE"])
+    let text = try String(contentsOfFile: path, encoding: .utf8)
+    let reflection = try await JournalIntelligence.reflection(on: text, date: "Sunday, April 26, 2026", ago: "196 days ago",
+                                                              today: "Sunday, November 8, 2026", firstName: "Paul", recent: [])
+    print("REFLECTION: \(reflection)")
+    #expect(!reflection.isEmpty)
+}

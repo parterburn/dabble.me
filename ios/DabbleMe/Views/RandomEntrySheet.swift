@@ -28,6 +28,8 @@ struct RandomEntrySheet: View {
     @State private var error: String?
     @State private var isLoading = false
     @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 17
+    @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
+    @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
@@ -90,10 +92,10 @@ struct RandomEntrySheet: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.tint)
                 if let document = entry.document {
-                    DocumentText(blocks: document, font: .system(size: bodySize, design: .serif), scale: 1, bodySize: bodySize)
+                    DocumentText(blocks: document, font: .system(size: bodySize * textSize.scale, design: fontStyle.design), scale: textSize.scale, bodySize: bodySize)
                 } else {
                     Text(AttributedString.journal(entry.bodyText))
-                        .font(.system(size: bodySize, design: .serif))
+                        .font(.system(size: bodySize * textSize.scale, design: fontStyle.design))
                         .lineSpacing(5)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }

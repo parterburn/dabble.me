@@ -75,6 +75,12 @@ struct APIClient: Sendable {
             request.httpBody = body
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         }
+        #if DEBUG
+        // UI tests: -DabbleDebugSlowWrites <ms> slows saves like a poor connection, so quick
+        // changes overlap requests still in flight.
+        let slowWrites = UserDefaults.standard.integer(forKey: "DabbleDebugSlowWrites")
+        if slowWrites > 0, method != "GET" { try await Task.sleep(for: .milliseconds(slowWrites)) }
+        #endif
 
         let data: Data
         let response: URLResponse

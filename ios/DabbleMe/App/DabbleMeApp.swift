@@ -32,6 +32,8 @@ struct DabbleMeApp: App {
 struct RootView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
+    /// The typing animation, once per launch, when signed in (the welcome screen has its own).
+    @State private var showsSplash = true
 
     var body: some View {
         Group {
@@ -86,6 +88,14 @@ struct RootView: View {
                 }
             }
         }
+        .overlay {
+            if showsSplash, model.isSignedIn {
+                SplashView(isReady: model.hasLoaded) {
+                    withAnimation(.easeOut(duration: 0.35)) { showsSplash = false }
+                }
+                .transition(.opacity)
+            }
+        }
     }
 
     @ViewBuilder
@@ -115,16 +125,16 @@ struct MainTabs: View {
         )
         TabView(selection: selection) {
             Tab("Today", image: "slab-calendar", value: AppModel.Tab.today) {
-                TodayView()
+                TodayView().tabBarClearance()
             }
             Tab("Journal", image: "slab-book", value: AppModel.Tab.journal) {
-                JournalView()
+                JournalView().tabBarClearance()
             }
             Tab("Search", image: "slab-search", value: AppModel.Tab.search) {
-                SearchView()
+                SearchView().tabBarClearance()
             }
             Tab("Settings", image: "slab-gear", value: AppModel.Tab.settings) {
-                SettingsView()
+                SettingsView().tabBarClearance()
             }
         }
         .sheet(isPresented: $model.showsRandomEntry) { RandomEntrySheet() }
@@ -145,5 +155,12 @@ struct MainTabs: View {
             }
             return .systemAction
         })
+    }
+}
+
+extension View {
+    /// Room at the bottom of a tab's scrolling content, so its last lines clear the floating tab bar.
+    func tabBarClearance() -> some View {
+        contentMargins(.bottom, 24, for: .scrollContent)
     }
 }

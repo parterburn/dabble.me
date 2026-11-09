@@ -53,6 +53,7 @@ Rails.application.routes.draw do
       get 'stats', to: 'stats#show'
       get 'hashtags', to: 'hashtags#index'
       resource :email_schedule, only: %i[show update]
+      resources :dated_hashtags, only: %i[index create update destroy]
       resources :image_uploads, only: :create
       post 'account/deletion_request', to: 'accounts#deletion_request'
     end

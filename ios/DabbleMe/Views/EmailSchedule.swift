@@ -35,7 +35,8 @@ struct EmailScheduleRow: View {
     }
 }
 
-/// The Daily Email page: which days, what hour and in which time zone. Saves as you change it.
+/// The Daily Email page: which days, what hour and in which time zone, and which past entry it
+/// includes (like the web settings). Saves as you change it.
 struct EmailScheduleView: View {
     @Binding var schedule: EmailSchedule?
     @Environment(AppModel.self) private var model
@@ -45,6 +46,9 @@ struct EmailScheduleView: View {
     @State private var generation = 0
     @State private var isSaving = false
     @State private var needsSave = false
+    /// The words being typed; saved on Return or on leaving the page.
+    @State private var filterDraft: String?
+    @FocusState private var filterFocused: Bool
 
     var body: some View {
         Form {
@@ -73,8 +77,10 @@ struct EmailScheduleView: View {
                     }
                 }
                 .disabled(schedule.days.isEmpty)
+                pastEntriesSection(schedule)
             }
         }
+        .onDisappear(perform: saveFilter)
         .navigationTitle("Daily Email")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Couldn't save your email schedule", isPresented: .present($error)) {
@@ -82,6 +88,52 @@ struct EmailScheduleView: View {
         } message: {
             Text(error ?? "")
         }
+    }
+
+    @ViewBuilder
+    private func pastEntriesSection(_ schedule: EmailSchedule) -> some View {
+        Section {
+            Toggle("Include a Past Entry", isOn: Binding(get: { schedule.includePastEntries }, set: { on in
+                save { $0.includePastEntries = on }
+            }))
+            if schedule.includePastEntries {
+                // PRO, like the web; greyed out for free accounts.
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("Leave out entries with these words (separate them with commas)")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    TextField("Words, separated by commas", text: Binding(get: { filterDraft ?? schedule.pastFilter }, set: { filterDraft = $0 }))
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .submitLabel(.done)
+                        .focused($filterFocused)
+                        .onSubmit(saveFilter)
+                }
+                .padding(.vertical, 2)
+                .disabled(!schedule.canChooseDays)
+                if schedule.canChooseDays, schedule.hasOldEntries {
+                    Toggle("Include Entries Over a Year Old", isOn: Binding(get: { schedule.includeOldEntries }, set: { on in
+                        save { $0.includeOldEntries = on }
+                    }))
+                }
+            }
+        } header: {
+            Text("Past Entries")
+        } footer: {
+            if !schedule.canChooseDays {
+                Text("Each email can end with one of your past entries. Leaving out entries is part of Dabble Me PRO.")
+            } else if schedule.includePastEntries, !schedule.pastFilter.isEmpty {
+                Text("\(schedule.filteredCount == 1 ? "1 entry is" : "\(schedule.filteredCount.formatted()) entries are") left out of past entries.")
+            } else {
+                Text("Each email can end with one of your past entries.")
+            }
+        }
+        .onChange(of: filterFocused) { _, focused in if !focused { saveFilter() } }
+    }
+
+    private func saveFilter() {
+        guard let draft = filterDraft, let schedule, schedule.canChooseDays, draft != schedule.pastFilter else { return }
+        save { $0.pastFilter = draft }
     }
 
     /// Shows the change right away, then saves. One request at a time, always sending the latest
@@ -104,10 +156,18 @@ struct EmailScheduleView: View {
             needsSave = false
             let sent = generation
             do {
+                // Filtering is PRO: free accounts don't send it (the server would refuse the save).
+                let pro = current.canChooseDays
                 let saved = try await model.updateEmailSchedule(
-                    EmailScheduleUpdate(days: current.days, hour: current.hour, timezone: current.timezone))
+                    EmailScheduleUpdate(days: current.days, hour: current.hour, timezone: current.timezone,
+                                        includePastEntries: current.includePastEntries,
+                                        pastFilter: pro ? current.pastFilter : nil,
+                                        includeOldEntries: pro ? current.includeOldEntries : nil))
                 confirmed = saved
-                if sent == generation { schedule = saved } // nothing newer is waiting
+                if sent == generation {
+                    schedule = saved // nothing newer is waiting
+                    if !filterFocused { filterDraft = nil } // shows the words as saved ("work, doctor")
+                }
             } catch is CancellationError {
                 return
             } catch {

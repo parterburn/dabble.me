@@ -5,47 +5,89 @@ import SwiftUI
 struct SignInView: View {
     var body: some View {
         TabView {
-            Tab("Today", image: "slab-calendar") { WelcomeView() }
+            Tab("Today", image: "slab-calendar") { WelcomeView().tabBarClearance() }
             Tab("Journal", image: "slab-book") {
                 LockedGlimpse(title: "Your whole journal, by month",
                               message: "Every entry you've written, with photos, Stats and a timeline to jump years back.") {
                     SampleJournal()
                 }
+                .tabBarClearance()
             }
             Tab("Search", image: "slab-search") {
                 LockedGlimpse(title: "Find any moment",
                               message: "Search every word you've ever written, or tap one of your #hashtags.") {
                     SampleHashtags()
                 }
+                .tabBarClearance()
             }
-            Tab("Settings", image: "slab-gear") { GuestSettings() }
+            Tab("Settings", image: "slab-gear") { GuestSettings().tabBarClearance() }
         }
     }
 }
 
-/// The "Dabble me." wordmark from dabble.me: Instrument Serif with an olive period.
+/// The "Dabble me." wordmark from dabble.me: Instrument Serif with an olive period and, like the
+/// site's header, a blinking grey cursor after it. `typesOut` types it letter by letter when it
+/// appears (the splash and the welcome screen); the space it takes never changes, so nothing
+/// shifts as it types.
 struct Wordmark: View {
     var size: CGFloat = 64
-    var pulsesDot = false
-    @State private var dotScale: CGFloat = 1
+    var typesOut = false
+    var showsCursor = false
+    @State private var typed: Int?
+    @State private var cursorOn = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    static let letters = Array("Dabble me.")
+
+    /// A pause, then a little unevenly, like someone typing, with a beat before the period.
+    private static let pauses: [Int] = (1...letters.count).map { index in
+        index == letters.count - 1 ? 180 : 55 + (index * 37) % 45
+    }
+    /// How long typing it out takes, in milliseconds.
+    static let typingDuration = 200 + pauses.reduce(0, +)
+
     var body: some View {
-        HStack(alignment: .lastTextBaseline, spacing: 0) {
-            Text("Dabble me")
-                .font(.custom("InstrumentSerif-Regular", size: size))
+        line(Self.letters.count)
+            .hidden()
+            .overlay(alignment: .leading) { line(typed ?? Self.letters.count) }
+            .accessibilityElement()
+            .accessibilityLabel("Dabble Me")
+            .onAppear { if typesOut, !reduceMotion, typed == nil { typed = 0 } }
+            .task {
+                guard typesOut, !reduceMotion else { return }
+                try? await Task.sleep(for: .milliseconds(200))
+                for (index, pause) in Self.pauses.enumerated() {
+                    typed = index + 1
+                    try? await Task.sleep(for: .milliseconds(pause))
+                }
+            }
+            .task(id: showsCursor) {
+                // The site's blink: on and off every 0.65 seconds.
+                guard showsCursor, !reduceMotion else { return }
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .milliseconds(650))
+                    cursorOn.toggle()
+                }
+            }
+    }
+
+    private func line(_ count: Int) -> some View {
+        HStack(alignment: .lastTextBaseline, spacing: size * 0.12) {
+            text(count)
                 .kerning(-size / 150)
-            Text(".")
-                .font(.custom("InstrumentSerif-Regular", size: size))
-                .foregroundStyle(.tint)
-                .scaleEffect(dotScale, anchor: .bottom)
+            if showsCursor {
+                Text("|")
+                    .foregroundStyle(.secondary)
+                    .opacity(cursorOn ? 1 : 0)
+            }
         }
-        .accessibilityElement()
-        .accessibilityLabel("Dabble Me")
-        .onAppear {
-            guard pulsesDot, !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true).delay(1.2)) { dotScale = 1.35 }
-        }
+        .font(.custom("InstrumentSerif-Regular", size: size))
+    }
+
+    private func text(_ count: Int) -> Text {
+        let shown = String(Self.letters.prefix(count))
+        guard shown.hasSuffix(".") else { return Text(shown) }
+        return Text(shown.dropLast()) + Text(".").foregroundStyle(.tint)
     }
 }
 
@@ -58,7 +100,7 @@ private struct WelcomeView: View {
         ScrollView {
             VStack(spacing: 28) {
                 VStack(spacing: 12) {
-                    Wordmark(size: 72, pulsesDot: true)
+                    Wordmark(size: 72, typesOut: true, showsCursor: true)
                     Text("Your life, written down\nand remembered.")
                         .font(.custom("InstrumentSerif-Regular", size: 28))
                         .multilineTextAlignment(.center)

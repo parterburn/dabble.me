@@ -460,6 +460,163 @@ final class JournalViewsTests: XCTestCase {
         pickTimeZone(app, "Mountain")
     }
 
+    /// Past entries in the email: on/off, words that leave entries out, and entries over a year old.
+    func testDailyEmailPastEntries() throws {
+        let app = launch()
+        openDailyEmail(app)
+        let include = app.switches["Include a Past Entry"]
+        app.swipeUp()
+        XCTAssertTrue(include.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.switches["Include Entries Over a Year Old"].exists, "The demo account has entries over a year old")
+        let words = app.textFields["Words, separated by commas"]
+        words.tap()
+        words.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 12) + "waffles\n")
+        XCTAssertTrue(app.staticTexts["1 entry is left out of past entries."].waitForExistence(timeout: 10))
+        snap("email-past-entries")
+
+        // Off hides the rest; on brings it back, with the words saved.
+        include.switches.firstMatch.tap()
+        XCTAssertTrue(words.waitForNonExistence(timeout: 5))
+        include.switches.firstMatch.tap()
+        XCTAssertTrue(words.waitForExistence(timeout: 5))
+        XCTAssertEqual(words.value as? String, "waffles")
+
+        // Put the demo account back.
+        words.tap()
+        words.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 12) + "\n")
+        XCTAssertTrue(app.staticTexts["Each email can end with one of your past entries."].waitForExistence(timeout: 10))
+    }
+
+    /// Settings → Manage Hashtags: dated tags, adding one by name, and removing it.
+    func testManageHashtags() throws {
+        let app = launch()
+        tab(app, "Settings").tap()
+        app.buttons["Manage Hashtags"].tap()
+        XCTAssertTrue(app.staticTexts["#Biscuit"].waitForExistence(timeout: 10), "The demo's dated #Biscuit")
+        snap("manage-hashtags")
+        app.buttons["Another Hashtag…"].tap()
+        let name = app.textFields["Hashtag"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        name.tap()
+        name.typeText("Leo")
+        app.buttons["Add"].tap()
+        let leo = app.staticTexts["#Leo"]
+        XCTAssertTrue(leo.waitForExistence(timeout: 10))
+        // Swipe to remove.
+        app.cells.containing(.staticText, identifier: "#Leo").firstMatch.swipeLeft()
+        app.buttons["Delete"].tap()
+        XCTAssertTrue(leo.waitForNonExistence(timeout: 10))
+    }
+
+    /// Pulling down far enough resets a tab: expanded entries collapse (Journal and Search).
+    func testPullToResetCollapsesEntries() throws {
+        let app = launch()
+        func pullDown(_ list: XCUIElement) {
+            let start = list.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.15))
+            start.press(forDuration: 0.05, thenDragTo: list.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.85)))
+        }
+        // Only an expanded entry shows its full date: the sticky header in Journal, a line in Search.
+        let day = Calendar.current.date(byAdding: .day, value: -4, to: .now)!
+        let header = app.staticTexts[day.formatted(.dateTime.weekday(.wide).month(.wide).day().year())]
+        let dateLine = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@",
+            day.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year()))).firstMatch
+
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Big presentation went well")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.tap()
+        XCTAssertTrue(header.waitForExistence(timeout: 5), "Expanded")
+        pullDown(app.collectionViews.firstMatch)
+        XCTAssertTrue(header.waitForNonExistence(timeout: 10), "Pulling down collapses it")
+
+        tab(app, "Search").tap()
+        let field = app.searchFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        field.typeText("presentation\n")
+        let result = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Big presentation went well")).firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout: 10))
+        result.coordinate(withNormalizedOffset: CGVector(dx: 0.3, dy: 0.2)).tap() // away from #hashtag links
+        XCTAssertTrue(dateLine.waitForExistence(timeout: 5), "Expanded in the results")
+        pullDown(app.collectionViews.firstMatch)
+        XCTAssertTrue(dateLine.waitForNonExistence(timeout: 10), "Pulling down collapses it")
+        XCTAssertTrue(result.exists, "The results stay")
+    }
+
+    /// Quick date changes save in order, and the last pick wins, even going back to the original
+    /// date (which used to be skipped, leaving the earlier change saved).
+    func testTagDateRapidChangesKeepTheLastPick() throws {
+        // The demo dates #Biscuit 3 years and 5 months back.
+        let original = Calendar.current.date(byAdding: DateComponents(year: -3, month: -5), to: .now)!
+        let step = Calendar.current.component(.day, from: original) <= 26 ? 1 : -1
+        func day(_ offset: Int) -> String {
+            Calendar.current.date(byAdding: .day, value: offset * step, to: original)!.formatted(.dateTime.weekday(.wide).month(.wide).day())
+        }
+        func openBiscuit(_ app: XCUIApplication) -> XCUIElement {
+            tab(app, "Settings").tap()
+            app.buttons["Manage Hashtags"].tap()
+            let cell = app.cells.containing(.staticText, identifier: "#Biscuit").firstMatch
+            XCTAssertTrue(cell.waitForExistence(timeout: 10))
+            return cell.buttons.firstMatch
+        }
+
+        // Slow saves, so the picks overlap requests still in flight.
+        var app = launch(["-DabbleDebugSlowWrites", "2500"])
+        openBiscuit(app).tap()
+        XCTAssertTrue(app.buttons[day(1)].waitForExistence(timeout: 5))
+        app.buttons[day(1)].tap()
+        app.buttons[day(2)].tap()
+        app.buttons[day(0)].tap()
+        app.buttons["dismiss popup"].tap()
+        sleep(10) // let the saves finish
+
+        app.terminate()
+        app = launch()
+        let picker = openBiscuit(app)
+        let shown = original.formatted(.dateTime.month(.abbreviated).day().year())
+        XCTAssertTrue(picker.label.contains(shown) || (picker.value as? String ?? "").contains(shown),
+                      "Expected \(shown), got \(picker.label) \(picker.value ?? "")")
+    }
+
+    /// Settings → Accessibility: the text size and font change entry text across the app, not just
+    /// an open entry.
+    func testAccessibilitySettingsApplyToTimeline() throws {
+        let app = launch()
+        func accessibility(_ change: () -> Void) {
+            tab(app, "Settings").tap()
+            let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Accessibility")).firstMatch
+            for _ in 0..<5 where !link.isHittable { app.collectionViews.firstMatch.swipeUp() }
+            link.tap()
+            change()
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+        }
+        func setSize(_ label: String) {
+            app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Entry Text Size")).firstMatch.tap()
+            app.buttons[label].tap()
+        }
+        let row = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Ran 5 miles without stopping")).firstMatch
+        accessibility { setSize("Small") }
+        tab(app, "Journal").tap()
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        let small = row.frame.width * row.frame.height
+
+        accessibility {
+            setSize("Largest")
+            app.buttons["Sans Serif"].tap()
+            snap("accessibility-settings")
+        }
+        tab(app, "Journal").tap()
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        XCTAssertGreaterThan(row.frame.width * row.frame.height, small * 1.3, "The timeline's text is larger")
+        snap("accessibility-timeline")
+
+        accessibility { // back to the defaults for other runs
+            setSize("Default")
+            app.buttons["Serif"].tap()
+        }
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Default, Serif")).firstMatch.waitForExistence(timeout: 5))
+    }
+
     /// A free account sees Daily Email greyed out with the rest of Reminders. TEST_RUNNER_DABBLE_FREE_TOKEN.
     func testEmailScheduleFreeAccount() throws {
         guard let free = ProcessInfo.processInfo.environment["DABBLE_FREE_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_FREE_TOKEN") }

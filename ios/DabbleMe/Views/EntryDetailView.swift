@@ -26,6 +26,7 @@ struct EntryDetailView: View {
     @AppStorage("entry.showsRelativeDate") private var showsRelativeDate = false
     @State private var hideHUD: Task<Void, Never>?
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
+    @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
 
     private var id: Int { entryID }
 
@@ -297,9 +298,10 @@ struct EntryDetailView: View {
 private struct EntryBody: View {
     let entry: EntryDetail
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
+    @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
     @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 17
 
-    private var bodyFont: Font { .system(size: bodySize * textSize.scale, design: .serif) }
+    private var bodyFont: Font { .system(size: bodySize * textSize.scale, design: fontStyle.design) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {

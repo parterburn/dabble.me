@@ -1,4 +1,5 @@
-import CoreGraphics
+import SwiftUI
+import UIKit
 
 /// How large entry text is when reading (not editing). Multiplies the Dynamic Type body
 /// size, so it adds to the user's system text size rather than replacing it.
@@ -31,4 +32,40 @@ enum ReadingTextSize: Int, CaseIterable, Identifiable {
 
     var smaller: ReadingTextSize? { ReadingTextSize(rawValue: rawValue - 1) }
     var larger: ReadingTextSize? { ReadingTextSize(rawValue: rawValue + 1) }
+}
+
+/// Settings → Accessibility → Entry Font: entries in a serif (the default, like a page) or a
+/// sans-serif, everywhere entry text appears.
+enum ReadingFontStyle: String, CaseIterable, Identifiable {
+    case serif, sansSerif
+
+    static let storageKey = "readingFontStyle"
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .serif: "Serif"
+        case .sansSerif: "Sans Serif"
+        }
+    }
+
+    var design: Font.Design {
+        switch self {
+        case .serif: .serif
+        case .sansSerif: .default
+        }
+    }
+
+    /// For UIKit text (the editor).
+    var uiDesign: UIFontDescriptor.SystemDesign {
+        switch self {
+        case .serif: .serif
+        case .sansSerif: .default
+        }
+    }
+
+    static var current: ReadingFontStyle {
+        UserDefaults.standard.string(forKey: storageKey).flatMap(ReadingFontStyle.init) ?? .serif
+    }
 }
