@@ -7,13 +7,6 @@ struct StatsView: View {
     @Environment(AppModel.self) private var model
     @State private var stats: JournalStats?
     @State private var error: String?
-    /// A written day tapped in the Past Year chart: its entries come up in a sheet.
-    @State private var openDay: SelectedDay?
-
-    private struct SelectedDay: Identifiable {
-        let day: JournalDay
-        var id: String { day.iso }
-    }
 
     var body: some View {
         Group {
@@ -23,7 +16,7 @@ struct StatsView: View {
                         tiles(stats)
                         StatsCard(title: "Past Year") {
                             WritingHeatmap(days: Set(stats.writingDays), today: model.today?.day ?? JournalDay(localDate: .now)) { day in
-                                openDay = SelectedDay(day: day)
+                                model.statsDay = StatsDay(day: day)
                             }
                             Text(stats.writingDays.count == 1 ? "1 day written in the past year" : "\(stats.writingDays.count.formatted()) days written in the past year")
                                 .font(.footnote)
@@ -59,7 +52,6 @@ struct StatsView: View {
         }
         .refreshable { await load() }
         .task { if stats == nil { await load() } }
-        .sheet(item: $openDay) { DayEntriesSheet(day: $0.day) }
     }
 
     private func tiles(_ stats: JournalStats) -> some View {
@@ -122,20 +114,25 @@ private struct StatTile: View {
     let icon: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        // The icon beside the number (not above it), in light grey: it labels, it isn't a button.
+        HStack(alignment: .center, spacing: 10) {
             appIcon(icon)
                 .resizable()
                 .scaledToFit()
                 .frame(width: 20, height: 20)
-                .foregroundStyle(.tint)
-            Text(value)
-                .font(.system(.title, design: .serif, weight: .semibold))
-                .monospacedDigit()
-                .lineLimit(1)
-                .minimumScaleFactor(0.6)
-            Text(label)
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(.tertiary)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(value)
+                    .font(.system(.title, design: .serif, weight: .semibold))
+                    .monospacedDigit()
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
+                Text(label)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
@@ -184,14 +181,16 @@ private struct WritingHeatmap: View {
                             RoundedRectangle(cornerRadius: 2.5)
                                 .fill(fill(for: week[index]))
                                 .frame(width: cell, height: cell)
-                                .contentShape(.rect.inset(by: -gap / 2))
-                                .onTapGesture {
-                                    if let day = week[index], days.contains(day.iso) { onSelect(day) }
-                                }
                         }
                     }
                 }
             }
+            // One tap handler for the grid: the squares are small, so a tap a little off a written
+            // day (on an empty neighbor or a gap) still opens the nearest written one next to it.
+            .contentShape(.rect)
+            .gesture(SpatialTapGesture().onEnded { tap in
+                if let day = writtenDay(near: tap.location) { onSelect(day) }
+            })
             .padding(.vertical, 2)
         }
         .defaultScrollAnchor(.trailing)
@@ -199,6 +198,23 @@ private struct WritingHeatmap: View {
         .accessibilityElement()
         .accessibilityLabel("Writing days in the past year")
         .accessibilityValue("\(days.count) days with an entry")
+    }
+
+    /// The written day under `point`, or else the closest written one within a square of it.
+    private func writtenDay(near point: CGPoint) -> JournalDay? {
+        let pitch = cell + gap
+        let weeks = weeks
+        var best: (day: JournalDay, distance: CGFloat)?
+        let column = Int(point.x / pitch), row = Int(point.y / pitch)
+        for c in (column - 1)...(column + 1) where weeks.indices.contains(c) {
+            for r in (row - 1)...(row + 1) where (0..<7).contains(r) {
+                guard let day = weeks[c][r], days.contains(day.iso) else { continue }
+                let center = CGPoint(x: CGFloat(c) * pitch + cell / 2, y: CGFloat(r) * pitch + cell / 2)
+                let distance = hypot(center.x - point.x, center.y - point.y)
+                if distance <= pitch * 1.1, distance < (best?.distance ?? .infinity) { best = (day, distance) }
+            }
+        }
+        return best?.day
     }
 
     private func fill(for day: JournalDay?) -> AnyShapeStyle {
@@ -288,7 +304,13 @@ private struct HashtagBars: View {
 
 /// A day's entries, from Stats → Past Year, in a sheet like A Random Memory: each one whole and
 /// scrollable, with Open to go to it in the Journal.
-private struct DayEntriesSheet: View {
+/// A day tapped in Stats → Past Year (`AppModel.statsDay`).
+struct StatsDay: Identifiable {
+    let day: JournalDay
+    var id: String { day.iso }
+}
+
+struct DayEntriesSheet: View {
     let day: JournalDay
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
@@ -303,11 +325,9 @@ private struct DayEntriesSheet: View {
             HStack {
                 Text(day.formatted(.dateTime.weekday(.wide).month(.wide).day().year()))
                     .font(.headline)
+                    .foregroundStyle(.tint) // olive, like Random Memory's date
                 Spacer()
-                Button { dismiss() } label: { Label("Close", icon: "slab-close") }
-                    .labelStyle(.iconOnly)
-                    .buttonStyle(.bordered)
-                    .buttonBorderShape(.circle)
+                SheetCloseButton()
             }
             if let entries {
                 ScrollView {
@@ -359,13 +379,10 @@ private struct DayEntriesSheet: View {
         .task { await load() }
     }
 
-    /// The day's entries from its month (loaded if it isn't yet), then each in full.
+    /// The day's entries, each in full.
     private func load() async {
         do {
-            await model.loadMonth(day.monthKey)
-            let ids = (model.monthEntries[day.monthKey] ?? []).filter { $0.date == day.iso }.map(\.id)
-            var loaded: [EntryDetail] = []
-            for id in ids { loaded.append(try await model.entry(id: id)) }
+            let loaded = try await model.entries(on: day)
             if loaded.isEmpty { error = "No entries on this day." } else { entries = loaded }
         } catch is CancellationError {
         } catch {

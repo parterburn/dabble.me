@@ -143,6 +143,7 @@ struct MainTabs: View {
             }
         }
         .sheet(isPresented: $model.showsRandomEntry) { RandomEntrySheet() }
+        .sheet(item: $model.statsDay) { DayEntriesSheet(day: $0.day) }
         .onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in
             // The open sheet picks another itself; otherwise show one. Not while locked.
             guard !model.showsRandomEntry, !model.lock.isLocked else { return }

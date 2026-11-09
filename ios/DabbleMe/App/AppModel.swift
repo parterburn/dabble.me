@@ -23,6 +23,9 @@ final class AppModel {
     var statsRequest = 0
     /// Shake the phone for a random memory (a preview sheet); `openEntryRequest` opens it in Journal.
     var showsRandomEntry = false
+    /// A day tapped in Stats → Past Year: its entries come up in a sheet, presented with the
+    /// random memory's at the top of the app (from inside Stats it didn't always appear).
+    var statsDay: StatsDay?
     var openEntryRequest: Int?
     let lock = AppLock()
 
@@ -224,6 +227,19 @@ final class AppModel {
     }
 
     // MARK: - Entries
+
+    /// A day's entries in full (Stats → Past Year). Fetched directly rather than through the
+    /// timeline's month cache, which can be mid-load or not loaded yet.
+    func entries(on day: JournalDay) async throws -> [EntryDetail] {
+        let parts = day.monthKey.split(separator: "-")
+        guard parts.count == 2 else { return [] }
+        let page: EntryPage = try await api.get("api/v1/entries", query: ["year": String(parts[0]), "month": String(parts[1]), "per": "50"])
+        var entries: [EntryDetail] = []
+        for summary in page.entries where summary.date == day.iso {
+            entries.append(try await entry(id: summary.id))
+        }
+        return entries
+    }
 
     func entry(id: Int) async throws -> EntryDetail {
         let envelope: EntryEnvelope = try await api.get("api/v1/entries/\(id)")
