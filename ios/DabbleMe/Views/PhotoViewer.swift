@@ -145,7 +145,8 @@ struct PhotoViewer: View {
                 ProgressView().tint(.white)
             }
         }
-        .overlay(alignment: .top) { toolbar }
+        .overlay(alignment: .top) { closeBar }
+        .overlay(alignment: .bottom) { actionBar }
         .statusBarHidden()
         .alert(saveResult?.message ?? "", isPresented: .present($saveResult)) {
             Button("OK", role: .cancel) {}
@@ -153,38 +154,60 @@ struct PhotoViewer: View {
         .task { await photo.load() }
     }
 
-    private var toolbar: some View {
-        // Save and Share as their own buttons rather than a ⋯ menu (which sometimes didn't open).
-        HStack(spacing: 12) {
-            Button { dismiss() } label: { circle(Label("Close", icon: "slab-close")) }
+    /// The X at the top right, where it is on the app's other sheets.
+    private var closeBar: some View {
+        HStack {
             Spacer()
-            if photo.image != nil, let data = photo.data {
-                Button {
-                    Task { saveResult = await PhotoActions.save(data) }
-                } label: {
-                    circle(Label("Save to Photos", icon: "slab-arrow-down-to-line"))
-                }
-                Button {
-                    Task { await PhotoActions.share(photo) }
-                } label: {
-                    circle(Label("Share", icon: "slab-arrow-up-from-line"))
-                }
+            Button { dismiss() } label: {
+                Label("Close", icon: "slab-close")
+                    .labelStyle(.iconOnly)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 44, height: 44)
+                    .background(.white.opacity(0.25), in: .circle)
+                    .contentShape(.circle)
             }
+            .buttonStyle(.plain)
         }
-        .buttonStyle(.plain)
         .padding(.horizontal)
         .opacity(dragOffset == 0 ? 1 : 0)
     }
 
-    /// A white icon on a translucent circle, over the photo.
-    private func circle(_ label: Label<Text, Image>) -> some View {
+    /// Save and Share, labelled, at the bottom center (as in Photos), rather than a ⋯ menu (which
+    /// sometimes didn't open) or bare icons (easy to miss).
+    @ViewBuilder
+    private var actionBar: some View {
+        if photo.image != nil, let data = photo.data {
+            HStack(spacing: 12) {
+                Button {
+                    Task { saveResult = await PhotoActions.save(data) }
+                } label: {
+                    pill(Label("Save", icon: "slab-arrow-down-to-line"))
+                }
+                .accessibilityLabel("Save to Photos")
+                Button {
+                    Task { await PhotoActions.share(photo) }
+                } label: {
+                    pill(Label("Share", icon: "slab-arrow-up-from-line"))
+                }
+            }
+            .buttonStyle(.plain)
+            .padding(.bottom, 12)
+            .opacity(dragOffset == 0 ? 1 : 0)
+        }
+    }
+
+    /// White text and icon on a dark translucent capsule, readable over any photo.
+    private func pill(_ label: Label<Text, Image>) -> some View {
         label
-            .labelStyle(.iconOnly)
-            .font(.title3.weight(.semibold))
+            .font(.body.weight(.semibold))
             .foregroundStyle(.white)
-            .frame(width: 44, height: 44)
-            .background(.white.opacity(0.25), in: .circle)
-            .contentShape(.circle)
+            .padding(.horizontal, 20)
+            .frame(minHeight: 48)
+            .background(.black.opacity(0.45), in: .capsule)
+            .background(.ultraThinMaterial.opacity(0.6), in: .capsule)
+            .overlay(Capsule().strokeBorder(.white.opacity(0.18)))
+            .contentShape(.capsule)
     }
 
     private var dismissDrag: some Gesture {
