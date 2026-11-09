@@ -116,8 +116,7 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertFalse(app.buttons["Bold"].exists)
         XCTAssertFalse(app.toolbars.buttons["Dictate"].exists, "Dictation is the keyboard's own")
 
-        app.buttons["Add"].tap()
-        app.buttons["Add Hashtags"].tap() // the bar: a sparkles button, then recent tags
+        app.buttons["Hashtags"].tap() // the row: Suggest, then recent tags
         let suggest = app.buttons["Suggest Hashtags"]
         if suggest.waitForExistence(timeout: 3) {
             suggest.tap()
@@ -320,8 +319,7 @@ final class JournalViewsTests: XCTestCase {
         editor.tap()
         if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
         editor.typeText("Took the kids to the climbing gym after school. Maya made it to the top of the blue wall.")
-        app.buttons["Add"].tap()
-        app.buttons["Add Hashtags"].tap() // the bar: a sparkles button, then recent tags
+        app.buttons["Hashtags"].tap() // the row: Suggest, then recent tags
         let suggest = app.buttons["Suggest Hashtags"]
         guard suggest.waitForExistence(timeout: 3) else { throw XCTSkip("Apple Intelligence isn't available here") }
         suggest.tap()
@@ -701,6 +699,27 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "Over the results")
     }
 
+    /// Tapping a hashtag in the row tags the word where it's already written (keeping its
+    /// capitalization) rather than adding it at the end.
+    func testHashtagTagsTheWordInTheText() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        app.buttons["New Entry"].tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        editor.tap()
+        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+        editor.typeText("Went Hiking with Sam. More hiking soon.")
+        app.buttons["Hashtags"].tap()
+        let chip = app.buttons["#hiking"] // the most recently used tag, first in the row
+        XCTAssertTrue(chip.waitForExistence(timeout: 10))
+        snap("compose-hashtag-row")
+        chip.tap()
+        XCTAssertEqual(editor.value as? String, "Went #Hiking with Sam. More hiking soon.")
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+    }
+
     /// Today's streak (top right) opens Stats.
     func testStreakOpensStats() throws {
         let app = launch()
@@ -731,14 +750,10 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(editor.waitForExistence(timeout: 10))
         editor.tap()
         if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
-        app.buttons["Add"].tap()
-        XCTAssertTrue(app.buttons["Add Hashtags"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["Add Link"].exists, "Links are PRO")
-        do {
-            XCTAssertFalse(app.buttons["Add Photos"].exists, "Photos are PRO")
-            snap("free-compose-menu")
-            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)).tap() // close the menu
-        }
+        XCTAssertTrue(app.buttons["Hashtags"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Link"].exists, "Links are PRO")
+        XCTAssertFalse(app.buttons["Add Photos"].exists, "Photos are PRO")
+        snap("free-compose-bar")
         app.buttons["Cancel"].tap()
         if app.buttons["Discard Changes"].waitForExistence(timeout: 2) { app.buttons["Discard Changes"].tap() }
 

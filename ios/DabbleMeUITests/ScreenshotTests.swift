@@ -55,8 +55,7 @@ final class ScreenshotTests: XCTestCase {
         let tip = app.buttons["Continue"]
         if tip.waitForExistence(timeout: 2) { tip.tap() }
         editor.typeText("Slow Saturday. Made pour-over with the beans from the farmers market and read on the porch until noon.\n\nGrateful for:\n- Quiet mornings\nThe first cold brew of fall")
-        app.buttons["Add"].tap()
-        app.buttons["Add Hashtags"].tap() // the bar: a sparkles button, then recent tags
+        app.buttons["Hashtags"].tap() // the row: Suggest, then recent tags
         let suggest = app.buttons["Suggest Hashtags"]
         if suggest.waitForExistence(timeout: 3) {
             suggest.tap()

@@ -54,7 +54,7 @@ final class PhotoEntryTests: XCTestCase {
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label == 'Photos' AND value == '4 photos'")).firstMatch
             .waitForExistence(timeout: 60), "All four photos should be attached")
         app.buttons["Photos"].tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "4 of 8 photos")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Add More Photos"].waitForExistence(timeout: 5))
         XCTAssertEqual(app.buttons.matching(identifier: "Remove photo").count, 4)
         editor.tap()
         editor.typeText("Four photos, one collage.")
@@ -114,7 +114,7 @@ final class PhotoEditTests: XCTestCase {
         openEntry(app, containing: "Finally made it to Yosemite")
         edit(app, photos: "2 photos")
         XCTAssertTrue(app.descendants(matching: .any)["Current photo"].waitForExistence(timeout: 10))
-        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "2 of 8 photos")).firstMatch.waitForExistence(timeout: 30))
+        XCTAssertEqual(app.buttons.matching(identifier: "Remove photo").count, 1, "The new photo beside the current one")
         snap("edit-photos")
         app.buttons["Save"].tap()
         XCTAssertTrue(app.textViews["Entry"].waitForNonExistence(timeout: 60), "Saving with a new photo should finish")

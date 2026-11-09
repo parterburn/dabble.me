@@ -90,9 +90,10 @@ struct ComposeView: View {
             VStack(spacing: 0) {
                 if restoredDraft != nil { draftBanner }
                 Divider()
-                RichTextEditor(model: editor, insertItems: insertItems,
-                               leading: attachedPhotoCount > 0 ? AnyView(photoStack) : nil,
-                               leadingKey: "\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")")
+                RichTextEditor(model: editor,
+                               leading: model.me?.canAddPhotos == true ? AnyView(photosButton) : nil,
+                               trailing: AnyView(tagAndLinkButtons),
+                               barKey: "\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)")
                     .overlay(alignment: .topLeading) {
                         if editor.isEmpty {
                             Text("How was your day?")
@@ -104,7 +105,7 @@ struct ComposeView: View {
                                 .accessibilityHidden(true)
                         }
                     }
-                // Only once used (from the bar's "+"), so the writing area stays as large as it can.
+                // Only when opened from the bar, so the writing area stays as large as it can.
                 if showsHashtagBar {
                     Divider()
                     hashtagSuggestions
@@ -200,24 +201,48 @@ struct ComposeView: View {
     /// The entry's photos: its current one (editing) and those being added.
     private var attachedPhotoCount: Int { photoItems.count + (existingPhotoURL == nil ? 0 : 1) }
 
-    /// The editor bar's "+" menu: photos (PRO), hashtags (everyone) and a link (PRO).
-    private var insertItems: [EditorInsertItem] {
-        var items: [EditorInsertItem] = []
-        if model.me?.canAddPhotos == true {
-            items.append(EditorInsertItem(title: attachedPhotoCount > 0 ? "Add More Photos" : "Add Photos", icon: "slab-images",
-                                          isEnabled: photoItems.count < photoLimit) { pickingPhotos = true })
+    /// The bar's left: Photos (PRO). With none yet it opens the picker; with some it's their stack,
+    /// which shows or hides the photo row (selected while it's open).
+    @ViewBuilder
+    private var photosButton: some View {
+        if attachedPhotoCount == 0 {
+            Button { pickingPhotos = true } label: {
+                appIcon("slab-images")
+                    .frame(width: 40, height: 36)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Add Photos")
+        } else {
+            photoStack
         }
-        items.append(EditorInsertItem(title: "Add Hashtags", icon: "slab-tag", isEnabled: !showsHashtagBar) {
-            showsHashtagBar = true
-            Task { recentTags = (try? await model.recentHashtags()) ?? [] }
-        })
-        if model.me?.mayAddLinks == true {
-            items.append(EditorInsertItem(title: "Add Link", icon: "slab-link") { editor.beginLink() })
-        }
-        return items
     }
 
-    /// The attached photos as a little stack at the bar's left; tap to open or close the drawer.
+    /// The bar's right: Tags shows or hides the hashtag row (selected while it's open); Link (PRO).
+    private var tagAndLinkButtons: some View {
+        HStack(spacing: 6) {
+            Button {
+                showsHashtagBar.toggle()
+                if showsHashtagBar { Task { recentTags = (try? await model.recentHashtags()) ?? [] } }
+            } label: {
+                appIcon("slab-tag")
+                    .frame(width: 40, height: 36)
+                    .background(showsHashtagBar ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Hashtags")
+            .accessibilityAddTraits(showsHashtagBar ? .isSelected : [])
+            if model.me?.mayAddLinks == true {
+                Button { editor.beginLink() } label: {
+                    appIcon("slab-link")
+                        .frame(width: 40, height: 36)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Link")
+            }
+        }
+    }
+
+    /// The attached photos as a little stack; tap to show or hide the photo row.
     private var photoStack: some View {
         let thumbs = Array(photoItems.prefix(3))
         return Button {
@@ -242,12 +267,15 @@ struct ComposeView: View {
                     .monospacedDigit()
                     .foregroundStyle(.primary)
             }
-            .padding(.horizontal, 4)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 1)
+            .background(showsPhotoDrawer ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Photos")
         .accessibilityValue(attachedPhotoCount == 1 ? "1 photo" : "\(attachedPhotoCount) photos")
+        .accessibilityAddTraits(showsPhotoDrawer ? .isSelected : [])
         .accessibilityHint(showsPhotoDrawer ? "Hides the photos" : "Shows the photos")
     }
 
@@ -288,20 +316,12 @@ struct ComposeView: View {
         let tags = (suggestedTags + recentTags).filter { seen.insert($0.lowercased()).inserted }
         return ScrollView(.horizontal) {
             HStack(spacing: 8) {
-                Button {
-                    showsHashtagBar = false
-                    suggestedTags = []
-                } label: {
-                    appIcon("slab-close")
-                }
-                .accessibilityLabel("Hide Hashtags")
                 if JournalIntelligence.canSuggestHashtags(for: model.me) {
+                    // The same size while it works: the word stays (hidden) under the spinner.
                     Button { Task { await suggestHashtags() } } label: {
-                        if isSuggestingTags {
-                            ProgressView().controlSize(.small)
-                        } else {
-                            appIcon("slab-sparkles")
-                        }
+                        Text("Suggest")
+                            .opacity(isSuggestingTags ? 0 : 1)
+                            .overlay { if isSuggestingTags { ProgressView().controlSize(.small).tint(.white) } }
                     }
                     .buttonStyle(.borderedProminent)
                     .buttonBorderShape(.capsule)
@@ -310,7 +330,7 @@ struct ComposeView: View {
                 }
                 ForEach(tags, id: \.self) { tag in
                     Button("#\(tag)") {
-                        editor.appendHashtag(tag)
+                        editor.addHashtag(tag)
                     }
                     .buttonStyle(.bordered)
                     .buttonBorderShape(.capsule)
@@ -327,6 +347,8 @@ struct ComposeView: View {
             .padding(.vertical, 8)
         }
         .scrollIndicators(.hidden)
+        // Its own height: a horizontal scroll view would otherwise stretch to share the editor's.
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     private func suggestHashtags() async {
@@ -342,47 +364,33 @@ struct ComposeView: View {
     }
 
     /// One compact row: thumbnails, "Add More", and the count (several photos become a collage).
+    /// Add more first (while there's room; the picker keeps count), then each photo with its X.
     private var photoBar: some View {
-        HStack(spacing: 0) {
-            photoThumbnails
-            Button {
-                showsPhotoDrawer = false
-            } label: {
-                appIcon("slab-close")
-                    .frame(width: 44, height: 44)
-            }
-            .accessibilityLabel("Hide Photos")
-            .padding(.trailing, 8)
-        }
-    }
-
-    private var photoThumbnails: some View {
         ScrollView(.horizontal) {
             HStack(spacing: 10) {
+                if photoItems.count < photoLimit {
+                    // The thumbnails' size, in the accent like Suggest.
+                    Button { pickingPhotos = true } label: {
+                        appIcon("slab-images")
+                            .foregroundStyle(.white)
+                            .frame(width: 56, height: 56)
+                            .background(Color.accentColor, in: .rect(cornerRadius: 8))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Add More Photos")
+                }
                 if let existingPhotoURL {
                     existingThumbnail(existingPhotoURL)
                 }
                 ForEach(photoItems, id: \.self) { item in
                     thumbnail(for: item)
                 }
-                if photoItems.count < photoLimit {
-                    PhotosPicker(selection: $photoItems, maxSelectionCount: photoLimit,
-                                 selectionBehavior: .ordered, matching: .images, preferredItemEncoding: .current) {
-                        Label("Add More", icon: "slab-images")
-                            .frame(minHeight: 56)
-                    }
-                }
-                let count = photoItems.count + (existingPhotoURL == nil ? 0 : 1)
-                Text("\(count) of \(AppModel.maxPhotos)")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .monospacedDigit()
-                    .accessibilityLabel("\(count) of \(AppModel.maxPhotos) photos")
             }
             .padding(.horizontal)
+            .padding(.vertical, 8)
         }
         .scrollIndicators(.hidden)
-        .padding(.vertical, 8)
+        .fixedSize(horizontal: false, vertical: true)
     }
 
     /// The entry's current photo when editing; the X removes it on save.
