@@ -228,8 +228,16 @@ class EmailProcessor
         Sentry.capture_message("Error sending email", level: :error, extra: { email_type: "Second Welcome Email" })
       end
     else # no user found
-      Sentry.set_user(id: @token, email: @from)
-      Sentry.capture_message("Inbound entry not associated to user", level: :error, extra: { subject: @subject, from: @from })
+      # Mail to a reset (retired) posting address lands here, spam included,
+      # so only alert when the sender is one of our users: that's someone
+      # whose entry was dropped, e.g. a reply to an old address that failed
+      # SPF/DKIM. Everything else is just logged.
+      if @from.present? && User.exists?(email: @from)
+        Sentry.set_user(id: @token, email: @from)
+        Sentry.capture_message("Inbound entry not associated to user", level: :warning, extra: { subject: @subject, from: @from })
+      else
+        Rails.logger.info("Inbound email matched no user (token: #{@token.inspect})")
+      end
     end
   end
 

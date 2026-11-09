@@ -57,7 +57,7 @@ module Mcp
       storage_token = OpenSSL::HMAC.hexdigest(
         'SHA256',
         Rails.application.secret_key_base.to_s,
-        "mcp-presigned-upload:#{user.id}:#{user.photo_storage_key}"
+        "mcp-presigned-upload:#{user.id}:#{user.image_key}"
       ).first(24)
       "uploads#{add_dev}/tmp/mcp/#{storage_token}/"
     end

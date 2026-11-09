@@ -25,10 +25,16 @@ describe User do
       expect(record.image_key).to eq('ucustomphoto1234567')
     end
 
-    it 'stores photos under user_key when image_key is missing' do
-      user.update_column(:image_key, nil)
+    it 'gives a fresh posting address on reset and keeps the photo folder' do
+      old_key = user.user_key
+      image_key = user.image_key
 
-      expect(user.photo_storage_key).to eq(user.user_key)
+      user.rotate_user_key!
+      user.reload
+
+      expect(user.user_key).to match(/\Au[0-9a-z]{18}\z/)
+      expect(user.user_key).not_to eq(old_key)
+      expect(user.image_key).to eq(image_key)
     end
   end
 

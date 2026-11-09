@@ -126,7 +126,7 @@ class ImageUploader < CarrierWave::Uploader::Base
 
   def store_dir_for(date)
     add_dev = "/development" unless Rails.env.production?
-    "uploads#{add_dev}/#{model.user.photo_storage_key}/#{date.strftime('%Y-%m-%d')}"
+    "uploads#{add_dev}/#{model.user.image_key}/#{date.strftime('%Y-%m-%d')}"
   end
 
   private

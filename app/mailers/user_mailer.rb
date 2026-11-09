@@ -62,6 +62,15 @@ class UserMailer < ActionMailer::Base
     email.mailgun_options = { tag: 'Export' }
   end
 
+  # Sent after the user resets their posting address. It comes from the new
+  # address, so they can save it to their contacts straight from this email.
+  def posting_address_changed(user)
+    @user = user
+    @user.increment!(:emails_sent)
+    email = mail(from: "Dabble me. <#{user.user_key}@#{ENV['SMTP_DOMAIN']}>", to: user.cleaned_to_address, subject: "Your new Dabble Me posting address")
+    email.mailgun_options = { tag: "Security" }
+  end
+
   def passkey_added(user, nickname)
     @user = user
     @nickname = nickname
