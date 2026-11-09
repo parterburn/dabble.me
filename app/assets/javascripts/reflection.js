@@ -42,7 +42,7 @@
     if (!dialog) build();
 
     dateLine.textContent = link.dataset.date;
-    body.innerHTML = '<p class="s-reflection-loading"><span class="slab-icon slab-icon--arrows-rotate slab-icon--spin" aria-hidden="true"></span> Reflecting&hellip;</p>';
+    body.innerHTML = '<p class="s-reflection-loading"><span class="slab-icon slab-icon--spinner slab-icon--spin" aria-hidden="true"></span> Reflecting&hellip;</p>';
     dialog.showModal();
 
     var request = pending = new AbortController();
