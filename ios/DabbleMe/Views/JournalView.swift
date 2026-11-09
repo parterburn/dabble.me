@@ -307,6 +307,7 @@ private struct EntryRowPlaceholder: View {
 struct EntryRow: View {
     @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 17
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
+    @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
     let entry: EntrySummary
     var showsYear = false
 
@@ -330,7 +331,7 @@ struct EntryRow: View {
                         .foregroundStyle(.tint)
                 }
                 Text(entry.excerpt.isEmpty ? "📷 Photo" : entry.excerpt)
-                    .font(.system(size: bodySize * textSize.scale, design: .serif))
+                    .font(.system(size: bodySize * textSize.scale, design: fontStyle.design))
                     .lineLimit(3)
                     .multilineTextAlignment(.leading)
                 if !entry.hashtags.isEmpty {

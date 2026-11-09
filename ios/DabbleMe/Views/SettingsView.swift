@@ -9,7 +9,7 @@ struct SettingsView: View {
     @State private var deletionEmail: String?
     @State private var deletionError: String?
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
-    @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 17
+    @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
     @AppStorage(ReminderSettings.writingEnabledKey) private var writingReminder = false
     @AppStorage(ReminderSettings.writingTimeKey) private var writingTime = ReminderSettings.defaultWritingTime
     @AppStorage(ReminderSettings.memoriesEnabledKey) private var memoriesReminder = false
@@ -57,18 +57,16 @@ struct SettingsView: View {
                 intelligenceSection
                 privacySection
 
-                // Entries everywhere: the timeline, previews, an open entry and the editor. (Pinch an
-                // open entry to change it too.)
                 Section {
-                    Picker("Entry Text Size", selection: $textSize) {
-                        ForEach(ReadingTextSize.allCases) { size in
-                            Text(size.label).tag(size)
+                    NavigationLink {
+                        AccessibilitySettingsView()
+                    } label: {
+                        LabeledContent {
+                            Text("\(textSize.label), \(fontStyle.label)")
+                        } label: {
+                            Label("Accessibility", systemImage: "textformat.size")
                         }
                     }
-                    Text("How was your day? A little preview of how entries will read.")
-                        .font(.system(size: bodySize * textSize.scale, design: .serif))
-                        .foregroundStyle(.secondary)
-                        .accessibilityHidden(true)
                 }
 
                 Section {

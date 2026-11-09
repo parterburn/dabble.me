@@ -18,6 +18,7 @@ struct TimelineEntryRow: View {
     @State private var full: EntryDetail?
     @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 17
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
+    @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
 
     var body: some View {
         Group {
@@ -61,10 +62,10 @@ struct TimelineEntryRow: View {
                     .foregroundStyle(.secondary)
             }
             if let document = full?.document {
-                DocumentText(blocks: document, font: .system(size: bodySize * textSize.scale, design: .serif), scale: textSize.scale, bodySize: bodySize)
+                DocumentText(blocks: document, font: .system(size: bodySize * textSize.scale, design: fontStyle.design), scale: textSize.scale, bodySize: bodySize)
             } else {
                 Text(RichText.linkingHashtags(in: AttributedString.journal(full?.bodyText ?? entry.previewText ?? entry.excerpt)))
-                    .font(.system(size: bodySize * textSize.scale, design: .serif))
+                    .font(.system(size: bodySize * textSize.scale, design: fontStyle.design))
                     .lineSpacing(5)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }

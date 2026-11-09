@@ -27,6 +27,7 @@ struct EntryPreview: View {
     let summary: EntrySummary
     @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 17
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
+    @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
 
     /// Light Markdown from the server; list lines ("- item") show as bullets.
     private var text: String {
@@ -76,7 +77,7 @@ struct EntryPreview: View {
 
     private var entryText: some View {
         Text(RichText.linkingHashtags(in: AttributedString.journal(text)))
-            .font(.system(size: bodySize * textSize.scale, design: .serif))
+            .font(.system(size: bodySize * textSize.scale, design: fontStyle.design))
             .lineSpacing(4)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)

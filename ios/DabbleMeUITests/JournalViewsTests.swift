@@ -578,30 +578,43 @@ final class JournalViewsTests: XCTestCase {
                       "Expected \(shown), got \(picker.label) \(picker.value ?? "")")
     }
 
-    /// Settings → Entry Text Size changes entry text across the app, not just an open entry.
-    func testEntryTextSizeAppliesToTimeline() throws {
+    /// Settings → Accessibility: the text size and font change entry text across the app, not just
+    /// an open entry.
+    func testAccessibilitySettingsApplyToTimeline() throws {
         let app = launch()
-        func setSize(_ label: String) {
+        func accessibility(_ change: () -> Void) {
             tab(app, "Settings").tap()
-            let picker = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Entry Text Size")).firstMatch
-            for _ in 0..<5 where !picker.isHittable { app.collectionViews.firstMatch.swipeUp() }
-            picker.tap()
+            let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Accessibility")).firstMatch
+            for _ in 0..<5 where !link.isHittable { app.collectionViews.firstMatch.swipeUp() }
+            link.tap()
+            change()
+            app.navigationBars.buttons.element(boundBy: 0).tap()
+        }
+        func setSize(_ label: String) {
+            app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Entry Text Size")).firstMatch.tap()
             app.buttons[label].tap()
         }
         let row = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Ran 5 miles without stopping")).firstMatch
-        setSize("Small")
+        accessibility { setSize("Small") }
         tab(app, "Journal").tap()
         XCTAssertTrue(row.waitForExistence(timeout: 10))
         let small = row.frame.width * row.frame.height
 
-        setSize("Largest")
-        snap("text-size-setting")
+        accessibility {
+            setSize("Largest")
+            app.buttons["Sans Serif"].tap()
+            snap("accessibility-settings")
+        }
         tab(app, "Journal").tap()
         XCTAssertTrue(row.waitForExistence(timeout: 10))
         XCTAssertGreaterThan(row.frame.width * row.frame.height, small * 1.3, "The timeline's text is larger")
-        snap("text-size-timeline")
+        snap("accessibility-timeline")
 
-        setSize("Default") // for other runs
+        accessibility { // back to the defaults for other runs
+            setSize("Default")
+            app.buttons["Serif"].tap()
+        }
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Default, Serif")).firstMatch.waitForExistence(timeout: 5))
     }
 
     /// A free account sees Daily Email greyed out with the rest of Reminders. TEST_RUNNER_DABBLE_FREE_TOKEN.

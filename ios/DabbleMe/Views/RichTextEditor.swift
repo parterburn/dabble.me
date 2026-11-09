@@ -2,10 +2,11 @@ import SwiftUI
 import UIKit
 
 extension RichText.Style {
-    /// Serif body text that follows the user's Dynamic Type size and Entry Text Size.
+    /// Body text in the Entry Font (serif by default) that follows the user's Dynamic Type size
+    /// and Entry Text Size.
     static var journal: RichText.Style {
         let body = UIFont.preferredFont(forTextStyle: .body)
-        let serif = body.fontDescriptor.withDesign(.serif) ?? body.fontDescriptor
+        let serif = body.fontDescriptor.withDesign(ReadingFontStyle.current.uiDesign) ?? body.fontDescriptor
         let size = (UserDefaults.standard.object(forKey: ReadingTextSize.storageKey) as? Int).flatMap(ReadingTextSize.init) ?? .standard
         // A little larger than body text (19pt at the default size), for comfortable writing.
         return RichText.Style(baseFont: UIFont(descriptor: serif, size: (body.pointSize * 1.12 * size.scale).rounded()), textColor: .label)
