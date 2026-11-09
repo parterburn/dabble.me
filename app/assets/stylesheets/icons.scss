@@ -1,7 +1,7 @@
 @import 'vars';
 
 // Font Awesome Pro "Slab" icons. The license lets the site use them but not
-// publish them in this public repo, so the SVGs live on S3 (uploads/icons/slab/)
+// publish them in this public repo, so the SVGs live on S3 (icons/slab/)
 // and IconsController serves them from our own origin. They're drawn as CSS
 // masks in the current text color. Masks load with CORS, which same-origin
 // URLs don't need.

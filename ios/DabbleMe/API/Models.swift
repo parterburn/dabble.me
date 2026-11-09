@@ -285,6 +285,21 @@ struct JournalDay: Hashable, Sendable, Comparable {
         return "\(yearText), \(days == 1 ? "1 day" : "\(days) days") ago"
     }
 
+    /// For a shared photo's band, rounded down to the largest unit: "Today", "Yesterday",
+    /// "12 days ago", "5 months ago", "3 years ago".
+    func shareLabel(to today: JournalDay) -> String {
+        let parts = Self.utc.dateComponents([.year, .month, .day], from: date, to: today.date)
+        let years = parts.year ?? 0, months = parts.month ?? 0, days = parts.day ?? 0
+        guard date <= today.date else { return relative(to: today) }
+        if years > 0 { return years == 1 ? "1 year ago" : "\(years) years ago" }
+        if months > 0 { return months == 1 ? "1 month ago" : "\(months) months ago" }
+        switch days {
+        case 0: return "Today"
+        case 1: return "Yesterday"
+        default: return "\(days) days ago"
+        }
+    }
+
     private static let utc: Calendar = {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = .gmt

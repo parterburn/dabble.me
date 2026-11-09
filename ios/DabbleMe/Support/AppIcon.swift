@@ -17,3 +17,17 @@ extension Label where Title == Text, Icon == Image {
         self.init { Text(title) } icon: { appIcon(icon) }
     }
 }
+
+/// A sheet's X: the Slab close icon in black on a light circle (Random Memory, Reflection).
+struct SheetCloseButton: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        Button { dismiss() } label: { Label("Close", icon: "slab-close") }
+            .labelStyle(.iconOnly)
+            .buttonStyle(.bordered)
+            .buttonBorderShape(.circle)
+            .tint(.primary)
+            .foregroundStyle(.primary)
+    }
+}

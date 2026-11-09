@@ -15,7 +15,7 @@ RSpec.configure do |config|
     )
 
     # Pages load Slab icons from /icons/slab/, which IconsController fetches from S3.
-    WebMock.stub_request(:get, %r{\Ahttps://dabble-me\.s3\.amazonaws\.com/uploads/icons/slab/[a-z0-9-]+\.svg\z}).to_return(
+    WebMock.stub_request(:get, %r{\Ahttps://dabble-me\.s3\.us-east-1\.amazonaws\.com/icons/slab/[a-z0-9-]+\.svg\z}).to_return(
       status: 200,
       body: %(<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 576"><path d="M0 0h576v576H0z"/></svg>),
       headers: { 'Content-Type' => 'image/svg+xml' }

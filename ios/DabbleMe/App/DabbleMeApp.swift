@@ -41,7 +41,9 @@ struct RootView: View {
             #if DEBUG
             // UI tests: -DabbleDebugPhotoURL <url> shows a single entry photo (viewer + menu checks).
             if let raw = UserDefaults.standard.string(forKey: "DabbleDebugPhotoURL"), let url = URL(string: raw) {
-                ScrollView { EntryPhoto(url: url, isProcessing: false).padding() }
+                // From three years ago, so sharing it makes a "3 years ago" card.
+                let day = Calendar.current.date(byAdding: .year, value: -3, to: .now).map { JournalDay(localDate: $0) }
+                ScrollView { EntryPhoto(url: url, isProcessing: false, day: day).padding() }
             } else {
                 content
             }
@@ -127,16 +129,16 @@ struct MainTabs: View {
             }
         )
         TabView(selection: selection) {
-            Tab("Today", image: "slab-calendar", value: AppModel.Tab.today) {
+            Tab("Today", image: tabIcon("slab-calendar", .today), value: AppModel.Tab.today) {
                 TodayView().tabBarClearance()
             }
-            Tab("Journal", image: "slab-book", value: AppModel.Tab.journal) {
+            Tab("Journal", image: tabIcon("slab-book", .journal), value: AppModel.Tab.journal) {
                 JournalView().tabBarClearance()
             }
-            Tab("Search", image: "slab-search", value: AppModel.Tab.search) {
+            Tab("Search", image: tabIcon("slab-search", .search), value: AppModel.Tab.search) {
                 SearchView().tabBarClearance()
             }
-            Tab("Settings", image: "slab-gear", value: AppModel.Tab.settings) {
+            Tab("Settings", image: tabIcon("slab-gear", .settings), value: AppModel.Tab.settings) {
                 SettingsView().tabBarClearance()
             }
         }
@@ -158,6 +160,11 @@ struct MainTabs: View {
             }
             return .systemAction
         })
+    }
+
+    /// The selected tab shows the filled version of its icon.
+    private func tabIcon(_ name: String, _ tab: AppModel.Tab) -> String {
+        model.selectedTab == tab ? name + "-full" : name
     }
 }
 

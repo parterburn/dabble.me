@@ -327,14 +327,14 @@ struct ComposeView: View {
             HStack(spacing: 8) {
                 if JournalIntelligence.canSuggestHashtags(for: model.me) {
                     // The same size while it works: the word stays (hidden) under the spinner.
-                    Button { Task { await suggestHashtags() } } label: {
+                    // Not disabled while it works (that greys it out): extra taps are ignored.
+                    Button { if !isSuggestingTags { Task { await suggestHashtags() } } } label: {
                         Text("Suggest")
                             .opacity(isSuggestingTags ? 0 : 1)
                             .overlay { if isSuggestingTags { ProgressView().controlSize(.small).tint(.white) } }
                     }
                     .buttonStyle(.borderedProminent)
                     .buttonBorderShape(.capsule)
-                    .disabled(isSuggestingTags)
                     .accessibilityLabel("Suggest Hashtags")
                 }
                 ForEach(tags, id: \.self) { tag in
@@ -361,6 +361,7 @@ struct ComposeView: View {
     }
 
     private func suggestHashtags() async {
+        guard !isSuggestingTags else { return }
         isSuggestingTags = true
         defer { isSuggestingTags = false }
         do {

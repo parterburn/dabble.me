@@ -5,8 +5,9 @@ import Foundation
 struct WidgetSnapshot: Codable, Equatable, Sendable {
     static let appGroup = "group.me.dabble.ios"
     static let storageKey = "widget.snapshot"
-    /// Off by default: entries (On This Day, or a throwback) appear on the widget only if the user
-    /// turns on "Show Entries in Widget".
+    /// What the medium widget shows next to the streak (Settings → Home Screen Widget).
+    static let contentKey = "widget.content"
+    /// The older on/off setting ("Show Entries in Widget"), read once for people who turned it on.
     static let showMemoriesKey = "widget.showMemories"
 
     /// The journal day this snapshot describes (YYYY-MM-DD).
@@ -16,7 +17,7 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     var memories: Int
     var memoriesFirstYear: Int?
     var prompt: String?
-    /// With "Show Entries in Widget" on (and no Face ID lock): an entry to look back on, e.g.
+    /// With "On This Day Entry" chosen (and no Face ID lock): an entry to look back on, e.g.
     /// "1 year ago · 2025" or "Throwback · 31 days ago", and the start of its text.
     var entryTitle: String? = nil
     var entryText: String? = nil
@@ -37,8 +38,15 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
         defaults?.removeObject(forKey: storageKey)
     }
 
-    static var showsMemories: Bool {
-        defaults?.bool(forKey: showMemoriesKey) ?? false
+    static var content: WidgetContent {
+        get {
+            if let raw = defaults?.string(forKey: contentKey), let content = WidgetContent(rawValue: raw) { return content }
+            return defaults?.bool(forKey: showMemoriesKey) == true ? .memoryEntry : .prompt
+        }
+        set {
+            defaults?.set(newValue.rawValue, forKey: contentKey)
+            defaults?.removeObject(forKey: showMemoriesKey)
+        }
     }
 
     /// The snapshot as of `date` (local calendar): a new day hasn't been written yet, and a
@@ -62,4 +70,33 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     /// Links the widget opens (the app's registered URL scheme, shared with OAuth sign-in).
     static let writeURL = URL(string: "me.dabble.app:/write")!
     static let todayURL = URL(string: "me.dabble.app:/today")!
+}
+
+/// What the medium widget shows beside the streak. Only `.memoryEntry` puts journal text on the
+/// home screen, and never while the app is locked with Face ID (widgets show without unlocking).
+enum WidgetContent: String, CaseIterable, Identifiable, Sendable {
+    /// Today's writing prompt: nothing from the journal.
+    case prompt
+    /// How many entries you wrote on this day in past years (no text).
+    case memoryCount
+    /// The start of one of them (or a throwback when there are none).
+    case memoryEntry
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .prompt: "Today's Prompt"
+        case .memoryCount: "On This Day Count"
+        case .memoryEntry: "On This Day Entry"
+        }
+    }
+
+    var summary: String {
+        switch self {
+        case .prompt: "A writing prompt for today. Nothing from your journal."
+        case .memoryCount: "How many entries you wrote on this day in past years, without their text."
+        case .memoryEntry: "The start of an entry from this day in past years, or a throwback when there isn't one."
+        }
+    }
 }

@@ -90,7 +90,7 @@ struct TimelineEntryRow: View {
                 DatedHashtagRow(hashtags: dated)
             }
             if entry.imageProcessing || entry.imageURL != nil {
-                EntryPhoto(url: entry.thumbnailURL(width: 1000), isProcessing: entry.imageProcessing)
+                EntryPhoto(url: entry.thumbnailURL(width: 1000), isProcessing: entry.imageProcessing, day: entry.day)
                     .frame(maxWidth: .infinity, maxHeight: 320, alignment: .leading)
                     .clipShape(.rect(cornerRadius: 12))
             }
@@ -176,7 +176,8 @@ struct TimelineEntryRow: View {
         .visualEffect { content, proxy in
             let frame = proxy.frame(in: .scrollView)
             let travel = max(frame.height - height - 8, 0)
-            return content.offset(y: min(max(pin - frame.minY, 0), travel))
+            // Pinned a little below the month header, clear of its border.
+            return content.offset(y: min(max(pin + 10 - frame.minY, 0), travel))
         }
         .accessibilityHidden(true)
     }
@@ -222,9 +223,8 @@ private struct TimelinePinsDates: ViewModifier {
 final class EntryActions {
     var editing: EntryDetail?
     var reflection: EntryReflection?
-    /// The Actions sheet (swipe left → Actions), and an entry waiting on "Delete?".
+    /// The Actions sheet (swipe left → Actions).
     var sheet: EntryDetail?
-    var deleting: EntryDetail?
     var isWorking = false
     var error: String?
 
@@ -306,17 +306,11 @@ private struct EntryActionSheets: ViewModifier {
                     switch action {
                     case .reflect: Task { await actions.reflect(on: entry.id, model: model) }
                     case .edit: if entry.document != nil { actions.editing = entry } else { openURL(entry.webUrl) }
-                    case .delete: actions.deleting = entry
+                    case .delete: Task { await actions.delete(entry, model: model) }
                     case .web: openURL(entry.webUrl)
                     case .search(let tag): if let url = URL(string: "\(RichText.hashtagScheme):\(tag)") { openURL(url) }
                     }
                 }
-            }
-            .confirmationDialog("Delete this entry?", isPresented: Binding(get: { actions.deleting != nil }, set: { if !$0 { actions.deleting = nil } }),
-                                titleVisibility: .visible, presenting: actions.deleting) { entry in
-                Button("Delete Entry", role: .destructive) { Task { await actions.delete(entry, model: model) } }
-            } message: { _ in
-                Text("This can't be undone.")
             }
             .overlay {
                 if actions.isWorking {
@@ -347,5 +341,8 @@ struct SongList: View {
             }
         }
         .font(.subheadline)
+        // The green of links and #hashtags in the text, and a little room below the text.
+        .foregroundStyle(Color("AccentColor"))
+        .padding(.top, 6)
     }
 }

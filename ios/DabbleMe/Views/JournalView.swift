@@ -306,13 +306,13 @@ private struct PlaceholderID: Hashable {
 
 struct MonthHeader: View {
     let title: String
-    /// An expanded entry's date (pinned while reading it), a little stronger than a month.
+    /// A day's date rather than a month (On This Day, a throwback).
     var isDay = false
 
     var body: some View {
         Text(title)
             .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.primary.opacity(isDay ? 0.85 : 0.7))
+            .foregroundStyle(.tint) // olive, like Random Memory's date
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityAddTraits(.isHeader)
     }

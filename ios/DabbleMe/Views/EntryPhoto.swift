@@ -8,6 +8,8 @@ struct EntryPhoto: View {
     let url: URL?
     let isProcessing: Bool
     var size: Size = .full
+    /// The entry's day, for the "3 years ago" band on a shared photo.
+    var day: JournalDay? = nil
 
     var body: some View {
         if isProcessing {
@@ -25,7 +27,7 @@ struct EntryPhoto: View {
                 .frame(width: 56, height: 56)
                 .clipShape(.rect(cornerRadius: 8))
             case .full:
-                FullEntryPhoto(url: url)
+                FullEntryPhoto(url: url, day: day)
                     .id(url)
             }
         }
@@ -56,15 +58,15 @@ struct EntryPhoto: View {
     }
 }
 
-/// Tap to view full screen (pinch/double-tap to zoom); long-press for Save, Share and Copy.
+/// Tap to view full screen (pinch/double-tap to zoom); long-press to Save or Share.
 private struct FullEntryPhoto: View {
     @State private var photo: RemotePhoto
     @State private var showingViewer = false
     @State private var saveResult: PhotoSaveResult?
     @Namespace private var zoom
 
-    init(url: URL) {
-        _photo = State(initialValue: RemotePhoto(url: url))
+    init(url: URL, day: JournalDay?) {
+        _photo = State(initialValue: RemotePhoto(url: url, day: day))
     }
 
     var body: some View {

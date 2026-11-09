@@ -12,7 +12,6 @@ struct EntryDetailView: View {
     @State private var loadError: String?
     @State private var actionError: String?
     @State private var editing = false
-    @State private var confirmingDelete = false
     @State private var isDeleting = false
     @State private var pinchStart: ReadingTextSize?
     @State private var textSizeHUD: String?
@@ -85,17 +84,12 @@ struct EntryDetailView: View {
                     switch action {
                     case .reflect: Task { await reflect(on: entry) }
                     case .edit: if entry.document != nil { editing = true } else { openURL(entry.webUrl) }
-                    case .delete: confirmingDelete = true
+                    case .delete: Task { await delete() }
                     case .web: openURL(entry.webUrl)
                     case .search(let tag): if let url = URL(string: "\(RichText.hashtagScheme):\(tag)") { openURL(url) }
                     }
                 }
             }
-        }
-        .confirmationDialog("Delete this entry?", isPresented: $confirmingDelete, titleVisibility: .visible) {
-            Button("Delete Entry", role: .destructive) { Task { await delete() } }
-        } message: {
-            Text("This can't be undone.")
         }
         .sheet(isPresented: $editing) {
             if let entry {
@@ -312,7 +306,7 @@ private struct EntryBody: View {
 
             // Text first: Dabble Me is about the writing; photos follow it.
             if entry.imageProcessing || entry.imageURL != nil {
-                EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing)
+                EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing, day: entry.day)
             }
         }
     }
@@ -401,7 +395,6 @@ struct EntryReflection: Identifiable {
 
 struct ReflectionSheet: View {
     let reflection: EntryReflection
-    @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         NavigationStack {
@@ -410,7 +403,7 @@ struct ReflectionSheet: View {
                     if !reflection.date.isEmpty {
                         Text(reflection.date)
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.tint)
                     }
                     if let text = reflection.text {
                         // Light Markdown: the reply bolds its closing question.
@@ -442,7 +435,7 @@ struct ReflectionSheet: View {
             .navigationTitle("Reflection")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
+                ToolbarItem(placement: .topBarTrailing) { SheetCloseButton() }
             }
         }
         .presentationDetents([.medium, .large])

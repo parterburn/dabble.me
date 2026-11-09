@@ -37,10 +37,7 @@ struct RandomEntrySheet: View {
                 Label("A Random Memory", systemImage: "dice")
                     .font(.headline)
                 Spacer()
-                Button { dismiss() } label: { Label("Close", icon: "slab-close") }
-                    .labelStyle(.iconOnly)
-                    .buttonStyle(.bordered)
-                    .buttonBorderShape(.circle)
+                SheetCloseButton()
             }
             if let entry {
                 preview(entry)
@@ -107,7 +104,7 @@ struct RandomEntrySheet: View {
                     DatedHashtagRow(hashtags: dated)
                 }
                 if entry.imageProcessing || entry.imageURL != nil {
-                    EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing)
+                    EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing, day: entry.day)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)

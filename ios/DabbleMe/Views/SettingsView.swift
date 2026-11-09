@@ -15,7 +15,6 @@ struct SettingsView: View {
     @AppStorage(ReminderSettings.memoriesEnabledKey) private var memoriesReminder = false
     @AppStorage(ReminderSettings.memoriesTimeKey) private var memoriesTime = ReminderSettings.defaultMemoriesTime
     @State private var notificationsDenied = false
-    @AppStorage(WidgetSnapshot.showMemoriesKey, store: WidgetSnapshot.defaults) private var widgetShowsMemories = false
     @AppStorage(JournalIntelligence.enabledKey) private var onDeviceAI = true
     /// The plan links to dabble.me/subscribe only on the US App Store, where Apple allows links to
     /// buy outside the app (guideline 3.1.1(a), US storefront). Elsewhere it's plain text.
@@ -33,9 +32,9 @@ struct SettingsView: View {
                         if canLinkToSubscribe {
                             Link(destination: AppConfig.webURL("subscribe")) {
                                 LabeledContent("Plan") {
-                                    HStack(spacing: 4) {
+                                    HStack(spacing: 8) {
                                         Text(me.isPro ? "PRO" : "Free")
-                                        Image(systemName: "arrow.up.forward").font(.caption)
+                                        ExternalLinkIcon()
                                     }
                                 }
                             }
@@ -59,6 +58,15 @@ struct SettingsView: View {
 
                 Section {
                     NavigationLink {
+                        WidgetSettingsView()
+                    } label: {
+                        LabeledContent {
+                            Text(WidgetSnapshot.content.title)
+                        } label: {
+                            Label("Home Screen Widget", systemImage: "widget.medium")
+                        }
+                    }
+                    NavigationLink {
                         AccessibilitySettingsView()
                     } label: {
                         LabeledContent {
@@ -74,14 +82,14 @@ struct SettingsView: View {
                     // the guide links to Claude's and ChatGPT's directories.
                     if let connectors = model.me?.aiConnectors {
                         Link(destination: connectors.guideUrl) {
-                            Label("Claude/ChatGPT Connector", icon: "slab-sparkles")
+                            ExternalLinkLabel("Claude/ChatGPT Connector", icon: "slab-claude")
                         }
                     }
                     Link(destination: model.me?.securityUrl ?? AppConfig.webURL("security")) {
-                        Label("Account Security", icon: "slab-shield")
+                        ExternalLinkLabel("Account Security", icon: "slab-shield")
                     }
                     Link(destination: URL(string: "#export", relativeTo: AppConfig.webURL("users/edit"))!.absoluteURL) {
-                        Label("Export Entries", icon: "slab-arrow-up-from-line")
+                        ExternalLinkLabel("Export Entries", icon: "slab-arrow-up-from-line")
                     }
                 } header: {
                     Text("On dabble.me")
@@ -89,13 +97,13 @@ struct SettingsView: View {
 
                 Section {
                     Link(destination: AppConfig.webURL("support")) {
-                        Label("Help & Support", icon: "slab-circle-question")
+                        ExternalLinkLabel("Help & Support", icon: "slab-circle-question")
                     }
                     Link(destination: AppConfig.webURL("privacy")) {
-                        Label("Privacy Policy", icon: "slab-hand")
+                        ExternalLinkLabel("Privacy Policy", icon: "slab-hand")
                     }
                     Link(destination: AppConfig.webURL("terms")) {
-                        Label("Terms", icon: "slab-anchor")
+                        ExternalLinkLabel("Terms", icon: "slab-anchor")
                     }
                 }
 
@@ -211,7 +219,10 @@ private extension SettingsView {
     var intelligenceSection: some View {
         if JournalIntelligence.isSupported {
             Section {
-                Toggle("Apple Intelligence", isOn: $onDeviceAI)
+                // The sparkles mean on-device Apple Intelligence wherever they appear in the app.
+                Toggle(isOn: $onDeviceAI) {
+                    Label("Apple Intelligence", icon: "slab-sparkles")
+                }
             } header: {
                 Text("On-Device AI")
             } footer: {
@@ -236,12 +247,8 @@ private extension SettingsView {
                 }
             ))
             .disabled(!lock.isAvailable)
-            Toggle("Show Entries in Widget", isOn: $widgetShowsMemories)
-                .onChange(of: widgetShowsMemories) { _, shows in WidgetSync.setShowsMemories(shows, model: model) }
         } header: {
             Text("Privacy")
-        } footer: {
-            Text("Show Entries in Widget puts the start of an entry from this day in past years (or a throwback) on your home screen widget. Widgets show without unlocking, so it's hidden while Face ID is on.")
         }
     }
 
@@ -300,5 +307,36 @@ struct ProInfoView: View {
         case .stats:
             "With Dabble Me PRO you can see your streaks, writing days, words and top hashtags."
         }
+    }
+}
+
+/// A Settings row that opens dabble.me (or another site) in the browser: its label, and a light
+/// grey "opens outside" arrow at the far right.
+private struct ExternalLinkLabel: View {
+    let title: String
+    let icon: String
+
+    init(_ title: String, icon: String) {
+        self.title = title
+        self.icon = icon
+    }
+
+    var body: some View {
+        HStack {
+            Label(title, icon: icon)
+            Spacer()
+            ExternalLinkIcon()
+        }
+    }
+}
+
+private struct ExternalLinkIcon: View {
+    var body: some View {
+        appIcon("slab-external-link")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 14, height: 14)
+            .foregroundStyle(.tertiary)
+            .accessibilityHidden(true)
     }
 }

@@ -3,25 +3,32 @@ import SwiftUI
 /// Signed out: the real app's tabs, each showing a glimpse of what it holds, with sign-in and
 /// sign-up front and center on Today. Everything shown here is made up; nothing is loaded.
 struct SignInView: View {
+    @State private var selected = "Today"
+
     var body: some View {
-        TabView {
-            Tab("Today", image: "slab-calendar") { WelcomeView().tabBarClearance() }
-            Tab("Journal", image: "slab-book") {
+        TabView(selection: $selected) {
+            Tab("Today", image: icon("slab-calendar", "Today"), value: "Today") { WelcomeView().tabBarClearance() }
+            Tab("Journal", image: icon("slab-book", "Journal"), value: "Journal") {
                 LockedGlimpse(title: "Your whole journal, by month",
                               message: "Every entry you've written, with photos, Stats and a timeline to jump years back.") {
                     SampleJournal()
                 }
                 .tabBarClearance()
             }
-            Tab("Search", image: "slab-search") {
+            Tab("Search", image: icon("slab-search", "Search"), value: "Search") {
                 LockedGlimpse(title: "Find any moment",
                               message: "Search every word you've ever written, or tap one of your #hashtags.") {
                     SampleHashtags()
                 }
                 .tabBarClearance()
             }
-            Tab("Settings", image: "slab-gear") { GuestSettings().tabBarClearance() }
+            Tab("Settings", image: icon("slab-gear", "Settings"), value: "Settings") { GuestSettings().tabBarClearance() }
         }
+    }
+
+    /// The selected tab shows the filled version of its icon.
+    private func icon(_ name: String, _ tab: String) -> String {
+        selected == tab ? name + "-full" : name
     }
 }
 

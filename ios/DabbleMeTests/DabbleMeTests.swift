@@ -52,6 +52,37 @@ struct JournalDayTests {
     }
 }
 
+struct ShareCardTests {
+    @Test func shareLabelRoundsDownToTheLargestUnit() throws {
+        let today = try #require(JournalDay("2026-11-09"))
+        func label(_ date: String) throws -> String { try #require(JournalDay(date)).shareLabel(to: today) }
+        #expect(try label("2026-11-09") == "Today")
+        #expect(try label("2026-11-08") == "Yesterday")
+        #expect(try label("2026-10-28") == "12 days ago")
+        #expect(try label("2026-06-01") == "5 months ago")
+        #expect(try label("2025-11-01") == "1 year ago")
+        #expect(try label("2023-11-02") == "3 years ago")
+    }
+
+    @MainActor
+    @Test func cardAddsABandAboveThePhotoAtItsWidth() {
+        let photo = UIGraphicsImageRenderer(size: CGSize(width: 800, height: 600), format: {
+            let format = UIGraphicsImageRendererFormat()
+            format.scale = 1
+            return format
+        }()).image { context in
+            UIColor.blue.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 800, height: 600))
+        }
+        let card = ShareCard.render(photo, label: "3 years ago")
+        if let dir = ProcessInfo.processInfo.environment["DABBLE_DEBUG_DIR"] {
+            try? card.pngData()?.write(to: URL(fileURLWithPath: "\(dir)/share-card.png"))
+        }
+        #expect(abs(card.size.width * card.scale - 800) < 1)
+        #expect(abs(card.size.height * card.scale - (600 + 88)) < 1) // an 11% band
+    }
+}
+
 struct DecodingTests {
     @Test func decodesEntryDetail() throws {
         let json = """

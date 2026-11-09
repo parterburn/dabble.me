@@ -3,7 +3,7 @@
 require "rails_helper"
 
 RSpec.describe "Slab icons", type: :request do
-  let(:source) { "https://dabble-me.s3.amazonaws.com/uploads/icons/slab/edit.svg" }
+  let(:source) { "https://dabble-me.s3.us-east-1.amazonaws.com/icons/slab/edit.svg" }
   let(:svg) { %(<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 576"><path d="M0 0"/></svg>) }
 
   it "serves the icon from our origin with public cache headers and no cookie" do
