@@ -188,7 +188,7 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
   describe "document" do
     it "is included for entries the app can edit, and nil otherwise" do
       editable = create(:entry, user: pro_user, body: "<p>Hi <b>there</b></p>")
-      web_only = create(:entry, user: pro_user, body: "<div data-content='dabblemegpt'>ai</div>")
+      web_only = create(:entry, user: pro_user, body: "<blockquote>quoted</blockquote>")
       expect(Api::EntrySerializer.full(editable)[:document]).to eq([
         { "type" => "paragraph", "runs" => [{ "text" => "Hi " }, { "text" => "there", "bold" => true }] }
       ])
@@ -339,7 +339,7 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
     end
 
     before do
-      pro_user.update_column(:user_key, "pro-user-key") # stored photo paths include it
+      pro_user.update_column(:image_key, "pro-image-key") # stored photo paths include it
       allow(ProcessEntryImageJob).to receive(:perform_later)
       allow(ImageCollageJob).to receive(:perform_later)
     end

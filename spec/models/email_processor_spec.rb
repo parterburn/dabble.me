@@ -16,6 +16,40 @@ describe EmailProcessor do
       expect(user.entries.reload.first.body).to eq("I am great")
     end
 
+    it "drops email sent to the retired AI address instead of saving it" do
+      user.entries.destroy_all
+      allow(Sentry).to receive(:capture_message)
+      ai_host = "ai.#{ENV['MAIN_DOMAIN']}"
+      email = FactoryBot.build(
+        :email,
+        from: { email: user.email },
+        to: [{ token: user.user_key, host: ai_host, email: "#{user.user_key}@#{ai_host}" }],
+        body: "Replying to the AI"
+      )
+
+      EmailProcessor.new(email).process
+
+      expect(user.entries.reload).to be_empty
+      expect(Sentry).to have_received(:capture_message).with("Dropped inbound email sent to the retired AI address", level: :info)
+    end
+
+    it "saves an email sent to both the AI address and the normal one, without an AI reply" do
+      user.entries.destroy_all
+      ai_host = "ai.#{ENV['MAIN_DOMAIN']}"
+      email = FactoryBot.build(
+        :email,
+        to: [
+          { token: user.user_key, host: ai_host, email: "#{user.user_key}@#{ai_host}" },
+          { token: user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{user.user_key}@#{ENV['SMTP_DOMAIN']}" }
+        ],
+        body: "I am great"
+      )
+
+      EmailProcessor.new(email).process
+
+      expect(user.entries.reload.first.body).to eq("I am great")
+    end
+
     it "creates an entry from email if the token is wrong but email matches a user" do
       user.entries.destroy_all
       email = FactoryBot.build(

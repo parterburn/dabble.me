@@ -49,32 +49,25 @@
         lastScrollTop = st;
     }
 
-    $("[rel='popover']").popover({
-      trigger: "hover",
-      container: "body",
-      html: true
-    });
-
     $("[rel='tooltip-mobile-friendly']").tooltip({
       container: "body"
     });
 
     if ($(window).width() > 768) {
-      $("[rel='popover_settings']").popover({
-        trigger: "hover",
+      // First-week hint about when emails arrive. It points at the account
+      // menu, so it goes away once that menu is opened.
+      var $settingsHint = $("[rel='popover_settings']");
+      $settingsHint.popover({
+        trigger: "manual",
         container: "body",
         html: true
       }).popover('show');
+      $settingsHint.on('show.bs.dropdown', function() { $settingsHint.popover('hide'); });
 
       $("[rel='tooltip']").tooltip({
         container: "body"
       });
     }
-
-    $("[rel='popover']").click(function (e) {
-        //e.stopPropagation();
-        $(this).popover('hide');
-    });
 
     $(".j-entry-link").click(function(e) {
       var $entry = $("#entry-"+$(this).attr('data-id'));
@@ -99,7 +92,7 @@
 
       navigator.clipboard.writeText(content).then(function() {
         var originalHtml = $btn.html();
-        $btn.html('<i class="fa fa-check"></i> Copied!');
+        $btn.html('<span class="slab-icon slab-icon--clipboard" aria-hidden="true"></span> Copied!');
         setTimeout(function() {
           $btn.html(originalHtml);
         }, 2000);

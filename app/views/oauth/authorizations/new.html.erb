@@ -20,8 +20,8 @@
           <span class="oauth-consent__flow-caption"><%= t("doorkeeper.authorizations.new.flow_you_label") %></span>
         </div>
         <div class="oauth-consent__flow-arrows">
-          <i class="fa fa-long-arrow-right" aria-hidden="true"></i>
-          <i class="fa fa-long-arrow-left" aria-hidden="true"></i>
+          <span class="slab-icon slab-icon--arrow-right" aria-hidden="true"></span>
+          <span class="slab-icon slab-icon--arrow-left" aria-hidden="true"></span>
         </div>
         <div class="oauth-consent__flow-node">
           <% if client_logo %>
@@ -58,17 +58,17 @@
 
       <div class="oauth-consent__permissions">
         <p class="oauth-consent__permissions-title">
-          <i class="fa fa-lock" aria-hidden="true"></i>
+          <span class="slab-icon slab-icon--lock" aria-hidden="true"></span>
           <%= t("doorkeeper.authorizations.new.able_to") %>
         </p>
         <% if mcp_access %>
           <ul class="oauth-consent__permissions-list">
             <li class="oauth-consent__permission-item">
-              <i class="fa fa-check" aria-hidden="true"></i>
+              <span class="slab-icon slab-icon--check" aria-hidden="true"></span>
               <%= t("doorkeeper.authorizations.new.permission_read") %>
             </li>
             <li class="oauth-consent__permission-item">
-              <i class="fa fa-check" aria-hidden="true"></i>
+              <span class="slab-icon slab-icon--check" aria-hidden="true"></span>
               <%= t("doorkeeper.authorizations.new.permission_write") %>
             </li>
           </ul>
@@ -76,7 +76,7 @@
           <ul class="oauth-consent__permissions-list">
             <% @pre_auth.scopes.each do |scope| %>
               <li class="oauth-consent__permission-item">
-                <i class="fa fa-check" aria-hidden="true"></i>
+                <span class="slab-icon slab-icon--check" aria-hidden="true"></span>
                 <%= t scope, scope: %i[doorkeeper scopes] %>
               </li>
             <% end %>
@@ -85,7 +85,7 @@
       </div>
 
       <p class="oauth-consent__privacy">
-        <i class="fa fa-shield" aria-hidden="true"></i>
+        <span class="slab-icon slab-icon--shield" aria-hidden="true"></span>
         <%= t("doorkeeper.authorizations.new.privacy_intro") %>
         <%= t("doorkeeper.authorizations.new.privacy_access", client_name: client_name) %>
         <%= t("doorkeeper.authorizations.new.privacy_revoke") %>

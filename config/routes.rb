@@ -8,6 +8,9 @@ Rails.application.routes.draw do
     )
   end
 
+  # Font Awesome Slab icons, proxied from S3 so CSS masks stay same-origin.
+  get 'icons/slab/:name', to: 'icons#show', as: :slab_icon, constraints: { name: /[a-z0-9-]+/, format: 'svg' }
+
   get '.well-known/oauth-protected-resource', to: 'oauth/metadata#protected_resource'
   get '.well-known/oauth-protected-resource/mcp', to: 'oauth/metadata#protected_resource'
   get '.well-known/oauth-authorization-server', to: 'oauth/metadata#authorization_server'
@@ -93,12 +96,12 @@ Rails.application.routes.draw do
   get 'entries/calendar' => 'entries#calendar', as: 'entries_calendar'
 
   get 'past(/:anything)',               to: redirect('/entries')
-  get 'entries/emotion/:emotion',       to: 'entries#index', as: 'entries_emotion'
+  get 'entries/emotion(/:anything)',    to: redirect('/entries') # sentiment tags were removed
+  get 'entries/ai',                     to: redirect('/entries') # stored AI replies were removed
   get 'entries/songs',                  to: 'entries#spotify', as: 'spotify'
   get 'entries/random',                 to: 'entries#random', as: 'random_entry'
   get 'entries/:year/:month/:day',      to: 'entries#show',  as: 'day_entry'
-  post 'entries/:id/process_ai',        to: 'entries#process_as_ai',  as: 'process_as_ai'
-  match 'entries/:id/respond_to_ai' => 'entries#respond_to_ai', as: 'respond_to_ai', via: [:put]
+  post 'entries/:id/reflection',        to: 'entries#reflection', as: 'entry_reflection'
   match 'entries/:id/image_error'   => 'entries#dismiss_image_error', as: 'dismiss_entry_image_error', via: [:delete]
   resources :entries, except: [:show]
   get 'entries/(:group)(/:subgroup)',   to: 'entries#index',  as: 'group_entries'

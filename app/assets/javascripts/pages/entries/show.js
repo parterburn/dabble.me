@@ -27,13 +27,13 @@
 
     var hammer_options = { cssProps: { userSelect: true } }
 
-    $(".s-entry-date").hammer(hammer_options).bind("swiperight", function(event) {
+    $(".s-entry-date").hammer(hammer_options).on("swiperight", function(event) {
       if ($('#previous-entry').length) {
         window.location = $('#previous-entry').attr('href');
       }
     });
 
-    $(".entry").hammer(hammer_options).bind("swipeleft", function(event) {
+    $(".entry").hammer(hammer_options).on("swipeleft", function(event) {
       if ($('#next-entry').length) {
         window.location = $('#next-entry').attr('href');
       }

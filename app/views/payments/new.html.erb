@@ -20,7 +20,7 @@
         <%= f.label :date %>
         <div class="input-group date">
           <span class="input-group-addon">
-            <i class="fa fa-calendar"></i>
+            <span class="slab-icon slab-icon--calendar" aria-hidden="true"></span>
           </span>
           <%= f.text_field :date, value: "#{@payment.date.present? ? @payment.date.strftime("%m %-d, %Y") : Date.today.strftime("%B %-d, %Y")}", placeholder: "2014-10-31", class: "form-control pickadate" %>
         </div>

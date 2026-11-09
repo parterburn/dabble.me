@@ -1,0 +1,96 @@
+@import 'vars';
+
+// Font Awesome Pro "Slab" icons. The license lets the site use them but not
+// publish them in this public repo, so the SVGs live on S3 (uploads/icons/slab/)
+// and IconsController serves them from our own origin. They're drawn as CSS
+// masks in the current text color. Masks load with CORS, which same-origin
+// URLs don't need.
+$slab-icons-url: "/icons/slab";
+
+// !important so container styles can't repaint the icon, like the card
+// headers' `h3 span { background-color: #fff; padding: 0 15px }`.
+@mixin slab-mask($name) {
+  background-color: currentColor !important;
+  -webkit-mask: url("#{$slab-icons-url}/#{$name}.svg") center / contain no-repeat;
+  mask: url("#{$slab-icons-url}/#{$name}.svg") center / contain no-repeat;
+}
+
+// <span class="slab-icon slab-icon--edit" aria-hidden="true"></span>
+.slab-icon {
+  display: inline-block;
+  width: 1.15em;
+  height: 1.15em;
+  padding: 0 !important;
+  vertical-align: -0.2em;
+}
+
+// Every icon on the CDN that the app uses.
+@each $name in arrow-down-to-line, arrow-left, arrow-right, arrow-up-from-line, arrows-rotate, calendar, check, clipboard, close, cloud, compress, copy, edit, gear, heart, hourglass, image, images, lightbulb, lock, music, search, shield, sign-out, thought-bubble, trash, trophy {
+  .slab-icon--#{$name} {
+    @include slab-mask($name);
+  }
+}
+
+// Uploaded as backward-slab-regular-full.svg.
+.slab-icon--backward {
+  @include slab-mask(backward-slab-regular-full);
+}
+
+.slab-icon--spin {
+  animation: slab-spin 1.2s linear infinite;
+}
+
+@keyframes slab-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slab-icon--spin {
+    animation-duration: 3s;
+  }
+}
+
+// Icons in navbar dropdown items (account menu).
+.navbar .dropdown-menu > li > a .slab-icon {
+  margin-right: 8px;
+  opacity: 0.7;
+}
+
+// Close buttons on dialogs (Summernote's link dialog, the reflection dialog).
+// Both are built in JS with a &times; label, so the icon goes in ::before.
+.modal-header .close,
+.s-reflection-dialog .close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -9px -9px -9px 0;
+  border-radius: 50%;
+  color: $olive-800;
+  font-size: 0; // hides the &times; text; the button keeps aria-label="Close"
+  opacity: 0.75;
+  text-shadow: none;
+  &::before {
+    content: "";
+    width: 20px;
+    height: 20px;
+    @include slab-mask(close);
+  }
+  &:hover,
+  &:focus-visible {
+    background: rgba(0, 0, 0, 0.06);
+    color: $olive-950;
+    opacity: 1;
+  }
+}
+
+// High contrast modes drop background colors, which would hide every icon.
+@media (forced-colors: active) {
+  .slab-icon,
+  .modal-header .close::before,
+  .s-reflection-dialog .close::before {
+    background-color: CanvasText !important;
+    forced-color-adjust: none;
+  }
+}

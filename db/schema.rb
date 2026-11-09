@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_07_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_08_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -216,7 +216,9 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_07_000000) do
     t.string "otp_session_challenge"
     t.datetime "otp_challenge_expires", precision: nil
     t.datetime "deleted_at", precision: nil
+    t.string "image_key"
     t.index ["email"], name: "index_users_on_email", unique: true
+    t.index ["image_key"], name: "index_users_on_image_key", unique: true
     t.index ["otp_challenge_expires"], name: "index_users_on_otp_challenge_expires"
     t.index ["otp_session_challenge"], name: "index_users_on_otp_session_challenge", unique: true
     t.index ["plan"], name: "index_users_on_plan"

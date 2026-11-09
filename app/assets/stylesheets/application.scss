@@ -163,10 +163,19 @@ hr {
   bottom:15px;
   display:none;
   a {
-    color: $light-gray;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: $mid-gray;
+    color: white;
+    font-size: 18px;
     text-decoration: none;
-    &:hover {
-      color: $mid-gray;
+    &:hover, &:focus-visible {
+      background: $olive-800;
+      color: white;
       text-decoration: none;
     }
   }

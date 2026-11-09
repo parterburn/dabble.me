@@ -227,21 +227,30 @@ class PaymentsController < ApplicationController
     end
   end
 
+  # PayPal is closed to new subscribers. PayPal notifications are not verified
+  # with PayPal, so only users already on the legacy PayPal plan can record a
+  # renewal, and their plan is never changed here. Anything else goes to the
+  # "[REFUND REQUIRED]" email for a manual look.
+  PAYPAL_LEGACY_PLAN = "PRO Monthly PayPal".freeze
+
   def process_paypal
-    user_key = params[:item_name].gsub('Dabble Me PRO for ','') if params[:item_name].present?
-    @user = User.find_by(user_key: user_key)
+    # item_name carries the key the user had when they subscribed. image_key
+    # holds that value for every pre-existing user and never changes, so
+    # renewals keep matching after the user resets their posting address.
+    subscription_key = params[:item_name].gsub('Dabble Me PRO for ','') if params[:item_name].present?
+    @user = User.find_by(image_key: subscription_key) if subscription_key.present?
+    @user = nil unless @user&.plan == PAYPAL_LEGACY_PLAN
 
     paid = params[:mc_gross]
-    frequency = paid.to_i > 10 ? 'Yearly' : 'Monthly'
 
     if @user.present? && @user.payments.size > 0 && @user.payments.last.date.to_date === Time.now.to_date
       # duplicate webhook, don't save, don't error
       { }
     elsif @user.present?
-      Payment.create(user_id: @user.id, comments: "Paypal #{frequency} from #{params[:payer_email]}", date: Time.now.strftime("%Y-%m-%d").to_s, amount: paid )
-      { plan: "PRO #{frequency} PayPal" }
+      Payment.create(user_id: @user.id, comments: "Paypal Monthly from #{params[:payer_email]}", date: Time.now.strftime("%Y-%m-%d").to_s, amount: paid )
+      { }
     elsif params[:item_name].present? && params[:item_name].include?("Dabble Me")
-      { error: "No user match" }
+      { error: "No eligible PayPal user" }
     end
   end
 

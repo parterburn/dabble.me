@@ -83,8 +83,7 @@ enum JournalIntelligence {
     }
 
     /// A short, warm response to an entry, ending with a question: the on-device version of the
-    /// web's DabbleMeGPT life-coach reply (Entry::AiAssistant#as_life_coach), minus web search,
-    /// images and hashtags.
+    /// web's reflection (Entry::AiAssistant#as_life_coach), minus images.
     /// `ago` is how long before `today` the entry was written ("Today", "Yesterday", "1 year, 35 days ago").
     static func reflection(on text: String, date: String, ago: String, today: String, firstName: String?, recent: [String]) async throws -> String {
         let context = recent.isEmpty ? "" : "\n\nMy other recent entries, with their dates (context only, if relevant):\n" + recent.joined(separator: "\n")
