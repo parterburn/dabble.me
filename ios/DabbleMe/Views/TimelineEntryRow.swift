@@ -262,15 +262,19 @@ final class EntryActions {
         }
     }
 
+    /// The reflection's sheet opens right away, reflecting inside it, so you can see where it'll appear.
     func reflect(on id: Int, model: AppModel) async {
-        guard !isWorking else { return }
-        isWorking = true
-        defer { isWorking = false }
+        guard !isWorking, reflection == nil else { return }
+        let pending = EntryReflection(date: "")
+        reflection = pending
         do {
-            reflection = try await model.reflection(on: try await model.entry(id: id))
-        } catch is CancellationError {
+            let entry = try await model.entry(id: id)
+            if reflection?.id == pending.id { reflection?.date = entry.day?.long ?? entry.date }
+            let text = try await model.reflection(on: entry).text
+            if reflection?.id == pending.id { reflection?.text = text }
         } catch {
-            self.error = error.localizedDescription
+            if reflection?.id == pending.id { reflection = nil }
+            if !(error is CancellationError) { self.error = error.localizedDescription }
         }
     }
 }

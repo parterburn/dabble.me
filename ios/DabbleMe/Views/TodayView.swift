@@ -68,7 +68,11 @@ struct TodayView: View {
             // An easter egg: keep pulling up past the bottom and let go for a random memory, in the
             // same sheet as a shake. Only on letting go of a drag (a flick that bounces doesn't count).
             .onScrollGeometryChange(for: CGFloat.self) { geometry in
-                geometry.contentOffset.y + geometry.containerSize.height - geometry.contentInsets.bottom - geometry.contentSize.height
+                // Past the furthest it can scroll. Content shorter than the screen (still loading)
+                // can't scroll at all, so it isn't "past the bottom" until it's actually pulled.
+                let visible = geometry.containerSize.height - geometry.contentInsets.top - geometry.contentInsets.bottom
+                let maxOffset = max(geometry.contentSize.height - visible, 0) - geometry.contentInsets.top
+                return geometry.contentOffset.y - maxOffset
             } action: { _, overscroll in
                 bottomPull = max(0, overscroll)
             }

@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// Google Photos-style fast scroller for the Journal: a tab on the right edge (rounded on its
-/// left, flush with the screen) that appears while scrolling; drag it to see the years and jump to
-/// any month. Positions are proportional to entry counts, which matches the timeline's layout (rows and
+/// left, flush with the screen) that appears while scrolling; drag it to see the years and the
+/// month you're on, and jump to any month. Positions are proportional to entry counts, which matches the timeline's layout (rows and
 /// placeholders are similar heights).
 struct TimelineScrubber: View {
     let months: [MonthCount]
@@ -30,6 +30,21 @@ struct TimelineScrubber: View {
                 if dragFraction != nil {
                     yearLabels(trackHeight: track)
                         .transition(.opacity)
+                    // The month you're on, beside the thumb, until you let go.
+                    if let month = month(at: fraction) {
+                        Text(month.title)
+                            .font(.subheadline.weight(.semibold))
+                            .monospacedDigit()
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(.regularMaterial, in: .capsule)
+                            .shadow(color: .black.opacity(0.15), radius: 6, y: 2)
+                            .frame(height: thumbHeight)
+                            .offset(x: -(stripWidth + 10), y: fraction * track)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                            .transition(.opacity)
+                    }
                 }
 
                 // Only the thumb takes touches, so scrolling near the edge still scrolls the list.

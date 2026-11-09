@@ -17,7 +17,6 @@ struct EntryDetailView: View {
     @State private var pinchStart: ReadingTextSize?
     @State private var textSizeHUD: String?
     @State private var reflection: EntryReflection?
-    @State private var isReflecting = false
     @State private var showingActions = false
     /// How far the entry follows a swipe left (≤ 0); past `swipeThreshold` it opens the actions.
     @State private var swipeOffset: CGFloat = 0
@@ -74,7 +73,7 @@ struct EntryDetailView: View {
         .toolbar {
             if let entry {
                 ToolbarItem(placement: .principal) { dateTitle(for: entry) }
-                ToolbarItem(placement: .primaryAction) { menu(for: entry) }
+                ToolbarItem(placement: .primaryAction) { editButton(for: entry) }
             }
         }
         .sheet(isPresented: $showingActions) {
@@ -106,13 +105,6 @@ struct EntryDetailView: View {
         .sheet(item: $reflection) { reflection in
             ReflectionSheet(reflection: reflection)
         }
-        .overlay {
-            if isReflecting {
-                ProgressView("Reflecting…")
-                    .padding(20)
-                    .background(.regularMaterial, in: .rect(cornerRadius: 14))
-            }
-        }
         .alert("Something went wrong", isPresented: .present($actionError)) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -131,11 +123,16 @@ struct EntryDetailView: View {
         }
     }
 
-    private func menu(for entry: EntryDetail) -> some View {
-        Menu {
-            actionButtons(for: entry)
-        } label: {
-            Label("Entry Actions", icon: "slab-edit")
+    /// Edit goes straight into editing; Delete and Reflect are in the swipe-left Actions.
+    @ViewBuilder
+    private func editButton(for entry: EntryDetail) -> some View {
+        if model.me?.canEdit == true {
+            Button {
+                // Formatting the app can't represent (styles, quotes, images) stays web-only so nothing gets lost.
+                if entry.document != nil { editing = true } else { openURL(entry.webUrl) }
+            } label: {
+                Label("Edit Entry", icon: "slab-edit")
+            }
         }
     }
 
@@ -189,23 +186,6 @@ struct EntryDetailView: View {
         }
     }
 
-    @ViewBuilder
-    private func actionButtons(for entry: EntryDetail) -> some View {
-            // Reflect is pull-down (and the swipe-left sheet), not in this menu.
-            if model.me?.canEdit == true {
-                if entry.document != nil {
-                    Button { editing = true } label: { Label("Edit", icon: "slab-edit") }
-                } else {
-                    // Formatting the app can't represent (styles, quotes, images) stays web-only so nothing gets lost.
-                    Button("Edit on dabble.me", systemImage: "safari") { openURL(entry.webUrl) }
-                }
-            }
-            // Free accounts can delete, not edit.
-            if model.me?.mayDelete == true {
-                Button(role: .destructive) { confirmingDelete = true } label: { Label("Delete", icon: "slab-trash") }
-            }
-    }
-
     /// Tap: the date or how long ago it was.
     private func dateTitle(for entry: EntryDetail) -> some View {
         let full = entry.day?.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year()) ?? entry.date
@@ -233,14 +213,17 @@ struct EntryDetailView: View {
         JournalIntelligence.isEnabled(for: model.me) && !entry.bodyText.isEmpty
     }
 
+    /// The reflection's sheet opens right away, reflecting inside it, so you can see where it'll appear.
     private func reflect(on entry: EntryDetail) async {
-        isReflecting = true
-        defer { isReflecting = false }
+        guard reflection == nil else { return }
+        let pending = EntryReflection(date: entry.day?.long ?? entry.date)
+        reflection = pending
         do {
-            reflection = try await model.reflection(on: entry)
-        } catch is CancellationError {
+            let text = try await model.reflection(on: entry).text
+            if reflection?.id == pending.id { reflection?.text = text }
         } catch {
-            actionError = error.localizedDescription
+            if reflection?.id == pending.id { reflection = nil }
+            if !(error is CancellationError) { actionError = error.localizedDescription }
         }
     }
 
@@ -322,12 +305,9 @@ private struct EntryBody: View {
                 DatedHashtagRow(hashtags: dated)
             }
 
+            // The music icon says what they are; no "Songs" heading.
             if !entry.songs.isEmpty {
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Songs")
-                        .font(.headline)
-                    SongList(songs: entry.songs)
-                }
+                SongList(songs: entry.songs)
             }
 
             // Text first: Dabble Me is about the writing; photos follow it.
@@ -412,10 +392,11 @@ struct DocumentText: View {
     }
 }
 
+/// A reflection's sheet: open while Apple Intelligence writes it (`text` is nil until then).
 struct EntryReflection: Identifiable {
-    let date: String
-    let text: String
-    var id: String { date + text }
+    let id = UUID()
+    var date: String
+    var text: String?
 }
 
 struct ReflectionSheet: View {
@@ -426,33 +407,38 @@ struct ReflectionSheet: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    Text(reflection.date)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    // Light Markdown: the reply bolds its closing question.
-                    Text(AttributedString.journal(reflection.text))
-                        .font(.system(.title3, design: .serif))
-                        .lineSpacing(4)
-                        .textSelection(.enabled)
-                    // Two short lines with the lock centered beside both.
-                    HStack(spacing: 12) {
-                        appIcon("slab-lock")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 18, height: 18)
-                        Text("Written on this device by Apple Intelligence.\nYour entry wasn't sent anywhere.")
-                            .fixedSize(horizontal: false, vertical: true)
+                    if !reflection.date.isEmpty {
+                        Text(reflection.date)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.secondary)
                     }
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .accessibilityElement(children: .combine)
-                    .padding(.top, 8)
+                    if let text = reflection.text {
+                        // Light Markdown: the reply bolds its closing question.
+                        Text(AttributedString.journal(text))
+                            .font(.system(.title3, design: .serif))
+                            .lineSpacing(4)
+                            .textSelection(.enabled)
+                            .transition(.opacity)
+                        privacyNote("Written on this device by Apple Intelligence.\nYour entry wasn't sent anywhere.")
+                    } else {
+                        VStack(spacing: 12) {
+                            ProgressView()
+                                .controlSize(.large)
+                            Text("Reflecting…")
+                                .font(.headline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .frame(maxWidth: .infinity, minHeight: 160)
+                        .accessibilityElement(children: .combine)
+                        privacyNote("Apple Intelligence is writing this on your device.\nYour entry isn't sent anywhere.")
+                    }
                 }
                 .padding()
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             // A short reflection doesn't bounce, so pulling down drags the sheet closed.
             .scrollBounceBehavior(.basedOnSize)
+            .animation(.easeOut(duration: 0.25), value: reflection.text)
             .navigationTitle("Reflection")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -460,6 +446,22 @@ struct ReflectionSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
+    }
+
+    /// Two short lines with the lock centered beside both.
+    private func privacyNote(_ text: String) -> some View {
+        HStack(spacing: 12) {
+            appIcon("slab-lock")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 18, height: 18)
+            Text(text)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .font(.footnote)
+        .foregroundStyle(.secondary)
+        .accessibilityElement(children: .combine)
+        .padding(.top, 8)
     }
 }
 

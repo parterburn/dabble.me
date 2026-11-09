@@ -195,9 +195,10 @@ struct JournalView: View {
             // Only the month header stays while reading down; the title bar comes back on the
             // way up (or at the top).
             // The content offset alone: the bar showing or hiding changes the top inset, which
-            // mustn't read as scrolling (that would flip it back and forth).
-            .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, offset in
-                updateBar(for: offset)
+            // mustn't read as scrolling (that would flip it back and forth). With the content's
+            // height, so a jump from rows loading or resizing isn't taken for scrolling either.
+            .onScrollGeometryChange(for: BarScroll.self) { BarScroll(offset: $0.contentOffset.y, height: $0.contentSize.height) } action: { old, new in
+                updateBar(for: new.offset, contentResized: abs(new.height - old.height) > 1)
             }
             .toolbarVisibility(barHidden ? .hidden : .visible, for: .navigationBar)
             .animation(.easeInOut(duration: 0.2), value: barHidden)
@@ -251,10 +252,16 @@ struct JournalView: View {
         }
     }
 
-    /// Hides the bar after ~40pt of scrolling down and shows it after ~24pt up, only while the
+    /// Hides the bar after ~40pt of scrolling down and shows it after ~60pt up, only while the
     /// person is scrolling, and not again for a moment after it changes.
-    private func updateBar(for offset: CGFloat) {
-        guard Date.now.timeIntervalSince(barChanged) > 0.35 else { barAnchor = offset; return }
+    private struct BarScroll: Equatable {
+        let offset: CGFloat
+        let height: CGFloat
+    }
+
+    private func updateBar(for offset: CGFloat, contentResized: Bool = false) {
+        // Rows loading (placeholders turning into entries) move the offset without anyone scrolling.
+        guard !contentResized, Date.now.timeIntervalSince(barChanged) > 0.35 else { barAnchor = offset; return }
         let wasHidden = barHidden
         defer { if barHidden != wasHidden { barChanged = .now } }
         if offset < 0 {
@@ -263,7 +270,7 @@ struct JournalView: View {
         } else if !isDragging {
             barAnchor = offset
         } else if barHidden {
-            if offset > barAnchor { barAnchor = offset } else if barAnchor - offset > 24 { barHidden = false; barAnchor = offset }
+            if offset > barAnchor { barAnchor = offset } else if barAnchor - offset > 60 { barHidden = false; barAnchor = offset }
         } else {
             if offset < barAnchor { barAnchor = offset } else if offset - barAnchor > 40 { barHidden = true; barAnchor = offset }
         }
@@ -277,7 +284,7 @@ struct JournalView: View {
         Image("Logo")
             .resizable()
             .scaledToFit()
-            .frame(width: 36, height: 36)
+            .frame(width: 44, height: 44) // the size of the + button opposite
             .clipShape(.circle)
             .accessibilityHidden(true)
     }

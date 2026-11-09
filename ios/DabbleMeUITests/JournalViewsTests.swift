@@ -151,7 +151,7 @@ final class JournalViewsTests: XCTestCase {
             .matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
         XCTAssertTrue(firstEntry.waitForExistence(timeout: 10))
         app.openTimelineEntry(firstEntry)
-        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
         sleep(1)
         snap("entry-lists")
         // The title is the date; tapping it shows how long ago it was, and back.
@@ -161,11 +161,12 @@ final class JournalViewsTests: XCTestCase {
         sleep(1)
         snap("entry-relative-date")
         title.tap()
-        app.buttons["Entry Actions"].tap()
+        app.swipeLeft() // the entry's Actions
         let reflect = app.buttons["Reflect on This Entry"]
         if reflect.waitForExistence(timeout: 3) {
             reflect.tap()
-            XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 90))
+            XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 5), "The reflection's sheet opens right away")
+            XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Written on this device")).firstMatch.waitForExistence(timeout: 90))
             snap("entry-reflection")
             app.buttons["Done"].tap()
         } else {
@@ -203,7 +204,7 @@ final class JournalViewsTests: XCTestCase {
         let yosemite = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
         XCTAssertTrue(yosemite.waitForExistence(timeout: 10))
         app.openTimelineEntry(yosemite)
-        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
         let tag = app.links["#hiking"].firstMatch
         XCTAssertTrue(tag.waitForExistence(timeout: 5))
         tag.tap()
@@ -211,7 +212,7 @@ final class JournalViewsTests: XCTestCase {
         // Results sit under sticky month headers, like the Journal.
         let month = Calendar.current.date(byAdding: .day, value: -1, to: .now)!.formatted(.dateTime.month(.wide).year())
         XCTAssertTrue(app.staticTexts[month].exists, "A month header over the results")
-        XCTAssertFalse(app.buttons["Entry Actions"].exists, "The entry should close to show the results")
+        XCTAssertFalse(app.buttons["Edit Entry"].exists, "The entry should close to show the results")
     }
 
     /// A long entry's preview says "Show more" and a tap expands it in place (the month header
@@ -226,7 +227,7 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(collapsed.exists, "A long entry's preview says Show more")
         long.tapRowText()
         XCTAssertTrue(collapsed.waitForNonExistence(timeout: 5), "Tapping it expands it in place")
-        XCTAssertFalse(app.buttons["Entry Actions"].exists, "Expanding doesn't open it")
+        XCTAssertFalse(app.buttons["Edit Entry"].exists, "Expanding doesn't open it")
         let month = Calendar.current.date(byAdding: .day, value: -1, to: .now)!.formatted(.dateTime.month(.wide).year())
         XCTAssertTrue(app.staticTexts[month].exists, "The sticky header stays the month")
         sleep(1)
@@ -259,7 +260,7 @@ final class JournalViewsTests: XCTestCase {
         }
 
         app.openTimelineEntry(row)
-        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
         app.scrollViews.firstMatch.swipeLeft()
         XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout: 5), "Swiping left on the entry shows its actions")
         snap("entry-swipe-actions")
@@ -282,8 +283,16 @@ final class JournalViewsTests: XCTestCase {
                       "The preview shows the entry's text, not just the start")
         sleep(1)
         snap("preview-yosemite")
-        app.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.8)).tap() // dismiss, away from the preview and menu
+        // Tapping the preview grows it into the entry.
+        // The preview sits just above its menu.
+        let menuTop = app.buttons.matching(NSPredicate(format: "label IN %@", ["Reflect on This Entry", "Edit", "Open"]))
+            .allElementsBoundByIndex.map { $0.frame.minY }.min() ?? app.buttons["Open"].frame.minY
+        app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: app.frame.midX, dy: menuTop - 150)).tap()
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10), "Tapping the preview opens the entry")
         XCTAssertTrue(app.buttons["Open"].waitForNonExistence(timeout: 5))
+        sleep(1)
+        snap("preview-opened")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
         sleep(1)
 
         app.scrollTo(row)
@@ -293,7 +302,7 @@ final class JournalViewsTests: XCTestCase {
         sleep(1)
         snap("entry-preview")
         open.tap()
-        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
 
         let chip = app.buttons["#Biscuit"].firstMatch
         XCTAssertTrue(chip.waitForExistence(timeout: 5))
@@ -386,20 +395,38 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(newest.isHittable, "Back at the top")
     }
 
+    /// On This Day rows show dated #tags (how old Biscuit was) above the photo, like the Journal's.
+    func testOnThisDayShowsDatedTags() throws {
+        let app = launch()
+        // Below the fold under the photo memories: scroll down to it.
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Bruges!")).firstMatch.waitForExistence(timeout: 15))
+        let memory = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Biscuit ate the carrot nose")).firstMatch
+        app.scrollTo(memory)
+        XCTAssertTrue(memory.exists)
+        let pill = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "#Biscuit")).firstMatch
+        XCTAssertTrue(pill.waitForExistence(timeout: 5), "The memory shows its dated tag")
+        snap("on-this-day-dated-tag")
+    }
+
     /// Pulling down on an entry asks Apple Intelligence for a reflection.
     func testPullDownOnEntryReflects() throws {
         let app = launch()
         tab(app, "Journal").tap()
         let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
         app.openTimelineEntry(row)
-        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
         let scroll = app.scrollViews.firstMatch
         scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
             .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.85)))
-        guard app.buttons["Done"].waitForExistence(timeout: 90) else {
+        guard app.buttons["Done"].waitForExistence(timeout: 5) else {
             throw XCTSkip("Apple Intelligence isn't available here")
         }
+        // The sheet opens first, reflecting inside it, then the text arrives.
         XCTAssertTrue(app.navigationBars["Reflection"].exists || app.staticTexts["Reflection"].exists)
+        XCTAssertTrue(app.staticTexts["Reflecting…"].exists, "The sheet shows it's reflecting")
+        snap("pull-reflecting")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Written on this device")).firstMatch.waitForExistence(timeout: 90))
+        XCTAssertFalse(app.staticTexts["Reflecting…"].exists)
         snap("pull-reflection")
         app.buttons["Done"].tap()
     }
@@ -411,13 +438,14 @@ final class JournalViewsTests: XCTestCase {
         let memory = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Bruges!")).firstMatch
         XCTAssertTrue(memory.waitForExistence(timeout: 15))
         app.openTimelineEntry(memory)
-        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
         let scroll = app.scrollViews.firstMatch
         scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
             .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.85)))
-        guard app.buttons["Done"].waitForExistence(timeout: 90) else {
+        guard app.buttons["Done"].waitForExistence(timeout: 5) else {
             throw XCTSkip("Apple Intelligence isn't available here")
         }
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Written on this device")).firstMatch.waitForExistence(timeout: 90))
         XCTAssertFalse(app.activityIndicators.firstMatch.exists, "No refresh spinner on the entry")
         // Pull down on the reflection's text (the sheet opens half height, its text near the bottom).
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.72))
@@ -803,7 +831,7 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertFalse(app.buttons["Random Entry"].exists, "No shuffle button")
         let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Big presentation went well")).firstMatch
         app.openTimelineEntry(row)
-        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
 
         XCUIDevice.shared.system.open(URL(string: "me.dabble.app:/shake")!) // Debug stand-in for a shake
         XCTAssertTrue(app.staticTexts["A Random Memory"].waitForExistence(timeout: 10))
@@ -815,14 +843,14 @@ final class JournalViewsTests: XCTestCase {
         // Close: still reading the same entry underneath.
         app.buttons["Close"].tap()
         XCTAssertTrue(app.staticTexts["A Random Memory"].waitForNonExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Entry Actions"].exists, "Still on the entry underneath")
+        XCTAssertTrue(app.buttons["Edit Entry"].exists, "Still on the entry underneath")
 
         XCUIDevice.shared.system.open(URL(string: "me.dabble.app:/shake")!)
         XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
         sleep(1)
         app.buttons["Open"].tap()
         XCTAssertTrue(app.staticTexts["A Random Memory"].waitForNonExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
     }
 
     /// Quick taps on several days all stick: saves go one at a time with the latest selection.
@@ -877,7 +905,7 @@ final class JournalViewsTests: XCTestCase {
         // A short entry opens on a tap; its dated tag is a pill with its age.
         app.scrollTo(row)
         row.tapRowText()
-        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
         let pill = app.buttons.matching(NSPredicate(format: "label == %@ AND value CONTAINS %@", "#Biscuit", "since entry")).firstMatch
         XCTAssertTrue(pill.waitForExistence(timeout: 10))
         snap("entry-dated-pill")

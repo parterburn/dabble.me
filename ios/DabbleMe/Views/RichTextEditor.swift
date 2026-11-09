@@ -249,7 +249,7 @@ struct RichTextEditor: UIViewRepresentable {
         private var hosts: [UIHostingController<AnyView>] = []
 
         func makeToolbar(for editor: RichTextEditor) -> UIToolbar {
-            let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 60))
+            let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 52))
             configure(toolbar, for: editor)
             return toolbar
         }

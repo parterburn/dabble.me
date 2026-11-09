@@ -105,14 +105,18 @@ struct ComposeView: View {
                                 .accessibilityHidden(true)
                         }
                     }
-                // Only when opened from the bar, so the writing area stays as large as it can.
+                // Only when opened from the bar, so the writing area stays as large as it can. They
+                // sit down against the bar: iOS leaves space above the keyboard's bar, which would
+                // otherwise show as a gap under the row.
                 if showsHashtagBar {
                     Divider()
                     hashtagSuggestions
+                        .padding(.bottom, -14)
                 }
                 if showsPhotoDrawer, attachedPhotoCount > 0 {
                     Divider()
                     photoBar
+                        .padding(.bottom, -14)
                 }
             }
             .overlay {
@@ -217,20 +221,10 @@ struct ComposeView: View {
         }
     }
 
-    /// The bar's right: Tags shows or hides the hashtag row (selected while it's open); Link (PRO).
+    /// The bar's right: Link (PRO), then Tags at the far edge, which shows or hides the hashtag row
+    /// (selected while it's open). One row at a time: opening one closes the photos.
     private var tagAndLinkButtons: some View {
         HStack(spacing: 6) {
-            Button {
-                showsHashtagBar.toggle()
-                if showsHashtagBar { Task { recentTags = (try? await model.recentHashtags()) ?? [] } }
-            } label: {
-                appIcon("slab-tag")
-                    .frame(width: 40, height: 36)
-                    .background(showsHashtagBar ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Hashtags")
-            .accessibilityAddTraits(showsHashtagBar ? .isSelected : [])
             if model.me?.mayAddLinks == true {
                 Button { editor.beginLink() } label: {
                     appIcon("slab-link")
@@ -239,6 +233,20 @@ struct ComposeView: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Link")
             }
+            Button {
+                showsHashtagBar.toggle()
+                if showsHashtagBar {
+                    showsPhotoDrawer = false
+                    Task { recentTags = (try? await model.recentHashtags()) ?? [] }
+                }
+            } label: {
+                appIcon("slab-tag")
+                    .frame(width: 40, height: 36)
+                    .background(showsHashtagBar ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Hashtags")
+            .accessibilityAddTraits(showsHashtagBar ? .isSelected : [])
         }
     }
 
@@ -247,6 +255,7 @@ struct ComposeView: View {
         let thumbs = Array(photoItems.prefix(3))
         return Button {
             showsPhotoDrawer.toggle()
+            if showsPhotoDrawer { showsHashtagBar = false } // one row at a time
         } label: {
             HStack(spacing: 8) {
                 ZStack {
@@ -344,7 +353,7 @@ struct ComposeView: View {
             }
             .font(.subheadline)
             .padding(.horizontal)
-            .padding(.vertical, 8)
+            .padding(.top, 8) // none below: the bar's own space sits under it
         }
         .scrollIndicators(.hidden)
         // Its own height: a horizontal scroll view would otherwise stretch to share the editor's.
@@ -387,7 +396,7 @@ struct ComposeView: View {
                 }
             }
             .padding(.horizontal)
-            .padding(.vertical, 8)
+            .padding(.top, 8) // none below: the bar's own space sits under it
         }
         .scrollIndicators(.hidden)
         .fixedSize(horizontal: false, vertical: true)
