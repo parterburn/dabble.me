@@ -29,10 +29,15 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
 
     static var defaults: UserDefaults? { UserDefaults(suiteName: appGroup) }
 
-    /// Where the widget's photo copies live (the App Group's shared folder).
-    static func photoURL(named name: String) -> URL? {
+    /// The folder of the widget's photo copies, inside the App Group's shared folder (which also
+    /// holds the shared settings: clean up in here only).
+    static var photoFolder: URL? {
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroup)?
-            .appending(path: "WidgetPhotos", directoryHint: .isDirectory).appending(path: name)
+            .appending(path: "WidgetPhotos", directoryHint: .isDirectory)
+    }
+
+    static func photoURL(named name: String) -> URL? {
+        photoFolder?.appending(path: name)
     }
 
     static func load() -> WidgetSnapshot? {

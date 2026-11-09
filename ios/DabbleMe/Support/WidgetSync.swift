@@ -86,18 +86,24 @@ enum WidgetSync {
         _ = await download(url, to: file)
     }
 
+    /// Downloads a photo copy once: a second caller while it's under way waits for the same one
+    /// (so the settings preview only redraws once the file is there).
     private static func download(_ url: URL, to file: URL) async -> Bool {
         let name = file.lastPathComponent
-        guard !downloading.contains(name) else { return false }
-        downloading.insert(name)
-        defer { downloading.remove(name) }
-        guard let (data, _) = try? await URLSession.shared.data(from: url),
-              let jpeg = await Task.detached(operation: { smallJPEG(data) }).value else { return false }
-        try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
-        return (try? jpeg.write(to: file, options: .atomic)) != nil
+        if let running = downloads[name] { return await running.value }
+        let task = Task<Bool, Never> {
+            guard let (data, _) = try? await URLSession.shared.data(from: url),
+                  let jpeg = await Task.detached(operation: { smallJPEG(data) }).value else { return false }
+            try? FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
+            return (try? jpeg.write(to: file, options: .atomic)) != nil
+        }
+        downloads[name] = task
+        let saved = await task.value
+        downloads[name] = nil
+        return saved
     }
 
-    private static var downloading: Set<String> = []
+    private static var downloads: [String: Task<Bool, Never>] = [:]
 
     /// At most 700 points wide: widgets have little memory, and that's sharp at widget size.
     nonisolated private static func smallJPEG(_ data: Data) -> Data? {
@@ -111,8 +117,10 @@ enum WidgetSync {
         }.jpegData(compressionQuality: 0.8)
     }
 
-    private static func removePhotos(except keep: String?) {
-        guard let folder = WidgetSnapshot.photoURL(named: "")?.deletingLastPathComponent(),
+    /// Deletes the widget's other photo copies: only inside `WidgetSnapshot.photoFolder`, never the
+    /// rest of the App Group (its shared settings live there too).
+    static func removePhotos(except keep: String?) {
+        guard let folder = WidgetSnapshot.photoFolder,
               let files = try? FileManager.default.contentsOfDirectory(atPath: folder.path) else { return }
         for file in files where file != keep {
             try? FileManager.default.removeItem(at: folder.appending(path: file))
