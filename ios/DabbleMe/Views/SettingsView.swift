@@ -53,7 +53,7 @@ struct SettingsView: View {
                     // the guide links to Claude's and ChatGPT's directories.
                     if let connectors = model.me?.aiConnectors {
                         Link(destination: connectors.guideUrl) {
-                            Label("Claude/ChatGPT Connector", icon: "slab-cloud")
+                            Label("Claude/ChatGPT Connector", icon: "slab-sparkles")
                         }
                     }
                     Link(destination: model.me?.settingsUrl ?? AppConfig.webURL("settings")) {

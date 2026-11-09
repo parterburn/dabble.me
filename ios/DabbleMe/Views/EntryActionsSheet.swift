@@ -30,7 +30,7 @@ struct EntryActionsSheet: View {
                     .foregroundStyle(.secondary)
                     .padding(.bottom, 4)
                 if canReflect {
-                    row("Reflect on This Entry", "slab-thought-bubble", .reflect)
+                    row("Reflect on This Entry", "slab-sparkles", .reflect)
                 }
                 if canEdit {
                     row(entry.document != nil ? "Edit" : "Edit on dabble.me", "slab-edit", .edit)

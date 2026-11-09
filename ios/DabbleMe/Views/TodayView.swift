@@ -98,29 +98,37 @@ struct TodayView: View {
                         .redacted(reason: .placeholder)
                         .accessibilityLabel("Writing a prompt for you")
                 } else if let prompt = personal ?? today.prompt {
-                    Text(personal != nil ? "A prompt for you" : "Today's prompt")
-                        .font(.caption.weight(.semibold))
-                        .textCase(.uppercase)
-                        .foregroundStyle(.tint)
+                    HStack {
+                        Text(personal != nil ? "A prompt for you" : "Today's prompt")
+                            .font(.caption.weight(.semibold))
+                            .textCase(.uppercase)
+                            .foregroundStyle(.tint)
+                        Spacer()
+                        if usesAI, personal != nil {
+                            // Another prompt: an icon in the card's top-right corner.
+                            Button {
+                                Task { await writePrompt(for: today) }
+                            } label: {
+                                if isWritingPrompt {
+                                    ProgressView().controlSize(.small)
+                                } else {
+                                    Label("Another Prompt", icon: "slab-arrows-rotate")
+                                }
+                            }
+                            .labelStyle(.iconOnly)
+                            .buttonStyle(.bordered)
+                            .buttonBorderShape(.circle)
+                            .disabled(isWritingPrompt)
+                            .accessibilityLabel("Another Prompt")
+                            .padding(.vertical, -8) // keep the label row's height
+                        }
+                    }
                     Text(prompt)
                         .font(.system(.title2, design: .serif))
                         .contentTransition(.opacity)
                 } else {
                     Text("How was your day?")
                         .font(.system(.title2, design: .serif))
-                }
-                if usesAI, personal != nil {
-                    Button {
-                        Task { await writePrompt(for: today) }
-                    } label: {
-                        if isWritingPrompt {
-                            ProgressView().controlSize(.small)
-                        } else {
-                            Label("Another Prompt", icon: "slab-arrows-rotate")
-                        }
-                    }
-                    .font(.subheadline)
-                    .disabled(isWritingPrompt)
                 }
                 if model.me?.canWrite == false {
                     Text("Reply to today's Dabble Me email and it'll show up here as your entry.")

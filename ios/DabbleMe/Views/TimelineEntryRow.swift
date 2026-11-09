@@ -39,7 +39,7 @@ struct TimelineEntryRow: View {
                 Button {
                     Task { await actions.reflect(on: entry.id, model: model) }
                 } label: {
-                    Label("Reflect", icon: "slab-thought-bubble")
+                    Label("Reflect", icon: "slab-sparkles")
                 }
                 .tint(.accentColor)
             }

@@ -134,7 +134,8 @@ enum JournalIntelligence {
 
     /// One reflection question inspired by recent entries.
     /// `recent` are dated lines from `dated(_:today:)`: the model needs to know those things happened
-    /// on earlier days, or it asks about "today's" game that was yesterday.
+    /// on earlier days, or it asks about "today's" game that was yesterday. (No concrete examples in
+    /// the instructions: the on-device model copies them, calling a hike "yesterday's game".)
     static func reflectionPrompt(from recent: [String], today: JournalDay) async throws -> String {
         let context = recent.prefix(5).joined(separator: "\n")
         let todayText = today.formatted(.dateTime.weekday(.wide).month(.wide).day())
@@ -142,9 +143,9 @@ enum JournalIntelligence {
             instructions: """
             You write one gentle journaling prompt for today: a single question under 20 words. Recent entries \
             are given with their dates; everything in them happened on those earlier days, not today. If the \
-            question mentions something from them, put it in the past ("yesterday's game", "last week's trip") \
-            and ask how it connects to today. Never describe a past event as happening today. Reply with only \
-            the question.
+            question mentions something from them, use the entry's own words for it (a hike stays a hike), say \
+            when it was (yesterday, last week), and ask how it connects to today. Never mention anything the \
+            entries don't say, and never describe a past event as happening today. Reply with only the question.
             """,
             prompt: "Today is \(todayText).\n" + (context.isEmpty ? "No recent entries yet." : "Recent entries:\n\(clipped(context))")
         )

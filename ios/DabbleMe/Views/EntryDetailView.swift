@@ -537,7 +537,7 @@ private struct PullToReflect: ViewModifier {
                 }
                 .overlay(alignment: .top) {
                     if pull > 8, !isRunning {
-                        Label(armed ? "Release to reflect" : "Pull to reflect on this entry", icon: "slab-thought-bubble")
+                        Label(armed ? "Release to reflect" : "Pull to reflect on this entry", icon: "slab-sparkles")
                             .font(.subheadline.weight(.medium))
                             .foregroundStyle(armed ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
                             .opacity(min(1, (pull - 8) / 40))
