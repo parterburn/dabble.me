@@ -17,7 +17,16 @@
     background-color: darken($olive,20);
     text-shadow: 0px 0px 3px darken($olive,40);
   }  
+  // 16px links and ~19px icons (up from 14px/16px) so they read clearly. The
+  // icons stay under Bootstrap's 20px line-height, which keeps the navbar 51px
+  // tall: .nav-up and the sticky entry headers rely on that height.
+  .navbar-nav > li > a .slab-icon {
+    width: 1.2em;
+    height: 1.2em;
+    vertical-align: middle; // the base -0.2em offset would grow the line box
+  }
   .navbar-nav > li > a {
+    font-size: 16px;
     color:whiteSmoke;
     letter-spacing: 0.5px;
     -webkit-transition: all 0.3s;
