@@ -242,7 +242,7 @@ private extension SettingsView {
                 set: { enabled in
                     Task {
                         await lock.setEnabled(enabled)
-                        WidgetSync.update(from: model) // the personal prompt leaves the widget while locked
+                        WidgetSync.update(from: model)
                     }
                 }
             ))

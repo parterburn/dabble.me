@@ -1,7 +1,8 @@
 import Foundation
 
 /// What the home-screen widget shows, written by the app into the shared App Group.
-/// Counts and a writing prompt only, never entry text: widgets are visible without unlocking.
+/// The streak, a writing prompt and, only if the person chooses it in Settings → Home Screen
+/// Widget, an entry to look back on.
 struct WidgetSnapshot: Codable, Equatable, Sendable {
     static let appGroup = "group.me.dabble.ios"
     static let storageKey = "widget.snapshot"
@@ -17,7 +18,7 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     var memories: Int
     var memoriesFirstYear: Int?
     var prompt: String?
-    /// With "On This Day Entry" chosen (and no Face ID lock): an entry to look back on, e.g.
+    /// With "On This Day Entry" chosen: an entry to look back on, e.g.
     /// "1 year ago · 2025" or "Throwback · 31 days ago", and the start of its text.
     var entryTitle: String? = nil
     var entryText: String? = nil
@@ -72,8 +73,8 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     static let todayURL = URL(string: "me.dabble.app:/today")!
 }
 
-/// What the medium widget shows beside the streak. Only `.memoryEntry` puts journal text on the
-/// home screen, and never while the app is locked with Face ID (widgets show without unlocking).
+/// What the medium widget shows beside the streak. Only `.memoryEntry` puts entry text on the home
+/// screen. The person's choice alone decides it; the Face ID lock doesn't change it.
 enum WidgetContent: String, CaseIterable, Identifiable, Sendable {
     /// Today's writing prompt: nothing from the journal.
     case prompt
@@ -94,7 +95,7 @@ enum WidgetContent: String, CaseIterable, Identifiable, Sendable {
 
     var summary: String {
         switch self {
-        case .prompt: "A writing prompt for today. Nothing from your journal."
+        case .prompt: "A writing prompt for today. No entry text."
         case .memoryCount: "How many entries you wrote on this day in past years, without their text."
         case .memoryEntry: "The start of an entry from this day in past years, or a throwback when there isn't one."
         }

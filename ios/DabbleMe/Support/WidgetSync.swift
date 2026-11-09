@@ -3,9 +3,9 @@ import WidgetKit
 
 /// Keeps the home-screen widget's snapshot (streak, written today, today's prompt and, only with
 /// "On This Day Entry" chosen, an entry to look back on) in step with the app. The prompt is the
-/// personal one Apple Intelligence wrote for today when there is one. Neither the personal prompt
-/// nor any entry text goes to the widget while the app is locked with Face ID (widgets show
-/// without unlocking).
+/// personal one Apple Intelligence wrote for today when there is one. Settings → Home Screen
+/// Widget decides what goes on it; the Face ID lock doesn't (it guards the app, and the person
+/// chose what the widget shows).
 @MainActor
 enum WidgetSync {
     static func update(from model: AppModel) {
@@ -27,16 +27,16 @@ enum WidgetSync {
     }
 
     private static func personalPrompt(for day: String, model: AppModel) -> String? {
-        guard JournalIntelligence.isEnabled(for: model.me), !model.lock.isEnabled,
+        guard JournalIntelligence.isEnabled(for: model.me),
               UserDefaults.standard.string(forKey: "ai.prompt.day") == day,
               let text = UserDefaults.standard.string(forKey: "ai.prompt.text"), !text.isEmpty else { return nil }
         return text
     }
 
     /// On This Day's first memory, or else the throwback, when the person has asked for entries on
-    /// the widget and the app isn't locked.
+    /// the widget.
     private static func shownEntry(_ today: TodaySummary, content: WidgetContent, model: AppModel) -> (title: String, text: String)? {
-        guard content == .memoryEntry, !model.lock.isEnabled else { return nil }
+        guard content == .memoryEntry else { return nil }
         let title: String
         let entry: EntrySummary
         if let memory = today.onThisDay.first {

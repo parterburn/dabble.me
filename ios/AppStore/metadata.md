@@ -95,7 +95,7 @@ Data used to track you: **none**. Data linked to you, all for **App Functionalit
 | User Content → Photos or Videos | Photos attached to entries |
 | Identifiers → User ID | Account identity |
 
-The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resources/PrivacyInfo.xcprivacy`. Not collected: Apple Intelligence features run on the device; reminders, the Face ID setting and drafts stay on the device; the widget reads a streak count, the day's prompt and (only if the person turns on Show Entries in Widget) the start of one entry, which the app stores in its App Group on the device.
+The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resources/PrivacyInfo.xcprivacy`. Not collected: Apple Intelligence features run on the device; reminders, the Face ID setting and drafts stay on the device; the widget reads a streak count, the day's prompt and (only if the person chooses On This Day Entry in Settings → Home Screen Widget) the start of one entry, which the app stores in its App Group on the device.
 
 ## App Review information
 

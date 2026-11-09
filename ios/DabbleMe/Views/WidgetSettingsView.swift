@@ -62,9 +62,7 @@ struct WidgetSettingsView: View {
 
     @ViewBuilder
     private var footer: some View {
-        if content == .memoryEntry, model.lock.isEnabled {
-            Text("Entries stay off the widget while Face ID is on: widgets can be seen without unlocking your phone. It shows today's prompt instead.")
-        } else if content != .prompt, model.me?.isPro != true {
+        if content != .prompt, model.me?.isPro != true {
             Text("On This Day is part of Dabble Me PRO, so the widget shows a throwback or today's prompt instead.")
         } else {
             Text("Widgets can be seen without unlocking your phone. Add one by touching and holding your home screen.")
