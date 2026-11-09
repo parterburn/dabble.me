@@ -339,9 +339,9 @@ private struct GuestSettings: View {
                 }
                 .disabled(model.isSigningIn)
                 Section {
-                    Link(destination: AppConfig.webURL("support")) { Label("Help & Support", icon: "slab-circle-question") }
-                    Link(destination: AppConfig.webURL("privacy")) { Label("Privacy Policy", icon: "slab-hand") }
-                    Link(destination: AppConfig.webURL("terms")) { Label("Terms", icon: "slab-anchor") }
+                    Link(destination: AppConfig.webURL("support")) { ExternalLinkLabel("Help & Support", icon: "slab-circle-question") }
+                    Link(destination: AppConfig.webURL("privacy")) { ExternalLinkLabel("Privacy Policy", icon: "slab-hand") }
+                    Link(destination: AppConfig.webURL("terms")) { ExternalLinkLabel("Terms", icon: "slab-anchor") }
                 }
                 #if DEBUG
                 Section("Development") { ServerPicker() }

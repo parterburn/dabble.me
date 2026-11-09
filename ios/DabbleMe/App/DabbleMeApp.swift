@@ -53,8 +53,8 @@ struct RootView: View {
         }
         .preferredColorScheme(theme.colorScheme)
         .onOpenURL { url in
-            // From the widget: me.dabble.app:/write or :/today. (Sign-in callbacks never get here;
-            // the web sign-in session handles them.)
+            // From the widget: me.dabble.app:/write, :/today, or :/entry/<id> (the entry it shows).
+            // (Sign-in callbacks never get here; the web sign-in session handles them.)
             guard model.isSignedIn, url.scheme == "me.dabble.app" else { return }
             #if DEBUG
             // UI tests can't shake the simulator: me.dabble.app:/shake does the same.
@@ -63,6 +63,11 @@ struct RootView: View {
                 return
             }
             #endif
+            if url.path.hasPrefix("/entry/"), let id = Int(url.lastPathComponent) {
+                model.selectedTab = .journal
+                model.openEntryRequest = id
+                return
+            }
             model.selectedTab = .today
             if url.path == "/write" { model.composeRequest = true }
         }

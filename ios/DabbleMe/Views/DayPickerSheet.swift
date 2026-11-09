@@ -72,10 +72,21 @@ private struct EntryCalendar: UIViewRepresentable {
             view.visibleDateComponents = DateComponents(calendar: calendar, year: latest.year, month: latest.month)
         }
         view.setContentHuggingPriority(.defaultHigh, for: .vertical)
+        // Its own minimum width would push the sheet's column (and its title and X) past the
+        // screen edges; it fits the width it's given instead.
+        view.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         return view
     }
 
     func updateUIView(_ view: UICalendarView, context: Context) {}
+
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UICalendarView, context: Context) -> CGSize? {
+        guard let width = proposal.width else { return nil }
+        let height = uiView.systemLayoutSizeFitting(CGSize(width: width, height: UIView.layoutFittingCompressedSize.height),
+                                                    withHorizontalFittingPriority: .required,
+                                                    verticalFittingPriority: .fittingSizeLevel).height
+        return CGSize(width: width, height: height)
+    }
 
     final class Coordinator: NSObject, UICalendarViewDelegate, UICalendarSelectionSingleDateDelegate {
         let days: Set<String>

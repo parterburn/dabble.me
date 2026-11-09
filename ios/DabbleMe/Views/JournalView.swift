@@ -70,8 +70,9 @@ struct JournalView: View {
                 }
                 .sheet(isPresented: $composing) { ComposeView(mode: .new) }
                 .entryActionSheets(actions)
-                .onChange(of: model.openEntryRequest) { _, id in
-                    // "Open" from the shake-for-a-memory sheet.
+                // "Open" from the shake-for-a-memory sheet, or the widget's entry. Also on first
+                // appearing: the Journal tab may not exist yet when the request comes.
+                .onChange(of: model.openEntryRequest, initial: true) { _, id in
                     guard let id else { return }
                     model.openEntryRequest = nil
                     mode = .list
@@ -300,8 +301,9 @@ struct JournalView: View {
             .accessibilityHidden(true)
     }
 
-    /// Scrolls the timeline to a day's entry: to its month at once, then, once the month has
-    /// loaded and its rows are laid out, to the entry itself.
+    /// Opens a day's entry picked from the scrubber's calendar, with the timeline scrolled to it
+    /// behind (so Back lands there): to its month at once, then, once the month has loaded and its
+    /// rows are laid out, to the entry, and opens it.
     private func jump(to day: JournalDay, proxy: ScrollViewProxy) async {
         let key = day.monthKey
         if let first = model.monthEntries[key]?.first {
@@ -310,13 +312,20 @@ struct JournalView: View {
             proxy.scrollTo(PlaceholderID(month: key, index: 0), anchor: .top)
         }
         await model.loadMonths(around: key)
+        // Let the calendar's sheet finish closing: a push while it's still going is dropped.
+        try? await Task.sleep(for: .milliseconds(450))
         for _ in 0..<30 {
             if let entry = model.monthEntries[key]?.first(where: { $0.date == day.iso }) {
                 try? await Task.sleep(for: .milliseconds(150))
-                withAnimation { proxy.scrollTo(entry.id, anchor: .top) }
+                proxy.scrollTo(entry.id, anchor: .top)
+                path.append(EntryRoute(id: entry.id))
                 return
             }
             try? await Task.sleep(for: .milliseconds(150))
+        }
+        // The month didn't load into the timeline in time: open the day's entry anyway.
+        if let entry = try? await model.entries(on: day).first {
+            path.append(EntryRoute(id: entry.id))
         }
     }
 

@@ -323,7 +323,7 @@ struct ProInfoView: View {
 
 /// A Settings row that opens dabble.me (or another site) in the browser: its label, and a light
 /// grey "opens outside" arrow at the far right.
-private struct ExternalLinkLabel: View {
+struct ExternalLinkLabel: View {
     let title: String
     let icon: String
 
@@ -341,7 +341,7 @@ private struct ExternalLinkLabel: View {
     }
 }
 
-private struct ExternalLinkIcon: View {
+struct ExternalLinkIcon: View {
     var body: some View {
         appIcon("slab-external-link")
             .resizable()

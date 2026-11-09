@@ -353,6 +353,14 @@ final class AppModel {
         return page.entries
     }
 
+    /// "Sunday, Nov 9, 2025 · 1 year ago": an entry's date and how long ago it was, for the
+    /// Random Memory and Reflection sheets.
+    func dateLine(for day: JournalDay?, fallback: String) -> String {
+        guard let day else { return fallback }
+        let today = today?.day ?? JournalDay(localDate: .now)
+        return "\(day.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year())) · \(day.relative(to: today))"
+    }
+
     /// An on-device Apple Intelligence reflection on an entry (PRO). Only the entry itself: with other
     /// entries as context, the small model kept mixing their details in.
     func reflection(on entry: EntryDetail) async throws -> EntryReflection {

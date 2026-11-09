@@ -37,8 +37,26 @@ struct TimelineEntryRow: View {
     private var styledText: AttributedString {
         let source = isExpanded ? (full?.bodyText ?? previewText) : previewText
         if source.isEmpty { return AttributedString("📷 Photo") }
-        let text = AttributedString.journal(Self.bullets(source))
+        let text = Self.tighteningParagraphGaps(in: AttributedString.journal(Self.bullets(source)),
+                                                fontSize: bodySize * textSize.scale, design: fontStyle.design)
         return isExpanded ? RichText.linkingURLs(in: RichText.linkingHashtags(in: text)) : Self.tintingHashtags(in: text)
+    }
+
+    /// Paragraphs come with a blank line between them, a whole line tall; the entry page spaces
+    /// them less (paragraph spacing). Setting each blank line in a small font makes the gap here
+    /// match it, about 0.9 of the text size.
+    private static func tighteningParagraphGaps(in text: AttributedString, fontSize: CGFloat, design: Font.Design) -> AttributedString {
+        var result = text
+        let characters = Array(result.characters)
+        var index = result.startIndex
+        for offset in characters.indices {
+            let next = result.index(afterCharacter: index)
+            if offset > 0, characters[offset] == "\n", characters[offset - 1] == "\n" {
+                result[index..<next].font = .system(size: fontSize * 0.55, design: design)
+            }
+            index = next
+        }
+        return result
     }
 
     private static func bullets(_ text: String) -> String {
@@ -269,7 +287,7 @@ final class EntryActions {
         reflection = pending
         do {
             let entry = try await model.entry(id: id)
-            if reflection?.id == pending.id { reflection?.date = entry.day?.long ?? entry.date }
+            if reflection?.id == pending.id { reflection?.date = model.dateLine(for: entry.day, fallback: entry.date) }
             let text = try await model.reflection(on: entry).text
             if reflection?.id == pending.id { reflection?.text = text }
         } catch {
@@ -335,9 +353,19 @@ struct SongList: View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(songs, id: \.self) { song in
                 Link(destination: song.spotifyUrl) {
-                    Label(song.label, icon: "slab-music")
-                        .multilineTextAlignment(.leading)
+                    // The icon close to the song (a Label leaves more room between them).
+                    HStack(alignment: .firstTextBaseline, spacing: 6) {
+                        appIcon("slab-music")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 18, height: 18)
+                            .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 5 }
+                        Text(song.label)
+                            .multilineTextAlignment(.leading)
+                    }
                 }
+                .accessibilityLabel(song.label)
+                .accessibilityHint("Opens in Spotify")
             }
         }
         .font(.subheadline)

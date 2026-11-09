@@ -57,6 +57,7 @@ struct WidgetSettingsView: View {
                 in: .rect(cornerRadius: 26)
             )
             .animation(.snappy(duration: 0.25), value: content)
+            .allowsHitTesting(false) // a picture of the widget: its links are for the home screen
             .accessibilityElement(children: .combine) // read as one: what the widget would say
     }
 

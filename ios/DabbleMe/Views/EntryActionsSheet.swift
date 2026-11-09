@@ -21,8 +21,9 @@ struct EntryActionsSheet: View {
 
     private var height: CGFloat {
         let actions = (canReflect ? 1 : 0) + (canEdit ? 1 : 0) + (canDelete ? 1 : 0)
-        let tagRows = tags.reduce(0) { $0 + ($1.age == nil ? 1 : 1.6) }
-        return min(70 + CGFloat(actions) * 56 + (tags.isEmpty ? 0 : 40 + tagRows * 40), 640)
+        // Pills wrap, a few to a row; dated ones are taller.
+        let pillRows = CGFloat((tags.count + 2) / 3) * (tags.contains { $0.age != nil } ? 64 : 44)
+        return min(70 + CGFloat(actions) * 62 + (tags.isEmpty ? 0 : 50 + pillRows), 640)
     }
 
     var body: some View {
@@ -33,7 +34,7 @@ struct EntryActionsSheet: View {
                     .foregroundStyle(.secondary)
                     .padding(.bottom, 4)
                 if canReflect {
-                    row("Reflect on This Entry", "slab-sparkles", .reflect)
+                    row("Reflection", "slab-sparkles", .reflect)
                 }
                 if canEdit {
                     row(entry.document != nil ? "Edit" : "Edit on dabble.me", "slab-edit", .edit)
@@ -46,30 +47,20 @@ struct EntryActionsSheet: View {
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .padding(.top, 10)
-                    ForEach(tags, id: \.tag) { item in
-                        Button {
-                            perform(.search(item.tag))
-                        } label: {
-                            HStack(alignment: .firstTextBaseline, spacing: 10) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text("#\(item.tag)")
-                                        .foregroundStyle(.tint)
-                                    if let age = item.age {
-                                        Text(age.prefix(1).uppercased() + age.dropFirst())
-                                            .font(.footnote)
-                                            .foregroundStyle(.primary.opacity(0.72)) // stronger than .secondary
-                                    }
-                                }
-                                Spacer()
+                    // The same pills as under entries; dated ones show their age. Tap to search.
+                    FlowLayout(spacing: 8) {
+                        ForEach(tags, id: \.tag) { item in
+                            Button {
+                                perform(.search(item.tag))
+                            } label: {
+                                HashtagPill(tag: item.tag, age: item.age)
                             }
-                            .padding(.vertical, 4)
-                            .contentShape(.rect)
+                            .buttonStyle(.plain)
+                            .accessibilityIdentifier("ActionsSheetTag")
+                            .accessibilityLabel("#\(item.tag)")
+                            .accessibilityValue(item.age ?? "")
+                            .accessibilityHint("Searches for this hashtag")
                         }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("ActionsSheetTag")
-                        .accessibilityLabel("#\(item.tag)")
-                        .accessibilityValue(item.age ?? "")
-                        .accessibilityHint("Searches for this hashtag")
                     }
                 }
             }

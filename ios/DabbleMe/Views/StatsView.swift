@@ -179,22 +179,25 @@ private struct WritingHeatmap: View {
         return weeks
     }
 
-    /// "JAN" over the first column of each month (the first column only if the month has room).
+    /// "JAN" over the first column of each month, or "NOV 2025" for a month from last year (the
+    /// first column only if the month has room).
     private func monthLabels(_ weeks: [[JournalDay?]]) -> [String?] {
-        let months = weeks.map { week in week.compactMap { $0 }.first.map { String($0.iso.dropFirst(5).prefix(2)) } }
+        let months = weeks.map { week in week.compactMap { $0 }.first.map { String($0.iso.prefix(7)) } } // "2025-11"
         return months.indices.map { index in
             guard let month = months[index] else { return nil }
             if index == 0 {
                 // Skip a sliver of a month at the start: its label would run into the next one.
-                return months.prefix(3).allSatisfy { $0 == month } ? Self.monthName(month) : nil
+                return months.prefix(3).allSatisfy { $0 == month } ? monthName(month) : nil
             }
-            return months[index - 1] == month ? nil : Self.monthName(month)
+            return months[index - 1] == month ? nil : monthName(month)
         }
     }
 
-    private static func monthName(_ number: String) -> String? {
-        guard let index = Int(number), (1...12).contains(index) else { return nil }
-        return Calendar.current.shortMonthSymbols[index - 1].uppercased() // the reader's language
+    private func monthName(_ key: String) -> String? {
+        let parts = key.split(separator: "-")
+        guard parts.count == 2, let index = Int(parts[1]), (1...12).contains(index) else { return nil }
+        let name = Calendar.current.shortMonthSymbols[index - 1].uppercased() // the reader's language
+        return parts[0] == today.year ? name : "\(name) \(parts[0])"
     }
 
     var body: some View {

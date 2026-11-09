@@ -19,7 +19,8 @@ enum WidgetSync {
             memoriesFirstYear: memories.compactMap { $0.day.flatMap { Int($0.year) } }.min(),
             prompt: personalPrompt(for: today.date, model: model) ?? today.prompt,
             entryTitle: shownEntry(today, content: WidgetSnapshot.content, model: model)?.title,
-            entryText: shownEntry(today, content: WidgetSnapshot.content, model: model)?.text
+            entryText: shownEntry(today, content: WidgetSnapshot.content, model: model)?.text,
+            entryID: shownEntry(today, content: WidgetSnapshot.content, model: model)?.id
         )
         guard snapshot != WidgetSnapshot.load() else { return }
         snapshot.save()
@@ -35,7 +36,7 @@ enum WidgetSync {
 
     /// On This Day's first memory, or else the throwback, when the person has asked for entries on
     /// the widget.
-    private static func shownEntry(_ today: TodaySummary, content: WidgetContent, model: AppModel) -> (title: String, text: String)? {
+    private static func shownEntry(_ today: TodaySummary, content: WidgetContent, model: AppModel) -> (title: String, text: String, id: Int)? {
         guard content == .memoryEntry else { return nil }
         let title: String
         let entry: EntrySummary
@@ -50,7 +51,7 @@ enum WidgetSync {
             return nil
         }
         let text = entry.excerpt.isEmpty ? "📷 Photo" : String(entry.excerpt.prefix(240))
-        return (title, text)
+        return (title, text, entry.id)
     }
 
     static func setContent(_ content: WidgetContent, model: AppModel) {
@@ -68,7 +69,7 @@ enum WidgetSync {
                            streak: today.currentStreak ?? 0,
                            memories: content != .prompt && !today.onThisDay.isEmpty ? today.onThisDay.count : nil,
                            prompt: personalPrompt(for: today.date, model: model) ?? today.prompt,
-                           entryTitle: shown?.title, entryText: shown?.text)
+                           entryTitle: shown?.title, entryText: shown?.text, entryID: shown?.id)
     }
 
     static func clear() {

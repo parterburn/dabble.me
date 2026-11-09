@@ -22,6 +22,8 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     /// "1 year ago · 2025" or "Throwback · 31 days ago", and the start of its text.
     var entryTitle: String? = nil
     var entryText: String? = nil
+    /// The shown entry, so tapping it on the widget opens it.
+    var entryID: Int? = nil
 
     static var defaults: UserDefaults? { UserDefaults(suiteName: appGroup) }
 
@@ -71,6 +73,7 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     /// Links the widget opens (the app's registered URL scheme, shared with OAuth sign-in).
     static let writeURL = URL(string: "me.dabble.app:/write")!
     static let todayURL = URL(string: "me.dabble.app:/today")!
+    static func entryURL(_ id: Int) -> URL { URL(string: "me.dabble.app:/entry/\(id)")! }
 }
 
 /// What the medium widget shows beside the streak. Only `.memoryEntry` puts entry text on the home

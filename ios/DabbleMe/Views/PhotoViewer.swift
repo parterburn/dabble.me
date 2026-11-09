@@ -79,8 +79,9 @@ enum PhotoActions {
         top.present(sheet, animated: true)
     }
 
-    /// Uses add-only access: Dabble Me never asks to read your photo library.
-    static func save(_ data: Data) async -> PhotoSaveResult {
+    /// Uses add-only access: Dabble Me never asks to read your photo library. Not on the main
+    /// actor: Photos runs the change block on its own queue, and a main-actor closure there traps.
+    nonisolated static func save(_ data: Data) async -> PhotoSaveResult {
         let status = await PHPhotoLibrary.requestAuthorization(for: .addOnly)
         guard status == .authorized || status == .limited else { return .denied }
         do {
@@ -173,13 +174,13 @@ struct PhotoViewer: View {
                 Button {
                     Task { saveResult = await PhotoActions.save(data) }
                 } label: {
-                    pill(Label("Save", icon: "slab-arrow-down-to-line"))
+                    pill("Save", icon: "slab-arrow-down-to-line")
                 }
                 .accessibilityLabel("Save to Photos")
                 Button {
                     Task { await PhotoActions.share(photo) }
                 } label: {
-                    pill(Label("Share", icon: "slab-arrow-up-from-line"))
+                    pill("Share", icon: "slab-arrow-up-from-line")
                 }
             }
             .buttonStyle(.plain)
@@ -189,8 +190,12 @@ struct PhotoViewer: View {
     }
 
     /// White text and icon on a dark translucent capsule, readable over any photo.
-    private func pill(_ label: Label<Text, Image>) -> some View {
-        label
+    private func pill(_ title: String, icon: String) -> some View {
+        // The icon close to its word (a Label leaves more room between them).
+        HStack(spacing: 5) {
+            appIcon(icon)
+            Text(title)
+        }
             .font(.body.weight(.semibold))
             .foregroundStyle(.white)
             .padding(.horizontal, 20)

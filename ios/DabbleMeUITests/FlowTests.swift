@@ -114,8 +114,8 @@ final class FlowTests: XCTestCase {
         snap("journal-scrubbed")
     }
 
-    /// Tapping (not dragging) the scrubber opens a calendar of written days; picking one scrolls
-    /// the timeline to it.
+    /// Tapping (not dragging) the scrubber opens a calendar of written days; picking one opens that
+    /// day's entry, with the timeline scrolled to it behind.
     func testTappingScrubberJumpsToADay() throws {
         openJournal()
         scrubToBottom() // start far from the day picked below
@@ -131,11 +131,24 @@ final class FlowTests: XCTestCase {
         let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", label)).firstMatch
         XCTAssertTrue(day.waitForExistence(timeout: 10), "\(label) is in the calendar")
         day.tap()
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10), "The day's entry opens")
+        // The entry page's text is a text view (selectable across paragraphs), not a label.
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "Biscuit has discovered", "Biscuit has discovered")).firstMatch.exists)
+        snap("day-picked")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
         let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Biscuit has discovered")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10))
         sleep(1)
-        XCTAssertTrue(row.isHittable, "The timeline jumped to the day")
-        snap("day-picked")
+        XCTAssertTrue(row.isHittable, "Back lands on the day in the timeline")
+    }
+
+    /// The medium widget's entry half opens that entry (me.dabble.app:/entry/<id>).
+    func testWidgetEntryLinkOpensTheEntry() throws {
+        let today = Calendar.current.dateComponents([.year, .month], from: .now)
+        let id = try entryID(year: today.year!, month: today.month!)
+        XCTAssertTrue(app.tabBars.buttons["Journal"].waitForExistence(timeout: 15))
+        app.open(URL(string: "me.dabble.app:/entry/\(id)")!)
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10), "The widget's entry link opens it")
     }
 
     func testRefreshPicksUpChangesInOlderMonths() throws {

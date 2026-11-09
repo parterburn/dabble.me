@@ -30,6 +30,10 @@ final class PhotoTests: XCTestCase {
             app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)).tap() // above the sheet closes it
             XCTAssertTrue(shareSheet.waitForNonExistence(timeout: 5))
         }
+        // Save to Photos (add-only access, granted to the simulator beforehand) saves it.
+        app.buttons["Save to Photos"].tap()
+        XCTAssertTrue(app.alerts["Saved to Photos."].waitForExistence(timeout: 10), "Saving the photo works (it crashed)")
+        app.alerts.buttons["OK"].tap()
         close.tap()
         XCTAssertTrue(close.waitForNonExistence(timeout: 5))
 

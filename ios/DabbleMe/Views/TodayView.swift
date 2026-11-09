@@ -52,6 +52,7 @@ struct TodayView: View {
                 }
             }
             .listStyle(.plain)
+            .environment(\.defaultMinListRowHeight, 1) // rows as tall as their content (the section titles)
             // Pull to reset: collapses expanded entries and reloads today. On the list itself,
             // inside the sheets and entry pages below, so they don't inherit a pull-to-refresh.
             .refreshable {
@@ -84,7 +85,7 @@ struct TodayView: View {
             .overlay(alignment: .bottom) {
                 if bottomPull > 12 {
                     let armed = bottomPull >= randomMemoryPull
-                    Label(armed ? "Let go for a random memory" : "Keep pulling for a random memory", icon: "slab-arrows-rotate")
+                    Text(armed ? "Let go for a random memory" : "Keep pulling for a random memory")
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(armed ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
                         .opacity(min(1, (bottomPull - 12) / 40))
@@ -262,8 +263,7 @@ struct TodayView: View {
     @ViewBuilder
     private func throwbackSection(_ throwback: EntrySummary?, today: TodaySummary) -> some View {
         SectionTitle("Throwback", icon: "slab-backward")
-            .padding(.top, 12)
-            .plainRow()
+            .sectionTitleRow()
         if let throwback {
             Section {
                 row(throwback)
@@ -289,13 +289,22 @@ struct TodayView: View {
     @ViewBuilder
     private func memoriesSection(_ today: TodaySummary) -> some View {
         SectionTitle("On This Day", icon: "slab-backward")
-            .padding(.top, 12)
-            .plainRow()
+            .sectionTitleRow()
         if !today.onThisDayAvailable {
             Text("See what you wrote on this date in past years with Dabble Me PRO.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .plainRow()
+            // Meanwhile, a look back that's free: the random memory sheet (also a shake away).
+            Button {
+                model.showsRandomEntry = true
+            } label: {
+                Label("Try a Random Memory", icon: "slab-dice")
+                    .fontWeight(.medium)
+            }
+            .buttonStyle(.bordered)
+            .controlSize(.large)
+            .plainRow()
         }
         // One section per memory, so its date sticks at the top while you scroll through it.
         ForEach(today.onThisDay) { memory in
@@ -325,6 +334,13 @@ struct TodayView: View {
 }
 
 private extension View {
+    /// On This Day's and Throwback's title: room above it, little below, so the first entry's
+    /// date follows close behind.
+    func sectionTitleRow() -> some View {
+        plainRow()
+            .listRowInsets(EdgeInsets(top: 23, leading: 20, bottom: 2, trailing: 20))
+    }
+
     /// A list row that's just page content: no separator, no row background.
     func plainRow() -> some View {
         listRowSeparator(.hidden)
