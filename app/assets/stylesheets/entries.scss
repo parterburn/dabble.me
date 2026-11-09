@@ -97,42 +97,44 @@
   }
 }
 
+// Round buttons beside the date: reflect on the left, edit on the right.
 .s-edit-entry {
-  color:$mid-gray;
-  font-size:20px;
-  padding: 6px 30px;
+  margin-top: -6px; // centers the buttons on the date line
+  padding: 0 24px;
   @media screen and (max-width: 767px) {
-    padding: 6px 15px;
-  }
-  transition: all 0.15s ease;
-  -webkit-transition: all 0.15s ease;
-  &:hover{
-    color: darken($olive, 20);
-  }
-  a {
-    font-size:20px;
-    color: $mid-gray;
-    transition: all 0.15s ease;
-    -webkit-transition: all 0.15s ease;
-    &:hover{
-      color: darken($olive, 20);
-    }
+    padding: 0 12px;
   }
 }
 
-// Icon-only links (reflect, edit) have no text to underline on hover.
-.s-edit-entry a,
-.s-edit-entry a:hover,
-.s-edit-entry a:focus {
-  text-decoration: none;
+.s-entry-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid $olive-300;
+  border-radius: 50%;
+  background-color: $cream;
+  color: $olive-600;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+  .slab-icon {
+    width: 20px;
+    height: 20px;
+  }
+  &:hover,
+  &:focus-visible {
+    background-color: $olive-300;
+    border-color: $olive-400;
+    color: $olive-900;
+    text-decoration: none;
+  }
+  &:focus {
+    text-decoration: none;
+  }
 }
 
-.s-process-ai {
-  top: -2px;
-  position: relative;
-  &:hover{
-    color: darken($olive, 20);
-  }
+.s-entry-action--spacer {
+  visibility: hidden;
 }
 
 a.s-delete {

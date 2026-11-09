@@ -13,7 +13,7 @@
           <span style="color: #999; cursor: not-allowed;">« Prev</span>
         <% end %>
 
-        <%= link_to random_entry_path, style: "margin: 0 30px;" do %><span class="slab-icon slab-icon--arrows-rotate" aria-hidden="true"></span> Random<% end %>
+        <%= link_to "Random", random_entry_path, style: "margin: 0 30px;" %>
 
         <% if next_entry.present? %>
           <%= link_to "Next »", day_entry_path(year: next_entry.date.year, month: next_entry.date.month, day: next_entry.date.day), id: "next-entry", rel: "tooltip", title: "#{next_entry.date_format_short}" %>

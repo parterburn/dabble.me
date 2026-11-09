@@ -1,4 +1,4 @@
-// "Reflect on this entry" (the magic wand on an entry). Asks the server for a
+// "Reflect on this entry" (the sparkles button on an entry). Asks the server for a
 // one-off AI reflection and shows it in a native <dialog>. Nothing is saved.
 // Plain JS on purpose: no new code on end-of-life Bootstrap 3 or jQuery.
 (function() {

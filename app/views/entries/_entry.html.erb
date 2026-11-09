@@ -6,20 +6,18 @@
       <div class="label label-past-years"><%= pluralize(year_back,"year").upcase %> AGO</div>
     <% end %>
     <div class="s-entry-date">
-      <%# Balances the icons on the right so the date stays centered. %>
       <div class="float-left s-edit-entry">
-        <div style="width: 20px;"></div>
         <% if can_reflect %>
-          <div style="width: 43px;"></div>
+          <%= link_to "#", class: "s-entry-action j-reflect", role: "button", rel: "tooltip", title: "Reflect on this entry", "aria-label": "Reflect on this entry", data: { url: entry_reflection_path(entry), date: entry.date_format_long } do %>
+            <span class="slab-icon slab-icon--sparkles" aria-hidden="true"></span>
+          <% end %>
+        <% else %>
+          <%# Balances the edit button so the date stays centered. %>
+          <span class="s-entry-action s-entry-action--spacer" aria-hidden="true"></span>
         <% end %>
       </div>
       <div class="float-right s-edit-entry">
-        <% if can_reflect %>
-          <%= link_to "#", class: "j-reflect", style: "margin-right: 15px;", role: "button", "aria-label": "Reflect on this entry", data: { url: entry_reflection_path(entry), date: entry.date_format_long } do %>
-            <span rel="tooltip" title="Reflect on this entry" class="s-process-ai"><span class="slab-icon slab-icon--thought-bubble" aria-hidden="true"></span></span>
-          <% end %>
-        <% end %>
-        <%= link_to edit_entry_path(entry), rel: "tooltip", title: "Edit Entry" do %>
+        <%= link_to edit_entry_path(entry), class: "s-entry-action", rel: "tooltip", title: "Edit Entry", "aria-label": "Edit entry" do %>
           <span class="slab-icon slab-icon--edit" aria-hidden="true"></span>
         <% end %>
       </div>
