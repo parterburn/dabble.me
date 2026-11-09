@@ -112,15 +112,19 @@ struct TodayView: View {
                                 if isWritingPrompt {
                                     ProgressView().controlSize(.small)
                                 } else {
-                                    Label("Another Prompt", icon: "slab-arrows-rotate")
+                                    appIcon("slab-arrows-rotate")
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 16, height: 16)
+                                        .foregroundStyle(.tint)
                                 }
                             }
-                            .labelStyle(.iconOnly)
-                            .buttonStyle(.bordered)
-                            .buttonBorderShape(.circle)
+                            .buttonStyle(.plain)
+                            .frame(width: 32, height: 32) // the tap target stays comfortable
+                            .contentShape(.rect)
+                            .padding(.vertical, -8) // keep the label row's height
                             .disabled(isWritingPrompt)
                             .accessibilityLabel("Another Prompt")
-                            .padding(.vertical, -8) // keep the label row's height
                         }
                     }
                     Text(prompt)
