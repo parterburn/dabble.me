@@ -44,6 +44,7 @@ struct TodayView: View {
                 }
             }
             .listStyle(.plain)
+            .timelinePinsDates()
             .frame(maxWidth: 680)
             .frame(maxWidth: .infinity)
             .entryActionSheets(actions)
@@ -80,7 +81,7 @@ struct TodayView: View {
                 .plainRow()
             // On the prompt box's Paper card, so today stands apart from On This Day. The card is
             // the row's background, so the entry keeps its swipes.
-            row(entry.summary, showsDate: false)
+            row(entry.summary)
                 .listRowSeparator(.hidden)
                 .listRowInsets(EdgeInsets(top: 16, leading: 32, bottom: 24, trailing: 32))
                 .listRowBackground(TodayCard())
@@ -203,7 +204,8 @@ struct TodayView: View {
             // One section per memory, so its date sticks at the top while you scroll through it.
             ForEach(today.onThisDay) { memory in
                 Section {
-                    row(memory, showsDate: false)
+                    row(memory)
+                        .timelineRowLayout()
                 } header: {
                     MonthHeader(title: Self.memoryTitle(memory), isDay: true)
                 }
@@ -218,18 +220,12 @@ struct TodayView: View {
         return "\(years == 1 ? "1 year" : "\(years) years") ago · \(date)"
     }
 
-    /// The Journal's row: tap to expand, again to open; swipe right for Actions, left to Open.
-    private func row(_ entry: EntrySummary, showsDate: Bool) -> some View {
-        TimelineEntryRow(entry: entry, isExpanded: expanded.contains(entry.id), showsDateWhenExpanded: showsDate, actions: actions,
-                         onTap: {
-                             if expanded.contains(entry.id) {
-                                 path.append(EntryRoute(id: entry.id))
-                             } else {
-                                 withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(entry.id) }
-                             }
-                         },
+    /// The Journal's row: tap to expand a long one (or open it); swipe right for Actions, left to Open.
+    private func row(_ entry: EntrySummary) -> some View {
+        TimelineEntryRow(entry: entry, isExpanded: expanded.contains(entry.id), actions: actions,
+                         onExpand: { withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(entry.id) } },
                          onOpen: { path.append(EntryRoute(id: entry.id)) })
-            .entryPreview(entry) { path.append(EntryRoute(id: entry.id)) }
+            .entryRowMenu(entry, actions: actions) { path.append(EntryRoute(id: entry.id)) }
     }
 }
 

@@ -191,10 +191,12 @@ struct EditorInsertItem {
 struct RichTextEditor: UIViewRepresentable {
     let model: RichTextEditorModel
     var insertItems: [EditorInsertItem] = []
+    /// The link button (hyperlinks are PRO).
+    var allowsLinks = true
 
     /// Changes when the bar's buttons need rebuilding.
     fileprivate var barKey: String {
-        insertItems.map { "\($0.title)\($0.isEnabled)\($0.subtitle ?? "")" }.joined(separator: "|")
+        insertItems.map { "\($0.title)\($0.isEnabled)\($0.subtitle ?? "")" }.joined(separator: "|") + "|links:\(allowsLinks)"
     }
 
     func makeUIView(context: Context) -> UITextView {
@@ -285,7 +287,7 @@ struct RichTextEditor: UIViewRepresentable {
                 items.append(plus)
             }
             items.append(.flexibleSpace())
-            items.append(item("slab-link", "Link") { $0.beginLink() })
+            if editor.allowsLinks { items.append(item("slab-link", "Link") { $0.beginLink() }) }
             toolbar.items = items
         }
     }

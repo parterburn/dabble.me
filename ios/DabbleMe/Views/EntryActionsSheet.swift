@@ -9,6 +9,8 @@ struct EntryActionsSheet: View {
     let entry: EntryDetail
     let canReflect: Bool
     let canEdit: Bool
+    /// Free accounts can delete but not edit.
+    let canDelete: Bool
     let perform: (Action) -> Void
 
     private var tags: [(tag: String, age: String?)] {
@@ -17,7 +19,7 @@ struct EntryActionsSheet: View {
     }
 
     private var height: CGFloat {
-        let actions = (canReflect ? 1 : 0) + (canEdit ? 2 : 1)
+        let actions = (canReflect ? 1 : 0) + (canEdit ? 1 : 0) + (canDelete ? 1 : 0)
         let tagRows = tags.reduce(0) { $0 + ($1.age == nil ? 1 : 1.6) }
         return min(70 + CGFloat(actions) * 56 + (tags.isEmpty ? 0 : 40 + tagRows * 40), 640)
     }
@@ -34,9 +36,9 @@ struct EntryActionsSheet: View {
                 }
                 if canEdit {
                     row(entry.document != nil ? "Edit" : "Edit on dabble.me", "slab-edit", .edit)
+                }
+                if canDelete {
                     row("Delete", "slab-trash", .delete, role: .destructive)
-                } else {
-                    row("Open on dabble.me", "safari", .web)
                 }
                 if !tags.isEmpty {
                     Text("Tags")

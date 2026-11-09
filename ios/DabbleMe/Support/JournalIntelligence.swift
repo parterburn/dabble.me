@@ -18,7 +18,12 @@ enum JournalIntelligence {
         return false
     }
 
-    /// PRO, supported, and not turned off in Settings.
+    /// Hashtag suggestions: any plan, where Apple Intelligence is supported and not turned off.
+    static func canSuggestHashtags(for me: Me?) -> Bool {
+        me != nil && isSupported && (UserDefaults.standard.object(forKey: enabledKey) as? Bool ?? true)
+    }
+
+    /// Everything else (reflections, prompts): PRO, supported, and not turned off in Settings.
     static func isEnabled(for me: Me?) -> Bool {
         me?.isPro == true && isSupported && (UserDefaults.standard.object(forKey: enabledKey) as? Bool ?? true)
     }

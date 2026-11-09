@@ -32,6 +32,7 @@ struct DabbleMeApp: App {
 struct RootView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
+    @AppStorage(AppTheme.storageKey) private var theme = AppTheme.system
     /// The typing animation, once per launch, when signed in (the welcome screen has its own).
     @State private var showsSplash = true
 
@@ -48,6 +49,7 @@ struct RootView: View {
             content
             #endif
         }
+        .preferredColorScheme(theme.colorScheme)
         .onOpenURL { url in
             // From the widget: me.dabble.app:/write or :/today. (Sign-in callbacks never get here;
             // the web sign-in session handles them.)

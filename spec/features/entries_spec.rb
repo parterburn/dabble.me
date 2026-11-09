@@ -194,6 +194,14 @@ describe 'Day Entries' do
   end
 
   describe 'edit' do
+    it 'shows free users that editing is PRO, with Delete Entry still below the update button' do
+      sign_in user
+      visit edit_entry_url(entry)
+
+      expect(page).to have_content('to unlock the ability to edit entries')
+      expect(page).to have_css('form + .delete-entry-action a.s-delete', text: 'Delete Entry')
+    end
+
     it 'shows a clear delete link below the update button' do
       sign_in paid_user
       visit edit_entry_url(paid_entry)

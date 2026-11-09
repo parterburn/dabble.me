@@ -62,9 +62,7 @@ final class PhotoEntryTests: XCTestCase {
         let saved = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", "Four photos, one collage")).firstMatch
         XCTAssertTrue(saved.waitForExistence(timeout: 10))
-        saved.tap() // expands in the timeline
-        sleep(1)
-        saved.tap() // opens
+        app.openTimelineEntry(saved)
         XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10), "The app froze after saving")
 
         // The processing placeholder turns into the collage once Sidekiq finishes.
@@ -93,11 +91,7 @@ final class PhotoEditTests: XCTestCase {
     private func openEntry(_ app: XCUIApplication, containing text: String) {
         app.tabBars.buttons["Journal"].tap()
         let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 10))
-        row.tap()
-        sleep(1)
-        // Tap the start of the text, away from any #hashtag link in it.
-        row.coordinate(withNormalizedOffset: CGVector(dx: 0.05, dy: 0.2)).tap()
+        app.openTimelineEntry(row)
         XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
     }
 

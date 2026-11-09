@@ -253,7 +253,7 @@ private extension SettingsView {
 /// App Store rules don't allow steering to outside purchases from inside the app.
 struct ProInfoView: View {
     enum Feature {
-        case writing, search
+        case writing, search, stats
     }
 
     let feature: Feature
@@ -263,7 +263,7 @@ struct ProInfoView: View {
     var body: some View {
         NavigationStack {
             ContentUnavailableView {
-                Label(title, systemImage: feature == .writing ? "square.and.pencil" : "magnifyingglass")
+                Label(title, systemImage: feature == .writing ? "square.and.pencil" : feature == .stats ? "chart.bar" : "magnifyingglass")
             } description: {
                 Text(message)
             }
@@ -279,7 +279,11 @@ struct ProInfoView: View {
     }
 
     private var title: String {
-        feature == .writing ? "Writing in the app is a PRO feature" : "Search is a PRO feature"
+        switch feature {
+        case .writing: "Writing in the app is a PRO feature"
+        case .search: "Search is a PRO feature"
+        case .stats: "Stats are a PRO feature"
+        }
     }
 
     private var message: String {
@@ -287,7 +291,9 @@ struct ProInfoView: View {
         case .writing:
             "You can always write for free by replying to your Dabble Me email. Your reply shows up here as an entry."
         case .search:
-            "With Dabble Me PRO you can search every entry you've ever written. Everything else in the app is free."
+            "With Dabble Me PRO you can search every entry you've ever written."
+        case .stats:
+            "With Dabble Me PRO you can see your streaks, writing days, words and top hashtags."
         }
     }
 }

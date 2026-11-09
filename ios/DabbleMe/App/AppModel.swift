@@ -176,6 +176,11 @@ final class AppModel {
         }
     }
 
+    /// The newest month with rows on screen: the one at the top of the timeline.
+    var topVisibleMonth: MonthCount? {
+        months.first { visibleMonths.contains($0.key) }
+    }
+
     func monthAppeared(_ key: String) {
         visibleMonths.insert(key)
     }

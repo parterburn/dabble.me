@@ -38,8 +38,10 @@ module Api
     end
 
     # Builds stored HTML from a client document. Raises InvalidDocument on bad input.
-    def to_html(document)
+    # `links: false` keeps a link's text but drops the link (hyperlinks are PRO).
+    def to_html(document, links: true)
       blocks = validate!(document)
+      blocks.each { |block| Array(block['runs']).each { |run| run.delete('link') } } unless links
       html = []
       open_list = nil
 

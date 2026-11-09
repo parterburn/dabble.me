@@ -1,35 +1,85 @@
 import SwiftUI
 
-/// A timeline/search/On This Day row: first tap expands the whole entry inline (like a long post
-/// in a feed), a second tap opens it. Swipe right for Actions (Reflect, Edit, Delete and the
-/// entry's tags); swipe left to Open.
+/// A timeline/search/On This Day row, laid out like a post in a feed: the date in its own column
+/// on the left, a long preview, then the photo large below it. A preview that's cut off says
+/// "Show more" and a tap anywhere expands it in place; otherwise (or once expanded) a tap opens the
+/// entry. While you read a long expanded entry, its date floats down alongside it. Swipe right for
+/// Actions (Reflect, Edit, Delete and the entry's tags); swipe left to Open.
 struct TimelineEntryRow: View {
     let entry: EntrySummary
     var showsYear = false
     let isExpanded: Bool
-    /// The expanded entry's date, unless a sticky header above already shows it.
-    var showsDateWhenExpanded = true
     let actions: EntryActions
-    let onTap: () -> Void
+    let onExpand: () -> Void
     let onOpen: () -> Void
 
     @Environment(AppModel.self) private var model
-    @Environment(\.openURL) private var openURL
+    @Environment(\.timelinePinTop) private var pinTop
     @State private var full: EntryDetail?
+    @State private var previewHeight: CGFloat = 0
+    @State private var fullPreviewHeight: CGFloat = 0
     @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 17
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
     @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
 
+    /// Lines of preview before "Show more".
+    private static let previewLines = 7
+    private static let avatarColumn: CGFloat = 42
+    private static let gutter: CGFloat = 14
+
+    private var bodyFont: Font { .system(size: bodySize * textSize.scale, design: fontStyle.design) }
+    /// Light Markdown from the server; list lines ("- item") show as bullets, as in previews.
+    private var previewText: String {
+        (entry.previewText ?? entry.excerpt)
+            .split(separator: "\n", omittingEmptySubsequences: false)
+            .map { line in
+                for marker in ["- ", "* "] where line.hasPrefix(marker) { return "• " + line.dropFirst(2) }
+                return String(line)
+            }
+            .joined(separator: "\n")
+    }
+
+    /// More to read than the preview shows: cut off on screen, or longer than the server's preview.
+    private var isTruncated: Bool {
+        fullPreviewHeight > previewHeight + 1 || (entry.previewText?.count ?? 0) >= 1500
+    }
+
     var body: some View {
-        Group {
+        VStack(alignment: .leading, spacing: 10) {
+            if showsYear, let year = entry.day?.year {
+                // Search and On This Day: "1 year ago · 2025".
+                Text(entry.yearsAgo.map { "\($0 == 1 ? "1 year" : "\($0) years") ago · \(year)" } ?? year)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tint)
+            }
             if isExpanded {
-                expanded
+                expandedText
             } else {
-                EntryRow(entry: entry, showsYear: showsYear)
+                preview
+            }
+            if entry.imageProcessing || entry.imageURL != nil {
+                EntryPhoto(url: entry.thumbnailURL(width: 1000), isProcessing: entry.imageProcessing)
+                    .frame(maxWidth: .infinity, maxHeight: 320, alignment: .leading)
+                    .clipShape(.rect(cornerRadius: 12))
+            }
+            if isExpanded, let dated = full?.datedHashtags, !dated.isEmpty {
+                // Dated #tags as on the entry itself, once the full entry has loaded.
+                DatedHashtagRow(hashtags: dated)
+            } else if !entry.hashtags.isEmpty, !isExpanded {
+                Text(entry.hashtags.map { "#\($0)" }.joined(separator: " "))
+                    .font(.caption)
+                    .foregroundStyle(.tint)
+                    .lineLimit(1)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.leading, Self.avatarColumn + Self.gutter)
+        .overlay(alignment: .topLeading) { floatingDate }
+        .padding(.vertical, 6)
         .contentShape(.rect)
-        .onTapGesture(perform: onTap)
+        .onTapGesture {
+            if !isExpanded, isTruncated { onExpand() } else { onOpen() }
+        }
         // Reload the full entry whenever its summary changes (an edit, or a refresh that brought
         // new text from the web or email), not just the first time it's expanded.
         .task(id: "\(isExpanded)|\(entry.updatedAt)") {
@@ -50,36 +100,106 @@ struct TimelineEntryRow: View {
             }
             .tint(.accentColor)
         }
+        // Collapsed it reads as one; expanded, its #tag pills are buttons of their own.
+        .accessibilityElement(children: isExpanded ? .contain : .combine)
         .accessibilityAddTraits(.isButton)
-        .accessibilityHint(isExpanded ? "Opens the entry" : "Shows the whole entry")
+        .accessibilityHint(!isExpanded && isTruncated ? "Shows the whole entry" : "Opens the entry")
     }
 
-    private var expanded: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            if showsDateWhenExpanded {
-                Text(entry.day?.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year()) ?? entry.date)
+    /// The first lines as plain text (no links, so a tap anywhere expands), and "Show more" when
+    /// there's more. The full height is measured behind it to tell.
+    private var preview: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(previewText.isEmpty ? AttributedString("📷 Photo") : AttributedString.journal(previewText))
+                .font(bodyFont)
+                .lineSpacing(3)
+                .lineLimit(Self.previewLines)
+                .multilineTextAlignment(.leading)
+                .onGeometryChange(for: CGFloat.self, of: \.size.height) { previewHeight = $0 }
+                .background(alignment: .topLeading) {
+                    Text(AttributedString.journal(previewText))
+                        .font(bodyFont)
+                        .lineSpacing(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .hidden()
+                        .onGeometryChange(for: CGFloat.self, of: \.size.height) { fullPreviewHeight = $0 }
+                }
+            if isTruncated {
+                Text("Show more")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
-            if let document = full?.document {
-                DocumentText(blocks: document, font: .system(size: bodySize * textSize.scale, design: fontStyle.design), scale: textSize.scale, bodySize: bodySize)
-            } else {
-                Text(RichText.linkingHashtags(in: AttributedString.journal(full?.bodyText ?? entry.previewText ?? entry.excerpt)))
-                    .font(.system(size: bodySize * textSize.scale, design: fontStyle.design))
-                    .lineSpacing(5)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            if entry.imageProcessing || entry.imageURL != nil {
-                EntryPhoto(url: entry.thumbnailURL(width: 1000), isProcessing: entry.imageProcessing)
-                    .frame(maxHeight: 320)
-                    .clipShape(.rect(cornerRadius: 12))
-            }
-            // Dated #tags as on the entry itself, once the full entry has loaded.
-            if let dated = full?.datedHashtags, !dated.isEmpty {
-                DatedHashtagRow(hashtags: dated)
+                    .foregroundStyle(.tint)
             }
         }
-        .padding(.vertical, 6)
+    }
+
+    @ViewBuilder
+    private var expandedText: some View {
+        if let document = full?.document {
+            DocumentText(blocks: document, font: bodyFont, scale: textSize.scale, bodySize: bodySize)
+        } else {
+            Text(RichText.linkingHashtags(in: AttributedString.journal(full?.bodyText ?? previewText)))
+                .font(bodyFont)
+                .lineSpacing(5)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    /// "THU / 7" in the left column. In a row taller than the screen it stays just below the
+    /// sticky month header while the row scrolls by, then leaves with it.
+    private var floatingDate: some View {
+        let pin = pinTop
+        let height: CGFloat = 52
+        return VStack(spacing: 0) {
+            Text(entry.day?.weekdayShort.uppercased() ?? "")
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text(entry.day?.dayNumber ?? "")
+                .font(.title2.weight(.semibold))
+                .monospacedDigit()
+        }
+        .frame(width: Self.avatarColumn, height: height, alignment: .top)
+        .padding(.top, 2)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .visualEffect { content, proxy in
+            let frame = proxy.frame(in: .scrollView)
+            let travel = max(frame.height - height - 8, 0)
+            return content.offset(y: min(max(pin - frame.minY, 0), travel))
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+extension View {
+    /// A timeline row in a list: close to the screen edges, with separators running edge to edge.
+    func timelineRowLayout() -> some View {
+        let side: CGFloat = 12
+        return listRowInsets(EdgeInsets(top: 8, leading: side, bottom: 8, trailing: side))
+            .alignmentGuide(.listRowSeparatorLeading) { _ in -side }
+            .alignmentGuide(.listRowSeparatorTrailing) { $0.width + side }
+    }
+}
+
+extension EnvironmentValues {
+    /// Where a long expanded row's date stops as it scrolls up: the bottom of the list's sticky
+    /// header, in the scroll view's coordinates.
+    @Entry var timelinePinTop: CGFloat = 0
+}
+
+extension View {
+    /// Lets the rows in this list float their dates just under its sticky section headers.
+    func timelinePinsDates(headerHeight: CGFloat = 34) -> some View {
+        modifier(TimelinePinsDates(headerHeight: headerHeight))
+    }
+}
+
+private struct TimelinePinsDates: ViewModifier {
+    let headerHeight: CGFloat
+    @State private var top: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        content
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentInsets.top } action: { _, inset in top = inset }
+            .environment(\.timelinePinTop, top + headerHeight)
     }
 }
 
@@ -101,6 +221,20 @@ final class EntryActions {
         defer { isWorking = false }
         do {
             sheet = try await model.entry(id: id)
+        } catch is CancellationError {
+        } catch {
+            self.error = error.localizedDescription
+        }
+    }
+
+    /// Edits in the app when it can represent the entry's formatting; otherwise on dabble.me.
+    func edit(_ id: Int, model: AppModel) async {
+        guard !isWorking else { return }
+        isWorking = true
+        defer { isWorking = false }
+        do {
+            let entry = try await model.entry(id: id)
+            if entry.document != nil { editing = entry } else { await UIApplication.shared.open(entry.webUrl) }
         } catch is CancellationError {
         } catch {
             self.error = error.localizedDescription
@@ -149,7 +283,8 @@ private struct EntryActionSheets: ViewModifier {
             }
             .sheet(item: $actions.sheet) { entry in
                 EntryActionsSheet(entry: entry, canReflect: JournalIntelligence.isEnabled(for: model.me) && !entry.bodyText.isEmpty,
-                                  canEdit: model.me?.canEdit == true) { action in
+                                  canEdit: model.me?.canEdit == true,
+                                  canDelete: model.me?.mayDelete == true) { action in
                     actions.sheet = nil
                     switch action {
                     case .reflect: Task { await actions.reflect(on: entry.id, model: model) }

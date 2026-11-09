@@ -84,7 +84,7 @@ struct ComposeView: View {
             VStack(spacing: 0) {
                 if restoredDraft != nil { draftBanner }
                 Divider()
-                RichTextEditor(model: editor, insertItems: insertItems)
+                RichTextEditor(model: editor, insertItems: insertItems, allowsLinks: model.me?.mayAddLinks == true)
                     .overlay(alignment: .topLeading) {
                         if editor.isEmpty {
                             Text("How was your day?")
@@ -192,11 +192,9 @@ struct ComposeView: View {
             let hasPhotos = !photoItems.isEmpty || existingPhotoURL != nil
             items.append(EditorInsertItem(title: hasPhotos ? "Add More Photos" : "Add Photos", icon: "slab-images",
                                           isEnabled: photoItems.count < photoLimit) { pickingPhotos = true })
-        } else if isNew {
-            items.append(EditorInsertItem(title: "Add Photos", icon: "slab-images",
-                                          subtitle: "Part of Dabble Me PRO", isEnabled: false) {})
         }
-        if JournalIntelligence.isEnabled(for: model.me) {
+        // Free accounts too (photos are PRO, so they don't see that).
+        if JournalIntelligence.canSuggestHashtags(for: model.me) {
             items.append(EditorInsertItem(title: "Suggest Hashtags", icon: "slab-compress",
                                           subtitle: editor.characterCount < 20 ? "Write a little more first" : nil,
                                           isEnabled: editor.characterCount >= 20 && !isSuggestingTags) {

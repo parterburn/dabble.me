@@ -17,9 +17,18 @@ struct Me: Decodable, Sendable, Equatable {
     let canAddPhotos: Bool
     let canEdit: Bool
     let canSearch: Bool
+    /// Newer flags (absent from an older server, so they fall back to the plan).
+    let canDelete: Bool?
+    let canAddLinks: Bool?
+    let canSeeStats: Bool?
     let settingsUrl: URL
     let securityUrl: URL
     let aiConnectors: AIConnectors?
+
+    /// Free accounts can write and delete; editing, photos, links, search and Stats are PRO.
+    var mayDelete: Bool { canDelete ?? canEdit }
+    var mayAddLinks: Bool { canAddLinks ?? isPro }
+    var maySeeStats: Bool { canSeeStats ?? isPro }
 
     struct AIConnectors: Decodable, Sendable, Equatable {
         let claudeUrl: URL

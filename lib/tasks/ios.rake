@@ -139,6 +139,10 @@ namespace :ios do
     user.password = "dabble-free-demo" if user.new_record?
     user.assign_attributes(plan: "Free", send_timezone: "Mountain Time (US & Canada)", send_time: "20:00", frequency: %w[Sun])
     user.save!
+    # One entry, for the entry controls (free accounts can delete, not edit).
+    user.entries.destroy_all
+    user.entries.create!(date: (Time.current.in_time_zone(user.send_timezone).to_date - 1).to_s,
+                         body: "<p>A quiet walk after dinner. #evening</p>")
 
     app = MobileApp.ensure_application!
     token = Doorkeeper::AccessToken.create!(application: app, resource_owner_id: user.id, scopes: MobileApp::SCOPE, expires_in: 1.day)

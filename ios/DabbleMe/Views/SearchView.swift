@@ -94,14 +94,11 @@ struct SearchView: View {
             List {
                 Section {
                     ForEach(results) { entry in
-                        TimelineEntryRow(entry: entry, showsYear: true, isExpanded: expanded.contains(entry.id), actions: actions, onTap: {
-                            if expanded.contains(entry.id) {
-                                path.append(EntryRoute(id: entry.id))
-                            } else {
-                                withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(entry.id) }
-                            }
-                        }, onOpen: { path.append(EntryRoute(id: entry.id)) })
-                        .entryPreview(entry) { path.append(EntryRoute(id: entry.id)) }
+                        TimelineEntryRow(entry: entry, showsYear: true, isExpanded: expanded.contains(entry.id), actions: actions,
+                                         onExpand: { withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(entry.id) } },
+                                         onOpen: { path.append(EntryRoute(id: entry.id)) })
+                        .entryRowMenu(entry, actions: actions) { path.append(EntryRoute(id: entry.id)) }
+                        .timelineRowLayout()
                         .task {
                             if entry.id == results.last?.id { await search(reset: false) }
                         }
@@ -114,6 +111,7 @@ struct SearchView: View {
                 }
             }
             .listStyle(.plain)
+            .timelinePinsDates()
             // Pull to reset: collapses expanded results and runs the search again.
             .refreshable {
                 withAnimation(.snappy(duration: 0.25)) { expanded = [] }
