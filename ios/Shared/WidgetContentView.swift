@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import WidgetKit
 
 struct WidgetEntry: TimelineEntry {
@@ -12,6 +13,8 @@ struct WidgetEntry: TimelineEntry {
     var entryTitle: String? = nil
     var entryText: String? = nil
     var entryID: Int? = nil
+    /// The entry's photo, when it has one (a small copy from the App Group).
+    var photo: UIImage? = nil
 
     static let placeholder = WidgetEntry(date: .now, signedIn: true, wroteToday: false, streak: 12, memories: nil,
                                          prompt: "What made you smile today?")
@@ -38,9 +41,7 @@ struct TodayWidgetContent: View {
 
     private var small: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Dabble Me")
-                .font(.system(.caption, design: .serif, weight: .semibold))
-                .foregroundStyle(.secondary)
+            wordmark
             Spacer(minLength: 0)
             if entry.signedIn {
                 HStack(alignment: .firstTextBaseline, spacing: 4) {
@@ -96,7 +97,49 @@ struct TodayWidgetContent: View {
         }
     }
 
+    /// "Dabble me." as on dabble.me: Instrument Serif with an olive period.
+    private var wordmark: some View {
+        (Text("Dabble me") + Text(".").foregroundStyle(Color.sage))
+            .font(.custom("InstrumentSerif-Regular", size: 19))
+            .foregroundStyle(.primary)
+            .accessibilityLabel("Dabble Me")
+    }
+
+    /// An entry with a photo: the photo fills the side, with a few words of the entry over it
+    /// (a picture says the rest).
+    @ViewBuilder
     private var mediumDetailContent: some View {
+        if let photo = entry.photo, let title = entry.entryTitle {
+            ZStack(alignment: .bottomLeading) {
+                Color.clear
+                    .overlay {
+                        Image(uiImage: photo)
+                            .resizable()
+                            .scaledToFill()
+                    }
+                    .clipped()
+                LinearGradient(colors: [.clear, .black.opacity(0.7)], startPoint: .center, endPoint: .bottom)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.85))
+                        .lineLimit(1)
+                    if let text = entry.entryText, !text.isEmpty {
+                        Text(text)
+                            .font(.system(.footnote, design: .serif))
+                            .foregroundStyle(.white)
+                            .lineLimit(2)
+                    }
+                }
+                .padding(10)
+            }
+            .clipShape(.rect(cornerRadius: 14))
+        } else {
+            mediumDetailText
+        }
+    }
+
+    private var mediumDetailText: some View {
         HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 8) {
                 if let title = entry.entryTitle, let text = entry.entryText {
@@ -104,9 +147,9 @@ struct TodayWidgetContent: View {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
-                    Text(text)
+                    Text(text.isEmpty ? "📷 Photo" : text)
                         .font(.system(.subheadline, design: .serif))
-                        .lineLimit(4)
+                        .lineLimit(5)
                 } else if let memories = entry.memories {
                     Label("On This Day", systemImage: "clock.arrow.circlepath")
                         .font(.caption.weight(.semibold))

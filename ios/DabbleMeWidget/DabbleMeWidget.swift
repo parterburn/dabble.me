@@ -46,7 +46,14 @@ struct Provider: TimelineProvider {
                            prompt: isToday ? snapshot.prompt : nil,
                            entryTitle: showsEntry ? snapshot.entryTitle : nil,
                            entryText: showsEntry ? snapshot.entryText : nil,
-                           entryID: showsEntry ? snapshot.entryID : nil)
+                           entryID: showsEntry ? snapshot.entryID : nil,
+                           photo: showsEntry ? snapshot.entryPhoto.flatMap(Self.photo(named:)) : nil)
+    }
+
+    /// The entry's photo copy from the App Group (the app saves it small for the widget).
+    private static func photo(named name: String) -> UIImage? {
+        guard let url = WidgetSnapshot.photoURL(named: name) else { return nil }
+        return UIImage(contentsOfFile: url.path)
     }
 }
 

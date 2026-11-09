@@ -7,6 +7,8 @@ import WidgetKit
 struct WidgetSettingsView: View {
     @Environment(AppModel.self) private var model
     @State private var content = WidgetSnapshot.content
+    /// Bumped once the shown entry's photo is ready, so the preview redraws with it.
+    @State private var photoReady = 0
 
     var body: some View {
         List {
@@ -39,11 +41,16 @@ struct WidgetSettingsView: View {
         .navigationTitle("Home Screen Widget")
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: content) { _, content in WidgetSync.setContent(content, model: model) }
+        .task(id: content) {
+            await WidgetSync.preparePreviewPhoto(for: content, model: model)
+            photoReady += 1
+        }
     }
 
     /// The medium widget, at its real size where it fits, on a home-screen-like background.
     private var preview: some View {
         let size = CGSize(width: 338, height: 158)
+        let _ = photoReady // redraw once the photo is ready
         return TodayWidgetContent(entry: WidgetSync.previewEntry(for: content, model: model), family: .systemMedium)
             .padding(16)
             .frame(width: size.width, height: size.height)

@@ -82,6 +82,9 @@ targets:
     sources:
       - DabbleMeWidget
       - Shared
+      # The wordmark's font, for "Dabble me." on the widget.
+      - path: DabbleMe/Resources/Fonts/InstrumentSerif-Regular.ttf
+        buildPhase: resources
     settings:
       base:
         PRODUCT_NAME: DabbleMeWidget
@@ -95,6 +98,8 @@ targets:
         CFBundleDisplayName: Dabble Me
         # The build number from CURRENT_PROJECT_VERSION (the app and widget must match).
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UIAppFonts:
+          - InstrumentSerif-Regular.ttf
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
   DabbleMeTests:
