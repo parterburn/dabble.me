@@ -1,0 +1,212 @@
+/*
+ * Tailwind for the logged-in app (layouts/application), adopted page by page.
+ *
+ * A restyled page opts in with `<% content_for :tailwind, true %>`, which makes
+ * the layout load this file and the marketing fonts, and wraps its content in
+ * `.tw`. Restyled pages use the marketing site's look and tokens.
+ *
+ * The rest of the app still runs on the older styles (ui.scss and friends).
+ * They load on every page and aren't in a cascade layer, so they would beat
+ * Tailwind's layered utilities. Until they're gone:
+ *  - utilities are !important;
+ *  - `.tw` undoes the old element defaults (heading sizes, margins, bold
+ *    labels) inside a restyled page, in place of Tailwind's preflight;
+ *  - only the files listed under @source are scanned, so no class name the old
+ *    pages use (text-muted, hidden, collapse, table…) picks up a new meaning;
+ *  - dark mode is off, since the rest of the app has none: `dark:` only applies
+ *    under a .dark ancestor, which nothing sets.
+ *
+ * Build: `npm run build:css:app` writes public/app-tailwind.css, which is
+ * committed (like public/marketing.css). CI fails if it's out of date.
+ */
+
+@layer theme, base, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) important source(none);
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Restyled pages. Add a page's views here when it moves to Tailwind. */
+@source "../../views/devise/registrations/edit.html.erb";
+@source "../../views/devise/registrations/settings.html.erb";
+@source "../../views/devise/registrations/_user_settings.html.erb";
+@source "../../views/devise/registrations/security.html.erb";
+@source "../../views/devise/registrations/_oauth_connected_apps.html.erb";
+@source "../../views/devise/registrations/delete_account.html.erb";
+@source "../../views/devise/registrations/posting_address.html.erb";
+@source "../../views/devise/otp_credentials/*.html.erb";
+@source "../../views/devise/otp_tokens/*.html.erb";
+@source "../../views/devise/shared/_error_messages.html.erb";
+
+/* The marketing site's palette and fonts (marketing.tailwind.css). */
+@theme {
+  --color-olive-50: oklch(98.8% 0.003 106.5);
+  --color-olive-100: oklch(96.6% 0.005 106.5);
+  --color-olive-150: oklch(94.5% 0.006 106.5);
+  --color-olive-200: oklch(93% 0.007 106.5);
+  --color-olive-300: oklch(88% 0.011 106.6);
+  --color-olive-400: oklch(73.7% 0.021 106.9);
+  --color-olive-500: oklch(58% 0.031 107.3);
+  --color-olive-600: oklch(46.6% 0.025 107.3);
+  --color-olive-700: oklch(39.4% 0.023 107.4);
+  --color-olive-800: oklch(28.6% 0.016 107.4);
+  --color-olive-900: oklch(22.8% 0.013 107.4);
+  --color-olive-950: oklch(15.3% 0.006 107.1);
+
+  --color-cream-50: #fdfcfa;
+  --color-cream-100: #f9f7f3;
+  --color-cream-200: #f3f1ec;
+  --color-cream-300: #edeae3;
+  --color-cream-400: #e0dcd2;
+  --color-cream-500: #d0cbc0;
+  --color-cream-600: #b8b2a5;
+  --color-cream-700: #9a9388;
+  --color-cream-800: #7f796f;
+  --color-cream-900: #69645c;
+  --color-cream-950: #37342f;
+
+  /* Light-mode values of the marketing site's semantic colors. */
+  --color-primary: var(--color-olive-950);
+  --color-accent: var(--color-olive-600);
+  --color-surface: #ffffff;
+  --color-surface-elevated: var(--color-cream-200);
+  --color-page: var(--color-olive-100);
+
+  --font-serif: "Instrument Serif", Georgia, serif;
+  --font-sans: "Instrument Sans", system-ui, sans-serif;
+}
+
+/* Marketing names whose text and border colors differ (text-subtle is olive,
+   border-subtle is cream), so they can't share one theme color. */
+@utility text-muted {
+  color: var(--color-olive-800);
+}
+@utility text-subtle {
+  color: var(--color-olive-600);
+}
+@utility border-subtle {
+  border-color: var(--color-cream-300);
+}
+@utility border-default {
+  border-color: var(--color-cream-400);
+}
+@utility placeholder-muted {
+  &::placeholder {
+    color: var(--color-cream-700);
+  }
+}
+
+/* Building blocks the restyled pages share, matching the marketing sign-in
+   form and cards. */
+@utility card {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-cream-300);
+  border-radius: 0.75rem;
+}
+@utility field-label {
+  @apply mb-1.5 block text-sm font-medium text-primary;
+}
+@utility field-input {
+  @apply w-full rounded-lg border border-subtle bg-surface px-4 py-2.5 text-base text-primary placeholder-muted transition-colors focus:border-transparent focus:ring-2 focus:ring-accent focus:outline-none disabled:cursor-not-allowed disabled:bg-surface-elevated disabled:text-muted;
+}
+@utility field-help {
+  @apply mt-1.5 text-sm text-muted;
+}
+@utility checkbox {
+  @apply size-4 shrink-0 cursor-pointer rounded accent-olive-900;
+}
+@utility button {
+  @apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-sm font-medium no-underline transition-colors focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-60;
+}
+@utility button-primary {
+  @apply button bg-olive-900 text-white hover:bg-olive-800 hover:text-white;
+}
+@utility button-secondary {
+  @apply button border border-subtle bg-surface text-primary hover:bg-surface-elevated hover:text-primary;
+}
+/* A square-ish secondary button holding just an icon. */
+@utility button-icon {
+  @apply button-secondary;
+  padding-inline: calc(var(--spacing) * 3);
+}
+@utility button-danger {
+  @apply button bg-red-700 text-white hover:bg-red-800 hover:text-white;
+}
+@utility text-link {
+  @apply text-accent underline underline-offset-2 hover:text-primary;
+}
+
+/*
+ * Inside a restyled page, undo the old base styles that ui.scss gives bare
+ * elements, so markup behaves as it does on the marketing site. Each rule is
+ * scoped to `.tw` so it outranks the old element selectors, while utilities
+ * (!important) still win.
+ */
+.tw {
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--color-olive-950);
+  -webkit-font-smoothing: antialiased;
+}
+.tw :where(h1, h2, h3, h4, h5, h6, p, ul, ol, dl, dd, figure, blockquote, pre, hr, label, legend, fieldset) {
+  margin: 0;
+}
+.tw :where(h1, h2, h3, h4, h5, h6) {
+  font-family: var(--font-serif);
+  font-size: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  color: inherit;
+}
+.tw :where(ul, ol) {
+  padding: 0;
+  list-style: none;
+}
+.tw :where(legend) {
+  width: auto;
+  padding: 0;
+  font-size: inherit;
+  line-height: inherit;
+  color: inherit;
+  border: 0;
+}
+.tw :where(label) {
+  display: inline;
+  max-width: none;
+  font-weight: inherit;
+  color: inherit;
+}
+.tw :where(a),
+.tw a:where(:hover, :focus) {
+  color: inherit;
+  text-decoration: inherit;
+}
+.tw :where(code, kbd, samp) {
+  padding: 0;
+  font-size: inherit;
+  color: inherit;
+  background: none;
+  border-radius: 0;
+}
+.tw :where(hr) {
+  height: 0;
+  border: 0;
+  border-top: 1px solid var(--color-cream-300);
+}
+.tw input:where([type="checkbox"], [type="radio"]) {
+  margin: 0;
+}
+.tw :where(button) {
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+}
+.tw :where(table) {
+  border-collapse: collapse;
+}
+.tw :where(th, td) {
+  padding: 0;
+}

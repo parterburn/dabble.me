@@ -19,8 +19,8 @@
   }
 
   .box {
-    width: 1rem;
-    height: 1rem;
+    width: 10px;
+    height: 10px;
     background-color: #CCC;
     border-radius: 50%;
     transition: background-color 0.3s ease;
@@ -45,7 +45,7 @@
     }
     
     .box {
-      width: 0.5rem;
+      width: 5px;
       border-radius: 3px;
     }
     .graph {

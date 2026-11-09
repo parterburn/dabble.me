@@ -1,86 +1,75 @@
-<% title 'Edit account — Dabble me.' %>
+<% title 'Settings — Dabble me.' %>
+<% content_for :tailwind, true %>
+<% email_address = "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}" %>
 
-<div class="row">
-  <div class="col-md-8 col-md-offset-2">
-    <h3>SETTINGS AND SUBSCRIPTION</h3>
-    <br>
-  </div>
-</div>
+<div class="tw mx-auto max-w-2xl pt-4 pb-16 sm:pt-8">
+  <header class="mb-8">
+    <h1 class="font-serif text-4xl tracking-tight text-primary sm:text-5xl">Settings</h1>
+    <p class="mt-2 text-muted">Your email schedule, posting address, and subscription.</p>
+  </header>
 
-<div class="row">
-  <div class="col-md-8 col-md-offset-2">
+  <div class="space-y-6">
     <% if current_user.is_pro? %>
-      <div class="alert alert-info force-links" style="margin-bottom: 0;">
-        Thanks for subscribing to
-        <%= link_to(current_user.plan_name, subscribe_path, class: "alert-link") %>.
+      <section class="card p-6 sm:p-8">
+        <span class="inline-flex items-center rounded-full bg-accent px-3 py-1 text-xs font-medium text-cream-100">PRO</span>
+        <p class="mt-3 text-primary">
+          Thanks for subscribing to <%= link_to current_user.plan_name, subscribe_path, class: "text-link font-medium" %>.
+        </p>
         <% if current_user.plan_type_unlinked.present? %>
-          Manage your subscription and payment history at&nbsp;<strong><%= link_to current_user.plan_type_unlinked, billing_path, target: :_blank %></strong>.
+          <p class="mt-1 text-sm text-muted">
+            Manage your subscription and payment history at <%= link_to current_user.plan_type_unlinked, billing_path, target: :_blank, class: "text-link" %>.
+          </p>
         <% end %>
-      </div>
+      </section>
     <% else %>
-      <div class="alert alert-warning force-links">
-        <%= link_to subscribe_path, class: "float-left" do %>
-          <button class="btn btn-warning">Subscribe Now</button>
-        <% end %>
-        <strong>Dabble Me PRO</strong>
-        for $4/mo unlocks premium features like changing the frequency of emails, adding/editing entries via the web, adding photos, rich formatting, and search.
-      </div>
+      <section class="card p-6 sm:p-8">
+        <h2 class="font-serif text-2xl text-primary">Dabble Me PRO</h2>
+        <p class="mt-2 text-muted">
+          For $4/mo, PRO unlocks premium features like changing the frequency of emails, adding and editing entries on the web, adding photos, rich formatting, and search.
+        </p>
+        <%= link_to "Subscribe now", subscribe_path, class: "button-primary mt-5" %>
+      </section>
     <% end %>
-  </div>
-</div>
 
-<div class="row">
-  <div class="col-md-8 col-md-offset-2">
-    <div class="email-post-card">
-      <div class="email-post-flex">        
-        <div class="email-post-content">
-          <h3>Send directly from your email</h3>
-          <p class="text-muted">Post to your journal by sending an email to your unique address</p>
-          
-          <div class="email-address-box">
-            <% email_address = "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}" %>
-            <code>
-              <%= email_address %>
-            </code>
-            <div class="s-address-actions">
-              <%= link_to posting_address_path, class: "s-reset-address", rel: "tooltip", title: "Get a new address", "aria-label": "Get a new posting address" do %>
-                <span class="slab-icon slab-icon--arrows-rotate" aria-hidden="true"></span>
-              <% end %>
-              <button class="j-copy-to-clipboard" data-content="<%= email_address %>">
-                <span class="slab-icon slab-icon--copy" aria-hidden="true"></span>
-                Copy
-              </button>
-            </div>
-          </div>
-                
-          <div class="email-post-footer">
-            <%# One span: the footer is display: flex, so a bare link would become its own column. %>
-            <span>Emailing this address creates a new Dabble Me entry in your account — keep it secret! If it gets out, <%= link_to "get a new address", posting_address_path %>. If the subject line is blank, the entry is saved under the date the email is sent. To save it under a different date, put that date in the subject line as YYYY-MM-DD.</span>
-          </div>
+    <section class="card p-6 sm:p-8">
+      <h2 class="font-serif text-2xl text-primary">Send directly from your email</h2>
+      <p class="mt-1 text-sm text-muted">Post to your journal by sending an email to your unique address.</p>
+
+      <div class="mt-5 flex flex-col gap-3 rounded-lg border border-subtle bg-surface-elevated p-3 sm:flex-row sm:items-center">
+        <code class="min-w-0 flex-1 break-all px-1 font-mono text-sm text-primary"><%= email_address %></code>
+        <div class="flex shrink-0 items-center gap-2">
+          <%= link_to posting_address_path, class: "button-icon", rel: "tooltip", title: "Get a new address", "aria-label": "Get a new posting address" do %>
+            <span class="slab-icon slab-icon--arrows-rotate" aria-hidden="true"></span>
+          <% end %>
+          <button type="button" class="j-copy-to-clipboard button-secondary" data-content="<%= email_address %>">
+            <span class="slab-icon slab-icon--copy" aria-hidden="true"></span>
+            Copy
+          </button>
         </div>
       </div>
-    </div>
-    <hr>
-  </div>
-</div>
 
-  <%= render partial: 'user_settings', locals: { form_path: registration_path(resource_name) } %>
+      <p class="mt-4 text-sm text-muted">
+        Emailing this address creates a new Dabble Me entry in your account — keep it secret! If it gets out,
+        <%= link_to "get a new address", posting_address_path, class: "text-link" %>.
+        If the subject line is blank, the entry is saved under the date the email is sent. To save it under a different date, put that date in the subject line as YYYY-MM-DD.
+      </p>
+    </section>
 
-  <div class="col-md-12 center">
-    <br>
-    <br>
-    <div id="export" class="col-md-8 col-md-offset-2 alert alert-info">
-      Export all entries as
-      <strong><%= link_to "TXT", export_entries_path(:txt), style: "text-decoration: underline;" %></strong>
-      (plain text)
-      or
-      <strong><%= link_to "JSON", export_entries_path(:json), style: "text-decoration: underline;" %></strong>
-      (rich formatting).
+    <%= render partial: 'user_settings', locals: { form_path: registration_path(resource_name) } %>
+
+    <section id="export" class="card p-6 sm:p-8">
+      <h2 class="font-serif text-2xl text-primary">Export your entries</h2>
+      <p class="mt-1 text-sm text-muted">Download every entry as plain text or with its rich formatting.</p>
+      <div class="mt-5 flex flex-wrap gap-3">
+        <%= link_to export_entries_path(:txt), class: "button-secondary" do %>TXT <span class="font-normal text-muted">plain text</span><% end %>
+        <%= link_to export_entries_path(:json), class: "button-secondary" do %>JSON <span class="font-normal text-muted">rich formatting</span><% end %>
+        <% if current_user.is_pro? && current_user.entries.only_images.any? %>
+          <%= link_to "Image URLs", export_entries_path(:txt, only_images: true), class: "button-secondary" %>
+        <% end %>
+      </div>
       <% if current_user.is_pro? && current_user.entries.only_images.any? %>
-        Export a
-        <strong><%= link_to("list of your Image URLs", export_entries_path(:txt, only_images: true), style: "text-decoration: underline;") %>.</strong>
-        You can use a script or app to download these to your computer.
+        <p class="mt-3 text-sm text-muted">The image list is a file of links. You can use a script or app to download them to your computer.</p>
       <% end %>
-    </div>
+    </section>
   </div>
 </div>

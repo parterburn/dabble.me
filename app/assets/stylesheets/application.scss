@@ -97,7 +97,8 @@ hr {
       text-align:center;
     }
   }
-  .flex {
+  // Not `.flex`: that name is a Tailwind utility on restyled pages.
+  .footer__row {
     align-items: center;
     column-gap: 10px;
     display: flex;
@@ -261,16 +262,6 @@ input[type="submit"].form-control {
   border-width: 2px;
 }
 
-.alert-warning.force-links a {
-  color: #66512c !important;
-  text-decoration: underline !important;
-}
-
-.alert-info.force-links a {
-  color: #245269 !important;
-  text-decoration: underline !important;
-}
-
 .flex-end {
   @media screen and (min-width: 992px) {
     align-items: flex-end;
@@ -404,39 +395,6 @@ strong {
       }
     }
 
-    // The reset link and Copy sit side by side; on phones, where the box
-    // stacks, they share one full-width row.
-    .s-address-actions {
-      display: flex;
-      align-self: stretch;
-      @media screen and (max-width: 767px) {
-        width: 100%;
-        .j-copy-to-clipboard {
-          flex: 1;
-        }
-      }
-    }
-
-    // Icon-only link to the reset page, styled like Copy.
-    .s-reset-address {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0 16px;
-      background: $cream;
-      color: $olive-600;
-      border-left: 1px solid #e5e7eb;
-      transition: background 0.2s;
-      @media screen and (max-width: 767px) {
-        border-left: none;
-        border-right: 1px solid #e5e7eb;
-      }
-      &:hover, &:focus {
-        background: darken($cream, 5%);
-        color: $olive-800;
-        text-decoration: none;
-      }
-    }
 
     // Copy is a helper, not the page's main action: keep it a quiet gray.
     .j-copy-to-clipboard {
@@ -487,8 +445,7 @@ strong {
       background: #26291e;
       border-color: #3f4235;
 
-      .j-copy-to-clipboard,
-      .s-reset-address {
+      .j-copy-to-clipboard {
         background: #2f3227;
         color: #c9cbbf;
         border-color: #3f4235;

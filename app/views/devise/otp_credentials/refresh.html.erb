@@ -1,23 +1,28 @@
 <% title "Two-Factor Authentication" %>
+<% content_for :tailwind, true %>
 
-<div class="row">
-  <div class="col-md-8 col-md-offset-2" style="margin-bottom: 40px;">
-    <h4><%= I18n.t('explain', :scope => 'devise.otp.credentials_refresh') %></h4>
+<div class="tw mx-auto max-w-lg pt-4 pb-16 sm:pt-8">
+  <header class="mb-8 text-center">
+    <h1 class="font-serif text-3xl tracking-tight text-primary sm:text-4xl">Confirm it's you</h1>
+    <p class="mt-2 text-muted"><%= I18n.t('explain', scope: 'devise.otp.credentials_refresh') %></p>
+  </header>
 
-    <%= form_for(resource, :as => resource_name, :url => [:refresh, resource_name, :otp_credential], :html => { :method => :put, "data-turbo" => false }) do |f| %>
-
+  <div class="card p-6 sm:p-8">
+    <%= form_for(resource, as: resource_name, url: [:refresh, resource_name, :otp_credential], html: { method: :put, "data-turbo" => false, class: "space-y-5" }) do |f| %>
       <%= render "devise/shared/error_messages", resource: resource %>
 
-     <%= f.hidden_field :email %>
+      <%= f.hidden_field :email %>
 
-      <br>
       <div>
-        <%= f.label :password %><br />
-        <%= f.password_field :refresh_password, :autocomplete => :off, :autofocus => true, class: "form-control" %>
+        <%= f.label :refresh_password, "Password", class: "field-label" %>
+        <%= f.password_field :refresh_password, autocomplete: "current-password", autofocus: true, class: "field-input" %>
       </div>
-      <br>
 
-      <div><%= f.submit I18n.t(:go_on, :scope => 'devise.otp.credentials_refresh'), class: "btn btn-primary" %></div>
+      <%= f.submit I18n.t(:go_on, scope: 'devise.otp.credentials_refresh'), class: "button-primary w-full" %>
     <% end %>
   </div>
+
+  <p class="mt-8 text-center">
+    <%= link_to "← Back to Account security", security_path, class: "text-sm text-muted hover:text-primary" %>
+  </p>
 </div>

@@ -1,100 +1,78 @@
-<% title 'Account Settings — Dabble me.' %>
+<% title 'Account security — Dabble me.' %>
+<% content_for :tailwind, true %>
 
-<div class="row">
-  <div class="col-md-8 col-md-offset-2">
-    <h3>ACCOUNT SECURITY</h3>
-    <br>
-  </div>
+<div class="tw mx-auto max-w-2xl pt-4 pb-16 sm:pt-8">
+  <header class="mb-8">
+    <h1 class="font-serif text-4xl tracking-tight text-primary sm:text-5xl">Account security</h1>
+    <p class="mt-2 text-muted">Your email, password, passkeys, two-factor authentication, and connected apps.</p>
+  </header>
 
-  <%= form_for(user, url: registration_path(user), html: { method: :put }) do |f| %>
-    <div class="col-md-8 col-md-offset-2">
-      <%= f.label :email %>
-      <%= f.email_field :email, class: "form-control" %>
-      <br>
-    </div>
+  <%= form_for(user, url: registration_path(user), html: { method: :put, class: "space-y-6" }) do |f| %>
+    <section class="card p-6 sm:p-8">
+      <h2 class="font-serif text-2xl text-primary">Email and password</h2>
 
-    <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
-      <div class="col-md-8 col-md-offset-2">
-        Currently waiting confirmation for: <%= resource.unconfirmed_email %>
+      <div class="mt-5 grid gap-5 sm:grid-cols-2">
+        <div class="sm:col-span-2">
+          <%= f.label :email, class: "field-label" %>
+          <%= f.email_field :email, autocomplete: "email", class: "field-input" %>
+          <% if devise_mapping.confirmable? && resource.pending_reconfirmation? %>
+            <p class="field-help">Currently waiting confirmation for: <%= resource.unconfirmed_email %></p>
+          <% end %>
+        </div>
+        <div>
+          <%= f.label :password, "New password", class: "field-label" %>
+          <%= f.password_field :password, autocomplete: "new-password", class: "field-input" %>
+        </div>
+        <div>
+          <%= f.label :password_confirmation, "Confirm new password", class: "field-label" %>
+          <%= f.password_field :password_confirmation, autocomplete: "new-password", class: "field-input" %>
+        </div>
       </div>
-    <% end %>
+    </section>
 
-    <div class="col-md-4 col-md-offset-2">
-      <%= f.label :password, "New Password" %>
-      <%= f.password_field :password, autocomplete: "off", class: "form-control" %>
-      <br>
-    </div>
+    <section class="card p-6 sm:p-8">
+      <h2 class="font-serif text-2xl text-primary">Passkeys and two-factor</h2>
+      <p class="mt-1 text-sm text-muted">More ways to keep your journal safe when you log in.</p>
 
-    <div class="col-md-4">
-      <%= f.label :password_confirmation, "New Password Confirmation" %>
-      <%= f.password_field :password_confirmation, autocomplete: "off", class: "form-control" %>
-      <br>
-    </div>
-
-    <div class="col-md-8 col-md-offset-2">
-      <label style="margin-bottom: 10px;">Additional Security</label>
-      <br>
-      <div style="margin-bottom: 15px;">
-        <button class="btn btn-default btn-sm" id="add-passkey" type="button">
-          Add Passkey
-        </button>
-
-        <%= link_to user_otp_token_path do %>
-          <button class="btn btn-default btn-sm" id="add-two-factor" type="button">
-            <% if current_user.otp_enabled? %>
-              <span class="text-success">
-                ✅ Change Two-Factor Authentication
-              </span>
-            <% else %>
-              Setup Two-Factor Authentication
-            <% end %>
-          </button>
+      <div class="mt-5 flex flex-wrap gap-3">
+        <button class="button-secondary" id="add-passkey" type="button">Add Passkey</button>
+        <%= link_to user_otp_token_path, id: "add-two-factor", class: "button-secondary" do %>
+          <% if current_user.otp_enabled? %>
+            <span class="slab-icon slab-icon--check text-green-700" aria-hidden="true"></span>
+            Change Two-Factor Authentication
+          <% else %>
+            Set Up Two-Factor Authentication
+          <% end %>
         <% end %>
       </div>
 
       <% if current_user.webauthn_credentials.any? %>
-        <table class="table">
-          <thead>
-            <tr>
-              <th>Passkey</th>
-              <th>Added</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            <% current_user.webauthn_credentials.each do |credential| %>
-              <tr>
-                <td><%= credential.nickname %></td>
-                <td><%= credential.created_at.strftime("%b %d, %Y") %></td>
-                <td class="text-right"><%= link_to "Remove", passkeys_registration_path(credential), method: :delete, data: { confirm: "Are you sure?" }, class: "text-danger" %></td>
-              </tr>
-            <% end %>
-          </tbody>
-        </table>
+        <ul class="mt-5 divide-y divide-cream-300 rounded-lg border border-subtle">
+          <% current_user.webauthn_credentials.each do |credential| %>
+            <li class="flex items-center justify-between gap-4 px-4 py-3">
+              <div class="min-w-0">
+                <p class="truncate font-medium text-primary"><%= credential.nickname %></p>
+                <p class="text-sm text-muted">Added <%= credential.created_at.strftime("%b %d, %Y") %></p>
+              </div>
+              <%= link_to "Remove", passkeys_registration_path(credential), method: :delete, data: { confirm: "Are you sure?" }, class: "shrink-0 text-sm font-medium text-red-700 hover:text-red-800 hover:underline" %>
+            </li>
+          <% end %>
+        </ul>
       <% end %>
-    </div>
+    </section>
 
     <%= render "oauth_connected_apps" %>
 
-    <div class="col-md-8 col-md-offset-2" style="margin-top: 1.5rem;">
-      <div class="well" style="background-color: #E8E8E2; padding: 15px 20px;">
-        <%= f.label :current_password %>
-        to confirm email or password changes above
-        <%= f.password_field :current_password, autocomplete: "off", class: "form-control" %>
-      </div>
-    </div>
-
-    <div class="col-md-8 col-md-offset-2" style="margin-top: 1rem;">
-      <%= f.submit "Update Security", class: "btn btn-primary form-control j-edit-security", name: "submit_method", type: :submit %>
-    </div>
-
-    <div class="clearfix"></div>
-
-    <div class="col-md-8 col-md-offset-2">
-      <p class="text-center text-muted" style="margin-top: 1.5rem;">
-        To permanently delete your account and <%= pluralize(current_user.entries.count, "entry") %>,
-        <%= link_to "use the delete account page", delete_account_path, class: "text-danger" %>.
-      </p>
-    </div>
+    <section class="card p-6 sm:p-8">
+      <%= f.label :current_password, class: "field-label" %>
+      <%= f.password_field :current_password, autocomplete: "current-password", class: "field-input" %>
+      <p class="field-help">Needed to change your email or password, or to add a passkey.</p>
+      <%= f.submit "Update Security", class: "button-primary mt-5 w-full sm:w-auto j-edit-security", name: "submit_method", type: :submit %>
+    </section>
   <% end %>
+
+  <p class="mt-8 text-center text-sm text-muted">
+    To permanently delete your account and <%= pluralize(current_user.entries.count, "entry") %>,
+    <%= link_to "use the delete account page", delete_account_path, class: "font-medium text-red-700 underline underline-offset-2 hover:text-red-800" %>.
+  </p>
 </div>

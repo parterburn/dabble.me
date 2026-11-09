@@ -3,6 +3,28 @@ name: Main
 on: [push]
 
 jobs:
+  # public/app-tailwind.css is committed (like marketing.css), so fail if it's
+  # out of date with the views and app.tailwind.css that generate it.
+  app-css:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+    - uses: actions/checkout@v6
+
+    - uses: actions/setup-node@v6
+      with:
+        node-version-file: .tool-versions
+        cache: npm
+
+    - name: Check public/app-tailwind.css is up to date
+      run: |
+        npm ci
+        npm run build:css:app
+        git diff --exit-code -- public/app-tailwind.css || {
+          echo "::error file=public/app-tailwind.css::Out of date. Run 'npm run build:css:app' and commit the result."
+          exit 1
+        }
+
   vm-job:
     runs-on: ubuntu-latest
     timeout-minutes: 20

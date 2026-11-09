@@ -1,11 +1,13 @@
-<% title "Two Factor Authentication Settings" %>
+<% title "Two-Factor Authentication" %>
+<% content_for :tailwind, true %>
 
-<div class="row">
-  <div class="col-md-8 col-md-offset-2" style="margin-bottom: 40px; margin-top: 20px;">
-    <%= link_to "Back to Security Settings", security_path %>
-    <h3><%= I18n.t('title', :scope => 'devise.otp.otp_tokens') %></h3>
-    <p><%= I18n.t('explain', :scope => 'devise.otp.otp_tokens') %></p>
+<div class="tw mx-auto max-w-2xl pt-4 pb-16 sm:pt-8">
+  <%= link_to "← Back to Account security", security_path, class: "text-sm text-muted hover:text-primary" %>
 
-    <%= render :partial => 'token_secret' %>
-  </div>
+  <header class="mt-4 mb-8">
+    <h1 class="font-serif text-4xl tracking-tight text-primary sm:text-5xl"><%= I18n.t('title', scope: 'devise.otp.otp_tokens') %></h1>
+    <p class="mt-2 text-muted"><%= I18n.t('explain', scope: 'devise.otp.otp_tokens') %></p>
+  </header>
+
+  <%= render partial: 'token_secret' %>
 </div>

@@ -1,43 +1,37 @@
 <% title "New posting address — Dabble me." %>
+<% content_for :tailwind, true %>
 <% current_address = "#{current_user.user_key}@#{ENV['SMTP_DOMAIN']}" %>
 
-<div class="row">
-  <div class="col-md-8 col-md-offset-2">
-    <h3>GET A NEW POSTING ADDRESS</h3>
-    <br>
-  </div>
-</div>
+<div class="tw mx-auto max-w-2xl pt-4 pb-16 sm:pt-8">
+  <header class="mb-8">
+    <h1 class="font-serif text-4xl tracking-tight text-primary sm:text-5xl">Get a new posting address</h1>
+    <p class="mt-2 text-muted">If your address got out and you're getting entries you didn't write, you can replace it.</p>
+  </header>
 
-<div class="row">
-  <div class="col-md-8 col-md-offset-2">
-    <div class="well s-posting-address-reset">
-      <p>
-        Your current posting address is <code><%= current_address %></code>.
-        If it got out and you're getting entries you didn't write, you can replace it.
-      </p>
+  <section class="card p-6 sm:p-8">
+    <p class="text-sm text-muted">Your current posting address</p>
+    <code class="mt-1 block break-all rounded-lg border border-subtle bg-surface-elevated px-4 py-3 font-mono text-sm text-primary"><%= current_address %></code>
 
-      <ul>
-        <li>You get a new address right away. We'll email it to you from that address, so you can save it to your contacts.</li>
-        <li>Your current address stops accepting entries from anyone else. Replies you send from <strong><%= current_user.email %></strong> to older Dabble Me emails still post.</li>
-        <li>If you send entries from any other email address, send them to the new address from now on.</li>
-        <li>Update the address anywhere you've saved it, like your contacts.</li>
-        <li>Your entries and photos don't change.</li>
-      </ul>
+    <h2 class="mt-6 font-serif text-2xl text-primary">What happens</h2>
+    <ul class="mt-3 list-disc space-y-2 pl-5 text-primary marker:text-cream-600">
+      <li>You get a new address right away. We'll email it to you from that address, so you can save it to your contacts.</li>
+      <li>Your current address stops accepting entries from anyone else. Replies you send from <strong class="font-semibold"><%= current_user.email %></strong> to older Dabble Me emails still post.</li>
+      <li>If you send entries from any other email address, send them to the new address from now on.</li>
+      <li>Update the address anywhere you've saved it, like your contacts.</li>
+      <li>Your entries and photos don't change.</li>
+    </ul>
 
-      <%= form_with url: reset_posting_address_path, method: :post do %>
-        <div class="checkbox" style="margin-top: 1.25rem;">
-          <label>
-            <%= check_box_tag :confirm_reset, "1", false, required: true %>
-            I understand <%= current_address %> will stop accepting entries.
-          </label>
-        </div>
+    <%= form_with url: reset_posting_address_path, method: :post, class: "mt-6 space-y-5" do %>
+      <label class="flex cursor-pointer items-start gap-3">
+        <%= check_box_tag :confirm_reset, "1", false, required: true, class: "checkbox mt-1" %>
+        <span class="text-primary">I understand <%= current_address %> will stop accepting entries.</span>
+      </label>
 
-        <%= submit_tag "Get a new posting address", class: "btn btn-warning btn-block", style: "margin-top: 1rem;" %>
-      <% end %>
-    </div>
+      <%= submit_tag "Get a new posting address", class: "button-primary w-full" %>
+    <% end %>
+  </section>
 
-    <p style="margin-top: 1.5rem;">
-      <%= link_to "← Keep my current address", edit_user_registration_path, class: "text-muted" %>
-    </p>
-  </div>
+  <p class="mt-8">
+    <%= link_to "← Keep my current address", edit_user_registration_path, class: "text-sm text-muted hover:text-primary" %>
+  </p>
 </div>

@@ -4,16 +4,6 @@ input[type="checkbox"] {
   cursor: pointer;
 }
 
-.s-day-email label {
-  font-weight: normal;
-  cursor: pointer;
-  margin-left: 3px;
-  margin-right: 10px;
-  position: relative;
-  font-size: 15px;
-  top: -1px;
-}
-
 // devise-otp renders the 2FA QR code as an inline SVG with no intrinsic size.
 // Keep it at the 256px the old JS renderer used, on white for reliable scanning.
 .qrcode-container {
