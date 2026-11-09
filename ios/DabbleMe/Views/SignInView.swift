@@ -23,29 +23,51 @@ struct SignInView: View {
     }
 }
 
-/// The "Dabble me." wordmark from dabble.me: Instrument Serif with an olive period.
+/// The "Dabble me." wordmark from dabble.me: Instrument Serif with an olive period and, like the
+/// site's header, a blinking grey cursor after it. `typed` shows only the first letters, for
+/// typing it out (the splash); the space it takes never changes, so it doesn't shift as it types.
 struct Wordmark: View {
     var size: CGFloat = 64
-    var pulsesDot = false
-    @State private var dotScale: CGFloat = 1
+    var typed: Int? = nil
+    var showsCursor = false
+    @State private var cursorOn = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    static let letters = Array("Dabble me.")
+
     var body: some View {
-        HStack(alignment: .lastTextBaseline, spacing: 0) {
-            Text("Dabble me")
-                .font(.custom("InstrumentSerif-Regular", size: size))
+        line(Self.letters.count)
+            .hidden()
+            .overlay(alignment: .leading) { line(min(typed ?? Self.letters.count, Self.letters.count)) }
+            .accessibilityElement()
+            .accessibilityLabel("Dabble Me")
+            .task(id: showsCursor) {
+                // The site's blink: on and off every 0.65 seconds.
+                guard showsCursor, !reduceMotion else { return }
+                while !Task.isCancelled {
+                    try? await Task.sleep(for: .milliseconds(650))
+                    cursorOn.toggle()
+                }
+            }
+    }
+
+    private func line(_ count: Int) -> some View {
+        HStack(alignment: .lastTextBaseline, spacing: size * 0.12) {
+            text(count)
                 .kerning(-size / 150)
-            Text(".")
-                .font(.custom("InstrumentSerif-Regular", size: size))
-                .foregroundStyle(.tint)
-                .scaleEffect(dotScale, anchor: .bottom)
+            if showsCursor {
+                Text("|")
+                    .foregroundStyle(.secondary)
+                    .opacity(cursorOn ? 1 : 0)
+            }
         }
-        .accessibilityElement()
-        .accessibilityLabel("Dabble Me")
-        .onAppear {
-            guard pulsesDot, !reduceMotion else { return }
-            withAnimation(.easeInOut(duration: 1.6).repeatForever(autoreverses: true).delay(1.2)) { dotScale = 1.35 }
-        }
+        .font(.custom("InstrumentSerif-Regular", size: size))
+    }
+
+    private func text(_ count: Int) -> Text {
+        let shown = String(Self.letters.prefix(count))
+        guard shown.hasSuffix(".") else { return Text(shown) }
+        return Text(shown.dropLast()) + Text(".").foregroundStyle(.tint)
     }
 }
 
@@ -58,7 +80,7 @@ private struct WelcomeView: View {
         ScrollView {
             VStack(spacing: 28) {
                 VStack(spacing: 12) {
-                    Wordmark(size: 72, pulsesDot: true)
+                    Wordmark(size: 72, showsCursor: true)
                     Text("Your life, written down\nand remembered.")
                         .font(.custom("InstrumentSerif-Regular", size: 28))
                         .multilineTextAlignment(.center)

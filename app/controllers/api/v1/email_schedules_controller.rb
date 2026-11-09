@@ -2,9 +2,10 @@
 
 module Api
   module V1
-    # GET/PATCH /api/v1/email_schedule — when the "How was your day?" email arrives, like the web
-    # settings page. Everyone sets the hour and time zone; choosing days beyond Sunday is PRO (free
-    # accounts get Sunday or nothing, as User#restrict_free_frequency enforces).
+    # GET/PATCH /api/v1/email_schedule — when the "How was your day?" email arrives and which past
+    # entry it includes, like the web settings page. Everyone sets the hour and time zone and whether
+    # to include a past entry; choosing days beyond Sunday, words to leave out, and entries over a
+    # year old are PRO (free accounts get Sunday or nothing, as User#restrict_free_frequency enforces).
     class EmailSchedulesController < BaseController
       DAYS = %w[Sun Mon Tue Wed Thu Fri Sat].freeze
 
@@ -12,7 +13,9 @@ module Api
         render json: schedule_json
       end
 
-      # PATCH { days: ["Mon", ...], hour: 0-23, timezone: "Pacific Time (US & Canada)" } (any of them)
+      # PATCH { days: ["Mon", ...], hour: 0-23, timezone: "Pacific Time (US & Canada)",
+      #         include_past_entries: true, past_filter: "work, doctor", include_old_entries: true }
+      # (any of them)
       def update
         user = current_user
         if params.key?(:days)
@@ -36,6 +39,13 @@ module Api
 
           user.send_timezone = zone.name
         end
+        user.send_past_entry = boolean(:include_past_entries) if params.key?(:include_past_entries)
+        if params.key?(:past_filter) || params.key?(:include_old_entries)
+          return render_error(:forbidden, 'pro_required', 'This is part of Dabble Me PRO.') unless user.is_pro?
+
+          user.past_filter = params[:past_filter].to_s.split(',').map(&:strip).reject(&:blank?).join(', ').presence if params.key?(:past_filter)
+          user.way_back_past_entries = boolean(:include_old_entries) if params.key?(:include_old_entries)
+        end
 
         if user.save
           render json: schedule_json
@@ -46,6 +56,10 @@ module Api
 
       private
 
+      def boolean(key)
+        ActiveModel::Type::Boolean.new.cast(params[key]) ? true : false
+      end
+
       def schedule_json
         user = current_user.reload
         {
@@ -53,6 +67,13 @@ module Api
           hour: user.send_time.hour,
           timezone: user.send_timezone,
           can_choose_days: user.is_pro?,
+          include_past_entries: user.send_past_entry != false,
+          past_filter: user.past_filter.to_s,
+          # How many entries the words leave out (the web links these to a search).
+          filtered_count: user.past_filter.present? ? Array(user.past_filter_entry_ids).size : 0,
+          include_old_entries: user.way_back_past_entries != false,
+          # The web only offers "over a year old" once there are entries that old.
+          has_old_entries: user.entries.where(date: ...1.year.ago).exists?,
           time_zones: ActiveSupport::TimeZone.all.map do |zone|
             { name: zone.name, iana: zone.tzinfo.name, offset: zone.formatted_offset }
           end

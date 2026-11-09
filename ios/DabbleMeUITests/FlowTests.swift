@@ -82,6 +82,8 @@ final class FlowTests: XCTestCase {
         }
         XCTAssertTrue(connector.waitForExistence(timeout: 5))
         XCTAssertTrue(app.links["Export Entries"].exists)
+        XCTAssertTrue(app.links["Account Security"].exists)
+        XCTAssertFalse(app.links["Email Preferences"].exists, "Email settings are in the app now")
         snap("settings-ai")
     }
 
@@ -89,7 +91,7 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["On This Day"].waitForExistence(timeout: 15))
         XCTAssertFalse(app.buttons["Random Entry"].isHittable, "Today has no random-entry button")
         // Memories depend on the date the demo account was seeded; either state is fine here.
-        let memory = app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "[0-9]+ years? ago · [0-9]{4}")).firstMatch
+        let memory = app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "[0-9]+ years? ago · .*[0-9]{4}")).firstMatch
         let empty = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Nothing from this date")).firstMatch
         XCTAssertTrue(memory.waitForExistence(timeout: 5) || empty.exists, "On This Day should show memories or its empty state")
         snap("today")

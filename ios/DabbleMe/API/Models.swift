@@ -310,6 +310,13 @@ struct EmailSchedule: Decodable, Sendable, Equatable {
     /// PRO: any days. Free: Sunday or nothing.
     let canChooseDays: Bool
     let timeZones: [TimeZoneOption]
+    /// The past entry at the bottom of each email, like the web settings: on or off for everyone;
+    /// words that keep entries out (comma-separated) and entries over a year old are PRO.
+    var includePastEntries: Bool
+    var pastFilter: String
+    let filteredCount: Int
+    var includeOldEntries: Bool
+    let hasOldEntries: Bool
 
     static let allDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 
@@ -326,4 +333,27 @@ struct EmailScheduleUpdate: Encodable, Sendable {
     var days: [String]? = nil
     var hour: Int? = nil
     var timezone: String? = nil
+    var includePastEntries: Bool? = nil
+    var pastFilter: String? = nil
+    var includeOldEntries: Bool? = nil
+}
+
+/// A date for a #tag (a birthday, an anniversary), so entries show how long it had been (PRO).
+struct TagDate: Codable, Sendable, Hashable, Identifiable {
+    let id: Int
+    var tag: String
+    var date: String
+
+    var day: JournalDay? { JournalDay(date) }
+}
+
+struct TagDateList: Decodable, Sendable {
+    let hashtags: [TagDate]
+    /// Tags used lately that don't have a date yet.
+    let suggestions: [String]
+}
+
+struct TagDateUpdate: Encodable, Sendable {
+    var tag: String? = nil
+    var date: String? = nil
 }

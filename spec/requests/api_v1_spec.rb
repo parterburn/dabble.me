@@ -593,6 +593,74 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       patch "/api/v1/email_schedule", params: { days: ["Funday"] }, headers: auth(pro_user), as: :json
       expect(response).to have_http_status(:unprocessable_content)
     end
+
+    it "sets which past entries the email includes" do
+      create(:entry, user: pro_user, date: 2.years.ago, body: "<p>A doctor visit</p>")
+      create(:entry, user: pro_user, date: 3.days.ago, body: "<p>Hiking</p>")
+      get "/api/v1/email_schedule", headers: auth(pro_user)
+      expect(json).to include("include_past_entries" => true, "past_filter" => "", "filtered_count" => 0,
+                              "include_old_entries" => true, "has_old_entries" => true)
+
+      patch "/api/v1/email_schedule", params: { include_past_entries: false, past_filter: " doctor ,, work ", include_old_entries: false },
+                                      headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:ok)
+      expect(json).to include("include_past_entries" => false, "past_filter" => "doctor, work", "filtered_count" => 1, "include_old_entries" => false)
+      expect(pro_user.reload).to have_attributes(send_past_entry: false, past_filter: "doctor, work", way_back_past_entries: false)
+
+      patch "/api/v1/email_schedule", params: { past_filter: "" }, headers: auth(pro_user), as: :json
+      expect(pro_user.reload.past_filter).to be_nil
+    end
+
+    it "lets free accounts include past entries, but not filter them" do
+      patch "/api/v1/email_schedule", params: { include_past_entries: false }, headers: auth(free_user), as: :json
+      expect(response).to have_http_status(:ok)
+      expect(json["include_past_entries"]).to be(false)
+
+      patch "/api/v1/email_schedule", params: { past_filter: "work" }, headers: auth(free_user), as: :json
+      expect(response).to have_http_status(:forbidden)
+      patch "/api/v1/email_schedule", params: { include_old_entries: false }, headers: auth(free_user), as: :json
+      expect(response).to have_http_status(:forbidden)
+    end
+  end
+
+  describe "/api/v1/dated_hashtags" do
+    it "lists, adds, changes and removes dated hashtags, suggesting tags without a date" do
+      create(:entry, user: pro_user, date: 2.days.ago, body: "<p>Park with #Leo and #Biscuit</p>")
+      pro_user.original_hashtags.create!(tag: "Biscuit", date: Date.new(2023, 5, 1))
+
+      get "/api/v1/dated_hashtags", headers: auth(pro_user)
+      expect(response).to have_http_status(:ok)
+      expect(json["hashtags"]).to contain_exactly(include("tag" => "Biscuit", "date" => "2023-05-01"))
+      expect(json["suggestions"]).to eq(["Leo"])
+
+      post "/api/v1/dated_hashtags", params: { tag: "#Leo", date: "2019-02-03" }, headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:created)
+      expect(json).to include("tag" => "Leo", "date" => "2019-02-03")
+      id = json["id"]
+
+      patch "/api/v1/dated_hashtags/#{id}", params: { date: "2019-02-04" }, headers: auth(pro_user), as: :json
+      expect(json["date"]).to eq("2019-02-04")
+
+      post "/api/v1/dated_hashtags", params: { tag: "leo", date: "2020-01-01" }, headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:unprocessable_content) # already dated
+      post "/api/v1/dated_hashtags", params: { tag: "two words", date: "2020-01-01" }, headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      post "/api/v1/dated_hashtags", params: { tag: "Max", date: "soon" }, headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+
+      delete "/api/v1/dated_hashtags/#{id}", headers: auth(pro_user)
+      expect(response).to have_http_status(:no_content)
+      expect(pro_user.original_hashtags.pluck(:tag)).to eq(["Biscuit"])
+    end
+
+    it "keeps each account's hashtags to itself, and is PRO" do
+      theirs = free_user.original_hashtags.create!(tag: "Secret", date: Date.new(2020, 1, 1))
+      delete "/api/v1/dated_hashtags/#{theirs.id}", headers: auth(pro_user)
+      expect(response).to have_http_status(:not_found)
+
+      get "/api/v1/dated_hashtags", headers: auth(free_user)
+      expect(response).to have_http_status(:forbidden)
+    end
   end
 
   describe "GET /api/v1/search" do

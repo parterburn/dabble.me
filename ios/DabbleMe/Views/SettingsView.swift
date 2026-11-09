@@ -41,6 +41,13 @@ struct SettingsView: View {
                         } else {
                             LabeledContent("Plan", value: me.isPro ? "PRO" : "Free")
                         }
+                        // Dates for #tags (PRO, like the web settings); greyed out for free accounts.
+                        NavigationLink {
+                            TagDatesView()
+                        } label: {
+                            Label("Manage Hashtags", icon: "slab-tag")
+                        }
+                        .disabled(!me.isPro)
                     }
                 }
 
@@ -56,13 +63,10 @@ struct SettingsView: View {
                             Label("Claude/ChatGPT Connector", icon: "slab-sparkles")
                         }
                     }
-                    Link(destination: model.me?.settingsUrl ?? AppConfig.webURL("settings")) {
-                        Label("Email Preferences", icon: "slab-envelope")
-                    }
                     Link(destination: model.me?.securityUrl ?? AppConfig.webURL("security")) {
-                        Label("Passkeys & Two-Factor", icon: "slab-shield")
+                        Label("Account Security", icon: "slab-shield")
                     }
-                    Link(destination: AppConfig.webURL("entries/export")) {
+                    Link(destination: URL(string: "#export", relativeTo: AppConfig.webURL("users/edit"))!.absoluteURL) {
                         Label("Export Entries", icon: "slab-arrow-up-from-line")
                     }
                 } header: {

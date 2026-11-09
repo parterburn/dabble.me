@@ -16,7 +16,8 @@ namespace :ios do
     user = User.find_or_initialize_by(email: "demo@dabble.ex")
     user.assign_attributes(password: "dabble-demo", first_name: "Alex", last_name: "Rivera",
                            plan: "PRO Monthly", send_timezone: "Mountain Time (US & Canada)",
-                           send_time: "20:00", frequency: %w[Sun])
+                           send_time: "20:00", frequency: %w[Sun],
+                           send_past_entry: true, past_filter: nil, way_back_past_entries: true)
     user.save!
     user.entries.destroy_all
 

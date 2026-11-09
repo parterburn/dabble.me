@@ -1,0 +1,9 @@
+@font-face { font-family: "Instrument Serif"; src: url("../../../../DabbleMe/Resources/Fonts/InstrumentSerif-Regular.ttf"); }
+:root { --paper: #f7f5f0; --ink: #1d1d16; --olive: #5b6750; --olive-dark: #4f5a45; --subtle: #9a9a90; }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { -webkit-font-smoothing: antialiased; overflow: hidden; }
+.phone { position: absolute; background: var(--ink); border-radius: 9.5% / 4.4%; padding: 2.4%; box-shadow: 0 60px 140px rgba(29,29,22,.28), 0 18px 40px rgba(29,29,22,.18); }
+.phone img { display: block; width: 100%; border-radius: 8% / 3.7%; }
+.serif { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; }
+.sans { font-family: "Instrument Sans", system-ui, sans-serif; }
+.cursor { color: var(--subtle); padding-left: .15em; }

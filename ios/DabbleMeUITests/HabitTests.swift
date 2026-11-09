@@ -86,7 +86,7 @@ final class HabitTests: XCTestCase {
         }
         let app = launch(["-lock.enabled", "YES", "-DabbleLockGrace", "0"])
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
-        let locked = app.staticTexts["Dabble Me is locked"]
+        let locked = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Unlock with")).firstMatch
         let journal = app.tabBars.buttons["Journal"]
 
         XCTAssertTrue(locked.waitForExistence(timeout: 15), "The app should open locked")

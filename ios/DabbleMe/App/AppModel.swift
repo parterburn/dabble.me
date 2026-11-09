@@ -342,6 +342,22 @@ final class AppModel {
         try await api.get("api/v1/email_schedule")
     }
 
+    func tagDates() async throws -> TagDateList {
+        try await api.get("api/v1/dated_hashtags")
+    }
+
+    func addTagDate(tag: String, date: String) async throws -> TagDate {
+        try await api.post("api/v1/dated_hashtags", TagDateUpdate(tag: tag, date: date))
+    }
+
+    func updateTagDate(id: Int, date: String) async throws -> TagDate {
+        try await api.patch("api/v1/dated_hashtags/\(id)", TagDateUpdate(date: date))
+    }
+
+    func removeTagDate(id: Int) async throws {
+        try await api.delete("api/v1/dated_hashtags/\(id)")
+    }
+
     func updateEmailSchedule(_ update: EmailScheduleUpdate) async throws -> EmailSchedule {
         let schedule: EmailSchedule = try await api.patch("api/v1/email_schedule", update)
         // The time zone is also the journal's: "today" may have moved.

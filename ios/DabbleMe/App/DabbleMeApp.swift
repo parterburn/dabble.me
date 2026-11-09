@@ -32,6 +32,8 @@ struct DabbleMeApp: App {
 struct RootView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.scenePhase) private var scenePhase
+    /// The "me." typing animation, once per launch.
+    @State private var showsSplash = true
 
     var body: some View {
         Group {
@@ -84,6 +86,14 @@ struct RootView: View {
                 } else if scenePhase != .active {
                     PrivacyCover() // hides the journal in the app switcher
                 }
+            }
+        }
+        .overlay {
+            if showsSplash {
+                SplashView(isReady: model.hasLoaded || !model.isSignedIn) {
+                    withAnimation(.easeOut(duration: 0.35)) { showsSplash = false }
+                }
+                .transition(.opacity)
             }
         }
     }

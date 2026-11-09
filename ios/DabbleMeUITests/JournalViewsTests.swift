@@ -460,6 +460,54 @@ final class JournalViewsTests: XCTestCase {
         pickTimeZone(app, "Mountain")
     }
 
+    /// Past entries in the email: on/off, words that leave entries out, and entries over a year old.
+    func testDailyEmailPastEntries() throws {
+        let app = launch()
+        openDailyEmail(app)
+        let include = app.switches["Include a Past Entry"]
+        app.swipeUp()
+        XCTAssertTrue(include.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.switches["Include Entries Over a Year Old"].exists, "The demo account has entries over a year old")
+        let words = app.textFields["Words, separated by commas"]
+        words.tap()
+        words.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 12) + "waffles\n")
+        XCTAssertTrue(app.staticTexts["1 entry is left out of past entries."].waitForExistence(timeout: 10))
+        snap("email-past-entries")
+
+        // Off hides the rest; on brings it back, with the words saved.
+        include.switches.firstMatch.tap()
+        XCTAssertTrue(words.waitForNonExistence(timeout: 5))
+        include.switches.firstMatch.tap()
+        XCTAssertTrue(words.waitForExistence(timeout: 5))
+        XCTAssertEqual(words.value as? String, "waffles")
+
+        // Put the demo account back.
+        words.tap()
+        words.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 12) + "\n")
+        XCTAssertTrue(app.staticTexts["Each email can end with one of your past entries."].waitForExistence(timeout: 10))
+    }
+
+    /// Settings → Manage Hashtags: dated tags, adding one by name, and removing it.
+    func testManageHashtags() throws {
+        let app = launch()
+        tab(app, "Settings").tap()
+        app.buttons["Manage Hashtags"].tap()
+        XCTAssertTrue(app.staticTexts["#Biscuit"].waitForExistence(timeout: 10), "The demo's dated #Biscuit")
+        snap("manage-hashtags")
+        app.buttons["Another Hashtag…"].tap()
+        let name = app.textFields["Hashtag"]
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        name.tap()
+        name.typeText("Leo")
+        app.buttons["Add"].tap()
+        let leo = app.staticTexts["#Leo"]
+        XCTAssertTrue(leo.waitForExistence(timeout: 10))
+        // Swipe to remove.
+        app.cells.containing(.staticText, identifier: "#Leo").firstMatch.swipeLeft()
+        app.buttons["Delete"].tap()
+        XCTAssertTrue(leo.waitForNonExistence(timeout: 10))
+    }
+
     /// A free account sees Daily Email greyed out with the rest of Reminders. TEST_RUNNER_DABBLE_FREE_TOKEN.
     func testEmailScheduleFreeAccount() throws {
         guard let free = ProcessInfo.processInfo.environment["DABBLE_FREE_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_FREE_TOKEN") }

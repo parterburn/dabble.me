@@ -71,7 +71,7 @@ struct TodayView: View {
     @ViewBuilder
     private func todaySection(_ today: TodaySummary) -> some View {
         if let entry = today.entry {
-            SectionTitle("Today's Entry")
+            SectionTitle("Today's Entry", icon: "slab-calendar")
                 .plainRow()
             row(entry.summary, showsDate: false)
         } else {
@@ -240,16 +240,22 @@ private struct SectionTitle: View {
         self.icon = icon
     }
 
+    /// A band of the brand olive, so Today's sections read as separate once both have entries.
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 10) {
             if let icon {
                 appIcon(icon)
-                    .foregroundStyle(.tint)
                     .accessibilityHidden(true)
             }
             Text(title)
                 .font(.system(.title3, design: .serif, weight: .semibold))
                 .accessibilityAddTraits(.isHeader)
+            Spacer(minLength: 0)
         }
+        .foregroundStyle(.white)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        // The brand olive in both modes (dark mode's lighter accent is too pale behind white text).
+        .background(Color(red: 0x5C / 255, green: 0x66 / 255, blue: 0x54 / 255), in: .rect(cornerRadius: 12))
     }
 }
