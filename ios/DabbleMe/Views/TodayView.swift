@@ -75,17 +75,15 @@ struct TodayView: View {
     @ViewBuilder
     private func todaySection(_ today: TodaySummary) -> some View {
         if let entry = today.entry {
-            // On the prompt box's Paper card, so today stands apart from On This Day. Two rows (the
-            // entry keeps its swipes), each drawing its half of the card.
             SectionTitle("Today's Entry", icon: "slab-calendar")
                 .padding(.top, 6)
-                .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 14, leading: 32, bottom: 4, trailing: 32))
-                .listRowBackground(TodayCard(edge: .top))
+                .plainRow()
+            // On the prompt box's Paper card, so today stands apart from On This Day. The card is
+            // the row's background, so the entry keeps its swipes.
             row(entry.summary, showsDate: false)
                 .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 4, leading: 32, bottom: 16, trailing: 32))
-                .listRowBackground(TodayCard(edge: .bottom))
+                .listRowInsets(EdgeInsets(top: 16, leading: 32, bottom: 24, trailing: 32))
+                .listRowBackground(TodayCard())
         } else {
             VStack(alignment: .leading, spacing: 14) {
                 let usesAI = JournalIntelligence.isEnabled(for: model.me)
@@ -266,50 +264,15 @@ private struct SectionTitle: View {
     }
 }
 
-/// Half of the Paper card behind Today's Entry (the same as the prompt box): the top half behind
-/// its title, the bottom behind the entry, outlined everywhere but where they meet.
+/// The Paper card behind Today's Entry, the same as the prompt box's.
 private struct TodayCard: View {
-    enum Edge { case top, bottom }
-    let edge: Edge
-
     var body: some View {
-        let radius: CGFloat = 16
-        ZStack {
-            UnevenRoundedRectangle(topLeadingRadius: edge == .top ? radius : 0, bottomLeadingRadius: edge == .bottom ? radius : 0,
-                                   bottomTrailingRadius: edge == .bottom ? radius : 0, topTrailingRadius: edge == .top ? radius : 0)
-                .fill(Color("Paper"))
-            CardOutline(edge: edge, radius: radius)
-                .stroke(.quaternary, lineWidth: 1)
-        }
-        // Inset like the prompt box, which sits within the list's margins.
-        .padding(.horizontal, 16)
-        .padding(edge == .top ? .top : .bottom, 8)
-    }
-
-    /// The card's outline without the edge where the two halves meet.
-    private struct CardOutline: Shape {
-        let edge: Edge
-        let radius: CGFloat
-
-        func path(in rect: CGRect) -> Path {
-            let r = rect.insetBy(dx: 0.5, dy: 0.5)
-            var path = Path()
-            if edge == .top {
-                path.move(to: CGPoint(x: r.minX, y: rect.maxY))
-                path.addLine(to: CGPoint(x: r.minX, y: r.minY + radius))
-                path.addArc(center: CGPoint(x: r.minX + radius, y: r.minY + radius), radius: radius, startAngle: .degrees(180), endAngle: .degrees(270), clockwise: false)
-                path.addLine(to: CGPoint(x: r.maxX - radius, y: r.minY))
-                path.addArc(center: CGPoint(x: r.maxX - radius, y: r.minY + radius), radius: radius, startAngle: .degrees(270), endAngle: .degrees(0), clockwise: false)
-                path.addLine(to: CGPoint(x: r.maxX, y: rect.maxY))
-            } else {
-                path.move(to: CGPoint(x: r.minX, y: rect.minY))
-                path.addLine(to: CGPoint(x: r.minX, y: r.maxY - radius))
-                path.addArc(center: CGPoint(x: r.minX + radius, y: r.maxY - radius), radius: radius, startAngle: .degrees(180), endAngle: .degrees(90), clockwise: true)
-                path.addLine(to: CGPoint(x: r.maxX - radius, y: r.maxY))
-                path.addArc(center: CGPoint(x: r.maxX - radius, y: r.maxY - radius), radius: radius, startAngle: .degrees(90), endAngle: .degrees(0), clockwise: true)
-                path.addLine(to: CGPoint(x: r.maxX, y: rect.minY))
-            }
-            return path
-        }
+        RoundedRectangle(cornerRadius: 16)
+            .fill(Color("Paper"))
+            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.quaternary))
+            // Inset like the prompt box, which sits within the list's margins.
+            .padding(.horizontal, 16)
+            .padding(.top, 2)
+            .padding(.bottom, 10)
     }
 }
