@@ -1,153 +1,143 @@
-<%= form_for(resource, as: resource_name, url: form_path, html: { method: :put }) do |f| %>
-  <% if form_path.include?('unsubscribe') %>
-    <div class="col-md-8 col-md-offset-2">
-      <%= f.label :email %>
-      <%= link_to "Login to change email and other settings", edit_user_registration_path, class: "s-delete", style: "opacity: 100%;margin-left: 5px;" %>
-      <%= f.email_field :email, value: user.masked_email, class: "form-control disabled", disabled: 'disabled' %>
-      <br>
-    </div>
-  <% else %>
-    <div class="col-md-4 col-md-offset-2">
-      <%= f.label :first_name %>
-      <%= f.text_field :first_name, class: "form-control" %>
-      <br>
-    </div>
+<%# Shared by the settings page (signed in) and the email-link settings page,
+    which posts to the unsubscribe path and can't change profile details. %>
+<% from_email_link = form_path.include?('unsubscribe') %>
 
-    <div class="col-md-4">
-      <%= f.label :last_name %>
-      <%= f.text_field :last_name, class: "form-control" %>
-      <br>
-      <div class="clearfix"></div>
-    </div>
+<%= form_for(resource, as: resource_name, url: form_path, html: { method: :put, class: "space-y-6" }) do |f| %>
+  <section class="card p-6 sm:p-8">
+    <h2 class="font-serif text-2xl text-primary"><%= from_email_link ? "Your account" : "Profile" %></h2>
 
-    <div class="col-md-8 col-md-offset-2">
-      <%= f.label :email %>
-      <%= f.email_field :email, class: "form-control disabled", disabled: 'disabled' %>
-      <div class="clearfix"></div>
-      <div style="margin-top: 10px;">
-        <em style="color: #666;">
-          <span>Visit</span>
-          <%= link_to "Account Security", security_path, class: "s-delete", style: "opacity: 100%;margin-left: 5px;" %>
-          to change your email, password,
-          <%= link_to("setup a passkey", security_path, class: "s-delete", style: "opacity: 100%;") + ", or " %>
-          <%= link_to("delete your account", delete_account_path, class: "s-delete", style: "opacity: 100%;") + "." %>
-        </em>
-      </div>
-      <br>
-    </div>
-  <% end %>
-
-  <div class="col-md-8 col-md-offset-2">
-    <div>
-      <%= label_tag "Days to send emails" %>
-      <br>
-      <% if user.is_free? %>
-        <% add_class = "disabled" %>
-      <% end %>
-      <% %w(Sun Mon Tue Wed Thu Fri Sat).each do |day| %>
-        <%= hidden_field_tag "frequency[#{day}]", "0", id: "frequency_#{day}_hidden" %>
-        <% if user.frequency && user.frequency.include?(day[0..2]) %>
-          <%= check_box_tag "frequency[#{day}]", "1", {checked: "checked", style: "cursor: pointer;"} %>
-        <% else %>
-          <% if add_class == "disabled" && day != "Sun" %>
-            <%= check_box_tag "frequency[#{day}]", "0", false, disabled: "true", title: "Payment required", style: "cursor: pointer;" %>
-          <% else %>
-            <%= check_box_tag "frequency[#{day}]", "1" %>
-          <% end %>
-        <% end %>
-        <span class="s-day-email"><%= label_tag "frequency_#{day}", day %></span>
-      <% end %>
-      <div class="clearfix"></div>
-      <% if user.is_free? %>
-        <strong><%= link_to "Subscribe to PRO to change frequency.", subscribe_path, class: "alert-link" %></strong>
-        Free accounts are limited to 1 email every other week.
-        <br>
-      <% end %>
-      <br>
-    </div>
-  </div>
-
-  <div class="col-md-4 col-md-offset-2">
-    <%= f.label :send_time %>
-    <%= f.time_select :send_time, {combined: true, minute_interval: 60, ampm: true, include_seconds: false }, class: "form-control" %>
-    <br>
-  </div>
-
-  <div class="col-md-4">
-    <%= f.label :send_timezone, "Timezone" %>
-    <%= f.time_zone_select :send_timezone, ActiveSupport::TimeZone.us_zones, {}, {class: 'form-control'} %>
-    <br>
-  </div>
-
-  <% unless form_path.include?('unsubscribe') %>
-    <div class="col-md-8 col-md-offset-2">
-      <div class="well" style="background-color: #E8E8E2; padding: 15px 20px;">
-        <div style="margin-bottom: 5px;">
-          <%= f.check_box :send_past_entry %>
-          <%= f.label :send_past_entry, "Include past entries in emails and prevent entries that have:" %>
+    <div class="mt-5 grid gap-5 sm:grid-cols-2">
+      <% if from_email_link %>
+        <div class="sm:col-span-2">
+          <%= f.label :email, class: "field-label" %>
+          <%= f.email_field :email, value: user.masked_email, class: "field-input", disabled: 'disabled' %>
+          <p class="field-help"><%= link_to "Log in to change your email and other settings", edit_user_registration_path, class: "text-link" %></p>
         </div>
-        <% if user.is_pro? %>
-          <%= f.text_field :past_filter, class: "form-control", placeholder: "Comma-separated words to prevent showing up in past entries." %>
-          <% if user.past_filter.present? %>
-            <small>
-              <%= link_to pluralize(user.past_filter_entry_ids.length, "entry"), search_path(search: { term: user.past_filter.split(',').map(&:strip).join(" OR ") }) %>
-              being filtered out of past entries.
-            </small>
-            <br>
+      <% else %>
+        <div>
+          <%= f.label :first_name, class: "field-label" %>
+          <%= f.text_field :first_name, class: "field-input" %>
+        </div>
+        <div>
+          <%= f.label :last_name, class: "field-label" %>
+          <%= f.text_field :last_name, class: "field-input" %>
+        </div>
+        <div class="sm:col-span-2">
+          <%= f.label :email, class: "field-label" %>
+          <%= f.email_field :email, class: "field-input", disabled: 'disabled' %>
+          <p class="field-help">
+            Visit <%= link_to "Account Security", security_path, class: "text-link" %> to change your email or password,
+            <%= link_to "set up a passkey", security_path, class: "text-link" %>, or
+            <%= link_to "delete your account", delete_account_path, class: "text-link" %>.
+          </p>
+        </div>
+      <% end %>
+    </div>
+  </section>
+
+  <section class="card p-6 sm:p-8">
+    <h2 class="font-serif text-2xl text-primary">Email schedule</h2>
+    <p class="mt-1 text-sm text-muted">When Dabble Me emails you a prompt to write.</p>
+
+    <fieldset class="mt-5">
+      <legend class="field-label">Days to send emails</legend>
+      <div class="flex flex-wrap gap-2">
+        <% %w(Sun Mon Tue Wed Thu Fri Sat).each do |day| %>
+          <% checked = user.frequency.present? && user.frequency.include?(day[0..2]) %>
+          <%# Free accounts get Sundays only; other days stay as they are. %>
+          <% locked = user.is_free? && !checked && day != "Sun" %>
+          <%= hidden_field_tag "frequency[#{day}]", "0", id: "frequency_#{day}_hidden" %>
+          <%= tag.label for: "frequency_#{day}", title: (locked ? "Payment required" : nil), class: "inline-flex min-w-14 cursor-pointer items-center justify-center rounded-full border border-subtle bg-surface px-3.5 py-2 text-sm font-medium text-primary transition-colors select-none hover:bg-surface-elevated has-checked:border-olive-900 has-checked:bg-olive-900 has-checked:text-white has-disabled:cursor-not-allowed has-disabled:opacity-50 has-focus-visible:ring-2 has-focus-visible:ring-accent has-focus-visible:ring-offset-2" do %>
+            <%= check_box_tag "frequency[#{day}]", (locked ? "0" : "1"), checked, disabled: locked, title: (locked ? "Payment required" : nil), class: "sr-only" %>
+            <%= day %>
           <% end %>
-        <% else %>
-          <%= f.text_field :past_filter, class: "form-control disabled", placeholder: "Comma-separated words to prevent in past entries", readonly: "readonly", value: "", rel: "tooltip", title: "Upgrade to PRO for this feature." %>
         <% end %>
+      </div>
+      <% if user.is_free? %>
+        <p class="field-help">
+          <%= link_to "Subscribe to PRO to change frequency.", subscribe_path, class: "text-link font-medium" %>
+          Free accounts are limited to 1 email every other week.
+        </p>
+      <% end %>
+    </fieldset>
+
+    <div class="mt-5 grid gap-5 sm:grid-cols-2">
+      <div>
+        <%# combined_time_select renders one select, id user_send_time_5i, after a stray ":". %>
+        <%= f.label :send_time, for: "user_send_time_5i", class: "field-label" %>
+        <%= f.time_select(:send_time, { combined: true, minute_interval: 60, ampm: true, include_seconds: false }, class: "field-input").to_str.sub(/\A\s*:\s*/, "").html_safe %>
+      </div>
+      <div>
+        <%= f.label :send_timezone, "Timezone", class: "field-label" %>
+        <%= f.time_zone_select :send_timezone, ActiveSupport::TimeZone.us_zones, {}, { class: "field-input" } %>
+      </div>
+    </div>
+  </section>
+
+  <% unless from_email_link %>
+    <section class="card p-6 sm:p-8">
+      <h2 class="font-serif text-2xl text-primary">Past entries</h2>
+      <p class="mt-1 text-sm text-muted">Emails can include something you wrote before.</p>
+
+      <div class="mt-5 space-y-5">
+        <%= f.label :send_past_entry, class: "flex cursor-pointer items-start gap-3" do %>
+          <%= f.check_box :send_past_entry, class: "checkbox mt-1" %>
+          <span class="text-primary">Include past entries in emails</span>
+        <% end %>
+
+        <div>
+          <%= f.label :past_filter, "Leave out past entries that mention", class: "field-label" %>
+          <% if user.is_pro? %>
+            <%= f.text_field :past_filter, class: "field-input", placeholder: "Comma-separated words" %>
+            <% if user.past_filter.present? %>
+              <p class="field-help">
+                <%= link_to pluralize(user.past_filter_entry_ids.length, "entry"), search_path(search: { term: user.past_filter.split(',').map(&:strip).join(" OR ") }), class: "text-link" %>
+                being filtered out of past entries.
+              </p>
+            <% end %>
+          <% else %>
+            <%= f.text_field :past_filter, class: "field-input cursor-not-allowed bg-surface-elevated text-muted", placeholder: "Comma-separated words", readonly: "readonly", value: "", rel: "tooltip", title: "Upgrade to PRO for this feature." %>
+          <% end %>
+        </div>
 
         <% if user.is_pro? && user.entries.where("date < (?)", 1.year.ago).any? %>
-          <div style="margin-top: 8px;">
-            <%= f.check_box :way_back_past_entries %>
-            <%= f.label :way_back_past_entries, "Include past entries that are over a year old", style: "font-weight: normal;" %>
-          </div>
+          <%= f.label :way_back_past_entries, class: "flex cursor-pointer items-start gap-3" do %>
+            <%= f.check_box :way_back_past_entries, class: "checkbox mt-1" %>
+            <span class="text-primary">Include past entries that are over a year old</span>
+          <% end %>
         <% end %>
       </div>
+    </section>
 
-      <% if user.is_pro? %>
-        <div class="well" style="background-color: #E8E8E2; padding: 15px 20px;">
-          <div style="margin-bottom: 5px;">
-            <div class="div" style="margin-bottom: 10px;">
-              <strong>Associate dates to your tags to see the relative age in your posts</strong>
-              <br>
-              <small>This works great for seeing how old kids were in your posts, anniversaries, etc.</small>
+    <% if user.is_pro? %>
+      <section class="card p-6 sm:p-8">
+        <h2 class="font-serif text-2xl text-primary">Dates for your tags</h2>
+        <p class="mt-1 text-sm text-muted">
+          Associate dates to your tags to see the relative age in your posts. This works great for seeing how old kids were in your posts, anniversaries, etc.
+        </p>
+        <div class="mt-5 space-y-3">
+          <%= f.fields_for :hashtags do |s| %>
+            <div class="grid grid-cols-[auto_1fr_1fr] items-center gap-3">
+              <span class="text-lg text-muted" aria-hidden="true">#</span>
+              <%= s.text_field :tag, placeholder: "e.g. Anniversary", class: "field-input", "aria-label": "Tag" %>
+              <%= s.text_field :date, value: s.object.date_format_short, placeholder: "e.g. Jan 1, 2020", class: "pickadate field-input", "aria-label": "Date" %>
             </div>
-            <%= f.fields_for :hashtags do |s| %>
-              <div style="margin-bottom: 5px;">
-                <strong>#</strong>
-                <%= s.text_field :tag, placeholder: "e.g. Anniversary", class: "form-control", style: "width: 45%; display: inline-block;" %>
-                <%= s.text_field :date, value: s.object.date_format_short, placeholder: "e.g. Jan 1, 2020", class: "pickadate form-control", style: "width: 45%; display: inline-block;" %>
-              </div>
-            <% end %>
-            <div class="clearfix"></div>
-          </div>
+          <% end %>
         </div>
-      <% end %>
-    </div>
+      </section>
+    <% end %>
   <% end %>
 
-  <div class="clearfix"></div>
-
-  <div class="col-md-8 col-md-offset-2">
-    <%= f.submit "Update Settings", class: "btn btn-primary form-control" %>
-  </div>
-
-  <% if form_path.include?('unsubscribe') %>
-    <div class="col-md-12 center">
-      <br>
-      <button name="unsub_all" type="submit" value="yes" class="s-unsubscribe">
+  <%# The submit button comes first so pressing Enter in a field saves, rather
+      than unsubscribing. Its row is reversed to put it on the right. %>
+  <div class="flex flex-col gap-4 sm:flex-row-reverse sm:items-center sm:justify-between">
+    <%= f.submit "Update Settings", class: "button-primary w-full sm:w-auto" %>
+    <% if from_email_link %>
+      <button name="unsub_all" type="submit" value="yes" class="cursor-pointer text-sm text-muted underline underline-offset-2 hover:text-primary">
         Unsubscribe from all emails
       </button>
-    </div>
-  <% else %>
-    <div class="col-md-12 center">
-      <br>
-      <%= link_to "Delete Account", delete_account_path, class: "s-delete" %>
-    </div>
-  <% end %>
-
-  <div class="clearfix"></div>
+    <% else %>
+      <%= link_to "Delete account", delete_account_path, class: "text-center text-sm font-medium text-red-700 hover:text-red-800 hover:underline" %>
+    <% end %>
+  </div>
 <% end %>

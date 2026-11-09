@@ -1,7 +1,7 @@
 <footer class="footer">
   <div class="container">
     <hr>
-    <div class="flex">
+    <div class="footer__row">
       <% two_factor_marketing = user_signed_in? && !(current_user.otp_enabled? || current_user.webauthn_credentials.any?) && current_user.created_at < 1.day.ago && Date.today.between?(Date.parse("2024-01-15"), Date.parse("2024-02-15")) %>
       <div style="flex: none;">
         <p class="muted float-left">

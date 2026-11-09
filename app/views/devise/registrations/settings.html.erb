@@ -1,10 +1,11 @@
 <% title 'Email settings — Dabble me.' %>
+<% content_for :tailwind, true %>
 
-<div class="row">
-  <div class="col-md-8 col-md-offset-2">
-    <h3>Email Settings for <%= user.first_name.presence || user.masked_email %></h3>
-    <br>
-  </div>
+<div class="tw mx-auto max-w-2xl pt-4 pb-16 sm:pt-8">
+  <header class="mb-8">
+    <h1 class="font-serif text-4xl tracking-tight text-primary sm:text-5xl">Email settings</h1>
+    <p class="mt-2 text-muted">For <%= user.first_name.presence || user.masked_email %></p>
+  </header>
 
   <%= render partial: 'user_settings', locals: { form_path: unsubscribe_path(token: @user.email_settings_token) } %>
 </div>

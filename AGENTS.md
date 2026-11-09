@@ -72,6 +72,9 @@ Or simply `bundle exec rake` with the same env vars.
 - `tmp/pids/` directory must exist before starting Puma in cluster mode; create it with `mkdir -p tmp/pids`.
 - `.rubocop.yml` exists but `rubocop` is not in the Gemfile — it is not part of the standard dev workflow.
 - `npm run build:css` builds marketing page Tailwind CSS to `public/marketing.css`. Run it after `npm install`.
+- `npm run build:css:app` builds `public/app-tailwind.css` for logged-in pages restyled with Tailwind (`watch:css:app` while editing). The output is committed, and CI fails if it is stale, so rebuild and commit it after changing a restyled view or `app/frontend/stylesheets/app.tailwind.css`.
+  - A page opts in with `<% content_for :tailwind, true %>` and a `<div class="tw …">` wrapper (see `devise/registrations/edit.html.erb`). Add the view to the `@source` list in `app.tailwind.css`; Tailwind scans nothing else.
+  - Utilities are `!important` so they beat the legacy `ui.scss` styles. Don't reuse a Tailwind utility name (`flex`, `hidden`, `container`…) as a legacy class in the shared layout; `spec/lib/app_tailwind_css_spec.rb` checks the navbar and footer.
 
 ### Sidekiq-Cron
 

@@ -1,12 +1,19 @@
-<h4><%= I18n.t('title', :scope => 'devise.otp.trusted_browsers') %></h4>
-<p><%= I18n.t('explain', :scope => 'devise.otp.trusted_browsers') %></p>
+<section class="card p-6 sm:p-8">
+  <h2 class="font-serif text-2xl text-primary"><%= I18n.t('title', scope: 'devise.otp.trusted_browsers') %></h2>
+  <p class="mt-1 text-sm text-muted"><%= I18n.t('explain', scope: 'devise.otp.trusted_browsers') %></p>
 
-<%- if is_otp_trusted_browser_for? resource %>
-  <p><em class="text-success"><%= I18n.t('browser_trusted', :scope => 'devise.otp.trusted_browsers') %></em></p>
-  <p><%= button_to I18n.t('trust_remove', :scope => 'devise.otp.trusted_browsers'), otp_persistence_path_for(resource_name), :method => :delete, class: "btn btn-default" %></p>
-<% else %>
-  <p><%= I18n.t('browser_not_trusted', :scope => 'devise.otp.trusted_browsers') %></p>
-  <p><%= button_to I18n.t('trust_add', :scope => 'devise.otp.trusted_browsers'), otp_persistence_path_for(resource_name), :method => :post, class: "btn btn-default" %></p>
-<% end %>
+  <% if is_otp_trusted_browser_for? resource %>
+    <p class="mt-5 font-medium text-green-800"><%= I18n.t('browser_trusted', scope: 'devise.otp.trusted_browsers') %></p>
+  <% else %>
+    <p class="mt-5 font-medium text-primary"><%= I18n.t('browser_not_trusted', scope: 'devise.otp.trusted_browsers') %></p>
+  <% end %>
 
-<p><%= button_to I18n.t('trust_clear', :scope => 'devise.otp.trusted_browsers'), reset_otp_persistence_path_for(resource_name), :method => :delete, class: "btn btn-warning" %></p>
+  <div class="mt-4 flex flex-wrap gap-3">
+    <% if is_otp_trusted_browser_for? resource %>
+      <%= button_to I18n.t('trust_remove', scope: 'devise.otp.trusted_browsers'), otp_persistence_path_for(resource_name), method: :delete, class: "button-secondary", form_class: "contents" %>
+    <% else %>
+      <%= button_to I18n.t('trust_add', scope: 'devise.otp.trusted_browsers'), otp_persistence_path_for(resource_name), method: :post, class: "button-secondary", form_class: "contents" %>
+    <% end %>
+    <%= button_to I18n.t('trust_clear', scope: 'devise.otp.trusted_browsers'), reset_otp_persistence_path_for(resource_name), method: :delete, class: "button-secondary", form_class: "contents" %>
+  </div>
+</section>

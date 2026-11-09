@@ -1,36 +1,48 @@
-<div class="row">
-  <div class="col-md-6 col-md-offset-3" style="margin-bottom: 40px;">
+<% title "Two-Factor Authentication" %>
+<% content_for :tailwind, true %>
 
-    <%= form_for(resource, :as => resource_name, :url => [resource_name, :otp_credential], :html => { :method => :put, "data-turbo" => false }) do |f| %>
+<%# The second sign-in step. Styled like the marketing sign-in card. %>
+<div class="tw mx-auto max-w-lg pt-4 pb-16 sm:pt-8">
+  <header class="mb-8 text-center">
+    <h1 class="font-serif text-3xl tracking-tight text-primary sm:text-4xl"><%= I18n.t('title', scope: 'devise.otp.otp_tokens') %></h1>
+  </header>
 
+  <div class="card p-6 sm:p-8">
+    <%= form_for(resource, as: resource_name, url: [resource_name, :otp_credential], html: { method: :put, "data-turbo" => false, class: "space-y-5" }) do |f| %>
       <%= hidden_field_tag :challenge, @challenge %>
       <%= hidden_field_tag :recovery, @recovery %>
       <%= hidden_field_tag :remember_me, @remember_me %>
 
-      <% if @recovery %>
-        <p>
-          <%= label_tag :token, I18n.t('recovery_prompt', :scope => 'devise.otp.submit_token') %><br />
-          <%= text_field_tag :otp_recovery_counter, resource.otp_recovery_counter, :autocomplete => :off, :disabled => true, :size => 4, class: "form-control" %>
-        </p>
-      <% else %>
-        <p>
-          <%= label_tag :token, I18n.t('prompt', :scope => 'devise.otp.submit_token') %><br />
-        </p>
-      <% end %>
+      <div class="space-y-3">
+        <% if @recovery %>
+          <%= label_tag :token, I18n.t('recovery_prompt', scope: 'devise.otp.submit_token'), class: "field-label" %>
+          <%= text_field_tag :otp_recovery_counter, resource.otp_recovery_counter, autocomplete: :off, disabled: true, size: 4, class: "field-input" %>
+          <%= text_field_tag :token, nil, autocomplete: :off, autofocus: true, size: 6, class: "field-input" %>
+        <% else %>
+          <%= label_tag :token, I18n.t('prompt', scope: 'devise.otp.submit_token'), class: "field-label" %>
+          <%= text_field_tag :token, nil, autocomplete: "one-time-code", inputmode: "numeric", autofocus: true, size: 6, class: "field-input" %>
+        <% end %>
+      </div>
 
-      <%= text_field_tag :token, nil, :autocomplete => :off, :autofocus => true, :size => 6, class: "form-control" %><br>
-
-      <p><%= f.submit I18n.t('submit', :scope => 'devise.otp.submit_token'), class: "btn btn-primary form-control" %></p>
+      <%= f.submit I18n.t('submit', scope: 'devise.otp.submit_token'), class: "button-primary w-full" %>
 
       <% if !@recovery && recovery_enabled? %>
-        <p class="text-center"><%= link_to I18n.t('recovery_link', :scope => 'devise.otp.submit_token'), otp_credential_path_for(resource_name, :challenge => @challenge, :recovery => true) %></p>
+        <p class="text-center text-sm">
+          <%= link_to I18n.t('recovery_link', scope: 'devise.otp.submit_token'), otp_credential_path_for(resource_name, challenge: @challenge, recovery: true), class: "text-link" %>
+        </p>
       <% end %>
     <% end %>
 
     <% if !@recovery && resource.webauthn_credentials.exists? %>
-      <p class="text-center">
-        <button type="button" id="otp-use-passkey" class="btn btn-link">Use a passkey instead</button>
-      </p>
+      <div class="relative my-5">
+        <div class="absolute inset-0 flex items-center" aria-hidden="true">
+          <div class="w-full border-t border-subtle"></div>
+        </div>
+        <div class="relative flex justify-center text-sm">
+          <span class="bg-surface px-4 text-muted">or</span>
+        </div>
+      </div>
+      <button type="button" id="otp-use-passkey" class="button-secondary w-full">Use a passkey instead</button>
       <script>
         DABBLE.webauthn.setupSignIn({
           buttonId: "otp-use-passkey",
