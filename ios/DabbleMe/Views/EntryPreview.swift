@@ -171,6 +171,9 @@ struct EntryPreview: View {
                     }
             }
             .frame(maxHeight: textLimit, alignment: .top)
+            if let songs = summary.songs, !songs.isEmpty {
+                SongList(songs: songs)
+            }
             if summary.imageURL != nil, !summary.imageProcessing {
                 // A fixed frame (the image loads after the preview is sized); the whole photo fits in it.
                 AsyncImage(url: summary.thumbnailURL(width: 900)) { image in

@@ -41,7 +41,7 @@ struct EntryActionsSheet: View {
                     row("Delete", "slab-trash", .delete, role: .destructive)
                 }
                 if !tags.isEmpty {
-                    Text("Tags")
+                    Label("Tags", icon: "slab-tag")
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.secondary)
                         .padding(.top, 10)
@@ -50,11 +50,6 @@ struct EntryActionsSheet: View {
                             perform(.search(item.tag))
                         } label: {
                             HStack(alignment: .firstTextBaseline, spacing: 10) {
-                                appIcon("slab-compress")
-                                    .resizable()
-                                    .scaledToFit()
-                                    .frame(width: 16, height: 16)
-                                    .foregroundStyle(.tint)
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("#\(item.tag)")
                                         .foregroundStyle(.tint)

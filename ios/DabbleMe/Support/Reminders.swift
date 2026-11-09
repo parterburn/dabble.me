@@ -32,8 +32,8 @@ struct MemoryDayList: Decodable, Sendable {
     let days: [MemoryDay]
 }
 
-/// Local notifications for PRO reminders: a daily nudge to write (skipped on days that already
-/// have an entry) and "On This Day" on days with memories. Everything is scheduled on the device
+/// Local notifications: a daily nudge to write (skipped on days that already have an entry), for
+/// everyone, and "On This Day" on days with memories, for PRO. Everything is scheduled on the device
 /// and rebuilt whenever something changes, so there's no server push to set up. Notifications
 /// never include entry text; they can appear on a lock screen.
 @MainActor
@@ -75,8 +75,9 @@ final class ReminderScheduler {
         center.removePendingNotificationRequests(withIdentifiers: existing)
 
         let defaults = UserDefaults.standard
-        guard model.isSignedIn, model.me?.isPro == true,
-              await center.notificationSettings().authorizationStatus == .authorized else { return }
+        guard model.isSignedIn, await center.notificationSettings().authorizationStatus == .authorized else { return }
+        // Writing reminders are for everyone; On This Day reminders are PRO, like On This Day.
+        let isPro = model.me?.isPro == true
 
         if defaults.bool(forKey: ReminderSettings.writingEnabledKey) {
             let minutes = defaults.object(forKey: ReminderSettings.writingTimeKey) as? Int ?? ReminderSettings.defaultWritingTime
@@ -92,7 +93,7 @@ final class ReminderScheduler {
             }
         }
 
-        if defaults.bool(forKey: ReminderSettings.memoriesEnabledKey),
+        if isPro, defaults.bool(forKey: ReminderSettings.memoriesEnabledKey),
            let list: MemoryDayList = try? await model.api.get("api/v1/entries/memory_days", query: ["days": String(memoryDays)]) {
             let minutes = defaults.object(forKey: ReminderSettings.memoriesTimeKey) as? Int ?? ReminderSettings.defaultMemoriesTime
             for memory in list.days {

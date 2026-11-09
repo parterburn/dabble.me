@@ -48,9 +48,13 @@ final class PhotoEntryTests: XCTestCase {
         app.buttons["New Entry"].tap()
         let editor = app.textViews["Entry"]
         XCTAssertTrue(editor.waitForExistence(timeout: 5))
-        // All four must attach (a single photo skips the collage path this test is for).
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "4 of 8 photos")).firstMatch
+        // All four must attach (a single photo skips the collage path this test is for). They
+        // stack at the bar's left; tapping the stack opens the drawer.
+        editor.tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label == 'Photos' AND value == '4 photos'")).firstMatch
             .waitForExistence(timeout: 60), "All four photos should be attached")
+        app.buttons["Photos"].tap()
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "4 of 8 photos")).firstMatch.waitForExistence(timeout: 5))
         XCTAssertEqual(app.buttons.matching(identifier: "Remove photo").count, 4)
         editor.tap()
         editor.typeText("Four photos, one collage.")
@@ -95,16 +99,20 @@ final class PhotoEditTests: XCTestCase {
         XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
     }
 
-    private func edit(_ app: XCUIApplication) {
+    private func edit(_ app: XCUIApplication, photos: String) {
         app.buttons["Entry Actions"].tap()
         app.buttons["Edit"].tap()
         XCTAssertTrue(app.textViews["Entry"].waitForExistence(timeout: 10))
+        // The entry's photos stack at the bar's left; tapping the stack opens the drawer.
+        app.textViews["Entry"].tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label == 'Photos' AND value == %@", photos)).firstMatch.waitForExistence(timeout: 30))
+        app.buttons["Photos"].tap()
     }
 
     func testAddPhotoToEntryWithPhotoMakesCollage() throws {
         let app = try launch(photos: true)
         openEntry(app, containing: "Finally made it to Yosemite")
-        edit(app)
+        edit(app, photos: "2 photos")
         XCTAssertTrue(app.descendants(matching: .any)["Current photo"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "2 of 8 photos")).firstMatch.waitForExistence(timeout: 30))
         snap("edit-photos")
@@ -117,7 +125,7 @@ final class PhotoEditTests: XCTestCase {
     func testRemovePhotoFromEntry() throws {
         let app = try launch(photos: false)
         openEntry(app, containing: "Biscuit has discovered")
-        edit(app)
+        edit(app, photos: "1 photo")
         let remove = app.buttons["Remove current photo"]
         XCTAssertTrue(remove.waitForExistence(timeout: 10))
         remove.tap()

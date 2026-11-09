@@ -312,7 +312,7 @@ private struct EntryBody: View {
                 SelectableDocumentText(blocks: document, fontSize: bodySize * textSize.scale,
                                        design: fontStyle.uiDesign, lineSpacing: 5 * textSize.scale)
             } else if !entry.bodyText.isEmpty {
-                Text(RichText.linkingHashtags(in: AttributedString.journal(entry.bodyText)))
+                Text(RichText.linkingURLs(in: RichText.linkingHashtags(in: AttributedString.journal(entry.bodyText))))
                     .font(bodyFont)
                     .lineSpacing(5 * textSize.scale)
                     .textSelection(.enabled)
@@ -326,11 +326,7 @@ private struct EntryBody: View {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("Songs")
                         .font(.headline)
-                    ForEach(entry.songs, id: \.self) { song in
-                        Link(destination: song.spotifyUrl) {
-                            Label(song.label, icon: "slab-music")
-                        }
-                    }
+                    SongList(songs: entry.songs)
                 }
             }
 

@@ -48,7 +48,7 @@ namespace :ios do
         <ol><li>A body that keeps healing</li><li>The crisp fall air</li><li>Dad calling just to say hi</li></ol>
       HTML
       [today - 9, <<~HTML, 225],
-        <p>Rainy day. Tea, soup, and the last hundred pages of <em>The Overstory</em>. Some books make you want to go stand next to a tree for a while. #reading</p>
+        <p>Rainy day. Tea, soup, and the last hundred pages of <em>The Overstory</em>. Some books make you want to go stand next to a tree for a while. Saved my favorite line at www.goodreads.com. #reading</p>
       HTML
       [today - 12, <<~HTML, nil],
         <p>Hard conversation with Jordan tonight. We didn't fix everything, but we listened to each other, which felt like the real win.</p>
@@ -101,6 +101,11 @@ namespace :ios do
         entry.reload
       end
     end
+
+    # A song on the slow Saturday (stored as Entry#find_songs would, without asking Spotify).
+    user.entries.where(date: (today - 2).all_day).first&.update_column(:songs, [
+      { "spotify_id" => "0VjIjW4GlUZAMYd2vXMi3b", "title" => "Blinding Lights", "artists" => ["The Weeknd"] }
+    ])
 
     # A dated hashtag (like a pet's or kid's birthday): the app shows how old Biscuit was on each entry.
     user.original_hashtags.destroy_all

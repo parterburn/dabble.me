@@ -52,6 +52,10 @@ struct EntrySummary: Decodable, Sendable, Identifiable, Hashable {
     var previewText: String? = nil
     /// Only on Today's "On This Day" memories.
     var yearsAgo: Int? = nil
+    /// Its #tags with a date (birthdays, anniversaries), and how long it had been.
+    var datedHashtags: [DatedHashtag]? = nil
+    /// Spotify songs found in it.
+    var songs: [Song]? = nil
 
     var day: JournalDay? { JournalDay(date) }
     var imageURL: URL? { imageUrl.flatMap(URL.init(string:)) }
@@ -101,6 +105,8 @@ struct TodaySummary: Decodable, Sendable {
     let prompt: String?
     /// Days in a row with an entry, up to today (or yesterday while today is unwritten).
     var currentStreak: Int? = nil
+    /// A past entry when On This Day is empty, like the daily email's ("Throwback").
+    var throwback: EntrySummary? = nil
 
     var day: JournalDay? { JournalDay(date) }
 }
@@ -114,6 +120,7 @@ struct Song: Decodable, Sendable, Hashable {
         [artists.joined(separator: ", "), title].compactMap { $0?.isEmpty == false ? $0 : nil }.joined(separator: " – ")
     }
 }
+
 
 struct EntryDetail: Decodable, Sendable, Identifiable, Hashable {
     let id: Int

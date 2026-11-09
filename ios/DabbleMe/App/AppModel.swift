@@ -19,6 +19,8 @@ final class AppModel {
     var searchFocusRequest = 0
     /// Bumped when the Journal tab is tapped while already showing: back to the list, at the top.
     var journalTopRequest = 0
+    /// The Journal shows Stats (Today's streak was tapped).
+    var statsRequest = 0
     /// Shake the phone for a random memory (a preview sheet); `openEntryRequest` opens it in Journal.
     var showsRandomEntry = false
     var openEntryRequest: Int?
@@ -174,11 +176,6 @@ final class AppModel {
         } catch {
             report(error)
         }
-    }
-
-    /// The newest month with rows on screen: the one at the top of the timeline.
-    var topVisibleMonth: MonthCount? {
-        months.first { visibleMonths.contains($0.key) }
     }
 
     func monthAppeared(_ key: String) {
@@ -382,6 +379,12 @@ final class AppModel {
     func allHashtags() async throws -> [HashtagCount] {
         let list: HashtagList = try await api.get("api/v1/hashtags", query: ["days": "3650", "limit": "200"])
         return list.hashtags
+    }
+
+    /// Most recently used first, for the composer's hashtag bar.
+    func recentHashtags() async throws -> [String] {
+        let list: HashtagList = try await api.get("api/v1/hashtags", query: ["days": "3650", "limit": "20", "order": "recent"])
+        return list.hashtags.map(\.tag)
     }
 
     func topHashtags() async throws -> [HashtagCount] {

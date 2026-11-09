@@ -15,6 +15,7 @@ struct SelectableDocumentText: UIViewRepresentable {
         let view = UITextView()
         view.isEditable = false
         view.isSelectable = true
+        view.dataDetectorTypes = [.link] // web addresses written into the entry
         view.isScrollEnabled = false
         view.backgroundColor = .clear
         view.textContainerInset = .zero

@@ -91,7 +91,8 @@ struct RootView: View {
             }
         }
         .overlay {
-            if showsSplash, model.isSignedIn {
+            // With the lock on, the lock screen types the wordmark instead.
+            if showsSplash, model.isSignedIn, !model.lock.isEnabled {
                 SplashView(isReady: model.hasLoaded) {
                     withAnimation(.easeOut(duration: 0.35)) { showsSplash = false }
                 }

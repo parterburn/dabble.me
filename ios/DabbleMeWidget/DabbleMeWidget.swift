@@ -15,7 +15,7 @@ struct TodayWidget: Widget {
                 .containerBackground(for: .widget) { Color.paper }
         }
         .configurationDisplayName("Today")
-        .description("Your writing streak and a nudge to write. Never shows what you wrote.")
+        .description("Your writing streak and a nudge to write. Shows an entry only if you turn on Show Entries in Widget in the app.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }
@@ -27,6 +27,9 @@ struct WidgetEntry: TimelineEntry {
     let streak: Int
     let memories: Int?
     let prompt: String?
+    /// An entry to look back on (only with "Show Entries in Widget" on in the app).
+    var entryTitle: String? = nil
+    var entryText: String? = nil
 
     static let placeholder = WidgetEntry(date: .now, signedIn: true, wroteToday: false, streak: 12, memories: nil,
                                          prompt: "What made you smile today?")
@@ -50,9 +53,13 @@ struct Provider: TimelineProvider {
             return WidgetEntry(date: date, signedIn: false, wroteToday: false, streak: 0, memories: nil, prompt: nil)
         }
         let state = snapshot.state(on: date)
+        let isToday = snapshot.day == WidgetSnapshot.iso(date)
+        let showsEntry = isToday && WidgetSnapshot.showsMemories
         return WidgetEntry(date: date, signedIn: true, wroteToday: state.wroteToday, streak: state.streak,
                            memories: WidgetSnapshot.showsMemories ? state.memories : nil,
-                           prompt: snapshot.day == WidgetSnapshot.iso(date) ? snapshot.prompt : nil)
+                           prompt: isToday ? snapshot.prompt : nil,
+                           entryTitle: showsEntry ? snapshot.entryTitle : nil,
+                           entryText: showsEntry ? snapshot.entryText : nil)
     }
 }
 
@@ -121,7 +128,15 @@ struct TodayWidgetView: View {
             small
                 .frame(maxWidth: 130)
             VStack(alignment: .leading, spacing: 8) {
-                if let memories = entry.memories {
+                if let title = entry.entryTitle, let text = entry.entryText {
+                    Label(title, systemImage: "clock.arrow.circlepath")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                    Text(text)
+                        .font(.system(.subheadline, design: .serif))
+                        .lineLimit(4)
+                } else if let memories = entry.memories {
                     Label("On This Day", systemImage: "clock.arrow.circlepath")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)

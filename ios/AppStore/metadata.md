@@ -63,12 +63,12 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 > PRIVATE BY DESIGN
 > • No social feed, no ads, no tracking
 > • Lock the app with Face ID; your journal is hidden in the app switcher
-> • Reminders and widgets never show what you wrote
+> • Reminders never show what you wrote, and the widget only shows an entry if you turn that on
 > • Photo location data is removed before upload
 > • Sign in with a passkey, password, or two-factor code
 > • Export everything, any time
 >
-> Free accounts can read their journal, write entries, and see their stats. Photos, search, On This Day, reminders, Apple Intelligence features, and AI connections are part of Dabble Me PRO.
+> Free accounts can read their journal, write and delete entries, get Apple Intelligence reflections, prompts and hashtag suggestions, and set a daily writing reminder. Photos, links, editing, search, stats, On This Day, and AI connections are part of Dabble Me PRO.
 
 **Keywords (100)**: these don't repeat words already in the name, which Apple indexes anyway, and use no third-party trademarks (guideline 2.3.7).
 
@@ -95,7 +95,7 @@ Data used to track you: **none**. Data linked to you, all for **App Functionalit
 | User Content → Photos or Videos | Photos attached to entries |
 | Identifiers → User ID | Account identity |
 
-The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resources/PrivacyInfo.xcprivacy`. Not collected: Apple Intelligence features run on the device; reminders, the Face ID setting and drafts stay on the device; the widget reads a streak count the app stores in its App Group.
+The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resources/PrivacyInfo.xcprivacy`. Not collected: Apple Intelligence features run on the device; reminders, the Face ID setting and drafts stay on the device; the widget reads a streak count, the day's prompt and (only if the person turns on Show Entries in Widget) the start of one entry, which the app stores in its App Group on the device.
 
 ## App Review information
 
@@ -124,5 +124,5 @@ In `ios/App Store Screenshots/`: **iPhone 6.3"** at 1206 × 2622 (iPhone 18 Pro 
 ## Decisions
 
 - **In-app purchase:** ship as a free companion app (guideline 3.1.3(f)) with no in-app purchasing. On the **US App Store only**, Settings → Plan links to dabble.me/subscribe (US storefront exception in guideline 3.1.1(a), May 2025), detected with StoreKit's `Storefront.current`; elsewhere the plan is plain text. If App Review objects, drop the link.
-- **Free vs PRO in the app:** free accounts read and write text entries and see Stats, the Photos view and the widget; photos, editing/deleting, search (and its hashtag cloud), On This Day, reminders, AI connections and on-device AI features are PRO. Dictation is the keyboard's own (no in-app mic). Face ID lock and drafts are for everyone.
+- **Free vs PRO in the app:** free accounts read, write and delete text entries, use the on-device Apple Intelligence features (reflections, Today's prompt, hashtag suggestions), set the daily writing reminder, and see the Photos view and the widget; photos, links, editing, search (and its hashtag cloud), Stats, On This Day (and its reminder), choosing the email's days, and AI connections are PRO. Dictation is the keyboard's own (no in-app mic). Face ID lock and drafts are for everyone.
 - **iPad:** supported in 1.0, so the submission needs the 13" iPad screenshot set too.

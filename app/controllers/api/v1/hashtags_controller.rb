@@ -11,7 +11,9 @@ module Api
         days = params[:days].to_s.match?(/\A\d+\z/) ? params[:days].to_i.clamp(1, 3650) : 365
         since = OnThisDay.today_for(current_user) - days
         limit = params[:limit].to_s.match?(/\A\d+\z/) ? params[:limit].to_i.clamp(1, 200) : 40
-        render json: { hashtags: HashtagCounts.new(current_user, since: since).top(limit) }
+        counts = HashtagCounts.new(current_user, since: since)
+        # order=recent: most recently used first (the composer's hashtag bar); otherwise most used.
+        render json: { hashtags: params[:order] == 'recent' ? counts.recent(limit) : counts.top(limit) }
       end
     end
   end

@@ -26,7 +26,12 @@ struct JournalView: View {
     @SceneStorage("journal.mode") private var mode = JournalMode.list
     @State private var path = NavigationPath()
     @State private var expanded: Set<Int> = []
-    @State private var scrubberLabel: String?
+    /// The title bar hides while scrolling down; `barAnchor` is where the current direction began.
+    @State private var barHidden = false
+    @State private var barAnchor: CGFloat = 0
+    @State private var barChanged = Date.distantPast
+    @State private var isDragging = false
+    @State private var handledStatsRequest = 0
     /// Bumped to scroll the timeline to its newest entry (after the List view is back on screen).
     @State private var scrollToTop = 0
     @State private var actions = EntryActions()
@@ -49,6 +54,13 @@ struct JournalView: View {
                 }
                 .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
                 .toolbar {
+                    // The "me" mark, always in view.
+                    if #available(iOS 26.0, *) {
+                        ToolbarItem(placement: .topBarLeading) { brandMark }
+                            .sharedBackgroundVisibility(.hidden)
+                    } else {
+                        ToolbarItem(placement: .topBarLeading) { brandMark }
+                    }
                     ToolbarItem(placement: .primaryAction) {
                         Button { startWriting() } label: { Label("New Entry", icon: "slab-plus") }
                     }
@@ -61,6 +73,13 @@ struct JournalView: View {
                     model.openEntryRequest = nil
                     mode = .list
                     path.append(EntryRoute(id: id))
+                }
+                // Also on first appearing: the Journal tab may not exist yet when Today asks.
+                .onChange(of: model.statsRequest, initial: true) { _, request in
+                    guard request != handledStatsRequest else { return }
+                    handledStatsRequest = request
+                    path = NavigationPath()
+                    mode = .stats
                 }
                 .onChange(of: model.journalTopRequest) {
                     path = NavigationPath()
@@ -156,11 +175,11 @@ struct JournalView: View {
             }
             .onScrollPhaseChange { _, phase in
                 isScrolling = phase.isScrolling
+                isDragging = phase == .interacting || phase == .decelerating
             }
             .overlay(alignment: .trailing) {
                 if model.months.count >= 3 {
-                    TimelineScrubber(months: model.months, progress: scrollProgress, isScrolling: isScrolling,
-                                     visibleMonth: model.topVisibleMonth, onSelect: { month in
+                    TimelineScrubber(months: model.months, progress: scrollProgress, isScrolling: isScrolling, onSelect: { month in
                         // Jump to the month's first row: its first entry if loaded, else its first placeholder.
                         if let first = model.monthEntries[month.key]?.first {
                             proxy.scrollTo(first.id, anchor: .top)
@@ -170,25 +189,18 @@ struct JournalView: View {
                     }, onRelease: { month in
                         // Load where the scrubber landed now, rather than waiting for rows to settle.
                         Task { await model.loadMonths(around: month.key) }
-                    }, label: $scrubberLabel)
+                    })
                 }
             }
-            // Google Photos' month pill: which month you're in while the scrubber shows.
-            .overlay(alignment: .top) {
-                if let scrubberLabel {
-                    Text(scrubberLabel)
-                        .font(.headline)
-                        .padding(.horizontal, 20)
-                        .padding(.vertical, 10)
-                        .background(.regularMaterial, in: .capsule)
-                        .shadow(color: .black.opacity(0.15), radius: 8, y: 2)
-                        .padding(.top, 44) // below the sticky month header
-                        .transition(.opacity)
-                        .allowsHitTesting(false)
-                        .accessibilityHidden(true)
-                }
+            // Only the month header stays while reading down; the title bar comes back on the
+            // way up (or at the top).
+            // The content offset alone: the bar showing or hiding changes the top inset, which
+            // mustn't read as scrolling (that would flip it back and forth).
+            .onScrollGeometryChange(for: CGFloat.self) { $0.contentOffset.y } action: { _, offset in
+                updateBar(for: offset)
             }
-            .animation(.easeOut(duration: 0.2), value: scrubberLabel == nil)
+            .toolbarVisibility(barHidden ? .hidden : .visible, for: .navigationBar)
+            .animation(.easeInOut(duration: 0.2), value: barHidden)
         }
     }
 
@@ -239,8 +251,35 @@ struct JournalView: View {
         }
     }
 
+    /// Hides the bar after ~40pt of scrolling down and shows it after ~24pt up, only while the
+    /// person is scrolling, and not again for a moment after it changes.
+    private func updateBar(for offset: CGFloat) {
+        guard Date.now.timeIntervalSince(barChanged) > 0.35 else { barAnchor = offset; return }
+        let wasHidden = barHidden
+        defer { if barHidden != wasHidden { barChanged = .now } }
+        if offset < 0 {
+            barHidden = false
+            barAnchor = offset
+        } else if !isDragging {
+            barAnchor = offset
+        } else if barHidden {
+            if offset > barAnchor { barAnchor = offset } else if barAnchor - offset > 24 { barHidden = false; barAnchor = offset }
+        } else {
+            if offset < barAnchor { barAnchor = offset } else if offset - barAnchor > 40 { barHidden = true; barAnchor = offset }
+        }
+    }
+
     private func expand(_ entry: EntrySummary) {
         withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(entry.id) }
+    }
+
+    private var brandMark: some View {
+        Image("Logo")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 36, height: 36)
+            .clipShape(.circle)
+            .accessibilityHidden(true)
     }
 
     private func startWriting() {

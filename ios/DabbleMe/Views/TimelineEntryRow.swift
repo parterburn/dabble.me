@@ -3,8 +3,8 @@ import SwiftUI
 /// A timeline/search/On This Day row, laid out like a post in a feed: the date in its own column
 /// on the left, a long preview, then the photo large below it. A preview that's cut off says
 /// "Show more" and a tap anywhere expands it in place; otherwise (or once expanded) a tap opens the
-/// entry. While you read a long expanded entry, its date floats down alongside it. Swipe right for
-/// Actions (Reflect, Edit, Delete and the entry's tags); swipe left to Open.
+/// entry. While you read a long expanded entry, its date floats down alongside it. Swipe left for
+/// Actions (Reflect, Edit, Delete and the entry's tags).
 struct TimelineEntryRow: View {
     let entry: EntrySummary
     var showsYear = false
@@ -28,10 +28,21 @@ struct TimelineEntryRow: View {
     private static let gutter: CGFloat = 14
 
     private var bodyFont: Font { .system(size: bodySize * textSize.scale, design: fontStyle.design) }
-    /// Light Markdown from the server; list lines ("- item") show as bullets, as in previews.
-    private var previewText: String {
-        (entry.previewText ?? entry.excerpt)
-            .split(separator: "\n", omittingEmptySubsequences: false)
+    private var previewText: String { entry.previewText ?? entry.excerpt }
+
+    /// Collapsed and expanded are the same text, set the same way: expanding only lifts the line
+    /// limit (and swaps in the full text when the server's preview was cut short), so nothing
+    /// shifts. Light Markdown; list lines ("- item") show as bullets. #hashtags are tinted, and
+    /// links once expanded (collapsed, a tap anywhere expands).
+    private var styledText: AttributedString {
+        let source = isExpanded ? (full?.bodyText ?? previewText) : previewText
+        if source.isEmpty { return AttributedString("📷 Photo") }
+        let text = AttributedString.journal(Self.bullets(source))
+        return isExpanded ? RichText.linkingURLs(in: RichText.linkingHashtags(in: text)) : Self.tintingHashtags(in: text)
+    }
+
+    private static func bullets(_ text: String) -> String {
+        text.split(separator: "\n", omittingEmptySubsequences: false)
             .map { line in
                 for marker in ["- ", "* "] where line.hasPrefix(marker) { return "• " + line.dropFirst(2) }
                 return String(line)
@@ -39,9 +50,23 @@ struct TimelineEntryRow: View {
             .joined(separator: "\n")
     }
 
+    private static func tintingHashtags(in text: AttributedString) -> AttributedString {
+        var result = text
+        let string = String(result.characters)
+        let regex = try! NSRegularExpression(pattern: "(?<![\\w&/#])#([0-9]*[A-Za-z_][A-Za-z0-9_]*)")
+        for match in regex.matches(in: string, range: NSRange(string.startIndex..., in: string)) {
+            guard let range = Range(match.range, in: result) else { continue }
+            result[range].foregroundColor = Color("AccentColor")
+        }
+        return result
+    }
+
+    /// The server's preview stops at 1,500 characters; past that, expanding loads the rest.
+    private var previewIsCut: Bool { (entry.previewText?.count ?? 0) >= 1500 }
+
     /// More to read than the preview shows: cut off on screen, or longer than the server's preview.
     private var isTruncated: Bool {
-        fullPreviewHeight > previewHeight + 1 || (entry.previewText?.count ?? 0) >= 1500
+        fullPreviewHeight > previewHeight + 1 || previewIsCut
     }
 
     var body: some View {
@@ -52,27 +77,23 @@ struct TimelineEntryRow: View {
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(.tint)
             }
-            if isExpanded {
-                expandedText
-            } else {
-                preview
+            entryText
+            // Songs once the whole entry shows (expanded, or short enough not to need it).
+            if let songs = entry.songs, !songs.isEmpty, isExpanded || !isTruncated {
+                SongList(songs: songs)
+            }
+            // Only dated #tags get a line of their own (their age), just above the photo.
+            if let dated = entry.datedHashtags, !dated.isEmpty {
+                DatedHashtagRow(hashtags: dated)
             }
             if entry.imageProcessing || entry.imageURL != nil {
                 EntryPhoto(url: entry.thumbnailURL(width: 1000), isProcessing: entry.imageProcessing)
                     .frame(maxWidth: .infinity, maxHeight: 320, alignment: .leading)
                     .clipShape(.rect(cornerRadius: 12))
             }
-            if isExpanded, let dated = full?.datedHashtags, !dated.isEmpty {
-                // Dated #tags as on the entry itself, once the full entry has loaded.
-                DatedHashtagRow(hashtags: dated)
-            } else if !entry.hashtags.isEmpty, !isExpanded {
-                Text(entry.hashtags.map { "#\($0)" }.joined(separator: " "))
-                    .font(.caption)
-                    .foregroundStyle(.tint)
-                    .lineLimit(1)
-            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        // At least as tall as the date beside it, so a one-line entry doesn't crowd the divider.
+        .frame(maxWidth: .infinity, minHeight: 56, alignment: .topLeading)
         .padding(.leading, Self.avatarColumn + Self.gutter)
         .overlay(alignment: .topLeading) { floatingDate }
         .padding(.vertical, 6)
@@ -82,11 +103,13 @@ struct TimelineEntryRow: View {
         }
         // Reload the full entry whenever its summary changes (an edit, or a refresh that brought
         // new text from the web or email), not just the first time it's expanded.
+        // Only when the server's preview was cut short: otherwise the preview is the whole entry.
         .task(id: "\(isExpanded)|\(entry.updatedAt)") {
-            guard isExpanded else { return }
+            guard isExpanded, previewIsCut else { return }
             if full?.updatedAt != entry.updatedAt { full = try? await model.entry(id: entry.id) }
         }
-        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+        // Swipe left for Actions (a tap opens).
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button {
                 Task { await actions.showActions(for: entry.id, model: model) }
             } label: {
@@ -94,53 +117,40 @@ struct TimelineEntryRow: View {
             }
             .tint(.gray)
         }
-        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-            Button(action: onOpen) {
-                Label("Open", icon: "slab-expand")
-            }
-            .tint(.accentColor)
-        }
         // Collapsed it reads as one; expanded, its #tag pills are buttons of their own.
         .accessibilityElement(children: isExpanded ? .contain : .combine)
         .accessibilityAddTraits(.isButton)
         .accessibilityHint(!isExpanded && isTruncated ? "Shows the whole entry" : "Opens the entry")
     }
 
-    /// The first lines as plain text (no links, so a tap anywhere expands), and "Show more" when
-    /// there's more. The full height is measured behind it to tell.
-    private var preview: some View {
+    /// One `Text` either way, with "Show more" when there's more. The full height is measured
+    /// behind it to tell.
+    private var entryText: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(previewText.isEmpty ? AttributedString("📷 Photo") : AttributedString.journal(previewText))
+            Text(styledText)
                 .font(bodyFont)
-                .lineSpacing(3)
-                .lineLimit(Self.previewLines)
+                .lineSpacing(4)
+                .lineLimit(isExpanded ? nil : Self.previewLines)
+                // Expanded, its full height (a list row would otherwise keep the collapsed height).
+                .fixedSize(horizontal: false, vertical: isExpanded)
                 .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .onGeometryChange(for: CGFloat.self, of: \.size.height) { previewHeight = $0 }
                 .background(alignment: .topLeading) {
-                    Text(AttributedString.journal(previewText))
-                        .font(bodyFont)
-                        .lineSpacing(3)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .hidden()
-                        .onGeometryChange(for: CGFloat.self, of: \.size.height) { fullPreviewHeight = $0 }
+                    if !isExpanded {
+                        Text(styledText)
+                            .font(bodyFont)
+                            .lineSpacing(4)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .hidden()
+                            .onGeometryChange(for: CGFloat.self, of: \.size.height) { fullPreviewHeight = $0 }
+                    }
                 }
-            if isTruncated {
+            if !isExpanded, isTruncated {
                 Text("Show more")
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.tint)
             }
-        }
-    }
-
-    @ViewBuilder
-    private var expandedText: some View {
-        if let document = full?.document {
-            DocumentText(blocks: document, font: bodyFont, scale: textSize.scale, bodySize: bodySize)
-        } else {
-            Text(RichText.linkingHashtags(in: AttributedString.journal(full?.bodyText ?? previewText)))
-                .font(bodyFont)
-                .lineSpacing(5)
-                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
@@ -313,5 +323,22 @@ private struct EntryActionSheets: ViewModifier {
             } message: {
                 Text(actions.error ?? "")
             }
+    }
+}
+
+/// An entry's Spotify songs, each a link to it: on the entry, in previews and expanded rows.
+struct SongList: View {
+    let songs: [Song]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            ForEach(songs, id: \.self) { song in
+                Link(destination: song.spotifyUrl) {
+                    Label(song.label, icon: "slab-music")
+                        .multilineTextAlignment(.leading)
+                }
+            }
+        }
+        .font(.subheadline)
     }
 }

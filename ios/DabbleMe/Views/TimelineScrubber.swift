@@ -2,20 +2,15 @@ import SwiftUI
 
 /// Google Photos-style fast scroller for the Journal: a tab on the right edge (rounded on its
 /// left, flush with the screen) that appears while scrolling; drag it to see the years and jump to
-/// any month. While it shows, `label` names the month in view, for a pill at the top of the list.
-/// Positions are proportional to entry counts, which matches the timeline's layout (rows and
+/// any month. Positions are proportional to entry counts, which matches the timeline's layout (rows and
 /// placeholders are similar heights).
 struct TimelineScrubber: View {
     let months: [MonthCount]
     let progress: CGFloat
     let isScrolling: Bool
-    /// The month at the top of the screen (row heights vary, so `progress` only approximates it).
-    var visibleMonth: MonthCount? = nil
     let onSelect: (MonthCount) -> Void
     /// The month the scrubber was released on, so its entries can load right away.
     var onRelease: (MonthCount) -> Void = { _ in }
-    /// The month in view while the scrubber shows ("October", or "October 2025" in another year).
-    @Binding var label: String?
 
     @State private var dragFraction: CGFloat?
     @State private var selected: MonthCount?
@@ -72,18 +67,11 @@ struct TimelineScrubber: View {
         .onChange(of: isScrolling) { _, scrolling in
             if scrolling { show() } else { scheduleHide() }
         }
-        .onChange(of: currentLabel, initial: true) { _, current in label = current }
+
     }
 
     // MARK: - Mapping
 
-    private var currentLabel: String? {
-        let shown = dragFraction.flatMap { month(at: $0) } ?? visibleMonth ?? month(at: progress)
-        guard visible || dragFraction != nil, let month = shown else { return nil }
-        return month.year == Calendar.current.component(.year, from: .now)
-            ? Calendar.current.monthSymbols[month.month - 1]
-            : month.title
-    }
 
     /// Where each month starts, as a fraction of all entries (newest month at 0).
     private var starts: [CGFloat] {

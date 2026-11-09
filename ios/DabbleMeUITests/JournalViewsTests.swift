@@ -117,6 +117,7 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertFalse(app.toolbars.buttons["Dictate"].exists, "Dictation is the keyboard's own")
 
         app.buttons["Add"].tap()
+        app.buttons["Add Hashtags"].tap() // the bar: a sparkles button, then recent tags
         let suggest = app.buttons["Suggest Hashtags"]
         if suggest.waitForExistence(timeout: 3) {
             suggest.tap()
@@ -207,7 +208,10 @@ final class JournalViewsTests: XCTestCase {
         let tag = app.links["#hiking"].firstMatch
         XCTAssertTrue(tag.waitForExistence(timeout: 5))
         tag.tap()
-        XCTAssertTrue(app.staticTexts["2 entries"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["2 matching entries"].waitForExistence(timeout: 10))
+        // Results sit under sticky month headers, like the Journal.
+        let month = Calendar.current.date(byAdding: .day, value: -1, to: .now)!.formatted(.dateTime.month(.wide).year())
+        XCTAssertTrue(app.staticTexts[month].exists, "A month header over the results")
         XCTAssertFalse(app.buttons["Entry Actions"].exists, "The entry should close to show the results")
     }
 
@@ -231,13 +235,10 @@ final class JournalViewsTests: XCTestCase {
 
         let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Big presentation went well")).firstMatch
         app.scrollTo(row)
-        // Dated #tags show as pills (with their age) once the row is expanded.
-        // Swipe left: Open. Swipe right: Actions, with Edit (and the entry's tags).
-        row.swipeLeft()
-        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 3))
-        XCTAssertFalse(app.buttons["Actions"].exists, "Actions is the right swipe now")
-        row.swipeRight() // closes Open
+        // Swipe left: Actions, with Edit (and the entry's tags). There's no right swipe.
         row.swipeRight()
+        XCTAssertFalse(app.buttons["Actions"].waitForExistence(timeout: 2), "Nothing on a right swipe")
+        row.swipeLeft()
         app.buttons["Actions"].tap()
         XCTAssertTrue(app.buttons["Edit"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons.matching(identifier: "ActionsSheetTag").matching(NSPredicate(format: "label == %@", "#work")).firstMatch.exists, "The entry's tags are in the Actions sheet")
@@ -247,7 +248,7 @@ final class JournalViewsTests: XCTestCase {
         app.buttons["Cancel"].tap()
         XCTAssertTrue(app.textViews["Entry"].waitForNonExistence(timeout: 10))
 
-        row.swipeRight()
+        row.swipeLeft()
         app.buttons["Actions"].tap()
         let reflect = app.buttons["Reflect on This Entry"]
         if reflect.waitForExistence(timeout: 10) {
@@ -319,6 +320,7 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
         editor.typeText("Took the kids to the climbing gym after school. Maya made it to the top of the blue wall.")
         app.buttons["Add"].tap()
+        app.buttons["Add Hashtags"].tap() // the bar: a sparkles button, then recent tags
         let suggest = app.buttons["Suggest Hashtags"]
         guard suggest.waitForExistence(timeout: 3) else { throw XCTSkip("Apple Intelligence isn't available here") }
         suggest.tap()
@@ -563,7 +565,7 @@ final class JournalViewsTests: XCTestCase {
         app.buttons[day(1)].tap()
         app.buttons[day(2)].tap()
         app.buttons[day(0)].tap()
-        app.buttons["dismiss popup"].tap()
+        app.buttons["Done"].tap()
         sleep(10) // let the saves finish
 
         app.terminate()
@@ -616,6 +618,75 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Default, Serif")).firstMatch.waitForExistence(timeout: 5))
     }
 
+    /// A web address written into an entry is a link.
+    func testURLsInEntriesAreLinks() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "The Overstory")).firstMatch
+        app.openTimelineEntry(row)
+        let link = app.links.matching(NSPredicate(format: "label CONTAINS %@", "goodreads.com")).firstMatch
+        XCTAssertTrue(link.waitForExistence(timeout: 10), "The web address is a link")
+        snap("entry-url-link")
+    }
+
+    /// An easter egg: at the bottom of Today, keep pulling up and let go for a random memory.
+    func testPullUpAtBottomOfTodayShowsRandomMemory() throws {
+        let app = launch()
+        let list = app.collectionViews.firstMatch
+        XCTAssertTrue(list.waitForExistence(timeout: 15))
+        for _ in 0..<6 { list.swipeUp(velocity: .fast) }
+        sleep(1)
+        list.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.75))
+            .press(forDuration: 0.1, thenDragTo: list.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)),
+                   withVelocity: .slow, thenHoldForDuration: 0.3)
+        XCTAssertTrue(app.staticTexts["A Random Memory"].waitForExistence(timeout: 10))
+        snap("pull-up-random-memory")
+    }
+
+    /// An entry's Spotify songs show in its long-press preview.
+    func testSongsShowInPreviews() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Slow Saturday")).firstMatch
+        app.scrollTo(row)
+        row.press(forDuration: 1.2)
+        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Blinding Lights")).firstMatch.exists,
+                      "The song is in the preview")
+        snap("preview-song")
+    }
+
+    /// With the search field focused, swiping down hides the keyboard (over the hashtags and the results).
+    func testSwipeDownHidesSearchKeyboard() throws {
+        let app = launch()
+        tab(app, "Search").tap()
+        let field = app.searchFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        app.swipeDown()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "Over the hashtags")
+
+        field.tap()
+        field.typeText("Yosemite\n")
+        let result = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
+        XCTAssertTrue(result.waitForExistence(timeout: 10))
+        field.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        app.collectionViews.firstMatch.swipeDown()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "Over the results")
+    }
+
+    /// Today's streak (top right) opens Stats.
+    func testStreakOpensStats() throws {
+        let app = launch()
+        let streak = app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", "day streak")).firstMatch
+        XCTAssertTrue(streak.waitForExistence(timeout: 15))
+        snap("today-streak")
+        streak.tap()
+        XCTAssertTrue(app.staticTexts["Past Year"].waitForExistence(timeout: 10), "Stats, in the Journal tab")
+    }
+
     /// A free account writes without photos or links, can delete but not edit, and has no Stats.
     /// TEST_RUNNER_DABBLE_FREE_TOKEN.
     func testFreeAccountLimits() throws {
@@ -624,6 +695,11 @@ final class JournalViewsTests: XCTestCase {
         app.launchArguments = ["-DabbleDebugAccessToken", free, "-DabbleServerOverride", "http://localhost:3000"]
         app.launch()
 
+        // No memories on this date (On This Day is PRO): a throwback instead.
+        XCTAssertTrue(app.staticTexts["Throwback"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "A quiet walk after dinner")).firstMatch.exists)
+        snap("free-throwback")
+
         // Writing: no photos, no link button.
         tab(app, "Journal").tap()
         app.buttons["New Entry"].tap()
@@ -631,9 +707,10 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(editor.waitForExistence(timeout: 10))
         editor.tap()
         if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
-        XCTAssertFalse(app.buttons["Link"].exists, "Links are PRO")
-        if app.buttons["Add"].exists {
-            app.buttons["Add"].tap()
+        app.buttons["Add"].tap()
+        XCTAssertTrue(app.buttons["Add Hashtags"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Add Link"].exists, "Links are PRO")
+        do {
             XCTAssertFalse(app.buttons["Add Photos"].exists, "Photos are PRO")
             snap("free-compose-menu")
             app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)).tap() // close the menu
@@ -644,7 +721,7 @@ final class JournalViewsTests: XCTestCase {
         // An entry: Delete, but no Edit.
         let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "A quiet walk after dinner")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10))
-        row.swipeRight()
+        row.swipeLeft()
         app.buttons["Actions"].tap()
         XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout: 10))
         XCTAssertFalse(app.buttons["Edit"].exists)
@@ -657,6 +734,14 @@ final class JournalViewsTests: XCTestCase {
         app.buttons["Stats"].tap()
         XCTAssertTrue(app.staticTexts["Stats are a PRO feature"].waitForExistence(timeout: 10))
         snap("free-stats")
+
+        // Reminders: writing for everyone; On This Day (a PRO feature) is greyed out.
+        tab(app, "Settings").tap()
+        let writing = app.switches["Daily Writing Reminder"]
+        XCTAssertTrue(writing.waitForExistence(timeout: 10))
+        XCTAssertTrue(writing.isEnabled)
+        XCTAssertFalse(app.switches["On This Day Memories"].isEnabled)
+        snap("free-reminders")
     }
 
     /// A free account sees Daily Email greyed out with the rest of Reminders. TEST_RUNNER_DABBLE_FREE_TOKEN.
@@ -731,7 +816,7 @@ final class JournalViewsTests: XCTestCase {
         row.tapRowText() // a long entry expands
         XCTAssertTrue(collapsed.waitForNonExistence(timeout: 5))
 
-        row.swipeRight()
+        row.swipeLeft()
         app.buttons["Actions"].tap()
         XCTAssertTrue(app.buttons["Edit"].waitForExistence(timeout: 10))
         app.buttons["Edit"].tap()
@@ -759,27 +844,25 @@ final class JournalViewsTests: XCTestCase {
         snap("entry-dated-pill")
         app.navigationBars.buttons.element(boundBy: 0).tap()
         XCTAssertTrue(row.waitForExistence(timeout: 10))
-        row.swipeRight()
+        row.swipeLeft()
         app.buttons["Actions"].tap()
         let tag = app.buttons.matching(identifier: "ActionsSheetTag").matching(NSPredicate(format: "label == %@", "#Biscuit")).firstMatch
         XCTAssertTrue(tag.waitForExistence(timeout: 10))
         XCTAssertTrue((tag.value as? String ?? "").contains("since entry"), "Dated tag shows its age")
         snap("actions-dated-tag")
         tag.tap() // searches it
-        XCTAssertTrue(app.staticTexts["1 entry"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["1 matching entry"].waitForExistence(timeout: 10))
     }
 
-    /// On This Day rows are the Journal's rows: swipe left offers Open and Actions.
+    /// On This Day rows are the Journal's rows: swipe left for Actions.
     func testOnThisDayRowsSwipe() throws {
         let app = launch()
         let memory = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Bruges!")).firstMatch
         XCTAssertTrue(memory.waitForExistence(timeout: 15))
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "1 year ago")).firstMatch.exists)
-        memory.swipeRight()
-        XCTAssertTrue(app.buttons["Actions"].waitForExistence(timeout: 3))
-        memory.swipeLeft() // closes the Actions swipe
         memory.swipeLeft()
-        app.buttons["Open"].tap()
-        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Actions"].waitForExistence(timeout: 3))
+        app.buttons["Actions"].tap()
+        XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout: 10))
     }
 }

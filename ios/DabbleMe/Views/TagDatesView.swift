@@ -13,6 +13,8 @@ struct TagDatesView: View {
     /// time per tag, always sending the latest pick, so the last date chosen is the one that sticks.
     @State private var picked: [Int: String] = [:]
     @State private var saving: Set<Int> = []
+    /// The tag whose calendar is open.
+    @State private var choosing: TagDate?
 
     var body: some View {
         Group {
@@ -24,10 +26,22 @@ struct TagDatesView: View {
                                 .foregroundStyle(.secondary)
                         }
                         ForEach(list.hashtags) { item in
-                            DatePicker(selection: Binding(get: { JournalDay(picked[item.id] ?? item.date)?.localDate ?? .now }, set: { date in
-                                pick(item, date)
-                            }), displayedComponents: .date) {
+                            // Our own date button, so every date reads the same ("May 3, 2014"); the
+                            // system's compact picker mixes in "2/18/18" for some. Tap for a calendar.
+                            HStack {
                                 Text("#\(item.tag)")
+                                Spacer(minLength: 8)
+                                Button {
+                                    choosing = item
+                                } label: {
+                                    Text(shownDate(item))
+                                        .monospacedDigit()
+                                        .padding(.horizontal, 11)
+                                        .padding(.vertical, 6)
+                                        .background(Color(uiColor: .tertiarySystemFill), in: .rect(cornerRadius: 8))
+                                }
+                                .buttonStyle(.plain)
+                                .accessibilityLabel("Date Picker \(shownDate(item))")
                             }
                         }
                         .onDelete { offsets in
@@ -77,6 +91,22 @@ struct TagDatesView: View {
                 await add(tag: tag, date: date)
             }
         }
+        .sheet(item: $choosing) { item in
+            NavigationStack {
+                DatePicker("#\(item.tag)", selection: Binding(get: { pickedDate(item) }, set: { pick(item, $0) }),
+                           displayedComponents: .date)
+                    .datePickerStyle(.graphical)
+                    .padding(.horizontal)
+                    .navigationTitle("#\(item.tag)")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .confirmationAction) {
+                            Button("Done") { choosing = nil }
+                        }
+                    }
+            }
+            .presentationDetents([.medium])
+        }
         .alert("Couldn't save", isPresented: .present($error)) {
             Button("OK", role: .cancel) {}
         } message: {
@@ -97,6 +127,15 @@ struct TagDatesView: View {
         } catch {
             loadError = error.localizedDescription
         }
+    }
+
+    private func pickedDate(_ item: TagDate) -> Date {
+        JournalDay(picked[item.id] ?? item.date)?.localDate ?? .now
+    }
+
+    /// "May 3, 2014", for every tag.
+    private func shownDate(_ item: TagDate) -> String {
+        pickedDate(item).formatted(.dateTime.month(.abbreviated).day().year())
     }
 
     private func pick(_ item: TagDate, _ date: Date) {

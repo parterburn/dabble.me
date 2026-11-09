@@ -23,6 +23,21 @@ module Api
                .first(limit)
     end
 
+    # The tags used most recently first (newest entries first), each in its latest spelling.
+    def recent(limit)
+      latest = {}
+      user.entries.unscope(:order)
+          .where(date: since.beginning_of_day..)
+          .where("entries.body ~ '#[A-Za-z0-9_]'")
+          .order(date: :desc, id: :desc)
+          .limit(500)
+          .each do |entry|
+        Array(entry.hashtags).each { |tag| latest[tag.downcase] ||= tag }
+        break if latest.size >= limit
+      end
+      latest.values.first(limit).map { |tag| { tag: tag, count: 0 } }
+    end
+
     private
 
     attr_reader :user, :since

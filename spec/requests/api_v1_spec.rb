@@ -103,6 +103,16 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       expect(json["entries"].map { |e| e["id"] }).to eq([older.id])
     end
 
+    it "includes an entry's Spotify songs in the timeline and on the entry" do
+      entry = create(:entry, user: free_user, date: Time.zone.local(2025, 3, 9), body: "<p>On repeat</p>")
+      # Saving looks songs up on Spotify (Entry#find_songs); store one as it would.
+      entry.update_column(:songs, [{ "spotify_id" => "4uLU6hMCjMI75M1A2tKUQC", "title" => "Never Gonna Give You Up", "artists" => ["Rick Astley"] }])
+      get "/api/v1/entries", params: { year: 2025, month: 3 }, headers: auth(free_user)
+      song = json["entries"].find { |e| e["date"] == "2025-03-09" }["songs"].first
+      expect(song).to eq("title" => "Never Gonna Give You Up", "artists" => ["Rick Astley"],
+                         "spotify_url" => "https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC")
+    end
+
     it "rejects a malformed year" do
       get "/api/v1/entries", params: { year: "abc" }, headers: auth(free_user)
       expect(response).to have_http_status(:unprocessable_content)
@@ -112,6 +122,10 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       free_user.original_hashtags.create!(tag: "Coffee", date: Date.new(2023, 11, 4))
       get "/api/v1/entries/#{mine.id}", headers: auth(free_user)
       expect(json["entry"]["dated_hashtags"]).to eq([{ "tag" => "coffee", "date" => "2023-11-04", "age" => "1 year and 4 months since entry" }])
+
+      # The timeline's summaries carry them too.
+      get "/api/v1/entries", params: { year: 2025, month: 3 }, headers: auth(free_user)
+      expect(json["entries"].first["dated_hashtags"]).to eq([{ "tag" => "coffee", "date" => "2023-11-04", "age" => "1 year and 4 months since entry" }])
     end
 
     it "shows a single entry with text body" do
@@ -166,6 +180,7 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
         expect(json["on_this_day_available"]).to be(true)
         expect(json["prompt"]).to eq("What surprised you today?")
         expect(json["current_streak"]).to eq(1)
+        expect(json["throwback"]).to be_nil # On This Day has entries
       end
     end
 
@@ -178,6 +193,25 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
 
       get "/api/v1/entries/memory_days", headers: auth(free_user)
       expect(response).to have_http_status(:forbidden)
+    end
+
+    it "offers a throwback when nothing was written on this date in earlier years" do
+      travel_to Time.find_zone(free_user.send_timezone).local(2026, 6, 20, 12) do
+        get "/api/v1/today", headers: auth(free_user)
+        expect(json["throwback"]).to be_nil # nothing to look back on yet
+
+        month_ago = create(:entry, user: free_user, date: Date.new(2026, 5, 20).to_s, body: "<p>A month back</p>")
+        create(:entry, user: free_user, date: Date.new(2026, 6, 20).to_s, body: "<p>Today</p>")
+        get "/api/v1/today", headers: auth(free_user)
+        expect(json["throwback"]).to include("id" => month_ago.id, "days_ago" => 31)
+
+        # Otherwise any earlier entry, the same one all day, minus words left out of past entries.
+        month_ago.update!(date: Date.new(2026, 3, 2))
+        create(:entry, user: free_user, date: Date.new(2026, 4, 9).to_s, body: "<p>Doctor visit</p>")
+        free_user.update!(past_filter: "doctor")
+        picks = 3.times.map { get "/api/v1/today", headers: auth(free_user); json["throwback"]["id"] }
+        expect(picks.uniq).to eq([month_ago.id])
+      end
     end
 
     it "keeps On This Day for PRO on the Today endpoint" do
@@ -548,6 +582,13 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
   end
 
   describe "GET /api/v1/hashtags" do
+    it "lists the most recently used hashtags first with order=recent" do
+      create(:entry, user: free_user, date: 3.days.ago, body: "<p>#Coffee and #books</p>")
+      create(:entry, user: free_user, date: 1.day.ago, body: "<p>#hiking #coffee</p>")
+      get "/api/v1/hashtags", params: { order: "recent" }, headers: auth(free_user)
+      expect(json["hashtags"].map { |h| h["tag"] }).to eq(%w[hiking coffee books])
+    end
+
     it "is open to free accounts (on-device hashtag suggestions pick from them)" do
       create(:entry, user: free_user, body: "<p>#coffee</p>")
       get "/api/v1/hashtags", headers: auth(free_user)

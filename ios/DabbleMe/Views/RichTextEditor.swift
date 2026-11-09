@@ -191,12 +191,14 @@ struct EditorInsertItem {
 struct RichTextEditor: UIViewRepresentable {
     let model: RichTextEditorModel
     var insertItems: [EditorInsertItem] = []
-    /// The link button (hyperlinks are PRO).
-    var allowsLinks = true
+    /// Shown at the bar's left (the composer's stack of attached photos), and what it shows, so
+    /// the bar is rebuilt when that changes.
+    var leading: AnyView? = nil
+    var leadingKey = ""
 
     /// Changes when the bar's buttons need rebuilding.
     fileprivate var barKey: String {
-        insertItems.map { "\($0.title)\($0.isEnabled)\($0.subtitle ?? "")" }.joined(separator: "|") + "|links:\(allowsLinks)"
+        insertItems.map { "\($0.title)\($0.isEnabled)\($0.subtitle ?? "")" }.joined(separator: "|") + "|leading:\(leadingKey)"
     }
 
     func makeUIView(context: Context) -> UITextView {
@@ -250,6 +252,7 @@ struct RichTextEditor: UIViewRepresentable {
         /// toolbar so the glass buttons clear the keyboard's top edge, and short enough to fit an
         /// iPhone without spilling into a "…" menu (swipe down on the text to hide the keyboard).
         fileprivate var barKey = ""
+        private var leadingHost: UIHostingController<AnyView>?
         /// The latest menu actions (their closures change as the composer's state does).
         var insertItems: [EditorInsertItem] = []
 
@@ -259,19 +262,23 @@ struct RichTextEditor: UIViewRepresentable {
             return toolbar
         }
 
-        /// "+" (photos, hashtag suggestions) and link. Bold, italic and underline are in the text's
-        /// edit menu (Format), typing "- " or "1. " starts a list, and the keyboard has dictation.
+        /// What's attached (the photo stack) on the left; "+" (photos, hashtags, link) on the right.
+        /// Bold, italic and underline are in the text's edit menu (Format), typing "- " or "1. "
+        /// starts a list, and the keyboard has dictation.
         func configure(_ toolbar: UIToolbar, for editor: RichTextEditor) {
             barKey = editor.barKey
             insertItems = editor.insertItems
-            func item(_ symbol: String, _ label: String, _ action: @escaping @MainActor (RichTextEditorModel) -> Void) -> UIBarButtonItem {
-                let button = UIBarButtonItem(image: appUIIcon(symbol), primaryAction: UIAction { [weak model] _ in
-                    if let model { action(model) }
-                })
-                button.accessibilityLabel = label
-                return button
-            }
             var items: [UIBarButtonItem] = []
+            if let leading = editor.leading {
+                let host = UIHostingController(rootView: leading)
+                host.view.backgroundColor = .clear
+                host.view.frame.size = host.sizeThatFits(in: CGSize(width: 200, height: 44))
+                leadingHost = host
+                items.append(UIBarButtonItem(customView: host.view))
+            } else {
+                leadingHost = nil
+            }
+            items.append(.flexibleSpace())
             if !editor.insertItems.isEmpty {
                 let menu = UIMenu(children: editor.insertItems.indices.map { index in
                     let entry = editor.insertItems[index]
@@ -286,8 +293,6 @@ struct RichTextEditor: UIViewRepresentable {
                 plus.accessibilityLabel = "Add"
                 items.append(plus)
             }
-            items.append(.flexibleSpace())
-            if editor.allowsLinks { items.append(item("slab-link", "Link") { $0.beginLink() }) }
             toolbar.items = items
         }
     }
