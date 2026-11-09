@@ -55,14 +55,14 @@
 
     if ($(window).width() > 768) {
       // First-week hint about when emails arrive. It points at the account
-      // menu, so it goes away once that menu is opened.
+      // menu, so it goes away once that menu is opened, by click or hover.
       var $settingsHint = $("[rel='popover_settings']");
       $settingsHint.popover({
         trigger: "manual",
         container: "body",
         html: true
       }).popover('show');
-      $settingsHint.on('show.bs.dropdown', function() { $settingsHint.popover('hide'); });
+      $settingsHint.on('show.bs.dropdown mouseenter', function() { $settingsHint.popover('hide'); });
 
       $("[rel='tooltip']").tooltip({
         container: "body"

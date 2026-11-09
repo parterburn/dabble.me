@@ -3,10 +3,15 @@
 require 'rails_helper'
 
 RSpec.describe 'Rack::Attack', type: :request do
+  include ActiveSupport::Testing::TimeHelpers
+
+  # Rack::Attack counts in fixed windows keyed by Time.now (20 seconds for
+  # sign-ins, 5 minutes for the probe ban). Freeze time so an example can't
+  # straddle a window boundary and start counting from zero partway through.
   around do |example|
     original = Rack::Attack.cache.store
     Rack::Attack.cache.store = ActiveSupport::Cache::MemoryStore.new
-    example.run
+    freeze_time { example.run }
   ensure
     Rack::Attack.cache.store = original
   end
