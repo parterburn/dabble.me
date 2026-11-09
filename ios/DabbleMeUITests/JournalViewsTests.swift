@@ -809,10 +809,11 @@ final class JournalViewsTests: XCTestCase {
         app.launchArguments = ["-DabbleDebugAccessToken", free, "-DabbleServerOverride", "http://localhost:3000"]
         app.launch()
 
-        // No memories on this date (On This Day is PRO): a throwback instead.
-        XCTAssertTrue(app.staticTexts["Throwback"].waitForExistence(timeout: 15))
-        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "A quiet walk after dinner")).firstMatch.exists)
-        snap("free-throwback")
+        // On This Day is PRO: Today says so (no throwback in its place).
+        XCTAssertTrue(app.staticTexts["On This Day"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["See what you wrote on this date in past years with Dabble Me PRO."].exists)
+        XCTAssertFalse(app.staticTexts["Throwback"].exists)
+        snap("free-on-this-day")
 
         // Writing: no photos, no link button.
         tab(app, "Journal").tap()

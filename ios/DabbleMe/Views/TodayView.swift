@@ -247,9 +247,12 @@ struct TodayView: View {
 
     /// On This Day when there's something from this date in past years; otherwise a Throwback
     /// (any past entry, as in the daily email), or, with nothing to look back on yet, a nudge to write.
+    /// Free accounts see On This Day as a PRO feature instead.
     @ViewBuilder
     private func onThisDaySection(_ today: TodaySummary) -> some View {
-        if today.onThisDay.isEmpty {
+        if !today.onThisDayAvailable {
+            memoriesSection(today)
+        } else if today.onThisDay.isEmpty {
             throwbackSection(today.throwback, today: today)
         } else {
             memoriesSection(today)
@@ -288,6 +291,12 @@ struct TodayView: View {
         SectionTitle("On This Day", icon: "slab-backward")
             .padding(.top, 12)
             .plainRow()
+        if !today.onThisDayAvailable {
+            Text("See what you wrote on this date in past years with Dabble Me PRO.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+                .plainRow()
+        }
         // One section per memory, so its date sticks at the top while you scroll through it.
         ForEach(today.onThisDay) { memory in
             Section {
