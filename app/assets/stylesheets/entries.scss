@@ -811,16 +811,21 @@ mark {
     text-transform: uppercase;
     letter-spacing: 0.04em;
   }
+  // Same type as entry bodies (.s-scrollable).
   .s-reflection-body {
     font-family: Georgia, Cambria, "Times New Roman", Times, serif;
-    font-size: 18px;
+    font-size: 18.5px;
     line-height: 1.6;
+    // The global p { font-size: 15px; color: #444 } would otherwise shrink
+    // every paragraph of the reflection.
     p, li {
+      font-size: inherit;
+      color: inherit;
       margin-bottom: 0.8em;
     }
-  }
-  .s-reflection-loading {
-    color: $olive-500;
+    .s-reflection-loading {
+      color: $olive-500;
+    }
   }
   .s-reflection-note {
     margin: 20px 0 0;

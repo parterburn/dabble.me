@@ -25,6 +25,10 @@
     height: 1.2em;
     vertical-align: middle; // the base -0.2em offset would grow the line box
   }
+  // Dropdown items (account and admin menus) match the 16px navbar links.
+  .dropdown-menu > li > a {
+    font-size: 16px;
+  }
   .navbar-nav > li > a {
     font-size: 16px;
     color:whiteSmoke;
