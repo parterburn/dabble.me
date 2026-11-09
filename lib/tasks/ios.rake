@@ -81,7 +81,7 @@ namespace :ios do
         <p>Bruges! Wandered the canals all afternoon and ate an unreasonable number of waffles. Sam says I'm "a waffle person now." I've accepted it. #travel</p>
       HTML
       [today - 2.years, <<~HTML, nil],
-        <p>First snow of the year. Built a lopsided snowman and drank cocoa by the window. Some days are just simple and good.</p>
+        <p>First snow of the year. Built a lopsided snowman and drank cocoa by the window. Biscuit ate the carrot nose. Some days are just simple and good. #Biscuit</p>
       HTML
       [today - 3.years, <<~HTML, nil],
         <p>Moved into the new apartment today. Boxes everywhere, no curtains yet, pizza on the floor. It already feels like home.</p>

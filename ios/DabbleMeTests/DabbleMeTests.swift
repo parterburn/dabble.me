@@ -154,7 +154,9 @@ struct RichTextTests {
 
     @Test func laysOutBlocksAsEditableText() {
         let text = RichText.attributedString(from: Self.sample, style: Self.style).string
-        #expect(text == "Morning run, then coffee\nwith Sam\n\n• eggs\n• toast\n\nAfterwards\n\n⸻\n\n1. one\n2. two")
+        // One line per paragraph (Return starts the next; paragraph spacing makes the gap); a
+        // line break inside a paragraph is a line separator.
+        #expect(text == "Morning run, then coffee\u{2028}with Sam\n• eggs\n• toast\nAfterwards\n⸻\n1. one\n2. two")
     }
 
     @Test func roundTripsFormatting() {
@@ -171,6 +173,16 @@ struct RichTextTests {
             DocumentBlock(type: .rule),
             .paragraph(DocumentRun("Done")),
         ])
+    }
+
+    /// Each Return is a new paragraph, spaced apart a little; blank lines don't add more.
+    @Test func eachLineIsAParagraph() {
+        let typed = NSMutableAttributedString(string: "First line\nSecond line\n\nThird", attributes: [.font: Self.style.baseFont])
+        #expect(RichText.blocks(from: typed) == [.paragraph(DocumentRun("First line")), .paragraph(DocumentRun("Second line")),
+                                                 .paragraph(DocumentRun("Third"))])
+        RichText.applyListIndents(to: typed, font: Self.style.baseFont)
+        let style = typed.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle
+        #expect((style?.paragraphSpacing ?? 0) > 0)
     }
 
     @Test func dropsEmptyItemsAndAttachments() {

@@ -67,7 +67,7 @@ final class PhotoEntryTests: XCTestCase {
             .matching(NSPredicate(format: "label CONTAINS %@", "Four photos, one collage")).firstMatch
         XCTAssertTrue(saved.waitForExistence(timeout: 10))
         app.openTimelineEntry(saved)
-        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10), "The app froze after saving")
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10), "The app froze after saving")
 
         // The processing placeholder turns into the collage once Sidekiq finishes.
         let photo = app.buttons["Entry photo"]
@@ -96,12 +96,11 @@ final class PhotoEditTests: XCTestCase {
         app.tabBars.buttons["Journal"].tap()
         let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", text)).firstMatch
         app.openTimelineEntry(row)
-        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
     }
 
     private func edit(_ app: XCUIApplication, photos: String) {
-        app.buttons["Entry Actions"].tap()
-        app.buttons["Edit"].tap()
+        app.buttons["Edit Entry"].tap()
         XCTAssertTrue(app.textViews["Entry"].waitForExistence(timeout: 10))
         // The entry's photos stack at the bar's left; tapping the stack opens the drawer.
         app.textViews["Entry"].tap()

@@ -58,6 +58,8 @@ enum RichText {
     static let ruleMarker = "⸻"
     private static let ruleMarkers: Set<String> = [ruleMarker, "---", "___", "***"]
     private static let attachmentCharacter = "\u{FFFC}"
+    /// A line break inside a paragraph (Return starts a new paragraph instead).
+    static let lineSeparator = "\u{2028}"
 
     struct Style {
         var baseFont: PlatformFont
@@ -88,7 +90,9 @@ enum RichText {
         for (index, block) in blocks.enumerated() {
             if index > 0 {
                 let bothList = blocks[index - 1].type.isList && block.type.isList
-                segments.append(Segment(text: bothList ? "\n" : "\n\n", run: nil))
+                // One line per paragraph: the space between them is paragraph spacing (see
+                // applyListIndents), so Return starts a new paragraph rather than a bare line.
+                segments.append(Segment(text: "\n", run: nil))
             }
             number = block.type == .number ? (index > 0 && blocks[index - 1].type == .number ? number + 1 : 1) : 0
             switch block.type {
@@ -103,7 +107,9 @@ enum RichText {
                 break
             }
             for run in block.runs ?? [] where !run.text.isEmpty {
-                segments.append(Segment(text: run.text, run: run))
+                // A line break within a paragraph (from <br>) is a line separator: it breaks the
+                // line without starting a new paragraph (no paragraph spacing).
+                segments.append(Segment(text: run.text.replacingOccurrences(of: "\n", with: lineSeparator), run: run))
             }
         }
         return segments
@@ -120,17 +126,23 @@ enum RichText {
     }
 
     /// Hangs list items: wrapped lines of a "• " or "1. " item line up with its text, not the marker.
+    /// Also spaces paragraphs apart (a little under a line), and list items a little less, so each
+    /// Return reads as a new paragraph.
     static func applyListIndents(to text: NSMutableAttributedString, font: PlatformFont) {
         let string = text.string as NSString
         string.enumerateSubstrings(in: NSRange(location: 0, length: string.length), options: [.byParagraphs, .substringNotRequired]) { _, range, enclosing, _ in
             let line = string.substring(with: range)
-            let indent = listPrefix(in: line).map {
+            let prefix = listPrefix(in: line)
+            let indent = prefix.map {
                 (string.substring(with: NSRange(location: range.location, length: $0.length)) as NSString).size(withAttributes: [.font: font]).width
             } ?? 0
+            let spacing = (font.pointSize * (prefix == nil ? 0.6 : 0.25)).rounded()
             let current = text.attribute(.paragraphStyle, at: enclosing.location, effectiveRange: nil) as? NSParagraphStyle
-            guard enclosing.length > 0, abs((current?.headIndent ?? 0) - indent) > 0.5 else { return }
-            let style = NSMutableParagraphStyle()
+            guard enclosing.length > 0,
+                  abs((current?.headIndent ?? 0) - indent) > 0.5 || abs((current?.paragraphSpacing ?? 0) - spacing) > 0.5 else { return }
+            let style = (current?.mutableCopy() as? NSMutableParagraphStyle) ?? NSMutableParagraphStyle()
             style.headIndent = indent
+            style.paragraphSpacing = spacing
             text.addAttribute(.paragraphStyle, value: style, range: enclosing)
         }
     }
@@ -155,7 +167,7 @@ enum RichText {
             let trimmed = line.replacingOccurrences(of: attachmentCharacter, with: "").trimmingCharacters(in: .whitespaces)
 
             if trimmed.isEmpty {
-                flushParagraph()
+                flushParagraph() // blank lines just separate (paragraph spacing makes the gap)
             } else if ruleMarkers.contains(trimmed) {
                 flushParagraph()
                 blocks.append(DocumentBlock(type: .rule, runs: nil))
@@ -165,8 +177,9 @@ enum RichText {
                 let runs = cleaned(self.runs(in: text, range: itemRange))
                 if !runs.isEmpty { blocks.append(DocumentBlock(type: prefix.kind, runs: runs)) }
             } else {
-                if !paragraph.isEmpty { paragraph.append(DocumentRun("\n")) }
-                paragraph += runs(in: text, range: lineRange)
+                // Each line is its own paragraph: Return starts a new one.
+                flushParagraph()
+                paragraph = runs(in: text, range: lineRange)
             }
 
             if newline.location == NSNotFound { break }
@@ -243,7 +256,7 @@ enum RichText {
             let font = attributes[.font] as? PlatformFont
             let underline = (attributes[.underlineStyle] as? Int ?? 0) != 0
             let link = (attributes[.link] as? URL)?.absoluteString ?? attributes[.link] as? String
-            runs.append(DocumentRun(string.substring(with: subrange),
+            runs.append(DocumentRun(string.substring(with: subrange).replacingOccurrences(of: lineSeparator, with: "\n"),
                                     bold: font?.isBold ?? false,
                                     italic: font?.isItalic ?? false,
                                     underline: underline,

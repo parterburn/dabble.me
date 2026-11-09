@@ -31,6 +31,6 @@ extension XCUIApplication {
     func openTimelineEntry(_ row: XCUIElement) {
         scrollTo(row)
         row.tapRowText()
-        if !buttons["Entry Actions"].waitForExistence(timeout: 3) { row.tapRowText() }
+        if !buttons["Edit Entry"].waitForExistence(timeout: 3) { row.tapRowText() }
     }
 }

@@ -10,7 +10,7 @@ settings:
   base:
     SWIFT_VERSION: "6.0"
     MARKETING_VERSION: "1.0"
-    CURRENT_PROJECT_VERSION: "38"
+    CURRENT_PROJECT_VERSION: "39"
     # Dabble Dev LLC. Change if you sign with a different Apple Developer team.
     DEVELOPMENT_TEAM: B79A4CAS56
     CODE_SIGN_STYLE: Automatic
@@ -45,6 +45,8 @@ targets:
       path: DabbleMe/Info.plist
       properties:
         CFBundleDisplayName: Dabble Me
+        # The build number from CURRENT_PROJECT_VERSION (the app and widget must match).
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         DabbleBaseURL: $(DABBLE_BASE_URL)
         # Instrument Serif (SIL OFL, see Resources/Fonts): the dabble.me wordmark.
         UIAppFonts:
@@ -91,6 +93,8 @@ targets:
       path: DabbleMeWidget/Info.plist
       properties:
         CFBundleDisplayName: Dabble Me
+        # The build number from CURRENT_PROJECT_VERSION (the app and widget must match).
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
           NSExtensionPointIdentifier: com.apple.widgetkit-extension
   DabbleMeTests:

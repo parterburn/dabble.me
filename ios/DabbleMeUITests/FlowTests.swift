@@ -36,7 +36,7 @@ final class FlowTests: XCTestCase {
             .matching(NSPredicate(format: "label CONTAINS %@", "Testing the app after saving")).firstMatch
         XCTAssertTrue(saved.waitForExistence(timeout: 10), "New entry missing from the timeline")
         app.openTimelineEntry(saved)
-        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10), "Entry detail never opened")
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10), "Entry detail never opened")
         app.navigationBars.buttons.element(boundBy: 0).tap()
         XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 10), "Could not get back to the journal")
     }
@@ -48,7 +48,7 @@ final class FlowTests: XCTestCase {
             .matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
         XCTAssertTrue(entry.waitForExistence(timeout: 10))
         app.openTimelineEntry(entry)
-        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
 
         // A multi-line paragraph: room for two fingers, and its height shows the text size.
         // (The entry's text is one selectable text view; its height shows the size.)

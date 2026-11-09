@@ -108,13 +108,18 @@ private struct CellContextMenu<Preview: View>: UIViewRepresentable {
             }, actionProvider: { _ in parent.menu() })
         }
 
-        /// Tapping the preview opens the entry.
+        /// Tapping the preview opens the entry: the preview grows into it (iOS's "pop") while the
+        /// entry is pushed underneath without its own slide, so there's no close-then-open jump.
         func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
                                     willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration,
                                     animator: UIContextMenuInteractionCommitAnimating) {
-            animator.preferredCommitStyle = .dismiss
+            animator.preferredCommitStyle = .pop
             let commit = parent.commit
-            animator.addCompletion { commit() }
+            animator.addAnimations {
+                var transaction = Transaction()
+                transaction.disablesAnimations = true
+                withTransaction(transaction) { commit() }
+            }
         }
     }
 }

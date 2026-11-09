@@ -41,7 +41,7 @@ final class ScreenshotTests: XCTestCase {
             .matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
         XCTAssertTrue(entry.waitForExistence(timeout: 10))
         app.openTimelineEntry(entry)
-        XCTAssertTrue(app.buttons["Entry Actions"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
         shot("03-entry")
         app.navigationBars.buttons.element(boundBy: 0).tap()
 
@@ -54,7 +54,7 @@ final class ScreenshotTests: XCTestCase {
         // A fresh simulator shows the one-time "slide to type" tip over the keyboard.
         let tip = app.buttons["Continue"]
         if tip.waitForExistence(timeout: 2) { tip.tap() }
-        editor.typeText("Slow Saturday. Made pour-over with the beans from the farmers market and read on the porch until noon.\n\nGrateful for:\n- Quiet mornings\nThe first cold brew of fall")
+        editor.typeText("Slow Saturday. Made pour-over with the beans from the farmers market and read on the porch until noon.\nGrateful for:\n- Quiet mornings\nThe first cold brew of fall")
         app.buttons["Hashtags"].tap() // the row: Suggest, then recent tags
         let suggest = app.buttons["Suggest Hashtags"]
         if suggest.waitForExistence(timeout: 3) {
