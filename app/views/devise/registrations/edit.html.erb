@@ -42,10 +42,15 @@
             <code>
               <%= email_address %>
             </code>
-            <button class="j-copy-to-clipboard" data-content="<%= email_address %>">
-              <span class="slab-icon slab-icon--copy" aria-hidden="true"></span>
-              Copy
-            </button>
+            <div class="s-address-actions">
+              <%= link_to posting_address_path, class: "s-reset-address", rel: "tooltip", title: "Get a new address", "aria-label": "Get a new posting address" do %>
+                <span class="slab-icon slab-icon--arrows-rotate" aria-hidden="true"></span>
+              <% end %>
+              <button class="j-copy-to-clipboard" data-content="<%= email_address %>">
+                <span class="slab-icon slab-icon--copy" aria-hidden="true"></span>
+                Copy
+              </button>
+            </div>
           </div>
                 
           <div class="email-post-footer">
