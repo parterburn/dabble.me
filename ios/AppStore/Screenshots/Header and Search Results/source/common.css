@@ -6,4 +6,3 @@ body { -webkit-font-smoothing: antialiased; overflow: hidden; }
 .phone img { display: block; width: 100%; border-radius: 8% / 3.7%; }
 .serif { font-family: "Instrument Serif", Georgia, serif; font-weight: 400; }
 .sans { font-family: "Instrument Sans", system-ui, sans-serif; }
-.cursor { color: var(--subtle); padding-left: .15em; }
