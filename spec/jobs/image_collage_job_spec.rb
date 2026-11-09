@@ -17,6 +17,48 @@ RSpec.describe ImageCollageJob, type: :job do
     end
   end
 
+  describe '.perform_later_for_mailgun with recipient_key' do
+    it 'passes along the posting address the email was accepted on' do
+      expect do
+        described_class.perform_later_for_mailgun(paid_entry.id, message_id: message_id, recipient_key: paid_user.user_key)
+      end.to have_enqueued_job(described_class).with(paid_entry.id, message_id: message_id, recipient_key: paid_user.user_key)
+    end
+  end
+
+  describe '#message_from_user?' do
+    let(:job) do
+      described_class.new.tap do |j|
+        j.instance_variable_set(:@user, paid_user)
+        j.instance_variable_set(:@recipient_key, recipient_key)
+      end
+    end
+    let(:recipient_key) { nil }
+    let(:stranger) { 'someone@example.com' }
+
+    context 'when the user resets their address after the email was accepted' do
+      let(:recipient_key) { paid_user.user_key }
+
+      it 'still accepts the stored message' do
+        message = { 'recipients' => "#{recipient_key}@#{ENV['SMTP_DOMAIN']}", 'from' => stranger }
+        paid_user.rotate_user_key!
+
+        expect(job.send(:message_from_user?, message)).to be(true)
+      end
+    end
+
+    it "accepts a message to the user's current address" do
+      message = { 'recipients' => "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}", 'from' => stranger }
+
+      expect(job.send(:message_from_user?, message)).to be(true)
+    end
+
+    it "rejects someone else's message" do
+      message = { 'recipients' => "uotheruser12345678901@#{ENV['SMTP_DOMAIN']}", 'from' => stranger }
+
+      expect(job.send(:message_from_user?, message)).to be(false)
+    end
+  end
+
   describe '#collage_from_mailgun_attachments' do
     it 'raises MailgunStoredEventNotFound when no stored event is found' do
       events_conn = instance_double(Faraday::Connection)
