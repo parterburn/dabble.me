@@ -397,7 +397,15 @@ struct ReflectionSheet: View {
     let reflection: EntryReflection
 
     var body: some View {
-        NavigationStack {
+        // Laid out like Random Memory: the title and the X across the top, then the text.
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Label("Reflection", icon: "slab-sparkles")
+                    .font(.headline)
+                    .accessibilityAddTraits(.isHeader)
+                Spacer()
+                SheetCloseButton()
+            }
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     if !reflection.date.isEmpty {
@@ -426,18 +434,15 @@ struct ReflectionSheet: View {
                         privacyNote("Apple Intelligence is writing this on your device.\nYour entry isn't sent anywhere.")
                     }
                 }
-                .padding()
+                .padding(.bottom)
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             // A short reflection doesn't bounce, so pulling down drags the sheet closed.
             .scrollBounceBehavior(.basedOnSize)
             .animation(.easeOut(duration: 0.25), value: reflection.text)
-            .navigationTitle("Reflection")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) { SheetCloseButton() }
-            }
         }
+        .padding([.horizontal, .top], 20)
+        .presentationDragIndicator(.visible)
         .presentationDetents([.medium, .large])
     }
 

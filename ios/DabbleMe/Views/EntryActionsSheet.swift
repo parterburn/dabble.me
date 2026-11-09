@@ -127,6 +127,10 @@ private struct HoldToDeleteButton: View {
     let delete: () -> Void
     @State private var armed = false
     @State private var progress: CGFloat = 0
+    /// Set when a hold lasts the full time. Not `progress == 1`: animating the fill sets
+    /// `progress` to 1 at once (only its drawing takes two seconds), so it can't tell an early
+    /// release from a finished hold.
+    @State private var completed = false
     @State private var disarm: Task<Void, Never>?
     private let holdTime: Double = 2
 
@@ -141,14 +145,16 @@ private struct HoldToDeleteButton: View {
             }
             .onLongPressGesture(minimumDuration: holdTime, maximumDistance: 30) {
                 guard armed else { return }
+                completed = true
                 disarm?.cancel()
                 delete()
             } onPressingChanged: { pressing in
-                guard armed else { return }
+                guard armed, !completed else { return }
                 if pressing {
                     disarm?.cancel()
                     withAnimation(.linear(duration: holdTime)) { progress = 1 }
-                } else if progress < 1 {
+                } else {
+                    // Let go early: empty it, and go back to "Delete" if left alone.
                     withAnimation(.easeOut(duration: 0.25)) { progress = 0 }
                     scheduleDisarm()
                 }

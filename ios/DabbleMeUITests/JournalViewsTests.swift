@@ -844,6 +844,8 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(row.exists, "A tap alone doesn't delete")
         hold.press(forDuration: 0.6) // let go early: nothing happens
         XCTAssertTrue(hold.exists)
+        sleep(1)
+        snap("free-hold-released") // the red fill has emptied again
         hold.press(forDuration: 2.6)
         XCTAssertTrue(hold.waitForNonExistence(timeout: 5))
         XCTAssertTrue(row.waitForNonExistence(timeout: 10), "Holding deletes the entry")

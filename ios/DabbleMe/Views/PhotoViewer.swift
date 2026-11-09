@@ -158,16 +158,7 @@ struct PhotoViewer: View {
     private var closeBar: some View {
         HStack {
             Spacer()
-            Button { dismiss() } label: {
-                Label("Close", icon: "slab-close")
-                    .labelStyle(.iconOnly)
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white)
-                    .frame(width: 44, height: 44)
-                    .background(.white.opacity(0.25), in: .circle)
-                    .contentShape(.circle)
-            }
-            .buttonStyle(.plain)
+            SheetCloseButton(onDark: true)
         }
         .padding(.horizontal)
         .opacity(dragOffset == 0 ? 1 : 0)

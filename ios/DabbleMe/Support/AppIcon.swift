@@ -18,16 +18,25 @@ extension Label where Title == Text, Icon == Image {
     }
 }
 
-/// A sheet's X: the Slab close icon in black on a light circle (Random Memory, Reflection).
+/// The app's one X: the Slab close icon on a 44pt circle, at the top right of Random Memory,
+/// Reflection and the photo viewer. Black on a light circle, or white on a translucent one over a
+/// photo (`onDark`).
 struct SheetCloseButton: View {
+    var onDark = false
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
-        Button { dismiss() } label: { Label("Close", icon: "slab-close") }
-            .labelStyle(.iconOnly)
-            .buttonStyle(.bordered)
-            .buttonBorderShape(.circle)
-            .tint(.primary)
-            .foregroundStyle(.primary)
+        Button { dismiss() } label: {
+            appIcon("slab-close")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 18, height: 18)
+                .foregroundStyle(onDark ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
+                .frame(width: 44, height: 44)
+                .background(onDark ? Color.white.opacity(0.25) : Color.primary.opacity(0.08), in: .circle)
+                .contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Close")
     }
 }
