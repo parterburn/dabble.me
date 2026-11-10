@@ -37,6 +37,8 @@ struct ComposeView: View {
     @State private var askedQuestions: [String] = []
     @State private var isAsking = false
     @State private var askError: String?
+    /// The newest few entries (dated lines), as background for prompts; loaded with the first one.
+    @State private var recentForPrompts: [String]?
     /// The photo drawer (thumbnails, Add More, remove): closed unless opened from the photo stack,
     /// so the writing area keeps its room.
     @State private var showsPhotoDrawer = false
@@ -122,9 +124,10 @@ struct ComposeView: View {
                 }
                 if showsAskRow {
                     Divider()
-                    // A prompt can take two lines: only a small nudge down, or the bar covers it.
+                    // A prompt can take two lines, so not the hashtag row's nudge down (the bar would
+                    // cover it): the same gap above the bar as under the hashtags.
                     askRow
-                        .padding(.bottom, 4)
+                        .padding(.bottom, 8)
                 }
                 if showsPhotoDrawer, attachedPhotoCount > 0 {
                     Divider()
@@ -234,29 +237,10 @@ struct ComposeView: View {
         }
     }
 
-    /// The bar's right: Link (PRO), then Tags at the far edge, which shows or hides the hashtag row
-    /// (selected while it's open). One row at a time: opening one closes the photos.
+    /// The bar's right: Link (PRO), Tags (shows or hides the hashtag row), then Prompt (the sparkles)
+    /// at the far edge. Each row button is selected while its row is open; one row at a time.
     private var tagAndLinkButtons: some View {
         HStack(spacing: 6) {
-            if canAsk {
-                Button {
-                    showsAskRow.toggle()
-                    if showsAskRow {
-                        showsHashtagBar = false
-                        showsPhotoDrawer = false
-                        question = nil
-                        Task { await ask() }
-                    }
-                } label: {
-                    appIcon("slab-sparkles")
-                        .frame(width: 40, height: 36)
-                        .background(showsAskRow ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Prompt")
-                .accessibilityHint("Apple Intelligence asks a question about what you've written")
-                .accessibilityAddTraits(showsAskRow ? .isSelected : [])
-            }
             if model.me?.mayAddLinks == true {
                 Button { editor.beginLink() } label: {
                     appIcon("slab-link")
@@ -280,6 +264,25 @@ struct ComposeView: View {
             .buttonStyle(.plain)
             .accessibilityLabel("Hashtags")
             .accessibilityAddTraits(showsHashtagBar ? .isSelected : [])
+            if canAsk {
+                Button {
+                    showsAskRow.toggle()
+                    if showsAskRow {
+                        showsHashtagBar = false
+                        showsPhotoDrawer = false
+                        question = nil
+                        Task { await ask() }
+                    }
+                } label: {
+                    appIcon("slab-sparkles")
+                        .frame(width: 40, height: 36)
+                        .background(showsAskRow ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Prompt")
+                .accessibilityHint("Apple Intelligence asks a question about what you've written")
+                .accessibilityAddTraits(showsAskRow ? .isSelected : [])
+            }
         }
     }
 
@@ -395,9 +398,10 @@ struct ComposeView: View {
 
     // MARK: - Ask Me
 
-    /// Once there's a couple of sentences to ask about, with Apple Intelligence on.
+    /// Always, with Apple Intelligence on: before there's much written, the prompt comes from recent
+    /// entries (like Today's); after, it's mostly about the draft.
     private var canAsk: Bool {
-        JournalIntelligence.isEnabled(for: model.me) && editor.characterCount >= 80
+        JournalIntelligence.isEnabled(for: model.me)
     }
 
     /// One question about the draft (Apple Intelligence, on the device): Add puts it in the entry.
@@ -441,7 +445,15 @@ struct ComposeView: View {
         isAsking = true
         defer { isAsking = false }
         do {
-            let next = try await JournalIntelligence.followUpQuestion(for: editor.plainText, asked: askedQuestions)
+            let today = model.today?.day ?? JournalDay(localDate: .now)
+            if recentForPrompts == nil {
+                // Not the entry being edited: it's the draft already.
+                let editing: Int? = if case .edit(let entry) = mode { entry.id } else { nil }
+                let recent = ((try? await model.recentEntries()) ?? []).filter { $0.id != editing }
+                recentForPrompts = JournalIntelligence.dated(recent, today: today)
+            }
+            let next = try await JournalIntelligence.followUpQuestion(for: editor.plainText, recent: recentForPrompts ?? [],
+                                                                      today: today, asked: askedQuestions)
             question = next
             askedQuestions.append(next)
             askError = nil

@@ -617,6 +617,12 @@ struct ReflectionSheet: View {
         guard let text = reflection.text else { return }
         let message = draft
         draft = ""
+        // The keyboard commits a pending autocorrection as Send is tapped, which puts the text
+        // back: clear it again once that's happened.
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(80))
+            draft = ""
+        }
         let chat = chat ?? ReflectionChat(entry: reflection.entryText, date: reflection.date, reflection: text, firstName: model.me?.firstName)
         self.chat = chat
         Task { await chat.send(message) }
