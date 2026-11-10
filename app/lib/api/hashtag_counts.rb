@@ -13,9 +13,10 @@ module Api
       spellings = Hash.new { |hash, key| hash[key] = Hash.new(0) }
       user.entries.unscope(:order)
           .where(date: since.beginning_of_day..)
-          .where("entries.body ~ '#[A-Za-z0-9_]'")
-          .find_each do |entry|
-        Array(entry.hashtags).each { |tag| spellings[tag.downcase][tag] += 1 }
+          .in_batches(of: 1000) do |batch|
+        batch.pluck(:body).each do |body|
+          Array(Entry.hashtags_in(body)).each { |tag| spellings[tag.downcase][tag] += 1 }
+        end
       end
 
       spellings.map { |_key, counts| { tag: counts.max_by { |_tag, n| n }.first, count: counts.values.sum } }
@@ -28,11 +29,10 @@ module Api
       latest = {}
       user.entries.unscope(:order)
           .where(date: since.beginning_of_day..)
-          .where("entries.body ~ '#[A-Za-z0-9_]'")
           .order(date: :desc, id: :desc)
-          .limit(500)
-          .each do |entry|
-        Array(entry.hashtags).each { |tag| latest[tag.downcase] ||= tag }
+          .pluck(:body)
+          .each do |body|
+        Array(Entry.hashtags_in(body)).each { |tag| latest[tag.downcase] ||= tag }
         break if latest.size >= limit
       end
       latest.values.first(limit).map { |tag| { tag: tag, count: 0 } }

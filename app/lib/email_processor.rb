@@ -172,7 +172,7 @@ class EmailProcessor
 
         unless existing_entry.save
           Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save existing entry", subject: @subject, entry_id: existing_entry&.id, errors: existing_entry&.errors&.full_messages })
-          UserMailer.failed_entry(@user, existing_entry.errors.full_messages.to_sentence, date, @body).deliver_later
+          UserMailer.failed_entry(@user, existing_entry.errors.full_messages.to_sentence, date, @body).deliver_now # not queued: job arguments would hold the entry text in Redis
           raise "Failed entry" # for mailgun to retry
         end
       else
@@ -216,7 +216,7 @@ class EmailProcessor
             record_errors = @error.full_messages.to_sentence
           end
           Sentry.capture_message("Error processing entry via email", level: :error, extra: { reason: "Could not save new entry (failed_entry email sent to hello@dabble.me)", errors: entry&.errors&.full_messages, rescue_error: @error, date: date })
-          UserMailer.failed_entry(@user, record_errors, date, @body).deliver_later
+          UserMailer.failed_entry(@user, record_errors, date, @body).deliver_now # not queued: job arguments would hold the entry text in Redis
           raise "Failed entry" # for mailgun to retry
         end
       end

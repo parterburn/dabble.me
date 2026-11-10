@@ -7,14 +7,6 @@ module Api
     HEATMAP_DAYS = 365
     RECENT_MONTHS = 12
 
-    # Words in an entry: tags and HTML entities become spaces, then whitespace-separated runs count.
-    WORD_COUNT_SQL = <<~SQL.squish
-      COALESCE(SUM(
-        CASE WHEN btrim(stripped) = '' THEN 0
-             ELSE array_length(regexp_split_to_array(btrim(stripped), '\\s+'), 1) END
-      ), 0)
-    SQL
-
     def initialize(user, today: OnThisDay.today_for(user))
       @user = user
       @today = today
@@ -57,11 +49,9 @@ module Api
       @dates ||= user.entries.unscope(:order).pluck(:date).compact.map(&:to_date).uniq.sort
     end
 
+    # Summed from entries.word_count (kept current by Entry on save).
     def total_words
-      stripped = user.entries.unscope(:order).select(
-        Arel.sql("regexp_replace(regexp_replace(COALESCE(body, ''), '<[^>]*>', ' ', 'g'), '&[#a-zA-Z0-9]+;', ' ', 'g') AS stripped")
-      )
-      Entry.connection.select_value("SELECT #{WORD_COUNT_SQL} FROM (#{stripped.to_sql}) AS bodies").to_i
+      user.entries.unscope(:order).sum(:word_count)
     end
 
     def longest_streak

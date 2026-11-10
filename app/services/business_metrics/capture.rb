@@ -254,7 +254,7 @@ module BusinessMetrics
     def email_metrics
       mailgun = BusinessMetrics::MailgunStats.fetch(date: date)
       replies = Entry.unscoped
-                     .where.not(original_email_body: [nil, ""])
+                     .where.not(original_email_body: nil)
                      .where(created_at: date.all_day)
                      .count
       sent = mailgun.sent
