@@ -147,7 +147,7 @@ enum JournalIntelligence {
     /// A reflection chat summed up as a few sentences to add to the entry, in the writer's own
     /// voice and from what they said (not the companion's suggestions).
     static func chatSummary(entry: String, conversation: [ReflectionChat.Message]) async throws -> String {
-        let transcript = conversation.map { "\($0.fromWriter ? "Me" : "Companion"): \($0.text)" }.joined(separator: "\n")
+        let transcript = summaryTranscript(conversation)
         return try await respond(
             instructions: """
             Write a short addendum to the writer's journal entry that captures what they said and realized while \
@@ -157,9 +157,26 @@ enum JournalIntelligence {
             companion or AI. Reply with only the sentences.
             """,
             journalText: true,
-            prompt: "The entry:\n\(clipped(entry, limit: 1500))\n\nTalking it through:\n\(clipped(transcript, limit: 2000))",
+            prompt: "The entry:\n\(clipped(entry, limit: 1500))\n\nTalking it through:\n\(transcript)",
             temperature: 0.4
         )
+    }
+
+    /// The chat for the summary, fitted to the model's small context: the most recent turns that
+    /// fit, working back from the end (so a late realization isn't the part left out), with the
+    /// companion's turns shortened first, since what the writer said is what the summary is made of.
+    static func summaryTranscript(_ conversation: [ReflectionChat.Message], limit: Int = 2000) -> String {
+        var lines: [String] = []
+        var used = 0
+        for message in conversation.reversed() {
+            let text = message.fromWriter ? message.text : clipped(message.text, limit: 240)
+            let line = "\(message.fromWriter ? "Me" : "Companion"): \(text)"
+            if used + line.count > limit, !lines.isEmpty { break }
+            lines.insert(used + line.count > limit ? clipped(line, limit: limit) : line, at: 0)
+            used += line.count + 1
+        }
+        if lines.count < conversation.count { lines.insert("…", at: 0) }
+        return lines.joined(separator: "\n")
     }
 
     /// "Ask Me" while writing: one specific question about something in the draft, to help the
