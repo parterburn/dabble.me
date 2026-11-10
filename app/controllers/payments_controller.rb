@@ -53,6 +53,9 @@ class PaymentsController < ApplicationController
     if params[:user_email].present?
       user = User.find_by(email: params[:user_email].downcase)
       params[:payment][:user_id] = user.id if user.present?
+    else
+      # Email cleared, so go by the User ID field.
+      user = User.find_by(id: params.dig(:payment, :user_id))
     end
     # The form prefills plan and billing IDs from the payment's current user,
     # so when the payment moves to someone else those values are the old
