@@ -201,11 +201,16 @@ class ImageCollageJob < ActiveJob::Base
     @error = "Message not from user" unless message.present? && message_from_user?(message)
     return unless message.present? && message_from_user?(message)
 
+    # The same per-user skips EmailProcessor applied when it counted these.
+    ignored_images = IgnoredEmailImage.matcher_for(@user)
     attachment_urls = message["attachments"].map do |att|
       next unless Entry::ALLOWED_IMAGE_TYPES.include?(att["content-type"]&.downcase)
       next unless att["size"].to_i > 20_000 # ignore tiny attachments
 
-      "#{att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")}?#{att["name"]}"
+      url = "#{att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")}?#{att["name"]}"
+      next if ignored_images.ignore?(name: att["name"], content_type: att["content-type"]) { ImageFingerprint.from_url(url) }
+
+      url
     end.compact_blank
 
     @error = "No attachments found" unless attachment_urls.any?

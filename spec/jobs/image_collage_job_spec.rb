@@ -77,6 +77,35 @@ RSpec.describe ImageCollageJob, type: :job do
     end
   end
 
+  describe '#collage_from_mailgun_attachments with ignored images' do
+    it "leaves out attachments the user's rules ignore" do
+      logo = signature_logo.pngsave_buffer
+      IgnoredEmailImage.new(user: paid_user, kind: "filename").tap { |rule| rule.value = "b_logo.png" }.save!
+      allow(CollageGenerator).to receive(:fetch).and_return(stored_copy(logo))
+      IgnoredEmailImage.new(user: paid_user, kind: "image").tap { |rule| rule.value = "https://cdn.example.com/sig.jpg" }.save!
+      allow(CollageGenerator).to receive(:fetch) { |url| url.include?("/a4?") ? logo : jpeg_bytes(photo_like(1)) }
+
+      attachment = ->(id, name, type = "image/jpeg") { { "content-type" => type, "size" => 50_000, "name" => name, "url" => "https://storage.mailgun.net/#{id}" } }
+      message = {
+        "recipients" => "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}",
+        "attachments" => [attachment.("a1", "B_Logo.png", "image/png"), attachment.("a2", "IMG_1.jpg"), attachment.("a3", "IMG_2.jpg"), attachment.("a4", "image003.png", "image/png")]
+      }
+      conn = instance_double(Faraday::Connection)
+      allow(Faraday).to receive(:new).and_return(conn)
+      allow(conn).to receive(:get).and_return(instance_double(Faraday::Response, success?: true, body: message))
+
+      job = described_class.new
+      job.instance_variable_set(:@message_id, message_id)
+      job.instance_variable_set(:@user, paid_user)
+      allow(job).to receive(:fetch_mailgun_stored_event).and_return([{ "storage" => { "url" => "https://storage.mailgun.net/v3/messages/abc" } }, []])
+      allow(job).to receive(:collage_from_urls) { |urls| urls }
+
+      urls = job.send(:collage_from_mailgun_attachments)
+
+      expect(urls.compact.map { |url| url.split("?").last }).to eq(%w[IMG_1.jpg IMG_2.jpg])
+    end
+  end
+
   describe 'retry_on MailgunStoredEventNotFound' do
     it 're-enqueues with polynomial backoff instead of raising on wait calculation' do
       allow_any_instance_of(described_class).to receive(:collage_from_mailgun_attachments)

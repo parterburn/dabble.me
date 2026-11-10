@@ -93,4 +93,6 @@
       </div>
     </div>
   </div>
+
+  <%= render "admin/ignored_email_images", user: @user, new_rule: @ignored_email_image || IgnoredEmailImage.new(kind: "image") %>
 </div>

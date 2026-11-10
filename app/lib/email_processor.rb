@@ -60,15 +60,12 @@ class EmailProcessor
           file_size = File.size?(attachment.tempfile).to_i
 
           # skip signature images
-          next if @user.id == 293 && attachment&.original_filename.to_s.downcase.include?("cropped-img-0719-300x86.jpeg")
-          next if @user.id == 10836 && attachment&.original_filename.to_s.downcase.include?("b_logo.png")
-          next if @user.id == 2541 && attachment&.original_filename.to_s.downcase.include?("image001.jpg")
-          next if @user.id == 20829 && attachment.content_type == "application/octet-stream"
-
           next if attachment&.original_filename.to_s.downcase.include?("linkedin_icon_circle.svg.png")
           next if ignored_attachment_domain?(attachment&.original_filename)
 
           if (attachment.content_type == "application/octet-stream" || attachment.content_type =~ /^image\/(png|jpe?g|webp|gif|heic|heif)$/i || attachment&.original_filename.to_s =~ /^(.+\.(heic|heif))$/i) && file_size > 20_000
+            next if ignored_by_user?(attachment)
+
             valid_attachments << attachment
           end
         end
@@ -100,11 +97,9 @@ class EmailProcessor
 
               # skip signature images
               next if image_url.downcase.include?("googleusercontent.com/mail-sig/")
-              next if @user.id == 293 && image_url.downcase.include?("cropped-img-0719-300x86.jpeg")
-              next if @user.id == 10836 && image_url.downcase.include?("b_logo.png")
-              next if @user.id == 2541 && image_url.downcase.include?("image001.jpg")
               next if image_url.downcase.include?("linkedin_icon_circle.svg.png")
               next if image_url.downcase.include?("app.v1ce.co.uk") # digital business cards
+              next if ignored_images.ignore?(name: image_url) { ImageFingerprint.from_url(image_url) }
 
               valid_attachment_urls << image_url
             end
@@ -559,6 +554,18 @@ class EmailProcessor
   end
 
   IGNORED_ATTACHMENT_DOMAINS = %w[wisestamp.com ytimg.com].freeze
+
+  # Images an admin told us to skip for this user, such as their signature
+  # logo (IgnoredEmailImage). Loaded once per email.
+  def ignored_images
+    @ignored_images ||= IgnoredEmailImage.matcher_for(@user)
+  end
+
+  def ignored_by_user?(attachment)
+    ignored_images.ignore?(name: attachment.original_filename, content_type: attachment.content_type) do
+      ImageFingerprint.from_file(attachment.tempfile.path)
+    end
+  end
 
   def ignored_attachment_domain?(value)
     return false if value.blank?
