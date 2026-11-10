@@ -222,23 +222,37 @@ class PaymentsController < ApplicationController
     end
   end
 
+  # Gumroad is closed to new subscribers, and its pings aren't signed, so only
+  # renewals of an existing Gumroad subscription are recorded:
+  #  - a user on a Gumroad plan, matched by Gumroad purchaser ID or email, or
+  #  - a lapsed one (downgraded to Free by UserDowngradeExpiredWorker), matched
+  #    by purchaser ID; their PRO plan comes back.
+  # Anything else, including a Free user's first purchase or a PRO user on
+  # another provider, goes to the "[REFUND REQUIRED]" email for a manual look.
   def process_gumroad
-    @user = User.find_by(gumroad_id: params[:purchaser_id])
-    @user ||= User.find_by(email: params[:email].downcase)
+    purchaser_id = params[:purchaser_id].to_s
+    email = params[:email].to_s.downcase
+    by_id = User.find_by(gumroad_id: purchaser_id) if purchaser_id.present?
+    @user = by_id || (User.find_by(email: email) if email.present?)
+    on_gumroad = @user&.plan.to_s.match?(/gumroad/i)
+    lapsed = @user.present? && @user == by_id && @user.plan == "Free"
+    @user = nil unless on_gumroad || lapsed
+
     paid = params[:price].to_f / 100
     if params[:recurrence].present?
       frequency = params[:recurrence].titleize
     else
       frequency = paid.to_i > 10 ? 'Yearly' : 'Monthly'
     end
+
     if @user.present? && @user.payments.count > 0 && @user.payments.last.date.to_date === Time.now.to_date
       # duplicate, don't send
-      { gumroad_id:  params[:purchaser_id] }
+      { gumroad_id: purchaser_id }.compact_blank
     elsif @user.present?
       Payment.create(user_id: @user.id, comments: "Gumroad #{frequency} from #{params[:email]}", date: Time.now.strftime("%Y-%m-%d").to_s, amount: paid )
-      { plan: "PRO #{frequency} Gumroad", gumroad_id:  params[:purchaser_id] }
+      { plan: "PRO #{frequency} Gumroad", gumroad_id: purchaser_id }.compact_blank
     else
-      { gumroad_id:  params[:purchaser_id] }
+      { error: "No eligible Gumroad user" }
     end
   end
 

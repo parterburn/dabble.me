@@ -385,29 +385,68 @@ RSpec.describe PaymentsController, type: :controller do
       }
     end
 
-    it 'should create a payment for an existing user with email match, but not id' do
-      gumroad_params.merge!(email: paid_user.email, purchaser_id: Faker::Number.number(digits: 12).to_s)
-      expect { post :payment_notify, params: gumroad_params, as: :json }.to change { Payment.count }.by(1)
-      expect(paid_user.reload.plan).to eq 'PRO Yearly Gumroad'
-      expect(paid_user.reload.gumroad_id).to eq gumroad_params[:purchaser_id]
-      expect(ActionMailer::Base.deliveries.size).to eq 0
+    let(:refund_subject) { '[REFUND REQUIRED] Payment Without a User' }
+    let(:gumroad_user) do
+      FactoryBot.create(:user, plan: 'PRO Yearly Gumroad', gumroad_id: '2222222222').tap { ActionMailer::Base.deliveries.clear }
     end
 
-    it 'should create a payment for an existing user with Gumroad ID match, but not email' do
-      gumroad_params.merge!(email: Faker::Internet.email, purchaser_id: paid_user.gumroad_id)
+    it 'records a renewal for a Gumroad subscriber matched by purchaser ID' do
+      gumroad_params.merge!(email: Faker::Internet.email, purchaser_id: gumroad_user.gumroad_id)
       expect { post :payment_notify, params: gumroad_params, as: :json }.to change { Payment.count }.by(1)
-      expect(paid_user.reload.plan).to eq 'PRO Yearly Gumroad'
-      expect(paid_user.reload.gumroad_id).to eq gumroad_params[:purchaser_id]
-      expect(ActionMailer::Base.deliveries.size).to eq 0
+      expect(Payment.last.user_id).to eq gumroad_user.id
+      expect(gumroad_user.reload.plan).to eq 'PRO Yearly Gumroad'
+      expect(ActionMailer::Base.deliveries.map(&:subject)).not_to include refund_subject
     end
 
-    it 'should create a payment if Free user is upgrading and email user thanks' do
-      gumroad_params.merge!(email: user.email, price: 300, recurrence: 'monthly')
+    it 'records a renewal for a Gumroad subscriber matched by email' do
+      gumroad_params.merge!(email: gumroad_user.email.upcase, purchaser_id: '3333333333')
       expect { post :payment_notify, params: gumroad_params, as: :json }.to change { Payment.count }.by(1)
-      expect(user.reload.plan).to eq 'PRO Monthly Gumroad'
-      expect(user.reload.gumroad_id).to eq gumroad_params[:purchaser_id]
-      # expect(ActionMailer::Base.deliveries.last.to).to eq [user.email]
-      # expect(ActionMailer::Base.deliveries.last.subject).to eq 'Thanks for subscribing to Dabble Me PRO!'
+      expect(gumroad_user.reload.gumroad_id).to eq '3333333333'
+      expect(ActionMailer::Base.deliveries.map(&:subject)).not_to include refund_subject
+    end
+
+    it 'keeps the stored purchaser ID when a renewal has none' do
+      gumroad_params.merge!(email: gumroad_user.email, purchaser_id: '')
+      expect { post :payment_notify, params: gumroad_params, as: :json }.to change { Payment.count }.by(1)
+      expect(gumroad_user.reload.gumroad_id).to eq '2222222222'
+    end
+
+    it 'restores PRO for a lapsed Gumroad subscriber matched by purchaser ID' do
+      gumroad_user.update!(plan: 'Free')
+      gumroad_params.merge!(email: gumroad_user.email, purchaser_id: gumroad_user.gumroad_id, price: '400', recurrence: 'monthly')
+      expect { post :payment_notify, params: gumroad_params, as: :json }.to change { Payment.count }.by(1)
+      expect(gumroad_user.reload.plan).to eq 'PRO Monthly Gumroad'
+    end
+
+    it "flags a Free user's first Gumroad purchase instead of upgrading them" do
+      gumroad_params.merge!(email: user.email, price: '400', recurrence: 'monthly')
+      expect { post :payment_notify, params: gumroad_params, as: :json }.not_to change { Payment.count }
+      expect(user.reload.plan).to eq 'Free'
+      expect(user.gumroad_id).to be_blank
+      expect(ActionMailer::Base.deliveries.last.subject).to eq refund_subject
+    end
+
+    it 'flags a lapsed user matched only by email' do
+      gumroad_user.update!(plan: 'Free')
+      gumroad_params.merge!(email: gumroad_user.email, purchaser_id: '4444444444')
+      expect { post :payment_notify, params: gumroad_params, as: :json }.not_to change { Payment.count }
+      expect(gumroad_user.reload.plan).to eq 'Free'
+      expect(ActionMailer::Base.deliveries.last.subject).to eq refund_subject
+    end
+
+    it 'flags a PRO user on another provider, even with a matching purchaser ID' do
+      gumroad_params.merge!(email: paid_user.email, purchaser_id: paid_user.gumroad_id)
+      expect { post :payment_notify, params: gumroad_params, as: :json }.not_to change { Payment.count }
+      expect(paid_user.reload.plan).to eq 'PRO Monthly PayHere'
+      expect(ActionMailer::Base.deliveries.last.subject).to eq refund_subject
+    end
+
+    # find_by(gumroad_id: nil) would match any user who never used Gumroad.
+    it 'does not match a user with no purchaser ID when the ping has none' do
+      params_without_id = gumroad_params.except(:purchaser_id).merge(email: Faker::Internet.email)
+      expect { post :payment_notify, params: params_without_id, as: :json }.not_to change { Payment.count }
+      expect(user.reload.plan).to eq 'Free'
+      expect(ActionMailer::Base.deliveries.last.subject).to eq refund_subject
     end
 
     it 'should not create a payment if no match' do
