@@ -49,6 +49,7 @@ class User < ActiveRecord::Base
   has_many :payments
   has_many :webauthn_credentials, dependent: :destroy
   has_many :mcp_tool_invocations, dependent: :delete_all
+  has_many :ignored_email_images, dependent: :delete_all
 
   accepts_nested_attributes_for :hashtags, allow_destroy: true, :reject_if => proc { |att| att[:tag].blank? || att[:date].blank? }
 

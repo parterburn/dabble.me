@@ -19,6 +19,27 @@ class AdminController < ApplicationController
     @user = User.find(params[:id])
   end
 
+  def create_ignored_email_image
+    @user = User.find(params[:id])
+    rule_params = params.require(:ignored_email_image).permit(:kind, :value)
+    # Built outside @user.ignored_email_images so a rule that fails to save
+    # isn't listed with the saved ones when the page re-renders.
+    @ignored_email_image = IgnoredEmailImage.new(user: @user, kind: rule_params[:kind])
+    @ignored_email_image.value = rule_params[:value]
+
+    if @ignored_email_image.save
+      redirect_to edit_admin_user_path(@user, anchor: "ignored-email-images"), notice: "Their emails will skip that image from now on."
+    else
+      render 'edit_user', status: :unprocessable_content
+    end
+  end
+
+  def destroy_ignored_email_image
+    user = User.find(params[:id])
+    user.ignored_email_images.find(params[:ignored_email_image_id]).destroy
+    redirect_to edit_admin_user_path(user, anchor: "ignored-email-images"), notice: "Removed. Their emails can save that image again."
+  end
+
   def update_user
     @user = User.find(params[:id])
     @user.assign_attributes(admin_user_params)

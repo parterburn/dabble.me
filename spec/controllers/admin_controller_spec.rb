@@ -110,6 +110,79 @@ RSpec.describe AdminController, type: :controller do
     end
   end
 
+  describe 'ignored email images' do
+    let(:image_url) { "https://d10r8m94hrfowu.cloudfront.net/#{paid_user.image_key}/2026-09-20/sig.jpg" }
+
+    def add(kind, value, id: paid_user.id)
+      post :create_ignored_email_image, params: { id: id, ignored_email_image: { kind: kind, value: value } }
+    end
+
+    before { sign_in superuser }
+
+    it "lists the user's rules on their page, with a form to add one" do
+      IgnoredEmailImage.create!(user: paid_user, kind: "filename", pattern: "b_logo.png")
+      IgnoredEmailImage.create!(user: user, kind: "filename", pattern: "not-theirs.png")
+
+      get :edit_user, params: { id: paid_user.id }
+
+      expect(response.body).to have_content('Ignored email images')
+      expect(response.body).to have_css('code', text: 'b_logo.png')
+      expect(response.body).not_to have_content('not-theirs.png')
+      expect(response.body).to have_select('ignored_email_image_kind', selected: 'Looks like this image')
+      expect(response.body).to have_button('Add')
+    end
+
+    it 'adds an image rule from a link to the saved image' do
+      allow(CollageGenerator).to receive(:fetch).with(image_url).and_return(stored_copy(jpeg_bytes(signature_logo)))
+
+      expect { add("image", image_url) }.to change(paid_user.ignored_email_images, :count).by(1)
+
+      rule = paid_user.ignored_email_images.last
+      expect(rule.image_url).to eq(image_url)
+      expect(rule.image_fingerprint).to be_detailed
+      expect(response).to redirect_to(edit_admin_user_path(paid_user, anchor: 'ignored-email-images'))
+    end
+
+    it 'adds a filename rule' do
+      add("filename", "Image001.jpg")
+      expect(paid_user.ignored_email_images.pluck(:kind, :pattern)).to eq([%w[filename image001.jpg]])
+    end
+
+    it "shows why a rule couldn't be added and keeps what was typed" do
+      allow(CollageGenerator).to receive(:fetch).and_return(nil)
+
+      expect { add("image", image_url) }.not_to change(IgnoredEmailImage, :count)
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(response.body).to have_content("That link couldn't be loaded as an image.")
+      expect(response.body).to have_field('ignored_email_image_value', with: image_url)
+    end
+
+    it 'removes a rule' do
+      rule = IgnoredEmailImage.create!(user: paid_user, kind: "filename", pattern: "b_logo.png")
+
+      delete :destroy_ignored_email_image, params: { id: paid_user.id, ignored_email_image_id: rule.id }
+
+      expect(IgnoredEmailImage.exists?(rule.id)).to be(false)
+      expect(response).to redirect_to(edit_admin_user_path(paid_user, anchor: 'ignored-email-images'))
+    end
+
+    it "won't remove another user's rule through this user's page" do
+      rule = IgnoredEmailImage.create!(user: user, kind: "filename", pattern: "b_logo.png")
+
+      expect {
+        delete :destroy_ignored_email_image, params: { id: paid_user.id, ignored_email_image_id: rule.id }
+      }.to raise_error(ActiveRecord::RecordNotFound)
+      expect(IgnoredEmailImage.exists?(rule.id)).to be(true)
+    end
+
+    it 'does nothing for a non-admin' do
+      sign_in user
+      add("filename", "b_logo.png")
+      expect(response).to redirect_to(entries_path)
+      expect(IgnoredEmailImage.count).to eq(0)
+    end
+  end
+
   describe 'send_password_reset' do
     include ActiveJob::TestHelper
 
