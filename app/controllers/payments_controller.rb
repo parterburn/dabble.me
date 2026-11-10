@@ -54,10 +54,19 @@ class PaymentsController < ApplicationController
       user = User.find_by(email: params[:user_email].downcase)
       params[:payment][:user_id] = user.id if user.present?
     end
+    # The form prefills plan and billing IDs from the payment's current user,
+    # so when the payment moves to someone else those values are the old
+    # user's. Copying them would leave two users sharing a stripe_id, and
+    # Stripe webhooks and DeleteUserJob would then act on the wrong account.
+    moving_to_new_user = user.present? && user.id != @payment.user_id
 
     if @payment.update(payment_params)
-      user.update(user_params) if user.present? && user_params[:plan].present?
-      flash[:notice] = "Payment successfully updated!"
+      if moving_to_new_user
+        flash[:notice] = "Payment moved to #{user.email}. Their plan and billing IDs were not changed; edit the payment again to change them."
+      else
+        user.update(user_params) if user.present? && user_params[:plan].present?
+        flash[:notice] = "Payment successfully updated!"
+      end
       redirect_to payments_path
     else
       render 'edit'
