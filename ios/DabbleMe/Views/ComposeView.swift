@@ -53,7 +53,7 @@ struct ComposeView: View {
     @State private var pickingPhotos = false
     @State private var takingPhoto = false
     /// Photos taken with the camera: they ride along in `photoItems` under made-up identifiers,
-    /// which the photo picker doesn't know and would drop when it's used again.
+    /// which the photo picker doesn't know, so the picker works on `libraryItems` instead.
     @State private var cameraItems: [PhotosPickerItem] = []
     @State private var removesExistingPhoto = false
     @Environment(\.scenePhase) private var scenePhase
@@ -168,7 +168,7 @@ struct ComposeView: View {
                 // One row at a time (the link row also opens by selecting a link).
                 if editing { showsHashtagBar = false; showsAskRow = false; showsPhotoDrawer = false }
             }
-            .photosPicker(isPresented: $pickingPhotos, selection: $photoItems, maxSelectionCount: photoLimit,
+            .photosPicker(isPresented: $pickingPhotos, selection: libraryItems, maxSelectionCount: photoLimit - cameraItems.count,
                           selectionBehavior: .ordered, matching: .images, preferredItemEncoding: .current)
             .alert("No hashtag suggestions", isPresented: .present($suggestionError)) {
                 Button("OK", role: .cancel) {}
@@ -176,8 +176,6 @@ struct ComposeView: View {
                 Text(suggestionError ?? "")
             }
             .onChange(of: photoItems) { old, new in
-                let dropped = cameraItems.filter { !new.contains($0) }
-                guard dropped.isEmpty else { photoItems = new + dropped; return } // the picker left them out
                 // Newly added photos go into the stack; the drawer closes to keep room for writing.
                 if new.count > old.count { showsPhotoDrawer = false }
                 Task { await preparePhotos() }
@@ -233,6 +231,17 @@ struct ComposeView: View {
         }
         // A little space between the row and the buttons under it.
         return row.map { row in AnyView(VStack(spacing: 0) { Divider(); row }.padding(.bottom, 8)) }
+    }
+
+    /// The photo picker's selection: the library photos only. Camera photos keep their places (and
+    /// their share of the limit); newly picked ones go after what's already there.
+    private var libraryItems: Binding<[PhotosPickerItem]> {
+        Binding {
+            photoItems.filter { !cameraItems.contains($0) }
+        } set: { picked in
+            let kept = photoItems.filter { cameraItems.contains($0) || picked.contains($0) }
+            photoItems = kept + picked.filter { !kept.contains($0) }
+        }
     }
 
     private var attachedPhotoCount: Int { photoItems.count + (existingPhotoURL == nil ? 0 : 1) }
