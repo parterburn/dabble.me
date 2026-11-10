@@ -190,23 +190,61 @@ enum JournalIntelligence {
             // Nothing much to ask about yet: a way in, from the recent days.
             return try await reflectionPrompt(from: recent, today: today, avoiding: asked)
         }
-        let background = recent.isEmpty ? "" : "\n\nTheir recent entries, with dates (background only; everything in them happened on those days):\n" + clipped(recent.prefix(5).joined(separator: "\n"), limit: 1200)
-        let reply = try await respond(
-            instructions: """
-            The writer is in the middle of a private journal entry and wants a nudge to keep writing. Ask one \
-            short, specific question (under 20 words), mostly about the entry they're writing now: a person, a \
-            moment, a feeling or a place they mentioned, in their words. Their recent entries are background: \
-            bring one in only when the new entry clearly connects to it, and say when it was (yesterday, last \
-            week). Make it easy and inviting to answer in a sentence or two. Never ask about anything neither \
-            mentions, never give advice, and don't repeat a question already asked. Reply with only the question.
-            """,
-            journalText: true,
-            prompt: "The entry they're writing now:\n\(clipped(draft, limit: 2000))\(background)\(already)",
-            temperature: 0.8
-        )
-        // One question, without quotes or a leading label.
-        let line = reply.split(whereSeparator: \.isNewline).first.map(String.init) ?? reply
-        return line.trimmingCharacters(in: CharacterSet(charactersIn: "\"“”' ")).replacingOccurrences(of: "Question: ", with: "")
+        // Only recent entries about the same people, places or #tags as the draft: the model latches
+        // onto anything it's given, and the question should be about what they're writing now.
+        let related = recent.prefix(5).filter { sharesNames(with: text, $0) }
+        let background = related.isEmpty ? "" : "\n\nRelated recent entries, with dates (background only; everything in them happened on those days):\n" + clipped(related.joined(separator: "\n"), limit: 1000)
+        return try await plainQuestion {
+            try await respond(
+                instructions: """
+                The writer is in the middle of today's journal entry and wants a nudge to keep writing. Pick one \
+                concrete thing they wrote about (a person, a moment, something someone said or did) and ask one \
+                short, plain question about it, the way a curious friend would ask. It's about today: never call \
+                it yesterday or another day. \(plainQuestionRules) Their \
+                recent entries are background: mention one only if the new entry is clearly about the same thing, \
+                and say when it was (yesterday, last week). Never ask about anything they didn't mention, never give \
+                advice, and don't repeat a question already asked. Reply with only the question.
+                """,
+                journalText: true,
+                prompt: "The entry they're writing now:\n\(clipped(draft, limit: 2000))\(background)\(already)",
+                temperature: 0.8
+            )
+        }
+    }
+
+    /// Whether a recent entry mentions a name, place or #tag from the draft (a capitalized word or a
+    /// hashtag, other than "I").
+    static func sharesNames(with draft: String, _ entry: String) -> Bool {
+        let names = Set(draft.split(whereSeparator: { !$0.isLetter && $0 != "#" }).map(String.init).filter {
+            $0.count > 1 && ($0.first == "#" || $0.first?.isUppercase == true)
+        }.map { $0.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "#")) })
+        let words = Set(entry.split(whereSeparator: { !$0.isLetter }).map { $0.lowercased() })
+        return !names.isDisjoint(with: words)
+    }
+
+    /// How a prompt should read: a friend's question, not a workshop's.
+    private static let plainQuestionRules = """
+    Keep it under 15 words, one simple sentence in everyday words, easy to answer in a line or two, and \
+    open (not a yes-or-no question). Don't use \
+    abstract words like connect, connection, shape, resonate, reflect, journey, or meaningful, and don't stack \
+    two ideas into one question.
+    """
+
+    /// Phrasing the on-device model reaches for that reads stiff in a prompt ("How does X's connection
+    /// to Y shape your thoughts?"); a reply with them is asked for once more.
+    private static let stiffPhrases = ["connect", "shape your", "shaped your", "resonat", "reflect on", "journey", "meaningful"]
+
+    /// One clean question from the model: the first line, without quotes or a label, asked again once
+    /// if it came out stiff.
+    private static func plainQuestion(_ ask: () async throws -> String) async throws -> String {
+        func clean(_ reply: String) -> String {
+            let line = reply.split(whereSeparator: \.isNewline).first.map(String.init) ?? reply
+            return line.trimmingCharacters(in: CharacterSet(charactersIn: "\"“”' ")).replacingOccurrences(of: "Question: ", with: "")
+        }
+        let first = clean(try await ask())
+        guard stiffPhrases.contains(where: first.lowercased().contains) else { return first }
+        let second = clean(try await ask())
+        return stiffPhrases.contains(where: second.lowercased().contains) ? first : second
     }
 
     /// One reflection question inspired by recent entries.
@@ -214,19 +252,23 @@ enum JournalIntelligence {
     /// on earlier days, or it asks about "today's" game that was yesterday. (No concrete examples in
     /// the instructions: the on-device model copies them, calling a hike "yesterday's game".)
     static func reflectionPrompt(from recent: [String], today: JournalDay, avoiding asked: [String] = []) async throws -> String {
-        let context = recent.prefix(5).joined(separator: "\n")
+        // One recent entry, picked at random: given them all, the model keeps choosing the same vivid
+        // moment, so prompts never vary.
+        let context = recent.prefix(5).randomElement() ?? ""
         let already = asked.isEmpty ? "" : "\n\nQuestions already asked (ask something different):\n" + asked.map { "- \($0)" }.joined(separator: "\n")
         let todayText = today.formatted(.dateTime.weekday(.wide).month(.wide).day())
-        return try await respond(
+        return try await plainQuestion { try await respond(
             instructions: """
-            You write one gentle journaling prompt for today: a single question under 20 words. Recent entries \
-            are given with their dates; everything in them happened on those earlier days, not today. If the \
-            question mentions something from them, use the entry's own words for it (a hike stays a hike), say \
-            when it was (yesterday, last week), and ask how it connects to today. Never mention anything the \
-            entries don't say, and never describe a past event as happening today. Reply with only the question.
+            You write one gentle journaling prompt for today, the way a curious friend would ask. A recent entry \
+            is given with its date; everything in it happened on that earlier day, not today. Pick one concrete \
+            thing from it (a person, a moment, a plan) and ask one plain question about it, in the past tense. \
+            Use the entry's own words for it (a hike stays a hike), and don't say when it happened: no today, \
+            yesterday or other days. \(plainQuestionRules) Never mention anything the entries don't say, and never \
+            describe a past event as happening today. Reply with only the question.
             """,
-            prompt: "Today is \(todayText).\n" + (context.isEmpty ? "No recent entries yet." : "Recent entries:\n\(clipped(context))") + already
-        )
+            prompt: "Today is \(todayText).\n" + (context.isEmpty ? "No recent entries yet." : "A recent entry:\n\(clipped(context))") + already,
+            temperature: 0.9
+        ) }
     }
 
     /// "- Yesterday (Saturday, Nov 7): The basketball win was fun!"
