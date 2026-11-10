@@ -194,6 +194,55 @@ RSpec.describe PaymentsController, type: :controller do
         expect(user.plan).to eq 'PRO Monthly PayHere'
       end
     end
+
+    context 'when the User email and User ID fields do not name one user' do
+      include ActiveJob::TestHelper
+
+      before { sign_in superuser }
+
+      let(:missing_id) { User.maximum(:id) + 1000 }
+      let(:form_params) do
+        { plan: 'PRO Yearly PayHere', payment: { amount: 3.0, date: Time.now, comments: 'Manual', send_thanks: '1' } }
+      end
+
+      def expect_refused(params, message)
+        payments_before = Payment.count
+        expect { post :create, params: params }.not_to have_enqueued_mail(UserMailer, :thanks_for_paying)
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.body).to have_content(message)
+        expect(Payment.count).to eq payments_before
+      end
+
+      it 'refuses an email and an ID that belong to different users' do
+        params = form_params.merge(user_email: paid_user.email).deep_merge(payment: { user_id: paid_annual_user.id })
+        expect_refused(params, "#{paid_user.email} and User ID #{paid_annual_user.id} are different users")
+        expect(paid_user.reload.plan).to eq 'PRO Monthly PayHere'
+        expect(paid_annual_user.reload.plan).to eq 'PRO Yearly PayHere'
+      end
+
+      it 'refuses an email that matches no user' do
+        expect_refused(form_params.merge(user_email: 'nobody@example.com'), 'No user has the email nobody@example.com.')
+      end
+
+      it 'refuses an ID that matches no user' do
+        expect_refused(form_params.deep_merge(payment: { user_id: missing_id }), "No user has the ID #{missing_id}.")
+      end
+
+      it 'keeps what was typed, including an unticked Send thanks, when the form comes back' do
+        params = form_params.merge(user_email: 'nobody@example.com').deep_merge(payment: { send_thanks: '0' })
+        post :create, params: params
+
+        expect(response.body).to have_field('user_email', with: 'nobody@example.com')
+        expect(response.body).to have_field('plan', with: 'PRO Yearly PayHere')
+        expect(response.body).to have_unchecked_field('payment_send_thanks')
+      end
+
+      it 'saves when the email and ID name the same user' do
+        params = form_params.merge(user_email: user.email).deep_merge(payment: { user_id: user.id })
+        expect { post :create, params: params }.to change { Payment.count }.by(1)
+        expect(Payment.last.user_id).to eq user.id
+      end
+    end
   end
 
   describe 'update' do
@@ -275,6 +324,63 @@ RSpec.describe PaymentsController, type: :controller do
         expect(paid_annual_user.reload.slice(:plan, :gumroad_id, :payhere_id, :stripe_id)).to eq original
         expect(flash[:notice]).to eq "Payment moved to #{paid_annual_user.email}. Their plan and billing IDs were not changed; edit the payment again to change them."
       end
+    end
+
+    it 'moves the payment by User ID when the prefilled email is left alone' do
+      original = paid_annual_user.slice(:plan, :gumroad_id, :payhere_id, :stripe_id)
+
+      patch :update, params: form_params.deep_merge(payment: { user_id: paid_annual_user.id })
+
+      expect(response).to redirect_to(payments_url)
+      expect(payment.reload.user_id).to eq paid_annual_user.id
+      expect(paid_annual_user.reload.slice(:plan, :gumroad_id, :payhere_id, :stripe_id)).to eq original
+      expect(paid_user.reload.stripe_id).to eq 'cus_existing'
+      expect(flash[:notice]).to start_with("Payment moved to #{paid_annual_user.email}.")
+    end
+
+    context 'when the edit cannot tell which user is meant' do
+      let(:missing_id) { User.maximum(:id) + 1000 }
+
+      def expect_refused(params, message)
+        patch :update, params: params
+
+        expect(response).to have_http_status(:unprocessable_content)
+        expect(response.body).to have_content(message)
+        expect(payment.reload.user_id).to eq paid_user.id
+        expect(paid_user.reload.plan).to eq 'PRO Monthly PayHere'
+      end
+
+      it 'refuses an email and an ID both changed to different users' do
+        params = form_params.merge(user_email: user.email, plan: 'PRO Yearly PayHere')
+                            .deep_merge(payment: { user_id: paid_annual_user.id })
+        expect_refused(params, "#{user.email} and User ID #{paid_annual_user.id} are different users")
+        expect(user.reload.plan).to eq 'Free'
+        expect(paid_annual_user.reload.plan).to eq 'PRO Yearly PayHere'
+      end
+
+      it 'refuses an email that matches no user' do
+        expect_refused(form_params.merge(user_email: 'nobody@example.com', plan: 'PRO Yearly PayHere'),
+                       'No user has the email nobody@example.com.')
+      end
+
+      it 'refuses an ID changed to one that matches no user' do
+        expect_refused(form_params.deep_merge(payment: { user_id: missing_id }), "No user has the ID #{missing_id}.")
+      end
+    end
+
+    it "still saves a payment whose user was deleted when its ID isn't changed" do
+      missing_id = User.maximum(:id) + 1000
+      payment.update_column(:user_id, missing_id)
+
+      patch :update, params: {
+        id: payment.id,
+        user_email: '',
+        payment: { amount: payment.amount, user_id: missing_id, comments: 'Edited' }
+      }
+
+      expect(response).to redirect_to(payments_url)
+      expect(payment.reload.comments).to eq 'Edited'
+      expect(payment.user_id).to eq missing_id
     end
   end
 

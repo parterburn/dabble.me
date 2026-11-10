@@ -1,5 +1,7 @@
 <%# locals: url:, method:, submit: %>
 <% user = @payment.user %>
+<%# When the form comes back with an error, keep what the admin typed. %>
+<% typed = ->(name, fallback) { params.key?(name) ? params[name] : fallback } %>
 <div class="card max-w-2xl p-6 sm:p-8">
   <%= form_for :payment, url: url, method: method, html: { class: "space-y-5" } do |f| %>
     <%= render "devise/shared/error_messages", resource: @payment %>
@@ -19,27 +21,27 @@
       </div>
       <div>
         <%= label_tag :user_email, nil, class: "field-label" %>
-        <%= text_field_tag :user_email, user&.email, class: "field-input" %>
+        <%= text_field_tag :user_email, typed.(:user_email, user&.email), class: "field-input" %>
       </div>
     </div>
 
     <div>
       <%= label_tag :plan, nil, class: "field-label" %>
-      <%= text_field_tag :plan, user&.plan, placeholder: "Free, PRO Monthly PayHere, PRO Yearly PayHere", class: "field-input" %>
+      <%= text_field_tag :plan, typed.(:plan, user&.plan), placeholder: "Free, PRO Monthly PayHere, PRO Yearly PayHere", class: "field-input" %>
     </div>
 
     <div class="grid gap-5 sm:grid-cols-3">
       <div>
         <%= label_tag :gumroad_id, nil, class: "field-label" %>
-        <%= text_field_tag :gumroad_id, user&.gumroad_id, class: "field-input" %>
+        <%= text_field_tag :gumroad_id, typed.(:gumroad_id, user&.gumroad_id), class: "field-input" %>
       </div>
       <div>
         <%= label_tag :payhere_id, nil, class: "field-label" %>
-        <%= text_field_tag :payhere_id, user&.payhere_id, class: "field-input" %>
+        <%= text_field_tag :payhere_id, typed.(:payhere_id, user&.payhere_id), class: "field-input" %>
       </div>
       <div>
         <%= label_tag :stripe_id, nil, class: "field-label" %>
-        <%= text_field_tag :stripe_id, user&.stripe_id, class: "field-input" %>
+        <%= text_field_tag :stripe_id, typed.(:stripe_id, user&.stripe_id), class: "field-input" %>
       </div>
     </div>
 
@@ -50,7 +52,7 @@
 
     <% if @payment.new_record? %>
       <label class="flex items-center gap-3 text-sm font-medium text-primary">
-        <%= f.check_box :send_thanks, checked: true, class: "checkbox" %>
+        <%= f.check_box :send_thanks, checked: params.dig(:payment, :send_thanks) != "0", class: "checkbox" %>
         Send thanks
       </label>
     <% end %>
