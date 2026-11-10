@@ -179,20 +179,29 @@ enum JournalIntelligence {
         return lines.joined(separator: "\n")
     }
 
-    /// "Ask Me" while writing: one specific question about something in the draft, to help the
-    /// writer keep going. `asked` are the questions already offered for this draft (not repeated).
-    static func followUpQuestion(for draft: String, asked: [String]) async throws -> String {
+    /// Prompt while writing: one specific question to help the writer keep going, mostly about the
+    /// draft, with their recent entries (dated lines from `dated(_:today:)`) as background it may
+    /// connect to. With little or nothing written yet, it's the kind of prompt Today shows, made from
+    /// the recent entries. `asked` are the prompts already offered for this draft (not repeated).
+    static func followUpQuestion(for draft: String, recent: [String], today: JournalDay, asked: [String]) async throws -> String {
+        let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         let already = asked.isEmpty ? "" : "\n\nQuestions already asked (ask something different):\n" + asked.map { "- \($0)" }.joined(separator: "\n")
+        guard text.count >= 40 else {
+            // Nothing much to ask about yet: a way in, from the recent days.
+            return try await reflectionPrompt(from: recent, today: today, avoiding: asked)
+        }
+        let background = recent.isEmpty ? "" : "\n\nTheir recent entries, with dates (background only; everything in them happened on those days):\n" + clipped(recent.prefix(5).joined(separator: "\n"), limit: 1200)
         let reply = try await respond(
             instructions: """
             The writer is in the middle of a private journal entry and wants a nudge to keep writing. Ask one \
-            short, specific question (under 20 words) about a detail they actually mentioned: a person, a moment, \
-            a feeling, a place. Make it easy and inviting to answer in a sentence or two, and use their words. \
-            Never ask about anything the entry doesn't mention, never give advice, and don't repeat a question \
-            already asked. Reply with only the question.
+            short, specific question (under 20 words), mostly about the entry they're writing now: a person, a \
+            moment, a feeling or a place they mentioned, in their words. Their recent entries are background: \
+            bring one in only when the new entry clearly connects to it, and say when it was (yesterday, last \
+            week). Make it easy and inviting to answer in a sentence or two. Never ask about anything neither \
+            mentions, never give advice, and don't repeat a question already asked. Reply with only the question.
             """,
             journalText: true,
-            prompt: "The entry so far:\n\(clipped(draft, limit: 2500))\(already)",
+            prompt: "The entry they're writing now:\n\(clipped(draft, limit: 2000))\(background)\(already)",
             temperature: 0.8
         )
         // One question, without quotes or a leading label.
@@ -204,8 +213,9 @@ enum JournalIntelligence {
     /// `recent` are dated lines from `dated(_:today:)`: the model needs to know those things happened
     /// on earlier days, or it asks about "today's" game that was yesterday. (No concrete examples in
     /// the instructions: the on-device model copies them, calling a hike "yesterday's game".)
-    static func reflectionPrompt(from recent: [String], today: JournalDay) async throws -> String {
+    static func reflectionPrompt(from recent: [String], today: JournalDay, avoiding asked: [String] = []) async throws -> String {
         let context = recent.prefix(5).joined(separator: "\n")
+        let already = asked.isEmpty ? "" : "\n\nQuestions already asked (ask something different):\n" + asked.map { "- \($0)" }.joined(separator: "\n")
         let todayText = today.formatted(.dateTime.weekday(.wide).month(.wide).day())
         return try await respond(
             instructions: """
@@ -215,7 +225,7 @@ enum JournalIntelligence {
             when it was (yesterday, last week), and ask how it connects to today. Never mention anything the \
             entries don't say, and never describe a past event as happening today. Reply with only the question.
             """,
-            prompt: "Today is \(todayText).\n" + (context.isEmpty ? "No recent entries yet." : "Recent entries:\n\(clipped(context))")
+            prompt: "Today is \(todayText).\n" + (context.isEmpty ? "No recent entries yet." : "Recent entries:\n\(clipped(context))") + already
         )
     }
 

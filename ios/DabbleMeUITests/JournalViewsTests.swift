@@ -533,8 +533,8 @@ final class JournalViewsTests: XCTestCase {
         app.buttons["Close"].tap()
     }
 
-    /// Prompt (the sparkles) while writing: once there's a couple of sentences, Apple Intelligence
-    /// asks one question about them, and Add puts it in the entry to answer.
+    /// Prompt (the sparkles) while writing: always there; on an empty page it offers a way in from
+    /// recent entries, and once there's writing it asks about that. Add puts it in the entry.
     func testPromptWhileWriting() throws {
         let app = launch()
         tab(app, "Journal").tap()
@@ -546,7 +546,14 @@ final class JournalViewsTests: XCTestCase {
         if tip.waitForExistence(timeout: 2) { tip.tap() }
         // A draft left by an earlier run comes back: start from a blank page.
         if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap(); editor.tap() }
-        XCTAssertFalse(app.buttons["Prompt"].exists, "Not until there's something to ask about")
+        // On an empty page: a prompt from recent entries, to get started.
+        let prompt = app.buttons["Prompt"]
+        guard prompt.waitForExistence(timeout: 5) else { throw XCTSkip("Apple Intelligence isn't available here") }
+        prompt.tap()
+        XCTAssertTrue(app.staticTexts["AskMeQuestion"].waitForExistence(timeout: 60), "A prompt to start with")
+        snap("prompt-empty")
+        prompt.tap() // close it
+        editor.tap()
         editor.typeText("Took Biscuit to the lake this morning. He chased the ducks and then fell asleep in the car on the way home.")
         // No random memory over the composer, even with the keyboard down.
         app.swipeDown()
@@ -554,8 +561,6 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertFalse(app.staticTexts["A Random Memory"].waitForExistence(timeout: 3), "No random memory while writing")
         XCTAssertTrue(editor.exists)
         editor.tap()
-        let prompt = app.buttons["Prompt"]
-        guard prompt.waitForExistence(timeout: 5) else { throw XCTSkip("Apple Intelligence isn't available here") }
         prompt.tap()
         let question = app.staticTexts["AskMeQuestion"]
         // "Generating prompt…" while it works (it can be quick enough to miss).
