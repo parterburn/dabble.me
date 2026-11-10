@@ -62,6 +62,29 @@ struct PromptGroundingTests {
         #expect(!JournalIntelligence.namesAreGrounded("How did the game in Denver go?", in: draft), "Nor is Denver")
         #expect(JournalIntelligence.namesAreGrounded("What made I so happy?", in: draft), "\"I\" isn't a name")
     }
+
+    /// A question may reword what's written, but not add a scene to it.
+    @Test func questionsStickToWhatIsWritten() {
+        let hike = "Went #hiking with Sam."
+        #expect(JournalIntelligence.wordsAreGrounded("What do you want to remember about hiking with Sam?", in: hike))
+        #expect(JournalIntelligence.wordsAreGrounded("What did going hiking with Sam feel like for you?", in: hike))
+        #expect(!JournalIntelligence.wordsAreGrounded("What was it like when Sam walked ahead, alone?", in: hike))
+        #expect(!JournalIntelligence.wordsAreGrounded("What did it feel like when Sam sang badly during the descent?", in: hike))
+        #expect(!JournalIntelligence.wordsAreGrounded("What did Sam’s voice sound like when you were walking?", in: hike))
+        let tooth = "Leo lost his first tooth tonight! He was so proud and a little scared of the blood."
+        #expect(JournalIntelligence.wordsAreGrounded("What do you want to remember about Leo’s pride when he lost his first tooth?", in: tooth))
+        #expect(JournalIntelligence.wordsAreGrounded("How did it feel when Leo was scared of the blood?", in: tooth))
+    }
+}
+
+@MainActor
+struct HashtagMatchingTests {
+    /// The writer's tags that are words in the entry come first in the composer's row, without a model.
+    @Test func tagsMatchWholeWordsWhateverTheCase() {
+        let tags = ["travel", "Hiking", "sam", "work", "hiking", "hike"]
+        #expect(JournalIntelligence.tags(tags, matchingWordsIn: "Went hiking with Sam. No workdays!") == ["Hiking", "sam"])
+        #expect(JournalIntelligence.tags(tags, matchingWordsIn: "").isEmpty)
+    }
 }
 
 @MainActor
