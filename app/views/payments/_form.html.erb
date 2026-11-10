@@ -1,0 +1,76 @@
+<%# locals: url:, method:, submit: %>
+<% user = @payment.user %>
+<div class="card max-w-2xl p-6 sm:p-8">
+  <%= form_for :payment, url: url, method: method, html: { class: "space-y-5" } do |f| %>
+    <%= render "devise/shared/error_messages", resource: @payment %>
+
+    <div class="grid gap-5 sm:grid-cols-2">
+      <div>
+        <%= f.label :date, class: "field-label" %>
+        <%= f.text_field :date, value: (@payment.date || Date.today).strftime("%B %-d, %Y"), placeholder: "2014-10-31", class: "field-input pickadate" %>
+      </div>
+      <div>
+        <%= f.label :amount, class: "field-label" %>
+        <%= f.text_field :amount, inputmode: "decimal", class: "field-input" %>
+      </div>
+      <div>
+        <%= f.label :user_id, class: "field-label" %>
+        <%= f.text_field :user_id, inputmode: "numeric", class: "field-input" %>
+      </div>
+      <div>
+        <%= label_tag :user_email, nil, class: "field-label" %>
+        <%= text_field_tag :user_email, user&.email, class: "field-input" %>
+      </div>
+    </div>
+
+    <div>
+      <%= label_tag :plan, nil, class: "field-label" %>
+      <%= text_field_tag :plan, user&.plan, placeholder: "Free, PRO Monthly PayHere, PRO Yearly PayHere", class: "field-input" %>
+    </div>
+
+    <div class="grid gap-5 sm:grid-cols-3">
+      <div>
+        <%= label_tag :gumroad_id, nil, class: "field-label" %>
+        <%= text_field_tag :gumroad_id, user&.gumroad_id, class: "field-input" %>
+      </div>
+      <div>
+        <%= label_tag :payhere_id, nil, class: "field-label" %>
+        <%= text_field_tag :payhere_id, user&.payhere_id, class: "field-input" %>
+      </div>
+      <div>
+        <%= label_tag :stripe_id, nil, class: "field-label" %>
+        <%= text_field_tag :stripe_id, user&.stripe_id, class: "field-input" %>
+      </div>
+    </div>
+
+    <div>
+      <%= f.label :comments, class: "field-label" %>
+      <%= f.text_area :comments, rows: 2, class: "field-input" %>
+    </div>
+
+    <% if @payment.new_record? %>
+      <label class="flex items-center gap-3 text-sm font-medium text-primary">
+        <%= f.check_box :send_thanks, checked: true, class: "checkbox" %>
+        Send thanks
+      </label>
+    <% end %>
+
+    <div class="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center">
+      <%= f.submit submit, class: "button-primary" %>
+      <%= link_to "Cancel", payments_path, class: "button-secondary" %>
+    </div>
+  <% end %>
+</div>
+
+<script>
+  var tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  $.extend($.fn.pickadate.defaults, {
+    format: 'mmmm d, yyyy',
+    selectYears: true,
+    selectMonths: true,
+    max: tomorrow
+  })
+
+  $('.pickadate').pickadate();
+</script>

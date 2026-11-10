@@ -1,41 +1,27 @@
 <% title "Admin Photos" %>
+<% content_for :tailwind, true %>
 
-<style>
-  .col-md-3 img {
-    width: 100%;
-  }
-</style>
+<div class="tw mx-auto max-w-6xl pt-4 pb-16 sm:pt-8">
+  <%= render "admin/header", title: "Photos", intro: "Every entry photo, newest first. Click one to open the original." %>
 
-<div class="row s-admin-container">
-  <div class="col-md-12">
-    <h3>
-      Admin Photos
-    </h3>
-  </div>
-
-  <div class="col-md-12">
-    <hr>
-  </div>
-
-  <div class="col-md-12">
-    <div class="row">
-      <div class="center">
-        <%= paginate @entries %>
-      </div>
+  <% if @entries.empty? %>
+    <p class="card px-5 py-8 text-center text-sm text-muted">No photos yet.</p>
+  <% else %>
+    <div class="mb-6">
+      <%= paginate @entries, theme: "tw" %>
     </div>
-    <div class="row">
+
+    <div class="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3 lg:grid-cols-6">
       <% @entries.each do |entry| %>
-        <div class="pictureFrame col-xs-2 col-md-3">
-          <%= link_to entry.image_url_cdn(cloudflare: false), target: "_blank", style: "border: 1px solid black; display: inline-block;" do %>
-            <%= image_code(entry) %>
-          <% end %>
-        </div>
+        <%= link_to entry.image_url_cdn(cloudflare: false), target: "_blank", rel: "noopener",
+              class: "block aspect-square overflow-hidden rounded-lg border border-subtle bg-surface-elevated transition-opacity hover:opacity-90 *:size-full *:object-cover" do %>
+          <%= image_code(entry) %>
+        <% end %>
       <% end %>
     </div>
-    <div class="row">
-      <div class="center">
-        <%= paginate @entries %>
-      </div>
+
+    <div class="mt-6">
+      <%= paginate @entries, theme: "tw" %>
     </div>
-  </div>
+  <% end %>
 </div>
