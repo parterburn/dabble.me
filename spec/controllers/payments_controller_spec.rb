@@ -254,6 +254,28 @@ RSpec.describe PaymentsController, type: :controller do
       expect(paid_user.plan).to eq 'PRO Yearly PayHere'
       expect(paid_user.stripe_id).to eq 'cus_existing'
     end
+
+    context 'with the email cleared and only the User ID filled in' do
+      let(:id_params) { form_params.merge(user_email: '') }
+
+      it 'finds the user by ID and updates their plan' do
+        patch :update, params: id_params.merge(plan: 'PRO Yearly PayHere')
+
+        expect(response).to redirect_to(payments_url)
+        expect(paid_user.reload.plan).to eq 'PRO Yearly PayHere'
+        expect(flash[:notice]).to eq 'Payment successfully updated!'
+      end
+
+      it "moves the payment to another user's ID without copying the old user's plan or IDs" do
+        original = paid_annual_user.slice(:plan, :gumroad_id, :payhere_id, :stripe_id)
+
+        patch :update, params: id_params.deep_merge(payment: { user_id: paid_annual_user.id })
+
+        expect(payment.reload.user_id).to eq paid_annual_user.id
+        expect(paid_annual_user.reload.slice(:plan, :gumroad_id, :payhere_id, :stripe_id)).to eq original
+        expect(flash[:notice]).to eq "Payment moved to #{paid_annual_user.email}. Their plan and billing IDs were not changed; edit the payment again to change them."
+      end
+    end
   end
 
   describe 'destroy' do
