@@ -472,6 +472,92 @@ final class JournalViewsTests: XCTestCase {
         app.buttons["Close"].tap()
     }
 
+    /// After a reflection, answering its question starts a short chat (on the device): a reply
+    /// streams in, the note says it isn't saved, and reopening starts fresh.
+    func testReflectionChat() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
+        app.openTimelineEntry(row)
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
+        func pullForReflection() {
+            let scroll = app.scrollViews.firstMatch
+            scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
+                .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.85)))
+        }
+        pullForReflection()
+        guard app.buttons["Close"].waitForExistence(timeout: 5) else { throw XCTSkip("Apple Intelligence isn't available here") }
+        let written = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Written on this device")).firstMatch
+        XCTAssertTrue(written.waitForExistence(timeout: 90))
+
+        let field = app.textFields["ReflectionReply"].exists ? app.textFields["ReflectionReply"] : app.textViews["ReflectionReply"]
+        XCTAssertTrue(field.waitForExistence(timeout: 5), "A field to answer the reflection")
+        field.tap()
+        field.typeText("Honestly the sunrise on the trail was the best part.")
+        app.buttons["Send"].tap()
+        let reply = app.descendants(matching: .any).matching(identifier: "ReflectionChatReply").firstMatch
+        XCTAssertTrue(reply.waitForExistence(timeout: 90), "Apple Intelligence replies")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "not saved anywhere")).firstMatch.exists)
+        sleep(2)
+        snap("reflection-chat")
+
+        // After the first answer: an offer to sum it up and add it to the entry.
+        let sumUp = app.buttons["Sum Up & Add to Entry"]
+        XCTAssertTrue(sumUp.waitForExistence(timeout: 10), "It offers to add a summary to the entry")
+        sumUp.tap()
+        let summary = app.staticTexts["ReflectionSummary"]
+        XCTAssertTrue(summary.waitForExistence(timeout: 60), "A summary to look over first")
+        let summed = summary.label
+        snap("reflection-summary")
+        sleep(1) // the buttons fade in with the summary
+        app.buttons["Add to Entry"].tap()
+        XCTAssertTrue(app.staticTexts["Added to this day's entry."].waitForExistence(timeout: 15))
+        app.buttons["Close"].tap()
+        let added = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@",
+                                                                         String(summed.prefix(30)), String(summed.prefix(30)))).firstMatch
+        XCTAssertTrue(added.waitForExistence(timeout: 10), "The summary is in the entry")
+        app.swipeUp()
+        snap("entry-with-reflection")
+        app.swipeDown() // back to the top, where pulling down asks for a reflection
+        sleep(1)
+
+        pullForReflection()
+        XCTAssertTrue(written.waitForExistence(timeout: 90))
+        XCTAssertFalse(reply.exists, "The chat isn't kept: reopening starts fresh")
+        app.buttons["Close"].tap()
+    }
+
+    /// Prompt (the sparkles) while writing: once there's a couple of sentences, Apple Intelligence
+    /// asks one question about them, and Add puts it in the entry to answer.
+    func testPromptWhileWriting() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        app.buttons["New Entry"].tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        editor.tap()
+        let tip = app.buttons["Continue"]
+        if tip.waitForExistence(timeout: 2) { tip.tap() }
+        // A draft left by an earlier run comes back: start from a blank page.
+        if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap(); editor.tap() }
+        XCTAssertFalse(app.buttons["Prompt"].exists, "Not until there's something to ask about")
+        editor.typeText("Took Biscuit to the lake this morning. He chased the ducks and then fell asleep in the car on the way home.")
+        let prompt = app.buttons["Prompt"]
+        guard prompt.waitForExistence(timeout: 5) else { throw XCTSkip("Apple Intelligence isn't available here") }
+        prompt.tap()
+        let question = app.staticTexts["AskMeQuestion"]
+        // "Generating prompt…" while it works (it can be quick enough to miss).
+        XCTAssertTrue(app.staticTexts["Generating prompt…"].waitForExistence(timeout: 5) || question.exists)
+        XCTAssertTrue(question.waitForExistence(timeout: 60), "Prompt asks a question")
+        let asked = question.label
+        XCTAssertTrue(asked.hasSuffix("?"), "It's a question: \(asked)")
+        snap("prompt-row")
+        app.buttons["Add"].tap()
+        XCTAssertTrue((editor.value as? String ?? "").contains(asked), "Add puts the question in the entry")
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+    }
+
     /// From Today: an entry's reflection closes with a pull down (Today's pull to reset doesn't
     /// leak into its sheets or entry pages).
     func testPullDownClosesReflectionFromToday() throws {

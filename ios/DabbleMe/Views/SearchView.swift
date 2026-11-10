@@ -3,6 +3,8 @@ import SwiftUI
 struct SearchView: View {
     @Environment(AppModel.self) private var model
     @State private var query = ""
+    /// The last "focus the search field" request handled (tapping Search again, or a quick action).
+    @State private var handledFocusRequest = 0
     @State private var submitted = ""
     @State private var results: [EntrySummary] = []
     @State private var nextPage: Int?
@@ -35,7 +37,10 @@ struct SearchView: View {
                                     placement: .navigationBarDrawer(displayMode: .always), prompt: "Search your journal")
                         .searchFocused($isSearchFocused)
                         // With results showing, search is already "active", so focus the field itself.
-                        .onChange(of: model.searchFocusRequest) {
+                        // Also on first appearing: a quick action can ask before Search exists.
+                        .onChange(of: model.searchFocusRequest, initial: true) { _, request in
+                            guard request > handledFocusRequest else { return }
+                            handledFocusRequest = request
                             isSearchActive = true
                             isSearchFocused = true
                         }

@@ -57,6 +57,17 @@ targets:
           UIColorName: Paper
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
+        # Touch and hold the app icon (QuickActions.swift).
+        UIApplicationShortcutItems:
+          - UIApplicationShortcutItemType: me.dabble.ios.new-entry
+            UIApplicationShortcutItemTitle: New Entry
+            UIApplicationShortcutItemIconFile: slab-edit
+          - UIApplicationShortcutItemType: me.dabble.ios.journal
+            UIApplicationShortcutItemTitle: View Journal
+            UIApplicationShortcutItemIconFile: slab-book
+          - UIApplicationShortcutItemType: me.dabble.ios.search
+            UIApplicationShortcutItemTitle: Search Journal
+            UIApplicationShortcutItemIconFile: slab-search
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         UISupportedInterfaceOrientations~ipad:

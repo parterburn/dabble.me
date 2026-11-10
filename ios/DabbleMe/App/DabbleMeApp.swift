@@ -3,6 +3,7 @@ import UserNotifications
 
 @main
 struct DabbleMeApp: App {
+    @UIApplicationDelegateAdaptor(QuickActionAppDelegate.self) private var appDelegate
     @State private var model: AppModel
 
     init() {
@@ -18,6 +19,7 @@ struct DabbleMeApp: App {
         let model = AppModel()
         _model = State(initialValue: model)
         NotificationRouter.shared.model = model
+        QuickActionRouter.shared.model = model
         UNUserNotificationCenter.current().delegate = NotificationRouter.shared
     }
 
@@ -73,6 +75,10 @@ struct RootView: View {
         }
         .task(id: model.isSignedIn) {
             if model.isSignedIn, !model.hasLoaded { await model.refresh() }
+        }
+        // A Home Screen quick action that launched the app waits until it has loaded.
+        .onChange(of: model.hasLoaded, initial: true) { _, loaded in
+            if loaded { QuickActionRouter.shared.performPending() }
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {

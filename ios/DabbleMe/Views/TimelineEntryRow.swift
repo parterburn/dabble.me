@@ -287,7 +287,12 @@ final class EntryActions {
         reflection = pending
         do {
             let entry = try await model.entry(id: id)
-            if reflection?.id == pending.id { reflection?.date = model.dateLine(for: entry.day, fallback: entry.date) }
+            if reflection?.id == pending.id {
+                reflection?.date = model.dateLine(for: entry.day, fallback: entry.date)
+                reflection?.entryText = entry.bodyText
+                reflection?.entryID = entry.id
+                reflection?.document = entry.document
+            }
             let text = try await model.reflection(on: entry).text
             if reflection?.id == pending.id { reflection?.text = text }
         } catch {

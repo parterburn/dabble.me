@@ -30,6 +30,13 @@ struct ComposeView: View {
     @State private var draftSave: Task<Void, Never>?
     /// The hashtag bar ("+" → Hashtags): AI suggestions first, then the most recently used tags.
     @State private var showsHashtagBar = false
+    /// Prompt (Apple Intelligence, the sparkles): a row with one question about the draft. Closing
+    /// and opening it again asks a new one.
+    @State private var showsAskRow = false
+    @State private var question: String?
+    @State private var askedQuestions: [String] = []
+    @State private var isAsking = false
+    @State private var askError: String?
     /// The photo drawer (thumbnails, Add More, remove): closed unless opened from the photo stack,
     /// so the writing area keeps its room.
     @State private var showsPhotoDrawer = false
@@ -93,7 +100,7 @@ struct ComposeView: View {
                 RichTextEditor(model: editor,
                                leading: model.me?.canAddPhotos == true ? AnyView(photosButton) : nil,
                                trailing: AnyView(tagAndLinkButtons),
-                               barKey: "\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)")
+                               barKey: "\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)")
                     .overlay(alignment: .topLeading) {
                         if editor.isEmpty {
                             Text("How was your day?")
@@ -112,6 +119,12 @@ struct ComposeView: View {
                     Divider()
                     hashtagSuggestions
                         .padding(.bottom, -14)
+                }
+                if showsAskRow {
+                    Divider()
+                    // A prompt can take two lines: only a small nudge down, or the bar covers it.
+                    askRow
+                        .padding(.bottom, 4)
                 }
                 if showsPhotoDrawer, attachedPhotoCount > 0 {
                     Divider()
@@ -225,6 +238,25 @@ struct ComposeView: View {
     /// (selected while it's open). One row at a time: opening one closes the photos.
     private var tagAndLinkButtons: some View {
         HStack(spacing: 6) {
+            if canAsk {
+                Button {
+                    showsAskRow.toggle()
+                    if showsAskRow {
+                        showsHashtagBar = false
+                        showsPhotoDrawer = false
+                        question = nil
+                        Task { await ask() }
+                    }
+                } label: {
+                    appIcon("slab-sparkles")
+                        .frame(width: 40, height: 36)
+                        .background(showsAskRow ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Prompt")
+                .accessibilityHint("Apple Intelligence asks a question about what you've written")
+                .accessibilityAddTraits(showsAskRow ? .isSelected : [])
+            }
             if model.me?.mayAddLinks == true {
                 Button { editor.beginLink() } label: {
                     appIcon("slab-link")
@@ -237,6 +269,7 @@ struct ComposeView: View {
                 showsHashtagBar.toggle()
                 if showsHashtagBar {
                     showsPhotoDrawer = false
+                    showsAskRow = false
                     Task { recentTags = (try? await model.recentHashtags()) ?? [] }
                 }
             } label: {
@@ -255,7 +288,7 @@ struct ComposeView: View {
         let thumbs = Array(photoItems.prefix(3))
         return Button {
             showsPhotoDrawer.toggle()
-            if showsPhotoDrawer { showsHashtagBar = false } // one row at a time
+            if showsPhotoDrawer { showsHashtagBar = false; showsAskRow = false } // one row at a time
         } label: {
             HStack(spacing: 8) {
                 ZStack {
@@ -358,6 +391,65 @@ struct ComposeView: View {
         .scrollIndicators(.hidden)
         // Its own height: a horizontal scroll view would otherwise stretch to share the editor's.
         .fixedSize(horizontal: false, vertical: true)
+    }
+
+    // MARK: - Ask Me
+
+    /// Once there's a couple of sentences to ask about, with Apple Intelligence on.
+    private var canAsk: Bool {
+        JournalIntelligence.isEnabled(for: model.me) && editor.characterCount >= 80
+    }
+
+    /// One question about the draft (Apple Intelligence, on the device): Add puts it in the entry.
+    /// For another, close the row and open it again.
+    private var askRow: some View {
+        HStack(alignment: .center, spacing: 10) {
+            if isAsking {
+                ProgressView().controlSize(.small)
+                Text("Generating prompt…")
+                    .foregroundStyle(.secondary)
+                Spacer(minLength: 0)
+            } else if let question {
+                Text(question)
+                    .font(.system(.subheadline, design: .serif))
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier("AskMeQuestion")
+                Button("Add") {
+                    editor.addQuestion(question)
+                    self.question = nil
+                    showsAskRow = false
+                }
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.capsule)
+                .accessibilityHint("Adds the question to your entry to answer")
+            } else {
+                Text(askError ?? "")
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+        .font(.subheadline)
+        .fontWeight(.medium)
+        .padding(.horizontal)
+        .padding(.top, 8)
+        .animation(.easeOut(duration: 0.2), value: question)
+    }
+
+    private func ask() async {
+        guard !isAsking else { return }
+        isAsking = true
+        defer { isAsking = false }
+        do {
+            let next = try await JournalIntelligence.followUpQuestion(for: editor.plainText, asked: askedQuestions)
+            question = next
+            askedQuestions.append(next)
+            askError = nil
+        } catch is CancellationError {
+        } catch {
+            question = nil
+            askError = error.localizedDescription
+        }
     }
 
     private func suggestHashtags() async {
