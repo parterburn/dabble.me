@@ -770,7 +770,7 @@ private extension View {
 }
 
 /// The link row: the address, with Insert (or Update for a link that's there, which can also be
-/// removed with the trash). Opened from the Link button it takes the keyboard; opened by selecting
+/// removed with the trash, at the far right). Opened from the Link button it takes the keyboard; opened by selecting
 /// a link, the selection stays until the address is tapped.
 private struct LinkRow: View {
     @Bindable var editor: RichTextEditorModel
@@ -791,6 +791,10 @@ private struct LinkRow: View {
                 .padding(.vertical, 7)
                 .background(Color.secondary.opacity(0.12), in: .capsule)
                 .accessibilityLabel("Link address")
+            Button(editor.isExistingLink ? "Update" : "Insert", action: apply)
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.capsule)
+                .disabled(!canApply)
             if editor.isExistingLink {
                 Button {
                     editor.removeLink()
@@ -803,10 +807,6 @@ private struct LinkRow: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel("Remove Link")
             }
-            Button(editor.isExistingLink ? "Update" : "Insert", action: apply)
-                .buttonStyle(.borderedProminent)
-                .buttonBorderShape(.capsule)
-                .disabled(!canApply)
         }
         .font(.subheadline)
         .padding(.horizontal)
