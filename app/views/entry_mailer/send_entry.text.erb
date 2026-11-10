@@ -33,7 +33,7 @@ Tags: <%= h.join(", ") %>
 
 View entry: <%= day_entry_url(year: @random_entry.date.year, month: @random_entry.date.month, day: @random_entry.date.day) %>
 <% elsif @user.send_past_entry? %>
-Keep writing...once you have a few entries you'll see a blast from the past show up here!
+Keep writing...once you have a few entries, you'll rewind to one of them here!
 <% end %>
 
 <% if @user.is_pro? %>

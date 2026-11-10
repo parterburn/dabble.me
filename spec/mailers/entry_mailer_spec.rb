@@ -73,5 +73,14 @@ RSpec.describe EntryMailer do
       expect(html).to include(">Fri, Nov 7, 2025</a> you wrote...")
       expect(text).to include("Rewind 1 year • Fri, Nov 7, 2025 you wrote...")
     end
+
+    it "tells a newer writer they'll rewind to past entries once they have a few" do
+      Entry.where(user: user).where.not(id: past_entries.first(2).map(&:id)).delete_all
+      html, text = deliver(nil)
+
+      expect(html).to include("<b>Keep writing...once you have a few entries, you'll rewind to one of them here!</b>")
+      expect(text).to include("Keep writing...once you have a few entries, you'll rewind to one of them here!")
+      expect(html + text).not_to match(/blast from the past/i)
+    end
   end
 end
