@@ -37,6 +37,10 @@
 @source "../../views/devise/otp_credentials/*.html.erb";
 @source "../../views/devise/otp_tokens/*.html.erb";
 @source "../../views/devise/shared/_error_messages.html.erb";
+@source "../../views/admin/*.html.erb";
+@source "../../views/payments/*.html.erb";
+@source "../../views/inspirations/*.html.erb";
+@source "../../views/kaminari/tw/*.html.erb";
 
 /* The marketing site's palette and fonts (marketing.tailwind.css). */
 @theme {
@@ -134,6 +138,45 @@
 }
 @utility text-link {
   @apply text-accent underline underline-offset-2 hover:text-primary;
+}
+/* Tables of records (admin): small text, uppercase column heads, hairline
+   rows. Wrap in `overflow-x-auto` so wide ones scroll on phones. */
+@utility data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+  line-height: var(--text-sm--line-height);
+  font-variant-numeric: tabular-nums;
+  & :where(th, td) {
+    padding: calc(var(--spacing) * 2.5) calc(var(--spacing) * 3);
+    text-align: left;
+    vertical-align: middle;
+  }
+  /* Outer columns line up with a card's p-5 content. */
+  & :where(th, td):first-child {
+    padding-left: calc(var(--spacing) * 5);
+  }
+  & :where(th, td):last-child {
+    padding-right: calc(var(--spacing) * 5);
+  }
+  & :where(thead th) {
+    font-size: var(--text-xs);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--color-olive-800);
+    border-bottom: 1px solid var(--color-cream-300);
+  }
+  & :where(tbody th) {
+    font-weight: 500;
+  }
+  & :where(tbody tr + tr) {
+    border-top: 1px solid var(--color-cream-200);
+  }
+  & :where(tbody tr:hover) {
+    background-color: var(--color-cream-100);
+  }
 }
 
 /*

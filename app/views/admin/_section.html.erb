@@ -1,0 +1,16 @@
+<%#
+  A titled card whose body (usually a .data-table) runs to the card's edges.
+  Use with a block: render layout: "admin/section", locals: { title:, intro: }
+  Inside, give anything that isn't a table `px-5` to line up with the title.
+%>
+<section class="card overflow-hidden">
+  <div class="px-5 pt-5">
+    <h2 class="font-serif text-2xl text-primary"><%= title %></h2>
+    <% if local_assigns[:intro] %>
+      <p class="mt-1 text-sm text-muted"><%= intro %></p>
+    <% end %>
+  </div>
+  <div class="mt-3 overflow-x-auto pb-2">
+    <%= yield %>
+  </div>
+</section>
