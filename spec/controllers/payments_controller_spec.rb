@@ -118,6 +118,39 @@ RSpec.describe PaymentsController, type: :controller do
       expect(response).to redirect_to(payments_url)
     end
 
+    context 'with a plan set and the billing ID fields blank' do
+      # The new-payment form has no user to prefill from, so it always posts
+      # these fields empty.
+      let(:form_params) { params.merge(plan: 'PRO Yearly PayHere', gumroad_id: '', payhere_id: '', stripe_id: '') }
+
+      before do
+        sign_in superuser
+        paid_user.update!(stripe_id: 'cus_existing')
+      end
+
+      it "keeps the user's existing IDs" do
+        original_ids = paid_user.slice(:gumroad_id, :payhere_id, :stripe_id)
+        expect(original_ids.values).to all(be_present)
+
+        post :create, params: form_params
+
+        paid_user.reload
+        expect(paid_user.plan).to eq 'PRO Yearly PayHere'
+        expect(paid_user.slice(:gumroad_id, :payhere_id, :stripe_id)).to eq original_ids
+      end
+
+      it 'still updates an ID that is filled in' do
+        original_payhere_id = paid_user.payhere_id
+
+        post :create, params: form_params.merge(stripe_id: 'cus_new')
+
+        paid_user.reload
+        expect(paid_user.plan).to eq 'PRO Yearly PayHere'
+        expect(paid_user.stripe_id).to eq 'cus_new'
+        expect(paid_user.payhere_id).to eq original_payhere_id
+      end
+    end
+
     describe 'send thanks' do
       include ActiveJob::TestHelper
 
@@ -160,6 +193,30 @@ RSpec.describe PaymentsController, type: :controller do
         expect(user.reload.frequency).to eq %w[Mon Wed Fri]
         expect(user.plan).to eq 'PRO Monthly PayHere'
       end
+    end
+  end
+
+  describe 'update' do
+    before do
+      sign_in superuser
+      paid_user.update!(stripe_id: 'cus_existing')
+    end
+
+    it 'keeps an existing ID when its field is blank' do
+      patch :update, params: {
+        id: payment.id,
+        user_email: paid_user.email,
+        plan: 'PRO Yearly PayHere',
+        gumroad_id: paid_user.gumroad_id,
+        payhere_id: paid_user.payhere_id,
+        stripe_id: '',
+        payment: { amount: 3.0, comments: 'Edited' }
+      }
+
+      expect(response).to redirect_to(payments_url)
+      paid_user.reload
+      expect(paid_user.plan).to eq 'PRO Yearly PayHere'
+      expect(paid_user.stripe_id).to eq 'cus_existing'
     end
   end
 
