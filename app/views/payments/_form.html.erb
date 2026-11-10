@@ -27,7 +27,13 @@
 
     <div>
       <%= label_tag :plan, nil, class: "field-label" %>
-      <%= text_field_tag :plan, typed.(:plan, user&.plan), placeholder: "Free, PRO Monthly PayHere, PRO Yearly PayHere", class: "field-input" %>
+      <%# Always list the user's current plan (and anything already chosen), so
+          an edit never silently swaps a legacy plan for another one. %>
+      <% plan = typed.(:plan, user&.plan) %>
+      <% plans = (User::SELECTABLE_PLANS + [user&.plan, plan]).compact_blank.uniq %>
+      <%= select_tag :plan,
+            options_for_select(plans.map { |p| [p.match?(/payhere/i) ? "#{p} (Stripe)" : p, p] }, plan),
+            include_blank: "Keep current plan", class: "field-input" %>
     </div>
 
     <div class="grid gap-5 sm:grid-cols-3">

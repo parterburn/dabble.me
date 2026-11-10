@@ -60,6 +60,31 @@ RSpec.describe PaymentsController, type: :controller do
       expect(response.body).to have_field('user_email', with: paid_user.email)
       expect(response.body).to have_field('payment_comments', with: payment.comments)
     end
+
+    context 'plan dropdown' do
+      let(:active_options) do
+        ['Keep current plan', 'Free', 'PRO Monthly PayHere (Stripe)', 'PRO Yearly PayHere (Stripe)', 'PRO Forever']
+      end
+
+      before { sign_in superuser }
+
+      it "selects a Stripe user's plan and offers only active plans" do
+        get :edit, params: { id: payment.id }
+        expect(response.body).to have_select('plan', options: active_options, selected: 'PRO Monthly PayHere (Stripe)')
+      end
+
+      it "adds a Gumroad user's current plan so saving keeps it" do
+        paid_user.update!(plan: 'PRO Yearly Gumroad')
+        get :edit, params: { id: payment.id }
+        expect(response.body).to have_select('plan', options: active_options + ['PRO Yearly Gumroad'], selected: 'PRO Yearly Gumroad')
+      end
+
+      it "adds a PayPal user's current plan so saving keeps it" do
+        paid_user.update!(plan: 'PRO Monthly PayPal')
+        get :edit, params: { id: payment.id }
+        expect(response.body).to have_select('plan', options: active_options + ['PRO Monthly PayPal'], selected: 'PRO Monthly PayPal')
+      end
+    end
   end
 
   describe 'new' do
@@ -83,6 +108,17 @@ RSpec.describe PaymentsController, type: :controller do
       expect(response.body).to have_field('plan')
       expect(response.body).to have_field('user_email')
       expect(response.body).to have_field('payment_comments')
+    end
+
+    it "defaults the plan dropdown to keeping the user's plan, with only active plans" do
+      sign_in superuser
+      get :new
+      expect(response.body).to have_select(
+        'plan',
+        options: ['Keep current plan', 'Free', 'PRO Monthly PayHere (Stripe)', 'PRO Yearly PayHere (Stripe)', 'PRO Forever']
+      )
+      # Nothing is preselected, so the form posts the blank "Keep current plan".
+      expect(response.body).to have_field('plan', with: '')
     end
   end
 
