@@ -117,6 +117,50 @@ RSpec.describe PaymentsController, type: :controller do
       expect(response.status).to eq 302
       expect(response).to redirect_to(payments_url)
     end
+
+    describe 'send thanks' do
+      include ActiveJob::TestHelper
+
+      # A Free user whose schedule was cut to Sundays when they downgraded.
+      before do
+        user.update_columns(frequency: ['Sun'], previous_frequency: %w[Mon Wed Fri])
+        sign_in superuser
+      end
+
+      let(:thanks_params) do
+        {
+          user_email: user.email,
+          plan: 'PRO Monthly PayHere',
+          payment: { amount: 3.0, date: Time.now, comments: 'Manual payment', send_thanks: '1' }
+        }
+      end
+
+      it 'emails thanks and restores the previous schedule when checked' do
+        expect { post :create, params: thanks_params }
+          .to have_enqueued_mail(UserMailer, :thanks_for_paying).with(user)
+        expect(user.reload.frequency).to eq %w[Mon Wed Fri]
+        expect(user.plan).to eq 'PRO Monthly PayHere'
+        expect(flash[:notice]).to eq 'Payment added successfully & thanks was sent!'
+      end
+
+      it 'does neither when unchecked' do
+        thanks_params[:payment][:send_thanks] = '0'
+        expect { post :create, params: thanks_params }
+          .not_to have_enqueued_mail(UserMailer, :thanks_for_paying)
+        expect(user.reload.frequency).to eq ['Sun']
+        expect(user.plan).to eq 'PRO Monthly PayHere'
+        expect(flash[:notice]).to eq 'Payment added successfully!'
+      end
+
+      it 'finds the user by user_id when no email is given' do
+        id_params = thanks_params.except(:user_email).deep_merge(payment: { user_id: user.id })
+        expect { post :create, params: id_params }
+          .to have_enqueued_mail(UserMailer, :thanks_for_paying).with(user)
+        expect(Payment.last.user_id).to eq user.id
+        expect(user.reload.frequency).to eq %w[Mon Wed Fri]
+        expect(user.plan).to eq 'PRO Monthly PayHere'
+      end
+    end
   end
 
   describe 'destroy' do

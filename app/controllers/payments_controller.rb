@@ -18,23 +18,26 @@ class PaymentsController < ApplicationController
   end
 
   def create
-
     if params[:user_email].present?
-      user = User.find_by(email: params[:user_email].downcase)
-      params[:payment][:user_id] = user.id if user.present?
+      email_user = User.find_by(email: params[:user_email].downcase)
+      params[:payment][:user_id] = email_user.id if email_user.present?
     end
 
-    @payment = Payment.create(payment_params)
+    @payment = Payment.new(payment_params)
 
     if @payment.save
-      if user.present? && params["send_thanks"] == 1
+      # The email match, or else whoever the entered user_id belongs to.
+      user = @payment.user
+      # Set the plan first: every update of a Free user resets their
+      # frequency to Sundays, which would undo the restore below.
+      user.update(user_params) if user.present? && user_params[:plan].present?
+      if user.present? && send_thanks?
         user.update(frequency: user.previous_frequency) if user.previous_frequency.any?
         UserMailer.thanks_for_paying(user).deliver_later
         flash[:notice] = "Payment added successfully & thanks was sent!"
       else
         flash[:notice] = "Payment added successfully!"
       end
-      user.update(user_params) if user.present? && user_params[:plan].present?
       redirect_to payments_path
     else
       render 'new'
@@ -260,6 +263,12 @@ class PaymentsController < ApplicationController
 
   def user_params
     params.permit(:plan, :gumroad_id, :payhere_id, :stripe_id)
+  end
+
+  # The form's check_box posts payment[send_thanks] as "1" or "0". It is not
+  # a Payment column, so payment_params leaves it out.
+  def send_thanks?
+    ActiveModel::Type::Boolean.new.cast(params.dig(:payment, :send_thanks)) == true
   end
 
   def valid_payhere_signature?
