@@ -78,12 +78,23 @@ class Entry < ActiveRecord::Base
     end
   end
 
-  def time_ago_in_words_or_numbers(user)
-    now_for_user = Time.now.in_time_zone(user.send_timezone)
-    if self.date.day == 29 && self.date.month == 2 && now_for_user.year - 4 == self.date.year && now_for_user.day == 29 && now_for_user.month == 2
-      "last leap day - exactly 4 years"
+  # How the daily email for send_day introduces this entry: "On this day
+  # 3 years ago" on the same calendar day in an earlier year, otherwise
+  # "Rewind 31 days" (whole days under 60, then e.g. "3 months and 1 week").
+  def look_back_label(send_day)
+    from = date.to_date
+    to = send_day.to_date
+    years = to.year - from.year
+    days = (to - from).to_i
+
+    if years.positive? && from.month == to.month && from.day == to.day
+      "On this day #{years} #{'year'.pluralize(years)} ago"
+    elsif days.positive? && days < 60
+      "Rewind #{days} #{'day'.pluralize(days)}"
+    elsif days.positive?
+      "Rewind #{distance_of_time_in_words(from, to)}"
     else
-      distance_of_time_in_words(self.date, now_for_user)
+      "From your journal"
     end
   end
 
