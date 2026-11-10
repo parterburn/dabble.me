@@ -924,6 +924,50 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
 
+    /// An open row is part of the keyboard's bar, above its buttons: it hides with the keyboard and
+    /// comes back with it, still above the buttons.
+    func testComposerRowClearsBarAfterKeyboardReturns() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        app.buttons["New Entry"].tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        editor.tap()
+        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+        if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap(); editor.tap() }
+        editor.typeText("Went hiking with Sam.")
+        let buttons = app.buttons["Hashtags"]
+        buttons.tap()
+        let chip = app.buttons["#hiking"]
+        XCTAssertTrue(chip.waitForExistence(timeout: 10))
+        XCTAssertLessThanOrEqual(chip.frame.maxY, buttons.frame.minY, "Above the buttons")
+        snap("compose-row-open")
+        app.swipeDown()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        XCTAssertFalse(chip.isHittable, "Hidden with the keyboard")
+        snap("compose-row-keyboard-hidden")
+        editor.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(chip.waitForExistence(timeout: 5))
+        sleep(1) // the keyboard finishes coming in
+        snap("compose-row-keyboard-back")
+        XCTAssertLessThanOrEqual(chip.frame.maxY, buttons.frame.minY, "Still above the buttons")
+        chip.tap()
+        XCTAssertEqual(editor.value as? String, "Went #hiking with Sam.")
+        // A prompt (it can wrap) clears the buttons too.
+        let prompt = app.buttons["Prompt"]
+        if prompt.exists {
+            prompt.tap()
+            let question = app.staticTexts["AskMeQuestion"]
+            XCTAssertTrue(question.waitForExistence(timeout: 60))
+            sleep(1)
+            snap("compose-prompt-row")
+            XCTAssertLessThanOrEqual(question.frame.maxY, prompt.frame.minY, "Prompt above the buttons")
+        }
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+    }
+
     /// Today's streak (top right) opens Stats.
     func testStreakOpensStats() throws {
         let app = launch()

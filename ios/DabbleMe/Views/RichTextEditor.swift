@@ -218,6 +218,9 @@ struct RichTextEditor: UIViewRepresentable {
     var leading: AnyView? = nil
     var trailing: AnyView? = nil
     var barKey = ""
+    /// A row shown above the buttons (hashtags, a prompt, photos), part of the bar so it moves with
+    /// the keyboard and is never covered by it.
+    var row: AnyView? = nil
 
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
@@ -230,15 +233,17 @@ struct RichTextEditor: UIViewRepresentable {
         textView.linkTextAttributes = [.foregroundColor: UIColor.tintColor, .underlineStyle: NSUnderlineStyle.single.rawValue]
         textView.attributedText = RichText.attributedString(from: model.initialBlocks, style: .journal)
         textView.typingAttributes = RichText.Style.journal.baseAttributes
-        textView.inputAccessoryView = context.coordinator.makeToolbar(for: self)
+        textView.inputAccessoryView = context.coordinator.makeBar(for: self)
         textView.accessibilityLabel = "Entry"
         model.attach(textView)
         return textView
     }
 
     func updateUIView(_ textView: UITextView, context: Context) {
-        guard context.coordinator.barKey != barKey, let toolbar = textView.inputAccessoryView as? UIToolbar else { return }
-        context.coordinator.configure(toolbar, for: self)
+        guard let bar = textView.inputAccessoryView as? EditorBar else { return }
+        bar.setRow(row)
+        guard context.coordinator.barKey != barKey else { return }
+        context.coordinator.configure(bar.toolbar, for: self)
     }
 
     func makeCoordinator() -> Coordinator {
@@ -271,10 +276,11 @@ struct RichTextEditor: UIViewRepresentable {
         fileprivate var barKey = ""
         private var hosts: [UIHostingController<AnyView>] = []
 
-        func makeToolbar(for editor: RichTextEditor) -> UIToolbar {
-            let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 52))
-            configure(toolbar, for: editor)
-            return toolbar
+        func makeBar(for editor: RichTextEditor) -> EditorBar {
+            let bar = EditorBar()
+            configure(bar.toolbar, for: editor)
+            bar.setRow(editor.row)
+            return bar
         }
 
         /// The composer's buttons, always in view: photos on the left, tags and link on the right.
@@ -296,6 +302,61 @@ struct RichTextEditor: UIViewRepresentable {
             if let trailing = editor.trailing { items.append(hosted(trailing)) }
             toolbar.items = items
         }
+    }
+}
+
+/// The editor's bar over the keyboard: an optional row (sized to fit its width) above the
+/// buttons. Its height follows the row, so the keyboard makes room for both.
+final class EditorBar: UIView {
+    static let toolbarHeight: CGFloat = 52
+    let toolbar = UIToolbar()
+    private let rowHost = UIHostingController<AnyView>(rootView: AnyView(EmptyView()))
+    private var rowHeight: CGFloat = 0
+    private var hasRow = false
+
+    init() {
+        super.init(frame: CGRect(x: 0, y: 0, width: 320, height: Self.toolbarHeight))
+        autoresizingMask = .flexibleHeight
+        rowHost.safeAreaRegions = []
+        rowHost.view.backgroundColor = .systemBackground
+        rowHost.view.isHidden = true
+        addSubview(rowHost.view)
+        addSubview(toolbar)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override var intrinsicContentSize: CGSize {
+        CGSize(width: UIView.noIntrinsicMetric, height: rowHeight + Self.toolbarHeight)
+    }
+
+    func setRow(_ row: AnyView?) {
+        hasRow = row != nil
+        rowHost.view.isHidden = !hasRow
+        if let row { rowHost.rootView = row }
+        updateRowHeight()
+    }
+
+    private func updateRowHeight() {
+        let height = hasRow && bounds.width > 0
+            ? rowHost.sizeThatFits(in: CGSize(width: bounds.width, height: .greatestFiniteMagnitude)).height.rounded(.up)
+            : 0
+        guard height != rowHeight else { return }
+        rowHeight = height
+        invalidateIntrinsicContentSize()
+        setNeedsLayout()
+    }
+
+    private var laidOutWidth: CGFloat = 0
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        if bounds.width != laidOutWidth {
+            laidOutWidth = bounds.width
+            updateRowHeight() // a wrapping prompt takes more lines when narrower
+        }
+        rowHost.view.frame = CGRect(x: 0, y: 0, width: bounds.width, height: rowHeight)
+        toolbar.frame = CGRect(x: 0, y: bounds.height - Self.toolbarHeight, width: bounds.width, height: Self.toolbarHeight)
     }
 }
 

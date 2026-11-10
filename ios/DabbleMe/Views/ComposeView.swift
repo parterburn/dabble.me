@@ -103,7 +103,8 @@ struct ComposeView: View {
                 RichTextEditor(model: editor,
                                leading: model.me?.canAddPhotos == true ? AnyView(photosButton) : nil,
                                trailing: AnyView(tagAndLinkButtons),
-                               barKey: "\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)")
+                               barKey: "\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)",
+                               row: openRow)
                     .overlay(alignment: .topLeading) {
                         if editor.isEmpty {
                             Text("How was your day?")
@@ -115,26 +116,6 @@ struct ComposeView: View {
                                 .accessibilityHidden(true)
                         }
                     }
-                // Only when opened from the bar, so the writing area stays as large as it can. They
-                // sit down against the bar: iOS leaves space above the keyboard's bar, which would
-                // otherwise show as a gap under the row.
-                if showsHashtagBar {
-                    Divider()
-                    hashtagSuggestions
-                        .padding(.bottom, -14)
-                }
-                if showsAskRow {
-                    Divider()
-                    // A prompt can take two lines, so not the hashtag row's nudge down (the bar would
-                    // cover it): the same gap above the bar as under the hashtags.
-                    askRow
-                        .padding(.bottom, 8)
-                }
-                if showsPhotoDrawer, attachedPhotoCount > 0 {
-                    Divider()
-                    photoBar
-                        .padding(.bottom, -14)
-                }
             }
             .overlay {
                 if isSaving { savingOverlay }
@@ -220,6 +201,22 @@ struct ComposeView: View {
     }
 
     /// The entry's photos: its current one (editing) and those being added.
+    /// The row open from the bar (one at a time), shown in the bar above its buttons so it moves
+    /// with the keyboard; only when opened, so the writing area stays as large as it can.
+    private var openRow: AnyView? {
+        let row: AnyView? = if showsHashtagBar {
+            AnyView(hashtagSuggestions)
+        } else if showsAskRow {
+            AnyView(askRow)
+        } else if showsPhotoDrawer, attachedPhotoCount > 0 {
+            AnyView(photoBar)
+        } else {
+            nil
+        }
+        // A little space between the row and the buttons under it.
+        return row.map { row in AnyView(VStack(spacing: 0) { Divider(); row }.padding(.bottom, 8)) }
+    }
+
     private var attachedPhotoCount: Int { photoItems.count + (existingPhotoURL == nil ? 0 : 1) }
 
     /// The bar's left: Photos (PRO). With none yet it opens the picker; with some it's their stack,
@@ -390,7 +387,7 @@ struct ComposeView: View {
             }
             .font(.subheadline)
             .padding(.horizontal)
-            .padding(.top, 8) // none below: the bar's own space sits under it
+            .padding(.top, 8)
         }
         .scrollIndicators(.hidden)
         // Its own height: a horizontal scroll view would otherwise stretch to share the editor's.
@@ -503,7 +500,7 @@ struct ComposeView: View {
                 }
             }
             .padding(.horizontal)
-            .padding(.top, 8) // none below: the bar's own space sits under it
+            .padding(.top, 8)
         }
         .scrollIndicators(.hidden)
         .fixedSize(horizontal: false, vertical: true)
