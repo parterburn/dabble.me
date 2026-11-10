@@ -316,6 +316,8 @@ class EntriesController < ApplicationController
     @entries = current_user.entries.where(date: year_range).order(date: :asc)
     @total_count = @entries.count
     @years_with_entries = current_user.entries.pluck(:date).compact.map(&:year).uniq.sort
+    entry_days = @entries.pluck(:date).compact.map(&:to_date).uniq.sort
+    @longest_streak = entry_days.slice_when { |day, next_day| next_day != day + 1 }.map(&:size).max.to_i
     if @total_count.positive?
       @body_text = @entries.map { |e| ActionView::Base.full_sanitizer.sanitize(e.body) }.join(" ")
       tokeniser = WordsCounted::Tokeniser.new(@body_text)
@@ -327,7 +329,7 @@ class EntriesController < ApplicationController
     elsif current_user.entries.any?
       prev_year = current_user.entries.first.date.year.to_s
       flash[:alert] = "No entries in #{@year} - sending you back to #{prev_year}"
-      redirect_to review_path(prev_year)
+      redirect_to rewind_path(prev_year)
     else
       flash[:alert] = "No entries to review :("
       redirect_to entries_path

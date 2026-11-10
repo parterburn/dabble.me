@@ -119,7 +119,8 @@ Rails.application.routes.draw do
   resources :entries, except: [:show]
   get 'entries/(:group)(/:subgroup)',   to: 'entries#index',  as: 'group_entries'
   get 'latest',                         to: 'entries#latest', as: 'latest_entry'
-  get 'review/(:year)',                 to: 'entries#review', as: 'review'
+  get 'rewind/(:year)',                 to: 'entries#review', as: 'rewind'
+  get 'review(/:year)',                 to: redirect { |params, _| ["/rewind", params[:year].to_s[/\A\d{4}\z/]].compact.join("/") }
   get 'play',                           to: redirect('/entries/songs')
   get 'search',                         to: 'searches#show'
   get 'write',                          to: redirect('/entries/new')

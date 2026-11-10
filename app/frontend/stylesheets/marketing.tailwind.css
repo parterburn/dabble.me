@@ -133,6 +133,21 @@
 
 /* Component layer for reusable components */
 @layer components {
+  /* Font Awesome Pro "Slab" icons, drawn as CSS masks in the text color.
+     The license keeps the SVGs out of this public repo, so IconsController
+     serves them from /icons/slab/. Size them with h-* and w-*:
+     <span class="slab-icon slab-icon--backward h-5 w-5" aria-hidden="true"></span> */
+  .slab-icon {
+    display: inline-block;
+    flex-shrink: 0;
+    background-color: currentColor;
+    mask: var(--slab-icon) center / contain no-repeat;
+  }
+
+  .slab-icon--backward {
+    --slab-icon: url("/icons/slab/backward.svg");
+  }
+
   .btn {
     @apply inline-flex items-center justify-center px-6 py-3 font-medium rounded-full transition-colors duration-200 cursor-pointer;
   }

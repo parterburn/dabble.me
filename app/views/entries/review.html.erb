@@ -1,13 +1,13 @@
-<% title ("#{@year} In Review — Dabble me.") %>
+<% title ("#{@year} Rewind — Dabble me.") %>
 <%= javascript_include_tag "//www.gstatic.com/charts/loader.js", "chartkick" %>
 <% add_class = 'really-blur' if current_user.is_free? %>
 
 <div class="row s-year-in-review">
   <div class="col-md-8 col-md-offset-2">
-    <h3><%= "#{@year} Year In Review" %></h3>
+    <h3><%= "#{@year} Rewind" %></h3>
     <% if @years_with_entries.size > 1 %>
       <% @years_with_entries.each do |yr| %>
-        <%= link_to "#{yr}", review_path(yr), style: "margin: 0 5px; font-size: 16px; #{'color: black;' if yr.to_s == @year.to_s}" %>
+        <%= link_to "#{yr}", rewind_path(yr), style: "margin: 0 5px; font-size: 16px; #{'color: black;' if yr.to_s == @year.to_s}" %>
       <% end %>
     <% end %>
     <div class="clearfix"></div>
@@ -32,7 +32,8 @@
         <div class="clearfix"></div>
         <div class="center" style="font-size: 14px;">
           <%= number_to_percentage((@total_count.to_f / elapsed_days_in_year(@year)).to_f * 100, precision: 0) %>
-          of the days in <%= @year %> with entries.
+          of the days in <%= @year %> with entries<% if @longest_streak > 1 %>
+            • <%= @longest_streak %> days is your longest streak<% end %>
         </div>
       </div>
     </div>
@@ -42,7 +43,7 @@
     <div class="col-md-8 col-md-offset-2">
       <div class="alert alert-warning">
         <%= link_to "Subscribe to PRO", subscribe_path, class: "alert-link" %>
-        to see the rest of your Year in Review.
+        to see the rest of your <%= @year %> Rewind.
       </div>
     </div>
   <% end %>
