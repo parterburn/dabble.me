@@ -4,6 +4,8 @@ module Api
   # How often each #hashtag appears in a user's entries since a date (one count per entry),
   # matched case-insensitively and shown in the spelling used most.
   class HashtagCounts
+    RECENT_PAGE_SIZE = 200
+
     def initialize(user, since:)
       @user = user
       @since = since
@@ -25,15 +27,22 @@ module Api
     end
 
     # The tags used most recently first (newest entries first), each in its latest spelling.
+    # Reads bodies a page at a time and stops once it has enough tags, so a
+    # long journal isn't loaded when the newest entries already hold them.
     def recent(limit)
       latest = {}
-      user.entries.unscope(:order)
-          .where(date: since.beginning_of_day..)
-          .order(date: :desc, id: :desc)
-          .pluck(:body)
-          .each do |body|
-        Array(Entry.hashtags_in(body)).each { |tag| latest[tag.downcase] ||= tag }
-        break if latest.size >= limit
+      newest_first = user.entries.unscope(:order)
+                         .where(date: since.beginning_of_day..)
+                         .order(date: :desc, id: :desc)
+      offset = 0
+      while latest.size < limit
+        bodies = newest_first.offset(offset).limit(RECENT_PAGE_SIZE).pluck(:body)
+        bodies.each do |body|
+          Array(Entry.hashtags_in(body)).each { |tag| latest[tag.downcase] ||= tag }
+        end
+        break if bodies.size < RECENT_PAGE_SIZE
+
+        offset += RECENT_PAGE_SIZE
       end
       latest.values.first(limit).map { |tag| { tag: tag, count: 0 } }
     end
