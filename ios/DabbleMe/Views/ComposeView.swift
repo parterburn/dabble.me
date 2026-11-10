@@ -39,6 +39,7 @@ struct ComposeView: View {
     @State private var askError: String?
     /// The newest few entries (dated lines), as background for prompts; loaded with the first one.
     @State private var recentForPrompts: [String]?
+    @State private var curatedPrompts: [String] = []
     /// The photo drawer (thumbnails, Add More, remove): closed unless opened from the photo stack,
     /// so the writing area keeps its room.
     @State private var showsPhotoDrawer = false
@@ -451,9 +452,10 @@ struct ComposeView: View {
                 let editing: Int? = if case .edit(let entry) = mode { entry.id } else { nil }
                 let recent = ((try? await model.recentEntries()) ?? []).filter { $0.id != editing }
                 recentForPrompts = JournalIntelligence.dated(recent, today: today)
+                curatedPrompts = await model.curatedPrompts()
             }
             let next = try await JournalIntelligence.followUpQuestion(for: editor.plainText, recent: recentForPrompts ?? [],
-                                                                      today: today, asked: askedQuestions)
+                                                                      curated: curatedPrompts, today: today, asked: askedQuestions)
             question = next
             askedQuestions.append(next)
             askError = nil

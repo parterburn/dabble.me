@@ -53,6 +53,18 @@ struct JournalDayTests {
 }
 
 @MainActor
+struct PromptGroundingTests {
+    @Test func namesMustComeFromTheEntry() {
+        let draft = "Boys had basketball practice. Leo hit three in a row and Coach Dana laughed."
+        #expect(JournalIntelligence.namesAreGrounded("What did it feel like when Leo hit three in a row?", in: draft))
+        #expect(JournalIntelligence.namesAreGrounded("Why did Coach Dana's laugh stay with you?", in: draft))
+        #expect(!JournalIntelligence.namesAreGrounded("What did Sam think of the practice?", in: draft), "Sam isn't in the entry")
+        #expect(!JournalIntelligence.namesAreGrounded("How did the game in Denver go?", in: draft), "Nor is Denver")
+        #expect(JournalIntelligence.namesAreGrounded("What made I so happy?", in: draft), "\"I\" isn't a name")
+    }
+}
+
+@MainActor
 struct ReflectionChatSummaryTests {
     /// A long chat keeps its most recent turns for the summary, so a late answer isn't cut off.
     @Test func longChatsKeepTheLatestTurns() {

@@ -347,6 +347,14 @@ final class AppModel {
         return response.email
     }
 
+    /// A random handful of dabble.me's curated writing prompts, for Apple Intelligence to choose
+    /// from (none from a server without the endpoint).
+    func curatedPrompts() async -> [String] {
+        struct Prompts: Decodable { let prompts: [String] }
+        let list: Prompts? = try? await api.get("api/v1/prompts", query: ["count": "20"])
+        return list?.prompts ?? []
+    }
+
     /// The newest few entries (for on-device reflection prompts).
     func recentEntries() async throws -> [EntrySummary] {
         let page: EntryPage = try await api.get("api/v1/entries", query: ["per": "5"])

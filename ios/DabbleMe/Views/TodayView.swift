@@ -210,8 +210,9 @@ struct TodayView: View {
         defer { isWritingPrompt = false }
         let day = today.day ?? JournalDay(localDate: .now)
         let recent = JournalIntelligence.dated((try? await model.recentEntries()) ?? [], today: day)
+        let curated = await model.curatedPrompts()
         do {
-            let text = try await JournalIntelligence.reflectionPrompt(from: recent, today: day)
+            let text = try await JournalIntelligence.startingPrompt(curated: curated, recent: recent, today: day)
             withAnimation {
                 aiPromptDay = today.date
                 aiPromptText = text
