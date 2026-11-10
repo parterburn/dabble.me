@@ -15,6 +15,29 @@ RSpec.describe UserMailer do
     end
   end
 
+  describe "#no_user_here" do
+    let(:notification) { { "email" => "buyer@example.com", "purchaser_id" => "4444" } }
+
+    it "says why the payment wasn't recorded, which account matched, and what to do" do
+      email = described_class.no_user_here(notification, provider: "Gumroad", reason: "Because of a test.", user_id: user.id)
+      body = email.body.decoded
+
+      expect(email.to).to eq(["hello@#{ENV['MAIN_DOMAIN']}"])
+      expect(email.subject).to eq("[REFUND REQUIRED] Payment Without a User")
+      expect(body).to include("A Gumroad notification wasn't recorded.", "Why: Because of a test.")
+      expect(body).to include("Matched account: mcp-test@example.com (user #{user.id}, #{user.plan})", "/admin/users?email=mcp-test%40example.com")
+      expect(body).to include("refund it in Gumroad", "/admin/payments/new")
+      expect(body).to include("purchaser_id: '4444'")
+    end
+
+    it "still sends the notification when called without a reason" do
+      body = described_class.no_user_here(notification).body.decoded
+
+      expect(body).to include("Why: No account matched this payment.", "refund it in the payment provider", "buyer@example.com")
+      expect(body).not_to include("Matched account")
+    end
+  end
+
   describe "#welcome_email" do
     it "links to settings with a token instead of the posting address" do
       email = described_class.welcome_email(user)

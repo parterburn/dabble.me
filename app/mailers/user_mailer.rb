@@ -39,8 +39,14 @@ class UserMailer < ActionMailer::Base
     email.mailgun_options = {tag: 'Downgraded'}
   end
 
-  def no_user_here(params)
-    mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: '[REFUND REQUIRED] Payment Without a User', body: params.to_yaml)
+  # A payment notification that wasn't recorded. PaymentsController passes the
+  # provider, why it was refused, and the account it matched, if any.
+  def no_user_here(params, provider: nil, reason: nil, user_id: nil)
+    @params = params.to_h
+    @provider = provider
+    @reason = reason
+    @user = User.find_by(id: user_id) if user_id
+    mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: '[REFUND REQUIRED] Payment Without a User')
   end
 
   def failed_entry(user, errors, date, body)

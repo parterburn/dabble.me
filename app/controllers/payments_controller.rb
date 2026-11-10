@@ -105,7 +105,7 @@ class PaymentsController < ApplicationController
         end
       end
     elsif processed_params && params[:event] != "subscription.cancelled"
-      UserMailer.no_user_here(params.permit!.to_h).deliver_later
+      UserMailer.no_user_here(params.permit!.to_h, provider: @provider, reason: @refund_reason, user_id: @refund_user&.id).deliver_later
     else
       Sentry.capture_message("Payment notification not processed", level: :info, extra: { params: params })
     end
@@ -202,8 +202,14 @@ class PaymentsController < ApplicationController
   end
 
   def process_payhere
+    @provider = "PayHere"
     @user = User.find_by(payhere_id: params[:customer][:id])
     @user ||= User.find_by(email: params[:customer][:email].downcase)
+    if @user.nil?
+      reason = "No account has PayHere customer ID #{params[:customer][:id]} or the email #{params[:customer][:email]} (event: #{params[:event]})."
+      reason += " The payment failed, so there may be nothing to refund." if params[:event] == "payment.failed"
+      explain_refund(reason)
+    end
 
     if params[:event] == "payment.failed"
       # Sentry.capture_message("Failed payment", level: :info, extra: { params: params })
@@ -230,13 +236,15 @@ class PaymentsController < ApplicationController
   # Anything else, including a Free user's first purchase or a PRO user on
   # another provider, goes to the "[REFUND REQUIRED]" email for a manual look.
   def process_gumroad
+    @provider = "Gumroad"
     purchaser_id = params[:purchaser_id].to_s
     email = params[:email].to_s.downcase
     by_id = User.find_by(gumroad_id: purchaser_id) if purchaser_id.present?
-    @user = by_id || (User.find_by(email: email) if email.present?)
-    on_gumroad = @user&.plan.to_s.match?(/gumroad/i)
-    lapsed = @user.present? && @user == by_id && @user.plan == "Free"
-    @user = nil unless on_gumroad || lapsed
+    matched = by_id || (User.find_by(email: email) if email.present?)
+    on_gumroad = matched&.plan.to_s.match?(/gumroad/i)
+    lapsed = matched.present? && matched == by_id && matched.plan == "Free"
+    @user = matched if on_gumroad || lapsed
+    explain_refund(gumroad_refusal(matched, by_id, purchaser_id, email), matched) if @user.nil?
 
     paid = params[:price].to_f / 100
     if params[:recurrence].present?
@@ -263,12 +271,25 @@ class PaymentsController < ApplicationController
   PAYPAL_LEGACY_PLAN = "PRO Monthly PayPal".freeze
 
   def process_paypal
+    @provider = "PayPal"
     # item_name carries the key the user had when they subscribed. image_key
     # holds that value for every pre-existing user and never changes, so
     # renewals keep matching after the user resets their posting address.
     subscription_key = params[:item_name].gsub('Dabble Me PRO for ','') if params[:item_name].present?
-    @user = User.find_by(image_key: subscription_key) if subscription_key.present?
-    @user = nil unless @user&.plan == PAYPAL_LEGACY_PLAN
+    matched = User.find_by(image_key: subscription_key) if subscription_key.present?
+    @user = matched if matched&.plan == PAYPAL_LEGACY_PLAN
+    if @user.nil?
+      explain_refund(
+        if matched
+          "#{matched.email} has this subscription key (#{subscription_key}) but is on the #{matched.plan} plan, not #{PAYPAL_LEGACY_PLAN}. " \
+            "PayPal is closed to new subscribers, so only renewals of a legacy PayPal subscription are accepted."
+        else
+          "No account has the subscription key #{subscription_key.presence || '(none sent)'} from item_name \"#{params[:item_name]}\". " \
+            "PayPal is closed to new subscribers."
+        end,
+        matched
+      )
+    end
 
     paid = params[:mc_gross]
 
@@ -280,6 +301,29 @@ class PaymentsController < ApplicationController
       { }
     elsif params[:item_name].present? && params[:item_name].include?("Dabble Me")
       { error: "No eligible PayPal user" }
+    end
+  end
+
+  # Why a notification wasn't recorded, and the closest account if one
+  # matched, for the "[REFUND REQUIRED]" email.
+  def explain_refund(reason, user = nil)
+    @refund_reason = reason
+    @refund_user = user
+  end
+
+  def gumroad_refusal(user, by_id, purchaser_id, email)
+    if user.nil?
+      "No account matches this purchase (Gumroad purchaser ID #{purchaser_id.presence || '(none sent)'}, email #{email.presence || '(none sent)'}). " \
+        "It looks like a new subscriber, and Gumroad is closed to new subscribers."
+    elsif user.plan == "Free" && user.gumroad_id.present?
+      "#{user.email} matches by email but is on the Free plan, and their Gumroad purchaser ID on file (#{user.gumroad_id}) " \
+        "differs from this one (#{purchaser_id.presence || 'none sent'}). Only renewals of an existing Gumroad subscription are accepted."
+    elsif user.plan == "Free"
+      "#{user.email} is on the Free plan and has never paid through Gumroad, so this is a new Gumroad purchase. " \
+        "Gumroad is closed to new subscribers."
+    else
+      "#{user.email} (matched by #{user == by_id ? 'Gumroad purchaser ID' : 'email'}) is already on the #{user.plan} plan, " \
+        "so this Gumroad charge would be a second payment."
     end
   end
 
