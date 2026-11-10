@@ -166,8 +166,6 @@ final class AppModel {
         }
     }
 
-    /// Refreshes Today and the account together, so "today" (in the journal's time zone) stays
-    /// in step everywhere, e.g. when the app stays open past midnight.
     /// Entries written this calendar year, for Today's header and the widget: from the server, or
     /// (an older server) added up from the Journal's months once they've loaded.
     var entriesThisYear: Int? {
@@ -177,12 +175,18 @@ final class AppModel {
         return months.filter { $0.year == year }.reduce(0) { $0 + $1.count }
     }
 
+    /// Refreshes Today and the account together, so "today" (in the journal's time zone) stays
+    /// in step everywhere, e.g. when the app stays open past midnight.
     func loadToday() async {
         guard isSignedIn else { return }
         do {
             async let todayRequest: TodaySummary = api.get("api/v1/today")
             async let meRequest: Me = api.get("api/v1/me")
             (today, me) = try await (todayRequest, meRequest)
+            // An older server: the year's count comes from the month index, so that's refreshed too.
+            if today?.entriesThisYear == nil, hasLoaded, let list: MonthList = try? await api.get("api/v1/entries/months") {
+                months = list.months
+            }
             WidgetSync.update(from: self)
         } catch is CancellationError {
         } catch {
