@@ -31,6 +31,15 @@ RSpec.describe WelcomeController, type: :controller do
     end
   end
 
+  describe 'subscribe' do
+    it 'calls the yearly stats page Writing Stats by Year, not Year in Review' do
+      get :subscribe
+
+      expect(response.body).to have_css('h3', text: 'Writing Stats by Year')
+      expect(response.body).not_to match(/Year in Review/i)
+    end
+  end
+
   describe 'mcp_server' do
     it 'renders the plain-language AI Connector guide' do
       get :mcp_server
