@@ -43,7 +43,8 @@ struct TimelineScrubber: View {
                             .background(.regularMaterial, in: .capsule)
                             .shadow(color: .black.opacity(0.15), radius: 6, y: 2)
                             .frame(height: thumbHeight)
-                            .offset(x: -(stripWidth + 10), y: fraction * track)
+                            // Well left of the thumb, so the finger dragging it doesn't cover it.
+                            .offset(x: -(stripWidth + 70), y: fraction * track)
                             .allowsHitTesting(false)
                             .accessibilityHidden(true)
                             .transition(.opacity)

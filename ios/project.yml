@@ -10,7 +10,7 @@ settings:
   base:
     SWIFT_VERSION: "6.0"
     MARKETING_VERSION: "1.0"
-    CURRENT_PROJECT_VERSION: "42"
+    CURRENT_PROJECT_VERSION: "43"
     # Dabble Dev LLC. Change if you sign with a different Apple Developer team.
     DEVELOPMENT_TEAM: B79A4CAS56
     CODE_SIGN_STYLE: Automatic
@@ -57,6 +57,17 @@ targets:
           UIColorName: Paper
         UIApplicationSceneManifest:
           UIApplicationSupportsMultipleScenes: false
+        # Touch and hold the app icon (QuickActions.swift).
+        UIApplicationShortcutItems:
+          - UIApplicationShortcutItemType: me.dabble.ios.new-entry
+            UIApplicationShortcutItemTitle: New Entry
+            UIApplicationShortcutItemIconFile: slab-edit
+          - UIApplicationShortcutItemType: me.dabble.ios.journal
+            UIApplicationShortcutItemTitle: View Journal
+            UIApplicationShortcutItemIconFile: slab-book
+          - UIApplicationShortcutItemType: me.dabble.ios.search
+            UIApplicationShortcutItemTitle: Search Journal
+            UIApplicationShortcutItemIconFile: slab-search
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         UISupportedInterfaceOrientations~ipad:

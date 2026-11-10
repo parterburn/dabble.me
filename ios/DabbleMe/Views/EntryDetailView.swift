@@ -97,7 +97,7 @@ struct EntryDetailView: View {
             }
         }
         .sheet(item: $reflection) { reflection in
-            ReflectionSheet(reflection: reflection)
+            ReflectionSheet(reflection: reflection) { self.entry = $0 }
         }
         .alert("Something went wrong", isPresented: .present($actionError)) {
             Button("OK", role: .cancel) {}
@@ -220,7 +220,8 @@ struct EntryDetailView: View {
     /// The reflection's sheet opens right away, reflecting inside it, so you can see where it'll appear.
     private func reflect(on entry: EntryDetail) async {
         guard reflection == nil else { return }
-        let pending = EntryReflection(date: model.dateLine(for: entry.day, fallback: entry.date))
+        let pending = EntryReflection(date: model.dateLine(for: entry.day, fallback: entry.date), entryText: entry.bodyText,
+                                      entryID: entry.id, document: entry.document)
         reflection = pending
         do {
             let text = try await model.reflection(on: entry).text
@@ -400,11 +401,29 @@ struct DocumentText: View {
 struct EntryReflection: Identifiable {
     let id = UUID()
     var date: String
+    /// The entry's text, for chatting about it after the reflection.
+    var entryText = ""
+    /// The entry and its editable content, so a summary of the chat can be added to it.
+    var entryID: Int?
+    var document: [DocumentBlock]?
     var text: String?
 }
 
 struct ReflectionSheet: View {
     let reflection: EntryReflection
+    /// The entry after a summary of the chat was added to it.
+    var onEntryUpdated: (EntryDetail) -> Void = { _ in }
+    @Environment(AppModel.self) private var model
+    @State private var summary = SummaryPhase.offer
+
+    private enum SummaryPhase: Equatable {
+        case offer, working, preview(String), saving(String), added, failed(String), dismissed
+    }
+    /// After the reflection, a chat about the entry (on the device, never saved).
+    @State private var chat: ReflectionChat?
+    @State private var draft = ""
+    @State private var detent = PresentationDetent.medium
+    @FocusState private var replying: Bool
 
     var body: some View {
         // Laid out like Random Memory: the title and the X across the top, then the text.
@@ -416,44 +435,191 @@ struct ReflectionSheet: View {
                 Spacer()
                 SheetCloseButton()
             }
-            ScrollView {
-                VStack(alignment: .leading, spacing: 16) {
-                    if !reflection.date.isEmpty {
-                        Text(reflection.date)
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.tint)
-                    }
-                    if let text = reflection.text {
-                        // Light Markdown: the reply bolds its closing question.
-                        Text(AttributedString.journal(text))
-                            .font(.system(.title3, design: .serif))
-                            .lineSpacing(4)
-                            .textSelection(.enabled)
-                            .transition(.opacity)
-                        privacyNote("Written on this device by Apple Intelligence.\nYour entry wasn't sent anywhere.")
-                    } else {
-                        VStack(spacing: 12) {
-                            ProgressView()
-                                .controlSize(.large)
-                            Text("Generating…")
-                                .font(.headline)
-                                .foregroundStyle(.secondary)
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 16) {
+                        if !reflection.date.isEmpty {
+                            Text(reflection.date)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.tint)
                         }
-                        .frame(maxWidth: .infinity, minHeight: 160)
-                        .accessibilityElement(children: .combine)
-                        privacyNote("Apple Intelligence is writing this on your device.\nYour entry isn't sent anywhere.")
+                        if let text = reflection.text {
+                            // Light Markdown: the reply bolds its closing question.
+                            Text(AttributedString.journal(text))
+                                .font(.system(.title3, design: .serif))
+                                .lineSpacing(4)
+                                .textSelection(.enabled)
+                                .transition(.opacity)
+                            if let chat {
+                                ForEach(chat.messages) { message in
+                                    ChatBubble(message: message, isReplying: chat.isReplying && message == chat.messages.last)
+                                        .id(message.id)
+                                }
+                                // After the first answer and reply: offer to keep it in the entry.
+                                if canAddSummary, chat.messages.count >= 2, !chat.isReplying || summary != .offer {
+                                    summaryOffer(chat)
+                                }
+                            }
+                            privacyNote(chat?.messages.isEmpty == false
+                                ? "On this device, and not saved anywhere.\nClosing this forgets the conversation."
+                                : "Written on this device by Apple Intelligence.\nYour entry wasn't sent anywhere.")
+                                .id("bottom")
+                        } else {
+                            VStack(spacing: 12) {
+                                ProgressView()
+                                    .controlSize(.large)
+                                Text("Generating…")
+                                    .font(.headline)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 160)
+                            .accessibilityElement(children: .combine)
+                            privacyNote("Apple Intelligence is writing this on your device.\nYour entry isn't sent anywhere.")
+                        }
                     }
+                    .padding(.bottom)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                 }
-                .padding(.bottom)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                // A short reflection doesn't bounce, so pulling down drags the sheet closed.
+                .scrollBounceBehavior(.basedOnSize)
+                .scrollDismissesKeyboard(.interactively)
+                .animation(.easeOut(duration: 0.25), value: reflection.text)
+                .onChange(of: chat?.messages.last?.text) {
+                    withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
+                }
+                .onChange(of: summary) {
+                    withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
+                }
             }
-            // A short reflection doesn't bounce, so pulling down drags the sheet closed.
-            .scrollBounceBehavior(.basedOnSize)
-            .animation(.easeOut(duration: 0.25), value: reflection.text)
+            if reflection.text != nil, !reflection.entryText.isEmpty {
+                replyField
+            }
         }
         .padding([.horizontal, .top], 20)
+        .padding(.bottom, reflection.text != nil ? 8 : 0)
         .presentationDragIndicator(.visible)
-        .presentationDetents([.medium, .large])
+        .presentationDetents([.medium, .large], selection: $detent)
+        // Room to read the conversation while typing.
+        .onChange(of: replying) { _, typing in if typing { withAnimation { detent = .large } } }
+    }
+
+    /// Answer the reflection's question and keep talking it through.
+    private var replyField: some View {
+        HStack(alignment: .bottom, spacing: 8) {
+            TextField("Reply to keep talking it through…", text: $draft, axis: .vertical)
+                .lineLimit(1...5)
+                .focused($replying)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 20))
+                .accessibilityIdentifier("ReflectionReply")
+                .onSubmit(send)
+            Button(action: send) {
+                appIcon("slab-send")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 18, height: 18)
+                    .foregroundStyle(.white)
+                    .frame(width: 40, height: 40)
+                    .background(Color.accentColor, in: .circle)
+            }
+            .buttonStyle(.plain)
+            .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || chat?.isReplying == true)
+            .opacity(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? 0.4 : 1)
+            .accessibilityLabel("Send")
+        }
+    }
+
+    /// Only where the writer can edit this entry in the app (PRO, and formatting the app can keep).
+    private var canAddSummary: Bool {
+        model.me?.canEdit == true && reflection.entryID != nil && reflection.document != nil
+    }
+
+    @ViewBuilder
+    private func summaryOffer(_ chat: ReflectionChat) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            switch summary {
+            case .offer:
+                Text("If you'd like to keep any of this, I can sum up our conversation and add it to this day's entry.")
+                    .foregroundStyle(.secondary)
+                Button {
+                    replying = false // the keyboard down, so the summary shows
+                    Task { await summarize(chat) }
+                } label: {
+                    Label("Sum Up & Add to Entry", icon: "slab-sparkles")
+                }
+                .buttonStyle(.bordered)
+                .buttonBorderShape(.capsule)
+            case .working:
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text("Summing up…").foregroundStyle(.secondary)
+                }
+            case .preview(let text), .saving(let text):
+                // As it'll read in the entry.
+                (Text("Reflection: ").bold() + Text(text))
+                    .font(.system(.body, design: .serif))
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(.tint.opacity(0.08), in: .rect(cornerRadius: 12))
+                    .accessibilityIdentifier("ReflectionSummary")
+                HStack(spacing: 10) {
+                    Button("Add to Entry") { Task { await addToEntry(text) } }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(summary == .saving(text))
+                    Button("Not Now") { summary = .dismissed }
+                        .buttonStyle(.bordered)
+                }
+                .buttonBorderShape(.capsule)
+            case .added:
+                Label("Added to this day's entry.", icon: "slab-check")
+                    .foregroundStyle(.tint)
+            case .failed(let message):
+                Text(message).foregroundStyle(.secondary)
+                Button("Try Again") { Task { await summarize(chat) } }
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.capsule)
+            case .dismissed:
+                EmptyView()
+            }
+        }
+        .font(.subheadline)
+        .fontWeight(.medium)
+        .animation(.easeOut(duration: 0.2), value: summary)
+    }
+
+    private func summarize(_ chat: ReflectionChat) async {
+        summary = .working
+        do {
+            let text = try await JournalIntelligence.chatSummary(entry: reflection.entryText, conversation: chat.messages)
+            summary = .preview(text)
+        } catch {
+            summary = .failed(error.localizedDescription)
+        }
+    }
+
+    /// Adds the summary at the end of the entry as its own paragraph, starting "Reflection:" in
+    /// bold, through the usual edit.
+    private func addToEntry(_ text: String) async {
+        guard let id = reflection.entryID, let document = reflection.document else { return }
+        summary = .saving(text)
+        do {
+            let paragraph = DocumentBlock.paragraph(DocumentRun("Reflection:", bold: true), DocumentRun(" " + text))
+            let updated = try await model.updateEntry(id: id, document: document + [paragraph])
+            onEntryUpdated(updated)
+            summary = .added
+        } catch {
+            summary = .failed(error.localizedDescription)
+        }
+    }
+
+    private func send() {
+        guard let text = reflection.text else { return }
+        let message = draft
+        draft = ""
+        let chat = chat ?? ReflectionChat(entry: reflection.entryText, date: reflection.date, reflection: text, firstName: model.me?.firstName)
+        self.chat = chat
+        Task { await chat.send(message) }
     }
 
     /// Two short lines with the lock centered beside both.
@@ -470,6 +636,37 @@ struct ReflectionSheet: View {
         .foregroundStyle(.secondary)
         .accessibilityElement(children: .combine)
         .padding(.top, 8)
+    }
+}
+
+/// One turn of the reflection chat: the writer's on the right in a tinted bubble, the reply on
+/// the left in the reflection's serif type (a spinner while it starts).
+private struct ChatBubble: View {
+    let message: ReflectionChat.Message
+    let isReplying: Bool
+
+    var body: some View {
+        if message.fromWriter {
+            Text(message.text)
+                .font(.body)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(.tint.opacity(0.14), in: .rect(cornerRadius: 18))
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.leading, 40)
+                .textSelection(.enabled)
+        } else if message.text.isEmpty, isReplying {
+            ProgressView()
+                .frame(maxWidth: .infinity, alignment: .leading)
+        } else {
+            // Light Markdown, like the reflection: it bolds its question too.
+            Text(AttributedString.journal(message.text))
+                .font(.system(.title3, design: .serif))
+                .lineSpacing(4)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .textSelection(.enabled)
+                .accessibilityIdentifier("ReflectionChatReply")
+        }
     }
 }
 

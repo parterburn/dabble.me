@@ -71,11 +71,34 @@ final class RichTextEditorModel {
         textDidChange()
     }
 
+    /// Adds an "Ask Me" question as its own bold paragraph at the end, with the cursor on a fresh
+    /// line under it, ready for the answer.
+    func addQuestion(_ question: String) {
+        guard let textView else { return }
+        let storage = textView.textStorage
+        let style = RichText.Style.journal
+        var bold = style.baseAttributes
+        bold[.font] = style.baseFont.with(bold: true, italic: false)
+        let lead = storage.length == 0 || storage.string.hasSuffix("\n") ? "" : "\n"
+        storage.beginEditing()
+        storage.append(NSAttributedString(string: lead, attributes: style.baseAttributes))
+        storage.append(NSAttributedString(string: question, attributes: bold))
+        storage.append(NSAttributedString(string: "\n", attributes: style.baseAttributes))
+        storage.endEditing()
+        textView.typingAttributes = style.baseAttributes
+        textView.selectedRange = NSRange(location: storage.length, length: 0)
+        textView.scrollRangeToVisible(textView.selectedRange)
+        textDidChange()
+        focus()
+    }
+
     /// Replaces everything in the editor (e.g. "Start Over" on a restored draft).
     func replace(with blocks: [DocumentBlock]) {
         textView?.attributedText = RichText.attributedString(from: blocks, style: .journal)
         textView?.typingAttributes = RichText.Style.journal.baseAttributes
         isEmpty = blocks.isEmpty
+        // Keep the count in step too (Prompt shows once there's a couple of sentences).
+        characterCount = (textView?.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines).count
     }
 
     fileprivate func textDidChange() {

@@ -53,6 +53,30 @@ struct JournalDayTests {
 }
 
 @MainActor
+struct ReflectionChatSummaryTests {
+    /// A long chat keeps its most recent turns for the summary, so a late answer isn't cut off.
+    @Test func longChatsKeepTheLatestTurns() {
+        var conversation: [ReflectionChat.Message] = []
+        for turn in 1...30 {
+            conversation.append(ReflectionChat.Message(fromWriter: true, text: "Answer \(turn): " + String(repeating: "words ", count: 20)))
+            conversation.append(ReflectionChat.Message(fromWriter: false, text: "A question back " + String(repeating: "hmm ", count: 100)))
+        }
+        conversation.append(ReflectionChat.Message(fromWriter: true, text: "The realization: I miss mornings outside."))
+        let transcript = JournalIntelligence.summaryTranscript(conversation)
+        #expect(transcript.contains("The realization: I miss mornings outside."))
+        #expect(!transcript.contains("Answer 1: "))
+        #expect(transcript.hasPrefix("…"))
+        #expect(transcript.count <= 2100)
+    }
+
+    @Test func shortChatsAreKeptWhole() {
+        let conversation = [ReflectionChat.Message(fromWriter: true, text: "The sunrise."),
+                            ReflectionChat.Message(fromWriter: false, text: "What made it stick?")]
+        #expect(JournalIntelligence.summaryTranscript(conversation) == "Me: The sunrise.\nCompanion: What made it stick?")
+    }
+}
+
+@MainActor
 struct WidgetPhotoTests {
     /// Cleaning up old photo copies stays inside WidgetPhotos: the App Group's other files (its
     /// shared settings) and the kept photo survive.

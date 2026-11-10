@@ -151,6 +151,36 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10), "The widget's entry link opens it")
     }
 
+    /// Touch and hold the app icon: New Entry, View Journal and Search Journal open those places.
+    func testHomeScreenQuickActions() throws {
+        XCTAssertTrue(app.tabBars.buttons["Journal"].waitForExistence(timeout: 15))
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        func quickAction(_ title: String) {
+            XCUIDevice.shared.press(.home)
+            let icon = springboard.icons["Dabble Me"]
+            XCTAssertTrue(icon.waitForExistence(timeout: 10), "The app icon is on the Home Screen")
+            icon.press(forDuration: 1.5)
+            let action = springboard.buttons[title]
+            XCTAssertTrue(action.waitForExistence(timeout: 5), "\(title) is a quick action")
+            action.tap()
+            XCTAssertTrue(app.wait(for: .runningForeground, timeout: 10))
+        }
+
+        quickAction("View Journal")
+        XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 10) || app.buttons["Journal"].isSelected)
+
+        quickAction("Search Journal")
+        let field = app.searchFields["Search your journal"]
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5), "Search Journal focuses the search field")
+
+        quickAction("New Entry")
+        XCTAssertTrue(app.textViews["Entry"].waitForExistence(timeout: 10), "New Entry opens the composer")
+        snap("quick-action-new-entry")
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+    }
+
     func testRefreshPicksUpChangesInOlderMonths() throws {
         openJournal()
         scrubToBottom()

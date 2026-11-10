@@ -144,6 +144,62 @@ enum JournalIntelligence {
     "as an AI".
     """
 
+    /// A reflection chat summed up as a few sentences to add to the entry, in the writer's own
+    /// voice and from what they said (not the companion's suggestions).
+    static func chatSummary(entry: String, conversation: [ReflectionChat.Message]) async throws -> String {
+        let transcript = summaryTranscript(conversation)
+        return try await respond(
+            instructions: """
+            Write a short addendum to the writer's journal entry that captures what they said and realized while \
+            talking it through. Write in the writer's own first-person voice, as if they wrote it in their journal: \
+            two to four sentences, under 80 words. Use only what the writer said; the companion's questions are \
+            just prompts, never facts. No headings, quotes or labels, and don't mention a conversation, a \
+            companion or AI. Reply with only the sentences.
+            """,
+            journalText: true,
+            prompt: "The entry:\n\(clipped(entry, limit: 1500))\n\nTalking it through:\n\(transcript)",
+            temperature: 0.4
+        )
+    }
+
+    /// The chat for the summary, fitted to the model's small context: the most recent turns that
+    /// fit, working back from the end (so a late realization isn't the part left out), with the
+    /// companion's turns shortened first, since what the writer said is what the summary is made of.
+    static func summaryTranscript(_ conversation: [ReflectionChat.Message], limit: Int = 2000) -> String {
+        var lines: [String] = []
+        var used = 0
+        for message in conversation.reversed() {
+            let text = message.fromWriter ? message.text : clipped(message.text, limit: 240)
+            let line = "\(message.fromWriter ? "Me" : "Companion"): \(text)"
+            if used + line.count > limit, !lines.isEmpty { break }
+            lines.insert(used + line.count > limit ? clipped(line, limit: limit) : line, at: 0)
+            used += line.count + 1
+        }
+        if lines.count < conversation.count { lines.insert("…", at: 0) }
+        return lines.joined(separator: "\n")
+    }
+
+    /// "Ask Me" while writing: one specific question about something in the draft, to help the
+    /// writer keep going. `asked` are the questions already offered for this draft (not repeated).
+    static func followUpQuestion(for draft: String, asked: [String]) async throws -> String {
+        let already = asked.isEmpty ? "" : "\n\nQuestions already asked (ask something different):\n" + asked.map { "- \($0)" }.joined(separator: "\n")
+        let reply = try await respond(
+            instructions: """
+            The writer is in the middle of a private journal entry and wants a nudge to keep writing. Ask one \
+            short, specific question (under 20 words) about a detail they actually mentioned: a person, a moment, \
+            a feeling, a place. Make it easy and inviting to answer in a sentence or two, and use their words. \
+            Never ask about anything the entry doesn't mention, never give advice, and don't repeat a question \
+            already asked. Reply with only the question.
+            """,
+            journalText: true,
+            prompt: "The entry so far:\n\(clipped(draft, limit: 2500))\(already)",
+            temperature: 0.8
+        )
+        // One question, without quotes or a leading label.
+        let line = reply.split(whereSeparator: \.isNewline).first.map(String.init) ?? reply
+        return line.trimmingCharacters(in: CharacterSet(charactersIn: "\"“”' ")).replacingOccurrences(of: "Question: ", with: "")
+    }
+
     /// One reflection question inspired by recent entries.
     /// `recent` are dated lines from `dated(_:today:)`: the model needs to know those things happened
     /// on earlier days, or it asks about "today's" game that was yesterday. (No concrete examples in
@@ -180,7 +236,7 @@ enum JournalIntelligence {
     }
 
     /// The on-device model has a small context window; long entries are cut down to their start.
-    private static func clipped(_ text: String, limit: Int = 3000) -> String {
+    static func clipped(_ text: String, limit: Int = 3000) -> String {
         text.count > limit ? String(text.prefix(limit)) + "…" : text
     }
 
@@ -210,4 +266,142 @@ enum JournalIntelligence {
         #endif
         throw Failure.unavailable
     }
+}
+
+/// After a reflection, a short back-and-forth about the entry with Apple Intelligence, on the
+/// device: the writer answers the reflection's question and it replies, one question at a time.
+/// Nothing is saved: the chat lives in the reflection's sheet and is gone when it closes.
+@MainActor
+@Observable
+final class ReflectionChat {
+    struct Message: Identifiable, Equatable {
+        let id = UUID()
+        let fromWriter: Bool
+        var text: String
+    }
+
+    private(set) var messages: [Message] = []
+    private(set) var isReplying = false
+
+    private let entry: String
+    private let date: String
+    private let reflection: String
+    private let firstName: String?
+    /// The model session (a LanguageModelSession on iOS 26), kept for the whole chat so it
+    /// remembers what was said.
+    private var session: AnyObject?
+
+    init(entry: String, date: String, reflection: String, firstName: String?) {
+        self.entry = entry
+        self.date = date
+        self.reflection = reflection
+        self.firstName = firstName
+    }
+
+    /// Sends the writer's message and streams the reply into the conversation.
+    func send(_ raw: String) async {
+        let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty, !isReplying else { return }
+        messages.append(Message(fromWriter: true, text: text))
+        messages.append(Message(fromWriter: false, text: ""))
+        let reply = messages.count - 1
+        isReplying = true
+        defer { isReplying = false }
+        do {
+            try await stream(text, into: reply)
+        } catch ReflectionChat.Problem.full {
+            // The model's memory is small: start over with the entry and the last few turns.
+            session = nil
+            do {
+                try await stream(text, into: reply)
+            } catch {
+                messages[reply].text = Self.fallback(for: error)
+            }
+        } catch {
+            messages[reply].text = Self.fallback(for: error)
+        }
+        if messages[reply].text.isEmpty { messages[reply].text = Self.fallback(for: JournalIntelligence.Failure.noAnswer) }
+    }
+
+    private enum Problem: Error { case full }
+
+    /// Kind words instead of an error: Apple's safety filters can decline hard moments, and the
+    /// writer shouldn't feel they did something wrong.
+    private static func fallback(for error: Error) -> String {
+        if case JournalIntelligence.Failure.declined = error {
+            return "That sounds like a lot to sit with. I can't go further with this one here, but it might help to keep writing about it in your journal."
+        }
+        return "I couldn't come up with a reply just now. Try again in a moment."
+    }
+
+    private func stream(_ text: String, into index: Int) async throws {
+        #if canImport(FoundationModels)
+        if #available(iOS 26.0, *), SystemLanguageModel.default.isAvailable {
+            let session = (self.session as? LanguageModelSession) ?? makeSession()
+            self.session = session
+            do {
+                for try await snapshot in session.streamResponse(to: text, options: GenerationOptions(temperature: 0.7)) {
+                    messages[index].text = snapshot.content
+                }
+                messages[index].text = messages[index].text.trimmingCharacters(in: .whitespacesAndNewlines)
+            } catch let error as LanguageModelSession.GenerationError {
+                switch error {
+                case .exceededContextWindowSize: throw Problem.full
+                case .guardrailViolation, .refusal: throw JournalIntelligence.Failure.declined
+                default: throw error
+                }
+            }
+            return
+        }
+        #endif
+        throw JournalIntelligence.Failure.unavailable
+    }
+
+    #if canImport(FoundationModels)
+    /// The entry, the reflection, and (when starting over) the last few turns, so it can carry on.
+    @available(iOS 26.0, *)
+    private func makeSession() -> LanguageModelSession {
+        let recent = messages.dropLast(2).suffix(4)
+            .map { "\($0.fromWriter ? "Writer" : "You"): \($0.text)" }.joined(separator: "\n")
+        let name = firstName.map { "The writer's name is \($0). " } ?? ""
+        let instructions = Self.companion + """
+
+            # The entry
+            \(name)Written \(date):
+            \(JournalIntelligence.clipped(entry, limit: 1800))
+
+            # Your reflection on it (the conversation starts after this)
+            \(reflection)
+            """ + (recent.isEmpty ? "" : "\n\n# The conversation so far (latest turns)\n\(recent)")
+        return LanguageModelSession(model: SystemLanguageModel(guardrails: .permissiveContentTransformations), instructions: instructions)
+    }
+    #endif
+
+    private static let companion = """
+    # Role
+    You are the journaling companion inside Dabble Me, a private journaling app. You already wrote a short \
+    reflection on the writer's entry, ending with a question. Now they're answering, and you keep the \
+    conversation going so they can process the entry. You are a curious, warm friend, not a therapist or coach.
+
+    # Context
+    This is the writer's own private journal. Journals are where people work through the hard parts of everyday \
+    life: arguments, parenting frustrations, anger, grief, stress and regret. Writing about these is healthy \
+    self-reflection. Engage with it supportively and without judgment.
+
+    # How to reply
+    - Short: two to four sentences, under 70 words.
+    - Respond to what they just said first, in their own words where you can.
+    - Then, usually, ask one gentle question that helps them go a little deeper. Only one question.
+    - No advice, plans or lists unless they ask for them. Don't summarize the whole entry back to them.
+    - Light humor is welcome when it fits; never at their expense. Reply in the language they write in.
+    - You only know this entry and this conversation. Never claim to remember anything else.
+
+    # Safety and boundaries
+    Do not diagnose or claim certainty about their mental health. If they mention self-harm, harm to others, \
+    abuse or immediate danger, respond with calm support and encourage reaching out right away to trusted people \
+    or emergency services.
+
+    # Output
+    Plain text only: no headings, links or labels, and never say "as an AI".
+    """
 }
