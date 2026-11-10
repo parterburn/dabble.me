@@ -319,37 +319,6 @@ class User < ActiveRecord::Base
     send_time.hour + (ActiveSupport::TimeZone["America/Denver"].formatted_offset(false).to_i - ActiveSupport::TimeZone[send_timezone].formatted_offset(false).to_i)/100
   end
 
-  def writing_streak
-    @writing_streak ||= begin
-      streak = 0
-      # Get all entry dates for the user, sorted descending
-      entry_dates = entries.pluck(:date).compact.map(&:to_date).uniq.sort.reverse
-
-      if entry_dates.any?
-        today = Time.current.in_time_zone(send_timezone).to_date
-
-        # Start checking from today or the latest entry date if it's recent
-        current_date = entry_dates.first
-
-        # If the latest entry is older than yesterday, the streak is broken (unless it's today/yesterday)
-        if current_date >= today - 1.day
-          entry_dates.each do |date|
-            if date == current_date
-              streak += 1
-              current_date -= 1.day
-            else
-              break
-            end
-          end
-        end
-      end
-      streak
-    end
-  rescue StandardError => e
-    Sentry.capture_exception(e, extra: { user_id: id })
-    0
-  end
-
   def has_active_stripe_subscription?
     return nil unless stripe_id.present?
     subscriptions = Stripe::Subscription.list(customer: stripe_id)

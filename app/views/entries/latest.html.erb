@@ -41,23 +41,19 @@
       <div class="center">
         <div class="s-entry-date">
           <h2>
-            <%= link_to "Year in Progress", review_path %>
+            <%= link_to "Year in Progress", rewind_path %>
           </h2>
           <h3>
             <span rel="tooltip" title="<%= percent_with_entries %>% of days so far in <%= graph_year %> have entries."><%= "#{total_count} entries in #{graph_year}" %></span>
           </h3>
         </div>
         <div class="s-review-details">
-          <% streak = current_user.writing_streak %>
-          <% if streak > 1 %>
-            <div style="display: block; margin: 10px auto; font-size: 16px; font-weight: 500;"><%= "You're on a #{format_number(streak)} day writing streak!" %></div>
-          <% end %>
           <%= render 'contribution_graph', data: contribution_calendar_data(year_entries, graph_year), year: graph_year %>
           <div class="clearfix"></div>
           <% if highlight_year_in_review %>
             <h4 style="font-size: 16px; margin-top: 10px; font-weight: 600;">
               <span>See more stats in your </span>
-              <%= link_to "Year in Review", review_path, style: "color: #649cc7;" %><span>!</span>
+              <%= link_to "#{review_year} Rewind", rewind_path, style: "color: #649cc7;" %><span>!</span>
             </h4>
           <% else %>
             <h4 style="font-size: 16px; margin-top: 10px; font-weight: 500;">

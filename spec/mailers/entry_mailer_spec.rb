@@ -10,22 +10,50 @@ RSpec.describe EntryMailer do
     let(:remembered) { past_entries.last } # Nov 7, 2025
 
     before do
-      allow(user).to receive(:writing_streak).and_return(2)
       allow(user).to receive(:days_since_last_post).and_return(1)
     end
 
-    def deliver(entry)
+    def deliver(entry, on: send_day)
       allow(user).to receive(:random_entry).and_return(entry)
-      email = described_class.send_entry(user, nil, send_day: send_day)
+      email = described_class.send_entry(user, nil, send_day: on)
       [email.html_part.body.decoded, email.text_part.body.decoded]
     end
 
-    it "shows the writing streak with a hyphen and a period" do
+    it "says how many entries they've written this year, counting up to the email's day" do
+      [Date.new(2026, 1, 1), Date.new(2026, 6, 15), Date.new(2026, 11, 8)].each { |date| create(:entry, user: user, date: date) }
+      create(:entry, user: user, date: Date.new(2026, 11, 20)) # dated after the email
+
       html, text = deliver(remembered)
 
-      expect(html).to include("You're on a 2-day writing streak.")
-      expect(text).to include("You're on a 2-day writing streak.")
-      expect(html + text).not_to include("day writing streak!")
+      expect(html).to include("You've written 3 entries in 2026.")
+      expect(text).to include("You've written 3 entries in 2026.")
+      expect(html + text).not_to include("streak")
+    end
+
+    it "says 'entry' for one" do
+      create(:entry, user: user, date: Date.new(2026, 3, 2))
+
+      expect(deliver(remembered).last).to include("You've written 1 entry in 2026.")
+    end
+
+    it "leaves the count out in January" do
+      create(:entry, user: user, date: Date.new(2026, 1, 3))
+      html, text = deliver(remembered, on: Time.find_zone(user.send_timezone).local(2026, 1, 31, 8))
+
+      expect(html + text).not_to include("You've written")
+      expect(text).to include("Reply to this email with your entry for January 31.\n")
+    end
+
+    it "starts the count on February 1" do
+      create(:entry, user: user, date: Date.new(2026, 1, 3))
+
+      expect(deliver(remembered, on: Time.find_zone(user.send_timezone).local(2026, 2, 1, 8)).last).to include("You've written 1 entry in 2026.")
+    end
+
+    it "leaves the count out when they haven't written yet this year" do
+      html, text = deliver(remembered) # past_entries are all in 2025
+
+      expect(html + text).not_to include("You've written")
     end
 
     it "introduces an entry from this day in an earlier year, bold, with the date linked" do

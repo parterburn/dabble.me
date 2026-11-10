@@ -31,7 +31,7 @@
         </li>
 
         <li class="<%= 'active' if params[:action] == "review" %>">
-          <%= link_to review_path(Date.today.year), title: "Analytics" do %>
+          <%= link_to rewind_path(Date.today.year), title: "Analytics" do %>
             <span>Stats</span>
           <% end %>
         </li>

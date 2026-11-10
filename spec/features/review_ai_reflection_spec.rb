@@ -11,7 +11,7 @@ RSpec.describe "Year in review AI Reflection", type: :feature do
   end
 
   it "links straight to the Claude and ChatGPT plugins, with other apps going to the connector guide" do
-    visit review_path(2026)
+    visit rewind_path(2026)
 
     expect(page).to have_css("h2", text: "AI Reflection")
     expect(page).to have_link("Add to Claude", href: ApplicationHelper.claude_plugin_directory_url)
@@ -25,7 +25,7 @@ RSpec.describe "Year in review AI Reflection", type: :feature do
   end
 
   it "does not ask for a passkey or two-factor authentication before connecting" do
-    visit review_path(2026)
+    visit rewind_path(2026)
 
     expect(page).not_to have_link("passkey or two-factor authentication")
   end

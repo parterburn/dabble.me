@@ -8,6 +8,12 @@ class EntryMailer < ActionMailer::Base
     @user = user
     @user.increment!(:emails_sent)
     @user.update_columns(last_sent_at: Time.now)
+    # "You've written 35 entries in 2026." Skipped in January, when the
+    # count is too small to mean much.
+    if @send_day.month > 1
+      send_date = @send_day.to_date
+      @entries_this_year = user.entries.where(date: send_date.beginning_of_year.beginning_of_day..send_date.end_of_day).count
+    end
     @random_entry = user.random_entry(@send_day.strftime('%Y-%m-%d'))
     if @random_entry.present?
       @random_entry_image_link = @random_entry.image_url_cdn(cloudflare: false)
