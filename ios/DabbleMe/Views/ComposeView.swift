@@ -122,9 +122,10 @@ struct ComposeView: View {
                 }
                 if showsAskRow {
                     Divider()
-                    // A prompt can take two lines: only a small nudge down, or the bar covers it.
+                    // A prompt can take two lines, so not the hashtag row's nudge down (the bar would
+                    // cover it): the same gap above the bar as under the hashtags.
                     askRow
-                        .padding(.bottom, 4)
+                        .padding(.bottom, 8)
                 }
                 if showsPhotoDrawer, attachedPhotoCount > 0 {
                     Divider()
