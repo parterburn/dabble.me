@@ -75,6 +75,7 @@ Or simply `bundle exec rake` with the same env vars.
 - `npm run build:css:app` builds `public/app-tailwind.css` for logged-in pages restyled with Tailwind (`watch:css:app` while editing). The output is committed, and CI fails if it is stale, so rebuild and commit it after changing a restyled view or `app/frontend/stylesheets/app.tailwind.css`.
   - A page opts in with `<% content_for :tailwind, true %>` and a `<div class="tw …">` wrapper (see `devise/registrations/edit.html.erb`). Add the view to the `@source` list in `app.tailwind.css`; Tailwind scans nothing else.
   - Utilities are `!important` so they beat the legacy `ui.scss` styles. Don't reuse a Tailwind utility name (`flex`, `hidden`, `container`…) as a legacy class in the shared layout; `spec/lib/app_tailwind_css_spec.rb` checks the navbar and footer.
+  - Shared pieces: `card`, `field-*`, `button-*` and `data-table` (in `app.tailwind.css`); `paginate records, theme: "tw"` (`app/views/kaminari/tw/`); and for admin pages, `admin/_header` (title and section tabs) and `admin/_section` (a titled card around a table).
 
 ### Sidekiq-Cron
 

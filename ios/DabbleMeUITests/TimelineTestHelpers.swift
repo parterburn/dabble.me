@@ -2,8 +2,10 @@ import XCTest
 
 extension XCUIElement {
     /// Taps a timeline row on its text, near the top: a tap on its photo opens the photo instead.
+    /// Below the sticky month header, which covers a row scrolled up to the top of the list.
     func tapRowText() {
-        coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.03)).tap()
+        let y = min(max(6, 150 - frame.minY), max(frame.height - 6, 6))
+        coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: frame.width * 0.6, dy: y)).tap()
     }
 
     /// Swipes a timeline row near its top, which is on screen even when a tall row isn't all in
@@ -31,6 +33,10 @@ extension XCUIApplication {
     func openTimelineEntry(_ row: XCUIElement) {
         scrollTo(row)
         row.tapRowText()
-        if !buttons["Edit Entry"].waitForExistence(timeout: 3) { row.tapRowText() }
+        // A long entry expands on the first tap and moves; find it again before tapping to open.
+        for _ in 0..<2 where !buttons["Edit Entry"].waitForExistence(timeout: 3) {
+            scrollTo(row)
+            row.tapRowText()
+        }
     }
 }

@@ -1,88 +1,61 @@
 <% title "Payments — Dabble me." %>
+<% content_for :tailwind, true %>
+<% icon_link = "inline-flex size-8 items-center justify-center rounded-lg text-muted hover:bg-surface-elevated" %>
 
-<div class="row">
-  <div class="col-md-2">
-    <p>
-      <%= link_to "Add new payment", new_payment_path, class: "btn btn-info" %>
-    </p>
-  </div>
-  <div class="col-md-6">
-    <p>
-      <strong>
-        Total Payments:
-        <%= number_with_delimiter(@payments.length) %>
-        for
-        <%= number_to_currency(@cash_total) %>
-      </strong>
-    </p>
-    <p class="text-muted">
-      This page is the payment ledger.
-      Recurring revenue (MRR / ARR) is on
-      <%= link_to "Admin Stats", admin_stats_path %>.
-    </p>
-  </div>
-</div>
-
-<div class="row">
-  <div class="col-md-1">
-    <h4>Actions</h4>
-  </div>
-  <div class="col-md-2">
-    <h4>Date</h4>
-  </div>
-  <div class="col-md-1">
-    <h4>Amount</h4>
-  </div>
-  <div class="col-md-3">
-    <h4>User</h4>
-  </div>
-  <div class="col-md-2">
-    <h4>Plan</h4>
-  </div>
-  <div class="col-md-3">
-    <h4>Comments</h4>
-  </div>
-</div>
-
-<% @paginated_payments.each do |payment| %>
-  <div class="row s-inspiration-admin">
-    <div class="col-md-1">
-      <%= link_to edit_payment_path(payment), class: "noline", title: "Edit Payment" do %>
-        <span class="slab-icon slab-icon--edit" aria-hidden="true"></span>
-      <% end %>
-      &nbsp;
-      <%= link_to payment_path(payment), title: "Delete Payment", class: "s-delete", method: :delete, data: { confirm: 'Are you sure you want to delete this payment? There is no undo.' } do %>
-        <span class="slab-icon slab-icon--trash" aria-hidden="true"></span>
-      <% end %>
-    </div>
-    <div class="col-md-2">
-      <%= payment.date.strftime("%Y-%m-%d") %>
-    </div>
-    <div class="col-md-1">
-      <%= number_to_currency(number_with_delimiter(payment.amount)) %>
-    </div>
-    <div class="col-md-3">
-      <% if payment.user %>
-        <%= payment.user.email %>
-      <% else %>
-        <%= payment.user_id %>
-      <% end %>
-    </div>
-    <div class="col-md-2">
-      <% if payment.user %>
-        <%= payment.user.plan %>
-      <% end %>
-    </div>
-    <div class="col-md-3">
-      <%= payment.comments %>
-    </div>
-  </div>
+<% content_for :admin_actions do %>
+  <%= link_to "Add new payment", new_payment_path, class: "button-primary" %>
 <% end %>
 
-<div class="row">
-  <div class="col-md-12">
-    <div class="center">
-      <%= paginate @paginated_payments %>
-    </div>
+<div class="tw mx-auto max-w-6xl pt-4 pb-16 sm:pt-8">
+  <%= render "admin/header", title: "Payments",
+        intro: safe_join(["This page is the payment ledger. Recurring revenue (MRR / ARR) is on ", link_to("Admin Stats", admin_stats_path, class: "text-link"), "."]) %>
+
+  <p class="mb-4 text-sm text-muted">
+    Total payments:
+    <strong class="font-semibold text-primary"><%= number_with_delimiter(@payments.length) %></strong>
+    for
+    <strong class="font-semibold text-primary"><%= number_to_currency(@cash_total) %></strong>
+  </p>
+
+  <div class="card overflow-x-auto">
+    <table class="data-table whitespace-nowrap">
+      <thead>
+        <tr>
+          <th><span class="sr-only">Actions</span></th>
+          <th>Date</th>
+          <th>Amount</th>
+          <th>User</th>
+          <th>Plan</th>
+          <th>Comments</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @paginated_payments.each do |payment| %>
+          <tr>
+            <td class="whitespace-nowrap">
+              <%= link_to edit_payment_path(payment), class: "#{icon_link} hover:text-primary", title: "Edit Payment", "aria-label": "Edit payment" do %>
+                <span class="slab-icon slab-icon--edit" aria-hidden="true"></span>
+              <% end %>
+              <%= link_to payment_path(payment), class: "#{icon_link} hover:text-red-700", title: "Delete Payment", "aria-label": "Delete payment",
+                    method: :delete, data: { confirm: 'Are you sure you want to delete this payment? There is no undo.' } do %>
+                <span class="slab-icon slab-icon--trash" aria-hidden="true"></span>
+              <% end %>
+            </td>
+            <td class="whitespace-nowrap"><%= payment.date.strftime("%Y-%m-%d") %></td>
+            <td><%= number_to_currency(number_with_delimiter(payment.amount)) %></td>
+            <td><%= payment.user ? payment.user.email : payment.user_id %></td>
+            <td><%= payment.user&.plan %></td>
+            <td class="min-w-48 whitespace-normal text-muted"><%= payment.comments %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <% if @paginated_payments.empty? %>
+      <p class="px-5 py-8 text-center text-sm text-muted">No payments yet.</p>
+    <% end %>
+  </div>
+
+  <div class="mt-6">
+    <%= paginate @paginated_payments, theme: "tw" %>
   </div>
 </div>

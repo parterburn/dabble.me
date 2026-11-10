@@ -13,6 +13,14 @@ extension UIWindow {
         NotificationCenter.default.post(name: .deviceDidShake, object: nil)
     }
 
+    /// Something is up over the app: a sheet (a reflection, the composer, an entry's actions) or the
+    /// full-screen photo. A shake leaves it alone rather than putting a random memory in its place.
+    @MainActor
+    static var isShowingSomethingOverApp: Bool {
+        UIApplication.shared.connectedScenes.compactMap { ($0 as? UIWindowScene)?.keyWindow }.first?
+            .rootViewController?.presentedViewController != nil
+    }
+
     private static func isTyping(in view: UIView) -> Bool {
         if view.isFirstResponder, view is UITextView || view is UITextField { return true }
         return view.subviews.contains { isTyping(in: $0) }

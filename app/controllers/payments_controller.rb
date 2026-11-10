@@ -270,8 +270,11 @@ class PaymentsController < ApplicationController
     params.require(:payment).permit(:amount, :date, :user_id,  :comments)
   end
 
+  # Blank fields keep the user's current value. The new-payment form always
+  # posts the ID fields empty, so applying blanks would wipe them. To clear an
+  # ID on purpose, use the Rails console.
   def user_params
-    params.permit(:plan, :gumroad_id, :payhere_id, :stripe_id)
+    params.permit(:plan, :gumroad_id, :payhere_id, :stripe_id).compact_blank
   end
 
   # The form's check_box posts payment[send_thanks] as "1" or "0". It is not

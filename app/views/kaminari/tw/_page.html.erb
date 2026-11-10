@@ -1,0 +1,5 @@
+<% if page.current? %>
+  <span class="inline-flex min-w-9 items-center justify-center rounded-lg bg-olive-900 px-3 py-1.5 font-medium text-white" aria-current="page"><%= page %></span>
+<% else %>
+  <%= link_to page, url, remote: remote, rel: page.rel, class: "inline-flex min-w-9 items-center justify-center rounded-lg px-3 py-1.5 text-primary hover:bg-surface-elevated" %>
+<% end %>
