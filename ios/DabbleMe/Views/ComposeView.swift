@@ -797,7 +797,7 @@ private struct LinkRow: View {
                     editor.focus()
                 } label: {
                     appIcon("slab-trash")
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Color.deleteRed)
                         .frame(width: 36, height: 32)
                 }
                 .buttonStyle(.plain)

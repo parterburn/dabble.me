@@ -102,7 +102,7 @@ private extension View {
                 ZStack(alignment: .leading) {
                     Color.primary.opacity(pressed ? 0.14 : 0.07)
                     GeometryReader { geometry in
-                        Color.red.frame(width: geometry.size.width * fill)
+                        Color.deleteRed.frame(width: geometry.size.width * fill)
                     }
                 }
                 .clipShape(.capsule)

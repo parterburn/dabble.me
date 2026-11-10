@@ -40,3 +40,9 @@ struct SheetCloseButton: View {
         .accessibilityLabel("Close")
     }
 }
+
+extension Color {
+    /// The red for deleting (the link row's trash, Hold to Delete): Tailwind's red-800, deeper than
+    /// the system's fire-engine red; a brighter red-600 in Dark Mode, where red-800 would sink in.
+    static let deleteRed = Color("DeleteRed")
+}
