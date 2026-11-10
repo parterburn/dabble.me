@@ -42,6 +42,30 @@ module Dabbleme
     # config.autoload_paths << "#{config.root}/lib"
 
     config.active_job.queue_adapter = :sidekiq
+
+    # Active Record Encryption for journal text and account secrets (see the
+    # `encrypts` calls on Entry, User and Hashtag). Production reads its keys
+    # from the environment; EncryptionCheck refuses to start a web or worker
+    # process without them. Development and test fall back to fixed keys that
+    # protect nothing.
+    #
+    # Never change hash_digest_class or the keys of an environment that already
+    # holds encrypted rows: its data would stop decrypting.
+    encryption_setting = lambda do |name|
+      ENV["ACTIVE_RECORD_ENCRYPTION_#{name}"].presence ||
+        (Rails.env.production? ? nil : "insecure-#{Rails.env}-#{name.downcase}-0123456789abcdef")
+    end
+    config.active_record.encryption.primary_key = encryption_setting.call("PRIMARY_KEY")
+    config.active_record.encryption.deterministic_key = encryption_setting.call("DETERMINISTIC_KEY")
+    config.active_record.encryption.key_derivation_salt = encryption_setting.call("KEY_DERIVATION_SALT")
+    config.active_record.encryption.hash_digest_class = OpenSSL::Digest::SHA256
+    # While rows written before encryption still exist, read them as they are
+    # and let lookups on encrypted columns match either form. Set
+    # ACTIVE_RECORD_ENCRYPTION_ALLOW_PLAINTEXT=false once `encryption:status`
+    # reports no plaintext left; a plaintext row then raises instead of reading.
+    allow_plaintext = ENV["ACTIVE_RECORD_ENCRYPTION_ALLOW_PLAINTEXT"] != "false"
+    config.active_record.encryption.support_unencrypted_data = allow_plaintext
+    config.active_record.encryption.extend_queries = allow_plaintext
     # dotenv-rails loads .env from the before_configuration hook registered
     # when the gem is required. `inherited` runs that hook before this class
     # body, so a mounted .env is visible here. The block is yielded the
