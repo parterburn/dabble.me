@@ -267,36 +267,49 @@ struct JournalDay: Hashable, Sendable, Comparable {
 
     static func < (lhs: JournalDay, rhs: JournalDay) -> Bool { lhs.iso < rhs.iso }
 
-    /// "Today", "Yesterday", "345 days ago", "1 year, 35 days ago", "3 years ago".
+    /// How long ago this day was, as the daily email words it (`Entry#look_back_label` on the
+    /// server): "Today", "Yesterday", whole days under 60 ("36 days ago"), then the two largest
+    /// units ("3 months and 1 week ago", "1 year and 2 months ago", "3 years ago").
     func relative(to today: JournalDay) -> String {
-        let parts = Self.utc.dateComponents([.year, .day], from: date, to: today.date)
-        let years = parts.year ?? 0, days = parts.day ?? 0
-        guard date <= today.date else { return "In the future" }
-        if years == 0 {
-            switch days {
-            case 0: return "Today"
-            case 1: return "Yesterday"
-            default: return "\(days.formatted()) days ago"
-            }
-        }
-        let yearText = years == 1 ? "1 year" : "\(years) years"
-        if days == 0 { return "\(yearText) ago" }
-        return "\(yearText), \(days == 1 ? "1 day" : "\(days) days") ago"
-    }
-
-    /// For a shared photo's band, rounded down to the largest unit: "Today", "Yesterday",
-    /// "12 days ago", "5 months ago", "3 years ago".
-    func shareLabel(to today: JournalDay) -> String {
-        let parts = Self.utc.dateComponents([.year, .month, .day], from: date, to: today.date)
-        let years = parts.year ?? 0, months = parts.month ?? 0, days = parts.day ?? 0
-        guard date <= today.date else { return relative(to: today) }
-        if years > 0 { return years == 1 ? "1 year ago" : "\(years) years ago" }
-        if months > 0 { return months == 1 ? "1 month ago" : "\(months) months ago" }
+        let days = Self.utc.dateComponents([.day], from: date, to: today.date).day ?? 0
+        guard days >= 0 else { return "In the future" }
         switch days {
         case 0: return "Today"
         case 1: return "Yesterday"
-        default: return "\(days) days ago"
+        case ..<60: return "\(days) days ago"
+        default: return Self.span(days: days).joined(separator: " and ") + " ago"
         }
+    }
+
+    /// For a shared photo's band, shorter: whole days under 60, then the largest unit alone
+    /// ("5 months ago", "3 years ago").
+    func shareLabel(to today: JournalDay) -> String {
+        let days = Self.utc.dateComponents([.day], from: date, to: today.date).day ?? 0
+        guard days >= 60 else { return relative(to: today) }
+        return (Self.span(days: days, depth: 1).first ?? "") + " ago"
+    }
+
+    /// A number of days in its largest units, at most `depth` of them: ["3 months", "1 week"].
+    /// The rounding is the server's (Jekyll::Timeago with a 0.05 threshold): a year is 365 days, a
+    /// month 30 (up to a year's worth) and a week 7 (up to a month's), and a smaller unit is left
+    /// out when what remains is under 5% of the span.
+    static func span(days: Int, depth: Int = 2) -> [String] {
+        var parts: [String] = []
+        var remaining = days
+        while parts.count < depth, remaining > 0 {
+            let (unit, length): (String, Int) = switch remaining {
+            case ...6: ("day", 1)
+            case ...30: ("week", 7)
+            case ...365: ("month", 30)
+            default: ("year", 365)
+            }
+            let count = remaining / length
+            parts.append("\(count) \(unit)\(count == 1 ? "" : "s")")
+            let left = remaining - count * length
+            guard left >= Int((Double(remaining) * 0.05).rounded(.down)) else { break }
+            remaining = left
+        }
+        return parts
     }
 
     private static let utc: Calendar = {

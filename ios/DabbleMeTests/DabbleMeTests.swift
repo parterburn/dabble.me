@@ -171,15 +171,35 @@ struct WidgetPhotoTests {
 }
 
 struct ShareCardTests {
-    @Test func shareLabelRoundsDownToTheLargestUnit() throws {
+    @Test func shareLabelIsDaysUnderSixtyThenTheLargestUnit() throws {
         let today = try #require(JournalDay("2026-11-09"))
         func label(_ date: String) throws -> String { try #require(JournalDay(date)).shareLabel(to: today) }
         #expect(try label("2026-11-09") == "Today")
         #expect(try label("2026-11-08") == "Yesterday")
         #expect(try label("2026-10-28") == "12 days ago")
+        #expect(try label("2026-09-20") == "50 days ago")
         #expect(try label("2026-06-01") == "5 months ago")
         #expect(try label("2025-11-01") == "1 year ago")
         #expect(try label("2023-11-02") == "3 years ago")
+    }
+
+    /// The same wording and rounding as the daily email's "Rewind 3 months and 1 week".
+    @Test func relativeDatesAreDaysUnderSixtyThenTwoUnits() throws {
+        let today = try #require(JournalDay("2026-11-09"))
+        func ago(_ days: Int) throws -> String {
+            let date = try #require(Calendar(identifier: .gregorian).date(byAdding: .day, value: -days, to: today.localDate))
+            return JournalDay(localDate: date).relative(to: today)
+        }
+        #expect(try ago(0) == "Today")
+        #expect(try ago(1) == "Yesterday")
+        #expect(try ago(36) == "36 days ago")
+        #expect(try ago(59) == "59 days ago")
+        #expect(try ago(60) == "2 months ago")
+        #expect(try ago(97) == "3 months and 1 week ago")
+        #expect(try ago(365) == "12 months ago")
+        #expect(try ago(430) == "1 year and 2 months ago")
+        #expect(try ago(1096) == "3 years ago")
+        #expect(JournalDay.span(days: 97) == ["3 months", "1 week"])
     }
 
     @MainActor
