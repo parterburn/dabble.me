@@ -292,8 +292,9 @@ struct TodayView: View {
 
     @ViewBuilder
     private func memoriesSection(_ today: TodaySummary) -> some View {
+        // A little more under it than a throwback's: several days can follow, each with its own date.
         SectionTitle("On This Day", icon: "slab-backward")
-            .sectionTitleRow()
+            .sectionTitleRow(bottom: 10)
         if !today.onThisDayAvailable {
             Text("See what you wrote on this date in past years with Dabble Me PRO.")
                 .font(.callout)
@@ -340,9 +341,9 @@ struct TodayView: View {
 private extension View {
     /// On This Day's and Throwback's title: room above it, little below, so the first entry's
     /// date follows close behind.
-    func sectionTitleRow() -> some View {
+    func sectionTitleRow(bottom: CGFloat = 2) -> some View {
         plainRow()
-            .listRowInsets(EdgeInsets(top: 23, leading: 20, bottom: 2, trailing: 20))
+            .listRowInsets(EdgeInsets(top: 23, leading: 20, bottom: bottom, trailing: 20))
     }
 
     /// A list row that's just page content: no separator, no row background.
