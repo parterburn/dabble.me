@@ -17,6 +17,12 @@ class User < ActiveRecord::Base
   # two independent values so a photo URL never reveals the posting address.
   KEY_CHARACTERS = [*"0".."9", *"a".."z"].freeze
 
+  # Plans an admin can pick on the payment form. Stripe subscriptions use the
+  # "PayHere" names (see config/initializers/stripe.rb). Gumroad and PayPal
+  # take no new subscribers, so the form offers their plans only to a user
+  # who is already on one.
+  SELECTABLE_PLANS = ["Free", "PRO Monthly PayHere", "PRO Yearly PayHere", "PRO Forever"].freeze
+
   # Signed token for the no-login settings and unsubscribe links in emails,
   # so those links don't carry the posting address. Its payload is readable,
   # so it holds a digest of user_key rather than the key: resetting the posting

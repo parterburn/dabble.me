@@ -10,11 +10,32 @@
   <%= render "admin/header", title: "Payments",
         intro: safe_join(["This page is the payment ledger. Recurring revenue (MRR / ARR) is on ", link_to("Admin Stats", admin_stats_path, class: "text-link"), "."]) %>
 
+  <form class="mb-6 grid gap-3 sm:grid-cols-[1fr_1fr_auto]" role="search">
+    <div>
+      <label for="email" class="sr-only">Email</label>
+      <input type="text" id="email" name="email" placeholder="Filter by email" value="<%= params[:email] %>" class="field-input">
+    </div>
+    <div>
+      <label for="user_id" class="sr-only">User ID</label>
+      <input type="text" id="user_id" name="user_id" inputmode="numeric" placeholder="Filter by user ID" value="<%= params[:user_id] %>" class="field-input">
+    </div>
+    <button type="submit" class="button-primary">Search</button>
+  </form>
+
   <p class="mb-4 text-sm text-muted">
-    Total payments:
-    <strong class="font-semibold text-primary"><%= number_with_delimiter(@payments.length) %></strong>
+    <% if @filter_user %>
+      Payments for
+      <%= link_to @filter_user.email, edit_admin_user_path(@filter_user), class: "text-link" %>
+      (ID <%= @filter_user.id %>):
+    <% else %>
+      Total payments:
+    <% end %>
+    <strong class="font-semibold text-primary"><%= number_with_delimiter(@payments_count) %></strong>
     for
     <strong class="font-semibold text-primary"><%= number_to_currency(@cash_total) %></strong>
+    <% if params[:email].present? || params[:user_id].present? %>
+      · <%= link_to "Show all", payments_path, class: "text-link" %>
+    <% end %>
   </p>
 
   <div class="card overflow-x-auto">
@@ -26,6 +47,7 @@
           <th>Amount</th>
           <th>User</th>
           <th>Plan</th>
+          <th>Source</th>
           <th>Comments</th>
         </tr>
       </thead>
@@ -43,15 +65,26 @@
             </td>
             <td class="whitespace-nowrap"><%= payment.date.strftime("%Y-%m-%d") %></td>
             <td><%= number_to_currency(number_with_delimiter(payment.amount)) %></td>
-            <td><%= payment.user ? payment.user.email : payment.user_id %></td>
+            <td>
+              <% if payment.user %>
+                <%= link_to payment.user.email, payments_path(user_id: payment.user_id), class: "text-link", title: "All payments from this user" %>
+              <% else %>
+                <%= payment.user_id %>
+              <% end %>
+            </td>
             <td><%= payment.user&.plan %></td>
+            <td>
+              <% if (source = payment_source(payment)) %>
+                <%= link_to source[0], source[1], class: "text-link", target: "_blank", rel: "noopener" %>
+              <% end %>
+            </td>
             <td class="min-w-48 whitespace-normal text-muted"><%= payment.comments %></td>
           </tr>
         <% end %>
       </tbody>
     </table>
     <% if @paginated_payments.empty? %>
-      <p class="px-5 py-8 text-center text-sm text-muted">No payments yet.</p>
+      <p class="px-5 py-8 text-center text-sm text-muted"><%= params[:email].present? || params[:user_id].present? ? "No payments match." : "No payments yet." %></p>
     <% end %>
   </div>
 
