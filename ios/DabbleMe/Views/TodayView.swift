@@ -27,7 +27,7 @@ struct TodayView: View {
             List {
                 if let today = model.today {
                     // The header (the nav bar is hidden here): the wordmark, small, with the year's
-                    // entry count beside it.
+                    // entry count ("36 entries in 2026") beside it.
                     HStack(alignment: .center) {
                         Wordmark(size: 28)
                         Spacer(minLength: 8)
@@ -41,8 +41,10 @@ struct TodayView: View {
                     SectionTitle(today.day?.formatted(.dateTime.weekday(.wide).month(.wide).day()) ?? today.date,
                                  icon: "slab-calendar")
                         .accessibilityLabel(today.day?.long ?? today.date)
-                        .padding(.top, 6)
                         .plainRow()
+                        // Close above the prompt card (which has its own space); a little more
+                        // above today's entry, whose card starts at the row's edge.
+                        .listRowInsets(EdgeInsets(top: 14, leading: 20, bottom: today.entry == nil ? 0 : 8, trailing: 20))
                     todaySection(today)
                     onThisDaySection(today)
                 } else if let error = model.timelineError {
@@ -54,6 +56,7 @@ struct TodayView: View {
                 }
             }
             .listStyle(.plain)
+            .listSectionSpacing(0) // a memory's date sits right under its section's title
             .environment(\.defaultMinListRowHeight, 1) // rows as tall as their content (the section titles)
             // Pull to reset: collapses expanded entries and reloads today. On the list itself,
             // inside the sheets and entry pages below, so they don't inherit a pull-to-refresh.
@@ -225,25 +228,20 @@ struct TodayView: View {
 
     // MARK: - On This Day
 
-    /// "[26] 36": entries written this year, the year as a little badge. Tapping it opens Stats.
+    /// "🔥 36 entries in 2026": entries written this year. Tapping it opens Stats.
     private func yearCountButton(_ count: Int, year: String) -> some View {
         Button {
             model.selectedTab = .journal
             model.statsRequest += 1
         } label: {
-            HStack(spacing: 6) {
-                Text(year.suffix(2))
-                    .font(.caption.weight(.bold))
+            HStack(spacing: 5) {
+                appIcon("slab-fire")
+                Text("\(count.formatted()) \(count == 1 ? "entry" : "entries") in \(year)")
                     .monospacedDigit()
-                    .foregroundStyle(Color("Paper"))
-                    .padding(.horizontal, 5)
-                    .padding(.vertical, 2)
-                    .background(.tint, in: .rect(cornerRadius: 5))
-                Text(count.formatted())
-                    .font(.headline)
-                    .monospacedDigit()
-                    .foregroundStyle(.tint)
             }
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.tint)
+            .lineLimit(1)
             .padding(.vertical, 4)
             .contentShape(.rect)
         }
