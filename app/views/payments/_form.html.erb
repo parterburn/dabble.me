@@ -27,12 +27,7 @@
 
     <div>
       <%= label_tag :plan, nil, class: "field-label" %>
-      <%# Always list the user's current plan (and anything already chosen), so
-          an edit never silently swaps a legacy plan for another one. %>
-      <% plan = typed.(:plan, user&.plan) %>
-      <% plans = (User::SELECTABLE_PLANS + [user&.plan, plan]).compact_blank.uniq %>
-      <%= select_tag :plan,
-            options_for_select(plans.map { |p| [p.match?(/payhere/i) ? "#{p} (Stripe)" : p, p] }, plan),
+      <%= select_tag :plan, plan_options(user&.plan, typed.(:plan, user&.plan)),
             include_blank: "Keep current plan", class: "field-input" %>
     </div>
 

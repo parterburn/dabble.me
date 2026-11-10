@@ -7,10 +7,24 @@ class PaymentsController < ApplicationController
   skip_before_action :verify_authenticity_token, only: [:success, :checkout, :billing, :payment_notify]
 
   def index
-    @payments = Payment.includes(:user).order("date DESC, id DESC")
+    payments = Payment.all
+    if params[:user_id].present?
+      user_id = params[:user_id].to_s.strip
+      # Rails casts a non-numeric ID to nil, which would list the userless payments.
+      payments = user_id.match?(/\A\d+\z/) ? payments.where(user_id: user_id) : payments.none
+      @filter_user = User.find_by(id: user_id) if user_id.match?(/\A\d+\z/)
+    end
+    if params[:email].present?
+      # Webhook payments put the payer's email in the comment, so this also
+      # finds payments whose user was deleted or never matched.
+      email = "%#{Payment.sanitize_sql_like(params[:email].strip.downcase)}%"
+      payments = payments.left_joins(:user).where("users.email ILIKE :email OR payments.comments ILIKE :email", email: email)
+    end
+
+    @payments_count = payments.count
+    @cash_total = payments.sum(:amount)
     params[:per] ||= 100
-    @paginated_payments = Kaminari.paginate_array(@payments.to_a).page(params[:page]).per(params[:per])
-    @cash_total = Payment.sum(:amount)
+    @paginated_payments = payments.includes(:user).order("payments.date DESC, payments.id DESC").page(params[:page]).per(params[:per])
   end
 
   def new

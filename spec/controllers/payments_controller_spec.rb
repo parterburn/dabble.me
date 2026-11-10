@@ -36,6 +36,38 @@ RSpec.describe PaymentsController, type: :controller do
       expect(response.body).to have_content("Admin Stats")
       expect(response.body).not_to have_content("Monthly Subs:")
     end
+
+    context 'searching' do
+      let!(:annual_payment) { Payment.create!(user: paid_annual_user, amount: 36.0, comments: 'Stripe Yearly from someone', date: Time.now) }
+      # A webhook payment whose user was deleted: only the comment has the email.
+      let!(:orphan_payment) { Payment.create!(user_id: nil, amount: 5.0, comments: 'Gumroad Monthly from Gone@Example.com', date: Time.now) }
+
+      before { sign_in superuser }
+
+      it "filters by user ID and totals only that user's payments" do
+        get :index, params: { user_id: paid_annual_user.id }
+
+        expect(response.body).to have_content("Payments for #{paid_annual_user.email} (ID #{paid_annual_user.id}): 1 for $36.00", normalize_ws: true)
+        expect(response.body).not_to have_content(paid_user.email)
+      end
+
+      it 'filters by part of an email, matching the user or the comment' do
+        get :index, params: { email: 'gone@example' }
+
+        expect(response.body).to have_content("Total payments: 1 for $5.00", normalize_ws: true)
+        expect(response.body).to have_content('Gumroad Monthly from Gone@Example.com')
+      end
+
+      it 'matches nothing for a user ID that is not a number' do
+        get :index, params: { user_id: 'abc' }
+        expect(response.body).to have_content('No payments match.')
+      end
+
+      it "links each payment's user to that user's payments" do
+        get :index
+        expect(response.body).to have_link(paid_annual_user.email, href: payments_path(user_id: paid_annual_user.id))
+      end
+    end
   end
 
   describe 'edit' do
