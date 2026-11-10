@@ -52,14 +52,14 @@
           <%= f.select :kind, IgnoredEmailImage::KINDS.invert, {}, class: "field-input" %>
         </div>
         <div>
-          <%= f.label :value, "Image URL, filename or type", class: "field-label" %>
-          <%= f.text_field :value, class: "field-input", required: true, placeholder: "https://… or image001.jpg or application/octet-stream" %>
+          <%= f.label :value, "Image URL or filename", class: "field-label" %>
+          <%= f.text_field :value, class: "field-input", required: true, placeholder: "https://… or image001.jpg" %>
         </div>
         <%= f.submit "Add", class: "button-primary" %>
       </div>
       <p class="field-help">
         Image: paste the link to a saved photo that shows only the unwanted image (open it from Photos). Copies are skipped even when renamed or re-saved.
-        Filename and type rules skip every match, so keep them specific.
+        Filename rules skip every match, so keep them specific.
       </p>
     <% end %>
   <% end %>

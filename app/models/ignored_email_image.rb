@@ -4,8 +4,7 @@
 class IgnoredEmailImage < ActiveRecord::Base
   KINDS = {
     "image" => "Looks like this image",
-    "filename" => "Filename or URL contains",
-    "content_type" => "Attachment type is"
+    "filename" => "Filename or URL contains"
   }.freeze
 
   belongs_to :user
@@ -31,7 +30,7 @@ class IgnoredEmailImage < ActiveRecord::Base
     image? ? image_url : pattern
   end
 
-  # The admin form has one field: the text a filename or type rule looks for,
+  # The admin form has one field: the text a filename rule looks for,
   # or for an image rule, the URL of a sample to fingerprint. Set kind first.
   def value=(value)
     value = value.to_s.strip
@@ -57,16 +56,14 @@ class IgnoredEmailImage < ActiveRecord::Base
   # the block only runs when the user has image rules.
   class Matcher
     def initialize(rules)
-      @filenames = rules.select { |rule| rule.kind == "filename" }.map(&:pattern)
-      @content_types = rules.select { |rule| rule.kind == "content_type" }.map(&:pattern)
+      @filenames = rules.reject(&:image?).map(&:pattern)
       @images = rules.select(&:image?).filter_map(&:image_fingerprint)
     end
 
     # name is an attachment's filename or an inline image's URL.
-    def ignore?(name: nil, content_type: nil)
+    def ignore?(name: nil)
       name = name.to_s.downcase
       return true if name.present? && @filenames.any? { |pattern| name.include?(pattern) }
-      return true if @content_types.include?(content_type.to_s.strip.downcase)
       return false if @images.empty? || !block_given?
 
       fingerprint = yield
@@ -78,7 +75,7 @@ class IgnoredEmailImage < ActiveRecord::Base
 
   def value_usable
     if !image?
-      errors.add(:base, "Enter the filename or type to match.") if pattern.blank?
+      errors.add(:base, "Enter the filename to match.") if pattern.blank?
     elsif image_url.blank?
       errors.add(:base, "Paste the link to the image.")
     elsif image_fingerprint.nil?

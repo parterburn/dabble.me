@@ -532,16 +532,14 @@ describe EmailProcessor do
         expect(ImageCollageJob).not_to have_received(:perform_later_for_mailgun)
       end
 
-      it "skips attachments by filename and by type" do
+      it "skips an attachment by filename and keeps an untyped photo" do
         add_rule("filename", "b_logo.png")
-        add_rule("content_type", "application/octet-stream")
         named = uploaded_image(logo_bytes, filename: "B_Logo.png", content_type: "image/png")
         untyped = uploaded_image(jpeg_bytes(photo_like(2)), filename: "attachment", content_type: "application/octet-stream")
 
         processor = process(email_with(attachments: [named, untyped]))
 
-        expect(processor).not_to have_received(:process_single_image)
-        expect(paid_user.entries.reload.count).to eq(1)
+        expect(processor).to have_received(:process_single_image).with(kind_of(Entry), untyped)
       end
 
       it "still saves attachments for a user without rules" do

@@ -562,7 +562,7 @@ class EmailProcessor
   end
 
   def ignored_by_user?(attachment)
-    ignored_images.ignore?(name: attachment.original_filename, content_type: attachment.content_type) do
+    ignored_images.ignore?(name: attachment.original_filename) do
       ImageFingerprint.from_file(attachment.tempfile.path)
     end
   end

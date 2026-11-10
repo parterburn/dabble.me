@@ -208,7 +208,7 @@ class ImageCollageJob < ActiveJob::Base
       next unless att["size"].to_i > 20_000 # ignore tiny attachments
 
       url = "#{att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")}?#{att["name"]}"
-      next if ignored_images.ignore?(name: att["name"], content_type: att["content-type"]) { ImageFingerprint.from_url(url) }
+      next if ignored_images.ignore?(name: att["name"]) { ImageFingerprint.from_url(url) }
 
       url
     end.compact_blank

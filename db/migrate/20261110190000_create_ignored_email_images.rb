@@ -1,17 +1,18 @@
 class CreateIgnoredEmailImages < ActiveRecord::Migration[8.1]
   # The per-user signature rules that used to be hard-coded in EmailProcessor.
+  # User 20829's rule skipped every application/octet-stream attachment; it
+  # isn't carried over. Add a "looks like" rule for their signature instead.
   LEGACY_RULES = [
     [293, "filename", "cropped-img-0719-300x86.jpeg"],
     [10836, "filename", "b_logo.png"],
-    [2541, "filename", "image001.jpg"],
-    [20829, "content_type", "application/octet-stream"]
+    [2541, "filename", "image001.jpg"]
   ].freeze
 
   def up
     create_table :ignored_email_images do |t|
       t.references :user, null: false, foreign_key: { on_delete: :cascade }
       t.string :kind, null: false
-      # filename and content_type rules
+      # filename rules
       t.string :pattern
       # image rules: the sample the admin pointed at, and its ImageFingerprint
       t.string :image_url

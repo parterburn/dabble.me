@@ -10,12 +10,12 @@ RSpec.describe IgnoredEmailImage do
   end
 
   describe "validation" do
-    it "keeps a filename or type rule's text, lowercased" do
+    it "keeps a filename rule's text, lowercased" do
       rule = build_rule("filename", "  Image001.JPG ")
 
       expect(rule).to be_valid
       expect(rule.pattern).to eq("image001.jpg")
-      expect(build_rule("content_type", "")).not_to be_valid
+      expect(build_rule("filename", " ")).not_to be_valid
     end
 
     it "fingerprints the linked image for an image rule" do
@@ -47,8 +47,9 @@ RSpec.describe IgnoredEmailImage do
       expect(rule.errors.full_messages.join).to match(/too plain/)
     end
 
-    it "rejects an unknown kind" do
+    it "rejects other kinds, including the retired content type rule" do
       expect(build_rule("regex", "x")).not_to be_valid
+      expect(build_rule("content_type", "application/octet-stream")).not_to be_valid
     end
   end
 
@@ -58,7 +59,6 @@ RSpec.describe IgnoredEmailImage do
     before do
       allow(CollageGenerator).to receive(:fetch).and_return(stored_copy(jpeg_bytes(signature_logo)))
       build_rule("filename", "b_logo.png").save!
-      build_rule("content_type", "application/octet-stream").save!
       build_rule("image", logo_url).save!
       build_rule("filename", "someone-elses.png", owner: user).save!
     end
@@ -69,11 +69,6 @@ RSpec.describe IgnoredEmailImage do
       expect(matcher.ignore?(name: "B_LOGO.png")).to be(true)
       expect(matcher.ignore?(name: "https://cdn.example.com/sig/b_logo.png?v=2")).to be(true)
       expect(matcher.ignore?(name: "beach.png")).to be(false)
-    end
-
-    it "matches an attachment type" do
-      expect(matcher.ignore?(name: "x", content_type: "Application/Octet-Stream")).to be(true)
-      expect(matcher.ignore?(name: "x", content_type: "image/png")).to be(false)
     end
 
     it "matches lookalike images through the block" do
