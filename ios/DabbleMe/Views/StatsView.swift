@@ -38,7 +38,7 @@ struct StatsView: View {
                         if let connectors = model.me?.aiConnectors {
                             ConnectorCallout(
                                 title: "Sentiment analysis",
-                                message: "Stats count; they don't read. For how your writing has felt over time, connect Dabble Me to Claude or ChatGPT and ask:",
+                                message: "Analyze your writing over time with the Claude or ChatGPT plugin.",
                                 guide: connectors.guideUrl,
                                 prompt: Self.sentimentPrompt
                             )

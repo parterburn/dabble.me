@@ -341,24 +341,33 @@ struct ConnectorCallout: View {
                     .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(.quaternary))
                     .accessibilityLabel("Prompt: \(prompt)")
             }
+            // The two buttons the same size; the copy icon small, beside its words.
             HStack(spacing: 10) {
                 if let prompt {
                     Button {
                         UIPasteboard.general.string = prompt
                         copied = true
                     } label: {
-                        Label(copied ? "Copied" : "Copy Prompt", icon: copied ? "slab-check" : "slab-copy")
+                        HStack(spacing: 5) {
+                            appIcon(copied ? "slab-check" : "slab-copy")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 13, height: 13)
+                            Text(copied ? "Copied" : "Copy Prompt")
+                        }
+                        .frame(minHeight: 20)
                     }
                     .buttonStyle(.borderedProminent)
                 }
                 Link(destination: guide) {
-                    Text("Connect Claude or ChatGPT")
+                    Text("Connect AI Assistant")
+                        .frame(minHeight: 20)
                 }
                 .buttonStyle(.bordered)
             }
             .buttonBorderShape(.capsule)
             .font(.footnote.weight(.semibold))
-            .controlSize(.small)
+            .controlSize(.regular)
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
