@@ -156,8 +156,9 @@ struct MainTabs: View {
         .sheet(isPresented: $model.showsRandomEntry) { RandomEntrySheet() }
         .sheet(item: $model.statsDay) { DayEntriesSheet(day: $0.day) }
         .onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in
-            // The open sheet picks another itself; otherwise show one. Not while locked.
-            guard !model.showsRandomEntry, !model.lock.isLocked else { return }
+            // The open sheet picks another itself; otherwise show one. Not while locked, and not
+            // over anything else that's up (a reflection, writing or editing, any sheet).
+            guard !model.showsRandomEntry, !model.lock.isLocked, !UIWindow.isShowingSomethingOverApp else { return }
             Task {
                 // Right after launch the journal may still be loading.
                 for _ in 0..<20 where !model.hasLoaded { try? await Task.sleep(for: .milliseconds(250)) }
