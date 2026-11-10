@@ -114,8 +114,9 @@ final class FlowTests: XCTestCase {
         snap("journal-scrubbed")
     }
 
-    /// Tapping (not dragging) the scrubber opens a calendar of written days; picking one opens that
-    /// day's entry, with the timeline scrolled to it behind.
+    /// Tapping (not dragging) the scrubber opens a calendar of written days; picking one brings
+    /// that day up in the day sheet, where Open opens its entry and the calendar button goes back
+    /// to the calendar.
     func testTappingScrubberJumpsToADay() throws {
         openJournal()
         scrubToBottom() // start far from the day picked below
@@ -131,15 +132,18 @@ final class FlowTests: XCTestCase {
         let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", label)).firstMatch
         XCTAssertTrue(day.waitForExistence(timeout: 10), "\(label) is in the calendar")
         day.tap()
-        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10), "The day's entry opens")
-        // The entry page's text is a text view (selectable across paragraphs), not a label.
-        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "Biscuit has discovered", "Biscuit has discovered")).firstMatch.exists)
+        let text = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "Biscuit has discovered", "Biscuit has discovered")).firstMatch
+        XCTAssertTrue(text.waitForExistence(timeout: 10), "The day comes up in its sheet")
+        XCTAssertTrue(app.buttons["Open"].exists)
         snap("day-picked")
-        app.navigationBars.buttons.element(boundBy: 0).tap()
-        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Biscuit has discovered")).firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 10))
-        sleep(1)
-        XCTAssertTrue(row.isHittable, "Back lands on the day in the timeline")
+        // Back to the calendar from the sheet, and pick the day again.
+        app.buttons["Jump to a Day"].tap()
+        XCTAssertTrue(app.staticTexts["Jump to a Day"].waitForExistence(timeout: 5), "The calendar again")
+        XCTAssertTrue(day.waitForExistence(timeout: 10))
+        day.tap()
+        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
+        app.buttons["Open"].tap()
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10), "Open opens the day's entry")
     }
 
     /// The medium widget's entry half opens that entry (me.dabble.app:/entry/<id>).

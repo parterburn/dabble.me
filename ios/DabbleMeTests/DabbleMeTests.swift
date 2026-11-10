@@ -88,6 +88,43 @@ struct HashtagMatchingTests {
 }
 
 @MainActor
+struct StatsOverviewTests {
+    @Test func wordsCompareToABookOnceThereAreEnough() {
+        #expect(JournalIntelligence.bookComparison(words: 5_000) == nil)
+        #expect(JournalIntelligence.bookComparison(words: 30_000) == "about 64% of the length of The Great Gatsby")
+        #expect(JournalIntelligence.bookComparison(words: 50_000) == "about as long as The Great Gatsby")
+        #expect(JournalIntelligence.bookComparison(words: 100_000) == "about as long as The Hobbit")
+        #expect(JournalIntelligence.bookComparison(words: 1_200_000) == "about 2 times the length of War and Peace")
+    }
+}
+
+@MainActor
+struct WebLinksTests {
+    /// dabble.me pages open in the app; other sites, and the link to subscribe, go to the browser.
+    @Test func onlyOurPagesOpenInTheApp() {
+        #expect(WebLinks.opensInApp(URL(string: "https://dabble.me/support")!))
+        #expect(WebLinks.opensInApp(URL(string: "https://dabble.me/security")!))
+        #expect(!WebLinks.opensInApp(URL(string: "https://dabble.me/subscribe")!))
+        #expect(!WebLinks.opensInApp(URL(string: "https://open.spotify.com/track/1")!))
+        #expect(!WebLinks.opensInApp(URL(string: "mailto:hello@dabble.me")!))
+    }
+}
+
+struct WidgetContentTests {
+    @Test func twoChoicesAndASwitch() {
+        #expect(WidgetContent(source: .prompt, showsPreviews: false) == .prompt)
+        #expect(WidgetContent(source: .prompt, showsPreviews: true) == .promptEntry)
+        #expect(WidgetContent(source: .rewind, showsPreviews: false) == .memoryCount)
+        #expect(WidgetContent(source: .rewind, showsPreviews: true) == .memoryEntry)
+        for content in WidgetContent.allCases {
+            #expect(WidgetContent(source: content.source, showsPreviews: content.showsPreviews) == content)
+        }
+        // The values saved by earlier builds still read.
+        #expect(WidgetContent(rawValue: "memoryCount") == .memoryCount && WidgetContent(rawValue: "memoryEntry") == .memoryEntry)
+    }
+}
+
+@MainActor
 struct ReflectionChatSummaryTests {
     /// A long chat keeps its most recent turns for the summary, so a late answer isn't cut off.
     @Test func longChatsKeepTheLatestTurns() {

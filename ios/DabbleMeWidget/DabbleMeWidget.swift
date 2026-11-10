@@ -40,10 +40,11 @@ struct Provider: TimelineProvider {
         let state = snapshot.state(on: date)
         let isToday = snapshot.day == WidgetSnapshot.iso(date)
         let content = WidgetSnapshot.content
-        let showsEntry = isToday && content == .memoryEntry
+        let showsEntry = isToday && content.showsPreviews
         return WidgetEntry(date: date, signedIn: true, wroteToday: state.wroteToday, yearCount: state.yearCount,
-                           memories: content != .prompt ? state.memories : nil,
+                           memories: content.source == .rewind ? state.memories : nil,
                            prompt: isToday ? snapshot.prompt : nil,
+                           memoryNote: isToday && content == .memoryCount ? snapshot.memoryNote : nil,
                            entryTitle: showsEntry ? snapshot.entryTitle : nil,
                            entryText: showsEntry ? snapshot.entryText : nil,
                            entryID: showsEntry ? snapshot.entryID : nil,

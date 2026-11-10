@@ -119,13 +119,19 @@ struct PhotoMenu: View {
     }
 }
 
-/// Full-screen photo: pinch or double-tap to zoom, swipe down or tap ✕ to close.
+/// Full-screen photo, under the band it's shared with (how long ago it was): pinch or double-tap
+/// to zoom, swipe down or tap ✕ to close. Save keeps the original photo, without the band.
 struct PhotoViewer: View {
     let photo: RemotePhoto
     @Environment(\.dismiss) private var dismiss
     @State private var saveResult: PhotoSaveResult?
     @State private var dragOffset: CGFloat = 0
     @State private var isZoomed = false
+    /// The photo under its band ("3 years ago"), as it's shared. Save still saves the original.
+    @State private var card: UIImage?
+
+    /// "3 years ago", when the photo's day is known.
+    private var bandLabel: String? { photo.day?.shareLabel(to: JournalDay(localDate: .now)) }
 
     var body: some View {
         ZStack {
@@ -133,7 +139,14 @@ struct PhotoViewer: View {
                 .opacity(1 - min(abs(dragOffset) / 400, 0.6))
                 .ignoresSafeArea()
 
-            if let image = photo.image {
+            if let image = photo.image, bandLabel != nil, card == nil {
+                // Making the band takes a moment on a large photo.
+                ProgressView().tint(.white)
+                    .task {
+                        await Task.yield() // let the spinner show first
+                        card = bandLabel.map { ShareCard.render(image, label: $0, maxWidth: 1600) } ?? image
+                    }
+            } else if let image = card ?? photo.image {
                 ZoomableImage(image: image, isZoomed: $isZoomed)
                     .ignoresSafeArea()
                     .offset(y: dragOffset)
@@ -291,9 +304,9 @@ private struct ZoomableImage: UIViewRepresentable {
 /// across the top of the photo at its own width.
 enum ShareCard {
     @MainActor
-    static func render(_ photo: UIImage, label: String) -> UIImage {
-        // Big enough to look sharp anywhere, small enough to share quickly.
-        let width = min(photo.size.width * photo.scale, 2400)
+    static func render(_ photo: UIImage, label: String, maxWidth: CGFloat = 2400) -> UIImage {
+        // Big enough to look sharp anywhere, small enough to share quickly (the viewer asks for less).
+        let width = min(photo.size.width * photo.scale, maxWidth)
         let photoHeight = width * photo.size.height / max(photo.size.width, 1)
         let band = (width * 0.11).rounded()
         let card = VStack(spacing: 0) {

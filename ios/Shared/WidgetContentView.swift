@@ -10,7 +10,9 @@ struct WidgetEntry: TimelineEntry {
     let yearCount: Int
     let memories: Int?
     let prompt: String?
-    /// An entry to look back on (only with "On This Day Entry" chosen in the app).
+    /// With nothing on this day in past years: "You have a memory from 36 days ago."
+    var memoryNote: String? = nil
+    /// An entry to look back on, or today's (only with previews turned on in the app).
     var entryTitle: String? = nil
     var entryText: String? = nil
     var entryID: Int? = nil
@@ -156,6 +158,12 @@ struct TodayWidgetContent: View {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.secondary)
                     Text(memories == 1 ? "You have a memory from this day." : "You have \(memories) memories from this day.")
+                        .font(.system(.subheadline, design: .serif))
+                } else if let note = entry.memoryNote {
+                    Label("Rewind", systemImage: "clock.arrow.circlepath")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(note)
                         .font(.system(.subheadline, design: .serif))
                 } else if !entry.wroteToday, let prompt = entry.prompt {
                     Text("Today's prompt")

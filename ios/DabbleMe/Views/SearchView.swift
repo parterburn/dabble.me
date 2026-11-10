@@ -68,34 +68,65 @@ struct SearchView: View {
     @ViewBuilder
     private var resultsList: some View {
         if submitted.isEmpty {
-            if hashtags.isEmpty {
-                ContentUnavailableView {
-                    Label("Search your journal", icon: "slab-search")
-                } description: {
-                    Text("Find a word, a #hashtag, an \"exact phrase\", or either of two words with hiking OR camping.")
-                }
-                .task { await loadHashtags() }
-            } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 14) {
-                        Text("Your Hashtags This Year")
-                            .font(.headline)
-                            .accessibilityAddTraits(.isHeader)
-                        HashtagCloud(hashtags: hashtags) { tag in
-                            query = "#\(tag)"
-                            Task { await search(reset: true) }
+            // Before a search: a way to a day, your hashtags, how to search, and where to ask more.
+            // (No pull to refresh here: the hashtags reload each time Search comes up.)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    Button {
+                        model.showsDayPicker = true
+                    } label: {
+                        HStack(spacing: 12) {
+                            appIcon("slab-calendar")
+                                .foregroundStyle(.tint)
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text("Jump to a Day")
+                                    .font(.body.weight(.semibold))
+                                Text("Pick a date from a calendar of the days you wrote.")
+                                    .font(.footnote)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer(minLength: 8)
+                            appIcon("slab-angle-right")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 12, height: 12)
+                                .foregroundStyle(.tertiary)
                         }
-                        Text("Search for a word, a #hashtag, an \"exact phrase\", or either of two words with hiking OR camping.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .padding(.top, 8)
+                        .padding(14)
+                        .background(Color.secondary.opacity(0.08), in: .rect(cornerRadius: 14))
+                        .contentShape(.rect(cornerRadius: 14))
                     }
-                    .padding()
-                    .frame(maxWidth: 680, alignment: .leading)
-                    .frame(maxWidth: .infinity)
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Jump to a Day")
+                    .accessibilityHint("Opens a calendar of the days you wrote")
+
+                    if !hashtags.isEmpty {
+                        VStack(alignment: .leading, spacing: 14) {
+                            Text("Your Hashtags This Year")
+                                .font(.headline)
+                                .accessibilityAddTraits(.isHeader)
+                            HashtagCloud(hashtags: hashtags) { tag in
+                                query = "#\(tag)"
+                                Task { await search(reset: true) }
+                            }
+                        }
+                    }
+                    Text("Search for a word, a #hashtag, an \"exact phrase\", or either of two words with hiking OR camping.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    if let connectors = model.me?.aiConnectors {
+                        ConnectorCallout(
+                            title: "Ask your journal a question",
+                            message: "Search finds words. To ask questions, or search by meaning across everything you've written, connect Dabble Me to Claude or ChatGPT.",
+                            guide: connectors.guideUrl
+                        )
+                    }
                 }
-                .refreshable { await loadHashtags() }
+                .padding()
+                .frame(maxWidth: 680, alignment: .leading)
+                .frame(maxWidth: .infinity)
             }
+            .onAppear { Task { await loadHashtags() } }
         } else if isSearching && results.isEmpty {
             ProgressView()
         } else if let error, results.isEmpty {
@@ -281,5 +312,62 @@ struct FlowLayout: Layout {
         }
         if !row.indices.isEmpty { rows.append(row) }
         return rows
+    }
+}
+
+/// A small pointer to the Claude/ChatGPT connector (set up on dabble.me), for what the app's own
+/// search and stats don't do: questions, meaning, sentiment. With `prompt`, something to ask once
+/// connected, with a Copy button.
+struct ConnectorCallout: View {
+    let title: String
+    let message: String
+    let guide: URL
+    var prompt: String? = nil
+    @State private var copied = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label(title, icon: "slab-claude")
+                .font(.subheadline.weight(.semibold))
+            Text(message)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            if let prompt {
+                Text(prompt)
+                    .font(.system(.footnote, design: .serif))
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color("Paper"), in: .rect(cornerRadius: 10))
+                    .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(.quaternary))
+                    .accessibilityLabel("Prompt: \(prompt)")
+            }
+            HStack(spacing: 10) {
+                if let prompt {
+                    Button {
+                        UIPasteboard.general.string = prompt
+                        copied = true
+                    } label: {
+                        Label(copied ? "Copied" : "Copy Prompt", icon: copied ? "slab-check" : "slab-copy")
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                Link(destination: guide) {
+                    Text("Connect Claude or ChatGPT")
+                }
+                .buttonStyle(.bordered)
+            }
+            .buttonBorderShape(.capsule)
+            .font(.footnote.weight(.semibold))
+            .controlSize(.small)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.secondary.opacity(0.08), in: .rect(cornerRadius: 14))
+        .sensoryFeedback(.success, trigger: copied)
+        .task(id: copied) {
+            guard copied else { return }
+            try? await Task.sleep(for: .seconds(2))
+            copied = false
+        }
     }
 }

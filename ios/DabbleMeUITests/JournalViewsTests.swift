@@ -71,7 +71,10 @@ final class JournalViewsTests: XCTestCase {
             XCTAssertTrue(app.buttons["Open"].waitForNonExistence(timeout: 5))
         }
 
-        // Pinch out for bigger squares (kept for next time), then back.
+        // Pinch out for bigger squares (kept for next time), then back. Up the page first, so the
+        // pinch's fingers stay clear of the tab bar under the heatmap.
+        let middle = heatmap.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        middle.press(forDuration: 0.05, thenDragTo: middle.withOffset(CGVector(dx: 0, dy: -260)))
         heatmap.pinch(withScale: 2, velocity: 1)
         sleep(1)
         snap("stats-heatmap-zoomed")
@@ -79,6 +82,11 @@ final class JournalViewsTests: XCTestCase {
 
         app.swipeUp()
         snap("journal-stats-2")
+        // At the bottom: where to take sentiment analysis, with a prompt to copy.
+        XCTAssertTrue(app.staticTexts["Sentiment analysis"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Copy Prompt"].exists)
+        app.swipeDown()
+        app.swipeDown()
 
         switchJournal(app, from: "Stats", to: "Photos")
         let photo = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Photo from'")).firstMatch
@@ -100,6 +108,11 @@ final class JournalViewsTests: XCTestCase {
         search.tap()
         XCTAssertTrue(app.staticTexts["Your Hashtags This Year"].waitForExistence(timeout: 10))
         snap("search-cloud")
+        // Jump to a Day is here too: it opens the calendar of written days.
+        app.buttons["Jump to a Day"].tap()
+        XCTAssertTrue(app.staticTexts["Jump to a Day"].waitForExistence(timeout: 5))
+        app.buttons["Close"].tap()
+        XCTAssertTrue(app.staticTexts["Ask your journal a question"].waitForExistence(timeout: 5), "A pointer to the Claude/ChatGPT connector")
         let tag = app.buttons.matching(NSPredicate(format: "label BEGINSWITH '#'")).firstMatch
         XCTAssertTrue(tag.exists)
         tag.tap()
@@ -338,7 +351,7 @@ final class JournalViewsTests: XCTestCase {
     }
 
     /// With no hashtags yet, suggestions aren't limited to (an empty) vocabulary. Needs a PRO
-    /// With nothing on this date in past years and no earlier entries, Today shows Throwback with
+    /// With nothing on this date in past years and no earlier entries, Today shows Rewink with
     /// a nudge to write. TEST_RUNNER_DABBLE_EMPTY_TOKEN (an account with no past entries).
     func testThrowbackNudgeWithoutPastEntries() throws {
         guard let empty = ProcessInfo.processInfo.environment["DABBLE_EMPTY_TOKEN"] else {
@@ -347,7 +360,7 @@ final class JournalViewsTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-DabbleDebugAccessToken", empty, "-DabbleServerOverride", "http://localhost:3000"]
         app.launch()
-        XCTAssertTrue(app.staticTexts["Throwback"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts["Rewind"].waitForExistence(timeout: 15))
         XCTAssertFalse(app.staticTexts["On This Day"].exists)
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "This is where your past entries come back")).firstMatch.exists)
         snap("today-throwback-empty")
@@ -517,7 +530,8 @@ final class JournalViewsTests: XCTestCase {
         snap("reflection-summary")
         sleep(1) // the buttons fade in with the summary
         app.buttons["Add to Entry"].tap()
-        XCTAssertTrue(app.staticTexts["Added to this day's entry."].waitForExistence(timeout: 15))
+        if !app.staticTexts["Added to this day's entry."].waitForExistence(timeout: 15) { snap("reflection-add-failed") }
+        XCTAssertTrue(app.staticTexts["Added to this day's entry."].waitForExistence(timeout: 1))
         app.buttons["Close"].tap()
         let added = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@",
                                                                          String(summed.prefix(30)), String(summed.prefix(30)))).firstMatch
@@ -770,13 +784,13 @@ final class JournalViewsTests: XCTestCase {
                       "Expected \(shown), got \(picker.label) \(picker.value ?? "")")
     }
 
-    /// Settings → Accessibility: the text size and font change entry text across the app, not just
+    /// Settings → Theme: the text size and font change entry text across the app, not just
     /// an open entry.
     func testAccessibilitySettingsApplyToTimeline() throws {
         let app = launch()
         func accessibility(_ change: () -> Void) {
             tab(app, "Settings").tap()
-            let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Accessibility")).firstMatch
+            let link = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Theme")).firstMatch
             for _ in 0..<5 where !link.isHittable { app.collectionViews.firstMatch.swipeUp() }
             link.tap()
             change()
@@ -796,7 +810,7 @@ final class JournalViewsTests: XCTestCase {
         accessibility {
             setSize("Largest")
             app.buttons["Sans Serif"].tap()
-            app.buttons["Night"].tap()
+            app.buttons["Dark"].tap()
             snap("accessibility-settings")
         }
         tab(app, "Journal").tap()
@@ -807,9 +821,9 @@ final class JournalViewsTests: XCTestCase {
         accessibility { // back to the defaults for other runs
             setSize("Default")
             app.buttons["Serif"].tap()
-            app.buttons["System"].tap()
+            app.buttons["Auto"].tap()
         }
-        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Default, Serif")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@ AND label CONTAINS %@", "Theme", "Auto")).firstMatch.waitForExistence(timeout: 5))
     }
 
     /// A web address written into an entry is a link.
@@ -1036,6 +1050,21 @@ final class JournalViewsTests: XCTestCase {
         snap("add-photos-library")
     }
 
+    /// A dabble.me page from Settings opens in a Safari sheet inside the app, not in Safari.
+    func testDabbleLinksOpenInTheApp() throws {
+        let app = launch()
+        tab(app, "Settings").tap()
+        let link = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Privacy Policy")).firstMatch
+        for _ in 0..<6 where !(link.exists && link.isHittable) { app.collectionViews.firstMatch.swipeUp() }
+        link.tap()
+        XCTAssertTrue(app.buttons["Close"].waitForExistence(timeout: 10), "The page is up in the app, with a Close button")
+        XCTAssertEqual(app.state, .runningForeground)
+        XCTAssertNotEqual(XCUIApplication(bundleIdentifier: "com.apple.mobilesafari").state, .runningForeground)
+        snap("in-app-page")
+        app.buttons["Close"].tap()
+        XCTAssertTrue(link.waitForExistence(timeout: 5))
+    }
+
     /// Today's count of the year's entries (top right) opens Stats.
     func testYearCountOpensStats() throws {
         let app = launch()
@@ -1057,21 +1086,29 @@ final class JournalViewsTests: XCTestCase {
         for _ in 0..<4 where !row.exists { app.swipeUp() } // below Reminders and Privacy
         XCTAssertTrue(row.waitForExistence(timeout: 10))
         row.tap()
-        XCTAssertTrue(app.buttons["On This Day Entry"].waitForExistence(timeout: 5) || app.staticTexts["On This Day Entry"].exists)
+        let previews = app.switches["Show Entry Previews"]
+        XCTAssertTrue(previews.waitForExistence(timeout: 5))
+        let memory = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Bruges!")).firstMatch
+        let count = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "memories from this day")).firstMatch
 
-        app.staticTexts["On This Day Entry"].tap()
-        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Bruges!")).firstMatch.waitForExistence(timeout: 5),
-                      "The preview shows the start of a memory")
-        snap("widget-entry")
-
-        app.staticTexts["On This Day Count"].tap()
-        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "memories from this day")).firstMatch.waitForExistence(timeout: 5))
-        XCTAssertFalse(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Bruges!")).firstMatch.exists, "No entry text")
+        // Rewind without previews: how many memories, none of their text.
+        app.staticTexts["Rewind"].tap()
+        if previews.value as? String == "1" { previews.switches.firstMatch.tap() }
+        XCTAssertTrue(count.waitForExistence(timeout: 5))
+        XCTAssertFalse(memory.exists, "No entry text")
         snap("widget-count")
 
+        // With previews: the start of a memory.
+        previews.switches.firstMatch.tap()
+        XCTAssertTrue(memory.waitForExistence(timeout: 5), "The preview shows the start of a memory")
+        snap("widget-entry")
+
+        // Today's Prompt (the demo hasn't written today): the prompt, with or without previews.
         app.staticTexts["Today's Prompt"].tap()
-        XCTAssertFalse(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "memories from this day")).firstMatch.exists)
+        XCTAssertTrue(memory.waitForNonExistence(timeout: 5))
+        XCTAssertFalse(count.exists)
         snap("widget-prompt")
+        previews.switches.firstMatch.tap() // back to the default: no previews
     }
 
     /// A free account writes without photos or links, can delete but not edit, and has no Stats.
@@ -1085,7 +1122,7 @@ final class JournalViewsTests: XCTestCase {
         // On This Day is PRO: Today says so (no throwback in its place).
         XCTAssertTrue(app.staticTexts["On This Day"].waitForExistence(timeout: 15))
         XCTAssertTrue(app.staticTexts["See what you wrote on this date in past years with Dabble Me PRO."].exists)
-        XCTAssertFalse(app.staticTexts["Throwback"].exists)
+        XCTAssertFalse(app.staticTexts["Rewind"].exists)
         snap("free-on-this-day")
         // Meanwhile, a random memory (free): the same sheet as shaking the phone.
         app.buttons["Try a Random Memory"].tap()

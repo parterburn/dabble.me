@@ -154,7 +154,18 @@ struct MainTabs: View {
             }
         }
         .sheet(isPresented: $model.showsRandomEntry) { RandomEntrySheet() }
-        .sheet(item: $model.statsDay) { DayEntriesSheet(day: $0.day) }
+        // One sheet at a time: the day sheet's calendar button closes it, then opens the calendar;
+        // a day picked there closes the calendar, then opens its sheet.
+        .sheet(item: $model.statsDay, onDismiss: {
+            guard model.reopensDayPicker else { return }
+            model.reopensDayPicker = false
+            model.showsDayPicker = true
+        }) { DayEntriesSheet(day: $0.day) }
+        .sheet(isPresented: $model.showsDayPicker, onDismiss: {
+            guard let day = model.pickedDay else { return }
+            model.pickedDay = nil
+            model.statsDay = StatsDay(day: day)
+        }) { DayPickerSheet { model.pickedDay = $0 } }
         .onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in
             // The open sheet picks another itself; otherwise show one. Not while locked, and not
             // over anything else that's up (a reflection, writing or editing, any sheet).
@@ -171,7 +182,7 @@ struct MainTabs: View {
                 model.search(hashtag: tag)
                 return .handled
             }
-            return .systemAction
+            return WebLinks.open(url)
         })
     }
 

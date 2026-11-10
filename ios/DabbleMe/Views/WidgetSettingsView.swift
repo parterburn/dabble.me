@@ -1,7 +1,8 @@
 import SwiftUI
 import WidgetKit
 
-/// Settings → Home Screen Widget: what the medium widget shows next to the year's entry count, with a live
+/// Settings → Home Screen Widget: whether the widget shows entry previews, and what the medium
+/// widget shows next to the year's entry count (today's prompt or a Rewind), with a live
 /// preview from today's data (the same view the widget draws). The small widget is always just
 /// the count, so the medium one is what changes.
 struct WidgetSettingsView: View {
@@ -19,11 +20,17 @@ struct WidgetSettingsView: View {
             }
 
             Section {
-                Picker("Next to Your Entry Count", selection: $content) {
-                    ForEach(WidgetContent.allCases) { option in
+                Toggle("Show Entry Previews", isOn: previews)
+            } footer: {
+                Text("The start of an entry, and its photo, on the widget. Widgets can be seen without unlocking your phone.")
+            }
+
+            Section {
+                Picker("Next to Your Entry Count", selection: source) {
+                    ForEach(WidgetContent.Source.allCases) { option in
                         VStack(alignment: .leading, spacing: 2) {
                             Text(option.title)
-                            Text(option.summary)
+                            Text(WidgetContent(source: option, showsPreviews: content.showsPreviews).summary)
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                         }
@@ -68,12 +75,20 @@ struct WidgetSettingsView: View {
             .accessibilityElement(children: .combine) // read as one: what the widget would say
     }
 
+    private var source: Binding<WidgetContent.Source> {
+        Binding { content.source } set: { content = WidgetContent(source: $0, showsPreviews: content.showsPreviews) }
+    }
+
+    private var previews: Binding<Bool> {
+        Binding { content.showsPreviews } set: { content = WidgetContent(source: content.source, showsPreviews: $0) }
+    }
+
     @ViewBuilder
     private var footer: some View {
-        if content != .prompt, model.me?.isPro != true {
-            Text("On This Day is part of Dabble Me PRO, so the widget shows a throwback or today's prompt instead.")
+        if content.source == .rewind, model.me?.isPro != true {
+            Text("On This Day is part of Dabble Me PRO, so the widget looks back at another past entry instead. Add a widget by touching and holding your home screen.")
         } else {
-            Text("Widgets can be seen without unlocking your phone. Add one by touching and holding your home screen.")
+            Text("Add a widget by touching and holding your home screen.")
         }
     }
 }

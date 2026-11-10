@@ -250,8 +250,8 @@ struct TodayView: View {
         .accessibilityHint("Shows your stats")
     }
 
-    /// On This Day when there's something from this date in past years; otherwise a Throwback
-    /// (any past entry, as in the daily email), or, with nothing to look back on yet, a nudge to write.
+    /// On This Day when there's something from this exact date in past years; otherwise a Rewind
+    /// (any past entry, as in the daily email; the API calls it `throwback`), or, with nothing to look back on yet, a nudge to write.
     /// Free accounts see On This Day as a PRO feature instead.
     @ViewBuilder
     private func onThisDaySection(_ today: TodaySummary) -> some View {
@@ -266,7 +266,7 @@ struct TodayView: View {
 
     @ViewBuilder
     private func throwbackSection(_ throwback: EntrySummary?, today: TodaySummary) -> some View {
-        SectionTitle("Throwback", icon: "slab-backward")
+        SectionTitle("Rewind", icon: "slab-backward")
             .sectionTitleRow()
         if let throwback {
             Section {
@@ -292,7 +292,7 @@ struct TodayView: View {
 
     @ViewBuilder
     private func memoriesSection(_ today: TodaySummary) -> some View {
-        // A little more under it than a throwback's: several days can follow, each with its own date.
+        // A little more under it than a Rewind's: several days can follow, each with its own date.
         SectionTitle("On This Day", icon: "slab-backward")
             .sectionTitleRow(bottom: 10)
         if !today.onThisDayAvailable {

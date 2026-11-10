@@ -3,7 +3,7 @@ import UIKit
 import WidgetKit
 
 /// Keeps the home-screen widget's snapshot (the year's entry count, written today, today's prompt and, only with
-/// "On This Day Entry" chosen, an entry to look back on) in step with the app. The prompt is the
+/// previews turned on, the start of an entry) in step with the app. The prompt is the
 /// personal one Apple Intelligence wrote for today when there is one. Settings → Home Screen
 /// Widget decides what goes on it; the Face ID lock doesn't (it guards the app, and the person
 /// chose what the widget shows).
@@ -18,6 +18,7 @@ enum WidgetSync {
             yearCount: model.entriesThisYear ?? 0,
             memories: memories.count,
             memoriesFirstYear: memories.compactMap { $0.day.flatMap { Int($0.year) } }.min(),
+            memoryNote: memoryNote(today),
             prompt: personalPrompt(for: today.date, model: model) ?? today.prompt,
             entryTitle: shownEntry(today, content: WidgetSnapshot.content, model: model)?.title,
             entryText: shownEntry(today, content: WidgetSnapshot.content, model: model)?.text,
@@ -36,24 +37,41 @@ enum WidgetSync {
         return text
     }
 
-    /// On This Day's first memory, or else the throwback, when the person has asked for entries on
-    /// the widget.
+    /// The entry whose start shows on the widget, when previews are on: for Rewind, On This Day's
+    /// first memory or else the past entry Today shows as its Rewind; for Today's Prompt, today's
+    /// own entry once it's written.
     private static func shownEntry(_ today: TodaySummary, content: WidgetContent, model: AppModel) -> (title: String, text: String, id: Int, entry: EntrySummary)? {
-        guard content == .memoryEntry else { return nil }
         let title: String
         let entry: EntrySummary
-        if let memory = today.onThisDay.first {
-            entry = memory
-            let years = memory.yearsAgo.map { $0 == 1 ? "1 year ago" : "\($0) years ago" }
-            title = [years, memory.day?.year].compactMap { $0 }.joined(separator: " · ")
-        } else if let throwback = today.throwback, let day = throwback.day, let now = today.day {
-            entry = throwback
-            title = "Throwback · \(day.relative(to: now))"
-        } else {
+        switch content {
+        case .prompt, .memoryCount:
             return nil
+        case .promptEntry:
+            guard let written = today.entry else { return nil }
+            entry = written.summary
+            title = "Today's entry"
+        case .memoryEntry:
+            if let memory = today.onThisDay.first {
+                entry = memory
+                let years = memory.yearsAgo.map { $0 == 1 ? "1 year ago" : "\($0) years ago" }
+                title = [years, memory.day?.year].compactMap { $0 }.joined(separator: " · ")
+            } else if let rewind = today.throwback, let day = rewind.day, let now = today.day {
+                entry = rewind
+                title = "Rewind · \(day.relative(to: now))"
+            } else {
+                return nil
+            }
         }
         let text = entry.excerpt.isEmpty ? "" : String(entry.excerpt.prefix(400))
         return (title, text, entry.id, entry)
+    }
+
+    /// Rewind without previews, with nothing on this day in past years: "You have a memory from
+    /// 36 days ago." (the past entry Today shows as its Rewind).
+    static func memoryNote(_ today: TodaySummary) -> String? {
+        guard today.onThisDay.isEmpty, let day = today.throwback?.day, let now = today.day else { return nil }
+        let ago = day.relative(to: now)
+        return "You have a memory from \(ago.prefix(1).lowercased() + ago.dropFirst())."
     }
 
     // MARK: - The entry's photo
@@ -140,8 +158,9 @@ enum WidgetSync {
         let shown = shownEntry(today, content: content, model: model)
         return WidgetEntry(date: .now, signedIn: true, wroteToday: today.entry != nil,
                            yearCount: model.entriesThisYear ?? 0,
-                           memories: content != .prompt && !today.onThisDay.isEmpty ? today.onThisDay.count : nil,
+                           memories: content.source == .rewind && !today.onThisDay.isEmpty ? today.onThisDay.count : nil,
                            prompt: personalPrompt(for: today.date, model: model) ?? today.prompt,
+                           memoryNote: content == .memoryCount ? memoryNote(today) : nil,
                            entryTitle: shown?.title, entryText: shown?.text, entryID: shown?.id,
                            photo: photo(for: shown?.entry, model: model, cleansUp: false)
                                .flatMap(WidgetSnapshot.photoURL(named:)).flatMap { UIImage(contentsOfFile: $0.path) })

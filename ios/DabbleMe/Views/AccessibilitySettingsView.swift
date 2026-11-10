@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Settings → Accessibility: the app's theme, and how entries read everywhere (the timeline,
+/// Settings → Theme: the app's theme (light, dark or automatic), and how entries read everywhere (the timeline,
 /// previews, an open entry and the editor): a text size slider over a live preview, like
 /// Twitter's, and a serif or sans-serif font.
 struct AccessibilitySettingsView: View {
@@ -17,6 +17,20 @@ struct AccessibilitySettingsView: View {
 
     var body: some View {
         Form {
+            Section {
+                Picker("Theme", selection: $theme) {
+                    ForEach(AppTheme.allCases) { theme in
+                        Text(theme.label).tag(theme)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .accessibilityLabel("Theme")
+            } header: {
+                Text("Theme")
+            } footer: {
+                Text("Auto follows your iPhone's Light or Dark Mode.")
+            }
+
             Section {
                 preview
                 HStack(spacing: 14) {
@@ -37,24 +51,11 @@ struct AccessibilitySettingsView: View {
             } header: {
                 Text("Entry Text")
             } footer: {
-                Text("For your entries everywhere: the Journal, previews, an open entry and the editor. Pinching an open entry changes the size too. Text also follows your iPhone's text size.")
+                Text("For your entries everywhere: the Journal, previews, an open entry and the editor. Text also follows your iPhone's text size.")
             }
 
-            Section {
-                Picker("Theme", selection: $theme) {
-                    ForEach(AppTheme.allCases) { theme in
-                        Text(theme.label).tag(theme)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .accessibilityLabel("Theme")
-            } header: {
-                Text("Theme")
-            } footer: {
-                Text("System follows your iPhone's Light or Dark Mode; Day and Night keep Dabble Me light or dark.")
-            }
         }
-        .navigationTitle("Accessibility")
+        .navigationTitle("Theme")
         .navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(.selection, trigger: textSize)
     }
