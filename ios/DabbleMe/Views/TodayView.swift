@@ -27,17 +27,17 @@ struct TodayView: View {
             List {
                 if let today = model.today {
                     // The header (the nav bar is hidden here): the wordmark, small, with the year's
-                    // entry count ("36 entries in 2026") beside it.
+                    // entry count ("36 entries this year") beside it.
                     HStack(alignment: .center) {
                         Wordmark(size: 28)
                         Spacer(minLength: 8)
-                        if let count = model.entriesThisYear, let year = today.day?.year {
-                            yearCountButton(count, year: year)
+                        // Nothing to count yet: no "0 entries".
+                        if let count = model.entriesThisYear, count > 0 {
+                            yearCountButton(count)
                         }
                     }
                     .plainRow()
-                    // Today's date titles the day's section. No year: it's always today (and it's
-                    // in the header's count).
+                    // Today's date titles the day's section. No year: it's always today.
                     SectionTitle(today.day?.formatted(.dateTime.weekday(.wide).month(.wide).day()) ?? today.date,
                                  icon: "slab-calendar")
                         .accessibilityLabel(today.day?.long ?? today.date)
@@ -228,15 +228,15 @@ struct TodayView: View {
 
     // MARK: - On This Day
 
-    /// "🔥 36 entries in 2026": entries written this year. Tapping it opens Stats.
-    private func yearCountButton(_ count: Int, year: String) -> some View {
+    /// "🔥 36 entries this year". Tapping it opens Stats.
+    private func yearCountButton(_ count: Int) -> some View {
         Button {
             model.selectedTab = .journal
             model.statsRequest += 1
         } label: {
             HStack(spacing: 5) {
                 appIcon("slab-fire")
-                Text("\(count.formatted()) \(count == 1 ? "entry" : "entries") in \(year)")
+                Text("\(count.formatted()) \(count == 1 ? "entry" : "entries") this year")
                     .monospacedDigit()
             }
             .font(.subheadline.weight(.semibold))
@@ -246,7 +246,7 @@ struct TodayView: View {
             .contentShape(.rect)
         }
         .buttonStyle(.borderless)
-        .accessibilityLabel(count == 1 ? "1 entry in \(year)" : "\(count) entries in \(year)")
+        .accessibilityLabel(count == 1 ? "1 entry this year" : "\(count) entries this year")
         .accessibilityHint("Shows your stats")
     }
 

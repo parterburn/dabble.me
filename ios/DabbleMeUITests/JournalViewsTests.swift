@@ -1069,8 +1069,7 @@ final class JournalViewsTests: XCTestCase {
     /// Today's count of the year's entries (top right) opens Stats.
     func testYearCountOpensStats() throws {
         let app = launch()
-        let year = Calendar.current.component(.year, from: .now)
-        let count = app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", "in \(year)")).firstMatch
+        let count = app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", "this year")).firstMatch
         XCTAssertTrue(count.waitForExistence(timeout: 15))
         snap("today-year-count")
         count.tap()
