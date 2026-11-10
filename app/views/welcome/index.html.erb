@@ -1,27 +1,30 @@
 <% content_for :head do %>
   <%= json_ld_script_tag organization_json_ld, website_json_ld, web_application_json_ld %>
 <% end %>
-<% 
+<%
+email_day = Time.now.yesterday
 sample_entries = [
   {
     body: "#Lily took four wobbly steps toward me before crashing into my arms, and we both squealed like it was the moon landing. I replayed those ten seconds in my head for the rest of the day.",
     tag: "#Lily (1 year and 2 months since entry)",
     image: "baby.jpg",
-    date: "#{(6.months.ago - 1.day).strftime("%a, %b %-d, %Y")} (6 months ago)"
+    date: email_day - 6.months
   },
   {
     body: "Today I ran a full mile without stopping—something I couldn't do six months ago when I could barely climb the stairs. My lungs burned and my legs ached, but I cried happy tears the whole walk home. #CouchTo5k",
     tag: "#CouchTo5k (6 months from entry)",
     image: "runner.jpg",
-    date: "#{(3.years.ago - 1.day).strftime("%a, %b %-d, %Y")} (3 years ago)"
+    date: email_day - 3.years
   },
   {
     body: "Halfway through dinner, we both just stopped talking and smiled at each other like we'd known this was coming. That comfortable silence said more than the conversation.",
     image: "first-date.jpg",
-    date: "#{(10.years.ago - 1.day).strftime("%a, %b %-d, %Y")} (10 years ago)"
+    date: email_day - 10.years
   }
 ]
 sample_entry = sample_entries.sample
+# The same heading the real email shows ("On this day 3 years ago", "Rewind 6 months").
+sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(email_day)
 %>
 
 <!-- Hero Section -->
@@ -83,10 +86,8 @@ sample_entry = sample_entries.sample
                 <div class="grow">Attach photos</div>
               </div>          
               <div class="flex items-center gap-2">
-                <svg class="h-5 w-5 text-hero-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div class="grow">Blasts from the past</div>
+                <span class="slab-icon slab-icon--backward h-5 w-5 text-hero-accent" aria-hidden="true"></span>
+                <div class="grow">Rewind past entries</div>
               </div>
               <div class="flex items-center gap-2">
                 <svg class="h-5 w-5 text-hero-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -126,7 +127,7 @@ sample_entry = sample_entries.sample
                   
                   <div class="bg-surface-elevated rounded-lg p-4">
                     <p class="font-semibold text-primary mb-2">
-                      Remember this? On <%= sample_entry[:date] %> you wrote...
+                      <%= sample_entry_heading %> • <%= sample_entry[:date].strftime("%a, %b %-d, %Y") %> you wrote...
                     </p>
                     <p class="text-primary leading-relaxed">
                       <%= sample_entry[:body] %>
@@ -288,13 +289,11 @@ sample_entry = sample_entries.sample
 
       <div class="card p-6">
         <div class="w-12 h-12 rounded-lg bg-surface-elevated flex items-center justify-center mb-4">
-          <svg class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <span class="slab-icon slab-icon--backward h-6 w-6 text-accent" aria-hidden="true"></span>
         </div>
-        <h3 class="font-semibold text-base text-primary font-sans">Blasts from the Past</h3>
+        <h3 class="font-semibold text-base text-primary font-sans">Rewind</h3>
         <p class="mt-2 text-muted">
-          Past entries resurface automatically. Rediscover moments you didn’t realize you’d forgotten.
+          Your emails bring back past entries, from this day years ago or just a few weeks back. Rediscover moments you didn’t realize you’d forgotten.
         </p>
       </div>
 
@@ -492,12 +491,12 @@ sample_entry = sample_entries.sample
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
             <span class="text-muted">Read your entries online</span>
-          </li>          
+          </li>
           <li class="flex items-start gap-3">
             <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
-            <span class="text-muted">Blasts from the past</span>
+            <span class="text-muted">Rewind to past entries</span>
           </li>
           <li class="flex items-start gap-3">
             <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -578,7 +577,7 @@ sample_entry = sample_entries.sample
             <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
             </svg>
-            <span class="text-muted">Blasts from the past</span>
+            <span class="text-muted">Rewind to past entries</span>
           </li>
           <li class="flex items-start gap-3">
             <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
