@@ -74,22 +74,13 @@ module Mcp
     def apply_query(relation, query)
       return relation if query.blank?
 
-      lowered_query = query.to_s.strip.downcase
+      # Same query styles as the search page, matched in Ruby (Entry::Matcher).
+      matcher = Entry::Matcher.parse(query.to_s.strip)
+      # Only quote marks: nothing to narrow by.
+      return relation if matcher.nil? && query.to_s.include?('"')
+      return relation.none if matcher.nil?
 
-      if lowered_query.include?(' OR ')
-        terms = lowered_query.split(' OR ').map(&:strip).reject(&:blank?)
-        return relation.none if terms.empty?
-
-        condition = terms.map { 'LOWER(entries.body) LIKE ?' }.join(' OR ')
-        relation.where(condition, *terms.map { |term| "%#{term}%" })
-      elsif query.to_s.include?('"')
-        phrase = query.to_s.delete('"').strip
-        return relation if phrase.blank?
-
-        relation.where('entries.body ~* ?', "\\m#{Regexp.escape(phrase)}\\M")
-      else
-        relation.where('LOWER(entries.body) LIKE ?', "%#{lowered_query}%")
-      end
+      matcher.filter(relation)
     end
 
     def normalized_limit(limit)

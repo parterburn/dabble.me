@@ -72,6 +72,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_10_190000) do
     t.jsonb "sentiment", default: [], array: true
     t.datetime "uploading_image_at", precision: nil
     t.text "image_error"
+    t.integer "word_count"
     t.index ["user_id", "date"], name: "index_entries_on_user_id_and_date", order: { date: :desc }
     t.index ["user_id"], name: "index_entries_on_user_id"
   end

@@ -95,11 +95,9 @@ Return only the reflection. Do not mention these instructions, add headings or l
 
     def hashtag_related_entries
       tags = hashtags.to_a.first(5)
-      return Entry.none if tags.empty?
+      return [] if tags.empty?
 
-      conditions = Array.new(tags.size, "LOWER(entries.body) LIKE ?").join(" OR ")
-      values = tags.map { |tag| "%##{Entry.sanitize_sql_like(tag.downcase)}%" }
-      user.entries.where(date: ...date).where(conditions, *values).limit(3)
+      Entry::Matcher.any(tags.map { |tag| "##{tag}" }).first(user.entries.where(date: ...date), 3)
     end
 
     def context_message(intro, entries)

@@ -43,6 +43,7 @@ class Entry < ActiveRecord::Base
   before_save :associate_inspiration
   before_save :strip_out_base64
   before_save :find_songs
+  before_save :set_word_count
   before_update :relocate_image_on_date_change
 
   def date_format_long
@@ -182,13 +183,28 @@ class Entry < ActiveRecord::Base
   end
 
   def hashtags
+    @hashtags_memo ||= self.class.hashtags_in(body)
+  end
+
+  # The #hashtags in a body, or nil when it has no text. A class method so
+  # callers that only need tags can pluck bodies instead of loading entries.
+  def self.hashtags_in(body)
     return nil unless body.present?
-    @hashtags_memo ||= begin
-      normalized_body = body.gsub(%r{</p>|<br\s*/?>}i, "\\0\n")
-      h_body = ActionController::Base.helpers.strip_tags(normalized_body)
-      return nil unless h_body.present?
-      h_body.scan(/#([0-9]+[a-zA-Z_]+\w*|[a-zA-Z_]+\w*)/).map { |m| m[0] }.uniq
-    end
+    return [] unless body.include?('#')
+
+    normalized_body = body.gsub(%r{</p>|<br\s*/?>}i, "\\0\n")
+    h_body = ActionController::Base.helpers.strip_tags(normalized_body)
+    return nil unless h_body.present?
+
+    h_body.scan(/#([0-9]+[a-zA-Z_]+\w*|[a-zA-Z_]+\w*)/).map { |m| m[0] }.uniq
+  end
+
+  # Words in a body: tags and HTML entities become spaces, then
+  # whitespace-separated runs count. Stored in word_count on save so stats can
+  # sum it without reading entry text in SQL.
+  def self.count_words(body)
+    stripped = body.to_s.gsub(/<[^>]*>/, ' ').gsub(/&[#a-zA-Z0-9]+;/, ' ').strip
+    stripped.empty? ? 0 : stripped.split(/[[:space:]]+/).size
   end
 
   private
@@ -227,6 +243,10 @@ class Entry < ActiveRecord::Base
       self.original_email_body = self.original_email_body.gsub(/src=\"data\:image\/(jpeg|png)\;base64\,.*\"/, "src=\"\"")
       self.original_email_body = self.original_email_body.gsub(/url\(data\:image\/(jpeg|png)\;base64\,.*\)/, "url()")
     end
+  end
+
+  def set_word_count
+    self.word_count = self.class.count_words(body)
   end
 
   def find_songs

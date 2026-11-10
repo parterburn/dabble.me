@@ -262,10 +262,8 @@ class User < ActiveRecord::Base
 
   def past_filter_entry_ids
     if (filters = self.past_filter).present?
-      filter_names = filters.split(',').map(&:strip)
-      cond_text = filter_names.map{|w| "LOWER(entries.body) like ?"}.join(" OR ")
-      cond_values = filter_names.map{|w| "%#{w}%"}
-      self.entries.where(cond_text, *cond_values).pluck(:id)
+      matcher = Entry::Matcher.any(filters.split(','))
+      matcher ? matcher.ids(entries) : []
     end
   end
 
@@ -307,7 +305,7 @@ class User < ActiveRecord::Base
   end
 
   def used_hashtags(entries, unique)
-    hashtags = entries.where("entries.body ~ '(#[a-zA-Z0-9_]+)'").map(&:hashtags).reject(&:blank?).flatten.map(&:downcase)
+    hashtags = entries.pluck(:body).flat_map { |body| Entry.hashtags_in(body) || [] }.map(&:downcase)
     if unique
       hashtags.group_by{|x| x}.sort_by{|k, v| -v.size}.map(&:first)
     else
