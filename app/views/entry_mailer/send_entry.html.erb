@@ -66,7 +66,7 @@
       </p>
     <% elsif @user.writing_streak > 1 %>
       <p>
-        Reply to this email with your entry for <%= link_to @send_day.strftime("%B %-d"), new_entry_url(day: @send_day.strftime('%Y-%m-%d')), class: "hover-line" %>. You're on a <%= ApplicationController.helpers.format_number(@user.writing_streak) %> day writing streak!
+        Reply to this email with your entry for <%= link_to @send_day.strftime("%B %-d"), new_entry_url(day: @send_day.strftime('%Y-%m-%d')), class: "hover-line" %>. You're on a <%= ApplicationController.helpers.format_number(@user.writing_streak) %>-day writing streak.
       </p>
     <% else %>
       <p>
@@ -79,7 +79,7 @@
         <p style="margin-top: 0;">
           <b>
             <% format_date  = @random_entry.date.strftime('%a, %b %-d, %Y') %>
-            Remember this? On <%= link_to(format_date, day_entry_url(year: @random_entry.date.year, month: @random_entry.date.month, day: @random_entry.date.day), class: "hover-line") %> (<%= @random_entry.time_ago_in_words_or_numbers(@user)%> ago) you wrote...
+            <%= @random_entry.look_back_label(@send_day) %> • <%= link_to(format_date, day_entry_url(year: @random_entry.date.year, month: @random_entry.date.month, day: @random_entry.date.day), class: "hover-line") %> you wrote...
           </b>
         </p>
         <p>
