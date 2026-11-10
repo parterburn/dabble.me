@@ -112,7 +112,8 @@ final class JournalViewsTests: XCTestCase {
         app.buttons["Jump to a Day"].tap()
         XCTAssertTrue(app.staticTexts["Jump to a Day"].waitForExistence(timeout: 5))
         app.buttons["Close"].tap()
-        XCTAssertTrue(app.staticTexts["Ask your journal a question"].waitForExistence(timeout: 5), "A pointer to the Claude/ChatGPT connector")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Chat with your journal")).firstMatch.waitForExistence(timeout: 5),
+                      "A pointer to the Claude/ChatGPT connector")
         let tag = app.buttons.matching(NSPredicate(format: "label BEGINSWITH '#'")).firstMatch
         XCTAssertTrue(tag.exists)
         tag.tap()

@@ -68,38 +68,10 @@ struct SearchView: View {
     @ViewBuilder
     private var resultsList: some View {
         if submitted.isEmpty {
-            // Before a search: a way to a day, your hashtags, how to search, and where to ask more.
+            // Before a search: your hashtags, how to search, a way to a day, and where to ask more.
             // (No pull to refresh here: the hashtags reload each time Search comes up.)
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
-                    Button {
-                        model.showsDayPicker = true
-                    } label: {
-                        HStack(spacing: 12) {
-                            appIcon("slab-calendar")
-                                .foregroundStyle(.tint)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text("Jump to a Day")
-                                    .font(.body.weight(.semibold))
-                                Text("Pick a date from a calendar of the days you wrote.")
-                                    .font(.footnote)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Spacer(minLength: 8)
-                            appIcon("slab-angle-right")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 12, height: 12)
-                                .foregroundStyle(.tertiary)
-                        }
-                        .padding(14)
-                        .background(Color.secondary.opacity(0.08), in: .rect(cornerRadius: 14))
-                        .contentShape(.rect(cornerRadius: 14))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Jump to a Day")
-                    .accessibilityHint("Opens a calendar of the days you wrote")
-
                     if !hashtags.isEmpty {
                         VStack(alignment: .leading, spacing: 14) {
                             Text("Your Hashtags This Year")
@@ -114,13 +86,25 @@ struct SearchView: View {
                     Text("Search for a word, a #hashtag, an \"exact phrase\", or either of two words with hiking OR camping.")
                         .font(.footnote)
                         .foregroundStyle(.secondary)
-                    if let connectors = model.me?.aiConnectors {
-                        ConnectorCallout(
-                            title: "Ask your journal a question",
-                            message: "Search finds words. To ask questions, or search by meaning across everything you've written, connect Dabble Me to Claude or ChatGPT.",
-                            guide: connectors.guideUrl
-                        )
+                    VStack(spacing: 12) {
+                        Button {
+                            model.showsDayPicker = true
+                        } label: {
+                            SearchRow(icon: "slab-calendar", title: "Jump to a Day", message: "See your entries in a calendar view.")
+                        }
+                        .accessibilityLabel("Jump to a Day")
+                        .accessibilityHint("Opens a calendar of the days you wrote")
+                        // The Claude/ChatGPT connector, set up on dabble.me.
+                        if let connectors = model.me?.aiConnectors {
+                            Link(destination: connectors.guideUrl) {
+                                SearchRow(icon: "slab-claude", title: "Chat with your journal",
+                                          message: "To ask questions, understand patterns, or have deeper reflections you can connect to your favorite AI Assistant like Claude or ChatGPT.")
+                            }
+                            .accessibilityLabel("Chat with your journal")
+                            .accessibilityHint("Shows how to connect Claude or ChatGPT")
+                        }
                     }
+                    .buttonStyle(.plain)
                 }
                 .padding()
                 .frame(maxWidth: 680, alignment: .leading)
@@ -315,9 +299,40 @@ struct FlowLayout: Layout {
     }
 }
 
-/// A small pointer to the Claude/ChatGPT connector (set up on dabble.me), for what the app's own
-/// search and stats don't do: questions, meaning, sentiment. With `prompt`, something to ask once
-/// connected, with a Copy button.
+/// A tappable card on Search's start screen: an icon, a title over a line about it, and an arrow.
+private struct SearchRow: View {
+    let icon: String
+    let title: String
+    let message: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            appIcon(icon)
+                .foregroundStyle(.tint)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+            }
+            Spacer(minLength: 8)
+            appIcon("slab-angle-right")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 12, height: 12)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(14)
+        .background(Color.secondary.opacity(0.08), in: .rect(cornerRadius: 14))
+        .contentShape(.rect(cornerRadius: 14))
+    }
+}
+
+/// Stats' pointer to the Claude/ChatGPT connector (set up on dabble.me), for what the numbers
+/// don't do. With `prompt`, something to ask once connected, with a Copy button.
 struct ConnectorCallout: View {
     let title: String
     let message: String
