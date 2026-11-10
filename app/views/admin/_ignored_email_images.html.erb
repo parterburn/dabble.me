@@ -1,0 +1,66 @@
+<%#
+  The user's IgnoredEmailImage rules on the admin user page, with a form to
+  add one. locals: user:, new_rule: (an unsaved rule, with errors after a
+  failed add)
+%>
+<% rules = user.ignored_email_images.order(:created_at) %>
+<div id="ignored-email-images" class="mt-6">
+  <%= render layout: "admin/section", locals: { title: "Ignored email images",
+        intro: "Images their emailed entries never save, such as a signature logo. Checked against every attachment and inline image." } do %>
+    <% if rules.any? %>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Rule</th>
+            <th>Matches</th>
+            <th>Added</th>
+            <th><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rules.each do |rule| %>
+            <tr>
+              <td class="whitespace-nowrap"><%= rule.label %></td>
+              <td class="min-w-48">
+                <% if rule.image? %>
+                  <%= link_to rule.image_url, target: "_blank", rel: "noopener", class: "inline-block", title: rule.image_url do %>
+                    <%= image_tag rule.image_url, alt: "Ignored image", loading: "lazy", class: "h-12 max-w-48 rounded border border-subtle object-contain" %>
+                  <% end %>
+                <% else %>
+                  <code class="break-all"><%= rule.pattern %></code>
+                <% end %>
+              </td>
+              <td class="whitespace-nowrap"><%= rule.created_at.strftime("%Y-%m-%d") %></td>
+              <td class="text-right">
+                <%= button_to "Remove", admin_user_ignored_email_image_path(user, rule), method: :delete, class: "button-secondary",
+                      data: { confirm: "Stop ignoring this? Their emails will save it again." } %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="px-5 text-sm text-muted">None yet.</p>
+    <% end %>
+
+    <%= form_with model: new_rule, scope: :ignored_email_image, url: admin_user_ignored_email_images_path(user), method: :post,
+          class: "mt-4 space-y-3 border-t border-subtle px-5 pt-4 pb-3" do |f| %>
+      <%= render "devise/shared/error_messages", resource: new_rule %>
+      <div class="grid gap-3 sm:grid-cols-[14rem_1fr_auto] sm:items-end">
+        <div>
+          <%= f.label :kind, "Rule", class: "field-label" %>
+          <%= f.select :kind, IgnoredEmailImage::KINDS.invert, {}, class: "field-input" %>
+        </div>
+        <div>
+          <%= f.label :value, "Image URL or filename", class: "field-label" %>
+          <%= f.text_field :value, class: "field-input", required: true, placeholder: "https://… or image001.jpg" %>
+        </div>
+        <%= f.submit "Add", class: "button-primary" %>
+      </div>
+      <p class="field-help">
+        Image: paste the link to a saved photo that shows only the unwanted image (open it from Photos). Copies are skipped even when renamed or re-saved.
+        Filename rules skip every match, so keep them specific.
+      </p>
+    <% end %>
+  <% end %>
+</div>

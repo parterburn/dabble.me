@@ -1,0 +1,14 @@
+A <%= @provider || "payment" %> notification wasn't recorded.
+
+Why: <%= @reason || "No account matched this payment." %>
+<% if @user %>
+
+Matched account: <%= @user.email %> (user <%= @user.id %>, <%= @user.plan %>)
+<%= admin_users_url(email: @user.email) %>
+<% end %>
+
+What to do: refund it in <%= @provider || "the payment provider" %>. If it's legitimate, record it by hand:
+<%= new_payment_url %>
+
+Full notification:
+<%= @params.to_hash.to_yaml %>

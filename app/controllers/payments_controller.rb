@@ -7,10 +7,24 @@ class PaymentsController < ApplicationController
   skip_before_action :verify_authenticity_token, only: [:success, :checkout, :billing, :payment_notify]
 
   def index
-    @payments = Payment.includes(:user).order("date DESC, id DESC")
+    payments = Payment.all
+    if params[:user_id].present?
+      user_id = params[:user_id].to_s.strip
+      # Rails casts a non-numeric ID to nil, which would list the userless payments.
+      payments = user_id.match?(/\A\d+\z/) ? payments.where(user_id: user_id) : payments.none
+      @filter_user = User.find_by(id: user_id) if user_id.match?(/\A\d+\z/)
+    end
+    if params[:email].present?
+      # Webhook payments put the payer's email in the comment, so this also
+      # finds payments whose user was deleted or never matched.
+      email = "%#{Payment.sanitize_sql_like(params[:email].strip.downcase)}%"
+      payments = payments.left_joins(:user).where("users.email ILIKE :email OR payments.comments ILIKE :email", email: email)
+    end
+
+    @payments_count = payments.count
+    @cash_total = payments.sum(:amount)
     params[:per] ||= 100
-    @paginated_payments = Kaminari.paginate_array(@payments.to_a).page(params[:page]).per(params[:per])
-    @cash_total = Payment.sum(:amount)
+    @paginated_payments = payments.includes(:user).order("payments.date DESC, payments.id DESC").page(params[:page]).per(params[:per])
   end
 
   def new
@@ -18,16 +32,12 @@ class PaymentsController < ApplicationController
   end
 
   def create
-    if params[:user_email].present?
-      email_user = User.find_by(email: params[:user_email].downcase)
-      params[:payment][:user_id] = email_user.id if email_user.present?
-    end
-
     @payment = Payment.new(payment_params)
+    user, error = form_user
+    @payment.user_id = user.id if user
+    @payment.errors.add(:base, error) if error
 
-    if @payment.save
-      # The email match, or else whoever the entered user_id belongs to.
-      user = @payment.user
+    if error.nil? && @payment.save
       # Set the plan first: every update of a Free user resets their
       # frequency to Sundays, which would undo the restore below.
       user.update(user_params) if user.present? && user_params[:plan].present?
@@ -40,7 +50,7 @@ class PaymentsController < ApplicationController
       end
       redirect_to payments_path
     else
-      render 'new'
+      render 'new', status: :unprocessable_content
     end
   end
 
@@ -50,20 +60,18 @@ class PaymentsController < ApplicationController
 
   def update
     @payment = Payment.find(params[:id])
-    if params[:user_email].present?
-      user = User.find_by(email: params[:user_email].downcase)
-      params[:payment][:user_id] = user.id if user.present?
-    else
-      # Email cleared, so go by the User ID field.
-      user = User.find_by(id: params.dig(:payment, :user_id))
-    end
+    previous_user_id = @payment.user_id
+    user, error = form_user(previous_user_id)
+    @payment.assign_attributes(payment_params)
+    @payment.user_id = user.id if user
+    @payment.errors.add(:base, error) if error
     # The form prefills plan and billing IDs from the payment's current user,
     # so when the payment moves to someone else those values are the old
     # user's. Copying them would leave two users sharing a stripe_id, and
     # Stripe webhooks and DeleteUserJob would then act on the wrong account.
-    moving_to_new_user = user.present? && user.id != @payment.user_id
+    moving_to_new_user = user.present? && user.id != previous_user_id
 
-    if @payment.update(payment_params)
+    if error.nil? && @payment.save
       if moving_to_new_user
         flash[:notice] = "Payment moved to #{user.email}. Their plan and billing IDs were not changed; edit the payment again to change them."
       else
@@ -72,7 +80,7 @@ class PaymentsController < ApplicationController
       end
       redirect_to payments_path
     else
-      render 'edit'
+      render 'edit', status: :unprocessable_content
     end
   end
 
@@ -105,7 +113,7 @@ class PaymentsController < ApplicationController
         end
       end
     elsif processed_params && params[:event] != "subscription.cancelled"
-      UserMailer.no_user_here(params.permit!.to_h).deliver_later
+      UserMailer.no_user_here(params.permit!.to_h, provider: @provider, reason: @refund_reason, user_id: @refund_user&.id).deliver_later
     else
       Sentry.capture_message("Payment notification not processed", level: :info, extra: { params: params })
     end
@@ -202,8 +210,14 @@ class PaymentsController < ApplicationController
   end
 
   def process_payhere
+    @provider = "PayHere"
     @user = User.find_by(payhere_id: params[:customer][:id])
     @user ||= User.find_by(email: params[:customer][:email].downcase)
+    if @user.nil?
+      reason = "No account has PayHere customer ID #{params[:customer][:id]} or the email #{params[:customer][:email]} (event: #{params[:event]})."
+      reason += " The payment failed, so there may be nothing to refund." if params[:event] == "payment.failed"
+      explain_refund(reason)
+    end
 
     if params[:event] == "payment.failed"
       # Sentry.capture_message("Failed payment", level: :info, extra: { params: params })
@@ -230,13 +244,15 @@ class PaymentsController < ApplicationController
   # Anything else, including a Free user's first purchase or a PRO user on
   # another provider, goes to the "[REFUND REQUIRED]" email for a manual look.
   def process_gumroad
+    @provider = "Gumroad"
     purchaser_id = params[:purchaser_id].to_s
     email = params[:email].to_s.downcase
     by_id = User.find_by(gumroad_id: purchaser_id) if purchaser_id.present?
-    @user = by_id || (User.find_by(email: email) if email.present?)
-    on_gumroad = @user&.plan.to_s.match?(/gumroad/i)
-    lapsed = @user.present? && @user == by_id && @user.plan == "Free"
-    @user = nil unless on_gumroad || lapsed
+    matched = by_id || (User.find_by(email: email) if email.present?)
+    on_gumroad = matched&.plan.to_s.match?(/gumroad/i)
+    lapsed = matched.present? && matched == by_id && matched.plan == "Free"
+    @user = matched if on_gumroad || lapsed
+    explain_refund(gumroad_refusal(matched, by_id, purchaser_id, email), matched) if @user.nil?
 
     paid = params[:price].to_f / 100
     if params[:recurrence].present?
@@ -263,12 +279,25 @@ class PaymentsController < ApplicationController
   PAYPAL_LEGACY_PLAN = "PRO Monthly PayPal".freeze
 
   def process_paypal
+    @provider = "PayPal"
     # item_name carries the key the user had when they subscribed. image_key
     # holds that value for every pre-existing user and never changes, so
     # renewals keep matching after the user resets their posting address.
     subscription_key = params[:item_name].gsub('Dabble Me PRO for ','') if params[:item_name].present?
-    @user = User.find_by(image_key: subscription_key) if subscription_key.present?
-    @user = nil unless @user&.plan == PAYPAL_LEGACY_PLAN
+    matched = User.find_by(image_key: subscription_key) if subscription_key.present?
+    @user = matched if matched&.plan == PAYPAL_LEGACY_PLAN
+    if @user.nil?
+      explain_refund(
+        if matched
+          "#{matched.email} has this subscription key (#{subscription_key}) but is on the #{matched.plan} plan, not #{PAYPAL_LEGACY_PLAN}. " \
+            "PayPal is closed to new subscribers, so only renewals of a legacy PayPal subscription are accepted."
+        else
+          "No account has the subscription key #{subscription_key.presence || '(none sent)'} from item_name \"#{params[:item_name]}\". " \
+            "PayPal is closed to new subscribers."
+        end,
+        matched
+      )
+    end
 
     paid = params[:mc_gross]
 
@@ -280,6 +309,29 @@ class PaymentsController < ApplicationController
       { }
     elsif params[:item_name].present? && params[:item_name].include?("Dabble Me")
       { error: "No eligible PayPal user" }
+    end
+  end
+
+  # Why a notification wasn't recorded, and the closest account if one
+  # matched, for the "[REFUND REQUIRED]" email.
+  def explain_refund(reason, user = nil)
+    @refund_reason = reason
+    @refund_user = user
+  end
+
+  def gumroad_refusal(user, by_id, purchaser_id, email)
+    if user.nil?
+      "No account matches this purchase (Gumroad purchaser ID #{purchaser_id.presence || '(none sent)'}, email #{email.presence || '(none sent)'}). " \
+        "It looks like a new subscriber, and Gumroad is closed to new subscribers."
+    elsif user.plan == "Free" && user.gumroad_id.present?
+      "#{user.email} matches by email but is on the Free plan, and their Gumroad purchaser ID on file (#{user.gumroad_id}) " \
+        "differs from this one (#{purchaser_id.presence || 'none sent'}). Only renewals of an existing Gumroad subscription are accepted."
+    elsif user.plan == "Free"
+      "#{user.email} is on the Free plan and has never paid through Gumroad, so this is a new Gumroad purchase. " \
+        "Gumroad is closed to new subscribers."
+    else
+      "#{user.email} (matched by #{user == by_id ? 'Gumroad purchaser ID' : 'email'}) is already on the #{user.plan} plan, " \
+        "so this Gumroad charge would be a second payment."
     end
   end
 
@@ -298,6 +350,30 @@ class PaymentsController < ApplicationController
   # a Payment column, so payment_params leaves it out.
   def send_thanks?
     ActiveModel::Type::Boolean.new.cast(params.dig(:payment, :send_thanks)) == true
+  end
+
+  # The payment form names its user two ways: the User email field and the
+  # User ID field. Returns [user, error]; user is nil when neither is filled in.
+  #
+  # The edit form prefills both with the payment's current user
+  # (current_user_id), so when they disagree, the field still naming that
+  # user is the one the admin left alone and the other one wins. On the new
+  # form nothing is prefilled, so a disagreement is an error.
+  def form_user(current_user_id = nil)
+    email = params[:user_email].to_s.strip
+    id = params.dig(:payment, :user_id).to_s.strip
+    email_user = User.find_by(email: email.downcase) if email.present?
+    id_user = User.find_by(id: id) if id.present?
+    # An unchanged ID may name a deleted user; let the rest of the edit save.
+    id_changed = id.present? && id != current_user_id.to_s
+
+    return [nil, "No user has the email #{email}."] if email.present? && email_user.nil?
+    return [nil, "No user has the ID #{id}."] if id_changed && id_user.nil?
+    return [email_user || id_user, nil] if email_user.nil? || id_user.nil? || email_user == id_user
+    return [email_user, nil] unless id_changed
+    return [id_user, nil] if email_user.id == current_user_id
+
+    [nil, "#{email} and User ID #{id} are different users. Clear one of the fields or make them match."]
   end
 
   def valid_payhere_signature?

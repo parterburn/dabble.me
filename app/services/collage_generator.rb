@@ -56,6 +56,12 @@ class CollageGenerator
   # canvas and reintroduce cropping, which we never want.
   MAX_ROW_HEIGHT_RATIO = 1.0
 
+  # Downloads one image with the collage's safety checks: public hosts only,
+  # bounded redirects. Returns the bytes, or nil.
+  def self.fetch(url)
+    new(urls: []).send(:fetch_bytes, url)
+  end
+
   def initialize(urls:, size: DEFAULT_SIZE, user: nil, allow_local_paths: false)
     @urls = Array(urls).compact_blank.uniq.first(MAX_IMAGES)
     @size = size

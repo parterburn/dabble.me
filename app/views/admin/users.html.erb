@@ -1,5 +1,6 @@
 <% title "Admin Users" %>
 <% content_for :tailwind, true %>
+<% icon_link = "inline-flex size-8 items-center justify-center rounded-lg text-muted hover:bg-surface-elevated hover:text-primary" %>
 
 <div class="tw mx-auto max-w-6xl pt-4 pb-16 sm:pt-8">
   <%= render "admin/header", title: "Users" %>
@@ -20,6 +21,7 @@
     <table class="data-table sortable whitespace-nowrap">
       <thead>
         <tr>
+          <th data-defaultsort="disabled"><span class="sr-only">Actions</span></th>
           <th data-mainsort="true">Created</th>
           <th data-firstsort="asc">Email</th>
           <th data-firstsort="asc">Name</th>
@@ -33,6 +35,11 @@
       <tbody>
         <% @user_list.each do |user| %>
           <tr>
+            <td>
+              <%= link_to edit_admin_user_path(user), class: icon_link, title: "Edit user", "aria-label": "Edit #{user.email}" do %>
+                <span class="slab-icon slab-icon--edit" aria-hidden="true"></span>
+              <% end %>
+            </td>
             <td class="whitespace-nowrap"><%= user.created_at.strftime('%Y-%m-%d') %></td>
             <td title="<%= user.user_key %>@<%= ENV['SMTP_DOMAIN'] %>"><%= user.email %></td>
             <td><%= user.full_name %></td>
@@ -40,7 +47,14 @@
             <% user_images_count = user.entries.only_images.count %>
             <td data-value="<%= user_entries_count %>"><%= number_with_delimiter(user_entries_count) %></td>
             <td data-value="<%= user_images_count %>"><%= number_with_delimiter(user_images_count) %></td>
-            <td><%= user.payments.sum(:amount) %></td>
+            <% user_paid = user.payments.sum(:amount) %>
+            <td data-value="<%= user_paid %>">
+              <% if user_paid.positive? %>
+                <%= link_to number_to_currency(user_paid), payments_path(user_id: user.id), class: "text-link", title: "Payments from this user" %>
+              <% else %>
+                <%= number_to_currency(user_paid) %>
+              <% end %>
+            </td>
             <td title="<%= user.frequencies %>"><%= user.plan %></td>
             <td><%= user.referrer %></td>
           </tr>

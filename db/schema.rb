@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_10_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_10_190000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -84,6 +84,18 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_10_000000) do
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
     t.index ["user_id"], name: "index_hashtags_on_user_id"
+  end
+
+  create_table "ignored_email_images", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "kind", null: false
+    t.string "pattern"
+    t.string "image_url"
+    t.binary "fingerprint"
+    t.float "aspect_ratio"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_ignored_email_images_on_user_id"
   end
 
   create_table "inspirations", id: :serial, force: :cascade do |t|
@@ -239,6 +251,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_10_000000) do
     t.index ["user_id"], name: "index_webauthn_credentials_on_user_id"
   end
 
+  add_foreign_key "ignored_email_images", "users", on_delete: :cascade
   add_foreign_key "mcp_tool_invocations", "users", on_delete: :cascade
   add_foreign_key "oauth_access_grants", "oauth_applications", column: "application_id"
   add_foreign_key "oauth_access_grants", "users", column: "resource_owner_id"

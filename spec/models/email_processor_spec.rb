@@ -492,6 +492,80 @@ describe EmailProcessor do
       expect(paid_user.entries.reload.first.image.file).to be_blank
     end
 
+    describe "images ignored for the user" do
+      let(:logo_bytes) { signature_logo.pngsave_buffer }
+      let(:photo) { uploaded_image(jpeg_bytes(photo_like(1)), filename: "IMG_1234.jpg") }
+
+      before { paid_user.entries.destroy_all }
+
+      def add_rule(kind, value)
+        IgnoredEmailImage.new(user: paid_user, kind: kind).tap { |rule| rule.value = value }.save!
+      end
+
+      def email_with(attachments: [], html: nil)
+        FactoryBot.build(
+          :email,
+          to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}" }],
+          body: "Today was good",
+          attachments: attachments,
+          vendor_specific: { stripped_html: html }
+        )
+      end
+
+      def process(email)
+        EmailProcessor.new(email).tap do |processor|
+          allow(processor).to receive(:process_single_image)
+          processor.process
+        end
+      end
+
+      it "skips an attachment that looks like an ignored image, even renamed, and keeps the photo" do
+        # The rule was made from the copy saved on an earlier entry.
+        allow(CollageGenerator).to receive(:fetch).and_return(stored_copy(logo_bytes))
+        add_rule("image", "https://d10r8m94hrfowu.cloudfront.net/#{paid_user.image_key}/2026-09-20/sig.jpg")
+        logo = uploaded_image(logo_bytes, filename: "image002.png", content_type: "image/png")
+        allow(ImageCollageJob).to receive(:perform_later_for_mailgun)
+
+        processor = process(email_with(attachments: [logo, photo]))
+
+        expect(processor).to have_received(:process_single_image).with(kind_of(Entry), photo)
+        expect(ImageCollageJob).not_to have_received(:perform_later_for_mailgun)
+      end
+
+      it "skips an attachment by filename and keeps an untyped photo" do
+        add_rule("filename", "b_logo.png")
+        named = uploaded_image(logo_bytes, filename: "B_Logo.png", content_type: "image/png")
+        untyped = uploaded_image(jpeg_bytes(photo_like(2)), filename: "attachment", content_type: "application/octet-stream")
+
+        processor = process(email_with(attachments: [named, untyped]))
+
+        expect(processor).to have_received(:process_single_image).with(kind_of(Entry), untyped)
+      end
+
+      it "still saves attachments for a user without rules" do
+        logo = uploaded_image(logo_bytes, filename: "B_Logo.png", content_type: "image/png")
+
+        processor = process(email_with(attachments: [logo]))
+
+        expect(processor).to have_received(:process_single_image).with(kind_of(Entry), logo)
+      end
+
+      it "skips inline images by URL or by likeness" do
+        add_rule("filename", "cdn.example.com/signature/")
+        allow(CollageGenerator).to receive(:fetch).and_return(stored_copy(logo_bytes))
+        add_rule("image", "https://d10r8m94hrfowu.cloudfront.net/#{paid_user.image_key}/2026-09-20/sig.jpg")
+        allow_any_instance_of(EmailProcessor).to receive(:safe_inline_image_url?).and_return(true)
+        allow(FastImage).to receive(:type).and_return(:png)
+        allow(FastImage).to receive(:size).and_return([300, 86])
+        allow(CollageGenerator).to receive(:fetch).with("https://mail.example.com/inline/abc123").and_return(logo_bytes)
+
+        process(email_with(html: '<div>Today was good</div><img src="https://cdn.example.com/signature/logo.png"><img src="https://mail.example.com/inline/abc123">'))
+
+        expect(FastImage).to have_received(:type).twice
+        expect(paid_user.entries.reload.first.image.file).to be_blank
+      end
+    end
+
     it "ignores local filesystem paths and private/internal IPs in inline <img> tags" do
       paid_user.entries.destroy_all
       expect(FastImage).not_to receive(:type)
