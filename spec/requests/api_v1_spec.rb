@@ -205,6 +205,7 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
         expect(json["on_this_day_available"]).to be(true)
         expect(json["prompt"]).to eq("What surprised you today?")
         expect(json["current_streak"]).to eq(1)
+        expect(json["entries_this_year"]).to eq(1)
         expect(json["throwback"]).to be_nil # On This Day has entries
       end
     end

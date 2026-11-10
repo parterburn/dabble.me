@@ -19,7 +19,7 @@ final class AppModel {
     var searchFocusRequest = 0
     /// Bumped when the Journal tab is tapped while already showing: back to the list, at the top.
     var journalTopRequest = 0
-    /// The Journal shows Stats (Today's streak was tapped).
+    /// The Journal shows Stats (Today's count for the year was tapped).
     var statsRequest = 0
     /// Shake the phone for a random memory (a preview sheet); `openEntryRequest` opens it in Journal.
     var showsRandomEntry = false
@@ -168,6 +168,15 @@ final class AppModel {
 
     /// Refreshes Today and the account together, so "today" (in the journal's time zone) stays
     /// in step everywhere, e.g. when the app stays open past midnight.
+    /// Entries written this calendar year, for Today's header and the widget: from the server, or
+    /// (an older server) added up from the Journal's months once they've loaded.
+    var entriesThisYear: Int? {
+        guard let today else { return nil }
+        if let count = today.entriesThisYear { return count }
+        guard hasLoaded, let year = Int(today.date.prefix(4)) else { return nil }
+        return months.filter { $0.year == year }.reduce(0) { $0 + $1.count }
+    }
+
     func loadToday() async {
         guard isSignedIn else { return }
         do {

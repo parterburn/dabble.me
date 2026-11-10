@@ -10,6 +10,7 @@ module Api
         memories = current_user.is_pro? ? OnThisDay.entries(current_user, today: today) : []
         # Nothing on this date in earlier years: a past entry instead, like the daily email's.
         throwback = Throwback.new(current_user, today: today).entry if memories.empty?
+        stats = JournalStats.new(current_user, today: today)
 
         render json: {
           date: today.iso8601,
@@ -18,7 +19,9 @@ module Api
           on_this_day_available: current_user.is_pro?,
           throwback: throwback && EntrySerializer.summary(throwback).merge(days_ago: (today - throwback.date.to_date).to_i),
           prompt: daily_prompt(today),
-          current_streak: JournalStats.new(current_user, today: today).current_streak
+          entries_this_year: stats.entries_this_year,
+          # Older app builds show this on Today; newer ones show the year's count (streaks are in Stats).
+          current_streak: stats.current_streak
         }
       end
 

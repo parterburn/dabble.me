@@ -6,7 +6,8 @@ struct WidgetEntry: TimelineEntry {
     let date: Date
     let signedIn: Bool
     let wroteToday: Bool
-    let streak: Int
+    /// Entries written so far in `date`'s year.
+    let yearCount: Int
     let memories: Int?
     let prompt: String?
     /// An entry to look back on (only with "On This Day Entry" chosen in the app).
@@ -16,7 +17,7 @@ struct WidgetEntry: TimelineEntry {
     /// The entry's photo, when it has one (a small copy from the App Group).
     var photo: UIImage? = nil
 
-    static let placeholder = WidgetEntry(date: .now, signedIn: true, wroteToday: false, streak: 12, memories: nil,
+    static let placeholder = WidgetEntry(date: .now, signedIn: true, wroteToday: false, yearCount: 36, memories: nil,
                                          prompt: "What made you smile today?")
 }
 
@@ -29,14 +30,17 @@ struct TodayWidgetContent: View {
         switch family {
         case .accessoryCircular: circular
         case .accessoryRectangular: rectangular
-        case .accessoryInline: Text(entry.wroteToday ? "✓ \(streakText)" : "Write today · \(streakText)")
+        case .accessoryInline: Text(entry.wroteToday ? "✓ \(countText)" : "Write today · \(countText)")
         case .systemMedium: medium
         default: small
         }
     }
 
-    private var streakText: String {
-        entry.streak == 1 ? "1-day streak" : entry.streak > 1 ? "\(entry.streak)-day streak" : "No streak yet"
+    private var year: String { entry.date.formatted(.dateTime.year()) }
+
+    /// "36 entries in 2026"
+    private var countText: String {
+        "\(entry.yearCount.formatted()) \(entry.yearCount == 1 ? "entry" : "entries") in \(year)"
     }
 
     private var small: some View {
@@ -44,19 +48,16 @@ struct TodayWidgetContent: View {
             wordmark
             Spacer(minLength: 0)
             if entry.signedIn {
-                HStack(alignment: .firstTextBaseline, spacing: 4) {
-                    Image(systemName: "flame.fill").foregroundStyle(Color.sage)
-                    Text(entry.streak.formatted())
-                        .font(.system(size: 34, weight: .semibold, design: .serif))
-                        .contentTransition(.numericText())
-                }
-                Text(entry.streak == 1 ? "day in a row" : "days in a row")
+                Text(entry.yearCount.formatted())
+                    .font(.system(size: 34, weight: .semibold, design: .serif))
+                    .contentTransition(.numericText())
+                Text("\(entry.yearCount == 1 ? "entry" : "entries") in \(year)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer(minLength: 0)
                 status
             } else {
-                Text("Sign in to see your streak.")
+                Text("Sign in to see your journal.")
                     .font(.footnote)
             }
         }
@@ -76,7 +77,7 @@ struct TodayWidgetContent: View {
         }
     }
 
-    /// Two halves, each its own link: the streak side writes today's entry (or opens Today once
+    /// Two halves, each its own link: the count side writes today's entry (or opens Today once
     /// it's written), and an entry shown on the right opens that entry to read.
     private var medium: some View {
         HStack(alignment: .top, spacing: 16) {
@@ -175,9 +176,9 @@ struct TodayWidgetContent: View {
 
     private var circular: some View {
         VStack(spacing: 0) {
-            Image(systemName: entry.wroteToday ? "checkmark" : "flame.fill")
+            Image(systemName: entry.wroteToday ? "checkmark" : "square.and.pencil")
                 .font(.caption)
-            Text(entry.streak.formatted())
+            Text(entry.yearCount.formatted())
                 .font(.system(.title3, design: .serif, weight: .semibold))
         }
         .widgetAccentable()
@@ -189,7 +190,7 @@ struct TodayWidgetContent: View {
             Text("Dabble Me")
                 .font(.headline)
                 .widgetAccentable()
-            Text(streakText)
+            Text(countText)
             Text(entry.wroteToday ? "Written today" : "Tap to write today")
                 .foregroundStyle(.secondary)
         }

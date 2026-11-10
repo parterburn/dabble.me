@@ -15,7 +15,7 @@ struct TodayWidget: Widget {
                 .containerBackground(for: .widget) { Color.paper }
         }
         .configurationDisplayName("Today")
-        .description("Your writing streak and a nudge to write. Choose what shows beside it in the app's Settings.")
+        .description("Your entries this year and a nudge to write. Choose what shows beside it in the app's Settings.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }
@@ -35,13 +35,13 @@ struct Provider: TimelineProvider {
 
     private func entry(at date: Date) -> WidgetEntry {
         guard let snapshot = WidgetSnapshot.load() else {
-            return WidgetEntry(date: date, signedIn: false, wroteToday: false, streak: 0, memories: nil, prompt: nil)
+            return WidgetEntry(date: date, signedIn: false, wroteToday: false, yearCount: 0, memories: nil, prompt: nil)
         }
         let state = snapshot.state(on: date)
         let isToday = snapshot.day == WidgetSnapshot.iso(date)
         let content = WidgetSnapshot.content
         let showsEntry = isToday && content == .memoryEntry
-        return WidgetEntry(date: date, signedIn: true, wroteToday: state.wroteToday, streak: state.streak,
+        return WidgetEntry(date: date, signedIn: true, wroteToday: state.wroteToday, yearCount: state.yearCount,
                            memories: content != .prompt ? state.memories : nil,
                            prompt: isToday ? snapshot.prompt : nil,
                            entryTitle: showsEntry ? snapshot.entryTitle : nil,

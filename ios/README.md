@@ -49,7 +49,7 @@ The simulator reaches `localhost` directly. On a phone, "localhost" is the phone
 | PATCH | `/api/v1/entries/:id` | PRO. Any of `{document, remove_image, uploaded_image_keys}`. `document` only when the entry's `document` is non-null; new photos join the entry's photo in a collage, or replace it with `remove_image` |
 | DELETE | `/api/v1/entries/:id` | PRO |
 | GET | `/api/v1/search?q=&page=` | PRO, same syntax as web search |
-| GET | `/api/v1/today` | Today tab: entry, On This Day (PRO), daily prompt, `current_streak` |
+| GET | `/api/v1/today` | Today tab: entry, On This Day (PRO), daily prompt, `entries_this_year` (and `current_streak` for older builds) |
 | GET | `/api/v1/entries/months` | month index for the timeline and scrubber |
 | GET | `/api/v1/entries/memory_days?days=30` | PRO. Upcoming days with memories (counts only) for On This Day reminders |
 | GET | `/api/v1/stats` | Journal > Stats: totals, streaks, writing days in the past year, 12 months, top hashtags (`Api::JournalStats`) |
@@ -60,7 +60,7 @@ The simulator reaches `localhost` directly. On a phone, "localhost" is the phone
 
 **Rich text editing.** The app never parses or sends raw HTML. `Api::EntryDocument` turns stored HTML into a `document`: a list of paragraph / bullet / number / rule blocks made of text runs that may be bold, italic, underlined or linked. That covers what the web editor (Summernote) and email ingestion produce, including `<div>` lines from email and `<hr>` between merged replies. The app edits the document in a native text view (bold, italic and underline from the text's Format menu; typing "- ", "* " or "1. " starts a list; the bar has "+" for photos and hashtag suggestions, and link; dictation is the keyboard's own) and sends it back, and the server rebuilds clean HTML from it (`to_html`). Entries with anything the document can't represent — inline styles, blockquotes, images, nested lists — come back with `document: null` and show "Edit on dabble.me", so an in-app edit can never drop formatting.
 
-**Widget.** `DabbleMeWidget` (WidgetKit) reads a `WidgetSnapshot` the app writes to the `group.me.dabble.ios` App Group after each refresh: streak, whether today is written and today's prompt (the personal Apple Intelligence one when there is one). Settings → Home Screen Widget (`WidgetSettingsView`, with a live preview drawn by the widget's own `TodayWidgetContent` from `Shared/`) chooses what the medium widget shows beside the streak (`WidgetContent`): today's prompt (the default), On This Day's count, or an entry to look back on (On This Day's first memory, else the throwback): a label and the start of its text, plus a small copy of its photo (saved to the App Group as `WidgetPhotos/entry-<id>.jpg`, at most 700pt wide), which fills the medium widget's right side under a few words of the entry. Only that last one puts entry text or photos on the widget, and the choice is the person's alone: the Face ID lock doesn't change what the widget shows. Tapping it opens `me.dabble.app:/write` or `:/today`.
+**Widget.** `DabbleMeWidget` (WidgetKit) reads a `WidgetSnapshot` the app writes to the `group.me.dabble.ios` App Group after each refresh: the year's entry count, whether today is written and today's prompt (the personal Apple Intelligence one when there is one). Settings → Home Screen Widget (`WidgetSettingsView`, with a live preview drawn by the widget's own `TodayWidgetContent` from `Shared/`) chooses what the medium widget shows beside the count (`WidgetContent`): today's prompt (the default), On This Day's count, or an entry to look back on (On This Day's first memory, else the throwback): a label and the start of its text, plus a small copy of its photo (saved to the App Group as `WidgetPhotos/entry-<id>.jpg`, at most 700pt wide), which fills the medium widget's right side under a few words of the entry. Only that last one puts entry text or photos on the widget, and the choice is the person's alone: the Face ID lock doesn't change what the widget shows. Tapping it opens `me.dabble.app:/write` or `:/today`.
 
 **Launch.** The launch screen is the Paper color; then `SplashView` types "me." in the icon's square with a blinking cursor until the journal has loaded (at most about 2.5 seconds; just the icon with Reduce Motion). The Face ID lock is only the Face ID symbol, which tries again when tapped.
 
@@ -78,7 +78,7 @@ The simulator reaches `localhost` directly. On a phone, "localhost" is the phone
 xcodebuild -project DabbleMe.xcodeproj -scheme DabbleMe -destination 'platform=iOS Simulator,name=iPhone 17' test
 ```
 
-The tests cover PKCE, day handling across time zones, JSON decoding, rich text layout, round-trips and list indents, GPS stripping, the widget's day/streak rollover, and reading hashtags from model replies. API behavior is covered by `spec/requests/api_v1_spec.rb` on the Rails side.
+The tests cover PKCE, day handling across time zones, JSON decoding, rich text layout, round-trips and list indents, GPS stripping, the widget's day and year rollover, and reading hashtags from model replies. API behavior is covered by `spec/requests/api_v1_spec.rb` on the Rails side.
 
 ### UI tests against a local server
 

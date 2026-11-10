@@ -1,12 +1,12 @@
 import Foundation
 
 /// What the home-screen widget shows, written by the app into the shared App Group.
-/// The streak, a writing prompt and, only if the person chooses it in Settings → Home Screen
+/// The year's entry count, a writing prompt and, only if the person chooses it in Settings → Home Screen
 /// Widget, an entry to look back on.
 struct WidgetSnapshot: Codable, Equatable, Sendable {
     static let appGroup = "group.me.dabble.ios"
     static let storageKey = "widget.snapshot"
-    /// What the medium widget shows next to the streak (Settings → Home Screen Widget).
+    /// What the medium widget shows next to the year's count (Settings → Home Screen Widget).
     static let contentKey = "widget.content"
     /// The older on/off setting ("Show Entries in Widget"), read once for people who turned it on.
     static let showMemoriesKey = "widget.showMemories"
@@ -14,7 +14,8 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     /// The journal day this snapshot describes (YYYY-MM-DD).
     var day: String
     var wroteToday: Bool
-    var streak: Int
+    /// Entries written in `day`'s year so far. Optional: snapshots saved by older builds don't have it.
+    var yearCount: Int?
     var memories: Int
     var memoriesFirstYear: Int?
     var prompt: String?
@@ -65,17 +66,15 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
         }
     }
 
-    /// The snapshot as of `date` (local calendar): a new day hasn't been written yet, and a
-    /// streak survives until the end of the day after the last entry.
-    func state(on date: Date, calendar: Calendar = .current) -> (wroteToday: Bool, streak: Int, memories: Int?) {
+    /// The snapshot as of `date` (local calendar): a new day hasn't been written yet, and the
+    /// year's count holds until a new year starts it again.
+    func state(on date: Date, calendar: Calendar = .current) -> (wroteToday: Bool, yearCount: Int, memories: Int?) {
         let today = Self.iso(date, calendar: calendar)
-        let yesterday = calendar.date(byAdding: .day, value: -1, to: date).map { Self.iso($0, calendar: calendar) }
+        let count = day.prefix(4) == today.prefix(4) ? yearCount ?? 0 : 0
         if day == today {
-            return (wroteToday, streak, memories > 0 ? memories : nil)
-        } else if day == yesterday {
-            return (false, wroteToday ? streak : 0, nil)
+            return (wroteToday, count, memories > 0 ? memories : nil)
         }
-        return (false, 0, nil)
+        return (false, count, nil)
     }
 
     static func iso(_ date: Date, calendar: Calendar = .current) -> String {
@@ -89,7 +88,7 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     static func entryURL(_ id: Int) -> URL { URL(string: "me.dabble.app:/entry/\(id)")! }
 }
 
-/// What the medium widget shows beside the streak. Only `.memoryEntry` puts entry text on the home
+/// What the medium widget shows beside the year's count. Only `.memoryEntry` puts entry text on the home
 /// screen. The person's choice alone decides it; the Face ID lock doesn't change it.
 enum WidgetContent: String, CaseIterable, Identifiable, Sendable {
     /// Today's writing prompt: nothing from the journal.

@@ -26,21 +26,23 @@ struct TodayView: View {
             // A list (not a plain scroll view) so On This Day rows swipe like the Journal's.
             List {
                 if let today = model.today {
-                    // The date is the page title (the nav bar is hidden here), with the writing
-                    // streak beside it. No year: it's always today. One line, shrinking a little
-                    // for long dates.
-                    HStack(alignment: .firstTextBaseline) {
-                        Text(today.day?.formatted(.dateTime.weekday(.wide).month(.wide).day()) ?? today.date)
-                            .font(.system(.title, design: .serif, weight: .semibold))
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                            .accessibilityLabel(today.day?.long ?? today.date)
-                            .accessibilityAddTraits(.isHeader)
+                    // The header (the nav bar is hidden here): the wordmark, small, with the year's
+                    // entry count beside it.
+                    HStack(alignment: .center) {
+                        Wordmark(size: 28)
                         Spacer(minLength: 8)
-                        streakButton(today.currentStreak ?? 0)
+                        if let count = model.entriesThisYear, let year = today.day?.year {
+                            yearCountButton(count, year: year)
+                        }
                     }
                     .plainRow()
+                    // Today's date titles the day's section. No year: it's always today (and it's
+                    // in the header's count).
+                    SectionTitle(today.day?.formatted(.dateTime.weekday(.wide).month(.wide).day()) ?? today.date,
+                                 icon: "slab-calendar")
+                        .accessibilityLabel(today.day?.long ?? today.date)
+                        .padding(.top, 6)
+                        .plainRow()
                     todaySection(today)
                     onThisDaySection(today)
                 } else if let error = model.timelineError {
@@ -115,9 +117,6 @@ struct TodayView: View {
     @ViewBuilder
     private func todaySection(_ today: TodaySummary) -> some View {
         if let entry = today.entry {
-            SectionTitle("Today's Entry", icon: "slab-calendar")
-                .padding(.top, 6)
-                .plainRow()
             // On the prompt box's Paper card, so today stands apart from On This Day. The card is
             // the row's background, so the entry keeps its swipes.
             row(entry.summary)
@@ -226,24 +225,30 @@ struct TodayView: View {
 
     // MARK: - On This Day
 
-    /// "🔥 4": days in a row with an entry. Tapping it opens Stats.
-    private func streakButton(_ streak: Int) -> some View {
+    /// "[26] 36": entries written this year, the year as a little badge. Tapping it opens Stats.
+    private func yearCountButton(_ count: Int, year: String) -> some View {
         Button {
             model.selectedTab = .journal
             model.statsRequest += 1
         } label: {
-            HStack(spacing: 4) {
-                appIcon("slab-fire")
-                Text(streak.formatted())
+            HStack(spacing: 6) {
+                Text(year.suffix(2))
+                    .font(.caption.weight(.bold))
                     .monospacedDigit()
+                    .foregroundStyle(Color("Paper"))
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(.tint, in: .rect(cornerRadius: 5))
+                Text(count.formatted())
+                    .font(.headline)
+                    .monospacedDigit()
+                    .foregroundStyle(.tint)
             }
-            .font(.headline)
-            .foregroundStyle(streak > 0 ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
             .padding(.vertical, 4)
             .contentShape(.rect)
         }
         .buttonStyle(.borderless)
-        .accessibilityLabel(streak == 1 ? "1 day streak" : "\(streak) day streak")
+        .accessibilityLabel(count == 1 ? "1 entry in \(year)" : "\(count) entries in \(year)")
         .accessibilityHint("Shows your stats")
     }
 
