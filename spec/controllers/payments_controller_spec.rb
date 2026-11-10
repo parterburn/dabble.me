@@ -163,6 +163,49 @@ RSpec.describe PaymentsController, type: :controller do
     end
   end
 
+  describe 'update' do
+    before do
+      sign_in superuser
+      paid_user.update!(stripe_id: 'cus_paid_user')
+    end
+
+    # What the edit form posts when nothing is changed: the plan and billing
+    # IDs are prefilled from the payment's current user.
+    let(:form_params) do
+      {
+        id: payment.id,
+        user_email: paid_user.email,
+        plan: paid_user.plan,
+        gumroad_id: paid_user.gumroad_id,
+        payhere_id: paid_user.payhere_id,
+        stripe_id: paid_user.stripe_id,
+        payment: { amount: payment.amount, user_id: payment.user_id, comments: payment.comments }
+      }
+    end
+
+    it "moves the payment to another user without copying the old user's plan or IDs" do
+      paid_annual_user.update!(stripe_id: 'cus_paid_annual_user')
+      original = paid_annual_user.slice(:plan, :gumroad_id, :payhere_id, :stripe_id)
+
+      patch :update, params: form_params.merge(user_email: paid_annual_user.email)
+
+      expect(response).to redirect_to(payments_url)
+      expect(payment.reload.user_id).to eq paid_annual_user.id
+      expect(paid_annual_user.reload.slice(:plan, :gumroad_id, :payhere_id, :stripe_id)).to eq original
+      expect(flash[:notice]).to include('plan and billing IDs were not changed')
+    end
+
+    it 'updates the plan and IDs when the payment stays with its user' do
+      patch :update, params: form_params.merge(plan: 'PRO Yearly PayHere', stripe_id: 'cus_new')
+
+      expect(response).to redirect_to(payments_url)
+      paid_user.reload
+      expect(paid_user.plan).to eq 'PRO Yearly PayHere'
+      expect(paid_user.stripe_id).to eq 'cus_new'
+      expect(flash[:notice]).to eq 'Payment successfully updated!'
+    end
+  end
+
   describe 'destroy' do
     it 'should redirect to login url if not logged in' do
       expect { delete(:destroy, params: { id: payment.id }) }.not_to change { Payment.count }
