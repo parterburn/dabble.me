@@ -183,7 +183,18 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       expect(json["days"]).to eq(%w[2025-01-02 2024-06-20 2024-06-03])
     end
 
-    it "summarizes today: today's entry, On This Day with years ago, and a prompt" do
+    it "lists a random handful of the curated writing prompts" do
+      Inspiration.create!(category: "Question", body: "What surprised   you today?")
+      Inspiration.create!(category: "Question", body: "Who did you feel grateful for today?")
+      Inspiration.create!(category: "Tip", body: "Write for five minutes.")
+      get "/api/v1/prompts", headers: auth(pro_user)
+      expect(json["prompts"]).to match_array(["What surprised you today?", "Who did you feel grateful for today?"])
+
+      get "/api/v1/prompts", params: { count: 1 }, headers: auth(pro_user)
+      expect(json["prompts"].size).to eq(1)
+    end
+
+        it "summarizes today: today's entry, On This Day with years ago, and a prompt" do
       Inspiration.create!(category: "Question", body: "What surprised you today?")
       travel_to Time.find_zone(pro_user.send_timezone).local(2026, 6, 20, 12) do
         todays = create(:entry, user: pro_user, date: Date.new(2026, 6, 20).to_s, body: "<p>Today</p>")

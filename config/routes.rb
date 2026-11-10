@@ -41,6 +41,7 @@ Rails.application.routes.draw do
     namespace :v1 do
       get 'me', to: 'me#show'
       get 'today', to: 'today#show'
+      get 'prompts', to: 'prompts#index'
       resources :entries, only: %i[index show create update destroy] do
         collection do
           get :random

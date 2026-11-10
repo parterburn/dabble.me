@@ -179,37 +179,97 @@ enum JournalIntelligence {
         return lines.joined(separator: "\n")
     }
 
-    /// Prompt while writing: one specific question to help the writer keep going, mostly about the
-    /// draft, with their recent entries (dated lines from `dated(_:today:)`) as background it may
-    /// connect to. With little or nothing written yet, it's the kind of prompt Today shows, made from
-    /// the recent entries. `asked` are the prompts already offered for this draft (not repeated).
-    static func followUpQuestion(for draft: String, recent: [String], today: JournalDay, asked: [String]) async throws -> String {
+    /// Prompt while writing. With little or nothing written yet, a starting prompt (one of the
+    /// curated ones, picked for the writer's recent days). Once there's writing, a reflective question
+    /// about the draft, with recent entries that share its names as background; if the model can't
+    /// manage one that sticks to what's written, a curated prompt instead. `asked` are the prompts
+    /// already offered for this draft (not repeated).
+    static func followUpQuestion(for draft: String, recent: [String], curated: [String], today: JournalDay,
+                                 asked: [String]) async throws -> String {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        let already = asked.isEmpty ? "" : "\n\nQuestions already asked (ask something different):\n" + asked.map { "- \($0)" }.joined(separator: "\n")
         guard text.count >= 40 else {
-            // Nothing much to ask about yet: a way in, from the recent days.
-            return try await reflectionPrompt(from: recent, today: today, avoiding: asked)
+            return try await startingPrompt(curated: curated, recent: recent, today: today, avoiding: asked)
         }
+        let already = asked.isEmpty ? "" : "\n\nQuestions already asked (ask something different):\n" + asked.map { "- \($0)" }.joined(separator: "\n")
         // Only recent entries about the same people, places or #tags as the draft: the model latches
         // onto anything it's given, and the question should be about what they're writing now.
         let related = recent.prefix(5).filter { sharesNames(with: text, $0) }
         let background = related.isEmpty ? "" : "\n\nRelated recent entries, with dates (background only; everything in them happened on those days):\n" + clipped(related.joined(separator: "\n"), limit: 1000)
-        return try await plainQuestion {
-            try await respond(
-                instructions: """
-                The writer is in the middle of today's journal entry and wants a nudge to keep writing. Pick one \
-                concrete thing they wrote about (a person, a moment, something someone said or did) and ask one \
-                short, plain question about it, the way a curious friend would ask. It's about today: never call \
-                it yesterday or another day. \(plainQuestionRules) Their \
-                recent entries are background: mention one only if the new entry is clearly about the same thing, \
-                and say when it was (yesterday, last week). Never ask about anything they didn't mention, never give \
-                advice, and don't repeat a question already asked. Reply with only the question.
-                """,
-                journalText: true,
-                prompt: "The entry they're writing now:\n\(clipped(draft, limit: 2000))\(background)\(already)",
-                temperature: 0.8
-            )
+        do {
+            return try await plainQuestion(groundedIn: text + "\n" + related.joined(separator: "\n")) {
+                try await respond(
+                    instructions: """
+                    The writer is in the middle of today's journal entry and wants a nudge to go deeper. Pick one \
+                    thing they wrote and ask one short, open question that invites them to reflect on it, using \
+                    their own words for it. Good shapes: "How did it feel when…?", "What do you want to remember \
+                    about…?", "What does … mean to you?", "What did … teach you?", "What would you tell yourself \
+                    about…?". \(groundingRules) \(plainQuestionRules) Don't ask "why did you…" about what they \
+                    did; it can sound like judgment. It's about today: never call it yesterday or another day. A related recent entry is background only; mention it only if \
+                    the new entry is clearly about the same thing. Never give advice, and don't repeat a question \
+                    already asked. Reply with only the question.
+                    """,
+                    journalText: true,
+                    prompt: "The entry they're writing now:\n\(clipped(draft, limit: 2000))\(background)\(already)",
+                    temperature: 0.7
+                )
+            }
+        } catch let error where !(error is CancellationError) && !curated.isEmpty {
+            return try await startingPrompt(curated: curated, recent: recent, today: today, avoiding: asked)
         }
+    }
+
+    /// Today's prompt, and Prompt on an empty page: one of the curated writing prompts (dabble.me's
+    /// Inspirations), picked by the model for the writer's recent entries and shown word for word, so
+    /// it's always a thoughtful question and never states anything about them. Without curated prompts
+    /// (an older server), the model writes one from a recent entry.
+    static func startingPrompt(curated: [String], recent: [String], today: JournalDay, avoiding asked: [String] = []) async throws -> String {
+        let candidates = curated.filter { !asked.contains($0) }
+        guard !candidates.isEmpty else { return try await reflectionPrompt(from: recent, today: today, avoiding: asked) }
+        return await pickPrompt(from: candidates, recent: recent)
+    }
+
+    /// The curated prompt that best fits the writer's recent entries (the model answers with a
+    /// number; the list is shuffled so it doesn't favor the top). Falls back to a random one.
+    static func pickPrompt(from candidates: [String], recent: [String]) async -> String {
+        // A few at a time: from a long list it keeps choosing the same favorite.
+        let options = Array(candidates.shuffled().prefix(6))
+        guard let fallback = options.first else { return "" }
+        guard options.count > 1, !recent.isEmpty else { return fallback }
+        let list = options.enumerated().map { "\($0.offset + 1). \($0.element)" }.joined(separator: "\n")
+        let reply = try? await respond(
+            instructions: """
+            You help someone choose a journaling prompt. Read their recent entries, then choose the one question \
+            from the numbered list that would be most worthwhile for them to reflect on now, given what's going on \
+            in their life. Prefer a question that invites reflection (feelings, meaning, what they're learning) \
+            over one that asks them to recount events. Reply with only the number.
+            """,
+            journalText: true,
+            prompt: "Their recent entries:\n\(clipped(recent.prefix(5).joined(separator: "\n"), limit: 1500))\n\nQuestions:\n\(list)",
+            temperature: 0.3
+        )
+        let number = reply.flatMap { $0.split(whereSeparator: { !$0.isNumber }).first.flatMap { Int($0) } }
+        guard let number, options.indices.contains(number - 1) else { return fallback }
+        return options[number - 1]
+    }
+
+    /// The rule against making things up: questions only use what the writer wrote.
+    private static let groundingRules = """
+    Only mention people, places and events the entry names, in its words. The question must not assume \
+    anything that isn't written: not what someone said, how anyone felt, when or where it happened, or what \
+    came of it. If you'd need to know something, ask about it instead.
+    """
+
+    /// Whether every name in a question (a capitalized word after the first, other than "I") appears
+    /// in `source`: the on-device model sometimes invents a person or place.
+    static func namesAreGrounded(_ question: String, in source: String) -> Bool {
+        let known = Set(source.lowercased().split(whereSeparator: { !$0.isLetter }).map(String.init))
+        let words = question.split(whereSeparator: { $0.isWhitespace })
+        for word in words.dropFirst() where word.first?.isUppercase == true {
+            guard let name = word.split(whereSeparator: { !$0.isLetter }).first.map({ $0.lowercased() }),
+                  name != "i" else { continue }
+            if !known.contains(name) { return false }
+        }
+        return true
     }
 
     /// Whether a recent entry mentions a name, place or #tag from the draft (a capitalized word or a
@@ -232,19 +292,26 @@ enum JournalIntelligence {
 
     /// Phrasing the on-device model reaches for that reads stiff in a prompt ("How does X's connection
     /// to Y shape your thoughts?"); a reply with them is asked for once more.
-    private static let stiffPhrases = ["connect", "shape your", "shaped your", "resonat", "reflect on", "journey", "meaningful"]
+    private static let stiffPhrases = ["connect", "shape your", "shaped your", "resonat", "reflect on", "journey", "meaningful",
+                                       "…", "..."] // the last two: a question shape copied with its blank
 
     /// One clean question from the model: the first line, without quotes or a label, asked again once
-    /// if it came out stiff.
-    private static func plainQuestion(_ ask: () async throws -> String) async throws -> String {
+    /// if it came out stiff or (with `source`) names someone or something that isn't in it. A question
+    /// that still invents a name is never shown: it throws instead.
+    private static func plainQuestion(groundedIn source: String? = nil, _ ask: () async throws -> String) async throws -> String {
         func clean(_ reply: String) -> String {
             let line = reply.split(whereSeparator: \.isNewline).first.map(String.init) ?? reply
             return line.trimmingCharacters(in: CharacterSet(charactersIn: "\"“”' ")).replacingOccurrences(of: "Question: ", with: "")
         }
+        func grounded(_ question: String) -> Bool { source.map { namesAreGrounded(question, in: $0) } ?? true }
+        func stiff(_ question: String) -> Bool { stiffPhrases.contains(where: question.lowercased().contains) }
         let first = clean(try await ask())
-        guard stiffPhrases.contains(where: first.lowercased().contains) else { return first }
+        if grounded(first), !stiff(first) { return first }
         let second = clean(try await ask())
-        return stiffPhrases.contains(where: second.lowercased().contains) ? first : second
+        if grounded(second), !stiff(second) { return second }
+        if grounded(first) { return first }
+        if grounded(second) { return second }
+        throw Failure.noAnswer
     }
 
     /// One reflection question inspired by recent entries.
