@@ -1,75 +1,58 @@
 <% title "Admin Users" %>
+<% content_for :tailwind, true %>
 
-<div class="container-fluid">
-  <div class="row s-admin-container">
-    <div class="col-md-12">
-      <h3>
-        Admin Users
-      </h3>
+<div class="tw mx-auto max-w-6xl pt-4 pb-16 sm:pt-8">
+  <%= render "admin/header", title: "Users" %>
+
+  <form class="mb-6 grid gap-3 sm:grid-cols-[1fr_1fr_auto]" role="search">
+    <div>
+      <label for="email" class="sr-only">Email</label>
+      <input type="text" id="email" name="email" placeholder="Filter by email" value="<%= params[:email] %>" class="field-input">
     </div>
-
-    <div class="col-md-12">
-      <hr>
+    <div>
+      <label for="user_key" class="sr-only">User or photo key</label>
+      <input type="text" id="user_key" name="user_key" placeholder="Filter by user or photo key" value="<%= params[:user_key] %>" class="field-input">
     </div>
+    <button type="submit" name="submit" value="Search" class="button-primary">Search</button>
+  </form>
 
-    <div class="col-md-12">
-      <div class="row">
-        <div class="col-md-12">
-          <form class="row">
-            <div class="col-md-4">
-              <input type="text" name="email" placeholder="Filter by Email" value="<%= params[:email] %>" class="form-control">
-            </div>
-            <div class="col-md-4">
-              <input type="text" name="user_key" placeholder="Filter by user or photo key" value="<%= params[:user_key] %>" class="form-control  col-md-6">
-            </div>
-            <div class="col-md-4">
-              <button type="submit" name="submit" value="Search" class="btn btn-primary">Search</button>
-            </div>
-          </form>
-        </div>
-      </div>
+  <div class="card overflow-x-auto">
+    <table class="data-table sortable whitespace-nowrap">
+      <thead>
+        <tr>
+          <th data-mainsort="true">Created</th>
+          <th data-firstsort="asc">Email</th>
+          <th data-firstsort="asc">Name</th>
+          <th data-firstsort="asc">Entries</th>
+          <th data-firstsort="asc">Images</th>
+          <th data-firstsort="asc">Paid</th>
+          <th data-firstsort="asc">Plan</th>
+          <th data-firstsort="asc">Ref</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @user_list.each do |user| %>
+          <tr>
+            <td class="whitespace-nowrap"><%= user.created_at.strftime('%Y-%m-%d') %></td>
+            <td title="<%= user.user_key %>@<%= ENV['SMTP_DOMAIN'] %>"><%= user.email %></td>
+            <td><%= user.full_name %></td>
+            <% user_entries_count = user.entries.count %>
+            <% user_images_count = user.entries.only_images.count %>
+            <td data-value="<%= user_entries_count %>"><%= number_with_delimiter(user_entries_count) %></td>
+            <td data-value="<%= user_images_count %>"><%= number_with_delimiter(user_images_count) %></td>
+            <td><%= user.payments.sum(:amount) %></td>
+            <td title="<%= user.frequencies %>"><%= user.plan %></td>
+            <td><%= user.referrer %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <% if @user_list.empty? %>
+      <p class="px-5 py-8 text-center text-sm text-muted">No users match.</p>
+    <% end %>
+  </div>
 
-      <div class="clearfix">
-        <hr>
-      </div>
-      <div class="row">
-        <div class="col-md-12">
-          <table class="table table-bordered table-striped well sortable">
-            <thead>
-              <tr>
-                <th style="width: 14%" data-mainsort="true">Created</th>
-                <th style="width: auto" data-firstsort="asc">Email</th>
-                <th style="width: 20%" data-firstsort="asc">Name</th>
-                <th style="width: 8%" data-firstsort="asc">Entries</th>
-                <th style="width: 8%" data-firstsort="asc">Images</th>
-                <th style="width: 8%" data-firstsort="asc">Paid</th>
-                <th style="width: auto" data-firstsort="asc">Plan</th>
-                <th style="width: auto" data-firstsort="asc">Ref</th>
-              </tr>
-            </thead>
-            <tbody>
-              <% @user_list.each do |user| %>
-                <tr>
-                  <td><%= user.created_at.strftime('%Y-%m-%d') %></td>
-                  <td title="<%= user.user_key %>@<%= ENV['SMTP_DOMAIN'] %>"><%= user.email %></td>
-                  <td><%= user.full_name %></td>
-                  <% user_entries_count = user.entries.count %>
-                  <% user_images_count = user.entries.only_images.count %>
-                  <td data-value="<%= user_entries_count %>"><%= number_with_delimiter(user_entries_count) %></td>
-                  <td data-value="<%= user_images_count %>"><%= number_with_delimiter(user_images_count) %></td>
-                  <td><%= user.payments.sum(:amount) %></td>
-                  <td title="<%= user.frequencies %>"><%= user.plan %></td>
-                  <td><%= user.referrer %></td>
-                </tr>
-              <% end %>
-            </tbody>
-          </table>
-          <div class="center">
-            <%= paginate @user_list %>
-          </div>
-        </div>
-      </div>
-    </div>
+  <div class="mt-6">
+    <%= paginate @user_list, theme: "tw" %>
   </div>
 </div>
-<div class="clearfix"></div>

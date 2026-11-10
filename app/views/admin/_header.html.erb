@@ -1,0 +1,32 @@
+<%#
+  Top of every admin page: title, optional intro, and tabs for the admin
+  sections (same order as the navbar's admin menu).
+  locals: title:, intro: (optional)
+  Page buttons go in `content_for :admin_actions` before rendering this.
+%>
+<header class="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+  <div class="min-w-0">
+    <p class="text-xs font-medium uppercase tracking-wide text-subtle">Admin</p>
+    <h1 class="mt-1 font-serif text-4xl tracking-tight text-primary sm:text-5xl"><%= title %></h1>
+    <% if local_assigns[:intro] %>
+      <p class="mt-2 max-w-3xl text-sm text-muted"><%= intro %></p>
+    <% end %>
+  </div>
+  <% if content_for?(:admin_actions) %>
+    <div class="flex shrink-0 flex-wrap items-center gap-3"><%= yield :admin_actions %></div>
+  <% end %>
+</header>
+
+<nav class="mb-8 flex overflow-x-auto border-b border-subtle text-sm sm:gap-1" aria-label="Admin sections">
+  <% [
+    ["Inspirations", inspirations_path, controller_name == "inspirations"],
+    ["Payments", payments_path, controller_name == "payments"],
+    ["Photos", admin_photos_path, controller_name == "admin" && action_name == "photos"],
+    ["Stats", admin_stats_path, controller_name == "admin" && action_name == "stats"],
+    ["Users", admin_users_path, controller_name == "admin" && action_name == "users"]
+  ].each do |label, path, active| %>
+    <%= link_to label, path,
+          "aria-current": (active ? "page" : nil),
+          class: "-mb-px shrink-0 border-b-2 px-2 py-2 font-medium sm:px-3 #{active ? 'border-olive-900 text-primary' : 'border-transparent text-muted hover:text-primary'}" %>
+  <% end %>
+</nav>
