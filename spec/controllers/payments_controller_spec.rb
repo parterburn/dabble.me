@@ -13,6 +13,11 @@ RSpec.describe PaymentsController, type: :controller do
     ActionMailer::Base.deliveries.clear
   end
 
+  # The "[REFUND REQUIRED]" email explains why the payment wasn't recorded.
+  def refund_body
+    ActionMailer::Base.deliveries.last.body.to_s
+  end
+
   describe 'index' do
     it 'should redirect to login url if not logged in' do
       get :index
@@ -534,6 +539,7 @@ RSpec.describe PaymentsController, type: :controller do
       expect { post :payment_notify, params: payhere_params, as: :json }.not_to change { Payment.count }
       expect(paid_user.reload.plan).to eq paid_user.plan
       expect(ActionMailer::Base.deliveries.last.subject).to eq '[REFUND REQUIRED] Payment Without a User'
+      expect(refund_body).to include('A PayHere notification', 'No account has PayHere customer ID 999999999999 or the email fakeemail@fake.com')
     end
   end
 
@@ -598,6 +604,8 @@ RSpec.describe PaymentsController, type: :controller do
       expect(user.reload.plan).to eq 'Free'
       expect(user.gumroad_id).to be_blank
       expect(ActionMailer::Base.deliveries.last.subject).to eq refund_subject
+      expect(refund_body).to include("#{user.email} is on the Free plan and has never paid through Gumroad")
+      expect(refund_body).to include("Matched account: #{user.email} (user #{user.id}, Free)", "/admin/users?email=")
     end
 
     it 'flags a lapsed user matched only by email' do
@@ -606,6 +614,7 @@ RSpec.describe PaymentsController, type: :controller do
       expect { post :payment_notify, params: gumroad_params, as: :json }.not_to change { Payment.count }
       expect(gumroad_user.reload.plan).to eq 'Free'
       expect(ActionMailer::Base.deliveries.last.subject).to eq refund_subject
+      expect(refund_body).to include('Gumroad purchaser ID on file (2222222222) differs from this one (4444444444)')
     end
 
     it 'flags a PRO user on another provider, even with a matching purchaser ID' do
@@ -613,6 +622,7 @@ RSpec.describe PaymentsController, type: :controller do
       expect { post :payment_notify, params: gumroad_params, as: :json }.not_to change { Payment.count }
       expect(paid_user.reload.plan).to eq 'PRO Monthly PayHere'
       expect(ActionMailer::Base.deliveries.last.subject).to eq refund_subject
+      expect(refund_body).to include("#{paid_user.email} (matched by Gumroad purchaser ID) is already on the PRO Monthly PayHere plan")
     end
 
     # find_by(gumroad_id: nil) would match any user who never used Gumroad.
@@ -621,6 +631,8 @@ RSpec.describe PaymentsController, type: :controller do
       expect { post :payment_notify, params: params_without_id, as: :json }.not_to change { Payment.count }
       expect(user.reload.plan).to eq 'Free'
       expect(ActionMailer::Base.deliveries.last.subject).to eq refund_subject
+      expect(refund_body).to include('No account matches this purchase (Gumroad purchaser ID (none sent)')
+      expect(refund_body).not_to include('Matched account')
     end
 
     it 'should not create a payment if no match' do
@@ -692,6 +704,7 @@ RSpec.describe PaymentsController, type: :controller do
       expect { post :payment_notify, params: paypal_params, as: :json }.not_to change { Payment.count }
       expect(user.reload.plan).to eq 'Free'
       expect(ActionMailer::Base.deliveries.last.subject).to eq '[REFUND REQUIRED] Payment Without a User'
+      expect(refund_body).to include("#{user.email} has this subscription key (#{user.image_key}) but is on the Free plan, not PRO Monthly PayPal")
     end
 
     it 'does not record a payment for a PRO user on another plan' do
@@ -705,6 +718,7 @@ RSpec.describe PaymentsController, type: :controller do
       expect { post :payment_notify, params: paypal_params, as: :json }.not_to change { Payment.count }
       expect(paid_user.reload.plan).to eq paid_user.plan
       expect(ActionMailer::Base.deliveries.last.subject).to eq '[REFUND REQUIRED] Payment Without a User'
+      expect(refund_body).to include('A PayPal notification', 'No account has the subscription key WRONG_KEY', 'refund it in PayPal')
     end
   end
 
