@@ -2,8 +2,8 @@
 
 require "rails_helper"
 
-# "Stay logged in" is opt-in: unticked sign-ins get a browser-session cookie
-# only; ticked ones also get Devise's 30-day remember cookie.
+# "Stay logged in" is ticked by default: ticked sign-ins also get Devise's
+# 30-day remember cookie; unticked ones get a browser-session cookie only.
 RSpec.describe "Stay logged in (remember me)", type: :request do
   include ActiveSupport::Testing::TimeHelpers
 
@@ -30,13 +30,22 @@ RSpec.describe "Stay logged in (remember me)", type: :request do
     post user_session_path, params: { user: { email: user.email, password: password, remember_me: remember } }
   end
 
-  it "leaves the checkbox unticked by default on the sign-in page" do
+  def remember_checkbox
+    response.body[/<input[^>]*type="checkbox"[^>]*name="user\[remember_me\]"[^>]*>/]
+  end
+
+  it "ticks the checkbox by default on the sign-in page" do
     get new_user_session_path
 
-    checkbox = response.body[/<input[^>]*type="checkbox"[^>]*name="user\[remember_me\]"[^>]*>/]
-    expect(checkbox).to be_present
-    expect(checkbox).not_to include("checked")
+    expect(remember_checkbox).to include('checked="checked"')
     expect(response.body).to include("Stay logged in<")
+  end
+
+  it "keeps the checkbox unticked after a failed sign-in that unticked it" do
+    post user_session_path, params: { user: { email: user.email, password: "wrong-password", remember_me: "0" } }
+
+    expect(remember_checkbox).to be_present
+    expect(remember_checkbox).not_to include("checked")
   end
 
   it "remembers a password sign-in for 30 days when the box is ticked" do

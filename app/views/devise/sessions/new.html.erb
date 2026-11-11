@@ -38,7 +38,7 @@
         <% if devise_mapping.rememberable? %>
           <div class="flex items-center justify-between">
             <label class="flex items-center gap-2 cursor-pointer">
-              <%= f.check_box :remember_me, class: "w-4 h-4 rounded border-subtle text-accent focus:ring-accent cursor-pointer" %>
+              <%= f.check_box :remember_me, checked: resource.remember_me.nil? || ActiveModel::Type::Boolean.new.cast(resource.remember_me), class: "w-4 h-4 rounded border-subtle text-accent focus:ring-accent cursor-pointer" %>
               <span class="text-sm text-muted">Stay logged in</span>
             </label>
             <%= link_to "Forgot password?", new_password_path(resource_name), class: "text-sm text-accent hover:text-primary transition-colors" %>
