@@ -7,17 +7,21 @@ module Api
   #    { "type" => "bullet", "runs" => [...] }, { "type" => "number", "runs" => [...] }, { "type" => "rule" }]
   #
   # Runs may set bold / italic / underline / link; "\n" inside a run is a line break.
+  # A list item inside another's list has a "level" (1 for the first list in, up to
+  # MAX_LIST_LEVEL); top-level items have none.
   #
   # Only the formatting the web editor (Summernote) and email ingestion produce is
   # editable: p, div, span, br, b/strong, i/em, u, a, ul/ol/li and hr (merged replies).
-  # Anything else — inline styles, blockquotes, images, unknown attributes,
-  # nested lists — makes from_html return nil and the entry stays web-only, so an app
-  # edit can never silently drop formatting.
+  # Anything else — inline styles, blockquotes, images, unknown attributes, text after a
+  # list inside a list item, a list under an item with no text — makes from_html return nil and the entry stays web-only, so
+  # an app edit can never silently drop formatting.
   module EntryDocument
     class NotEditable < StandardError; end
     class InvalidDocument < StandardError; end
 
     BLOCK_TYPES = %w[paragraph bullet number rule].freeze
+    LIST_TAGS = { 'bullet' => 'ul', 'number' => 'ol' }.freeze
+    MAX_LIST_LEVEL = 5
     INLINE_FORMATS = { 'b' => :bold, 'strong' => :bold, 'i' => :italic, 'em' => :italic, 'u' => :underline }.freeze
     ALLOWED_ATTRIBUTES = { 'a' => %w[href target rel] }.freeze
     LINK_SCHEMES = %w[http https mailto].freeze
@@ -43,23 +47,37 @@ module Api
       blocks = validate!(document)
       blocks.each { |block| Array(block['runs']).each { |run| run.delete('link') } } unless links
       html = []
-      open_list = nil
+      lists = [] # the open lists' tags, outermost first; each has an item open
+      # An item with nothing nested closes on its own line ("<li>x</li>").
+      close_item = lambda do
+        html.last.start_with?('<li>') && !html.last.end_with?('</li>') ? html[-1] += '</li>' : html << '</li>'
+      end
+      close_list = lambda do
+        close_item.call
+        html << "</#{lists.pop}>"
+      end
 
       blocks.each do |block|
-        list_tag = { 'bullet' => 'ul', 'number' => 'ol' }[block['type']]
-        if list_tag != open_list
-          html << "</#{open_list}>" if open_list
-          html << "<#{list_tag}>" if list_tag
-          open_list = list_tag
-        end
+        tag = LIST_TAGS[block['type']]
+        # A list goes at most one level deeper than the item before it.
+        level = tag ? [block['level'].to_i, lists.size].min : -1
+        close_list.call while lists.size > level + 1
+        close_list.call if tag && lists.size == level + 1 && lists.last != tag
 
         case block['type']
         when 'paragraph' then html << "<p>#{runs_html(block['runs'])}</p>" if runs_text(block['runs']).strip.present?
-        when 'bullet', 'number' then html << "<li>#{runs_html(block['runs'])}</li>"
+        when 'bullet', 'number'
+          if lists.size == level + 1
+            close_item.call
+          else
+            html << "<#{tag}>"
+            lists << tag
+          end
+          html << "<li>#{runs_html(block['runs'])}"
         when 'rule' then html << '<hr>'
         end
       end
-      html << "</#{open_list}>" if open_list
+      close_list.call while lists.any?
       html.join("\n")
     end
 
@@ -135,15 +153,53 @@ module Api
       blocks
     end
 
-    def list_items(list)
+    # A list's items in order, each followed by the items of any list inside it (a level deeper).
+    def list_items(list, level = 0)
+      raise NotEditable if level > MAX_LIST_LEVEL
+
       type = list.name == 'ol' ? 'number' : 'bullet'
-      list.children.filter_map do |item|
-        next if item.text? && item.text.strip.empty?
-        raise NotEditable unless item.element? && item.name == 'li'
+      blocks = []
+      list.children.each do |item|
+        next if blank_node?(item)
+        raise NotEditable unless item.element?
 
         check_attributes!(item)
-        { 'type' => type, 'runs' => clean_runs(inline_children(item, {})) }
+        if list?(item) # a list straight inside a list, as browsers' indent command leaves it
+          # With no item before it there's nothing for it to sit under.
+          raise NotEditable if blocks.empty?
+
+          blocks.concat(list_items(item, level + 1))
+          next
+        end
+        raise NotEditable unless item.name == 'li'
+
+        children = item.children.to_a
+        text_count = children.index { |child| list?(child) } || children.size
+        block = { 'type' => type, 'runs' => clean_runs(children.first(text_count).flat_map { |child| inline_runs(child, {}) }) }
+        block['level'] = level if level.positive?
+        # An item with no text of its own that holds a list: the app drops empty items, which
+        # would leave that list without the item it's under, so the entry stays web-only.
+        raise NotEditable if block['runs'].empty? && text_count < children.size && children.drop(text_count).any? { |child| list?(child) }
+
+        blocks << block
+        # Only lists may follow: text after a nested list has nowhere to go in the document.
+        children.drop(text_count).each do |child|
+          next if blank_node?(child)
+          raise NotEditable unless list?(child)
+
+          check_attributes!(child)
+          blocks.concat(list_items(child, level + 1))
+        end
       end
+      blocks
+    end
+
+    def list?(node)
+      node.element? && LIST_TAGS.value?(node.name)
+    end
+
+    def blank_node?(node)
+      node.comment? || (node.text? && node.text.strip.empty?)
     end
 
     def inline_children(node, format)
@@ -243,7 +299,10 @@ module Api
           clean['link'] = link if link.present? && safe_link?(link)
           clean
         end
-        { 'type' => type, 'runs' => runs }
+        clean = { 'type' => type, 'runs' => runs }
+        level = block['level'].to_i.clamp(0, MAX_LIST_LEVEL)
+        clean['level'] = level if level.positive? && LIST_TAGS.key?(type)
+        clean
       end
     end
 

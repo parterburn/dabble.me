@@ -52,6 +52,24 @@ RSpec.describe Api::EntryDocument do
       ])
     end
 
+    it "reads a list inside a list item as items a level in" do
+      html = "<ol><li><div><b>Outer</b></div><ol><li>First in</li><li>Second in<ul><li>Deeper</li></ul></li></ol></li><li>Next</li></ol>"
+      expect(described_class.from_html(html)).to eq([
+        { "type" => "number", "runs" => [run("Outer", bold: true)] },
+        { "type" => "number", "runs" => [run("First in")], "level" => 1 },
+        { "type" => "number", "runs" => [run("Second in")], "level" => 1 },
+        { "type" => "bullet", "runs" => [run("Deeper")], "level" => 2 },
+        { "type" => "number", "runs" => [run("Next")] }
+      ])
+    end
+
+    it "reads a list straight inside a list, as the web editor's indent leaves it" do
+      expect(described_class.from_html("<ul><li>outer</li><ul><li>nested</li></ul></ul>")).to eq([
+        { "type" => "bullet", "runs" => [run("outer")] },
+        { "type" => "bullet", "runs" => [run("nested")], "level" => 1 }
+      ])
+    end
+
     [
       %(<p><span style="color: red">red</span></p>),
       "<blockquote>quoted</blockquote>",
@@ -59,7 +77,9 @@ RSpec.describe Api::EntryDocument do
       %(<p><img src="https://x.test/a.png"></p>),
       %(<p>My day</p><div><img src="https://x.test/a.png"></div>),
       %(<div>Text</div><div><span><img src="https://x.test/a.png"></span></div>),
-      "<ul><li>outer<ul><li>nested</li></ul></li></ul>",
+      "<ul><li>outer<ul><li>nested</li></ul>and more</li></ul>",
+      "<ol><li><ul><li>Child</li></ul></li><li>Next</li></ol>",
+      "<ul><ul><li>nested first</li></ul><li>outer</li></ul>",
       %(<p><a href="javascript:alert(1)">x</a></p>),
       "<h1>Heading</h1>"
     ].each do |html|
@@ -86,6 +106,21 @@ RSpec.describe Api::EntryDocument do
       )
     end
 
+    it "nests the lists of items with a level" do
+      html = described_class.to_html([
+        { "type" => "number", "runs" => [run("Outer")] },
+        { "type" => "bullet", "runs" => [run("In")], "level" => 1 },
+        { "type" => "bullet", "runs" => [run("Deeper")], "level" => 5 },
+        { "type" => "number", "runs" => [run("Numbered in")], "level" => 1 },
+        { "type" => "number", "runs" => [run("Next")] },
+        paragraph(run("After"))
+      ])
+      expect(html).to eq(
+        "<ol>\n<li>Outer\n<ul>\n<li>In\n<ul>\n<li>Deeper</li>\n</ul>\n</li>\n</ul>\n" \
+        "<ol>\n<li>Numbered in</li>\n</ol>\n</li>\n<li>Next</li>\n</ol>\n<p>After</p>"
+      )
+    end
+
     it "drops unsafe links but keeps the text" do
       html = described_class.to_html([paragraph(run("click", link: "javascript:alert(1)"))])
       expect(html).to eq("<p>click</p>")
@@ -107,6 +142,8 @@ RSpec.describe Api::EntryDocument do
         paragraph(run("Hello "), run("world", bold: true), run("\nagain")),
         { "type" => "rule" },
         { "type" => "number", "runs" => [run("one")] },
+        { "type" => "bullet", "runs" => [run("inside")], "level" => 1 },
+        { "type" => "bullet", "runs" => [run("deeper", italic: true)], "level" => 2 },
         { "type" => "number", "runs" => [run("two", link: "https://x.test")] }
       ]
       expect(described_class.from_html(described_class.to_html(blocks))).to eq(blocks)

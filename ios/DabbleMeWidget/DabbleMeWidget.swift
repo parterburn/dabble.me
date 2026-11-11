@@ -15,7 +15,7 @@ struct TodayWidget: Widget {
                 .containerBackground(for: .widget) { Color.paper }
         }
         .configurationDisplayName("Today")
-        .description("Your entries this year and a nudge to write. Choose what shows beside it in the app's Settings.")
+        .description("Today's date and a nudge to write (on the Lock Screen, your entries this year). Choose what shows beside the date in the app's Settings.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }

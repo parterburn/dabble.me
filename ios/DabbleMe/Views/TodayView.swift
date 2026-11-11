@@ -26,14 +26,14 @@ struct TodayView: View {
             // A list (not a plain scroll view) so On This Day rows swipe like the Journal's.
             List {
                 if let today = model.today {
-                    // The header (the nav bar is hidden here): the wordmark, small, with the year's
-                    // entry count ("36 entries this year") beside it.
+                    // The header (the nav bar is hidden here): the wordmark, small, with how many
+                    // entries the journal holds ("1,204 entries") beside it.
                     HStack(alignment: .center) {
                         Wordmark(size: 28)
                         Spacer(minLength: 8)
                         // Nothing to count yet: no "0 entries".
-                        if let count = model.entriesThisYear, count > 0 {
-                            yearCountButton(count)
+                        if let count = model.me?.entryCount, count > 0 {
+                            entryCountButton(count)
                         }
                     }
                     .plainRow()
@@ -228,25 +228,22 @@ struct TodayView: View {
 
     // MARK: - On This Day
 
-    /// "🔥 36 entries this year". Tapping it opens Stats.
-    private func yearCountButton(_ count: Int) -> some View {
+    /// "1,204 entries": every entry in the journal. Tapping it opens Stats.
+    private func entryCountButton(_ count: Int) -> some View {
         Button {
             model.selectedTab = .journal
             model.statsRequest += 1
         } label: {
-            HStack(spacing: 5) {
-                appIcon("slab-fire")
-                Text("\(count.formatted()) \(count == 1 ? "entry" : "entries") this year")
-                    .monospacedDigit()
-            }
-            .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.tint)
-            .lineLimit(1)
-            .padding(.vertical, 4)
-            .contentShape(.rect)
+            Text("\(count.formatted()) \(count == 1 ? "entry" : "entries")")
+                .monospacedDigit()
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.tint)
+                .lineLimit(1)
+                .padding(.vertical, 4)
+                .contentShape(.rect)
         }
         .buttonStyle(.borderless)
-        .accessibilityLabel(count == 1 ? "1 entry this year" : "\(count) entries this year")
+        .accessibilityLabel(count == 1 ? "1 entry" : "\(count) entries")
         .accessibilityHint("Shows your stats")
     }
 

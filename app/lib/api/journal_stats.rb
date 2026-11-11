@@ -45,9 +45,16 @@ module Api
       dates.count { |date| date.year == today.year }
     end
 
+    # YYYY-MM-DD days with an entry in a calendar year, oldest first.
+    def writing_days_in(year)
+      dates.select { |date| date.year == year }.map(&:iso8601)
+    end
+
+    attr_reader :today
+
     private
 
-    attr_reader :user, :today
+    attr_reader :user
 
     # One date per entry (there's at most one entry per day), oldest first.
     def dates

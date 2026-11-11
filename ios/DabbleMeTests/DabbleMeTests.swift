@@ -180,18 +180,6 @@ struct WidgetPhotoTests {
 }
 
 struct ShareCardTests {
-    @Test func shareLabelIsDaysUnderSixtyThenTheLargestUnit() throws {
-        let today = try #require(JournalDay("2026-11-09"))
-        func label(_ date: String) throws -> String { try #require(JournalDay(date)).shareLabel(to: today) }
-        #expect(try label("2026-11-09") == "Today")
-        #expect(try label("2026-11-08") == "Yesterday")
-        #expect(try label("2026-10-28") == "12 days ago")
-        #expect(try label("2026-09-20") == "50 days ago")
-        #expect(try label("2026-06-01") == "5 months ago")
-        #expect(try label("2025-11-01") == "1 year ago")
-        #expect(try label("2023-11-02") == "3 years ago")
-    }
-
     /// The same wording and rounding as the daily email's "Rewind 3 months and 1 week".
     @Test func relativeDatesAreDaysUnderSixtyThenTwoUnits() throws {
         let today = try #require(JournalDay("2026-11-09"))
@@ -467,4 +455,67 @@ func reflectsOnAHardEntry() async throws {
                                                               today: "Sunday, November 8, 2026", firstName: "Paul", recent: [])
     print("REFLECTION: \(reflection)")
     #expect(!reflection.isEmpty)
+}
+
+struct NestedListTests {
+    private let blocks = [
+        DocumentBlock(type: .number, runs: [DocumentRun("Outer", bold: true)]),
+        DocumentBlock(type: .number, runs: [DocumentRun("First in")], level: 1),
+        DocumentBlock(type: .number, runs: [DocumentRun("Second in")], level: 1),
+        DocumentBlock(type: .bullet, runs: [DocumentRun("Deeper")], level: 2),
+        DocumentBlock(type: .number, runs: [DocumentRun("Next")]),
+    ]
+
+    /// A list inside an item counts from 1, and the outer list carries on after it.
+    @Test func listsInsideListsAreSetInAndNumberedOnTheirOwn() {
+        let text = RichText.segments(for: blocks).map(\.text).joined()
+        #expect(text == "1. Outer\n    1. First in\n    2. Second in\n        • Deeper\n2. Next")
+        #expect(RichText.listNumbers(for: blocks) == [1, 1, 2, 0, 2])
+    }
+
+    @Test func levelsRoundTripThroughTheEditorsText() {
+        let style = RichText.Style(baseFont: .systemFont(ofSize: 17), textColor: .black)
+        #expect(RichText.blocks(from: RichText.attributedString(from: blocks, style: style)) == blocks)
+    }
+
+    @Test func levelsDecodeAndEncode() throws {
+        let json = #"[{"type":"bullet","runs":[{"text":"a"}]},{"type":"bullet","runs":[{"text":"b"}],"level":1}]"#
+        let decoded = try JSONDecoder().decode([DocumentBlock].self, from: Data(json.utf8))
+        #expect(decoded.map(\.depth) == [0, 1])
+        let encoded = String(decoding: try JSONEncoder().encode(decoded), as: UTF8.self)
+        #expect(encoded.contains(#""level":1"#) && encoded.components(separatedBy: "level").count == 2)
+    }
+
+    @Test func spacesBeforeAMarkerSetItsLevel() {
+        #expect(RichText.listPrefix(in: "- a")?.level == 0)
+        #expect(RichText.listPrefix(in: "    - a")?.level == 1)
+        #expect(RichText.listPrefix(in: "   2. a")?.level == 1)
+        #expect(RichText.listPrefix(in: "\t\t• a")?.level == 2)
+        #expect(RichText.listPrefix(in: "    - a")?.length == 6)
+        #expect(RichText.listPrefix(in: "    plain") == nil)
+    }
+}
+
+struct TrailingHashtagTests {
+    @Test func datedTagsAtTheEndAreDropped() {
+        #expect(RichText.droppingTrailingHashtags(["Leo"], from: "Park day. #leo") == "Park day.")
+        #expect(RichText.droppingTrailingHashtags(["Leo", "Mila"], from: "Park day.\n\n#Leo #Mila\n") == "Park day.")
+        #expect(RichText.droppingTrailingHashtags(["Leo"], from: "Park day. #Leo #park") == "Park day. #park")
+    }
+
+    @Test func otherTagsAndTagsInTheTextStay() {
+        #expect(RichText.droppingTrailingHashtags(["Leo"], from: "#Leo loved the park.") == "#Leo loved the park.")
+        #expect(RichText.droppingTrailingHashtags(["Leo"], from: "Park day. #park") == "Park day. #park")
+        #expect(RichText.droppingTrailingHashtags([], from: "Park day. #Leo") == "Park day. #Leo")
+        #expect(RichText.droppingTrailingHashtags(["Leo"], from: "#Leo") == "#Leo", "Nothing else to show")
+    }
+
+    @Test func theLastBlocksTagsAreDropped() {
+        let entry = [DocumentBlock.paragraph(DocumentRun("Park "), DocumentRun("day", bold: true), DocumentRun(". #Leo #park"))]
+        #expect(RichText.droppingTrailingHashtags(["leo"], from: entry)
+            == [DocumentBlock.paragraph(DocumentRun("Park "), DocumentRun("day", bold: true), DocumentRun(". "), DocumentRun("#park"))])
+        let tagsLast = [DocumentBlock.paragraph(DocumentRun("Park day.")), DocumentBlock.paragraph(DocumentRun("#Leo"))]
+        #expect(RichText.droppingTrailingHashtags(["Leo"], from: tagsLast) == [DocumentBlock.paragraph(DocumentRun("Park day."))])
+        #expect(RichText.droppingTrailingHashtags(["Leo"], from: [tagsLast[1]]) == [tagsLast[1]])
+    }
 }

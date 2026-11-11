@@ -1,12 +1,12 @@
 import Foundation
 
 /// What the home-screen widget shows, written by the app into the shared App Group.
-/// The year's entry count, a writing prompt and, only if the person turns previews on in
+/// Whether today is written, a writing prompt and, only if the person turns previews on in
 /// Settings → Home Screen Widget, the start of an entry.
 struct WidgetSnapshot: Codable, Equatable, Sendable {
     static let appGroup = "group.me.dabble.ios"
     static let storageKey = "widget.snapshot"
-    /// What the medium widget shows next to the year's count (Settings → Home Screen Widget).
+    /// What the medium widget shows next to today's date (Settings → Home Screen Widget).
     static let contentKey = "widget.content"
     /// The older on/off setting ("Show Entries in Widget"), read once for people who turned it on.
     static let showMemoriesKey = "widget.showMemories"
@@ -14,7 +14,8 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     /// The journal day this snapshot describes (YYYY-MM-DD).
     var day: String
     var wroteToday: Bool
-    /// Entries written in `day`'s year so far. Optional: snapshots saved by older builds don't have it.
+    /// Entries written in `day`'s year so far, for the Lock Screen's circular widget.
+    /// Optional: snapshots saved by older builds don't have it.
     var yearCount: Int?
     var memories: Int
     var memoriesFirstYear: Int?
@@ -91,7 +92,7 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     static func entryURL(_ id: Int) -> URL { URL(string: "me.dabble.app:/entry/\(id)")! }
 }
 
-/// What the medium widget shows beside the year's count: today's prompt or a look back (Rewind),
+/// What the medium widget shows beside today's date: today's prompt or a look back (Rewind),
 /// each with or without entry previews. Only the two preview cases put entry text or photos on
 /// the home screen. The person's choice alone decides it; the Face ID lock doesn't change it.
 enum WidgetContent: String, CaseIterable, Identifiable, Sendable {

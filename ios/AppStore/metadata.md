@@ -39,7 +39,7 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 >
 > BUILD THE HABIT
 > • A daily reminder to write, skipped on days you already have
-> • A home-screen and Lock Screen widget with your writing streak, plus today's prompt or a memory from this day: your choice, with a live preview
+> • A home-screen and Lock Screen widget with today's date and a nudge to write, plus today's prompt or a memory from this day: your choice, with a live preview
 > • Stats: entries, words, current and longest streak, a year of writing at a glance (tap any day to read it), and your most-used hashtags
 >
 > YEARS OF MEMORIES, ONE TAP AWAY
@@ -95,7 +95,7 @@ Data used to track you: **none**. Data linked to you, all for **App Functionalit
 | User Content → Photos or Videos | Photos attached to entries |
 | Identifiers → User ID | Account identity |
 
-The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resources/PrivacyInfo.xcprivacy`. Not collected: Apple Intelligence features run on the device; reminders, the Face ID setting and drafts stay on the device; the widget reads a streak count, the day's prompt and (only if the person chooses On This Day Entry in Settings → Home Screen Widget) the start of one entry, which the app stores in its App Group on the device.
+The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resources/PrivacyInfo.xcprivacy`. Not collected: Apple Intelligence features run on the device; reminders, the Face ID setting and drafts stay on the device; the widget reads whether today is written, the day's prompt and (only if the person chooses On This Day Entry in Settings → Home Screen Widget) the start of one entry, which the app stores in its App Group on the device.
 
 ## App Review information
 
