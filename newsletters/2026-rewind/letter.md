@@ -37,7 +37,7 @@ See it for yourself: **[write a line about today]({{write_url}})**. One sentence
 
 Dabble Me now has an app for iPhone and iPad. **[Get the app](https://testflight.apple.com/join/mYj4vrFZ)**
 
-It has me writing a lot more. I talk my entries out loud with Siri, and adding photos takes a couple of taps.
+It has me writing a lot more. I speak my entries a lot more, and adding photos takes a couple of taps.
 
 My favorite part is the On This Day widget. It sits on my home screen and shows me what I wrote on this date in past years, and it's a small delight every time.
 
