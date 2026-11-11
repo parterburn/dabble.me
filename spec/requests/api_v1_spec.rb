@@ -608,8 +608,9 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
     it "counts entries, words, streaks, writing days and hashtags for PRO accounts" do
       zone = Time.find_zone(pro_user.send_timezone)
       travel_to zone.local(2026, 6, 20, 12) do
-        create(:entry, user: pro_user, date: Time.zone.local(2026, 6, 20), body: "<p>Hiking with <b>Sam</b> #Outside</p>")
+        # One entry each for #outside and #Outside: the tie goes to the newer entry's spelling.
         create(:entry, user: pro_user, date: Time.zone.local(2026, 6, 19), body: "<p>Rain &amp; tea #outside</p>")
+        create(:entry, user: pro_user, date: Time.zone.local(2026, 6, 20), body: "<p>Hiking with <b>Sam</b> #Outside</p>")
         create(:entry, user: pro_user, date: Time.zone.local(2026, 6, 18), body: "<p>#books</p>")
         create(:entry, user: pro_user, date: Time.zone.local(2026, 1, 1), body: "<p>One</p><p>two three</p>")
         create(:entry, user: pro_user, date: Time.zone.local(2026, 1, 2), body: "<div><br></div>")

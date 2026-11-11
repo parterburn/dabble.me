@@ -2,7 +2,13 @@
 
 module Api
   # How often each #hashtag appears in a user's entries since a date (one count per entry),
-  # matched case-insensitively and shown in the spelling used most.
+  # matched case-insensitively. An entry that spells a tag two ways counts once, in its first
+  # spelling.
+  #
+  # #top shows each tag in the spelling used in the most entries. A tie goes to the spelling used
+  # most recently: the one whose newest entry is latest by date, then by id, the order #recent
+  # reads entries in. Rows come back in no set order, so the tie-break can't depend on which
+  # spelling is read first.
   class HashtagCounts
     RECENT_PAGE_SIZE = 200
 
@@ -12,16 +18,18 @@ module Api
     end
 
     def top(limit)
-      spellings = Hash.new { |hash, key| hash[key] = Hash.new(0) }
-      user.entries.unscope(:order)
-          .where(date: since.beginning_of_day..)
-          .in_batches(of: 1000) do |batch|
-        batch.pluck(:body).each do |body|
-          Array(Entry.hashtags_in(body)).each { |tag| spellings[tag.downcase][tag] += 1 }
+      # spellings["run"]["Run"] = [entries using "Run", [date, id] of the newest of them]
+      spellings = Hash.new { |hash, key| hash[key] = {} }
+      entries_since.in_batches(of: 1000) do |batch|
+        batch.pluck(:date, :id, :body).each do |date, id, body|
+          tags_in(body).each do |tag|
+            count, newest = spellings[tag.downcase][tag]
+            spellings[tag.downcase][tag] = [count.to_i + 1, [newest, [date, id]].compact.max]
+          end
         end
       end
 
-      spellings.map { |_key, counts| { tag: counts.max_by { |_tag, n| n }.first, count: counts.values.sum } }
+      spellings.map { |_key, uses| { tag: uses.max_by { |_tag, use| use }.first, count: uses.values.sum(&:first) } }
                .sort_by { |item| [-item[:count], item[:tag].downcase] }
                .first(limit)
     end
@@ -31,14 +39,12 @@ module Api
     # long journal isn't loaded when the newest entries already hold them.
     def recent(limit)
       latest = {}
-      newest_first = user.entries.unscope(:order)
-                         .where(date: since.beginning_of_day..)
-                         .order(date: :desc, id: :desc)
+      newest_first = entries_since.order(date: :desc, id: :desc)
       offset = 0
       while latest.size < limit
         bodies = newest_first.offset(offset).limit(RECENT_PAGE_SIZE).pluck(:body)
         bodies.each do |body|
-          Array(Entry.hashtags_in(body)).each { |tag| latest[tag.downcase] ||= tag }
+          tags_in(body).each { |tag| latest[tag.downcase] ||= tag }
         end
         break if bodies.size < RECENT_PAGE_SIZE
 
@@ -50,5 +56,13 @@ module Api
     private
 
     attr_reader :user, :since
+
+    def entries_since
+      user.entries.unscope(:order).where(date: since.beginning_of_day..)
+    end
+
+    def tags_in(body)
+      Array(Entry.hashtags_in(body)).uniq(&:downcase)
+    end
   end
 end
