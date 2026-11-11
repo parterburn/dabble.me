@@ -8,7 +8,9 @@ Public server-card and OAuth metadata were verified on 2026-10-08. Tool contract
 
 After installation, connect Dabble Me through the host, ask for one recent entry, then try a dated memory search and a period review. Test saving only with an explicitly requested entry; confirm the returned success and URL. Do not create test entries merely to validate authentication.
 
-Package from the plugins directory with: `python3 -m zipfile -c /tmp/dabble-me-plugin.zip dabble-me`
+Package from the plugins directory with: `zip -rX /tmp/dabble-me-plugin.zip dabble-me -x '*.DS_Store'`
+
+The Claude directory accepts only Markdown, text, JSON, YAML, and PNG, JPEG, GIF, WebP, or ICO images from unverified organizations, so keep scripts, HTML, and other file types out of this folder.
 
 ## Claude directory submission
 

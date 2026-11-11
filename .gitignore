@@ -81,3 +81,5 @@ config/local_env.yml
 .trunk
 .cursor/environment.json
 .1password/environments.toml
+__pycache__/
+*.pyc

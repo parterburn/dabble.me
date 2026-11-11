@@ -18,22 +18,30 @@ Dates use YYYY-MM-DD and ranges are inclusive. Default period: Jan 1 of the curr
 ## Workflow
 
 1. **Get every entry.** Call `analyze_entries` for the period to learn `total_entries`. Then call `list_entries` (limit 50) one month at a time, splitting any month that returns 50. Deduplicate by entry ID and confirm your count matches `total_entries`; if it doesn't, keep splitting until it does. Never build the recap from `analyze_entries` highlights.
-2. **Save the entries** to `entries.json` as a list of `{"id", "date", "text", "hashtags", "image_url"}`. `list_entries` returns the body as `excerpt` (up to 5,000 characters); copy that value into `text` verbatim, and omit `image_url` when the entry has none. This file is the single source of truth for every number in the recap.
-3. **Run the stats:** `python scripts/build.py stats entries.json --names "Name1,Name2,Place1"`, passing the people and places that recur in the entries. Use only these numbers; do not count by hand.
-4. **Read every entry, then write `cards.json`** following `assets/cards_schema.md`. The script adds the cover, count, photo wall, month and weekday charts, longest/shortest, entry index, and closing card itself. You write the narrative cards, each grounded in specific dated entries:
+2. **Keep the entries as data:** one record per entry with its ID, date, text, hashtags, and `image_url` when it has one. `list_entries` returns the body as `excerpt` (up to 5,000 characters); keep that value verbatim as the text. Mark entries that are someone else's words (a pasted letter or email) as pasted. These records are the single source of truth for every number in the recap.
+3. **Compute the stats.** If the host has a code tool, write and run your own code over the records; otherwise count carefully and recheck each figure. Never estimate. Compute:
+   - Entries, distinct days, and entries with photos.
+   - Words of the user's own: whitespace-separated words with URLs removed, excluding pasted entries; the average per own entry.
+   - Entries per month across the period, the top month, and months with none.
+   - Entries per weekday, and whether at least half fell on Saturday or Sunday.
+   - The longest and shortest own entries by word count (ignore empty ones).
+   - The three longest gaps between consecutive entry days.
+   - The ten most used hashtags, case-insensitive.
+   - For each person and place that recurs: how many entries mention them (whole-word, case-insensitive, possessives included) and which of those entries have photos.
+4. **Read every entry, then plan the slides** in `references/design.md`. The fixed slides come straight from the stats. You write the narrative cards, each grounded in specific dated entries:
    - Top cast (people ranked by entries mentioning them) and top place.
    - Lines of the year: 4–6 of the user's own sentences, quoted exactly, with dates.
    - Wins and firsts; recurring themes or a thread they kept pulling; the hardest stretch.
    - Anything the year was distinctly about (trips, a project they shipped, costumes, letters they saved).
    - One honest card, "What the journal missed": silent gaps from the stats, plans written about but never followed up, commitments with no later entry, unused hashtags. Plain, not scolding.
    - A one-line summary for every entry (the index) and a word of the year drawn from the entries.
-   Use photos generously: reference entry dates that have images on as many cards as fit.
-5. **Build:** `python scripts/build.py build entries.json cards.json recap.html --title "2026, as you wrote it."`. The script downloads and embeds entry photos; if downloads are blocked, it builds without them and says so. Take a phone-size screenshot if a browser is available and fix overflow before delivering.
-6. **Deliver** the page through the host's private artifact or file tool. In chat, give 3–5 lines: entry count, the standout stats, what the honest card says, and anything that couldn't be read (images blocked, truncated excerpts, attachments like songs you can't identify).
+   Use photos generously: put entries that have images on as many cards as fit.
+5. **Build the page** as described in `references/design.md`. Check it at phone size if a browser or preview is available and fix anything that overflows before delivering.
+6. **Deliver** the page through the host's private artifact or file tool. In chat, give 3–5 lines: entry count, the standout stats, what the honest card says, and anything that couldn't be read (images that didn't load, truncated excerpts, attachments like songs you can't identify).
 
 ## Accuracy rules
 
 - Every claim traces to an entry. Quotes match the user's wording exactly; paraphrase never sharpens or upgrades a fact (an "issue" is not a "charge").
 - Text the user pasted from someone else (a letter, an email) is theirs to keep but not their words: label it and exclude it from word counts.
 - Excerpts can truncate at 5,000 characters. If any did, say which entries.
-- Do not claim to have seen an image you could not download. Do not infer moods, diagnoses, or causes the user didn't write.
+- Do not claim to have seen an image you could not load. Do not infer moods, diagnoses, or causes the user didn't write.
