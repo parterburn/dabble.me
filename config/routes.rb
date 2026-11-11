@@ -75,6 +75,7 @@ Rails.application.routes.draw do
       get 'admin/users/:id/edit' => 'admin#edit_user', as: 'edit_admin_user'
       patch 'admin/users/:id' => 'admin#update_user', as: 'admin_user'
       post 'admin/users/:id/password_reset' => 'admin#send_password_reset', as: 'admin_user_password_reset'
+      post 'admin/users/:id/upgrade_email' => 'admin#send_upgrade_email', as: 'admin_user_upgrade_email'
       post 'admin/users/:id/ignored_email_images' => 'admin#create_ignored_email_image', as: 'admin_user_ignored_email_images'
       delete 'admin/users/:id/ignored_email_images/:ignored_email_image_id' => 'admin#destroy_ignored_email_image', as: 'admin_user_ignored_email_image'
       get 'admin/stats' => 'admin#stats', as: 'admin_stats'

@@ -210,6 +210,14 @@ class User < ActiveRecord::Base
     ai_opt_in?
   end
 
+  # After an upgrade: puts back the email days a Free plan cut to Sunday, and
+  # emails "Thanks for subscribing to Dabble Me PRO!". Used by the payment
+  # form's "Send upgrade email" box and the button on the admin user page.
+  def send_upgrade_email!
+    update(frequency: previous_frequency) if Array(previous_frequency).any?
+    UserMailer.thanks_for_paying(self).deliver_later
+  end
+
   # OAuth MCP tokens and in-flight auth codes (Doorkeeper). Call when the user loses PRO access.
   # Pass keep_mobile_app: true when only MCP eligibility changed — the iOS app isn't gated on PRO.
   def revoke_doorkeeper_access_tokens!(keep_mobile_app: false)

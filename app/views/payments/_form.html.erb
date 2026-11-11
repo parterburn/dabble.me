@@ -54,7 +54,7 @@
     <% if @payment.new_record? %>
       <label class="flex items-center gap-3 text-sm font-medium text-primary">
         <%= f.check_box :send_thanks, checked: params.dig(:payment, :send_thanks) != "0", class: "checkbox" %>
-        Send thanks
+        Send upgrade email
       </label>
     <% end %>
 

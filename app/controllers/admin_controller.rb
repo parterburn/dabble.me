@@ -92,6 +92,13 @@ class AdminController < ApplicationController
     redirect_to edit_admin_user_path(user), notice: "Password reset email sent to #{user.email}."
   end
 
+  # The payment form's "Send upgrade email", on its own (User#send_upgrade_email!).
+  def send_upgrade_email
+    user = User.find(params[:id])
+    user.send_upgrade_email!
+    redirect_to edit_admin_user_path(user), notice: "Upgrade email sent to #{user.email}."
+  end
+
   def photos
     # `uploading_image_at` is required by Entry#uploading_image? (called through
     # image_code → display_image_url in the view). Keep `:id` for AR identity
