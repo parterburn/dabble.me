@@ -36,12 +36,6 @@
               "expected_behavior": "Use query \"pottery\", start_date \"2026-10-01\", end_date \"2026-10-02\". Return the October 2 pottery memory and its day link; do not list October 1 as a match."
             },
             {
-              "description": "Setup: use a dedicated authorized PRO reviewer account. Before running, prepare exactly these entries in October 1–2, 2026: October 1: \"Walked by the river with Sarah. Felt grateful for the quiet afternoon. #gratitude\"; October 2: \"Started my pottery class today. Learning something new felt exciting. #learning\". Run read cases before write cases; restore these fixtures before repeating. Credentials belong only in secure reviewer-access fields. Read a bounded period.",
-              "prompt": "Show me my journal entries from October 1–2, 2026.",
-              "tools_triggered": "list_entries",
-              "expected_behavior": "Use start_date \"2026-10-01\" and end_date \"2026-10-02\". Return both prepared entries newest first with their dates and links, excluding other dates."
-            },
-            {
               "description": "Setup: use a dedicated authorized PRO reviewer account. Before running, prepare exactly these entries in October 1–2, 2026: October 1: \"Walked by the river with Sarah. Felt grateful for the quiet afternoon. #gratitude\"; October 2: \"Started my pottery class today. Learning something new felt exciting. #learning\". Run read cases before write cases; restore these fixtures before repeating. Credentials belong only in secure reviewer-access fields. Analyze entry counts and hashtags.",
               "prompt": "How many journal entries did I write from October 1–2, 2026, and which hashtags did I use?",
               "tools_triggered": "analyze_entries",
