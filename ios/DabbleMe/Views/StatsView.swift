@@ -515,6 +515,8 @@ struct DayEntriesSheet: View {
                                     EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing, day: entry.day)
                                 }
                                 Button {
+                                    // The Journal opens it (this sheet also comes up over Search).
+                                    model.selectedTab = .journal
                                     model.openEntryRequest = entry.id
                                     dismiss()
                                 } label: {

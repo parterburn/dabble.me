@@ -1066,6 +1066,23 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(link.waitForExistence(timeout: 5))
     }
 
+    /// Jump to a Day from Search: the day's sheet, and Open shows the entry (in the Journal).
+    func testJumpToADayFromSearchOpensTheEntry() throws {
+        let app = launch()
+        tab(app, "Search").tap()
+        let jump = app.buttons["Jump to a Day"]
+        XCTAssertTrue(jump.waitForExistence(timeout: 10))
+        jump.tap()
+        // The demo's Biscuit entry is five days ago, in the month the calendar opens on.
+        let date = Calendar.current.date(byAdding: .day, value: -5, to: .now)!
+        let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", date.formatted(.dateTime.month(.wide).day()))).firstMatch
+        XCTAssertTrue(day.waitForExistence(timeout: 10))
+        day.tap()
+        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
+        app.buttons["Open"].tap()
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10), "The entry opens, not left behind Search")
+    }
+
     /// Results that span a few months get the Journal's timeline scrubber; a tap on it opens the calendar.
     func testSearchResultsHaveTheTimelineScrubber() throws {
         let app = launch()
