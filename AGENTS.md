@@ -87,6 +87,22 @@ Schedule file: `config/sidekiq_cron_schedule.yml`. With `SIDEKIQ_CRON_ENABLED` s
 
 If Redis loses cron keys while Sidekiq stays up, reload from disk without restarting Sidekiq: **`bundle exec rake sidekiq_cron:reload`** (same semantics as boot: `load_from_hash!` / `load_from_array!` with `source: "schedule"`). On **Railway**, add a **Cron** service every 15 minutes with that command (same env vars / Redis URL as the web app). The rake task retries transient Redis connect timeouts (common on private-network cold starts).
 
+### Encryption at rest
+
+Journal text and account secrets are encrypted with Active Record Encryption: `entries.body`, `original_email_body` and `original_email`; `users.user_key` and `image_key` (deterministic, so exact lookups work), `first_name`, `last_name`, `past_filter`, `otp_auth_secret` and `otp_recovery_secret`; `hashtags.tag`.
+
+- Never read these columns in SQL (`LIKE`, regex, `ORDER BY`, `= ''`). Match entry text with `Entry::Matcher`; compare and sort the others in Ruby. `pluck` decrypts.
+- Development and test use fixed, insecure fallback keys, so no setup is needed. Production needs the three key variables; `EncryptionCheck.verify!` stops a web or worker process that lacks them or holds different keys from the process that started first.
+- In specs, `stored_value(record, column)` and `ciphertext?` (`spec/support/encryption_helpers.rb`) read what the database actually holds.
+
+| Variable | Purpose |
+|----------|---------|
+| `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY`, `_DETERMINISTIC_KEY`, `_KEY_DERIVATION_SALT` | The keys. Losing them loses every encrypted row; changing them does the same. |
+| `ACTIVE_RECORD_ENCRYPTION_WRITE` | `true` writes ciphertext. Defaults to `false` in production and `true` elsewhere. Every process can read ciphertext either way (`Encryption::StagedEncryptor`, installed in `config/initializers/active_record_encryption.rb`). |
+| `ACTIVE_RECORD_ENCRYPTION_ALLOW_PLAINTEXT` | `false` makes a plaintext row raise instead of reading. Set it only after `rake encryption:status` reports none left. |
+
+Rake tasks (each takes `USER_ID=` for one account and `PAUSE=` seconds between batches): `encryption:status` counts plaintext rows, `encryption:rehearse` round-trips every value in memory without writing, `encryption:backfill` encrypts existing rows and verifies each one, `encryption:decrypt` (with `CONFIRM=decrypt`) is the way back.
+
 ### iOS app
 
 SwiftUI app in `ios/` (see `ios/README.md`). Generate the project with `cd ios && xcodegen generate`; `DabbleMe.xcodeproj` is gitignored. It talks to `/api/v1` (`app/controllers/api/v1/`) with Doorkeeper tokens from the first-party `MobileApp` client, which `db:migrate` / `db:seed` register. The API specs are in `spec/requests/api_v1_spec.rb`.

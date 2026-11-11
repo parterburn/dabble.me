@@ -15,7 +15,7 @@ module Api
       before_action :find_hashtag, only: %i[update destroy]
 
       def index
-        dated = current_user.original_hashtags.order(:tag).to_a
+        dated = current_user.original_hashtags.sort_by { |hashtag| hashtag.tag.to_s.downcase }
         taken = dated.map { |hashtag| hashtag.tag.downcase }
         # The tags used most lately that don't have a date yet.
         suggestions = HashtagCounts.new(current_user, since: 2.years.ago.to_date).top(40)

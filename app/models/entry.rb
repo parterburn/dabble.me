@@ -24,6 +24,10 @@ class Entry < ActiveRecord::Base
   WORDS_NOT_TO_COUNT = ['s', 'amp', '-', 'p', 'br', 'div', 'img', 'span', 'hr', '<', '>']
   COMMON_WORDS = WORDS_NOT_TO_COUNT + ['has', 'did', "you're", 'your', 'we', 'i', "it's", 'like', 'these', 'you', 'so', 'went', 'while', 's', 'amp', '-', 'p', 'br', 'div', 'img', 'span', 'the', 'of', 'and', 'a', 'to', 'in', 'is', 'that', 'it', 'was', 'for', 'on', 'are', 'as', 'with', 'at', 'be', 'this', 'have', 'from', 'or', 'had', 'by', 'but', 'not', 'what', 'all', 'were', 'when', 'can', 'said', 'there', 'use', 'an', 'each', 'which', 'do', 'how', 'if']
 
+  # Journal text is encrypted in the database. Nothing may read these columns
+  # in SQL; match text in Ruby (Entry::Matcher).
+  encrypts :body, :original_email_body, :original_email
+
   belongs_to :user
   belongs_to :inspiration, optional: true
 

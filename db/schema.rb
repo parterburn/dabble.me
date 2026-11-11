@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_10_190000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_11_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -56,6 +56,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_10_190000) do
     t.integer "mcp_tool_calls", default: 0, null: false
     t.jsonb "mcp_tool_breakdown", default: {}, null: false
     t.index ["captured_on"], name: "index_business_metric_snapshots_on_captured_on", unique: true
+  end
+
+  create_table "encryption_checks", force: :cascade do |t|
+    t.text "value", null: false
+    t.text "lookup", null: false
+    t.boolean "singleton", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["singleton"], name: "index_encryption_checks_on_singleton", unique: true
   end
 
   create_table "entries", id: :serial, force: :cascade do |t|
