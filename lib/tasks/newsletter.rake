@@ -1,4 +1,6 @@
 # Sending the letters under newsletters/. See newsletters/README.md.
+# newsletter:send takes PLAN=pro|free to send to one plan, LIMIT=<n> to cap
+# how many emails a run queues, and PER_MINUTE=<n> to pace them.
 namespace :newsletter do
   desc "Email every variant of a newsletter to one account as a preview: rake 'newsletter:preview[2026-rewind,you@example.com]'"
   task :preview, %i[key email] => :environment do |_task, args|
@@ -15,11 +17,12 @@ namespace :newsletter do
   desc "Show who would get a newsletter; add SEND=yes to send it: rake 'newsletter:send[2026-rewind]'"
   task :send, [:key] => :environment do |_task, args|
     newsletter = Newsletter.find(args[:key])
-    send = Newsletter::Send.new(newsletter)
+    send = Newsletter::Send.new(newsletter, plan: ENV["PLAN"].presence, limit: ENV["LIMIT"].presence&.to_i)
 
     count = ->(number) { "#{number} #{number == 1 ? 'person' : 'people'}" }
     send.plan.each { |variant, user_ids| puts "#{variant}: #{count.call(user_ids.size)}" }
     puts "Already sent: #{count.call(send.already_delivered)}"
+    puts "This run would email #{count.call(send.queue.size)}."
     send.blockers.each { |blocker| puts "Not ready: #{blocker}" }
 
     if ENV["SEND"] != "yes"

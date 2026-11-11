@@ -1,6 +1,16 @@
-audience: pro
 year: 2026
+audiences:
+  pro: {}
+  free:
+    from: "Paul <hello@updates.test>"
+    reply_to: hello@test
+    mailgun_domain: updates.test
+    active_within_months: 18
 variants:
   - name: active
+    plan: pro
     min_entries_in_year: 2
   - name: quiet
+    plan: pro
+  - name: free
+    plan: free

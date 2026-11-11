@@ -1,6 +1,24 @@
-audience: pro
 year: 2026
+
+audiences:
+  pro: {}
+  free:
+    # A separate sending domain, so this mail builds its own reputation
+    # apart from the journal emails. Replies still reach the usual inbox.
+    from: "Paul from Dabble Me <hello@updates.dabble.me>"
+    reply_to: hello@dabble.me
+    mailgun_domain: updates.dabble.me
+    # Only accounts that signed in or wrote an entry this recently.
+    active_within_months: 18
+
 variants:
   - name: rewind
+    plan: pro
     min_entries_in_year: 5
   - name: whats_new
+    plan: pro
+  - name: rewind_free
+    plan: free
+    min_entries_in_year: 5
+  - name: whats_new_free
+    plan: free

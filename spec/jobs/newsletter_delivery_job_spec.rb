@@ -24,13 +24,23 @@ RSpec.describe NewsletterDeliveryJob do
     expect(NewsletterDelivery.count).to eq(1)
   end
 
-  it 'skips someone who unsubscribed, downgraded or was deleted after it was queued' do
+  it 'sends a free account that was active lately the free variant' do
+    free = FactoryBot.create(:user, plan: 'Free', last_sign_in_at: 1.week.ago)
+    deliveries.clear
+
+    described_class.perform_now(free.id, 'sample')
+
+    expect(deliveries.map(&:subject)).to eq(['What is new, free'])
+    expect(NewsletterDelivery.where(user: free).pluck(:variant)).to eq(['free'])
+  end
+
+  it 'skips someone who unsubscribed, went quiet or was deleted after it was queued' do
     user.update_columns(send_updates: false)
-    free = FactoryBot.create(:user, plan: 'Free')
+    lapsed = FactoryBot.create(:user, plan: 'Free', last_sign_in_at: 3.years.ago)
     deliveries.clear
 
     described_class.perform_now(user.id, 'sample')
-    described_class.perform_now(free.id, 'sample')
+    described_class.perform_now(lapsed.id, 'sample')
     described_class.perform_now(0, 'sample')
 
     expect(deliveries).to be_empty

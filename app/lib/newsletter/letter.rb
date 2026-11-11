@@ -6,13 +6,14 @@ class Newsletter
   #
   # Everyone gets the same letter apart from two things. The subject and
   # preview may be given per variant, and a block between {{#name}} and
-  # {{/name}} lines is kept only for the variant called `name`. {{name}}
-  # placeholders are filled in per person.
+  # {{/name}} lines is kept only for the variant called `name`
+  # ({{#one,two}} for either of two). {{name}} placeholders are filled in
+  # per person.
   class Letter
     PLACEHOLDER = /\{\{\s*(\w+)\s*\}\}/
     FRONT_MATTER = /\A---\s*\n(.*?)\n---\s*\n/m
-    BLOCK = /^\{\{#(\w+)\}\}[ \t]*\n(.*?)^\{\{\/\1\}\}[ \t]*\n?/m
-    BLOCK_MARK = /\{\{[#\/]\w+\}\}/
+    BLOCK = /^\{\{#([\w,]+)\}\}[ \t]*\n(.*?)^\{\{\/\1\}\}[ \t]*\n?/m
+    BLOCK_MARK = /\{\{[#\/][\w,]+\}\}/
 
     Rendered = Struct.new(:subject, :preview, :markdown, :html, :text, keyword_init: true)
 
@@ -68,7 +69,7 @@ class Newsletter
     # Keeps the blocks for this variant, drops the others, and closes the gap
     # a dropped block leaves.
     def body_for(variant)
-      @body.gsub(BLOCK) { Regexp.last_match(1) == variant ? Regexp.last_match(2) : "" }.gsub(/\n{3,}/, "\n\n").strip
+      @body.gsub(BLOCK) { Regexp.last_match(1).split(",").include?(variant) ? Regexp.last_match(2) : "" }.gsub(/\n{3,}/, "\n\n").strip
     end
 
     # A subject or preview is one line for everyone, or one per variant.
@@ -83,7 +84,7 @@ class Newsletter
         for_variant(@preview, variant)
       end
 
-      @body.scan(BLOCK).each do |(name, _content)|
+      @body.scan(BLOCK).flat_map { |(names, _content)| names.split(",") }.each do |name|
         raise Newsletter::Error, "#{@path}: {{##{name}}} names no variant (#{@variant_names.join(', ')})" unless @variant_names.include?(name)
       end
       stray = @body.gsub(BLOCK, "")[BLOCK_MARK]

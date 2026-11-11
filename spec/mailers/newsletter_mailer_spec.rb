@@ -21,6 +21,26 @@ RSpec.describe NewsletterMailer do
     expect(text).not_to include('&amp;')
   end
 
+  it 'sends from the app\'s usual address and Mailgun domain for PRO' do
+    mail = described_class.letter(user, 'sample', 'quiet')
+
+    expect(mail.reply_to).to be_nil
+    expect(mail.delivery_method.settings[:domain]).not_to eq('updates.test')
+    expect(mail.html_part.body.to_s).to include('you have a Dabble Me PRO account')
+  end
+
+  it 'sends free accounts their letter from the separate domain, with replies to the usual inbox' do
+    free = FactoryBot.create(:user, plan: 'Free', first_name: 'Cy')
+    mail = described_class.letter(free, 'sample', 'free')
+
+    expect(mail.from).to eq(['hello@updates.test'])
+    expect(mail.reply_to).to eq(['hello@test'])
+    expect(mail.delivery_method.settings[:domain]).to eq('updates.test')
+    expect(mail.subject).to eq('What is new, free')
+    expect(mail.html_part.body.to_s).to include('you have a Dabble Me account')
+    expect(mail.html_part.body.to_s).not_to include('PRO account')
+  end
+
   it 'marks a preview in the subject' do
     mail = described_class.letter(user, 'sample', 'quiet', preview: true)
     expect(mail.subject).to eq('[Preview: quiet] What is new')

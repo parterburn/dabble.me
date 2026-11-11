@@ -2,6 +2,7 @@
 subject:
   active: Your {{year}} in {{entry_count}} entries
   quiet: What is new
+  free: What is new, free
 preview: A look back.
 ---
 
@@ -13,10 +14,10 @@ See **[your rewind]({{rewind_url}})**.
 {{/active}}
 Here is what is new.
 
-{{#quiet}}
+{{#quiet,free}}
 [Write]({{write_url}}) when you like.
 
-{{/quiet}}
+{{/quiet,free}}
 ## Thanks
 
 - one

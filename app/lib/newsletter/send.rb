@@ -1,27 +1,39 @@
 # frozen_string_literal: true
 
 class Newsletter
-  # Works out who gets which letter of a newsletter, and queues the emails.
+  # Works out who gets which variant of a newsletter, and queues the emails.
   # Run through `rake newsletter:send`.
   class Send
     BATCH_SIZE = 500
 
-    def initialize(newsletter)
+    # plan limits the send to "pro" or "free". limit caps how many emails
+    # one run queues, for building up a new sending domain a day at a time.
+    def initialize(newsletter, plan: nil, limit: nil)
       @newsletter = newsletter
+      @plans = plan ? [plan] : newsletter.plans
+      @limit = limit
     end
 
     # { variant name => [user ids] } for everyone not yet sent this newsletter.
     def plan
       @plan ||= begin
-        plan = @newsletter.variants.to_h { |variant| [variant.name, []] }
+        plan = @newsletter.variants.select { |variant| @plans.include?(variant.plan) }.to_h { |variant| [variant.name, []] }
         delivered = @newsletter.delivered_user_ids.to_set
-        @newsletter.audience.in_batches(of: BATCH_SIZE) do |batch|
-          ids = batch.pluck(:id).reject { |id| delivered.include?(id) }
-          counts = @newsletter.entry_counts(ids)
-          ids.each { |id| plan[@newsletter.variant_for(nil, entries_in_year: counts.fetch(id, 0))] << id }
+        @plans.each do |audience_plan|
+          @newsletter.audience(audience_plan).in_batches(of: BATCH_SIZE) do |batch|
+            ids = batch.pluck(:id).reject { |id| delivered.include?(id) }
+            counts = @newsletter.entry_counts(ids)
+            ids.each { |id| plan[@newsletter.variant_name(audience_plan, counts.fetch(id, 0))] << id }
+          end
         end
         plan
       end
+    end
+
+    # The people this run would email: everyone planned, up to the limit.
+    def queue
+      ids = plan.values.flatten
+      @limit ? ids.first(@limit) : ids
     end
 
     def already_delivered
@@ -41,7 +53,7 @@ class Newsletter
       raise Newsletter::Error, blockers.join("; ") if blockers.any?
 
       gap = 60.0 / per_minute
-      plan.values.flatten.each_with_index do |user_id, index|
+      queue.each_with_index do |user_id, index|
         NewsletterDeliveryJob.set(wait: (index * gap).seconds).perform_later(user_id, @newsletter.key)
       end.size
     end
