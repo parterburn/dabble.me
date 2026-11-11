@@ -197,6 +197,7 @@ struct EntryDetailView: View {
         let relative = entry.day.map { $0.relative(to: today) } ?? full
         return Text(showsRelativeDate ? relative : full)
             .font(.headline)
+            .foregroundStyle(.tint) // olive, like the dates over entries elsewhere
             .lineLimit(1)
             .minimumScaleFactor(0.75)
             .contentTransition(.opacity)

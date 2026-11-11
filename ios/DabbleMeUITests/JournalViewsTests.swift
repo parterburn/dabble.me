@@ -1066,6 +1066,23 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(link.waitForExistence(timeout: 5))
     }
 
+    /// Results that span a few months get the Journal's timeline scrubber; a tap on it opens the calendar.
+    func testSearchResultsHaveTheTimelineScrubber() throws {
+        let app = launch()
+        tab(app, "Search").tap()
+        let field = app.searchFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        field.typeText("the\n")
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ENDSWITH 'matching entries'")).firstMatch.waitForExistence(timeout: 10))
+        app.swipeUp(velocity: .slow) // the scrubber shows while scrolling
+        let scrubber = app.otherElements["Timeline scrubber"]
+        XCTAssertTrue(scrubber.waitForExistence(timeout: 5))
+        snap("search-scrubber")
+        scrubber.tap()
+        XCTAssertTrue(app.staticTexts["Jump to a Day"].waitForExistence(timeout: 5), "A tap opens the calendar")
+    }
+
     /// Today's count of the year's entries (top right) opens Stats.
     func testYearCountOpensStats() throws {
         let app = launch()

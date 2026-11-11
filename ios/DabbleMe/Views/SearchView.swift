@@ -17,6 +17,9 @@ struct SearchView: View {
     @State private var path = NavigationPath()
     @State private var expanded: Set<Int> = []
     @State private var actions = EntryActions()
+    /// For the timeline scrubber over the results (as on the Journal).
+    @State private var scrollProgress: CGFloat = 0
+    @State private var isScrolling = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -120,6 +123,7 @@ struct SearchView: View {
         } else {
             // The count scrolls away; each month's results sit under a sticky "Month YYYY"
             // (pinned just under the search field), like the Journal.
+            ScrollViewReader { proxy in
             List {
                 Text(totalCount == 1 ? "1 matching entry" : "\(totalCount.formatted()) matching entries")
                     .font(.subheadline)
@@ -156,6 +160,28 @@ struct SearchView: View {
                 query = submitted
                 await search(reset: true, keepingResults: true)
             }
+            // The Journal's timeline scrubber, over the months the results (loaded so far) fall
+            // in: drag to a month, or tap it for the calendar.
+            .scrollIndicators(scrubberMonths.count >= 3 ? .hidden : .automatic)
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                let scrollable = geometry.contentSize.height - geometry.containerSize.height
+                return scrollable > 0 ? min(max((geometry.contentOffset.y + geometry.contentInsets.top) / scrollable, 0), 1) : 0
+            } action: { _, progress in
+                scrollProgress = progress
+            }
+            .onScrollPhaseChange { _, phase in isScrolling = phase.isScrolling }
+            .overlay(alignment: .trailing) {
+                if scrubberMonths.count >= 3 {
+                    TimelineScrubber(months: scrubberMonths, progress: scrollProgress, isScrolling: isScrolling, onSelect: { month in
+                        if let first = resultMonths.first(where: { $0.key == month.key })?.entries.first {
+                            proxy.scrollTo(first.id, anchor: .top)
+                        }
+                    }, onTap: {
+                        model.showsDayPicker = true
+                    })
+                }
+            }
+            }
         }
     }
 
@@ -171,6 +197,15 @@ struct SearchView: View {
             }
         }
         return months
+    }
+
+    /// The results' months with how many results each has, for the scrubber.
+    private var scrubberMonths: [MonthCount] {
+        resultMonths.compactMap { month in
+            let parts = month.key.split(separator: "-").compactMap { Int($0) }
+            guard parts.count == 2 else { return nil }
+            return MonthCount(year: parts[0], month: parts[1], count: month.entries.count)
+        }
     }
 
     private func loadHashtags() async {
