@@ -37,6 +37,59 @@ RSpec.describe AdminController, type: :controller do
       expect(response.body).to have_link(href: edit_admin_user_path(user))
       expect(response.body).to have_link('$3.00', href: payments_path(user_id: paid_user.id))
     end
+
+    context 'filtering' do
+      let!(:zora) { FactoryBot.create(:user, first_name: 'Zorabel', last_name: 'Quenneville', email: 'zora@example.com') }
+
+      before { sign_in superuser }
+
+      it 'finds users by first or last name' do
+        get :users, params: { name: 'quenneville ZORA' }
+        expect(response.body).to have_field('name', with: 'quenneville ZORA')
+        expect(response.body).to have_link(href: edit_admin_user_path(zora))
+        expect(response.body).not_to have_link(href: edit_admin_user_path(user))
+      end
+
+      it 'applies every filter that is filled in' do
+        get :users, params: { name: 'zorabel', email: 'zora@' }
+        expect(response.body).to have_link(href: edit_admin_user_path(zora))
+
+        get :users, params: { name: 'zorabel', email: user.email }
+        expect(response.body).to have_content('No users match.')
+
+        get :users, params: { name: 'zorabel', user_key: user.user_key }
+        expect(response.body).to have_content('No users match.')
+      end
+    end
+  end
+
+  describe 'photos' do
+    before { sign_in superuser }
+
+    def photo_entries(count, date: Date.new(2026, 1, 1))
+      Entry.insert_all(Array.new(count) { |i| { user_id: paid_user.id, date: date, image: "photo#{i}.jpg" } })
+    end
+
+    it 'shows up to 300 photos a page, past the usual 100-per-page cap' do
+      photo_entries(301)
+
+      get :photos
+      expect(response.body).to have_css('img[src*="photo"]', count: 300)
+      expect(response.body).to have_link(href: admin_photos_path(page: 2))
+    end
+
+    it 'shows the newest first, a page at a time' do
+      stub_const('AdminController::PHOTOS_PER_PAGE', 1)
+      photo_entries(1, date: Date.new(2026, 1, 1))
+      photo_entries(1, date: Date.new(2026, 2, 1))
+
+      get :photos
+      expect(response.body).to have_css('img[alt="February 1, 2026"]')
+      expect(response.body).not_to have_css('img[alt="January 1, 2026"]')
+
+      get :photos, params: { page: 2 }
+      expect(response.body).to have_css('img[alt="January 1, 2026"]')
+    end
   end
 
   describe 'AI cost' do
@@ -77,6 +130,7 @@ RSpec.describe AdminController, type: :controller do
       expect(response.body).to have_field('user_email', with: paid_user.email)
       expect(response.body).to have_select('user_plan', selected: 'PRO Monthly PayHere (Stripe)')
       expect(response.body).to have_checked_field('frequency_Sun')
+      expect(response.body).to have_checked_field('user_send_updates')
       expect(response.body).to have_button('Send password reset')
     end
   end
@@ -86,7 +140,7 @@ RSpec.describe AdminController, type: :controller do
       {
         id: paid_user.id,
         user: { first_name: 'Ada', last_name: 'Lovelace', email: 'ada@example.com', send_time: '07:00',
-                send_timezone: 'Pacific Time (US & Canada)', plan: 'PRO Yearly PayHere' },
+                send_timezone: 'Pacific Time (US & Canada)', send_updates: '0', plan: 'PRO Yearly PayHere' },
         frequency: ['', 'Mon', 'Wed']
       }
     end
@@ -103,6 +157,7 @@ RSpec.describe AdminController, type: :controller do
       expect(paid_user.frequency).to eq %w[Mon Wed]
       expect(paid_user.send_time.strftime('%H:%M')).to eq '07:00'
       expect(paid_user.send_timezone).to eq 'Pacific Time (US & Canada)'
+      expect(paid_user.send_updates).to be(false)
       expect(paid_user.plan).to eq 'PRO Yearly PayHere'
       expect(flash[:notice]).to eq 'Saved ada@example.com.'
     end

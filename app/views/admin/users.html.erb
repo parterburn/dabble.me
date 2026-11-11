@@ -5,10 +5,14 @@
 <div class="tw mx-auto max-w-6xl pt-4 pb-16 sm:pt-8">
   <%= render "admin/header", title: "Users" %>
 
-  <form class="mb-6 grid gap-3 sm:grid-cols-[1fr_1fr_auto]" role="search">
+  <form class="mb-6 grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto]" role="search">
     <div>
       <label for="email" class="sr-only">Email</label>
       <input type="text" id="email" name="email" placeholder="Filter by email" value="<%= params[:email] %>" class="field-input">
+    </div>
+    <div>
+      <label for="name" class="sr-only">Name</label>
+      <input type="text" id="name" name="name" placeholder="Filter by first or last name" value="<%= params[:name] %>" class="field-input">
     </div>
     <div>
       <label for="user_key" class="sr-only">User or photo key</label>
