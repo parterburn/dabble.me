@@ -13,7 +13,7 @@ extension RichText.Style {
     }
 }
 
-/// Owns the UITextView behind `RichTextEditor` so SwiftUI (Save, link alert) can read
+/// Owns the UITextView behind `RichTextEditor` so SwiftUI (Save, the link row) can read
 /// the document and drive formatting.
 @MainActor
 @Observable
@@ -26,9 +26,14 @@ final class RichTextEditorModel {
     /// Non-blank characters written so far.
     private(set) var characterCount = 0
 
-    /// Set while the link sheet is up; `linkText` is what the user is typing.
+    /// Set while the link row is open; `linkText` is what the user is typing.
     var isEditingLink = false
     var linkText = ""
+    /// The row is for a link that's already there (it can be changed or removed).
+    private(set) var isExistingLink = false
+    /// Opened by selecting a link's text rather than from the Link button: it closes again when
+    /// the selection moves off the link, and doesn't take the keyboard from the text.
+    private(set) var linkOpenedBySelection = false
     private var linkRange = NSRange(location: 0, length: 0)
 
     @ObservationIgnored fileprivate weak var textView: UITextView?
@@ -119,17 +124,74 @@ final class RichTextEditorModel {
 
     // MARK: - Links
 
+    /// The link (its whole range and address) that `range` touches, if any.
+    private func link(touching range: NSRange, in storage: NSTextStorage) -> (range: NSRange, address: String)? {
+        guard storage.length > 0 else { return nil }
+        var found: (NSRange, String)?
+        // A caret counts when it's inside or at the end of a link.
+        let probe = range.length > 0 ? range : NSRange(location: max(range.location - 1, 0), length: min(2, storage.length - max(range.location - 1, 0)))
+        storage.enumerateAttribute(.link, in: NSIntersectionRange(probe, NSRange(location: 0, length: storage.length))) { value, at, stop in
+            guard let value else { return }
+            var whole = NSRange()
+            _ = storage.attribute(.link, at: at.location, longestEffectiveRange: &whole, in: NSRange(location: 0, length: storage.length))
+            found = (whole, (value as? URL)?.absoluteString ?? value as? String ?? "")
+            stop.pointee = true
+        }
+        return found
+    }
+
+    /// Opens the link row from the Link button: for the link at the cursor or selection if there is
+    /// one, otherwise a new link on the selection (or at the cursor).
     func beginLink() {
         guard let textView else { return }
-        linkRange = textView.selectedRange
-        let existing = linkRange.location < textView.textStorage.length
-            ? textView.textStorage.attribute(.link, at: linkRange.location, effectiveRange: nil)
-            : nil
-        linkText = (existing as? URL)?.absoluteString ?? existing as? String ?? ""
+        if let existing = link(touching: textView.selectedRange, in: textView.textStorage) {
+            linkRange = existing.range
+            linkText = existing.address
+            isExistingLink = true
+        } else {
+            linkRange = textView.selectedRange
+            linkText = ""
+            isExistingLink = false
+        }
+        linkOpenedBySelection = false
         isEditingLink = true
     }
 
-    /// Adds `linkText` as a link on the selection, or inserts it as linked text when nothing is selected.
+    func endLink() {
+        isEditingLink = false
+        linkOpenedBySelection = false
+    }
+
+    /// Selecting some or all of a link's text opens the row for it, to change or remove. It stays
+    /// while the cursor is still in that link, and closes when it moves off.
+    fileprivate func selectionDidChange() {
+        guard let textView, textView.isFirstResponder else { return }
+        let selection = textView.selectedRange
+        let existing = link(touching: selection, in: textView.textStorage)
+        if isEditingLink, isExistingLink, let existing, NSEqualRanges(existing.range, linkRange) { return }
+        if selection.length > 0, let existing {
+            showRow(for: existing)
+        } else if isEditingLink, linkOpenedBySelection {
+            endLink()
+        }
+    }
+
+    /// Tapping a link in the editor opens its row too (rather than leaving for the browser).
+    fileprivate func linkTapped(in range: NSRange) {
+        guard let textView, let existing = link(touching: range, in: textView.textStorage) else { return }
+        showRow(for: existing)
+    }
+
+    private func showRow(for existing: (range: NSRange, address: String)) {
+        linkRange = existing.range
+        linkText = existing.address
+        isExistingLink = true
+        linkOpenedBySelection = true
+        isEditingLink = true
+    }
+
+    /// Adds `linkText` as a link on the selection (or changes the existing link's address), or
+    /// inserts it as linked text when nothing is selected.
     func applyLink() {
         guard let textView, let url = Self.normalizedURL(linkText) else { return }
         let storage = textView.textStorage
@@ -142,18 +204,19 @@ final class RichTextEditorModel {
             textView.selectedRange = NSRange(location: range.location + url.absoluteString.utf16.count, length: 0)
         } else {
             storage.addAttribute(.link, value: url, range: range)
-            textView.selectedRange = range
+            textView.selectedRange = NSRange(location: NSMaxRange(range), length: 0)
         }
+        endLink()
         textDidChange()
     }
 
     func removeLink() {
+        defer { endLink() }
         guard let textView, linkRange.length > 0, NSMaxRange(linkRange) <= textView.textStorage.length else { return }
         textView.textStorage.removeAttribute(.link, range: linkRange)
+        textView.selectedRange = NSRange(location: NSMaxRange(linkRange), length: 0)
         textDidChange()
     }
-
-    var canRemoveLink: Bool { linkRange.length > 0 && !linkText.isEmpty }
 
     static func normalizedURL(_ text: String) -> URL? {
         var trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -218,6 +281,9 @@ struct RichTextEditor: UIViewRepresentable {
     var leading: AnyView? = nil
     var trailing: AnyView? = nil
     var barKey = ""
+    /// A row shown above the buttons (hashtags, a prompt, photos), part of the bar so it moves with
+    /// the keyboard and is never covered by it.
+    var row: AnyView? = nil
 
     func makeUIView(context: Context) -> UITextView {
         let textView = UITextView()
@@ -230,15 +296,17 @@ struct RichTextEditor: UIViewRepresentable {
         textView.linkTextAttributes = [.foregroundColor: UIColor.tintColor, .underlineStyle: NSUnderlineStyle.single.rawValue]
         textView.attributedText = RichText.attributedString(from: model.initialBlocks, style: .journal)
         textView.typingAttributes = RichText.Style.journal.baseAttributes
-        textView.inputAccessoryView = context.coordinator.makeToolbar(for: self)
+        textView.inputAccessoryView = context.coordinator.makeBar(for: self)
         textView.accessibilityLabel = "Entry"
         model.attach(textView)
         return textView
     }
 
     func updateUIView(_ textView: UITextView, context: Context) {
-        guard context.coordinator.barKey != barKey, let toolbar = textView.inputAccessoryView as? UIToolbar else { return }
-        context.coordinator.configure(toolbar, for: self)
+        guard let bar = textView.inputAccessoryView as? EditorBar else { return }
+        bar.setRow(row)
+        guard context.coordinator.barKey != barKey else { return }
+        context.coordinator.configure(bar.toolbar, for: self)
     }
 
     func makeCoordinator() -> Coordinator {
@@ -257,11 +325,31 @@ struct RichTextEditor: UIViewRepresentable {
             model.textDidChange()
         }
 
+        func textViewDidChangeSelection(_ textView: UITextView) {
+            model.selectionDidChange()
+        }
+
+        func textView(_ textView: UITextView, primaryActionFor textItem: UITextItem, defaultAction: UIAction) -> UIAction? {
+            guard case .link = textItem.content else { return defaultAction }
+            let range = textItem.range
+            return UIAction { [model] _ in model.linkTapped(in: range) }
+        }
+
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
             guard range.length == 0 else { return true }
+            stopLinkAtItsEnd(in: textView, at: range.location)
             if text == "\n" { return model.handleReturn(in: textView, at: range) }
             if text == " " { return model.handleSpace(in: textView, at: range) }
             return true
+        }
+
+        /// Typing right after a link doesn't extend it (typing inside one still does).
+        private func stopLinkAtItsEnd(in textView: UITextView, at location: Int) {
+            let storage = textView.textStorage
+            guard textView.typingAttributes[.link] != nil, location > 0, location <= storage.length,
+                  storage.attribute(.link, at: location - 1, effectiveRange: nil) != nil,
+                  location == storage.length || storage.attribute(.link, at: location, effectiveRange: nil) == nil else { return }
+            textView.typingAttributes[.link] = nil
         }
 
         /// Bold/italic/underline also live in the system edit menu (select text, then Format), the
@@ -271,10 +359,11 @@ struct RichTextEditor: UIViewRepresentable {
         fileprivate var barKey = ""
         private var hosts: [UIHostingController<AnyView>] = []
 
-        func makeToolbar(for editor: RichTextEditor) -> UIToolbar {
-            let toolbar = UIToolbar(frame: CGRect(x: 0, y: 0, width: 320, height: 52))
-            configure(toolbar, for: editor)
-            return toolbar
+        func makeBar(for editor: RichTextEditor) -> EditorBar {
+            let bar = EditorBar()
+            configure(bar.toolbar, for: editor)
+            bar.setRow(editor.row)
+            return bar
         }
 
         /// The composer's buttons, always in view: photos on the left, tags and link on the right.
@@ -299,23 +388,58 @@ struct RichTextEditor: UIViewRepresentable {
     }
 }
 
-extension View {
-    /// The link prompt for a `RichTextEditor`.
-    func richTextLinkAlert(_ model: RichTextEditorModel) -> some View {
-        @Bindable var model = model
-        return alert("Link", isPresented: $model.isEditingLink) {
-            TextField("https://", text: $model.linkText)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .keyboardType(.URL)
-            Button("Save") { model.applyLink() }
-            if model.canRemoveLink {
-                Button("Remove Link", role: .destructive) { model.removeLink() }
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Select text first to link it, or add a web address on its own.")
+/// The editor's bar over the keyboard: an optional row (sized to fit its width) above the
+/// buttons. Its height follows the row, so the keyboard makes room for both.
+final class EditorBar: UIView {
+    static let toolbarHeight: CGFloat = 52
+    let toolbar = UIToolbar()
+    private let rowHost = UIHostingController<AnyView>(rootView: AnyView(EmptyView()))
+    private var rowHeight: CGFloat = 0
+    private var hasRow = false
+
+    init() {
+        super.init(frame: CGRect(x: 0, y: 0, width: 320, height: Self.toolbarHeight))
+        autoresizingMask = .flexibleHeight
+        rowHost.safeAreaRegions = []
+        rowHost.view.backgroundColor = .systemBackground
+        rowHost.view.isHidden = true
+        addSubview(rowHost.view)
+        addSubview(toolbar)
+    }
+
+    required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
+
+    override var intrinsicContentSize: CGSize {
+        CGSize(width: UIView.noIntrinsicMetric, height: rowHeight + Self.toolbarHeight)
+    }
+
+    func setRow(_ row: AnyView?) {
+        hasRow = row != nil
+        rowHost.view.isHidden = !hasRow
+        if let row { rowHost.rootView = row }
+        updateRowHeight()
+    }
+
+    private func updateRowHeight() {
+        let height = hasRow && bounds.width > 0
+            ? rowHost.sizeThatFits(in: CGSize(width: bounds.width, height: .greatestFiniteMagnitude)).height.rounded(.up)
+            : 0
+        guard height != rowHeight else { return }
+        rowHeight = height
+        invalidateIntrinsicContentSize()
+        setNeedsLayout()
+    }
+
+    private var laidOutWidth: CGFloat = 0
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        if bounds.width != laidOutWidth {
+            laidOutWidth = bounds.width
+            updateRowHeight() // a wrapping prompt takes more lines when narrower
         }
+        rowHost.view.frame = CGRect(x: 0, y: 0, width: bounds.width, height: rowHeight)
+        toolbar.frame = CGRect(x: 0, y: bounds.height - Self.toolbarHeight, width: bounds.width, height: Self.toolbarHeight)
     }
 }
 

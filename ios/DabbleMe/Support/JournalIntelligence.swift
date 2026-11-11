@@ -179,18 +179,28 @@ enum JournalIntelligence {
         return lines.joined(separator: "\n")
     }
 
-    /// Prompt while writing. With little or nothing written yet, a starting prompt (one of the
-    /// curated ones, picked for the writer's recent days). Once there's writing, a reflective question
+    /// Prompt while writing. With nothing much written yet (under a few words), a starting prompt (one
+    /// of the curated ones, picked for the writer's recent days). Once there's writing, a reflective question
     /// about the draft, with recent entries that share its names as background; if the model can't
     /// manage one that sticks to what's written, a curated prompt instead. `asked` are the prompts
     /// already offered for this draft (not repeated).
     static func followUpQuestion(for draft: String, recent: [String], curated: [String], today: JournalDay,
                                  asked: [String]) async throws -> String {
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard text.count >= 40 else {
+        // Even one short sentence ("Went hiking with Sam.") is worth asking about: a prompt about
+        // something else would ignore what they just wrote.
+        guard text.split(whereSeparator: \.isWhitespace).count >= 3 else {
             return try await startingPrompt(curated: curated, recent: recent, today: today, avoiding: asked)
         }
         let already = asked.isEmpty ? "" : "\n\nQuestions already asked (ask something different):\n" + asked.map { "- \($0)" }.joined(separator: "\n")
+        // A line or so: there's little to pick from, and the model fills the gap with invented detail
+        // (voices, weather) unless the question stays on what's there.
+        let brief = text.count < 80 ? """
+             They've only written a line so far, so the blank is that line itself, as an -ing phrase or a \
+            noun phrase, in a shape like "What do you want to remember about …?", "What did … feel like for \
+            you?" or "What stood out about …?". Add nothing to it: no details of the scene (sounds, voices, \
+            weather, places, what anyone said or did) that aren't written.
+            """ : ""
         // Only recent entries about the same people, places or #tags as the draft: the model latches
         // onto anything it's given, and the question should be about what they're writing now.
         let related = recent.prefix(5).filter { sharesNames(with: text, $0) }
@@ -200,13 +210,18 @@ enum JournalIntelligence {
                 try await respond(
                     instructions: """
                     The writer is in the middle of today's journal entry and wants a nudge to go deeper. Pick one \
-                    thing they wrote and ask one short, open question that invites them to reflect on it, using \
-                    their own words for it. Good shapes: "How did it feel when…?", "What do you want to remember \
-                    about…?", "What does … mean to you?", "What did … teach you?", "What would you tell yourself \
-                    about…?". \(groundingRules) \(plainQuestionRules) Don't ask "why did you…" about what they \
-                    did; it can sound like judgment. It's about today: never call it yesterday or another day. A related recent entry is background only; mention it only if \
-                    the new entry is clearly about the same thing. Never give advice, and don't repeat a question \
-                    already asked. Reply with only the question.
+                    moment they wrote about and ask one short, open question that invites them to reflect on it. Use \
+                    one of these shapes, filling in the moment: "How did it feel when …?", "What was it like when …?", \
+                    "What do you want to remember about …?", "What has stayed with you from …?". The shape must suit \
+                    the mood: nothing cheerful about a hard day. Fill the blank with a specific phrase from the entry \
+                    that says who and what, reworded only as much as grammar needs (after "when", a full past-tense \
+                    clause; after "about" or "from", a noun phrase or an -ing phrase). Ask about the writer's own \
+                    experience, never about what a place, thing or other person felt. Read the question back: it must \
+                    be a sentence a person would say, speaking to the writer as "you".\(brief) \(groundingRules) \
+                    \(plainQuestionRules) Don't ask "why did you…" about what they did; it can sound like judgment. \
+                    It's about today: never call it yesterday or another day. A related recent entry is background \
+                    only; mention it only if the new entry is clearly about the same thing. Never give advice, and \
+                    don't repeat a question already asked. Reply with only the question.
                     """,
                     journalText: true,
                     prompt: "The entry they're writing now:\n\(clipped(draft, limit: 2000))\(background)\(already)",
@@ -272,6 +287,32 @@ enum JournalIntelligence {
         return true
     }
 
+    /// Words a question is made of whatever the entry says.
+    private static let questionWords: Set<String> = [
+        "what", "when", "where", "which", "while", "want", "wanted", "remember", "about", "feel", "feels", "felt",
+        "feeling", "like", "liked", "stay", "stayed", "with", "from", "stood", "stand", "stands", "were", "have",
+        "having", "does", "doing", "your", "yours", "yourself", "that", "this", "most", "more", "moment", "time",
+        "today", "they", "them", "their", "there", "being", "going", "been", "made", "make", "makes", "think",
+        "thinking", "thought", "mean", "means", "meant", "would", "could", "tell", "still", "really", "first",
+        "after", "before", "during", "just", "into", "tonight", "morning", "know", "knew", "learn", "learned",
+        "teach", "taught", "kept", "keep", "watching", "watched", "seeing", "happened", "enjoy", "enjoyed", "hardest",
+        "best", "part", "thing", "things", "something", "anything", "them", "then", "than", "over", "back", "down",
+    ]
+
+    /// Whether a question sticks to what's written: its content words (four letters or more, beyond the
+    /// words questions are made of) appear in `source`, give or take an ending ("chasing" for "chased").
+    /// One stray word is let through (a fair rewording, like "pride" for "proud"); more is a scene the
+    /// model made up ("when Sam walked ahead, alone").
+    static func wordsAreGrounded(_ question: String, in source: String) -> Bool {
+        func words(_ text: String) -> [String] {
+            text.lowercased().replacingOccurrences(of: "’", with: "'").split(whereSeparator: { !$0.isLetter && $0 != "'" })
+                .map { String($0.split(separator: "'").first ?? "") }
+        }
+        let stems = Set(words(source).filter { $0.count >= 3 }.map { String($0.prefix(4)) })
+        let stray = words(question).filter { $0.count >= 4 && !questionWords.contains($0) && !stems.contains(String($0.prefix(4))) }
+        return stray.count <= 1
+    }
+
     /// Whether a recent entry mentions a name, place or #tag from the draft (a capitalized word or a
     /// hashtag, other than "I").
     static func sharesNames(with draft: String, _ entry: String) -> Bool {
@@ -296,14 +337,17 @@ enum JournalIntelligence {
                                        "…", "..."] // the last two: a question shape copied with its blank
 
     /// One clean question from the model: the first line, without quotes or a label, asked again once
-    /// if it came out stiff or (with `source`) names someone or something that isn't in it. A question
-    /// that still invents a name is never shown: it throws instead.
+    /// if it came out stiff or (with `source`) names someone or describes something that isn't in it.
+    /// A question that still invents is never shown: it throws instead.
     private static func plainQuestion(groundedIn source: String? = nil, _ ask: () async throws -> String) async throws -> String {
         func clean(_ reply: String) -> String {
             let line = reply.split(whereSeparator: \.isNewline).first.map(String.init) ?? reply
             return line.trimmingCharacters(in: CharacterSet(charactersIn: "\"“”' ")).replacingOccurrences(of: "Question: ", with: "")
+                .replacingOccurrences(of: "#", with: "") // a tag from the entry reads as a word in a question
         }
-        func grounded(_ question: String) -> Bool { source.map { namesAreGrounded(question, in: $0) } ?? true }
+        func grounded(_ question: String) -> Bool {
+            source.map { namesAreGrounded(question, in: $0) && wordsAreGrounded(question, in: $0) } ?? true
+        }
         func stiff(_ question: String) -> Bool { stiffPhrases.contains(where: question.lowercased().contains) }
         let first = clean(try await ask())
         if grounded(first), !stiff(first) { return first }
@@ -324,17 +368,22 @@ enum JournalIntelligence {
         let context = recent.prefix(5).randomElement() ?? ""
         let already = asked.isEmpty ? "" : "\n\nQuestions already asked (ask something different):\n" + asked.map { "- \($0)" }.joined(separator: "\n")
         let todayText = today.formatted(.dateTime.weekday(.wide).month(.wide).day())
-        return try await plainQuestion { try await respond(
+        return try await plainQuestion(groundedIn: context.isEmpty ? nil : context) { try await respond(
             instructions: """
             You write one gentle journaling prompt for today, the way a curious friend would ask. A recent entry \
             is given with its date; everything in it happened on that earlier day, not today. Pick one concrete \
-            thing from it (a person, a moment, a plan) and ask one plain question about it, in the past tense. \
-            Use the entry's own words for it (a hike stays a hike), and don't say when it happened: no today, \
-            yesterday or other days. \(plainQuestionRules) Never mention anything the entries don't say, and never \
-            describe a past event as happening today. Reply with only the question.
+            thing from it (a person, a moment, a plan) and ask one open question that invites the writer to \
+            reflect on it, naming it in the entry's own words. Use one of these shapes, filling in the thing: \
+            "What do you want to remember about …?", "How did it feel when …?", "What has stayed with you from …?", \
+            "What was it like when …?". The shape must suit the mood: nothing cheerful about a hard day. Fill the blank with a specific phrase from the entry that says \
+            who and what, reworded only as much as grammar needs (after "when", a full past-tense clause; after \
+            "about" or "from", a noun phrase or an -ing phrase). Read the question back: it must be a sentence a \
+            person would say, speaking to the writer as "you". Don't say when it happened: no today, yesterday or other days. \(groundingRules) \
+            \(plainQuestionRules) Never describe a past event as happening today. Reply with only the question.
             """,
+            journalText: true,
             prompt: "Today is \(todayText).\n" + (context.isEmpty ? "No recent entries yet." : "A recent entry:\n\(clipped(context))") + already,
-            temperature: 0.9
+            temperature: 0.8
         ) }
     }
 
@@ -345,6 +394,14 @@ enum JournalIntelligence {
             let date = day.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
             return "- \(day.relative(to: today)) (\(date)): \(entry.excerpt)"
         }
+    }
+
+    /// The tags (in the order given, without repeats) that are a word in `text`, whatever its
+    /// capitalization: "hiking" for "Went Hiking with Sam". No model involved, so it's instant.
+    static func tags(_ tags: [String], matchingWordsIn text: String) -> [String] {
+        let words = Set(text.lowercased().split(whereSeparator: { !$0.isLetter && !$0.isNumber && $0 != "_" }).map(String.init))
+        var seen = Set<String>()
+        return tags.filter { words.contains($0.lowercased()) && seen.insert($0.lowercased()).inserted }
     }
 
     static func hashtags(in text: String) -> [String] {

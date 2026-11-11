@@ -213,7 +213,7 @@ private struct AddTagDateSheet: View {
                 if let error {
                     Text(error)
                         .font(.footnote)
-                        .foregroundStyle(.red)
+                        .foregroundStyle(Color.deleteRed)
                 }
             }
             .navigationTitle(tag.isEmpty ? "New Dated Hashtag" : "#\(tag)")

@@ -86,6 +86,7 @@ targets:
           NSAllowsLocalNetworking: true
         NSLocalNetworkUsageDescription: Connects to a Dabble Me development server on your network.
         NSPhotoLibraryAddUsageDescription: Save photos from your journal entries to your photo library.
+        NSCameraUsageDescription: Take photos to add to your journal entries.
         NSFaceIDUsageDescription: Unlock your journal with Face ID.
   DabbleMeWidget:
     type: app-extension

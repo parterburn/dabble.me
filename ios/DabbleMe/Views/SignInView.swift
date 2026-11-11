@@ -148,7 +148,7 @@ private struct WelcomeView: View {
                     if let error = model.signInError {
                         Text(error)
                             .font(.footnote)
-                            .foregroundStyle(.red)
+                            .foregroundStyle(Color.deleteRed)
                             .multilineTextAlignment(.center)
                     }
 

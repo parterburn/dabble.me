@@ -62,6 +62,29 @@ struct PromptGroundingTests {
         #expect(!JournalIntelligence.namesAreGrounded("How did the game in Denver go?", in: draft), "Nor is Denver")
         #expect(JournalIntelligence.namesAreGrounded("What made I so happy?", in: draft), "\"I\" isn't a name")
     }
+
+    /// A question may reword what's written, but not add a scene to it.
+    @Test func questionsStickToWhatIsWritten() {
+        let hike = "Went #hiking with Sam."
+        #expect(JournalIntelligence.wordsAreGrounded("What do you want to remember about hiking with Sam?", in: hike))
+        #expect(JournalIntelligence.wordsAreGrounded("What did going hiking with Sam feel like for you?", in: hike))
+        #expect(!JournalIntelligence.wordsAreGrounded("What was it like when Sam walked ahead, alone?", in: hike))
+        #expect(!JournalIntelligence.wordsAreGrounded("What did it feel like when Sam sang badly during the descent?", in: hike))
+        #expect(!JournalIntelligence.wordsAreGrounded("What did Sam’s voice sound like when you were walking?", in: hike))
+        let tooth = "Leo lost his first tooth tonight! He was so proud and a little scared of the blood."
+        #expect(JournalIntelligence.wordsAreGrounded("What do you want to remember about Leo’s pride when he lost his first tooth?", in: tooth))
+        #expect(JournalIntelligence.wordsAreGrounded("How did it feel when Leo was scared of the blood?", in: tooth))
+    }
+}
+
+@MainActor
+struct HashtagMatchingTests {
+    /// The writer's tags that are words in the entry come first in the composer's row, without a model.
+    @Test func tagsMatchWholeWordsWhateverTheCase() {
+        let tags = ["travel", "Hiking", "sam", "work", "hiking", "hike"]
+        #expect(JournalIntelligence.tags(tags, matchingWordsIn: "Went hiking with Sam. No workdays!") == ["Hiking", "sam"])
+        #expect(JournalIntelligence.tags(tags, matchingWordsIn: "").isEmpty)
+    }
 }
 
 @MainActor
@@ -319,23 +342,30 @@ struct WidgetSnapshotTests {
         calendar.date(from: DateComponents(year: 2026, month: 11, day: day, hour: 12))!
     }
 
-    private func snapshot(day: String, wrote: Bool, streak: Int, memories: Int = 0) -> WidgetSnapshot {
-        WidgetSnapshot(day: day, wroteToday: wrote, streak: streak, memories: memories, memoriesFirstYear: nil, prompt: "Hi")
+    private func snapshot(day: String, wrote: Bool, count: Int?, memories: Int = 0) -> WidgetSnapshot {
+        WidgetSnapshot(day: day, wroteToday: wrote, yearCount: count, memories: memories, memoriesFirstYear: nil, prompt: "Hi")
     }
 
     @Test func sameDayShowsTheSnapshot() {
-        let state = snapshot(day: "2026-11-08", wrote: true, streak: 4, memories: 2).state(on: date(8), calendar: calendar)
-        #expect(state.wroteToday && state.streak == 4 && state.memories == 2)
+        let state = snapshot(day: "2026-11-08", wrote: true, count: 36, memories: 2).state(on: date(8), calendar: calendar)
+        #expect(state.wroteToday && state.yearCount == 36 && state.memories == 2)
     }
 
-    @Test func aStreakSurvivesTheNextDayUntilItsWritten() {
-        let state = snapshot(day: "2026-11-07", wrote: true, streak: 4, memories: 2).state(on: date(8), calendar: calendar)
-        #expect(!state.wroteToday && state.streak == 4 && state.memories == nil)
+    @Test func aNewDayIsUnwrittenAndKeepsTheYearsCount() {
+        let state = snapshot(day: "2026-11-05", wrote: true, count: 36, memories: 2).state(on: date(8), calendar: calendar)
+        #expect(!state.wroteToday && state.yearCount == 36 && state.memories == nil)
     }
 
-    @Test func anUnwrittenDayEndsTheStreak() {
-        #expect(snapshot(day: "2026-11-07", wrote: false, streak: 3).state(on: date(8), calendar: calendar).streak == 0)
-        #expect(snapshot(day: "2026-11-05", wrote: true, streak: 9).state(on: date(8), calendar: calendar).streak == 0)
+    @Test func aNewYearStartsTheCountAgain() {
+        let newYear = calendar.date(from: DateComponents(year: 2027, month: 1, day: 1, hour: 9))!
+        #expect(snapshot(day: "2026-12-31", wrote: true, count: 40).state(on: newYear, calendar: calendar).yearCount == 0)
+    }
+
+    /// A snapshot saved by a build that still tracked the streak has no count yet.
+    @Test func olderSnapshotsStillLoad() throws {
+        let old = #"{"day":"2026-11-08","wroteToday":true,"streak":4,"memories":0,"prompt":"Hi"}"#
+        let snapshot = try JSONDecoder().decode(WidgetSnapshot.self, from: Data(old.utf8))
+        #expect(snapshot.state(on: date(8), calendar: calendar).yearCount == 0)
     }
 }
 

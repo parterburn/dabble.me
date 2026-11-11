@@ -26,21 +26,25 @@ struct TodayView: View {
             // A list (not a plain scroll view) so On This Day rows swipe like the Journal's.
             List {
                 if let today = model.today {
-                    // The date is the page title (the nav bar is hidden here), with the writing
-                    // streak beside it. No year: it's always today. One line, shrinking a little
-                    // for long dates.
-                    HStack(alignment: .firstTextBaseline) {
-                        Text(today.day?.formatted(.dateTime.weekday(.wide).month(.wide).day()) ?? today.date)
-                            .font(.system(.title, design: .serif, weight: .semibold))
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.7)
-                            .accessibilityLabel(today.day?.long ?? today.date)
-                            .accessibilityAddTraits(.isHeader)
+                    // The header (the nav bar is hidden here): the wordmark, small, with the year's
+                    // entry count ("36 entries in 2026") beside it.
+                    HStack(alignment: .center) {
+                        Wordmark(size: 28)
                         Spacer(minLength: 8)
-                        streakButton(today.currentStreak ?? 0)
+                        if let count = model.entriesThisYear, let year = today.day?.year {
+                            yearCountButton(count, year: year)
+                        }
                     }
                     .plainRow()
+                    // Today's date titles the day's section. No year: it's always today (and it's
+                    // in the header's count).
+                    SectionTitle(today.day?.formatted(.dateTime.weekday(.wide).month(.wide).day()) ?? today.date,
+                                 icon: "slab-calendar")
+                        .accessibilityLabel(today.day?.long ?? today.date)
+                        .plainRow()
+                        // Close above the prompt card (which has its own space); a little more
+                        // above today's entry, whose card starts at the row's edge.
+                        .listRowInsets(EdgeInsets(top: 14, leading: 20, bottom: today.entry == nil ? 0 : 8, trailing: 20))
                     todaySection(today)
                     onThisDaySection(today)
                 } else if let error = model.timelineError {
@@ -52,6 +56,7 @@ struct TodayView: View {
                 }
             }
             .listStyle(.plain)
+            .listSectionSpacing(0) // a memory's date sits right under its section's title
             .environment(\.defaultMinListRowHeight, 1) // rows as tall as their content (the section titles)
             // Pull to reset: collapses expanded entries and reloads today. On the list itself,
             // inside the sheets and entry pages below, so they don't inherit a pull-to-refresh.
@@ -115,9 +120,6 @@ struct TodayView: View {
     @ViewBuilder
     private func todaySection(_ today: TodaySummary) -> some View {
         if let entry = today.entry {
-            SectionTitle("Today's Entry", icon: "slab-calendar")
-                .padding(.top, 6)
-                .plainRow()
             // On the prompt box's Paper card, so today stands apart from On This Day. The card is
             // the row's background, so the entry keeps its swipes.
             row(entry.summary)
@@ -226,24 +228,25 @@ struct TodayView: View {
 
     // MARK: - On This Day
 
-    /// "🔥 4": days in a row with an entry. Tapping it opens Stats.
-    private func streakButton(_ streak: Int) -> some View {
+    /// "🔥 36 entries in 2026": entries written this year. Tapping it opens Stats.
+    private func yearCountButton(_ count: Int, year: String) -> some View {
         Button {
             model.selectedTab = .journal
             model.statsRequest += 1
         } label: {
-            HStack(spacing: 4) {
+            HStack(spacing: 5) {
                 appIcon("slab-fire")
-                Text(streak.formatted())
+                Text("\(count.formatted()) \(count == 1 ? "entry" : "entries") in \(year)")
                     .monospacedDigit()
             }
-            .font(.headline)
-            .foregroundStyle(streak > 0 ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.tint)
+            .lineLimit(1)
             .padding(.vertical, 4)
             .contentShape(.rect)
         }
         .buttonStyle(.borderless)
-        .accessibilityLabel(streak == 1 ? "1 day streak" : "\(streak) day streak")
+        .accessibilityLabel(count == 1 ? "1 entry in \(year)" : "\(count) entries in \(year)")
         .accessibilityHint("Shows your stats")
     }
 
@@ -289,8 +292,9 @@ struct TodayView: View {
 
     @ViewBuilder
     private func memoriesSection(_ today: TodaySummary) -> some View {
+        // A little more under it than a throwback's: several days can follow, each with its own date.
         SectionTitle("On This Day", icon: "slab-backward")
-            .sectionTitleRow()
+            .sectionTitleRow(bottom: 10)
         if !today.onThisDayAvailable {
             Text("See what you wrote on this date in past years with Dabble Me PRO.")
                 .font(.callout)
@@ -337,9 +341,9 @@ struct TodayView: View {
 private extension View {
     /// On This Day's and Throwback's title: room above it, little below, so the first entry's
     /// date follows close behind.
-    func sectionTitleRow() -> some View {
+    func sectionTitleRow(bottom: CGFloat = 2) -> some View {
         plainRow()
-            .listRowInsets(EdgeInsets(top: 23, leading: 20, bottom: 2, trailing: 20))
+            .listRowInsets(EdgeInsets(top: 23, leading: 20, bottom: bottom, trailing: 20))
     }
 
     /// A list row that's just page content: no separator, no row background.

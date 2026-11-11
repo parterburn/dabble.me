@@ -20,7 +20,7 @@ module Api
         first_entry_date: dates.first&.iso8601,
         current_streak: current_streak,
         longest_streak: longest_streak,
-        entries_this_year: dates.count { |date| date.year == today.year },
+        entries_this_year: entries_this_year,
         writing_days: dates.select { |date| date > today - HEATMAP_DAYS && date <= today }.map(&:iso8601),
         months: recent_months,
         busiest_weekday: busiest_weekday,
@@ -38,6 +38,11 @@ module Api
         day -= 1
       end
       streak
+    end
+
+    # Entries written in the current calendar year (the app's Today shows it, and the widget).
+    def entries_this_year
+      dates.count { |date| date.year == today.year }
     end
 
     private

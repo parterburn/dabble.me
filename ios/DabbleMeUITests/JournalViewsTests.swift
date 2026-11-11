@@ -569,7 +569,7 @@ final class JournalViewsTests: XCTestCase {
         let asked = question.label
         XCTAssertTrue(asked.hasSuffix("?"), "It's a question: \(asked)")
         snap("prompt-row")
-        app.buttons["Add"].tap()
+        app.buttons["Insert"].tap()
         XCTAssertTrue((editor.value as? String ?? "").contains(asked), "Add puts the question in the entry")
         app.buttons["Cancel"].tap()
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
@@ -924,17 +924,130 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
 
-    /// Today's streak (top right) opens Stats.
-    func testStreakOpensStats() throws {
+    /// An open row is part of the keyboard's bar, above its buttons: it hides with the keyboard and
+    /// comes back with it, still above the buttons.
+    func testComposerRowClearsBarAfterKeyboardReturns() throws {
         let app = launch()
-        let streak = app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", "day streak")).firstMatch
-        XCTAssertTrue(streak.waitForExistence(timeout: 15))
-        snap("today-streak")
-        streak.tap()
+        tab(app, "Journal").tap()
+        app.buttons["New Entry"].tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        editor.tap()
+        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+        if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap(); editor.tap() }
+        editor.typeText("Went hiking with Sam.")
+        let buttons = app.buttons["Hashtags"]
+        buttons.tap()
+        let chip = app.buttons["#hiking"]
+        XCTAssertTrue(chip.waitForExistence(timeout: 10))
+        XCTAssertLessThanOrEqual(chip.frame.maxY, buttons.frame.minY, "Above the buttons")
+        snap("compose-row-open")
+        app.swipeDown()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        XCTAssertFalse(chip.isHittable, "Hidden with the keyboard")
+        snap("compose-row-keyboard-hidden")
+        editor.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(chip.waitForExistence(timeout: 5))
+        sleep(1) // the keyboard finishes coming in
+        snap("compose-row-keyboard-back")
+        XCTAssertLessThanOrEqual(chip.frame.maxY, buttons.frame.minY, "Still above the buttons")
+        chip.tap()
+        XCTAssertEqual(editor.value as? String, "Went #hiking with Sam.")
+        // A prompt (it can wrap) clears the buttons too.
+        let prompt = app.buttons["Prompt"]
+        if prompt.exists {
+            prompt.tap()
+            let question = app.staticTexts["AskMeQuestion"]
+            XCTAssertTrue(question.waitForExistence(timeout: 60))
+            sleep(1)
+            snap("compose-prompt-row")
+            XCTAssertLessThanOrEqual(question.frame.maxY, prompt.frame.minY, "Prompt above the buttons")
+        }
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+    }
+
+    /// Link opens a row in the bar for the address; selecting a link's text opens it again to
+    /// change or remove the link.
+    func testLinkRowInsertsEditsAndRemoves() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        app.buttons["New Entry"].tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        editor.tap()
+        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+        // A draft left by an earlier run comes back: discard it and start from a blank page.
+        if app.buttons["Start Over"].waitForExistence(timeout: 1) {
+            app.buttons["Cancel"].tap()
+            app.buttons["Discard"].tap()
+            XCTAssertTrue(editor.waitForNonExistence(timeout: 5))
+            app.buttons["New Entry"].tap()
+            XCTAssertTrue(editor.waitForExistence(timeout: 5))
+            editor.tap()
+        }
+        editor.typeText("Read this: ")
+        let link = app.buttons["Link"]
+        link.tap()
+        let address = app.textFields["Link address"]
+        XCTAssertTrue(address.waitForExistence(timeout: 5))
+        XCTAssertLessThanOrEqual(address.frame.maxY, link.frame.minY, "Above the buttons")
+        XCTAssertFalse(app.buttons["Insert"].isEnabled, "Nothing to insert yet")
+        sleep(1)
+        XCTAssertTrue(app.keyboards.firstMatch.exists, "The keyboard stays up for the address")
+        snap("link-row-focused")
+        address.typeText("dabble.me/write")
+        snap("link-row")
+        app.buttons["Insert"].tap()
+        XCTAssertEqual(editor.value as? String, "Read this: https://dabble.me/write")
+        XCTAssertTrue(address.waitForNonExistence(timeout: 5), "The row closes")
+        editor.typeText(" ok") // the keyboard is back on the entry
+        XCTAssertEqual(editor.value as? String, "Read this: https://dabble.me/write ok")
+        // Tap the link: its row opens (it doesn't leave for the browser).
+        editor.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0)).withOffset(CGVector(dx: 0, dy: 30)).tap()
+        XCTAssertTrue(address.waitForExistence(timeout: 5), "Tapping a link opens its row")
+        XCTAssertEqual(address.value as? String, "https://dabble.me/write")
+        snap("link-row-existing")
+        XCTAssertTrue(app.buttons["Update"].exists)
+        app.buttons["Remove Link"].tap()
+        XCTAssertTrue(address.waitForNonExistence(timeout: 5))
+        XCTAssertEqual(editor.value as? String, "Read this: https://dabble.me/write ok", "The text stays")
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+    }
+
+    /// Where there's a camera, Add Photos offers it as well as the library. (The simulator has
+    /// none, so the menu is switched on for the test.)
+    func testAddPhotosOffersTheCamera() throws {
+        let app = launch(["-DabbleDebugCameraMenu", "YES"])
+        tab(app, "Journal").tap()
+        app.buttons["New Entry"].tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        editor.tap()
+        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+        app.buttons["Add Photos"].tap()
+        XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Choose Photos"].exists)
+        snap("add-photos-menu")
+        app.buttons["Choose Photos"].tap()
+        sleep(2)
+        snap("add-photos-library")
+    }
+
+    /// Today's count of the year's entries (top right) opens Stats.
+    func testYearCountOpensStats() throws {
+        let app = launch()
+        let year = Calendar.current.component(.year, from: .now)
+        let count = app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", "in \(year)")).firstMatch
+        XCTAssertTrue(count.waitForExistence(timeout: 15))
+        snap("today-year-count")
+        count.tap()
         XCTAssertTrue(app.staticTexts["Past Year"].waitForExistence(timeout: 10), "Stats, in the Journal tab")
     }
 
-    /// Settings → Home Screen Widget: choosing what shows beside the streak updates the preview.
+    /// Settings → Home Screen Widget: choosing what shows beside the year's count updates the preview.
     func testWidgetSettingsPreview() throws {
         let app = launch()
         tab(app, "Settings").tap()

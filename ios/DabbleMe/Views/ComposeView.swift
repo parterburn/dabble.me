@@ -28,6 +28,7 @@ struct ComposeView: View {
     /// An unsaved draft from an earlier session was put back in the editor.
     @State private var restoredDraft: DraftStore.Draft?
     @State private var draftSave: Task<Void, Never>?
+    @State private var isDiscarded = false
     /// The hashtag bar ("+" → Hashtags): AI suggestions first, then the most recently used tags.
     @State private var showsHashtagBar = false
     /// Prompt (Apple Intelligence, the sparkles): a row with one question about the draft. Closing
@@ -44,10 +45,16 @@ struct ComposeView: View {
     /// so the writing area keeps its room.
     @State private var showsPhotoDrawer = false
     @State private var recentTags: [String] = []
+    /// Every hashtag the writer has used, to offer the ones the entry's words match.
+    @State private var allTags: [String] = []
     @State private var suggestedTags: [String] = []
     @State private var isSuggestingTags = false
     @State private var suggestionError: String?
     @State private var pickingPhotos = false
+    @State private var takingPhoto = false
+    /// Photos taken with the camera: they ride along in `photoItems` under made-up identifiers,
+    /// which the photo picker doesn't know, so the picker works on `libraryItems` instead.
+    @State private var cameraItems: [PhotosPickerItem] = []
     @State private var removesExistingPhoto = false
     @Environment(\.scenePhase) private var scenePhase
     private let draftKey: String
@@ -103,7 +110,8 @@ struct ComposeView: View {
                 RichTextEditor(model: editor,
                                leading: model.me?.canAddPhotos == true ? AnyView(photosButton) : nil,
                                trailing: AnyView(tagAndLinkButtons),
-                               barKey: "\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)")
+                               barKey: "\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)",
+                               row: openRow)
                     .overlay(alignment: .topLeading) {
                         if editor.isEmpty {
                             Text("How was your day?")
@@ -115,26 +123,6 @@ struct ComposeView: View {
                                 .accessibilityHidden(true)
                         }
                     }
-                // Only when opened from the bar, so the writing area stays as large as it can. They
-                // sit down against the bar: iOS leaves space above the keyboard's bar, which would
-                // otherwise show as a gap under the row.
-                if showsHashtagBar {
-                    Divider()
-                    hashtagSuggestions
-                        .padding(.bottom, -14)
-                }
-                if showsAskRow {
-                    Divider()
-                    // A prompt can take two lines, so not the hashtag row's nudge down (the bar would
-                    // cover it): the same gap above the bar as under the hashtags.
-                    askRow
-                        .padding(.bottom, 8)
-                }
-                if showsPhotoDrawer, attachedPhotoCount > 0 {
-                    Divider()
-                    photoBar
-                        .padding(.bottom, -14)
-                }
             }
             .overlay {
                 if isSaving { savingOverlay }
@@ -146,7 +134,7 @@ struct ComposeView: View {
                 ToolbarItem(placement: .principal) { dateTitle }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
-                        if hasChanges { confirmingDiscard = true } else { DraftStore.clear(draftKey); dismiss() }
+                        if hasChanges { confirmingDiscard = true } else { discardDraft(); dismiss() }
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
@@ -162,7 +150,7 @@ struct ComposeView: View {
             .confirmationDialog(isNew ? "Discard this entry?" : "Discard your changes?",
                                 isPresented: $confirmingDiscard, titleVisibility: .visible) {
                 Button("Discard", role: .destructive) {
-                    DraftStore.clear(draftKey)
+                    discardDraft()
                     dismiss()
                 }
                 Button("Keep Writing", role: .cancel) {}
@@ -172,8 +160,15 @@ struct ComposeView: View {
             } message: {
                 Text(error ?? "")
             }
-            .richTextLinkAlert(editor)
-            .photosPicker(isPresented: $pickingPhotos, selection: $photoItems, maxSelectionCount: photoLimit,
+            .fullScreenCover(isPresented: $takingPhoto) {
+                CameraPicker { image in Task { await addCameraPhoto(image) } }
+                    .ignoresSafeArea()
+            }
+            .onChange(of: editor.isEditingLink) { _, editing in
+                // One row at a time (the link row also opens by selecting a link).
+                if editing { showsHashtagBar = false; showsAskRow = false; showsPhotoDrawer = false }
+            }
+            .photosPicker(isPresented: $pickingPhotos, selection: libraryItems, maxSelectionCount: photoLimit - cameraItems.count,
                           selectionBehavior: .ordered, matching: .images, preferredItemEncoding: .current)
             .alert("No hashtag suggestions", isPresented: .present($suggestionError)) {
                 Button("OK", role: .cancel) {}
@@ -220,6 +215,35 @@ struct ComposeView: View {
     }
 
     /// The entry's photos: its current one (editing) and those being added.
+    /// The row open from the bar (one at a time), shown in the bar above its buttons so it moves
+    /// with the keyboard; only when opened, so the writing area stays as large as it can.
+    private var openRow: AnyView? {
+        let row: AnyView? = if editor.isEditingLink {
+            AnyView(LinkRow(editor: editor))
+        } else if showsHashtagBar {
+            AnyView(hashtagSuggestions)
+        } else if showsAskRow {
+            AnyView(askRow)
+        } else if showsPhotoDrawer, attachedPhotoCount > 0 {
+            AnyView(photoBar)
+        } else {
+            nil
+        }
+        // A little space between the row and the buttons under it.
+        return row.map { row in AnyView(VStack(spacing: 0) { Divider(); row }.padding(.bottom, 8)) }
+    }
+
+    /// The photo picker's selection: the library photos only. Camera photos keep their places (and
+    /// their share of the limit); newly picked ones go after what's already there.
+    private var libraryItems: Binding<[PhotosPickerItem]> {
+        Binding {
+            photoItems.filter { !cameraItems.contains($0) }
+        } set: { picked in
+            let kept = photoItems.filter { cameraItems.contains($0) || picked.contains($0) }
+            photoItems = kept + picked.filter { !kept.contains($0) }
+        }
+    }
+
     private var attachedPhotoCount: Int { photoItems.count + (existingPhotoURL == nil ? 0 : 1) }
 
     /// The bar's left: Photos (PRO). With none yet it opens the picker; with some it's their stack,
@@ -227,35 +251,66 @@ struct ComposeView: View {
     @ViewBuilder
     private var photosButton: some View {
         if attachedPhotoCount == 0 {
-            Button { pickingPhotos = true } label: {
+            addPhotos {
                 appIcon("slab-images")
                     .frame(width: 40, height: 36)
             }
-            .buttonStyle(.plain)
             .accessibilityLabel("Add Photos")
         } else {
             photoStack
         }
     }
 
-    /// The bar's right: Link (PRO), Tags (shows or hides the hashtag row), then Prompt (the sparkles)
-    /// at the far edge. Each row button is selected while its row is open; one row at a time.
+    /// Add photos: from the library, or (where there's a camera) a menu to take one or choose.
+    @ViewBuilder
+    private func addPhotos(@ViewBuilder label: () -> some View) -> some View {
+        if CameraPicker.isAvailable || showsCameraMenuForTesting {
+            Menu {
+                Button { takingPhoto = CameraPicker.isAvailable } label: { Label("Take Photo", icon: "camera") }
+                Button { pickingPhotos = true } label: { Label("Choose Photos", icon: "slab-images") }
+            } label: {
+                label()
+            }
+            .buttonStyle(.plain)
+        } else {
+            Button { pickingPhotos = true } label: { label() }
+                .buttonStyle(.plain)
+        }
+    }
+
+    /// UI tests: `-DabbleDebugCameraMenu YES` shows the menu on the simulator, which has no camera.
+    private var showsCameraMenuForTesting: Bool {
+        #if DEBUG
+        UserDefaults.standard.bool(forKey: "DabbleDebugCameraMenu")
+        #else
+        false
+        #endif
+    }
+
+    /// The bar's right: Link (PRO; shows or hides the link row), Tags (the hashtag row), then Prompt
+    /// (the question mark) at the far edge. Each row button is selected while its row is open; one row at a time.
     private var tagAndLinkButtons: some View {
         HStack(spacing: 6) {
             if model.me?.mayAddLinks == true {
-                Button { editor.beginLink() } label: {
+                Button {
+                    if editor.isEditingLink { editor.endLink() } else { editor.beginLink() }
+                } label: {
                     appIcon("slab-link")
                         .frame(width: 40, height: 36)
+                        .background(editor.isEditingLink ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Link")
+                .accessibilityAddTraits(editor.isEditingLink ? .isSelected : [])
             }
             Button {
                 showsHashtagBar.toggle()
                 if showsHashtagBar {
                     showsPhotoDrawer = false
                     showsAskRow = false
+                    editor.endLink()
                     Task { recentTags = (try? await model.recentHashtags()) ?? [] }
+                    Task { if allTags.isEmpty { allTags = ((try? await model.allHashtags()) ?? []).map(\.tag) } }
                 }
             } label: {
                 appIcon("slab-tag")
@@ -271,11 +326,12 @@ struct ComposeView: View {
                     if showsAskRow {
                         showsHashtagBar = false
                         showsPhotoDrawer = false
+                        editor.endLink()
                         question = nil
                         Task { await ask() }
                     }
                 } label: {
-                    appIcon("slab-sparkles")
+                    appIcon("slab-question")
                         .frame(width: 40, height: 36)
                         .background(showsAskRow ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
                 }
@@ -292,7 +348,7 @@ struct ComposeView: View {
         let thumbs = Array(photoItems.prefix(3))
         return Button {
             showsPhotoDrawer.toggle()
-            if showsPhotoDrawer { showsHashtagBar = false; showsAskRow = false } // one row at a time
+            if showsPhotoDrawer { showsHashtagBar = false; showsAskRow = false; editor.endLink() } // one row at a time
         } label: {
             HStack(spacing: 8) {
                 ZStack {
@@ -353,13 +409,17 @@ struct ComposeView: View {
         return photos.count == 1 ? "Uploading photo…" : "Uploading photo \(uploadedCount + 1) of \(photos.count)…"
     }
 
-    /// Tags to tap in: a sparkles button (on-device suggestions for what's written, where Apple
-    /// Intelligence is on) first, then its suggestions, then the most recently used tags. A tag
-    /// already in the entry isn't offered again.
+    /// Tags to tap in: Suggest (on-device suggestions for what's written, where Apple Intelligence
+    /// is on) first, then its suggestions and the writer's tags that match a word in the entry
+    /// (both highlighted), then the most recently used tags. A tag already in the entry isn't
+    /// offered again.
     private var hashtagSuggestions: some View {
-        let inEntry = Set(JournalIntelligence.hashtags(in: editor.plainText).map { $0.lowercased() })
+        let text = editor.plainText
+        let inEntry = Set(JournalIntelligence.hashtags(in: text).map { $0.lowercased() })
         var seen = inEntry
-        let tags = (suggestedTags + recentTags).filter { seen.insert($0.lowercased()).inserted }
+        let matching = JournalIntelligence.tags(allTags + recentTags, matchingWordsIn: text)
+        let highlighted = Set((suggestedTags + matching).map { $0.lowercased() })
+        let tags = (suggestedTags + matching + recentTags).filter { seen.insert($0.lowercased()).inserted }
         return ScrollView(.horizontal) {
             HStack(spacing: 8) {
                 if JournalIntelligence.canSuggestHashtags(for: model.me) {
@@ -380,7 +440,7 @@ struct ComposeView: View {
                     }
                     .buttonStyle(.bordered)
                     .buttonBorderShape(.capsule)
-                    .tint(suggestedTags.contains(tag) ? .accentColor : .secondary)
+                    .tint(highlighted.contains(tag.lowercased()) ? .accentColor : .secondary)
                     .accessibilityHint("Adds this hashtag to the entry")
                 }
                 if tags.isEmpty, !isSuggestingTags {
@@ -390,7 +450,7 @@ struct ComposeView: View {
             }
             .font(.subheadline)
             .padding(.horizontal)
-            .padding(.top, 8) // none below: the bar's own space sits under it
+            .padding(.top, 8)
         }
         .scrollIndicators(.hidden)
         // Its own height: a horizontal scroll view would otherwise stretch to share the editor's.
@@ -405,7 +465,7 @@ struct ComposeView: View {
         JournalIntelligence.isEnabled(for: model.me)
     }
 
-    /// One question about the draft (Apple Intelligence, on the device): Add puts it in the entry.
+    /// One question about the draft (Apple Intelligence, on the device): Insert puts it in the entry.
     /// For another, close the row and open it again.
     private var askRow: some View {
         HStack(alignment: .center, spacing: 10) {
@@ -420,7 +480,7 @@ struct ComposeView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .accessibilityIdentifier("AskMeQuestion")
-                Button("Add") {
+                Button("Insert") {
                     editor.addQuestion(question)
                     self.question = nil
                     showsAskRow = false
@@ -486,13 +546,12 @@ struct ComposeView: View {
             HStack(spacing: 10) {
                 if photoItems.count < photoLimit {
                     // The thumbnails' size, in the accent like Suggest.
-                    Button { pickingPhotos = true } label: {
+                    addPhotos {
                         appIcon("slab-images")
                             .foregroundStyle(.white)
                             .frame(width: 56, height: 56)
                             .background(Color.accentColor, in: .rect(cornerRadius: 8))
                     }
-                    .buttonStyle(.plain)
                     .accessibilityLabel("Add More Photos")
                 }
                 if let existingPhotoURL {
@@ -503,7 +562,7 @@ struct ComposeView: View {
                 }
             }
             .padding(.horizontal)
-            .padding(.top, 8) // none below: the bar's own space sits under it
+            .padding(.top, 8)
         }
         .scrollIndicators(.hidden)
         .fixedSize(horizontal: false, vertical: true)
@@ -552,6 +611,7 @@ struct ComposeView: View {
             .clipShape(.rect(cornerRadius: 8))
 
             Button {
+                cameraItems.removeAll { $0 == item }
                 photoItems.removeAll { $0 == item }
             } label: {
                 Image(systemName: "xmark.circle.fill")
@@ -588,9 +648,26 @@ struct ComposeView: View {
     }
     #endif
 
+    /// A photo from the camera joins the picked ones, prepared the same way.
+    private func addCameraPhoto(_ image: UIImage) async {
+        guard photoItems.count < photoLimit else { return }
+        isLoadingPhotos = true
+        defer { isLoadingPhotos = false }
+        let photo = await Task.detached(priority: .userInitiated) {
+            image.jpegData(compressionQuality: 0.95).flatMap { try? PhotoPreparer.prepare($0) }
+        }.value
+        guard let photo else { error = "The photo couldn't be added."; return }
+        let item = PhotosPickerItem(itemIdentifier: "camera-\(UUID().uuidString)")
+        prepared[item] = photo
+        previews[item] = UIImage(data: photo.thumbnail).map(Image.init(uiImage:))
+        cameraItems.append(item)
+        photoItems.append(item)
+    }
+
     /// Prepares newly picked photos (downscale, strip location) and forgets removed ones.
     private func preparePhotos() async {
         let current = Set(photoItems)
+        cameraItems.removeAll { !current.contains($0) }
         prepared = prepared.filter { current.contains($0.key) }
         previews = previews.filter { current.contains($0.key) }
         let pending = photoItems.filter { prepared[$0] == nil }
@@ -646,8 +723,15 @@ struct ComposeView: View {
         }
     }
 
+    /// Discarding is final: nothing still pending (or fired while the sheet closes) saves it again.
+    private func discardDraft() {
+        isDiscarded = true
+        draftSave?.cancel()
+        DraftStore.clear(draftKey)
+    }
+
     private func saveDraftNow() {
-        guard !isSaving, editor.isDirty || restoredDraft != nil else { return }
+        guard !isSaving, !isDiscarded, editor.isDirty || restoredDraft != nil else { return }
         let blocks = editor.blocks
         if blocks.isEmpty {
             DraftStore.clear(draftKey)
@@ -691,5 +775,90 @@ private extension View {
             .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(.white.opacity(0.8), lineWidth: 1.5))
             .rotationEffect(.degrees(Double(index) * 7 - 7))
             .offset(x: CGFloat(index) * 5 - 5)
+    }
+}
+
+/// The link row: the address, with Insert (or Update for a link that's there, which can also be
+/// removed with the trash, at the far right). Opened from the Link button it takes the keyboard; opened by selecting
+/// a link, the selection stays until the address is tapped.
+private struct LinkRow: View {
+    @Bindable var editor: RichTextEditorModel
+    @FocusState private var focused: Bool
+
+    private var canApply: Bool { RichTextEditorModel.normalizedURL(editor.linkText) != nil }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            TextField("https://", text: $editor.linkText)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+                .keyboardType(.URL)
+                .submitLabel(.done)
+                .focused($focused)
+                .onSubmit(apply)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(Color.secondary.opacity(0.12), in: .capsule)
+                .accessibilityLabel("Link address")
+            Button(editor.isExistingLink ? "Update" : "Insert", action: apply)
+                .buttonStyle(.borderedProminent)
+                .buttonBorderShape(.capsule)
+                .disabled(!canApply)
+            if editor.isExistingLink {
+                Button {
+                    editor.removeLink()
+                    editor.focus()
+                } label: {
+                    appIcon("slab-trash")
+                        .foregroundStyle(Color.deleteRed)
+                        .frame(width: 36, height: 32)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Remove Link")
+            }
+        }
+        .font(.subheadline)
+        .padding(.horizontal)
+        .padding(.top, 8)
+        .onAppear { focused = !editor.linkOpenedBySelection }
+    }
+
+    private func apply() {
+        guard canApply else { return }
+        editor.applyLink()
+        editor.focus()
+    }
+}
+
+/// The camera, for one photo.
+private struct CameraPicker: UIViewControllerRepresentable {
+    static var isAvailable: Bool { UIImagePickerController.isSourceTypeAvailable(.camera) }
+
+    let onPhoto: (UIImage) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = .camera
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ picker: UIImagePickerController, context: Context) {}
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let parent: CameraPicker
+        init(_ parent: CameraPicker) { self.parent = parent }
+
+        func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            if let image = info[.originalImage] as? UIImage { parent.onPhoto(image) }
+            parent.dismiss()
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            parent.dismiss()
+        }
     }
 }
