@@ -51,7 +51,7 @@ You can now connect your journal to an AI assistant like Claude or ChatGPT. Then
 
 I've been using it to spot patterns in my own behavior, and it's been wildly helpful. Advice lands differently when it has years of your own words behind it.
 
-It's part of PRO. It only works on your own journal, only after you say yes, and you can turn it off anytime.
+It's part of PRO ($4/mo). It securely accesses your own journal, only when you want it to, and you can turn it off anytime.
 
 ## A more private journal
 
@@ -82,7 +82,7 @@ PRO is $4 a month or $40 a year. It lets you choose which days your emails arriv
 {{/rewind_free,whats_new_free}}
 ## Thank you
 
-Dabble Me has no investors and no ads. It exists because of its paying users, which is why I work to keep it secure and running for everyone who still wants it. My wife and I are two of them.
+Dabble Me has no investors and no ads. It exists because of its paying users, which is why I work to keep it secure and running for all of us that still want a place to remember our days.
 
 If something is broken, confusing, or missing, reply to this email. It comes straight to me.
 
