@@ -1,6 +1,6 @@
 audience: pro
 year: 2026
 variants:
-  - letter: active
+  - name: active
     min_entries_in_year: 2
-  - letter: quiet
+  - name: quiet

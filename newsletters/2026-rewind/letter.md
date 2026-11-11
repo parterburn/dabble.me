@@ -1,14 +1,20 @@
 ---
-subject: Your 2026 Rewind is ready
-preview: Plus a new look, an iPhone app, and encryption for everything you've written.
+subject:
+  rewind: Your 2026 Rewind is ready
+  whats_new: What's new in Dabble Me
+preview:
+  rewind: Plus a new look, an iPhone app, and encryption for everything you've written.
+  whats_new: A new look, an iPhone app, and encryption for everything you've written.
 ---
 
 Hi {{first_name}},
 
-Your 2026 Rewind is ready: **[dabble.me/rewind/2026]({{rewind_url}})**
+{{#rewind}}
+You wrote {{entry_count}} entries in 2026, and your Rewind is ready: **[dabble.me/rewind/2026]({{rewind_url}})**
 
 It's your year in entries: how many days you wrote, the words you leaned on most, and how 2026 compares with the years before it. If you used to know this page as Year in Review, it's the same idea with a better name.
 
+{{/rewind}}
 Dabble Me turned twelve this year, and it changed more in 2026 than in the previous several years combined. Here is what's new.
 
 ## A new look

@@ -31,9 +31,7 @@ class Newsletter
     # Reasons this newsletter must not go out yet. Empty when it is ready.
     def blockers
       blockers = []
-      @newsletter.variants.each do |variant|
-        blockers << "#{variant.name}.md still has a TODO in it" if @newsletter.letter(variant.name).unfinished?
-      end
+      blockers << "letter.md still has a TODO in it" if @newsletter.letter.unfinished?
       blockers << "MAILING_ADDRESS is not set; the footer needs a postal address" if ENV["MAILING_ADDRESS"].blank?
       blockers
     end

@@ -38,24 +38,48 @@ RSpec.describe Newsletter do
   end
 
   describe Newsletter::Letter do
-    it 'fills placeholders and renders HTML and plain text' do
+    it 'fills placeholders, keeps only the blocks for the variant, and renders HTML and plain text' do
       write_entries(pro, 3)
-      rendered = newsletter.letter('active').render(newsletter.values_for(pro))
+      rendered = newsletter.letter.render(newsletter.values_for(pro), variant: 'active')
 
       expect(rendered.subject).to eq('Your 2026 in 3 entries')
       expect(rendered.preview).to eq('A look back.')
-      expect(rendered.html).to include('Hi Ann,', '<a href="https://test/rewind/2026">your rewind</a>', '<h2>Thanks</h2>', '<li>one</li>')
+      expect(rendered.html).to include('Hi Ann,', '<a href="https://test/rewind/2026">your rewind</a>', 'Here is what is new.', '<h2>Thanks</h2>', '<li>one</li>')
+      expect(rendered.html).not_to include('when you like', '{{')
       expect(rendered.text).to include('See your rewind (https://test/rewind/2026).', "Thanks\n", '- one')
       expect(rendered.text).not_to include('**', '##')
     end
 
+    it 'gives the other variant its own subject and blocks, with no gap where one was dropped' do
+      rendered = newsletter.letter.render(newsletter.values_for(pro), variant: 'quiet')
+
+      expect(rendered.subject).to eq('What is new')
+      expect(rendered.markdown).to start_with("Hi Ann,\n\nHere is what is new.\n\n[Write](https://test/write) when you like.\n\n## Thanks")
+      expect(rendered.html).not_to include('your rewind')
+    end
+
     it 'greets someone with no first name' do
       nameless = FactoryBot.create(:user, plan: 'PRO Monthly PayHere', first_name: nil)
-      expect(newsletter.letter('quiet').render(newsletter.values_for(nameless)).html).to include('Hi there,')
+      expect(newsletter.letter.render(newsletter.values_for(nameless), variant: 'quiet').html).to include('Hi there,')
     end
 
     it 'fails on a placeholder nothing fills' do
-      expect { newsletter.letter('active').render('first_name' => 'Ann') }.to raise_error(Newsletter::Error, /nothing fills/)
+      expect { newsletter.letter.render({ 'first_name' => 'Ann' }, variant: 'active') }.to raise_error(Newsletter::Error, /nothing fills/)
+    end
+
+    def letter_from(text)
+      path = Pathname(Dir.mktmpdir).join('letter.md')
+      path.write(text)
+      described_class.new(path, %w[active quiet])
+    end
+
+    it 'refuses a block that names no variant, or is left open' do
+      expect { letter_from("---\nsubject: Hi\n---\n\n{{#actve}}\nx\n{{/actve}}\n") }.to raise_error(Newsletter::Error, /names no variant/)
+      expect { letter_from("---\nsubject: Hi\n---\n\n{{#active}}\nx\n") }.to raise_error(Newsletter::Error, /no matching line/)
+    end
+
+    it 'refuses a subject that misses a variant' do
+      expect { letter_from("---\nsubject:\n  active: Hi\n---\n\nBody\n") }.to raise_error(Newsletter::Error, /every variant/)
     end
   end
 
@@ -96,6 +120,23 @@ RSpec.describe Newsletter do
     end
   end
 
+  it 'writes the 2026 Rewind with the entry count for writers and without the Rewind for everyone else' do
+    stub_const('Newsletter::ROOT', Rails.root.join('newsletters'))
+    rewind = described_class.find('2026-rewind')
+    write_entries(pro, 20)
+    opening = 'Dabble Me turned twelve this year, and it changed more in 2026 than in the previous several years combined. Here is what\'s new.'
+
+    writer = rewind.letter.render(rewind.values_for(pro), variant: rewind.variant_for(pro))
+    expect(writer.subject).to eq('Your 2026 Rewind is ready')
+    expect(writer.text).to include('You wrote 20 entries in 2026, and your Rewind is ready: dabble.me/rewind/2026 (https://test/rewind/2026)', opening)
+
+    other = FactoryBot.create(:user, plan: 'PRO Forever', first_name: 'Bo')
+    quiet = rewind.letter.render(rewind.values_for(other), variant: rewind.variant_for(other))
+    expect(quiet.subject).to eq("What's new in Dabble Me")
+    expect(quiet.markdown).to start_with("Hi Bo,\n\n#{opening}\n\n## A new look")
+    expect(quiet.text).not_to include('Rewind is ready', 'You wrote')
+  end
+
   describe 'the newsletters in this repository' do
     before { stub_const('Newsletter::ROOT', Rails.root.join('newsletters')) }
 
@@ -103,7 +144,7 @@ RSpec.describe Newsletter do
       it "#{directory.basename} loads and every letter renders" do
         real = Newsletter.find(directory.basename.to_s)
         real.variants.each do |variant|
-          rendered = real.letter(variant.name).render(real.values_for(pro))
+          rendered = real.letter.render(real.values_for(pro), variant: variant.name)
           expect(rendered.subject).to be_present
           expect(rendered.html).to include('Hi Ann,')
           expect(rendered.html).not_to include('{{')

@@ -16,7 +16,7 @@ RSpec.describe NewsletterMailer do
 
     html = mail.html_part.body.to_s
     text = mail.text_part.body.to_s
-    expect(html).to include('Hi Ann,', 'A look back.', 'Unsubscribe from updates', '1 Main St, Denver, CO')
+    expect(html).to include('Hi Ann,', 'A look back.', 'your rewind', 'Unsubscribe from updates', '1 Main St, Denver, CO')
     expect(text).to include('Hi Ann,', 'Unsubscribe from updates: http', '1 Main St, Denver, CO')
     expect(text).not_to include('&amp;')
   end

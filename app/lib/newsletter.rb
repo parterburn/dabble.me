@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # A newsletter is a folder under newsletters/: a newsletter.yml naming who it
-# goes to and which letter each person gets, plus one Markdown file per letter.
+# goes to and the variants of the letter, plus the letter itself, letter.md.
 # See newsletters/README.md.
 class Newsletter
   class Error < StandardError; end
@@ -29,6 +29,8 @@ class Newsletter
     raise Error, "#{key}: audience must be \"pro\"" unless @config["audience"] == "pro"
     raise Error, "#{key}: list at least one variant" if variants.empty?
     raise Error, "#{key}: the last variant must have no conditions, so everyone gets a letter" if variants.last.min_entries_in_year
+
+    letter
   end
 
   # The year whose entries are counted for `min_entries_in_year`.
@@ -38,13 +40,12 @@ class Newsletter
 
   def variants
     @variants ||= Array(@config["variants"]).map do |variant|
-      Variant.new(name: variant.fetch("letter"), min_entries_in_year: variant["min_entries_in_year"])
+      Variant.new(name: variant.fetch("name"), min_entries_in_year: variant["min_entries_in_year"])
     end
   end
 
-  def letter(variant_name)
-    @letters ||= {}
-    @letters[variant_name] ||= Letter.new(@directory.join("#{variant_name}.md"))
+  def letter
+    @letter ||= Letter.new(@directory.join("letter.md"), variants.map(&:name))
   end
 
   # Everyone who should get this newsletter: PRO, not deleted, and still

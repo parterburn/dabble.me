@@ -1,6 +1,6 @@
 # Sending the letters under newsletters/. See newsletters/README.md.
 namespace :newsletter do
-  desc "Email every letter of a newsletter to one account as a preview: rake 'newsletter:preview[2026-rewind,you@example.com]'"
+  desc "Email every variant of a newsletter to one account as a preview: rake 'newsletter:preview[2026-rewind,you@example.com]'"
   task :preview, %i[key email] => :environment do |_task, args|
     newsletter = Newsletter.find(args[:key])
     user = User.find_by(email: args[:email].to_s.downcase)
@@ -8,7 +8,7 @@ namespace :newsletter do
 
     newsletter.variants.each do |variant|
       NewsletterMailer.letter(user, newsletter.key, variant.name, preview: true).deliver_now
-      puts "Sent the #{variant.name} letter to #{user.email}."
+      puts "Sent the #{variant.name} variant to #{user.email}."
     end
   end
 

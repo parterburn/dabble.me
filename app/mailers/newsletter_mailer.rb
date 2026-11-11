@@ -4,7 +4,7 @@ class NewsletterMailer < ActionMailer::Base
 
   def letter(user, newsletter_key, variant, preview: false)
     newsletter = Newsletter.find(newsletter_key)
-    @rendered = newsletter.letter(variant).render(newsletter.values_for(user))
+    @rendered = newsletter.letter.render(newsletter.values_for(user), variant: variant)
     @unsubscribe_url = email_updates_url(token: user.email_settings_token)
     @settings_url = settings_url(token: user.email_settings_token)
     @postal_address = ENV["MAILING_ADDRESS"]

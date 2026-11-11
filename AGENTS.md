@@ -105,10 +105,10 @@ Rake tasks (each takes `USER_ID=` for one account and `PAUSE=` seconds between b
 
 ### Newsletters
 
-Letters to subscribers live in `newsletters/<name>/` as Markdown, with a `newsletter.yml` choosing which letter each person gets (`newsletters/README.md` has the format). `Newsletter` (`app/lib/newsletter.rb`) loads them, `NewsletterMailer` sends one, and `NewsletterDeliveryJob` sends a person a newsletter at most once, recorded in `newsletter_deliveries`.
+Letters to subscribers live in `newsletters/<name>/`: one Markdown `letter.md`, and a `newsletter.yml` naming its variants and who gets which (`newsletters/README.md` has the format). `Newsletter` (`app/lib/newsletter.rb`) loads them, `NewsletterMailer` sends one, and `NewsletterDeliveryJob` sends a person a newsletter at most once, recorded in `newsletter_deliveries`.
 
 - Audience is PRO accounts with `users.send_updates` true ("Send me updates about Dabble Me" in email settings). Journal prompts (`frequency`) are a separate setting.
-- `rake 'newsletter:preview[name,email]'` emails every letter to one account. `rake 'newsletter:send[name]'` prints who would get what and sends only with `SEND=yes`. A send is refused while a letter contains `TODO` or `MAILING_ADDRESS` is unset.
+- `rake 'newsletter:preview[name,email]'` emails every variant to one account. `rake 'newsletter:send[name]'` prints who would get what and sends only with `SEND=yes`. A send is refused while a letter contains `TODO` or `MAILING_ADDRESS` is unset.
 - The unsubscribe link (`/updates/unsubscribe`, `EmailUpdatesController`) takes the same signed token as the settings links and accepts a one-click POST without CSRF.
 
 ### iOS app
