@@ -198,7 +198,6 @@ GEM
     erubi (1.13.1)
     et-orbi (1.4.0)
       tzinfo
-    event_stream_parser (1.0.0)
     excon (1.10.0)
     execjs (2.7.0)
     factory_bot (6.5.0)
@@ -216,6 +215,8 @@ GEM
       multipart-post (~> 2.0)
     faraday-net_http (3.4.4)
       net-http (~> 0.5)
+    faraday-retry (2.4.0)
+      faraday (~> 2.0)
     fastimage (2.4.3)
     ffi (1.17.4)
     ffi (1.17.4-arm64-darwin)
@@ -474,14 +475,20 @@ GEM
     rspec-retry (0.6.2)
       rspec-core (> 3.3)
     rspec-support (3.13.7)
-    ruby-openai (8.1.0)
-      event_stream_parser (>= 0.3.0, < 2.0.0)
-      faraday (>= 1)
-      faraday-multipart (>= 1)
     ruby-statistics (3.0.0)
     ruby-vips (2.2.3)
       ffi (~> 1.12)
       logger
+    ruby_llm (2.1.1)
+      base64
+      faraday (>= 1.10.0, != 2.0.0)
+      faraday-multipart (>= 1)
+      faraday-net_http (>= 1)
+      faraday-retry (>= 1)
+      json (< 4)
+      marcel (>= 1.0, < 3)
+      schematist (~> 1.1)
+      zeitwerk (~> 2)
     rubyzip (3.4.0)
     safe_yaml (1.0.5)
     safety_net_attestation (0.5.0)
@@ -494,6 +501,7 @@ GEM
       sprockets (> 3.0)
       sprockets-rails
       tilt
+    schematist (1.1.0)
     securerandom (0.4.1)
     selenium-webdriver (4.39.0)
       base64 (~> 0.2)
@@ -660,8 +668,8 @@ DEPENDENCIES
   rinku
   rspec-rails (~> 8.0)
   rspec-retry
-  ruby-openai
   ruby-vips
+  ruby_llm (~> 2.1.1)
   rubyzip (~> 3.4)
   sassc-rails
   selenium-webdriver (>= 4.20)

@@ -1,4 +1,4 @@
-<% can_reflect = current_user.can_ai? && entry.body.present? %>
+<% can_reflect = current_user.can_ai? && entry.body.present? && Entry::AiAssistant.configured? %>
 <% cache [entry, current_user.is_pro?, can_reflect, @search.present?, @hashtags.present?] do %>
   <div class="center s-entry-header">
     <% if entry.exactly_past_years(current_user, @user_today) %>

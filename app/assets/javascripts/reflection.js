@@ -40,8 +40,8 @@
     body.innerHTML =
       '<div class="s-reflection-intro">' +
         '<p>Get a short reflection on this entry: a note on how it feels, an observation or two, and one question to think about.</p>' +
-        '<p>To write it, Dabble Me sends this entry to OpenAI, with its photo if it has one and short excerpts of a few related entries for context. ' +
-        'The reflection is shown here and not saved, and OpenAI doesn\'t use your entries to train its models.</p>' +
+        '<p>To write it, Dabble Me sends this entry to Anthropic, the maker of Claude, with its photo if it has one and short excerpts of a few related entries for context. ' +
+        'The reflection is shown here and not saved, and Anthropic doesn\'t use your entries to train its models.</p>' +
         '<button type="button" class="btn btn-primary j-generate-reflection" autofocus>' +
           '<span class="slab-icon slab-icon--sparkles" aria-hidden="true"></span> Generate Reflection' +
         '</button>' +

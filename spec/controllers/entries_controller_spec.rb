@@ -55,34 +55,36 @@ RSpec.describe EntriesController, type: :controller do
   end
 
   describe 'reflection' do
-    let(:responses_url) { 'https://api.openai.com/v1/responses' }
-    let(:ai_entry) { FactoryBot.create(:entry, user: paid_user_ai, body: '<p>Ran my first mile today.</p>', date: 2.days.ago) }
+    include_context 'reflections configured'
 
-    def stub_openai(text)
-      stub_request(:post, responses_url).to_return(
-        status: 200,
-        headers: { 'Content-Type' => 'application/json' },
-        body: { output: [{ type: 'reasoning', summary: [] }, { type: 'message', content: [{ type: 'output_text', text: text }] }] }.to_json
-      )
-    end
+    let(:claude_url) { ReflectionHelpers::CLAUDE_MESSAGES_URL }
+    let(:ai_entry) { FactoryBot.create(:entry, user: paid_user_ai, body: '<p>Ran my first mile today.</p>', date: 2.days.ago) }
 
     it 'is not available without AI enabled' do
       sign_in user
       post :reflection, params: { id: entry.id }
       expect(response).to have_http_status(:forbidden)
-      expect(WebMock).not_to have_requested(:post, responses_url)
+      expect(WebMock).not_to have_requested(:post, claude_url)
     end
 
     it "won't reflect on someone else's entry" do
       sign_in paid_user_ai
       post :reflection, params: { id: entry.id }
       expect(response).to redirect_to(entries_path)
-      expect(WebMock).not_to have_requested(:post, responses_url)
+      expect(WebMock).not_to have_requested(:post, claude_url)
+    end
+
+    it 'is off when no reflection model is set' do
+      ENV['REFLECTION_MODEL'] = nil
+      sign_in paid_user_ai
+      post :reflection, params: { id: ai_entry.id }
+      expect(response).to have_http_status(:service_unavailable)
+      expect(WebMock).not_to have_requested(:post, claude_url)
     end
 
     it 'returns the reflection as sanitized HTML and leaves the entry alone' do
       sign_in paid_user_ai
-      stub_openai("That's a milestone.\n\n**What made today the day it clicked?** <script>alert(1)</script>")
+      stub_claude("That's a milestone.\n\n**What made today the day it clicked?** <script>alert(1)</script>")
 
       expect { post :reflection, params: { id: ai_entry.id } }.not_to(change { ai_entry.reload.body })
 
@@ -90,21 +92,23 @@ RSpec.describe EntriesController, type: :controller do
       html = JSON.parse(response.body)['html']
       expect(html).to include('<strong>What made today the day it clicked?</strong>')
       expect(html).not_to include('<script')
-      expect(WebMock).to(have_requested(:post, responses_url).with do |req|
-        body = JSON.parse(req.body)
-        body['store'] == false && !body.key?('tools') && body['input'].last['content'].include?('Ran my first mile today.')
-      end)
+      body = claude_request_body
+      expect(body['model']).to eq('claude-opus-5-5')
+      expect(body).not_to have_key('tools')
+      expect(claude_message_texts(body).last).to include('Ran my first mile today.')
     end
 
-    it 'says so when OpenAI fails' do
+    it 'says so when Claude fails, without retrying' do
       sign_in paid_user_ai
       allow(Sentry).to receive(:capture_exception)
-      stub_request(:post, responses_url).to_return(status: 500, body: '{}')
+      stub_claude('', status: 529)
 
       post :reflection, params: { id: ai_entry.id }
 
       expect(response).to have_http_status(:bad_gateway)
-      expect(JSON.parse(response.body)['error']).to be_present
+      expect(JSON.parse(response.body)['error']).to eq("The AI service didn't respond. Try again in a minute.")
+      expect(Sentry).to have_received(:capture_exception).with(kind_of(RubyLLM::Error), level: :info)
+      expect(WebMock).to have_requested(:post, claude_url).once
     end
   end
 
