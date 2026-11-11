@@ -149,6 +149,41 @@
         });
     },
 
+    // Confirms a passkey for the signed-in account (the admin check on
+    // /passkeys/verification/new). Resolves true once the browser is sent on,
+    // false if the prompt was dismissed; rejects with { status, errors } when
+    // the server refused the passkey.
+    verify: function() {
+      return getJSON("/passkeys/verification/options")
+        .then(function(options) {
+          options.challenge = webauthn.bufferDecode(options.challenge);
+          options.allowCredentials = credentialDescriptors(options.allowCredentials || options.allow_credentials);
+          delete options.allow_credentials;
+          return navigator.credentials.get({ publicKey: options });
+        })
+        .then(function(assertion) {
+          return postJSON("/passkeys/verification", {
+            id: assertion.id,
+            rawId: webauthn.bufferEncode(assertion.rawId),
+            type: assertion.type,
+            response: {
+              authenticatorData: webauthn.bufferEncode(assertion.response.authenticatorData),
+              clientDataJSON: webauthn.bufferEncode(assertion.response.clientDataJSON),
+              signature: webauthn.bufferEncode(assertion.response.signature),
+              userHandle: assertion.response.userHandle ? webauthn.bufferEncode(assertion.response.userHandle) : null
+            }
+          });
+        })
+        .then(function(response) {
+          window.location.href = response.redirect_url;
+          return true;
+        })
+        .catch(function(err) {
+          if (isCancel(err)) { return false; }
+          throw err;
+        });
+    },
+
     // Wires up passkey sign-in on a page: email-field autofill where the
     // browser supports it, plus a button that opens the passkey dialog.
     // config.buttonId, config.rememberMe (function), config.autofill (boolean)

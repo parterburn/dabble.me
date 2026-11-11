@@ -24,7 +24,7 @@ RSpec.describe AdminController, type: :controller do
     end
 
     it 'should show Admin Users to superusers' do
-      sign_in superuser
+      sign_in_admin superuser
       get :users
       expect(response.status).to eq 200
       expect(response.body).to have_content('Admin Users')
@@ -32,7 +32,7 @@ RSpec.describe AdminController, type: :controller do
 
     it "links each user to their edit page, and a paid user's amount to their payments" do
       Payment.create!(user: paid_user, amount: 3.0, comments: 'Monthly', date: Time.now)
-      sign_in superuser
+      sign_in_admin superuser
       get :users
       expect(response.body).to have_link(href: edit_admin_user_path(user))
       expect(response.body).to have_link('$3.00', href: payments_path(user_id: paid_user.id))
@@ -41,7 +41,7 @@ RSpec.describe AdminController, type: :controller do
     context 'filtering' do
       let!(:zora) { FactoryBot.create(:user, first_name: 'Zorabel', last_name: 'Quenneville', email: 'zora@example.com') }
 
-      before { sign_in superuser }
+      before { sign_in_admin superuser }
 
       it 'finds users by first or last name' do
         get :users, params: { name: 'quenneville ZORA' }
@@ -64,7 +64,7 @@ RSpec.describe AdminController, type: :controller do
   end
 
   describe 'photos' do
-    before { sign_in superuser }
+    before { sign_in_admin superuser }
 
     def photo_entries(count, date: Date.new(2026, 1, 1))
       Entry.insert_all(Array.new(count) { |i| { user_id: paid_user.id, date: date, image: "photo#{i}.jpg" } })
@@ -94,7 +94,7 @@ RSpec.describe AdminController, type: :controller do
 
   describe 'AI cost' do
     before do
-      sign_in superuser
+      sign_in_admin superuser
       AiUsage.create!(user: paid_user, model: 'claude-opus-5-5', input_tokens: 3000, output_tokens: 400, cost_usd: 1.2)
       AiUsage.create!(user: paid_user, model: 'claude-sonnet-5-5', input_tokens: 3000, output_tokens: 400, cost_usd: 0.05)
       AiUsage.create!(user: user, model: 'claude-opus-5-5', input_tokens: 10, output_tokens: 5, cost_usd: 0.0002)
@@ -124,7 +124,7 @@ RSpec.describe AdminController, type: :controller do
     end
 
     it "shows the user's settings, plan and a password reset button" do
-      sign_in superuser
+      sign_in_admin superuser
       get :edit_user, params: { id: paid_user.id }
       expect(response.status).to eq 200
       expect(response.body).to have_field('user_email', with: paid_user.email)
@@ -145,7 +145,7 @@ RSpec.describe AdminController, type: :controller do
       }
     end
 
-    before { sign_in superuser }
+    before { sign_in_admin superuser }
 
     it 'saves the basic settings and plan' do
       patch :update_user, params: params
@@ -196,7 +196,7 @@ RSpec.describe AdminController, type: :controller do
       post :create_ignored_email_image, params: { id: id, ignored_email_image: { kind: kind, value: value } }
     end
 
-    before { sign_in superuser }
+    before { sign_in_admin superuser }
 
     it "lists the user's rules on their page, with a form to add one" do
       IgnoredEmailImage.create!(user: paid_user, kind: "filename", pattern: "b_logo.png")
@@ -266,7 +266,7 @@ RSpec.describe AdminController, type: :controller do
     include ActiveJob::TestHelper
 
     it 'emails the user a reset link' do
-      sign_in superuser
+      sign_in_admin superuser
       expect { post :send_password_reset, params: { id: paid_user.id } }
         .to have_enqueued_mail(Devise::Mailer, :reset_password_instructions)
       expect(paid_user.reload.reset_password_token).to be_present
@@ -297,7 +297,7 @@ RSpec.describe AdminController, type: :controller do
     end
 
     it 'should show Admin Stats to superusers' do
-      sign_in superuser
+      sign_in_admin superuser
       get :stats
       expect(response.status).to eq 200
       expect(response.body).to have_content('Admin Stats')
@@ -311,7 +311,7 @@ RSpec.describe AdminController, type: :controller do
 
     it 'does not call Mailgun while rendering the page' do
       expect(BusinessMetrics::MailgunStats).not_to receive(:fetch)
-      sign_in superuser
+      sign_in_admin superuser
       get :stats
       expect(response.status).to eq 200
     end
@@ -331,7 +331,7 @@ RSpec.describe AdminController, type: :controller do
     end
 
     it 'snapshots metrics for superusers' do
-      sign_in superuser
+      sign_in_admin superuser
       expect { post :capture_stats }.to change(BusinessMetricSnapshot, :count).by(1)
       expect(BusinessMetricSnapshot.last.captured_on).to eq(Date.current)
       expect(response).to redirect_to(admin_stats_path)

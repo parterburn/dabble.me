@@ -19,8 +19,12 @@ Doorkeeper.configure do
     end
   end
 
+  # /oauth/applications. Doorkeeper's controllers inherit ApplicationController,
+  # so the admin passkey check (require_admin_passkey) also applies here.
   admin_authenticator do
-    if user_signed_in? && current_user.admin?
+    if !CloudflareAccess.allowed?(request)
+      head :not_found
+    elsif user_signed_in? && current_user.admin?
       # allow Doorkeeper admin UI
     else
       redirect_to(new_user_session_url)

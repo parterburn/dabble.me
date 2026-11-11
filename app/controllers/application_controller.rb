@@ -6,6 +6,7 @@ class ApplicationController < ActionController::Base
   before_action :set_user_today
   before_action :configure_permitted_parameters, if: :devise_controller?
   before_action :identify_current_user_to_sentry
+  before_action :require_admin_passkey
   after_action :set_webmcp_discovery_headers
   helper_method :webmcp_catalog
 
@@ -53,6 +54,41 @@ class ApplicationController < ActionController::Base
 
   def js_action
     @js_action = [controller_path.camelize.gsub('::', '_'), action_name].join('_')
+  end
+
+  # Admin sessions need a passkey check every AdminAccess::PASSKEY_FRESHNESS,
+  # whichever way the admin signed in. An admin without a passkey can only
+  # reach the page that adds one.
+  def require_admin_passkey
+    return unless user_signed_in? && AdminAccess.passkey_required?(current_user)
+    return if AdminAccess.passkey_fresh?(session, current_user)
+    return if admin_passkey_exempt?
+
+    has_passkey = current_user.webauthn_credentials.exists?
+    return if !has_passkey && adding_first_passkey?
+
+    AdminAccess.remember_return_to!(session, request.fullpath) if request.get? && request.format.html?
+
+    respond_to do |format|
+      format.html do
+        if has_passkey
+          redirect_to new_passkeys_verification_path
+        else
+          redirect_to security_path, alert: "Admin accounts need a passkey. Add one to continue."
+        end
+      end
+      format.any { render json: { errors: ["Confirm your passkey to continue."] }, status: :forbidden }
+    end
+  end
+
+  def admin_passkey_exempt?
+    controller_path == "passkeys/verifications" ||
+      (controller_path == "sessions" && action_name == "destroy")
+  end
+
+  def adding_first_passkey?
+    controller_path == "passkeys/registrations" ||
+      (controller_path == "registrations" && action_name == "security")
   end
 
   def handle_timeout(exception)

@@ -42,6 +42,7 @@
 @source "../../views/payments/*.html.erb";
 @source "../../views/inspirations/*.html.erb";
 @source "../../views/kaminari/tw/*.html.erb";
+@source "../../views/passkeys/verifications/*.html.erb";
 
 /* The marketing site's palette and fonts (marketing.tailwind.css). */
 @theme {
