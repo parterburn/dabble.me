@@ -179,8 +179,10 @@ RSpec.describe Newsletter do
     expect(plain.text).to include('See it for yourself: write a line about today (https://test/write)', 'Subscribe to PRO (https://test/subscribe)')
     expect(plain.text).not_to include('You wrote')
     letters = [writer, quiet, waiting, plain]
+    expect(rewind.letter).not_to be_unfinished
 
     letters.each do |letter|
+      expect(letter.html).to include('<a href="https://testflight.apple.com/join/mYj4vrFZ">Join the beta on TestFlight</a>')
       expect(letter.html).to include('Paul Arterburn<br>', 'founder/maker of dabble.me<br>', '<a href="https://x.com/parterburn">x.com/parterburn</a>')
       expect(letter.text).to end_with("Paul Arterburn\nfounder/maker of dabble.me\nx.com/parterburn (https://x.com/parterburn)")
     end

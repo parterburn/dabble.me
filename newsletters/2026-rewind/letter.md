@@ -39,7 +39,7 @@ Nothing moved that you rely on. The daily email still asks how your day went, an
 
 ## An iPhone app
 
-There is now a Dabble Me app for iPhone and iPad. [Get it on the App Store](TODO-app-store-link)
+There is now a Dabble Me app for iPhone and iPad, in beta. [Join the beta on TestFlight](https://testflight.apple.com/join/mYj4vrFZ)
 
 It opens on Today, with your entry for the day and what you wrote on this date in past years. You can write with photos straight from the camera, search your whole journal, and scrub through your timeline by month. There's a Home Screen widget, Face ID lock, and your Rewind and stats are built in.
 
