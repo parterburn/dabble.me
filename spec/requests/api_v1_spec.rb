@@ -58,6 +58,16 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       expect(json["today"]).to match(/\A\d{4}-\d{2}-\d{2}\z/)
     end
 
+    it "gives the full name when one is set" do
+      free_user.update!(first_name: "Sam", last_name: "Rivera")
+      get "/api/v1/me", headers: auth(free_user)
+      expect(json).to include("first_name" => "Sam", "name" => "Sam Rivera")
+
+      free_user.update!(first_name: nil, last_name: nil)
+      get "/api/v1/me", headers: auth(free_user)
+      expect(json["name"]).to be_nil
+    end
+
     it "describes a PRO account" do
       get "/api/v1/me", headers: auth(pro_user)
       expect(json).to include("plan" => "pro", "can_write" => true, "can_add_photos" => true, "can_edit" => true, "can_search" => true,

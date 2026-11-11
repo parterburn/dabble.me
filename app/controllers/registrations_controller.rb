@@ -109,6 +109,7 @@ class RegistrationsController < Devise::RegistrationsController
       user.frequency = params[:frequency].select { |day, value| value == "1" }.keys.map { |day| day[0..2] }
     elsif params[:unsub_all].present?
       user.frequency = []
+      user.send_updates = false
     end
 
     # Add validation for send_time
@@ -121,6 +122,7 @@ class RegistrationsController < Devise::RegistrationsController
     end
 
     prefs = devise_parameter_sanitizer.sanitize(:preferences).except(:email, :password, :password_confirmation, :current_password)
+    prefs = prefs.except(:send_updates) if params[:unsub_all].present?
     if user.update_without_password(prefs)
       if user.frequency.present?
         set_flash_message :notice, :updated

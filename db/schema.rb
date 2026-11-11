@@ -141,6 +141,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_11_030000) do
     t.index ["user_id"], name: "index_mcp_tool_invocations_on_user_id"
   end
 
+  create_table "newsletter_deliveries", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "newsletter", null: false
+    t.string "variant", null: false
+    t.datetime "created_at", null: false
+    t.index ["newsletter"], name: "index_newsletter_deliveries_on_newsletter"
+    t.index ["user_id", "newsletter"], name: "index_newsletter_deliveries_on_user_id_and_newsletter", unique: true
+  end
+
   create_table "oauth_access_grants", force: :cascade do |t|
     t.bigint "resource_owner_id", null: false
     t.bigint "application_id", null: false
@@ -249,6 +258,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_11_030000) do
     t.datetime "otp_challenge_expires", precision: nil
     t.datetime "deleted_at", precision: nil
     t.string "image_key", null: false
+    t.boolean "send_updates", default: true, null: false
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["image_key"], name: "index_users_on_image_key", unique: true
     t.index ["otp_challenge_expires"], name: "index_users_on_otp_challenge_expires"
@@ -273,6 +283,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_11_030000) do
   add_foreign_key "ai_usages", "users", on_delete: :cascade
   add_foreign_key "ignored_email_images", "users", on_delete: :cascade
   add_foreign_key "mcp_tool_invocations", "users", on_delete: :cascade
+  add_foreign_key "newsletter_deliveries", "users", on_delete: :cascade
   add_foreign_key "oauth_access_grants", "oauth_applications", column: "application_id"
   add_foreign_key "oauth_access_grants", "users", column: "resource_owner_id"
   add_foreign_key "oauth_access_tokens", "oauth_applications", column: "application_id"

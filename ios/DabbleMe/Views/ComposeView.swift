@@ -820,7 +820,15 @@ private struct LinkRow: View {
         .font(.subheadline)
         .padding(.horizontal)
         .padding(.top, 8)
-        .onAppear { focused = !editor.linkOpenedBySelection }
+        // Opened from the Link button: the address takes the keyboard, so typing goes here and not
+        // into the entry. Asked for again a moment later: the row has only just been put in the bar,
+        // and a first request can come before the field can take it.
+        .task(id: editor.linkFocusRequest) {
+            guard !editor.linkOpenedBySelection else { return }
+            focused = true
+            try? await Task.sleep(for: .milliseconds(250))
+            if !focused { focused = true }
+        }
     }
 
     private func apply() {

@@ -71,10 +71,13 @@ struct SearchView: View {
     @ViewBuilder
     private var resultsList: some View {
         if submitted.isEmpty {
-            // Before a search: your hashtags, how to search, a way to a day, and where to ask more.
+            // Before a search: how to search, your hashtags, a way to a day, and where to ask more.
             // (No pull to refresh here: the hashtags reload each time Search comes up.)
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
+                    Text("Search for a word, a #hashtag, an \"exact phrase\", or either of two words with hiking OR camping.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
                     if !hashtags.isEmpty {
                         VStack(alignment: .leading, spacing: 14) {
                             Text("Your Hashtags This Year")
@@ -86,9 +89,6 @@ struct SearchView: View {
                             }
                         }
                     }
-                    Text("Search for a word, a #hashtag, an \"exact phrase\", or either of two words with hiking OR camping.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
                     VStack(spacing: 12) {
                         Button {
                             model.showsDayPicker = true

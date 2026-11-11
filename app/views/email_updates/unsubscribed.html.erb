@@ -1,0 +1,19 @@
+<% title 'Unsubscribed from updates — Dabble me.' %>
+<% content_for :tailwind, true %>
+
+<div class="tw mx-auto max-w-2xl pt-4 pb-16 sm:pt-8">
+  <header class="mb-8">
+    <h1 class="font-serif text-4xl tracking-tight text-primary sm:text-5xl">You're unsubscribed from updates</h1>
+    <p class="mt-2 text-muted">For <%= @user.first_name.presence || @user.masked_email %></p>
+  </header>
+
+  <section class="card p-6 sm:p-8">
+    <p class="text-primary">
+      You won't get letters about what's new in Dabble Me. Your journal emails haven't changed.
+    </p>
+    <p class="mt-3 text-sm text-muted">
+      Changed your mind? Turn updates back on in your
+      <%= link_to "email settings", settings_path(token: @user.email_settings_token), class: "text-link" %>.
+    </p>
+  </section>
+</div>

@@ -103,6 +103,14 @@ Journal text and account secrets are encrypted with Active Record Encryption: `e
 
 Rake tasks (each takes `USER_ID=` for one account and `PAUSE=` seconds between batches): `encryption:status` counts plaintext rows, `encryption:rehearse` round-trips every value in memory without writing, `encryption:backfill` encrypts existing rows and verifies each one, `encryption:decrypt` (with `CONFIRM=decrypt`) is the way back.
 
+### Newsletters
+
+Letters to subscribers live in `newsletters/<name>/`: one Markdown `letter.md`, and a `newsletter.yml` naming its variants and who gets which (`newsletters/README.md` has the format). `Newsletter` (`app/lib/newsletter.rb`) loads them, `NewsletterMailer` sends one, and `NewsletterDeliveryJob` sends a person a newsletter at most once, recorded in `newsletter_deliveries`.
+
+- `newsletter.yml` lists the audiences, `pro`, `free` or both. Everyone needs `users.send_updates` true ("Send me updates about Dabble Me" in email settings); journal prompts (`frequency`) are a separate setting. Free accounts must also have no bounces and, with `active_within_months`, a recent sign-in or entry. An audience can send from its own address and Mailgun domain.
+- `rake 'newsletter:preview[name,email]'` emails every variant to one account. `rake 'newsletter:send[name]'` prints who would get what and sends only with `SEND=yes`; `PLAN=` limits it to one plan and `LIMIT=` to a number of emails. A send is refused while a letter contains `TODO` or `MAILING_ADDRESS` is unset.
+- The unsubscribe link (`/updates/unsubscribe`, `EmailUpdatesController`) takes the same signed token as the settings links and accepts a one-click POST without CSRF.
+
 ### iOS app
 
 SwiftUI app in `ios/` (see `ios/README.md`). Generate the project with `cd ios && xcodegen generate`; `DabbleMe.xcodeproj` is gitignored. It talks to `/api/v1` (`app/controllers/api/v1/`) with Doorkeeper tokens from the first-party `MobileApp` client, which `db:migrate` / `db:seed` register. The API specs are in `spec/requests/api_v1_spec.rb`.
