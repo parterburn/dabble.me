@@ -78,6 +78,8 @@ RSpec.describe Api::EntryDocument do
       %(<p>My day</p><div><img src="https://x.test/a.png"></div>),
       %(<div>Text</div><div><span><img src="https://x.test/a.png"></span></div>),
       "<ul><li>outer<ul><li>nested</li></ul>and more</li></ul>",
+      "<ol><li><ul><li>Child</li></ul></li><li>Next</li></ol>",
+      "<ul><ul><li>nested first</li></ul><li>outer</li></ul>",
       %(<p><a href="javascript:alert(1)">x</a></p>),
       "<h1>Heading</h1>"
     ].each do |html|

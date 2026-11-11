@@ -13,7 +13,7 @@ module Api
   # Only the formatting the web editor (Summernote) and email ingestion produce is
   # editable: p, div, span, br, b/strong, i/em, u, a, ul/ol/li and hr (merged replies).
   # Anything else — inline styles, blockquotes, images, unknown attributes, text after a
-  # list inside a list item — makes from_html return nil and the entry stays web-only, so
+  # list inside a list item, a list under an item with no text — makes from_html return nil and the entry stays web-only, so
   # an app edit can never silently drop formatting.
   module EntryDocument
     class NotEditable < StandardError; end
@@ -165,6 +165,9 @@ module Api
 
         check_attributes!(item)
         if list?(item) # a list straight inside a list, as browsers' indent command leaves it
+          # With no item before it there's nothing for it to sit under.
+          raise NotEditable if blocks.empty?
+
           blocks.concat(list_items(item, level + 1))
           next
         end
@@ -174,6 +177,10 @@ module Api
         text_count = children.index { |child| list?(child) } || children.size
         block = { 'type' => type, 'runs' => clean_runs(children.first(text_count).flat_map { |child| inline_runs(child, {}) }) }
         block['level'] = level if level.positive?
+        # An item with no text of its own that holds a list: the app drops empty items, which
+        # would leave that list without the item it's under, so the entry stays web-only.
+        raise NotEditable if block['runs'].empty? && text_count < children.size && children.drop(text_count).any? { |child| list?(child) }
+
         blocks << block
         # Only lists may follow: text after a nested list has nowhere to go in the document.
         children.drop(text_count).each do |child|
