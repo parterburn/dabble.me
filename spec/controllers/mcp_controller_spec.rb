@@ -130,6 +130,23 @@ RSpec.describe McpController, type: :controller do
         end
       end
 
+      { "list_entries" => {}, "search_entries" => { query: "lake" } }.each do |tool, arguments|
+        it "gives each photo's S3 URL in #{tool}, and none for an entry without one" do
+          paid_entry.update!(body: "Swam in the lake", date: 2.days.ago)
+          paid_entry.update_columns(image: "lake.jpg")
+          plain = paid_user.entries.create!(body: "No photo of the lake today", date: 1.day.ago)
+
+          post :invoke, params: { jsonrpc: "2.0", id: 10, method: "tools/call", params: { name: tool, arguments: arguments } }, as: :json
+
+          entries = JSON.parse(response.body).dig("result", "structuredContent", "entries").index_by { |e| e["id"] }
+          photo_url = entries.dig(paid_entry.id, "image_url")
+          expect(photo_url).to eq(paid_entry.reload.image.url)
+          expect(photo_url).to start_with("https://").and include(".s3.amazonaws.com/uploads/").and end_with("/lake.jpg")
+          expect(entries.dig(paid_entry.id, "has_image")).to be(true)
+          expect(entries.fetch(plain.id)).to include("image_url" => nil, "has_image" => false)
+        end
+      end
+
       it "returns aggregate analysis" do
         paid_entry.update!(body: "First #gratitude note")
         paid_user.entries.create!(body: "Second #gratitude note", date: 1.day.ago)

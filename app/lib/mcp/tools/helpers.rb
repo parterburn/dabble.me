@@ -60,7 +60,8 @@ module Mcp
           date: entry[:date],
           excerpt: entry[:text_body].to_s.squish.truncate(5000),
           hashtags: entry[:hashtags],
-          has_image: entry[:has_image]
+          has_image: entry[:has_image],
+          image_url: entry[:image_url]
         }
       end
 
