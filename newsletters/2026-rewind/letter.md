@@ -47,7 +47,7 @@ Email is still the heart of Dabble Me. The app is one more way in.
 
 ## Chat with your journal
 
-You can now connect your journal to an AI assistant like Claude or ChatGPT. Then you can ask it things in plain words, like "what was I worried about last spring?" **[Connect your journal](https://dabble.me/mcp-server)**
+You can now [connect your journal to an AI assistant like Claude or ChatGPT](https://dabble.me/mcp-server) and ask it things in plain words.
 
 I've been using it to spot patterns in my own behavior, and it's been wildly helpful. If you connect yours, try this first: **"Make a Spotify Wrapped of my 2026 Dabble Me journal."**
 
