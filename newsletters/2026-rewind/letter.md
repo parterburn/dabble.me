@@ -51,6 +51,8 @@ You can now connect your journal to an AI assistant like Claude or ChatGPT. Then
 
 I've been using it to spot patterns in my own behavior, and it's been wildly helpful. Advice lands differently when it has years of your own words behind it.
 
+If you connect yours, try this first: **"Make a Spotify Wrapped of my 2026 Dabble Me journal."**
+
 It's part of PRO ($4/mo). It securely accesses your own journal, only when you want it to, and you can turn it off anytime.
 
 ## A more private journal
