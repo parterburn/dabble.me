@@ -24,6 +24,30 @@ RSpec.describe EntriesHelper, type: :helper do
       expect(page).not_to have_link('#2026')
     end
 
+    it 'finds the same tags as Entry.hashtags_in around URLs' do
+      body = '<p>#Leo see https://example.com/notes#today and ' \
+             '<a href="https://example.com/notes#later">https://example.com/notes#later</a>, #Run</p>'
+      page = linked(body)
+
+      expect(page.all('a.s-entry-hashtag').map(&:text)).to eq(Entry.hashtags_in(body).map { |tag| "##{tag}" })
+      expect(page.all('a.s-entry-hashtag').map(&:text)).to eq(%w[#Leo #Run])
+      expect(page).to have_text('https://example.com/notes#today and')
+    end
+
+    it 'links tags in text outside any element, like a plain-text body' do
+      body = '#Run this morning<br>then #coffee <a href="/x">#not_a_tag</a>'
+
+      expect(linked(body).all('a.s-entry-hashtag').map(&:text)).to eq(%w[#Run #coffee])
+      expect(Entry.hashtags_in(body)).to eq(%w[Run coffee])
+    end
+
+    it 'finds the same tags as Entry.hashtags_in after a stray <' do
+      body = '<p>I <note to self #Leo</p>'
+
+      expect(linked(body).all('a.s-entry-hashtag').map(&:text)).to eq(['#Leo'])
+      expect(Entry.hashtags_in(body)).to eq(['Leo'])
+    end
+
     it "leaves text inside an existing link alone" do
       page = linked('<p>See <a href="https://example.com/notes#today">https://example.com/notes#today</a> and #Leo</p>')
 

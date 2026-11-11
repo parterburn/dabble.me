@@ -30,6 +30,7 @@ RSpec.describe User do
       entry_with('<p>#Run in the park</p><p>#coffee</p>', days_ago: 1)
       entry_with('another #run', days_ago: 2)
       entry_with('no tags, just a # sign', days_ago: 3)
+      entry_with('<p>notes at https://example.com/notes#today</p>', days_ago: 4)
     end
 
     it 'lists every tag use, lowercased' do
