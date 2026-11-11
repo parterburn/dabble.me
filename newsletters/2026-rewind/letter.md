@@ -25,57 +25,43 @@ You wrote {{entry_count}} entries in 2026, and your Rewind is waiting: **[dabble
 You can see your year of entries there now. [PRO unlocks the rest]({{subscribe_url}}): your total words, your busiest days and months, and the words and hashtags you used most.
 
 {{/rewind_free}}
-Dabble Me turned twelve this year, and it changed more in 2026 than in the previous several years combined.
-
-I built it for my wife and me, and I keep building the things that keep me journaling, because I know how much a journal is worth. Here is what's new.
+Dabble Me turned twelve this year, and it changed more in 2026 than in the previous several years combined. I initially built it for myself, and I keep building the things that keep me journaling, because I know how valuable it is for me.
 
 {{#whats_new,whats_new_free}}
 See it for yourself: **[write a line about today]({{write_url}})**. One sentence counts.
 
 {{/whats_new,whats_new_free}}
-## An iPhone app
+## 📱 iPhone app
 
 Dabble Me now has an app for iPhone and iPad. **[Get the app](https://testflight.apple.com/join/mYj4vrFZ)**
 
-It has me writing a lot more. I often speak my entries instead of typing, and adding photos takes a couple of taps.
+I write far more now. I often speak my entries instead of typing, and photos take a couple of taps.
 
-My favorite part is the On This Day widget. It sits on my home screen and shows me what I wrote on this date in past years, and it's a small delight every time.
+A small delight is the Home Screen widget: it shows what I wrote on this date in past years.
 
-You can also share a photo from a past entry with its date on it. I borrowed that idea from Timehop, and I use it to send my closest friends the memories that still make me smile.
+You can also share a Timehop-style photo from a past entry with its date stamped on it with the family & friends you made the memory with.
 
-Email is still the heart of Dabble Me. The app is one more way in.
-
-## Chat with your journal
+## ✨ AI Assistance
 
 You can now [connect your journal to an AI assistant like Claude or ChatGPT](https://dabble.me/mcp-server) and ask it things in plain words.
 
-I've been using it to spot patterns in my own behavior, and it's been wildly helpful. If you connect yours, try this first: **"Make a private Spotify Wrapped of my 2026 journal; use lots of photos."**
+If you connect yours, try this first: **"Make a private Spotify Wrapped of my 2026 journal; use lots of photos."**
 
-It's part of PRO ($4/mo). It securely accesses your own journal, only when you want it to, and you can turn it off anytime.
-
-## A more private journal
+## 🔒 A more private journal
 
 You've probably seen the news lately: data breaches keep getting bigger and more frequent. A journal is about the last thing anyone wants caught up in one.
 
-So I spent a good part of this year making Dabble Me more private and secure. I updated the systems it runs on, and your entries are now encrypted, which means they're stored in a scrambled form. If anyone ever stole a copy of our database, they couldn't read a word of it.
+I spent a good part of this year making Dabble Me more private and secure. I updated the systems it runs on, and your entries are now encrypted, which means they're stored in a scrambled form. If anyone ever stole a copy of the database, they couldn't read a word of it.
 
-You don't need to do anything. It's already protecting what you've written.
+## ➕ Other updates
 
-## A fresh look
-
-Dabble Me has a new logo and a cleaner design. Settings are easier to read, especially on a phone.
-
-Nothing you rely on moved. The daily email still asks how your day went, and replying still saves your entry.
-
-## Other updates
-
+- **A fresh look.** A new logo, a cleaner design, and a site that's easier to find your way around.
 - **Sign in without a password.** Use Face ID, Touch ID, or your device's own unlock.
 - **A new address for sending entries.** If the email address you send entries to ever gets out, you can swap it for a new one in Settings.
 - **Day One import.** Users can now bring their Day One journal over, photos included.
-- **A yearly count instead of streaks.** Streaks punish you for having a life. Dabble Me now focuses more on how many days you've written in a year.
 
 {{#rewind_free,whats_new_free}}
-## Dabble Me PRO
+## 👉 Dabble Me PRO
 
 PRO is $4 a month or $40 a year. It lets you choose which days your emails arrive, attach photos, search everything you've written, and see your full Rewind. **[Subscribe to PRO]({{subscribe_url}})**
 

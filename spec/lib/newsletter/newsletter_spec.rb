@@ -153,8 +153,8 @@ RSpec.describe Newsletter do
     stub_const('Newsletter::ROOT', Rails.root.join('newsletters'))
     rewind = described_class.find('2026-rewind')
     write_entries(pro, 20)
-    opening = "Dabble Me turned twelve this year, and it changed more in 2026 than in the previous several years combined.\n\n" \
-              "I built it for my wife and me, and I keep building the things that keep me journaling, because I know how much a journal is worth. Here is what's new."
+    opening = 'Dabble Me turned twelve this year, and it changed more in 2026 than in the previous several years combined. ' \
+              'I initially built it for myself, and I keep building the things that keep me journaling, because I know how valuable it is for me.'
 
     writer = rewind.letter.render(rewind.values_for(pro), variant: rewind.variant_for(pro))
     expect(writer.subject).to eq('Your 2026 Rewind is ready')
@@ -163,7 +163,7 @@ RSpec.describe Newsletter do
     other = FactoryBot.create(:user, plan: 'PRO Forever', first_name: 'Bo')
     quiet = rewind.letter.render(rewind.values_for(other), variant: rewind.variant_for(other))
     expect(quiet.subject).to eq("What's new in Dabble Me")
-    expect(quiet.markdown).to start_with("Hi Bo,\n\n#{opening}\n\nSee it for yourself: **[write a line about today](https://test/write)**. One sentence counts.\n\n## An iPhone app")
+    expect(quiet.markdown).to start_with("Hi Bo,\n\n#{opening}\n\nSee it for yourself: **[write a line about today](https://test/write)**. One sentence counts.\n\n## 📱 iPhone app")
     expect(quiet.text).not_to include('Rewind is ready', 'You wrote', 'Subscribe to PRO')
 
     free_writer = FactoryBot.create(:user, plan: 'Free', first_name: 'Cy')
