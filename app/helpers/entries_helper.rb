@@ -1,6 +1,6 @@
 module EntriesHelper
-  def image_code(entry)
-    converted_image_url = entry.display_image_url
+  def image_code(entry, cloudflare: true)
+    converted_image_url = entry.display_image_url(cloudflare: cloudflare)
     image_tag converted_image_url, data: { src: converted_image_url }, alt: "#{entry.date_format_short}", loading: "lazy"
   end
 

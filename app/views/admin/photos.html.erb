@@ -15,7 +15,7 @@
       <% @entries.each do |entry| %>
         <%= link_to entry.image_url_cdn(cloudflare: false), target: "_blank", rel: "noopener",
               class: "block aspect-square overflow-hidden rounded-lg border border-subtle bg-surface-elevated transition-opacity hover:opacity-90 *:size-full *:object-cover" do %>
-          <%= image_code(entry) %>
+          <%= image_code(entry, cloudflare: false) %>
         <% end %>
       <% end %>
     </div>
