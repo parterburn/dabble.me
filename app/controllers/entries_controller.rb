@@ -5,7 +5,6 @@ class EntriesController < ApplicationController
   include ActionView::Helpers::SanitizeHelper
 
   before_action :authenticate_user!
-  before_action :authenticate_admin!, only: [:email_replies_test]
   before_action :set_entry, :require_entry_permission, only: [:show, :edit, :update, :destroy, :reflection, :dismiss_image_error]
 
   rate_limit to: 10, within: 10.minutes, only: :reflection, with: -> { render json: { error: "Too many reflections. Try again in a few minutes." }, status: :too_many_requests }
@@ -359,12 +358,6 @@ class EntriesController < ApplicationController
   def dismiss_image_error
     @entry.update(image_error: nil)
     redirect_back fallback_location: day_entry_path(year: @entry.date.year, month: @entry.date.month, day: @entry.date.day)
-  end
-
-  def email_replies_test
-    user = User.find(73069)
-    entry_every_day = user.entries.size == (Time.now.in_time_zone(user.send_timezone).to_date - Date.parse("2025-01-25")).to_i
-    render json: entry_every_day
   end
 
   private
