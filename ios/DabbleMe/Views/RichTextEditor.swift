@@ -34,6 +34,8 @@ final class RichTextEditorModel {
     /// Opened by selecting a link's text rather than from the Link button: it closes again when
     /// the selection moves off the link, and doesn't take the keyboard from the text.
     private(set) var linkOpenedBySelection = false
+    /// Bumped each time the Link button opens the row, so the address field takes the keyboard.
+    private(set) var linkFocusRequest = 0
     private var linkRange = NSRange(location: 0, length: 0)
 
     @ObservationIgnored fileprivate weak var textView: UITextView?
@@ -155,11 +157,35 @@ final class RichTextEditorModel {
         }
         linkOpenedBySelection = false
         isEditingLink = true
+        linkFocusRequest += 1
+        markLinkedText()
     }
 
     func endLink() {
+        unmarkLinkedText()
         isEditingLink = false
         linkOpenedBySelection = false
+    }
+
+    /// While the link row is open, the text it will link (or that's linked already) is tinted: once
+    /// the address field has the keyboard, the entry's own selection highlight is gone, and nothing
+    /// else would show what's being linked. A display-only tint: it's taken off when the row closes,
+    /// and the document doesn't read background colors.
+    private func markLinkedText() {
+        guard let textView else { return }
+        let storage = textView.textStorage
+        unmarkLinkedText()
+        let range = NSIntersectionRange(linkRange, NSRange(location: 0, length: storage.length))
+        guard range.length > 0 else { return }
+        let tint = (UIColor(named: "AccentColor") ?? .tintColor).withAlphaComponent(0.28)
+        storage.addAttribute(.backgroundColor, value: tint, range: range)
+    }
+
+    private func unmarkLinkedText() {
+        guard let textView else { return }
+        let storage = textView.textStorage
+        storage.removeAttribute(.backgroundColor, range: NSRange(location: 0, length: storage.length))
+        textView.typingAttributes[.backgroundColor] = nil
     }
 
     /// Selecting some or all of a link's text opens the row for it, to change or remove. It stays
@@ -188,6 +214,7 @@ final class RichTextEditorModel {
         isExistingLink = true
         linkOpenedBySelection = true
         isEditingLink = true
+        markLinkedText()
     }
 
     /// Adds `linkText` as a link on the selection (or changes the existing link's address), or
@@ -401,7 +428,9 @@ final class EditorBar: UIView {
         super.init(frame: CGRect(x: 0, y: 0, width: 320, height: Self.toolbarHeight))
         autoresizingMask = .flexibleHeight
         rowHost.safeAreaRegions = []
-        rowHost.view.backgroundColor = .systemBackground
+        // Clear, like the buttons' bar: the sheet shows through (an opaque fill was a black band in
+        // Dark Mode, where a sheet is a lighter grey than the system background).
+        rowHost.view.backgroundColor = .clear
         rowHost.view.isHidden = true
         addSubview(rowHost.view)
         addSubview(toolbar)
@@ -414,6 +443,9 @@ final class EditorBar: UIView {
     }
 
     func setRow(_ row: AnyView?) {
+        // A closed row is taken down, not just hidden, so reopening one starts it afresh (the link
+        // row takes the keyboard when it appears).
+        if hasRow, row == nil { rowHost.rootView = AnyView(EmptyView()) }
         hasRow = row != nil
         rowHost.view.isHidden = !hasRow
         if let row { rowHost.rootView = row }
