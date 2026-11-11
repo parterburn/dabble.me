@@ -109,8 +109,15 @@ class User < ActiveRecord::Base
   after_update :revoke_doorkeeper_oauth_if_downgraded_from_pro
   after_update :revoke_doorkeeper_oauth_if_credentials_changed
 
+  EMAIL_DAYS = %w[Sun Mon Tue Wed Thu Fri Sat].freeze
+
+  # The schedule can be changed from the no-login settings link, so keep it to
+  # values the app knows: day abbreviations and real time zone names.
+  before_validation { self.frequency = EMAIL_DAYS & Array(frequency) if will_save_change_to_frequency? }
+  before_validation { self.send_timezone = send_timezone.gsub("&amp;", "&") if send_timezone.present? }
+  validate :send_timezone_must_exist, if: :will_save_change_to_send_timezone?
+
   before_save { email&.gsub!(",",".")&.gsub!(".@", "@")&.downcase! }
-  before_save { send_timezone.gsub!("&amp;", "&") }
   after_commit on: :update do
     restrict_free_frequency
   end
@@ -144,6 +151,10 @@ class User < ActiveRecord::Base
     return unless self.class.blocked_email_domain?(domain)
 
     errors.add(:email, 'is not allowed')
+  end
+
+  def send_timezone_must_exist
+    errors.add(:send_timezone, 'is not a known time zone') if ActiveSupport::TimeZone[send_timezone.to_s].nil?
   end
 
   # Gives the user a new posting address. Only the user (from the settings

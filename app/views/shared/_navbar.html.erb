@@ -81,7 +81,8 @@
         <% if user_signed_in? && current_user.sign_in_count < 10 && !cookies[:viewed_settings] && (current_page?(entries_path) || current_page?(root_path)) %>
           <% add_popover = "popover_settings" %>
           <% if current_user.frequency.count > 0 %>
-            <% current_settings = "You will be emailed at <strong>#{current_user.send_time.strftime("%-I %P")} #{current_user.send_timezone}</strong> on <strong>#{current_user.frequencies}</strong>." %>
+            <%# ui.js renders data-content as HTML, so escape the user's own values. %>
+            <% current_settings = "You will be emailed at <strong>#{h current_user.send_time.strftime("%-I %P")} #{h current_user.send_timezone}</strong> on <strong>#{h current_user.frequencies}</strong>." %>
           <% else %>
             <% current_settings = "Email reminders are currently <strong>disabled</strong>." %>
           <% end %>

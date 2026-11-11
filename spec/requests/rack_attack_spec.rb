@@ -42,6 +42,54 @@ RSpec.describe 'Rack::Attack', type: :request do
     expect(statuses.last).to eq(429)
   end
 
+  ['/users/sign_in.json', '/users/sign_in/', '/users/sign_in.html'].each do |path|
+    it "throttles sign-in attempts posted to #{path}" do
+      statuses = Array.new(6) do |index|
+        post path,
+          params: { user: { email: "variant-#{index}@example.com", password: 'wrong-password' } },
+          env: { 'REMOTE_ADDR' => '203.0.113.70' }
+        response.status
+      end
+
+      expect(statuses.first(5)).to all(be < 429)
+      expect(statuses.last).to eq(429)
+    end
+  end
+
+  it 'counts sign-in attempts sent as a JSON body against the email' do
+    email = 'json-target@example.com'
+
+    statuses = Array.new(6) do |index|
+      post '/users/sign_in',
+        params: { user: { email: email, password: 'wrong-password' } }.to_json,
+        headers: { 'CONTENT_TYPE' => 'application/json' },
+        env: { 'REMOTE_ADDR' => "203.0.113.#{index + 80}" }
+      response.status
+    end
+
+    expect(statuses.first(5)).to all(be < 429)
+    expect(statuses.last).to eq(429)
+  end
+
+  it 'throttles OTP guesses posted to a format variant of the path' do
+    statuses = Array.new(11) do |index|
+      put '/users/otp/credentials.json',
+        params: { user: { challenge: "c#{index}", token: '000000' } },
+        env: { 'REMOTE_ADDR' => '203.0.113.90' }
+      response.status
+    end
+
+    expect(statuses.first(10)).to all(be < 429)
+    expect(statuses.last).to eq(429)
+  end
+
+  it 'reads no email from a malformed JSON body instead of raising' do
+    env = Rack::MockRequest.env_for('/users/sign_in', method: 'POST', input: '{not json',
+                                                      'CONTENT_TYPE' => 'application/json')
+
+    expect(Rack::Attack.submitted_email(Rack::Attack::Request.new(env))).to be_nil
+  end
+
   it 'throttles signup posts from one IP' do
     statuses = Array.new(6) do |index|
       post '/users',
