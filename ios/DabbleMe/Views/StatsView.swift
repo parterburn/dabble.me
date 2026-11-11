@@ -123,7 +123,7 @@ private struct StatsOverview: View {
     @AppStorage("ai.stats.text") private var savedText = ""
     @State private var failed = false
 
-    private var key: String { "\(today.iso)|\(stats.totalEntries)|\(stats.totalWords)" }
+    private var key: String { "2|\(today.iso)|\(stats.totalEntries)|\(stats.totalWords)" }
     private var text: String? { savedKey == key && !savedText.isEmpty ? savedText : nil }
     /// What shows if the model can't write one: the plainest facts, as before.
     private var fallback: String { JournalIntelligence.statsFacts(stats, today: today).prefix(3).joined(separator: " ") }

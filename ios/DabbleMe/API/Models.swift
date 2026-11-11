@@ -6,6 +6,8 @@ struct Me: Decodable, Sendable, Equatable {
     let id: Int
     let email: String
     let firstName: String?
+    /// First and last name, as set on dabble.me (nil from an older server, or when not set).
+    var name: String? = nil
     let plan: String
     let isPro: Bool
     let timezone: String?

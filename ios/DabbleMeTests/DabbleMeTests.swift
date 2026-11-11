@@ -96,6 +96,15 @@ struct StatsOverviewTests {
         #expect(JournalIntelligence.bookComparison(words: 100_000) == "about as long as The Hobbit")
         #expect(JournalIntelligence.bookComparison(words: 1_200_000) == "about 2 times the length of War and Peace")
     }
+
+    /// The overview isn't given a name, so one in its reply was made up.
+    @Test func anOverviewWithANameIsCaught() {
+        let facts = "Writing since November 2023. 18 entries in all, 15 of them in 2026. Writes most often on Mondays. Busiest month of the last 12: October (6 entries)."
+        #expect(!JournalIntelligence.overviewUsesAName("You've written 18 entries since November 2023. Mondays are your day, and October was your busiest month.", facts: facts))
+        #expect(JournalIntelligence.overviewUsesAName("Sam, you've written 18 entries since November 2023.", facts: facts))
+        #expect(JournalIntelligence.overviewUsesAName("Great work, Alex! You write most often on Mondays.", facts: facts))
+        #expect(JournalIntelligence.overviewUsesAName("Hi Jordan. You've written 18 entries.", facts: facts))
+    }
 }
 
 @MainActor

@@ -444,19 +444,45 @@ enum JournalIntelligence {
         }
     }
 
-    /// A few sentences on the writer's habits, from `statsFacts` alone.
+    /// A few sentences on the writer's habits, from `statsFacts` alone. The model isn't told their
+    /// name and mustn't use one: it has made one up. A reply with a name in it (a capitalized word
+    /// that isn't in the facts and doesn't start a sentence, or one addressed with a comma, "Sam, …")
+    /// is asked for once more, then given up on (the caller shows the plain facts).
     static func statsOverview(facts: [String]) async throws -> String {
-        try await respond(
-            instructions: """
-            You write a short, warm overview of someone's journaling habits for the top of their stats page, \
-            speaking to them as "you". Use only the facts given, with their exact numbers, names and dates; \
-            never add a fact, guess at reasons, or mention streaks. Pick the three or four most interesting facts \
-            and weave them into two or three plain sentences, under 60 words in all. No headings, lists, emoji \
-            or advice. Reply with only the sentences.
-            """,
-            prompt: "Facts:\n" + facts.map { "- \($0)" }.joined(separator: "\n"),
-            temperature: 0.5
-        )
+        let source = facts.joined(separator: " ")
+        for _ in 0..<2 {
+            let reply = try await respond(
+                instructions: """
+                You write a short, warm overview of someone's journaling habits for the top of their stats page, \
+                speaking to them as "you". You don't know their name: never use a name or greet them. Use only the \
+                facts given, with their exact numbers, names and dates; never add a fact, guess at reasons, or \
+                mention streaks. Pick the three or four most interesting facts and weave them into two or three \
+                plain sentences, under 60 words in all. No headings, lists, emoji or advice. Reply with only the \
+                sentences.
+                """,
+                prompt: "Facts:\n" + facts.map { "- \($0)" }.joined(separator: "\n"),
+                temperature: 0.5
+            )
+            if !overviewUsesAName(reply, facts: source) { return reply }
+        }
+        throw Failure.noAnswer
+    }
+
+    /// Whether an overview names someone: a capitalized word that isn't in the facts, either inside
+    /// a sentence or opening one as a greeting ("Sam, you've…", "Hi Sam").
+    static func overviewUsesAName(_ overview: String, facts: String) -> Bool {
+        let known = Set(facts.lowercased().split(whereSeparator: { !$0.isLetter }).map(String.init))
+        let sentences = overview.split(whereSeparator: { ".!?\n".contains($0) })
+        for sentence in sentences {
+            let words = sentence.split(whereSeparator: \.isWhitespace)
+            for (index, word) in words.enumerated() where word.first?.isUppercase == true {
+                let bare = word.split(whereSeparator: { !$0.isLetter }).first.map { $0.lowercased() } ?? ""
+                guard !bare.isEmpty, bare != "i", !known.contains(bare) else { continue }
+                // Inside a sentence, or the sentence's first word used as an address ("Sam, …").
+                if index > 0 || word.hasSuffix(",") { return true }
+            }
+        }
+        return false
     }
 
     /// The tags (in the order given, without repeats) that are a word in `text`, whatever its

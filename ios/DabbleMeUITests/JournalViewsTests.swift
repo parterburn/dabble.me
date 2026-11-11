@@ -1012,13 +1012,27 @@ final class JournalViewsTests: XCTestCase {
         sleep(1)
         XCTAssertTrue(app.keyboards.firstMatch.exists, "The keyboard stays up for the address")
         snap("link-row-focused")
-        address.typeText("dabble.me/write")
+        // Typing goes to the address without tapping it first: Link gave it the keyboard.
+        app.typeText("dabble.me/write")
+        XCTAssertEqual(address.value as? String, "dabble.me/write")
+        XCTAssertEqual(editor.value as? String, "Read this: ", "Nothing typed into the entry")
         snap("link-row")
         app.buttons["Insert"].tap()
         XCTAssertEqual(editor.value as? String, "Read this: https://dabble.me/write")
         XCTAssertTrue(address.waitForNonExistence(timeout: 5), "The row closes")
         editor.typeText(" ok") // the keyboard is back on the entry
         XCTAssertEqual(editor.value as? String, "Read this: https://dabble.me/write ok")
+        // Link a word: select it, tap Link (the second time the row opens), and type the address.
+        editor.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 40, dy: 30)).doubleTap()
+        link.tap()
+        XCTAssertTrue(address.waitForExistence(timeout: 5))
+        sleep(1)
+        app.typeText("example.com")
+        XCTAssertEqual(address.value as? String, "example.com", "The address has the keyboard again")
+        snap("link-row-word") // "Read" stays tinted while its address is typed
+        app.buttons["Insert"].tap()
+        XCTAssertTrue(address.waitForNonExistence(timeout: 5))
+        XCTAssertEqual(editor.value as? String, "Read this: https://dabble.me/write ok", "Linking a word doesn't change the text")
         // Tap the link: its row opens (it doesn't leave for the browser).
         editor.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0)).withOffset(CGVector(dx: 0, dy: 30)).tap()
         XCTAssertTrue(address.waitForExistence(timeout: 5), "Tapping a link opens its row")

@@ -9,6 +9,7 @@ module Api
           id: user.id,
           email: user.email,
           first_name: user.first_name,
+          name: user.full_name&.strip.presence,
           plan: user.is_pro? ? 'pro' : 'free',
           is_pro: user.is_pro?,
           timezone: user.send_timezone,
