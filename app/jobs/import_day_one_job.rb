@@ -32,7 +32,7 @@ class ImportDayOneJob < ActiveJob::Base
     end
 
     ActionMailer::Base.mail(
-      from: "Paul from Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>",
+      from: "Paul // Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>",
       to: @user.email,
       subject: "Import of Day One entries is complete",
       content_type: "text/html",
@@ -44,7 +44,7 @@ class ImportDayOneJob < ActiveJob::Base
     return unless @user
 
     ActionMailer::Base.mail(
-      from: "Paul from Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>",
+      from: "Paul // Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>",
       to: @user.email,
       subject: "Day One import failed",
       content_type: "text/html",

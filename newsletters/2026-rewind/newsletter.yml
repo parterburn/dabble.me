@@ -5,7 +5,7 @@ audiences:
   free:
     # A separate sending domain, so this mail builds its own reputation
     # apart from the journal emails. Replies still reach the usual inbox.
-    from: "Paul from Dabble Me <hello@updates.dabble.me>"
+    from: "Paul // Dabble Me <hello@updates.dabble.me>"
     reply_to: hello@dabble.me
     mailgun_domain: updates.dabble.me
     # Only accounts that signed in or wrote an entry this recently.

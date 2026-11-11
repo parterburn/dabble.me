@@ -35,7 +35,7 @@ class ImportTrailmixJob < ActiveJob::Base
     end
 
     ActionMailer::Base.mail(
-      from: "Paul from Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>",
+      from: "Paul // Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>",
       to: @user.email,
       subject: "Import of Trailmix.life entries is complete",
       content_type: "text/html",

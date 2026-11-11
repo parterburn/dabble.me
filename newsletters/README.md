@@ -18,7 +18,7 @@ year: 2026             # the year `min_entries_in_year` counts
 audiences:             # who it goes to: pro, free, or both
   pro: {}
   free:
-    from: "Paul from Dabble Me <hello@updates.dabble.me>"
+    from: "Paul // Dabble Me <hello@updates.dabble.me>"
     reply_to: hello@dabble.me
     mailgun_domain: updates.dabble.me
     active_within_months: 18
