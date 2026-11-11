@@ -1,0 +1,6 @@
+audience: pro
+year: 2026
+variants:
+  - letter: rewind
+    min_entries_in_year: 5
+  - letter: whats_new

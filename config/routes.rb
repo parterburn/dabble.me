@@ -89,6 +89,10 @@ Rails.application.routes.draw do
     resources :sessions, only: [:new, :create]
   end
 
+  # The unsubscribe link in product-update emails (EmailUpdatesController).
+  get 'updates/unsubscribe', to: 'email_updates#show', as: 'email_updates'
+  post 'updates/unsubscribe', to: 'email_updates#destroy'
+
   devise_scope :user do
     get 'settings/mcp', to: redirect { |_params, req| "#{req.protocol}#{req.host_with_port}/mcp-server" }
     get 'settings/delete-account'  => 'registrations#delete_account', as: 'delete_account'

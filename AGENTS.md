@@ -103,6 +103,14 @@ Journal text and account secrets are encrypted with Active Record Encryption: `e
 
 Rake tasks (each takes `USER_ID=` for one account and `PAUSE=` seconds between batches): `encryption:status` counts plaintext rows, `encryption:rehearse` round-trips every value in memory without writing, `encryption:backfill` encrypts existing rows and verifies each one, `encryption:decrypt` (with `CONFIRM=decrypt`) is the way back.
 
+### Newsletters
+
+Letters to subscribers live in `newsletters/<name>/` as Markdown, with a `newsletter.yml` choosing which letter each person gets (`newsletters/README.md` has the format). `Newsletter` (`app/lib/newsletter.rb`) loads them, `NewsletterMailer` sends one, and `NewsletterDeliveryJob` sends a person a newsletter at most once, recorded in `newsletter_deliveries`.
+
+- Audience is PRO accounts with `users.send_updates` true ("Send me updates about Dabble Me" in email settings). Journal prompts (`frequency`) are a separate setting.
+- `rake 'newsletter:preview[name,email]'` emails every letter to one account. `rake 'newsletter:send[name]'` prints who would get what and sends only with `SEND=yes`. A send is refused while a letter contains `TODO` or `MAILING_ADDRESS` is unset.
+- The unsubscribe link (`/updates/unsubscribe`, `EmailUpdatesController`) takes the same signed token as the settings links and accepts a one-click POST without CSRF.
+
 ### iOS app
 
 SwiftUI app in `ios/` (see `ios/README.md`). Generate the project with `cd ios && xcodegen generate`; `DabbleMe.xcodeproj` is gitignored. It talks to `/api/v1` (`app/controllers/api/v1/`) with Doorkeeper tokens from the first-party `MobileApp` client, which `db:migrate` / `db:seed` register. The API specs are in `spec/requests/api_v1_spec.rb`.

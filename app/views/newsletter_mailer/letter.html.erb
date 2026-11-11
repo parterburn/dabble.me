@@ -1,0 +1,16 @@
+<% if @rendered.preview.present? %>
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;"><%= @rendered.preview %></div>
+<% end %>
+<div style="max-width:600px;margin:0 auto;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;font-size:16px;line-height:1.55;color:#222;">
+  <%= @rendered.html.html_safe %>
+  <hr style="border:0;border-top:1px solid #ddd;margin:32px 0 16px;">
+  <p style="font-size:13px;line-height:1.5;color:#777;">
+    You're getting this because you have a Dabble Me PRO account.
+    <%= link_to "Unsubscribe from updates", @unsubscribe_url, style: "color:#777;" %>
+    or <%= link_to "change your email settings", @settings_url, style: "color:#777;" %>.
+    Your journal emails are a separate setting.
+    <% if @postal_address.present? %>
+      <br><%= @postal_address %>
+    <% end %>
+  </p>
+</div>
