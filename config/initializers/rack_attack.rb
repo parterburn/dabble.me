@@ -12,77 +12,77 @@ class Rack::Attack
 
   # Throttle OTP second-factor challenge attempts per challenge token and per IP
   throttle('otp/challenge', limit: 5, period: 5.minutes) do |req|
-    submitted_otp_challenge(req) if req.path == OTP_CREDENTIALS_PATH && !req.get?
+    submitted_otp_challenge(req) if auth_path(req) == OTP_CREDENTIALS_PATH && !req.get?
   end
 
   throttle('otp/ip', limit: 10, period: 10.minutes) do |req|
-    req.ip if req.path == OTP_CREDENTIALS_PATH && !req.get?
+    req.ip if auth_path(req) == OTP_CREDENTIALS_PATH && !req.get?
   end
 
   # Throttle login attempts by IP address
   throttle('logins/ip', limit: 5, period: 20.seconds) do |req|
-    req.ip if req.path == '/users/sign_in' && req.post?
+    req.ip if auth_path(req) == '/users/sign_in' && req.post?
   end
 
   throttle('logins/ip/hour', limit: 20, period: 1.hour) do |req|
-    req.ip if req.path == '/users/sign_in' && req.post?
+    req.ip if auth_path(req) == '/users/sign_in' && req.post?
   end
 
   # Devise posts user[email], not a top-level email param.
   throttle('logins/email', limit: 5, period: 20.seconds) do |req|
-    submitted_email(req) if req.path == '/users/sign_in' && req.post?
+    submitted_email(req) if auth_path(req) == '/users/sign_in' && req.post?
   end
 
   throttle('logins/email/hour', limit: 20, period: 1.hour) do |req|
-    submitted_email(req) if req.path == '/users/sign_in' && req.post?
+    submitted_email(req) if auth_path(req) == '/users/sign_in' && req.post?
   end
 
   # Passkey sign-in. The sign-in page asks for a challenge on load (autofill)
   # and again after each attempt, so the GET limit is looser than the POST one.
   throttle('passkeys/challenge/ip', limit: 30, period: 1.minute) do |req|
-    req.ip if req.path == '/passkeys/sessions/new' && req.get?
+    req.ip if auth_path(req) == '/passkeys/sessions/new' && req.get?
   end
 
   throttle('passkeys/sign-in/ip', limit: 10, period: 1.minute) do |req|
-    req.ip if req.path == '/passkeys/sessions' && req.post?
+    req.ip if auth_path(req) == '/passkeys/sessions' && req.post?
   end
 
   throttle('passwords/ip', limit: 5, period: 1.hour) do |req|
-    req.ip if req.path == '/users/password' && req.post?
+    req.ip if auth_path(req) == '/users/password' && req.post?
   end
 
   throttle('passwords/email', limit: 5, period: 1.hour) do |req|
-    submitted_email(req) if req.path == '/users/password' && req.post?
+    submitted_email(req) if auth_path(req) == '/users/password' && req.post?
   end
 
   throttle('signups/ip', limit: 5, period: 1.hour) do |req|
-    req.ip if req.path == '/users' && req.post?
+    req.ip if auth_path(req) == '/users' && req.post?
   end
 
   throttle('signups/email', limit: 5, period: 1.hour) do |req|
-    submitted_email(req) if req.path == '/users' && req.post?
+    submitted_email(req) if auth_path(req) == '/users' && req.post?
   end
 
   throttle('checkout/ip', limit: 10, period: 10.minutes) do |req|
-    req.ip if req.path == '/checkout' && req.post?
+    req.ip if auth_path(req) == '/checkout' && req.post?
   end
 
   throttle('mcp/ip', limit: 30, period: 1.minute) do |req|
-    req.ip if req.path == MCP_PATH && req.post?
+    req.ip if auth_path(req) == MCP_PATH && req.post?
   end
 
   # OAuth dynamic client registration (public); keep tight to limit abuse.
   throttle('oauth/dcr/ip', limit: 5, period: 1.minute) do |req|
-    req.ip if req.path == '/oauth/registrations' && req.post?
+    req.ip if auth_path(req) == '/oauth/registrations' && req.post?
   end
 
   throttle('oauth/dcr/ip/day', limit: 50, period: 1.day) do |req|
-    req.ip if req.path == '/oauth/registrations' && req.post?
+    req.ip if auth_path(req) == '/oauth/registrations' && req.post?
   end
 
   # Brute-force OAuth token attempts against MCP
   throttle('mcp/auth-attempts/ip', limit: 10, period: 10.minutes) do |req|
-    next unless req.path == MCP_PATH && req.post?
+    next unless auth_path(req) == MCP_PATH && req.post?
 
     auth = req.env['HTTP_AUTHORIZATION'].to_s
     next unless auth.match?(/\ABearer\s+\S+/i)
@@ -99,19 +99,38 @@ class Rack::Attack
     Allow2Ban.filter(probe_discriminator(ip), probe_ban_options) { false }
   end
 
+  # Rails routes /users/sign_in.json, /users/sign_in/ and //users/sign_in to
+  # the same action as /users/sign_in, so compare a normalized path: no
+  # repeated or trailing slashes and no format extension.
+  def self.auth_path(req)
+    path = req.path.squeeze('/')
+    path = path.chomp('/') unless path == '/'
+    path.sub(/\.[a-z0-9]+\z/i, '')
+  end
+
+  # Rack::Request#params only reads query strings and form bodies; Rails also
+  # accepts a JSON body, so read the parameters the way the controller will.
+  def self.auth_params(req)
+    ActionDispatch::Request.new(req.env).params
+  rescue StandardError
+    req.params
+  end
+
   def self.submitted_email(req)
-    user_params = req.params['user']
+    params = auth_params(req)
+    user_params = params['user']
     email = user_params['email'] if user_params.is_a?(Hash)
-    email = req.params['email'] unless email.is_a?(String)
+    email = params['email'] unless email.is_a?(String)
     return unless email.is_a?(String)
 
     email.strip.downcase.presence
   end
 
   def self.submitted_otp_challenge(req)
-    user_params = req.params['user']
+    params = auth_params(req)
+    user_params = params['user']
     challenge = user_params['challenge'] if user_params.is_a?(Hash)
-    challenge = req.params['challenge'] unless challenge.is_a?(String)
+    challenge = params['challenge'] unless challenge.is_a?(String)
     token = challenge.is_a?(String) ? challenge.strip.presence : nil
     token || "missing:#{req.ip}"
   end
