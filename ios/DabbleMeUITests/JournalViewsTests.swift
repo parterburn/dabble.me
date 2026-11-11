@@ -352,7 +352,7 @@ final class JournalViewsTests: XCTestCase {
     }
 
     /// With no hashtags yet, suggestions aren't limited to (an empty) vocabulary. Needs a PRO
-    /// With nothing on this date in past years and no earlier entries, Today shows Rewink with
+    /// With nothing on this date in past years and no earlier entries, Today shows Rewind with
     /// a nudge to write. TEST_RUNNER_DABBLE_EMPTY_TOKEN (an account with no past entries).
     func testThrowbackNudgeWithoutPastEntries() throws {
         guard let empty = ProcessInfo.processInfo.environment["DABBLE_EMPTY_TOKEN"] else {
