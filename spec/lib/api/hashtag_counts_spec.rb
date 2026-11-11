@@ -40,5 +40,27 @@ RSpec.describe Api::HashtagCounts do
 
       expect(counts.top(10)).to eq([{ tag: 'run', count: 3 }, { tag: 'coffee', count: 1 }])
     end
+
+    it 'breaks a tie between spellings with the newest entry, whichever is written first' do
+      entry_with('#outside', days_ago: 5)
+      entry_with('#Outside', days_ago: 1)
+      entry_with('#Books', days_ago: 2)
+      entry_with('#books', days_ago: 4)
+
+      expect(counts.top(10)).to eq([{ tag: 'Books', count: 2 }, { tag: 'Outside', count: 2 }])
+    end
+
+    it 'breaks a tie on the same date with the later entry' do
+      entry_with('#Tea', days_ago: 1)
+      entry_with('#tea', days_ago: 1)
+
+      expect(counts.top(10)).to eq([{ tag: 'tea', count: 2 }])
+    end
+
+    it 'counts an entry that spells a tag two ways once, in its first spelling' do
+      entry_with('#Run then a #run', days_ago: 1)
+
+      expect(counts.top(10)).to eq([{ tag: 'Run', count: 1 }])
+    end
   end
 end
