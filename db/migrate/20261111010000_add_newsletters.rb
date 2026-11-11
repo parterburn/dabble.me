@@ -2,9 +2,9 @@
 # prompts, and records which newsletter each person was sent.
 class AddNewsletters < ActiveRecord::Migration[8.1]
   def up
+    # On for everyone, including people who turned their journal emails off:
+    # that setting is about prompts, and this one is about updates.
     add_column :users, :send_updates, :boolean, null: false, default: true
-    # People who turned every journal email off asked for no email at all.
-    execute "UPDATE users SET send_updates = FALSE WHERE frequency = '{}' OR frequency IS NULL"
 
     create_table :newsletter_deliveries do |t|
       t.references :user, null: false, foreign_key: { on_delete: :cascade }, index: false
