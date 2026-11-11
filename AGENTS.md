@@ -103,6 +103,18 @@ Journal text and account secrets are encrypted with Active Record Encryption: `e
 
 Rake tasks (each takes `USER_ID=` for one account and `PAUSE=` seconds between batches): `encryption:status` counts plaintext rows, `encryption:rehearse` round-trips every value in memory without writing, `encryption:backfill` encrypts existing rows and verifies each one, `encryption:decrypt` (with `CONFIRM=decrypt`) is the way back.
 
+### Admin access
+
+Admin pages (`/admin/*`, `/sidekiq`, `/oauth/applications`) have two extra gates on top of `users.admin`:
+
+- **Passkey every 12 hours.** An admin's session must confirm a passkey (`AdminAccess`, checked by `ApplicationController#require_admin_passkey` and by `AdminPasskeyGate` around Sidekiq), whichever way they signed in. Passkey sign-in counts; a password, a 2FA code or a remember-me cookie alone sends them to `/passkeys/verification/new`. An admin without a passkey can only add one, and can't remove their last. A locked-out admin is recovered from the Rails console.
+- **Cloudflare Access.** With both variables set, those routes also need a valid Cloudflare Access token (`CloudflareAccess` checks the `Cf-Access-Jwt-Assertion` header against the team's signing keys); anything else gets a 404. Without them the check is off, as in development and test.
+
+| Variable | Purpose |
+|----------|---------|
+| `CLOUDFLARE_ACCESS_TEAM_DOMAIN` | e.g. `dabble.cloudflareaccess.com` |
+| `CLOUDFLARE_ACCESS_AUD` | The Access application's Application Audience (AUD) tag |
+
 ### Newsletters
 
 Letters to subscribers live in `newsletters/<name>/`: one Markdown `letter.md`, and a `newsletter.yml` naming its variants and who gets which (`newsletters/README.md` has the format). `Newsletter` (`app/lib/newsletter.rb`) loads them, `NewsletterMailer` sends one, and `NewsletterDeliveryJob` sends a person a newsletter at most once, recorded in `newsletter_deliveries`.

@@ -25,7 +25,7 @@ RSpec.describe InspirationsController, type: :controller do
     end
 
     it 'should show Inspirations to superusers' do
-      sign_in superuser
+      sign_in_admin superuser
       get :index
       expect(response.status).to eq 200
       expect(response.body).to have_content('Add new inspiration')

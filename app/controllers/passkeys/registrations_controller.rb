@@ -40,6 +40,9 @@ class Passkeys::RegistrationsController < ApplicationController
       )
 
       if credential.save
+        # Creating a passkey with user verification proves it as well as using one.
+        # (An admin who already has passkeys only gets here after a passkey check.)
+        AdminAccess.record_passkey!(session, current_user)
         UserMailer.passkey_added(current_user, credential.nickname).deliver_later
         render json: { status: "ok" }, status: :ok
       else
@@ -54,6 +57,11 @@ class Passkeys::RegistrationsController < ApplicationController
 
   def destroy
     credential = current_user.webauthn_credentials.find(params[:id])
+    if current_user.admin? && current_user.webauthn_credentials.count <= 1
+      redirect_to security_path, alert: "Admin accounts must keep at least one passkey. Add another before removing this one."
+      return
+    end
+
     credential.destroy
     redirect_to security_path, notice: "Passkey removed."
   end

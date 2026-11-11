@@ -61,19 +61,24 @@ Rails.application.routes.draw do
     end
   end
 
-  authenticate :user, ->(u) { u.admin? } do
-    resources :inspirations, path: '/admin/inspirations'
-    resources :payments, path: '/admin/payments'
-    get 'admin/users' => 'admin#users', as: 'admin_users'
-    get 'admin/users/:id/edit' => 'admin#edit_user', as: 'edit_admin_user'
-    patch 'admin/users/:id' => 'admin#update_user', as: 'admin_user'
-    post 'admin/users/:id/password_reset' => 'admin#send_password_reset', as: 'admin_user_password_reset'
-    post 'admin/users/:id/ignored_email_images' => 'admin#create_ignored_email_image', as: 'admin_user_ignored_email_images'
-    delete 'admin/users/:id/ignored_email_images/:ignored_email_image_id' => 'admin#destroy_ignored_email_image', as: 'admin_user_ignored_email_image'
-    get 'admin/stats' => 'admin#stats', as: 'admin_stats'
-    post 'admin/stats/capture' => 'admin#capture_stats', as: 'capture_admin_stats'
-    get 'admin/photos' => 'admin#photos', as: 'admin_photos'
-    mount Sidekiq::Web => "/sidekiq"
+  # Admin pages: behind Cloudflare Access when it's configured (CloudflareAccess),
+  # for signed-in admins only, and after a recent passkey check (AdminAccess;
+  # enforced in ApplicationController, and by AdminPasskeyGate for Sidekiq).
+  constraints(CloudflareAccess) do
+    authenticate :user, ->(u) { u.admin? } do
+      resources :inspirations, path: '/admin/inspirations'
+      resources :payments, path: '/admin/payments'
+      get 'admin/users' => 'admin#users', as: 'admin_users'
+      get 'admin/users/:id/edit' => 'admin#edit_user', as: 'edit_admin_user'
+      patch 'admin/users/:id' => 'admin#update_user', as: 'admin_user'
+      post 'admin/users/:id/password_reset' => 'admin#send_password_reset', as: 'admin_user_password_reset'
+      post 'admin/users/:id/ignored_email_images' => 'admin#create_ignored_email_image', as: 'admin_user_ignored_email_images'
+      delete 'admin/users/:id/ignored_email_images/:ignored_email_image_id' => 'admin#destroy_ignored_email_image', as: 'admin_user_ignored_email_image'
+      get 'admin/stats' => 'admin#stats', as: 'admin_stats'
+      post 'admin/stats/capture' => 'admin#capture_stats', as: 'capture_admin_stats'
+      get 'admin/photos' => 'admin#photos', as: 'admin_photos'
+      mount AdminPasskeyGate.new(Sidekiq::Web) => "/sidekiq"
+    end
   end
 
   devise_for :users, controllers: { registrations: 'registrations', sessions: 'sessions', passwords: 'passwords' }
@@ -86,6 +91,9 @@ Rails.application.routes.draw do
   namespace :passkeys do
     resources :registrations, only: [:new, :create, :destroy]
     resources :sessions, only: [:new, :create]
+    resource :verification, only: [:new, :create] do
+      get :options
+    end
   end
 
   # The unsubscribe link in product-update emails (EmailUpdatesController).

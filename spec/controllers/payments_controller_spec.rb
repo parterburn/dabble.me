@@ -33,7 +33,7 @@ RSpec.describe PaymentsController, type: :controller do
     end
 
     it 'should show Admin Dashboard to superusers' do
-      sign_in superuser
+      sign_in_admin superuser
       get :index
       expect(response.status).to eq 200
       expect(response.body).to have_content(paid_user.email)
@@ -47,7 +47,7 @@ RSpec.describe PaymentsController, type: :controller do
       # A webhook payment whose user was deleted: only the comment has the email.
       let!(:orphan_payment) { Payment.create!(user_id: nil, amount: 5.0, comments: 'Gumroad Monthly from Gone@Example.com', date: Time.now) }
 
-      before { sign_in superuser }
+      before { sign_in_admin superuser }
 
       it "filters by user ID and totals only that user's payments" do
         get :index, params: { user_id: paid_annual_user.id }
@@ -90,7 +90,7 @@ RSpec.describe PaymentsController, type: :controller do
     end
 
     it 'should show Payment to superusers' do
-      sign_in superuser
+      sign_in_admin superuser
       get :edit, params: { id: payment.id }
       expect(response.status).to eq 200
       expect(response.body).to have_field('plan', with: paid_user.plan)
@@ -103,7 +103,7 @@ RSpec.describe PaymentsController, type: :controller do
         ['Keep current plan', 'Free', 'PRO Monthly PayHere (Stripe)', 'PRO Yearly PayHere (Stripe)', 'PRO Forever']
       end
 
-      before { sign_in superuser }
+      before { sign_in_admin superuser }
 
       it "selects a Stripe user's plan and offers only active plans" do
         get :edit, params: { id: payment.id }
@@ -139,7 +139,7 @@ RSpec.describe PaymentsController, type: :controller do
     end
 
     it 'should show new Payment to superusers' do
-      sign_in superuser
+      sign_in_admin superuser
       get :new
       expect(response.status).to eq 200
       expect(response.body).to have_field('plan')
@@ -148,7 +148,7 @@ RSpec.describe PaymentsController, type: :controller do
     end
 
     it "defaults the plan dropdown to keeping the user's plan, with only active plans" do
-      sign_in superuser
+      sign_in_admin superuser
       get :new
       expect(response.body).to have_select(
         'plan',
@@ -185,7 +185,7 @@ RSpec.describe PaymentsController, type: :controller do
     end
 
     it 'should show create new Payment for superusers' do
-      sign_in superuser
+      sign_in_admin superuser
       expect { post(:create, params: params) }.to change { Payment.count }.by(1)
       expect(response.status).to eq 302
       expect(response).to redirect_to(payments_url)
@@ -197,7 +197,7 @@ RSpec.describe PaymentsController, type: :controller do
       let(:form_params) { params.merge(plan: 'PRO Yearly PayHere', gumroad_id: '', payhere_id: '', stripe_id: '') }
 
       before do
-        sign_in superuser
+        sign_in_admin superuser
         paid_user.update!(stripe_id: 'cus_existing')
       end
 
@@ -230,7 +230,7 @@ RSpec.describe PaymentsController, type: :controller do
       # A Free user whose schedule was cut to Sundays when they downgraded.
       before do
         user.update_columns(frequency: ['Sun'], previous_frequency: %w[Mon Wed Fri])
-        sign_in superuser
+        sign_in_admin superuser
       end
 
       let(:thanks_params) do
@@ -271,7 +271,7 @@ RSpec.describe PaymentsController, type: :controller do
     context 'when the User email and User ID fields do not name one user' do
       include ActiveJob::TestHelper
 
-      before { sign_in superuser }
+      before { sign_in_admin superuser }
 
       let(:missing_id) { User.maximum(:id) + 1000 }
       let(:form_params) do
@@ -320,7 +320,7 @@ RSpec.describe PaymentsController, type: :controller do
 
   describe 'update' do
     before do
-      sign_in superuser
+      sign_in_admin superuser
       paid_user.update!(stripe_id: 'cus_existing')
     end
 
@@ -472,7 +472,7 @@ RSpec.describe PaymentsController, type: :controller do
     end
 
     it 'should show create new Payment for superusers' do
-      sign_in superuser
+      sign_in_admin superuser
       expect { delete(:destroy, params: { id: payment.id }) }.to change { Payment.count }.by(-1)
       expect(response.status).to eq 302
       expect(response).to redirect_to(payments_url)

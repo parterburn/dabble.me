@@ -39,6 +39,8 @@ class Passkeys::SessionsController < ApplicationController
     # Remembered only when the sign-in page's "Stay logged in" box is ticked.
     user.remember_me = ActiveModel::Type::Boolean.new.cast(params[:remember_me])
     sign_in(user)
+    # Signing in with a passkey is itself the check admin sessions need.
+    AdminAccess.record_passkey!(session, user)
 
     render json: { status: "ok", redirect_url: after_sign_in_path_for(user) }, status: :ok
   rescue WebAuthn::Error, ArgumentError

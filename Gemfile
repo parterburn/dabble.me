@@ -126,5 +126,6 @@ gem 'rack-timeout', '~> 0.7'
 
 gem "mcp", "~> 0.23.0"
 gem "doorkeeper", "~> 5.9"
+gem "jwt", "~> 3.2" # verifies Cloudflare Access tokens (CloudflareAccess)
 
 gem "rack-cors", "~> 2.0", group: :development

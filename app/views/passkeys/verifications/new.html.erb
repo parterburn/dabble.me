@@ -1,0 +1,20 @@
+<% title "Confirm with your passkey — Dabble me." %>
+<% content_for :tailwind, true %>
+
+<div class="tw mx-auto max-w-2xl pt-4 pb-16 sm:pt-8">
+  <header class="mb-8">
+    <h1 class="font-serif text-4xl tracking-tight text-primary sm:text-5xl">Confirm it's you</h1>
+    <p class="mt-2 text-muted">Admin accounts confirm a passkey every 12 hours, however they signed in.</p>
+  </header>
+
+  <section class="card p-6 sm:p-8">
+    <p class="text-primary">Use a passkey saved for <strong class="font-semibold"><%= current_user.email %></strong> to continue.</p>
+
+    <button type="button" id="verify-passkey" class="button-primary mt-6 w-full">Use my passkey</button>
+    <p id="verify-passkey-error" class="field-help mt-3 hidden" role="alert"></p>
+  </section>
+
+  <p class="mt-8">
+    <%= link_to "Log out", destroy_user_session_path, method: :delete, class: "text-sm text-muted hover:text-primary" %>
+  </p>
+</div>

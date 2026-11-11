@@ -643,6 +643,7 @@ DEPENDENCIES
   irb
   jekyll-timeago
   jquery-rails
+  jwt (~> 3.2)
   kaminari (>= 1.2.1)
   listen
   logger
