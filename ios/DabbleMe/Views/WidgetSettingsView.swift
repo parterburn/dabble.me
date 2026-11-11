@@ -1,9 +1,9 @@
 import SwiftUI
 import WidgetKit
 
-/// Settings → Home Screen Widget: what the medium widget shows next to your streak, with a live
+/// Settings → Home Screen Widget: what the medium widget shows next to the year's entry count, with a live
 /// preview from today's data (the same view the widget draws). The small widget is always just
-/// the streak, so the medium one is what changes.
+/// the count, so the medium one is what changes.
 struct WidgetSettingsView: View {
     @Environment(AppModel.self) private var model
     @State private var content = WidgetSnapshot.content
@@ -19,7 +19,7 @@ struct WidgetSettingsView: View {
             }
 
             Section {
-                Picker("Next to Your Streak", selection: $content) {
+                Picker("Next to Your Entry Count", selection: $content) {
                     ForEach(WidgetContent.allCases) { option in
                         VStack(alignment: .leading, spacing: 2) {
                             Text(option.title)
@@ -33,7 +33,7 @@ struct WidgetSettingsView: View {
                 .pickerStyle(.inline)
                 .labelsHidden()
             } header: {
-                Text("Next to Your Streak")
+                Text("Next to Your Entry Count")
             } footer: {
                 footer
             }

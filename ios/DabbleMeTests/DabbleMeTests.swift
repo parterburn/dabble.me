@@ -342,23 +342,30 @@ struct WidgetSnapshotTests {
         calendar.date(from: DateComponents(year: 2026, month: 11, day: day, hour: 12))!
     }
 
-    private func snapshot(day: String, wrote: Bool, streak: Int, memories: Int = 0) -> WidgetSnapshot {
-        WidgetSnapshot(day: day, wroteToday: wrote, streak: streak, memories: memories, memoriesFirstYear: nil, prompt: "Hi")
+    private func snapshot(day: String, wrote: Bool, count: Int?, memories: Int = 0) -> WidgetSnapshot {
+        WidgetSnapshot(day: day, wroteToday: wrote, yearCount: count, memories: memories, memoriesFirstYear: nil, prompt: "Hi")
     }
 
     @Test func sameDayShowsTheSnapshot() {
-        let state = snapshot(day: "2026-11-08", wrote: true, streak: 4, memories: 2).state(on: date(8), calendar: calendar)
-        #expect(state.wroteToday && state.streak == 4 && state.memories == 2)
+        let state = snapshot(day: "2026-11-08", wrote: true, count: 36, memories: 2).state(on: date(8), calendar: calendar)
+        #expect(state.wroteToday && state.yearCount == 36 && state.memories == 2)
     }
 
-    @Test func aStreakSurvivesTheNextDayUntilItsWritten() {
-        let state = snapshot(day: "2026-11-07", wrote: true, streak: 4, memories: 2).state(on: date(8), calendar: calendar)
-        #expect(!state.wroteToday && state.streak == 4 && state.memories == nil)
+    @Test func aNewDayIsUnwrittenAndKeepsTheYearsCount() {
+        let state = snapshot(day: "2026-11-05", wrote: true, count: 36, memories: 2).state(on: date(8), calendar: calendar)
+        #expect(!state.wroteToday && state.yearCount == 36 && state.memories == nil)
     }
 
-    @Test func anUnwrittenDayEndsTheStreak() {
-        #expect(snapshot(day: "2026-11-07", wrote: false, streak: 3).state(on: date(8), calendar: calendar).streak == 0)
-        #expect(snapshot(day: "2026-11-05", wrote: true, streak: 9).state(on: date(8), calendar: calendar).streak == 0)
+    @Test func aNewYearStartsTheCountAgain() {
+        let newYear = calendar.date(from: DateComponents(year: 2027, month: 1, day: 1, hour: 9))!
+        #expect(snapshot(day: "2026-12-31", wrote: true, count: 40).state(on: newYear, calendar: calendar).yearCount == 0)
+    }
+
+    /// A snapshot saved by a build that still tracked the streak has no count yet.
+    @Test func olderSnapshotsStillLoad() throws {
+        let old = #"{"day":"2026-11-08","wroteToday":true,"streak":4,"memories":0,"prompt":"Hi"}"#
+        let snapshot = try JSONDecoder().decode(WidgetSnapshot.self, from: Data(old.utf8))
+        #expect(snapshot.state(on: date(8), calendar: calendar).yearCount == 0)
     }
 }
 

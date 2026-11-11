@@ -2,7 +2,7 @@ import Foundation
 import UIKit
 import WidgetKit
 
-/// Keeps the home-screen widget's snapshot (streak, written today, today's prompt and, only with
+/// Keeps the home-screen widget's snapshot (the year's entry count, written today, today's prompt and, only with
 /// "On This Day Entry" chosen, an entry to look back on) in step with the app. The prompt is the
 /// personal one Apple Intelligence wrote for today when there is one. Settings → Home Screen
 /// Widget decides what goes on it; the Face ID lock doesn't (it guards the app, and the person
@@ -15,7 +15,7 @@ enum WidgetSync {
         let snapshot = WidgetSnapshot(
             day: today.date,
             wroteToday: today.entry != nil,
-            streak: today.currentStreak ?? 0,
+            yearCount: model.entriesThisYear ?? 0,
             memories: memories.count,
             memoriesFirstYear: memories.compactMap { $0.day.flatMap { Int($0.year) } }.min(),
             prompt: personalPrompt(for: today.date, model: model) ?? today.prompt,
@@ -139,7 +139,7 @@ enum WidgetSync {
         guard let today = model.today else { return .placeholder }
         let shown = shownEntry(today, content: content, model: model)
         return WidgetEntry(date: .now, signedIn: true, wroteToday: today.entry != nil,
-                           streak: today.currentStreak ?? 0,
+                           yearCount: model.entriesThisYear ?? 0,
                            memories: content != .prompt && !today.onThisDay.isEmpty ? today.onThisDay.count : nil,
                            prompt: personalPrompt(for: today.date, model: model) ?? today.prompt,
                            entryTitle: shown?.title, entryText: shown?.text, entryID: shown?.id,

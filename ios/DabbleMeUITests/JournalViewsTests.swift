@@ -1036,17 +1036,18 @@ final class JournalViewsTests: XCTestCase {
         snap("add-photos-library")
     }
 
-    /// Today's streak (top right) opens Stats.
-    func testStreakOpensStats() throws {
+    /// Today's count of the year's entries (top right) opens Stats.
+    func testYearCountOpensStats() throws {
         let app = launch()
-        let streak = app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", "day streak")).firstMatch
-        XCTAssertTrue(streak.waitForExistence(timeout: 15))
-        snap("today-streak")
-        streak.tap()
+        let year = Calendar.current.component(.year, from: .now)
+        let count = app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", "in \(year)")).firstMatch
+        XCTAssertTrue(count.waitForExistence(timeout: 15))
+        snap("today-year-count")
+        count.tap()
         XCTAssertTrue(app.staticTexts["Past Year"].waitForExistence(timeout: 10), "Stats, in the Journal tab")
     }
 
-    /// Settings → Home Screen Widget: choosing what shows beside the streak updates the preview.
+    /// Settings → Home Screen Widget: choosing what shows beside the year's count updates the preview.
     func testWidgetSettingsPreview() throws {
         let app = launch()
         tab(app, "Settings").tap()

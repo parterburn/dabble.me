@@ -104,8 +104,8 @@ struct TodaySummary: Decodable, Sendable {
     let onThisDay: [EntrySummary]
     let onThisDayAvailable: Bool
     let prompt: String?
-    /// Days in a row with an entry, up to today (or yesterday while today is unwritten).
-    var currentStreak: Int? = nil
+    /// Entries written this calendar year (nil from a server that doesn't send it yet).
+    var entriesThisYear: Int? = nil
     /// A past entry when On This Day is empty, like the daily email's ("Throwback").
     var throwback: EntrySummary? = nil
 
