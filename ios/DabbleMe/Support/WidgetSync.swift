@@ -57,7 +57,7 @@ enum WidgetSync {
                 title = [years, memory.day?.year].compactMap { $0 }.joined(separator: " · ")
             } else if let rewind = today.throwback, let day = rewind.day, let now = today.day {
                 entry = rewind
-                title = "Rewind · \(day.relative(to: now))"
+                title = day.relative(to: now) // "2 years and 3 months ago": the icon says it's a look back
             } else {
                 return nil
             }

@@ -23,7 +23,7 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     var memoryNote: String? = nil
     var prompt: String?
     /// With previews on: an entry (a look back, or today's own), e.g. "1 year ago · 2025",
-    /// "Rewind · 31 days ago" or "Today's entry", and the start of its text.
+    /// "31 days ago" or "Today's entry", and the start of its text.
     var entryTitle: String? = nil
     var entryText: String? = nil
     /// The shown entry, so tapping it on the widget opens it.
