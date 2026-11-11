@@ -128,6 +128,18 @@
     <% end %>
   <% end %>
 
+  <section class="card p-6 sm:p-8">
+    <h2 class="font-serif text-2xl text-primary">Updates</h2>
+    <p class="mt-1 text-sm text-muted">The occasional letter about what's new in Dabble Me. Separate from your journal emails.</p>
+
+    <div class="mt-5">
+      <%= f.label :send_updates, class: "flex cursor-pointer items-start gap-3" do %>
+        <%= f.check_box :send_updates, class: "checkbox mt-1" %>
+        <span class="text-primary">Send me updates about Dabble Me</span>
+      <% end %>
+    </div>
+  </section>
+
   <%# The submit button comes first so pressing Enter in a field saves, rather
       than unsubscribing. Its row is reversed to put it on the right. %>
   <div class="flex flex-col gap-4 sm:flex-row-reverse sm:items-center sm:justify-between">
