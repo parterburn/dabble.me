@@ -34,7 +34,7 @@ enum ReadingTextSize: Int, CaseIterable, Identifiable {
     var larger: ReadingTextSize? { ReadingTextSize(rawValue: rawValue + 1) }
 }
 
-/// Settings → Accessibility → Entry Font: entries in a serif (the default, like a page) or a
+/// Settings → Theme → Entry Font: entries in a serif (the default, like a page) or a
 /// sans-serif, everywhere entry text appears.
 enum ReadingFontStyle: String, CaseIterable, Identifiable {
     case serif, sansSerif
@@ -70,7 +70,8 @@ enum ReadingFontStyle: String, CaseIterable, Identifiable {
     }
 }
 
-/// Settings → Accessibility → Theme: follow the system, or always light (Day) or dark (Night).
+/// Settings → Theme: follow the system (Auto), or always Light or Dark. (The stored values keep
+/// their first names.)
 enum AppTheme: String, CaseIterable, Identifiable {
     case system, day, night
 
@@ -80,9 +81,9 @@ enum AppTheme: String, CaseIterable, Identifiable {
 
     var label: String {
         switch self {
-        case .system: "System"
-        case .day: "Day"
-        case .night: "Night"
+        case .system: "Auto"
+        case .day: "Light"
+        case .night: "Dark"
         }
     }
 

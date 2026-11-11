@@ -88,6 +88,43 @@ struct HashtagMatchingTests {
 }
 
 @MainActor
+struct StatsOverviewTests {
+    @Test func wordsCompareToABookOnceThereAreEnough() {
+        #expect(JournalIntelligence.bookComparison(words: 5_000) == nil)
+        #expect(JournalIntelligence.bookComparison(words: 30_000) == "about 64% of the length of The Great Gatsby")
+        #expect(JournalIntelligence.bookComparison(words: 50_000) == "about as long as The Great Gatsby")
+        #expect(JournalIntelligence.bookComparison(words: 100_000) == "about as long as The Hobbit")
+        #expect(JournalIntelligence.bookComparison(words: 1_200_000) == "about 2 times the length of War and Peace")
+    }
+}
+
+@MainActor
+struct WebLinksTests {
+    /// dabble.me pages open in the app; other sites, and the link to subscribe, go to the browser.
+    @Test func onlyOurPagesOpenInTheApp() {
+        #expect(WebLinks.opensInApp(URL(string: "https://dabble.me/support")!))
+        #expect(WebLinks.opensInApp(URL(string: "https://dabble.me/security")!))
+        #expect(!WebLinks.opensInApp(URL(string: "https://dabble.me/subscribe")!))
+        #expect(!WebLinks.opensInApp(URL(string: "https://open.spotify.com/track/1")!))
+        #expect(!WebLinks.opensInApp(URL(string: "mailto:hello@dabble.me")!))
+    }
+}
+
+struct WidgetContentTests {
+    @Test func twoChoicesAndASwitch() {
+        #expect(WidgetContent(source: .prompt, showsPreviews: false) == .prompt)
+        #expect(WidgetContent(source: .prompt, showsPreviews: true) == .promptEntry)
+        #expect(WidgetContent(source: .rewind, showsPreviews: false) == .memoryCount)
+        #expect(WidgetContent(source: .rewind, showsPreviews: true) == .memoryEntry)
+        for content in WidgetContent.allCases {
+            #expect(WidgetContent(source: content.source, showsPreviews: content.showsPreviews) == content)
+        }
+        // The values saved by earlier builds still read.
+        #expect(WidgetContent(rawValue: "memoryCount") == .memoryCount && WidgetContent(rawValue: "memoryEntry") == .memoryEntry)
+    }
+}
+
+@MainActor
 struct ReflectionChatSummaryTests {
     /// A long chat keeps its most recent turns for the summary, so a late answer isn't cut off.
     @Test func longChatsKeepTheLatestTurns() {
@@ -134,15 +171,35 @@ struct WidgetPhotoTests {
 }
 
 struct ShareCardTests {
-    @Test func shareLabelRoundsDownToTheLargestUnit() throws {
+    @Test func shareLabelIsDaysUnderSixtyThenTheLargestUnit() throws {
         let today = try #require(JournalDay("2026-11-09"))
         func label(_ date: String) throws -> String { try #require(JournalDay(date)).shareLabel(to: today) }
         #expect(try label("2026-11-09") == "Today")
         #expect(try label("2026-11-08") == "Yesterday")
         #expect(try label("2026-10-28") == "12 days ago")
+        #expect(try label("2026-09-20") == "50 days ago")
         #expect(try label("2026-06-01") == "5 months ago")
         #expect(try label("2025-11-01") == "1 year ago")
         #expect(try label("2023-11-02") == "3 years ago")
+    }
+
+    /// The same wording and rounding as the daily email's "Rewind 3 months and 1 week".
+    @Test func relativeDatesAreDaysUnderSixtyThenTwoUnits() throws {
+        let today = try #require(JournalDay("2026-11-09"))
+        func ago(_ days: Int) throws -> String {
+            let date = try #require(Calendar(identifier: .gregorian).date(byAdding: .day, value: -days, to: today.localDate))
+            return JournalDay(localDate: date).relative(to: today)
+        }
+        #expect(try ago(0) == "Today")
+        #expect(try ago(1) == "Yesterday")
+        #expect(try ago(36) == "36 days ago")
+        #expect(try ago(59) == "59 days ago")
+        #expect(try ago(60) == "2 months ago")
+        #expect(try ago(97) == "3 months and 1 week ago")
+        #expect(try ago(365) == "12 months ago")
+        #expect(try ago(430) == "1 year and 2 months ago")
+        #expect(try ago(1096) == "3 years ago")
+        #expect(JournalDay.span(days: 97) == ["3 months", "1 week"])
     }
 
     @MainActor

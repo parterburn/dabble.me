@@ -197,6 +197,7 @@ struct EntryDetailView: View {
         let relative = entry.day.map { $0.relative(to: today) } ?? full
         return Text(showsRelativeDate ? relative : full)
             .font(.headline)
+            .foregroundStyle(.tint) // olive, like the dates over entries elsewhere
             .lineLimit(1)
             .minimumScaleFactor(0.75)
             .contentTransition(.opacity)
@@ -489,6 +490,15 @@ struct ReflectionSheet: View {
                 }
                 .onChange(of: summary) {
                     withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
+                }
+                // Starting a reply: once the sheet has grown and the keyboard is up, the end of
+                // the reflection (its question) is in view, not scrolled out above the field.
+                .onChange(of: replying) { _, typing in
+                    guard typing else { return }
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(450))
+                        withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
+                    }
                 }
             }
             if reflection.text != nil, !reflection.entryText.isEmpty {

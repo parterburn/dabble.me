@@ -17,6 +17,9 @@ struct SearchView: View {
     @State private var path = NavigationPath()
     @State private var expanded: Set<Int> = []
     @State private var actions = EntryActions()
+    /// For the timeline scrubber over the results (as on the Journal).
+    @State private var scrollProgress: CGFloat = 0
+    @State private var isScrolling = false
 
     var body: some View {
         NavigationStack(path: $path) {
@@ -68,34 +71,49 @@ struct SearchView: View {
     @ViewBuilder
     private var resultsList: some View {
         if submitted.isEmpty {
-            if hashtags.isEmpty {
-                ContentUnavailableView {
-                    Label("Search your journal", icon: "slab-search")
-                } description: {
-                    Text("Find a word, a #hashtag, an \"exact phrase\", or either of two words with hiking OR camping.")
-                }
-                .task { await loadHashtags() }
-            } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 14) {
-                        Text("Your Hashtags This Year")
-                            .font(.headline)
-                            .accessibilityAddTraits(.isHeader)
-                        HashtagCloud(hashtags: hashtags) { tag in
-                            query = "#\(tag)"
-                            Task { await search(reset: true) }
+            // Before a search: your hashtags, how to search, a way to a day, and where to ask more.
+            // (No pull to refresh here: the hashtags reload each time Search comes up.)
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    if !hashtags.isEmpty {
+                        VStack(alignment: .leading, spacing: 14) {
+                            Text("Your Hashtags This Year")
+                                .font(.headline)
+                                .accessibilityAddTraits(.isHeader)
+                            HashtagCloud(hashtags: hashtags) { tag in
+                                query = "#\(tag)"
+                                Task { await search(reset: true) }
+                            }
                         }
-                        Text("Search for a word, a #hashtag, an \"exact phrase\", or either of two words with hiking OR camping.")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                            .padding(.top, 8)
                     }
-                    .padding()
-                    .frame(maxWidth: 680, alignment: .leading)
-                    .frame(maxWidth: .infinity)
+                    Text("Search for a word, a #hashtag, an \"exact phrase\", or either of two words with hiking OR camping.")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                    VStack(spacing: 12) {
+                        Button {
+                            model.showsDayPicker = true
+                        } label: {
+                            SearchRow(icon: "slab-calendar", title: "Jump to a Day", message: "See your entries in a calendar view.")
+                        }
+                        .accessibilityLabel("Jump to a Day")
+                        .accessibilityHint("Opens a calendar of the days you wrote")
+                        // The Claude/ChatGPT connector, set up on dabble.me.
+                        if let connectors = model.me?.aiConnectors {
+                            Link(destination: connectors.guideUrl) {
+                                SearchRow(icon: "slab-claude", title: "Chat with your journal",
+                                          message: "Ask questions and understand patterns by connecting to your AI assistant like Claude or ChatGPT.")
+                            }
+                            .accessibilityLabel("Chat with your journal")
+                            .accessibilityHint("Shows how to connect Claude or ChatGPT")
+                        }
+                    }
+                    .buttonStyle(.plain)
                 }
-                .refreshable { await loadHashtags() }
+                .padding()
+                .frame(maxWidth: 680, alignment: .leading)
+                .frame(maxWidth: .infinity)
             }
+            .onAppear { Task { await loadHashtags() } }
         } else if isSearching && results.isEmpty {
             ProgressView()
         } else if let error, results.isEmpty {
@@ -105,6 +123,7 @@ struct SearchView: View {
         } else {
             // The count scrolls away; each month's results sit under a sticky "Month YYYY"
             // (pinned just under the search field), like the Journal.
+            ScrollViewReader { proxy in
             List {
                 Text(totalCount == 1 ? "1 matching entry" : "\(totalCount.formatted()) matching entries")
                     .font(.subheadline)
@@ -141,6 +160,28 @@ struct SearchView: View {
                 query = submitted
                 await search(reset: true, keepingResults: true)
             }
+            // The Journal's timeline scrubber, over the months the results (loaded so far) fall
+            // in: drag to a month, or tap it for the calendar.
+            .scrollIndicators(scrubberMonths.count >= 3 ? .hidden : .automatic)
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                let scrollable = geometry.contentSize.height - geometry.containerSize.height
+                return scrollable > 0 ? min(max((geometry.contentOffset.y + geometry.contentInsets.top) / scrollable, 0), 1) : 0
+            } action: { _, progress in
+                scrollProgress = progress
+            }
+            .onScrollPhaseChange { _, phase in isScrolling = phase.isScrolling }
+            .overlay(alignment: .trailing) {
+                if scrubberMonths.count >= 3 {
+                    TimelineScrubber(months: scrubberMonths, progress: scrollProgress, isScrolling: isScrolling, onSelect: { month in
+                        if let first = resultMonths.first(where: { $0.key == month.key })?.entries.first {
+                            proxy.scrollTo(first.id, anchor: .top)
+                        }
+                    }, onTap: {
+                        model.showsDayPicker = true
+                    })
+                }
+            }
+            }
         }
     }
 
@@ -156,6 +197,15 @@ struct SearchView: View {
             }
         }
         return months
+    }
+
+    /// The results' months with how many results each has, for the scrubber.
+    private var scrubberMonths: [MonthCount] {
+        resultMonths.compactMap { month in
+            let parts = month.key.split(separator: "-").compactMap { Int($0) }
+            guard parts.count == 2 else { return nil }
+            return MonthCount(year: parts[0], month: parts[1], count: month.entries.count)
+        }
     }
 
     private func loadHashtags() async {
@@ -281,5 +331,102 @@ struct FlowLayout: Layout {
         }
         if !row.indices.isEmpty { rows.append(row) }
         return rows
+    }
+}
+
+/// A tappable card on Search's start screen: an icon, a title over a line about it, and an arrow.
+private struct SearchRow: View {
+    let icon: String
+    let title: String
+    let message: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            appIcon(icon)
+                .foregroundStyle(.tint)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(message)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.leading)
+            }
+            Spacer(minLength: 8)
+            appIcon("slab-angle-right")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 12, height: 12)
+                .foregroundStyle(.tertiary)
+        }
+        .padding(14)
+        .background(Color.secondary.opacity(0.08), in: .rect(cornerRadius: 14))
+        .contentShape(.rect(cornerRadius: 14))
+    }
+}
+
+/// Stats' pointer to the Claude/ChatGPT connector (set up on dabble.me), for what the numbers
+/// don't do. With `prompt`, something to ask once connected, with a Copy button.
+struct ConnectorCallout: View {
+    let title: String
+    let message: String
+    let guide: URL
+    var prompt: String? = nil
+    @State private var copied = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label(title, icon: "slab-claude")
+                .font(.subheadline.weight(.semibold))
+            Text(message)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+            if let prompt {
+                Text(prompt)
+                    .font(.system(.footnote, design: .serif))
+                    .padding(10)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(Color("Paper"), in: .rect(cornerRadius: 10))
+                    .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(.quaternary))
+                    .accessibilityLabel("Prompt: \(prompt)")
+            }
+            // The two buttons the same size; the copy icon small, beside its words.
+            HStack(spacing: 10) {
+                if let prompt {
+                    Button {
+                        UIPasteboard.general.string = prompt
+                        copied = true
+                    } label: {
+                        HStack(spacing: 5) {
+                            appIcon(copied ? "slab-check" : "slab-copy")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 13, height: 13)
+                            Text(copied ? "Copied" : "Copy Prompt")
+                        }
+                        .frame(minHeight: 20)
+                    }
+                    .buttonStyle(.borderedProminent)
+                }
+                Link(destination: guide) {
+                    Text("Connect AI Assistant")
+                        .frame(minHeight: 20)
+                }
+                .buttonStyle(.bordered)
+            }
+            .buttonBorderShape(.capsule)
+            .font(.footnote.weight(.semibold))
+            .controlSize(.regular)
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.secondary.opacity(0.08), in: .rect(cornerRadius: 14))
+        .sensoryFeedback(.success, trigger: copied)
+        .task(id: copied) {
+            guard copied else { return }
+            try? await Task.sleep(for: .seconds(2))
+            copied = false
+        }
     }
 }

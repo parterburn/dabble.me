@@ -8,8 +8,7 @@ struct SettingsView: View {
     @State private var confirmingDeletion = false
     @State private var deletionEmail: String?
     @State private var deletionError: String?
-    @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
-    @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
+    @AppStorage(AppTheme.storageKey) private var theme = AppTheme.system
     @AppStorage(ReminderSettings.writingEnabledKey) private var writingReminder = false
     @AppStorage(ReminderSettings.writingTimeKey) private var writingTime = ReminderSettings.defaultWritingTime
     @AppStorage(ReminderSettings.memoriesEnabledKey) private var memoriesReminder = false
@@ -34,7 +33,17 @@ struct SettingsView: View {
                     .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 0))
                 if let me = model.me {
                     Section("Account") {
-                        LabeledContent("Email", value: me.email)
+                        // Your email opens Account Security on dabble.me (password, passkeys, 2FA).
+                        Link(destination: me.securityUrl) {
+                            LabeledContent("Email") {
+                                HStack(spacing: 8) {
+                                    Text(me.email)
+                                    ExternalLinkIcon()
+                                }
+                            }
+                        }
+                        .foregroundStyle(.primary)
+                        .accessibilityHint("Opens Account Security on dabble.me")
                         if canLinkToSubscribe {
                             Link(destination: AppConfig.webURL("subscribe")) {
                                 LabeledContent("Plan") {
@@ -80,9 +89,9 @@ struct SettingsView: View {
                         AccessibilitySettingsView()
                     } label: {
                         LabeledContent {
-                            Text("\(textSize.label), \(fontStyle.label)")
+                            Text(theme.label)
                         } label: {
-                            Label("Accessibility", icon: "slab-universal-access")
+                            Label("Theme", icon: "slab-universal-access")
                         }
                     }
                 }

@@ -17,12 +17,14 @@ enum WebAuthError: LocalizedError {
 
 /// Runs the dabble.me sign-in page in ASWebAuthenticationSession. It shares Safari's
 /// cookies (not ephemeral), so a user already signed in on the web just taps through,
-/// and passkeys / 2FA work exactly as they do on the website.
+/// and passkeys / 2FA work exactly as they do on the website. After an explicit Sign Out,
+/// the next sign-in is `ephemeral` instead: it ignores Safari's session, so it asks for the
+/// password again (and another account can sign in).
 @MainActor
 final class WebAuthenticator: NSObject, ASWebAuthenticationPresentationContextProviding {
     private var session: ASWebAuthenticationSession?
 
-    func authenticate(url: URL) async throws -> URL {
+    func authenticate(url: URL, ephemeral: Bool = false) async throws -> URL {
         defer { session = nil }
         return try await withCheckedThrowingContinuation { continuation in
             let session = ASWebAuthenticationSession(url: url, callback: .customScheme(AppConfig.callbackScheme)) { callbackURL, error in
@@ -35,7 +37,7 @@ final class WebAuthenticator: NSObject, ASWebAuthenticationPresentationContextPr
                 }
             }
             session.presentationContextProvider = self
-            session.prefersEphemeralWebBrowserSession = false
+            session.prefersEphemeralWebBrowserSession = ephemeral
             self.session = session
             if !session.start() {
                 continuation.resume(throwing: WebAuthError.couldNotStart)

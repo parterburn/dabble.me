@@ -27,17 +27,17 @@ struct TodayView: View {
             List {
                 if let today = model.today {
                     // The header (the nav bar is hidden here): the wordmark, small, with the year's
-                    // entry count ("36 entries in 2026") beside it.
+                    // entry count ("36 entries this year") beside it.
                     HStack(alignment: .center) {
                         Wordmark(size: 28)
                         Spacer(minLength: 8)
-                        if let count = model.entriesThisYear, let year = today.day?.year {
-                            yearCountButton(count, year: year)
+                        // Nothing to count yet: no "0 entries".
+                        if let count = model.entriesThisYear, count > 0 {
+                            yearCountButton(count)
                         }
                     }
                     .plainRow()
-                    // Today's date titles the day's section. No year: it's always today (and it's
-                    // in the header's count).
+                    // Today's date titles the day's section. No year: it's always today.
                     SectionTitle(today.day?.formatted(.dateTime.weekday(.wide).month(.wide).day()) ?? today.date,
                                  icon: "slab-calendar")
                         .accessibilityLabel(today.day?.long ?? today.date)
@@ -228,15 +228,15 @@ struct TodayView: View {
 
     // MARK: - On This Day
 
-    /// "🔥 36 entries in 2026": entries written this year. Tapping it opens Stats.
-    private func yearCountButton(_ count: Int, year: String) -> some View {
+    /// "🔥 36 entries this year". Tapping it opens Stats.
+    private func yearCountButton(_ count: Int) -> some View {
         Button {
             model.selectedTab = .journal
             model.statsRequest += 1
         } label: {
             HStack(spacing: 5) {
                 appIcon("slab-fire")
-                Text("\(count.formatted()) \(count == 1 ? "entry" : "entries") in \(year)")
+                Text("\(count.formatted()) \(count == 1 ? "entry" : "entries") this year")
                     .monospacedDigit()
             }
             .font(.subheadline.weight(.semibold))
@@ -246,12 +246,12 @@ struct TodayView: View {
             .contentShape(.rect)
         }
         .buttonStyle(.borderless)
-        .accessibilityLabel(count == 1 ? "1 entry in \(year)" : "\(count) entries in \(year)")
+        .accessibilityLabel(count == 1 ? "1 entry this year" : "\(count) entries this year")
         .accessibilityHint("Shows your stats")
     }
 
-    /// On This Day when there's something from this date in past years; otherwise a Throwback
-    /// (any past entry, as in the daily email), or, with nothing to look back on yet, a nudge to write.
+    /// On This Day when there's something from this exact date in past years; otherwise a Rewind
+    /// (any past entry, as in the daily email; the API calls it `throwback`), or, with nothing to look back on yet, a nudge to write.
     /// Free accounts see On This Day as a PRO feature instead.
     @ViewBuilder
     private func onThisDaySection(_ today: TodaySummary) -> some View {
@@ -266,7 +266,7 @@ struct TodayView: View {
 
     @ViewBuilder
     private func throwbackSection(_ throwback: EntrySummary?, today: TodaySummary) -> some View {
-        SectionTitle("Throwback", icon: "slab-backward")
+        SectionTitle("Rewind", icon: "slab-backward")
             .sectionTitleRow()
         if let throwback {
             Section {
@@ -283,16 +283,17 @@ struct TodayView: View {
         }
     }
 
-    /// "31 days ago · Wednesday, May 20, 2026".
+    /// "2 years and 3 months ago • August 2024": on one line, and the day itself is on the row
+    /// under it (SAT 10).
     private static func throwbackTitle(_ entry: EntrySummary, today: TodaySummary) -> String {
-        let date = entry.day?.formatted(.dateTime.weekday(.wide).month(.wide).day().year()) ?? entry.date
-        guard let day = entry.day, let now = today.day else { return date }
-        return "\(day.relative(to: now)) · \(date)"
+        guard let day = entry.day else { return entry.date }
+        guard let now = today.day else { return day.monthTitle }
+        return "\(day.relative(to: now)) • \(day.monthTitle)"
     }
 
     @ViewBuilder
     private func memoriesSection(_ today: TodaySummary) -> some View {
-        // A little more under it than a throwback's: several days can follow, each with its own date.
+        // A little more under it than a Rewind's: several days can follow, each with its own date.
         SectionTitle("On This Day", icon: "slab-backward")
             .sectionTitleRow(bottom: 10)
         if !today.onThisDayAvailable {
@@ -322,11 +323,11 @@ struct TodayView: View {
         }
     }
 
-    /// "1 year ago · Saturday, November 8, 2025".
+    /// "1 year ago • November 2025".
     private static func memoryTitle(_ memory: EntrySummary) -> String {
-        let date = memory.day?.formatted(.dateTime.weekday(.wide).month(.wide).day().year()) ?? memory.date
-        guard let years = memory.yearsAgo else { return date }
-        return "\(years == 1 ? "1 year" : "\(years) years") ago · \(date)"
+        let month = memory.day?.monthTitle ?? memory.date
+        guard let years = memory.yearsAgo else { return month }
+        return "\(years == 1 ? "1 year" : "\(years) years") ago • \(month)"
     }
 
     /// The Journal's row: tap to expand a long one (or open it); swipe right for Actions, left to Open.

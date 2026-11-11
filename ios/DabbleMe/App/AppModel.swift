@@ -27,6 +27,12 @@ final class AppModel {
     /// random memory's at the top of the app (from inside Stats it didn't always appear).
     var statsDay: StatsDay?
     var openEntryRequest: Int?
+    /// Jump to a Day: the calendar of written days (from the Journal's scrubber, Search, or a
+    /// day's sheet). The day picked comes up in the day sheet (`statsDay`) once the calendar has
+    /// closed; `reopensDayPicker` brings the calendar back after a day's sheet closes.
+    var showsDayPicker = false
+    var pickedDay: JournalDay?
+    var reopensDayPicker = false
     let lock = AppLock()
 
     func search(hashtag: String) {
@@ -78,7 +84,9 @@ final class AppModel {
         let pkce = PKCE()
         let state = PKCE.randomURLSafeString(byteCount: 16)
         do {
-            let callback = try await authenticator.authenticate(url: OAuthEndpoints.authorizeURL(pkce: pkce, state: state, createAccount: createAccount))
+            let callback = try await authenticator.authenticate(
+                url: OAuthEndpoints.authorizeURL(pkce: pkce, state: state, createAccount: createAccount),
+                ephemeral: UserDefaults.standard.bool(forKey: Self.signedOutKey))
             let items = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems ?? []
             let value = { (name: String) in items.first { $0.name == name }?.value }
 
@@ -89,6 +97,7 @@ final class AppModel {
                 throw WebAuthError.invalidCallback(nil)
             }
             await tokens.signIn(with: try await OAuthEndpoints.exchange(code: code, pkce: pkce))
+            UserDefaults.standard.removeObject(forKey: Self.signedOutKey)
             isSignedIn = true
             await refresh()
         } catch WebAuthError.cancelled {
@@ -98,16 +107,24 @@ final class AppModel {
         }
     }
 
+    /// Set by Sign Out until the next sign-in, which then asks for the password again rather than
+    /// riding on Safari's dabble.me session.
+    private static let signedOutKey = "auth.signedOut"
+
     func signOut() async {
         if let token = await tokens.clear() {
             Task.detached { await OAuthEndpoints.revoke(token) }
         }
+        UserDefaults.standard.set(true, forKey: Self.signedOutKey)
+        await WebLinks.clearWebsiteData()
         ReminderScheduler.shared.removeAll()
         DraftStore.clearAll()
         WidgetSync.clear()
         // Today's on-device prompt is written from the journal; don't leave it behind.
         UserDefaults.standard.removeObject(forKey: "ai.prompt.day")
         UserDefaults.standard.removeObject(forKey: "ai.prompt.text")
+        UserDefaults.standard.removeObject(forKey: "ai.stats.key")
+        UserDefaults.standard.removeObject(forKey: "ai.stats.text")
         lock.reset()
         resetSession()
     }

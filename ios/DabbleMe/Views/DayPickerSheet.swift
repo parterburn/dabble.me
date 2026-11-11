@@ -1,8 +1,9 @@
 import SwiftUI
 import UIKit
 
-/// Tap the Journal's timeline scrubber: a calendar of the days you wrote (a dot under each, and
-/// only those can be picked) to jump the timeline to one. UIKit's calendar, since SwiftUI's
+/// Jump to a Day (from the Journal's timeline scrubber, Search, or a day's sheet): a calendar of
+/// the days you wrote (a dot under each, and only those can be picked); the day picked comes up
+/// in the day sheet. UIKit's calendar, since SwiftUI's
 /// DatePicker can't limit which days are selectable.
 struct DayPickerSheet: View {
     let onPick: (JournalDay) -> Void

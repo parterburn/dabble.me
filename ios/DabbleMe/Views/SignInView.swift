@@ -24,6 +24,7 @@ struct SignInView: View {
             }
             Tab("Settings", image: icon("slab-gear", "Settings"), value: "Settings") { GuestSettings().tabBarClearance() }
         }
+        .opensDabbleLinksInApp()
     }
 
     /// The selected tab shows the filled version of its icon.

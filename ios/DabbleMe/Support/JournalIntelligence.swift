@@ -396,6 +396,69 @@ enum JournalIntelligence {
         }
     }
 
+    // MARK: - Stats overview
+
+    /// What the overview is written from: plain facts worked out from the stats (counts only, never
+    /// entry text), so the model only has to put them into sentences.
+    static func statsFacts(_ stats: JournalStats, today: JournalDay) -> [String] {
+        var facts: [String] = []
+        if let first = stats.firstEntryDay {
+            facts.append("Writing since \(first.formatted(.dateTime.month(.wide).year())).")
+        }
+        facts.append("\(stats.totalEntries.formatted()) entries in all, \(stats.entriesThisYear.formatted()) of them in \(today.year).")
+        if let weekday = stats.busiestWeekday { facts.append("Writes most often on \(weekday)s.") }
+        if let book = bookComparison(words: stats.totalWords) {
+            facts.append("\(stats.totalWords.formatted()) words in all: \(book).")
+        }
+        // The last 12 months: the fullest, and how many were quiet.
+        func name(_ month: MonthCount) -> String { String(month.title.split(separator: " ").first ?? "") }
+        if let busiest = stats.months.max(by: { $0.count < $1.count }), busiest.count > 0,
+           stats.months.filter({ $0.count > 0 }).count > 1 {
+            facts.append("Busiest month of the last 12: \(name(busiest)) (\(busiest.count) entries).")
+            let quiet = stats.months.filter { $0.count == 0 }.count
+            if quiet > 0 {
+                facts.append("No entries in \(quiet) of the last 12 months.")
+            } else if let lull = stats.months.min(by: { $0.count < $1.count }), lull.key != busiest.key {
+                facts.append("Quietest month of the last 12: \(name(lull)) (\(lull.count) entries).")
+            }
+        }
+        if stats.photoEntries > 0 { facts.append("\(stats.photoEntries.formatted()) days have a photo.") }
+        if let tag = stats.topHashtags.first { facts.append("Most used hashtag this year: #\(tag.tag) (\(tag.count) entries).") }
+        return facts
+    }
+
+    /// "about as long as The Great Gatsby", when the words written add up to a book.
+    static func bookComparison(words: Int) -> String? {
+        let books: [(title: String, words: Int)] = [
+            ("The Great Gatsby", 47_000), ("Harry Potter and the Sorcerer's Stone", 77_000), ("The Hobbit", 95_000),
+            ("Pride and Prejudice", 122_000), ("Moby-Dick", 206_000), ("Anna Karenina", 350_000), ("War and Peace", 587_000),
+        ]
+        guard words >= books[0].words / 2 else { return nil }
+        // The longest book they've matched, or the shortest one they're on the way to.
+        let book = books.last { words >= $0.words } ?? books[0]
+        let ratio = Double(words) / Double(book.words)
+        switch ratio {
+        case ..<0.9: return "about \(Int((ratio * 100).rounded()))% of the length of \(book.title)"
+        case ..<1.25: return "about as long as \(book.title)"
+        default: return "about \((ratio * 10).rounded() / 10 == ratio.rounded() ? String(Int(ratio.rounded())) : String(format: "%.1f", ratio)) times the length of \(book.title)"
+        }
+    }
+
+    /// A few sentences on the writer's habits, from `statsFacts` alone.
+    static func statsOverview(facts: [String]) async throws -> String {
+        try await respond(
+            instructions: """
+            You write a short, warm overview of someone's journaling habits for the top of their stats page, \
+            speaking to them as "you". Use only the facts given, with their exact numbers, names and dates; \
+            never add a fact, guess at reasons, or mention streaks. Pick the three or four most interesting facts \
+            and weave them into two or three plain sentences, under 60 words in all. No headings, lists, emoji \
+            or advice. Reply with only the sentences.
+            """,
+            prompt: "Facts:\n" + facts.map { "- \($0)" }.joined(separator: "\n"),
+            temperature: 0.5
+        )
+    }
+
     /// The tags (in the order given, without repeats) that are a word in `text`, whatever its
     /// capitalization: "hiking" for "Went Hiking with Sam". No model involved, so it's instant.
     static func tags(_ tags: [String], matchingWordsIn text: String) -> [String] {

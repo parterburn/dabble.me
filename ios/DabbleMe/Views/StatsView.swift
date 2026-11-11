@@ -14,6 +14,9 @@ struct StatsView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 28) {
                         tiles(stats)
+                        if showsOverview(stats) {
+                            StatsOverview(stats: stats, today: model.today?.day ?? JournalDay(localDate: .now))
+                        }
                         StatsCard(title: "Past Year") {
                             WritingHeatmap(days: Set(stats.writingDays), today: model.today?.day ?? JournalDay(localDate: .now)) { day in
                                 model.statsDay = StatsDay(day: day)
@@ -32,7 +35,15 @@ struct StatsView: View {
                                 }
                             }
                         }
-                        footer(stats)
+                        if let connectors = model.me?.aiConnectors {
+                            ConnectorCallout(
+                                title: "Sentiment analysis",
+                                message: "Analyze your writing over time with the Claude or ChatGPT plugin.",
+                                guide: connectors.guideUrl,
+                                prompt: Self.sentimentPrompt
+                            )
+                        }
+                        if !showsOverview(stats) { footer(stats) } // the overview says these
                     }
                     .padding()
                     .frame(maxWidth: 680)
@@ -54,6 +65,9 @@ struct StatsView: View {
         .task { if stats == nil { await load() } }
     }
 
+    /// Something to ask Claude or ChatGPT with the Dabble Me connector on.
+    static let sentimentPrompt = "Using my Dabble Me journal, do a sentiment analysis of my entries from the past year: how my mood trended month by month, what lifted it and what weighed on it, and the people, places and themes that show up when I'm at my best."
+
     private func tiles(_ stats: JournalStats) -> some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
             StatTile(value: stats.totalEntries.formatted(), label: stats.totalEntries == 1 ? "Entry" : "Entries", icon: "slab-book")
@@ -63,6 +77,11 @@ struct StatsView: View {
             StatTile(value: stats.entriesThisYear.formatted(), label: "Entries This Year", icon: "slab-calendar")
             StatTile(value: stats.photoEntries.formatted(), label: "Days with Photos", icon: "slab-images")
         }
+    }
+
+    /// With Apple Intelligence on and a few entries to go on, an overview under the tiles.
+    private func showsOverview(_ stats: JournalStats) -> Bool {
+        stats.totalEntries >= 5 && JournalIntelligence.isEnabled(for: model.me)
     }
 
     @ViewBuilder
@@ -90,6 +109,62 @@ struct StatsView: View {
         } catch is CancellationError {
         } catch {
             if stats == nil { self.error = error.localizedDescription }
+        }
+    }
+}
+
+/// A few sentences on the stats, written on the device from the numbers alone (no entry text),
+/// once a day (kept for that day, and redone if the entry count changes). In a well with a
+/// minimum height, so the page doesn't jump when it arrives.
+private struct StatsOverview: View {
+    let stats: JournalStats
+    let today: JournalDay
+    @AppStorage("ai.stats.key") private var savedKey = ""
+    @AppStorage("ai.stats.text") private var savedText = ""
+    @State private var failed = false
+
+    private var key: String { "\(today.iso)|\(stats.totalEntries)|\(stats.totalWords)" }
+    private var text: String? { savedKey == key && !savedText.isEmpty ? savedText : nil }
+    /// What shows if the model can't write one: the plainest facts, as before.
+    private var fallback: String { JournalIntelligence.statsFacts(stats, today: today).prefix(3).joined(separator: " ") }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Overview", icon: "slab-sparkles")
+                .font(.caption.weight(.semibold))
+                .textCase(.uppercase)
+                .foregroundStyle(.tint)
+            if let text = text ?? (failed ? fallback : nil) {
+                Text(text)
+                    .font(.system(.callout, design: .serif))
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .transition(.opacity)
+                    .accessibilityIdentifier("StatsOverview")
+            } else {
+                Text("A few sentences about how and when you write, from the numbers on this page, are being written on your device now.")
+                    .font(.system(.callout, design: .serif))
+                    .lineSpacing(3)
+                    .redacted(reason: .placeholder)
+                    .accessibilityLabel("Writing an overview of your stats")
+            }
+        }
+        .padding(14)
+        .frame(maxWidth: .infinity, minHeight: 132, alignment: .topLeading)
+        .background(Color("Paper"), in: .rect(cornerRadius: 14))
+        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(.quaternary))
+        .animation(.easeOut(duration: 0.25), value: text)
+        .task(id: key) {
+            guard text == nil else { return }
+            failed = false
+            do {
+                let written = try await JournalIntelligence.statsOverview(facts: JournalIntelligence.statsFacts(stats, today: today))
+                savedText = written
+                savedKey = key
+            } catch is CancellationError {
+            } catch {
+                failed = true
+            }
         }
     }
 }
@@ -375,7 +450,7 @@ private struct HashtagBars: View {
 
 /// A day's entries, from Stats → Past Year, in a sheet like A Random Memory: each one whole and
 /// scrollable, with Open to go to it in the Journal.
-/// A day tapped in Stats → Past Year (`AppModel.statsDay`).
+/// A day tapped in Stats → Past Year or picked in Jump to a Day (`AppModel.statsDay`).
 struct StatsDay: Identifiable {
     let day: JournalDay
     var id: String { day.iso }
@@ -398,6 +473,22 @@ struct DayEntriesSheet: View {
                     .font(.headline)
                     .foregroundStyle(.tint) // olive, like Random Memory's date
                 Spacer()
+                // Another day: closes this and opens the calendar.
+                Button {
+                    model.reopensDayPicker = true
+                    dismiss()
+                } label: {
+                    appIcon("slab-calendar")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 18, height: 18)
+                        .foregroundStyle(.primary)
+                        .frame(width: 44, height: 44)
+                        .background(Color.primary.opacity(0.08), in: .circle)
+                        .contentShape(.circle)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Jump to a Day")
                 SheetCloseButton()
             }
             if let entries {
@@ -424,6 +515,8 @@ struct DayEntriesSheet: View {
                                     EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing, day: entry.day)
                                 }
                                 Button {
+                                    // The Journal opens it (this sheet also comes up over Search).
+                                    model.selectedTab = .journal
                                     model.openEntryRequest = entry.id
                                     dismiss()
                                 } label: {

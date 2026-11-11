@@ -1,8 +1,8 @@
 import Foundation
 
 /// What the home-screen widget shows, written by the app into the shared App Group.
-/// The year's entry count, a writing prompt and, only if the person chooses it in Settings → Home Screen
-/// Widget, an entry to look back on.
+/// The year's entry count, a writing prompt and, only if the person turns previews on in
+/// Settings → Home Screen Widget, the start of an entry.
 struct WidgetSnapshot: Codable, Equatable, Sendable {
     static let appGroup = "group.me.dabble.ios"
     static let storageKey = "widget.snapshot"
@@ -18,9 +18,12 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     var yearCount: Int?
     var memories: Int
     var memoriesFirstYear: Int?
+    /// With nothing on this day in past years: that there's another past entry to look back on
+    /// ("You have a memory from 36 days ago."), for Rewind without previews.
+    var memoryNote: String? = nil
     var prompt: String?
-    /// With "On This Day Entry" chosen: an entry to look back on, e.g.
-    /// "1 year ago · 2025" or "Throwback · 31 days ago", and the start of its text.
+    /// With previews on: an entry (a look back, or today's own), e.g. "1 year ago · 2025",
+    /// "Rewind · 31 days ago" or "Today's entry", and the start of its text.
     var entryTitle: String? = nil
     var entryText: String? = nil
     /// The shown entry, so tapping it on the widget opens it.
@@ -88,31 +91,58 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     static func entryURL(_ id: Int) -> URL { URL(string: "me.dabble.app:/entry/\(id)")! }
 }
 
-/// What the medium widget shows beside the year's count. Only `.memoryEntry` puts entry text on the home
-/// screen. The person's choice alone decides it; the Face ID lock doesn't change it.
+/// What the medium widget shows beside the year's count: today's prompt or a look back (Rewind),
+/// each with or without entry previews. Only the two preview cases put entry text or photos on
+/// the home screen. The person's choice alone decides it; the Face ID lock doesn't change it.
 enum WidgetContent: String, CaseIterable, Identifiable, Sendable {
     /// Today's writing prompt: nothing from the journal.
     case prompt
-    /// How many entries you wrote on this day in past years (no text).
+    /// Today's prompt until today's written, then the start of today's entry.
+    case promptEntry
+    /// How many entries you wrote on this day in past years, or that there's a past entry (no text).
     case memoryCount
-    /// The start of one of them (or a throwback when there are none).
+    /// The start of one of them (or of another past entry when there are none).
     case memoryEntry
 
-    var id: Self { self }
+    /// The two things to choose between; previews are a separate switch.
+    enum Source: String, CaseIterable, Identifiable, Sendable {
+        case prompt, rewind
 
-    var title: String {
-        switch self {
-        case .prompt: "Today's Prompt"
-        case .memoryCount: "On This Day Count"
-        case .memoryEntry: "On This Day Entry"
+        var id: Self { self }
+
+        var title: String {
+            switch self {
+            case .prompt: "Today's Prompt"
+            case .rewind: "Rewind"
+            }
         }
     }
 
+    init(source: Source, showsPreviews: Bool) {
+        switch source {
+        case .prompt: self = showsPreviews ? .promptEntry : .prompt
+        case .rewind: self = showsPreviews ? .memoryEntry : .memoryCount
+        }
+    }
+
+    var id: Self { self }
+
+    var source: Source {
+        switch self {
+        case .prompt, .promptEntry: .prompt
+        case .memoryCount, .memoryEntry: .rewind
+        }
+    }
+
+    /// Entry text and photos can show on the widget.
+    var showsPreviews: Bool { self == .promptEntry || self == .memoryEntry }
+
     var summary: String {
         switch self {
-        case .prompt: "A writing prompt for today. No entry text."
-        case .memoryCount: "How many entries you wrote on this day in past years, without their text."
-        case .memoryEntry: "The start of an entry from this day in past years (with its photo), or a throwback when there isn't one."
+        case .prompt: "A writing prompt for today."
+        case .promptEntry: "A writing prompt for today, then your entry once you've written it."
+        case .memoryCount: "How many entries you wrote on this day in past years or a past entry, without the text."
+        case .memoryEntry: "The start of an entry from this day in past years, or another past entry, with its photo."
         }
     }
 }
