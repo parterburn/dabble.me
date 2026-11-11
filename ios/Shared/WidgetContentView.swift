@@ -19,6 +19,9 @@ struct WidgetEntry: TimelineEntry {
     /// The entry's photo, when it has one (a small copy from the App Group).
     var photo: UIImage? = nil
 
+    /// The label over today's own entry (the rest are look-backs).
+    static let todayTitle = "Today's entry"
+
     static let placeholder = WidgetEntry(date: .now, signedIn: true, wroteToday: false, yearCount: 36, memories: nil,
                                          prompt: "What made you smile today?")
 }
@@ -69,12 +72,10 @@ struct TodayWidgetContent: View {
     @ViewBuilder
     private var status: some View {
         if entry.wroteToday {
-            Label("Written today", systemImage: "checkmark.circle.fill")
-                .font(.caption.weight(.semibold))
+            WidgetLabel("Written today", icon: "widget-check")
                 .foregroundStyle(Color.sage)
         } else {
-            Label("Write today", systemImage: "square.and.pencil")
-                .font(.caption.weight(.semibold))
+            WidgetLabel("Write today", icon: "widget-write")
                 .foregroundStyle(Color.sage)
         }
     }
@@ -146,29 +147,25 @@ struct TodayWidgetContent: View {
         HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 8) {
                 if let title = entry.entryTitle, let text = entry.entryText {
-                    Label(title, systemImage: "clock.arrow.circlepath")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                    WidgetLabel(title, icon: title == WidgetEntry.todayTitle ? "widget-write" : "widget-rewind")
+                        .foregroundStyle(Color.widgetLabel)
                     Text(text.isEmpty ? "📷 Photo" : text)
                         .font(.system(.subheadline, design: .serif))
                         .lineLimit(5)
                 } else if let memories = entry.memories {
-                    Label("On This Day", systemImage: "clock.arrow.circlepath")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                    WidgetLabel("On This Day", icon: "widget-rewind")
+                        .foregroundStyle(Color.widgetLabel)
                     Text(memories == 1 ? "You have a memory from this day." : "You have \(memories) memories from this day.")
                         .font(.system(.subheadline, design: .serif))
                 } else if let note = entry.memoryNote {
-                    Label("Rewind", systemImage: "clock.arrow.circlepath")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                    WidgetLabel("Rewind", icon: "widget-rewind")
+                        .foregroundStyle(Color.widgetLabel)
                     Text(note)
                         .font(.system(.subheadline, design: .serif))
                 } else if !entry.wroteToday, let prompt = entry.prompt {
                     Text("Today's prompt")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(Color.widgetLabel)
                     Text(prompt)
                         .font(.system(.subheadline, design: .serif))
                         .lineLimit(4)
@@ -206,7 +203,35 @@ struct TodayWidgetContent: View {
     }
 }
 
+/// A small heading on the widget: one of the app's own icons close beside its words (a system
+/// `Label` leaves a wide gap at this size). The icons are copies in `WidgetIcons.xcassets`, which
+/// the widget and the app's preview of it both carry.
+private struct WidgetLabel: View {
+    let title: String
+    let icon: String
+
+    init(_ title: String, icon: String) {
+        self.title = title
+        self.icon = icon
+    }
+
+    var body: some View {
+        HStack(spacing: 4) {
+            Image(icon)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 12, height: 12)
+                .accessibilityHidden(true)
+            Text(title)
+                .lineLimit(1)
+        }
+        .font(.caption.weight(.semibold))
+    }
+}
+
 extension Color {
+    /// A widget heading ("Rewind", a memory's date): darker than secondary text, which read too faint.
+    static let widgetLabel = Color.primary.opacity(0.72)
     /// The dabble.me logo's colors.
     static let logoInk = Color(uiColor: UIColor { traits in
         traits.userInterfaceStyle == .dark ? .white : UIColor(red: 0x11 / 255, green: 0x11 / 255, blue: 0x11 / 255, alpha: 1)

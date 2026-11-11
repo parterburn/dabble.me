@@ -49,7 +49,7 @@ enum WidgetSync {
         case .promptEntry:
             guard let written = today.entry else { return nil }
             entry = written.summary
-            title = "Today's entry"
+            title = WidgetEntry.todayTitle
         case .memoryEntry:
             if let memory = today.onThisDay.first {
                 entry = memory
