@@ -1,8 +1,9 @@
-// "Reflect on this entry" (the sparkles button on an entry). Asks the server for a
-// one-off AI reflection and shows it in a native <dialog>. Nothing is saved.
+// "Reflect on this entry" (the sparkles button on an entry). Opens a native
+// <dialog> that explains the feature, and only after "Generate Reflection" is
+// pressed asks the server for a one-off AI reflection. Nothing is saved.
 // Plain JS on purpose: no new code on jQuery.
 (function() {
-  var dialog, body, dateLine, pending;
+  var dialog, body, dateLine, note, pending, url;
 
   function build() {
     dialog = document.createElement('dialog');
@@ -22,10 +23,29 @@
 
     body = dialog.querySelector('.s-reflection-body');
     dateLine = dialog.querySelector('.s-reflection-date');
+    note = dialog.querySelector('.s-reflection-note');
     dialog.querySelector('.close').addEventListener('click', function() { dialog.close(); });
     // A click on the backdrop lands on the dialog element itself.
-    dialog.addEventListener('click', function(e) { if (e.target === dialog) dialog.close(); });
+    dialog.addEventListener('click', function(e) {
+      if (e.target === dialog) dialog.close();
+      else if (e.target.closest('.j-generate-reflection')) generate();
+    });
     dialog.addEventListener('close', function() { if (pending) pending.abort(); });
+  }
+
+  // What the feature does and where the entry goes, before anything is sent.
+  // Matches the AI section of the privacy policy.
+  function showIntro() {
+    note.hidden = true;
+    body.innerHTML =
+      '<div class="s-reflection-intro">' +
+        '<p>Get a short reflection on this entry: a note on how it feels, an observation or two, and one question to think about.</p>' +
+        '<p>To write it, Dabble Me sends this entry to Anthropic, the maker of Claude, with its photo if it has one and short excerpts of a few related entries for context. ' +
+        'The reflection is shown here and not saved, and Anthropic doesn\'t use your entries to train its models.</p>' +
+        '<button type="button" class="btn btn-primary j-generate-reflection" autofocus>' +
+          '<span class="slab-icon slab-icon--sparkles" aria-hidden="true"></span> Generate Reflection' +
+        '</button>' +
+      '</div>';
   }
 
   function showError(message) {
@@ -35,19 +55,13 @@
     body.replaceChildren(p);
   }
 
-  document.addEventListener('click', function(e) {
-    var link = e.target.closest('.j-reflect');
-    if (!link) return;
-    e.preventDefault();
-    if (!dialog) build();
-
-    dateLine.textContent = link.dataset.date;
+  function generate() {
+    note.hidden = false;
     body.innerHTML = '<p class="s-reflection-loading"><span class="slab-icon slab-icon--spinner slab-icon--spin" aria-hidden="true"></span> Reflecting&hellip;</p>';
-    dialog.showModal();
 
     var request = pending = new AbortController();
     var token = document.querySelector('meta[name="csrf-token"]');
-    fetch(link.dataset.url, {
+    fetch(url, {
       method: 'POST',
       credentials: 'same-origin',
       headers: { 'Accept': 'application/json', 'X-CSRF-Token': token ? token.content : '' },
@@ -63,5 +77,17 @@
     }).then(function() {
       if (pending === request) pending = null;
     });
+  }
+
+  document.addEventListener('click', function(e) {
+    var link = e.target.closest('.j-reflect');
+    if (!link) return;
+    e.preventDefault();
+    if (!dialog) build();
+
+    url = link.dataset.url;
+    dateLine.textContent = link.dataset.date;
+    showIntro();
+    dialog.showModal();
   });
 })();

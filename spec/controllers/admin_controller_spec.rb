@@ -39,6 +39,30 @@ RSpec.describe AdminController, type: :controller do
     end
   end
 
+  describe 'AI cost' do
+    before do
+      sign_in superuser
+      AiUsage.create!(user: paid_user, model: 'claude-opus-5-5', input_tokens: 3000, output_tokens: 400, cost_usd: 1.2)
+      AiUsage.create!(user: paid_user, model: 'claude-sonnet-5-5', input_tokens: 3000, output_tokens: 400, cost_usd: 0.05)
+      AiUsage.create!(user: user, model: 'claude-opus-5-5', input_tokens: 10, output_tokens: 5, cost_usd: 0.0002)
+    end
+
+    it "shows each user's total in the users list" do
+      get :users
+      page = Capybara.string(response.body)
+
+      expect(page).to have_css('th', text: 'AI cost')
+      expect(page.find('tr', text: paid_user.email)).to have_css('td[data-value="1.25"]', text: '$1.25')
+      expect(page.find('tr', text: user.email)).to have_css('td', text: '<$0.01')
+      expect(page.find('tr', text: superuser.email)).to have_css('td[data-value="0.0"]', text: '—')
+    end
+
+    it 'shows the count and total on the edit page' do
+      get :edit_user, params: { id: paid_user.id }
+      expect(Capybara.string(response.body)).to have_css('div', text: /AI reflections\s*2 · \$1\.25/)
+    end
+  end
+
   describe 'edit_user' do
     it 'redirects a non-admin' do
       sign_in user

@@ -11,6 +11,32 @@ module EntriesHelper
     sanitize body, tags: %w(strong em a div span ul ol li b i img br p hr u em blockquote), attributes: %w(href style src target)
   end
 
+  # Turns each #tag in an entry's HTML into a link that searches for it, the
+  # same tags Entry.hashtags_in finds. Text already inside a link, like a URL
+  # with a #fragment, is left alone.
+  def link_hashtags(html)
+    return html if html.blank? || !html.include?("#")
+
+    fragment = Nokogiri::HTML5.fragment(html)
+    document = fragment.document
+    fragment.xpath(".//text()[not(ancestor::a)]").each do |node|
+      text = node.content
+      next unless text.match?(Entry::HASHTAG_PATTERN)
+
+      position = 0
+      text.scan(Entry::HASHTAG_PATTERN) do
+        match = Regexp.last_match
+        node.add_previous_sibling(document.create_text_node(text[position...match.begin(0)])) if match.begin(0) > position
+        tag = "##{match[1]}"
+        node.add_previous_sibling(document.create_element("a", tag, href: search_path(search: { term: tag }), class: "s-entry-hashtag"))
+        position = match.end(0)
+      end
+      node.add_previous_sibling(document.create_text_node(text[position..])) if position < text.length
+      node.remove
+    end
+    fragment.to_html.html_safe
+  end
+
   def contribution_calendar_data(entries, year)
     start_date = Date.new(year.to_i, 1, 1)
     end_date = Date.new(year.to_i, 12, 31)

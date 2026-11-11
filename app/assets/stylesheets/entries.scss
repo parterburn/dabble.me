@@ -811,6 +811,20 @@ mark {
     .s-reflection-loading {
       color: $olive-500;
     }
+    // What the feature does, before "Generate Reflection". Interface text,
+    // not the reflection itself, so it drops the entry type.
+    .s-reflection-intro {
+      font-family: "Raleway", sans-serif; // the body font
+      p {
+        font-size: 15px;
+        line-height: 1.5;
+        color: $olive-950;
+        margin-bottom: 12px;
+      }
+      .btn {
+        margin-top: 8px;
+      }
+    }
   }
   .s-reflection-note {
     margin: 20px 0 0;

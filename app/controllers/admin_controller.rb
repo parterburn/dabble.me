@@ -14,6 +14,7 @@ class AdminController < ApplicationController
       users = User.all
     end
     @user_list = users.order('id DESC').page(params[:page]).per(per_page)
+    @ai_costs = AiUsage.where(user_id: @user_list.map(&:id)).group(:user_id).sum(:cost_usd)
     render 'users'
   end
 

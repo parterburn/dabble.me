@@ -7,6 +7,16 @@ module AdminHelper
     options_for_select(plans.map { |p| [p.match?(/payhere/i) ? "#{p} (Stripe)" : p, p] }, selected)
   end
 
+  # What AI reflections cost, in dollars. Most are a cent or two, so anything
+  # under a cent shows as "<$0.01" rather than rounding to $0.00.
+  def ai_cost(amount)
+    amount = amount.to_d
+    return "—" if amount.zero?
+    return "<$0.01" if amount < 0.01
+
+    number_to_currency(amount)
+  end
+
   # A Stripe Dashboard page, under /test when the app runs on a test key.
   def stripe_dashboard_url(path)
     test_mode = ENV["STRIPE_API_KEY"].to_s.match?(/\A(sk|rk)_test_/)

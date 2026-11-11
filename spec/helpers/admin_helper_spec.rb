@@ -48,4 +48,13 @@ RSpec.describe AdminHelper, type: :helper do
       expect(helper.stripe_dashboard_url('customers/cus_1')).to eq 'https://dashboard.stripe.com/customers/cus_1'
     end
   end
+
+  describe '#ai_cost' do
+    it 'shows dollars, with tiny amounts as under a cent and none as a dash' do
+      expect(helper.ai_cost(BigDecimal('1.234567'))).to eq('$1.23')
+      expect(helper.ai_cost(BigDecimal('0.0008'))).to eq('<$0.01')
+      expect(helper.ai_cost(0)).to eq('—')
+      expect(helper.ai_cost(nil)).to eq('—')
+    end
+  end
 end

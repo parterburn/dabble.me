@@ -339,6 +339,7 @@ class EntriesController < ApplicationController
   # A one-off AI reflection on this entry, shown in a modal. Not saved.
   def reflection
     return render(json: { error: "AI reflections aren't available on your account." }, status: :forbidden) unless current_user.can_ai?
+    return render(json: { error: "AI reflections are turned off right now." }, status: :service_unavailable) unless Entry::AiAssistant.configured?
     return render(json: { error: "This entry has no text to reflect on." }, status: :unprocessable_content) if @entry.text_body.blank?
 
     html = @entry.ai_reflection
@@ -347,7 +348,7 @@ class EntriesController < ApplicationController
     else
       render json: { error: "The AI couldn't come up with anything for this one. Try again." }, status: :bad_gateway
     end
-  rescue Faraday::Error => e
+  rescue RubyLLM::Error, Faraday::Error => e
     Sentry.capture_exception(e, level: :info)
     render json: { error: "The AI service didn't respond. Try again in a minute." }, status: :bad_gateway
   end

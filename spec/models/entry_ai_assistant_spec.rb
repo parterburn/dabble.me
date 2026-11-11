@@ -1,34 +1,43 @@
 require "rails_helper"
 
 RSpec.describe Entry::AiAssistant do
+  include_context "reflections configured"
+
   let(:user) { FactoryBot.create(:user, plan: "PRO Monthly PayHere", payhere_id: 1, first_name: "Sam", ai_opt_in: true) }
-  let(:responses_url) { "https://api.openai.com/v1/responses" }
   let(:entry) { FactoryBot.create(:entry, user: user, date: Date.new(2026, 6, 10), body: "<p>Long run by the river. #running</p>") }
 
-  before do
-    stub_request(:post, responses_url).to_return(
-      status: 200,
-      headers: { "Content-Type" => "application/json" },
-      body: { output: [{ type: "message", content: [{ type: "output_text", text: "**How did it feel?**" }] }] }.to_json
-    )
-  end
-
-  def sent_input
-    input = nil
-    expect(WebMock).to(have_requested(:post, responses_url).with { |req| input = JSON.parse(req.body)["input"] })
-    input
-  end
+  before { stub_claude("**How did it feel?**") }
 
   it "renders the reply as HTML" do
     expect(entry.ai_reflection).to include("<strong>How did it feel?</strong>")
   end
 
-  it "uses the life coach instructions without hashtag suggestions" do
+  it "asks the model named in REFLECTION_MODEL, at low effort, with the life coach instructions" do
     entry.ai_reflection
-    instructions = sent_input.first
-    expect(instructions["role"]).to eq("developer")
-    expect(instructions["content"]).to include("journaling assistant")
-    expect(instructions["content"]).not_to match(/hashtag/i)
+    body = claude_request_body
+
+    expect(body["model"]).to eq("claude-opus-5-5")
+    expect(body["output_config"]).to eq("effort" => "low")
+    expect(body["max_tokens"]).to eq(Entry::AiAssistant::MAX_OUTPUT_TOKENS)
+    expect(body).not_to include("temperature", "tools", "thinking")
+    system = Array(body["system"]).map { |block| block.is_a?(Hash) ? block["text"] : block }.join
+    expect(system).to include("journaling assistant")
+    expect(system).not_to match(/hashtag/i)
+  end
+
+  it "asks for a refusal fallback on models that support one, and not on others" do
+    entry.ai_reflection
+    expect(claude_request_body["fallbacks"]).to eq("default")
+    expect(WebMock).to have_requested(:post, ReflectionHelpers::CLAUDE_MESSAGES_URL)
+      .with(headers: { "anthropic-beta" => Entry::AiAssistant::REFUSAL_FALLBACK_BETA, "x-api-key" => "test-anthropic-key" })
+
+    WebMock.reset_executed_requests!
+    ENV["REFLECTION_MODEL"] = "claude-haiku-5-5"
+    entry.ai_reflection
+    body = claude_request_body
+    expect(body["model"]).to eq("claude-haiku-5-5")
+    expect(body).not_to include("fallbacks")
+    expect(WebMock).not_to have_requested(:post, ReflectionHelpers::CLAUDE_MESSAGES_URL).with(headers: { "anthropic-beta" => /fallback/ })
   end
 
   it "adds the month before and entries sharing a hashtag as context, but not this entry or later ones" do
@@ -38,19 +47,42 @@ RSpec.describe Entry::AiAssistant do
     FactoryBot.create(:entry, user: user, date: Date.new(2026, 1, 1), body: "<p>Unrelated winter entry.</p>")
 
     entry.ai_reflection
-    context = sent_input[1..-2].map { |message| message["content"] }.join("\n")
+    body = claude_request_body
+    texts = claude_message_texts(body)
+    context = texts[0..-2].join("\n")
 
-    expect(context).to include("Rest day, sore legs.")
-    expect(context).to include("Signed up for a 10k.")
-    expect(context).not_to include("Unrelated winter entry.")
-    expect(context).not_to include("Long run by the river.")
-    expect(context).not_to include("Later entry.")
-    expect(sent_input.last["content"]).to include("My name is Sam.", "Wednesday, June 10, 2026", "Long run by the river.")
+    expect(body["messages"].map { |message| message["role"] }.uniq).to eq(["user"])
+    expect(context).to include("Rest day, sore legs.", "Signed up for a 10k.")
+    expect(context).not_to include("Unrelated winter entry.", "Long run by the river.", "Later entry.")
+    expect(texts.last).to include("My name is Sam.", "Wednesday, June 10, 2026", "Long run by the river.")
   end
 
   it "sends no context when there are no earlier or related entries" do
     entry.update!(body: "<p>Just today, no tags.</p>")
     entry.ai_reflection
-    expect(sent_input.size).to eq(2)
+    expect(claude_request_body["messages"].size).to eq(1)
+  end
+
+  it "sends the entry's photo by URL" do
+    allow(entry).to receive(:image_stored?).and_return(true)
+    allow(entry).to receive(:image_url_cdn).and_return("https://cdn.example.com/photo.jpg")
+
+    entry.ai_reflection
+
+    blocks = claude_request_body["messages"].last["content"]
+    expect(blocks).to include(hash_including("type" => "image", "source" => { "type" => "url", "url" => "https://cdn.example.com/photo.jpg" }))
+  end
+
+  describe ".configured?" do
+    it "needs both a model and an Anthropic key" do
+      expect(described_class.configured?).to be(true)
+
+      ENV["REFLECTION_MODEL"] = ""
+      expect(described_class.configured?).to be(false)
+
+      ENV["REFLECTION_MODEL"] = "claude-opus-5-5"
+      RubyLLM.config.anthropic_api_key = nil
+      expect(described_class.configured?).to be(false)
+    end
   end
 end

@@ -10,9 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_11_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_11_030000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "ai_usages", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "model", null: false
+    t.integer "input_tokens", default: 0, null: false
+    t.integer "output_tokens", default: 0, null: false
+    t.decimal "cost_usd", precision: 12, scale: 6
+    t.datetime "created_at", null: false
+    t.index ["user_id", "created_at"], name: "index_ai_usages_on_user_id_and_created_at"
+  end
 
   create_table "business_metric_snapshots", force: :cascade do |t|
     t.date "captured_on", null: false
@@ -270,6 +280,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_11_010000) do
     t.index ["user_id"], name: "index_webauthn_credentials_on_user_id"
   end
 
+  add_foreign_key "ai_usages", "users", on_delete: :cascade
   add_foreign_key "ignored_email_images", "users", on_delete: :cascade
   add_foreign_key "mcp_tool_invocations", "users", on_delete: :cascade
   add_foreign_key "newsletter_deliveries", "users", on_delete: :cascade
