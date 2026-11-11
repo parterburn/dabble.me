@@ -17,7 +17,7 @@ RSpec.describe "Year in review AI Reflection", type: :feature do
     expect(page).to have_link("Add to Claude", href: ApplicationHelper.claude_plugin_directory_url)
     expect(page).to have_link("Add to ChatGPT", href: ApplicationHelper.chatgpt_plugin_directory_url)
     expect(page).to have_link("Other AI apps", href: mcp_server_docs_path)
-    expect(page).to have_content("Make a Spotify Wrapped of my 2026 journal")
+    expect(page).to have_content("Make a Spotify Wrapped of my 2026 journal with lots of photos.")
     expect(page).to have_link("Export your 2026 entries")
 
     expect(page.text).not_to include("MCP")
