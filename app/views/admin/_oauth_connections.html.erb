@@ -1,0 +1,36 @@
+<%# The user's OAuth clients (AI connectors, the iOS app), revoked ones included. locals: user: %>
+<% connections = Admin::OauthApps.connections_for(user) %>
+<% day = ->(time) { time&.strftime('%Y-%m-%d') || "—" } %>
+
+<div class="mt-6" id="connected-apps">
+  <%= render layout: "admin/section", locals: { title: "Connected apps", intro: "Apps this user has signed in to Dabble Me with. They manage these under Connected apps on their security page." } do %>
+    <% if connections.any? %>
+      <table class="data-table whitespace-nowrap">
+        <thead>
+          <tr>
+            <th>App</th>
+            <th>Status</th>
+            <th>Redirects to</th>
+            <th>First connected</th>
+            <th>Last token</th>
+            <th>Last MCP call</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% connections.each do |connection| %>
+            <tr>
+              <td><%= link_to connection.application.name, admin_oauth_apps_path(name: connection.application.name, email: user.email), class: "text-link" %></td>
+              <td><%= connection.active ? "Connected" : "Revoked" %></td>
+              <td class="max-w-xs truncate"><%= connection.redirect_hosts.join(", ") %></td>
+              <td><%= day.(connection.first_token_at) %></td>
+              <td><%= day.(connection.last_token_at) %></td>
+              <td><%= day.(connection.last_call_at) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="px-5 pb-4 text-sm text-muted">None.</p>
+    <% end %>
+  <% end %>
+</div>

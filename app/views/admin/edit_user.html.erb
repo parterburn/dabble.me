@@ -105,5 +105,7 @@
     </div>
   </div>
 
+  <%= render "admin/oauth_connections", user: @user %>
+
   <%= render "admin/ignored_email_images", user: @user, new_rule: @ignored_email_image || IgnoredEmailImage.new(kind: "image") %>
 </div>

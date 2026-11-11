@@ -28,3 +28,8 @@ founder_weekly_digest:
   cron: "0 6 * * 1"
   class: "FounderWeeklyDigestWorker"
   description: "Mondays at 6:00 AM UTC. Emails the weekly founder digest."
+
+oauth_app_cleanup:
+  cron: "0 4 * * 0"
+  class: "OauthAppCleanupWorker"
+  description: "Sundays at 4:00 AM UTC. Deletes self-registered OAuth clients unused for 30 days."

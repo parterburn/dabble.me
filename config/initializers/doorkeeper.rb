@@ -19,16 +19,11 @@ Doorkeeper.configure do
     end
   end
 
-  # /oauth/applications. Doorkeeper's controllers inherit ApplicationController,
-  # so the admin passkey check (require_admin_passkey) also applies here.
+  # Doorkeeper's client admin screens are switched off in routes.rb
+  # (skip_controllers :applications); admins use /admin/oauth. Refuse anyway in
+  # case they are ever routed again.
   admin_authenticator do
-    if !CloudflareAccess.allowed?(request)
-      head :not_found
-    elsif user_signed_in? && current_user.admin?
-      # allow Doorkeeper admin UI
-    else
-      redirect_to(new_user_session_url)
-    end
+    head :not_found
   end
 
   authorization_code_expires_in 10.minutes

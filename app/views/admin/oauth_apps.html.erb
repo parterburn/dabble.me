@@ -1,0 +1,105 @@
+<% title "Admin OAuth apps" %>
+<% content_for :tailwind, true %>
+<% day = ->(time) { time&.strftime('%Y-%m-%d') || "—" } %>
+<% groups = @oauth_apps.groups %>
+
+<div class="tw mx-auto max-w-6xl pt-4 pb-16 sm:pt-8">
+  <%= render "admin/header", title: "OAuth apps",
+        intro: "Apps that can sign in to Dabble Me: AI connectors that registered themselves, and the iOS app. A user is connected while they hold an unrevoked token. Self-registered apps nobody has used in 30 days are deleted weekly." %>
+
+  <form class="mb-6 grid gap-3 sm:grid-cols-[1fr_1fr_auto]" role="search">
+    <div>
+      <label for="name" class="sr-only">App name</label>
+      <input type="text" id="name" name="name" placeholder="Filter by app name" value="<%= params[:name] %>" class="field-input">
+    </div>
+    <div>
+      <label for="email" class="sr-only">User email</label>
+      <input type="text" id="email" name="email" placeholder="Apps a user has connected (email)" value="<%= params[:email] %>" class="field-input">
+    </div>
+    <button type="submit" class="button-primary">Search</button>
+  </form>
+
+  <%= render layout: "admin/section", locals: { title: "By app", intro: "Registrations with the same name, together." } do %>
+    <table class="data-table sortable whitespace-nowrap">
+      <thead>
+        <tr>
+          <th data-firstsort="asc">Name</th>
+          <th data-firstsort="desc">Registrations</th>
+          <th data-firstsort="desc">Users connected</th>
+          <th data-firstsort="desc">Last token</th>
+          <th data-firstsort="desc">Last MCP call</th>
+          <th data-firstsort="asc">Redirects to</th>
+          <th data-firstsort="desc">First registered</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% groups.each do |group| %>
+          <tr>
+            <td><%= link_to group.name, admin_oauth_apps_path(name: group.name, email: params[:email].presence), class: "text-link" %></td>
+            <td data-value="<%= group.registrations.size %>"><%= number_with_delimiter(group.registrations.size) %></td>
+            <td data-value="<%= group.users_connected %>"><%= number_with_delimiter(group.users_connected) %></td>
+            <td><%= day.(group.last_token_at) %></td>
+            <td><%= day.(group.last_call_at) %></td>
+            <td class="max-w-xs truncate" title="<%= group.redirect_hosts.join(', ') %>"><%= group.redirect_hosts.join(", ") %></td>
+            <td><%= day.(group.first_registered_at) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <% if groups.empty? %>
+      <p class="px-5 py-8 text-center text-sm text-muted">No apps match.</p>
+    <% end %>
+  <% end %>
+
+  <% if @oauth_apps.filtered? && groups.any? %>
+    <% emails = @oauth_apps.user_emails %>
+    <div class="mt-6">
+      <%= render layout: "admin/section", locals: { title: "Registrations", intro: "Deleting one disconnects its users; their AI tool will ask them to connect again." } do %>
+        <table class="data-table whitespace-nowrap">
+          <thead>
+            <tr>
+              <th>Registered</th>
+              <th>Name</th>
+              <th>Redirect URIs</th>
+              <th>Users connected</th>
+              <th>Last token</th>
+              <th>Last MCP call</th>
+              <th><span class="sr-only">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% @oauth_apps.registrations.each do |registration| %>
+              <% application = registration.application %>
+              <tr>
+                <td><%= day.(application.created_at) %></td>
+                <td><%= application.name %></td>
+                <td class="whitespace-normal break-all text-xs"><%= safe_join(application.redirect_uri.to_s.split, tag.br) %></td>
+                <td class="whitespace-normal">
+                  <% if registration.users_connected.empty? %>
+                    <span class="text-muted">None</span>
+                  <% else %>
+                    <%= safe_join(registration.users_connected.first(5).map { |id| link_to(emails[id] || "User #{id}", edit_admin_user_path(id), class: "text-link") }, ", ") %>
+                    <% if registration.users_connected.size > 5 %>
+                      <span class="text-muted">and <%= registration.users_connected.size - 5 %> more</span>
+                    <% end %>
+                  <% end %>
+                </td>
+                <td><%= day.(registration.last_token_at) %></td>
+                <td><%= day.(registration.last_call_at) %></td>
+                <td>
+                  <% if registration.mobile_app? %>
+                    <span class="text-xs text-muted">iOS app</span>
+                  <% else %>
+                    <%= button_to "Delete", admin_oauth_app_path(application.id, name: params[:name].presence, email: params[:email].presence),
+                          method: :delete, class: "text-sm font-medium text-red-700 hover:text-red-800 hover:underline",
+                          data: { confirm: "Delete this #{application.name} registration?#{" #{registration.users_connected.size} connected user(s) will need to connect again." if registration.users_connected.any?}" } %>
+                  <% end %>
+                </td>
+              </tr>
+            <% end %>
+          </tbody>
+        </table>
+      <% end %>
+    </div>
+  <% end %>
+</div>

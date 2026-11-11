@@ -204,7 +204,7 @@ RSpec.describe "Admin access", type: :request do
       get "/sidekiq"
       expect(response).to have_http_status(:not_found)
 
-      get "/oauth/applications"
+      get "/admin/oauth"
       expect(response).to have_http_status(:not_found)
     end
 

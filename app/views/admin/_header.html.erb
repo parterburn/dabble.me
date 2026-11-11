@@ -20,6 +20,7 @@
 <nav class="mb-8 flex overflow-x-auto border-b border-subtle text-sm sm:gap-1" aria-label="Admin sections">
   <% [
     ["Inspirations", inspirations_path, controller_name == "inspirations"],
+    ["OAuth apps", admin_oauth_apps_path, controller_name == "admin" && action_name == "oauth_apps"],
     ["Payments", payments_path, controller_name == "payments"],
     ["Photos", admin_photos_path, controller_name == "admin" && action_name == "photos"],
     ["Stats", admin_stats_path, controller_name == "admin" && action_name == "stats"],

@@ -60,6 +60,9 @@
               <li class="<%= 'active' if current_page?(inspirations_path) %>">
                 <%= link_to "Inspirations", inspirations_path, title: "Inspirations" %>
               </li>
+              <li class="<%= 'active' if current_page?(admin_oauth_apps_path) %>">
+                <%= link_to "OAuth apps", admin_oauth_apps_path, title: "Admin OAuth apps" %>
+              </li>
               <li class="<%= 'active' if current_page?(payments_path) %>">
                 <%= link_to "Payments", payments_path, title: "Payments" %>
               </li>

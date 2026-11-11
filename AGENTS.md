@@ -105,7 +105,7 @@ Rake tasks (each takes `USER_ID=` for one account and `PAUSE=` seconds between b
 
 ### Admin access
 
-Admin pages (`/admin/*`, `/sidekiq`, `/oauth/applications`) have two extra gates on top of `users.admin`:
+Admin pages (`/admin/*` and `/sidekiq`) have two extra gates on top of `users.admin`. Doorkeeper's own client screens (`/oauth/applications`) are switched off; `/admin/oauth` lists OAuth clients instead, and `OauthAppCleanupWorker` deletes self-registered ones unused for 30 days.
 
 - **Passkey every 12 hours.** An admin's session must confirm a passkey (`AdminAccess`, checked by `ApplicationController#require_admin_passkey` and by `AdminPasskeyGate` around Sidekiq), whichever way they signed in. Passkey sign-in counts; a password, a 2FA code or a remember-me cookie alone sends them to `/passkeys/verification/new`. An admin without a passkey can only add one, and can't remove their last. A locked-out admin is recovered from the Rails console.
 - **Cloudflare Access.** With both variables set, those routes also need a valid Cloudflare Access token (`CloudflareAccess` checks the `Cf-Access-Jwt-Assertion` header against the team's signing keys); anything else gets a 404. Without them the check is off, as in development and test.
