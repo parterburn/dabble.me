@@ -41,11 +41,9 @@ struct TodayWidgetContent: View {
         }
     }
 
-    private var year: String { entry.date.formatted(.dateTime.year()) }
-
-    /// "36 entries in 2026"
+    /// "36 entries this year" (as Today says it)
     private var countText: String {
-        "\(entry.yearCount.formatted()) \(entry.yearCount == 1 ? "entry" : "entries") in \(year)"
+        "\(entry.yearCount.formatted()) \(entry.yearCount == 1 ? "entry" : "entries") this year"
     }
 
     private var small: some View {
@@ -56,7 +54,7 @@ struct TodayWidgetContent: View {
                 Text(entry.yearCount.formatted())
                     .font(.system(size: 34, weight: .semibold, design: .serif))
                     .contentTransition(.numericText())
-                Text("\(entry.yearCount == 1 ? "entry" : "entries") in \(year)")
+                Text("\(entry.yearCount == 1 ? "entry" : "entries") this year")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer(minLength: 0)
@@ -147,7 +145,7 @@ struct TodayWidgetContent: View {
         HStack(spacing: 0) {
             VStack(alignment: .leading, spacing: 8) {
                 if let title = entry.entryTitle, let text = entry.entryText {
-                    WidgetLabel(title, icon: title == WidgetEntry.todayTitle ? "widget-write" : "widget-rewind")
+                    WidgetLabel(title, icon: title == WidgetEntry.todayTitle ? "widget-write" : "widget-rewind", shrinksToFit: true)
                         .foregroundStyle(Color.widgetLabel)
                     Text(text.isEmpty ? "📷 Photo" : text)
                         .font(.system(.subheadline, design: .serif))
@@ -209,10 +207,13 @@ struct TodayWidgetContent: View {
 private struct WidgetLabel: View {
     let title: String
     let icon: String
+    /// For a long date ("2 years and 3 months ago"): a little smaller rather than cut off.
+    var shrinksToFit = false
 
-    init(_ title: String, icon: String) {
+    init(_ title: String, icon: String, shrinksToFit: Bool = false) {
         self.title = title
         self.icon = icon
+        self.shrinksToFit = shrinksToFit
     }
 
     var body: some View {
@@ -224,6 +225,7 @@ private struct WidgetLabel: View {
                 .accessibilityHidden(true)
             Text(title)
                 .lineLimit(1)
+                .minimumScaleFactor(shrinksToFit ? 0.8 : 1)
         }
         .font(.caption.weight(.semibold))
     }
