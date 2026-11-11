@@ -25,6 +25,28 @@ class AdminController < ApplicationController
     @user = User.find(params[:id])
   end
 
+  # Registered OAuth clients (MCP connectors and the iOS app), grouped by name,
+  # with who is connected to each. Filtering lists each registration too.
+  def oauth_apps
+    @oauth_apps = Admin::OauthApps.new(name: params[:name], email: params[:email])
+  end
+
+  # Deletes a client registration. Doorkeeper deletes its tokens and grants
+  # with it, which disconnects anyone using it.
+  def destroy_oauth_app
+    application = Doorkeeper::Application.find(params[:application_id])
+    if MobileApp.client?(application)
+      redirect_to admin_oauth_apps_path, alert: "The iOS app's client can't be deleted here."
+      return
+    end
+
+    users = Doorkeeper::AccessToken.where(application_id: application.id, revoked_at: nil).distinct.count(:resource_owner_id)
+    application.destroy
+    notice = "Deleted #{application.name} (registered #{application.created_at.strftime('%Y-%m-%d')})."
+    notice += " #{helpers.pluralize(users, 'user')} disconnected." if users.positive?
+    redirect_to admin_oauth_apps_path(name: params[:name].presence, email: params[:email].presence), notice: notice
+  end
+
   def create_ignored_email_image
     @user = User.find(params[:id])
     rule_params = params.require(:ignored_email_image).permit(:kind, :value)
@@ -68,6 +90,13 @@ class AdminController < ApplicationController
     user = User.find(params[:id])
     user.send_reset_password_instructions
     redirect_to edit_admin_user_path(user), notice: "Password reset email sent to #{user.email}."
+  end
+
+  # The payment form's "Send upgrade email", on its own (User#send_upgrade_email!).
+  def send_upgrade_email
+    user = User.find(params[:id])
+    user.send_upgrade_email!
+    redirect_to edit_admin_user_path(user), notice: "Upgrade email sent to #{user.email}."
   end
 
   def photos

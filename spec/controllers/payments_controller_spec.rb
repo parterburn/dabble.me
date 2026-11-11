@@ -246,7 +246,7 @@ RSpec.describe PaymentsController, type: :controller do
           .to have_enqueued_mail(UserMailer, :thanks_for_paying).with(user)
         expect(user.reload.frequency).to eq %w[Mon Wed Fri]
         expect(user.plan).to eq 'PRO Monthly PayHere'
-        expect(flash[:notice]).to eq 'Payment added successfully & thanks was sent!'
+        expect(flash[:notice]).to eq 'Payment added successfully & upgrade email was sent!'
       end
 
       it 'does neither when unchecked' do
@@ -301,7 +301,7 @@ RSpec.describe PaymentsController, type: :controller do
         expect_refused(form_params.deep_merge(payment: { user_id: missing_id }), "No user has the ID #{missing_id}.")
       end
 
-      it 'keeps what was typed, including an unticked Send thanks, when the form comes back' do
+      it 'keeps what was typed, including an unticked Send upgrade email, when the form comes back' do
         params = form_params.merge(user_email: 'nobody@example.com').deep_merge(payment: { send_thanks: '0' })
         post :create, params: params
 

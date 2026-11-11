@@ -42,9 +42,8 @@ class PaymentsController < ApplicationController
       # frequency to Sundays, which would undo the restore below.
       user.update(user_params) if user.present? && user_params[:plan].present?
       if user.present? && send_thanks?
-        user.update(frequency: user.previous_frequency) if user.previous_frequency.any?
-        UserMailer.thanks_for_paying(user).deliver_later
-        flash[:notice] = "Payment added successfully & thanks was sent!"
+        user.send_upgrade_email!
+        flash[:notice] = "Payment added successfully & upgrade email was sent!"
       else
         flash[:notice] = "Payment added successfully!"
       end

@@ -13,6 +13,13 @@ RSpec.describe "OAuth authorized applications", type: :request do
     expect(response).to redirect_to(security_path)
   end
 
+  it "doesn't route Doorkeeper's client admin screens (admins use /admin/oauth)" do
+    sign_in create(:user, admin: true)
+
+    expect { get "/oauth/applications" }.to raise_error(ActionController::RoutingError)
+    expect { get "/oauth/applications/new" }.to raise_error(ActionController::RoutingError)
+  end
+
   it "redirects legacy /settings/mcp to the dedicated MCP documentation" do
     sign_in user
     get "/settings/mcp"

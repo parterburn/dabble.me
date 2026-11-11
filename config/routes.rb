@@ -6,6 +6,9 @@ Rails.application.routes.draw do
       authorizations: "oauth/authorizations",
       authorized_applications: "oauth/authorized_applications"
     )
+    # Doorkeeper's own client admin screens (/oauth/applications) are off;
+    # admins use /admin/oauth instead.
+    skip_controllers :applications
   end
 
   # Font Awesome Slab icons, proxied from S3 so CSS masks stay same-origin.
@@ -72,11 +75,14 @@ Rails.application.routes.draw do
       get 'admin/users/:id/edit' => 'admin#edit_user', as: 'edit_admin_user'
       patch 'admin/users/:id' => 'admin#update_user', as: 'admin_user'
       post 'admin/users/:id/password_reset' => 'admin#send_password_reset', as: 'admin_user_password_reset'
+      post 'admin/users/:id/upgrade_email' => 'admin#send_upgrade_email', as: 'admin_user_upgrade_email'
       post 'admin/users/:id/ignored_email_images' => 'admin#create_ignored_email_image', as: 'admin_user_ignored_email_images'
       delete 'admin/users/:id/ignored_email_images/:ignored_email_image_id' => 'admin#destroy_ignored_email_image', as: 'admin_user_ignored_email_image'
       get 'admin/stats' => 'admin#stats', as: 'admin_stats'
       post 'admin/stats/capture' => 'admin#capture_stats', as: 'capture_admin_stats'
       get 'admin/photos' => 'admin#photos', as: 'admin_photos'
+      get 'admin/oauth' => 'admin#oauth_apps', as: 'admin_oauth_apps'
+      delete 'admin/oauth/:application_id' => 'admin#destroy_oauth_app', as: 'admin_oauth_app'
       mount AdminPasskeyGate.new(Sidekiq::Web) => "/sidekiq"
     end
   end

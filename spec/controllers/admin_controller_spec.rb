@@ -132,6 +132,8 @@ RSpec.describe AdminController, type: :controller do
       expect(response.body).to have_checked_field('frequency_Sun')
       expect(response.body).to have_checked_field('user_send_updates')
       expect(response.body).to have_button('Send password reset')
+      expect(response.body).to have_button('Send upgrade email')
+      expect(response.body).to have_css('h2', text: 'Actions')
     end
   end
 
@@ -278,6 +280,28 @@ RSpec.describe AdminController, type: :controller do
       sign_in user
       expect { post :send_password_reset, params: { id: paid_user.id } }
         .not_to have_enqueued_mail(Devise::Mailer, :reset_password_instructions)
+      expect(response).to redirect_to(entries_path)
+    end
+  end
+
+  describe 'send_upgrade_email' do
+    include ActiveJob::TestHelper
+
+    it 'emails the upgrade email and restores their previous email days' do
+      paid_user.update_columns(frequency: ['Sun'], previous_frequency: %w[Mon Thu])
+      sign_in_admin superuser
+
+      expect { post :send_upgrade_email, params: { id: paid_user.id } }
+        .to have_enqueued_mail(UserMailer, :thanks_for_paying).with(paid_user)
+      expect(paid_user.reload.frequency).to eq %w[Mon Thu]
+      expect(response).to redirect_to(edit_admin_user_path(paid_user))
+      expect(flash[:notice]).to eq "Upgrade email sent to #{paid_user.email}."
+    end
+
+    it 'sends nothing for a non-admin' do
+      sign_in user
+      expect { post :send_upgrade_email, params: { id: paid_user.id } }
+        .not_to have_enqueued_mail(UserMailer, :thanks_for_paying)
       expect(response).to redirect_to(entries_path)
     end
   end

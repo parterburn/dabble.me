@@ -84,10 +84,13 @@
 
     <div class="space-y-6">
       <div class="card p-6">
-        <h2 class="font-serif text-2xl text-primary">Password</h2>
-        <p class="mt-1 mb-4 text-sm text-muted">Emails them a link to choose a new password. Their current password keeps working until they use it.</p>
-        <%= button_to "Send password reset", admin_user_password_reset_path(@user), method: :post, class: "button-secondary",
-              data: { confirm: "Email a password reset link to #{@user.email_in_database}?" } %>
+        <h2 class="mb-4 font-serif text-2xl text-primary">Actions</h2>
+        <div class="flex flex-col items-start gap-3">
+          <%= button_to "Send password reset", admin_user_password_reset_path(@user), method: :post, class: "button-secondary",
+                data: { confirm: "Email a password reset link to #{@user.email_in_database}?" } %>
+          <%= button_to "Send upgrade email", admin_user_upgrade_email_path(@user), method: :post, class: "button-secondary",
+                data: { confirm: "Email the PRO upgrade email to #{@user.email_in_database}? Their previous email days are restored too." } %>
+        </div>
       </div>
 
       <div class="card p-6">
@@ -104,6 +107,8 @@
       </div>
     </div>
   </div>
+
+  <%= render "admin/oauth_connections", user: @user %>
 
   <%= render "admin/ignored_email_images", user: @user, new_rule: @ignored_email_image || IgnoredEmailImage.new(kind: "image") %>
 </div>
