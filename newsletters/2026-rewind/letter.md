@@ -82,7 +82,7 @@ PRO is $4 a month or $40 a year. It lets you choose which days your emails arriv
 {{/rewind_free,whats_new_free}}
 ## Thank you
 
-Dabble Me has no investors and no ads. It exists because of its paying users, which is why I work to keep it secure and running for all of us that still want a place to remember our days.
+Dabble Me has no investors and no ads. It exists because of its paying users, which is why I work to keep it secure and running for all of us who still want a place to remember our days.
 
 If something is broken, confusing, or missing, reply to this email. It comes straight to me.
 
