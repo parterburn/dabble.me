@@ -61,4 +61,24 @@ RSpec.describe Mcp::EntrySearch do
     expect(result[:total_matches]).to eq(1)
     expect(result[:most_used_hashtags]).to eq([{ tag: 'calm', count: 1 }])
   end
+
+  it 'appends Spotify songs after an analysis highlight' do
+    entry = entry_with('On repeat all evening', days_ago: 1)
+    entry.update_column(:songs, [{ 'spotify_id' => 'track1', 'title' => 'Motion Sickness', 'artists' => ['Phoebe Bridgers'] }])
+
+    highlight = search.analyze[:sample_highlights].find { |row| row[:id] == entry.id }
+    expect(highlight[:excerpt]).to eq(
+      "On repeat all evening\n\n🎶 [Phoebe Bridgers - Motion Sickness](https://open.spotify.com/track/track1)"
+    )
+  end
+
+  it 'appends dated tags after an analysis highlight' do
+    entry_date = Date.new(2026, 3, 5)
+    entry = entry_with('Park day with #Leo', days_ago: 0)
+    entry.update!(date: entry_date)
+    user.original_hashtags.create!(tag: 'Leo', date: entry_date - (9 * 365 + 2))
+
+    highlight = search.analyze[:sample_highlights].find { |row| row[:id] == entry.id }
+    expect(highlight[:excerpt]).to end_with("#Leo (9 years, 2 days)")
+  end
 end

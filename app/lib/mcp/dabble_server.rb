@@ -34,6 +34,9 @@ module Mcp
                       'Never combine image_url, uploaded_image_key, and image_base64 in the same create_entry call. ' \
                       'Entries that list_entries and search_entries return include image_url when they have a photo: ' \
                       'a direct https link to the stored image that you can open to see it. ' \
+                      'Those excerpts also append any Spotify songs saved on the entry, each on its own line as ' \
+                      '“🎶 [Artist - Title](https://open.spotify.com/track/…)”. ' \
+                      'Dated tags are appended at the end, one per line, as “#Leo (9 years, 2 days)”. ' \
                       'Tools always apply to the signed-in account from OAuth and cannot access other users’ data. ' \
                       'Reading sends selected journal content to the connected AI client for processing. Never claim a ' \
                       'write succeeded unless create_entry returns success. ' \

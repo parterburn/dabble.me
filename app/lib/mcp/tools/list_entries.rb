@@ -5,7 +5,7 @@ module Mcp
     class ListEntries < MCP::Tool
       tool_name 'list_entries'
       title 'List journal entries'
-      description 'Read the signed-in user’s private Dabble Me journal entries newest first, optionally within an inclusive date range. Use when the user asks to review a period such as last week or last month without requiring a keyword. An entry with a photo includes image_url, a direct https link to the image.'
+      description 'Read the signed-in user’s private Dabble Me journal entries newest first, optionally within an inclusive date range. Use when the user asks to review a period such as last week or last month without requiring a keyword. An entry with a photo includes image_url, a direct https link to the image. An entry with Spotify songs appends each one on its own line after the excerpt, as “🎶 [Artist - Title](https://open.spotify.com/track/…)”. Dated tags are appended at the end, one per line, as “#Leo (9 years, 2 days)”.'
       annotations(
         title: 'List journal entries',
         read_only_hint: true,

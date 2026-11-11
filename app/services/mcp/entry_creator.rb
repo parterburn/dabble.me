@@ -470,7 +470,11 @@ module Mcp
         id: entry.id,
         date: entry.date.to_date.iso8601,
         url: Tools::Helpers.entry_public_url(entry),
-        excerpt: entry.text_body.to_s.squish.truncate(5000),
+        excerpt: Tools::Helpers.append_entry_extras(
+          entry.text_body.to_s.squish.truncate(5000),
+          entry.spotify_songs_text,
+          entry.dated_tag_lines(Entry.dated_tag_dates_for(@user))
+        ),
         hashtags: entry.hashtags,
         has_image: entry.image_stored?,
         image_processing: entry.uploading_image?

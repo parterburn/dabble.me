@@ -52,7 +52,11 @@ module Mcp
           {
             id: entry.id,
             date: entry.date.to_date.iso8601,
-            excerpt: excerpt(entry.text_body)
+            excerpt: Mcp::Tools::Helpers.append_entry_extras(
+              excerpt(entry.text_body),
+              entry.spotify_songs_text,
+              entry.dated_tag_lines(dated_tag_dates)
+            )
           }
         end
       }
@@ -61,6 +65,10 @@ module Mcp
     private
 
     attr_reader :user
+
+    def dated_tag_dates
+      @dated_tag_dates ||= Entry.dated_tag_dates_for(user)
+    end
 
     def filtered_entries(since:, until_date:, has_images: nil)
       relation = user.entries.reorder(date: :desc, created_at: :desc)
@@ -110,6 +118,8 @@ module Mcp
         id: entry.id,
         date: entry.date.to_date.iso8601,
         text_body: entry.text_body.to_s,
+        songs_text: entry.spotify_songs_text,
+        tags_text: entry.dated_tag_lines(dated_tag_dates),
         hashtags: entry.hashtags || [],
         has_image: entry.image_stored?,
         image_url: image_url(entry)

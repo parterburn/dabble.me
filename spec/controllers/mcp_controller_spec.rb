@@ -147,6 +147,43 @@ RSpec.describe McpController, type: :controller do
         end
       end
 
+      { "list_entries" => {}, "search_entries" => { query: "windows" } }.each do |tool, arguments|
+        it "appends Spotify songs saved on the entry to #{tool}" do
+          paid_entry.update!(body: "Drove home with the windows down")
+          paid_entry.update_column(:songs, [
+            { "spotify_id" => "4uLU6hMCjMI75M1A2tKUQC", "title" => "Never Gonna Give You Up", "artists" => ["Rick Astley"] },
+            { "spotify_id" => "abc123track", "title" => "Vampire Empire", "artists" => ["Big Thief"] }
+          ])
+
+          post :invoke, params: { jsonrpc: "2.0", id: 11, method: "tools/call", params: { name: tool, arguments: arguments } }, as: :json
+
+          excerpt = JSON.parse(response.body).dig("result", "structuredContent", "entries").first["excerpt"]
+          expect(excerpt).to start_with("Drove home with the windows down")
+          expect(excerpt).to end_with(
+            "🎶 [Rick Astley - Never Gonna Give You Up](https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC)\n" \
+            "🎶 [Big Thief - Vampire Empire](https://open.spotify.com/track/abc123track)"
+          )
+        end
+      end
+
+      { "list_entries" => {}, "search_entries" => { query: "park day" } }.each do |tool, arguments|
+        it "appends dated tags at the end of #{tool}" do
+          entry_date = Date.new(2026, 3, 5)
+          paid_entry.update!(body: "Park day with #Leo and #Sam #friends", date: entry_date)
+          paid_user.original_hashtags.create!(tag: "Leo", date: entry_date - (9 * 365 + 2))
+          paid_user.original_hashtags.create!(tag: "Sam", date: entry_date - (3 * 365))
+          paid_user.original_hashtags.create!(tag: "Other", date: entry_date - 10)
+
+          post :invoke, params: { jsonrpc: "2.0", id: 12, method: "tools/call", params: { name: tool, arguments: arguments } }, as: :json
+
+          excerpt = JSON.parse(response.body).dig("result", "structuredContent", "entries").first["excerpt"]
+          expect(excerpt).to start_with("Park day with #Leo and #Sam #friends")
+          expect(excerpt).to end_with("#Leo (9 years, 2 days)\n#Sam (3 years)")
+          expect(excerpt).not_to include("#friends (")
+          expect(excerpt).not_to include("#Other")
+        end
+      end
+
       it "returns aggregate analysis" do
         paid_entry.update!(body: "First #gratitude note")
         paid_user.entries.create!(body: "Second #gratitude note", date: 1.day.ago)

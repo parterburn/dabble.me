@@ -58,11 +58,16 @@ module Mcp
         {
           id: entry[:id],
           date: entry[:date],
-          excerpt: entry[:text_body].to_s.squish.truncate(5000),
+          excerpt: append_entry_extras(entry[:text_body].to_s.squish.truncate(5000), entry[:songs_text], entry[:tags_text]),
           hashtags: entry[:hashtags],
           has_image: entry[:has_image],
           image_url: entry[:image_url]
         }
+      end
+
+      # Songs and dated tags sit after the entry text so a long excerpt cannot truncate them away.
+      def append_entry_extras(text, songs_text, tags_text)
+        [text.to_s.presence, songs_text.presence, tags_text.presence].compact.join("\n\n")
       end
 
       def default_entry_date_iso8601(user)

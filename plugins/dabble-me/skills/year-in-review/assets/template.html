@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>__TITLE__</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Newsreader:ital,opsz,wght@0,6..72,400;1,6..72,400;1,6..72,500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --olive:#5E6B23; --moss:#1C230F; --saffron:#F0B429; --plum:#3A1D38; --sage:#DCE4C6; --sky:#BCD6E3; --paper:#F6F5EE;
+  --on-dark:#F6F5EE; --on-light:#1C230F;
+  --page:#0F1408;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){ --olive:#4C581C; --saffron:#D99F1E; --sage:#C9D2B0; --sky:#A6C3D1; --page:#080B04; color-scheme:dark; }
+}
+:root[data-theme="dark"]{ --olive:#4C581C; --saffron:#D99F1E; --sage:#C9D2B0; --sky:#A6C3D1; --page:#080B04; color-scheme:dark; }
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;height:100%;background:var(--page);font-family:"Bricolage Grotesque",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.stage{position:relative;width:min(100%,460px);height:min(100%,860px);overflow:hidden;border-radius:clamp(0px,(100vw - 480px)*999,22px)}
+.bars{position:absolute;z-index:5;top:14px;left:14px;right:14px;display:flex;gap:4px}
+.bars span{flex:1;height:3px;border-radius:2px;background:currentColor;opacity:.25;transition:opacity .2s}
+.bars span.on{opacity:.9}
+.slide{position:absolute;inset:0;padding:64px 28px 92px;display:flex;flex-direction:column;justify-content:center;visibility:hidden;opacity:0;transition:opacity .35s ease}
+.slide.active{visibility:visible;opacity:1}
+.olive{background:var(--olive);color:var(--on-dark)} .moss{background:var(--moss);color:var(--on-dark)}
+.saffron{background:var(--saffron);color:var(--on-light)} .plum{background:var(--plum);color:var(--on-dark)}
+.sage{background:var(--sage);color:var(--on-light)} .sky{background:var(--sky);color:var(--on-light)}
+h1,h2{margin:0;font-weight:800;letter-spacing:-.035em;line-height:.92}
+h1{font-size:clamp(3rem,15vw,4.6rem)}
+h2{font-size:clamp(2.1rem,10vw,2.9rem)}
+.huge{font-size:clamp(7rem,40vw,11rem);font-weight:800;letter-spacing:-.06em;line-height:.8;margin:0 0 .1em -.04em}
+p{margin:.9em 0 0;font-size:1.06rem;line-height:1.4;max-width:34ch}
+.small{font-size:.9rem;opacity:.78}
+.q{font-family:Newsreader,Georgia,serif;font-style:italic;font-weight:400}
+.photo{width:100%;aspect-ratio:4/3;object-fit:cover;border-radius:6px;margin:22px 0 0;display:block;transform:rotate(-1.5deg);box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.photo.r{transform:rotate(1.2deg)}
+.months{display:flex;align-items:flex-end;gap:6px;height:170px;margin-top:28px}
+.months div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;font-size:.72rem;gap:6px}
+.months i{display:block;width:100%;background:currentColor;border-radius:3px 3px 0 0;min-height:2px;opacity:.85}
+.months .hi i{background:var(--saffron);opacity:1}
+.months .zero i{opacity:.2}
+.rank{list-style:none;margin:26px 0 0;padding:0}
+.rank li{display:grid;grid-template-columns:2.2rem 1fr auto;align-items:baseline;padding:10px 0;border-top:1px solid currentColor;border-color:color-mix(in srgb,currentColor 22%,transparent)}
+.rank b{font-size:1.5rem;font-weight:800}
+.rank span{font-size:1.5rem;font-weight:600;letter-spacing:-.02em}
+.rank em{font-style:normal;font-size:.9rem;opacity:.75}
+.lines{margin-top:18px;display:flex;flex-direction:column;gap:13px}
+.line{font-family:Newsreader,Georgia,serif;font-style:italic;font-size:1.25rem;line-height:1.22;min-height:1.3em}
+.line small{display:block;font-family:"Bricolage Grotesque",sans-serif;font-style:normal;font-size:.78rem;opacity:.7;margin-top:4px}
+.caret{display:inline-block;width:2px;height:1.05em;background:currentColor;vertical-align:-.15em;margin-left:2px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.cost{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.cost span{border:1.5px solid currentColor;border-radius:999px;padding:6px 12px;font-weight:600;font-size:.95rem}
+.tl{list-style:none;margin:24px 0 0;padding:0;border-left:2px solid currentColor}
+.tl li{position:relative;padding:0 0 16px 18px;line-height:1.35}
+.tl li::before{content:"";position:absolute;left:-7px;top:.35em;width:12px;height:12px;border-radius:50%;background:currentColor}
+.tl time{display:block;font-size:.8rem;opacity:.7}
+.cta{display:inline-block;margin-top:28px;padding:14px 22px;border-radius:999px;background:var(--saffron);color:var(--on-light);font-weight:800;text-decoration:none;font-size:1.05rem;position:relative;z-index:6}
+.cta:focus-visible,.nav button:focus-visible{outline:3px solid var(--saffron);outline-offset:3px}
+.nav{position:absolute;z-index:6;left:0;right:0;bottom:22px;display:flex;justify-content:space-between;padding:0 20px}
+.nav button{font:inherit;font-weight:600;font-size:.9rem;background:transparent;color:inherit;border:1.5px solid currentColor;border-radius:999px;padding:8px 16px;cursor:pointer;opacity:.8}
+.nav button[disabled]{opacity:.25;cursor:default}
+.tap{position:absolute;inset:0;z-index:4;display:flex}
+.tap div{flex:1}.tap div+div{flex:2}
+.mosaic{position:absolute;inset:0;display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:1fr;z-index:0}
+.mosaic img{width:100%;height:100%;object-fit:cover;display:block}
+.veil{position:absolute;inset:0;z-index:1;background:linear-gradient(180deg,color-mix(in srgb,var(--olive) 70%,transparent) 0%,color-mix(in srgb,var(--olive) 92%,transparent) 55%,var(--olive) 100%)}
+.slide>.fg{position:relative;z-index:2}
+.wall{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-top:20px}
+.wall img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:3px;display:block}
+.strip{display:flex;gap:6px;margin-top:20px}
+.strip img{flex:1;min-width:0;aspect-ratio:3/4;object-fit:cover;border-radius:4px;display:block}
+.collage{display:grid;grid-template-columns:1.4fr 1fr;grid-template-rows:1fr 1fr;gap:6px;margin-top:20px;height:min(40vh,300px)}
+.collage img{width:100%;height:100%;object-fit:cover;border-radius:4px;display:block}
+.collage img:first-child{grid-row:span 2}
+.rank li{grid-template-columns:2rem 48px 1fr auto;gap:0 12px;align-items:center}
+.rank img{width:48px;height:48px;border-radius:50%;object-fit:cover;display:block}
+.tl.ph li{display:grid;grid-template-columns:1fr 64px;gap:12px;align-items:center}
+.tl.ph img{width:64px;height:64px;border-radius:6px;object-fit:cover;display:block}
+.photo.tall{aspect-ratio:4/5;max-height:44vh;width:auto;max-width:100%}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:end;margin-top:14px}
+.split img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:6px;display:block}
+.slide.dense{justify-content:flex-start;overflow-y:auto}
+.slide.scroll{justify-content:flex-start;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:110px}
+.idx{list-style:none;margin:18px 0 0;padding:0}
+.idx li{display:grid;grid-template-columns:52px 1fr;gap:12px;padding:12px 0;border-top:1px solid color-mix(in srgb,currentColor 20%,transparent)}
+.idx img,.idx .ph0{width:52px;height:52px;border-radius:6px;object-fit:cover;display:block}
+.idx .ph0{border:1.5px dashed color-mix(in srgb,currentColor 35%,transparent)}
+.idx time{display:block;font-weight:800;font-size:.85rem}
+.idx p{margin:2px 0 0;font-size:.92rem;line-height:1.35;max-width:none}
+.idx a{color:inherit}
+.letter{font-family:Newsreader,Georgia,serif;font-size:1.2rem;line-height:1.38;margin-top:18px}
+.letter p{margin:0 0 .7em;font-size:inherit;max-width:none}
+.facts{margin:16px 0 0;padding:0;list-style:none}
+.facts li{padding:7px 0;border-top:1px solid color-mix(in srgb,currentColor 20%,transparent);line-height:1.35;font-size:.98rem}
+@media (prefers-reduced-motion:reduce){.slide{transition:none}.caret{animation:none}}
+</style>
+</head>
+<body>
+<main class="stage" id="stage" aria-roledescription="carousel" aria-label="Journal year in review">
+  <div class="bars" id="bars" aria-hidden="true"></div>
+  <div id="deck"></div>
+  <div class="tap" aria-hidden="true"><div id="tapPrev"></div><div id="tapNext"></div></div>
+  <nav class="nav"><button id="prev" aria-label="Previous slide">Back</button><button id="next" aria-label="Next slide">Next</button></nav>
+  <div id="live" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)"></div>
+</main>
+<script>
+const DATA=__DATA__;
+const IMGS=__IMGS__;
+(function(){
+  const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const rich=s=>esc(s).replace(/&lt;(\/?)(strong|em)&gt;/g,'<$1$2>');
+  const has=k=>k&&IMGS[k];
+  const img=(k,cls)=>has(k)?'<img '+(cls?'class="'+cls+'" ':'')+'data-img="'+esc(k)+'" alt="">':'';
+  const pics=ks=>{ks=(ks||[]).filter(has);if(!ks.length)return'';if(ks.length===1)return img(ks[0],'photo');if(ks.length===3)return'<div class="collage">'+ks.map(k=>img(k)).join('')+'</div>';return'<div class="strip">'+ks.slice(0,4).map(k=>img(k)).join('')+'</div>'};
+  const pal=['saffron','moss','sky','plum','sage','olive'];
+  const S=[];
+  const sec=(cls,inner,extra)=>S.push('<section class="slide '+cls+'" '+(extra||'')+'>'+inner+'</section>');
+  const st=DATA.stats, dates=Object.keys(IMGS).sort();
+  // cover
+  sec('olive','<div class="mosaic" data-all></div><div class="veil"></div><div class="fg"><p class="small" style="margin:0 0 18px">Dabble Me · '+esc(st.range_label)+'</p><h1>'+esc(DATA.title)+'</h1><p>'+st.entries+' entries, read front to back. Here’s what you kept coming back to.</p><p class="small">Tap or press → to start</p></div>','style="justify-content:flex-end"');
+  sec('saffron','<div class="huge">'+st.entries+'</div><h2>times you showed up.</h2><p>'+st.days+' different days. '+st.words.toLocaleString()+' words of your own, about '+st.avg_words+' per entry. '+st.with_photos+' came with photos.</p>'+(st.pasted.length?'<p class="small">Plus '+st.pasted.length+' you saved from someone else ('+esc(st.pasted.join(', '))+').</p>':''));
+  if(dates.length>=4) sec('moss','<h2>'+st.with_photos+' entries came with pictures.</h2><p class="small" style="margin-top:8px">Your year in the photos you chose to keep.</p><div class="wall" data-all></div>');
+  const bars=(arr,hi)=>{const mx=Math.max(1,...arr.map(a=>a[1]));return'<div class="months">'+arr.map(([l,v])=>'<div class="'+(v===mx&&hi?'hi':(!v?'zero':''))+'"><span>'+(v||'')+'</span><i style="height:'+(v/mx*100)+'%"></i><span>'+esc(l)+'</span></div>').join('')+'</div>'};
+  sec('moss','<h2>'+esc(st.top_month_name)+' was your loudest month.</h2><p>'+st.top_month_count+' entries.'+(st.empty_months.length?' '+esc(st.empty_months.join(', '))+' got nothing.':'')+'</p>'+bars(st.by_month,true)+pics(st.top_month_imgs));
+  sec('sky','<h2>'+esc(st.weekday_headline)+'</h2><p>'+esc(st.weekday_note)+'</p>'+bars(st.by_weekday,false)+pics(st.weekend_imgs));
+  sec('moss','<div class="split"><div><p class="small" style="margin:0">Longest · '+esc(st.longest.label)+'</p><div class="huge" style="font-size:clamp(3.6rem,18vw,5.2rem)">'+st.longest.words+'</div><p class="small" style="margin:0 0 10px">words.</p>'+img(st.longest.date)+'</div><div><p class="small" style="margin:0">Shortest · '+esc(st.shortest.label)+'</p><div class="huge" style="font-size:clamp(3.6rem,18vw,5.2rem)">'+st.shortest.words+'</div><p class="small" style="margin:0 0 10px">words.</p>'+img(st.shortest.date)+'</div></div><p class="q" style="font-size:1.25rem;line-height:1.25">“'+esc(st.shortest.text)+'”</p>');
+  // narrative cards
+  (DATA.cards||[]).forEach((c,n)=>{
+    const color=c.color||pal[n%pal.length]; let h='<h2>'+rich(c.title)+'</h2>'+(c.subtitle?'<p class="small" style="margin-top:8px">'+rich(c.subtitle)+'</p>':'');
+    const it=c.items||[];
+    if(c.type==='rank') h+='<ol class="rank">'+it.map((x,i)=>'<li><b>'+(i+1)+'</b>'+(has(x.img)?img(x.img):'<span></span>')+'<span>'+rich(x.label)+'</span><em>'+rich(x.value)+'</em></li>').join('')+'</ol>';
+    else if(c.type==='timeline') h+='<ul class="tl ph">'+it.map(x=>'<li><div><time>'+rich(x.when)+'</time>'+rich(x.text)+'</div>'+(has(x.img)?img(x.img):'<span></span>')+'</li>').join('')+'</ul>';
+    else if(c.type==='facts') h+='<ul class="facts">'+it.map(x=>'<li>'+rich(x)+'</li>').join('')+'</ul>'+pics(c.imgs);
+    else if(c.type==='chips') h+='<div class="cost">'+it.map(x=>'<span>'+rich(x)+'</span>').join('')+'</div>'+pics(c.imgs);
+    else if(c.type==='text') h+=(c.quote?'<div class="letter">'+(Array.isArray(c.quote)?c.quote:[c.quote]).map(q=>'<p>“'+rich(q)+'”</p>').join('')+'</div>':'')+(c.body||[]).map(p=>'<p>'+rich(p)+'</p>').join('')+pics(c.imgs);
+    else if(c.type==='lines'){S.push('<section class="slide '+color+'" data-type="lines" data-lines="'+esc(JSON.stringify(it))+'">'+h+'<div class="lines"></div></section>');return}
+    if(c.note) h+='<p class="small">'+rich(c.note)+'</p>';
+    sec(color,h);
+  });
+  // index
+  const sum=DATA.summaries||{};
+  sec('sage scroll','<h2>All '+st.entries+', in order.</h2><p class="small" style="margin-top:8px">Scroll this one. Dates open the entry in Dabble Me.</p><ol class="idx">'+DATA.entries.map(e=>'<li>'+(has(e.date)?img(e.date):'<span class="ph0"></span>')+'<div><time><a href="'+esc(e.url)+'" target="_blank" rel="noopener">'+esc(e.label)+'</a></time><p>'+rich(sum[e.id]||e.fallback)+'</p></div></li>').join('')+'</ol>');
+  sec('olive',(has(st.latest_img)?img(st.latest_img,'photo tall r').replace('class="','style="margin:0 0 22px" class="'):'')+'<p class="small" style="margin:0 0 14px">Word of the year</p><h1>'+esc(DATA.word||'')+'</h1>'+(DATA.word_note?'<p>'+rich(DATA.word_note)+'</p>':'')+'<a class="cta" href="https://dabble.me/write" target="_blank" rel="noopener">Write today’s entry</a>');
+  document.getElementById('deck').innerHTML=S.join('');
+  document.querySelectorAll('[data-img]').forEach(el=>{el.src=IMGS[el.dataset.img];el.decoding='async'});
+  document.querySelectorAll('[data-all]').forEach(box=>dates.forEach(k=>{const im=document.createElement('img');im.src=IMGS[k];im.alt='';im.decoding='async';box.appendChild(im)}));
+  const slides=[...document.querySelectorAll('.slide')], barsEl=document.getElementById('bars');
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  slides.forEach(()=>barsEl.appendChild(document.createElement('span')));
+  let timer=null;
+  function typeLines(s){
+    clearTimeout(timer);const box=s.querySelector('.lines');box.innerHTML='';
+    const L=JSON.parse(s.dataset.lines);
+    const els=L.map(x=>{const e=document.createElement('div');e.className='line';box.appendChild(e);return[e,x]});
+    const done=(e,x)=>e.innerHTML='“'+esc(x.text)+'”<small>'+esc(x.when)+'</small>';
+    if(reduce){els.forEach(([e,x])=>done(e,x));return}
+    let li=0,ci=0;(function step(){if(li>=els.length)return;const[e,x]=els[li];ci++;
+      if(ci>=x.text.length){done(e,x);li++;ci=0;timer=setTimeout(step,450)}else{e.innerHTML='“'+esc(x.text.slice(0,ci))+'<span class="caret"></span>';timer=setTimeout(step,38)}})();
+  }
+  let i=0;
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>{s.classList.toggle('active',k===i);s.setAttribute('aria-hidden',k!==i)});
+    [...barsEl.children].forEach((b,k)=>b.classList.toggle('on',k<=i));
+    const c=getComputedStyle(slides[i]).color;barsEl.style.color=c;document.querySelector('.nav').style.color=c;
+    document.getElementById('prev').disabled=i===0;document.getElementById('next').disabled=i===slides.length-1;
+    document.getElementById('live').textContent='Slide '+(i+1)+' of '+slides.length+': '+((slides[i].querySelector('h1,h2')||{}).textContent||'');
+    document.querySelector('.tap').style.display=slides[i].classList.contains('scroll')?'none':'flex';
+    if(slides[i].dataset.type==='lines')typeLines(slides[i]);else clearTimeout(timer);
+  }
+  document.getElementById('next').onclick=()=>show(i+1);document.getElementById('prev').onclick=()=>show(i-1);
+  document.getElementById('tapNext').onclick=()=>show(i+1);document.getElementById('tapPrev').onclick=()=>show(i-1);
+  addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key===' '){e.preventDefault();show(i+1)}if(e.key==='ArrowLeft')show(i-1)});
+  show(0);
+})();
+</script>
+</body>
+</html>

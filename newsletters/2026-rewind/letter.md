@@ -41,7 +41,7 @@ It has me writing a lot more. I often speak my entries instead of typing, and ad
 
 My favorite part is the On This Day widget. It sits on my home screen and shows me what I wrote on this date in past years, and it's a small delight every time.
 
-You can also share a photo from an old entry with its date on it. I borrowed that idea from Timehop, and I use it to send my closest friends the memories that make me smile.
+You can also share a photo from a past entry with its date on it. I borrowed that idea from Timehop, and I use it to send my closest friends the memories that still make me smile.
 
 Email is still the heart of Dabble Me. The app is one more way in.
 
@@ -49,7 +49,7 @@ Email is still the heart of Dabble Me. The app is one more way in.
 
 You can now [connect your journal to an AI assistant like Claude or ChatGPT](https://dabble.me/mcp-server) and ask it things in plain words.
 
-I've been using it to spot patterns in my own behavior, and it's been wildly helpful. If you connect yours, try this first: **"Make a Spotify Wrapped of my 2026 journal with lots of photos."**
+I've been using it to spot patterns in my own behavior, and it's been wildly helpful. If you connect yours, try this first: **"Make a private Spotify Wrapped of my 2026 journal; use lots of photos."**
 
 It's part of PRO ($4/mo). It securely accesses your own journal, only when you want it to, and you can turn it off anytime.
 

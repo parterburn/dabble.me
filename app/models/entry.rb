@@ -97,6 +97,52 @@ class Entry < ActiveRecord::Base
     end
   end
 
+  # Plain-text form of the songs on this entry, for readers that cannot render
+  # the embed (the MCP excerpt). Nil when the entry has none.
+  def spotify_songs_text
+    lines = Array(songs).filter_map { |song| spotify_song_label(song) }
+    return if lines.empty?
+
+    lines.join("\n")
+  end
+
+  # Dated tags on this entry, one per line: "#Leo (9 years, 2 days)".
+  # dates_by_tag is the account's dated tags, downcased tag => date, loaded once per request.
+  def dated_tag_lines(dates_by_tag)
+    return if dates_by_tag.blank?
+
+    lines = Array(hashtags).filter_map do |tag|
+      tag_date = dates_by_tag[tag.to_s.downcase]
+      next unless tag_date
+
+      "##{tag} (#{self.class.dated_tag_age(tag_date, date)})"
+    end
+    lines.join("\n").presence
+  end
+
+  def self.dated_tag_dates_for(user)
+    user.original_hashtags.where.not(date: nil).each_with_object({}) do |hashtag, dates|
+      tag = hashtag.tag.to_s.strip
+      next if tag.blank? || hashtag.date.blank?
+
+      dates[tag.downcase] = hashtag.date.to_date
+    end
+  end
+
+  # Age of a dated tag on an entry day. Two units, comma-separated: "9 years, 2 days".
+  def self.dated_tag_age(tag_date, entry_date)
+    tag_date = tag_date.to_date
+    entry_date = entry_date.to_date
+    days = (entry_date - tag_date).to_i
+    return 'today' if days.zero?
+    return '1 day' if days == 1
+    return 'in 1 day' if days == -1
+
+    phrase = Jekyll::Timeago.timeago(tag_date, entry_date, depth: 2, threshold: 0)
+    phrase = phrase.delete_suffix(' ago').delete_prefix('in ').sub(' and ', ', ')
+    days.negative? ? "in #{phrase}" : phrase
+  end
+
   # How the daily email for send_day introduces this entry: "On this day
   # 3 years ago" on the same calendar day in an earlier year, otherwise
   # "Rewind 31 days" (whole days under 60, then e.g. "3 months and 1 week").
@@ -291,6 +337,18 @@ class Entry < ActiveRecord::Base
 
   def set_word_count
     self.word_count = self.class.count_words(body)
+  end
+
+  def spotify_song_label(song)
+    data = song.respond_to?(:to_h) ? song.to_h.stringify_keys : {}
+    id = data['spotify_id'].to_s.strip
+    return if id.blank?
+
+    artists = Array(data['artists']).map { |name| name.to_s.strip }.compact_blank
+    title = data['title'].to_s.strip
+    label = [artists.to_sentence.presence, title.presence].compact.join(' - ')
+    label = 'Spotify track' if label.blank?
+    "🎶 [#{label.gsub(']', '\\]')}](https://open.spotify.com/track/#{id})"
   end
 
   def find_songs

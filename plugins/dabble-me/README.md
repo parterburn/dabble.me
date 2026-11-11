@@ -2,7 +2,7 @@
 
 Connects to the existing Dabble Me Streamable HTTP server at https://dabble.me/mcp using host-managed OAuth (PKCE S256, scope mcp:access). No API keys or server deployment are needed. Requires a Dabble Me PRO account.
 
-Includes three skills: find-memories, reflect-on-your-journal, and write-journal-entry. Uses the existing Dabble Me icon.
+Includes four skills: find-memories, reflect-on-your-journal, year-in-review, and write-journal-entry. Uses the existing Dabble Me icon.
 
 Public server-card and OAuth metadata were verified on 2026-10-08. Tool contracts and limitations were inspected in app/lib/mcp and app/services/mcp. Authenticated tools/list and account actions require installation and user OAuth connection; they have not been exercised by this package build. No journal entries were read or created.
 
@@ -18,7 +18,7 @@ Validate locally with `claude plugin validate ./plugins/dabble-me`. Keep the ide
 
 ## OpenAI review materials
 
-The portable manifest includes five positive and three negative review cases, the demo link (https://urg.ai/dbl-mcp), and release notes. The demo link resolves to a public Loom page; video playback has not been verified. These cases are drafted and have not been run against the reviewer account. Prepare the dated sample entries described in the cases before running them. Run read cases before write cases, and supply reviewer credentials only through the portal's secure fields.
+The portable manifest includes six positive and three negative review cases, the demo link (https://urg.ai/dbl-mcp), and release notes. The demo link resolves to a public Loom page; video playback has not been verified. These cases are drafted and have not been run against the reviewer account. Prepare the dated sample entries described in the cases before running them. Run read cases before write cases, and supply reviewer credentials only through the portal's secure fields.
 
 Public ChatGPT directory listing: https://chatgpt.com/plugins/plugin_asdk_app_6ac8451cdf78819190a3a26f21bfe561
 

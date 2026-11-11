@@ -1,8 +1,8 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "dabble-me",
-  "version": "0.1.6",
-  "description": "Search, reflect on, and write your private Dabble Me journal using its existing OAuth MCP server.",
+  "version": "0.1.7",
+  "description": "Search, reflect on, recap, and write your private Dabble Me journal using its existing OAuth MCP server.",
   "author": {
     "name": "Dabble Me"
   },
@@ -11,14 +11,14 @@
       "interface": {
         "displayName": "Dabble Me",
         "shortDescription": "Your journal, remembered",
-        "longDescription": "Find past memories, reflect on a week, month, or year, and save new journal entries with optional photos. Connect your Dabble Me PRO account using OAuth.",
+        "longDescription": "Find past memories, reflect on a week, month, or year, build a private Wrapped-style year in review, and save new journal entries with optional photos. Connect your Dabble Me PRO account using OAuth.",
         "developerName": "Dabble Me",
         "category": "Productivity",
         "logo": "./assets/logo.png",
         "composerIcon": "./assets/logo.png",
         "defaultPrompt": [
-          "Find a memory in my Dabble Me journal.",
           "Help me reflect on my journal from last month.",
+          "Make a private Spotify Wrapped of my journal this year.",
           "Help me write an entry in my Dabble Me journal."
         ],
         "websiteURL": "https://dabble.me",
@@ -46,6 +46,12 @@
               "prompt": "How many journal entries did I write from October 1–2, 2026, and which hashtags did I use?",
               "tools_triggered": "analyze_entries",
               "expected_behavior": "Use start_date \"2026-10-01\" and end_date \"2026-10-02\". Report two entries, with gratitude and learning appearing once each, supported by returned data."
+            },
+            {
+              "description": "Setup: use a dedicated authorized PRO reviewer account. Before running, prepare exactly these entries in October 1–2, 2026: October 1: \"Walked by the river with Sarah. Felt grateful for the quiet afternoon. #gratitude\"; October 2: \"Started my pottery class today. Learning something new felt exciting. #learning\". Run read cases before write cases; restore these fixtures before repeating. Credentials belong only in secure reviewer-access fields. Build a private recap of that period.",
+              "prompt": "Make a private Spotify Wrapped of my journal from October 1–2, 2026. Use photos if there are any, and leave nothing out.",
+              "tools_triggered": "analyze_entries, list_entries",
+              "expected_behavior": "Use the year-in-review skill. Call analyze_entries and list_entries with start_date \"2026-10-01\" and end_date \"2026-10-02\", then build a private recap from those entries. Do not post or write the recap back into the journal."
             },
             {
               "description": "Setup: use a dedicated authorized PRO reviewer account. Before running, prepare exactly these entries in October 1–2, 2026: October 1: \"Walked by the river with Sarah. Felt grateful for the quiet afternoon. #gratitude\"; October 2: \"Started my pottery class today. Learning something new felt exciting. #learning\". Run read cases before write cases; restore these fixtures before repeating. Credentials belong only in secure reviewer-access fields. Append to an existing entry. Run once after the read cases.",
@@ -78,7 +84,7 @@
         "demo_recording_url": "https://urg.ai/dbl-mcp"
       },
       "publication": {
-        "release_notes": "Added three skills for finding memories, reflecting on journal patterns, and writing entries with optional photos. Improved MCP tool metadata with readable titles and a documentation link. Added website, support, privacy policy, and terms links."
+        "release_notes": "Added a year-in-review skill that builds a private Wrapped-style recap from the connected journal. Connecting requires Dabble Me PRO."
       }
     }
   }
