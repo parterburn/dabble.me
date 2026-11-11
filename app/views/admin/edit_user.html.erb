@@ -89,6 +89,8 @@
           <div class="flex justify-between gap-4"><dt class="text-muted">Last sign-in</dt><dd class="text-primary"><%= @user.last_sign_in_at&.strftime("%Y-%m-%d") || "Never" %></dd></div>
           <div class="flex justify-between gap-4"><dt class="text-muted">Posting address</dt><dd class="truncate text-primary" title="<%= @user.user_key %>@<%= ENV['SMTP_DOMAIN'] %>"><%= @user.user_key %>@<%= ENV['SMTP_DOMAIN'] %></dd></div>
           <div class="flex justify-between gap-4"><dt class="text-muted">Paid</dt><dd class="text-primary"><%= link_to number_to_currency(@user.payments.sum(:amount)), payments_path(user_id: @user.id), class: "text-link" %></dd></div>
+          <% ai_usages = @user.ai_usages %>
+          <div class="flex justify-between gap-4"><dt class="text-muted">AI reflections</dt><dd class="text-primary"><%= number_with_delimiter(ai_usages.count) %> · <%= ai_cost(ai_usages.sum(:cost_usd)) %></dd></div>
         </dl>
       </div>
     </div>

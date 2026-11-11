@@ -63,7 +63,9 @@ class Entry
 
       reflection_context.compact.each { |context| chat.add_message(role: :user, content: context) }
       text, image_url = reflection_entry_message
-      chat.ask(text, with: image_url).content
+      response = chat.ask(text, with: image_url)
+      AiUsage.record(user: user, response: response, requested_model: model)
+      response.content
     end
 
     def reflection_instructions

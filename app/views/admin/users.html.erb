@@ -28,6 +28,7 @@
           <th data-firstsort="asc">Entries</th>
           <th data-firstsort="asc">Images</th>
           <th data-firstsort="asc">Paid</th>
+          <th data-firstsort="asc" title="What this user's AI reflections have cost us">AI cost</th>
           <th data-firstsort="asc">Plan</th>
           <th data-firstsort="asc">Ref</th>
         </tr>
@@ -55,6 +56,8 @@
                 <%= number_to_currency(user_paid) %>
               <% end %>
             </td>
+            <% user_ai_cost = @ai_costs[user.id] %>
+            <td data-value="<%= user_ai_cost.to_f %>"><%= ai_cost(user_ai_cost) %></td>
             <td title="<%= user.frequencies %>"><%= user.plan %></td>
             <td><%= user.referrer %></td>
           </tr>
