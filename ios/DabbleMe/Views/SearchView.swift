@@ -98,7 +98,7 @@ struct SearchView: View {
                         if let connectors = model.me?.aiConnectors {
                             Link(destination: connectors.guideUrl) {
                                 SearchRow(icon: "slab-claude", title: "Chat with your journal",
-                                          message: "To ask questions, understand patterns, or have deeper reflections you can connect to your favorite AI Assistant like Claude or ChatGPT.")
+                                          message: "Ask questions and understand patterns by connecting to your AI assistant like Claude or ChatGPT.")
                             }
                             .accessibilityLabel("Chat with your journal")
                             .accessibilityHint("Shows how to connect Claude or ChatGPT")
