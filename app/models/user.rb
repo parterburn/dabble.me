@@ -31,6 +31,23 @@ class User < ActiveRecord::Base
     Digest::SHA256.hexdigest(user_key.to_s).first(16)
   end
 
+  # Encrypted in the database. user_key and image_key are looked up by exact
+  # value, so they use deterministic encryption; nothing can match them (or
+  # the other columns) by substring in SQL.
+  #
+  # The two `previous` schemes carry the staged rollout (see
+  # Encryption::StagedEncryptor). Rails writes a deterministic column with its
+  # first previous scheme, which uses the staged encryptor, so a process
+  # writes plaintext until ciphertext writes are turned on. Lookups search for
+  # every scheme's form, and the second scheme always encrypts, so a process
+  # still writing plaintext finds users whose keys another process already
+  # encrypted. Once every row is encrypted this can become a plain
+  # deterministic `encrypts`; the keys and cipher are the same.
+  encrypts :user_key, :image_key, deterministic: true,
+                                  previous: [{ deterministic: true },
+                                             { deterministic: true, encryptor: ActiveRecord::Encryption::Encryptor.new }]
+  encrypts :first_name, :last_name, :past_filter, :otp_auth_secret, :otp_recovery_secret
+
   validates :user_key, uniqueness: true
   validates :image_key, uniqueness: true, allow_nil: true
   before_create :assign_keys

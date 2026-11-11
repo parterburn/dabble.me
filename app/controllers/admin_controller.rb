@@ -7,7 +7,9 @@ class AdminController < ApplicationController
       users = User.where("email ILIKE ?", "%#{params[:email].downcase}%")
     elsif params[:user_key].present?
       # Also matches image_key, so a photo URL's folder leads back to its user.
-      users = User.where("user_key ILIKE :key OR image_key ILIKE :key", key: "%#{params[:user_key]}%")
+      # Both keys are encrypted, so this is an exact match on the whole key.
+      key = params[:user_key].to_s.strip
+      users = User.where(user_key: key).or(User.where(image_key: key))
     else
       users = User.all
     end

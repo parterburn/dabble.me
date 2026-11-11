@@ -20,6 +20,9 @@ Sidekiq.configure_server do |config|
   # (not dead_max_age).
   config[:dead_max_jobs] = 10_000
   config[:dead_timeout_in_seconds] = 15_552_000 # 180 days (~6 months)
+
+  # Refuse to run jobs with missing or mismatched encryption keys.
+  config.on(:startup) { EncryptionCheck.verify! }
 end
 
 # sidekiq-cron: https://github.com/sidekiq-cron/sidekiq-cron
