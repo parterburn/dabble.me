@@ -10,8 +10,13 @@ class EncryptionCheck < ActiveRecord::Base
   EXPECTED = "dabble-me-encryption-check".freeze
   KEY_SETTINGS = %i[primary_key deterministic_key key_derivation_salt].freeze
 
-  # Always encrypted, whatever stage the rollout is at.
+  # Always encrypted, whatever stage the rollout is at. `value` proves the
+  # primary key and salt; `lookup` is deterministic, so it proves the
+  # deterministic key that posting and photo key lookups depend on.
   encrypts :value, encryptor: ActiveRecord::Encryption::Encryptor.new
+  encrypts :lookup, deterministic: true, encryptor: ActiveRecord::Encryption::Encryptor.new
+
+  CHECKED = %i[value lookup].freeze
 
   def self.verify!
     missing = KEY_SETTINGS.reject { |setting| key_set?(setting) }
@@ -21,7 +26,7 @@ class EncryptionCheck < ActiveRecord::Base
     end
 
     check = first || create_check
-    unless check.encrypted_attribute?(:value) && check.value == EXPECTED
+    unless CHECKED.all? { |column| check.encrypted_attribute?(column) && check.public_send(column) == EXPECTED }
       raise Failed, "The stored encryption check does not decrypt with this process's keys. " \
                     "Another process wrote it with different keys; do not start until they match."
     end
@@ -36,7 +41,7 @@ class EncryptionCheck < ActiveRecord::Base
   private_class_method :key_set?
 
   def self.create_check
-    create!(value: EXPECTED)
+    create!(value: EXPECTED, lookup: EXPECTED)
   rescue ActiveRecord::RecordNotUnique
     first
   end
