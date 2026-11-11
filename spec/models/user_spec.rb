@@ -3,6 +3,30 @@ require 'rails_helper'
 describe User do
   let(:user) { User.create(email: Faker::Internet.email, password: Faker::Internet.password(min_length: 8), first_name: Faker::Name.first_name, last_name: Faker::Name.last_name) }
 
+  describe '.with_name_matching' do
+    let!(:zora) { FactoryBot.create(:user, first_name: 'Zorabel', last_name: 'Quenneville', plan: 'PRO Monthly PayHere') }
+    let!(:free_zora) { FactoryBot.create(:user, first_name: 'Zorabel', last_name: nil, plan: 'Free') }
+    let!(:legacy) { FactoryBot.create(:user, first_name: 'Ottoline', last_name: 'Quennell') }
+
+    before do
+      FactoryBot.create(:user, first_name: nil, last_name: nil)
+      store_plaintext(legacy, :last_name, 'Quennell') # a row from before encryption
+    end
+
+    it 'matches every word of the query in the first and last name, ignoring case and order' do
+      expect(ciphertext?(stored_value(zora, :first_name))).to be(true)
+      expect(User.with_name_matching('ZORA')).to contain_exactly(zora, free_zora)
+      expect(User.with_name_matching('quenneville zorabel')).to contain_exactly(zora)
+      expect(User.with_name_matching('quenn')).to contain_exactly(zora, legacy)
+      expect(User.with_name_matching('zorabel smith')).to be_empty
+    end
+
+    it 'narrows the relation it is called on, and leaves it alone for a blank query' do
+      expect(User.pro_only.with_name_matching('zorabel')).to contain_exactly(zora)
+      expect(User.with_name_matching('  ').count).to eq(User.count)
+    end
+  end
+
   describe 'posting and photo keys' do
     it 'gives a new user independent posting and photo keys in the usual format' do
       expect(user.user_key).to match(/\Au[0-9a-z]{18}\z/)

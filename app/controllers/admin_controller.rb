@@ -2,17 +2,20 @@ class AdminController < ApplicationController
   before_action :authenticate_user!
   before_action :authenticate_admin!
 
+  # Kaminari caps a page at 100 (config/initializers/kaminari_config.rb); the photo grid lifts that.
+  PHOTOS_PER_PAGE = 300
+
   def users
-    if params[:email].present?
-      users = User.where("email ILIKE ?", "%#{params[:email].downcase}%")
-    elsif params[:user_key].present?
+    # Each filter that's filled in narrows the list.
+    users = User.all
+    users = users.where("email ILIKE ?", "%#{params[:email].downcase}%") if params[:email].present?
+    if params[:user_key].present?
       # Also matches image_key, so a photo URL's folder leads back to its user.
       # Both keys are encrypted, so this is an exact match on the whole key.
       key = params[:user_key].to_s.strip
-      users = User.where(user_key: key).or(User.where(image_key: key))
-    else
-      users = User.all
+      users = users.merge(User.where(user_key: key).or(User.where(image_key: key)))
     end
+    users = users.with_name_matching(params[:name]) if params[:name].present?
     @user_list = users.order('id DESC').page(params[:page]).per(per_page)
     @ai_costs = AiUsage.where(user_id: @user_list.map(&:id)).group(:user_id).sum(:cost_usd)
     render 'users'
@@ -72,11 +75,13 @@ class AdminController < ApplicationController
     # image_code → display_image_url in the view). Keep `:id` for AR identity
     # and any future per-entry actions. Heavy columns like body/original_email
     # stay excluded so the 300-per-page grid stays cheap.
-    entries = Entry.select(:id, :image, :user_id, :date, :uploading_image_at)
-                   .includes(:user)
-                   .only_images
-                   .order('date DESC')
-    @entries = Kaminari.paginate_array(entries).page(params[:page]).per(per_page)
+    # Paginated in SQL, so a page reads only its own rows.
+    @entries = Entry.select(:id, :image, :user_id, :date, :uploading_image_at)
+                    .includes(:user)
+                    .only_images
+                    .order('date DESC')
+                    .page(params[:page])
+                    .per(params[:per].presence || PHOTOS_PER_PAGE, max_per_page: PHOTOS_PER_PAGE)
   end
 
   def stats
@@ -98,7 +103,7 @@ class AdminController < ApplicationController
   # The same basics a user can change on their own settings page, plus plan.
   # Billing IDs stay on the payment form. A blank plan keeps the current one.
   def admin_user_params
-    params.require(:user).permit(:first_name, :last_name, :email, :send_time, :send_timezone, :plan).tap do |p|
+    params.require(:user).permit(:first_name, :last_name, :email, :send_time, :send_timezone, :send_updates, :plan).tap do |p|
       p.delete(:plan) if p[:plan].blank?
     end
   end

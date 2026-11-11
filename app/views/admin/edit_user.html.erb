@@ -47,6 +47,15 @@
           <p class="field-help">Free accounts get Sunday emails only. Untick every day to stop the emails.</p>
         </fieldset>
 
+        <fieldset>
+          <legend class="field-label">Updates</legend>
+          <%= f.label :send_updates, class: "inline-flex items-center gap-2 text-sm text-primary" do %>
+            <%= f.check_box :send_updates, class: "checkbox" %>
+            Send updates about Dabble Me
+          <% end %>
+          <p class="field-help">The occasional newsletter, separate from journal emails. A newsletter's unsubscribe link turns it off.</p>
+        </fieldset>
+
         <div class="grid gap-5 sm:grid-cols-2">
           <div>
             <%= f.label :send_time, class: "field-label" %>

@@ -88,6 +88,23 @@ class User < ActiveRecord::Base
   scope :not_forever, -> { where("plan NOT ILIKE '%forever%'") }
   scope :referrals, -> { where("referrer IS NOT null") }
 
+  # Users whose "first last" name holds every word of the query, ignoring case and order
+  # ("ada", "lovelace ada"). Names are encrypted, so SQL can't search them: this decrypts
+  # the names in Ruby and returns a relation of the matching ids.
+  def self.with_name_matching(query)
+    words = query.to_s.downcase.split
+    return all if words.empty?
+
+    ids = []
+    where.not(first_name: nil).or(where.not(last_name: nil)).in_batches(of: 1000) do |batch|
+      batch.pluck(:id, :first_name, :last_name).each do |id, first_name, last_name|
+        name = "#{first_name} #{last_name}".downcase
+        ids << id if words.all? { |word| name.include?(word) }
+      end
+    end
+    where(id: ids)
+  end
+
   after_commit :notify_stripe
   after_update :revoke_doorkeeper_oauth_if_downgraded_from_pro
   after_update :revoke_doorkeeper_oauth_if_credentials_changed
