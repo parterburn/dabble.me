@@ -77,7 +77,6 @@ Rails.application.routes.draw do
       get 'admin/stats' => 'admin#stats', as: 'admin_stats'
       post 'admin/stats/capture' => 'admin#capture_stats', as: 'capture_admin_stats'
       get 'admin/photos' => 'admin#photos', as: 'admin_photos'
-      get 'email_replies_test', to: 'entries#email_replies_test'
       mount AdminPasskeyGate.new(Sidekiq::Web) => "/sidekiq"
     end
   end
