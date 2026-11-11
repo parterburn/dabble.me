@@ -87,7 +87,7 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["On This Day"].waitForExistence(timeout: 15))
         XCTAssertFalse(app.buttons["Random Entry"].isHittable, "Today has no random-entry button")
         // The demo account is seeded with entries 1, 2 and 3 years before today.
-        let memory = app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "[0-9]+ years? ago · .*[0-9]{4}")).firstMatch
+        let memory = app.staticTexts.matching(NSPredicate(format: "label MATCHES %@", "[0-9]+ years? ago • .*[0-9]{4}")).firstMatch
         XCTAssertTrue(memory.waitForExistence(timeout: 5), "On This Day shows the demo's memories")
         snap("today")
     }

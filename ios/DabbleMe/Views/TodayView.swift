@@ -283,11 +283,12 @@ struct TodayView: View {
         }
     }
 
-    /// "31 days ago · Wednesday, May 20, 2026".
+    /// "2 years and 3 months ago • August 2024": on one line, and the day itself is on the row
+    /// under it (SAT 10).
     private static func throwbackTitle(_ entry: EntrySummary, today: TodaySummary) -> String {
-        let date = entry.day?.formatted(.dateTime.weekday(.wide).month(.wide).day().year()) ?? entry.date
-        guard let day = entry.day, let now = today.day else { return date }
-        return "\(day.relative(to: now)) · \(date)"
+        guard let day = entry.day else { return entry.date }
+        guard let now = today.day else { return day.monthTitle }
+        return "\(day.relative(to: now)) • \(day.monthTitle)"
     }
 
     @ViewBuilder
@@ -322,11 +323,11 @@ struct TodayView: View {
         }
     }
 
-    /// "1 year ago · Saturday, November 8, 2025".
+    /// "1 year ago • November 2025".
     private static func memoryTitle(_ memory: EntrySummary) -> String {
-        let date = memory.day?.formatted(.dateTime.weekday(.wide).month(.wide).day().year()) ?? memory.date
-        guard let years = memory.yearsAgo else { return date }
-        return "\(years == 1 ? "1 year" : "\(years) years") ago · \(date)"
+        let month = memory.day?.monthTitle ?? memory.date
+        guard let years = memory.yearsAgo else { return month }
+        return "\(years == 1 ? "1 year" : "\(years) years") ago • \(month)"
     }
 
     /// The Journal's row: tap to expand a long one (or open it); swipe right for Actions, left to Open.
