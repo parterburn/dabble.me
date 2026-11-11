@@ -33,11 +33,11 @@ Email is still the heart of Dabble Me. The app is for the times you want to brow
 
 ## Encryption for your journal
 
-Your entries are now encrypted in our database, with the keys kept separately from it. A copy of the database on its own can't be read.
+You've probably seen the news lately: data breaches keep getting bigger and more frequent. A journal is about the last thing anyone wants caught up in one.
 
-I want to be exact about what this is. It is not end-to-end encryption: our servers still decrypt your entries to email them to you, search them, and show them in the app. What it removes is the scenario I worried about most, where a leaked database would be a readable copy of everyone's journal.
+So I spent a good part of this year securing Dabble Me. It now runs on the latest infrastructure, and your entries are encrypted in our database. A stolen copy of that database would be unreadable.
 
-The same protection now covers your posting address, your name, and your two-factor secrets. The code that does it is public, as all of Dabble Me's code is.
+You don't need to do anything. It's there, protecting what you've written.
 
 ## Connect your journal to Claude or ChatGPT
 
@@ -45,19 +45,21 @@ PRO accounts can connect their journal to Claude or ChatGPT. Once you approve it
 
 It only ever works on your own journal, only after you approve it, and you can disconnect it at any time under Account Security.
 
-## Smaller things that add up
+## Other updates
 
 - **Passkeys.** Sign in with Face ID, Touch ID, or your device's passkey instead of a password.
 - **A new posting address on demand.** If the address you email entries to ever ends up somewhere it shouldn't, you can reset it in Settings.
-- **Day One import.** Bring your Day One journal over, photos included.
-- **A yearly count instead of streaks.** Streaks punish you for having a life. Dabble Me now shows how many days you've written this year.
+- **Day One import.** Users can now bring their Day One journal over, photos included.
+- **A yearly count instead of streaks.** Streaks punish you for having a life. Dabble Me now focuses more on how many days you've written in a year.
 
 ## Thank you
 
-Dabble Me has no investors and no ads. It exists because you pay for it, which is also why I answer to you and nobody else.
+Dabble Me has no investors and no ads. It exists because of its paying users, which is why I work to keep it secure and running for everyone who still wants it. That includes my wife and me.
 
 If something is broken, confusing, or missing, reply to this email. It comes straight to me.
 
 Here's to another year of writing things down.
 
-Paul
+Paul Arterburn
+founder/maker of dabble.me
+[x.com/parterburn](https://x.com/parterburn)

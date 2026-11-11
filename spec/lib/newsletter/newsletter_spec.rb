@@ -135,6 +135,11 @@ RSpec.describe Newsletter do
     expect(quiet.subject).to eq("What's new in Dabble Me")
     expect(quiet.markdown).to start_with("Hi Bo,\n\n#{opening}\n\n## A new look")
     expect(quiet.text).not_to include('Rewind is ready', 'You wrote')
+
+    [writer, quiet].each do |letter|
+      expect(letter.html).to include('Paul Arterburn<br>', 'founder/maker of dabble.me<br>', '<a href="https://x.com/parterburn">x.com/parterburn</a>')
+      expect(letter.text).to end_with("Paul Arterburn\nfounder/maker of dabble.me\nx.com/parterburn (https://x.com/parterburn)")
+    end
   end
 
   describe 'the newsletters in this repository' do

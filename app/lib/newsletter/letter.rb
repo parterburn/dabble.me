@@ -49,7 +49,8 @@ class Newsletter
     end
 
     def self.markdown_to_html(markdown)
-      renderer = Redcarpet::Render::HTML.new(filter_html: true, safe_links_only: true)
+      # hard_wrap keeps the line breaks of a sign-off written on separate lines.
+      renderer = Redcarpet::Render::HTML.new(filter_html: true, safe_links_only: true, hard_wrap: true)
       Redcarpet::Markdown.new(renderer, autolink: true, no_intra_emphasis: true).render(markdown)
     end
 
