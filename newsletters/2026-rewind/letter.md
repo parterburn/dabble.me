@@ -45,7 +45,7 @@ You can also share a photo from an old entry with its date on it. I borrowed tha
 
 Email is still the heart of Dabble Me. The app is one more way in.
 
-## Connect your journal to an AI Assistant
+## Chat with your journal
 
 You can now connect your journal to an AI assistant like Claude or ChatGPT. Then you can ask it things in plain words, like "what was I worried about last spring?" **[Connect your journal](https://dabble.me/mcp-server)**
 
