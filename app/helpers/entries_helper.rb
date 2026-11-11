@@ -12,20 +12,17 @@ module EntriesHelper
   end
 
   # Turns each #tag in an entry's HTML into a link that searches for it, the
-  # same tags Entry.hashtags_in finds. Text already inside a link, like a URL
-  # with a #fragment, is left alone.
+  # same tags Entry.hashtags_in finds. Text inside a link and the #fragment of
+  # a URL written out in text are left alone.
   def link_hashtags(html)
     return html if html.blank? || !html.include?("#")
 
-    fragment = Nokogiri::HTML5.fragment(html)
+    fragment = Entry.html_fragment(html)
     document = fragment.document
-    fragment.xpath(".//text()[not(ancestor::a)]").each do |node|
+    Entry.each_hashtag_node(fragment) do |node, matches|
       text = node.content
-      next unless text.match?(Entry::HASHTAG_PATTERN)
-
       position = 0
-      text.scan(Entry::HASHTAG_PATTERN) do
-        match = Regexp.last_match
+      matches.each do |match|
         node.add_previous_sibling(document.create_text_node(text[position...match.begin(0)])) if match.begin(0) > position
         tag = "##{match[1]}"
         node.add_previous_sibling(document.create_element("a", tag, href: search_path(search: { term: tag }), class: "s-entry-hashtag"))

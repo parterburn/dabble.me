@@ -14,6 +14,16 @@ class Entry < ActiveRecord::Base
   # run (so "#1" isn't a tag but "#1st" is).
   HASHTAG_PATTERN = /#([0-9]+[a-zA-Z_]+\w*|[a-zA-Z_]+\w*)/
 
+  # A URL written out in text ("https://…", "www.…"), up to the next space.
+  # Rinku links these when an entry is shown, and a # inside one starts its
+  # fragment, not a tag. Schemes are capped in length so a long run of
+  # letters and dots can't make the scan slow.
+  TEXT_URL_PATTERN = %r{\b(?:[a-z][a-z0-9+.\-]{0,31}://|www\.)[^[:space:]]*}i
+
+  # Scanning for either consumes a URL whole, so the #fragment in it is never
+  # read as a tag. Group 1 is the tag.
+  HASHTAG_OR_URL_PATTERN = /#{TEXT_URL_PATTERN}|#{HASHTAG_PATTERN}/
+
   ALLOWED_IMAGE_TYPES = %w[image/jpg image/jpeg image/png image/gif image/webp image/heic image/heif image/heic-sequence image/heif-sequence application/octet-stream]
 
   # Placeholder image shown in the UI while an entry's image is being processed
@@ -196,15 +206,41 @@ class Entry < ActiveRecord::Base
 
   # The #hashtags in a body, or nil when it has no text. A class method so
   # callers that only need tags can pluck bodies instead of loading entries.
+  # A # in a link or a URL is not a tag (see .each_hashtag_node).
   def self.hashtags_in(body)
     return nil unless body.present?
     return [] unless body.include?('#')
 
-    normalized_body = body.gsub(%r{</p>|<br\s*/?>}i, "\\0\n")
-    h_body = ActionController::Base.helpers.strip_tags(normalized_body)
-    return nil unless h_body.present?
+    fragment = html_fragment(body)
+    return nil if fragment.content.blank?
 
-    h_body.scan(HASHTAG_PATTERN).map { |m| m[0] }.uniq
+    tags = []
+    each_hashtag_node(fragment) { |_node, matches| tags.concat(matches.map { |match| match[1] }) }
+    tags.uniq
+  end
+
+  # Entry HTML parsed the way Rails' sanitizer parses it, so a stray "<" in
+  # prose is escaped first (config/initializers/html_sanitizer.rb) instead of
+  # raising.
+  def self.html_fragment(html)
+    Rails::HTML5::FullSanitizer.new.parse_fragment(html)
+  end
+
+  # Yields each text node that holds a #tag, with its tag matches (group 1 is
+  # the tag). Text inside a link is skipped, since it's usually the URL, and so
+  # is a # inside a URL written out in text. EntriesHelper#link_hashtags uses
+  # this too, so the tags under an entry are the ones linked in its body.
+  def self.each_hashtag_node(fragment)
+    # Not ".//text()[...]": on a fragment that form drops text outside any
+    # element, like a plain-text body.
+    fragment.xpath('descendant::text()[not(ancestor::a)]').each do |node|
+      text = node.content
+      next unless text.include?('#')
+
+      matches = []
+      text.scan(HASHTAG_OR_URL_PATTERN) { matches << Regexp.last_match if Regexp.last_match(1) }
+      yield node, matches if matches.any?
+    end
   end
 
   # Words in a body: tags and HTML entities become spaces, then
