@@ -111,8 +111,15 @@ module Mcp
         date: entry.date.to_date.iso8601,
         text_body: entry.text_body.to_s,
         hashtags: entry.hashtags || [],
-        has_image: entry.image_stored?
+        has_image: entry.image_stored?,
+        image_url: image_url(entry)
       }
+    end
+
+    # The photo's public S3 URL (the bucket is public-read). Built from the image column, so
+    # it costs no S3 request, except one for a HEIC original, to find its JPEG copy.
+    def image_url(entry)
+      entry.image.url if entry.image_stored?
     end
 
     def average_words(text_bodies)

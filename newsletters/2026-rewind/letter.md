@@ -45,11 +45,11 @@ You can also share a photo from an old entry with its date on it. I borrowed tha
 
 Email is still the heart of Dabble Me. The app is one more way in.
 
-## Ask your journal questions
+## Chat with your journal
 
-You can now connect your journal to an AI assistant like Claude or ChatGPT. Then you can ask it things in plain words, like "what was I worried about last spring?"
+You can now [connect your journal to an AI assistant like Claude or ChatGPT](https://dabble.me/mcp-server) and ask it things in plain words.
 
-I've been using it to spot patterns in my own behavior, and it's been wildly helpful. Advice lands differently when it has years of your own words behind it.
+I've been using it to spot patterns in my own behavior, and it's been wildly helpful. If you connect yours, try this first: **"Make a Spotify Wrapped of my 2026 Dabble Me journal."**
 
 It's part of PRO ($4/mo). It securely accesses your own journal, only when you want it to, and you can turn it off anytime.
 
