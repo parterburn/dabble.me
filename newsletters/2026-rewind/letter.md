@@ -5,10 +5,10 @@ subject:
   rewind_free: Your 2026 Rewind is waiting
   whats_new_free: What's new in Dabble Me
 preview:
-  rewind: Plus a new look, an iPhone app, and encryption for everything you've written.
-  whats_new: A new look, an iPhone app, and encryption for everything you've written.
-  rewind_free: Plus a new look, an iPhone app, and encryption for everything you've written.
-  whats_new_free: A new look, an iPhone app, and encryption for everything you've written.
+  rewind: Plus an iPhone app, a more private journal, and a new look.
+  whats_new: An iPhone app, a more private journal, and a new look.
+  rewind_free: Plus an iPhone app, a more private journal, and a new look.
+  whats_new_free: An iPhone app, a more private journal, and a new look.
 ---
 
 Hi {{first_name}},
@@ -25,44 +25,52 @@ You wrote {{entry_count}} entries in 2026, and your Rewind is waiting: **[dabble
 You can see your year of entries there now. [PRO unlocks the rest]({{subscribe_url}}): your total words, your busiest days and months, and the words and hashtags you used most.
 
 {{/rewind_free}}
-Dabble Me turned twelve this year, and it changed more in 2026 than in the previous several years combined. Here is what's new.
+Dabble Me turned twelve this year, and it changed more in 2026 than in the previous several years combined.
+
+I built it for my wife and me, and I keep building the things that keep me journaling, because I know how much a journal is worth. Here is what's new.
 
 {{#whats_new,whats_new_free}}
 See it for yourself: **[write a line about today]({{write_url}})**. One sentence counts.
 
 {{/whats_new,whats_new_free}}
-## A new look
-
-Dabble Me has a new wordmark, a new set of icons, and a calmer palette. The account pages were rebuilt to match, so Settings and Security are easier to read and easier to use on a phone.
-
-Nothing moved that you rely on. The daily email still asks how your day went, and replying still saves your entry.
-
 ## An iPhone app
 
-There is now a Dabble Me app for iPhone and iPad, in beta. [Join the beta on TestFlight](https://testflight.apple.com/join/mYj4vrFZ)
+Dabble Me now has an app for iPhone and iPad. **[Get the app](https://testflight.apple.com/join/mYj4vrFZ)**
 
-It opens on Today, with your entry for the day and what you wrote on this date in past years. You can write with photos straight from the camera, search your whole journal, and scrub through your timeline by month. There's a Home Screen widget, Face ID lock, and your Rewind and stats are built in.
+It has me writing a lot more. I talk my entries out loud with Siri, and adding photos takes a couple of taps.
 
-Email is still the heart of Dabble Me. The app is for the times you want to browse, or write something longer than a reply.
+My favorite part is the On This Day widget. It sits on my home screen and shows me what I wrote on this date in past years, and it's a small delight every time.
 
-## Encryption for your journal
+You can also share a photo from an old entry with its date on it. I borrowed that idea from Timehop, and I use it to send my closest friends the memories that make me smile.
+
+Email is still the heart of Dabble Me. The app is one more way in.
+
+## Ask your journal questions
+
+You can now connect your journal to an AI assistant like Claude or ChatGPT. Then you can ask it things in plain words, like "what was I worried about last spring?"
+
+I've been using it to spot patterns in my own behavior, and it's been wildly helpful. Advice lands differently when it has years of your own words behind it.
+
+It's part of PRO. It only works on your own journal, only after you say yes, and you can turn it off anytime.
+
+## A more private journal
 
 You've probably seen the news lately: data breaches keep getting bigger and more frequent. A journal is about the last thing anyone wants caught up in one.
 
-So I spent a good part of this year securing Dabble Me. It now runs on the latest infrastructure, and your entries are encrypted in our database. A stolen copy of that database would be unreadable.
+So I spent a good part of this year making Dabble Me more private and secure. I updated the systems it runs on, and your entries are now encrypted, which means they're stored in a scrambled form. If anyone ever stole a copy of our database, they couldn't read a word of it.
 
-You don't need to do anything. It's there, protecting what you've written.
+You don't need to do anything. It's already protecting what you've written.
 
-## Connect your journal to Claude or ChatGPT
+## A fresh look
 
-PRO accounts can connect their journal to Claude or ChatGPT. Once you approve it, you can ask things like "what was I worried about last spring?" or "find every entry where I mentioned the lake house," and save new entries by asking.
+Dabble Me has a new logo and a cleaner design. Settings are easier to read, especially on a phone.
 
-It only ever works on your own journal, only after you approve it, and you can disconnect it at any time under Account Security.
+Nothing you rely on moved. The daily email still asks how your day went, and replying still saves your entry.
 
 ## Other updates
 
-- **Passkeys.** Sign in with Face ID, Touch ID, or your device's passkey instead of a password.
-- **A new posting address on demand.** If the address you email entries to ever ends up somewhere it shouldn't, you can reset it in Settings.
+- **Sign in without a password.** Use Face ID, Touch ID, or your device's own unlock.
+- **A new address for sending entries.** If the email address you send entries to ever gets out, you can swap it for a new one in Settings.
 - **Day One import.** Users can now bring their Day One journal over, photos included.
 - **A yearly count instead of streaks.** Streaks punish you for having a life. Dabble Me now focuses more on how many days you've written in a year.
 
@@ -74,7 +82,7 @@ PRO is $4 a month or $40 a year. It lets you choose which days your emails arriv
 {{/rewind_free,whats_new_free}}
 ## Thank you
 
-Dabble Me has no investors and no ads. It exists because of its paying users, which is why I work to keep it secure and running for everyone who still wants it. That includes my wife and me.
+Dabble Me has no investors and no ads. It exists because of its paying users, which is why I work to keep it secure and running for everyone who still wants it. My wife and I are two of them.
 
 If something is broken, confusing, or missing, reply to this email. It comes straight to me.
 
