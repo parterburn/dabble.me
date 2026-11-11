@@ -38,10 +38,13 @@
     </div>
   </div>
   <div class="s-scrollable">
+    <%# Tags link to search, which is PRO-only, like the tag labels below. %>
+    <% body_html = format_body(entry.formatted_body) %>
+    <% body_html = link_hashtags(body_html) if current_user.is_pro? %>
     <% if @search.present? %>
-      <%= highlight(format_body(entry.formatted_body), @search.term) %>
+      <%= highlight(body_html, @search.term) %>
     <% elsif entry.formatted_body.present? %>
-      <%= format_body(entry.formatted_body) %>
+      <%= body_html %>
     <% else %>
       <div class="text-muted text-center" style="margin: 25px 0;">Entry has no content.</div>
     <% end %>

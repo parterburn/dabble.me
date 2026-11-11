@@ -135,6 +135,20 @@ RSpec.describe EntriesController, type: :controller do
       expect(response.body).to include('McpStyleShowBody')
     end
 
+    it "links #tags in a PRO user's entry to search, but not a free user's" do
+      paid_entry.update_columns(date: Time.utc(2026, 11, 10), body: '<p>#Leo showered and made eggs.</p>')
+      entry.update_columns(date: Time.utc(2026, 11, 10), body: '<p>#Leo showered and made eggs.</p>')
+
+      sign_in paid_user
+      get :show, params: { year: 2026, month: 11, day: 10 }
+      expect(Capybara.string(response.body)).to have_css('.s-scrollable a.s-entry-hashtag[href="/search?search%5Bterm%5D=%23Leo"]', text: '#Leo')
+
+      sign_in user
+      get :show, params: { year: 2026, month: 11, day: 10 }
+      expect(response.body).to include('#Leo showered')
+      expect(response.body).not_to include('s-entry-hashtag')
+    end
+
     it 'redirects with Entry not found when no entry exists that day' do
       get :show, params: { year: 2099, month: 1, day: 1 }
 

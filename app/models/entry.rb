@@ -10,6 +10,10 @@ class Entry < ActiveRecord::Base
   # no running code still writes it.
   self.ignored_columns += %w[sentiment]
 
+  # A #tag: letters, digits and underscores that don't start with a digit-only
+  # run (so "#1" isn't a tag but "#1st" is).
+  HASHTAG_PATTERN = /#([0-9]+[a-zA-Z_]+\w*|[a-zA-Z_]+\w*)/
+
   ALLOWED_IMAGE_TYPES = %w[image/jpg image/jpeg image/png image/gif image/webp image/heic image/heif image/heic-sequence image/heif-sequence application/octet-stream]
 
   # Placeholder image shown in the UI while an entry's image is being processed
@@ -200,7 +204,7 @@ class Entry < ActiveRecord::Base
     h_body = ActionController::Base.helpers.strip_tags(normalized_body)
     return nil unless h_body.present?
 
-    h_body.scan(/#([0-9]+[a-zA-Z_]+\w*|[a-zA-Z_]+\w*)/).map { |m| m[0] }.uniq
+    h_body.scan(HASHTAG_PATTERN).map { |m| m[0] }.uniq
   end
 
   # Words in a body: tags and HTML entities become spaces, then
