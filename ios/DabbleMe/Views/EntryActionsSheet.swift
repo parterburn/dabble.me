@@ -21,8 +21,9 @@ struct EntryActionsSheet: View {
 
     private var height: CGFloat {
         let actions = (canReflect ? 1 : 0) + (canEdit ? 1 : 0) + (canDelete ? 1 : 0)
-        // Pills wrap, a few to a row; dated ones are taller.
-        let pillRows = CGFloat((tags.count + 2) / 3) * (tags.contains { $0.age != nil } ? 64 : 44)
+        // Pills wrap, a few to a row; a dated one, with its age beside it, mostly has a row to itself.
+        let dated = tags.count(where: { $0.age != nil })
+        let pillRows = CGFloat(dated + (tags.count - dated + 2) / 3) * 44
         return min(70 + CGFloat(actions) * 62 + (tags.isEmpty ? 0 : 50 + pillRows), 640)
     }
 

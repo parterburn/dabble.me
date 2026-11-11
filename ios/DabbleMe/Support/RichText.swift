@@ -45,16 +45,26 @@ struct DocumentBlock: Codable, Hashable, Sendable {
 
     var type: Kind
     var runs: [DocumentRun]?
+    /// A list item inside another's list: 1 for the first list in. Top-level items have none.
+    var level: Int? = nil
+
+    /// How many lists deep a list item is (0 at the top; always 0 for other blocks).
+    var depth: Int { type.isList ? min(max(level ?? 0, 0), RichText.maxListDepth) : 0 }
 
     static func paragraph(_ runs: DocumentRun...) -> DocumentBlock { DocumentBlock(type: .paragraph, runs: runs) }
 }
 
 /// Lays a document out as editable text and reads it back:
 /// - paragraphs are separated by a blank line; "\n" inside a paragraph is a line break
-/// - list items are lines starting with "• " or "1. " (typing "- " or "2) " works too)
+/// - list items are lines starting with "• " or "1. " (typing "- " or "2) " works too); an item
+///   in a list inside another starts four spaces further in for each list it's inside
 /// - a line containing only "⸻" (or "---") is a divider, as between merged email replies
 enum RichText {
     static let bulletPrefix = "• "
+    /// What a list item starts with for each list it's inside.
+    static let listIndent = "    "
+    /// As deep as the server keeps (`Api::EntryDocument::MAX_LIST_LEVEL`).
+    static let maxListDepth = 5
     static let ruleMarker = "⸻"
     private static let ruleMarkers: Set<String> = [ruleMarker, "---", "___", "***"]
     private static let attachmentCharacter = "\u{FFFC}"
@@ -86,23 +96,22 @@ enum RichText {
 
     static func segments(for blocks: [DocumentBlock]) -> [Segment] {
         var segments: [Segment] = []
-        var number = 0
+        let numbers = listNumbers(for: blocks)
         for (index, block) in blocks.enumerated() {
             if index > 0 {
-                let bothList = blocks[index - 1].type.isList && block.type.isList
                 // One line per paragraph: the space between them is paragraph spacing (see
                 // applyListIndents), so Return starts a new paragraph rather than a bare line.
                 segments.append(Segment(text: "\n", run: nil))
             }
-            number = block.type == .number ? (index > 0 && blocks[index - 1].type == .number ? number + 1 : 1) : 0
+            let indent = String(repeating: listIndent, count: block.depth)
             switch block.type {
             case .rule:
                 segments.append(Segment(text: ruleMarker, run: nil))
                 continue
             case .bullet:
-                segments.append(Segment(text: bulletPrefix, run: nil))
+                segments.append(Segment(text: indent + bulletPrefix, run: nil))
             case .number:
-                segments.append(Segment(text: "\(number). ", run: nil))
+                segments.append(Segment(text: "\(indent)\(numbers[index]). ", run: nil))
             case .paragraph:
                 break
             }
@@ -113,6 +122,25 @@ enum RichText {
             }
         }
         return segments
+    }
+
+    /// Each numbered item's number (0 for other blocks). A list counts from 1, and picks up where
+    /// it left off after a list inside one of its items.
+    static func listNumbers(for blocks: [DocumentBlock]) -> [Int] {
+        // The list open at each depth: its kind and the last number given.
+        var open: [(kind: DocumentBlock.Kind, count: Int)] = []
+        return blocks.map { block in
+            guard block.type.isList else {
+                open = []
+                return 0
+            }
+            let depth = min(block.depth, open.count)
+            open.removeLast(open.count - min(open.count, depth + 1))
+            if open.count == depth + 1, open[depth].kind != block.type { open.removeLast() }
+            if open.count == depth { open.append((block.type, 0)) }
+            open[depth].count += 1
+            return block.type == .number ? open[depth].count : 0
+        }
     }
 
     static func attributedString(from blocks: [DocumentBlock], style: Style) -> NSAttributedString {
@@ -175,7 +203,7 @@ enum RichText {
                 flushParagraph()
                 let itemRange = NSRange(location: lineRange.location + prefix.length, length: lineRange.length - prefix.length)
                 let runs = cleaned(self.runs(in: text, range: itemRange))
-                if !runs.isEmpty { blocks.append(DocumentBlock(type: prefix.kind, runs: runs)) }
+                if !runs.isEmpty { blocks.append(DocumentBlock(type: prefix.kind, runs: runs, level: prefix.level > 0 ? prefix.level : nil)) }
             } else {
                 // Each line is its own paragraph: Return starts a new one.
                 flushParagraph()
@@ -229,23 +257,81 @@ enum RichText {
         return tag.isEmpty ? nil : String(tag)
     }
 
+    // MARK: - Hashtags shown as pills
+
+    /// The text without the #tags at its end that are among `tags`: the ones shown again as pills
+    /// right under it (dated tags, with their age). Other tags at the end stay, and so does a tag
+    /// anywhere before the end. Text that's nothing but those tags is left as it is.
+    static func droppingTrailingHashtags(_ tags: [String], from text: String) -> String {
+        guard let cut = trailingHashtagCut(tags, in: text) else { return text }
+        let result = cut.kept.isEmpty ? String(cut.lead) : cut.lead + cut.kept
+        return result.isEmpty ? text : result
+    }
+
+    /// The same for an entry's blocks: the tags at the end of its last block.
+    static func droppingTrailingHashtags(_ tags: [String], from blocks: [DocumentBlock]) -> [DocumentBlock] {
+        guard let index = blocks.lastIndex(where: { $0.type != .rule && $0.runs?.isEmpty == false }),
+              let runs = blocks[index].runs,
+              let cut = trailingHashtagCut(tags, in: runs.map(\.text).joined()) else { return blocks }
+        var result = blocks
+        var left = cut.lead.count
+        var kept: [DocumentRun] = []
+        for var run in runs where left > 0 {
+            run.text = String(run.text.prefix(left))
+            left -= run.text.count
+            kept.append(run)
+        }
+        if !cut.kept.isEmpty { kept.append(DocumentRun(cut.kept)) }
+        if kept.isEmpty {
+            result.remove(at: index)
+        } else {
+            result[index].runs = kept
+        }
+        return result.contains { $0.type != .rule } ? result : blocks
+    }
+
+    /// Splits `text` at the run of #tags it ends with: what's before it, and the tags of that run
+    /// that aren't in `tags`. Nil when there's nothing to drop.
+    private static func trailingHashtagCut(_ tags: [String], in text: String) -> (lead: String, kept: String)? {
+        let dropped = Set(tags.map { $0.lowercased() })
+        guard !dropped.isEmpty,
+              let run = text.range(of: #"(?:(?<![\w&/#])#[0-9]*[A-Za-z_][A-Za-z0-9_]*\s*)+$"#, options: .regularExpression) else { return nil }
+        let found = text[run].split(whereSeparator: \.isWhitespace)
+        let kept = found.filter { !dropped.contains($0.dropFirst().lowercased()) }
+        guard kept.count < found.count else { return nil }
+        let lead = String(text[..<run.lowerBound])
+        // With nothing left after it, the text ends where its words do.
+        return kept.isEmpty ? (String(lead.reversed().drop(while: \.isWhitespace).reversed()), "") : (lead, kept.joined(separator: " "))
+    }
+
     struct ListPrefix: Equatable {
         let kind: DocumentBlock.Kind
-        /// UTF-16 length, for NSRange math.
+        /// UTF-16 length, for NSRange math: the spaces it's set in by, then the marker.
         let length: Int
         let number: Int
+        /// How many lists deep: four spaces (or a tab) in for each.
+        var level = 0
+        /// UTF-16 length of the spaces before the marker.
+        var indentLength = 0
     }
 
     static func listPrefix(in line: String) -> ListPrefix? {
-        for marker in [bulletPrefix, "- ", "* ", "•\t"] where line.hasPrefix(marker) {
-            return ListPrefix(kind: .bullet, length: marker.utf16.count, number: 0)
+        let leading = line.prefix { $0 == " " || $0 == "\t" }
+        let columns = leading.reduce(0) { $0 + ($1 == "\t" ? listIndent.count : 1) }
+        // Three spaces count as a level too (a number's own width, as some people indent).
+        let level = min((columns + 1) / listIndent.count, maxListDepth)
+        let rest = line.dropFirst(leading.count)
+        for marker in [bulletPrefix, "- ", "* ", "•\t"] where rest.hasPrefix(marker) {
+            return ListPrefix(kind: .bullet, length: leading.utf16.count + marker.utf16.count, number: 0,
+                              level: level, indentLength: leading.utf16.count)
         }
         // "12. " or "12) "
-        let digits = line.prefix { $0.isASCII && $0.isNumber }
+        let digits = rest.prefix { $0.isASCII && $0.isNumber }
         guard (1...3).contains(digits.count) else { return nil }
-        let rest = line.dropFirst(digits.count)
-        guard rest.hasPrefix(". ") || rest.hasPrefix(") ") else { return nil }
-        return ListPrefix(kind: .number, length: digits.count + 2, number: Int(digits) ?? 1)
+        let after = rest.dropFirst(digits.count)
+        guard after.hasPrefix(". ") || after.hasPrefix(") ") else { return nil }
+        return ListPrefix(kind: .number, length: leading.utf16.count + digits.count + 2, number: Int(digits) ?? 1,
+                          level: level, indentLength: leading.utf16.count)
     }
 
     private static func runs(in text: NSAttributedString, range: NSRange) -> [DocumentRun] {

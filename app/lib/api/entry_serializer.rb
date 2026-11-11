@@ -67,9 +67,14 @@ module Api
 
     # Entry#text_body is Markdown from ReverseMarkdown, which turns email blank lines
     # (<div><br></div>) into "  \n\n" sequences. Trim line ends and collapse blank-line runs
-    # so the app shows one blank line between paragraphs, like the web.
+    # so the app shows one blank line between paragraphs, like the web. A list item whose text
+    # is in its own <div> or <p> comes out as a bare "1." above it, and a list inside it after
+    # a blank line: the text goes back beside its marker, and the inner list right under it.
     def display_text(text)
-      text.to_s.gsub(/[ \t]+$/, '').gsub(/\n{3,}/, "\n\n").strip
+      text.to_s.gsub(/[ \t]+$/, '')
+          .gsub(/^([ \t]*(?:\d{1,3}\.|[-*+]))\n+(?=\S)/, '\1 ')
+          .gsub(/\n{2,}(?=[ \t]+(?:\d+\.|[-*+]) )/, "\n")
+          .gsub(/\n{3,}/, "\n\n").strip
     end
 
     def neighbour(other)

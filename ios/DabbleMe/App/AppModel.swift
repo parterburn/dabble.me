@@ -436,6 +436,12 @@ final class AppModel {
         return schedule
     }
 
+    /// The days (YYYY-MM-DD) with an entry in a calendar year, for Stats' earlier years.
+    func writingDays(year: Int) async throws -> [String] {
+        let days: YearDays = try await api.get("api/v1/stats/days", query: ["year": String(year)])
+        return days.days
+    }
+
     func stats() async throws -> JournalStats {
         try await api.get("api/v1/stats")
     }

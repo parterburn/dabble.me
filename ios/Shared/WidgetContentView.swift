@@ -35,28 +35,40 @@ struct TodayWidgetContent: View {
         switch family {
         case .accessoryCircular: circular
         case .accessoryRectangular: rectangular
-        case .accessoryInline: Text(entry.wroteToday ? "✓ \(countText)" : "Write today · \(countText)")
+        case .accessoryInline: Text(entry.wroteToday ? "✓ \(inlineDate)" : "Write today · \(inlineDate)")
         case .systemMedium: medium
         default: small
         }
     }
 
-    /// "36 entries this year" (as Today says it)
-    private var countText: String {
-        "\(entry.yearCount.formatted()) \(entry.yearCount == 1 ? "entry" : "entries") this year"
-    }
+    /// "Wed 11", above the Lock Screen's clock (short, so the nudge to write fits beside it).
+    private var inlineDate: String { entry.date.formatted(.dateTime.weekday(.abbreviated).day()) }
+
+    /// Today's date as the app's entries show theirs: "SAT" over "10" (no month).
+    private var weekday: String { entry.date.formatted(.dateTime.weekday(.abbreviated)).uppercased() }
+    private var dayNumber: String { entry.date.formatted(.dateTime.day()) }
 
     private var small: some View {
         VStack(alignment: .leading, spacing: 6) {
             wordmark
             Spacer(minLength: 0)
             if entry.signedIn {
-                Text(entry.yearCount.formatted())
-                    .font(.system(size: 34, weight: .semibold, design: .serif))
-                    .contentTransition(.numericText())
-                Text("\(entry.yearCount == 1 ? "entry" : "entries") this year")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                // Set as the app's timeline sets an entry's date (the weekday small and grey,
+                // centered over the day in black), about half as large again to fill the widget.
+VStack(spacing: 0) {
+                    // The label colors themselves: inside the medium widget's link, .primary
+                    // would take the link's tint.
+                    Text(weekday)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Color(uiColor: .secondaryLabel))
+                    Text(dayNumber)
+                        .font(.system(size: 34, weight: .semibold))
+                        .monospacedDigit()
+                        .foregroundStyle(Color(uiColor: .label))
+                        .contentTransition(.numericText())
+                }
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(entry.date.formatted(.dateTime.weekday(.wide).month(.wide).day()))
                 Spacer(minLength: 0)
                 status
             } else {
@@ -78,7 +90,7 @@ struct TodayWidgetContent: View {
         }
     }
 
-    /// Two halves, each its own link: the count side writes today's entry (or opens Today once
+    /// Two halves, each its own link: the date side writes today's entry (or opens Today once
     /// it's written), and an entry shown on the right opens that entry to read.
     private var medium: some View {
         HStack(alignment: .top, spacing: 16) {
@@ -193,7 +205,7 @@ struct TodayWidgetContent: View {
             Text("Dabble Me")
                 .font(.headline)
                 .widgetAccentable()
-            Text(countText)
+            Text(entry.date.formatted(.dateTime.weekday(.wide).day()))
             Text(entry.wroteToday ? "Written today" : "Tap to write today")
                 .foregroundStyle(.secondary)
         }

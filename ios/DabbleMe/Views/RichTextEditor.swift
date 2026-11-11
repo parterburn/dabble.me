@@ -266,18 +266,39 @@ final class RichTextEditorModel {
         let line = string.substring(with: lineRange).trimmingCharacters(in: .newlines)
         guard let prefix = RichText.listPrefix(in: line) else { return true }
 
+        let indent = String(repeating: RichText.listIndent, count: prefix.level)
         if line.utf16.count == prefix.length || line.dropFirst(prefix.length).allSatisfy(\.isWhitespace) {
-            // Return on an empty item ends the list.
-            storage.replaceCharacters(in: NSRange(location: lineRange.location, length: prefix.length), with: "")
-            textView.selectedRange = NSRange(location: lineRange.location, length: 0)
+            // Return on an empty item ends the list; in a list inside another, it goes back out
+            // to that one.
+            let outer = prefix.level > 0 ? outerPrefix(before: lineRange.location, level: prefix.level - 1, in: string) : ""
+            storage.replaceCharacters(in: NSRange(location: lineRange.location, length: prefix.length),
+                                      with: NSAttributedString(string: outer, attributes: RichText.Style.journal.baseAttributes))
+            textView.selectedRange = NSRange(location: lineRange.location + (outer as NSString).length, length: 0)
         } else {
-            let next = prefix.kind == .bullet ? RichText.bulletPrefix : "\(prefix.number + 1). "
+            let next = indent + (prefix.kind == .bullet ? RichText.bulletPrefix : "\(prefix.number + 1). ")
             let insert = NSAttributedString(string: "\n" + next, attributes: RichText.Style.journal.baseAttributes)
             storage.replaceCharacters(in: range, with: insert)
             textView.selectedRange = NSRange(location: range.location + insert.length, length: 0)
         }
         textDidChange()
         return false
+    }
+
+    /// What the next item of the list at `level` starts with, going back out to it from a list
+    /// inside it: its bullet or next number, found from the items above `location`.
+    private func outerPrefix(before location: Int, level: Int, in string: NSString) -> String {
+        let indent = String(repeating: RichText.listIndent, count: level)
+        var end = location
+        while end > 0 {
+            let lineRange = string.lineRange(for: NSRange(location: end - 1, length: 0))
+            let line = string.substring(with: lineRange).trimmingCharacters(in: .newlines)
+            guard let prefix = RichText.listPrefix(in: line), prefix.level >= level else { break }
+            if prefix.level == level {
+                return indent + (prefix.kind == .bullet ? RichText.bulletPrefix : "\(prefix.number + 1). ")
+            }
+            end = lineRange.location
+        }
+        return indent + RichText.bulletPrefix
     }
 
     /// Typing "- " or "* " at the start of a line starts a bulleted list ("1. " is already a
@@ -287,10 +308,13 @@ final class RichTextEditorModel {
         let string = storage.string as NSString
         let lineStart = string.lineRange(for: NSRange(location: range.location, length: 0)).location
         let typed = string.substring(with: NSRange(location: lineStart, length: range.location - lineStart))
-        guard typed == "-" || typed == "*" else { return true }
-        storage.replaceCharacters(in: NSRange(location: lineStart, length: range.location - lineStart),
+        // Spaces before it set the item in, for a list inside another.
+        let marker = typed.drop { $0 == " " || $0 == "\t" }
+        guard marker == "-" || marker == "*" else { return true }
+        let markerStart = range.location - (String(marker) as NSString).length
+        storage.replaceCharacters(in: NSRange(location: markerStart, length: range.location - markerStart),
                                   with: NSAttributedString(string: RichText.bulletPrefix, attributes: RichText.Style.journal.baseAttributes))
-        textView.selectedRange = NSRange(location: lineStart + (RichText.bulletPrefix as NSString).length, length: 0)
+        textView.selectedRange = NSRange(location: markerStart + (RichText.bulletPrefix as NSString).length, length: 0)
         textView.typingAttributes = RichText.Style.journal.baseAttributes
         textDidChange()
         return false
@@ -421,6 +445,9 @@ final class EditorBar: UIView {
     static let toolbarHeight: CGFloat = 52
     let toolbar = UIToolbar()
     private let rowHost = UIHostingController<AnyView>(rootView: AnyView(EmptyView()))
+    /// Behind the whole bar while a row is open, so the row reads on its own and not over the
+    /// entry's text. A material, not a fill: it sits right on a light sheet or a dark one.
+    private let backdrop = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
     private var rowHeight: CGFloat = 0
     private var hasRow = false
 
@@ -428,10 +455,12 @@ final class EditorBar: UIView {
         super.init(frame: CGRect(x: 0, y: 0, width: 320, height: Self.toolbarHeight))
         autoresizingMask = .flexibleHeight
         rowHost.safeAreaRegions = []
-        // Clear, like the buttons' bar: the sheet shows through (an opaque fill was a black band in
-        // Dark Mode, where a sheet is a lighter grey than the system background).
+        // Clear over the backdrop (an opaque fill was a black band in Dark Mode, where a sheet is a
+        // lighter grey than the system background).
         rowHost.view.backgroundColor = .clear
         rowHost.view.isHidden = true
+        backdrop.isHidden = true
+        addSubview(backdrop)
         addSubview(rowHost.view)
         addSubview(toolbar)
     }
@@ -448,6 +477,7 @@ final class EditorBar: UIView {
         if hasRow, row == nil { rowHost.rootView = AnyView(EmptyView()) }
         hasRow = row != nil
         rowHost.view.isHidden = !hasRow
+        backdrop.isHidden = !hasRow
         if let row { rowHost.rootView = row }
         updateRowHeight()
     }
@@ -470,6 +500,7 @@ final class EditorBar: UIView {
             laidOutWidth = bounds.width
             updateRowHeight() // a wrapping prompt takes more lines when narrower
         }
+        backdrop.frame = bounds
         rowHost.view.frame = CGRect(x: 0, y: 0, width: bounds.width, height: rowHeight)
         toolbar.frame = CGRect(x: 0, y: bounds.height - Self.toolbarHeight, width: bounds.width, height: Self.toolbarHeight)
     }

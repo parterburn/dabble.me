@@ -129,8 +129,11 @@ struct TagDatesView: View {
         }
     }
 
+    /// The date being picked, or else the saved one: read from the list, not from `item`, which
+    /// (in the calendar's sheet) is the tag as it was when the sheet opened. Once a pick had
+    /// saved, the calendar went back to that older date.
     private func pickedDate(_ item: TagDate) -> Date {
-        JournalDay(picked[item.id] ?? item.date)?.localDate ?? .now
+        JournalDay(picked[item.id] ?? savedDate(item.id) ?? item.date)?.localDate ?? .now
     }
 
     /// "May 3, 2014", for every tag.

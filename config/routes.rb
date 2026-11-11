@@ -56,6 +56,7 @@ Rails.application.routes.draw do
       end
       get 'search', to: 'searches#show'
       get 'stats', to: 'stats#show'
+      get 'stats/days', to: 'stats#days'
       get 'hashtags', to: 'hashtags#index'
       resource :email_schedule, only: %i[show update]
       resources :dated_hashtags, only: %i[index create update destroy]

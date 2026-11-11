@@ -783,23 +783,19 @@ private extension View {
 /// a link, the selection stays until the address is tapped.
 private struct LinkRow: View {
     @Bindable var editor: RichTextEditorModel
-    @FocusState private var focused: Bool
 
     private var canApply: Bool { RichTextEditorModel.normalizedURL(editor.linkText) != nil }
 
     var body: some View {
         HStack(spacing: 10) {
-            TextField("https://", text: $editor.linkText)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .keyboardType(.URL)
-                .submitLabel(.done)
-                .focused($focused)
-                .onSubmit(apply)
+            // Opened from the Link button, the address takes the keyboard, so typing goes here and
+            // not into the entry.
+            LinkAddressField(text: $editor.linkText,
+                             focusRequest: editor.linkOpenedBySelection ? 0 : editor.linkFocusRequest,
+                             onSubmit: apply)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 7)
                 .background(Color.secondary.opacity(0.12), in: .capsule)
-                .accessibilityLabel("Link address")
             Button(editor.isExistingLink ? "Update" : "Insert", action: apply)
                 .buttonStyle(.borderedProminent)
                 .buttonBorderShape(.capsule)
@@ -820,21 +816,100 @@ private struct LinkRow: View {
         .font(.subheadline)
         .padding(.horizontal)
         .padding(.top, 8)
-        // Opened from the Link button: the address takes the keyboard, so typing goes here and not
-        // into the entry. Asked for again a moment later: the row has only just been put in the bar,
-        // and a first request can come before the field can take it.
-        .task(id: editor.linkFocusRequest) {
-            guard !editor.linkOpenedBySelection else { return }
-            focused = true
-            try? await Task.sleep(for: .milliseconds(250))
-            if !focused { focused = true }
-        }
     }
 
     private func apply() {
         guard canApply else { return }
         editor.applyLink()
         editor.focus()
+    }
+}
+
+/// The link row's address field. A UIKit field, asked directly to take the keyboard: the row is
+/// in the bar over the keyboard, where SwiftUI's own focus could report the field focused while
+/// the keyboard still typed into the entry.
+private struct LinkAddressField: UIViewRepresentable {
+    @Binding var text: String
+    /// Changes (to anything but 0) each time the field should take the keyboard.
+    let focusRequest: Int
+    let onSubmit: () -> Void
+
+    func makeUIView(context: Context) -> Field {
+        let field = Field()
+        field.placeholder = "https://"
+        field.font = .preferredFont(forTextStyle: .subheadline)
+        field.adjustsFontForContentSizeCategory = true
+        field.autocapitalizationType = .none
+        field.autocorrectionType = .no
+        field.spellCheckingType = .no
+        field.keyboardType = .URL
+        field.returnKeyType = .done
+        field.accessibilityLabel = "Link address"
+        field.delegate = context.coordinator
+        field.addTarget(context.coordinator, action: #selector(Coordinator.changed(_:)), for: .editingChanged)
+        field.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        return field
+    }
+
+    func updateUIView(_ field: Field, context: Context) {
+        context.coordinator.parent = self
+        if field.text != text { field.text = text }
+        guard focusRequest != context.coordinator.focusRequest else { return }
+        context.coordinator.focusRequest = focusRequest
+        if focusRequest != 0 { field.takeKeyboard() }
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: Field, context: Context) -> CGSize? {
+        CGSize(width: proposal.width ?? 200, height: uiView.intrinsicContentSize.height)
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    @MainActor
+    final class Coordinator: NSObject, UITextFieldDelegate {
+        var parent: LinkAddressField
+        var focusRequest = 0
+
+        init(_ parent: LinkAddressField) { self.parent = parent }
+
+        @objc func changed(_ field: UITextField) {
+            parent.text = field.text ?? ""
+        }
+
+        func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+            parent.onSubmit()
+            return false
+        }
+    }
+
+    /// Takes the keyboard once it can: the row has only just been put in the bar when it's asked,
+    /// so it tries again when it joins the window and for a moment after, until it has it.
+    final class Field: UITextField {
+        private var wantsKeyboard = false
+        private var retry: Task<Void, Never>?
+
+        func takeKeyboard() {
+            wantsKeyboard = true
+            retry?.cancel()
+            retry = Task { [weak self] in
+                for _ in 0..<20 {
+                    guard let self, self.wantsKeyboard, !Task.isCancelled else { return }
+                    self.takeKeyboardIfWanted()
+                    try? await Task.sleep(for: .milliseconds(50))
+                }
+            }
+        }
+
+        override func didMoveToWindow() {
+            super.didMoveToWindow()
+            takeKeyboardIfWanted()
+        }
+
+        private func takeKeyboardIfWanted() {
+            guard wantsKeyboard, window != nil else { return }
+            if isFirstResponder || becomeFirstResponder() { wantsKeyboard = false }
+        }
     }
 }
 

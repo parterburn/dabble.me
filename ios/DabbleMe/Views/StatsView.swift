@@ -1,7 +1,7 @@
 import Charts
 import SwiftUI
 
-/// Journal > Stats: totals, streaks, a year of writing days, recent months and the past
+/// Journal > Stats: totals, streaks, a year of writing days (this year or an earlier one), recent months and the past
 /// year's hashtags. Counts only; it never shows entry text.
 struct StatsView: View {
     @Environment(AppModel.self) private var model
@@ -17,14 +17,7 @@ struct StatsView: View {
                         if showsOverview(stats) {
                             StatsOverview(stats: stats, today: model.today?.day ?? JournalDay(localDate: .now))
                         }
-                        StatsCard(title: "Past Year") {
-                            WritingHeatmap(days: Set(stats.writingDays), today: model.today?.day ?? JournalDay(localDate: .now)) { day in
-                                model.statsDay = StatsDay(day: day)
-                            }
-                            Text(stats.writingDays.count == 1 ? "1 day written in the past year" : "\(stats.writingDays.count.formatted()) days written in the past year")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
-                        }
+                        YearCard(stats: stats, today: model.today?.day ?? JournalDay(localDate: .now))
                         StatsCard(title: "Entries per Month") {
                             MonthBars(months: stats.months)
                         }
@@ -169,6 +162,138 @@ private struct StatsOverview: View {
     }
 }
 
+/// A year of writing days. Its title is the year ("2026"), with a small chevron when there are
+/// earlier years to choose from a menu. On the right, for this year, how much of it has gone by
+/// ("86% complete": the days still to come are the paler squares); for a finished one, how much
+/// of it has an entry ("41% written"). A tap swaps either for the year's number of entries.
+private struct YearCard: View {
+    let stats: JournalStats
+    let today: JournalDay
+    @Environment(AppModel.self) private var model
+    /// The year shown; nil is this year.
+    @State private var picked: Int?
+    /// Earlier years' days, loaded as they're picked.
+    @State private var loaded: [Int: Set<String>] = [:]
+    @State private var failed: Int?
+    @AppStorage("stats.yearShowsEntries") private var showsEntries = false
+
+    private var thisYear: Int { Int(today.year) ?? 0 }
+    private var year: Int { picked ?? thisYear }
+    /// From the first entry's year to this one, newest first.
+    private var years: [Int] {
+        let first = min(stats.firstEntryDay.flatMap { Int($0.year) } ?? thisYear, thisYear)
+        return Array((first...thisYear).reversed())
+    }
+    /// The year's days with an entry, or nil while an earlier year's are loading.
+    private var days: Set<String>? {
+        year == thisYear ? Set(stats.writingDays.filter { $0.hasPrefix("\(today.year)-") }) : loaded[year]
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .firstTextBaseline) {
+                title
+                Spacer(minLength: 8)
+                summary
+            }
+            WritingHeatmap(year: year, days: days ?? [], today: today) { day in
+                model.statsDay = StatsDay(day: day)
+            }
+            .id(year) // each year opens at its newest weeks
+            if failed == year {
+                Text("Couldn't load \(String(year)).")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .task(id: year) { await load(year) }
+    }
+
+    @ViewBuilder
+    private var title: some View {
+        if years.count > 1 {
+            Menu {
+                Picker("Year", selection: Binding(get: { year }, set: { picked = $0 == thisYear ? nil : $0 })) {
+                    ForEach(years, id: \.self) { Text(String($0)).tag($0) }
+                }
+            } label: {
+                HStack(spacing: 5) {
+                    Text(String(year))
+                        .font(.headline)
+                        .foregroundStyle(.primary)
+                    appIcon("slab-angle-down")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 11, height: 11)
+                        .foregroundStyle(.secondary)
+                }
+                .contentShape(.rect)
+            }
+            .buttonStyle(.plain) // the title's own black and the chevron's grey, not the tint
+            .accessibilityLabel("Year, \(String(year))")
+            .accessibilityHint("Chooses another year")
+        } else {
+            Text(String(year))
+                .font(.headline)
+                .accessibilityAddTraits(.isHeader)
+        }
+    }
+
+    @ViewBuilder
+    private var summary: some View {
+        if let days {
+            let entries = year == thisYear ? max(stats.entriesThisYear, days.count) : days.count
+            Button {
+                showsEntries.toggle()
+            } label: {
+                Text(showsEntries ? (entries == 1 ? "1 entry" : "\(entries.formatted()) entries") : percentText(written: days.count))
+                    .font(.subheadline)
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+                    .contentTransition(.opacity)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .animation(.easeOut(duration: 0.15), value: showsEntries)
+            .accessibilityIdentifier("StatsYearSummary")
+            .accessibilityHint(showsEntries ? "Shows how much of the year is written" : "Shows the year's number of entries")
+        } else if failed != year {
+            ProgressView().controlSize(.small)
+        }
+    }
+
+    /// "86% complete" for this year: how much of it has gone by, today included. "41% written"
+    /// for a finished year: the share of its days with an entry.
+    private func percentText(written: Int) -> String {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .gmt
+        let length = calendar.range(of: .day, in: .year, for: JournalDay("\(year)-06-01")?.date ?? today.date)?.count ?? 365
+        if year == thisYear {
+            let elapsed = calendar.ordinality(of: .day, in: .year, for: today.date) ?? 1
+            return "\(Self.percent(elapsed, of: length))% complete"
+        }
+        return "\(Self.percent(written, of: length))% written"
+    }
+
+    /// 100 only for the whole of it; never 0 once there's any.
+    static func percent(_ written: Int, of total: Int) -> Int {
+        guard written > 0, total > 0 else { return 0 }
+        if written >= total { return 100 }
+        return min(max(Int((Double(written) * 100 / Double(total)).rounded()), 1), 99)
+    }
+
+    private func load(_ year: Int) async {
+        guard year != thisYear, loaded[year] == nil else { return }
+        failed = nil
+        do {
+            loaded[year] = Set(try await model.writingDays(year: year))
+        } catch is CancellationError {
+        } catch {
+            failed = year
+        }
+    }
+}
+
 private struct StatsCard<Content: View>: View {
     let title: String
     @ViewBuilder let content: Content
@@ -216,10 +341,12 @@ private struct StatTile: View {
     }
 }
 
-/// A year of days as week columns (Sunday on top), newest on the right, like a contribution graph
-/// and the web's: month names along the top, Mon / Wed / Fri down the side. Pinch to make the
+/// A calendar year of days as week columns (Sunday on top), like a contribution graph and the
+/// web's. This year's days still to come are paler, so the grid shows how much of the year is
+/// left, and it opens with today a few weeks from its right edge. Month names along the top, Mon / Wed / Fri down the side. Pinch to make the
 /// squares bigger (easier to tap a day) or smaller (more of the year at once); the size is kept.
 private struct WritingHeatmap: View {
+    let year: Int
     let days: Set<String>
     let today: JournalDay
     /// A day with an entry was tapped.
@@ -236,8 +363,9 @@ private struct WritingHeatmap: View {
     private var weeks: [[JournalDay?]] {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = .gmt
-        let end = today.date
-        guard let start = calendar.date(byAdding: .day, value: -364, to: end) else { return [] }
+        guard let start = calendar.date(from: DateComponents(year: year, month: 1, day: 1)),
+              let last = calendar.date(from: DateComponents(year: year, month: 12, day: 31)) else { return [] }
+        let end = last
         // Start each column on a Sunday.
         let weekday = calendar.component(.weekday, from: start)
         guard let firstSunday = calendar.date(byAdding: .day, value: -(weekday - 1), to: start) else { return [] }
@@ -254,8 +382,7 @@ private struct WritingHeatmap: View {
         return weeks
     }
 
-    /// "JAN" over the first column of each month, or "NOV 2025" for a month from last year (the
-    /// first column only if the month has room).
+    /// "JAN" over the first column of each month (the year is the card's title).
     private func monthLabels(_ weeks: [[JournalDay?]]) -> [String?] {
         let months = weeks.map { week in week.compactMap { $0 }.first.map { String($0.iso.prefix(7)) } } // "2025-11"
         return months.indices.map { index in
@@ -271,8 +398,7 @@ private struct WritingHeatmap: View {
     private func monthName(_ key: String) -> String? {
         let parts = key.split(separator: "-")
         guard parts.count == 2, let index = Int(parts[1]), (1...12).contains(index) else { return nil }
-        let name = Calendar.current.shortMonthSymbols[index - 1].uppercased() // the reader's language
-        return parts[0] == today.year ? name : "\(name) \(parts[0])"
+        return Calendar.current.shortMonthSymbols[index - 1].uppercased() // the reader's language
     }
 
     var body: some View {
@@ -314,8 +440,9 @@ private struct WritingHeatmap: View {
             }
             .defaultScrollAnchor(.trailing)
             .scrollIndicators(.hidden)
-            // Resizing keeps the newest weeks in view (otherwise it jumps to last year's start).
-            .onChange(of: cellSize) { proxy.scrollTo(weeks.count - 1, anchor: .trailing) }
+            .onAppear { proxy.scrollTo(restingColumn(in: weeks), anchor: .trailing) }
+            // Resizing keeps the same weeks in view (otherwise it jumps to the year's start).
+            .onChange(of: cellSize) { proxy.scrollTo(restingColumn(in: weeks), anchor: .trailing) }
             }
         }
         .simultaneousGesture(
@@ -328,9 +455,17 @@ private struct WritingHeatmap: View {
                 .onEnded { _ in pinchStart = nil }
         )
         .accessibilityElement()
-        .accessibilityLabel("Writing days in the past year")
+        .accessibilityLabel("Writing days in \(String(year))")
         .accessibilityValue("\(days.count) days with an entry")
     }
+
+    /// The column at the grid's right edge when it opens: the year's last, or, this year, a few
+    /// weeks past today's, so the days written are in view with the start of what's left.
+    private func restingColumn(in weeks: [[JournalDay?]]) -> Int {
+        guard let current = weeks.firstIndex(where: { $0.contains { $0?.iso == today.iso } }) else { return weeks.count - 1 }
+        return min(current + Self.weeksAhead, weeks.count - 1)
+    }
+    private static let weeksAhead = 4
 
     /// Mon, Wed and Fri beside their rows, like the web.
     private var weekdayLabels: some View {
@@ -365,7 +500,9 @@ private struct WritingHeatmap: View {
 
     private func fill(for day: JournalDay?) -> AnyShapeStyle {
         guard let day else { return AnyShapeStyle(.clear) }
-        return days.contains(day.iso) ? AnyShapeStyle(.tint) : AnyShapeStyle(Color.secondary.opacity(0.14))
+        if days.contains(day.iso) { return AnyShapeStyle(.tint) }
+        // Days still to come are paler than the ones that went by unwritten.
+        return AnyShapeStyle(Color.secondary.opacity(day > today ? 0.06 : 0.14))
     }
 }
 
@@ -497,10 +634,10 @@ struct DayEntriesSheet: View {
                         ForEach(entries) { entry in
                             VStack(alignment: .leading, spacing: 12) {
                                 if let document = entry.document {
-                                    DocumentText(blocks: document, font: .system(size: bodySize * textSize.scale, design: fontStyle.design),
+                                    DocumentText(blocks: RichText.droppingTrailingHashtags((entry.datedHashtags ?? []).map(\.tag), from: document), font: .system(size: bodySize * textSize.scale, design: fontStyle.design),
                                                  scale: textSize.scale, bodySize: bodySize)
                                 } else {
-                                    Text(AttributedString.journal(entry.bodyText))
+                                    Text(AttributedString.journal(RichText.droppingTrailingHashtags((entry.datedHashtags ?? []).map(\.tag), from: entry.bodyText)))
                                         .font(.system(size: bodySize * textSize.scale, design: fontStyle.design))
                                         .lineSpacing(5)
                                         .frame(maxWidth: .infinity, alignment: .leading)

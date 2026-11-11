@@ -8,7 +8,7 @@ import UIKit
 @Observable
 final class RemotePhoto {
     let url: URL
-    /// The entry's day, for the band on a shared photo ("3 years ago").
+    /// The entry's day, for the band on a shared photo ("1 year and 9 months ago").
     let day: JournalDay?
     private(set) var image: UIImage?
     private(set) var data: Data?
@@ -58,7 +58,7 @@ enum PhotoActions {
     /// menu over a full-screen cover sometimes did nothing.
     static func share(_ photo: RemotePhoto) async {
         guard let image = photo.image else { return }
-        let label = photo.day?.shareLabel(to: JournalDay(localDate: .now))
+        let label = photo.day?.relative(to: JournalDay(localDate: .now))
         let card = label.map { ShareCard.render(image, label: $0) } ?? image
         // As a JPEG file: the share sheet then shows the card itself and a sensible name.
         let file = FileManager.default.temporaryDirectory.appending(path: "Dabble Me – \(label ?? "Photo").jpg")
@@ -127,11 +127,11 @@ struct PhotoViewer: View {
     @State private var saveResult: PhotoSaveResult?
     @State private var dragOffset: CGFloat = 0
     @State private var isZoomed = false
-    /// The photo under its band ("3 years ago"), as it's shared. Save still saves the original.
+    /// The photo under its band ("1 year and 9 months ago"), as it's shared. Save still saves the original.
     @State private var card: UIImage?
 
-    /// "3 years ago", when the photo's day is known.
-    private var bandLabel: String? { photo.day?.shareLabel(to: JournalDay(localDate: .now)) }
+    /// "1 year and 9 months ago" (as the entry's own date says it), when the photo's day is known.
+    private var bandLabel: String? { photo.day?.relative(to: JournalDay(localDate: .now)) }
 
     var body: some View {
         ZStack {
@@ -300,7 +300,7 @@ private struct ZoomableImage: UIViewRepresentable {
     }
 }
 
-/// The shared photo's band: the "me" mark and "3 years ago" in semibold white serif on olive,
+/// The shared photo's band: the "me" mark and "1 year and 9 months ago" in semibold white serif on olive,
 /// across the top of the photo at its own width.
 enum ShareCard {
     @MainActor

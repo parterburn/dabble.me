@@ -2,7 +2,7 @@ import SwiftUI
 import WidgetKit
 
 /// Settings → Home Screen Widget: whether the widget shows entry previews, and what the medium
-/// widget shows next to the year's entry count (today's prompt or a Rewind), with a live
+/// widget shows next to today's date (today's prompt or a Rewind), with a live
 /// preview from today's data (the same view the widget draws). The small widget is always just
 /// the count, so the medium one is what changes.
 struct WidgetSettingsView: View {
@@ -26,7 +26,7 @@ struct WidgetSettingsView: View {
             }
 
             Section {
-                Picker("Next to Your Entry Count", selection: source) {
+                Picker("Next to Today's Date", selection: source) {
                     ForEach(WidgetContent.Source.allCases) { option in
                         VStack(alignment: .leading, spacing: 2) {
                             Text(option.title)
@@ -40,7 +40,7 @@ struct WidgetSettingsView: View {
                 .pickerStyle(.inline)
                 .labelsHidden()
             } header: {
-                Text("Next to Your Entry Count")
+                Text("Next to Today's Date")
             } footer: {
                 footer
             }

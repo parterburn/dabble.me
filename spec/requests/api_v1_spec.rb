@@ -597,11 +597,37 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       entry = create(:entry, user: pro_user, body: "<div>One.</div><div><br></div><div>Two.</div><div><br></div><div>Three.</div>")
       expect(Api::EntrySerializer.full(entry)[:body_text]).to eq("One.\n\nTwo.\n\nThree.")
     end
+
+    it "keeps a list item's text beside its number, and a list inside it right under" do
+      body = %(<ol><li><div style="color: red"><b>Outer</b></div><ol><li>Inner one</li><li>Inner two</li></ol></li><li><div>Next</div></li></ol>)
+      entry = create(:entry, user: pro_user, body: body)
+      full = Api::EntrySerializer.full(entry)
+      expect(full[:document]).to be_nil # the style keeps it web-only
+      expect(full[:body_text]).to eq("1. **Outer**\n  1. Inner one\n  2. Inner two\n2. Next")
+    end
+
+    it "sends a list inside a list as an editable document" do
+      entry = create(:entry, user: pro_user, body: "<ol><li><div><b>Outer</b></div><ol><li>Inner</li></ol></li></ol>")
+      expect(Api::EntrySerializer.full(entry)[:document]).to eq([
+        { "type" => "number", "runs" => [{ "bold" => true, "text" => "Outer" }] },
+        { "type" => "number", "runs" => [{ "text" => "Inner" }], "level" => 1 }
+      ])
+    end
   end
 
   describe "GET /api/v1/stats" do
     it "is PRO" do
       get "/api/v1/stats", headers: auth(free_user)
+      expect(response).to have_http_status(:forbidden)
+    end
+
+    it "lists a year's writing days" do
+      create(:entry, user: pro_user, date: "2024-03-02", body: "<p>One</p>")
+      create(:entry, user: pro_user, date: "2024-11-30", body: "<p>Two</p>")
+      create(:entry, user: pro_user, date: "2025-01-01", body: "<p>Next year</p>")
+      get "/api/v1/stats/days", params: { year: 2024 }, headers: auth(pro_user)
+      expect(json).to eq("year" => 2024, "days" => %w[2024-03-02 2024-11-30])
+      get "/api/v1/stats/days", headers: auth(free_user)
       expect(response).to have_http_status(:forbidden)
     end
 

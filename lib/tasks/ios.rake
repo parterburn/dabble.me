@@ -59,6 +59,11 @@ namespace :ios do
       [today - 19, <<~HTML, nil],
         <p>Started a pottery class! My first bowl looks more like an ashtray, but the instructor says that's how everyone starts. #newthings</p>
       HTML
+      # A list inside a list: the app sets the inner one in under its item.
+      [today - 21, <<~HTML, nil],
+        <p>Planning the cabin weekend. The list so far:</p>
+        <ol><li><div><b>Food</b></div><ol><li>Chili for Friday night</li><li>Pancake mix, and the good maple syrup from the farm stand up the road</li></ol></li><li><div><b>Games</b></div><ul><li>Cards</li><li>The puzzle nobody finished last year</li></ul></li></ol>
+      HTML
       [today - 24, <<~HTML, 1039],
         <p>Day trip to the falls. The trail was muddy and the waterfall was <strong>roaring</strong> after all the rain. #hiking</p>
       HTML

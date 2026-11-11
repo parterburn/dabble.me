@@ -35,7 +35,12 @@ struct TimelineEntryRow: View {
     /// shifts. Light Markdown; list lines ("- item") show as bullets. #hashtags are tinted, and
     /// links once expanded (collapsed, a tap anywhere expands).
     private var styledText: AttributedString {
-        let source = isExpanded ? (full?.bodyText ?? previewText) : previewText
+        var source = isExpanded ? (full?.bodyText ?? previewText) : previewText
+        // Dated #tags at the entry's end show as pills under it, so not here as well (when this is
+        // the whole entry: a preview that's cut short doesn't reach its end).
+        if !previewIsCut || (isExpanded && full != nil) {
+            source = RichText.droppingTrailingHashtags((entry.datedHashtags ?? []).map(\.tag), from: source)
+        }
         if source.isEmpty { return AttributedString("📷 Photo") }
         let text = Self.tighteningParagraphGaps(in: AttributedString.journal(Self.bullets(source)),
                                                 fontSize: bodySize * textSize.scale, design: fontStyle.design)
@@ -265,7 +270,7 @@ final class EntryActions {
         defer { isWorking = false }
         do {
             let entry = try await model.entry(id: id)
-            if entry.document != nil { editing = entry } else { await UIApplication.shared.open(entry.webUrl) }
+            if entry.document != nil { editing = entry } else { await UIApplication.shared.open(entry.webEditURL) }
         } catch is CancellationError {
         } catch {
             self.error = error.localizedDescription
@@ -328,7 +333,7 @@ private struct EntryActionSheets: ViewModifier {
                     actions.sheet = nil
                     switch action {
                     case .reflect: Task { await actions.reflect(on: entry.id, model: model) }
-                    case .edit: if entry.document != nil { actions.editing = entry } else { openURL(entry.webUrl) }
+                    case .edit: if entry.document != nil { actions.editing = entry } else { openURL(entry.webEditURL) }
                     case .delete: Task { await actions.delete(entry, model: model) }
                     case .web: openURL(entry.webUrl)
                     case .search(let tag): if let url = URL(string: "\(RichText.hashtagScheme):\(tag)") { openURL(url) }

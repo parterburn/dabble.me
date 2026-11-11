@@ -83,7 +83,7 @@ struct EntryDetailView: View {
                     showingActions = false
                     switch action {
                     case .reflect: Task { await reflect(on: entry) }
-                    case .edit: if entry.document != nil { editing = true } else { openURL(entry.webUrl) }
+                    case .edit: if entry.document != nil { editing = true } else { openURL(entry.webEditURL) }
                     case .delete: Task { await delete() }
                     case .web: openURL(entry.webUrl)
                     case .search(let tag): if let url = URL(string: "\(RichText.hashtagScheme):\(tag)") { openURL(url) }
@@ -129,13 +129,13 @@ struct EntryDetailView: View {
                 .contentShape(.rect)
                 .onTapGesture {
                     // Formatting the app can't represent (styles, quotes, images) stays web-only so nothing gets lost.
-                    if entry.document != nil { editing = true } else { openURL(entry.webUrl) }
+                    if entry.document != nil { editing = true } else { openURL(entry.webEditURL) }
                 }
                 .onLongPressGesture(minimumDuration: 0.45) { showingActions = true }
                 .accessibilityElement()
                 .accessibilityLabel("Edit Entry")
                 .accessibilityAddTraits(.isButton)
-                .accessibilityAction { if entry.document != nil { editing = true } else { openURL(entry.webUrl) } }
+                .accessibilityAction { if entry.document != nil { editing = true } else { openURL(entry.webEditURL) } }
                 .accessibilityAction(named: "More Actions") { showingActions = true }
         }
     }
@@ -296,12 +296,14 @@ private struct EntryBody: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
+            // Dated #tags at the end of the entry aren't shown twice: their pills are right under it.
+            let pilled = (entry.datedHashtags ?? []).map(\.tag)
             if let document = entry.document {
                 // Selectable across paragraphs (SwiftUI's selection stops at each paragraph).
-                SelectableDocumentText(blocks: document, fontSize: bodySize * textSize.scale,
+                SelectableDocumentText(blocks: RichText.droppingTrailingHashtags(pilled, from: document), fontSize: bodySize * textSize.scale,
                                        design: fontStyle.uiDesign, lineSpacing: 5 * textSize.scale)
             } else if !entry.bodyText.isEmpty {
-                Text(RichText.linkingURLs(in: RichText.linkingHashtags(in: AttributedString.journal(entry.bodyText))))
+                Text(RichText.linkingURLs(in: RichText.linkingHashtags(in: AttributedString.journal(RichText.droppingTrailingHashtags(pilled, from: entry.bodyText)))))
                     .font(bodyFont)
                     .lineSpacing(5 * textSize.scale)
                     .textSelection(.enabled)
@@ -358,13 +360,12 @@ struct DocumentText: View {
     }
 
     private var items: [Item] {
-        var number = 0
+        let numbers = RichText.listNumbers(for: blocks)
         return blocks.enumerated().map { index, block in
-            number = block.type == .number ? (index > 0 && blocks[index - 1].type == .number ? number + 1 : 1) : 0
             switch block.type {
-            case .bullet: return Item(block: block, marker: "•")
-            case .number: return Item(block: block, marker: "\(number).")
-            default: return Item(block: block, marker: nil)
+            case .bullet: Item(block: block, marker: "•")
+            case .number: Item(block: block, marker: "\(numbers[index]).")
+            default: Item(block: block, marker: nil)
             }
         }
     }
@@ -386,6 +387,8 @@ struct DocumentText: View {
                     .accessibilityHidden(item.block.type == .bullet)
                 text(for: item.block)
             }
+            // A list inside another starts under its item's text.
+            .padding(.leading, CGFloat(item.block.depth) * (bodySize * 1.3 + 6) * scale)
         } else {
             text(for: item.block)
         }
@@ -731,15 +734,26 @@ struct DatedHashtagRow: View {
 
 }
 
-/// The app's #tag pill: the tag in olive on a light olive card, with its age underneath for a
-/// dated tag ("3 years and 4 months"). Under entries, in the Actions sheet, and anywhere tags show.
+/// The app's #tag pill: the tag in olive on a light olive card, with its age beside it for a
+/// dated tag ("#Leo  3 years and 4 months"), on one line. Under entries, in the Actions sheet, and
+/// anywhere tags show. One too long for the space it's given scrolls sideways inside its card.
 struct HashtagPill: View {
     let tag: String
     /// "3 years and 4 months since entry", or nil for a tag without a date.
     var age: String?
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        ViewThatFits(in: .horizontal) {
+            line
+            ScrollView(.horizontal) { line }
+                .scrollIndicators(.hidden)
+                .scrollBounceBehavior(.basedOnSize)
+        }
+        .background(.tint.opacity(0.12), in: .rect(cornerRadius: 12))
+    }
+
+    private var line: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 7) {
             Text("#\(tag)")
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.tint)
@@ -749,9 +763,10 @@ struct HashtagPill: View {
                     .foregroundStyle(.primary.opacity(0.72)) // stronger than .secondary on the tint
             }
         }
+        .lineLimit(1)
+        .fixedSize()
         .padding(.horizontal, 12)
         .padding(.vertical, 7)
-        .background(.tint.opacity(0.12), in: .rect(cornerRadius: 12))
     }
 
     /// "3 years and 4 months since entry" → "3 years and 4 months" (the pill is under the entry).

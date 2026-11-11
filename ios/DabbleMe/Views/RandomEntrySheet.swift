@@ -103,9 +103,9 @@ struct RandomEntrySheet: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.tint)
                 if let document = entry.document {
-                    DocumentText(blocks: document, font: .system(size: bodySize * textSize.scale, design: fontStyle.design), scale: textSize.scale, bodySize: bodySize)
+                    DocumentText(blocks: RichText.droppingTrailingHashtags((entry.datedHashtags ?? []).map(\.tag), from: document), font: .system(size: bodySize * textSize.scale, design: fontStyle.design), scale: textSize.scale, bodySize: bodySize)
                 } else {
-                    Text(AttributedString.journal(entry.bodyText))
+                    Text(AttributedString.journal(RichText.droppingTrailingHashtags((entry.datedHashtags ?? []).map(\.tag), from: entry.bodyText)))
                         .font(.system(size: bodySize * textSize.scale, design: fontStyle.design))
                         .lineSpacing(5)
                         .frame(maxWidth: .infinity, alignment: .leading)

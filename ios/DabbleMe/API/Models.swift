@@ -146,6 +146,8 @@ struct EntryDetail: Decodable, Sendable, Identifiable, Hashable {
 
     var day: JournalDay? { JournalDay(date) }
     var imageURL: URL? { imageUrl.flatMap(URL.init(string:)) }
+    /// The entry's edit page on the web (`/entries/499512/edit`), for one the app can't edit.
+    var webEditURL: URL { URL(string: "/entries/\(id)/edit", relativeTo: webUrl)?.absoluteURL ?? webUrl }
 
     var summary: EntrySummary {
         // The whole text as the preview, so nothing's left to load; songs and dated tags carry over.
@@ -283,14 +285,6 @@ struct JournalDay: Hashable, Sendable, Comparable {
         }
     }
 
-    /// For a shared photo's band, shorter: whole days under 60, then the largest unit alone
-    /// ("5 months ago", "3 years ago").
-    func shareLabel(to today: JournalDay) -> String {
-        let days = Self.utc.dateComponents([.day], from: date, to: today.date).day ?? 0
-        guard days >= 60 else { return relative(to: today) }
-        return (Self.span(days: days, depth: 1).first ?? "") + " ago"
-    }
-
     /// A number of days in its largest units, at most `depth` of them: ["3 months", "1 week"].
     /// The rounding is the server's (Jekyll::Timeago with a 0.05 threshold): a year is 365 days, a
     /// month 30 (up to a year's worth) and a week 7 (up to a month's), and a smaller unit is left
@@ -338,6 +332,13 @@ struct JournalStats: Decodable, Sendable, Equatable {
     let topHashtags: [HashtagCount]
 
     var firstEntryDay: JournalDay? { firstEntryDate.flatMap(JournalDay.init) }
+}
+
+/// GET /api/v1/stats/days?year=: the days with an entry in one calendar year.
+struct YearDays: Decodable, Sendable {
+    let year: Int
+    /// YYYY-MM-DD, oldest first.
+    let days: [String]
 }
 
 struct HashtagCount: Decodable, Sendable, Hashable, Identifiable {
