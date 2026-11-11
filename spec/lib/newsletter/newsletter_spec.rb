@@ -183,7 +183,9 @@ RSpec.describe Newsletter do
     expect(rewind.letter).not_to be_unfinished
 
     letters.each do |letter|
-      expect(letter.text).not_to match(/\bbeta\b|MCP|end-to-end/i)
+      # No jargon in the words people read; a link's URL can say mcp.
+      expect(letter.text.gsub(%r{https?://\S+}, '')).not_to match(/\bbeta\b|MCP|end-to-end/i)
+      expect(letter.html).to include('<a href="https://dabble.me/mcp-server">Connect your journal</a>')
       expect(letter.html).to include('<a href="https://testflight.apple.com/join/mYj4vrFZ">Get the app</a>')
       expect(letter.html).to include('Paul Arterburn<br>', 'founder/maker of dabble.me<br>', '<a href="https://x.com/parterburn">x.com/parterburn</a>')
       expect(letter.text).to end_with("Paul Arterburn\nfounder/maker of dabble.me\nx.com/parterburn (https://x.com/parterburn)")
