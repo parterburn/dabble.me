@@ -26,7 +26,9 @@ struct EntryDetailView: View {
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
     @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
 
-    private var id: Int { entryID }
+    /// The entry shown: the one opened, or the one it was merged into when its date was changed
+    /// to a day that had one.
+    private var id: Int { entry?.id ?? entryID }
 
     var body: some View {
         Group {
@@ -296,14 +298,15 @@ private struct EntryBody: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            // Dated #tags at the end of the entry aren't shown twice: their pills are right under it.
+            // Dated #tags and Spotify links at the end of the entry aren't shown twice: their pills
+            // and the songs are right under it.
             let pilled = (entry.datedHashtags ?? []).map(\.tag)
             if let document = entry.document {
                 // Selectable across paragraphs (SwiftUI's selection stops at each paragraph).
-                SelectableDocumentText(blocks: RichText.droppingTrailingHashtags(pilled, from: document), fontSize: bodySize * textSize.scale,
+                SelectableDocumentText(blocks: RichText.droppingTrailing(hashtags: pilled, songLinks: !entry.songs.isEmpty, from: document), fontSize: bodySize * textSize.scale,
                                        design: fontStyle.uiDesign, lineSpacing: 5 * textSize.scale)
             } else if !entry.bodyText.isEmpty {
-                Text(RichText.linkingURLs(in: RichText.linkingHashtags(in: AttributedString.journal(RichText.droppingTrailingHashtags(pilled, from: entry.bodyText)))))
+                Text(RichText.linkingURLs(in: RichText.linkingHashtags(in: AttributedString.journal(RichText.droppingTrailing(hashtags: pilled, songLinks: !entry.songs.isEmpty, from: entry.bodyText)))))
                     .font(bodyFont)
                     .lineSpacing(5 * textSize.scale)
                     .textSelection(.enabled)
@@ -395,7 +398,7 @@ struct DocumentText: View {
     }
 
     private func text(for block: DocumentBlock) -> some View {
-        Text(RichText.linkingHashtags(in: RichText.displayString(from: [DocumentBlock(type: .paragraph, runs: block.runs)])))
+        Text(RichText.linkingURLs(in: RichText.linkingHashtags(in: RichText.displayString(from: [DocumentBlock(type: .paragraph, runs: block.runs)]))))
             .lineSpacing(5 * scale)
             .frame(maxWidth: .infinity, alignment: .leading)
     }

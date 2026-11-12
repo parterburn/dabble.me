@@ -25,6 +25,8 @@ struct ComposeView: View {
     @State private var uploadedCount: Int?
     @State private var error: String?
     @State private var confirmingDiscard = false
+    /// Moving the entry onto a day that has one: the server's words for it, while asking to merge.
+    @State private var mergeQuestion: String?
     /// An unsaved draft from an earlier session was put back in the editor.
     @State private var restoredDraft: DraftStore.Draft?
     @State private var draftSave: Task<Void, Never>?
@@ -76,7 +78,7 @@ struct ComposeView: View {
         draftKey = key
         originalBlocks = original
         _restoredDraft = State(initialValue: draft)
-        if let date = draft?.date.flatMap(JournalDay.init) { _date = State(initialValue: date.localDate) }
+        if let date = draft?.date.flatMap(JournalDay.init) ?? entry?.day { _date = State(initialValue: date.localDate) }
         _editor = State(initialValue: RichTextEditorModel(blocks: draft?.blocks ?? original))
     }
 
@@ -86,12 +88,21 @@ struct ComposeView: View {
 
     /// In the order the user picked them.
     private var photos: [PreparedPhoto] { photoItems.compactMap { prepared[$0] } }
-    private var hasChanges: Bool { editor.isDirty || !photoItems.isEmpty || restoredDraft != nil || removesExistingPhoto }
+    /// Editing: the day the entry is being moved to, when the date's been changed.
+    private var movedTo: JournalDay? {
+        guard case .edit(let entry) = mode else { return nil }
+        let picked = JournalDay(localDate: date)
+        return picked.iso == entry.date ? nil : picked
+    }
+    private var hasChanges: Bool { editor.isDirty || !photoItems.isEmpty || restoredDraft != nil || removesExistingPhoto || movedTo != nil }
     private var canSave: Bool {
         guard !isSaving, !isLoadingPhotos else { return false }
         return isNew ? (!editor.isEmpty || !photos.isEmpty)
-            : (!editor.isEmpty && (editor.isDirty || restoredDraft != nil || !photos.isEmpty || removesExistingPhoto))
+            : (!editor.isEmpty && (editor.isDirty || restoredDraft != nil || !photos.isEmpty || removesExistingPhoto || movedTo != nil))
     }
+
+    /// There are words to keep as a draft (a draft doesn't hold photos).
+    private var canSaveDraft: Bool { !editor.isEmpty && (editor.isDirty || restoredDraft != nil) }
 
     /// Editing: the entry's photo (or collage) as it is now, unless removed. New photos join it in a collage.
     private var existingPhotoURL: URL? {
@@ -106,6 +117,7 @@ struct ComposeView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 if restoredDraft != nil { draftBanner }
+                if isSimplified { simplifiedBanner }
                 Divider()
                 RichTextEditor(model: editor,
                                leading: model.me?.canAddPhotos == true ? AnyView(photosButton) : nil,
@@ -147,13 +159,37 @@ struct ComposeView: View {
                 }
             }
             .interactiveDismissDisabled(hasChanges || isSaving)
-            .confirmationDialog(isNew ? "Discard this entry?" : "Discard your changes?",
+            .confirmationDialog(isNew ? "Close this entry?" : "Close without saving your changes?",
                                 isPresented: $confirmingDiscard, titleVisibility: .visible) {
+                // A draft is kept on this device and comes back the next time this is opened.
+                if canSaveDraft {
+                    Button("Save Draft") {
+                        draftSave?.cancel()
+                        saveDraftNow()
+                        dismiss()
+                    }
+                }
                 Button("Discard", role: .destructive) {
                     discardDraft()
                     dismiss()
                 }
                 Button("Keep Writing", role: .cancel) {}
+            } message: {
+                if canSaveDraft {
+                    Text(photoItems.isEmpty && !removesExistingPhoto
+                        ? "A draft is kept on this device until you come back to it."
+                        : "A draft keeps your words on this device until you come back to it, but not changes to photos.")
+                }
+            }
+            // An alert, for its Cancel button (a confirmation dialog shows none here): Cancel puts
+            // the date back to the entry's own day.
+            .alert(mergeQuestion ?? "", isPresented: .present($mergeQuestion)) {
+                Button("Merge", role: .destructive) { Task { await save(merging: true) } } // red: it can't be undone
+                Button("Cancel", role: .cancel) {
+                    if case .edit(let entry) = mode, let day = entry.day { date = day.localDate }
+                }
+            } message: {
+                Text("Merging adds this entry to the end of that one, photo included. The two become one entry, which can't be undone.")
             }
             .alert("Couldn't save", isPresented: .present($error)) {
                 Button("OK", role: .cancel) {}
@@ -202,16 +238,12 @@ struct ComposeView: View {
         }
     }
 
-    @ViewBuilder
+    /// The entry's date, which can be changed: for a new entry, and to move one being edited to
+    /// another day.
     private var dateTitle: some View {
-        if isNew {
-            DatePicker("Date", selection: $date, in: ...Date.now, displayedComponents: .date)
-                .labelsHidden()
-                .accessibilityLabel("Entry date")
-        } else if case .edit(let entry) = mode {
-            Text(entry.day?.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().year()) ?? entry.date)
-                .font(.headline)
-        }
+        DatePicker("Date", selection: $date, in: ...Date.now, displayedComponents: .date)
+            .labelsHidden()
+            .accessibilityLabel("Entry date")
     }
 
     /// The entry's photos: its current one (editing) and those being added.
@@ -337,7 +369,7 @@ struct ComposeView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Prompt")
-                .accessibilityHint("Apple Intelligence asks a question about what you've written")
+                .accessibilityHint("Shows a question to write about")
                 .accessibilityAddTraits(showsAskRow ? .isSelected : [])
             }
         }
@@ -460,9 +492,20 @@ struct ComposeView: View {
     // MARK: - Ask Me
 
     /// Always, with Apple Intelligence on: before there's much written, the prompt comes from recent
-    /// entries (like Today's); after, it's mostly about the draft.
+    /// entries (like Today's); after, it's mostly about the draft. Without it, a new entry still
+    /// has today's prompt to show.
     private var canAsk: Bool {
-        JournalIntelligence.isEnabled(for: model.me)
+        JournalIntelligence.isEnabled(for: model.me) || (isNew && todaysPrompt != nil)
+    }
+
+    /// The prompt on Today's card: the one written for today on the device when there is one,
+    /// otherwise the day's general prompt.
+    private var todaysPrompt: String? {
+        guard let today = model.today else { return nil }
+        let defaults = UserDefaults.standard
+        if JournalIntelligence.isEnabled(for: model.me), defaults.string(forKey: "ai.prompt.day") == today.date,
+           let personal = defaults.string(forKey: "ai.prompt.text"), !personal.isEmpty { return personal }
+        return today.prompt
     }
 
     /// One question about the draft (Apple Intelligence, on the device): Insert puts it in the entry.
@@ -503,6 +546,15 @@ struct ComposeView: View {
 
     private func ask() async {
         guard !isAsking else { return }
+        // A new entry with nothing written yet: the prompt Today showed, first, so it can be
+        // seen again without leaving the draft. (And the only one without Apple Intelligence.)
+        let usesAI = JournalIntelligence.isEnabled(for: model.me)
+        if isNew, let todaysPrompt, !usesAI || (editor.isEmpty && !askedQuestions.contains(todaysPrompt)) {
+            question = todaysPrompt
+            askedQuestions.append(todaysPrompt)
+            askError = nil
+            return
+        }
         isAsking = true
         defer { isAsking = false }
         do {
@@ -696,6 +748,23 @@ struct ComposeView: View {
 
     // MARK: - Drafts
 
+    /// Editing an entry with formatting the app can't hold (styles, quotes, images in the text…):
+    /// it's shown without it, and saving keeps it that way.
+    private var isSimplified: Bool {
+        if case .edit(let entry) = mode { entry.documentSimplified == true } else { false }
+    }
+
+    private var simplifiedBanner: some View {
+        Label("Some previous formatting may be lost if you edit.", icon: "slab-triangle-exclamation")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            .background(.quaternary.opacity(0.5))
+            .accessibilityIdentifier("SimplifiedBanner")
+    }
+
     private var draftBanner: some View {
         HStack(spacing: 12) {
             Label("Restored your unsaved draft.", systemImage: "clock.arrow.circlepath")
@@ -736,11 +805,11 @@ struct ComposeView: View {
         if blocks.isEmpty {
             DraftStore.clear(draftKey)
         } else {
-            DraftStore.save(.init(blocks: blocks, date: isNew ? JournalDay(localDate: date).iso : nil, savedAt: Date()), key: draftKey)
+            DraftStore.save(.init(blocks: blocks, date: isNew || movedTo != nil ? JournalDay(localDate: date).iso : nil, savedAt: Date()), key: draftKey)
         }
     }
 
-    private func save() async {
+    private func save(merging: Bool = false) async {
         isSaving = true
         defer { isSaving = false }
         do {
@@ -755,12 +824,15 @@ struct ComposeView: View {
             case .edit(let entry):
                 uploadedCount = photos.isEmpty ? nil : 0
                 defer { uploadedCount = nil }
-                onSaved(try await model.updateEntry(id: entry.id, document: editor.blocks, photos: photos,
-                                                    removeImage: removesExistingPhoto) { uploadedCount = $0 })
+                onSaved(try await model.updateEntry(id: entry.id, document: editor.blocks, day: movedTo, merging: merging,
+                                                    photos: photos, removeImage: removesExistingPhoto) { uploadedCount = $0 })
             }
             draftSave?.cancel()
             DraftStore.clear(draftKey)
             dismiss()
+        } catch let error as APIError where error.code == "date_taken" {
+            // That day has an entry: ask before putting the two together.
+            mergeQuestion = error.localizedDescription
         } catch {
             self.error = error.localizedDescription
         }

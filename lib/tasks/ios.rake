@@ -73,6 +73,12 @@ namespace :ios do
       [today - 38, <<~HTML, nil],
         <p>Quiet week. Mostly work and early nights. Sometimes the boring weeks are the ones that refill the tank.</p>
       HTML
+      # Formatting the app's editor can't hold (a heading, a quote, a style): it opens simplified.
+      [today - 45, <<~HTML, nil],
+        <h2>Reading notes</h2>
+        <blockquote>The best time to plant a tree was twenty years ago. The second best time is now.</blockquote>
+        <p style="color: #555555">Worth remembering the next time I put something off.</p>
+      HTML
       [today - 52, <<~HTML, 1015],
         <p>Norway, day 3. Hiked up to Preikestolen and sat at the edge for an hour. I don't think a photo can hold a view like that. #travel</p>
       HTML

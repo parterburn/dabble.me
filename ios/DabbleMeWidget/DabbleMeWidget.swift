@@ -64,6 +64,6 @@ struct TodayWidgetView: View {
 
     var body: some View {
         TodayWidgetContent(entry: entry, family: family)
-            .widgetURL(entry.wroteToday ? WidgetSnapshot.todayURL : WidgetSnapshot.writeURL)
+            .widgetURL(entry.wroteToday ? WidgetSnapshot.editTodayURL : WidgetSnapshot.writeURL)
     }
 }

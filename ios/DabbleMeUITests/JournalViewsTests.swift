@@ -1182,6 +1182,152 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10), "The entry opens, not left behind Search")
     }
 
+    /// Links in a day's drawer work: a #tag closes it and searches.
+    func testLinksInTheDayDrawerWork() throws {
+        let app = launch()
+        tab(app, "Search").tap()
+        let jump = app.buttons["Jump to a Day"]
+        XCTAssertTrue(jump.waitForExistence(timeout: 10))
+        jump.tap()
+        // Four days ago: "Big presentation went well… #work #gratitude".
+        let date = Calendar.current.date(byAdding: .day, value: -4, to: .now)!
+        let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", date.formatted(.dateTime.month(.wide).day()))).firstMatch
+        XCTAssertTrue(day.waitForExistence(timeout: 10))
+        day.tap()
+        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
+        let tag = app.links["#work"]
+        XCTAssertTrue(tag.waitForExistence(timeout: 5), "The #tag is a link")
+        tag.tap()
+        // (The tap lands on one of the entry's two tags.)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'matching entr'")).firstMatch.waitForExistence(timeout: 10),
+                      "It searches for the tag")
+        XCTAssertFalse(app.buttons["Open"].exists, "The drawer closed")
+    }
+
+    /// An entry with formatting the editor can't hold (a heading, a quote, a style) still opens
+    /// in the app, simplified, and says so.
+    func testEntryWithOtherFormattingEditsSimplified() throws {
+        let app = launch()
+        tab(app, "Search").tap()
+        let field = app.searchFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        field.typeText("plant a tree\n")
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Reading notes")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        app.openTimelineEntry(row)
+        app.buttons["Edit Entry"].tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 10), "It opens in the app, not on the web")
+        XCTAssertTrue(app.staticTexts["SimplifiedBanner"].exists)
+        let text = editor.value as? String ?? ""
+        XCTAssertTrue(text.hasPrefix("Reading notes\nThe best time to plant a tree"), text)
+        XCTAssertTrue(text.contains("Worth remembering"), text)
+        snap("edit-simplified")
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+    }
+
+    /// Moving an entry onto a day that has one asks first, then merges the two.
+    func testChangingTheDateToATakenDayOffersToMerge() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let editor = app.textViews["Entry"]
+        func pickDay(_ offset: Int) {
+            app.navigationBars.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            let target = Calendar.current.date(byAdding: .day, value: offset, to: .now)!
+            let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", target.formatted(.dateTime.weekday(.wide).month(.wide).day()))).firstMatch
+            XCTAssertTrue(day.waitForExistence(timeout: 5))
+            day.tap()
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.08)).tap() // closes the calendar
+        }
+        // Two entries of the test's own, on days the demo leaves empty (three and six days ago).
+        func write(_ text: String, daysAgo: Int) {
+            app.buttons["New Entry"].tap()
+            XCTAssertTrue(editor.waitForExistence(timeout: 10))
+            editor.tap()
+            if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+            if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap(); editor.tap() }
+            editor.typeText(text)
+            pickDay(-daysAgo)
+            app.buttons["Save"].tap()
+            XCTAssertTrue(editor.waitForNonExistence(timeout: 15))
+        }
+        write("Kept on its day.", daysAgo: 6)
+        write("Moved onto it.", daysAgo: 3)
+        let moved = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Moved onto it.")).firstMatch
+        app.openTimelineEntry(moved)
+        app.buttons["Edit Entry"].tap()
+        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        pickDay(-6)
+        app.buttons["Save"].tap()
+        let merge = app.buttons["Merge"]
+        XCTAssertTrue(merge.waitForExistence(timeout: 10), "That day has an entry: asked first")
+        snap("merge-question")
+        // Cancel puts the date back (nothing left to save), and the entry stays where it was.
+        app.alerts.buttons["Cancel"].tap()
+        XCTAssertTrue(merge.waitForNonExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Save"].isEnabled, "Back on its own day")
+        pickDay(-6)
+        app.buttons["Save"].tap()
+        XCTAssertTrue(merge.waitForExistence(timeout: 10))
+        merge.tap()
+        XCTAssertTrue(editor.waitForNonExistence(timeout: 15))
+        // The open entry is the merged one: that day's, with the moved one after a rule.
+        let shown = app.textViews.firstMatch
+        XCTAssertTrue(shown.waitForExistence(timeout: 10))
+        let text = shown.value as? String ?? ""
+        XCTAssertTrue(text.contains("Kept on its day.") && text.contains("Moved onto it."), text)
+        snap("merged-entry")
+        // Clean up: delete it.
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Kept on its day.")).firstMatch
+        app.scrollTo(row)
+        XCTAssertFalse(app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "Moved onto it.")).firstMatch.exists,
+                       "The moved entry is gone from its old day")
+        row.swipeLeft()
+        app.buttons["Actions"].tap()
+        let delete = app.buttons["Delete"]
+        XCTAssertTrue(delete.waitForExistence(timeout: 10))
+        delete.tap()
+        app.buttons["Hold to Delete"].press(forDuration: 2.6)
+        XCTAssertTrue(row.waitForNonExistence(timeout: 15))
+    }
+
+    /// Editing an entry, its date can be changed: the entry moves to that day.
+    func testEditingCanChangeTheDate() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Big presentation went well")).firstMatch
+        app.openTimelineEntry(row)
+        // Four days ago to begin with; three days ago has no entry.
+        func title(_ offset: Int) -> String {
+            Calendar.current.date(byAdding: .day, value: offset, to: .now)!.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year())
+        }
+        func move(to offset: Int) {
+            let edit = app.buttons["Edit Entry"]
+            XCTAssertTrue(edit.waitForExistence(timeout: 10))
+            edit.tap()
+            // The date, in the middle of the editor's bar, opens a calendar.
+            XCTAssertTrue(app.textViews["Entry"].waitForExistence(timeout: 10))
+            app.navigationBars.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            let target = Calendar.current.date(byAdding: .day, value: offset, to: .now)!
+            let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", target.formatted(.dateTime.weekday(.wide).month(.wide).day()))).firstMatch
+            XCTAssertTrue(day.waitForExistence(timeout: 5))
+            day.tap()
+            // Close the calendar, then save.
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.08)).tap()
+            let save = app.buttons["Save"]
+            XCTAssertTrue(save.waitForExistence(timeout: 5))
+            XCTAssertTrue(save.isEnabled, "A new date alone is a change to save")
+            save.tap()
+            XCTAssertTrue(app.staticTexts[title(offset)].waitForExistence(timeout: 15), "The entry is on \(title(offset))")
+        }
+        move(to: -3)
+        snap("entry-date-changed")
+        move(to: -4) // back where it was, for the other tests
+    }
+
     /// Results that span a few months get the Journal's timeline scrubber; a tap on it opens the calendar.
     func testSearchResultsHaveTheTimelineScrubber() throws {
         let app = launch()
@@ -1219,6 +1365,12 @@ final class JournalViewsTests: XCTestCase {
         snap("today-edit-pencil")
         pencil.tap()
         XCTAssertTrue(editor.waitForExistence(timeout: 10), "Straight into editing")
+        XCTAssertEqual(editor.value as? String, "A quiet day at home.")
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+        // The widget's "Add to today" link does the same.
+        XCUIDevice.shared.system.open(URL(string: "me.dabble.app:/today/edit")!)
+        XCTAssertTrue(editor.waitForExistence(timeout: 10), "Add to today opens today's entry for editing")
         XCTAssertEqual(editor.value as? String, "A quiet day at home.")
         app.buttons["Cancel"].tap()
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
@@ -1357,12 +1509,11 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Stats are a PRO feature"].waitForExistence(timeout: 10))
         snap("free-stats")
 
-        // Reminders: writing for everyone; On This Day (a PRO feature) is greyed out.
+        // Reminders: the daily one is for everyone.
         tab(app, "Settings").tap()
-        let writing = app.switches["Daily Writing Reminder"]
-        XCTAssertTrue(writing.waitForExistence(timeout: 10))
-        XCTAssertTrue(writing.isEnabled)
-        XCTAssertFalse(app.switches["On This Day Memories"].isEnabled)
+        let daily = app.switches["Daily Reminder"]
+        XCTAssertTrue(daily.waitForExistence(timeout: 10))
+        XCTAssertTrue(daily.isEnabled)
         snap("free-reminders")
     }
 

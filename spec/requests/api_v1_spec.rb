@@ -281,13 +281,21 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
   end
 
   describe "document" do
-    it "is included for entries the app can edit, and nil otherwise" do
+    it "is exact for formatting the app can hold, and simplified (and marked so) otherwise" do
       editable = create(:entry, user: pro_user, body: "<p>Hi <b>there</b></p>")
-      web_only = create(:entry, user: pro_user, body: "<blockquote>quoted</blockquote>")
-      expect(Api::EntrySerializer.full(editable)[:document]).to eq([
+      complex = create(:entry, user: pro_user, body: %(<h2>Trip</h2><blockquote>quoted <i>well</i></blockquote><p><img src="https://x.test/a.png">After</p>))
+      exact = Api::EntrySerializer.full(editable)
+      expect(exact[:document]).to eq([
         { "type" => "paragraph", "runs" => [{ "text" => "Hi " }, { "text" => "there", "bold" => true }] }
       ])
-      expect(Api::EntrySerializer.full(web_only)[:document]).to be_nil
+      expect(exact[:document_simplified]).to be(false)
+      simplified = Api::EntrySerializer.full(complex)
+      expect(simplified[:document_simplified]).to be(true)
+      expect(simplified[:document]).to eq([
+        { "type" => "paragraph", "runs" => [{ "text" => "Trip", "bold" => true }] },
+        { "type" => "paragraph", "runs" => [{ "text" => "quoted " }, { "text" => "well", "italic" => true }] },
+        { "type" => "paragraph", "runs" => [{ "text" => "After" }] }
+      ])
     end
   end
 
@@ -387,13 +395,42 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       expect(entry.reload.body).to eq("<p>Old</p>")
     end
 
-    it "refuses to edit entries with formatting the app can't represent" do
+    it "saves an edit of an entry with formatting the app can't hold, simplified" do
       entry = create(:entry, user: pro_user, body: %(<p><span style="color:red">Red</span></p>))
-      patch "/api/v1/entries/#{entry.id}", params: { document: [{ type: "paragraph", runs: [{ text: "Flat" }] }] },
+      patch "/api/v1/entries/#{entry.id}", params: { document: [{ type: "paragraph", runs: [{ text: "Red and more" }] }] },
                                            headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:ok)
+      expect(entry.reload.body).to eq("<p>Red and more</p>")
+      expect(json["entry"]["document_simplified"]).to be(false)
+    end
+
+    it "merges an entry into the one on the day it's moved to, when asked" do
+      moved = create(:entry, user: pro_user, date: Time.zone.local(2025, 3, 4), body: "<p>Moved</p>")
+      taken = create(:entry, user: pro_user, date: Time.zone.local(2025, 3, 6), body: "<p>Taken</p>")
+      patch "/api/v1/entries/#{moved.id}", headers: auth(pro_user), as: :json,
+                                           params: { date: "2025-03-06", merge: true, document: [{ type: "paragraph", runs: [{ text: "Moved, edited" }] }] }
+      expect(response).to have_http_status(:ok)
+      expect(json["merged"]).to be(true)
+      expect(json["entry"]["id"]).to eq(taken.id)
+      expect(taken.reload.body).to eq("<p>Taken</p><hr><p>Moved, edited</p>")
+      expect(Entry.exists?(moved.id)).to be(false)
+    end
+
+    it "moves an entry to another day, but not onto a day that has one or into the future" do
+      entry = create(:entry, user: pro_user, date: Time.zone.local(2025, 3, 4), body: "<p>Moved</p>")
+      create(:entry, user: pro_user, date: Time.zone.local(2025, 3, 6), body: "<p>Taken</p>")
+      patch "/api/v1/entries/#{entry.id}", params: { date: "2025-03-05" }, headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:ok)
+      expect(json["entry"]["date"]).to eq("2025-03-05")
+      expect(entry.reload.date.to_date).to eq(Date.new(2025, 3, 5))
+      expect(entry.body).to eq("<p>Moved</p>")
+
+      patch "/api/v1/entries/#{entry.id}", params: { date: "2025-03-06" }, headers: auth(pro_user), as: :json
       expect(response).to have_http_status(:unprocessable_content)
-      expect(json["error"]).to eq("not_editable")
-      expect(entry.reload.body).to eq(%(<p><span style="color:red">Red</span></p>))
+      expect(json["error"]).to eq("date_taken")
+      patch "/api/v1/entries/#{entry.id}", params: { date: 1.year.from_now.to_date.iso8601 }, headers: auth(pro_user), as: :json
+      expect(json["error"]).to eq("invalid_date")
+      expect(entry.reload.date.to_date).to eq(Date.new(2025, 3, 5))
     end
 
     it "requires PRO to edit, but free accounts can delete" do
@@ -551,6 +588,29 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       end
     end
 
+    it "merges photos into the day's entry, and refuses a merge with more than a collage holds" do
+      moved = create(:entry, user: pro_user, date: Time.zone.local(2025, 3, 4), body: "<p>Moved</p>")
+      taken = create(:entry, user: pro_user, date: Time.zone.local(2025, 3, 6), body: "<p>Taken</p>")
+      give_photo(moved)
+      give_photo(taken)
+      # Its own photo and seven new ones fit an entry; with the other day's photo they don't.
+      patch "/api/v1/entries/#{moved.id}", headers: auth(pro_user), as: :json,
+                                           params: { date: "2025-03-06", merge: true, uploaded_image_keys: Array.new(7) { photo_key(pro_user) } }
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(json["message"]).to include("more than 8 photos")
+      expect(Entry.exists?(moved.id)).to be(true)
+      expect(taken.reload.body).to eq("<p>Taken</p>")
+      expect(ImageCollageJob).not_to have_received(:perform_later)
+
+      key = photo_key(pro_user)
+      patch "/api/v1/entries/#{moved.id}", headers: auth(pro_user), as: :json,
+                                           params: { date: "2025-03-06", merge: true, uploaded_image_keys: [key] }
+      expect(response).to have_http_status(:ok)
+      expect(Entry.exists?(moved.id)).to be(false)
+      expect(json["entry"]["image_processing"]).to be(true)
+      expect(ImageCollageJob).to have_received(:perform_later).with(taken.id, urls: [a_string_including("existing.jpg"), Mcp::PresignedImageUpload.public_url(key)])
+    end
+
     it "refuses more photos than the collage can hold" do
       post "/api/v1/entries", params: { date: "2026-02-01", body: "x", uploaded_image_keys: Array.new(9) { photo_key(pro_user) } },
                               headers: auth(pro_user), as: :json
@@ -611,7 +671,7 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       body = %(<ol><li><div style="color: red"><b>Outer</b></div><ol><li>Inner one</li><li>Inner two</li></ol></li><li><div>Next</div></li></ol>)
       entry = create(:entry, user: pro_user, body: body)
       full = Api::EntrySerializer.full(entry)
-      expect(full[:document]).to be_nil # the style keeps it web-only
+      expect(full[:document_simplified]).to be(true) # the style is left out of its document
       expect(full[:body_text]).to eq("1. **Outer**\n  1. Inner one\n  2. Inner two\n2. Next")
     end
 
@@ -621,6 +681,35 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
         { "type" => "number", "runs" => [{ "bold" => true, "text" => "Outer" }] },
         { "type" => "number", "runs" => [{ "text" => "Inner" }], "level" => 1 }
       ])
+    end
+  end
+
+  describe "GET /api/v1/reminders" do
+    it "gives each coming day's entry to look back on: On This Day, or else a Rewind" do
+      zone = Time.find_zone(pro_user.send_timezone)
+      travel_to zone.local(2026, 6, 20, 12) do
+        years_back = create(:entry, user: pro_user, date: Time.zone.local(2024, 6, 21), body: "<p>Two years back</p>")
+        week_back = create(:entry, user: pro_user, date: Time.zone.local(2026, 6, 13), body: "<p>A week back</p>")
+        get "/api/v1/reminders", params: { days: 2 }, headers: auth(pro_user)
+        expect(response).to have_http_status(:ok)
+        expect(json["email_hour"]).to eq(pro_user.send_time.hour)
+        today, tomorrow = json["days"]
+        expect(today).to include("date" => "2026-06-20", "kind" => "rewind", "count" => 1)
+        expect(today["entry"]).to include("id" => week_back.id, "excerpt" => "A week back")
+        expect(tomorrow).to include("date" => "2026-06-21", "kind" => "on_this_day", "count" => 1)
+        expect(tomorrow["entry"]).to include("id" => years_back.id, "date" => "2024-06-21")
+      end
+    end
+
+    it "leaves out days with nothing to look back on, and On This Day on a free plan" do
+      zone = Time.find_zone(free_user.send_timezone)
+      travel_to zone.local(2026, 6, 20, 12) do
+        get "/api/v1/reminders", headers: auth(pro_user)
+        expect(json["days"]).to eq([])
+        create(:entry, user: free_user, date: Time.zone.local(2024, 6, 20), body: "<p>Old</p>")
+        get "/api/v1/reminders", params: { days: 1 }, headers: auth(free_user)
+        expect(json["days"].map { |day| day["kind"] }).to eq(["rewind"])
+      end
     end
   end
 

@@ -10,7 +10,7 @@ settings:
   base:
     SWIFT_VERSION: "6.0"
     MARKETING_VERSION: "1.0"
-    CURRENT_PROJECT_VERSION: "50"
+    CURRENT_PROJECT_VERSION: "52"
     # Dabble Dev LLC. Change if you sign with a different Apple Developer team.
     DEVELOPMENT_TEAM: B79A4CAS56
     CODE_SIGN_STYLE: Automatic
@@ -52,6 +52,11 @@ targets:
         UIAppFonts:
           - InstrumentSerif-Regular.ttf
         ITSAppUsesNonExemptEncryption: false
+        # The daily reminders are rebuilt now and then while the app's closed (BackgroundRefresh).
+        UIBackgroundModes:
+          - fetch
+        BGTaskSchedulerPermittedIdentifiers:
+          - me.dabble.ios.reminders
         LSApplicationCategoryType: public.app-category.lifestyle
         UILaunchScreen:
           UIColorName: Paper

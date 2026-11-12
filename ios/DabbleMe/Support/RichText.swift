@@ -257,37 +257,75 @@ enum RichText {
         return tag.isEmpty ? nil : String(tag)
     }
 
-    // MARK: - Hashtags shown as pills
+    // MARK: - What's shown again under the text
 
-    /// The text without the #tags at its end that are among `tags`: the ones shown again as pills
-    /// right under it (dated tags, with their age). Other tags at the end stay, and so does a tag
-    /// anywhere before the end. Text that's nothing but those tags is left as it is.
-    static func droppingTrailingHashtags(_ tags: [String], from text: String) -> String {
-        guard let cut = trailingHashtagCut(tags, in: text) else { return text }
-        let result = cut.kept.isEmpty ? String(cut.lead) : cut.lead + cut.kept
+    /// The text without what it ends with that's shown again right under it: the #tags among
+    /// `hashtags` (dated ones, in their pills) and, with `songLinks`, links to Spotify songs (in
+    /// the list of songs). Other tags at the end stay, and so does anything before the end. Text
+    /// that's nothing but those is left as it is.
+    static func droppingTrailing(hashtags: [String], songLinks: Bool, from text: String) -> String {
+        var result = text
+        // In either order ("…link #tag", "…#tag link"): until neither is at the end.
+        for _ in 0..<4 {
+            var next = result
+            if let cut = trailingHashtagCut(hashtags, in: next) { next = cut.kept.isEmpty ? cut.lead : cut.lead + cut.kept }
+            if songLinks, let range = next.range(of: trailingSongLinks, options: .regularExpression) { next.removeSubrange(range) }
+            if next == result { break }
+            result = next
+        }
         return result.isEmpty ? text : result
     }
 
-    /// The same for an entry's blocks: the tags at the end of its last block.
-    static func droppingTrailingHashtags(_ tags: [String], from blocks: [DocumentBlock]) -> [DocumentBlock] {
-        guard let index = blocks.lastIndex(where: { $0.type != .rule && $0.runs?.isEmpty == false }),
-              let runs = blocks[index].runs,
-              let cut = trailingHashtagCut(tags, in: runs.map(\.text).joined()) else { return blocks }
+    /// The same for an entry's blocks: what its last block ends with.
+    static func droppingTrailing(hashtags: [String], songLinks: Bool, from blocks: [DocumentBlock]) -> [DocumentBlock] {
         var result = blocks
-        var left = cut.lead.count
+        for _ in 0..<4 {
+            guard let index = result.lastIndex(where: { $0.type != .rule && $0.runs?.isEmpty == false }),
+                  var runs = result[index].runs else { break }
+            let before = runs
+            if songLinks {
+                // Runs linked to a song (whatever they say), and the spaces around them.
+                while let last = runs.last, last.link.map(isSongLink) == true || last.text.allSatisfy(\.isWhitespace) { runs.removeLast() }
+                // And a song's address written out, unlinked.
+                let text = runs.map(\.text).joined()
+                if let range = text.range(of: trailingSongLinks, options: .regularExpression) {
+                    runs = truncating(runs, to: text[..<range.lowerBound].count)
+                }
+            }
+            if let cut = trailingHashtagCut(hashtags, in: runs.map(\.text).joined()) {
+                runs = truncating(runs, to: cut.lead.count)
+                if !cut.kept.isEmpty { runs.append(DocumentRun(cut.kept)) }
+            }
+            if runs == before { break }
+            if runs.isEmpty {
+                result.remove(at: index)
+            } else {
+                // The text ends where its words do.
+                while let last = runs[runs.count - 1].text.last, last.isWhitespace { runs[runs.count - 1].text.removeLast() }
+                result[index].runs = runs.filter { !$0.text.isEmpty }
+            }
+        }
+        return result.contains { $0.type != .rule && $0.runs?.isEmpty == false } ? result : blocks
+    }
+
+    /// One or more links to Spotify songs at the end of a text: the address alone, or a Markdown
+    /// link to it.
+    private static let trailingSongLinks = #"(?:\s*(?:\[[^\]]*\]\(https?://open\.spotify\.com/track/[^)\s]+\)|<?https?://open\.spotify\.com/track/[^\s>]+>?))+\s*$"#
+
+    private static func isSongLink(_ link: String) -> Bool {
+        link.range(of: #"^https?://open\.spotify\.com/track/"#, options: .regularExpression) != nil
+    }
+
+    /// The runs up to `count` characters of their text.
+    private static func truncating(_ runs: [DocumentRun], to count: Int) -> [DocumentRun] {
+        var left = count
         var kept: [DocumentRun] = []
         for var run in runs where left > 0 {
             run.text = String(run.text.prefix(left))
             left -= run.text.count
             kept.append(run)
         }
-        if !cut.kept.isEmpty { kept.append(DocumentRun(cut.kept)) }
-        if kept.isEmpty {
-            result.remove(at: index)
-        } else {
-            result[index].runs = kept
-        }
-        return result.contains { $0.type != .rule } ? result : blocks
+        return kept
     }
 
     /// Splits `text` at the run of #tags it ends with: what's before it, and the tags of that run

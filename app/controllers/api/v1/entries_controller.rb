@@ -110,16 +110,34 @@ module Api
                status: result[:merged] ? :ok : :created
       end
 
-      # PATCH /api/v1/entries/:id { document: [...], remove_image: true, uploaded_image_keys: [...] }
-      # Any of them. `document` only for entries whose `document` is non-null. New photos join the
+      # PATCH /api/v1/entries/:id { document: [...], date: "2026-11-03", merge: true,
+      #                            remove_image: true, uploaded_image_keys: [...] }
+      # Any of them. Saving a `document` replaces the entry's HTML with it, so one the serializer
+      # marked `document_simplified` loses the formatting that was left out. New photos join the
       # entry's photo in a collage (like adding to a day on create), or replace it with remove_image.
+      # `date` moves the entry to another day, and its photo with it. A day that has an entry
+      # already answers `date_taken`, unless `merge: true` comes too (see merge_into).
       def update
-        if params.key?(:document)
-          if EntryDocument.from_html(@entry.body).nil?
-            return render_error(:unprocessable_content, 'not_editable',
-                                'This entry has formatting the app cannot edit yet. Edit it on dabble.me instead.')
-          end
+        if params[:date].present?
+          date = Date.iso8601(params[:date].to_s) rescue nil
+          return render_error(:unprocessable_content, 'invalid_date', 'Date must be YYYY-MM-DD.') unless date
 
+          if date != @entry.date.to_date
+            if date > OnThisDay.today_for(current_user) + 1
+              return render_error(:unprocessable_content, 'invalid_date', "An entry can't be dated in the future.")
+            end
+            other = current_user.entries.where(date: date.all_day).where.not(id: @entry.id).first
+            if other && !ActiveModel::Type::Boolean.new.cast(params[:merge])
+              # The app asks first, then sends `merge: true`.
+              return render_error(:unprocessable_content, 'date_taken', "You already have an entry on #{date.strftime('%B %-d, %Y')}.")
+            end
+            return merge_into(other) if other
+
+            @entry.date = date.iso8601
+          end
+        end
+
+        if params.key?(:document)
           html = document_html
           return if performed?
           if Rails::HTML5::FullSanitizer.new.sanitize(html).strip.blank?
@@ -158,6 +176,43 @@ module Api
       def destroy
         @entry.destroy
         head :no_content
+      end
+
+      # Moving an entry onto a day that has one, with `merge: true`: this entry's text (as edited,
+      # when a document came too) goes on the end of that day's entry after a rule, as the web
+      # merges them, and its photo joins that entry's (a collage when both have one). This
+      # entry is then gone; the response is the merged one.
+      def merge_into(other)
+        body = @entry.body
+        if params.key?(:document)
+          body = document_html
+          return if performed?
+        end
+        other.body = [other.body.presence, body.presence].compact.join('<hr>')
+        # Its photo (unless it's being removed) and any added in this edit. Checked before anything
+        # is saved or deleted: a bad upload or too many photos leaves both entries as they were.
+        keys = Array(params[:uploaded_image_keys]).map { |key| key.to_s.strip }.compact_blank.uniq
+        unless keys.all? { |key| Mcp::PresignedImageUpload.key_allowed_for_user?(current_user, key) }
+          return render_error(:unprocessable_content, 'invalid', 'A photo upload is not valid for this account.')
+        end
+
+        keeps_photo = @entry.image_stored? && !ActiveModel::Type::Boolean.new.cast(params[:remove_image])
+        photos = keys.map { |key| Mcp::PresignedImageUpload.public_url(key) }
+        photos.unshift(@entry.image_url_cdn(cloudflare: false)) if keeps_photo
+        if photos.size + (other.image_stored? ? 1 : 0) > CollageGenerator::MAX_IMAGES
+          return render_error(:unprocessable_content, 'invalid',
+                              "Together these entries would have more than #{CollageGenerator::MAX_IMAGES} photos. Remove some, then merge.")
+        end
+
+        other.uploading_image = true if photos.any?
+        unless other.save
+          return render_error(:unprocessable_content, 'invalid', 'Could not merge the entries.', details: other.errors.full_messages)
+        end
+
+        # Not destroy: the photo's file stays for the collage job to fetch (as on the web).
+        @entry.delete
+        ImageCollageJob.perform_later(other.id, urls: photos) if photos.any?
+        render json: { entry: EntrySerializer.full(other.reload), merged: true }
       end
 
       private

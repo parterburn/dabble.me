@@ -10,10 +10,11 @@ struct SettingsView: View {
     @State private var deletionEmail: String?
     @State private var deletionError: String?
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.system
-    @AppStorage(ReminderSettings.writingEnabledKey) private var writingReminder = false
-    @AppStorage(ReminderSettings.writingTimeKey) private var writingTime = ReminderSettings.defaultWritingTime
-    @AppStorage(ReminderSettings.memoriesEnabledKey) private var memoriesReminder = false
-    @AppStorage(ReminderSettings.memoriesTimeKey) private var memoriesTime = ReminderSettings.defaultMemoriesTime
+    @AppStorage(ReminderSettings.enabledKey) private var dailyReminder = false
+    /// The time set for it, or `followsEmail` until one is: then it's the daily email's.
+    @AppStorage(ReminderSettings.timeKey) private var reminderTime = ReminderSettings.followsEmail
+    @AppStorage(ReminderSettings.emailTimeKey) private var emailTime = ReminderSettings.defaultTime
+    @AppStorage(ReminderSettings.previewsKey) private var reminderPreviews = true
     @State private var notificationsDenied = false
     @AppStorage(JournalIntelligence.enabledKey) private var onDeviceAI = true
     /// The plan links to dabble.me/subscribe only on the US App Store, where Apple allows links to
@@ -170,10 +171,9 @@ struct SettingsView: View {
             .toolbarVisibility(.hidden, for: .navigationBar) // like Today: no empty bar above it
             .task { notificationsDenied = await ReminderScheduler.shared.isDenied() }
             .task { canLinkToSubscribe = await Storefront.current?.countryCode == "USA" }
-            .onChange(of: writingReminder) { _, on in Task { await remindersChanged(turnedOn: on) } }
-            .onChange(of: memoriesReminder) { _, on in Task { await remindersChanged(turnedOn: on) } }
-            .onChange(of: writingTime) { Task { await ReminderScheduler.shared.reschedule(for: model) } }
-            .onChange(of: memoriesTime) { Task { await ReminderScheduler.shared.reschedule(for: model) } }
+            .onChange(of: dailyReminder) { _, on in Task { await remindersChanged(turnedOn: on) } }
+            .onChange(of: reminderTime) { Task { await ReminderScheduler.shared.reschedule(for: model) } }
+            .onChange(of: reminderPreviews) { Task { await ReminderScheduler.shared.reschedule(for: model) } }
             .alert("Check your email", isPresented: .present($deletionEmail)) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -189,34 +189,32 @@ struct SettingsView: View {
 }
 
 private extension SettingsView {
-    // MARK: - Reminders (writing: everyone; On This Day: PRO)
+    // MARK: - Reminders (one a day, for everyone; On This Day entries in it are PRO)
 
     @ViewBuilder
     var remindersSection: some View {
         let isPro = model.me?.isPro == true
         Section {
             do {
-                Toggle("Daily Writing Reminder", isOn: $writingReminder)
+                Toggle("Daily Reminder", isOn: $dailyReminder)
                     #if DEBUG
                     // For the reminders UI test only: an invisible count of what's scheduled.
                     .background {
                         Color.clear.frame(width: 1, height: 1)
                             .accessibilityElement()
                             .accessibilityLabel("\(pendingReminders) reminders scheduled")
-                            .task(id: "\(writingReminder)\(memoriesReminder)\(writingTime)\(memoriesTime)") {
-                                try? await Task.sleep(for: .seconds(2))
+                            .task(id: "\(dailyReminder)\(reminderTime)\(reminderPreviews)") {
+                                try? await Task.sleep(for: .seconds(3))
                                 pendingReminders = await ReminderScheduler.shared.pendingCount()
                             }
                     }
                     #endif
-                if writingReminder {
-                    DatePicker("Time", selection: minutesBinding($writingTime), displayedComponents: .hourAndMinute)
-                }
-                // On This Day is PRO, so its reminder is too (greyed out on a free plan).
-                Toggle("On This Day Memories", isOn: $memoriesReminder)
-                    .disabled(!isPro)
-                if memoriesReminder, isPro {
-                    DatePicker("Time", selection: minutesBinding($memoriesTime), displayedComponents: .hourAndMinute)
+                if dailyReminder {
+                    // The daily email's time until another is picked here.
+                    DatePicker("Time", selection: Binding(
+                        get: { ReminderSettings.date(fromMinutes: reminderTime >= 0 ? reminderTime : emailTime) },
+                        set: { reminderTime = ReminderSettings.minutes(from: $0) }), displayedComponents: .hourAndMinute)
+                    Toggle("Show Entry Previews", isOn: $reminderPreviews)
                 }
                 EmailScheduleRow()
                 if notificationsDenied {
@@ -228,8 +226,15 @@ private extension SettingsView {
         } header: {
             Text("Reminders")
         } footer: {
-            if !isPro {
-                Text("On This Day reminders and choosing your email's days are part of Dabble Me PRO.")
+            VStack(alignment: .leading, spacing: 6) {
+                if dailyReminder {
+                    Text(reminderPreviews
+                        ? "One notification a day, with a past entry to look back on: the start of it and its photo, which can be seen without unlocking your phone. Skipped once you've written that day."
+                        : "One notification a day, saying there's a past entry to look back on, without showing it. Skipped once you've written that day.")
+                }
+                if !isPro {
+                    Text("Choosing your email's days is part of Dabble Me PRO.")
+                }
             }
         }
     }
@@ -242,8 +247,7 @@ private extension SettingsView {
     func remindersChanged(turnedOn: Bool) async {
         if turnedOn, !(await ReminderScheduler.shared.requestPermission()) {
             notificationsDenied = true
-            writingReminder = false
-            memoriesReminder = false
+            dailyReminder = false
             return
         }
         notificationsDenied = false

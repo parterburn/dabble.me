@@ -112,6 +112,17 @@ struct TodayView: View {
                 model.composeRequest = false
                 composing = true
             }
+            // From the widget's "Add to today": today's entry, open for editing, once Today has
+            // loaded it (the app may be starting up). Nothing written after all: write it.
+            .onChange(of: "\(model.editTodayRequest)|\(model.today?.date ?? "")|\(model.today?.entry?.id ?? 0)", initial: true) {
+                guard model.editTodayRequest, let today = model.today else { return }
+                model.editTodayRequest = false
+                if let entry = today.entry {
+                    if model.me?.canEdit == true { Task { await actions.edit(entry.id, model: model) } }
+                } else {
+                    composing = true
+                }
+            }
             .sheet(isPresented: $composing) { ComposeView(mode: .new) }
             .sheet(isPresented: $showingProInfo) { ProInfoView(feature: .writing) }
             .alert("Couldn't write a prompt", isPresented: .present($promptError)) {
@@ -180,6 +191,7 @@ struct TodayView: View {
                     Text(prompt)
                         .font(.system(.title2, design: .serif))
                         .contentTransition(.opacity)
+                        .accessibilityIdentifier("TodayPrompt")
                 } else {
                     Text("How was your day?")
                         .font(.system(.title2, design: .serif))

@@ -140,8 +140,12 @@ struct EntryDetail: Decodable, Sendable, Identifiable, Hashable {
     let hashtags: [String]
     let updatedAt: String
     let bodyText: String
-    /// Editable structured body, or nil when the entry has formatting only the web editor keeps.
+    /// Editable structured body (nil only from an older server, for an entry with formatting it
+    /// kept for the web editor).
     let document: [DocumentBlock]?
+    /// The document leaves out formatting it can't hold (styles, quotes, images…): saving an edit
+    /// rewrites the entry without it.
+    var documentSimplified: Bool? = nil
     let songs: [Song]
     /// Hashtags in this entry that have a date on dabble.me (a birthday, an anniversary), with
     /// how long it had been on this entry's day. Optional for older servers.
@@ -222,6 +226,10 @@ struct NewEntryRequest: Encodable, Sendable {
 
 struct UpdateEntryRequest: Encodable, Sendable {
     let document: [DocumentBlock]
+    /// Another day for the entry (YYYY-MM-DD), when it's being moved.
+    var date: String? = nil
+    /// Moving onto a day that has an entry: add this one to it (asked first).
+    var merge: Bool? = nil
     /// New photos: they join the entry's photo in a collage, or replace it with `removeImage`.
     var uploadedImageKeys: [String]? = nil
     var removeImage: Bool? = nil

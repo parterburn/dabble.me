@@ -15,6 +15,8 @@ final class AppModel {
     var searchRequest: String?
     /// Set when a writing reminder is tapped; Today opens the composer.
     var composeRequest = false
+    /// The widget's "Add to today": Today opens today's entry for editing once it has it.
+    var editTodayRequest = false
     /// Bumped when the Search tab is tapped while already showing, to focus the search field.
     var searchFocusRequest = 0
     /// Bumped when the Journal tab is tapped while already showing: back to the list, at the top.
@@ -348,15 +350,23 @@ final class AppModel {
         }
     }
 
-    func updateEntry(id: Int, document: [DocumentBlock], photos: [PreparedPhoto] = [], removeImage: Bool = false,
+    func updateEntry(id: Int, document: [DocumentBlock], day: JournalDay? = nil, merging: Bool = false,
+                     photos: [PreparedPhoto] = [], removeImage: Bool = false,
                      onProgress: @escaping @MainActor (Int) -> Void = { _ in }) async throws -> EntryDetail {
         let keys = try await uploadPhotos(photos, onProgress: onProgress)
-        let request = UpdateEntryRequest(document: document, uploadedImageKeys: keys.isEmpty ? nil : keys,
+        let request = UpdateEntryRequest(document: document, date: day?.iso, merge: merging ? true : nil,
+                                         uploadedImageKeys: keys.isEmpty ? nil : keys,
                                          removeImage: removeImage ? true : nil)
         let envelope: EntryEnvelope = try await api.patch("api/v1/entries/\(id)", request)
+        // Merged into that day's entry: this one is gone from the timeline.
+        if envelope.entry.id != id { for key in monthEntries.keys { monthEntries[key]?.removeAll { $0.id == id } } }
         upsert(envelope.entry.summary)
         if envelope.entry.imageProcessing { watchProcessing(id: envelope.entry.id) }
-        if envelope.entry.id == today?.entry?.id { await loadToday() }
+        if day != nil {
+            // Moved to another day: its place in the timeline, the months' counts and Today
+            // (it may have been today's, or be today's now) all come from the server again.
+            await refresh()
+        } else if envelope.entry.id == today?.entry?.id { await loadToday() }
         return envelope.entry
     }
 
@@ -385,6 +395,14 @@ final class AppModel {
         struct Prompts: Decodable { let prompts: [String] }
         let list: Prompts? = try? await api.get("api/v1/prompts", query: ["count": "20"])
         return list?.prompts ?? []
+    }
+
+    /// From the background refresh: Today again (is today written?), then the reminders.
+    func refreshRemindersInBackground() async {
+        BackgroundRefresh.schedule()
+        guard isSignedIn else { return }
+        if let today: TodaySummary = try? await api.get("api/v1/today") { self.today = today }
+        await ReminderScheduler.shared.reschedule(for: self)
     }
 
     /// The newest few entries (for on-device reflection prompts).

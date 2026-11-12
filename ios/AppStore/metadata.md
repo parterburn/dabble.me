@@ -63,7 +63,7 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 > PRIVATE BY DESIGN
 > • No social feed, no ads, no tracking
 > • Lock the app with Face ID; your journal is hidden in the app switcher
-> • Reminders never show what you wrote, and the widget only shows an entry if you choose that
+> • You choose whether reminders and the widget show any of an entry: both have a switch for previews
 > • Photo location data is removed before upload
 > • Sign in with a passkey, password, or two-factor code
 > • Export everything, any time

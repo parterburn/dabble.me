@@ -617,10 +617,10 @@ struct DayEntriesSheet: View {
                                     .font(.subheadline.weight(.semibold))
                                     .foregroundStyle(.tint)
                                 if let document = entry.document {
-                                    DocumentText(blocks: RichText.droppingTrailingHashtags((entry.datedHashtags ?? []).map(\.tag), from: document), font: .system(size: bodySize * textSize.scale, design: fontStyle.design),
+                                    DocumentText(blocks: RichText.droppingTrailing(hashtags: (entry.datedHashtags ?? []).map(\.tag), songLinks: !entry.songs.isEmpty, from: document), font: .system(size: bodySize * textSize.scale, design: fontStyle.design),
                                                  scale: textSize.scale, bodySize: bodySize)
                                 } else {
-                                    Text(AttributedString.journal(RichText.droppingTrailingHashtags((entry.datedHashtags ?? []).map(\.tag), from: entry.bodyText)))
+                                    Text(RichText.linkingURLs(in: RichText.linkingHashtags(in: AttributedString.journal(RichText.droppingTrailing(hashtags: (entry.datedHashtags ?? []).map(\.tag), songLinks: !entry.songs.isEmpty, from: entry.bodyText)))))
                                         .font(.system(size: bodySize * textSize.scale, design: fontStyle.design))
                                         .lineSpacing(5)
                                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -639,7 +639,16 @@ struct DayEntriesSheet: View {
                     }
                     .padding(.bottom, 8)
                 }
-                .environment(\.openURL, OpenURLAction { _ in .discarded })
+                // Links work here too: a #tag closes this and searches for it; a web page opens (dabble.me's
+                // in the app).
+                .environment(\.openURL, OpenURLAction { url in
+                    if let tag = RichText.hashtag(from: url) {
+                        dismiss()
+                        model.search(hashtag: tag)
+                        return .handled
+                    }
+                    return WebLinks.open(url)
+                })
                 // Always in view under the entry, as in A Random Memory: Open, between the
                 // entries before and after this one.
                 EntryStepBar(entry: entries.first, isLoading: isStepping) { id in

@@ -36,10 +36,11 @@ struct TimelineEntryRow: View {
     /// links once expanded (collapsed, a tap anywhere expands).
     private var styledText: AttributedString {
         var source = isExpanded ? (full?.bodyText ?? previewText) : previewText
-        // Dated #tags at the entry's end show as pills under it, so not here as well (when this is
-        // the whole entry: a preview that's cut short doesn't reach its end).
+        // Dated #tags and Spotify links at the entry's end show again under it (pills, the songs),
+        // so not here as well (when this is the whole entry: a cut preview doesn't reach its end).
         if !previewIsCut || (isExpanded && full != nil) {
-            source = RichText.droppingTrailingHashtags((entry.datedHashtags ?? []).map(\.tag), from: source)
+            source = RichText.droppingTrailing(hashtags: (entry.datedHashtags ?? []).map(\.tag),
+                                               songLinks: entry.songs?.isEmpty == false, from: source)
         }
         if source.isEmpty { return AttributedString("📷 Photo") }
         let text = Self.tighteningParagraphGaps(in: AttributedString.journal(Self.bullets(source)),
