@@ -30,12 +30,20 @@ class Export < ActiveRecord::Base
   def self.scope_for(year: nil, search_term: nil)
     if search_term.present?
       key = Rails.application.key_generator.generate_key("export search scope", 32)
-      "search:#{OpenSSL::HMAC.hexdigest('SHA256', key, search_term.to_s.strip.downcase)}"
+      "search:#{OpenSSL::HMAC.hexdigest('SHA256', key, normalized_search(search_term))}"
     elsif year.present?
       "year:#{year}"
     else
       "all"
     end
+  end
+
+  # Two searches share an export only when they match the same entries.
+  # Matching ignores case, except that " OR " must be upper case to split a
+  # search into alternatives (Entry::Matcher), so such a search keeps its case.
+  def self.normalized_search(term)
+    term = term.to_s.strip
+    term.include?(" OR ") ? term : term.downcase
   end
 
   def to_param

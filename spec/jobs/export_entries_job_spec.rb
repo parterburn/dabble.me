@@ -64,6 +64,16 @@ RSpec.describe ExportEntriesJob do
     expect(export.reload.storage_key).to be_nil
   end
 
+  it 'keeps a finished export ready when the email about it cannot be sent' do
+    allow(UserMailer).to receive(:export_ready).and_raise(Net::SMTPServerBusy.new('try later'))
+
+    described_class.perform_now(export.id)
+
+    expect(export.reload.status).to eq('ready')
+    expect(export).to be_downloadable
+    expect(deliveries).to be_empty
+  end
+
   it 'marks the export failed and tells the person when it cannot be built' do
     allow_any_instance_of(ExportStore).to receive(:upload).and_raise(Excon::Error::Timeout)
 

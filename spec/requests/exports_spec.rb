@@ -161,6 +161,12 @@ RSpec.describe 'Exports', type: :request do
       expect(response).to redirect_to(download_export_path(search))
     end
 
+    it 'treats "coffee OR tea" and "coffee or tea" as different searches, as search itself does' do
+      user.exports.create!(status: 'ready', scope: Export.scope_for(search_term: 'coffee OR tea'), storage_key: 'exports/s.zip', expires_at: 6.days.from_now)
+
+      expect { get export_entries_path(search: { term: 'coffee or tea' }) }.to change { user.exports.count }.by(1)
+    end
+
     it 'starts a new export for something else inside those 12 hours' do
       user.exports.create!(status: 'ready', storage_key: 'exports/x.zip', expires_at: 6.days.from_now)
       user.exports.create!(status: 'ready', scope: Export.scope_for(search_term: 'coffee'), storage_key: 'exports/s.zip', expires_at: 6.days.from_now)

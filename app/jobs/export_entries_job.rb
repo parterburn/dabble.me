@@ -16,11 +16,15 @@ class ExportEntriesJob < ActiveJob::Base
     key = ExportStore.new.upload(ExportStore.key_for(export), tempfile.path)
     export.ready!(storage_key: key, byte_size: File.size(tempfile.path), entry_count: result.entry_count,
                   image_count: result.image_count, skipped_image_count: result.skipped_image_count)
-    UserMailer.export_ready(export).deliver_now
+    # Queued on its own, so trouble sending mail is retried there and never
+    # undoes an export that is built and stored.
+    UserMailer.export_ready(export).deliver_later
   rescue StandardError => e
-    export&.update_columns(status: "failed")
     Sentry.capture_exception(e, extra: { export_id: export_id })
-    UserMailer.export_failed(export).deliver_now if export
+    if export && !export.reload.downloadable?
+      export.update_columns(status: "failed")
+      UserMailer.export_failed(export).deliver_later
+    end
   ensure
     tempfile&.unlink
   end
