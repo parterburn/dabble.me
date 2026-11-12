@@ -5,8 +5,12 @@ class Export < ActiveRecord::Base
   LIFETIME = 7.days
   # How long a download link from the app works once handed out.
   LINK_LIFETIME = 5.minutes
-  # One export per person in this long. A failed one doesn't count.
+  # One export of the same thing (everything, a year, a search) per person
+  # in this long; asking again downloads the last one. A failed one doesn't
+  # count.
   LIMIT_PERIOD = 12.hours
+  # However varied the requests, this many per person an hour and no more.
+  HOURLY_LIMIT = 10
 
   belongs_to :user
 
@@ -19,22 +23,19 @@ class Export < ActiveRecord::Base
 
   before_destroy :delete_file
 
-  # What an export of this year or search holds, as stored in `scope`. The
-  # search words themselves are never stored.
+  # What an export of this year or search holds, as stored in `scope`:
+  # "all", "year:2021" or "search:<digest>". The digest tells two searches
+  # apart without storing the words, and is keyed so it can't be reversed by
+  # guessing words against a copy of the database.
   def self.scope_for(year: nil, search_term: nil)
     if search_term.present?
-      "search"
+      key = Rails.application.key_generator.generate_key("export search scope", 32)
+      "search:#{OpenSSL::HMAC.hexdigest('SHA256', key, search_term.to_s.strip.downcase)}"
     elsif year.present?
       "year:#{year}"
     else
       "all"
     end
-  end
-
-  # Whether asking for `scope` again can be answered with this export's file.
-  # Two searches may differ, so a search export is never reused.
-  def reusable_for?(scope)
-    downloadable? && self.scope == scope && scope != "search"
   end
 
   def to_param

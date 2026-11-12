@@ -35,7 +35,7 @@ RSpec.describe ExportEntriesJob do
     expect(export.expires_at).to be_within(1.minute).of(7.days.from_now)
     expect(export.storage_key).to start_with("exports/test/#{user.id}/").and end_with('.zip')
     expect(export.storage_key).not_to include('uploads')
-    expect(stored_files['entries.txt']).to include('hiking in March', 'reading in 2025')
+    expect(stored_files['journal.md']).to include('hiking in March', 'reading in 2025')
 
     mail = deliveries.sole
     expect(mail.to).to eq([user.email])
@@ -47,8 +47,8 @@ RSpec.describe ExportEntriesJob do
 
   it 'exports one year, or the entries matching a search' do
     described_class.perform_now(export.id, { 'year' => '2026' })
-    expect(stored_files['entries.txt']).to include('hiking in March')
-    expect(stored_files['entries.txt']).not_to include('reading in 2025')
+    expect(stored_files['journal.md']).to include('hiking in March')
+    expect(stored_files['journal.md']).not_to include('reading in 2025')
 
     other = user.exports.create!
     described_class.perform_now(other.id, { 'search_term' => 'reading' })

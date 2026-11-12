@@ -87,7 +87,33 @@ RSpec.describe 'Exports', type: :request do
       expect(user.exports.last.status).to eq('preparing')
     end
 
-    it 'never downloads on the spot, whatever format an old link asks for' do
+    it 'streams the journal as Markdown right away, without creating an export' do
+      FactoryBot.create(:entry, user: user, body: '<p>one <b>entry</b></p>', date: Time.utc(2026, 3, 1, 12))
+      FactoryBot.create(:entry, user: user, body: '<p>an older one</p>', date: Time.utc(2021, 3, 1, 12))
+      FactoryBot.create(:entry, body: 'someone else')
+
+      expect { get export_entries_path(format: :md) }.not_to(change { Export.count })
+      expect(response).to have_http_status(:ok)
+      expect(response.media_type).to eq('text/markdown')
+      expect(response.headers['Content-Disposition']).to match(/attachment; filename="dabble-me-\d{4}-\d\d-\d\d\.md"/)
+      expect(response.body).to eq("# Dabble Me journal\n\n## 2021-03-01 (Monday)\n\nan older one\n\n## 2026-03-01 (Sunday)\n\none **entry**\n\n")
+    end
+
+    it 'streams only one year or one search as Markdown when asked' do
+      FactoryBot.create(:entry, user: user, body: '<p>coffee in 2026</p>', date: Time.utc(2026, 3, 1, 12))
+      FactoryBot.create(:entry, user: user, body: '<p>tea in 2021</p>', date: Time.utc(2021, 3, 1, 12))
+
+      get export_entries_path(year: '2021', format: :md)
+      expect(response.body).to include('tea in 2021')
+      expect(response.body).not_to include('coffee in 2026')
+      expect(response.headers['Content-Disposition']).to include('dabble-me-2021-')
+
+      get export_entries_path(search: { term: 'coffee' }, format: :md)
+      expect(response.body).to include('coffee in 2026')
+      expect(response.body).not_to include('tea in 2021')
+    end
+
+    it 'never sends entry text when a ZIP is asked for, whatever format an old link names' do
       FactoryBot.create(:entry, user: user, body: 'one entry')
 
       expect { get export_entries_path(format: :txt) }.to change { user.exports.count }.by(1)
@@ -99,19 +125,21 @@ RSpec.describe 'Exports', type: :request do
       expect { get export_entries_path(year: '2021'), headers: { 'HTTP_REFERER' => entries_url } }
         .to have_enqueued_job(ExportEntriesJob).with(kind_of(Integer), { year: '2021' })
       expect(response).to redirect_to(entries_url)
+      expect(user.exports.last.scope).to eq('year:2021')
 
-      user.exports.update_all(created_at: 13.hours.ago)
       expect { get export_entries_path(search: { term: 'coffee' }) }
         .to have_enqueued_job(ExportEntriesJob).with(kind_of(Integer), { search_term: 'coffee' })
+      expect(user.exports.last.scope).to match(/\Asearch:\h{64}\z/)
+      expect(user.exports.last.scope).not_to include('coffee')
     end
 
-    it 'does not queue a second export while one is being prepared' do
+    it 'does not queue a second export of the same thing while one is being prepared' do
       user.exports.create!
       expect { get export_entries_path }.not_to(change { Export.count })
       expect(flash[:notice]).to include('already being prepared')
     end
 
-    it 'downloads the last export when asked again within 12 hours' do
+    it 'downloads the last export when the same thing is asked for again within 12 hours' do
       last = user.exports.create!(status: 'ready', storage_key: 'exports/x.zip', expires_at: 6.days.from_now, created_at: 11.hours.ago)
 
       expect { get export_entries_path }.not_to(change { Export.count })
@@ -122,31 +150,37 @@ RSpec.describe 'Exports', type: :request do
       expect(last.reload.download_count).to eq(1)
     end
 
-    it 'downloads the last export of the same year, too' do
-      last = user.exports.create!(status: 'ready', scope: 'year:2021', storage_key: 'exports/x.zip', expires_at: 6.days.from_now)
+    it 'does the same for a year and for a search, matching the search whatever its case' do
+      year = user.exports.create!(status: 'ready', scope: Export.scope_for(year: '2021'), storage_key: 'exports/y.zip', expires_at: 6.days.from_now)
+      search = user.exports.create!(status: 'ready', scope: Export.scope_for(search_term: 'coffee'), storage_key: 'exports/s.zip', expires_at: 6.days.from_now)
 
       get export_entries_path(year: '2021')
-      expect(response).to redirect_to(download_export_path(last))
+      expect(response).to redirect_to(download_export_path(year))
+
+      get export_entries_path(search: { term: ' Coffee ' })
+      expect(response).to redirect_to(download_export_path(search))
     end
 
-    it 'does not hand over an export of something else, or of a search' do
-      user.exports.create!(status: 'ready', scope: 'search', storage_key: 'exports/x.zip', expires_at: 6.days.from_now, created_at: 11.hours.ago)
+    it 'starts a new export for something else inside those 12 hours' do
+      user.exports.create!(status: 'ready', storage_key: 'exports/x.zip', expires_at: 6.days.from_now)
+      user.exports.create!(status: 'ready', scope: Export.scope_for(search_term: 'coffee'), storage_key: 'exports/s.zip', expires_at: 6.days.from_now)
 
-      [export_entries_path, export_entries_path(search: { term: 'coffee' })].each do |path|
-        expect { get path }.not_to(change { Export.count })
-        expect(response).to redirect_to(edit_user_registration_path(anchor: 'export'))
-      end
-      expect(flash[:alert]).to include('once every 12 hours', 'under an hour', export_path(user.exports.last))
+      expect { get export_entries_path(year: '2021') }.to change { user.exports.count }.by(1)
+      expect { get export_entries_path(search: { term: 'tea' }) }.to change { user.exports.count }.by(1)
     end
 
-    it 'allows another once 12 hours have passed' do
-      user.exports.create!(status: 'ready', created_at: 13.hours.ago)
+    it 'starts a new export of the same thing once 12 hours have passed, or after a failure' do
+      user.exports.create!(status: 'ready', storage_key: 'exports/x.zip', expires_at: 6.days.from_now, created_at: 13.hours.ago)
+      user.exports.create!(status: 'failed', created_at: 2.hours.ago)
+
       expect { get export_entries_path }.to change { user.exports.count }.by(1)
     end
 
-    it 'does not count a failed export against the limit' do
-      user.exports.create!(status: 'failed', created_at: 1.hour.ago)
-      expect { get export_entries_path }.to change { user.exports.count }.by(1)
+    it 'stops at ten exports an hour, however varied' do
+      Export::HOURLY_LIMIT.times { |n| user.exports.create!(status: 'ready', scope: "year:#{2000 + n}") }
+
+      expect { get export_entries_path }.not_to(change { Export.count })
+      expect(flash[:alert]).to include('try again later')
     end
   end
 end

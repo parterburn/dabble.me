@@ -76,7 +76,7 @@
         </ul>
 
         <p style="margin-top: 15px; font-size: 14px;">
-          Rather not connect? <%= link_to "Export your #{@year} entries", export_entries_path(year: @year) %> and upload them to your AI app instead.
+          Rather not connect? <%= link_to "Export your #{@year} entries", export_entries_path(year: @year, format: :md) %> and upload them to your AI app instead.
         </p>
       </div>
     </div>

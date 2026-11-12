@@ -14,7 +14,7 @@
         as a ZIP file (<%= number_to_human_size(@export.byte_size) %>).
       </p>
       <p class="mt-3 text-sm text-muted">
-        Inside: <code>entries.txt</code> in plain text, <code>entries.json</code> with formatting<% if @export.image_count.positive? %>, and an <code>images</code> folder<% end %>.
+        Inside: <code>journal.html</code> to read in any browser, <code>journal.md</code> in Markdown<% if @export.image_count.positive? %>, and an <code>images</code> folder<% end %>.
         Available until <%= @export.expires_at.strftime("%B %-d, %Y") %>, then deleted.
       </p>
       <% if @export.skipped_image_count.positive? %>

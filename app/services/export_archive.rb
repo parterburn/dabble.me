@@ -1,8 +1,9 @@
 # frozen_string_literal: true
 
-# Writes a ZIP of entries to a file: entries.txt, entries.json and an images/
-# folder holding each entry's photo. Entries are read in batches and photos
-# one at a time, so a large journal never has to fit in memory.
+# Writes a ZIP of entries to a file: an images/ folder holding each entry's
+# photo, journal.md (ExportMarkdown) and journal.html (ExportHtml), which show
+# those photos. Entries are read in batches and photos one at a time, so a
+# large journal never has to fit in memory.
 class ExportArchive
   BATCH_SIZE = 200
 
@@ -16,17 +17,8 @@ class ExportArchive
     result = Result.new(entry_count: ids.size, image_count: 0, skipped_image_count: 0)
 
     Zip::OutputStream.open(path) do |zip|
-      zip.put_next_entry("entries.txt")
-      each_entry { |entry| zip.write(text_for(entry)) }
-
-      zip.put_next_entry("entries.json")
-      zip.write("[\n")
-      each_entry.with_index do |entry, index|
-        zip.write(",\n") unless index.zero?
-        zip.write(JSON.pretty_generate(json_for(entry)))
-      end
-      zip.write("\n]\n")
-
+      # Photos first, so the documents only point to ones that made it in.
+      written = {}
       each_entry do |entry|
         name = image_names[entry.id]
         next unless name
@@ -40,8 +32,18 @@ class ExportArchive
         # Photos are already compressed; storing them as they are is faster.
         zip.put_next_entry(name, nil, nil, Zip::Entry::STORED)
         zip.write(data)
+        written[entry.id] = name
         result.image_count += 1
       end
+
+      zip.put_next_entry("journal.md")
+      zip.write(ExportMarkdown.header)
+      each_entry { |entry| zip.write(ExportMarkdown.entry(entry, image: written[entry.id])) }
+
+      zip.put_next_entry("journal.html")
+      zip.write(ExportHtml.header(result.entry_count))
+      each_entry { |entry| zip.write(ExportHtml.entry(entry, image: written[entry.id])) }
+      zip.write(ExportHtml.footer)
     end
 
     result
@@ -63,8 +65,8 @@ class ExportArchive
     end
   end
 
-  # { entry id => "images/2026-01-02.jpg" }, worked out up front so the text
-  # and JSON files can name each photo before it is written.
+  # { entry id => "images/2026-01-02.jpg" }, worked out up front so two
+  # photos from one day get different names.
   def image_names
     @image_names ||= begin
       taken = Set.new
@@ -77,20 +79,6 @@ class ExportArchive
         [id, name]
       end
     end
-  end
-
-  def text_for(entry)
-    text = +"## #{entry.date.strftime('%Y-%m-%d')}\n"
-    body = entry.body.present? ? entry.text_body.to_s.strip : ""
-    text << "#{body}\n" if body.present?
-    text << "Photo: #{image_names[entry.id]}\n" if image_names[entry.id]
-    text << "\n"
-  end
-
-  def json_for(entry)
-    json = { date: entry.date.strftime("%Y-%m-%d"), body: entry.body.to_s.strip }
-    json[:image] = image_names[entry.id] if image_names[entry.id]
-    json
   end
 
   # The photo's bytes, or nil when it can't be read (a file missing from

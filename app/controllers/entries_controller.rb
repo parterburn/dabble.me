@@ -265,23 +265,29 @@ class EntriesController < ApplicationController
     redirect_to entries_path
   end
 
-  # Every export is a ZIP built in the background (ExportEntriesJob): the
-  # entries as text and JSON, plus their photos. Asking again inside the
-  # limit downloads the last export when it holds the same thing.
+  # .md streams the journal as Markdown right away. Anything else is a ZIP
+  # built in the background (ExportEntriesJob): the journal as a web page and
+  # as Markdown, plus photos. Asking for the same ZIP again inside
+  # Export::LIMIT_PERIOD downloads the last one.
   def export
     search_term = params[:search].present? ? search_params[:term].presence : nil
     year = params[:year].presence
     raise InvalidDateError if year && year !~ /\A(19|20)\d{2}\z/
 
+    if request.format.md?
+      stream_markdown_export(search_term, year)
+      return
+    end
+
     scope = Export.scope_for(year: year, search_term: search_term)
     back = edit_user_registration_path(anchor: "export")
-    recent = current_user.exports.within_limit.order(:created_at).last
+    recent = current_user.exports.within_limit.where(scope: scope).order(:created_at).last
     if recent&.preparing?
       redirect_back fallback_location: back, notice: "Your export is already being prepared. We'll email you a link when it's ready."
-    elsif recent&.reusable_for?(scope)
+    elsif recent&.downloadable?
       redirect_to download_export_path(recent)
-    elsif recent
-      redirect_back fallback_location: back, alert: export_limit_message(recent)
+    elsif current_user.exports.where(created_at: 1.hour.ago..).count >= Export::HOURLY_LIMIT
+      redirect_back fallback_location: back, alert: "You've requested a lot of exports in the last hour. Please try again later."
     else
       export = current_user.exports.create!(scope: scope)
       ExportEntriesJob.perform_later(export.id, { search_term: search_term, year: year }.compact)
@@ -537,12 +543,21 @@ class EntriesController < ApplicationController
     )
   end
 
-  def export_limit_message(recent)
-    hours = ((recent.created_at + Export::LIMIT_PERIOD - Time.current) / 1.hour).ceil
-    wait = hours > 1 ? "about #{hours} hours" : "under an hour"
-    message = "You can export once every #{Export::LIMIT_PERIOD.in_hours.to_i} hours. Try again in #{wait}."
-    return message unless recent.downloadable?
+  def stream_markdown_export(search_term, year)
+    entries = if search_term
+                Search.new(term: search_term, user: current_user).entries
+              elsif year
+                current_user.entries.where(date: Time.utc(year.to_i).all_year)
+              else
+                current_user.entries
+              end
+    name = ["dabble-me", year, ("search" if search_term), Time.current.strftime("%Y-%m-%d")].compact.join("-")
 
-    "#{message} Your last export is #{helpers.link_to('still available to download', export_path(recent), class: 'alert-link')}."
+    headers["Content-Type"] = "text/markdown; charset=utf-8"
+    headers["Content-Disposition"] = %(attachment; filename="#{name}.md")
+    headers["Cache-Control"] = "no-store"
+    # Rack::ETag would read the whole body to hash it; this stops it.
+    headers["Last-Modified"] = Time.current.httpdate
+    self.response_body = ExportMarkdown.stream(entries)
   end
 end
