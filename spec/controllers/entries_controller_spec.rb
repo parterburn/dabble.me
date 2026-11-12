@@ -581,6 +581,21 @@ RSpec.describe EntriesController, type: :controller do
       expect(page.at_css('.s-blurb__more')['open']).to be_nil
     end
 
+    it 'lays an entry out as the entries list does, with its songs under the text and no search box' do
+      sign_in paid_user
+      song = song_entry('<p>Short and sweet.</p>')
+
+      get :spotify
+      page = Nokogiri::HTML(response.body)
+      well = page.at_css("#entry-#{song.id}.entry--sticky-header")
+
+      expect(well.at_css('.s-entry-header h2').text.strip).to eq('March 1, 2026')
+      expect(well.at_css('.s-entry-header h3').text.strip).to eq('SUNDAY')
+      expect(well.at_css(".s-entry-header a[href='#{edit_entry_path(song)}']")).to be_present
+      expect(well.to_html.index('Short and sweet.')).to be < well.to_html.index('open.spotify.com/embed')
+      expect(page.at_css('input[placeholder="Search your entries..."]')).to be_nil
+    end
+
     it 'shows a short entry whole, with nothing to expand' do
       sign_in paid_user
       song_entry('<p>Short and sweet.</p>')
