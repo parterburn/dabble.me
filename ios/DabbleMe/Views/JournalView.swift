@@ -9,6 +9,7 @@ enum JournalMode: String, CaseIterable, Identifiable {
     case list = "Journal"
     case stats = "Stats"
     case photos = "Photos"
+    case playlist = "Playlist"
 
     var id: Self { self }
 
@@ -17,6 +18,7 @@ enum JournalMode: String, CaseIterable, Identifiable {
         case .list: "slab-list"
         case .stats: "slab-signal-bars"
         case .photos: "slab-images"
+        case .playlist: "slab-music"
         }
     }
 }
@@ -106,6 +108,7 @@ struct JournalView: View {
                 StatsView()
             }
         case .photos: PhotoGridView { path.append($0) }
+        case .playlist: PlaylistView { path.append($0) }
         }
     }
 

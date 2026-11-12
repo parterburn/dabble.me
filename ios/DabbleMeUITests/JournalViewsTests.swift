@@ -944,6 +944,31 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
 
+    /// Journal > Playlist: the entries with songs, each with a short preview and its songs; a
+    /// song plays in Spotify's player docked at the bottom, and tapping the row opens the entry.
+    func testPlaylistListsEntriesWithSongsAndPlaysOne() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        switchJournal(app, from: "Journal", to: "Playlist")
+        let song = app.buttons["The Weeknd – Blinding Lights"]
+        XCTAssertTrue(song.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["The Killers – Mr. Brightside"].exists)
+        XCTAssertTrue(app.buttons["Rick Astley – Never Gonna Give You Up"].exists)
+        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Biscuit has discovered")).firstMatch.exists,
+                       "Only entries with songs")
+        snap("playlist")
+        song.tap()
+        XCTAssertTrue(app.buttons["Close Player"].waitForExistence(timeout: 5))
+        XCTAssertEqual(song.value as? String, "Playing")
+        sleep(6) // Spotify's player loads
+        snap("playlist-playing")
+        app.buttons["Close Player"].tap()
+        XCTAssertTrue(app.buttons["Close Player"].waitForNonExistence(timeout: 5))
+        // The row itself opens the entry.
+        app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Slow Saturday")).firstMatch.tap()
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
+    }
+
     /// A long entry's last line stays in view above the bar, and above a row opened in it (the
     /// row used to sit over it). Checked by eye from the screenshots: the text is one element.
     func testOpenRowLeavesTheEndOfALongEntryInView() throws {

@@ -446,6 +446,11 @@ final class AppModel {
         try await api.get("api/v1/stats")
     }
 
+    /// Entries with a Spotify song, newest first (Journal > Playlist).
+    func songEntries(page: Int) async throws -> EntryPage {
+        try await api.get("api/v1/entries", query: ["songs": "1", "page": String(page), "per": "30"])
+    }
+
     func photoEntries(page: Int) async throws -> EntryPage {
         try await api.get("api/v1/entries", query: ["photos": "1", "page": String(page), "per": "48"])
     }

@@ -41,7 +41,7 @@ The simulator reaches `localhost` directly. On a phone, "localhost" is the phone
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/api/v1/me` | account, plan, `today` in the user's journal time zone |
-| GET | `/api/v1/entries?page=&per=&year=&month=&photos=1` | newest first, 20 per page by default (max 50); `photos=1` lists only entries with a photo (Journal > Photos) |
+| GET | `/api/v1/entries?page=&per=&year=&month=&photos=1&songs=1` | newest first, 20 per page by default (max 50); `photos=1` lists only entries with a photo (Journal > Photos), `songs=1` only those with a Spotify song (Journal > Playlist) |
 | GET | `/api/v1/entries/:id` | full entry: `body_text` (light Markdown), `document` (editable structure or null), songs, `web_url` |
 | GET | `/api/v1/entries/random` | |
 | GET | `/api/v1/entries/on_this_day` | PRO |
@@ -70,6 +70,8 @@ The simulator reaches `localhost` directly. On a phone, "localhost" is the phone
 **Icons** are the Slab set (Font Awesome Pro, as on dabble.me), as template vector assets in `Assets.xcassets/Slab` (`slab-…`), sized 24pt. `appIcon(_:)` / `Label(_:icon:)` take a `slab-…` name or fall back to an SF Symbol for anything the set doesn't cover. `slab-sparkles` (on-device Apple Intelligence everywhere: Reflect, prompts, hashtag suggestions) and `slab-bolt` (Actions) are our own, drawn to match; `slab-claude` marks the Claude/ChatGPT connector. A selected tab shows its `-full` icon.
 
 **Shake** the phone for a random memory: a preview sheet (Another / Open) over whatever you're reading. Not while typing, where shaking is iOS's Undo.
+
+**Playlist** (Journal > Playlist) lists the entries with a Spotify song: a short preview and the songs. A song plays in Spotify's own embedded player (`SpotifyPlayer`, its iFrame API in a web view) docked at the bottom: a preview, or the whole song for someone signed in to Spotify there. Nothing is requested from Spotify until a song is played.
 
 **Photos** are re-encoded on the device to a JPEG of at most 2400px, with all metadata removed (including GPS) before upload. The server then processes them the same way as MCP uploads (`ProcessEntryImageJob`).
 
