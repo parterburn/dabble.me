@@ -3,9 +3,13 @@
 require "fog/aws"
 
 # Private storage for export ZIPs. Photos in the main bucket are public by
-# design; exports must never be. They are stored with a private ACL under
-# their own prefix (or in their own bucket, AWS_EXPORTS_BUCKET) and reached
-# only through links that expire in minutes.
+# design; exports must never be. They go under their own prefix, ideally in
+# their own bucket (AWS_EXPORTS_BUCKET, with AWS_EXPORTS_REGION if it is in a
+# different region), and are reached only through links that expire in
+# minutes.
+#
+# Uploads set no ACL: an S3 object is private unless something makes it
+# public, and a bucket with ACLs disabled rejects uploads that name one.
 class ExportStore
   PREFIX = "exports"
   # Above this size, uploads are sent in parts.
@@ -18,7 +22,7 @@ class ExportStore
 
   def upload(key, path)
     File.open(path, "rb") do |file|
-      directory.files.create(key: key, body: file, public: false, content_type: "application/zip",
+      directory.files.create(key: key, body: file, content_type: "application/zip",
                              multipart_chunk_size: MULTIPART_CHUNK)
     end
     key
@@ -55,6 +59,10 @@ class ExportStore
   end
 
   def storage
-    @storage ||= Fog::Storage.new(CarrierWave::Uploader::Base.fog_credentials)
+    @storage ||= begin
+      region = ENV["AWS_EXPORTS_REGION"].presence
+      credentials = CarrierWave::Uploader::Base.fog_credentials
+      Fog::Storage.new(region ? credentials.merge(region: region) : credentials)
+    end
   end
 end
