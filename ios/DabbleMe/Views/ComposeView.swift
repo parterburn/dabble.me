@@ -756,7 +756,7 @@ struct ComposeView: View {
 
     private var simplifiedBanner: some View {
         Label("Some previous formatting may be lost if you edit.", icon: "slab-triangle-exclamation")
-            .font(.footnote)
+            .font(.subheadline)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal)
