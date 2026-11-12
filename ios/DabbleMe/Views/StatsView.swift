@@ -64,12 +64,12 @@ struct StatsView: View {
     private func tiles(_ stats: JournalStats) -> some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
             StatTile(value: stats.totalEntries.formatted(), label: stats.totalEntries == 1 ? "Entry" : "Entries", icon: "slab-book")
-            StatTile(value: stats.totalWords.formatted(.number.notation(.compactName)), label: "Words", icon: "slab-language")
+            StatTile(value: stats.photoEntries.formatted(), label: "Photos", icon: "slab-images")
             // The longest streak, with the year it was in ("Streak • 2024"). The year's own entries
             // are beside the year below.
             StatTile(value: days(stats.longestStreak), label: stats.longestStreakYear.map { "Streak • \(String($0))" } ?? "Longest Streak",
                      icon: "slab-fire")
-            StatTile(value: stats.photoEntries.formatted(), label: "Days with Photos", icon: "slab-images")
+            StatTile(value: stats.totalWords.formatted(.number.notation(.compactName)), label: "Words", icon: "slab-language")
         }
     }
 
