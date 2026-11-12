@@ -516,6 +516,8 @@ RSpec.describe EntriesController, type: :controller do
       expect(response.status).to eq 200
       expect(links.map { |link| link['href'] }).to eq([entry_path(newer), entry_path(older)])
       expect(links.map { |link| link['target'] }.compact).to be_empty
+      expect(links.map { |link| link['rel'] }).to all(eq('tooltip'))
+      expect(links.first['title']).to match(/\AMarch 2, 2026 • (.+ ago|in .+|Today|Yesterday)\z/)
       expect(links.first.at_css('img')['src']).to include('/cdn-cgi/image/width=480,height=480,fit=cover,quality=80/https://')
       expect(response.body).not_to have_content('A day with a photo')
     end
