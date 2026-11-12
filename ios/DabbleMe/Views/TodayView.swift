@@ -38,9 +38,16 @@ struct TodayView: View {
                     }
                     .plainRow()
                     // Today's date titles the day's section. No year: it's always today.
-                    SectionTitle(today.day?.formatted(.dateTime.weekday(.wide).month(.wide).day()) ?? today.date,
-                                 icon: "slab-calendar")
-                        .accessibilityLabel(today.day?.long ?? today.date)
+                    // Once today's written, a pencil at the far right edits it (PRO).
+                    HStack(spacing: 8) {
+                        SectionTitle(today.day?.formatted(.dateTime.weekday(.wide).month(.wide).day()) ?? today.date,
+                                     icon: "slab-calendar")
+                            .accessibilityLabel(today.day?.long ?? today.date)
+                        Spacer(minLength: 8)
+                        if let entry = today.entry, model.me?.canEdit == true {
+                            editTodayButton(entry)
+                        }
+                    }
                         .plainRow()
                         // Close above the prompt card (which has its own space); a little more
                         // above today's entry, whose card starts at the row's edge.
@@ -228,19 +235,41 @@ struct TodayView: View {
 
     // MARK: - On This Day
 
-    /// "1,204 entries": every entry in the journal. Tapping it opens Stats.
+    /// The olive pencil beside today's date: straight into editing today's entry (or to its edit
+    /// page on dabble.me, for one the app can't edit).
+    private func editTodayButton(_ entry: EntryDetail) -> some View {
+        Button {
+            Task { await actions.edit(entry.id, model: model) }
+        } label: {
+            appIcon("slab-edit")
+                .foregroundStyle(.tint)
+                .frame(width: 44, height: 32, alignment: .trailing)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.borderless)
+        .accessibilityLabel("Edit Today's Entry")
+    }
+
+    /// "1,204 entries ›": every entry in the journal. Tapping it opens Stats.
     private func entryCountButton(_ count: Int) -> some View {
         Button {
             model.selectedTab = .journal
             model.statsRequest += 1
         } label: {
-            Text("\(count.formatted()) \(count == 1 ? "entry" : "entries")")
-                .monospacedDigit()
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.tint)
-                .lineLimit(1)
-                .padding(.vertical, 4)
-                .contentShape(.rect)
+            // The chevron says it goes somewhere.
+            HStack(spacing: 4) {
+                Text("\(count.formatted()) \(count == 1 ? "entry" : "entries")")
+                    .monospacedDigit()
+                appIcon("slab-angle-right")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 11, height: 11)
+            }
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.tint)
+            .lineLimit(1)
+            .padding(.vertical, 4)
+            .contentShape(.rect)
         }
         .buttonStyle(.borderless)
         .accessibilityLabel(count == 1 ? "1 entry" : "\(count) entries")

@@ -10,10 +10,12 @@ module Api
       before_action :require_pro_for_photos!, only: :create
       before_action :set_entry, only: %i[show update destroy]
 
-      # GET /api/v1/entries?page=&per=&year=&month=&photos=1 (photos: only entries with a photo)
+      # GET /api/v1/entries?page=&per=&year=&month=&photos=1&songs=1 (photos: only entries with
+      # a photo; songs: only entries with a Spotify song, for the app's Playlist)
       def index
         entries = current_user.entries
         entries = entries.where("image IS NOT NULL AND image != ''") if params[:photos] == '1'
+        entries = entries.where("songs::text NOT IN ('[]', '{}')") if params[:songs] == '1'
         if params[:year].present?
           year = params[:year].to_s
           month = params[:month].to_s

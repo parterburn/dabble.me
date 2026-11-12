@@ -112,6 +112,12 @@ namespace :ios do
       { "spotify_id" => "0VjIjW4GlUZAMYd2vXMi3b", "title" => "Blinding Lights", "artists" => ["The Weeknd"] }
     ])
 
+    # And two on the jam-making evening, for the Playlist.
+    user.entries.where(date: (today - 15).all_day).first&.update_column(:songs, [
+      { "spotify_id" => "003vvx7Niy0yvhvHt4a68B", "title" => "Mr. Brightside", "artists" => ["The Killers"] },
+      { "spotify_id" => "4cOdK2wGLETKBW3PvgPWqT", "title" => "Never Gonna Give You Up", "artists" => ["Rick Astley"] }
+    ])
+
     # A dated hashtag (like a pet's or kid's birthday): the app shows how old Biscuit was on each entry.
     user.original_hashtags.destroy_all
     user.original_hashtags.create!(tag: "Biscuit", date: today - 3.years - 5.months)

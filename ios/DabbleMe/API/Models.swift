@@ -119,6 +119,12 @@ struct Song: Decodable, Sendable, Hashable {
     let artists: [String]
     let spotifyUrl: URL
 
+    /// The track's Spotify id (the last part of its link), for playing it in the app.
+    var trackID: String? {
+        let id = spotifyUrl.lastPathComponent
+        return !id.isEmpty && id.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber) } ? id : nil
+    }
+
     var label: String {
         [artists.joined(separator: ", "), title].compactMap { $0?.isEmpty == false ? $0 : nil }.joined(separator: " – ")
     }
@@ -323,6 +329,8 @@ struct JournalStats: Decodable, Sendable, Equatable {
     let firstEntryDate: String?
     let currentStreak: Int
     let longestStreak: Int
+    /// The year the longest streak ended in (nil from an older server, or with no entries).
+    var longestStreakYear: Int? = nil
     let entriesThisYear: Int
     /// YYYY-MM-DD days with an entry in the past year, oldest first.
     let writingDays: [String]

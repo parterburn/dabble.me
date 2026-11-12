@@ -33,6 +33,8 @@ final class AppModel {
     var showsDayPicker = false
     var pickedDay: JournalDay?
     var reopensDayPicker = false
+    /// The day last looked at from the calendar: it opens on that month again.
+    var dayPickerOpensOn: JournalDay?
     let lock = AppLock()
 
     func search(hashtag: String) {
@@ -444,6 +446,11 @@ final class AppModel {
 
     func stats() async throws -> JournalStats {
         try await api.get("api/v1/stats")
+    }
+
+    /// Entries with a Spotify song, newest first (Journal > Playlist).
+    func songEntries(page: Int) async throws -> EntryPage {
+        try await api.get("api/v1/entries", query: ["songs": "1", "page": String(page), "per": "30"])
     }
 
     func photoEntries(page: Int) async throws -> EntryPage {

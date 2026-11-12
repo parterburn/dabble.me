@@ -1,7 +1,7 @@
 import Charts
 import SwiftUI
 
-/// Journal > Stats: totals, streaks, a year of writing days (this year or an earlier one), recent months and the past
+/// Journal > Stats: totals, the longest streak, a year of writing days (this year or an earlier one), recent months and the past
 /// year's hashtags. Counts only; it never shows entry text.
 struct StatsView: View {
     @Environment(AppModel.self) private var model
@@ -64,11 +64,12 @@ struct StatsView: View {
     private func tiles(_ stats: JournalStats) -> some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
             StatTile(value: stats.totalEntries.formatted(), label: stats.totalEntries == 1 ? "Entry" : "Entries", icon: "slab-book")
+            StatTile(value: stats.photoEntries.formatted(), label: "Photos", icon: "slab-images")
+            // The longest streak, with the year it was in ("Streak • 2024"). The year's own entries
+            // are beside the year below.
+            StatTile(value: days(stats.longestStreak), label: stats.longestStreakYear.map { "Streak • \(String($0))" } ?? "Longest Streak",
+                     icon: "slab-fire")
             StatTile(value: stats.totalWords.formatted(.number.notation(.compactName)), label: "Words", icon: "slab-language")
-            StatTile(value: days(stats.currentStreak), label: "Current Streak", icon: "slab-fire")
-            StatTile(value: days(stats.longestStreak), label: "Longest Streak", icon: "slab-trophy")
-            StatTile(value: stats.entriesThisYear.formatted(), label: "Entries This Year", icon: "slab-calendar")
-            StatTile(value: stats.photoEntries.formatted(), label: "Days with Photos", icon: "slab-images")
         }
     }
 
@@ -163,9 +164,9 @@ private struct StatsOverview: View {
 }
 
 /// A year of writing days. Its title is the year ("2026"), with a small chevron when there are
-/// earlier years to choose from a menu. On the right, for this year, how much of it has gone by
-/// ("86% complete": the days still to come are the paler squares); for a finished one, how much
-/// of it has an entry ("41% written"). A tap swaps either for the year's number of entries.
+/// earlier years to choose from a menu. On the right, the year's entries and the share of its
+/// days with one ("37 entries • 11% of days"); for this year that's of the days so far, and the
+/// days still to come are the paler squares.
 private struct YearCard: View {
     let stats: JournalStats
     let today: JournalDay
@@ -175,7 +176,6 @@ private struct YearCard: View {
     /// Earlier years' days, loaded as they're picked.
     @State private var loaded: [Int: Set<String>] = [:]
     @State private var failed: Int?
-    @AppStorage("stats.yearShowsEntries") private var showsEntries = false
 
     private var thisYear: Int { Int(today.year) ?? 0 }
     private var year: Int { picked ?? thisYear }
@@ -239,40 +239,30 @@ private struct YearCard: View {
         }
     }
 
+    /// "37 entries • 11% of days": the year's entries, and the share of its days with one (for
+    /// this year, of the days so far, today included).
     @ViewBuilder
     private var summary: some View {
         if let days {
             let entries = year == thisYear ? max(stats.entriesThisYear, days.count) : days.count
-            Button {
-                showsEntries.toggle()
-            } label: {
-                Text(showsEntries ? (entries == 1 ? "1 entry" : "\(entries.formatted()) entries") : percentText(written: days.count))
-                    .font(.subheadline)
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-                    .contentTransition(.opacity)
-                    .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .animation(.easeOut(duration: 0.15), value: showsEntries)
-            .accessibilityIdentifier("StatsYearSummary")
-            .accessibilityHint(showsEntries ? "Shows how much of the year is written" : "Shows the year's number of entries")
+            Text("\(entries == 1 ? "1 entry" : "\(entries.formatted()) entries") • \(Self.percent(days.count, of: dayCount))% of days")
+                .font(.subheadline)
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .accessibilityIdentifier("StatsYearSummary")
         } else if failed != year {
             ProgressView().controlSize(.small)
         }
     }
 
-    /// "86% complete" for this year: how much of it has gone by, today included. "41% written"
-    /// for a finished year: the share of its days with an entry.
-    private func percentText(written: Int) -> String {
+    /// The year's days: all of them for a finished year, those up to today for this one.
+    private var dayCount: Int {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = .gmt
-        let length = calendar.range(of: .day, in: .year, for: JournalDay("\(year)-06-01")?.date ?? today.date)?.count ?? 365
-        if year == thisYear {
-            let elapsed = calendar.ordinality(of: .day, in: .year, for: today.date) ?? 1
-            return "\(Self.percent(elapsed, of: length))% complete"
-        }
-        return "\(Self.percent(written, of: length))% written"
+        if year == thisYear { return calendar.ordinality(of: .day, in: .year, for: today.date) ?? 1 }
+        return calendar.range(of: .day, in: .year, for: JournalDay("\(year)-06-01")?.date ?? today.date)?.count ?? 365
     }
 
     /// 100 only for the whole of it; never 0 once there's any.
@@ -599,40 +589,33 @@ struct DayEntriesSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var entries: [EntryDetail]?
     @State private var error: String?
+    /// The day of the entry stepped to with the arrows beside Open (nil: the day it opened on).
+    @State private var steppedTo: JournalDay?
+    @State private var isStepping = false
     @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 17
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
     @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text(day.formatted(.dateTime.weekday(.wide).month(.wide).day().year()))
-                    .font(.headline)
-                    .foregroundStyle(.tint) // olive, like Random Memory's date
-                Spacer()
-                // Another day: closes this and opens the calendar.
-                Button {
+            // The calendar picks another day: this closes and it opens, on this day's month.
+            SheetHeader(title: "Jump to a Day") {
+                SheetIconButton(icon: "slab-calendar", label: "Jump to a Day") {
+                    model.dayPickerOpensOn = steppedTo ?? day
                     model.reopensDayPicker = true
                     dismiss()
-                } label: {
-                    appIcon("slab-calendar")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 18, height: 18)
-                        .foregroundStyle(.primary)
-                        .frame(width: 44, height: 44)
-                        .background(Color.primary.opacity(0.08), in: .circle)
-                        .contentShape(.circle)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Jump to a Day")
-                SheetCloseButton()
+                .accessibilityIdentifier("DayDrawerCalendar")
             }
             if let entries {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 28) {
                         ForEach(entries) { entry in
                             VStack(alignment: .leading, spacing: 12) {
+                                // "Sunday, Nov 9, 2025 · 1 year ago", as A Random Memory dates its entry.
+                                Text(model.dateLine(for: entry.day, fallback: entry.date))
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.tint)
                                 if let document = entry.document {
                                     DocumentText(blocks: RichText.droppingTrailingHashtags((entry.datedHashtags ?? []).map(\.tag), from: document), font: .system(size: bodySize * textSize.scale, design: fontStyle.design),
                                                  scale: textSize.scale, bodySize: bodySize)
@@ -651,33 +634,55 @@ struct DayEntriesSheet: View {
                                 if entry.imageProcessing || entry.imageURL != nil {
                                     EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing, day: entry.day)
                                 }
-                                Button {
-                                    // The Journal opens it (this sheet also comes up over Search).
-                                    model.selectedTab = .journal
-                                    model.openEntryRequest = entry.id
-                                    dismiss()
-                                } label: {
-                                    Label("Open", icon: "slab-expand").frame(maxWidth: .infinity, minHeight: 30)
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .controlSize(.large)
                             }
                         }
                     }
                     .padding(.bottom, 8)
                 }
                 .environment(\.openURL, OpenURLAction { _ in .discarded })
+                // Always in view under the entry, as in A Random Memory: Open, between the
+                // entries before and after this one.
+                EntryStepBar(entry: entries.first, isLoading: isStepping) { id in
+                    Task { await step(to: id) }
+                } open: {
+                    // The Journal opens it (this sheet also comes up over Search).
+                    guard let entry = entries.first else { return }
+                    model.selectedTab = .journal
+                    model.openEntryRequest = entry.id
+                    dismiss()
+                }
             } else if let error {
                 ContentUnavailableView("Couldn't load this day", systemImage: "exclamationmark.triangle", description: Text(error))
             } else {
                 ProgressView().frame(maxWidth: .infinity, minHeight: 200)
             }
         }
-        .padding(20)
+        .padding([.horizontal, .top], 20)
+        // The Open bar sits at the sheet's foot, as far from its bottom edge as from its sides
+        // (the home indicator's safe area on top of the padding left a gap under it).
+        .padding(.bottom, 22)
         .frame(maxHeight: .infinity, alignment: .top)
+        .ignoresSafeArea(.container, edges: .bottom)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .task { await load() }
+    }
+
+    /// The entry before or after: it takes the sheet, under its own date.
+    private func step(to id: Int) async {
+        guard !isStepping else { return }
+        isStepping = true
+        defer { isStepping = false }
+        do {
+            let entry = try await model.entry(id: id)
+            withAnimation(.snappy) {
+                entries = [entry]
+                steppedTo = entry.day
+            }
+        } catch is CancellationError {
+        } catch {
+            self.error = error.localizedDescription
+        }
     }
 
     /// The day's entries, each in full.

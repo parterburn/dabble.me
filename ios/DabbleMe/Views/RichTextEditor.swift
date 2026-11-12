@@ -487,8 +487,15 @@ final class EditorBar: UIView {
     let toolbar = UIToolbar()
     private let rowHost = UIHostingController<AnyView>(rootView: AnyView(EmptyView()))
     /// Behind the whole bar while a row is open, so the row reads on its own and not over the
-    /// entry's text. A material, not a fill: it sits right on a light sheet or a dark one.
-    private let backdrop = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
+    /// entry's text: the editor's own background. That's the sheet's, which in Dark Mode is the
+    /// raised grey, not the black the plain system background is out here in the keyboard's window.
+    private let backdrop: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor { traits in
+            UIColor.systemBackground.resolvedColor(with: traits.modifyingTraits { $0.userInterfaceLevel = .elevated })
+        }
+        return view
+    }()
     private var rowHeight: CGFloat = 0
     private var hasRow = false
     /// Called when the bar is laid out or joins or leaves the screen (see `keepTextClear`).
@@ -498,8 +505,7 @@ final class EditorBar: UIView {
         super.init(frame: CGRect(x: 0, y: 0, width: 320, height: Self.toolbarHeight))
         autoresizingMask = .flexibleHeight
         rowHost.safeAreaRegions = []
-        // Clear over the backdrop (an opaque fill was a black band in Dark Mode, where a sheet is a
-        // lighter grey than the system background).
+        // Clear over the backdrop.
         rowHost.view.backgroundColor = .clear
         rowHost.view.isHidden = true
         backdrop.isHidden = true

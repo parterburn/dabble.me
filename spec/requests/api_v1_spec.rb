@@ -441,6 +441,15 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       expect(json["entries"].map { |e| e["id"] }).to eq([with_photo.id])
     end
 
+    it "lists only entries with songs when asked" do
+      with_song = create(:entry, user: pro_user, date: Time.zone.local(2025, 2, 2), body: "<p>Drive home</p>")
+      create(:entry, user: pro_user, date: Time.zone.local(2025, 2, 3), body: "<p>Quiet</p>")
+      with_song.update_column(:songs, [{ "spotify_id" => "abc123", "title" => "Song", "artists" => ["Band"] }])
+      get "/api/v1/entries", params: { songs: 1 }, headers: auth(pro_user)
+      expect(json["entries"].map { |e| e["id"] }).to eq([with_song.id])
+      expect(json["entries"].first["songs"]).to eq([{ "title" => "Song", "artists" => ["Band"], "spotify_url" => "https://open.spotify.com/track/abc123" }])
+    end
+
     def photo_key(user, name = SecureRandom.hex(4))
       "#{Mcp::PresignedImageUpload.key_prefix_for(user)}#{name}.jpg"
     end
@@ -647,7 +656,7 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(json).to include(
-        "total_entries" => 5, "total_words" => 11, "current_streak" => 3, "longest_streak" => 3,
+        "total_entries" => 5, "total_words" => 11, "current_streak" => 3, "longest_streak" => 3, "longest_streak_year" => 2026,
         "entries_this_year" => 5, "first_entry_date" => "2026-01-01", "photo_entries" => 0
       )
       expect(json["writing_days"]).to eq(%w[2026-01-01 2026-01-02 2026-06-18 2026-06-19 2026-06-20])

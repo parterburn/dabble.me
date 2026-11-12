@@ -3,6 +3,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
+    @AppStorage(ShakeSetting.storageKey) private var shakeForRandomEntry = true
     @Environment(\.openURL) private var openURL
     @State private var confirmingSignOut = false
     @State private var confirmingDeletion = false
@@ -105,6 +106,10 @@ struct SettingsView: View {
                         } label: {
                             Label("Theme", icon: "slab-universal-access")
                         }
+                    }
+                    // Shaking the phone brings up a random entry; off for anyone it surprises.
+                    Toggle(isOn: $shakeForRandomEntry) {
+                        Label("Shake for Random Entry", icon: "slab-dice")
                     }
                 }
 

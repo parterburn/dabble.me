@@ -5,11 +5,18 @@ extension Notification.Name {
     static let deviceDidShake = Notification.Name("DabbleMeDeviceDidShake")
 }
 
+/// Settings → Shake for Random Entry: on unless it's been switched off.
+enum ShakeSetting {
+    static let storageKey = "shake.randomEntry"
+    static var isOn: Bool { UserDefaults.standard.object(forKey: storageKey) as? Bool ?? true }
+}
+
 extension UIWindow {
-    /// Shake the phone for a random memory. Not while typing: there, shaking is iOS's Undo.
+    /// Shake the phone for a random memory (unless that's switched off in Settings). Not while
+    /// typing: there, shaking is iOS's Undo.
     open override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {
         super.motionEnded(motion, with: event)
-        guard motion == .motionShake, !Self.isTyping(in: self) else { return }
+        guard motion == .motionShake, ShakeSetting.isOn, !Self.isTyping(in: self) else { return }
         NotificationCenter.default.post(name: .deviceDidShake, object: nil)
     }
 
@@ -28,7 +35,8 @@ extension UIWindow {
 }
 
 /// A random entry as a preview, over whatever you were reading: an accidental shake never
-/// replaces it. Open goes to the entry in Journal; Another (or another shake) picks again.
+/// replaces it. Open goes to the entry in Journal, the arrows beside it to the entry before or
+/// after, and the dice at the top left (or another shake) picks again.
 struct RandomEntrySheet: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
@@ -41,11 +49,11 @@ struct RandomEntrySheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Label("A Random Memory", icon: "slab-dice")
-                    .font(.headline)
-                Spacer()
-                SheetCloseButton()
+            // The dice rolls again (as another shake does).
+            SheetHeader(title: "A Random Memory") {
+                SheetIconButton(icon: "slab-dice", label: "Another") { Task { await load() } }
+                    .disabled(isLoading)
+                    .accessibilityHint("Shows another random memory")
             }
             if let entry {
                 preview(entry)
@@ -60,31 +68,22 @@ struct RandomEntrySheet: View {
             } else {
                 ProgressView().frame(maxWidth: .infinity, minHeight: 200)
             }
-            // Medium weight, like the app's other main buttons.
-            HStack(spacing: 12) {
-                Button {
-                    Task { await load() }
-                } label: {
-                    Label("Another", icon: "slab-arrows-rotate").frame(maxWidth: .infinity, minHeight: 30)
-                }
-                .buttonStyle(.bordered)
-                .disabled(isLoading)
-                Button {
-                    guard let entry else { return }
-                    model.selectedTab = .journal
-                    model.openEntryRequest = entry.id
-                    dismiss()
-                } label: {
-                    Label("Open", icon: "slab-expand").frame(maxWidth: .infinity, minHeight: 30)
-                }
-                .buttonStyle(.borderedProminent)
-                .disabled(entry == nil)
+            // Open, between the entries before and after this one.
+            EntryStepBar(entry: entry, isLoading: isLoading) { id in
+                Task { await load(id) }
+            } open: {
+                guard let entry else { return }
+                model.selectedTab = .journal
+                model.openEntryRequest = entry.id
+                dismiss()
             }
-            .fontWeight(.medium)
-            .controlSize(.large)
         }
-        .padding(20)
+        .padding([.horizontal, .top], 20)
+        // The Open bar sits at the sheet's foot, as far from its bottom edge as from its sides
+        // (the home indicator's safe area on top of the padding left a gap under it).
+        .padding(.bottom, 22)
         .frame(maxHeight: .infinity, alignment: .top)
+        .ignoresSafeArea(.container, edges: .bottom)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .task { await load() }
@@ -129,17 +128,60 @@ struct RandomEntrySheet: View {
         .environment(\.openURL, OpenURLAction { _ in .discarded })
     }
 
-    private func load() async {
+    /// A random entry, or (stepping to the one before or after) the entry with `id`.
+    private func load(_ id: Int? = nil) async {
         guard !isLoading else { return }
         isLoading = true
         defer { isLoading = false }
         do {
-            let next = try await model.randomEntry()
+            let next = if let id { try await model.entry(id: id) } else { try await model.randomEntry() }
             withAnimation(.snappy) { entry = next }
             error = nil
         } catch is CancellationError {
         } catch {
             if entry == nil { self.error = error.localizedDescription }
         }
+    }
+}
+
+/// The bottom of an entry's sheet: Open, with an arrow each side for the entry before it and the
+/// one after (greyed out at either end of the journal).
+struct EntryStepBar: View {
+    let entry: EntryDetail?
+    var isLoading = false
+    /// Shows the entry with this id in the sheet.
+    let step: (Int) -> Void
+    let open: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            arrow("slab-angle-left", "Previous Entry", to: entry?.previousEntry)
+            Button(action: open) {
+                Label("Open", icon: "slab-expand").frame(maxWidth: .infinity, minHeight: 26)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(entry == nil)
+            arrow("slab-angle-right", "Next Entry", to: entry?.nextEntry)
+        }
+        // Medium weight, like the app's other main buttons, a size down from them.
+        .fontWeight(.medium)
+        .controlSize(.regular)
+        .buttonBorderShape(.capsule)
+    }
+
+    private func arrow(_ icon: String, _ label: String, to neighbour: EntryNeighbour?) -> some View {
+        Button {
+            if let neighbour { step(neighbour.id) }
+        } label: {
+            appIcon(icon)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 14, height: 14)
+                .frame(width: 24, height: 26)
+        }
+        .buttonStyle(.bordered)
+        .disabled(neighbour == nil || isLoading)
+        .accessibilityLabel(label)
+        .accessibilityValue(neighbour?.day?.long ?? "")
     }
 }

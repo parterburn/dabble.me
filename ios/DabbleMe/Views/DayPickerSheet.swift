@@ -3,7 +3,7 @@ import UIKit
 
 /// Jump to a Day (from the Journal's timeline scrubber, Search, or a day's sheet): a calendar of
 /// the days you wrote (a dot under each, and only those can be picked); the day picked comes up
-/// in the day sheet. UIKit's calendar, since SwiftUI's
+/// in the day sheet. Opened again, it's on the month of the day last looked at. UIKit's calendar, since SwiftUI's
 /// DatePicker can't limit which days are selectable.
 struct DayPickerSheet: View {
     let onPick: (JournalDay) -> Void
@@ -14,15 +14,9 @@ struct DayPickerSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Label("Jump to a Day", icon: "slab-calendar")
-                    .font(.headline)
-                    .accessibilityAddTraits(.isHeader)
-                Spacer()
-                SheetCloseButton()
-            }
+            SheetHeader(title: "Jump to a Day")
             if let days {
-                EntryCalendar(days: days) { day in
+                EntryCalendar(days: days, opensOn: model.dayPickerOpensOn) { day in
                     dismiss()
                     onPick(day)
                 }
@@ -49,6 +43,8 @@ struct DayPickerSheet: View {
 
 private struct EntryCalendar: UIViewRepresentable {
     let days: Set<String>
+    /// The day last looked at: the calendar opens on its month (else on the latest entry's).
+    var opensOn: JournalDay? = nil
     let onPick: (JournalDay) -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(days: days, onPick: onPick) }
@@ -68,8 +64,8 @@ private struct EntryCalendar: UIViewRepresentable {
             let latest = sorted.last.flatMap(JournalDay.init)?.components.flatMap { calendar.date(from: $0) } ?? start
             view.availableDateRange = DateInterval(start: start, end: max(start, latest, .now))
         }
-        // Open on the month of the latest entry.
-        if let latest = sorted.last.flatMap(JournalDay.init)?.components {
+        // Open on the month last looked at, or else the latest entry's.
+        if let latest = (opensOn ?? sorted.last.flatMap(JournalDay.init))?.components {
             view.visibleDateComponents = DateComponents(calendar: calendar, year: latest.year, month: latest.month)
         }
         view.setContentHuggingPriority(.defaultHigh, for: .vertical)

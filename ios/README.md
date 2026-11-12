@@ -41,7 +41,7 @@ The simulator reaches `localhost` directly. On a phone, "localhost" is the phone
 | Method | Path | Notes |
 |---|---|---|
 | GET | `/api/v1/me` | account, plan, `today` in the user's journal time zone |
-| GET | `/api/v1/entries?page=&per=&year=&month=&photos=1` | newest first, 20 per page by default (max 50); `photos=1` lists only entries with a photo (Journal > Photos) |
+| GET | `/api/v1/entries?page=&per=&year=&month=&photos=1&songs=1` | newest first, 20 per page by default (max 50); `photos=1` lists only entries with a photo (Journal > Photos), `songs=1` only those with a Spotify song (Journal > Playlist) |
 | GET | `/api/v1/entries/:id` | full entry: `body_text` (light Markdown), `document` (editable structure or null), songs, `web_url` |
 | GET | `/api/v1/entries/random` | |
 | GET | `/api/v1/entries/on_this_day` | PRO |
@@ -52,7 +52,7 @@ The simulator reaches `localhost` directly. On a phone, "localhost" is the phone
 | GET | `/api/v1/today` | Today tab: entry, On This Day (PRO), daily prompt, `entries_this_year` and `current_streak` (both for older builds: Today now shows the journal's total, from `/me`) |
 | GET | `/api/v1/entries/months` | month index for the timeline and scrubber |
 | GET | `/api/v1/entries/memory_days?days=30` | PRO. Upcoming days with memories (counts only) for On This Day reminders |
-| GET | `/api/v1/stats` | Journal > Stats: totals, streaks, writing days in the past year, 12 months, top hashtags (`Api::JournalStats`) |
+| GET | `/api/v1/stats` | Journal > Stats: totals, streaks (`longest_streak_year` is the year the longest one ended in), writing days in the past year, 12 months, top hashtags (`Api::JournalStats`) |
 | GET | `/api/v1/stats/days?year=2024` | PRO. The days with an entry in one calendar year, for Stats' earlier years |
 | GET/PATCH | `/api/v1/email_schedule` | The daily email: `{days, hour, timezone}` (Rails zone names; `time_zones` lists them with IANA ids) and its past entry: `include_past_entries`, `past_filter` (comma-separated words that leave entries out; `filtered_count` says how many) and `include_old_entries` (`has_old_entries` says whether any are over a year old). Days beyond Sunday, the filter and old entries are PRO, like the web |
 | GET | `/api/v1/hashtags?days=365` | PRO. Hashtag counts for the Search tag cloud (`Api::HashtagCounts`) |
@@ -70,6 +70,8 @@ The simulator reaches `localhost` directly. On a phone, "localhost" is the phone
 **Icons** are the Slab set (Font Awesome Pro, as on dabble.me), as template vector assets in `Assets.xcassets/Slab` (`slab-…`), sized 24pt. `appIcon(_:)` / `Label(_:icon:)` take a `slab-…` name or fall back to an SF Symbol for anything the set doesn't cover. `slab-sparkles` (on-device Apple Intelligence everywhere: Reflect, prompts, hashtag suggestions) and `slab-bolt` (Actions) are our own, drawn to match; `slab-claude` marks the Claude/ChatGPT connector. A selected tab shows its `-full` icon.
 
 **Shake** the phone for a random memory: a preview sheet (Another / Open) over whatever you're reading. Not while typing, where shaking is iOS's Undo.
+
+**Playlist** (Journal > Playlist) lists the entries with a Spotify song: a short preview and the songs. A song plays in Spotify's own embedded player (`SpotifyPlayer`, its iFrame API in a web view) docked at the bottom: a preview, or the whole song for someone signed in to Spotify there. Nothing is requested from Spotify until a song is played.
 
 **Photos** are re-encoded on the device to a JPEG of at most 2400px, with all metadata removed (including GPS) before upload. The server then processes them the same way as MCP uploads (`ProcessEntryImageJob`).
 

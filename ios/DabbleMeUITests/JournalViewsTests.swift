@@ -48,7 +48,7 @@ final class JournalViewsTests: XCTestCase {
         journal.tap()
 
         switchJournal(app, from: "Journal", to: "Stats")
-        XCTAssertTrue(app.staticTexts["Current Streak"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Words"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["Entries per Month"].exists)
         sleep(1)
         snap("journal-stats")
@@ -71,7 +71,16 @@ final class JournalViewsTests: XCTestCase {
         for attempt in 1...3 {
             heatmap.coordinate(withNormalizedOffset: .zero).withOffset(yesterday).tap()
             XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10), "The day's entries open (try \(attempt))")
-            if attempt == 1 { sleep(1); snap("stats-day-sheet") }
+            if attempt == 1 {
+                sleep(1)
+                snap("stats-day-sheet")
+                // The arrows beside Open: the entry before yesterday's takes the sheet, under its date.
+                XCTAssertTrue(app.buttons["Next Entry"].exists)
+                app.buttons["Previous Entry"].tap()
+                sleep(2)
+                snap("stats-day-sheet-previous")
+                XCTAssertTrue(app.buttons["Open"].exists)
+            }
             app.buttons["Close"].tap()
             XCTAssertTrue(app.buttons["Open"].waitForNonExistence(timeout: 5))
         }
@@ -442,11 +451,11 @@ final class JournalViewsTests: XCTestCase {
         let app = launch()
         tab(app, "Journal").tap()
         switchJournal(app, from: "Journal", to: "Stats")
-        XCTAssertTrue(app.staticTexts["Current Streak"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Words"].waitForExistence(timeout: 10))
         tab(app, "Journal").tap()
         let newest = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
         XCTAssertTrue(newest.waitForExistence(timeout: 10))
-        XCTAssertFalse(app.staticTexts["Current Streak"].exists)
+        XCTAssertFalse(app.staticTexts["Words"].exists)
 
         app.swipeUp(); app.swipeUp(); app.swipeUp()
         XCTAssertFalse(newest.isHittable)
@@ -944,6 +953,31 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
 
+    /// Journal > Playlist: the entries with songs, each with a short preview and its songs; a
+    /// song plays in Spotify's player docked at the bottom, and tapping the row opens the entry.
+    func testPlaylistListsEntriesWithSongsAndPlaysOne() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        switchJournal(app, from: "Journal", to: "Playlist")
+        let song = app.buttons["The Weeknd – Blinding Lights"]
+        XCTAssertTrue(song.waitForExistence(timeout: 15))
+        XCTAssertTrue(app.buttons["The Killers – Mr. Brightside"].exists)
+        XCTAssertTrue(app.buttons["Rick Astley – Never Gonna Give You Up"].exists)
+        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Biscuit has discovered")).firstMatch.exists,
+                       "Only entries with songs")
+        snap("playlist")
+        song.tap()
+        XCTAssertTrue(app.buttons["Close Player"].waitForExistence(timeout: 5))
+        XCTAssertEqual(song.value as? String, "Playing")
+        sleep(6) // Spotify's player loads
+        snap("playlist-playing")
+        app.buttons["Close Player"].tap()
+        XCTAssertTrue(app.buttons["Close Player"].waitForNonExistence(timeout: 5))
+        // The row itself opens the entry.
+        app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Slow Saturday")).firstMatch.tap()
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
+    }
+
     /// A long entry's last line stays in view above the bar, and above a row opened in it (the
     /// row used to sit over it). Checked by eye from the screenshots: the text is one element.
     func testOpenRowLeavesTheEndOfALongEntryInView() throws {
@@ -1125,6 +1159,25 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(day.waitForExistence(timeout: 10))
         day.tap()
         XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
+        // The drawer is titled Jump to a Day, with the entry's date (and how long ago) in its body.
+        XCTAssertTrue(app.staticTexts["Jump to a Day"].exists)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "· 5 days ago")).firstMatch.exists)
+        snap("day-drawer")
+        // Back three entries (twelve days ago), then the calendar again: it opens on that month.
+        for _ in 0..<3 {
+            app.buttons["Previous Entry"].tap()
+            sleep(2)
+        }
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "· 12 days ago")).firstMatch.waitForExistence(timeout: 5))
+        // The drawer's calendar button (Search has one of the same name behind the sheet).
+        app.buttons["DayDrawerCalendar"].tap()
+        let earlier = Calendar.current.date(byAdding: .day, value: -12, to: .now)!
+        let earlierDay = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", earlier.formatted(.dateTime.month(.wide).day()))).firstMatch
+        XCTAssertTrue(earlierDay.waitForExistence(timeout: 10), "The calendar is on the month last looked at")
+        sleep(1)
+        snap("day-picker-reopened")
+        earlierDay.tap()
+        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
         app.buttons["Open"].tap()
         XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10), "The entry opens, not left behind Search")
     }
@@ -1146,43 +1199,66 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Jump to a Day"].waitForExistence(timeout: 5), "A tap opens the calendar")
     }
 
+    /// Once today's written, the pencil beside today's date opens it for editing. (Deletes the
+    /// entry afterwards, so Today is unwritten again for the other tests.)
+    func testPencilBesideTodaysDateEditsTodaysEntry() throws {
+        let app = launch()
+        let write = app.buttons["Write Today's Entry"]
+        XCTAssertTrue(write.waitForExistence(timeout: 15))
+        XCTAssertFalse(app.buttons["Edit Today's Entry"].exists, "Nothing to edit yet")
+        write.tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        editor.tap()
+        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+        if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap(); editor.tap() }
+        editor.typeText("A quiet day at home.")
+        app.buttons["Save"].tap()
+        let pencil = app.buttons["Edit Today's Entry"]
+        XCTAssertTrue(pencil.waitForExistence(timeout: 15))
+        snap("today-edit-pencil")
+        pencil.tap()
+        XCTAssertTrue(editor.waitForExistence(timeout: 10), "Straight into editing")
+        XCTAssertEqual(editor.value as? String, "A quiet day at home.")
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+        // Clean up: delete today's entry from its Actions.
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "A quiet day at home.")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.swipeLeft()
+        app.buttons["Actions"].tap()
+        let delete = app.buttons["Delete"]
+        XCTAssertTrue(delete.waitForExistence(timeout: 10))
+        delete.tap()
+        app.buttons["Hold to Delete"].press(forDuration: 2.6)
+        XCTAssertTrue(write.waitForExistence(timeout: 15), "Today is unwritten again")
+    }
+
     /// Today's count of the journal's entries (top right) opens Stats, where the year of writing
-    /// days is titled with its year, says how much of it is written (or, tapped, how many
-    /// entries), and can go back to an earlier year.
+    /// days is titled with its year, says how many entries it has and the share of its days with
+    /// one, and can go back to an earlier year.
     func testEntryCountOpensStats() throws {
         let app = launch()
         let count = app.buttons.matching(NSPredicate(format: "label MATCHES %@", "[0-9,]+ entries")).firstMatch
         XCTAssertTrue(count.waitForExistence(timeout: 15))
         snap("today-entry-count")
         count.tap()
-        XCTAssertTrue(app.staticTexts["Current Streak"].waitForExistence(timeout: 10), "Stats, in the Journal tab")
+        XCTAssertTrue(app.staticTexts["Words"].waitForExistence(timeout: 10), "Stats, in the Journal tab")
         let thisYear = Calendar.current.component(.year, from: .now)
-        let summary = app.buttons["StatsYearSummary"]
-        func shows(_ format: String, _ value: String) -> Bool {
-            let match = app.buttons.matching(identifier: "StatsYearSummary").matching(NSPredicate(format: format, value)).firstMatch
-            return match.waitForExistence(timeout: 5)
+        func summary(_ pattern: String) -> Bool {
+            app.staticTexts.matching(identifier: "StatsYearSummary").matching(NSPredicate(format: "label MATCHES %@", pattern))
+                .firstMatch.waitForExistence(timeout: 10)
         }
-        XCTAssertTrue(summary.waitForExistence(timeout: 5))
-        if !summary.label.contains("%") { summary.tap() } // an earlier run left it on the entries
-        XCTAssertTrue(shows("label ENDSWITH %@", "% complete"), summary.label)
-        // How much of the year has gone by, today included.
-        let gone = Calendar.current.ordinality(of: .day, in: .year, for: .now)! * 100 / Calendar.current.range(of: .day, in: .year, for: .now)!.count
-        XCTAssertLessThanOrEqual(abs((Int(summary.label.prefix { $0.isNumber }) ?? 0) - gone), 1, summary.label)
+        XCTAssertTrue(summary("[0-9,]+ entries • [0-9]+% of days"))
         snap("stats-year")
-        summary.tap()
-        XCTAssertTrue(shows("label ENDSWITH %@", " entries"), summary.label)
-        summary.tap()
         // The demo's first entry is three years back: last year has one entry (its On This Day).
         let menu = app.buttons["Year, \(thisYear)"]
         XCTAssertTrue(menu.exists)
         menu.tap()
         app.buttons[String(thisYear - 1)].tap()
         XCTAssertTrue(app.otherElements["Writing days in \(thisYear - 1)"].waitForExistence(timeout: 10))
-        XCTAssertTrue(shows("label ENDSWITH %@", "% written"), summary.label)
+        XCTAssertTrue(summary("1 entry • 1% of days"))
         snap("stats-year-earlier")
-        summary.tap()
-        XCTAssertTrue(shows("label == %@", "1 entry"), summary.label)
-        summary.tap()
     }
 
     /// Settings → Home Screen Widget: choosing what shows beside today's date updates the preview.
@@ -1304,6 +1380,26 @@ final class JournalViewsTests: XCTestCase {
     }
 
     /// Shaking shows a random entry as a preview over what you're reading; Open goes to it.
+    /// Settings → Shake for Random Entry: switched off, a shake does nothing.
+    func testShakeCanBeSwitchedOff() throws {
+        let app = launch()
+        tab(app, "Settings").tap()
+        let toggle = app.switches["Shake for Random Entry"]
+        for _ in 0..<5 where !toggle.exists { app.swipeUp() }
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+        XCTAssertEqual(toggle.value as? String, "1", "On to begin with")
+        snap("settings-shake")
+        toggle.switches.firstMatch.exists ? toggle.switches.firstMatch.tap() : toggle.tap()
+        XCTAssertEqual(toggle.value as? String, "0")
+        XCUIDevice.shared.system.open(URL(string: "me.dabble.app:/shake")!) // Debug stand-in for a shake
+        XCTAssertFalse(app.staticTexts["A Random Memory"].waitForExistence(timeout: 4), "Nothing comes up")
+        // Back on (for the other tests), and it works again.
+        toggle.switches.firstMatch.exists ? toggle.switches.firstMatch.tap() : toggle.tap()
+        XCTAssertEqual(toggle.value as? String, "1")
+        XCUIDevice.shared.system.open(URL(string: "me.dabble.app:/shake")!)
+        XCTAssertTrue(app.staticTexts["A Random Memory"].waitForExistence(timeout: 10))
+    }
+
     func testShakeForRandomMemory() throws {
         let app = launch()
         tab(app, "Journal").tap()
@@ -1319,6 +1415,15 @@ final class JournalViewsTests: XCTestCase {
         snap("shake-memory")
         app.buttons["Another"].tap()
         sleep(1)
+        // The arrows beside Open step to the entry before or after (one is off at either end).
+        let previous = app.buttons["Previous Entry"], next = app.buttons["Next Entry"]
+        XCTAssertTrue(previous.exists && next.exists)
+        let arrow = previous.isEnabled ? previous : next
+        let before = arrow.value as? String
+        arrow.tap()
+        sleep(2)
+        XCTAssertNotEqual(arrow.value as? String, before, "A different entry is showing")
+        snap("shake-memory-stepped")
         // Close: still reading the same entry underneath.
         app.buttons["Close"].tap()
         XCTAssertTrue(app.staticTexts["A Random Memory"].waitForNonExistence(timeout: 5))

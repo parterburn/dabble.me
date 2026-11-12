@@ -61,7 +61,7 @@ struct RootView: View {
             #if DEBUG
             // UI tests can't shake the simulator: me.dabble.app:/shake does the same.
             if url.path == "/shake" {
-                NotificationCenter.default.post(name: .deviceDidShake, object: nil)
+                if ShakeSetting.isOn { NotificationCenter.default.post(name: .deviceDidShake, object: nil) }
                 return
             }
             #endif
@@ -164,6 +164,7 @@ struct MainTabs: View {
         .sheet(isPresented: $model.showsDayPicker, onDismiss: {
             guard let day = model.pickedDay else { return }
             model.pickedDay = nil
+            model.dayPickerOpensOn = day
             model.statsDay = StatsDay(day: day)
         }) { DayPickerSheet { model.pickedDay = $0 } }
         .onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in
