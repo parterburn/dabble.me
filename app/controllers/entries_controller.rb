@@ -95,9 +95,16 @@ class EntriesController < ApplicationController
   end
 
   # With nothing written on this day in an earlier year, one past entry picked
-  # the way the reminder emails pick theirs.
+  # the way the reminder emails pick theirs. The pick is kept for the day, so
+  # it is worked out once and the page shows the same entry on every visit.
   def set_rewind_entry
-    entry = current_user.random_entry(@user_today.to_date)
+    key = ["rewind_entry", current_user.id, current_user.updated_at.to_i, @user_today.to_date.iso8601]
+    id = Rails.cache.read(key)
+    entry = current_user.entries.find_by(id: id) if id
+    unless entry
+      entry = current_user.random_entry(@user_today.to_date)
+      Rails.cache.write(key, entry.id, expires_in: 1.day) if entry
+    end
     @rewind_entry = entry unless entry.nil? || entry == @today_entry
   end
 

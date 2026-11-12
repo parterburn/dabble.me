@@ -458,6 +458,33 @@ RSpec.describe EntriesController, type: :controller do
       expect(response.body).to include('ON THIS DAY')
     end
 
+    it 'keeps the same REWIND entry for the day, working it out once' do
+      allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new)
+      sign_in pro
+      past = write(pro, 'Last year, a day off', today.prev_year(1) + 1)
+      write(pro, 'Another old one', today.prev_year(2) + 3)
+      expect_any_instance_of(User).to receive(:random_entry).once.and_return(past)
+
+      2.times do
+        get :today
+        expect(response.body).to include('Last year, a day off')
+        expect(response.body).not_to include('Another old one')
+      end
+    end
+
+    it 'picks again when the kept entry has been deleted' do
+      allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new)
+      sign_in pro
+      past = write(pro, 'Last year, a day off', today.prev_year(1) + 1)
+      other = write(pro, 'Another old one', today.prev_year(2) + 3)
+      allow_any_instance_of(User).to receive(:random_entry).and_return(past, other)
+
+      get :today
+      past.destroy
+      get :today
+      expect(response.body).to include('Another old one')
+    end
+
     it 'shows no REWIND entry to a free account' do
       sign_in user
       get :today
