@@ -164,6 +164,7 @@ struct MainTabs: View {
         .sheet(isPresented: $model.showsDayPicker, onDismiss: {
             guard let day = model.pickedDay else { return }
             model.pickedDay = nil
+            model.dayPickerOpensOn = day
             model.statsDay = StatsDay(day: day)
         }) { DayPickerSheet { model.pickedDay = $0 } }
         .onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in

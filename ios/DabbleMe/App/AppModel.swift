@@ -33,6 +33,8 @@ final class AppModel {
     var showsDayPicker = false
     var pickedDay: JournalDay?
     var reopensDayPicker = false
+    /// The day last looked at from the calendar: it opens on that month again.
+    var dayPickerOpensOn: JournalDay?
     let lock = AppLock()
 
     func search(hashtag: String) {

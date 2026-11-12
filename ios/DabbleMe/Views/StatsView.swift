@@ -598,34 +598,24 @@ struct DayEntriesSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text((steppedTo ?? day).formatted(.dateTime.weekday(.wide).month(.wide).day().year()))
-                    .font(.headline)
-                    .foregroundStyle(.tint) // olive, like Random Memory's date
-                Spacer()
-                // Another day: closes this and opens the calendar.
-                Button {
+            // The calendar picks another day: this closes and it opens, on this day's month.
+            SheetHeader(title: "Jump to a Day") {
+                SheetIconButton(icon: "slab-calendar", label: "Jump to a Day") {
+                    model.dayPickerOpensOn = steppedTo ?? day
                     model.reopensDayPicker = true
                     dismiss()
-                } label: {
-                    appIcon("slab-calendar")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 18, height: 18)
-                        .foregroundStyle(.primary)
-                        .frame(width: 44, height: 44)
-                        .background(Color.primary.opacity(0.08), in: .circle)
-                        .contentShape(.circle)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Jump to a Day")
-                SheetCloseButton()
+                .accessibilityIdentifier("DayDrawerCalendar")
             }
             if let entries {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 28) {
                         ForEach(entries) { entry in
                             VStack(alignment: .leading, spacing: 12) {
+                                // "Sunday, Nov 9, 2025 · 1 year ago", as A Random Memory dates its entry.
+                                Text(model.dateLine(for: entry.day, fallback: entry.date))
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.tint)
                                 if let document = entry.document {
                                     DocumentText(blocks: RichText.droppingTrailingHashtags((entry.datedHashtags ?? []).map(\.tag), from: document), font: .system(size: bodySize * textSize.scale, design: fontStyle.design),
                                                  scale: textSize.scale, bodySize: bodySize)
@@ -667,8 +657,12 @@ struct DayEntriesSheet: View {
                 ProgressView().frame(maxWidth: .infinity, minHeight: 200)
             }
         }
-        .padding(20)
+        .padding([.horizontal, .top], 20)
+        // The Open bar sits at the sheet's foot, as far from its bottom edge as from its sides
+        // (the home indicator's safe area on top of the padding left a gap under it).
+        .padding(.bottom, 22)
         .frame(maxHeight: .infinity, alignment: .top)
+        .ignoresSafeArea(.container, edges: .bottom)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .task { await load() }

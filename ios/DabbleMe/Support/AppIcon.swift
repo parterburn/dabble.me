@@ -41,6 +41,57 @@ struct SheetCloseButton: View {
     }
 }
 
+/// The top of a sheet: its title centered between a round button for the sheet's own action (when
+/// it has one) at the left and the X at the right.
+struct SheetHeader<Leading: View>: View {
+    let title: String
+    @ViewBuilder var leading: Leading
+
+    var body: some View {
+        ZStack {
+            Text(title)
+                .font(.headline)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .padding(.horizontal, 52) // clear of the buttons either side
+                .accessibilityAddTraits(.isHeader)
+            HStack {
+                leading
+                Spacer()
+                SheetCloseButton()
+            }
+        }
+    }
+}
+
+extension SheetHeader where Leading == EmptyView {
+    init(title: String) {
+        self.init(title: title) { EmptyView() }
+    }
+}
+
+/// A sheet header's round icon button (the X's twin).
+struct SheetIconButton: View {
+    let icon: String
+    let label: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            appIcon(icon)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 18, height: 18)
+                .foregroundStyle(.primary)
+                .frame(width: 44, height: 44)
+                .background(Color.primary.opacity(0.08), in: .circle)
+                .contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+    }
+}
+
 extension Color {
     /// The app's red, for deleting (the link row's trash, Hold to Delete) and error messages:
     /// Tailwind's red-800, deeper than the system's fire-engine red; a brighter red-600 in Dark

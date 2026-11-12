@@ -36,7 +36,7 @@ extension UIWindow {
 
 /// A random entry as a preview, over whatever you were reading: an accidental shake never
 /// replaces it. Open goes to the entry in Journal, the arrows beside it to the entry before or
-/// after, and Another (the icon by the X, or another shake) picks again.
+/// after, and the dice at the top left (or another shake) picks again.
 struct RandomEntrySheet: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
@@ -49,28 +49,11 @@ struct RandomEntrySheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Label("A Random Memory", icon: "slab-dice")
-                    .font(.headline)
-                Spacer()
-                // Another: picks again (as another shake does).
-                Button {
-                    Task { await load() }
-                } label: {
-                    appIcon("slab-arrows-rotate")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 18, height: 18)
-                        .foregroundStyle(.primary)
-                        .frame(width: 44, height: 44)
-                        .background(Color.primary.opacity(0.08), in: .circle)
-                        .contentShape(.circle)
-                }
-                .buttonStyle(.plain)
-                .disabled(isLoading)
-                .accessibilityLabel("Another")
-                .accessibilityHint("Shows another random memory")
-                SheetCloseButton()
+            // The dice rolls again (as another shake does).
+            SheetHeader(title: "A Random Memory") {
+                SheetIconButton(icon: "slab-dice", label: "Another") { Task { await load() } }
+                    .disabled(isLoading)
+                    .accessibilityHint("Shows another random memory")
             }
             if let entry {
                 preview(entry)
@@ -95,8 +78,12 @@ struct RandomEntrySheet: View {
                 dismiss()
             }
         }
-        .padding(20)
+        .padding([.horizontal, .top], 20)
+        // The Open bar sits at the sheet's foot, as far from its bottom edge as from its sides
+        // (the home indicator's safe area on top of the padding left a gap under it).
+        .padding(.bottom, 22)
         .frame(maxHeight: .infinity, alignment: .top)
+        .ignoresSafeArea(.container, edges: .bottom)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .task { await load() }

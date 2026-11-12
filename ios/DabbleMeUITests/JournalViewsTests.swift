@@ -1159,6 +1159,25 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(day.waitForExistence(timeout: 10))
         day.tap()
         XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
+        // The drawer is titled Jump to a Day, with the entry's date (and how long ago) in its body.
+        XCTAssertTrue(app.staticTexts["Jump to a Day"].exists)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "· 5 days ago")).firstMatch.exists)
+        snap("day-drawer")
+        // Back three entries (twelve days ago), then the calendar again: it opens on that month.
+        for _ in 0..<3 {
+            app.buttons["Previous Entry"].tap()
+            sleep(2)
+        }
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "· 12 days ago")).firstMatch.waitForExistence(timeout: 5))
+        // The drawer's calendar button (Search has one of the same name behind the sheet).
+        app.buttons["DayDrawerCalendar"].tap()
+        let earlier = Calendar.current.date(byAdding: .day, value: -12, to: .now)!
+        let earlierDay = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", earlier.formatted(.dateTime.month(.wide).day()))).firstMatch
+        XCTAssertTrue(earlierDay.waitForExistence(timeout: 10), "The calendar is on the month last looked at")
+        sleep(1)
+        snap("day-picker-reopened")
+        earlierDay.tap()
+        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
         app.buttons["Open"].tap()
         XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10), "The entry opens, not left behind Search")
     }
