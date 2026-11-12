@@ -94,6 +94,9 @@ final class ReminderScheduler {
     #if DEBUG
     private var debugSoonID: String?
     #endif
+    /// Bumped on sign-out: a rebuild checks it's still on the session it started in before it
+    /// keeps or schedules anything.
+    private var session = 0
     private var isScheduling = false
     private var needsAnotherPass = false
 
@@ -114,7 +117,10 @@ final class ReminderScheduler {
         await center.notificationSettings().authorizationStatus == .denied
     }
 
+    /// Signing out: nothing pending stays, and a rebuild that's under way (waiting on the plan or
+    /// a photo) stops short of scheduling that account's entries after it.
     func removeAll() {
+        session += 1
         cached = nil
         Task {
             let ids = await center.pendingNotificationRequests().map(\.identifier).filter { $0.hasPrefix(prefix) }
@@ -142,12 +148,16 @@ final class ReminderScheduler {
         ], intentIdentifiers: [])])
 
         let defaults = UserDefaults.standard
+        let session = session
+        // Still the account this pass began with (not signed out since, perhaps into another).
+        func isCurrent() -> Bool { session == self.session && model.isSignedIn }
         guard model.isSignedIn, defaults.bool(forKey: ReminderSettings.enabledKey),
               await center.notificationSettings().authorizationStatus == .authorized else {
             await removePending()
             return
         }
-        let plan = await plan(for: model)
+        let plan = await plan(for: model, session: session)
+        guard isCurrent() else { return }
         if let plan { defaults.set(plan.emailHour * 60, forKey: ReminderSettings.emailTimeKey) }
         let minutes = ReminderSettings.minutes
         let previews = ReminderSettings.showsPreviews
@@ -172,6 +182,7 @@ final class ReminderScheduler {
                     content.title = label
                     content.body = memory.entry.excerpt.isEmpty ? "📷 Photo" : Self.clipped(memory.entry.excerpt)
                     if let attachment = await photo(for: memory, on: iso) { content.attachments = [attachment] }
+                    guard isCurrent() else { return } // signed out while the photo came down
                 } else {
                     content.body = "\(Self.teaser(for: memory, on: iso)) Take a look back, then write today's."
                 }
@@ -200,8 +211,14 @@ final class ReminderScheduler {
         #if DEBUG
         if let debugSoonID { wanted.insert(debugSoonID) }
         #endif
+        guard isCurrent() else { return }
         await removePending(except: wanted)
-        for request in requests { try? await center.add(request) }
+        for request in requests {
+            guard isCurrent() else { break }
+            try? await center.add(request)
+        }
+        // Signed out in the middle of adding them: none of this account's stay.
+        if !isCurrent() { await removePending() }
     }
 
     private func removePending(except kept: Set<String> = []) async {
@@ -210,12 +227,14 @@ final class ReminderScheduler {
     }
 
     /// The coming days' memories, fetched again when the journal has changed or half an hour on.
-    private func plan(for model: AppModel) async -> ReminderPlan? {
+    private func plan(for model: AppModel, session: Int) async -> ReminderPlan? {
         let key = "\(model.today?.date ?? "")|\(model.me?.entryCount ?? 0)|\(model.today?.entry?.updatedAt ?? "")"
         if let cached, cached.key == key, Date().timeIntervalSince(cached.at) < 30 * 60 { return cached.plan }
         guard let plan: ReminderPlan = try? await model.api.get("api/v1/reminders", query: ["days": String(days)]) else {
             return cached?.plan // an older server, or offline: what was known (or just the nudge)
         }
+        // Not kept if the account signed out while it was on its way (the caller drops it too).
+        guard session == self.session else { return nil }
         cached = (plan, key, Date())
         return plan
     }

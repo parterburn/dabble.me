@@ -588,6 +588,29 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       end
     end
 
+    it "merges photos into the day's entry, and refuses a merge with more than a collage holds" do
+      moved = create(:entry, user: pro_user, date: Time.zone.local(2025, 3, 4), body: "<p>Moved</p>")
+      taken = create(:entry, user: pro_user, date: Time.zone.local(2025, 3, 6), body: "<p>Taken</p>")
+      give_photo(moved)
+      give_photo(taken)
+      # Its own photo and seven new ones fit an entry; with the other day's photo they don't.
+      patch "/api/v1/entries/#{moved.id}", headers: auth(pro_user), as: :json,
+                                           params: { date: "2025-03-06", merge: true, uploaded_image_keys: Array.new(7) { photo_key(pro_user) } }
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(json["message"]).to include("more than 8 photos")
+      expect(Entry.exists?(moved.id)).to be(true)
+      expect(taken.reload.body).to eq("<p>Taken</p>")
+      expect(ImageCollageJob).not_to have_received(:perform_later)
+
+      key = photo_key(pro_user)
+      patch "/api/v1/entries/#{moved.id}", headers: auth(pro_user), as: :json,
+                                           params: { date: "2025-03-06", merge: true, uploaded_image_keys: [key] }
+      expect(response).to have_http_status(:ok)
+      expect(Entry.exists?(moved.id)).to be(false)
+      expect(json["entry"]["image_processing"]).to be(true)
+      expect(ImageCollageJob).to have_received(:perform_later).with(taken.id, urls: [a_string_including("existing.jpg"), Mcp::PresignedImageUpload.public_url(key)])
+    end
+
     it "refuses more photos than the collage can hold" do
       post "/api/v1/entries", params: { date: "2026-02-01", body: "x", uploaded_image_keys: Array.new(9) { photo_key(pro_user) } },
                               headers: auth(pro_user), as: :json

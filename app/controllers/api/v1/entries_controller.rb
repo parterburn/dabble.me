@@ -189,13 +189,21 @@ module Api
           return if performed?
         end
         other.body = [other.body.presence, body.presence].compact.join('<hr>')
-        # Its photo (unless it's being removed) and any added in this edit.
+        # Its photo (unless it's being removed) and any added in this edit. Checked before anything
+        # is saved or deleted: a bad upload or too many photos leaves both entries as they were.
         keys = Array(params[:uploaded_image_keys]).map { |key| key.to_s.strip }.compact_blank.uniq
-                                                  .select { |key| Mcp::PresignedImageUpload.key_allowed_for_user?(current_user, key) }
+        unless keys.all? { |key| Mcp::PresignedImageUpload.key_allowed_for_user?(current_user, key) }
+          return render_error(:unprocessable_content, 'invalid', 'A photo upload is not valid for this account.')
+        end
+
         keeps_photo = @entry.image_stored? && !ActiveModel::Type::Boolean.new.cast(params[:remove_image])
         photos = keys.map { |key| Mcp::PresignedImageUpload.public_url(key) }
         photos.unshift(@entry.image_url_cdn(cloudflare: false)) if keeps_photo
-        photos = photos.first(CollageGenerator::MAX_IMAGES - (other.image_stored? ? 1 : 0))
+        if photos.size + (other.image_stored? ? 1 : 0) > CollageGenerator::MAX_IMAGES
+          return render_error(:unprocessable_content, 'invalid',
+                              "Together these entries would have more than #{CollageGenerator::MAX_IMAGES} photos. Remove some, then merge.")
+        end
+
         other.uploading_image = true if photos.any?
         unless other.save
           return render_error(:unprocessable_content, 'invalid', 'Could not merge the entries.', details: other.errors.full_messages)
