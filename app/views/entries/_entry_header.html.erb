@@ -1,0 +1,44 @@
+<%# The top of an entry's well: an optional label, the Reflect and Edit
+    buttons, the date and the day of the week. label replaces the "on this
+    day" strip; can_reflect shows the Reflect button. %>
+<% label = local_assigns[:label] %>
+<% can_reflect = local_assigns.fetch(:can_reflect) { current_user.can_ai? && entry.body.present? && Entry::AiAssistant.configured? } %>
+<div class="center s-entry-header">
+  <% if label %>
+    <div class="label label-past-years"><%= label %></div>
+  <% elsif entry.exactly_past_years(current_user, @user_today) %>
+    <% year_back = @user_today.year - entry.date.year %>
+    <div class="label label-past-years">ON THIS DAY <%= pluralize(year_back,"year").upcase %> AGO</div>
+  <% end %>
+  <div class="s-entry-date">
+    <div class="float-left s-edit-entry">
+      <% if can_reflect %>
+        <%= link_to "#", class: "s-entry-action j-reflect", role: "button", rel: "tooltip", title: "Reflect on this entry", "aria-label": "Reflect on this entry", data: { url: entry_reflection_path(entry), date: entry.date_format_long } do %>
+          <span class="slab-icon slab-icon--sparkles" aria-hidden="true"></span>
+        <% end %>
+      <% else %>
+        <%# Balances the edit button so the date stays centered. %>
+        <span class="s-entry-action s-entry-action--spacer" aria-hidden="true"></span>
+      <% end %>
+    </div>
+    <div class="float-right s-edit-entry">
+      <%= link_to edit_entry_path(entry), class: "s-entry-action", rel: "tooltip", title: "Edit Entry", "aria-label": "Edit entry" do %>
+        <span class="slab-icon slab-icon--edit" aria-hidden="true"></span>
+      <% end %>
+    </div>
+    <h2>
+      <% if current_page?(day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day)) %>
+        <span rel="tooltip-mobile-friendly" title="<%= tag_relative_date(entry.date, @user_today) %>">
+          <%= entry.date_format_short %>
+        </span>
+      <% else %>
+        <%= link_to entry.date_format_short, day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day), rel: "tooltip-mobile-friendly", title: "#{tag_relative_date(entry.date, @user_today)}" %>
+      <% end %>
+    </h2>
+    <h3>
+      <span>
+        <%= entry.date_day.upcase %>
+      </span>
+    </h3>
+  </div>
+</div>
