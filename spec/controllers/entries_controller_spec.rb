@@ -514,7 +514,9 @@ RSpec.describe EntriesController, type: :controller do
       links = Nokogiri::HTML(response.body).css('.s-photo-grid a.s-photo-grid__photo')
 
       expect(response.status).to eq 200
-      expect(links.map { |link| link['href'] }).to eq([entry_path(newer), entry_path(older)])
+      expect(links.map { |link| link['href'] }).to eq(%w[/entries/2026/3/2 /entries/2026/3/1])
+      expect(newer.date.day).to eq(2)
+      expect(older.date.day).to eq(1)
       expect(links.map { |link| link['target'] }.compact).to be_empty
       expect(links.map { |link| link['rel'] }).to all(eq('tooltip'))
       expect(links.first['title']).to match(/\AMarch 2, 2026 • (.+ ago|in .+|Today|Yesterday)\z/)
