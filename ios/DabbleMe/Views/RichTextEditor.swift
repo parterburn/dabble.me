@@ -348,6 +348,7 @@ struct RichTextEditor: UIViewRepresentable {
         textView.attributedText = RichText.attributedString(from: model.initialBlocks, style: .journal)
         textView.typingAttributes = RichText.Style.journal.baseAttributes
         textView.inputAccessoryView = context.coordinator.makeBar(for: self)
+        context.coordinator.keepTextClear(of: textView)
         textView.accessibilityLabel = "Entry"
         model.attach(textView)
         return textView
@@ -378,6 +379,46 @@ struct RichTextEditor: UIViewRepresentable {
 
         func textViewDidChangeSelection(_ textView: UITextView) {
             model.selectionDidChange()
+        }
+
+        func textViewDidBeginEditing(_ textView: UITextView) {
+            padBottomForBar()
+        }
+
+        func textViewDidEndEditing(_ textView: UITextView) {
+            // Once the keyboard (and the bar) has gone, or stayed for the link's address.
+            DispatchQueue.main.async { [weak self] in self?.padBottomForBar() }
+        }
+
+        private weak var paddedTextView: UITextView?
+
+        /// The bar sits over the bottom of the text. Whenever it's laid out (it appears, or a
+        /// row opens in it), the text gets that much room at its end, so a long entry's last
+        /// lines scroll clear of the bar and its row.
+        func keepTextClear(of textView: UITextView) {
+            paddedTextView = textView
+            (textView.inputAccessoryView as? EditorBar)?.onLayout = { [weak self] in
+                // After this pass: the text's own frame may still be settling around the keyboard.
+                DispatchQueue.main.async { self?.padBottomForBar() }
+            }
+        }
+
+        private func padBottomForBar() {
+            guard let textView = paddedTextView else { return }
+            var covered: CGFloat = 0
+            if let bar = textView.inputAccessoryView, let barWindow = bar.window, let window = textView.window {
+                let space = barWindow.screen.coordinateSpace
+                let barTop = bar.convert(bar.bounds, to: space).minY
+                // The text view's frame, not its (scrolled) bounds.
+                let textBottom = (textView.superview ?? window).convert(textView.frame, to: space).maxY
+                covered = max(0, textBottom - barTop)
+            }
+            guard abs(textView.contentInset.bottom - covered) > 0.5 else { return }
+            let grew = covered > textView.contentInset.bottom
+            textView.contentInset.bottom = covered
+            textView.verticalScrollIndicatorInsets.bottom = covered
+            // A row that opened over the cursor's line: bring that line back into view.
+            if grew { textView.scrollRangeToVisible(textView.selectedRange) }
         }
 
         func textView(_ textView: UITextView, primaryActionFor textItem: UITextItem, defaultAction: UIAction) -> UIAction? {
@@ -450,6 +491,8 @@ final class EditorBar: UIView {
     private let backdrop = UIVisualEffectView(effect: UIBlurEffect(style: .systemMaterial))
     private var rowHeight: CGFloat = 0
     private var hasRow = false
+    /// Called when the bar is laid out or joins or leaves the screen (see `keepTextClear`).
+    var onLayout: (() -> Void)?
 
     init() {
         super.init(frame: CGRect(x: 0, y: 0, width: 320, height: Self.toolbarHeight))
@@ -503,6 +546,12 @@ final class EditorBar: UIView {
         backdrop.frame = bounds
         rowHost.view.frame = CGRect(x: 0, y: 0, width: bounds.width, height: rowHeight)
         toolbar.frame = CGRect(x: 0, y: bounds.height - Self.toolbarHeight, width: bounds.width, height: Self.toolbarHeight)
+        onLayout?()
+    }
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        onLayout?()
     }
 }
 

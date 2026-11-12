@@ -944,6 +944,33 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
 
+    /// A long entry's last line stays in view above the bar, and above a row opened in it (the
+    /// row used to sit over it). Checked by eye from the screenshots: the text is one element.
+    func testOpenRowLeavesTheEndOfALongEntryInView() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        app.buttons["New Entry"].tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        editor.tap()
+        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+        if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap(); editor.tap() }
+        editor.typeText((1...16).map { "Line \($0)" }.joined(separator: "\n") + "\nThe last line about hiking")
+        sleep(1)
+        snap("long-entry-end")
+        app.buttons["Hashtags"].tap()
+        XCTAssertTrue(app.buttons["#hiking"].waitForExistence(timeout: 10))
+        sleep(1)
+        snap("long-entry-hashtags")
+        app.buttons["Link"].tap()
+        XCTAssertTrue(app.textFields["Link address"].waitForExistence(timeout: 5))
+        sleep(1)
+        snap("long-entry-link")
+        app.buttons["Link"].tap()
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+    }
+
     /// An open row is part of the keyboard's bar, above its buttons: it hides with the keyboard and
     /// comes back with it, still above the buttons.
     func testComposerRowClearsBarAfterKeyboardReturns() throws {
