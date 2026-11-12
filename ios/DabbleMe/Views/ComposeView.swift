@@ -184,7 +184,7 @@ struct ComposeView: View {
             // An alert, for its Cancel button (a confirmation dialog shows none here): Cancel puts
             // the date back to the entry's own day.
             .alert(mergeQuestion ?? "", isPresented: .present($mergeQuestion)) {
-                Button("Merge") { Task { await save(merging: true) } }
+                Button("Merge", role: .destructive) { Task { await save(merging: true) } } // red: it can't be undone
                 Button("Cancel", role: .cancel) {
                     if case .edit(let entry) = mode, let day = entry.day { date = day.localDate }
                 }
@@ -755,8 +755,7 @@ struct ComposeView: View {
     }
 
     private var simplifiedBanner: some View {
-        Label("Some of this entry's formatting can't be shown here. Saving keeps the words and simplifies the rest; Cancel leaves it as it is.",
-              icon: "slab-wand-magic-sparkles")
+        Label("Some previous formatting may be lost if you edit.", icon: "slab-triangle-exclamation")
             .font(.footnote)
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity, alignment: .leading)
