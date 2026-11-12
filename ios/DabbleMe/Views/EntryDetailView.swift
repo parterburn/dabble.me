@@ -296,14 +296,15 @@ private struct EntryBody: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            // Dated #tags at the end of the entry aren't shown twice: their pills are right under it.
+            // Dated #tags and Spotify links at the end of the entry aren't shown twice: their pills
+            // and the songs are right under it.
             let pilled = (entry.datedHashtags ?? []).map(\.tag)
             if let document = entry.document {
                 // Selectable across paragraphs (SwiftUI's selection stops at each paragraph).
-                SelectableDocumentText(blocks: RichText.droppingTrailingHashtags(pilled, from: document), fontSize: bodySize * textSize.scale,
+                SelectableDocumentText(blocks: RichText.droppingTrailing(hashtags: pilled, songLinks: !entry.songs.isEmpty, from: document), fontSize: bodySize * textSize.scale,
                                        design: fontStyle.uiDesign, lineSpacing: 5 * textSize.scale)
             } else if !entry.bodyText.isEmpty {
-                Text(RichText.linkingURLs(in: RichText.linkingHashtags(in: AttributedString.journal(RichText.droppingTrailingHashtags(pilled, from: entry.bodyText)))))
+                Text(RichText.linkingURLs(in: RichText.linkingHashtags(in: AttributedString.journal(RichText.droppingTrailing(hashtags: pilled, songLinks: !entry.songs.isEmpty, from: entry.bodyText)))))
                     .font(bodyFont)
                     .lineSpacing(5 * textSize.scale)
                     .textSelection(.enabled)

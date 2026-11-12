@@ -498,24 +498,53 @@ struct NestedListTests {
 
 struct TrailingHashtagTests {
     @Test func datedTagsAtTheEndAreDropped() {
-        #expect(RichText.droppingTrailingHashtags(["Leo"], from: "Park day. #leo") == "Park day.")
-        #expect(RichText.droppingTrailingHashtags(["Leo", "Mila"], from: "Park day.\n\n#Leo #Mila\n") == "Park day.")
-        #expect(RichText.droppingTrailingHashtags(["Leo"], from: "Park day. #Leo #park") == "Park day. #park")
+        #expect(RichText.droppingTrailing(hashtags: ["Leo"], songLinks: false, from: "Park day. #leo") == "Park day.")
+        #expect(RichText.droppingTrailing(hashtags: ["Leo", "Mila"], songLinks: false, from: "Park day.\n\n#Leo #Mila\n") == "Park day.")
+        #expect(RichText.droppingTrailing(hashtags: ["Leo"], songLinks: false, from: "Park day. #Leo #park") == "Park day. #park")
     }
 
     @Test func otherTagsAndTagsInTheTextStay() {
-        #expect(RichText.droppingTrailingHashtags(["Leo"], from: "#Leo loved the park.") == "#Leo loved the park.")
-        #expect(RichText.droppingTrailingHashtags(["Leo"], from: "Park day. #park") == "Park day. #park")
-        #expect(RichText.droppingTrailingHashtags([], from: "Park day. #Leo") == "Park day. #Leo")
-        #expect(RichText.droppingTrailingHashtags(["Leo"], from: "#Leo") == "#Leo", "Nothing else to show")
+        #expect(RichText.droppingTrailing(hashtags: ["Leo"], songLinks: false, from: "#Leo loved the park.") == "#Leo loved the park.")
+        #expect(RichText.droppingTrailing(hashtags: ["Leo"], songLinks: false, from: "Park day. #park") == "Park day. #park")
+        #expect(RichText.droppingTrailing(hashtags: [], songLinks: false, from: "Park day. #Leo") == "Park day. #Leo")
+        #expect(RichText.droppingTrailing(hashtags: ["Leo"], songLinks: false, from: "#Leo") == "#Leo", "Nothing else to show")
     }
 
     @Test func theLastBlocksTagsAreDropped() {
         let entry = [DocumentBlock.paragraph(DocumentRun("Park "), DocumentRun("day", bold: true), DocumentRun(". #Leo #park"))]
-        #expect(RichText.droppingTrailingHashtags(["leo"], from: entry)
+        #expect(RichText.droppingTrailing(hashtags: ["leo"], songLinks: false, from: entry)
             == [DocumentBlock.paragraph(DocumentRun("Park "), DocumentRun("day", bold: true), DocumentRun(". "), DocumentRun("#park"))])
         let tagsLast = [DocumentBlock.paragraph(DocumentRun("Park day.")), DocumentBlock.paragraph(DocumentRun("#Leo"))]
-        #expect(RichText.droppingTrailingHashtags(["Leo"], from: tagsLast) == [DocumentBlock.paragraph(DocumentRun("Park day."))])
-        #expect(RichText.droppingTrailingHashtags(["Leo"], from: [tagsLast[1]]) == [tagsLast[1]])
+        #expect(RichText.droppingTrailing(hashtags: ["Leo"], songLinks: false, from: tagsLast) == [DocumentBlock.paragraph(DocumentRun("Park day."))])
+        #expect(RichText.droppingTrailing(hashtags: ["Leo"], songLinks: false, from: [tagsLast[1]]) == [tagsLast[1]])
+    }
+}
+
+struct TrailingSongLinkTests {
+    private let link = "https://open.spotify.com/track/5vUNRJsvEOUsz4sbKkJpFr"
+
+    @Test func aSongLinkAtTheEndIsDropped() {
+        #expect(RichText.droppingTrailing(hashtags: [], songLinks: true, from: "Love it.\n\n\(link)") == "Love it.")
+        #expect(RichText.droppingTrailing(hashtags: [], songLinks: true, from: "Love it. [\(link)](\(link)?si=abc)") == "Love it.")
+        #expect(RichText.droppingTrailing(hashtags: ["Leo"], songLinks: true, from: "Love it. \(link) #Leo") == "Love it.")
+        #expect(RichText.droppingTrailing(hashtags: ["Leo"], songLinks: true, from: "Love it. #Leo \(link)") == "Love it.")
+    }
+
+    @Test func linksElsewhereAndOtherLinksStay() {
+        #expect(RichText.droppingTrailing(hashtags: [], songLinks: true, from: "\(link) is the one.") == "\(link) is the one.")
+        #expect(RichText.droppingTrailing(hashtags: [], songLinks: true, from: "Read https://dabble.me") == "Read https://dabble.me")
+        #expect(RichText.droppingTrailing(hashtags: [], songLinks: false, from: "Love it. \(link)") == "Love it. \(link)")
+        #expect(RichText.droppingTrailing(hashtags: [], songLinks: true, from: link) == link, "Nothing else to show")
+    }
+
+    @Test func theLastBlocksSongLinkIsDropped() {
+        let text = DocumentBlock.paragraph(DocumentRun("Love it."))
+        let own = DocumentBlock.paragraph(DocumentRun(link, link: link))
+        #expect(RichText.droppingTrailing(hashtags: [], songLinks: true, from: [text, own]) == [text])
+        let inline = DocumentBlock.paragraph(DocumentRun("Love it. "), DocumentRun("this song", link: link), DocumentRun(" #Leo"))
+        #expect(RichText.droppingTrailing(hashtags: ["leo"], songLinks: true, from: [inline]) == [text])
+        let bare = DocumentBlock.paragraph(DocumentRun("Love it. \(link)"))
+        #expect(RichText.droppingTrailing(hashtags: [], songLinks: true, from: [bare]) == [text])
+        #expect(RichText.droppingTrailing(hashtags: [], songLinks: true, from: [own]) == [own])
     }
 }

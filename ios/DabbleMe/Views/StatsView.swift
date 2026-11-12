@@ -617,10 +617,10 @@ struct DayEntriesSheet: View {
                                     .font(.subheadline.weight(.semibold))
                                     .foregroundStyle(.tint)
                                 if let document = entry.document {
-                                    DocumentText(blocks: RichText.droppingTrailingHashtags((entry.datedHashtags ?? []).map(\.tag), from: document), font: .system(size: bodySize * textSize.scale, design: fontStyle.design),
+                                    DocumentText(blocks: RichText.droppingTrailing(hashtags: (entry.datedHashtags ?? []).map(\.tag), songLinks: !entry.songs.isEmpty, from: document), font: .system(size: bodySize * textSize.scale, design: fontStyle.design),
                                                  scale: textSize.scale, bodySize: bodySize)
                                 } else {
-                                    Text(AttributedString.journal(RichText.droppingTrailingHashtags((entry.datedHashtags ?? []).map(\.tag), from: entry.bodyText)))
+                                    Text(AttributedString.journal(RichText.droppingTrailing(hashtags: (entry.datedHashtags ?? []).map(\.tag), songLinks: !entry.songs.isEmpty, from: entry.bodyText)))
                                         .font(.system(size: bodySize * textSize.scale, design: fontStyle.design))
                                         .lineSpacing(5)
                                         .frame(maxWidth: .infinity, alignment: .leading)
