@@ -4,6 +4,14 @@ module EntriesHelper
     image_tag converted_image_url, data: { src: converted_image_url }, alt: "#{entry.date_format_short}", loading: "lazy"
   end
 
+  # A small square-friendly version of an entry's photo for grids. Cloudflare
+  # resizes it on the way through, so a page of thumbnails isn't a page of
+  # full-size photos.
+  def photo_thumbnail(entry)
+    url = entry.display_image_url.to_s.sub(%r{/cdn-cgi/image/[^/]+/}, "/cdn-cgi/image/width=480,height=480,fit=cover,quality=80/")
+    image_tag url, alt: entry.date_format_short, loading: "lazy"
+  end
+
   def format_body(body)
     return nil unless body.present?
 

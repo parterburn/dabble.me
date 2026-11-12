@@ -1,0 +1,18 @@
+<%# The start of an entry's text, with "Read more" to open the whole entry
+    in place. No JavaScript: the full text sits in a <details>. %>
+<% text = entry.text_body.to_s.squish %>
+<% if text.present? %>
+  <% blurb = truncate(text, length: Entry::BLURB_LENGTH, separator: " ") %>
+  <% if blurb == text %>
+    <p class="s-blurb__text"><%= blurb %></p>
+  <% else %>
+    <div class="s-blurb">
+      <p class="s-blurb__text"><%= blurb %></p>
+      <details class="s-blurb__more">
+        <summary>Read more</summary>
+        <% body_html = format_body(entry.formatted_body) %>
+        <%= current_user.is_pro? ? link_hashtags(body_html) : body_html %>
+      </details>
+    </div>
+  <% end %>
+<% end %>

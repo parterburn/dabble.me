@@ -125,6 +125,9 @@ Rails.application.routes.draw do
   match 'entries/import/(:type)' => 'import#update', via: [:put], as: 'import_process'
   match '/entries/import/ohlife/upload'  => 'import#process_ohlife_images', via: [:post], :as => 'import_ohlife_images'
   get 'entries/export'   => 'entries#export', as: 'export_entries'
+  # Where an "export is ready" email leads (ExportsController).
+  get 'exports/:token'          => 'exports#show', as: 'export'
+  get 'exports/:token/download' => 'exports#download', as: 'download_export'
   get 'entries/calendar' => 'entries#calendar', as: 'entries_calendar'
 
   get 'past(/:anything)',               to: redirect('/entries')

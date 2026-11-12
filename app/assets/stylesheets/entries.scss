@@ -325,10 +325,30 @@ mark {
   padding-right:40px;
 }
 
+// Search box and its button, filling the width of their column.
+.s-search-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+// Inside a padded column whose neighbours (entry wells) are columns
+// themselves: reach the column's edges so the box lines up with them.
+.s-search-row--edge {
+  margin-left: -15px;
+  margin-right: -15px;
+}
+
+.s-search-row__field {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
 .s-clear-search {
   color:$light-gray;
   position: absolute;
-  right: 25px;
+  right: 12px;
   top: 10px;
   font-size: 20px;
   &:hover {
@@ -582,28 +602,32 @@ mark {
   clip: rect(0 0 0 0);
 }
 
+// Height of the "Add photos" box, and of the saved photo's thumbnail that
+// takes its place on the edit form.
+$photo-picker-height: 72px;
+
 .photo-picker__drop {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
+  justify-content: flex-start;
+  gap: 12px;
   width: 100%;
   max-width: 100%;
-  min-height: 140px;
+  min-height: $photo-picker-height;
   margin: 0;
-  padding: 20px;
+  padding: 10px 16px;
   border: 2px dashed $light-gray;
   border-radius: 8px;
   background: #fafaf8;
   color: $mid-gray;
   font-weight: normal;
-  text-align: center;
+  text-align: left;
   cursor: pointer;
   transition: border-color 0.15s ease, background-color 0.15s ease;
 
   .slab-icon {
-    font-size: 28px;
+    flex: none;
+    font-size: 26px;
     color: $olive;
   }
 
@@ -618,26 +642,24 @@ mark {
     border-style: solid;
   }
 
+  // Photos have been picked: their thumbnails sit above the box.
   &.is-compact {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 8px;
-    min-height: 0;
     margin-top: 12px;
-    padding: 12px;
-
-    .slab-icon {
-      font-size: 20px;
-    }
 
     .photo-picker__hint {
       display: none;
     }
 
     .photo-picker__count {
-      display: inline;
+      display: block;
     }
   }
+}
+
+.photo-picker__text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .photo-picker__title {
@@ -729,22 +751,45 @@ mark {
 }
 
 .photo-picker__current {
-  text-align: center;
+  text-align: left;
 }
 
+// The saved photo, as a small square the height of the "Add photos" box.
 .photo-picker__current-frame {
   position: relative;
-  display: inline-block;
+  display: block;
+  width: $photo-picker-height;
+  height: $photo-picker-height;
+  margin: 0;
+  overflow: hidden;
+  border-radius: 6px;
+
+  a {
+    display: block;
+    height: 100%;
+  }
 
   img {
     display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .photo-picker__remove {
+    top: 3px;
+    right: 3px;
+    width: 22px;
+    height: 22px;
+    font-size: 16px;
+    line-height: 22px;
   }
 }
 
 .photo-picker__removed {
-  margin: 0 0 4px;
+  margin: 0 0 8px;
   color: $mid-gray;
-  text-align: center;
+  text-align: left;
 
   .btn-link {
     padding: 0 0 0 4px;
@@ -819,7 +864,7 @@ mark {
         font-size: 15px;
         line-height: 1.5;
         color: $olive-950;
-        margin-bottom: 12px;
+        margin-bottom: 8px;
       }
       .btn {
         margin-top: 8px;
@@ -836,4 +881,77 @@ mark {
 // Keep the page behind the dialog from scrolling.
 body:has(.s-reflection-dialog[open]) {
   overflow: hidden;
+}
+
+// The photo grid on /entries/photos: square thumbnails, each linking to its
+// entry.
+.s-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 20px 0;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  @media (min-width: 1200px) {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+.s-photo-grid__photo {
+  display: block;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  background: #fff;
+  transition: opacity 0.15s;
+
+  &:hover,
+  &:focus {
+    opacity: 0.9;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+// A little room between a form's heading ("NEW ENTRY") and its first field.
+.s-new-entry > h3 {
+  margin-bottom: 8px;
+}
+
+// Start of an entry with "Read more" (entries/_blurb).
+.s-blurb__text {
+  margin: 12px 0 4px;
+}
+
+.s-blurb__more > summary {
+  display: inline-block;
+  color: $olive;
+  cursor: pointer;
+  list-style: none;
+
+  &::-webkit-details-marker {
+    display: none;
+  }
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.s-blurb__more[open] > summary {
+  display: none;
+}
+
+// Opened: the whole entry replaces the blurb.
+.s-blurb:has(> .s-blurb__more[open]) > .s-blurb__text {
+  display: none;
 }

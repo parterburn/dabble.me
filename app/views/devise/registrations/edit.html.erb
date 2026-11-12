@@ -59,17 +59,14 @@
 
     <section id="export" class="card p-6 sm:p-8">
       <h2 class="font-serif text-2xl text-primary">Export your entries</h2>
-      <p class="mt-1 text-sm text-muted">Download every entry as plain text or with its rich formatting.</p>
+      <p class="mt-1 text-sm text-muted">Get a copy of everything you've written<%= ", with your photos" if current_user.is_pro? %>.</p>
       <div class="mt-5 flex flex-wrap gap-3">
-        <%= link_to export_entries_path(:txt), class: "button-secondary" do %>TXT <span class="font-normal text-muted">plain text</span><% end %>
-        <%= link_to export_entries_path(:json), class: "button-secondary" do %>JSON <span class="font-normal text-muted">rich formatting</span><% end %>
-        <% if current_user.is_pro? && current_user.entries.only_images.any? %>
-          <%= link_to "Image URLs", export_entries_path(:txt, only_images: true), class: "button-secondary" %>
-        <% end %>
+        <%= link_to export_entries_path, class: "button-primary" do %>Export <span class="font-normal">ZIP</span><% end %>
+        <%= link_to export_entries_path(format: :md), class: "button-secondary" do %>Markdown <span class="font-normal text-muted">text only, downloads now</span><% end %>
       </div>
-      <% if current_user.is_pro? && current_user.entries.only_images.any? %>
-        <p class="mt-3 text-sm text-muted">The image list is a file of links. You can use a script or app to download them to your computer.</p>
-      <% end %>
+      <p class="mt-3 text-sm text-muted">
+        The ZIP holds your journal as a web page you can open in any browser and as Markdown<%= ", plus your photos" if current_user.is_pro? %>. We'll email you a link to download it. You'll sign in to use the link, and it works for 7 days. Exporting again within 12 hours downloads the same ZIP.
+      </p>
     </section>
   </div>
 </div>

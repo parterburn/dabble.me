@@ -363,12 +363,77 @@ RSpec.describe EntriesController, type: :controller do
       expect(response).to redirect_to(new_user_session_url)
     end
 
-    it 'should show the latest entry' do
+    def write(owner, body, date)
+      FactoryBot.create(:entry, user: owner, body: body, date: date)
+    end
+
+    # A PRO account with no entries of its own yet.
+    let(:pro) { FactoryBot.create(:user, plan: 'PRO Monthly PayHere') }
+    let(:today) { Time.now.in_time_zone(pro.send_timezone).to_date }
+
+    it "shows today's entry labelled TODAY, without a greeting, search or the latest entry" do
+      sign_in pro
+      write(pro, 'Something from last week', today - 6)
+      write(pro, 'What I wrote today', today)
+      get :latest
+      body = response.body
+
+      expect(response.status).to eq 200
+      expect(body).to have_content('TODAY')
+      expect(body).to have_content('What I wrote today')
+      expect(body).not_to have_content('Something from last week')
+      expect(body).not_to include('Welcome back', 'LATEST ENTRY', 'Search your entries', 'Write today')
+      expect(body).not_to have_content(entry.formatted_body)
+    end
+
+    it 'asks for an entry when today has none, and shows no older entry in its place' do
+      sign_in pro
+      write(pro, 'Something from last week', today - 6)
+      get :latest
+      body = response.body
+
+      expect(body).to include('Write today')
+      expect(Nokogiri::HTML(body).css('.label-past-years').map(&:text)).to eq([today.strftime('%A, %B %-d')])
+      expect(body).not_to have_content('Something from last week')
+    end
+
+    it 'shows every entry written on this day in earlier years, however far back' do
+      sign_in pro
+      write(pro, 'One year back', today.prev_year(1))
+      write(pro, 'Five years back', today.prev_year(5))
+      write(pro, 'Nine years back', today.prev_year(9))
+      write(pro, 'Same year, other day', today - 40)
+      write(pro, 'Last year, a day off', today.prev_year(1) + 1)
+      get :latest
+      body = response.body
+
+      expect(body.index('One year back')).to be < body.index('Five years back')
+      expect(body.index('Five years back')).to be < body.index('Nine years back')
+      expect(Nokogiri::HTML(body).css('.s-entry-header .label-past-years').map(&:text))
+        .to eq(['ON THIS DAY 1 YEAR AGO', 'ON THIS DAY 5 YEARS AGO', 'ON THIS DAY 9 YEARS AGO'])
+      expect(body).not_to have_content('Same year, other day')
+      expect(body).not_to have_content('Last year, a day off')
+    end
+
+    it 'keeps entries from this day in earlier years for PRO accounts only' do
+      sign_in user
+      write(user, 'One year back', today.prev_year(1))
+      get :latest
+
+      expect(response.body).not_to have_content('One year back')
+    end
+
+    it 'shows Year in Progress under today, with day links that open in the same tab' do
       sign_in user
       get :latest
-      expect(response.status).to eq 200
-      expect(response.body).to have_content(entry.formatted_body)
-      expect(response.body).not_to have_content(not_my_entry.formatted_body)
+      body = response.body
+
+      expect(body.index('Write today') || body.index('>TODAY<')).to be < body.index('Year in Progress')
+      expect(body).not_to include('of the year completed', 'Write your memories down')
+
+      day_links = Nokogiri::HTML(body).css('#year-in-review a.day')
+      expect(day_links).not_to be_empty
+      expect(day_links.map { |link| link['target'] }.compact).to be_empty
     end
 
     it 'should show a CTA to logged in users without entries' do
@@ -382,6 +447,72 @@ RSpec.describe EntriesController, type: :controller do
     end
   end
 
+  describe 'photos' do
+    def photo_entry(owner, date)
+      entry = FactoryBot.create(:entry, user: owner, body: 'A day with a photo', date: date)
+      entry.update_columns(image: 'photo.jpg')
+      entry
+    end
+
+    it 'shows a grid of photos, each linking to its entry, without entry text' do
+      sign_in paid_user
+      newer = photo_entry(paid_user, Date.new(2026, 3, 2))
+      older = photo_entry(paid_user, Date.new(2026, 3, 1))
+      FactoryBot.create(:entry, user: paid_user, body: 'No photo here', date: Date.new(2026, 3, 3))
+      photo_entry(user, Date.new(2026, 3, 4))
+
+      get :index, params: { group: 'photos' }
+      links = Nokogiri::HTML(response.body).css('.s-photo-grid a.s-photo-grid__photo')
+
+      expect(response.status).to eq 200
+      expect(links.map { |link| link['href'] }).to eq([entry_path(newer), entry_path(older)])
+      expect(links.map { |link| link['target'] }.compact).to be_empty
+      expect(links.first.at_css('img')['src']).to include('/cdn-cgi/image/width=480,height=480,fit=cover,quality=80/https://')
+      expect(response.body).not_to have_content('A day with a photo')
+    end
+
+    it 'sends someone with no photos back to the home page' do
+      sign_in paid_user
+      get :index, params: { group: 'photos' }
+
+      expect(response).to redirect_to(latest_entry_path)
+    end
+  end
+
+  describe 'songs' do
+    def song_entry(body)
+      entry = FactoryBot.create(:entry, user: paid_user, body: body, date: Date.new(2026, 3, 1))
+      entry.update_columns(songs: [{ 'spotify_id' => 'abc123', 'artists' => ['Artist'], 'title' => 'Title' }])
+      entry
+    end
+
+    it 'shows the start of a long entry with the rest behind Read more' do
+      sign_in paid_user
+      song_entry("<p>#{'Windows down the whole way. ' * 20}</p><p>The very last line.</p>")
+
+      get :spotify
+      page = Nokogiri::HTML(response.body)
+      blurb = page.at_css('.s-blurb > .s-blurb__text').text
+
+      expect(blurb.length).to be <= Entry::BLURB_LENGTH
+      expect(blurb).to start_with('Windows down the whole way.').and end_with('...')
+      expect(page.at_css('.s-blurb__more > summary').text).to eq('Read more')
+      expect(page.at_css('.s-blurb__more').text).to include('The very last line.')
+      expect(page.at_css('.s-blurb__more')['open']).to be_nil
+    end
+
+    it 'shows a short entry whole, with nothing to expand' do
+      sign_in paid_user
+      song_entry('<p>Short and sweet.</p>')
+
+      get :spotify
+      page = Nokogiri::HTML(response.body)
+
+      expect(page.at_css('.s-blurb__text').text).to eq('Short and sweet.')
+      expect(page.at_css('.s-blurb__more')).to be_nil
+    end
+  end
+
   describe 'export' do
     it 'should redirect to sign in if not logged in' do
       get :export, format: 'txt'
@@ -389,16 +520,12 @@ RSpec.describe EntriesController, type: :controller do
       expect(response.body).to eq 'You need to login or sign up before continuing.'
     end
 
-    it 'should show me the page' do
+    it 'queues an export and sends no entry text' do
       sign_in user
-      get :export, format: 'txt'
-      expect(response.status).to eq 200
-      # The export streams an Enumerator. On Rails 8.1, response.body in a controller
-      # spec returns it unread, so read it the way Rack does.
-      body = +''
-      response.each { |chunk| body << chunk }
-      expect(body).to have_content(entry.formatted_body)
-      expect(body).not_to have_content(not_my_entry.formatted_body)
+      expect(ExportEntriesJob).to receive(:perform_later).with(kind_of(Integer), {})
+      expect { get :export }.to change { user.exports.count }.by(1)
+      expect(response).to redirect_to(edit_user_registration_path(anchor: 'export'))
+      expect(response.body).not_to include(entry.formatted_body)
     end
   end
 end

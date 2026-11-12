@@ -1,3 +1,5 @@
+<%# Days link to their entry (or to writing one). They open in a new tab unless new_tab: false is passed. %>
+<% link_target = local_assigns.fetch(:new_tab, true) ? "_blank" : nil %>
 <div class="table-container">
   <div class="contribution-graph">
     <div class="month-labels" style="display: grid; font-size: 11px; color: #999; font-weight: 600; text-transform: uppercase; padding-bottom: 5px;">
@@ -31,7 +33,7 @@
           <% if day_data && day_data[:has_entry] %>
             <% streak_text = day_data[:streak] > 2 ? "#{day_data[:streak]} day streak! " : "" %>
             <div style="margin: 0 auto;" rel="tooltip" title="<%= streak_text %>Entry on <%= day_data[:date].strftime('%a, %b %-d') %>">
-              <%= link_to day_entry_path(year: day_data[:date].year, month: day_data[:date].month, day: day_data[:date].day), class: "day", title: "Entry on #{day_data[:date].strftime('%B %-d, %Y')}#{streak_text}", target: "_blank" do %>
+              <%= link_to day_entry_path(year: day_data[:date].year, month: day_data[:date].month, day: day_data[:date].day), class: "day", title: "Entry on #{day_data[:date].strftime('%B %-d, %Y')}#{streak_text}", target: link_target do %>
                 <div class="box active <%= 'streak' if day_data[:streak] > 2 %>" style="margin: 0 auto;"></div>
               <% end %>
             </div>
@@ -39,7 +41,7 @@
             <% user_today = @user_today || Time.now.in_time_zone(current_user.send_timezone.presence || "UTC").to_date %>
             <% is_future = date >= user_today %>
             <div style="margin: 0 auto;" rel="tooltip" title="<%= 'No entry on ' unless is_future %><%= date.strftime('%a, %b %-d') %>">
-              <%= link_to new_entry_path(day: date.strftime('%Y-%m-%d')), class: "day", title: "#{is_future ? 'Future date' : 'No entry'} on #{date.strftime('%B %-d, %Y')}", target: "_blank" do %>
+              <%= link_to new_entry_path(day: date.strftime('%Y-%m-%d')), class: "day", title: "#{is_future ? 'Future date' : 'No entry'} on #{date.strftime('%B %-d, %Y')}", target: link_target do %>
                 <div class="box" style="margin: 0 auto; <%= 'opacity: 0.5;' if is_future %>"></div>
               <% end %>
             </div>

@@ -19,6 +19,11 @@ entry_maintenance:
   class: "EntryMaintenanceWorker"
   description: "Weekly on Wednesday at 3:00 PM UTC"
 
+export_cleanup:
+  cron: "20 4 * * *"
+  class: "ExportCleanupWorker"
+  description: "Daily at 4:20 AM UTC. Deletes the files of exports past their 7 days."
+
 capture_business_metrics:
   cron: "5 0 * * *"
   class: "CaptureBusinessMetricsWorker"

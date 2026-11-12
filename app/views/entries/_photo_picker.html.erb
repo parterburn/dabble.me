@@ -8,15 +8,15 @@
   <% if has_photo %>
     <%= f.hidden_field :remove_image, value: "0", class: "j-photo-remove-flag" %>
     <div class="photo-picker__current j-photo-current">
-      <div class="pictureFrame editable photo-picker__current-frame">
+      <div class="photo-picker__current-frame">
         <%= link_to entry.display_image_url(cloudflare: false), target: "_blank", rel: "noopener" do %>
-          <%= image_code(entry) %>
+          <%= photo_thumbnail(entry) %>
         <% end %>
         <button type="button" class="photo-picker__remove j-photo-remove-current" aria-label="Remove photo" title="Remove photo">&times;</button>
       </div>
     </div>
     <p class="photo-picker__removed j-photo-removed" hidden>
-      Photo will be removed when you save.
+      Photo will be deleted when you save.
       <button type="button" class="btn-link j-photo-undo">Undo</button>
     </p>
   <% end %>
@@ -26,9 +26,11 @@
   <label for="entry_image" class="photo-picker__drop j-photo-drop" <%= "hidden" if has_photo %>>
     <%= f.file_field :image, accept: Entry::ALLOWED_IMAGE_TYPES.join(","), multiple: true, class: "photo-picker__input" %>
     <span class="slab-icon slab-icon--images" aria-hidden="true"></span>
-    <span class="photo-picker__title j-photo-title">Add photo(s)</span>
-    <span class="photo-picker__hint">Drag photos here or click to browse</span>
-    <span class="photo-picker__count j-photo-count"></span>
+    <span class="photo-picker__text">
+      <span class="photo-picker__title j-photo-title">Add photos</span>
+      <span class="photo-picker__hint">Drag up to <%= max_photos %> photos or click to browse</span>
+      <span class="photo-picker__count j-photo-count"></span>
+    </span>
   </label>
 
   <p class="photo-picker__message j-photo-message" role="status" aria-live="polite"></p>

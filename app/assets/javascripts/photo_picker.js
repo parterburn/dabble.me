@@ -131,7 +131,7 @@
       var full = files.length >= max;
       drop.classList.toggle("is-compact", files.length > 0);
       if (!current || current.hidden) { drop.hidden = full; }
-      title.textContent = files.length ? "Add more photos" : "Add photo(s)";
+      title.textContent = files.length ? "Add more photos" : "Add photos";
       count.textContent = files.length ? files.length + " of " + max + " photos" : "";
     }
 

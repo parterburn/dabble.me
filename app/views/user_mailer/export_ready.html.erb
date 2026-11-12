@@ -1,7 +1,15 @@
 <p>Hey <%= @user.first_name_or_fallback %>,</p>
 
 <p>
-  Your Dabble Me export is ready! The file
-  <strong><%= @filename %></strong>
-  is attached to this email.
+  Your Dabble Me export is ready:
+  <%= pluralize(@export.entry_count, "entry") %><% if @export.image_count.positive? %> and <%= pluralize(@export.image_count, "photo") %><% end %>, as a ZIP file.
 </p>
+
+<p><strong><%= link_to "Download your export", @export_url %></strong></p>
+
+<p>
+  You'll be asked to sign in first, so this email alone can't be used to get your journal.
+  The link works until <%= @export.expires_at.strftime("%B %-d, %Y") %>. After that the file is deleted.
+</p>
+
+<p>If you didn't ask for this, reply to this email and change your password.</p>

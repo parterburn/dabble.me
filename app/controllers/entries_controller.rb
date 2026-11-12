@@ -11,6 +11,9 @@ class EntriesController < ApplicationController
 
   rescue_from InvalidDateError, with: :handle_invalid_date
 
+  # Photos on a page of the photo grid: full rows at 3, 4 and 6 across.
+  PHOTOS_PER_PAGE = 60
+
   def index
     @entries = current_user.entries.includes(:inspiration)
 
@@ -39,7 +42,15 @@ class EntriesController < ApplicationController
       @title = 'All Entries'
     end
 
-    @entries = @entries.page(params[:page]).per(index_per_page)
+    photo_grid = params[:group] == 'photos' && !request.format.json?
+    if photo_grid
+      # The grid shows only photos, so skip the entry text (and decrypting it).
+      # uploading_image_at is needed by Entry#uploading_image?.
+      @entries = @entries.unscope(:includes).select(:id, :user_id, :date, :image, :uploading_image_at)
+                         .page(params[:page]).per(PHOTOS_PER_PAGE)
+    else
+      @entries = @entries.page(params[:page]).per(index_per_page)
+    end
 
     if @entries.empty? && params[:format] != "json"
       flash[:alert] = "No entries found." if params[:group].present? || params[:subgroup].present?
@@ -55,7 +66,7 @@ class EntriesController < ApplicationController
         end_date = parse_iso_date(params[:end]) || @user_today
         render json: calendar_json(current_user.entries
           .where("date >= ? AND date < ?", start_date, end_date)) }
-      format.html
+      format.html { render 'photos' if photo_grid }
     end
   end
 
@@ -69,19 +80,24 @@ class EntriesController < ApplicationController
     end
   end
 
+  # The home page: today's entry (or a nudge to write it), the year so far,
+  # and what was written on this day in earlier years.
   def latest
-    @title = "Latest Entry — Dabble me."
-    @lastest_entry = current_user.entries.includes(:inspiration).order(date: :asc).first
+    @title = "Today — Dabble me."
+    @has_entries = current_user.entries.exists?
+    @today_entry = current_user.entries.includes(:inspiration).where(date: @user_today.all_day).first
     set_hashtags
     set_sidebar_stats
     set_years_ago if current_user.is_pro?
   end
 
+  # Every entry written on this month and day in an earlier year, as
+  # [years back, entry] pairs, most recent year first.
   def set_years_ago
-    user_time = Time.now.in_time_zone(current_user.send_timezone)
-    day_ranges = (1..5).map { |y| (user_time - y.years).to_date.all_day }
-    years_ago_scope = day_ranges.map { |range| current_user.entries.where(date: range) }.reduce(:or)
-    @years_ago_entries = (years_ago_scope || current_user.entries.none).index_by { |e| (user_time.year - e.date.year) }
+    on_this_day = current_user.entries.includes(:inspiration)
+                              .where("extract(month from date) = ? AND extract(day from date) = ?", @user_today.month, @user_today.day)
+                              .where("date < ?", @user_today.beginning_of_year)
+    @years_ago_entries = on_this_day.map { |entry| [@user_today.year - entry.date.year, entry] }.sort_by { |years_back, entry| [years_back, entry.id] }
   end
 
   def random
@@ -249,60 +265,33 @@ class EntriesController < ApplicationController
     redirect_to entries_path
   end
 
+  # .md streams the journal as Markdown right away. Anything else is a ZIP
+  # built in the background (ExportEntriesJob): the journal as a web page and
+  # as Markdown, plus photos. Asking for the same ZIP again inside
+  # Export::LIMIT_PERIOD downloads the last one.
   def export
-    only_images = params[:only_images] == 'true'
-    search_term = params[:search].present? && search_params[:term].present? ? search_params[:term] : nil
-    year = params[:year]
+    search_term = params[:search].present? ? search_params[:term].presence : nil
+    year = params[:year].presence
+    raise InvalidDateError if year && year !~ /\A(19|20)\d{2}\z/
 
-    # Validate year format early
-    if year.present? && year !~ /\A(19|20)\d{2}\z/
-      raise InvalidDateError
-    end
-
-    entries_scope = build_export_scope(only_images, search_term, year)
-    entry_count = entries_scope.count
-
-    # Background the job if more than 100 entries
-    if entry_count > 100
-      export_options = { only_images: only_images, search_term: search_term, year: year }.compact
-      ExportEntriesJob.perform_later(current_user.id, request.format.symbol.to_s, export_options)
-      redirect_to settings_path, notice: "Your export is being prepared. You'll receive an email with the file attached shortly."
+    if request.format.md?
+      stream_markdown_export(search_term, year)
       return
     end
 
-    filename = build_export_filename(only_images, search_term, year)
-
-    respond_to do |format|
-      format.json do
-        headers['Content-Type'] = 'application/json'
-        headers['Content-Disposition'] = "attachment; filename=#{filename.gsub('.txt', '.json')}"
-        self.response_body = Enumerator.new do |yielder|
-          yielder << "[\n"
-          first = true
-          entries_scope.select(:id, :user_id, :date, :body, :image).find_each(batch_size: 100) do |entry|
-            yielder << ",\n" unless first
-            first = false
-            entry_hash = { date: entry.date.strftime('%Y-%m-%d'), body: entry.body.strip }
-            entry_hash[:image] = entry.image_url_cdn(cloudflare: false) if entry.image_stored?
-            yielder << JSON.pretty_generate(entry_hash)
-          end
-          yielder << "\n]"
-        end
-      end
-      format.txt do
-        headers['Content-Type'] = 'text/plain'
-        headers['Content-Disposition'] = "attachment; filename=#{filename}"
-        self.response_body = Enumerator.new do |yielder|
-          entries_scope.select(:id, :user_id, :date, :body, :image).find_each(batch_size: 100) do |entry|
-            if only_images
-              yielder << "#{entry.image_url_cdn(cloudflare: false)}\n"
-            else
-              yielder << "## #{entry.date.strftime('%Y-%m-%d')}\n"
-              yielder << "#{entry.text_body}\n\n"
-            end
-          end
-        end
-      end
+    scope = Export.scope_for(year: year, search_term: search_term)
+    back = edit_user_registration_path(anchor: "export")
+    recent = current_user.exports.within_limit.where(scope: scope).order(:created_at).last
+    if recent&.preparing?
+      redirect_back fallback_location: back, notice: "Your export is already being prepared. We'll email you a link when it's ready."
+    elsif recent&.downloadable?
+      redirect_to download_export_path(recent)
+    elsif current_user.exports.where(created_at: 1.hour.ago..).count >= Export::HOURLY_LIMIT
+      redirect_back fallback_location: back, alert: "You've requested a lot of exports in the last hour. Please try again later."
+    else
+      export = current_user.exports.create!(scope: scope)
+      ExportEntriesJob.perform_later(export.id, { search_term: search_term, year: year }.compact)
+      redirect_back fallback_location: back, notice: "Your export is being prepared. We'll email you a link to download it. The link works for 7 days."
     end
   end
 
@@ -554,30 +543,21 @@ class EntriesController < ApplicationController
     )
   end
 
-  def build_export_scope(only_images, search_term, year)
-    if only_images
-      current_user.entries.only_images.reorder(:date)
-    elsif search_term.present?
-      Search.new(term: search_term, user: current_user).entries.reorder(:date)
-    elsif year.present?
-      start_date = Date.new(year.to_i, 1, 1)
-      end_date = Date.new(year.to_i, 12, 31)
-      current_user.entries.where(date: start_date..end_date).reorder(:date)
-    else
-      current_user.entries.reorder(:date)
-    end
-  end
+  def stream_markdown_export(search_term, year)
+    entries = if search_term
+                Search.new(term: search_term, user: current_user).entries
+              elsif year
+                current_user.entries.where(date: Time.utc(year.to_i).all_year)
+              else
+                current_user.entries
+              end
+    name = ["dabble-me", year, ("search" if search_term), Time.current.strftime("%Y-%m-%d")].compact.join("-")
 
-  def build_export_filename(only_images, search_term, year)
-    timestamp = Time.now.strftime('%Y-%m-%d')
-    if only_images
-      "dabble_export_image_entries_#{timestamp}.txt"
-    elsif search_term.present?
-      "dabble_export_search_#{search_term.parameterize}_#{timestamp}.txt"
-    elsif year.present?
-      "dabble_export_#{year}.txt"
-    else
-      "dabble_export_#{timestamp}.txt"
-    end
+    headers["Content-Type"] = "text/markdown; charset=utf-8"
+    headers["Content-Disposition"] = %(attachment; filename="#{name}.md")
+    headers["Cache-Control"] = "no-store"
+    # Rack::ETag would read the whole body to hash it; this stops it.
+    headers["Last-Modified"] = Time.current.httpdate
+    self.response_body = ExportMarkdown.stream(entries)
   end
 end

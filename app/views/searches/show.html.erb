@@ -18,8 +18,8 @@
   <div class="col-md-8 col-md-offset-2">
     <br>
     <%= form_for @search, url: search_path, method: :get, html: { class: "form-horizontal" } do |f| %>
-      <div class="form-group">
-        <div class="col-xs-8 col-sm-9" style="padding-right: 0px;">
+      <div class="s-search-row">
+        <div class="s-search-row__field">
           <%= f.text_field :term, class: "form-control input-lg s-search-with-clear", autofocus: true, placeholder: "What are you looking for?" %>
           <% if @search.term.present? %>
             <%= link_to search_path, class: "s-clear-search", rel: "tooltip", title: "Clear search" do %>
@@ -27,9 +27,7 @@
             <% end %>
           <% end %>
         </div>
-        <div class="col-xs-4 col-sm-3">
-          <%= f.submit "Search", class: "btn btn-primary btn-lg" %>
-        </div>
+        <%= f.submit "Search", class: "btn btn-primary btn-lg" %>
       </div>
     <% end %>
 
@@ -63,7 +61,7 @@
       </div>
 
       <div class="center s-search-export">
-        <%= link_to export_entries_path(search: { term: @search.term }, format: :txt), class: "btn btn-default" do %>
+        <%= link_to export_entries_path(search: { term: @search.term }), class: "btn btn-default" do %>
           <span class="slab-icon slab-icon--arrow-down-to-line" aria-hidden="true"></span>
           Export Search Entries
         <% end %>

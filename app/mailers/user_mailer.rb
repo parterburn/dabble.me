@@ -59,12 +59,19 @@ class UserMailer < ActionMailer::Base
     email.mailgun_options = {tag: 'EntryError'}
   end
 
-  def export_ready(user, file, filename, format)
-    @user = user
-    @filename = filename
-    content_type = format.to_s == 'json' ? 'application/json' : 'text/plain'
-    attachments[filename] = { mime_type: content_type, content: file.read }
-    email = mail(to: user.email, subject: 'Your Dabble Me export is ready')
+  # The link opens the app, which asks for a sign-in before the download.
+  def export_ready(export)
+    @export = export
+    @user = export.user
+    @export_url = export_url(export)
+    email = mail(to: @user.email, subject: 'Your Dabble Me export is ready')
+    email.mailgun_options = { tag: 'Export' }
+  end
+
+  def export_failed(export)
+    @user = export.user
+    @settings_url = edit_user_registration_url(anchor: 'export')
+    email = mail(to: @user.email, subject: "We couldn't finish your Dabble Me export")
     email.mailgun_options = { tag: 'Export' }
   end
 
