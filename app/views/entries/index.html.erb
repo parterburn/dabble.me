@@ -24,7 +24,7 @@
   <% if current_user.is_pro? && params[:group] && params[:group] =~ /\A(19|20)\d{2}\z/ %>
     <div class="col-md-8 col-md-offset-1">
       <div class="center">
-        <%= link_to export_entries_path(year: params[:group], format: :txt), class: "btn btn-default", style: "margin: 15px auto;" do %>
+        <%= link_to export_entries_path(year: params[:group]), class: "btn btn-default", style: "margin: 15px auto;" do %>
           <span class="slab-icon slab-icon--arrow-down-to-line" aria-hidden="true"></span>
           Export Entries from <%= params[:group] %>
         <% end %>

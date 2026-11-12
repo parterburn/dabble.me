@@ -28,9 +28,7 @@ class ExportEntriesJob < ActiveJob::Base
   private
 
   def entries_for(user, options)
-    if options[:only_images]
-      user.entries.only_images
-    elsif options[:search_term].present?
+    if options[:search_term].present?
       Search.new(term: options[:search_term], user: user).entries
     elsif options[:year].present?
       user.entries.where(date: Time.utc(options[:year].to_i).all_year)

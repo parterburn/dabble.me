@@ -61,13 +61,10 @@
       <h2 class="font-serif text-2xl text-primary">Export your entries</h2>
       <p class="mt-1 text-sm text-muted">Get a copy of everything you've written<%= ", with your photos" if current_user.is_pro? %>.</p>
       <div class="mt-5 flex flex-wrap gap-3">
-        <%= link_to export_entries_path(:zip), class: "button-primary" do %>Everything <span class="font-normal">ZIP</span><% end %>
-        <%= link_to export_entries_path(:txt), class: "button-secondary" do %>TXT <span class="font-normal text-muted">plain text</span><% end %>
-        <%= link_to export_entries_path(:json), class: "button-secondary" do %>JSON <span class="font-normal text-muted">rich formatting</span><% end %>
+        <%= link_to "Export", export_entries_path, class: "button-primary" %>
       </div>
       <p class="mt-3 text-sm text-muted">
-        The ZIP holds your entries as text and JSON, plus your photos. We'll email you a link to download it. You'll sign in to use the link, and it works for 7 days.
-        A large journal exported as TXT or JSON is delivered the same way.
+        You get one ZIP with your entries as text and JSON<%= ", plus your photos" if current_user.is_pro? %>. We'll email you a link to download it. You'll sign in to use the link, and it works for 7 days. You can export once every 12 hours.
       </p>
     </section>
   </div>

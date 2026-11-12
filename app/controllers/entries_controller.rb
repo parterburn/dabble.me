@@ -265,59 +265,23 @@ class EntriesController < ApplicationController
     redirect_to entries_path
   end
 
+  # Every export is a ZIP built in the background (ExportEntriesJob): the
+  # entries as text and JSON, plus their photos. Nothing downloads from here.
   def export
-    only_images = params[:only_images] == 'true'
-    search_term = params[:search].present? && search_params[:term].present? ? search_params[:term] : nil
-    year = params[:year]
+    search_term = params[:search].present? ? search_params[:term].presence : nil
+    year = params[:year].presence
+    raise InvalidDateError if year && year !~ /\A(19|20)\d{2}\z/
 
-    # Validate year format early
-    if year.present? && year !~ /\A(19|20)\d{2}\z/
-      raise InvalidDateError
-    end
-
-    entries_scope = build_export_scope(only_images, search_term, year)
-    entry_count = entries_scope.count
-
-    # A ZIP, or anything over 100 entries, is built in the background and
-    # delivered as a link by email. Smaller text exports download right here.
-    if request.format.zip? || entry_count > 100
-      request_export_by_email(entry_count, { only_images: only_images, search_term: search_term, year: year }.compact)
-      return
-    end
-
-    filename = build_export_filename(only_images, search_term, year)
-
-    respond_to do |format|
-      format.json do
-        headers['Content-Type'] = 'application/json'
-        headers['Content-Disposition'] = "attachment; filename=#{filename.gsub('.txt', '.json')}"
-        self.response_body = Enumerator.new do |yielder|
-          yielder << "[\n"
-          first = true
-          entries_scope.select(:id, :user_id, :date, :body, :image).find_each(batch_size: 100) do |entry|
-            yielder << ",\n" unless first
-            first = false
-            entry_hash = { date: entry.date.strftime('%Y-%m-%d'), body: entry.body.strip }
-            entry_hash[:image] = entry.image_url_cdn(cloudflare: false) if entry.image_stored?
-            yielder << JSON.pretty_generate(entry_hash)
-          end
-          yielder << "\n]"
-        end
-      end
-      format.txt do
-        headers['Content-Type'] = 'text/plain'
-        headers['Content-Disposition'] = "attachment; filename=#{filename}"
-        self.response_body = Enumerator.new do |yielder|
-          entries_scope.select(:id, :user_id, :date, :body, :image).find_each(batch_size: 100) do |entry|
-            if only_images
-              yielder << "#{entry.image_url_cdn(cloudflare: false)}\n"
-            else
-              yielder << "## #{entry.date.strftime('%Y-%m-%d')}\n"
-              yielder << "#{entry.text_body}\n\n"
-            end
-          end
-        end
-      end
+    back = edit_user_registration_path(anchor: "export")
+    recent = current_user.exports.within_limit.order(:created_at).last
+    if recent&.preparing?
+      redirect_back fallback_location: back, notice: "Your export is already being prepared. We'll email you a link when it's ready."
+    elsif recent
+      redirect_back fallback_location: back, alert: export_limit_message(recent)
+    else
+      export = current_user.exports.create!
+      ExportEntriesJob.perform_later(export.id, { search_term: search_term, year: year }.compact)
+      redirect_back fallback_location: back, notice: "Your export is being prepared. We'll email you a link to download it. The link works for 7 days."
     end
   end
 
@@ -569,43 +533,12 @@ class EntriesController < ApplicationController
     )
   end
 
-  def request_export_by_email(entry_count, options)
-    back = edit_user_registration_path(anchor: "export")
-    if current_user.exports.preparing.where(created_at: 1.hour.ago..).exists?
-      redirect_to back, notice: "Your export is already being prepared. We'll email you a link when it's ready."
-    elsif current_user.exports.where(created_at: 1.day.ago..).count >= Export::DAILY_LIMIT
-      redirect_to back, alert: "You've requested several exports today. Please try again tomorrow."
-    else
-      export = current_user.exports.create!(entry_count: entry_count)
-      ExportEntriesJob.perform_later(export.id, options)
-      redirect_to back, notice: "Your export is being prepared. We'll email you a link to download it. The link works for 7 days."
-    end
-  end
+  def export_limit_message(recent)
+    hours = ((recent.created_at + Export::LIMIT_PERIOD - Time.current) / 1.hour).ceil
+    wait = hours > 1 ? "about #{hours} hours" : "under an hour"
+    message = "You can export once every #{Export::LIMIT_PERIOD.in_hours.to_i} hours. Try again in #{wait}."
+    return message unless recent.downloadable?
 
-  def build_export_scope(only_images, search_term, year)
-    if only_images
-      current_user.entries.only_images.reorder(:date)
-    elsif search_term.present?
-      Search.new(term: search_term, user: current_user).entries.reorder(:date)
-    elsif year.present?
-      start_date = Date.new(year.to_i, 1, 1)
-      end_date = Date.new(year.to_i, 12, 31)
-      current_user.entries.where(date: start_date..end_date).reorder(:date)
-    else
-      current_user.entries.reorder(:date)
-    end
-  end
-
-  def build_export_filename(only_images, search_term, year)
-    timestamp = Time.now.strftime('%Y-%m-%d')
-    if only_images
-      "dabble_export_image_entries_#{timestamp}.txt"
-    elsif search_term.present?
-      "dabble_export_search_#{search_term.parameterize}_#{timestamp}.txt"
-    elsif year.present?
-      "dabble_export_#{year}.txt"
-    else
-      "dabble_export_#{timestamp}.txt"
-    end
+    "#{message} Your last export is #{helpers.link_to('still available to download', export_path(recent), class: 'alert-link')}."
   end
 end

@@ -61,7 +61,7 @@
       </div>
 
       <div class="center s-search-export">
-        <%= link_to export_entries_path(search: { term: @search.term }, format: :txt), class: "btn btn-default" do %>
+        <%= link_to export_entries_path(search: { term: @search.term }), class: "btn btn-default" do %>
           <span class="slab-icon slab-icon--arrow-down-to-line" aria-hidden="true"></span>
           Export Search Entries
         <% end %>

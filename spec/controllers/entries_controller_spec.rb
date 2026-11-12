@@ -520,16 +520,12 @@ RSpec.describe EntriesController, type: :controller do
       expect(response.body).to eq 'You need to login or sign up before continuing.'
     end
 
-    it 'should show me the page' do
+    it 'queues an export and sends no entry text' do
       sign_in user
-      get :export, format: 'txt'
-      expect(response.status).to eq 200
-      # The export streams an Enumerator. On Rails 8.1, response.body in a controller
-      # spec returns it unread, so read it the way Rack does.
-      body = +''
-      response.each { |chunk| body << chunk }
-      expect(body).to have_content(entry.formatted_body)
-      expect(body).not_to have_content(not_my_entry.formatted_body)
+      expect(ExportEntriesJob).to receive(:perform_later).with(kind_of(Integer), {})
+      expect { get :export }.to change { user.exports.count }.by(1)
+      expect(response).to redirect_to(edit_user_registration_path(anchor: 'export'))
+      expect(response.body).not_to include(entry.formatted_body)
     end
   end
 end

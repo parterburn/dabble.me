@@ -5,7 +5,8 @@ class Export < ActiveRecord::Base
   LIFETIME = 7.days
   # How long a download link from the app works once handed out.
   LINK_LIFETIME = 5.minutes
-  DAILY_LIMIT = 5
+  # One export per person in this long. A failed one doesn't count.
+  LIMIT_PERIOD = 12.hours
 
   belongs_to :user
 
@@ -13,6 +14,7 @@ class Export < ActiveRecord::Base
 
   scope :preparing, -> { where(status: "preparing") }
   scope :with_file, -> { where.not(storage_key: nil) }
+  scope :within_limit, -> { where(created_at: LIMIT_PERIOD.ago..).where.not(status: "failed") }
   scope :past_expiry, -> { where(expires_at: ..Time.current) }
 
   before_destroy :delete_file

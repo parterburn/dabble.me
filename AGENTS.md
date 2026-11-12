@@ -117,7 +117,7 @@ Admin pages (`/admin/*` and `/sidekiq`) have two extra gates on top of `users.ad
 
 ### Exports
 
-`entries#export` downloads up to 100 entries as TXT or JSON on the spot. A ZIP (`export_entries_path(:zip)`), or any export over 100 entries, becomes an `Export`: `ExportEntriesJob` builds the ZIP with `ExportArchive` (`entries.txt`, `entries.json`, `images/`), `ExportStore` uploads it privately, and `UserMailer.export_ready` emails a link.
+Every export is a ZIP; nothing downloads from `entries#export` itself. It creates an `Export`, for everything or for one year or search: `ExportEntriesJob` builds the ZIP with `ExportArchive` (`entries.txt`, `entries.json`, `images/`), `ExportStore` uploads it privately, and `UserMailer.export_ready` emails a link. A person gets one export every `Export::LIMIT_PERIOD` (12 hours); a failed one doesn't count.
 
 - The emailed link goes to `ExportsController`, which needs a sign-in and only shows an export to its owner. `download` redirects to a storage link that lasts `Export::LINK_LIFETIME`. Never attach an export to an email or link to its file directly.
 - Exports are private: stored under `exports/` with no public ACL, in `AWS_EXPORTS_BUCKET` when set (`AWS_EXPORTS_REGION` if its region differs). Don't write them under `uploads/`, which is served publicly.
