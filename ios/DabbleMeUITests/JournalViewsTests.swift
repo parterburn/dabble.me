@@ -1198,7 +1198,8 @@ final class JournalViewsTests: XCTestCase {
         let tag = app.links["#work"]
         XCTAssertTrue(tag.waitForExistence(timeout: 5), "The #tag is a link")
         tag.tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ENDSWITH 'matching entries'")).firstMatch.waitForExistence(timeout: 10),
+        // (The tap lands on one of the entry's two tags.)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'matching entr'")).firstMatch.waitForExistence(timeout: 10),
                       "It searches for the tag")
         XCTAssertFalse(app.buttons["Open"].exists, "The drawer closed")
     }
@@ -1217,9 +1218,9 @@ final class JournalViewsTests: XCTestCase {
             let edit = app.buttons["Edit Entry"]
             XCTAssertTrue(edit.waitForExistence(timeout: 10))
             edit.tap()
-            let picker = app.datePickers["Entry date"].exists ? app.datePickers["Entry date"] : app.buttons["Entry date"]
-            XCTAssertTrue(picker.waitForExistence(timeout: 10))
-            picker.tap()
+            // The date, in the middle of the editor's bar, opens a calendar.
+            XCTAssertTrue(app.textViews["Entry"].waitForExistence(timeout: 10))
+            app.navigationBars.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
             let target = Calendar.current.date(byAdding: .day, value: offset, to: .now)!
             let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", target.formatted(.dateTime.weekday(.wide).month(.wide).day()))).firstMatch
             XCTAssertTrue(day.waitForExistence(timeout: 5))
@@ -1274,6 +1275,12 @@ final class JournalViewsTests: XCTestCase {
         snap("today-edit-pencil")
         pencil.tap()
         XCTAssertTrue(editor.waitForExistence(timeout: 10), "Straight into editing")
+        XCTAssertEqual(editor.value as? String, "A quiet day at home.")
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+        // The widget's "Add to today" link does the same.
+        XCUIDevice.shared.system.open(URL(string: "me.dabble.app:/today/edit")!)
+        XCTAssertTrue(editor.waitForExistence(timeout: 10), "Add to today opens today's entry for editing")
         XCTAssertEqual(editor.value as? String, "A quiet day at home.")
         app.buttons["Cancel"].tap()
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
