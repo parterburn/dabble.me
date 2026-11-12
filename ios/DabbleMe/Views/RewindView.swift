@@ -66,7 +66,25 @@ struct RewindView: View {
     private func load() async {
         guard rewind == nil else { return }
         do {
-            let summaries = try await model.entries(year: year)
+            var summaries = try await model.entries(year: year)
+            #if DEBUG
+            // Screenshots and UI tests without stored photos: -DabbleDebugRewindPhotos YES gives two
+            // entries in three a stand-in photo from the development server.
+            if UserDefaults.standard.bool(forKey: "DabbleDebugRewindPhotos") {
+                // Pictures the development server has on hand.
+                let standIns = ["baby", "runner", "first-date", "anxious", "untamed", "monkey-wrench", "caste", "born-a-crime", "second-mountain"]
+                summaries = summaries.map { summary in
+                    guard summary.imageUrl == nil, summary.id % 3 != 0 else { return summary }
+                    var copy = summary
+                    copy = EntrySummary(id: copy.id, date: copy.date, excerpt: copy.excerpt,
+                                        imageUrl: AppConfig.webURL("assets/\(standIns[copy.id % standIns.count]).jpg").absoluteString, imageProcessing: false,
+                                        hashtags: copy.hashtags, updatedAt: copy.updatedAt, previewText: copy.previewText,
+                                        yearsAgo: copy.yearsAgo, datedHashtags: copy.datedHashtags, songs: copy.songs,
+                                        previewTruncated: copy.previewTruncated, wordCount: copy.wordCount)
+                    return copy
+                }
+            }
+            #endif
             progress = 0.25
             let tagDates = (try? await model.tagDates())?.hashtags ?? []
             let ownName = model.me?.firstName
@@ -207,7 +225,7 @@ struct RewindView: View {
         case .places: places(rewind)
         case .soundtrack: soundtrack(rewind)
         case .hashtags: hashtags(rewind)
-        case .line: line
+        case .line: line(rewind)
         case .closing: closing(rewind)
         case .photos: photos(rewind)
         }
@@ -226,8 +244,8 @@ struct RewindView: View {
                 : "\(entries(rewind.entries.count)) and \(photos.count == 1 ? "a photo" : "\(photos.count) photos"). Here’s what you wrote down.")
                 .font(.system(.title3, design: .serif))
             Spacer(minLength: 12)
-            // Three from across the year: its first, middle and last.
-            PhotoSpread(entries: [photos.first, photos.count > 2 ? photos[photos.count / 2] : nil, photos.count > 1 ? photos.last : nil].compactMap { $0 })
+            // A few from across the year.
+            PhotoSpread(entries: Rewind.photos(from: photos, limit: 4))
             Spacer(minLength: 12)
             Text("Tap to go on. Tap the left edge to go back.")
                 .font(.footnote)
@@ -274,7 +292,7 @@ struct RewindView: View {
 
     private func month(_ rewind: Rewind) -> some View {
         let month = rewind.biggestMonth ?? (1, 0)
-        let photos = rewind.entries(inMonth: month.month).filter { $0.imageUrl != nil }
+        let photos = Rewind.photos(from: rewind.entries(inMonth: month.month), limit: 4)
         return VStack(alignment: .leading, spacing: 10) {
             Kicker("Your biggest month")
             Big(Rewind.monthName(month.month), size: 110)
@@ -282,7 +300,7 @@ struct RewindView: View {
                 .font(.system(.title3, design: .serif))
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 12)
-            PhotoSpread(entries: Array(photos.prefix(3)))
+            PhotoSpread(entries: photos)
             Spacer(minLength: 0)
         }
     }
@@ -297,6 +315,9 @@ struct RewindView: View {
             if let gap = rewind.longestGap {
                 Text("\(gap.from.formatted(.dateTime.month(.wide).day())) to \(gap.to.formatted(.dateTime.month(.wide).day())). Then you picked it back up.")
                     .font(.system(.title3, design: .serif))
+                // The last photo before it and the first after.
+                Spacer(minLength: 12)
+                PhotoSpread(entries: [rewind.photos.last { $0.day <= gap.from }, rewind.photos.first { $0.day >= gap.to }].compactMap { $0 })
             }
             Spacer(minLength: 0)
         }
@@ -306,11 +327,17 @@ struct RewindView: View {
         VStack(alignment: .leading, spacing: 14) {
             Kicker("Who showed up most")
             ForEach(Array(rewind.people.prefix(3).enumerated()), id: \.element.id) { rank, person in
-                HStack(alignment: .firstTextBaseline, spacing: 14) {
+                HStack(alignment: .center, spacing: 14) {
                     Text("\(rank + 1)")
                         .font(.custom("InstrumentSerif-Regular", size: 44))
                         .opacity(0.6)
                         .frame(width: 28, alignment: .leading)
+                    // A photo from an entry that names them (their latest), when there is one.
+                    if let photo = rewind.entries(mentioning: person).last(where: { $0.imageUrl != nil }) {
+                        Print(entry: photo, showsDate: false)
+                            .frame(width: 66)
+                            .rotationEffect(.degrees(rank.isMultiple(of: 2) ? -3 : 3))
+                    }
                     VStack(alignment: .leading, spacing: 2) {
                         Text(person.name)
                             .font(.custom("InstrumentSerif-Regular", size: 56))
@@ -328,6 +355,11 @@ struct RewindView: View {
                 .font(.footnote)
                 .opacity(0.75)
                 .padding(.top, 4)
+            Spacer(minLength: 8)
+            // More of the days they were in.
+            PhotoSpread(entries: Rewind.photos(from: rewind.people.prefix(3).flatMap { rewind.entries(mentioning: $0) }
+                .reduce(into: [Rewind.Entry]()) { seen, entry in if !seen.contains(entry) { seen.append(entry) } }
+                .sorted { $0.day < $1.day }, limit: 4))
             Spacer(minLength: 0)
         }
     }
@@ -349,6 +381,10 @@ struct RewindView: View {
                 .font(.footnote)
                 .opacity(0.75)
                 .padding(.top, 4)
+            Spacer(minLength: 8)
+            PhotoSpread(entries: Rewind.photos(from: places.flatMap { rewind.entries(mentioning: $0) }
+                .reduce(into: [Rewind.Entry]()) { seen, entry in if !seen.contains(entry) { seen.append(entry) } }
+                .sorted { $0.day < $1.day }, limit: 4))
             Spacer(minLength: 0)
         }
     }
@@ -369,7 +405,14 @@ struct RewindView: View {
     private func soundtrack(_ rewind: Rewind) -> some View {
         VStack(alignment: .leading, spacing: 14) {
             Kicker("Your \(String(year)) soundtrack")
-            ForEach(Array(rewind.songs.prefix(4).enumerated()), id: \.offset) { _, item in
+            ForEach(Array(rewind.songs.prefix(4).enumerated()), id: \.offset) { index, item in
+                HStack(alignment: .center, spacing: 14) {
+                // The photo from the day it was saved, when that day has one.
+                if let photo = rewind.entry(on: item.day), photo.imageUrl != nil {
+                    Print(entry: photo, showsDate: false)
+                        .frame(width: 72)
+                        .rotationEffect(.degrees(index.isMultiple(of: 2) ? -3 : 3))
+                }
                 VStack(alignment: .leading, spacing: 3) {
                     Text("“\(item.song.title ?? "A song")”")
                         .font(.custom("InstrumentSerif-Regular", size: 38))
@@ -388,11 +431,19 @@ struct RewindView: View {
                     }
                     .padding(.top, 2)
                 }
+                }
             }
             if rewind.songs.count > 4 {
                 Text("And \(rewind.songs.count - 4) more in Journal › Playlist.")
                     .font(.footnote)
                     .opacity(0.75)
+            }
+            // Where the songs' own days have no photo: the ones from around then.
+            let shown = rewind.songs.prefix(4)
+            if !shown.contains(where: { rewind.entry(on: $0.day)?.imageUrl != nil }) {
+                Spacer(minLength: 8)
+                PhotoSpread(entries: shown.compactMap { song in rewind.photos.last { $0.day <= song.day } ?? rewind.photos.first }
+                    .reduce(into: [Rewind.Entry]()) { seen, entry in if !seen.contains(entry) { seen.append(entry) } })
             }
             Spacer(minLength: 0)
         }
@@ -422,23 +473,32 @@ struct RewindView: View {
                         .font(.system(.title3, design: .serif))
                 }
             }
+            Spacer(minLength: 8)
+            // Days with the most used tag (or, with none photographed, any tagged day).
+            let tagged = rewind.entries.filter { entry in rewind.hashtags.first.map { top in entry.hashtags.contains { $0.lowercased() == top.tag.lowercased() } } ?? false }
+            PhotoSpread(entries: Rewind.photos(from: tagged.contains { $0.imageUrl != nil } ? tagged : rewind.entries.filter { !$0.hashtags.isEmpty }, limit: 4))
             Spacer(minLength: 0)
         }
     }
 
-    private var line: some View {
-        VStack(alignment: .leading, spacing: 14) {
+    private func line(_ rewind: Rewind) -> some View {
+        let day = story.lineDay.flatMap(JournalDay.init)
+        // That day's photo, or the one nearest before it.
+        let photo = day.flatMap { day in rewind.photos.last { $0.day <= day } }
+        return VStack(alignment: .leading, spacing: 14) {
             Kicker("Line of the year")
             Text("“\(story.line ?? "")”")
                 .font(.custom("InstrumentSerif-Regular", size: 40))
                 .lineSpacing(2)
                 .minimumScaleFactor(0.5)
                 .fixedSize(horizontal: false, vertical: false)
-            if let day = story.lineDay.flatMap(JournalDay.init) {
+            if let day {
                 Text("You, \(day.formatted(.dateTime.month(.wide).day()))")
                     .font(.system(.subheadline, design: .serif))
                     .opacity(0.85)
             }
+            Spacer(minLength: 8)
+            PhotoSpread(entries: [photo].compactMap { $0 })
             Spacer(minLength: 0)
         }
     }
@@ -457,6 +517,9 @@ struct RewindView: View {
                 Text("\(rewind.days.count == 1 ? "One day" : "\(rewind.days.count.formatted()) days") you’ll be able to look back on. Keep writing them down.")
                     .font(.system(.title3, design: .serif))
             }
+            Spacer(minLength: 8)
+            // A last few, from between the ones the cover showed.
+            PhotoSpread(entries: Rewind.photos(from: Array(rewind.photos.dropFirst().dropLast()), limit: 3))
             Spacer(minLength: 0)
             if rewind.photos.isEmpty {
                 Button("Start Over") { index = 0 }
@@ -565,30 +628,53 @@ private struct Big: View {
     }
 }
 
-/// A few of the year's photos, set down like prints: white edges, a little askew.
+/// A few of the year's photos, set down like prints: overlapping, a little askew.
 private struct PhotoSpread: View {
     let entries: [Rewind.Entry]
 
     var body: some View {
         if !entries.isEmpty {
-            HStack(spacing: -10) {
+            HStack(spacing: entries.count > 3 ? -22 : -12) {
                 ForEach(Array(entries.enumerated()), id: \.element.id) { index, entry in
-                    Color.black.opacity(0.1)
-                        .aspectRatio(0.82, contentMode: .fit)
-                        .overlay {
-                            AsyncImage(url: entry.thumbnail) { $0.resizable().scaledToFill() } placeholder: { Color.clear }
-                        }
-                        .clipped()
-                        .padding(5)
-                        .background(.white)
-                        .shadow(color: .black.opacity(0.22), radius: 5, y: 2)
-                        .rotationEffect(.degrees([-4.0, 2.5, -1.5][index % 3]))
-                        .zIndex(index == 1 ? 1 : 0)
+                    Print(entry: entry)
+                        .rotationEffect(.degrees([-4.0, 2.5, -1.5, 3.5][index % 4]))
+                        .offset(y: index.isMultiple(of: 2) ? 0 : 10)
+                        .zIndex(Double(index))
                 }
             }
-            .frame(maxWidth: .infinity, maxHeight: 220)
+            // One photo alone is a print, not a poster.
+            .frame(maxWidth: entries.count == 1 ? 210 : .infinity, maxHeight: 250)
+            .frame(maxWidth: .infinity)
             .accessibilityHidden(true)
         }
+    }
+}
+
+/// One photo as a print: a white edge, its date written underneath.
+private struct Print: View {
+    let entry: Rewind.Entry
+    var showsDate = true
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Color.black.opacity(0.1)
+                .aspectRatio(showsDate ? 0.86 : 1, contentMode: .fit)
+                .overlay {
+                    AsyncImage(url: entry.thumbnail) { $0.resizable().scaledToFill() } placeholder: { Color.clear }
+                }
+                .clipped()
+            if showsDate {
+                Text(entry.day.formatted(.dateTime.month(.abbreviated).day()))
+                    .font(.system(size: 10, weight: .medium, design: .serif))
+                    .foregroundStyle(Color(red: 0x16 / 255, green: 0x17 / 255, blue: 0x14 / 255).opacity(0.75))
+                    .lineLimit(1)
+                    .padding(.top, 4)
+            }
+        }
+        .padding(showsDate ? 5 : 3)
+        .padding(.bottom, showsDate ? 1 : 0)
+        .background(.white)
+        .shadow(color: .black.opacity(0.25), radius: 5, y: 2)
     }
 }
 

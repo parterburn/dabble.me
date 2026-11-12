@@ -1390,7 +1390,8 @@ final class JournalViewsTests: XCTestCase {
     /// like a story, to the end and back.
     func testRewindOpensFromStatsAndPagesThrough() throws {
         let year = Calendar.current.component(.year, from: .now)
-        let app = launch(["-DabbleDebugRewindYear", String(year)])
+        // (Stand-in photos: the demo's own need storage the test server may not have.)
+        let app = launch(["-DabbleDebugRewindYear", String(year), "-DabbleDebugRewindPhotos", "YES"])
         tab(app, "Journal").tap()
         switchJournal(app, from: "Journal", to: "Stats")
         let card = app.buttons["\(year) Rewind"]
@@ -1401,7 +1402,8 @@ final class JournalViewsTests: XCTestCase {
         let cover = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Here’s what you wrote down.")).firstMatch
         XCTAssertTrue(cover.waitForExistence(timeout: 300), "The cover comes up")
         snap("rewind-1")
-        let forward = app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.6))
+        // Near the top, clear of the last card's photos (which open their days).
+        let forward = app.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.14))
         forward.tap()
         XCTAssertTrue(app.staticTexts["You showed up"].waitForExistence(timeout: 5))
         var cards = 2
@@ -1410,12 +1412,12 @@ final class JournalViewsTests: XCTestCase {
         while !last.exists, cards < 14 {
             forward.tap()
             cards += 1
-            usleep(600_000)
+            sleep(2) // photos come in
             snap("rewind-\(cards)")
         }
         XCTAssertTrue(last.exists, "The last card offers to start over")
         // The left edge goes back; Start Over to the cover; the X closes it.
-        app.coordinate(withNormalizedOffset: CGVector(dx: 0.08, dy: 0.6)).tap()
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.08, dy: 0.14)).tap()
         XCTAssertTrue(last.waitForNonExistence(timeout: 5) || cards == 2)
         forward.tap()
         last.tap()

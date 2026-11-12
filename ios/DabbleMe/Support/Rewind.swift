@@ -92,6 +92,18 @@ struct Rewind: Equatable, Sendable {
         return from == to ? from : "\(from) to \(to)"
     }
 
+    /// Up to `limit` of these entries' photos, spread evenly across them (the first and last
+    /// included), so a handful stands for the whole run.
+    static func photos(from entries: [Entry], limit: Int) -> [Entry] {
+        let photos = entries.filter { $0.imageUrl != nil }
+        guard photos.count > limit, limit > 1 else { return Array(photos.prefix(limit)) }
+        return (0..<limit).map { photos[Int((Double($0) * Double(photos.count - 1) / Double(limit - 1)).rounded())] }
+    }
+
+    func entry(on day: JournalDay) -> Entry? {
+        entries.first { $0.day == day }
+    }
+
     func entries(inMonth month: Int) -> [Entry] {
         entries.filter { Int($0.day.iso.dropFirst(5).prefix(2)) == month }
     }
