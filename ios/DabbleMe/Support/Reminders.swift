@@ -72,11 +72,11 @@ struct ReminderPlan: Decodable, Sendable {
     }
 }
 
-/// Local notifications: one a day at the reminder's time, asking how the day was, with an entry
-/// to look back on (this date in an earlier year, or else the day's Rewind, as Today shows).
-/// Today's is skipped once today is written. With entry previews on (Settings), it shows the
-/// start of that entry and its photo; without, only that there's a memory. A tap writes; touch
-/// and hold offers reading the memory. Everything is scheduled on the device, two weeks ahead,
+/// Local notifications: one a day at the reminder's time, with an entry to look back on (this
+/// date in an earlier year, or else the day's Rewind, as Today shows). Today's is skipped once
+/// today is written. With entry previews on (Settings), it's that entry: "Rewind · 22 days ago"
+/// over the start of it, and its photo. Without, "How was your day?" and only that there's a
+/// memory. A tap opens Today; touch and hold offers reading the memory or writing. Everything is scheduled on the device, two weeks ahead,
 /// and rebuilt whenever the app opens or something changes (and now and then in the background),
 /// so there's no server push to set up.
 @MainActor
@@ -162,13 +162,14 @@ final class ReminderScheduler {
             let content = UNMutableNotificationContent()
             content.title = "How was your day?"
             content.sound = .default
-            content.userInfo = ["destination": "write"]
+            content.userInfo = ["destination": "today"]
             if let memory = memories[iso] {
                 content.categoryIdentifier = Self.memoryCategory
                 content.userInfo["entryID"] = memory.entry.id
                 let label = Self.label(for: memory, on: iso)
                 if previews {
-                    content.subtitle = label
+                    // The memory is the notification: its label for a title, no "How was your day?".
+                    content.title = label
                     content.body = memory.entry.excerpt.isEmpty ? "📷 Photo" : Self.clipped(memory.entry.excerpt)
                     if let attachment = await photo(for: memory, on: iso) { content.attachments = [attachment] }
                 } else {
@@ -268,7 +269,7 @@ final class ReminderScheduler {
     }
 }
 
-/// Routes notification taps into the app: a tap opens the composer; "Read the Memory" opens that entry.
+/// Routes notification taps into the app: a tap opens Today; its actions read the memory or write.
 final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate, @unchecked Sendable {
     static let shared = NotificationRouter()
     @MainActor weak var model: AppModel?
@@ -279,9 +280,10 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate, @unc
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
         let info = response.notification.request.content.userInfo
-        let destination = info["destination"] as? String
-        // "Read the Memory" (touch and hold the notification) opens that entry; anything else writes.
+        // A tap opens Today. Touch and hold for the rest: "Read the Memory" opens that entry, and
+        // "Write Today's Entry" the composer.
         let reading = response.actionIdentifier == ReminderScheduler.readAction ? info["entryID"] as? Int : nil
+        let writing = response.actionIdentifier == ReminderScheduler.writeAction
         nonisolated(unsafe) let done = completionHandler
         DispatchQueue.main.async {
             MainActor.assumeIsolated {
@@ -291,7 +293,7 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate, @unc
                         model.openEntryRequest = reading
                     } else {
                         model.selectedTab = .today
-                        if destination == "write" { model.composeRequest = true }
+                        if writing { model.composeRequest = true }
                     }
                 }
             }

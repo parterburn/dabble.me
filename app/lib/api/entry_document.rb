@@ -13,8 +13,10 @@ module Api
   # Only the formatting the web editor (Summernote) and email ingestion produce is
   # editable: p, div, span, br, b/strong, i/em, u, a, ul/ol/li and hr (merged replies).
   # Anything else — inline styles, blockquotes, images, unknown attributes, text after a
-  # list inside a list item, a list under an item with no text — makes from_html return nil and the entry stays web-only, so
-  # an app edit can never silently drop formatting.
+  # list inside a list item, a list under an item with no text — makes from_html return nil.
+  # Such an entry is still editable in the app, from simplified_from_html: the same document
+  # with what it can't hold left out or flattened. The app says so before saving, since saving
+  # rewrites the entry without that formatting.
   module EntryDocument
     class NotEditable < StandardError; end
     class InvalidDocument < StandardError; end
@@ -39,6 +41,21 @@ module Api
       blocks.presence
     rescue NotEditable
       nil
+    end
+
+    # A document for HTML from_html won't take, by simplifying it first: attributes and styles
+    # go, as do images and other embedded things; headings become bold paragraphs; quotes,
+    # tables and anything else unknown keep their text; a list the document can't nest is
+    # flattened. Always a document when there's any text at all (plain paragraphs at worst).
+    # @return [Array<Hash>, nil] nil only when there's nothing to show.
+    def simplified_from_html(html)
+      return nil if html.blank?
+
+      fragment = Nokogiri::HTML5.fragment(html)
+      simplify!(fragment)
+      parse_blocks(fragment.children).presence || text_paragraphs(fragment)
+    rescue NotEditable
+      text_paragraphs(Nokogiri::HTML5.fragment(html))
     end
 
     # Builds stored HTML from a client document. Raises InvalidDocument on bad input.
@@ -83,6 +100,95 @@ module Api
 
     def plain_text(document)
       validate!(document).filter_map { |block| runs_text(block['runs']).strip.presence }.join("\n\n")
+    end
+
+    # -- simplifying HTML the document can't hold -----------------------------------
+
+    DROPPED_TAGS = %w[img picture video audio iframe object embed svg canvas script style head meta link title
+                      input button select textarea form map area source track noscript template].freeze
+    LINE_TAGS = %w[blockquote pre table thead tbody tfoot tr section article header footer aside main nav
+                   figure figcaption address details summary dl dt dd center fieldset caption].freeze
+    HEADING_TAGS = %w[h1 h2 h3 h4 h5 h6].freeze
+    KEPT_TAGS = (%w[p div span br a ul ol li hr] + INLINE_FORMATS.keys).freeze
+
+    def simplify!(fragment)
+      fragment.xpath('.//comment()').each(&:remove)
+      fragment.css(DROPPED_TAGS.join(',')).each(&:remove)
+      # Deepest first, so replacing an element never loses one still to be visited.
+      fragment.xpath('.//*').reverse_each do |node|
+        if node.name == 'a'
+          href = node['href'].to_s.strip
+          next node.replace(node.children) unless safe_link?(href)
+
+          node.attributes.each_key { |name| node.remove_attribute(name) unless name == 'href' }
+          node['href'] = href
+          next
+        end
+        node.attributes.each_key { |name| node.remove_attribute(name) }
+        if HEADING_TAGS.include?(node.name)
+          node.inner_html = "<strong>#{node.inner_html}</strong>"
+          node.name = 'p'
+        elsif LINE_TAGS.include?(node.name)
+          node.name = 'div'
+        elsif %w[td th].include?(node.name)
+          node.add_next_sibling(' ')
+          node.replace(node.children)
+        elsif !KEPT_TAGS.include?(node.name)
+          node.replace(node.children) # its text stays; what it meant doesn't
+        end
+      end
+      simplify_lists!(fragment)
+    end
+
+    # Lists as the document can hold them: every list under an item with text, nothing after a
+    # list inside an item, and no deeper than MAX_LIST_LEVEL.
+    def simplify_lists!(fragment)
+      fragment.css('ul, ol').each do |list|
+        next unless list.parent # already folded into another
+
+        # Anything loose in a list (text, a paragraph) becomes an item.
+        list.children.each do |child|
+          next if blank_node?(child) || (child.element? && (child.name == 'li' || list?(child)))
+
+          item = Nokogiri::XML::Node.new('li', list.document)
+          child.replace(item)
+          item.add_child(child)
+        end
+        too_deep = list.ancestors.count { |ancestor| list?(ancestor) } > MAX_LIST_LEVEL
+        owner = list.parent
+        if owner.name == 'li'
+          before = owner.children.take_while { |child| child != list }
+          orphan = before.all? { |child| blank_node?(child) || child.text.strip.empty? }
+          after = owner.children.drop_while { |child| child != list }.drop(1).reject { |child| blank_node?(child) || list?(child) }
+          # What follows the list in its item goes on as an item of its own.
+          if after.any?
+            item = Nokogiri::XML::Node.new('li', list.document)
+            after.each { |child| item.add_child(child) }
+            owner.add_next_sibling(item)
+          end
+          # No text to sit under, or too deep: its items join the list around it.
+          if orphan || too_deep
+            list.children.reverse_each { |child| owner.add_next_sibling(child) }
+            list.remove
+            owner.remove if orphan && owner.text.strip.empty?
+          end
+        elsif list?(owner)
+          previous = list.previous_element
+          if previous.nil? || previous.name != 'li' || too_deep
+            list.replace(list.children)
+          end
+        end
+      end
+    end
+
+    # The last resort: the text alone, a paragraph for each block of it.
+    def text_paragraphs(fragment)
+      fragment.css('br').each { |br| br.replace("\n") }
+      fragment.css('p, div, li, tr, h1, h2, h3, h4, h5, h6, blockquote').each { |node| node.add_next_sibling("\n\n") }
+      fragment.text.split(/\n{2,}/).filter_map do |text|
+        text = text.gsub(/[ \t]+/, ' ').gsub(/ *\n */, "\n").strip
+        { 'type' => 'paragraph', 'runs' => [{ 'text' => text }] } if text.present?
+      end.presence
     end
 
     # -- HTML -> document ---------------------------------------------------------

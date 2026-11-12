@@ -113,8 +113,8 @@ final class HabitTests: XCTestCase {
         snap("reminders-settings")
     }
 
-    /// The daily reminder as it arrives: how the day was, with the entry to look back on (previews
-    /// are on). Touch and hold it for Read the Memory, which opens that entry.
+    /// The daily reminder as it arrives: the entry to look back on (previews are on). Touch and
+    /// hold it for Read the Memory, which opens that entry.
     func testDailyReminderShowsAMemoryAndOpensIt() throws {
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         let app = launch(["-DabbleDebugReminderSoon", "YES"])
@@ -130,10 +130,10 @@ final class HabitTests: XCTestCase {
             if allow.waitForExistence(timeout: 3) { allow.tap() }
         }
         XCUIDevice.shared.press(.home)
-        let banner = springboard.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "How was your day?")).firstMatch
+        let banner = springboard.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@ OR label CONTAINS %@", "Rewind ·", "On This Day ·")).firstMatch
         XCTAssertTrue(banner.waitForExistence(timeout: 25), "The reminder arrives")
         snap("reminder-banner")
-        XCTAssertTrue(banner.label.contains("On This Day") || banner.label.contains("Rewind"), banner.label)
+        XCTAssertFalse(banner.label.contains("How was your day?"), "The memory is the notification: \(banner.label)")
         banner.press(forDuration: 1.2)
         let read = springboard.buttons["Read the Memory"]
         XCTAssertTrue(read.waitForExistence(timeout: 5))

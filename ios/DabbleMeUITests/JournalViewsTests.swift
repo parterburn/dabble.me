@@ -1204,6 +1204,89 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertFalse(app.buttons["Open"].exists, "The drawer closed")
     }
 
+    /// An entry with formatting the editor can't hold (a heading, a quote, a style) still opens
+    /// in the app, simplified, and says so.
+    func testEntryWithOtherFormattingEditsSimplified() throws {
+        let app = launch()
+        tab(app, "Search").tap()
+        let field = app.searchFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        field.tap()
+        field.typeText("plant a tree\n")
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Reading notes")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        app.openTimelineEntry(row)
+        app.buttons["Edit Entry"].tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 10), "It opens in the app, not on the web")
+        XCTAssertTrue(app.staticTexts["SimplifiedBanner"].exists)
+        let text = editor.value as? String ?? ""
+        XCTAssertTrue(text.hasPrefix("Reading notes\nThe best time to plant a tree"), text)
+        XCTAssertTrue(text.contains("Worth remembering"), text)
+        snap("edit-simplified")
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+    }
+
+    /// Moving an entry onto a day that has one asks first, then merges the two.
+    func testChangingTheDateToATakenDayOffersToMerge() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let editor = app.textViews["Entry"]
+        func pickDay(_ offset: Int) {
+            app.navigationBars.firstMatch.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            let target = Calendar.current.date(byAdding: .day, value: offset, to: .now)!
+            let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", target.formatted(.dateTime.weekday(.wide).month(.wide).day()))).firstMatch
+            XCTAssertTrue(day.waitForExistence(timeout: 5))
+            day.tap()
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.08)).tap() // closes the calendar
+        }
+        // Two entries of the test's own, on days the demo leaves empty (three and six days ago).
+        func write(_ text: String, daysAgo: Int) {
+            app.buttons["New Entry"].tap()
+            XCTAssertTrue(editor.waitForExistence(timeout: 10))
+            editor.tap()
+            if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+            if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap(); editor.tap() }
+            editor.typeText(text)
+            pickDay(-daysAgo)
+            app.buttons["Save"].tap()
+            XCTAssertTrue(editor.waitForNonExistence(timeout: 15))
+        }
+        write("Kept on its day.", daysAgo: 6)
+        write("Moved onto it.", daysAgo: 3)
+        let moved = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Moved onto it.")).firstMatch
+        app.openTimelineEntry(moved)
+        app.buttons["Edit Entry"].tap()
+        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        pickDay(-6)
+        app.buttons["Save"].tap()
+        let merge = app.buttons["Merge"]
+        XCTAssertTrue(merge.waitForExistence(timeout: 10), "That day has an entry: asked first")
+        snap("merge-question")
+        merge.tap()
+        XCTAssertTrue(editor.waitForNonExistence(timeout: 15))
+        // The open entry is the merged one: that day's, with the moved one after a rule.
+        let shown = app.textViews.firstMatch
+        XCTAssertTrue(shown.waitForExistence(timeout: 10))
+        let text = shown.value as? String ?? ""
+        XCTAssertTrue(text.contains("Kept on its day.") && text.contains("Moved onto it."), text)
+        snap("merged-entry")
+        // Clean up: delete it.
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Kept on its day.")).firstMatch
+        app.scrollTo(row)
+        XCTAssertFalse(app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "Moved onto it.")).firstMatch.exists,
+                       "The moved entry is gone from its old day")
+        row.swipeLeft()
+        app.buttons["Actions"].tap()
+        let delete = app.buttons["Delete"]
+        XCTAssertTrue(delete.waitForExistence(timeout: 10))
+        delete.tap()
+        app.buttons["Hold to Delete"].press(forDuration: 2.6)
+        XCTAssertTrue(row.waitForNonExistence(timeout: 15))
+    }
+
     /// Editing an entry, its date can be changed: the entry moves to that day.
     func testEditingCanChangeTheDate() throws {
         let app = launch()

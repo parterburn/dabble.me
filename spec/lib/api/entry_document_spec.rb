@@ -89,6 +89,41 @@ RSpec.describe Api::EntryDocument do
     end
   end
 
+  describe ".simplified_from_html" do
+    it "drops styles, attributes and images, and keeps the text and what formatting it can" do
+      html = %(<div data-x="1"><span style="color: red">Red <b>bold</b></span> <a href="javascript:alert(1)">link</a></div>) +
+             %(<p><img src="https://x.test/a.png"><a href="https://x.test" class="c">Site</a></p><h1>Title</h1>)
+      expect(described_class.simplified_from_html(html)).to eq([
+        paragraph(run("Red "), run("bold", bold: true), run(" link")),
+        paragraph(run("Site", link: "https://x.test")),
+        paragraph(run("Title", bold: true))
+      ])
+    end
+
+    it "keeps lists it can't nest as they are, flattened" do
+      html = "<ul><li>outer<ul><li>nested</li></ul>and more</li></ul><ol><li><ul><li>Child</li></ul></li><li>Next</li></ol>"
+      expect(described_class.simplified_from_html(html)).to eq([
+        { "type" => "bullet", "runs" => [run("outer")] },
+        { "type" => "bullet", "runs" => [run("nested")], "level" => 1 },
+        { "type" => "bullet", "runs" => [run("and more")] },
+        { "type" => "number", "runs" => [run("Child")] },
+        { "type" => "number", "runs" => [run("Next")] }
+      ])
+    end
+
+    it "keeps a table's and a quote's text" do
+      html = "<table><tr><td>A</td><td>B</td></tr><tr><td>C</td></tr></table><blockquote><p>Quoted</p></blockquote>"
+      expect(described_class.simplified_from_html(html)).to eq([paragraph(run("A B\nC")), paragraph(run("Quoted"))])
+    end
+
+    it "is the same as from_html for what that takes, and nil for nothing" do
+      html = "<p>Hi <b>there</b></p><ul><li>one</li></ul>"
+      expect(described_class.simplified_from_html(html)).to eq(described_class.from_html(html))
+      expect(described_class.simplified_from_html("")).to be_nil
+      expect(described_class.simplified_from_html(%(<img src="https://x.test/a.png">))).to be_nil
+    end
+  end
+
   describe ".to_html" do
     it "renders blocks with escaping and grouped lists" do
       html = described_class.to_html([

@@ -43,10 +43,15 @@ module Api
     end
 
     def full
+      exact = EntryDocument.from_html(entry.body)
+      simplified = exact ? nil : EntryDocument.simplified_from_html(entry.body)
       summary.merge(
         body_text: display_text(entry.text_body),
-        # Structured, editable copy of the body (see EntryDocument), or nil when it's web-only.
-        document: EntryDocument.from_html(entry.body),
+        # Structured, editable copy of the body (see EntryDocument). When the body has formatting
+        # the document can't hold, it's a simplified copy and `document_simplified` says so:
+        # saving it from the app rewrites the entry without that formatting.
+        document: exact || simplified || [],
+        document_simplified: simplified.present?,
         # Neighbouring entries by date, for moving between days in the app.
         previous_entry: neighbour(entry.previous),
         next_entry: neighbour(entry.next),

@@ -26,7 +26,9 @@ struct EntryDetailView: View {
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
     @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
 
-    private var id: Int { entryID }
+    /// The entry shown: the one opened, or the one it was merged into when its date was changed
+    /// to a day that had one.
+    private var id: Int { entry?.id ?? entryID }
 
     var body: some View {
         Group {

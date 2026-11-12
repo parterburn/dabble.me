@@ -25,6 +25,8 @@ struct ComposeView: View {
     @State private var uploadedCount: Int?
     @State private var error: String?
     @State private var confirmingDiscard = false
+    /// Moving the entry onto a day that has one: the server's words for it, while asking to merge.
+    @State private var mergeQuestion: String?
     /// An unsaved draft from an earlier session was put back in the editor.
     @State private var restoredDraft: DraftStore.Draft?
     @State private var draftSave: Task<Void, Never>?
@@ -115,6 +117,7 @@ struct ComposeView: View {
         NavigationStack {
             VStack(spacing: 0) {
                 if restoredDraft != nil { draftBanner }
+                if isSimplified { simplifiedBanner }
                 Divider()
                 RichTextEditor(model: editor,
                                leading: model.me?.canAddPhotos == true ? AnyView(photosButton) : nil,
@@ -177,6 +180,12 @@ struct ComposeView: View {
                         ? "A draft is kept on this device until you come back to it."
                         : "A draft keeps your words on this device until you come back to it, but not changes to photos.")
                 }
+            }
+            .confirmationDialog(mergeQuestion ?? "", isPresented: .present($mergeQuestion), titleVisibility: .visible) {
+                Button("Merge") { Task { await save(merging: true) } }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Merging adds this entry to the end of that one, photo included. The two become one entry, which can't be undone.")
             }
             .alert("Couldn't save", isPresented: .present($error)) {
                 Button("OK", role: .cancel) {}
@@ -735,6 +744,24 @@ struct ComposeView: View {
 
     // MARK: - Drafts
 
+    /// Editing an entry with formatting the app can't hold (styles, quotes, images in the text…):
+    /// it's shown without it, and saving keeps it that way.
+    private var isSimplified: Bool {
+        if case .edit(let entry) = mode { entry.documentSimplified == true } else { false }
+    }
+
+    private var simplifiedBanner: some View {
+        Label("Some of this entry's formatting can't be shown here. Saving keeps the words and simplifies the rest; Cancel leaves it as it is.",
+              icon: "slab-wand-magic-sparkles")
+            .font(.footnote)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            .background(.quaternary.opacity(0.5))
+            .accessibilityIdentifier("SimplifiedBanner")
+    }
+
     private var draftBanner: some View {
         HStack(spacing: 12) {
             Label("Restored your unsaved draft.", systemImage: "clock.arrow.circlepath")
@@ -779,7 +806,7 @@ struct ComposeView: View {
         }
     }
 
-    private func save() async {
+    private func save(merging: Bool = false) async {
         isSaving = true
         defer { isSaving = false }
         do {
@@ -794,12 +821,15 @@ struct ComposeView: View {
             case .edit(let entry):
                 uploadedCount = photos.isEmpty ? nil : 0
                 defer { uploadedCount = nil }
-                onSaved(try await model.updateEntry(id: entry.id, document: editor.blocks, day: movedTo, photos: photos,
-                                                    removeImage: removesExistingPhoto) { uploadedCount = $0 })
+                onSaved(try await model.updateEntry(id: entry.id, document: editor.blocks, day: movedTo, merging: merging,
+                                                    photos: photos, removeImage: removesExistingPhoto) { uploadedCount = $0 })
             }
             draftSave?.cancel()
             DraftStore.clear(draftKey)
             dismiss()
+        } catch let error as APIError where error.code == "date_taken" {
+            // That day has an entry: ask before putting the two together.
+            mergeQuestion = error.localizedDescription
         } catch {
             self.error = error.localizedDescription
         }

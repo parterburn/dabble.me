@@ -350,12 +350,16 @@ final class AppModel {
         }
     }
 
-    func updateEntry(id: Int, document: [DocumentBlock], day: JournalDay? = nil, photos: [PreparedPhoto] = [], removeImage: Bool = false,
+    func updateEntry(id: Int, document: [DocumentBlock], day: JournalDay? = nil, merging: Bool = false,
+                     photos: [PreparedPhoto] = [], removeImage: Bool = false,
                      onProgress: @escaping @MainActor (Int) -> Void = { _ in }) async throws -> EntryDetail {
         let keys = try await uploadPhotos(photos, onProgress: onProgress)
-        let request = UpdateEntryRequest(document: document, date: day?.iso, uploadedImageKeys: keys.isEmpty ? nil : keys,
+        let request = UpdateEntryRequest(document: document, date: day?.iso, merge: merging ? true : nil,
+                                         uploadedImageKeys: keys.isEmpty ? nil : keys,
                                          removeImage: removeImage ? true : nil)
         let envelope: EntryEnvelope = try await api.patch("api/v1/entries/\(id)", request)
+        // Merged into that day's entry: this one is gone from the timeline.
+        if envelope.entry.id != id { for key in monthEntries.keys { monthEntries[key]?.removeAll { $0.id == id } } }
         upsert(envelope.entry.summary)
         if envelope.entry.imageProcessing { watchProcessing(id: envelope.entry.id) }
         if day != nil {
