@@ -52,6 +52,11 @@ targets:
         UIAppFonts:
           - InstrumentSerif-Regular.ttf
         ITSAppUsesNonExemptEncryption: false
+        # The daily reminders are rebuilt now and then while the app's closed (BackgroundRefresh).
+        UIBackgroundModes:
+          - fetch
+        BGTaskSchedulerPermittedIdentifiers:
+          - me.dabble.ios.reminders
         LSApplicationCategoryType: public.app-category.lifestyle
         UILaunchScreen:
           UIColorName: Paper

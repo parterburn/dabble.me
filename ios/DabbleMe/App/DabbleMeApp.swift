@@ -1,3 +1,4 @@
+import BackgroundTasks
 import SwiftUI
 import UserNotifications
 
@@ -28,6 +29,23 @@ struct DabbleMeApp: App {
             RootView()
                 .environment(model)
         }
+        // Now and then while the app's closed: the daily reminders are built again, so an entry
+        // written since (by email, say) can be the one a later day looks back on.
+        .backgroundTask(.appRefresh(BackgroundRefresh.identifier)) {
+            await model.refreshRemindersInBackground()
+        }
+    }
+}
+
+/// iOS decides when (and whether) this runs; it's asked for again each time the app goes into the
+/// background and each time it has run.
+enum BackgroundRefresh {
+    static let identifier = "me.dabble.ios.reminders"
+
+    static func schedule() {
+        let request = BGAppRefreshTaskRequest(identifier: identifier)
+        request.earliestBeginDate = Date(timeIntervalSinceNow: 6 * 60 * 60)
+        try? BGTaskScheduler.shared.submit(request)
     }
 }
 
@@ -84,6 +102,7 @@ struct RootView: View {
             switch phase {
             case .background:
                 model.lock.didEnterBackground()
+                if model.isSignedIn { BackgroundRefresh.schedule() }
             case .active:
                 model.lock.willEnterForeground()
                 // Pick up entries that arrived by email while the app was in the background.

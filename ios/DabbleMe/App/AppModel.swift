@@ -387,6 +387,14 @@ final class AppModel {
         return list?.prompts ?? []
     }
 
+    /// From the background refresh: Today again (is today written?), then the reminders.
+    func refreshRemindersInBackground() async {
+        BackgroundRefresh.schedule()
+        guard isSignedIn else { return }
+        if let today: TodaySummary = try? await api.get("api/v1/today") { self.today = today }
+        await ReminderScheduler.shared.reschedule(for: self)
+    }
+
     /// The newest few entries (for on-device reflection prompts).
     func recentEntries() async throws -> [EntrySummary] {
         let page: EntryPage = try await api.get("api/v1/entries", query: ["per": "5"])

@@ -111,6 +111,10 @@ extension EntrySummary {
     /// A smaller copy of the photo through Cloudflare image resizing when the URL supports it
     /// (production photos are served via /cdn-cgi/image/), else the original.
     func thumbnailURL(width: Int) -> URL? {
+        Self.thumbnailURL(imageUrl, width: width)
+    }
+
+    static func thumbnailURL(_ imageUrl: String?, width: Int) -> URL? {
         guard let imageUrl else { return nil }
         let resized = imageUrl.replacingOccurrences(of: "/cdn-cgi/image/quality=95/",
                                                     with: "/cdn-cgi/image/width=\(width),quality=85,fit=cover/")

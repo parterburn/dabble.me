@@ -548,3 +548,25 @@ struct TrailingSongLinkTests {
         #expect(RichText.droppingTrailing(hashtags: [], songLinks: true, from: [own]) == [own])
     }
 }
+
+@MainActor
+struct ReminderTests {
+    private func plan(_ json: String) throws -> ReminderPlan {
+        try APIClient.decoder.decode(ReminderPlan.self, from: Data(json.utf8))
+    }
+
+    /// How long ago is as of the day the reminder shows, not the day it was scheduled.
+    @Test func memoriesAreLabelledAsOfTheirDay() throws {
+        let plan = try plan(#"""
+        {"email_hour":21,"days":[
+          {"date":"2026-11-20","kind":"on_this_day","count":2,"entry":{"id":7,"date":"2023-11-20","excerpt":"Snow.","image_url":null}},
+          {"date":"2026-11-21","kind":"rewind","count":1,"entry":{"id":9,"date":"2026-11-14","excerpt":"","image_url":"https://x.test/a.jpg"}}]}
+        """#)
+        #expect(plan.emailHour == 21)
+        #expect(ReminderScheduler.label(for: plan.days[0], on: "2026-11-20") == "On This Day · 3 years ago")
+        #expect(ReminderScheduler.label(for: plan.days[1], on: "2026-11-21") == "Rewind · 7 days ago")
+        #expect(ReminderScheduler.teaser(for: plan.days[0], on: "2026-11-20") == "You have 2 memories from this day.")
+        #expect(ReminderScheduler.teaser(for: plan.days[1], on: "2026-11-21") == "You have a memory from 7 days ago.")
+    }
+}
+

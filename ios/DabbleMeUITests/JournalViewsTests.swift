@@ -1357,12 +1357,11 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Stats are a PRO feature"].waitForExistence(timeout: 10))
         snap("free-stats")
 
-        // Reminders: writing for everyone; On This Day (a PRO feature) is greyed out.
+        // Reminders: the daily one is for everyone.
         tab(app, "Settings").tap()
-        let writing = app.switches["Daily Writing Reminder"]
-        XCTAssertTrue(writing.waitForExistence(timeout: 10))
-        XCTAssertTrue(writing.isEnabled)
-        XCTAssertFalse(app.switches["On This Day Memories"].isEnabled)
+        let daily = app.switches["Daily Reminder"]
+        XCTAssertTrue(daily.waitForExistence(timeout: 10))
+        XCTAssertTrue(daily.isEnabled)
         snap("free-reminders")
     }
 

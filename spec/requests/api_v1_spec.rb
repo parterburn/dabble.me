@@ -624,6 +624,35 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
     end
   end
 
+  describe "GET /api/v1/reminders" do
+    it "gives each coming day's entry to look back on: On This Day, or else a Rewind" do
+      zone = Time.find_zone(pro_user.send_timezone)
+      travel_to zone.local(2026, 6, 20, 12) do
+        years_back = create(:entry, user: pro_user, date: Time.zone.local(2024, 6, 21), body: "<p>Two years back</p>")
+        week_back = create(:entry, user: pro_user, date: Time.zone.local(2026, 6, 13), body: "<p>A week back</p>")
+        get "/api/v1/reminders", params: { days: 2 }, headers: auth(pro_user)
+        expect(response).to have_http_status(:ok)
+        expect(json["email_hour"]).to eq(pro_user.send_time.hour)
+        today, tomorrow = json["days"]
+        expect(today).to include("date" => "2026-06-20", "kind" => "rewind", "count" => 1)
+        expect(today["entry"]).to include("id" => week_back.id, "excerpt" => "A week back")
+        expect(tomorrow).to include("date" => "2026-06-21", "kind" => "on_this_day", "count" => 1)
+        expect(tomorrow["entry"]).to include("id" => years_back.id, "date" => "2024-06-21")
+      end
+    end
+
+    it "leaves out days with nothing to look back on, and On This Day on a free plan" do
+      zone = Time.find_zone(free_user.send_timezone)
+      travel_to zone.local(2026, 6, 20, 12) do
+        get "/api/v1/reminders", headers: auth(pro_user)
+        expect(json["days"]).to eq([])
+        create(:entry, user: free_user, date: Time.zone.local(2024, 6, 20), body: "<p>Old</p>")
+        get "/api/v1/reminders", params: { days: 1 }, headers: auth(free_user)
+        expect(json["days"].map { |day| day["kind"] }).to eq(["rewind"])
+      end
+    end
+  end
+
   describe "GET /api/v1/stats" do
     it "is PRO" do
       get "/api/v1/stats", headers: auth(free_user)

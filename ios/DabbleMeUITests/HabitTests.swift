@@ -61,17 +61,49 @@ final class HabitTests: XCTestCase {
         let app = launch()
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         app.tabBars.buttons["Settings"].tap()
-        let writing = app.switches["Daily Writing Reminder"]
-        XCTAssertTrue(writing.waitForExistence(timeout: 10))
-        if (writing.value as? String) != "1" { writing.switches.firstMatch.tap() }
+        let daily = app.switches["Daily Reminder"]
+        XCTAssertTrue(daily.waitForExistence(timeout: 10))
+        if (daily.value as? String) != "1" { daily.switches.firstMatch.tap() }
         let allow = springboard.buttons["Allow"]
         if allow.waitForExistence(timeout: 5) { allow.tap() }
-        let memories = app.switches["On This Day Memories"]
-        if (memories.value as? String) != "1" { memories.switches.firstMatch.tap() }
+        // Its time (the daily email's until one is set) and entry previews, on to begin with.
+        let previews = app.switches["Show Entry Previews"]
+        XCTAssertTrue(previews.waitForExistence(timeout: 5))
+        XCTAssertEqual(previews.value as? String, "1")
+        XCTAssertFalse(app.switches["On This Day Memories"].exists, "One reminder now")
 
         let scheduled = app.descendants(matching: .any).matching(NSPredicate(format: "label MATCHES %@", "[1-9][0-9]* reminders scheduled")).firstMatch
         XCTAssertTrue(scheduled.waitForExistence(timeout: 15), "Turning reminders on should schedule notifications")
         snap("reminders-settings")
+    }
+
+    /// The daily reminder as it arrives: how the day was, with the entry to look back on (previews
+    /// are on). Touch and hold it for Read the Memory, which opens that entry.
+    func testDailyReminderShowsAMemoryAndOpensIt() throws {
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        let app = launch(["-DabbleDebugReminderSoon", "YES"])
+        XCTAssertTrue(app.tabBars.buttons["Settings"].waitForExistence(timeout: 15))
+        app.tabBars.buttons["Settings"].tap()
+        // On (it may be already, from an earlier run): the first one comes twelve seconds after
+        // it's scheduled, by which time the app is in the background.
+        let daily = app.switches["Daily Reminder"]
+        XCTAssertTrue(daily.waitForExistence(timeout: 10))
+        if (daily.value as? String) != "1" {
+            daily.switches.firstMatch.tap()
+            let allow = springboard.buttons["Allow"]
+            if allow.waitForExistence(timeout: 3) { allow.tap() }
+        }
+        XCUIDevice.shared.press(.home)
+        let banner = springboard.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "How was your day?")).firstMatch
+        XCTAssertTrue(banner.waitForExistence(timeout: 25), "The reminder arrives")
+        snap("reminder-banner")
+        XCTAssertTrue(banner.label.contains("On This Day") || banner.label.contains("Rewind"), banner.label)
+        banner.press(forDuration: 1.2)
+        let read = springboard.buttons["Read the Memory"]
+        XCTAssertTrue(read.waitForExistence(timeout: 5))
+        snap("reminder-expanded")
+        read.tap()
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 15), "The memory opens")
     }
 
     /// Needs Face ID enrolled on the simulator and a host-side helper that sends one face match
