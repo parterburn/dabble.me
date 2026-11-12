@@ -88,7 +88,17 @@ class EntriesController < ApplicationController
     @today_entry = current_user.entries.includes(:inspiration).where(date: @user_today.all_day).first
     set_hashtags
     set_sidebar_stats
-    set_years_ago if current_user.is_pro?
+    return unless current_user.is_pro?
+
+    set_years_ago
+    set_rewind_entry if @years_ago_entries.empty?
+  end
+
+  # With nothing written on this day in an earlier year, one past entry picked
+  # the way the reminder emails pick theirs.
+  def set_rewind_entry
+    entry = current_user.random_entry(@user_today.to_date)
+    @rewind_entry = entry unless entry.nil? || entry == @today_entry
   end
 
   # Every entry written on this month and day in an earlier year, as

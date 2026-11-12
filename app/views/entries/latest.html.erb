@@ -51,6 +51,12 @@
       </div>
     </div>
 
+    <% if @rewind_entry %>
+      <div class="col-md-8 col-md-offset-1 well entry entry--sticky-header" id="entry-<%= @rewind_entry.id %>">
+        <%= render partial: 'entries/entry', locals: { entry: @rewind_entry, label: "REWIND" } %>
+      </div>
+    <% end %>
+
     <% if current_user.is_pro? && @years_ago_entries.present? %>
       <% @years_ago_entries.each do |_years_back, back_year_entry| %>
         <div class="col-md-8 col-md-offset-1 well entry entry--sticky-header" id="entry-<%= back_year_entry.id %>">

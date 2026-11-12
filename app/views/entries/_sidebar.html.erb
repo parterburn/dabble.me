@@ -20,29 +20,20 @@
 
 <div class="col-xs-11 col-sm-5 col-md-2 s-date-groups j-calendar">
   <% if current_page?(latest_entry_path) %>
-    <%# One link: down to today's memories when there are any, otherwise
-        to the year's Rewind. %>
+    <%# One link down the page: to the entries from this day in earlier years
+        when there are any, otherwise to the past entry picked for today. %>
     <% on_this_day = current_user.is_pro? ? @years_ago_entries&.first&.last : nil %>
-    <h4>
-      <% if on_this_day %>
-        <%= link_to "#entry-#{on_this_day.id}", "data-id": on_this_day.id.to_s, class: "j-entry-link", style: "color: #a41100;" do %>
+    <% past_entry = on_this_day || @rewind_entry %>
+    <% if past_entry %>
+      <h4>
+        <%= link_to "#entry-#{past_entry.id}", "data-id": past_entry.id.to_s, class: "j-entry-link", style: "color: #a41100;" do %>
           <div class="s-date-left">
             <span class="slab-icon slab-icon--backward" aria-hidden="true"></span>
-            &nbsp;ON THIS DAY
+            &nbsp;<%= on_this_day ? "ON THIS DAY" : "REWIND" %>
           </div>
           <div class="clearfix"></div>
         <% end %>
-      <% else %>
-        <%= link_to rewind_path, style: "color: #a41100;" do %>
-          <div class="s-date-left">
-            <span class="slab-icon slab-icon--backward" aria-hidden="true"></span>
-            &nbsp;REWIND
-          </div>
-          <div class="clearfix"></div>
-        <% end %>
-      <% end %>
-    </h4>
-    <% if on_this_day %>
+      </h4>
       <script>
         $(".j-date-header").show();
       </script>

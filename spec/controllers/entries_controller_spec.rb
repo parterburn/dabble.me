@@ -375,6 +375,7 @@ RSpec.describe EntriesController, type: :controller do
       sign_in pro
       write(pro, 'Something from last week', today - 6)
       write(pro, 'What I wrote today', today)
+      allow_any_instance_of(User).to receive(:random_entry).and_return(nil)
       get :latest
       body = response.body
 
@@ -389,6 +390,7 @@ RSpec.describe EntriesController, type: :controller do
     it 'asks for an entry when today has none, and shows no older entry in its place' do
       sign_in pro
       write(pro, 'Something from last week', today - 6)
+      allow_any_instance_of(User).to receive(:random_entry).and_return(nil)
       get :latest
       body = response.body
 
@@ -428,14 +430,38 @@ RSpec.describe EntriesController, type: :controller do
       expect(page.css('.entry--sticky-header .s-entry-header').size).to eq(2)
     end
 
-    it 'links to Rewind from the sidebar when nothing was written on this day' do
+    it 'shows one past entry as REWIND when nothing was written on this day, and links to it' do
       sign_in pro
-      write(pro, 'Last year, a day off', today.prev_year(1) + 1)
+      past = write(pro, 'Last year, a day off', today.prev_year(1) + 1)
+      write(pro, 'What I wrote today', today)
+      allow_any_instance_of(User).to receive(:random_entry).with(today).and_return(past)
       get :latest
-      links = Nokogiri::HTML(response.body).css('.s-date-groups h4 a').select { |link| link.text =~ /ON THIS DAY|REWIND|AGO/ }
+      page = Nokogiri::HTML(response.body)
+      links = page.css('.s-date-groups h4 a').select { |link| link.text =~ /ON THIS DAY|REWIND|AGO/ }
 
+      expect(page.css('.entry--sticky-header .s-entry-header .label-past-years').map(&:text)).to eq(%w[TODAY REWIND])
+      expect(page.at_css("#entry-#{past.id}").text).to include('Last year, a day off')
       expect(links.map { |link| link.text.delete("\u00a0").strip }).to eq(['REWIND'])
-      expect(links.first['href']).to eq(rewind_path)
+      expect(links.first['href']).to eq("#entry-#{past.id}")
+    end
+
+    it 'shows no REWIND entry when there are entries from this day, or when the pick is today\'s own' do
+      sign_in pro
+      mine = write(pro, 'What I wrote today', today)
+      allow_any_instance_of(User).to receive(:random_entry).and_return(mine)
+      get :latest
+      expect(response.body).not_to include('REWIND')
+
+      write(pro, 'One year back', today.prev_year(1))
+      get :latest
+      expect(response.body).not_to include('REWIND')
+      expect(response.body).to include('ON THIS DAY')
+    end
+
+    it 'shows no REWIND entry to a free account' do
+      sign_in user
+      get :latest
+      expect(response.body).not_to include('REWIND')
     end
 
     it 'keeps entries from this day in earlier years for PRO accounts only' do
