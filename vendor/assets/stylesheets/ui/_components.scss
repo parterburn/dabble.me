@@ -81,6 +81,12 @@ a.label {
   .alert-link {
     color: $cream;
   }
+  // Validation errors are listed as paragraphs, which the global
+  // p { color: #444 } would otherwise turn dark grey on the red.
+  p,
+  li {
+    color: inherit;
+  }
 }
 
 // Kaminari's default markup is a <nav class="pagination"> of spans and links;
