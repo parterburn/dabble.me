@@ -1361,6 +1361,26 @@ final class JournalViewsTests: XCTestCase {
     }
 
     /// Shaking shows a random entry as a preview over what you're reading; Open goes to it.
+    /// Settings → Shake for Random Entry: switched off, a shake does nothing.
+    func testShakeCanBeSwitchedOff() throws {
+        let app = launch()
+        tab(app, "Settings").tap()
+        let toggle = app.switches["Shake for Random Entry"]
+        for _ in 0..<5 where !toggle.exists { app.swipeUp() }
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5))
+        XCTAssertEqual(toggle.value as? String, "1", "On to begin with")
+        snap("settings-shake")
+        toggle.switches.firstMatch.exists ? toggle.switches.firstMatch.tap() : toggle.tap()
+        XCTAssertEqual(toggle.value as? String, "0")
+        XCUIDevice.shared.system.open(URL(string: "me.dabble.app:/shake")!) // Debug stand-in for a shake
+        XCTAssertFalse(app.staticTexts["A Random Memory"].waitForExistence(timeout: 4), "Nothing comes up")
+        // Back on (for the other tests), and it works again.
+        toggle.switches.firstMatch.exists ? toggle.switches.firstMatch.tap() : toggle.tap()
+        XCTAssertEqual(toggle.value as? String, "1")
+        XCUIDevice.shared.system.open(URL(string: "me.dabble.app:/shake")!)
+        XCTAssertTrue(app.staticTexts["A Random Memory"].waitForExistence(timeout: 10))
+    }
+
     func testShakeForRandomMemory() throws {
         let app = launch()
         tab(app, "Journal").tap()

@@ -61,7 +61,7 @@ struct RootView: View {
             #if DEBUG
             // UI tests can't shake the simulator: me.dabble.app:/shake does the same.
             if url.path == "/shake" {
-                NotificationCenter.default.post(name: .deviceDidShake, object: nil)
+                if ShakeSetting.isOn { NotificationCenter.default.post(name: .deviceDidShake, object: nil) }
                 return
             }
             #endif

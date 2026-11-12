@@ -5,11 +5,18 @@ extension Notification.Name {
     static let deviceDidShake = Notification.Name("DabbleMeDeviceDidShake")
 }
 
+/// Settings → Shake for Random Entry: on unless it's been switched off.
+enum ShakeSetting {
+    static let storageKey = "shake.randomEntry"
+    static var isOn: Bool { UserDefaults.standard.object(forKey: storageKey) as? Bool ?? true }
+}
+
 extension UIWindow {
-    /// Shake the phone for a random memory. Not while typing: there, shaking is iOS's Undo.
+    /// Shake the phone for a random memory (unless that's switched off in Settings). Not while
+    /// typing: there, shaking is iOS's Undo.
     open override func motionEnded(_ motion: UIEvent.EventSubtype, with event: UIEvent?) {
         super.motionEnded(motion, with: event)
-        guard motion == .motionShake, !Self.isTyping(in: self) else { return }
+        guard motion == .motionShake, ShakeSetting.isOn, !Self.isTyping(in: self) else { return }
         NotificationCenter.default.post(name: .deviceDidShake, object: nil)
     }
 
@@ -163,15 +170,16 @@ struct EntryStepBar: View {
         HStack(spacing: 12) {
             arrow("slab-angle-left", "Previous Entry", to: entry?.previousEntry)
             Button(action: open) {
-                Label("Open", icon: "slab-expand").frame(maxWidth: .infinity, minHeight: 30)
+                Label("Open", icon: "slab-expand").frame(maxWidth: .infinity, minHeight: 26)
             }
             .buttonStyle(.borderedProminent)
             .disabled(entry == nil)
             arrow("slab-angle-right", "Next Entry", to: entry?.nextEntry)
         }
-        // Medium weight, like the app's other main buttons.
+        // Medium weight, like the app's other main buttons, a size down from them.
         .fontWeight(.medium)
-        .controlSize(.large)
+        .controlSize(.regular)
+        .buttonBorderShape(.capsule)
     }
 
     private func arrow(_ icon: String, _ label: String, to neighbour: EntryNeighbour?) -> some View {
@@ -181,8 +189,8 @@ struct EntryStepBar: View {
             appIcon(icon)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 16, height: 16)
-                .frame(width: 28, height: 30)
+                .frame(width: 14, height: 14)
+                .frame(width: 24, height: 26)
         }
         .buttonStyle(.bordered)
         .disabled(neighbour == nil || isLoading)
