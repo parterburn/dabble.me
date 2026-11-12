@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// The year's Rewind: a look back at a year of the journal as a run of full-screen cards, tapped
-/// through like a story (the right of the screen goes on, the left edge goes back). Counts, the
+/// through like a story (the right of the screen goes on, the left edge goes back, and on from
+/// the last card closes it). Counts, the
 /// people and places named, songs, hashtags and photos are worked out on the device; with Apple
 /// Intelligence on, a few lines are written there too (what the biggest month held, a phrase for
 /// each person, the line of the year, the year in a few words) and kept for next time. Offered
@@ -163,18 +164,20 @@ struct RewindView: View {
                     .foregroundStyle(tone.text)
                     .padding(.horizontal, 24)
                     .padding(.top, 56)
-                    .padding(.bottom, 16)
+                    .padding(.bottom, 30)
                     .frame(maxWidth: 560, maxHeight: .infinity, alignment: .topLeading)
                     .frame(maxWidth: .infinity)
                     .id(card)
                     .transition(.opacity)
             }
             .contentShape(.rect)
-            // The story's taps: the left edge goes back, anywhere else goes on.
+            // The story's taps: the left edge goes back, anywhere else goes on, and on from the
+            // last card closes it.
             .onTapGesture(coordinateSpace: .local) { point in
                 move(point.x < geometry.size.width * 0.3 ? -1 : 1, in: deck)
             }
-            .overlay(alignment: .top) {
+            // How far along, across the bottom.
+            .overlay(alignment: .bottom) {
                 HStack(spacing: 3) {
                     ForEach(deck.indices, id: \.self) { step in
                         Capsule()
@@ -183,10 +186,10 @@ struct RewindView: View {
                     }
                 }
                 .padding(.horizontal, 16)
-                .padding(.top, 10)
+                .padding(.bottom, 8)
                 .accessibilityHidden(true)
             }
-            .overlay(alignment: .topTrailing) { closeButton(on: tone).padding(.trailing, 14).padding(.top, 20) }
+            .overlay(alignment: .topTrailing) { closeButton(on: tone).padding(.trailing, 14).padding(.top, 6) }
         }
         .animation(.easeOut(duration: 0.22), value: index)
         .environment(\.colorScheme, .light) // the cards bring their own colors
@@ -196,7 +199,11 @@ struct RewindView: View {
     }
 
     private func move(_ by: Int, in deck: [Card]) {
-        index = min(max(index + by, 0), deck.count - 1)
+        if by > 0, index >= deck.count - 1 {
+            dismiss()
+        } else {
+            index = min(max(index + by, 0), deck.count - 1)
+        }
     }
 
     private func closeButton(on tone: Tone) -> some View {
@@ -521,23 +528,16 @@ struct RewindView: View {
             // A last few, from between the ones the cover showed.
             PhotoSpread(entries: Rewind.photos(from: Array(rewind.photos.dropFirst().dropLast()), limit: 3))
             Spacer(minLength: 0)
-            if rewind.photos.isEmpty {
-                Button("Start Over") { index = 0 }
-                    .buttonStyle(.bordered)
-                    .buttonBorderShape(.capsule)
-                    .tint(Tone.marigold.text)
-            } else {
-                Text("Tap for every photo.")
-                    .font(.footnote)
-                    .opacity(0.7)
-            }
+            Text(rewind.photos.isEmpty ? "Tap to close." : "Tap for every photo.")
+                .font(.footnote)
+                .opacity(0.7)
         }
     }
 
     private func photos(_ rewind: Rewind) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Kicker("Every photo from \(String(year))")
-            Text("Tap one to open that day.")
+            Text("Tap one to open that day, or anywhere else to close.")
                 .font(.footnote)
                 .opacity(0.7)
             ScrollView {
@@ -562,10 +562,6 @@ struct RewindView: View {
                 }
             }
             .scrollIndicators(.hidden)
-            Button("Start Over") { index = 0 }
-                .buttonStyle(.bordered)
-                .buttonBorderShape(.capsule)
-                .tint(Color("AccentColor"))
         }
     }
 

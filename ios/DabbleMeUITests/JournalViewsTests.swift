@@ -1399,7 +1399,7 @@ final class JournalViewsTests: XCTestCase {
     }
 
     /// Stats offers the year's Rewind in its season: it opens full screen and is tapped through
-    /// like a story, to the end and back.
+    /// like a story, back a card and on to the end, where one more tap closes it.
     func testRewindOpensFromStatsAndPagesThrough() throws {
         let year = Calendar.current.component(.year, from: .now)
         // (Stand-in photos: the demo's own need storage the test server may not have.)
@@ -1418,24 +1418,30 @@ final class JournalViewsTests: XCTestCase {
         let forward = app.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.14))
         forward.tap()
         XCTAssertTrue(app.staticTexts["You showed up"].waitForExistence(timeout: 5))
-        var cards = 2
         snap("rewind-2")
-        let last = app.buttons["Start Over"]
-        while !last.exists, cards < 14 {
+        // The left edge goes back.
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.08, dy: 0.14)).tap()
+        XCTAssertTrue(cover.waitForExistence(timeout: 5))
+        forward.tap()
+        XCTAssertTrue(app.staticTexts["You showed up"].waitForExistence(timeout: 5))
+        // On through the rest; a tap on the last card closes it, back to Stats.
+        var cards = 2
+        let close = app.buttons["Close"] // the Rewind's X: there while it's open
+        while close.exists, cards < 16 {
             forward.tap()
             cards += 1
             sleep(2) // photos come in
-            snap("rewind-\(cards)")
+            if close.exists { snap("rewind-\(cards)") }
         }
-        XCTAssertTrue(last.exists, "The last card offers to start over")
-        // The left edge goes back; Start Over to the cover; the X closes it.
-        app.coordinate(withNormalizedOffset: CGVector(dx: 0.08, dy: 0.14)).tap()
-        XCTAssertTrue(last.waitForNonExistence(timeout: 5) || cards == 2)
-        forward.tap()
-        last.tap()
-        XCTAssertTrue(cover.waitForExistence(timeout: 5))
-        app.buttons["Close"].tap()
-        XCTAssertTrue(card.waitForExistence(timeout: 5), "Back on Stats")
+        XCTAssertFalse(close.exists, "Tapping on from the last card closes the Rewind")
+        XCTAssertTrue(card.isHittable)
+        XCTAssertGreaterThan(cards, 5)
+        XCTAssertFalse(app.buttons["Start Over"].exists)
+        // The X closes it from anywhere.
+        card.tap()
+        XCTAssertTrue(cover.waitForExistence(timeout: 60))
+        close.tap()
+        XCTAssertTrue(close.waitForNonExistence(timeout: 5), "Back on Stats")
     }
 
     /// Today's count of the journal's entries (top right) opens Stats, where the year of writing
