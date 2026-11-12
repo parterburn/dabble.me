@@ -1146,6 +1146,41 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Jump to a Day"].waitForExistence(timeout: 5), "A tap opens the calendar")
     }
 
+    /// Once today's written, the pencil beside today's date opens it for editing. (Deletes the
+    /// entry afterwards, so Today is unwritten again for the other tests.)
+    func testPencilBesideTodaysDateEditsTodaysEntry() throws {
+        let app = launch()
+        let write = app.buttons["Write Today's Entry"]
+        XCTAssertTrue(write.waitForExistence(timeout: 15))
+        XCTAssertFalse(app.buttons["Edit Today's Entry"].exists, "Nothing to edit yet")
+        write.tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        editor.tap()
+        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+        if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap(); editor.tap() }
+        editor.typeText("A quiet day at home.")
+        app.buttons["Save"].tap()
+        let pencil = app.buttons["Edit Today's Entry"]
+        XCTAssertTrue(pencil.waitForExistence(timeout: 15))
+        snap("today-edit-pencil")
+        pencil.tap()
+        XCTAssertTrue(editor.waitForExistence(timeout: 10), "Straight into editing")
+        XCTAssertEqual(editor.value as? String, "A quiet day at home.")
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+        // Clean up: delete today's entry from its Actions.
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "A quiet day at home.")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.swipeLeft()
+        app.buttons["Actions"].tap()
+        let delete = app.buttons["Delete"]
+        XCTAssertTrue(delete.waitForExistence(timeout: 10))
+        delete.tap()
+        app.buttons["Hold to Delete"].press(forDuration: 2.6)
+        XCTAssertTrue(write.waitForExistence(timeout: 15), "Today is unwritten again")
+    }
+
     /// Today's count of the journal's entries (top right) opens Stats, where the year of writing
     /// days is titled with its year, says how many entries it has and the share of its days with
     /// one, and can go back to an earlier year.
