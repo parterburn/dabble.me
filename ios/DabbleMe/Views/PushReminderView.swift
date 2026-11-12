@@ -62,8 +62,8 @@ struct PushReminderView: View {
                     Toggle("Show Entry Previews", isOn: $showsPreviews)
                 } footer: {
                     Text(showsPreviews
-                        ? "With a past entry (Settings › Past Entries), the notification shows the start of it and its photo, which can be seen without unlocking your phone."
-                        : "With a past entry (Settings › Past Entries), the notification says there's one to look back on, without showing it.")
+                        ? "With a past entry (Settings › Include Past Entries), the notification shows the start of it and its photo, which can be seen without unlocking your phone."
+                        : "With a past entry (Settings › Include Past Entries), the notification says there's one to look back on, without showing it.")
                 }
             }
         }

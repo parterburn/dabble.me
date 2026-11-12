@@ -689,11 +689,14 @@ final class JournalViewsTests: XCTestCase {
     func testPastEntriesForNotifications() throws {
         let app = launch()
         tab(app, "Settings").tap()
-        // Reminders: Past Entries, then Push and Email, each to a page of its own.
-        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Past Entries'")).firstMatch
+        // Reminders: Push and Email, each to a page of its own, then Include Past Entries under them.
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Include Past Entries'")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10))
-        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Push'")).firstMatch.exists)
-        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Email'")).firstMatch.exists)
+        let push = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Push'")).firstMatch
+        let email = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Email'")).firstMatch
+        XCTAssertTrue(push.exists && email.exists)
+        XCTAssertLessThan(push.frame.minY, email.frame.minY)
+        XCTAssertLessThan(email.frame.minY, row.frame.minY, "Under Email")
         snap("settings-reminders")
         row.tap()
         let include = app.switches["Include Past Entries in Notifications"]

@@ -188,8 +188,7 @@ private extension SettingsView {
     @ViewBuilder
     var remindersSection: some View {
         Section {
-            // What a notification can look back on, for both kinds; then each on its own page.
-            PastEntriesRow(store: emailSchedule)
+            // Each kind on a page of its own; then what either can look back on.
             NavigationLink {
                 PushReminderView()
             } label: {
@@ -197,6 +196,7 @@ private extension SettingsView {
                                                                        minutes: reminderTime >= 0 ? reminderTime : emailTime))
             }
             EmailScheduleRow(store: emailSchedule)
+            PastEntriesRow(store: emailSchedule)
         } header: {
             Text("Reminders")
         }

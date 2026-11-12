@@ -63,8 +63,8 @@ final class EmailScheduleStore {
     }
 }
 
-/// Settings → Reminders → Past Entries: a summary row ("On", "Off") that opens the choices both
-/// notifications share.
+/// Settings → Reminders → Include Past Entries: a summary row ("On", "Off"), under Push and
+/// Email, that opens the choices both notifications share.
 struct PastEntriesRow: View {
     let store: EmailScheduleStore
 
@@ -72,7 +72,7 @@ struct PastEntriesRow: View {
         NavigationLink {
             PastEntriesView(store: store)
         } label: {
-            LabeledContent("Past Entries", value: store.schedule.map { $0.includePastEntries ? "On" : "Off" } ?? "")
+            LabeledContent("Include Past Entries", value: store.schedule.map { $0.includePastEntries ? "On" : "Off" } ?? "")
         }
         .disabled(store.schedule == nil)
     }
