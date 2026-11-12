@@ -103,6 +103,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_12_000000) do
     t.string "storage_key"
     t.integer "entry_count", default: 0, null: false
     t.integer "image_count", default: 0, null: false
+    t.string "scope", default: "all", null: false
     t.integer "skipped_image_count", default: 0, null: false
     t.bigint "byte_size"
     t.datetime "expires_at"

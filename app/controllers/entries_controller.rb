@@ -266,20 +266,24 @@ class EntriesController < ApplicationController
   end
 
   # Every export is a ZIP built in the background (ExportEntriesJob): the
-  # entries as text and JSON, plus their photos. Nothing downloads from here.
+  # entries as text and JSON, plus their photos. Asking again inside the
+  # limit downloads the last export when it holds the same thing.
   def export
     search_term = params[:search].present? ? search_params[:term].presence : nil
     year = params[:year].presence
     raise InvalidDateError if year && year !~ /\A(19|20)\d{2}\z/
 
+    scope = Export.scope_for(year: year, search_term: search_term)
     back = edit_user_registration_path(anchor: "export")
     recent = current_user.exports.within_limit.order(:created_at).last
     if recent&.preparing?
       redirect_back fallback_location: back, notice: "Your export is already being prepared. We'll email you a link when it's ready."
+    elsif recent&.reusable_for?(scope)
+      redirect_to download_export_path(recent)
     elsif recent
       redirect_back fallback_location: back, alert: export_limit_message(recent)
     else
-      export = current_user.exports.create!
+      export = current_user.exports.create!(scope: scope)
       ExportEntriesJob.perform_later(export.id, { search_term: search_term, year: year }.compact)
       redirect_back fallback_location: back, notice: "Your export is being prepared. We'll email you a link to download it. The link works for 7 days."
     end

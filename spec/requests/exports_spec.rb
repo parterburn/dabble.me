@@ -111,10 +111,31 @@ RSpec.describe 'Exports', type: :request do
       expect(flash[:notice]).to include('already being prepared')
     end
 
-    it 'allows one export every 12 hours, and points to the last one' do
-      user.exports.create!(status: 'ready', storage_key: 'exports/x.zip', expires_at: 6.days.from_now, created_at: 11.hours.ago)
+    it 'downloads the last export when asked again within 12 hours' do
+      last = user.exports.create!(status: 'ready', storage_key: 'exports/x.zip', expires_at: 6.days.from_now, created_at: 11.hours.ago)
 
       expect { get export_entries_path }.not_to(change { Export.count })
+      expect(response).to redirect_to(download_export_path(last))
+
+      follow_redirect!
+      expect(response.location).to include('exports/x.zip')
+      expect(last.reload.download_count).to eq(1)
+    end
+
+    it 'downloads the last export of the same year, too' do
+      last = user.exports.create!(status: 'ready', scope: 'year:2021', storage_key: 'exports/x.zip', expires_at: 6.days.from_now)
+
+      get export_entries_path(year: '2021')
+      expect(response).to redirect_to(download_export_path(last))
+    end
+
+    it 'does not hand over an export of something else, or of a search' do
+      user.exports.create!(status: 'ready', scope: 'search', storage_key: 'exports/x.zip', expires_at: 6.days.from_now, created_at: 11.hours.ago)
+
+      [export_entries_path, export_entries_path(search: { term: 'coffee' })].each do |path|
+        expect { get path }.not_to(change { Export.count })
+        expect(response).to redirect_to(edit_user_registration_path(anchor: 'export'))
+      end
       expect(flash[:alert]).to include('once every 12 hours', 'under an hour', export_path(user.exports.last))
     end
 

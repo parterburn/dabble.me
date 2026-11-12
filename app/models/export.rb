@@ -19,6 +19,24 @@ class Export < ActiveRecord::Base
 
   before_destroy :delete_file
 
+  # What an export of this year or search holds, as stored in `scope`. The
+  # search words themselves are never stored.
+  def self.scope_for(year: nil, search_term: nil)
+    if search_term.present?
+      "search"
+    elsif year.present?
+      "year:#{year}"
+    else
+      "all"
+    end
+  end
+
+  # Whether asking for `scope` again can be answered with this export's file.
+  # Two searches may differ, so a search export is never reused.
+  def reusable_for?(scope)
+    downloadable? && self.scope == scope && scope != "search"
+  end
+
   def to_param
     token
   end
