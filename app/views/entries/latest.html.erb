@@ -33,38 +33,8 @@
     <% year_entries = current_user.entries.where("date >= '#{graph_year}-01-01'::DATE AND date <= '#{graph_year}-12-31'::DATE") %>
     <%= javascript_include_tag "//www.gstatic.com/charts/loader.js", "chartkick" %>
     <% total_count = year_entries.count %>
-    <% percent_complete = graph_year < @user_today.year ? 100 : (@user_today.yday.to_f / Date.new(graph_year, 12, 31).yday * 100).round %>
     <% days_with_entries = year_entries.where("date <= ?", @user_today).distinct.count(:date) %>
     <% percent_with_entries = (days_with_entries.to_f / elapsed_days_in_year(graph_year) * 100).round %>
-
-    <div class="col-md-8 well col-md-offset-1" id="year-in-review" style="padding-top: 0; padding-left: 0; padding-right: 0;">
-      <div class="center">
-        <div class="s-entry-date">
-          <h2>
-            <%= link_to "Year in Progress", rewind_path %>
-          </h2>
-          <h3>
-            <span rel="tooltip" title="<%= percent_with_entries %>% of days so far in <%= graph_year %> have entries."><%= "#{total_count} entries in #{graph_year}" %></span>
-          </h3>
-        </div>
-        <div class="s-review-details">
-          <%= render 'contribution_graph', data: contribution_calendar_data(year_entries, graph_year), year: graph_year %>
-          <div class="clearfix"></div>
-          <% if highlight_year_in_review %>
-            <h4 style="font-size: 16px; margin-top: 10px; font-weight: 600;">
-              <span>See more stats in your </span>
-              <%= link_to "#{review_year} Rewind", rewind_path, style: "color: #649cc7;" %><span>!</span>
-            </h4>
-          <% else %>
-            <h4 style="font-size: 16px; margin-top: 10px; font-weight: 500;">
-              <span><%= "#{percent_complete}% of the year completed. " %></span>
-              <%= link_to "Write your memories down", new_entry_path, style: "color: #5B6554;" %>
-              <span> so you can remember them later.</span>
-            </h4>
-          <% end %>
-        </div>
-      </div>
-    </div>
 
     <% unless @lastest_entry.date == @user_today %>
       <div class="col-md-8 well col-md-offset-1 entry">
@@ -80,6 +50,29 @@
     <div class="col-md-8 well entry col-md-offset-1" id="entry-<%= @lastest_entry.id %>">
       <div class="label label-past-years">LATEST ENTRY</div>
       <%= render partial: 'entries/entry', locals: { entry: @lastest_entry } %>
+    </div>
+
+    <div class="col-md-8 well col-md-offset-1" id="year-in-review" style="padding-top: 0; padding-left: 0; padding-right: 0;">
+      <div class="center">
+        <div class="s-entry-date">
+          <h2>
+            <%= link_to "Year in Progress", rewind_path %>
+          </h2>
+          <h3>
+            <span rel="tooltip" title="<%= percent_with_entries %>% of days so far in <%= graph_year %> have entries."><%= "#{total_count} entries in #{graph_year}" %></span>
+          </h3>
+        </div>
+        <div class="s-review-details">
+          <%= render 'contribution_graph', data: contribution_calendar_data(year_entries, graph_year), year: graph_year, new_tab: false %>
+          <div class="clearfix"></div>
+          <% if highlight_year_in_review %>
+            <h4 style="font-size: 16px; margin-top: 10px; font-weight: 600;">
+              <span>See more stats in your </span>
+              <%= link_to "#{review_year} Rewind", rewind_path, style: "color: #649cc7;" %><span>!</span>
+            </h4>
+          <% end %>
+        </div>
+      </div>
     </div>
 
     <% if current_user.is_pro? && @years_ago_entries.present? %>

@@ -371,6 +371,19 @@ RSpec.describe EntriesController, type: :controller do
       expect(response.body).not_to have_content(not_my_entry.formatted_body)
     end
 
+    it 'shows Year in Progress under the latest entry, with day links that open in the same tab' do
+      sign_in user
+      get :latest
+      body = response.body
+
+      expect(body.index('LATEST ENTRY')).to be < body.index('Year in Progress')
+      expect(body).not_to include('of the year completed', 'Write your memories down')
+
+      day_links = Nokogiri::HTML(body).css('#year-in-review a.day')
+      expect(day_links).not_to be_empty
+      expect(day_links.map { |link| link['target'] }.compact).to be_empty
+    end
+
     it 'should show a CTA to logged in users without entries' do
       sign_in user
       user.plan = 'PRO PayHere Monthly'
