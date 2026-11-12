@@ -11,6 +11,9 @@ class EntriesController < ApplicationController
 
   rescue_from InvalidDateError, with: :handle_invalid_date
 
+  # Photos on a page of the photo grid: full rows at 3, 4 and 6 across.
+  PHOTOS_PER_PAGE = 60
+
   def index
     @entries = current_user.entries.includes(:inspiration)
 
@@ -39,7 +42,15 @@ class EntriesController < ApplicationController
       @title = 'All Entries'
     end
 
-    @entries = @entries.page(params[:page]).per(index_per_page)
+    photo_grid = params[:group] == 'photos' && !request.format.json?
+    if photo_grid
+      # The grid shows only photos, so skip the entry text (and decrypting it).
+      # uploading_image_at is needed by Entry#uploading_image?.
+      @entries = @entries.unscope(:includes).select(:id, :user_id, :date, :image, :uploading_image_at)
+                         .page(params[:page]).per(PHOTOS_PER_PAGE)
+    else
+      @entries = @entries.page(params[:page]).per(index_per_page)
+    end
 
     if @entries.empty? && params[:format] != "json"
       flash[:alert] = "No entries found." if params[:group].present? || params[:subgroup].present?
@@ -55,7 +66,7 @@ class EntriesController < ApplicationController
         end_date = parse_iso_date(params[:end]) || @user_today
         render json: calendar_json(current_user.entries
           .where("date >= ? AND date < ?", start_date, end_date)) }
-      format.html
+      format.html { render 'photos' if photo_grid }
     end
   end
 
@@ -69,19 +80,24 @@ class EntriesController < ApplicationController
     end
   end
 
+  # The home page: today's entry (or a nudge to write it), the year so far,
+  # and what was written on this day in earlier years.
   def latest
-    @title = "Latest Entry — Dabble me."
-    @lastest_entry = current_user.entries.includes(:inspiration).order(date: :asc).first
+    @title = "Today — Dabble me."
+    @has_entries = current_user.entries.exists?
+    @today_entry = current_user.entries.includes(:inspiration).where(date: @user_today.all_day).first
     set_hashtags
     set_sidebar_stats
     set_years_ago if current_user.is_pro?
   end
 
+  # Every entry written on this month and day in an earlier year, as
+  # [years back, entry] pairs, most recent year first.
   def set_years_ago
-    user_time = Time.now.in_time_zone(current_user.send_timezone)
-    day_ranges = (1..5).map { |y| (user_time - y.years).to_date.all_day }
-    years_ago_scope = day_ranges.map { |range| current_user.entries.where(date: range) }.reduce(:or)
-    @years_ago_entries = (years_ago_scope || current_user.entries.none).index_by { |e| (user_time.year - e.date.year) }
+    on_this_day = current_user.entries.includes(:inspiration)
+                              .where("extract(month from date) = ? AND extract(day from date) = ?", @user_today.month, @user_today.day)
+                              .where("date < ?", @user_today.beginning_of_year)
+    @years_ago_entries = on_this_day.map { |entry| [@user_today.year - entry.date.year, entry] }.sort_by { |years_back, entry| [years_back, entry.id] }
   end
 
   def random

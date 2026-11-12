@@ -6,11 +6,7 @@
   <h3 class="visible-sm visible-xs">
     <div style="display: flex; justify-content: space-between; align-items: center;">
       <% if dashboard %>
-        <% if current_user.first_name.present? %>
-          Welcome back, <%= current_user.first_name %>.
-        <% else %>
-          Welcome back.
-        <% end %>
+        <span><%= @user_today.strftime("%A, %B %-d").upcase %></span>
       <% else %>
         <%= @title.upcase.html_safe %>
       <% end %>
@@ -26,7 +22,7 @@
   <% if current_page?(latest_entry_path) %>
     <% has_past_entries = false %>
     <% if current_user.is_pro? && @years_ago_entries.present? %>
-      <% @years_ago_entries.sort.each do |year_back, back_year_entry| %>
+      <% @years_ago_entries.each do |year_back, back_year_entry| %>
         <% has_past_entries = true %>
         <h4>
           <%= link_to "#entry-#{back_year_entry.id}", "data-id": "#{back_year_entry.id}", class: "j-entry-link", style: "color: #a41100;" do %>

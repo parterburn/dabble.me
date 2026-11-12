@@ -837,3 +837,42 @@ mark {
 body:has(.s-reflection-dialog[open]) {
   overflow: hidden;
 }
+
+// The photo grid on /entries/photos: square thumbnails, each linking to its
+// entry.
+.s-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 20px 0;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+
+  @media (min-width: 1200px) {
+    grid-template-columns: repeat(6, 1fr);
+  }
+}
+
+.s-photo-grid__photo {
+  display: block;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+  background: #fff;
+  transition: opacity 0.15s;
+
+  &:hover,
+  &:focus {
+    opacity: 0.9;
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}

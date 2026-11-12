@@ -1,0 +1,22 @@
+<% title "#{@title} — Dabble me." %>
+<div class="row">
+  <%= render "sidebar" %>
+
+  <div class="col-md-8 col-md-offset-1">
+    <div class="center">
+      <%= paginate @entries %>
+    </div>
+
+    <div class="s-photo-grid">
+      <% @entries.each do |entry| %>
+        <%= link_to entry_path(entry), title: entry.date_format_short, class: "s-photo-grid__photo" do %>
+          <%= photo_thumbnail(entry) %>
+        <% end %>
+      <% end %>
+    </div>
+
+    <div class="center">
+      <%= paginate @entries %>
+    </div>
+  </div>
+</div>
