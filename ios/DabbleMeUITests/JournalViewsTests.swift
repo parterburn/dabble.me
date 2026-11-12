@@ -1264,6 +1264,13 @@ final class JournalViewsTests: XCTestCase {
         let merge = app.buttons["Merge"]
         XCTAssertTrue(merge.waitForExistence(timeout: 10), "That day has an entry: asked first")
         snap("merge-question")
+        // Cancel puts the date back (nothing left to save), and the entry stays where it was.
+        app.alerts.buttons["Cancel"].tap()
+        XCTAssertTrue(merge.waitForNonExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Save"].isEnabled, "Back on its own day")
+        pickDay(-6)
+        app.buttons["Save"].tap()
+        XCTAssertTrue(merge.waitForExistence(timeout: 10))
         merge.tap()
         XCTAssertTrue(editor.waitForNonExistence(timeout: 15))
         // The open entry is the merged one: that day's, with the moved one after a rule.

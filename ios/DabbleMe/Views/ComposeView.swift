@@ -181,9 +181,13 @@ struct ComposeView: View {
                         : "A draft keeps your words on this device until you come back to it, but not changes to photos.")
                 }
             }
-            .confirmationDialog(mergeQuestion ?? "", isPresented: .present($mergeQuestion), titleVisibility: .visible) {
+            // An alert, for its Cancel button (a confirmation dialog shows none here): Cancel puts
+            // the date back to the entry's own day.
+            .alert(mergeQuestion ?? "", isPresented: .present($mergeQuestion)) {
                 Button("Merge") { Task { await save(merging: true) } }
-                Button("Cancel", role: .cancel) {}
+                Button("Cancel", role: .cancel) {
+                    if case .edit(let entry) = mode, let day = entry.day { date = day.localDate }
+                }
             } message: {
                 Text("Merging adds this entry to the end of that one, photo included. The two become one entry, which can't be undone.")
             }
