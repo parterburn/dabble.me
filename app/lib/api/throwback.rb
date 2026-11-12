@@ -8,19 +8,24 @@ module Api
   # past year has none, so even a single old entry comes back). It respects the email's "leave out
   # entries with" words, and stays the same all day rather than changing on every refresh.
   class Throwback
-    def initialize(user, today:)
+    # `pool` and `way_back` stand in for the email's own choices (User#random_entries, minus its
+    # left-out words; User#way_back_past_entries) where the app's push reminder has its own.
+    def initialize(user, today:, pool: nil, way_back: nil)
       @user = user
       @today = today
+      @pool = pool
+      @way_back = way_back
     end
 
     def entry
-      pool = user.random_entries.unscope(:order).where(date: ...today.beginning_of_day)
+      pool = (@pool || user.random_entries).unscope(:order).where(date: ...today.beginning_of_day)
       exact_days.each do |day|
         found = pool.where(date: day.all_day).first
         return found if found
       end
       recent = pool.where(date: (today - 1.year).beginning_of_day..)
-      pick(user.way_back_past_entries || !recent.exists? ? pool : recent)
+      way_back = @way_back.nil? ? user.way_back_past_entries : @way_back
+      pick(way_back || !recent.exists? ? pool : recent)
     end
 
     private

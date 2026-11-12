@@ -12,6 +12,14 @@ enum ReminderSettings {
     static let emailTimeKey = "reminders.emailMinutes"
     /// The notification shows the start of the entry and its photo (on unless switched off).
     static let previewsKey = "reminders.previews"
+    /// The days it goes out ("Sun"…"Sat", comma-separated; every day unless chosen).
+    static let daysKey = "reminders.days"
+    /// It carries a past entry to look back on (on unless switched off), and which ones (PRO):
+    /// words that leave entries out, and whether to go back over a year. Like the email's, but
+    /// the reminder's own.
+    static let pastEntriesKey = "reminders.pastEntries"
+    static let pastFilterKey = "reminders.pastFilter"
+    static let includeOldKey = "reminders.includeOld"
     static let followsEmail = -1
     static let defaultTime = 20 * 60 // 8:00 PM, until the email's hour is known
 
@@ -21,6 +29,35 @@ enum ReminderSettings {
     private static let oldMemoriesEnabledKey = "reminders.memories.enabled"
 
     static var showsPreviews: Bool { UserDefaults.standard.object(forKey: previewsKey) as? Bool ?? true }
+    static var includesPastEntries: Bool { UserDefaults.standard.object(forKey: pastEntriesKey) as? Bool ?? true }
+    static var includesOldEntries: Bool { UserDefaults.standard.object(forKey: includeOldKey) as? Bool ?? true }
+    static var pastFilter: String { UserDefaults.standard.string(forKey: pastFilterKey) ?? "" }
+
+    /// The days it goes out, in the week's order.
+    static var days: [String] {
+        guard let stored = UserDefaults.standard.string(forKey: daysKey) else { return EmailSchedule.allDays }
+        return days(from: stored)
+    }
+
+    static func days(from stored: String) -> [String] {
+        let chosen = Set(stored.split(separator: ",").map(String.init))
+        return EmailSchedule.allDays.filter(chosen.contains)
+    }
+
+    /// "Every day · 8:00 PM", "Weekdays · 7:30 AM", "Off": the reminder in a line, for Settings.
+    static func summary(enabled: Bool, days: [String], minutes: Int) -> String {
+        guard enabled, !days.isEmpty else { return "Off" }
+        let when: String
+        switch days {
+        case EmailSchedule.allDays: when = "Every day"
+        case ["Mon", "Tue", "Wed", "Thu", "Fri"]: when = "Weekdays"
+        case ["Sun", "Sat"]: when = "Weekends"
+        case let one where one.count == 1:
+            when = Calendar.current.weekdaySymbols[EmailSchedule.allDays.firstIndex(of: one[0]) ?? 0] + "s"
+        default: when = days.joined(separator: ", ")
+        }
+        return "\(when) · \(date(fromMinutes: minutes).formatted(date: .omitted, time: .shortened))"
+    }
 
     /// When the reminder goes out: the time set, or else the daily email's.
     static var minutes: Int {
@@ -52,6 +89,8 @@ enum ReminderSettings {
 /// GET /api/v1/reminders: the entry to look back on for each of the coming days.
 struct ReminderPlan: Decodable, Sendable {
     let emailHour: Int
+    /// How many entries the reminder's left-out words leave out (nil from an older server).
+    var filteredCount: Int? = nil
     let days: [Day]
 
     struct Day: Decodable, Sendable {
@@ -94,6 +133,8 @@ final class ReminderScheduler {
     #if DEBUG
     private var debugSoonID: String?
     #endif
+    /// How many entries the left-out words leave out, as the server last said (for Settings).
+    private(set) var filteredCount: Int?
     /// Bumped on sign-out: a rebuild checks it's still on the session it started in before it
     /// keeps or schedules anything.
     private var session = 0
@@ -161,13 +202,17 @@ final class ReminderScheduler {
         if let plan { defaults.set(plan.emailHour * 60, forKey: ReminderSettings.emailTimeKey) }
         let minutes = ReminderSettings.minutes
         let previews = ReminderSettings.showsPreviews
-        let memories = Dictionary((plan?.days ?? []).map { ($0.date, $0) }, uniquingKeysWith: { first, _ in first })
+        let weekdays = Set(ReminderSettings.days)
+        // Without a past entry it's the plain nudge.
+        let memories = ReminderSettings.includesPastEntries
+            ? Dictionary((plan?.days ?? []).map { ($0.date, $0) }, uniquingKeysWith: { first, _ in first }) : [:]
         let wroteToday = model.today?.entry != nil
 
         // Built first, photos and all, then swapped in, so nothing's missing in between.
         var requests: [UNNotificationRequest] = []
         for offset in 0..<days where !(offset == 0 && wroteToday) {
-            guard let day = Calendar.current.date(byAdding: .day, value: offset, to: Date()) else { continue }
+            guard let day = Calendar.current.date(byAdding: .day, value: offset, to: Date()),
+                  weekdays.contains(EmailSchedule.allDays[Calendar.current.component(.weekday, from: day) - 1]) else { continue }
             let iso = Self.isoDay(day)
             let content = UNMutableNotificationContent()
             content.title = "How was your day?"
@@ -228,14 +273,21 @@ final class ReminderScheduler {
 
     /// The coming days' memories, fetched again when the journal has changed or half an hour on.
     private func plan(for model: AppModel, session: Int) async -> ReminderPlan? {
-        let key = "\(model.today?.date ?? "")|\(model.me?.entryCount ?? 0)|\(model.today?.entry?.updatedAt ?? "")"
+        // The reminder's own choice of past entries (PRO; without them the server uses the email's).
+        var query = ["days": String(days)]
+        if model.me?.isPro == true {
+            query["filter"] = ReminderSettings.pastFilter
+            query["include_old"] = ReminderSettings.includesOldEntries ? "1" : "0"
+        }
+        let key = "\(model.today?.date ?? "")|\(model.me?.entryCount ?? 0)|\(model.today?.entry?.updatedAt ?? "")|\(query["filter"] ?? "-")|\(query["include_old"] ?? "-")"
         if let cached, cached.key == key, Date().timeIntervalSince(cached.at) < 30 * 60 { return cached.plan }
-        guard let plan: ReminderPlan = try? await model.api.get("api/v1/reminders", query: ["days": String(days)]) else {
+        guard let plan: ReminderPlan = try? await model.api.get("api/v1/reminders", query: query) else {
             return cached?.plan // an older server, or offline: what was known (or just the nudge)
         }
         // Not kept if the account signed out while it was on its way (the caller drops it too).
         guard session == self.session else { return nil }
         cached = (plan, key, Date())
+        filteredCount = plan.filteredCount
         return plan
     }
 

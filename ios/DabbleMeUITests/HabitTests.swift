@@ -97,20 +97,40 @@ final class HabitTests: XCTestCase {
         let app = launch()
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
         app.tabBars.buttons["Settings"].tap()
+        // Reminders is two rows, each to a page of its own: Push and Email.
+        let push = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Push'")).firstMatch
+        XCTAssertTrue(push.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Email'")).firstMatch.exists)
+        push.tap()
         let daily = app.switches["Daily Reminder"]
         XCTAssertTrue(daily.waitForExistence(timeout: 10))
         if (daily.value as? String) != "1" { daily.switches.firstMatch.tap() }
         let allow = springboard.buttons["Allow"]
         if allow.waitForExistence(timeout: 5) { allow.tap() }
-        // Its time (the daily email's until one is set) and entry previews, on to begin with.
+        // Its days, and the past entry it carries: previews on to begin with, and (PRO) which
+        // entries can come up, as for the email.
         let previews = app.switches["Show Entry Previews"]
         XCTAssertTrue(previews.waitForExistence(timeout: 5))
         XCTAssertEqual(previews.value as? String, "1")
-        XCTAssertFalse(app.switches["On This Day Memories"].exists, "One reminder now")
+        XCTAssertTrue(app.switches["Include a Past Entry"].exists)
+        XCTAssertTrue(app.switches["Include Entries Over a Year Old"].exists)
+        XCTAssertTrue(app.buttons["Saturday"].exists)
 
         let scheduled = app.descendants(matching: .any).matching(NSPredicate(format: "label MATCHES %@", "[1-9][0-9]* reminders scheduled")).firstMatch
         XCTAssertTrue(scheduled.waitForExistence(timeout: 15), "Turning reminders on should schedule notifications")
         snap("reminders-settings")
+        // Fewer days, fewer reminders: with only the weekend on, two weeks ahead hold four.
+        for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"] {
+            let button = app.buttons[day]
+            if (button.value as? String) == "On" { button.tap() }
+        }
+        let weekend = app.descendants(matching: .any).matching(NSPredicate(format: "label MATCHES %@", "[1-4] reminders scheduled")).firstMatch
+        XCTAssertTrue(weekend.waitForExistence(timeout: 15), "Only the weekend's reminders are scheduled")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Push' AND label CONTAINS 'Weekends'")).firstMatch.waitForExistence(timeout: 5))
+        // Every day again, for the other tests.
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Push'")).firstMatch.tap()
+        for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"] { app.buttons[day].tap() }
     }
 
     /// The daily reminder as it arrives: the entry to look back on (previews are on). Touch and
@@ -122,6 +142,7 @@ final class HabitTests: XCTestCase {
         app.tabBars.buttons["Settings"].tap()
         // On (it may be already, from an earlier run): the first one comes twelve seconds after
         // it's scheduled, by which time the app is in the background.
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Push'")).firstMatch.tap()
         let daily = app.switches["Daily Reminder"]
         XCTAssertTrue(daily.waitForExistence(timeout: 10))
         if (daily.value as? String) != "1" {

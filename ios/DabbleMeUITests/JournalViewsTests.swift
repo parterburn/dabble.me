@@ -630,7 +630,7 @@ final class JournalViewsTests: XCTestCase {
 
     private func openDailyEmail(_ app: XCUIApplication) {
         tab(app, "Settings").tap()
-        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Daily Email'")).firstMatch
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Email'")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10))
         for _ in 0..<3 where !row.isHittable { app.swipeUp() }
         row.tap()
@@ -667,7 +667,7 @@ final class JournalViewsTests: XCTestCase {
         sleep(1)
         snap("email-schedule")
         app.navigationBars.buttons.element(boundBy: 0).tap()
-        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Daily Email' AND label CONTAINS '7:00'")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Email' AND label CONTAINS '7:00'")).firstMatch.waitForExistence(timeout: 5))
         snap("email-schedule-row")
 
         // Saved on the server: a fresh launch shows the same.
@@ -1551,6 +1551,7 @@ final class JournalViewsTests: XCTestCase {
 
         // Reminders: the daily one is for everyone.
         tab(app, "Settings").tap()
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Push'")).firstMatch.tap()
         let daily = app.switches["Daily Reminder"]
         XCTAssertTrue(daily.waitForExistence(timeout: 10))
         XCTAssertTrue(daily.isEnabled)
@@ -1564,7 +1565,7 @@ final class JournalViewsTests: XCTestCase {
         app.launchArguments = ["-DabbleDebugAccessToken", free, "-DabbleServerOverride", "http://localhost:3000"]
         app.launch()
         tab(app, "Settings").tap()
-        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Daily Email'")).firstMatch
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Email'")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10))
         XCTAssertFalse(row.isEnabled)
         snap("email-schedule-free")

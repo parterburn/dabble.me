@@ -701,6 +701,26 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       end
     end
 
+    it "takes the reminder's own left-out words and whether to go back over a year" do
+      zone = Time.find_zone(pro_user.send_timezone)
+      travel_to zone.local(2026, 6, 20, 12) do
+        old = create(:entry, user: pro_user, date: Time.zone.local(2024, 6, 20), body: "<p>The dentist again</p>")
+        older = create(:entry, user: pro_user, date: Time.zone.local(2023, 6, 20), body: "<p>A walk</p>")
+        recent = create(:entry, user: pro_user, date: Time.zone.local(2026, 6, 13), body: "<p>A week back</p>")
+        get "/api/v1/reminders", params: { days: 1 }, headers: auth(pro_user)
+        expect(json["days"].first["entry"]["id"]).to eq(old.id)
+
+        get "/api/v1/reminders", params: { days: 1, filter: "dentist, taxes" }, headers: auth(pro_user)
+        expect(json["filtered_count"]).to eq(1)
+        expect(json["days"].first).to include("kind" => "on_this_day", "count" => 1)
+        expect(json["days"].first["entry"]["id"]).to eq(older.id)
+
+        get "/api/v1/reminders", params: { days: 1, filter: "", include_old: "0" }, headers: auth(pro_user)
+        expect(json["days"].first).to include("kind" => "rewind")
+        expect(json["days"].first["entry"]["id"]).to eq(recent.id)
+      end
+    end
+
     it "leaves out days with nothing to look back on, and On This Day on a free plan" do
       zone = Time.find_zone(free_user.send_timezone)
       travel_to zone.local(2026, 6, 20, 12) do

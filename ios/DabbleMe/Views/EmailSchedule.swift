@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Settings → Reminders → Daily Email: a summary row ("Mon, Wed, Fri · 8 PM") that opens a page
+/// Settings → Reminders → Email: a summary row ("Mon, Wed, Fri · 8 PM") that opens a page
 /// for the days, hour and time zone of the "How was your day?" email. PRO; greyed out for free
 /// accounts, like the rest of Reminders.
 struct EmailScheduleRow: View {
@@ -12,7 +12,7 @@ struct EmailScheduleRow: View {
         NavigationLink {
             EmailScheduleView(schedule: $schedule)
         } label: {
-            LabeledContent("Daily Email", value: schedule.map(Self.summary) ?? "")
+            LabeledContent("Email", value: schedule.map(Self.summary) ?? "")
         }
         .disabled(!isPro || schedule == nil)
         .task { if schedule == nil { schedule = try? await model.emailSchedule() } }
@@ -191,8 +191,8 @@ struct EmailScheduleView: View {
     }
 }
 
-/// S M T W T F S toggles. Free accounts can only turn Sunday on or off.
-private struct DayPicker: View {
+/// S M T W T F S toggles. For the email, free accounts can only turn Sunday on or off.
+struct DayPicker: View {
     let days: [String]
     let canChooseAll: Bool
     let onChange: ([String]) -> Void
