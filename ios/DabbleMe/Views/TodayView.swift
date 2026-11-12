@@ -180,6 +180,7 @@ struct TodayView: View {
                     Text(prompt)
                         .font(.system(.title2, design: .serif))
                         .contentTransition(.opacity)
+                        .accessibilityIdentifier("TodayPrompt")
                 } else {
                     Text("How was your day?")
                         .font(.system(.title2, design: .serif))

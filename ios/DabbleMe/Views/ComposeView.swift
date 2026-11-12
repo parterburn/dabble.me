@@ -93,6 +93,9 @@ struct ComposeView: View {
             : (!editor.isEmpty && (editor.isDirty || restoredDraft != nil || !photos.isEmpty || removesExistingPhoto))
     }
 
+    /// There are words to keep as a draft (a draft doesn't hold photos).
+    private var canSaveDraft: Bool { !editor.isEmpty && (editor.isDirty || restoredDraft != nil) }
+
     /// Editing: the entry's photo (or collage) as it is now, unless removed. New photos join it in a collage.
     private var existingPhotoURL: URL? {
         guard case .edit(let entry) = mode, !removesExistingPhoto, !entry.imageProcessing else { return nil }
@@ -147,13 +150,27 @@ struct ComposeView: View {
                 }
             }
             .interactiveDismissDisabled(hasChanges || isSaving)
-            .confirmationDialog(isNew ? "Discard this entry?" : "Discard your changes?",
+            .confirmationDialog(isNew ? "Close this entry?" : "Close without saving your changes?",
                                 isPresented: $confirmingDiscard, titleVisibility: .visible) {
+                // A draft is kept on this device and comes back the next time this is opened.
+                if canSaveDraft {
+                    Button("Save Draft") {
+                        draftSave?.cancel()
+                        saveDraftNow()
+                        dismiss()
+                    }
+                }
                 Button("Discard", role: .destructive) {
                     discardDraft()
                     dismiss()
                 }
                 Button("Keep Writing", role: .cancel) {}
+            } message: {
+                if canSaveDraft {
+                    Text(photoItems.isEmpty && !removesExistingPhoto
+                        ? "A draft is kept on this device until you come back to it."
+                        : "A draft keeps your words on this device until you come back to it, but not changes to photos.")
+                }
             }
             .alert("Couldn't save", isPresented: .present($error)) {
                 Button("OK", role: .cancel) {}
@@ -337,7 +354,7 @@ struct ComposeView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Prompt")
-                .accessibilityHint("Apple Intelligence asks a question about what you've written")
+                .accessibilityHint("Shows a question to write about")
                 .accessibilityAddTraits(showsAskRow ? .isSelected : [])
             }
         }
@@ -460,9 +477,20 @@ struct ComposeView: View {
     // MARK: - Ask Me
 
     /// Always, with Apple Intelligence on: before there's much written, the prompt comes from recent
-    /// entries (like Today's); after, it's mostly about the draft.
+    /// entries (like Today's); after, it's mostly about the draft. Without it, a new entry still
+    /// has today's prompt to show.
     private var canAsk: Bool {
-        JournalIntelligence.isEnabled(for: model.me)
+        JournalIntelligence.isEnabled(for: model.me) || (isNew && todaysPrompt != nil)
+    }
+
+    /// The prompt on Today's card: the one written for today on the device when there is one,
+    /// otherwise the day's general prompt.
+    private var todaysPrompt: String? {
+        guard let today = model.today else { return nil }
+        let defaults = UserDefaults.standard
+        if JournalIntelligence.isEnabled(for: model.me), defaults.string(forKey: "ai.prompt.day") == today.date,
+           let personal = defaults.string(forKey: "ai.prompt.text"), !personal.isEmpty { return personal }
+        return today.prompt
     }
 
     /// One question about the draft (Apple Intelligence, on the device): Insert puts it in the entry.
@@ -503,6 +531,15 @@ struct ComposeView: View {
 
     private func ask() async {
         guard !isAsking else { return }
+        // A new entry with nothing written yet: the prompt Today showed, first, so it can be
+        // seen again without leaving the draft. (And the only one without Apple Intelligence.)
+        let usesAI = JournalIntelligence.isEnabled(for: model.me)
+        if isNew, let todaysPrompt, !usesAI || (editor.isEmpty && !askedQuestions.contains(todaysPrompt)) {
+            question = todaysPrompt
+            askedQuestions.append(todaysPrompt)
+            askError = nil
+            return
+        }
         isAsking = true
         defer { isAsking = false }
         do {

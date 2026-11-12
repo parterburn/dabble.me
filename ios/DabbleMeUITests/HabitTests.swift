@@ -57,6 +57,42 @@ final class HabitTests: XCTestCase {
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
 
+    /// A blank new entry's Prompt button shows the prompt Today showed, and Cancel offers to keep
+    /// what's written as a draft.
+    func testPromptShowsTodaysAndCancelCanSaveADraft() throws {
+        let app = launch()
+        let write = app.buttons["Write Today's Entry"]
+        XCTAssertTrue(write.waitForExistence(timeout: 15))
+        sleep(3) // a prompt written on the device may replace the general one
+        let todays = app.staticTexts["TodayPrompt"].label
+        XCTAssertFalse(todays.isEmpty)
+        write.tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        editor.tap()
+        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+        if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap(); editor.tap() }
+        app.buttons["Prompt"].tap()
+        let question = app.staticTexts["AskMeQuestion"]
+        XCTAssertTrue(question.waitForExistence(timeout: 10))
+        XCTAssertEqual(question.label, todays, "The prompt from Today")
+        snap("compose-todays-prompt")
+        app.buttons["Prompt"].tap() // closes the row
+        editor.typeText("Saved for later.")
+        app.buttons["Cancel"].tap()
+        let saveDraft = app.buttons["Save Draft"]
+        XCTAssertTrue(saveDraft.waitForExistence(timeout: 5))
+        snap("compose-save-draft")
+        saveDraft.tap()
+        XCTAssertTrue(editor.waitForNonExistence(timeout: 5))
+        write.tap()
+        XCTAssertTrue(app.staticTexts["Restored your unsaved draft."].waitForExistence(timeout: 5))
+        XCTAssertTrue((app.textViews["Entry"].value as? String ?? "").contains("Saved for later."))
+        app.buttons["Start Over"].tap()
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+    }
+
     func testRemindersScheduleNotifications() throws {
         let app = launch()
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
