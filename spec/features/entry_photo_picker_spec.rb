@@ -51,7 +51,7 @@ RSpec.describe "Entry photo picker", type: :feature, js: true do
     it "shows a drop zone instead of labels" do
       visit new_entry_path
 
-      expect(page).to have_css(".photo-picker__drop", text: "Add photo(s)")
+      expect(page).to have_css(".photo-picker__drop", text: "Add photos")
       # Date and Entry keep labels for screen readers only; the photo field has none.
       expect(page).to have_css("label.sr-only[for='entry_date']", visible: :all)
       expect(page).to have_css("label.sr-only[for='entry_entry']", visible: :all)
@@ -61,7 +61,7 @@ RSpec.describe "Entry photo picker", type: :feature, js: true do
     it "says to drag or click with a mouse" do
       visit new_entry_path
 
-      expect(page).to have_css(".photo-picker__hint", text: "Drag photos here or click to browse")
+      expect(page).to have_css(".photo-picker__hint", text: "Drag up to #{CollageGenerator::MAX_IMAGES} photos or click to browse")
       expect(page).to have_no_content("photos per entry")
     end
 
@@ -69,7 +69,7 @@ RSpec.describe "Entry photo picker", type: :feature, js: true do
       with_touch_screen do
         visit new_entry_path
 
-        expect(page).to have_css(".photo-picker__drop", text: "Add photo(s)")
+        expect(page).to have_css(".photo-picker__drop", text: "Add photos")
         expect(page).to have_no_css(".photo-picker__hint", visible: true)
       end
     end
@@ -161,7 +161,7 @@ RSpec.describe "Entry photo picker", type: :feature, js: true do
 
       expect(page).to have_no_css(".photo-picker__current", visible: true)
       expect(page).to have_content("Photo will be deleted when you save.")
-      expect(page).to have_css(".photo-picker__drop", text: "Add photo(s)")
+      expect(page).to have_css(".photo-picker__drop", text: "Add photos")
       expect(find("#entry_remove_image", visible: :all).value).to eq("1")
 
       click_button "Update Entry"

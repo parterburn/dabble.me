@@ -27,8 +27,8 @@
     <%= f.file_field :image, accept: Entry::ALLOWED_IMAGE_TYPES.join(","), multiple: true, class: "photo-picker__input" %>
     <span class="slab-icon slab-icon--images" aria-hidden="true"></span>
     <span class="photo-picker__text">
-      <span class="photo-picker__title j-photo-title">Add photo(s)</span>
-      <span class="photo-picker__hint">Drag photos here or click to browse</span>
+      <span class="photo-picker__title j-photo-title">Add photos</span>
+      <span class="photo-picker__hint">Drag up to <%= max_photos %> photos or click to browse</span>
       <span class="photo-picker__count j-photo-count"></span>
     </span>
   </label>

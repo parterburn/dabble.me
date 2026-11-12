@@ -602,7 +602,7 @@ mark {
   clip: rect(0 0 0 0);
 }
 
-// Height of the "Add photo(s)" box, and of the saved photo's thumbnail that
+// Height of the "Add photos" box, and of the saved photo's thumbnail that
 // takes its place on the edit form.
 $photo-picker-height: 72px;
 
@@ -754,7 +754,7 @@ $photo-picker-height: 72px;
   text-align: left;
 }
 
-// The saved photo, as a small square the height of the "Add photo(s)" box.
+// The saved photo, as a small square the height of the "Add photos" box.
 .photo-picker__current-frame {
   position: relative;
   display: block;
