@@ -71,7 +71,16 @@ final class JournalViewsTests: XCTestCase {
         for attempt in 1...3 {
             heatmap.coordinate(withNormalizedOffset: .zero).withOffset(yesterday).tap()
             XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10), "The day's entries open (try \(attempt))")
-            if attempt == 1 { sleep(1); snap("stats-day-sheet") }
+            if attempt == 1 {
+                sleep(1)
+                snap("stats-day-sheet")
+                // The arrows beside Open: the entry before yesterday's takes the sheet, under its date.
+                XCTAssertTrue(app.buttons["Next Entry"].exists)
+                app.buttons["Previous Entry"].tap()
+                sleep(2)
+                snap("stats-day-sheet-previous")
+                XCTAssertTrue(app.buttons["Open"].exists)
+            }
             app.buttons["Close"].tap()
             XCTAssertTrue(app.buttons["Open"].waitForNonExistence(timeout: 5))
         }
@@ -1367,6 +1376,15 @@ final class JournalViewsTests: XCTestCase {
         snap("shake-memory")
         app.buttons["Another"].tap()
         sleep(1)
+        // The arrows beside Open step to the entry before or after (one is off at either end).
+        let previous = app.buttons["Previous Entry"], next = app.buttons["Next Entry"]
+        XCTAssertTrue(previous.exists && next.exists)
+        let arrow = previous.isEnabled ? previous : next
+        let before = arrow.value as? String
+        arrow.tap()
+        sleep(2)
+        XCTAssertNotEqual(arrow.value as? String, before, "A different entry is showing")
+        snap("shake-memory-stepped")
         // Close: still reading the same entry underneath.
         app.buttons["Close"].tap()
         XCTAssertTrue(app.staticTexts["A Random Memory"].waitForNonExistence(timeout: 5))

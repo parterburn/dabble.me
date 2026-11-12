@@ -589,6 +589,9 @@ struct DayEntriesSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var entries: [EntryDetail]?
     @State private var error: String?
+    /// The day of the entry stepped to with the arrows beside Open (nil: the day it opened on).
+    @State private var steppedTo: JournalDay?
+    @State private var isStepping = false
     @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 17
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
     @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
@@ -596,7 +599,7 @@ struct DayEntriesSheet: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             HStack {
-                Text(day.formatted(.dateTime.weekday(.wide).month(.wide).day().year()))
+                Text((steppedTo ?? day).formatted(.dateTime.weekday(.wide).month(.wide).day().year()))
                     .font(.headline)
                     .foregroundStyle(.tint) // olive, like Random Memory's date
                 Spacer()
@@ -641,22 +644,23 @@ struct DayEntriesSheet: View {
                                 if entry.imageProcessing || entry.imageURL != nil {
                                     EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing, day: entry.day)
                                 }
-                                Button {
-                                    // The Journal opens it (this sheet also comes up over Search).
-                                    model.selectedTab = .journal
-                                    model.openEntryRequest = entry.id
-                                    dismiss()
-                                } label: {
-                                    Label("Open", icon: "slab-expand").frame(maxWidth: .infinity, minHeight: 30)
-                                }
-                                .buttonStyle(.borderedProminent)
-                                .controlSize(.large)
                             }
                         }
                     }
                     .padding(.bottom, 8)
                 }
                 .environment(\.openURL, OpenURLAction { _ in .discarded })
+                // Always in view under the entry, as in A Random Memory: Open, between the
+                // entries before and after this one.
+                EntryStepBar(entry: entries.first, isLoading: isStepping) { id in
+                    Task { await step(to: id) }
+                } open: {
+                    // The Journal opens it (this sheet also comes up over Search).
+                    guard let entry = entries.first else { return }
+                    model.selectedTab = .journal
+                    model.openEntryRequest = entry.id
+                    dismiss()
+                }
             } else if let error {
                 ContentUnavailableView("Couldn't load this day", systemImage: "exclamationmark.triangle", description: Text(error))
             } else {
@@ -668,6 +672,23 @@ struct DayEntriesSheet: View {
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .task { await load() }
+    }
+
+    /// The entry before or after: it takes the sheet, under its own date.
+    private func step(to id: Int) async {
+        guard !isStepping else { return }
+        isStepping = true
+        defer { isStepping = false }
+        do {
+            let entry = try await model.entry(id: id)
+            withAnimation(.snappy) {
+                entries = [entry]
+                steppedTo = entry.day
+            }
+        } catch is CancellationError {
+        } catch {
+            self.error = error.localizedDescription
+        }
     }
 
     /// The day's entries, each in full.
