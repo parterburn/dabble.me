@@ -160,7 +160,7 @@ RSpec.describe "Entry photo picker", type: :feature, js: true do
       find(".j-photo-remove-current").click
 
       expect(page).to have_no_css(".photo-picker__current", visible: true)
-      expect(page).to have_content("Photo will be removed when you save.")
+      expect(page).to have_content("Photo will be deleted when you save.")
       expect(page).to have_css(".photo-picker__drop", text: "Add photo(s)")
       expect(find("#entry_remove_image", visible: :all).value).to eq("1")
 

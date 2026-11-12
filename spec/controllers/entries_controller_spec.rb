@@ -479,6 +479,40 @@ RSpec.describe EntriesController, type: :controller do
     end
   end
 
+  describe 'songs' do
+    def song_entry(body)
+      entry = FactoryBot.create(:entry, user: paid_user, body: body, date: Date.new(2026, 3, 1))
+      entry.update_columns(songs: [{ 'spotify_id' => 'abc123', 'artists' => ['Artist'], 'title' => 'Title' }])
+      entry
+    end
+
+    it 'shows the start of a long entry with the rest behind Read more' do
+      sign_in paid_user
+      song_entry("<p>#{'Windows down the whole way. ' * 20}</p><p>The very last line.</p>")
+
+      get :spotify
+      page = Nokogiri::HTML(response.body)
+      blurb = page.at_css('.s-blurb > .s-blurb__text').text
+
+      expect(blurb.length).to be <= Entry::BLURB_LENGTH
+      expect(blurb).to start_with('Windows down the whole way.').and end_with('...')
+      expect(page.at_css('.s-blurb__more > summary').text).to eq('Read more')
+      expect(page.at_css('.s-blurb__more').text).to include('The very last line.')
+      expect(page.at_css('.s-blurb__more')['open']).to be_nil
+    end
+
+    it 'shows a short entry whole, with nothing to expand' do
+      sign_in paid_user
+      song_entry('<p>Short and sweet.</p>')
+
+      get :spotify
+      page = Nokogiri::HTML(response.body)
+
+      expect(page.at_css('.s-blurb__text').text).to eq('Short and sweet.')
+      expect(page.at_css('.s-blurb__more')).to be_nil
+    end
+  end
+
   describe 'export' do
     it 'should redirect to sign in if not logged in' do
       get :export, format: 'txt'
