@@ -323,6 +323,8 @@ struct JournalStats: Decodable, Sendable, Equatable {
     let firstEntryDate: String?
     let currentStreak: Int
     let longestStreak: Int
+    /// The year the longest streak ended in (nil from an older server, or with no entries).
+    var longestStreakYear: Int? = nil
     let entriesThisYear: Int
     /// YYYY-MM-DD days with an entry in the past year, oldest first.
     let writingDays: [String]

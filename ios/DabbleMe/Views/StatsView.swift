@@ -1,7 +1,7 @@
 import Charts
 import SwiftUI
 
-/// Journal > Stats: totals, streaks, a year of writing days (this year or an earlier one), recent months and the past
+/// Journal > Stats: totals, the longest streak, a year of writing days (this year or an earlier one), recent months and the past
 /// year's hashtags. Counts only; it never shows entry text.
 struct StatsView: View {
     @Environment(AppModel.self) private var model
@@ -65,9 +65,10 @@ struct StatsView: View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
             StatTile(value: stats.totalEntries.formatted(), label: stats.totalEntries == 1 ? "Entry" : "Entries", icon: "slab-book")
             StatTile(value: stats.totalWords.formatted(.number.notation(.compactName)), label: "Words", icon: "slab-language")
-            StatTile(value: days(stats.currentStreak), label: "Current Streak", icon: "slab-fire")
-            StatTile(value: days(stats.longestStreak), label: "Longest Streak", icon: "slab-trophy")
-            StatTile(value: stats.entriesThisYear.formatted(), label: "Entries This Year", icon: "slab-calendar")
+            // The longest streak, with the year it was in ("Streak • 2024"). The year's own entries
+            // are beside the year below.
+            StatTile(value: days(stats.longestStreak), label: stats.longestStreakYear.map { "Streak • \(String($0))" } ?? "Longest Streak",
+                     icon: "slab-fire")
             StatTile(value: stats.photoEntries.formatted(), label: "Days with Photos", icon: "slab-images")
         }
     }

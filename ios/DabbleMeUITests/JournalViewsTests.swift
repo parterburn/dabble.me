@@ -48,7 +48,7 @@ final class JournalViewsTests: XCTestCase {
         journal.tap()
 
         switchJournal(app, from: "Journal", to: "Stats")
-        XCTAssertTrue(app.staticTexts["Current Streak"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Days with Photos"].waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["Entries per Month"].exists)
         sleep(1)
         snap("journal-stats")
@@ -442,11 +442,11 @@ final class JournalViewsTests: XCTestCase {
         let app = launch()
         tab(app, "Journal").tap()
         switchJournal(app, from: "Journal", to: "Stats")
-        XCTAssertTrue(app.staticTexts["Current Streak"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Days with Photos"].waitForExistence(timeout: 10))
         tab(app, "Journal").tap()
         let newest = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
         XCTAssertTrue(newest.waitForExistence(timeout: 10))
-        XCTAssertFalse(app.staticTexts["Current Streak"].exists)
+        XCTAssertFalse(app.staticTexts["Days with Photos"].exists)
 
         app.swipeUp(); app.swipeUp(); app.swipeUp()
         XCTAssertFalse(newest.isHittable)
@@ -1190,7 +1190,7 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(count.waitForExistence(timeout: 15))
         snap("today-entry-count")
         count.tap()
-        XCTAssertTrue(app.staticTexts["Current Streak"].waitForExistence(timeout: 10), "Stats, in the Journal tab")
+        XCTAssertTrue(app.staticTexts["Days with Photos"].waitForExistence(timeout: 10), "Stats, in the Journal tab")
         let thisYear = Calendar.current.component(.year, from: .now)
         func summary(_ pattern: String) -> Bool {
             app.staticTexts.matching(identifier: "StatsYearSummary").matching(NSPredicate(format: "label MATCHES %@", pattern))

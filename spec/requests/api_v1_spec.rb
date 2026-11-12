@@ -647,7 +647,7 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
 
       expect(response).to have_http_status(:ok)
       expect(json).to include(
-        "total_entries" => 5, "total_words" => 11, "current_streak" => 3, "longest_streak" => 3,
+        "total_entries" => 5, "total_words" => 11, "current_streak" => 3, "longest_streak" => 3, "longest_streak_year" => 2026,
         "entries_this_year" => 5, "first_entry_date" => "2026-01-01", "photo_entries" => 0
       )
       expect(json["writing_days"]).to eq(%w[2026-01-01 2026-01-02 2026-06-18 2026-06-19 2026-06-20])

@@ -20,6 +20,8 @@ module Api
         first_entry_date: dates.first&.iso8601,
         current_streak: current_streak,
         longest_streak: longest_streak,
+        # The year the longest streak ended in (the app labels it "Streak • 2024").
+        longest_streak_year: longest_streak_end&.year,
         entries_this_year: entries_this_year,
         writing_days: dates.select { |date| date > today - HEATMAP_DAYS && date <= today }.map(&:iso8601),
         months: recent_months,
@@ -67,12 +69,25 @@ module Api
     end
 
     def longest_streak
-      longest = run = 0
-      dates.each_with_index do |date, index|
-        run = index.positive? && dates[index - 1] == date - 1 ? run + 1 : 1
-        longest = [longest, run].max
+      longest_run.first
+    end
+
+    # The last day of the longest streak (the earliest one, when two are as long).
+    def longest_streak_end
+      longest_run.last
+    end
+
+    # [days, last day] of the longest run of days in a row.
+    def longest_run
+      @longest_run ||= begin
+        longest = run = 0
+        last = nil
+        dates.each_with_index do |date, index|
+          run = index.positive? && dates[index - 1] == date - 1 ? run + 1 : 1
+          longest, last = run, date if run > longest
+        end
+        [longest, last]
       end
-      longest
     end
 
     def recent_months

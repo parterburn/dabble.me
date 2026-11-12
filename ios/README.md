@@ -52,7 +52,7 @@ The simulator reaches `localhost` directly. On a phone, "localhost" is the phone
 | GET | `/api/v1/today` | Today tab: entry, On This Day (PRO), daily prompt, `entries_this_year` and `current_streak` (both for older builds: Today now shows the journal's total, from `/me`) |
 | GET | `/api/v1/entries/months` | month index for the timeline and scrubber |
 | GET | `/api/v1/entries/memory_days?days=30` | PRO. Upcoming days with memories (counts only) for On This Day reminders |
-| GET | `/api/v1/stats` | Journal > Stats: totals, streaks, writing days in the past year, 12 months, top hashtags (`Api::JournalStats`) |
+| GET | `/api/v1/stats` | Journal > Stats: totals, streaks (`longest_streak_year` is the year the longest one ended in), writing days in the past year, 12 months, top hashtags (`Api::JournalStats`) |
 | GET | `/api/v1/stats/days?year=2024` | PRO. The days with an entry in one calendar year, for Stats' earlier years |
 | GET/PATCH | `/api/v1/email_schedule` | The daily email: `{days, hour, timezone}` (Rails zone names; `time_zones` lists them with IANA ids) and its past entry: `include_past_entries`, `past_filter` (comma-separated words that leave entries out; `filtered_count` says how many) and `include_old_entries` (`has_old_entries` says whether any are over a year old). Days beyond Sunday, the filter and old entries are PRO, like the web |
 | GET | `/api/v1/hashtags?days=365` | PRO. Hashtag counts for the Search tag cloud (`Api::HashtagCounts`) |

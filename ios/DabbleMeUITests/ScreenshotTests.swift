@@ -90,7 +90,7 @@ final class ScreenshotTests: XCTestCase {
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Photo from'")).firstMatch.waitForExistence(timeout: 10))
         shot("05-photos")
         journalView("Photos", "Stats")
-        XCTAssertTrue(app.staticTexts["Current Streak"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["Days with Photos"].waitForExistence(timeout: 10))
         shot("06-stats")
         journalView("Stats", "Journal")
 
