@@ -2,7 +2,7 @@
 
 # Writes a ZIP of entries to a file: an images/ folder holding each entry's
 # photo, journal.md (ExportMarkdown) and journal.html (ExportHtml), which show
-# those photos. Entries are read in batches and photos one at a time, so a
+# those photos, and entries.json with each entry's original HTML. Entries are read in batches and photos one at a time, so a
 # large journal never has to fit in memory.
 class ExportArchive
   BATCH_SIZE = 200
@@ -44,6 +44,15 @@ class ExportArchive
       zip.write(ExportHtml.header(result.entry_count))
       each_entry { |entry| zip.write(ExportHtml.entry(entry, image: written[entry.id])) }
       zip.write(ExportHtml.footer)
+
+      # Each entry exactly as it was written, for moving the journal elsewhere.
+      zip.put_next_entry("entries.json")
+      zip.write("[\n")
+      each_entry.with_index do |entry, index|
+        zip.write(",\n") unless index.zero?
+        zip.write(JSON.pretty_generate(json_for(entry, written[entry.id])))
+      end
+      zip.write("\n]\n")
     end
 
     result
@@ -79,6 +88,12 @@ class ExportArchive
         [id, name]
       end
     end
+  end
+
+  def json_for(entry, image)
+    json = { date: entry.date.strftime("%Y-%m-%d"), body: entry.body.to_s.strip }
+    json[:image] = image if image
+    json
   end
 
   # The photo's bytes, or nil when it can't be read (a file missing from

@@ -28,13 +28,18 @@ RSpec.describe ExportArchive do
     files = unzip
 
     expect(result.to_h).to eq(entry_count: 3, image_count: 2, skipped_image_count: 0)
-    expect(files.keys).to eq(%w[images/2026-03-02.jpg images/2026-03-03.png journal.md journal.html])
+    expect(files.keys).to eq(%w[images/2026-03-02.jpg images/2026-03-03.png journal.md journal.html entries.json])
     expect(files['journal.md']).to eq(
       "# Dabble Me journal\n\n" \
       "## 2026-03-01 (Sunday)\n\nFirst **day** #start\n\n" \
       "## 2026-03-02 (Monday)\n\nSecond café day\n\n![Photo](images/2026-03-02.jpg)\n\n" \
       "## 2026-03-03 (Tuesday)\n\n![Photo](images/2026-03-03.png)\n\n"
     )
+    expect(JSON.parse(files['entries.json'])).to eq([
+      { 'date' => '2026-03-01', 'body' => '<p>First <b>day</b> #start</p>' },
+      { 'date' => '2026-03-02', 'body' => '<p>Second café day</p>', 'image' => 'images/2026-03-02.jpg' },
+      { 'date' => '2026-03-03', 'body' => '', 'image' => 'images/2026-03-03.png' }
+    ])
     expect(files['images/2026-03-02.jpg']).to eq('PHOTO-2')
     expect(files['journal.md']).not_to include('someone else')
 
@@ -85,8 +90,8 @@ RSpec.describe ExportArchive do
 
     expect(result.to_h).to eq(entry_count: 1, image_count: 0, skipped_image_count: 1)
     files = unzip
-    expect(files.keys).to eq(%w[journal.md journal.html])
-    expect(files['journal.md'] + files['journal.html']).not_to include('images/')
+    expect(files.keys).to eq(%w[journal.md journal.html entries.json])
+    expect(files.values.join).not_to include('images/')
   end
 
   it 'writes a valid, empty export when there are no entries' do
@@ -95,5 +100,6 @@ RSpec.describe ExportArchive do
     expect(result.entry_count).to eq(0)
     expect(unzip['journal.md']).to eq("# Dabble Me journal\n\n")
     expect(Nokogiri::HTML(unzip['journal.html']).css('article')).to be_empty
+    expect(JSON.parse(unzip['entries.json'])).to eq([])
   end
 end
