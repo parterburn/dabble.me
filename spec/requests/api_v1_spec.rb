@@ -396,6 +396,23 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       expect(entry.reload.body).to eq(%(<p><span style="color:red">Red</span></p>))
     end
 
+    it "moves an entry to another day, but not onto a day that has one or into the future" do
+      entry = create(:entry, user: pro_user, date: Time.zone.local(2025, 3, 4), body: "<p>Moved</p>")
+      create(:entry, user: pro_user, date: Time.zone.local(2025, 3, 6), body: "<p>Taken</p>")
+      patch "/api/v1/entries/#{entry.id}", params: { date: "2025-03-05" }, headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:ok)
+      expect(json["entry"]["date"]).to eq("2025-03-05")
+      expect(entry.reload.date.to_date).to eq(Date.new(2025, 3, 5))
+      expect(entry.body).to eq("<p>Moved</p>")
+
+      patch "/api/v1/entries/#{entry.id}", params: { date: "2025-03-06" }, headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(json["error"]).to eq("date_taken")
+      patch "/api/v1/entries/#{entry.id}", params: { date: 1.year.from_now.to_date.iso8601 }, headers: auth(pro_user), as: :json
+      expect(json["error"]).to eq("invalid_date")
+      expect(entry.reload.date.to_date).to eq(Date.new(2025, 3, 5))
+    end
+
     it "requires PRO to edit, but free accounts can delete" do
       entry = create(:entry, user: free_user, body: "<p>Mine</p>")
       patch "/api/v1/entries/#{entry.id}", params: { document: [{ type: "paragraph", runs: [{ text: "x" }] }] },

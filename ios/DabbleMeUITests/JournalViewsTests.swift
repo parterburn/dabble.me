@@ -1182,6 +1182,61 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10), "The entry opens, not left behind Search")
     }
 
+    /// Links in a day's drawer work: a #tag closes it and searches.
+    func testLinksInTheDayDrawerWork() throws {
+        let app = launch()
+        tab(app, "Search").tap()
+        let jump = app.buttons["Jump to a Day"]
+        XCTAssertTrue(jump.waitForExistence(timeout: 10))
+        jump.tap()
+        // Four days ago: "Big presentation went well… #work #gratitude".
+        let date = Calendar.current.date(byAdding: .day, value: -4, to: .now)!
+        let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", date.formatted(.dateTime.month(.wide).day()))).firstMatch
+        XCTAssertTrue(day.waitForExistence(timeout: 10))
+        day.tap()
+        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
+        let tag = app.links["#work"]
+        XCTAssertTrue(tag.waitForExistence(timeout: 5), "The #tag is a link")
+        tag.tap()
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ENDSWITH 'matching entries'")).firstMatch.waitForExistence(timeout: 10),
+                      "It searches for the tag")
+        XCTAssertFalse(app.buttons["Open"].exists, "The drawer closed")
+    }
+
+    /// Editing an entry, its date can be changed: the entry moves to that day.
+    func testEditingCanChangeTheDate() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Big presentation went well")).firstMatch
+        app.openTimelineEntry(row)
+        // Four days ago to begin with; three days ago has no entry.
+        func title(_ offset: Int) -> String {
+            Calendar.current.date(byAdding: .day, value: offset, to: .now)!.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year())
+        }
+        func move(to offset: Int) {
+            let edit = app.buttons["Edit Entry"]
+            XCTAssertTrue(edit.waitForExistence(timeout: 10))
+            edit.tap()
+            let picker = app.datePickers["Entry date"].exists ? app.datePickers["Entry date"] : app.buttons["Entry date"]
+            XCTAssertTrue(picker.waitForExistence(timeout: 10))
+            picker.tap()
+            let target = Calendar.current.date(byAdding: .day, value: offset, to: .now)!
+            let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", target.formatted(.dateTime.weekday(.wide).month(.wide).day()))).firstMatch
+            XCTAssertTrue(day.waitForExistence(timeout: 5))
+            day.tap()
+            // Close the calendar, then save.
+            app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.08)).tap()
+            let save = app.buttons["Save"]
+            XCTAssertTrue(save.waitForExistence(timeout: 5))
+            XCTAssertTrue(save.isEnabled, "A new date alone is a change to save")
+            save.tap()
+            XCTAssertTrue(app.staticTexts[title(offset)].waitForExistence(timeout: 15), "The entry is on \(title(offset))")
+        }
+        move(to: -3)
+        snap("entry-date-changed")
+        move(to: -4) // back where it was, for the other tests
+    }
+
     /// Results that span a few months get the Journal's timeline scrubber; a tap on it opens the calendar.
     func testSearchResultsHaveTheTimelineScrubber() throws {
         let app = launch()

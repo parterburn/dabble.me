@@ -110,10 +110,30 @@ module Api
                status: result[:merged] ? :ok : :created
       end
 
-      # PATCH /api/v1/entries/:id { document: [...], remove_image: true, uploaded_image_keys: [...] }
+      # PATCH /api/v1/entries/:id { document: [...], date: "2026-11-03", remove_image: true,
+      #                            uploaded_image_keys: [...] }
       # Any of them. `document` only for entries whose `document` is non-null. New photos join the
       # entry's photo in a collage (like adding to a day on create), or replace it with remove_image.
+      # `date` moves the entry to another day (not one that has an entry already: the web merges
+      # the two, which the app leaves to it), and its photo with it.
       def update
+        if params[:date].present?
+          date = Date.iso8601(params[:date].to_s) rescue nil
+          return render_error(:unprocessable_content, 'invalid_date', 'Date must be YYYY-MM-DD.') unless date
+
+          if date != @entry.date.to_date
+            if date > OnThisDay.today_for(current_user) + 1
+              return render_error(:unprocessable_content, 'invalid_date', "An entry can't be dated in the future.")
+            end
+            if current_user.entries.where(date: date.all_day).where.not(id: @entry.id).exists?
+              return render_error(:unprocessable_content, 'date_taken',
+                                  "You already have an entry on #{date.strftime('%B %-d, %Y')}. Edit that one, or merge them on dabble.me.")
+            end
+
+            @entry.date = date.iso8601
+          end
+        end
+
         if params.key?(:document)
           if EntryDocument.from_html(@entry.body).nil?
             return render_error(:unprocessable_content, 'not_editable',

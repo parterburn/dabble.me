@@ -76,7 +76,7 @@ struct ComposeView: View {
         draftKey = key
         originalBlocks = original
         _restoredDraft = State(initialValue: draft)
-        if let date = draft?.date.flatMap(JournalDay.init) { _date = State(initialValue: date.localDate) }
+        if let date = draft?.date.flatMap(JournalDay.init) ?? entry?.day { _date = State(initialValue: date.localDate) }
         _editor = State(initialValue: RichTextEditorModel(blocks: draft?.blocks ?? original))
     }
 
@@ -86,11 +86,17 @@ struct ComposeView: View {
 
     /// In the order the user picked them.
     private var photos: [PreparedPhoto] { photoItems.compactMap { prepared[$0] } }
-    private var hasChanges: Bool { editor.isDirty || !photoItems.isEmpty || restoredDraft != nil || removesExistingPhoto }
+    /// Editing: the day the entry is being moved to, when the date's been changed.
+    private var movedTo: JournalDay? {
+        guard case .edit(let entry) = mode else { return nil }
+        let picked = JournalDay(localDate: date)
+        return picked.iso == entry.date ? nil : picked
+    }
+    private var hasChanges: Bool { editor.isDirty || !photoItems.isEmpty || restoredDraft != nil || removesExistingPhoto || movedTo != nil }
     private var canSave: Bool {
         guard !isSaving, !isLoadingPhotos else { return false }
         return isNew ? (!editor.isEmpty || !photos.isEmpty)
-            : (!editor.isEmpty && (editor.isDirty || restoredDraft != nil || !photos.isEmpty || removesExistingPhoto))
+            : (!editor.isEmpty && (editor.isDirty || restoredDraft != nil || !photos.isEmpty || removesExistingPhoto || movedTo != nil))
     }
 
     /// There are words to keep as a draft (a draft doesn't hold photos).
@@ -219,16 +225,12 @@ struct ComposeView: View {
         }
     }
 
-    @ViewBuilder
+    /// The entry's date, which can be changed: for a new entry, and to move one being edited to
+    /// another day.
     private var dateTitle: some View {
-        if isNew {
-            DatePicker("Date", selection: $date, in: ...Date.now, displayedComponents: .date)
-                .labelsHidden()
-                .accessibilityLabel("Entry date")
-        } else if case .edit(let entry) = mode {
-            Text(entry.day?.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().year()) ?? entry.date)
-                .font(.headline)
-        }
+        DatePicker("Date", selection: $date, in: ...Date.now, displayedComponents: .date)
+            .labelsHidden()
+            .accessibilityLabel("Entry date")
     }
 
     /// The entry's photos: its current one (editing) and those being added.
@@ -773,7 +775,7 @@ struct ComposeView: View {
         if blocks.isEmpty {
             DraftStore.clear(draftKey)
         } else {
-            DraftStore.save(.init(blocks: blocks, date: isNew ? JournalDay(localDate: date).iso : nil, savedAt: Date()), key: draftKey)
+            DraftStore.save(.init(blocks: blocks, date: isNew || movedTo != nil ? JournalDay(localDate: date).iso : nil, savedAt: Date()), key: draftKey)
         }
     }
 
@@ -792,7 +794,7 @@ struct ComposeView: View {
             case .edit(let entry):
                 uploadedCount = photos.isEmpty ? nil : 0
                 defer { uploadedCount = nil }
-                onSaved(try await model.updateEntry(id: entry.id, document: editor.blocks, photos: photos,
+                onSaved(try await model.updateEntry(id: entry.id, document: editor.blocks, day: movedTo, photos: photos,
                                                     removeImage: removesExistingPhoto) { uploadedCount = $0 })
             }
             draftSave?.cancel()

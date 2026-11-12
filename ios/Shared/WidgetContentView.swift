@@ -82,7 +82,8 @@ VStack(spacing: 0) {
     @ViewBuilder
     private var status: some View {
         if entry.wroteToday {
-            WidgetLabel("Written today", icon: "widget-check")
+            // Written already: the check stays, and a tap opens today's entry to add to.
+            WidgetLabel("Add to today", icon: "widget-check")
                 .foregroundStyle(Color.sage)
         } else {
             WidgetLabel("Write today", icon: "widget-write")
@@ -90,11 +91,11 @@ VStack(spacing: 0) {
         }
     }
 
-    /// Two halves, each its own link: the date side writes today's entry (or opens Today once
-    /// it's written), and an entry shown on the right opens that entry to read.
+    /// Two halves, each its own link: the date side writes today's entry (or opens it to add to,
+    /// once it's written), and an entry shown on the right opens that entry to read.
     private var medium: some View {
         HStack(alignment: .top, spacing: 16) {
-            Link(destination: entry.wroteToday ? WidgetSnapshot.todayURL : WidgetSnapshot.writeURL) {
+            Link(destination: entry.wroteToday ? WidgetSnapshot.editTodayURL : WidgetSnapshot.writeURL) {
                 small
             }
             .frame(maxWidth: 130)
@@ -206,7 +207,7 @@ VStack(spacing: 0) {
                 .font(.headline)
                 .widgetAccentable()
             Text(entry.date.formatted(.dateTime.weekday(.wide).day()))
-            Text(entry.wroteToday ? "Written today" : "Tap to write today")
+            Text(entry.wroteToday ? "Add to today" : "Tap to write today")
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

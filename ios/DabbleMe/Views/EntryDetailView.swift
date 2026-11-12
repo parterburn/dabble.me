@@ -396,7 +396,7 @@ struct DocumentText: View {
     }
 
     private func text(for block: DocumentBlock) -> some View {
-        Text(RichText.linkingHashtags(in: RichText.displayString(from: [DocumentBlock(type: .paragraph, runs: block.runs)])))
+        Text(RichText.linkingURLs(in: RichText.linkingHashtags(in: RichText.displayString(from: [DocumentBlock(type: .paragraph, runs: block.runs)]))))
             .lineSpacing(5 * scale)
             .frame(maxWidth: .infinity, alignment: .leading)
     }

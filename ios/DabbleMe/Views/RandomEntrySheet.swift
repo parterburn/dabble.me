@@ -93,8 +93,8 @@ struct RandomEntrySheet: View {
         .sensoryFeedback(.impact(weight: .medium), trigger: entry?.id)
     }
 
-    /// The whole entry, scrollable inside the sheet (drag the sheet up for more room). Links in it
-    /// don't navigate from here; Open goes to the entry.
+    /// The whole entry, scrollable inside the sheet (drag the sheet up for more room). Its links
+    /// work: a #tag searches, an address opens.
     private func preview(_ entry: EntryDetail) -> some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 12) {
@@ -104,7 +104,7 @@ struct RandomEntrySheet: View {
                 if let document = entry.document {
                     DocumentText(blocks: RichText.droppingTrailing(hashtags: (entry.datedHashtags ?? []).map(\.tag), songLinks: !entry.songs.isEmpty, from: document), font: .system(size: bodySize * textSize.scale, design: fontStyle.design), scale: textSize.scale, bodySize: bodySize)
                 } else {
-                    Text(AttributedString.journal(RichText.droppingTrailing(hashtags: (entry.datedHashtags ?? []).map(\.tag), songLinks: !entry.songs.isEmpty, from: entry.bodyText)))
+                    Text(RichText.linkingURLs(in: RichText.linkingHashtags(in: AttributedString.journal(RichText.droppingTrailing(hashtags: (entry.datedHashtags ?? []).map(\.tag), songLinks: !entry.songs.isEmpty, from: entry.bodyText)))))
                         .font(.system(size: bodySize * textSize.scale, design: fontStyle.design))
                         .lineSpacing(5)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -125,7 +125,16 @@ struct RandomEntrySheet: View {
         }
         .scrollIndicators(.automatic)
         .frame(maxHeight: .infinity, alignment: .top)
-        .environment(\.openURL, OpenURLAction { _ in .discarded })
+        // Links work here too: a #tag closes this and searches for it; a web page opens (dabble.me's
+        // in the app).
+        .environment(\.openURL, OpenURLAction { url in
+            if let tag = RichText.hashtag(from: url) {
+                dismiss()
+                model.search(hashtag: tag)
+                return .handled
+            }
+            return WebLinks.open(url)
+        })
     }
 
     /// A random entry, or (stepping to the one before or after) the entry with `id`.

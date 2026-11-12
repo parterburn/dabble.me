@@ -222,6 +222,8 @@ struct NewEntryRequest: Encodable, Sendable {
 
 struct UpdateEntryRequest: Encodable, Sendable {
     let document: [DocumentBlock]
+    /// Another day for the entry (YYYY-MM-DD), when it's being moved.
+    var date: String? = nil
     /// New photos: they join the entry's photo in a collage, or replace it with `removeImage`.
     var uploadedImageKeys: [String]? = nil
     var removeImage: Bool? = nil

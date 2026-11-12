@@ -73,7 +73,8 @@ struct RootView: View {
         }
         .preferredColorScheme(theme.colorScheme)
         .onOpenURL { url in
-            // From the widget: me.dabble.app:/write, :/today, or :/entry/<id> (the entry it shows).
+            // From the widget: me.dabble.app:/write, :/today, :/today/edit ("Add to today"), or
+            // :/entry/<id> (the entry it shows).
             // (Sign-in callbacks never get here; the web sign-in session handles them.)
             guard model.isSignedIn, url.scheme == "me.dabble.app" else { return }
             #if DEBUG
@@ -90,6 +91,7 @@ struct RootView: View {
             }
             model.selectedTab = .today
             if url.path == "/write" { model.composeRequest = true }
+            if url.path == "/today/edit" { model.editTodayRequest = true }
         }
         .task(id: model.isSignedIn) {
             if model.isSignedIn, !model.hasLoaded { await model.refresh() }
