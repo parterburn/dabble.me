@@ -12,6 +12,22 @@ module EntriesHelper
     image_tag url, alt: entry.date_format_short, loading: "lazy"
   end
 
+  # "March 1, 2024 • 2 years and 8 months ago", for a photo's tooltip.
+  def photo_tooltip(entry, today)
+    date = entry.date.to_date
+    today = today.to_date
+    relative = if date == today
+                 "Today"
+               elsif date == today - 1
+                 "Yesterday"
+               elsif date > today
+                 "in #{distance_of_time_in_words(today, date)}"
+               else
+                 "#{distance_of_time_in_words(date, today)} ago"
+               end
+    "#{entry.date_format_short} • #{relative}"
+  end
+
   def format_body(body)
     return nil unless body.present?
 

@@ -9,7 +9,7 @@
 
     <div class="s-photo-grid">
       <% @entries.each do |entry| %>
-        <%= link_to entry_path(entry), title: entry.date_format_short, class: "s-photo-grid__photo" do %>
+        <%= link_to day_entry_path(year: entry.date.year, month: entry.date.month, day: entry.date.day), title: photo_tooltip(entry, @user_today), rel: "tooltip", class: "s-photo-grid__photo" do %>
           <%= photo_thumbnail(entry) %>
         <% end %>
       <% end %>

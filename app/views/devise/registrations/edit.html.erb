@@ -62,7 +62,7 @@
       <p class="mt-1 text-sm text-muted">Get a copy of everything you've written<%= ", with your photos" if current_user.is_pro? %>.</p>
       <div class="mt-5 flex flex-wrap gap-3">
         <%= link_to export_entries_path, class: "button-primary" do %>Export <span class="font-normal">ZIP</span><% end %>
-        <%= link_to export_entries_path(format: :md), class: "button-secondary" do %>Markdown <span class="font-normal text-muted">text only, downloads now</span><% end %>
+        <%= link_to "Markdown", export_entries_path(format: :md), class: "button-secondary" %>
       </div>
       <p class="mt-3 text-sm text-muted">
         The ZIP holds your journal as a web page you can open in any browser and as Markdown<%= ", plus your photos" if current_user.is_pro? %>. We'll email you a link to download it. You'll sign in to use the link, and it works for 7 days. Exporting again within 12 hours downloads the same ZIP.

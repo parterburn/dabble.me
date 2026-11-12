@@ -54,7 +54,7 @@ class EntriesController < ApplicationController
 
     if @entries.empty? && params[:format] != "json"
       flash[:alert] = "No entries found." if params[:group].present? || params[:subgroup].present?
-      redirect_to latest_entry_path and return
+      redirect_to today_path and return
     end
 
     set_hashtags
@@ -82,13 +82,30 @@ class EntriesController < ApplicationController
 
   # The home page: today's entry (or a nudge to write it), the year so far,
   # and what was written on this day in earlier years.
-  def latest
+  def today
     @title = "Today — Dabble me."
     @has_entries = current_user.entries.exists?
     @today_entry = current_user.entries.includes(:inspiration).where(date: @user_today.all_day).first
     set_hashtags
     set_sidebar_stats
-    set_years_ago if current_user.is_pro?
+    return unless current_user.is_pro?
+
+    set_years_ago
+    set_rewind_entry if @years_ago_entries.empty?
+  end
+
+  # With nothing written on this day in an earlier year, one past entry picked
+  # the way the reminder emails pick theirs. The pick is kept for the day, so
+  # it is worked out once and the page shows the same entry on every visit.
+  def set_rewind_entry
+    key = ["rewind_entry", current_user.id, current_user.updated_at.to_i, @user_today.to_date.iso8601]
+    id = Rails.cache.read(key)
+    entry = current_user.entries.find_by(id: id) if id
+    unless entry
+      entry = current_user.random_entry(@user_today.to_date)
+      Rails.cache.write(key, entry.id, expires_in: 1.day) if entry
+    end
+    @rewind_entry = entry unless entry.nil? || entry == @today_entry
   end
 
   # Every entry written on this month and day in an earlier year, as

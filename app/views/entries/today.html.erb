@@ -14,9 +14,8 @@
     <% percent_with_entries = (days_with_entries.to_f / elapsed_days_in_year(graph_year) * 100).round %>
 
     <% if @today_entry %>
-      <div class="col-md-8 well entry col-md-offset-1" id="entry-<%= @today_entry.id %>" style="margin-top: 30px;">
-        <div class="label label-past-years">TODAY</div>
-        <%= render partial: 'entries/entry', locals: { entry: @today_entry } %>
+      <div class="col-md-8 well entry entry--sticky-header col-md-offset-1" id="entry-<%= @today_entry.id %>" style="margin-top: 30px;">
+        <%= render partial: 'entries/entry', locals: { entry: @today_entry, label: "TODAY" } %>
       </div>
     <% else %>
       <div class="col-md-8 well col-md-offset-1 entry" style="margin-top: 30px;">
@@ -52,9 +51,15 @@
       </div>
     </div>
 
+    <% if @rewind_entry %>
+      <div class="col-md-8 col-md-offset-1 well entry entry--sticky-header" id="entry-<%= @rewind_entry.id %>">
+        <%= render partial: 'entries/entry', locals: { entry: @rewind_entry, label: "REWIND" } %>
+      </div>
+    <% end %>
+
     <% if current_user.is_pro? && @years_ago_entries.present? %>
       <% @years_ago_entries.each do |_years_back, back_year_entry| %>
-        <div class="col-md-8 col-md-offset-1 well entry" id="entry-<%= back_year_entry.id %>">
+        <div class="col-md-8 col-md-offset-1 well entry entry--sticky-header" id="entry-<%= back_year_entry.id %>">
           <%= render partial: 'entries/entry', locals: { entry: back_year_entry } %>
         </div>
       <% end %>

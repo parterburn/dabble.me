@@ -356,9 +356,9 @@ RSpec.describe EntriesController, type: :controller do
     end
   end
 
-  describe 'latest' do
+  describe 'today' do
     it 'should redirect to sign in if not logged in' do
-      get :latest
+      get :today
       expect(response.status).to eq 302
       expect(response).to redirect_to(new_user_session_url)
     end
@@ -375,11 +375,12 @@ RSpec.describe EntriesController, type: :controller do
       sign_in pro
       write(pro, 'Something from last week', today - 6)
       write(pro, 'What I wrote today', today)
-      get :latest
+      allow_any_instance_of(User).to receive(:random_entry).and_return(nil)
+      get :today
       body = response.body
 
       expect(response.status).to eq 200
-      expect(body).to have_content('TODAY')
+      expect(Nokogiri::HTML(body).css('.entry--sticky-header .s-entry-header .label-past-years').map(&:text)).to eq(['TODAY'])
       expect(body).to have_content('What I wrote today')
       expect(body).not_to have_content('Something from last week')
       expect(body).not_to include('Welcome back', 'LATEST ENTRY', 'Search your entries', 'Write today')
@@ -389,7 +390,8 @@ RSpec.describe EntriesController, type: :controller do
     it 'asks for an entry when today has none, and shows no older entry in its place' do
       sign_in pro
       write(pro, 'Something from last week', today - 6)
-      get :latest
+      allow_any_instance_of(User).to receive(:random_entry).and_return(nil)
+      get :today
       body = response.body
 
       expect(body).to include('Write today')
@@ -404,7 +406,7 @@ RSpec.describe EntriesController, type: :controller do
       write(pro, 'Nine years back', today.prev_year(9))
       write(pro, 'Same year, other day', today - 40)
       write(pro, 'Last year, a day off', today.prev_year(1) + 1)
-      get :latest
+      get :today
       body = response.body
 
       expect(body.index('One year back')).to be < body.index('Five years back')
@@ -415,20 +417,94 @@ RSpec.describe EntriesController, type: :controller do
       expect(body).not_to have_content('Last year, a day off')
     end
 
+    it 'links to them once from the sidebar, as ON THIS DAY, and keeps their headers in view' do
+      sign_in pro
+      first = write(pro, 'One year back', today.prev_year(1))
+      write(pro, 'Five years back', today.prev_year(5))
+      get :today
+      page = Nokogiri::HTML(response.body)
+      links = page.css('.s-date-groups h4 a').select { |link| link.text =~ /ON THIS DAY|REWIND|AGO/ }
+
+      expect(links.map { |link| link.text.delete("\u00a0").strip }).to eq(['ON THIS DAY'])
+      expect(links.first['href']).to eq("#entry-#{first.id}")
+      expect(page.css('.entry--sticky-header .s-entry-header').size).to eq(2)
+    end
+
+    it 'shows one past entry as REWIND when nothing was written on this day, and links to it' do
+      sign_in pro
+      past = write(pro, 'Last year, a day off', today.prev_year(1) + 1)
+      write(pro, 'What I wrote today', today)
+      allow_any_instance_of(User).to receive(:random_entry).with(today).and_return(past)
+      get :today
+      page = Nokogiri::HTML(response.body)
+      links = page.css('.s-date-groups h4 a').select { |link| link.text =~ /ON THIS DAY|REWIND|AGO/ }
+
+      expect(page.css('.entry--sticky-header .s-entry-header .label-past-years').map(&:text)).to eq(%w[TODAY REWIND])
+      expect(page.at_css("#entry-#{past.id}").text).to include('Last year, a day off')
+      expect(links.map { |link| link.text.delete("\u00a0").strip }).to eq(['REWIND'])
+      expect(links.first['href']).to eq("#entry-#{past.id}")
+    end
+
+    it 'shows no REWIND entry when there are entries from this day, or when the pick is today\'s own' do
+      sign_in pro
+      mine = write(pro, 'What I wrote today', today)
+      allow_any_instance_of(User).to receive(:random_entry).and_return(mine)
+      get :today
+      expect(response.body).not_to include('REWIND')
+
+      write(pro, 'One year back', today.prev_year(1))
+      get :today
+      expect(response.body).not_to include('REWIND')
+      expect(response.body).to include('ON THIS DAY')
+    end
+
+    it 'keeps the same REWIND entry for the day, working it out once' do
+      allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new)
+      sign_in pro
+      past = write(pro, 'Last year, a day off', today.prev_year(1) + 1)
+      write(pro, 'Another old one', today.prev_year(2) + 3)
+      expect_any_instance_of(User).to receive(:random_entry).once.and_return(past)
+
+      2.times do
+        get :today
+        expect(response.body).to include('Last year, a day off')
+        expect(response.body).not_to include('Another old one')
+      end
+    end
+
+    it 'picks again when the kept entry has been deleted' do
+      allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new)
+      sign_in pro
+      past = write(pro, 'Last year, a day off', today.prev_year(1) + 1)
+      other = write(pro, 'Another old one', today.prev_year(2) + 3)
+      allow_any_instance_of(User).to receive(:random_entry).and_return(past, other)
+
+      get :today
+      past.destroy
+      get :today
+      expect(response.body).to include('Another old one')
+    end
+
+    it 'shows no REWIND entry to a free account' do
+      sign_in user
+      get :today
+      expect(response.body).not_to include('REWIND')
+    end
+
     it 'keeps entries from this day in earlier years for PRO accounts only' do
       sign_in user
       write(user, 'One year back', today.prev_year(1))
-      get :latest
+      get :today
 
       expect(response.body).not_to have_content('One year back')
     end
 
     it 'shows Year in Progress under today, with day links that open in the same tab' do
       sign_in user
-      get :latest
+      get :today
       body = response.body
 
-      expect(body.index('Write today') || body.index('>TODAY<')).to be < body.index('Year in Progress')
+      expect(body.index('Write today') || body.index('TODAY</div>')).to be < body.index('Year in Progress')
       expect(body).not_to include('of the year completed', 'Write your memories down')
 
       day_links = Nokogiri::HTML(body).css('#year-in-review a.day')
@@ -441,7 +517,7 @@ RSpec.describe EntriesController, type: :controller do
       user.plan = 'PRO PayHere Monthly'
       user.save
       expect { delete :destroy, params: { id: entry.id } }.to change { Entry.count }.by(-1)
-      get :latest
+      get :today
       expect(response.status).to eq 200
       expect(response.body).to have_content("reply to the email from Dabble Me to create your first entry")
     end
@@ -465,8 +541,12 @@ RSpec.describe EntriesController, type: :controller do
       links = Nokogiri::HTML(response.body).css('.s-photo-grid a.s-photo-grid__photo')
 
       expect(response.status).to eq 200
-      expect(links.map { |link| link['href'] }).to eq([entry_path(newer), entry_path(older)])
+      expect(links.map { |link| link['href'] }).to eq(%w[/entries/2026/3/2 /entries/2026/3/1])
+      expect(newer.date.day).to eq(2)
+      expect(older.date.day).to eq(1)
       expect(links.map { |link| link['target'] }.compact).to be_empty
+      expect(links.map { |link| link['rel'] }).to all(eq('tooltip'))
+      expect(links.first['title']).to match(/\AMarch 2, 2026 • (.+ ago|in .+|Today|Yesterday)\z/)
       expect(links.first.at_css('img')['src']).to include('/cdn-cgi/image/width=480,height=480,fit=cover,quality=80/https://')
       expect(response.body).not_to have_content('A day with a photo')
     end
@@ -475,7 +555,7 @@ RSpec.describe EntriesController, type: :controller do
       sign_in paid_user
       get :index, params: { group: 'photos' }
 
-      expect(response).to redirect_to(latest_entry_path)
+      expect(response).to redirect_to(today_path)
     end
   end
 
