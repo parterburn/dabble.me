@@ -27,7 +27,7 @@ RSpec.describe WelcomeController, type: :controller do
       sign_in user
       get :index
       expect(response.status).to eq 302
-      expect(response).to redirect_to(latest_entry_url)
+      expect(response).to redirect_to(today_url)
     end
   end
 

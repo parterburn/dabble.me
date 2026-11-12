@@ -356,9 +356,9 @@ RSpec.describe EntriesController, type: :controller do
     end
   end
 
-  describe 'latest' do
+  describe 'today' do
     it 'should redirect to sign in if not logged in' do
-      get :latest
+      get :today
       expect(response.status).to eq 302
       expect(response).to redirect_to(new_user_session_url)
     end
@@ -376,7 +376,7 @@ RSpec.describe EntriesController, type: :controller do
       write(pro, 'Something from last week', today - 6)
       write(pro, 'What I wrote today', today)
       allow_any_instance_of(User).to receive(:random_entry).and_return(nil)
-      get :latest
+      get :today
       body = response.body
 
       expect(response.status).to eq 200
@@ -391,7 +391,7 @@ RSpec.describe EntriesController, type: :controller do
       sign_in pro
       write(pro, 'Something from last week', today - 6)
       allow_any_instance_of(User).to receive(:random_entry).and_return(nil)
-      get :latest
+      get :today
       body = response.body
 
       expect(body).to include('Write today')
@@ -406,7 +406,7 @@ RSpec.describe EntriesController, type: :controller do
       write(pro, 'Nine years back', today.prev_year(9))
       write(pro, 'Same year, other day', today - 40)
       write(pro, 'Last year, a day off', today.prev_year(1) + 1)
-      get :latest
+      get :today
       body = response.body
 
       expect(body.index('One year back')).to be < body.index('Five years back')
@@ -421,7 +421,7 @@ RSpec.describe EntriesController, type: :controller do
       sign_in pro
       first = write(pro, 'One year back', today.prev_year(1))
       write(pro, 'Five years back', today.prev_year(5))
-      get :latest
+      get :today
       page = Nokogiri::HTML(response.body)
       links = page.css('.s-date-groups h4 a').select { |link| link.text =~ /ON THIS DAY|REWIND|AGO/ }
 
@@ -435,7 +435,7 @@ RSpec.describe EntriesController, type: :controller do
       past = write(pro, 'Last year, a day off', today.prev_year(1) + 1)
       write(pro, 'What I wrote today', today)
       allow_any_instance_of(User).to receive(:random_entry).with(today).and_return(past)
-      get :latest
+      get :today
       page = Nokogiri::HTML(response.body)
       links = page.css('.s-date-groups h4 a').select { |link| link.text =~ /ON THIS DAY|REWIND|AGO/ }
 
@@ -449,32 +449,32 @@ RSpec.describe EntriesController, type: :controller do
       sign_in pro
       mine = write(pro, 'What I wrote today', today)
       allow_any_instance_of(User).to receive(:random_entry).and_return(mine)
-      get :latest
+      get :today
       expect(response.body).not_to include('REWIND')
 
       write(pro, 'One year back', today.prev_year(1))
-      get :latest
+      get :today
       expect(response.body).not_to include('REWIND')
       expect(response.body).to include('ON THIS DAY')
     end
 
     it 'shows no REWIND entry to a free account' do
       sign_in user
-      get :latest
+      get :today
       expect(response.body).not_to include('REWIND')
     end
 
     it 'keeps entries from this day in earlier years for PRO accounts only' do
       sign_in user
       write(user, 'One year back', today.prev_year(1))
-      get :latest
+      get :today
 
       expect(response.body).not_to have_content('One year back')
     end
 
     it 'shows Year in Progress under today, with day links that open in the same tab' do
       sign_in user
-      get :latest
+      get :today
       body = response.body
 
       expect(body.index('Write today') || body.index('TODAY</div>')).to be < body.index('Year in Progress')
@@ -490,7 +490,7 @@ RSpec.describe EntriesController, type: :controller do
       user.plan = 'PRO PayHere Monthly'
       user.save
       expect { delete :destroy, params: { id: entry.id } }.to change { Entry.count }.by(-1)
-      get :latest
+      get :today
       expect(response.status).to eq 200
       expect(response.body).to have_content("reply to the email from Dabble Me to create your first entry")
     end
@@ -524,7 +524,7 @@ RSpec.describe EntriesController, type: :controller do
       sign_in paid_user
       get :index, params: { group: 'photos' }
 
-      expect(response).to redirect_to(latest_entry_path)
+      expect(response).to redirect_to(today_path)
     end
   end
 

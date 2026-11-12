@@ -140,7 +140,7 @@ Rails.application.routes.draw do
   match 'entries/:id/image_error'   => 'entries#dismiss_image_error', as: 'dismiss_entry_image_error', via: [:delete]
   resources :entries, except: [:show]
   get 'entries/(:group)(/:subgroup)',   to: 'entries#index',  as: 'group_entries'
-  get 'latest',                         to: 'entries#latest', as: 'latest_entry'
+  get 'today',                          to: 'entries#today', as: 'today'
   get 'rewind/(:year)',                 to: 'entries#review', as: 'rewind'
   get 'review(/:year)',                 to: redirect { |params, _| ["/rewind", params[:year].to_s[/\A\d{4}\z/]].compact.join("/") }
   get 'play',                           to: redirect('/entries/songs')

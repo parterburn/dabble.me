@@ -54,7 +54,7 @@ class EntriesController < ApplicationController
 
     if @entries.empty? && params[:format] != "json"
       flash[:alert] = "No entries found." if params[:group].present? || params[:subgroup].present?
-      redirect_to latest_entry_path and return
+      redirect_to today_path and return
     end
 
     set_hashtags
@@ -82,7 +82,7 @@ class EntriesController < ApplicationController
 
   # The home page: today's entry (or a nudge to write it), the year so far,
   # and what was written on this day in earlier years.
-  def latest
+  def today
     @title = "Today — Dabble me."
     @has_entries = current_user.entries.exists?
     @today_entry = current_user.entries.includes(:inspiration).where(date: @user_today.all_day).first

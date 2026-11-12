@@ -19,7 +19,7 @@
 </div>
 
 <div class="col-xs-11 col-sm-5 col-md-2 s-date-groups j-calendar">
-  <% if current_page?(latest_entry_path) %>
+  <% if current_page?(today_path) %>
     <%# One link down the page: to the entries from this day in earlier years
         when there are any, otherwise to the past entry picked for today. %>
     <% on_this_day = current_user.is_pro? ? @years_ago_entries&.first&.last : nil %>
