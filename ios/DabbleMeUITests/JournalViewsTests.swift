@@ -684,21 +684,28 @@ final class JournalViewsTests: XCTestCase {
         pickTimeZone(app, "Mountain")
     }
 
-    /// Past entries in the email: on/off, words that leave entries out, and entries over a year old.
-    func testDailyEmailPastEntries() throws {
+    /// Settings → Reminders → Past Entries, for push and email notifications alike: on/off, words
+    /// that leave entries out, and entries over a year old.
+    func testPastEntriesForNotifications() throws {
         let app = launch()
-        openDailyEmail(app)
-        let include = app.switches["Include a Past Entry"]
-        app.swipeUp()
+        tab(app, "Settings").tap()
+        // Reminders: Past Entries, then Push and Email, each to a page of its own.
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Past Entries'")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Push'")).firstMatch.exists)
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Email'")).firstMatch.exists)
+        snap("settings-reminders")
+        row.tap()
+        let include = app.switches["Include Past Entries in Notifications"]
         XCTAssertTrue(include.waitForExistence(timeout: 5))
         XCTAssertTrue(app.switches["Include Entries Over a Year Old"].exists, "The demo account has entries over a year old")
         let words = app.textFields["Words, separated by commas"]
         words.tap()
         words.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 12) + "waffles\n")
         XCTAssertTrue(app.staticTexts["1 entry is left out of past entries."].waitForExistence(timeout: 10))
-        snap("email-past-entries")
+        snap("past-entries")
 
-        // Off hides the rest; on brings it back, with the words saved.
+        // Off hides the rest (and the row says so); on brings it back, with the words saved.
         include.switches.firstMatch.tap()
         XCTAssertTrue(words.waitForNonExistence(timeout: 5))
         include.switches.firstMatch.tap()
@@ -708,7 +715,12 @@ final class JournalViewsTests: XCTestCase {
         // Put the demo account back.
         words.tap()
         words.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 12) + "\n")
-        XCTAssertTrue(app.staticTexts["Each email can end with one of your past entries."].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["1 entry is left out of past entries."].waitForNonExistence(timeout: 10))
+        // The email's page is its days and time; past entries aren't repeated there.
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Email'")).firstMatch.tap()
+        XCTAssertTrue(app.navigationBars["Email Notifications"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.switches["Include a Past Entry"].exists)
     }
 
     /// Settings → Manage Hashtags: dated tags, adding one by name, and removing it.
@@ -1552,7 +1564,7 @@ final class JournalViewsTests: XCTestCase {
         // Reminders: the daily one is for everyone.
         tab(app, "Settings").tap()
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Push'")).firstMatch.tap()
-        let daily = app.switches["Daily Reminder"]
+        let daily = app.switches["Push Notifications"]
         XCTAssertTrue(daily.waitForExistence(timeout: 10))
         XCTAssertTrue(daily.isEnabled)
         snap("free-reminders")

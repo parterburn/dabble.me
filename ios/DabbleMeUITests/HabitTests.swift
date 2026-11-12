@@ -102,18 +102,17 @@ final class HabitTests: XCTestCase {
         XCTAssertTrue(push.waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Email'")).firstMatch.exists)
         push.tap()
-        let daily = app.switches["Daily Reminder"]
+        let daily = app.switches["Push Notifications"]
         XCTAssertTrue(daily.waitForExistence(timeout: 10))
         if (daily.value as? String) != "1" { daily.switches.firstMatch.tap() }
         let allow = springboard.buttons["Allow"]
         if allow.waitForExistence(timeout: 5) { allow.tap() }
-        // Its days, and the past entry it carries: previews on to begin with, and (PRO) which
-        // entries can come up, as for the email.
+        // Its days, and whether the past entry it carries is shown (on to begin with). Which past
+        // entries can come up is on Past Entries, for both kinds of notification.
         let previews = app.switches["Show Entry Previews"]
         XCTAssertTrue(previews.waitForExistence(timeout: 5))
         XCTAssertEqual(previews.value as? String, "1")
-        XCTAssertTrue(app.switches["Include a Past Entry"].exists)
-        XCTAssertTrue(app.switches["Include Entries Over a Year Old"].exists)
+        XCTAssertFalse(app.switches["Include Entries Over a Year Old"].exists)
         XCTAssertTrue(app.buttons["Saturday"].exists)
 
         let scheduled = app.descendants(matching: .any).matching(NSPredicate(format: "label MATCHES %@", "[1-9][0-9]* reminders scheduled")).firstMatch
@@ -143,7 +142,7 @@ final class HabitTests: XCTestCase {
         // On (it may be already, from an earlier run): the first one comes twelve seconds after
         // it's scheduled, by which time the app is in the background.
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Push'")).firstMatch.tap()
-        let daily = app.switches["Daily Reminder"]
+        let daily = app.switches["Push Notifications"]
         XCTAssertTrue(daily.waitForExistence(timeout: 10))
         if (daily.value as? String) != "1" {
             daily.switches.firstMatch.tap()

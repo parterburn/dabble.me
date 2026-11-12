@@ -15,6 +15,8 @@ struct SettingsView: View {
     @AppStorage(ReminderSettings.timeKey) private var reminderTime = ReminderSettings.followsEmail
     @AppStorage(ReminderSettings.emailTimeKey) private var emailTime = ReminderSettings.defaultTime
     @AppStorage(ReminderSettings.daysKey) private var reminderDays = EmailSchedule.allDays.joined(separator: ",")
+    /// The account's email schedule and past-entry choices, shared by the Reminders rows.
+    @State private var emailSchedule = EmailScheduleStore()
     @AppStorage(JournalIntelligence.enabledKey) private var onDeviceAI = true
     /// The plan links to dabble.me/subscribe only on the US App Store, where Apple allows links to
     /// buy outside the app (guideline 3.1.1(a), US storefront). Elsewhere it's plain text.
@@ -186,16 +188,19 @@ private extension SettingsView {
     @ViewBuilder
     var remindersSection: some View {
         Section {
+            // What a notification can look back on, for both kinds; then each on its own page.
+            PastEntriesRow(store: emailSchedule)
             NavigationLink {
                 PushReminderView()
             } label: {
                 LabeledContent("Push", value: ReminderSettings.summary(enabled: dailyReminder, days: ReminderSettings.days(from: reminderDays),
                                                                        minutes: reminderTime >= 0 ? reminderTime : emailTime))
             }
-            EmailScheduleRow()
+            EmailScheduleRow(store: emailSchedule)
         } header: {
             Text("Reminders")
         }
+        .task { await emailSchedule.load(with: model) }
     }
 
     // MARK: - On-device AI

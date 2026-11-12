@@ -701,7 +701,7 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       end
     end
 
-    it "takes the reminder's own left-out words and whether to go back over a year" do
+    it "follows the account's past entries: on or off, its left-out words, and over a year old" do
       zone = Time.find_zone(pro_user.send_timezone)
       travel_to zone.local(2026, 6, 20, 12) do
         old = create(:entry, user: pro_user, date: Time.zone.local(2024, 6, 20), body: "<p>The dentist again</p>")
@@ -710,14 +710,19 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
         get "/api/v1/reminders", params: { days: 1 }, headers: auth(pro_user)
         expect(json["days"].first["entry"]["id"]).to eq(old.id)
 
-        get "/api/v1/reminders", params: { days: 1, filter: "dentist, taxes" }, headers: auth(pro_user)
-        expect(json["filtered_count"]).to eq(1)
+        pro_user.update!(past_filter: "dentist, taxes")
+        get "/api/v1/reminders", params: { days: 1 }, headers: auth(pro_user)
         expect(json["days"].first).to include("kind" => "on_this_day", "count" => 1)
         expect(json["days"].first["entry"]["id"]).to eq(older.id)
 
-        get "/api/v1/reminders", params: { days: 1, filter: "", include_old: "0" }, headers: auth(pro_user)
+        pro_user.update!(past_filter: nil, way_back_past_entries: false)
+        get "/api/v1/reminders", params: { days: 1 }, headers: auth(pro_user)
         expect(json["days"].first).to include("kind" => "rewind")
         expect(json["days"].first["entry"]["id"]).to eq(recent.id)
+
+        pro_user.update!(send_past_entry: false)
+        get "/api/v1/reminders", params: { days: 1 }, headers: auth(pro_user)
+        expect(json["days"]).to eq([])
       end
     end
 
