@@ -1,7 +1,11 @@
 <% can_reflect = current_user.can_ai? && entry.body.present? && Entry::AiAssistant.configured? %>
-<% cache [entry, current_user.is_pro?, can_reflect, @search.present?, @hashtags.present?] do %>
+<%# label: text for the strip above the date, in place of the "on this day" one. %>
+<% label = local_assigns[:label] %>
+<% cache [entry, current_user.is_pro?, can_reflect, @search.present?, @hashtags.present?, label] do %>
   <div class="center s-entry-header">
-    <% if entry.exactly_past_years(current_user, @user_today) %>
+    <% if label %>
+      <div class="label label-past-years"><%= label %></div>
+    <% elsif entry.exactly_past_years(current_user, @user_today) %>
       <% year_back = @user_today.year - entry.date.year %>
       <div class="label label-past-years">ON THIS DAY <%= pluralize(year_back,"year").upcase %> AGO</div>
     <% end %>

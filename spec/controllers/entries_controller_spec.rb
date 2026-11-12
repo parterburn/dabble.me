@@ -379,7 +379,7 @@ RSpec.describe EntriesController, type: :controller do
       body = response.body
 
       expect(response.status).to eq 200
-      expect(body).to have_content('TODAY')
+      expect(Nokogiri::HTML(body).css('.entry--sticky-header .s-entry-header .label-past-years').map(&:text)).to eq(['TODAY'])
       expect(body).to have_content('What I wrote today')
       expect(body).not_to have_content('Something from last week')
       expect(body).not_to include('Welcome back', 'LATEST ENTRY', 'Search your entries', 'Write today')
@@ -415,6 +415,29 @@ RSpec.describe EntriesController, type: :controller do
       expect(body).not_to have_content('Last year, a day off')
     end
 
+    it 'links to them once from the sidebar, as ON THIS DAY, and keeps their headers in view' do
+      sign_in pro
+      first = write(pro, 'One year back', today.prev_year(1))
+      write(pro, 'Five years back', today.prev_year(5))
+      get :latest
+      page = Nokogiri::HTML(response.body)
+      links = page.css('.s-date-groups h4 a').select { |link| link.text =~ /ON THIS DAY|REWIND|AGO/ }
+
+      expect(links.map { |link| link.text.delete("\u00a0").strip }).to eq(['ON THIS DAY'])
+      expect(links.first['href']).to eq("#entry-#{first.id}")
+      expect(page.css('.entry--sticky-header .s-entry-header').size).to eq(2)
+    end
+
+    it 'links to Rewind from the sidebar when nothing was written on this day' do
+      sign_in pro
+      write(pro, 'Last year, a day off', today.prev_year(1) + 1)
+      get :latest
+      links = Nokogiri::HTML(response.body).css('.s-date-groups h4 a').select { |link| link.text =~ /ON THIS DAY|REWIND|AGO/ }
+
+      expect(links.map { |link| link.text.delete("\u00a0").strip }).to eq(['REWIND'])
+      expect(links.first['href']).to eq(rewind_path)
+    end
+
     it 'keeps entries from this day in earlier years for PRO accounts only' do
       sign_in user
       write(user, 'One year back', today.prev_year(1))
@@ -428,7 +451,7 @@ RSpec.describe EntriesController, type: :controller do
       get :latest
       body = response.body
 
-      expect(body.index('Write today') || body.index('>TODAY<')).to be < body.index('Year in Progress')
+      expect(body.index('Write today') || body.index('TODAY</div>')).to be < body.index('Year in Progress')
       expect(body).not_to include('of the year completed', 'Write your memories down')
 
       day_links = Nokogiri::HTML(body).css('#year-in-review a.day')
