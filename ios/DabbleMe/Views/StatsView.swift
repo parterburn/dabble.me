@@ -163,9 +163,9 @@ private struct StatsOverview: View {
 }
 
 /// A year of writing days. Its title is the year ("2026"), with a small chevron when there are
-/// earlier years to choose from a menu. On the right, for this year, how much of it has gone by
-/// ("86% complete": the days still to come are the paler squares); for a finished one, how much
-/// of it has an entry ("41% written"). A tap swaps either for the year's number of entries.
+/// earlier years to choose from a menu. On the right, the year's entries and the share of its
+/// days with one ("37 entries • 11% of days"); for this year that's of the days so far, and the
+/// days still to come are the paler squares.
 private struct YearCard: View {
     let stats: JournalStats
     let today: JournalDay
@@ -175,7 +175,6 @@ private struct YearCard: View {
     /// Earlier years' days, loaded as they're picked.
     @State private var loaded: [Int: Set<String>] = [:]
     @State private var failed: Int?
-    @AppStorage("stats.yearShowsEntries") private var showsEntries = false
 
     private var thisYear: Int { Int(today.year) ?? 0 }
     private var year: Int { picked ?? thisYear }
@@ -239,40 +238,30 @@ private struct YearCard: View {
         }
     }
 
+    /// "37 entries • 11% of days": the year's entries, and the share of its days with one (for
+    /// this year, of the days so far, today included).
     @ViewBuilder
     private var summary: some View {
         if let days {
             let entries = year == thisYear ? max(stats.entriesThisYear, days.count) : days.count
-            Button {
-                showsEntries.toggle()
-            } label: {
-                Text(showsEntries ? (entries == 1 ? "1 entry" : "\(entries.formatted()) entries") : percentText(written: days.count))
-                    .font(.subheadline)
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-                    .contentTransition(.opacity)
-                    .contentShape(.rect)
-            }
-            .buttonStyle(.plain)
-            .animation(.easeOut(duration: 0.15), value: showsEntries)
-            .accessibilityIdentifier("StatsYearSummary")
-            .accessibilityHint(showsEntries ? "Shows how much of the year is written" : "Shows the year's number of entries")
+            Text("\(entries == 1 ? "1 entry" : "\(entries.formatted()) entries") • \(Self.percent(days.count, of: dayCount))% of days")
+                .font(.subheadline)
+                .monospacedDigit()
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+                .accessibilityIdentifier("StatsYearSummary")
         } else if failed != year {
             ProgressView().controlSize(.small)
         }
     }
 
-    /// "86% complete" for this year: how much of it has gone by, today included. "41% written"
-    /// for a finished year: the share of its days with an entry.
-    private func percentText(written: Int) -> String {
+    /// The year's days: all of them for a finished year, those up to today for this one.
+    private var dayCount: Int {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = .gmt
-        let length = calendar.range(of: .day, in: .year, for: JournalDay("\(year)-06-01")?.date ?? today.date)?.count ?? 365
-        if year == thisYear {
-            let elapsed = calendar.ordinality(of: .day, in: .year, for: today.date) ?? 1
-            return "\(Self.percent(elapsed, of: length))% complete"
-        }
-        return "\(Self.percent(written, of: length))% written"
+        if year == thisYear { return calendar.ordinality(of: .day, in: .year, for: today.date) ?? 1 }
+        return calendar.range(of: .day, in: .year, for: JournalDay("\(year)-06-01")?.date ?? today.date)?.count ?? 365
     }
 
     /// 100 only for the whole of it; never 0 once there's any.

@@ -1147,8 +1147,8 @@ final class JournalViewsTests: XCTestCase {
     }
 
     /// Today's count of the journal's entries (top right) opens Stats, where the year of writing
-    /// days is titled with its year, says how much of it is written (or, tapped, how many
-    /// entries), and can go back to an earlier year.
+    /// days is titled with its year, says how many entries it has and the share of its days with
+    /// one, and can go back to an earlier year.
     func testEntryCountOpensStats() throws {
         let app = launch()
         let count = app.buttons.matching(NSPredicate(format: "label MATCHES %@", "[0-9,]+ entries")).firstMatch
@@ -1157,32 +1157,20 @@ final class JournalViewsTests: XCTestCase {
         count.tap()
         XCTAssertTrue(app.staticTexts["Current Streak"].waitForExistence(timeout: 10), "Stats, in the Journal tab")
         let thisYear = Calendar.current.component(.year, from: .now)
-        let summary = app.buttons["StatsYearSummary"]
-        func shows(_ format: String, _ value: String) -> Bool {
-            let match = app.buttons.matching(identifier: "StatsYearSummary").matching(NSPredicate(format: format, value)).firstMatch
-            return match.waitForExistence(timeout: 5)
+        func summary(_ pattern: String) -> Bool {
+            app.staticTexts.matching(identifier: "StatsYearSummary").matching(NSPredicate(format: "label MATCHES %@", pattern))
+                .firstMatch.waitForExistence(timeout: 10)
         }
-        XCTAssertTrue(summary.waitForExistence(timeout: 5))
-        if !summary.label.contains("%") { summary.tap() } // an earlier run left it on the entries
-        XCTAssertTrue(shows("label ENDSWITH %@", "% complete"), summary.label)
-        // How much of the year has gone by, today included.
-        let gone = Calendar.current.ordinality(of: .day, in: .year, for: .now)! * 100 / Calendar.current.range(of: .day, in: .year, for: .now)!.count
-        XCTAssertLessThanOrEqual(abs((Int(summary.label.prefix { $0.isNumber }) ?? 0) - gone), 1, summary.label)
+        XCTAssertTrue(summary("[0-9,]+ entries • [0-9]+% of days"))
         snap("stats-year")
-        summary.tap()
-        XCTAssertTrue(shows("label ENDSWITH %@", " entries"), summary.label)
-        summary.tap()
         // The demo's first entry is three years back: last year has one entry (its On This Day).
         let menu = app.buttons["Year, \(thisYear)"]
         XCTAssertTrue(menu.exists)
         menu.tap()
         app.buttons[String(thisYear - 1)].tap()
         XCTAssertTrue(app.otherElements["Writing days in \(thisYear - 1)"].waitForExistence(timeout: 10))
-        XCTAssertTrue(shows("label ENDSWITH %@", "% written"), summary.label)
+        XCTAssertTrue(summary("1 entry • 1% of days"))
         snap("stats-year-earlier")
-        summary.tap()
-        XCTAssertTrue(shows("label == %@", "1 entry"), summary.label)
-        summary.tap()
     }
 
     /// Settings → Home Screen Widget: choosing what shows beside today's date updates the preview.
