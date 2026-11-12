@@ -115,6 +115,14 @@ Admin pages (`/admin/*` and `/sidekiq`) have two extra gates on top of `users.ad
 | `CLOUDFLARE_ACCESS_TEAM_DOMAIN` | e.g. `dabble.cloudflareaccess.com` |
 | `CLOUDFLARE_ACCESS_AUD` | The Access application's Application Audience (AUD) tag |
 
+### Exports
+
+`entries#export` downloads up to 100 entries as TXT or JSON on the spot. A ZIP (`export_entries_path(:zip)`), or any export over 100 entries, becomes an `Export`: `ExportEntriesJob` builds the ZIP with `ExportArchive` (`entries.txt`, `entries.json`, `images/`), `ExportStore` uploads it privately, and `UserMailer.export_ready` emails a link.
+
+- The emailed link goes to `ExportsController`, which needs a sign-in and only shows an export to its owner. `download` redirects to a storage link that lasts `Export::LINK_LIFETIME`. Never attach an export to an email or link to its file directly.
+- Exports are private: stored with a private ACL under `exports/`, or in `AWS_EXPORTS_BUCKET` when set. Don't write them under `uploads/`, which is served publicly.
+- They last `Export::LIFETIME` (7 days). `ExportCleanupWorker` (daily, in `config/sidekiq_cron_schedule.yml`) deletes expired files; a storage lifecycle rule on `exports/` should back it up.
+
 ### Newsletters
 
 Letters to subscribers live in `newsletters/<name>/`: one Markdown `letter.md`, and a `newsletter.yml` naming its variants and who gets which (`newsletters/README.md` has the format). `Newsletter` (`app/lib/newsletter.rb`) loads them, `NewsletterMailer` sends one, and `NewsletterDeliveryJob` sends a person a newsletter at most once, recorded in `newsletter_deliveries`.

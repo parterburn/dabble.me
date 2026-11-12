@@ -63,6 +63,7 @@ class User < ActiveRecord::Base
 
   has_many :entries, dependent: :destroy
   has_many :hashtags, dependent: :destroy
+  has_many :exports, dependent: :destroy
   has_many :payments
   has_many :webauthn_credentials, dependent: :destroy
   has_many :mcp_tool_invocations, dependent: :delete_all

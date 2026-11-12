@@ -262,11 +262,10 @@ class EntriesController < ApplicationController
     entries_scope = build_export_scope(only_images, search_term, year)
     entry_count = entries_scope.count
 
-    # Background the job if more than 100 entries
-    if entry_count > 100
-      export_options = { only_images: only_images, search_term: search_term, year: year }.compact
-      ExportEntriesJob.perform_later(current_user.id, request.format.symbol.to_s, export_options)
-      redirect_to settings_path, notice: "Your export is being prepared. You'll receive an email with the file attached shortly."
+    # A ZIP, or anything over 100 entries, is built in the background and
+    # delivered as a link by email. Smaller text exports download right here.
+    if request.format.zip? || entry_count > 100
+      request_export_by_email(entry_count, { only_images: only_images, search_term: search_term, year: year }.compact)
       return
     end
 
@@ -552,6 +551,19 @@ class EntriesController < ApplicationController
       entry.id,
       file.key
     )
+  end
+
+  def request_export_by_email(entry_count, options)
+    back = edit_user_registration_path(anchor: "export")
+    if current_user.exports.preparing.where(created_at: 1.hour.ago..).exists?
+      redirect_to back, notice: "Your export is already being prepared. We'll email you a link when it's ready."
+    elsif current_user.exports.where(created_at: 1.day.ago..).count >= Export::DAILY_LIMIT
+      redirect_to back, alert: "You've requested several exports today. Please try again tomorrow."
+    else
+      export = current_user.exports.create!(entry_count: entry_count)
+      ExportEntriesJob.perform_later(export.id, options)
+      redirect_to back, notice: "Your export is being prepared. We'll email you a link to download it. The link works for 7 days."
+    end
   end
 
   def build_export_scope(only_images, search_term, year)

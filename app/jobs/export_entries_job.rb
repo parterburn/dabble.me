@@ -1,90 +1,41 @@
+# Builds the ZIP for an Export, stores it privately and emails its owner a
+# link. The link opens the app and needs a sign-in; the file itself is never
+# attached or linked directly.
 class ExportEntriesJob < ActiveJob::Base
   queue_as :default
 
-  def perform(user_id, format, options = {})
-    user = User.find(user_id)
+  def perform(export_id, options = {})
+    export = Export.find_by(id: export_id)
+    return unless export&.preparing?
+
     options = options.with_indifferent_access
-    only_images = options[:only_images]
-    search_term = options[:search_term]
-    year = options[:year]
+    tempfile = Tempfile.new(["dabble-export", ".zip"], binmode: true)
+    tempfile.close
 
-    entries_scope = build_entries_scope(user, only_images, search_term, year)
-    filename = build_filename(only_images, search_term, year, format)
-
-    tempfile = Tempfile.new([filename.gsub(/\.\w+$/, ''), ".#{format}"])
-
-    begin
-      generate_export(tempfile, entries_scope, format, only_images)
-      tempfile.rewind
-
-      UserMailer.export_ready(user, tempfile, filename, format).deliver_now
-    ensure
-      tempfile.close
-      tempfile.unlink
-    end
+    result = ExportArchive.new(entries_for(export.user, options)).write_to(tempfile.path)
+    key = ExportStore.new.upload(ExportStore.key_for(export), tempfile.path)
+    export.ready!(storage_key: key, byte_size: File.size(tempfile.path), entry_count: result.entry_count,
+                  image_count: result.image_count, skipped_image_count: result.skipped_image_count)
+    UserMailer.export_ready(export).deliver_now
+  rescue StandardError => e
+    export&.update_columns(status: "failed")
+    Sentry.capture_exception(e, extra: { export_id: export_id })
+    UserMailer.export_failed(export).deliver_now if export
+  ensure
+    tempfile&.unlink
   end
 
   private
 
-  def build_entries_scope(user, only_images, search_term, year)
-    if only_images
-      user.entries.only_images.reorder(:date)
-    elsif search_term.present?
-      Search.new(term: search_term, user: user).entries.reorder(:date)
-    elsif year.present?
-      start_date = Date.new(year.to_i, 1, 1)
-      end_date = Date.new(year.to_i, 12, 31)
-      user.entries.where(date: start_date..end_date).reorder(:date)
+  def entries_for(user, options)
+    if options[:only_images]
+      user.entries.only_images
+    elsif options[:search_term].present?
+      Search.new(term: options[:search_term], user: user).entries
+    elsif options[:year].present?
+      user.entries.where(date: Time.utc(options[:year].to_i).all_year)
     else
-      user.entries.reorder(:date)
-    end
-  end
-
-  def build_filename(only_images, search_term, year, format)
-    timestamp = Time.now.strftime('%Y-%m-%d')
-    extension = format.to_s
-
-    if only_images
-      "dabble_export_image_entries_#{timestamp}.#{extension}"
-    elsif search_term.present?
-      "dabble_export_search_#{search_term.parameterize}_#{timestamp}.#{extension}"
-    elsif year.present?
-      "dabble_export_#{year}.#{extension}"
-    else
-      "dabble_export_#{timestamp}.#{extension}"
-    end
-  end
-
-  def generate_export(tempfile, entries_scope, format, only_images)
-    case format.to_s
-    when 'json'
-      generate_json_export(tempfile, entries_scope)
-    when 'txt'
-      generate_txt_export(tempfile, entries_scope, only_images)
-    end
-  end
-
-  def generate_json_export(tempfile, entries_scope)
-    tempfile.write("[\n")
-    first = true
-    entries_scope.select(:id, :user_id, :date, :body, :image).find_each(batch_size: 100) do |entry|
-      tempfile.write(",\n") unless first
-      first = false
-      entry_hash = { date: entry.date, body: entry.body }
-      entry_hash[:image] = entry.image_url_cdn(cloudflare: false) if entry.image_stored?
-      tempfile.write(JSON.pretty_generate(entry_hash))
-    end
-    tempfile.write("\n]")
-  end
-
-  def generate_txt_export(tempfile, entries_scope, only_images)
-    entries_scope.select(:id, :user_id, :date, :body, :image).find_each(batch_size: 100) do |entry|
-      if only_images
-        tempfile.write("#{entry.image_url_cdn(cloudflare: false)}\n")
-      else
-        tempfile.write("## #{entry.date.strftime('%Y-%m-%d')}\n")
-        tempfile.write("#{entry.text_body}\n\n")
-      end
+      user.entries
     end
   end
 end

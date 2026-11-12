@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_11_030000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_12_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -94,6 +94,25 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_11_030000) do
     t.integer "word_count"
     t.index ["user_id", "date"], name: "index_entries_on_user_id_and_date", order: { date: :desc }
     t.index ["user_id"], name: "index_entries_on_user_id"
+  end
+
+  create_table "exports", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "token", null: false
+    t.string "status", default: "preparing", null: false
+    t.string "storage_key"
+    t.integer "entry_count", default: 0, null: false
+    t.integer "image_count", default: 0, null: false
+    t.integer "skipped_image_count", default: 0, null: false
+    t.bigint "byte_size"
+    t.datetime "expires_at"
+    t.datetime "downloaded_at"
+    t.integer "download_count", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["expires_at"], name: "index_exports_on_expires_at"
+    t.index ["token"], name: "index_exports_on_token", unique: true
+    t.index ["user_id"], name: "index_exports_on_user_id"
   end
 
   create_table "hashtags", force: :cascade do |t|
@@ -281,6 +300,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_11_030000) do
   end
 
   add_foreign_key "ai_usages", "users", on_delete: :cascade
+  add_foreign_key "exports", "users", on_delete: :cascade
   add_foreign_key "ignored_email_images", "users", on_delete: :cascade
   add_foreign_key "mcp_tool_invocations", "users", on_delete: :cascade
   add_foreign_key "newsletter_deliveries", "users", on_delete: :cascade
