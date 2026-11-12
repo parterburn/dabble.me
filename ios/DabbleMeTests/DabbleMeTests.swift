@@ -570,3 +570,67 @@ struct ReminderTests {
     }
 }
 
+
+struct RewindTests {
+    private func summary(_ id: Int, _ date: String, _ text: String, tags: [String] = [], image: String? = nil, songs: [Song]? = nil) -> EntrySummary {
+        EntrySummary(id: id, date: date, excerpt: text, imageUrl: image, imageProcessing: false, hashtags: tags,
+                     updatedAt: "\(date)T12:00:00Z", previewText: text, songs: songs)
+    }
+
+    private var year: Rewind {
+        let song = Song(title: "Holocene", artists: ["Bon Iver"], spotifyUrl: URL(string: "https://open.spotify.com/track/abc")!)
+        return Rewind.build(year: 2026, summaries: [
+            summary(1, "2026-01-03", "Leo and Silas built a fort. **Great** day. #Leo", tags: ["Leo"]),
+            summary(2, "2026-01-10", "Leo lost a tooth in Denver. https://open.spotify.com/track/abc", songs: [song]),
+            summary(3, "2026-03-07", "Flew to Lisbon with Katelyn. I felt lucky to be there with her.", image: "https://x.test/a.jpg"),
+            summary(4, "2026-03-14", "Then Silas rode a bike while Alex cheered. #bikes #Leo", tags: ["bikes", "Leo"]),
+            summary(5, "2026-03-21", "Quiet Saturday at home.", songs: [song]),
+            summary(6, "2025-12-31", "Last year's entry about Leo."),
+        ], ownName: "Alex", tagDates: [TagDate(id: 1, tag: "Leo", date: "2018-01-18")])
+    }
+
+    @Test func countsTheYearsEntriesWordsAndPhotos() {
+        #expect(year.entries.map(\.id) == [1, 2, 3, 4, 5], "Only this year's, oldest first")
+        #expect(year.entries[0].text == "Leo and Silas built a fort. Great day. #Leo", "Markdown marks go")
+        #expect(year.entries[1].text == "Leo lost a tooth in Denver.", "A song's link goes")
+        #expect(year.wordCount == 9 + 6 + 13 + 10 + 4)
+        #expect(year.photos.map(\.id) == [3])
+        #expect(year.span == "January to March")
+    }
+
+    @Test func findsTheBiggestMonthTheWeekdayAndTheLongestGap() {
+        #expect(year.biggestMonth?.month == 3 && year.biggestMonth?.count == 3)
+        #expect(year.busiestWeekday?.name == "Saturday" && year.busiestWeekday?.count == 5)
+        #expect(year.longestGap == Rewind.Gap(days: 56, from: JournalDay("2026-01-10")!, to: JournalDay("2026-03-07")!))
+    }
+
+    /// People by first name, in two entries or more, without the writer; a song and a tag once each.
+    @Test func ranksPeopleAndGathersSongsHashtagsAndMilestones() {
+        #expect(year.people.map(\.name) == ["Leo", "Silas"])
+        #expect(year.people.first?.entryIDs == [1, 2, 4])
+        #expect(!year.people.contains { $0.name == "Alex" })
+        #expect(year.songs.count == 1 && year.songs.first?.day.iso == "2026-01-10")
+        #expect(year.hashtags.map { "\($0.tag) \($0.count)" } == ["Leo 2", "bikes 1"])
+        #expect(year.milestones == [Rewind.Milestone(tag: "Leo", years: 8)])
+    }
+
+    /// Without name recognition, names are the words capitalized mid-sentence, and #Tags.
+    @Test func findsNamesByTheirCapitals() {
+        #expect(Rewind.capitalizedNames(in: "Went to Yosemite with Sam. Sam’s idea. I think Maya knew. #Biscuit slept on Friday.")
+            == ["Yosemite", "Sam", "Maya", "Biscuit"])
+        #expect(Rewind.capitalizedNames(in: "The list so far:\nThe puzzle\nCards with Sam") == ["Sam"], "A new line starts a sentence")
+    }
+
+    @Test func offersTheWritersOwnSentencesForLineOfTheYear() {
+        let lines = year.lineCandidates().map(\.text)
+        #expect(lines == ["I felt lucky to be there with her."])
+    }
+
+    @Test func theSeasonIsNovemberToJanuary() throws {
+        #expect(RewindSeason.year(on: try #require(JournalDay("2026-11-01"))) == 2026)
+        #expect(RewindSeason.year(on: try #require(JournalDay("2026-12-31"))) == 2026)
+        #expect(RewindSeason.year(on: try #require(JournalDay("2027-01-15"))) == 2026)
+        #expect(RewindSeason.year(on: try #require(JournalDay("2027-02-01"))) == nil)
+        #expect(RewindSeason.year(on: try #require(JournalDay("2026-10-31"))) == nil)
+    }
+}

@@ -1386,6 +1386,44 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(write.waitForExistence(timeout: 15), "Today is unwritten again")
     }
 
+    /// Stats offers the year's Rewind in its season: it opens full screen and is tapped through
+    /// like a story, to the end and back.
+    func testRewindOpensFromStatsAndPagesThrough() throws {
+        let year = Calendar.current.component(.year, from: .now)
+        let app = launch(["-DabbleDebugRewindYear", String(year)])
+        tab(app, "Journal").tap()
+        switchJournal(app, from: "Journal", to: "Stats")
+        let card = app.buttons["\(year) Rewind"]
+        XCTAssertTrue(card.waitForExistence(timeout: 15))
+        snap("rewind-card")
+        card.tap()
+        // The year is read (and, with Apple Intelligence, a few lines written) before the cover.
+        let cover = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Here’s what you wrote down.")).firstMatch
+        XCTAssertTrue(cover.waitForExistence(timeout: 300), "The cover comes up")
+        snap("rewind-1")
+        let forward = app.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.6))
+        forward.tap()
+        XCTAssertTrue(app.staticTexts["You showed up"].waitForExistence(timeout: 5))
+        var cards = 2
+        snap("rewind-2")
+        let last = app.buttons["Start Over"]
+        while !last.exists, cards < 14 {
+            forward.tap()
+            cards += 1
+            usleep(600_000)
+            snap("rewind-\(cards)")
+        }
+        XCTAssertTrue(last.exists, "The last card offers to start over")
+        // The left edge goes back; Start Over to the cover; the X closes it.
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.08, dy: 0.6)).tap()
+        XCTAssertTrue(last.waitForNonExistence(timeout: 5) || cards == 2)
+        forward.tap()
+        last.tap()
+        XCTAssertTrue(cover.waitForExistence(timeout: 5))
+        app.buttons["Close"].tap()
+        XCTAssertTrue(card.waitForExistence(timeout: 5), "Back on Stats")
+    }
+
     /// Today's count of the journal's entries (top right) opens Stats, where the year of writing
     /// days is titled with its year, says how many entries it has and the share of its days with
     /// one, and can go back to an earlier year.

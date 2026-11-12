@@ -59,6 +59,8 @@ struct EntrySummary: Decodable, Sendable, Identifiable, Hashable {
     var songs: [Song]? = nil
     /// `previewText` was cut short (the rest loads when the row is expanded).
     var previewTruncated: Bool? = nil
+    /// The whole entry's word count (nil from an older server).
+    var wordCount: Int? = nil
 
     var day: JournalDay? { JournalDay(date) }
     var imageURL: URL? { imageUrl.flatMap(URL.init(string:)) }

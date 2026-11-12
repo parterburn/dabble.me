@@ -466,6 +466,18 @@ final class AppModel {
         try await api.get("api/v1/stats")
     }
 
+    /// Every entry of a year (its text capped, as in the timeline), for the year's Rewind.
+    func entries(year: Int) async throws -> [EntrySummary] {
+        var all: [EntrySummary] = []
+        var page: Int? = 1
+        while let next = page {
+            let result: EntryPage = try await api.get("api/v1/entries", query: ["year": String(year), "page": String(next), "per": "50"])
+            all += result.entries
+            page = result.nextPage
+        }
+        return all
+    }
+
     /// Entries with a Spotify song, newest first (Journal > Playlist).
     func songEntries(page: Int) async throws -> EntryPage {
         try await api.get("api/v1/entries", query: ["songs": "1", "page": String(page), "per": "30"])
