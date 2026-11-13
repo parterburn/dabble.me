@@ -346,16 +346,19 @@ struct TodayView: View {
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .plainRow()
-            // Meanwhile, a look back that's free: the random memory sheet (also a shake away).
-            Button {
-                model.showsRandomEntry = true
-            } label: {
-                Label("Try a Random Memory", icon: "slab-dice")
-                    .fontWeight(.medium)
+            // Meanwhile, a look back that's free: the random memory sheet (also a shake away),
+            // once there's an entry from a day before today to come up in it.
+            if (model.me?.entryCount ?? 0) - (today.entry == nil ? 0 : 1) >= 1 {
+                Button {
+                    model.showsRandomEntry = true
+                } label: {
+                    Label("See a Random Memory", icon: "slab-dice")
+                        .fontWeight(.medium)
+                }
+                .buttonStyle(.bordered)
+                .controlSize(.large)
+                .plainRow()
             }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
-            .plainRow()
         }
         // One section per memory, so its date sticks at the top while you scroll through it.
         ForEach(today.onThisDay) { memory in

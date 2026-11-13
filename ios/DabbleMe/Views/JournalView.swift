@@ -169,10 +169,18 @@ struct JournalView: View {
                 ContentUnavailableView {
                     Label("No entries yet", icon: "slab-envelope")
                 } description: {
-                    Text("Reply to your Dabble Me email and your entry will show up here.")
+                    // Only for someone who can't write in the app: otherwise the button is the way in.
+                    if model.me?.canWrite != true {
+                        Text("Reply to your Dabble Me email and your entry will show up here.")
+                    }
                 } actions: {
                     if model.me?.canWrite == true {
                         Button("Write Your First Entry") { composing = true }
+                            .buttonStyle(.borderedProminent)
+                            .buttonBorderShape(.capsule)
+                            .controlSize(.large)
+                            .fontWeight(.medium)
+                            .padding(.top, 10)
                     }
                 }
                 .refreshable { await model.refresh() }

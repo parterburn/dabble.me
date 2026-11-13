@@ -1905,7 +1905,7 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertFalse(app.staticTexts["Rewind"].exists)
         snap("free-on-this-day")
         // Meanwhile, a random memory (free): the same sheet as shaking the phone.
-        app.buttons["Try a Random Memory"].tap()
+        app.buttons["See a Random Memory"].tap()
         XCTAssertTrue(app.staticTexts["A Random Memory"].waitForExistence(timeout: 5))
         // The journal's only entry: Open, with no arrows to step to another.
         XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 5))
