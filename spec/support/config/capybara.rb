@@ -48,3 +48,30 @@ Capybara.javascript_driver = :selenium_chrome_headless
 
 Capybara.app = Rack::ShowExceptions.new(Dabbleme::Application)
 Capybara.server_port = 64515
+
+# Since Chrome 156, asking about a node that a navigation or re-render has
+# just removed fails with "unknown error ... Node with given id does not
+# belong to the document" where it used to be a stale element reference.
+# Capybara waits and looks again after a stale reference, but lets an unknown
+# error through, so a check made while a page was changing failed outright
+# (seen in the photo picker's remove-and-save spec, right after its form is
+# submitted). Report it as the stale reference it is, and Capybara retries.
+module DetachedNodeIsStale
+  DETACHED = "does not belong to the document"
+
+  def self.translate
+    yield
+  rescue Selenium::WebDriver::Error::UnknownError => e
+    raise unless e.message.include?(DETACHED)
+
+    raise Selenium::WebDriver::Error::StaleElementReferenceError, e.message
+  end
+
+  %i[visible? visible_text all_text].each do |name|
+    define_method(name) { |*args, &block| DetachedNodeIsStale.translate { super(*args, &block) } }
+  end
+end
+
+require "capybara/selenium/node"
+require "capybara/selenium/nodes/chrome_node"
+Capybara::Selenium::ChromeNode.prepend(DetachedNodeIsStale)
