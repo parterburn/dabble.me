@@ -55,7 +55,7 @@ final class PhotoEntryTests: XCTestCase {
         }
         let urls = [1043, 1015, 1039, 1060].map { "https://picsum.photos/id/\($0)/2400/1800" }.joined(separator: ",")
         let app = XCUIApplication()
-        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", "http://localhost:3000",
+        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", testServer,
                                "-DabbleDebugComposePhotoURLs", urls]
         app.launch()
 
@@ -102,7 +102,7 @@ final class PhotoEditTests: XCTestCase {
             throw XCTSkip("Needs a local server, Sidekiq and TEST_RUNNER_DABBLE_TOKEN (rails ios:demo_account)")
         }
         let app = XCUIApplication()
-        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", testServer]
             + (photos ? ["-DabbleDebugComposePhotoURLs", "https://picsum.photos/id/1015/1600/1200"] : [])
         app.launch()
         return app

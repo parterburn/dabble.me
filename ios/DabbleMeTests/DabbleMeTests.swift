@@ -549,6 +549,16 @@ struct TrailingSongLinkTests {
     }
 }
 
+struct SpotifyPlayerTests {
+    /// An entry's player shows its song without starting it; a tap on a song is what plays.
+    @Test func thePlayerOnlyStartsWhenAsked() {
+        let shown = SpotifyPlayer.page(for: "abc123", autoplay: false)
+        let played = SpotifyPlayer.page(for: "abc123", autoplay: true)
+        #expect(shown.contains("spotify:track:abc123") && !shown.contains("addListener('ready'"))
+        #expect(played.contains("addListener('ready', window.dabblePlay)"))
+    }
+}
+
 @MainActor
 struct ReminderTests {
     private func plan(_ json: String) throws -> ReminderPlan {

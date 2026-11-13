@@ -15,7 +15,7 @@ final class JournalViewsTests: XCTestCase {
 
     private func launch(_ extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", "http://localhost:3000"] + extra
+        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", testServer] + extra
         app.launch()
         return app
     }
@@ -373,7 +373,7 @@ final class JournalViewsTests: XCTestCase {
             throw XCTSkip("Set TEST_RUNNER_DABBLE_EMPTY_TOKEN to an account with no entries")
         }
         let app = XCUIApplication()
-        app.launchArguments = ["-DabbleDebugAccessToken", empty, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launchArguments = ["-DabbleDebugAccessToken", empty, "-DabbleServerOverride", testServer]
         app.launch()
         XCTAssertTrue(app.staticTexts["Rewind"].waitForExistence(timeout: 15))
         XCTAssertFalse(app.staticTexts["On This Day"].exists)
@@ -387,7 +387,7 @@ final class JournalViewsTests: XCTestCase {
             throw XCTSkip("Set TEST_RUNNER_DABBLE_EMPTY_TOKEN to a PRO account with no hashtags")
         }
         let app = XCUIApplication()
-        app.launchArguments = ["-DabbleDebugAccessToken", empty, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launchArguments = ["-DabbleDebugAccessToken", empty, "-DabbleServerOverride", testServer]
         app.launch()
         let write = app.buttons["Write Today's Entry"]
         XCTAssertTrue(write.waitForExistence(timeout: 15))
@@ -432,7 +432,7 @@ final class JournalViewsTests: XCTestCase {
     func testAIPromptKeepsPastInThePast() throws {
         guard let token = ProcessInfo.processInfo.environment["DABBLE_EMPTY_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_EMPTY_TOKEN") }
         let app = XCUIApplication()
-        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", testServer]
         app.launch()
         let another = app.buttons["Another Prompt"]
         guard another.waitForExistence(timeout: 60) else { throw XCTSkip("Apple Intelligence isn't available here") }
@@ -913,6 +913,57 @@ final class JournalViewsTests: XCTestCase {
         snap("pull-up-random-memory")
     }
 
+    /// An entry with songs has Spotify's player under it, showing the first (in bold above) and
+    /// not started. A tap on another song puts that one in the player; a swipe left puts the
+    /// player away, and a tap on a song brings it back.
+    func testEntryWithSongsHasThePlayerUnderIt() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Last farmers market")).firstMatch
+        app.scrollTo(row)
+        app.openTimelineEntry(row)
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
+        func player(_ song: String) -> XCUIElement {
+            app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Spotify player, \(song)")).firstMatch
+        }
+        let first = app.buttons["The Killers – Mr. Brightside"], second = app.buttons["Rick Astley – Never Gonna Give You Up"]
+        XCTAssertTrue(player("The Killers – Mr. Brightside").waitForExistence(timeout: 10), "The first song is in the player")
+        XCTAssertTrue(first.isSelected)
+        XCTAssertFalse(second.isSelected)
+        XCTAssertTrue(app.links["Open in Spotify"].exists || app.buttons["Open in Spotify"].exists)
+        sleep(6) // Spotify's player loads
+        snap("entry-song-player")
+
+        second.tap()
+        XCTAssertTrue(player("Rick Astley – Never Gonna Give You Up").waitForExistence(timeout: 5), "One song at a time: the one tapped")
+        XCTAssertFalse(player("The Killers – Mr. Brightside").exists)
+        XCTAssertTrue(second.isSelected)
+        XCTAssertFalse(first.isSelected)
+
+        player("Rick Astley – Never Gonna Give You Up").swipeLeft()
+        XCTAssertTrue(player("Rick Astley – Never Gonna Give You Up").waitForNonExistence(timeout: 5), "A swipe left puts the player away")
+        XCTAssertFalse(second.isSelected)
+        snap("entry-song-player-hidden")
+        first.tap()
+        XCTAssertTrue(player("The Killers – Mr. Brightside").waitForExistence(timeout: 5), "A tap on a song brings the player back")
+    }
+
+    /// A web address in a row (Today's and the Journal's are the same row) is a link without
+    /// expanding or opening the entry first: a tap on it goes to the browser.
+    func testALinkInARowOpensWithoutOpeningTheEntry() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "The Overstory")).firstMatch
+        app.scrollTo(row)
+        let link = app.links.matching(NSPredicate(format: "label CONTAINS %@", "goodreads")).firstMatch
+        XCTAssertTrue(link.waitForExistence(timeout: 5), "The address is a link in the row")
+        link.tap()
+        let safari = XCUIApplication(bundleIdentifier: "com.apple.mobilesafari")
+        XCTAssertTrue(safari.wait(for: .runningForeground, timeout: 15), "The link opens in the browser")
+        app.activate()
+        XCTAssertFalse(app.buttons["Edit Entry"].waitForExistence(timeout: 3), "The entry itself didn't open")
+    }
+
     /// An entry's Spotify songs show in its long-press preview.
     func testSongsShowInPreviews() throws {
         let app = launch()
@@ -982,12 +1033,17 @@ final class JournalViewsTests: XCTestCase {
                        "Only entries with songs")
         snap("playlist")
         song.tap()
-        XCTAssertTrue(app.buttons["Close Player"].waitForExistence(timeout: 5))
+        // The player, with a way out to Spotify beside it (no close button: it's swiped away).
+        let player = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Spotify player, The Weeknd – Blinding Lights")).firstMatch
+        XCTAssertTrue(player.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.links["Open in Spotify"].exists || app.buttons["Open in Spotify"].exists)
+        XCTAssertFalse(app.buttons["Close Player"].exists)
         XCTAssertEqual(song.value as? String, "Playing")
         sleep(6) // Spotify's player loads
         snap("playlist-playing")
-        app.buttons["Close Player"].tap()
-        XCTAssertTrue(app.buttons["Close Player"].waitForNonExistence(timeout: 5))
+        player.swipeLeft()
+        XCTAssertTrue(player.waitForNonExistence(timeout: 5), "A swipe left puts the player away")
+        XCTAssertNotEqual(song.value as? String, "Playing")
         // The row itself opens the entry.
         app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Slow Saturday")).firstMatch.tap()
         XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
@@ -1516,7 +1572,7 @@ final class JournalViewsTests: XCTestCase {
     func testDeletingTheAccountSignsOutAndOpensTheBrowser() throws {
         guard let spare = ProcessInfo.processInfo.environment["DABBLE_DELETION_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_DELETION_TOKEN") }
         let app = XCUIApplication()
-        app.launchArguments = ["-DabbleDebugAccessToken", spare, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launchArguments = ["-DabbleDebugAccessToken", spare, "-DabbleServerOverride", testServer]
         app.launch()
         XCTAssertTrue(tab(app, "Settings").waitForExistence(timeout: 15))
         tab(app, "Settings").tap()
@@ -1542,7 +1598,7 @@ final class JournalViewsTests: XCTestCase {
     func testFreeAccountLimits() throws {
         guard let free = ProcessInfo.processInfo.environment["DABBLE_FREE_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_FREE_TOKEN") }
         let app = XCUIApplication()
-        app.launchArguments = ["-DabbleDebugAccessToken", free, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launchArguments = ["-DabbleDebugAccessToken", free, "-DabbleServerOverride", testServer]
         app.launch()
 
         // On This Day is PRO: Today says so (no throwback in its place).
@@ -1616,7 +1672,7 @@ final class JournalViewsTests: XCTestCase {
     func testEmailScheduleFreeAccount() throws {
         guard let free = ProcessInfo.processInfo.environment["DABBLE_FREE_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_FREE_TOKEN") }
         let app = XCUIApplication()
-        app.launchArguments = ["-DabbleDebugAccessToken", free, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launchArguments = ["-DabbleDebugAccessToken", free, "-DabbleServerOverride", testServer]
         app.launch()
         tab(app, "Settings").tap()
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Email'")).firstMatch

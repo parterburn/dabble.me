@@ -9,7 +9,7 @@ final class WidgetTests: XCTestCase {
             throw XCTSkip("Set TEST_RUNNER_DABBLE_WIDGET=1 and TEST_RUNNER_DABBLE_TOKEN")
         }
         let app = XCUIApplication()
-        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", testServer]
         app.launch()
         XCTAssertTrue(app.buttons["Journal"].firstMatch.waitForExistence(timeout: 15))
         sleep(3) // refresh writes the widget snapshot

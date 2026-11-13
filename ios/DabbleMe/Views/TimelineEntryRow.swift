@@ -32,8 +32,9 @@ struct TimelineEntryRow: View {
 
     /// Collapsed and expanded are the same text, set the same way: expanding only lifts the line
     /// limit (and swaps in the full text when the server's preview was cut short), so nothing
-    /// shifts. Light Markdown; list lines ("- item") show as bullets. #hashtags are tinted, and
-    /// links once expanded (collapsed, a tap anywhere expands).
+    /// shifts. Light Markdown; list lines ("- item") show as bullets. Web addresses are links
+    /// either way (a tap on one opens it; anywhere else expands or opens the entry). #hashtags are
+    /// tinted, and links once expanded.
     private var styledText: AttributedString {
         var source = isExpanded ? (full?.bodyText ?? previewText) : previewText
         // Dated #tags and Spotify links at the entry's end show again under it (pills, the songs),
@@ -45,7 +46,7 @@ struct TimelineEntryRow: View {
         if source.isEmpty { return AttributedString("📷 Photo") }
         let text = Self.tighteningParagraphGaps(in: AttributedString.journal(Self.bullets(source)),
                                                 fontSize: bodySize * textSize.scale, design: fontStyle.design)
-        return isExpanded ? RichText.linkingURLs(in: RichText.linkingHashtags(in: text)) : Self.tintingHashtags(in: text)
+        return RichText.linkingURLs(in: isExpanded ? RichText.linkingHashtags(in: text) : Self.tintingHashtags(in: text))
     }
 
     /// Paragraphs come with a blank line between them, a whole line tall; the entry page spaces
@@ -356,32 +357,50 @@ private struct EntryActionSheets: ViewModifier {
     }
 }
 
-/// An entry's Spotify songs, each a link to it: on the entry, in previews and expanded rows.
+/// An entry's Spotify songs: in previews, drawers and expanded rows, each a link to it. On the
+/// entry itself (given `select`), a tap puts the song in the player under it, and the one that's
+/// there is in bold.
 struct SongList: View {
     let songs: [Song]
+    var selected: Song?
+    var select: ((Song) -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(songs, id: \.self) { song in
-                Link(destination: song.spotifyUrl) {
-                    // The icon close to the song (a Label leaves more room between them).
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        appIcon("slab-music")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 18, height: 18)
-                            .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 5 }
-                        Text(song.label)
-                            .multilineTextAlignment(.leading)
-                    }
+                if let select {
+                    Button { select(song) } label: { row(song, isSelected: song == selected) }
+                        .buttonStyle(.borderless)
+                        .contextMenu {
+                            Link(destination: song.spotifyUrl) { Label("Open in Spotify", icon: "slab-external-link") }
+                        }
+                        .accessibilityLabel(song.label)
+                        .accessibilityHint("Plays it")
+                        .accessibilityAddTraits(song == selected ? .isSelected : [])
+                } else {
+                    Link(destination: song.spotifyUrl) { row(song, isSelected: false) }
+                        .accessibilityLabel(song.label)
+                        .accessibilityHint("Opens in Spotify")
                 }
-                .accessibilityLabel(song.label)
-                .accessibilityHint("Opens in Spotify")
             }
         }
         .font(.subheadline)
         // The green of links and #hashtags in the text, and a little room below the text.
         .foregroundStyle(Color("AccentColor"))
         .padding(.top, 6)
+    }
+
+    private func row(_ song: Song, isSelected: Bool) -> some View {
+        // The icon close to the song (a Label leaves more room between them).
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
+            appIcon("slab-music")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 18, height: 18)
+                .alignmentGuide(.firstTextBaseline) { $0[VerticalAlignment.center] + 5 }
+            Text(song.label)
+                .fontWeight(isSelected ? .semibold : .regular)
+                .multilineTextAlignment(.leading)
+        }
     }
 }

@@ -1,5 +1,9 @@
 import XCTest
 
+/// The server the UI tests run against: the local one, or TEST_RUNNER_DABBLE_SERVER when
+/// something else on the Mac has taken port 3000 on localhost (this Mac's own address reaches it).
+let testServer = ProcessInfo.processInfo.environment["DABBLE_SERVER"] ?? "http://localhost:3000"
+
 extension XCUIElement {
     /// Taps a timeline row on its text, near the top: a tap on its photo opens the photo instead.
     /// Below the sticky month header, which covers a row scrolled up to the top of the list.

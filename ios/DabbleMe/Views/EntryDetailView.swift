@@ -23,6 +23,12 @@ struct EntryDetailView: View {
     /// Tapping the title switches between the date and how long ago it was (remembered).
     @AppStorage("entry.showsRelativeDate") private var showsRelativeDate = false
     @State private var hideHUD: Task<Void, Never>?
+    /// The song in the player under the entry (its first, until another is tapped), how many
+    /// times a song's been tapped to play (none: the player only shows it), and whether the
+    /// player's been swiped away.
+    @State private var song: Song?
+    @State private var songPlays = 0
+    @State private var playerHidden = false
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
     @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
 
@@ -34,7 +40,7 @@ struct EntryDetailView: View {
         Group {
             if let entry {
                 ScrollView {
-                    EntryBody(entry: entry)
+                    EntryBody(entry: entry, song: playerHidden ? nil : song, play: play)
                         .padding()
                         .frame(maxWidth: 680, alignment: .leading)
                         .frame(maxWidth: .infinity)
@@ -57,6 +63,14 @@ struct EntryDetailView: View {
                     }
                 }
                 .animation(.easeOut(duration: 0.15), value: textSizeHUD)
+                // An entry with a song has Spotify's player under it, as the Playlist does. It
+                // doesn't start by itself: a tap on a song, or on the player's own button, does.
+                .safeAreaInset(edge: .bottom, spacing: 0) {
+                    if let song, !playerHidden {
+                        SongPlayerBar(song: song, plays: songPlays) { playerHidden = true }
+                    }
+                }
+                .animation(.snappy(duration: 0.25), value: playerHidden)
             } else if let loadError {
                 ContentUnavailableView {
                     Label("Couldn't load this entry", systemImage: "exclamationmark.triangle")
@@ -110,6 +124,12 @@ struct EntryDetailView: View {
         .sensoryFeedback(.selection, trigger: textSize)
         .disabled(isDeleting)
         .task { await load() }
+        // The first song is the one shown, and again if an edit takes the shown one away.
+        .onChange(of: entry?.songs, initial: true) { _, songs in
+            guard let songs, song.map(songs.contains) != true else { return }
+            song = songs.first { $0.trackID != nil }
+            songPlays = 0
+        }
         .task(id: entry?.imageProcessing) {
             // Swap the placeholder for the finished photo/collage as soon as it's ready.
             while entry?.imageProcessing == true, !Task.isCancelled {
@@ -117,6 +137,14 @@ struct EntryDetailView: View {
                 await load()
             }
         }
+    }
+
+    /// A tap on one of the entry's songs: it takes the player (one song at a time) and starts.
+    private func play(_ tapped: Song) {
+        guard tapped.trackID != nil else { openURL(tapped.spotifyUrl); return }
+        song = tapped
+        songPlays += 1
+        playerHidden = false
     }
 
     /// Edit goes straight into editing; Delete and Reflect are in the swipe-left Actions.
@@ -290,6 +318,9 @@ struct EntryDetailView: View {
 
 private struct EntryBody: View {
     let entry: EntryDetail
+    /// The song in the player, and what a tap on a song does.
+    var song: Song?
+    var play: ((Song) -> Void)?
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
     @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
     @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 17
@@ -318,7 +349,7 @@ private struct EntryBody: View {
 
             // The music icon says what they are; no "Songs" heading.
             if !entry.songs.isEmpty {
-                SongList(songs: entry.songs)
+                SongList(songs: entry.songs, selected: song, select: play)
             }
 
             // Text first: Dabble Me is about the writing; photos follow it.
