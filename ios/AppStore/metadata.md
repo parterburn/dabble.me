@@ -12,7 +12,7 @@ The voice: a few lines a day, kept private, and handed back to you later. No str
 | Subtitle (30) | Daily diary, photos & memories |
 | Primary category | Lifestyle |
 | Secondary category | Productivity |
-| Content rights | Does not contain, show, or access third-party content |
+| Content rights | Contains, shows, or accesses third-party content, with the necessary rights: Journal > Playlist plays an entry's songs in Spotify's own embedded player. Everything else is the account holder's own writing and photos |
 | Age rating | 4+ (no objectionable content; entries are private and never shared with other users) |
 | Copyright | 2026 Dabble Dev LLC |
 
