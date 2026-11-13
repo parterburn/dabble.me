@@ -1,5 +1,6 @@
 import StoreKit
 import SwiftUI
+import UIKit
 
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
@@ -7,8 +8,6 @@ struct SettingsView: View {
     @Environment(\.openURL) private var openURL
     @State private var confirmingSignOut = false
     @State private var confirmingDeletion = false
-    @State private var deletionEmail: String?
-    @State private var deletionError: String?
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.system
     @AppStorage(ReminderSettings.enabledKey) private var dailyReminder = false
     /// The time set for it, or `followsEmail` until one is: then it's the daily email's.
@@ -148,16 +147,22 @@ struct SettingsView: View {
                         .confirmationDialog("Sign out of Dabble Me?", isPresented: $confirmingSignOut, titleVisibility: .visible) {
                             Button("Sign Out", role: .destructive) { Task { await model.signOut() } }
                         }
-                    Button("Delete Account…", role: .destructive) { confirmingDeletion = true }
-                        // Deleting takes three deliberate steps: confirm here (which signs the app out),
-                        // open the emailed link, then confirm with your password on dabble.me (and it can
-                        // still be undone for an hour).
-                        .confirmationDialog("Delete your Dabble Me account?", isPresented: $confirmingDeletion, titleVisibility: .visible) {
-                            Button("Email Me a Deletion Link", role: .destructive) { Task { await requestDeletion() } }
-                            Button("Cancel", role: .cancel) {}
-                        } message: {
-                            Text("We'll email you a link to finish on dabble.me, where you'll confirm with your password, and sign you out of the app. You can export your entries there first.")
+                    // Deleting finishes on dabble.me (signed in there, confirmed with the password, and
+                    // it can still be undone for an hour), so this says what's about to happen, signs
+                    // the app out and hands over to the browser.
+                    Button(role: .destructive) { confirmingDeletion = true } label: {
+                        HStack {
+                            Text("Delete Account…")
+                            Spacer()
+                            ExternalLinkIcon()
                         }
+                    }
+                    .confirmationDialog("Delete your Dabble Me account?", isPresented: $confirmingDeletion, titleVisibility: .visible) {
+                        Button("Sign Out and Continue", role: .destructive) { Task { await continueDeletionInBrowser() } }
+                        Button("Cancel", role: .cancel) {}
+                    } message: {
+                        Text("You'll be signed out of the app, and your browser will open dabble.me, where you finish deleting your account with your password. You can export your entries there first.")
+                    }
                 } footer: {
                     if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
                         Text("Dabble Me for iOS \(version)")
@@ -169,17 +174,6 @@ struct SettingsView: View {
             .toolbar(removing: .title) // the heading in the list is the title
             .toolbarVisibility(.hidden, for: .navigationBar) // like Today: no empty bar above it
             .task { canLinkToSubscribe = await Storefront.current?.countryCode == "USA" }
-            // The rest happens on dabble.me, so the app signs out here (as Sign Out does).
-            .alert("Check your email", isPresented: .present($deletionEmail)) {
-                Button("OK", role: .cancel) { Task { await model.signOut() } }
-            } message: {
-                Text("We sent a link to \(deletionEmail ?? "your email") to finish deleting your account on dabble.me. Nothing has been deleted yet. You'll be signed out of the app now.")
-            }
-            .alert("Couldn't send the email", isPresented: .present($deletionError)) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(deletionError ?? "")
-            }
         }
     }
 }
@@ -244,12 +238,10 @@ private extension SettingsView {
         }
     }
 
-    func requestDeletion() async {
-        do {
-            deletionEmail = try await model.requestAccountDeletion()
-        } catch {
-            deletionError = error.localizedDescription
-        }
+    /// The browser itself, not the page inside the app: that one's signed out along with the app.
+    func continueDeletionInBrowser() async {
+        await model.signOut()
+        await UIApplication.shared.open(AppConfig.webURL("settings/delete-account"))
     }
 }
 

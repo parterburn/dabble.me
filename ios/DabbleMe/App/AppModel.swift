@@ -389,14 +389,6 @@ final class AppModel {
         await loadToday()
     }
 
-    /// Emails a link to the web deletion page. Nothing is deleted from the app itself; Settings
-    /// signs out once the email's on its way, since the rest happens on dabble.me.
-    func requestAccountDeletion() async throws -> String {
-        struct Empty: Encodable, Sendable {}
-        let response: AccountDeletionRequest = try await api.post("api/v1/account/deletion_request", Empty())
-        return response.email
-    }
-
     /// A random handful of dabble.me's curated writing prompts, for Apple Intelligence to choose
     /// from (none from a server without the endpoint).
     func curatedPrompts() async -> [String] {

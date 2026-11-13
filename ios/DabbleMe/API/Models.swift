@@ -207,10 +207,6 @@ struct ImageUpload: Decodable, Sendable {
     let maxBytes: Int
 }
 
-struct AccountDeletionRequest: Decodable, Sendable {
-    let email: String
-}
-
 struct APIErrorBody: Decodable, Sendable {
     let error: String
     let message: String?

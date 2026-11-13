@@ -102,7 +102,7 @@ The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resour
 - **Sign-in required:** yes. Create a production demo account (for example `appreview@dabble.me`) on **PRO**, with a few entries that include photos and hashtags, and with password sign-in (no 2FA) so the reviewer can get in.
 - **Notes for the reviewer:**
 
-> Dabble Me is a private journal; the app is a free companion to the dabble.me service, and it sells nothing in the app. Sign in with the demo account above on the sign-in page that opens. Photos, search, On This Day and AI connections are PRO features; the demo account is PRO. Accounts can be created with "Start Your Journal" on the first screen and deleted in Settings → Delete Account (we email a link to finish deletion on dabble.me, where it's confirmed with the account password, and the app signs out).
+> Dabble Me is a private journal; the app is a free companion to the dabble.me service, and it sells nothing in the app. Sign in with the demo account above on the sign-in page that opens. Photos, search, On This Day and AI connections are PRO features; the demo account is PRO. Accounts can be created with "Start Your Journal" on the first screen and deleted in Settings → Delete Account (the app signs out and opens the deletion page on dabble.me in the browser, where it's confirmed with the account password).
 
 - **Export compliance:** the app uses only standard HTTPS (`ITSAppUsesNonExemptEncryption = NO`).
 

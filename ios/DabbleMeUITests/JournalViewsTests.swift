@@ -1509,10 +1509,11 @@ final class JournalViewsTests: XCTestCase {
         previews.switches.firstMatch.tap() // back to the default: no previews
     }
 
-    /// Settings → Delete Account: with the deletion link on its way the app signs out (the rest
-    /// happens on dabble.me). TEST_RUNNER_DABBLE_DELETION_TOKEN: a token of its own, since signing
-    /// out spends it (the free demo account's will do).
-    func testRequestingDeletionSignsOut() throws {
+    /// Settings → Delete Account: says what's about to happen, then signs the app out and opens
+    /// the deletion page in the browser (it's finished on dabble.me).
+    /// TEST_RUNNER_DABBLE_DELETION_TOKEN: a token of its own, since signing out spends it (the
+    /// free demo account's will do).
+    func testDeletingTheAccountSignsOutAndOpensTheBrowser() throws {
         guard let spare = ProcessInfo.processInfo.environment["DABBLE_DELETION_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_DELETION_TOKEN") }
         let app = XCUIApplication()
         app.launchArguments = ["-DabbleDebugAccessToken", spare, "-DabbleServerOverride", "http://localhost:3000"]
@@ -1521,17 +1522,19 @@ final class JournalViewsTests: XCTestCase {
         tab(app, "Settings").tap()
         let delete = app.buttons["Delete Account…"]
         for _ in 0..<6 where !(delete.exists && delete.isHittable) { app.swipeUp() }
+        snap("delete-account-row")
         delete.tap()
-        let send = app.buttons["Email Me a Deletion Link"]
-        XCTAssertTrue(send.waitForExistence(timeout: 5))
+        let go = app.buttons["Sign Out and Continue"]
+        XCTAssertTrue(go.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Email Me a Deletion Link"].exists)
         snap("delete-account-confirm")
-        send.tap()
-        let sent = app.alerts["Check your email"]
-        XCTAssertTrue(sent.waitForExistence(timeout: 10))
-        snap("delete-account-sent")
-        sent.buttons["OK"].tap()
+        go.tap()
+        let safari = XCUIApplication(bundleIdentifier: "com.apple.mobilesafari")
+        XCTAssertTrue(safari.wait(for: .runningForeground, timeout: 15), "The deletion page opens in the browser")
+        sleep(2)
+        snap("delete-account-browser")
+        app.activate()
         XCTAssertTrue(app.buttons["I Already Have an Account"].waitForExistence(timeout: 10), "Signed out, back at the first page")
-        snap("delete-account-signed-out")
     }
 
     /// A free account writes without photos or links, can delete but not edit, and has no Stats.
