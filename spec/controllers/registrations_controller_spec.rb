@@ -327,6 +327,21 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(response).to have_http_status(:ok)
       expect(response.body).to match(/delete your account/i)
     end
+
+    it "says a subscription billed elsewhere may need cancelling there" do
+      sign_in FactoryBot.create(:user, plan: "PRO Monthly Gumroad")
+      get :delete_account
+      text = Nokogiri::HTML(response.body).at_css("[role=alert]").text.squish
+
+      expect(text).to eq("You may need to cancel your paid subscription separately at Gumroad if billing is active there.")
+    end
+
+    it "says nothing about cancelling when the plan has no billing service" do
+      sign_in FactoryBot.create(:user, plan: "PRO Forever")
+      get :delete_account
+
+      expect(response.body).not_to include("cancel your paid subscription")
+    end
   end
 
   describe "destroy" do

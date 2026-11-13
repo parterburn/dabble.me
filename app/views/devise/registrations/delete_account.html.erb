@@ -1,7 +1,8 @@
 <% title "Delete account — Dabble me." %>
 <% content_for :tailwind, true %>
 <% entry_count = current_user.entries.count %>
-<% pro_cancel_warning = current_user.is_pro? && (current_user.plan_type_unlinked != "Stripe" || current_user.stripe_id.blank?) %>
+<%# A plan with no billing service behind it (PRO Forever, say) has nothing to cancel. %>
+<% pro_cancel_warning = current_user.is_pro? && current_user.plan_type.present? && (current_user.plan_type_unlinked != "Stripe" || current_user.stripe_id.blank?) %>
 
 <div class="tw mx-auto max-w-2xl pt-4 pb-16 sm:pt-8">
   <header class="mb-8">
@@ -27,7 +28,7 @@
 
     <% if pro_cancel_warning %>
       <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="alert">
-        You will need to cancel your paid subscription separately at
+        You may need to cancel your paid subscription separately at
         <strong class="font-semibold"><%= current_user.plan_type_unlinked %></strong>
         if billing is active there.
       </div>
