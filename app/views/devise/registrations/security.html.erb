@@ -61,14 +61,14 @@
       <% end %>
     </section>
 
-    <%= render "oauth_connected_apps" %>
-
     <section class="card p-6 sm:p-8">
       <%= f.label :current_password, class: "field-label" %>
       <%= f.password_field :current_password, autocomplete: "current-password", class: "field-input" %>
       <p class="field-help">Needed to change your email or password, or to add a passkey.</p>
-      <%= f.submit "Update Security", class: "button-primary mt-5 w-full sm:w-auto j-edit-security", name: "submit_method", type: :submit %>
+      <%= f.submit "Save Security Changes", class: "button-primary mt-5 w-full sm:w-auto j-edit-security", name: "submit_method", type: :submit %>
     </section>
+
+    <%= render "oauth_connected_apps" %>
   <% end %>
 
   <p class="mt-8 text-center text-sm text-muted">

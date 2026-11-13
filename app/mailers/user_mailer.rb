@@ -70,7 +70,7 @@ class UserMailer < ActionMailer::Base
 
   def export_failed(export)
     @user = export.user
-    @settings_url = edit_user_registration_url(anchor: 'export')
+    @settings_url = export_entries_url
     email = mail(to: @user.email, subject: "We couldn't finish your Dabble Me export")
     email.mailgun_options = { tag: 'Export' }
   end

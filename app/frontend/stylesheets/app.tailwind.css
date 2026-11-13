@@ -39,6 +39,7 @@
 @source "../../views/devise/shared/_error_messages.html.erb";
 @source "../../views/email_updates/*.html.erb";
 @source "../../views/exports/*.html.erb";
+@source "../../views/import/*.html.erb";
 @source "../../views/admin/*.html.erb";
 @source "../../views/payments/*.html.erb";
 @source "../../views/inspirations/*.html.erb";

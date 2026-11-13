@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_12_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_13_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -101,6 +101,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_12_000000) do
     t.string "token", null: false
     t.string "status", default: "preparing", null: false
     t.string "scope", default: "all", null: false
+    t.text "search_term"
     t.string "storage_key"
     t.integer "entry_count", default: 0, null: false
     t.integer "image_count", default: 0, null: false

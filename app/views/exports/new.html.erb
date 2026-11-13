@@ -1,0 +1,62 @@
+<% title 'Export entries — Dabble me.' %>
+<% content_for :tailwind, true %>
+
+<div class="tw mx-auto max-w-2xl pt-4 pb-16 sm:pt-8">
+  <header class="mb-8">
+    <h1 class="font-serif text-4xl tracking-tight text-primary sm:text-5xl">Export entries</h1>
+    <p class="mt-2 text-muted">Your journal is yours. Take a copy whenever you like<%= ", photos included" if current_user.is_pro? %>.</p>
+  </header>
+
+  <div class="space-y-6">
+    <section class="card p-6 sm:p-8">
+      <%= form_tag export_entries_path, method: :post do %>
+        <% if @search_term %>
+          <%= hidden_field_tag "search[term]", @search_term %>
+          <p class="field-label">What to export</p>
+          <p class="text-primary">Entries matching <mark><%= @search_term %></mark></p>
+          <p class="field-help"><%= link_to "Export all entries instead", export_entries_path, class: "text-link" %></p>
+        <% else %>
+          <%= label_tag :year, "Year", class: "field-label" %>
+          <%= select_tag :year, options_for_select([["All", ""]] + @years.map { |year| [year, year] }, @year.to_i), class: "field-input sm:w-48" %>
+        <% end %>
+
+        <div class="mt-5 flex flex-wrap gap-3">
+          <%= button_tag type: "submit", name: "download", value: "zip", class: "button-primary" do %>Export <span class="font-normal">ZIP</span><% end %>
+          <%= button_tag "Markdown", type: "submit", name: "download", value: "markdown", class: "button-secondary" %>
+        </div>
+      <% end %>
+
+      <dl class="mt-6 space-y-3 border-t border-subtle pt-5 text-sm text-muted">
+        <div>
+          <dt class="font-medium text-primary">ZIP</dt>
+          <dd>Your journal as a web page you can open in any browser, as Markdown and as JSON<%= ", plus your photos" if current_user.is_pro? %>. We'll email you a link to download it. You'll sign in to use the link, and it works for 7 days. Exporting the same thing again within 12 hours downloads the same ZIP.</dd>
+        </div>
+        <div>
+          <dt class="font-medium text-primary">Markdown</dt>
+          <dd>One text file, without photos, that downloads right away. Handy for reading elsewhere or giving to an AI app.</dd>
+        </div>
+      </dl>
+    </section>
+
+    <% if @recent_exports.any? %>
+      <section class="card p-6 sm:p-8">
+        <h2 class="font-serif text-2xl text-primary">Ready to download</h2>
+        <ul class="mt-4 space-y-3">
+          <% @recent_exports.each do |export| %>
+            <li class="flex flex-wrap items-center justify-between gap-3">
+              <span>
+                <span class="text-primary"><%= export.description %></span>
+                <span class="block text-sm text-muted"><%= export.created_at.strftime("%B %-d, %Y") %> · <%= number_to_human_size(export.byte_size) %> · until <%= export.expires_at.strftime("%B %-d") %></span>
+              </span>
+              <%= link_to "Download", download_export_path(export), class: "button-secondary" %>
+            </li>
+          <% end %>
+        </ul>
+      </section>
+    <% end %>
+
+    <p class="text-sm text-muted">
+      Moving in, not out? <%= link_to "Import entries", import_path, class: "text-link" %> from Day One, OhLife and others.
+    </p>
+  </div>
+</div>

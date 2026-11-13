@@ -92,14 +92,18 @@
         <% end %>
         <% on_settings = current_page?(edit_user_registration_path) %>
         <% on_security = current_page?(security_path) %>
+        <% on_import = params[:controller] == "import" %>
+        <% on_export = params[:controller] == "exports" %>
 
         <%# Phones: plain links in the collapsed menu. %>
-        <li class="visible-xs <%= 'active' if on_settings %>"><%= link_to "Settings", edit_user_registration_path %></li>
+        <li class="visible-xs s-nav-account <%= 'active' if on_settings %>"><%= link_to "Settings", edit_user_registration_path %></li>
         <li class="visible-xs <%= 'active' if on_security %>"><%= link_to "Account Security", security_path %></li>
+        <li class="visible-xs <%= 'active' if on_import %>"><%= link_to "Import Entries", import_path %></li>
+        <li class="visible-xs <%= 'active' if on_export %>"><%= link_to "Export Entries", export_entries_path %></li>
         <li class="visible-xs"><%= link_to "Logout", destroy_user_session_path, method: :delete %></li>
 
         <%# Desktop: the same links behind the "me" avatar. %>
-        <li class="dropdown hidden-xs <%= 'active' if on_settings || on_security %>" rel="<%= add_popover %>" title="" data-content="<%= current_settings %>" data-placement="bottom">
+        <li class="dropdown hidden-xs <%= 'active' if on_settings || on_security || on_import || on_export %>" rel="<%= add_popover %>" title="" data-content="<%= current_settings %>" data-placement="bottom">
           <a class="dropdown-toggle s-avatar-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false" title="Account">
             <%= image_tag "logos/me-avatar.png", alt: "Account", class: "s-avatar", width: 32, height: 32 %>
           </a>
@@ -109,6 +113,12 @@
             </li>
             <li class="<%= 'active' if on_security %>">
               <%= link_to security_path do %><span class="slab-icon slab-icon--shield" aria-hidden="true"></span>Account Security<% end %>
+            </li>
+            <li class="<%= 'active' if on_import %>">
+              <%= link_to import_path do %><span class="slab-icon slab-icon--arrow-down-to-line" aria-hidden="true"></span>Import Entries<% end %>
+            </li>
+            <li class="<%= 'active' if on_export %>">
+              <%= link_to export_entries_path do %><span class="slab-icon slab-icon--arrow-up-from-line" aria-hidden="true"></span>Export Entries<% end %>
             </li>
             <li role="separator" class="divider"></li>
             <li>

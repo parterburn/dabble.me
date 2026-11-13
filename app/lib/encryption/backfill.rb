@@ -10,13 +10,13 @@ module Encryption
   class Backfill
     class VerificationFailed < StandardError; end
 
-    MODELS = [Entry, User, Hashtag].freeze
+    MODELS = [Entry, User, Hashtag, Export].freeze
     BATCH_SIZE = 500
 
     Result = Struct.new(:checked, :changed, :remaining, keyword_init: true)
 
-    # user_id limits the run to one account: its entries, its hashtags and its
-    # own row.
+    # user_id limits the run to one account: its entries, hashtags and exports,
+    # and its own row.
     def initialize(user_id: nil, pause: 0, out: $stdout)
       @user_id = user_id
       @pause = pause

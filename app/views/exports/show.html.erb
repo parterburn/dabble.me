@@ -27,10 +27,10 @@
       <p class="text-primary">This export is still being prepared. We'll email you when it's ready.</p>
     <% elsif @export.failed? %>
       <p class="text-primary">Something went wrong preparing this export.</p>
-      <%= link_to "Request a new export", edit_user_registration_path(anchor: "export"), class: "button-secondary mt-5 inline-block" %>
+      <%= link_to "Request a new export", export_entries_path, class: "button-secondary mt-5 inline-block" %>
     <% else %>
       <p class="text-primary">This export has expired and its file was deleted.</p>
-      <%= link_to "Request a new export", edit_user_registration_path(anchor: "export"), class: "button-secondary mt-5 inline-block" %>
+      <%= link_to "Request a new export", export_entries_path, class: "button-secondary mt-5 inline-block" %>
     <% end %>
   </section>
 </div>

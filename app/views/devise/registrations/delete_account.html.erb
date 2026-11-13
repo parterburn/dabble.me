@@ -1,7 +1,8 @@
 <% title "Delete account — Dabble me." %>
 <% content_for :tailwind, true %>
 <% entry_count = current_user.entries.count %>
-<% pro_cancel_warning = current_user.is_pro? && (current_user.plan_type_unlinked != "Stripe" || current_user.stripe_id.blank?) %>
+<%# A plan with no billing service behind it (PRO Forever, say) has nothing to cancel. %>
+<% pro_cancel_warning = current_user.is_pro? && current_user.plan_type.present? && (current_user.plan_type_unlinked != "Stripe" || current_user.stripe_id.blank?) %>
 
 <div class="tw mx-auto max-w-2xl pt-4 pb-16 sm:pt-8">
   <header class="mb-8">
@@ -17,18 +18,19 @@
     <section class="card p-6 sm:p-8">
       <h2 class="font-serif text-2xl text-primary">Export your entries first</h2>
       <p class="mt-1 text-sm text-muted">Get a copy of everything you've written<%= ", with your photos" if current_user.is_pro? %>.</p>
-      <div class="mt-5 flex flex-wrap gap-3">
-        <%= link_to export_entries_path, class: "button-primary" do %>Export <span class="font-normal">ZIP</span><% end %>
-        <%= link_to "Markdown", export_entries_path(format: :md), class: "button-secondary" %>
+      <div class="mt-5">
+        <%= link_to "Export entries", export_entries_path, class: "button-primary" %>
       </div>
       <p class="mt-3 text-sm text-muted">
-        The ZIP holds your journal as a web page you can open in any browser and as Markdown<%= ", plus your photos" if current_user.is_pro? %>. We'll email you a link to download it. Download it before you delete your account: the export is deleted along with everything else.
+        Download your export before you delete your account: exports are deleted along with everything else.
       </p>
     </section>
 
     <% if pro_cancel_warning %>
       <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="alert">
-        You will need to cancel your paid subscription separately at
+        <%# Gumroad and PayPal bill on their own, so the account must be cancelled there.
+            A Stripe plan with no customer on file may have nothing left to cancel. %>
+        You <%= current_user.plan_type_unlinked == "Stripe" ? "may" : "will" %> need to cancel your paid subscription separately at
         <strong class="font-semibold"><%= current_user.plan_type_unlinked %></strong>
         if billing is active there.
       </div>

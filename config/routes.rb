@@ -123,7 +123,9 @@ Rails.application.routes.draw do
   get 'entries/import/(:type)'   => 'import#show', as: 'import'
   match 'entries/import/(:type)' => 'import#update', via: [:put], as: 'import_process'
   match '/entries/import/ohlife/upload'  => 'import#process_ohlife_images', via: [:post], :as => 'import_ohlife_images'
-  get 'entries/export'   => 'entries#export', as: 'export_entries'
+  # The Export page; with .md, the journal as Markdown straight away.
+  get 'entries/export'   => 'exports#new', as: 'export_entries'
+  post 'entries/export'  => 'exports#create'
   # Where an "export is ready" email leads (ExportsController).
   get 'exports/:token'          => 'exports#show', as: 'export'
   get 'exports/:token/download' => 'exports#download', as: 'download_export'

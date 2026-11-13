@@ -72,14 +72,9 @@
         <%= f.time_zone_select :send_timezone, ActiveSupport::TimeZone.us_zones, {}, { class: "field-input" } %>
       </div>
     </div>
-  </section>
 
-  <% unless from_email_link %>
-    <section class="card p-6 sm:p-8">
-      <h2 class="font-serif text-2xl text-primary">Past entries</h2>
-      <p class="mt-1 text-sm text-muted">Emails can include something you wrote before.</p>
-
-      <div class="mt-5 space-y-5">
+    <% unless from_email_link %>
+      <div class="mt-5 space-y-5 border-t border-subtle pt-5">
         <%= f.label :send_past_entry, class: "flex cursor-pointer items-start gap-3" do %>
           <%= f.check_box :send_past_entry, class: "checkbox mt-1" %>
           <span class="text-primary">Include past entries in emails</span>
@@ -107,8 +102,10 @@
           <% end %>
         <% end %>
       </div>
-    </section>
+    <% end %>
+  </section>
 
+  <% unless from_email_link %>
     <% if user.is_pro? %>
       <section class="card p-6 sm:p-8">
         <h2 class="font-serif text-2xl text-primary">Dates for your tags</h2>
@@ -140,16 +137,25 @@
     </div>
   </section>
 
-  <%# The submit button comes first so pressing Enter in a field saves, rather
-      than unsubscribing. Its row is reversed to put it on the right. %>
-  <div class="flex flex-col gap-4 sm:flex-row-reverse sm:items-center sm:justify-between">
-    <%= f.submit "Update Settings", class: "button-primary w-full sm:w-auto" %>
+  <%# Stays at the bottom of the window while the form is on screen, so saving
+      is always in reach. The submit button comes first so pressing Enter in a
+      field saves, rather than unsubscribing; its row is reversed to put it on
+      the right. %>
+  <div class="sticky bottom-3 z-10 flex flex-col gap-3 rounded-xl border border-default bg-surface p-3 shadow-lg sm:flex-row-reverse sm:items-center sm:justify-between sm:px-5">
+    <%= f.submit "Save Settings", class: "button-primary w-full sm:w-auto" %>
     <% if from_email_link %>
       <button name="unsub_all" type="submit" value="yes" class="cursor-pointer text-sm text-muted underline underline-offset-2 hover:text-primary">
         Unsubscribe from all emails
       </button>
     <% else %>
-      <%= link_to "Delete account", delete_account_path, class: "text-center text-sm font-medium text-red-700 hover:text-red-800 hover:underline" %>
+      <span class="text-center text-sm text-muted sm:text-left">Changes take effect when you save.</span>
     <% end %>
   </div>
+
+  <%# Below the bar, not in it: a link this final shouldn't follow you down the page. %>
+  <% unless from_email_link %>
+    <p class="text-center text-sm">
+      <%= link_to "Delete account", delete_account_path, class: "font-medium text-red-700 hover:text-red-800 hover:underline" %>
+    </p>
+  <% end %>
 <% end %>

@@ -13,6 +13,7 @@ module ExportHtml
     body { margin: 0; background: #f4f4ef; color: #222; font: 18px/1.6 Georgia, "Times New Roman", serif; }
     main { max-width: 680px; margin: 0 auto; padding: 32px 16px 64px; }
     h1 { margin: 0 0 4px; font-size: 34px; font-weight: normal; }
+    .subset { margin: 0 0 4px; font-size: 20px; }
     .summary { margin: 0 0 12px; color: #777; font: 14px/1.4 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
     .order { display: inline-block; margin: 0 0 28px; color: #777; font: 14px/1.4 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; cursor: pointer; }
     .entries { display: flex; flex-direction: column; }
@@ -29,20 +30,23 @@ module ExportHtml
 
   module_function
 
-  def header(entry_count)
+  # description: what the page holds, such as "Entries from 2021".
+  def header(entry_count, description = nil)
+    subset = description.present? && description != "All entries" ? ERB::Util.html_escape(description) : nil
     <<~HTML
       <!DOCTYPE html>
       <html lang="en">
       <head>
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width, initial-scale=1">
-      <title>Dabble Me journal</title>
+      <title>#{['Dabble Me journal', subset].compact.join(': ')}</title>
       <style>
       #{STYLE}</style>
       </head>
       <body>
       <main>
       <h1>Dabble Me journal</h1>
+      #{%(<p class="subset">#{subset}</p>) if subset}
       <p class="summary">#{entry_count} #{entry_count == 1 ? 'entry' : 'entries'}, exported #{Time.current.strftime('%B %-d, %Y')}</p>
       <label class="order"><input type="checkbox" id="oldest-first"> Oldest first</label>
       <div class="entries">

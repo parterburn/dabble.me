@@ -122,7 +122,7 @@ struct SettingsView: View {
                     Link(destination: model.me?.securityUrl ?? AppConfig.webURL("security")) {
                         ExternalLinkLabel("Account Security", icon: "slab-shield")
                     }
-                    Link(destination: URL(string: "#export", relativeTo: AppConfig.webURL("users/edit"))!.absoluteURL) {
+                    Link(destination: AppConfig.webURL("entries/export")) {
                         ExternalLinkLabel("Export Entries", icon: "slab-arrow-up-from-line")
                     }
                 } header: {

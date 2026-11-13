@@ -607,20 +607,4 @@ RSpec.describe EntriesController, type: :controller do
       expect(page.at_css('.s-blurb__more')).to be_nil
     end
   end
-
-  describe 'export' do
-    it 'should redirect to sign in if not logged in' do
-      get :export, format: 'txt'
-      expect(response.status).to eq 401
-      expect(response.body).to eq 'You need to login or sign up before continuing.'
-    end
-
-    it 'queues an export and sends no entry text' do
-      sign_in user
-      expect(ExportEntriesJob).to receive(:perform_later).with(kind_of(Integer), {})
-      expect { get :export }.to change { user.exports.count }.by(1)
-      expect(response).to redirect_to(edit_user_registration_path(anchor: 'export'))
-      expect(response.body).not_to include(entry.formatted_body)
-    end
-  end
 end

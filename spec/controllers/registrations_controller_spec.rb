@@ -55,6 +55,25 @@ RSpec.describe RegistrationsController, type: :controller do
   end
 
   describe 'email settings links' do
+    it 'opens the no-login settings page from the link in the welcome email' do
+      mail = UserMailer.welcome_email(user)
+      html_link = Nokogiri::HTML(mail.html_part.body.to_s).css('a').find { |a| a.text == 'unsubscribe' }['href']
+      text_link = mail.text_part.body.to_s[/^Unsubscribe: (\S+)/, 1]
+
+      expect(html_link).to eq(text_link)
+      get :settings, params: Rack::Utils.parse_query(URI(html_link).query)
+
+      expect(response.status).to eq 200
+      expect(response.body).to include('Unsubscribe from all emails')
+    end
+
+    it 'says so when a link no longer leads to an account' do
+      get :settings, params: { token: 'not-a-real-token' }
+
+      expect(response).to redirect_to(new_user_session_path)
+      expect(flash[:alert]).to eq('That settings link no longer works. Log in to change your email settings.')
+    end
+
     it 'opens the no-login settings page from a token link' do
       get :settings, params: { token: user.email_settings_token }
 
@@ -69,21 +88,22 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(response.status).to eq 200
     end
 
-    it 'turns away a token that does not match' do
-      get :settings, params: { token: 'not-a-token' }
-
-      expect(response).to redirect_to(edit_user_registration_url)
-    end
-
     it 'retires both old and token links when the posting address is reset' do
       token = user.email_settings_token
       old_key = user.user_key
       user.rotate_user_key!
 
       get :settings, params: { token: token }
-      expect(response).to redirect_to(edit_user_registration_url)
+      expect(response).to redirect_to(new_user_session_path)
 
       get :settings, params: { user_key: old_key }
+      expect(response).to redirect_to(new_user_session_path)
+      expect(flash[:alert]).to include('no longer works')
+    end
+
+    it 'sends someone with no link at all to their own settings' do
+      get :settings
+
       expect(response).to redirect_to(edit_user_registration_url)
     end
 
@@ -326,6 +346,35 @@ RSpec.describe RegistrationsController, type: :controller do
       get :delete_account
       expect(response).to have_http_status(:ok)
       expect(response.body).to match(/delete your account/i)
+    end
+
+    it "says a subscription billed at Gumroad or PayPal will need cancelling there" do
+      { "PRO Monthly Gumroad" => "Gumroad", "PRO Yearly PayPal" => "PayPal" }.each do |plan, service|
+        sign_in FactoryBot.create(:user, plan: plan)
+        get :delete_account
+        text = Nokogiri::HTML(response.body).at_css("[role=alert]").text.squish
+
+        expect(text).to eq("You will need to cancel your paid subscription separately at #{service} if billing is active there.")
+      end
+    end
+
+    it "says a Stripe plan with no customer on file may need cancelling, and nothing when there is one" do
+      sign_in FactoryBot.create(:user, plan: "PRO Monthly PayHere", stripe_id: nil)
+      get :delete_account
+      expect(Nokogiri::HTML(response.body).at_css("[role=alert]").text.squish).to start_with("You may need to cancel your paid subscription separately at Stripe")
+
+      linked = FactoryBot.create(:user, plan: "PRO Monthly PayHere")
+      linked.update_column(:stripe_id, "cus_123")
+      sign_in linked
+      get :delete_account
+      expect(response.body).not_to include("cancel your paid subscription")
+    end
+
+    it "says nothing about cancelling when the plan has no billing service" do
+      sign_in FactoryBot.create(:user, plan: "PRO Forever")
+      get :delete_account
+
+      expect(response.body).not_to include("cancel your paid subscription")
     end
   end
 

@@ -54,6 +54,11 @@ class RegistrationsController < Devise::RegistrationsController
     if !user_signed_in? && user.present? # allow unsubscribing without logging in
       cookies.permanent[:viewed_settings] = true
       render 'devise/registrations/settings'
+    elsif !user_signed_in? && (params[:token].present? || params[:user_key].present?)
+      # The link didn't lead to an account: say so, where a bare redirect to
+      # the settings page would only show "You must be logged in".
+      store_location_for(:user, edit_user_registration_path)
+      redirect_to new_user_session_path, alert: 'That settings link no longer works. Log in to change your email settings.'
     else
       redirect_to edit_user_registration_path
     end
