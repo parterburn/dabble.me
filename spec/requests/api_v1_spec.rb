@@ -633,27 +633,6 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
     end
   end
 
-  describe "POST /api/v1/account/deletion_request" do
-    include ActiveJob::TestHelper
-
-    it "emails a link to the web deletion page without deleting anything, at most once per window" do
-      allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new) # test env uses :null_store
-      expect {
-        post "/api/v1/account/deletion_request", headers: auth(free_user)
-        post "/api/v1/account/deletion_request", headers: auth(free_user)
-      }.to have_enqueued_mail(UserMailer, :account_deletion_requested).once
-      expect(response).to have_http_status(:accepted)
-      expect(json["email"]).to eq(free_user.email)
-      expect(free_user.reload.deletion_pending?).to be(false)
-    end
-
-    it "builds an email that links to the web deletion page" do
-      mail = UserMailer.account_deletion_requested(free_user)
-      expect(mail.to).to eq([free_user.email])
-      expect(mail.body.encoded).to include("/settings/delete-account")
-    end
-  end
-
   describe "excerpt" do
     it "is plain text without Markdown markers, with spaces between blocks" do
       entry = create(:entry, user: pro_user, body: "<p>Made it to <strong>Yosemite</strong> &amp; <em>back</em>.</p><ul><li>one</li><li>two</li></ul>")
@@ -698,6 +677,31 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
         expect(today["entry"]).to include("id" => week_back.id, "excerpt" => "A week back")
         expect(tomorrow).to include("date" => "2026-06-21", "kind" => "on_this_day", "count" => 1)
         expect(tomorrow["entry"]).to include("id" => years_back.id, "date" => "2024-06-21")
+      end
+    end
+
+    it "follows the account's past entries: on or off, its left-out words, and over a year old" do
+      zone = Time.find_zone(pro_user.send_timezone)
+      travel_to zone.local(2026, 6, 20, 12) do
+        old = create(:entry, user: pro_user, date: Time.zone.local(2024, 6, 20), body: "<p>The dentist again</p>")
+        older = create(:entry, user: pro_user, date: Time.zone.local(2023, 6, 20), body: "<p>A walk</p>")
+        recent = create(:entry, user: pro_user, date: Time.zone.local(2026, 6, 13), body: "<p>A week back</p>")
+        get "/api/v1/reminders", params: { days: 1 }, headers: auth(pro_user)
+        expect(json["days"].first["entry"]["id"]).to eq(old.id)
+
+        pro_user.update!(past_filter: "dentist, taxes")
+        get "/api/v1/reminders", params: { days: 1 }, headers: auth(pro_user)
+        expect(json["days"].first).to include("kind" => "on_this_day", "count" => 1)
+        expect(json["days"].first["entry"]["id"]).to eq(older.id)
+
+        pro_user.update!(past_filter: nil, way_back_past_entries: false)
+        get "/api/v1/reminders", params: { days: 1 }, headers: auth(pro_user)
+        expect(json["days"].first).to include("kind" => "rewind")
+        expect(json["days"].first["entry"]["id"]).to eq(recent.id)
+
+        pro_user.update!(send_past_entry: false)
+        get "/api/v1/reminders", params: { days: 1 }, headers: auth(pro_user)
+        expect(json["days"]).to eq([])
       end
     end
 

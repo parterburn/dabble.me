@@ -7,7 +7,7 @@ here="$(cd "$(dirname "$0")" && pwd)"
 shots="$(cd "$here/../../iPhone 6.3in" && pwd)"
 out="$(cd "$here/.." && pwd)"
 for t in header search; do
-  sed -e "s|TODAY|$shots/01-today.png|; s|JOURNAL|$shots/02-journal.png|; s|ENTRY|$shots/03-entry.png|; s|WRITE|$shots/04-write.png|" "$here/$t.html" > "$here/.$t.filled.html"
+  sed -e "s|TODAY|$shots/01-today.png|; s|JOURNAL|$shots/02-journal.png|; s|ENTRY|$shots/03-entry.png|; s|WRITE|$shots/04-write.png|; s|PHOTOS|$shots/05-photos.png|; s|STATS|$shots/06-stats.png|" "$here/$t.html" > "$here/.$t.filled.html"
 done
 chrome="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 render() { "$chrome" --headless=new --hide-scrollbars --force-device-scale-factor=1 --virtual-time-budget=8000 \

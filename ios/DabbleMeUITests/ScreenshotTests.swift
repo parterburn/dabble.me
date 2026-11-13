@@ -9,7 +9,8 @@ final class ScreenshotTests: XCTestCase {
         guard let dir = env["DABBLE_SCREENSHOT_DIR"], let token = env["DABBLE_TOKEN"] else {
             throw XCTSkip("Screenshots are opt-in: set TEST_RUNNER_DABBLE_SCREENSHOT_DIR and TEST_RUNNER_DABBLE_TOKEN")
         }
-        let photos = [1043, 1060].map { "https://picsum.photos/id/\($0)/2400/1800" }.joined(separator: ",")
+        let photos = ["1426604966848-d7adac402bff", "1442512595331-e89e73853f31"]
+            .map { "https://images.unsplash.com/photo-\($0)?w=2400&h=1800&fit=crop&fm=jpg&q=80" }.joined(separator: ",")
 
         let app = XCUIApplication()
         app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", "http://localhost:3000",
@@ -63,11 +64,9 @@ final class ScreenshotTests: XCTestCase {
         } else {
             app.tap()
         }
-        // Open the photo drawer from the stack, so the shot shows the photos.
+        // Open the photo drawer from the stack, so the shot shows the photos (the bar and its
+        // rows sit on the keyboard, so the keyboard stays up).
         app.buttons["Photos"].tap()
-        // Drag the text down into the keyboard to hide it, so the whole entry shows.
-        editor.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
-            .press(forDuration: 0.1, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.98)))
         sleep(1)
         shot("04-write")
         app.buttons["Cancel"].tap()

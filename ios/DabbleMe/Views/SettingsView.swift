@@ -1,5 +1,6 @@
 import StoreKit
 import SwiftUI
+import UIKit
 
 struct SettingsView: View {
     @Environment(AppModel.self) private var model
@@ -7,22 +8,18 @@ struct SettingsView: View {
     @Environment(\.openURL) private var openURL
     @State private var confirmingSignOut = false
     @State private var confirmingDeletion = false
-    @State private var deletionEmail: String?
-    @State private var deletionError: String?
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.system
     @AppStorage(ReminderSettings.enabledKey) private var dailyReminder = false
     /// The time set for it, or `followsEmail` until one is: then it's the daily email's.
     @AppStorage(ReminderSettings.timeKey) private var reminderTime = ReminderSettings.followsEmail
     @AppStorage(ReminderSettings.emailTimeKey) private var emailTime = ReminderSettings.defaultTime
-    @AppStorage(ReminderSettings.previewsKey) private var reminderPreviews = true
-    @State private var notificationsDenied = false
+    @AppStorage(ReminderSettings.daysKey) private var reminderDays = EmailSchedule.allDays.joined(separator: ",")
+    /// The account's email schedule and past-entry choices, shared by the Reminders rows.
+    @State private var emailSchedule = EmailScheduleStore()
     @AppStorage(JournalIntelligence.enabledKey) private var onDeviceAI = true
     /// The plan links to dabble.me/subscribe only on the US App Store, where Apple allows links to
     /// buy outside the app (guideline 3.1.1(a), US storefront). Elsewhere it's plain text.
     @State private var canLinkToSubscribe = false
-    #if DEBUG
-    @State private var pendingReminders = 0
-    #endif
 
     var body: some View {
         NavigationStack {
@@ -150,15 +147,22 @@ struct SettingsView: View {
                         .confirmationDialog("Sign out of Dabble Me?", isPresented: $confirmingSignOut, titleVisibility: .visible) {
                             Button("Sign Out", role: .destructive) { Task { await model.signOut() } }
                         }
-                    Button("Delete Account…", role: .destructive) { confirmingDeletion = true }
-                        // Deleting takes three deliberate steps: confirm here, open the emailed link, then
-                        // confirm with your password on dabble.me (and it can still be undone for an hour).
-                        .confirmationDialog("Delete your Dabble Me account?", isPresented: $confirmingDeletion, titleVisibility: .visible) {
-                            Button("Email Me a Deletion Link", role: .destructive) { Task { await requestDeletion() } }
-                            Button("Cancel", role: .cancel) {}
-                        } message: {
-                            Text("We'll email you a link to finish on dabble.me, where you'll confirm with your password. You can export your entries there first.")
+                    // Deleting finishes on dabble.me (signed in there, confirmed with the password, and
+                    // it can still be undone for an hour), so this says what's about to happen, signs
+                    // the app out and hands over to the browser.
+                    Button(role: .destructive) { confirmingDeletion = true } label: {
+                        HStack {
+                            Text("Delete Account…")
+                            Spacer()
+                            ExternalLinkIcon()
                         }
+                    }
+                    .confirmationDialog("Delete your Dabble Me account?", isPresented: $confirmingDeletion, titleVisibility: .visible) {
+                        Button("Sign Out and Continue", role: .destructive) { Task { await continueDeletionInBrowser() } }
+                        Button("Cancel", role: .cancel) {}
+                    } message: {
+                        Text("You'll be signed out of the app, and your browser will open dabble.me, where you finish deleting your account with your password. You can export your entries there first.")
+                    }
                 } footer: {
                     if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
                         Text("Dabble Me for iOS \(version)")
@@ -169,89 +173,30 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(removing: .title) // the heading in the list is the title
             .toolbarVisibility(.hidden, for: .navigationBar) // like Today: no empty bar above it
-            .task { notificationsDenied = await ReminderScheduler.shared.isDenied() }
             .task { canLinkToSubscribe = await Storefront.current?.countryCode == "USA" }
-            .onChange(of: dailyReminder) { _, on in Task { await remindersChanged(turnedOn: on) } }
-            .onChange(of: reminderTime) { Task { await ReminderScheduler.shared.reschedule(for: model) } }
-            .onChange(of: reminderPreviews) { Task { await ReminderScheduler.shared.reschedule(for: model) } }
-            .alert("Check your email", isPresented: .present($deletionEmail)) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text("We sent a link to \(deletionEmail ?? "your email") to finish deleting your account. Nothing has been deleted yet.")
-            }
-            .alert("Couldn't send the email", isPresented: .present($deletionError)) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(deletionError ?? "")
-            }
         }
     }
 }
 
 private extension SettingsView {
-    // MARK: - Reminders (one a day, for everyone; On This Day entries in it are PRO)
+    // MARK: - Reminders (each on a page of its own)
 
     @ViewBuilder
     var remindersSection: some View {
-        let isPro = model.me?.isPro == true
         Section {
-            do {
-                Toggle("Daily Reminder", isOn: $dailyReminder)
-                    #if DEBUG
-                    // For the reminders UI test only: an invisible count of what's scheduled.
-                    .background {
-                        Color.clear.frame(width: 1, height: 1)
-                            .accessibilityElement()
-                            .accessibilityLabel("\(pendingReminders) reminders scheduled")
-                            .task(id: "\(dailyReminder)\(reminderTime)\(reminderPreviews)") {
-                                try? await Task.sleep(for: .seconds(3))
-                                pendingReminders = await ReminderScheduler.shared.pendingCount()
-                            }
-                    }
-                    #endif
-                if dailyReminder {
-                    // The daily email's time until another is picked here.
-                    DatePicker("Time", selection: Binding(
-                        get: { ReminderSettings.date(fromMinutes: reminderTime >= 0 ? reminderTime : emailTime) },
-                        set: { reminderTime = ReminderSettings.minutes(from: $0) }), displayedComponents: .hourAndMinute)
-                    Toggle("Show Entry Previews", isOn: $reminderPreviews)
-                }
-                EmailScheduleRow()
-                if notificationsDenied {
-                    Button("Turn On Notifications in Settings", systemImage: "bell.slash") {
-                        if let url = URL(string: UIApplication.openNotificationSettingsURLString) { openURL(url) }
-                    }
-                }
+            // Each kind on a page of its own; then what either can look back on.
+            NavigationLink {
+                PushReminderView()
+            } label: {
+                LabeledContent("Push", value: ReminderSettings.summary(enabled: dailyReminder, days: ReminderSettings.days(from: reminderDays),
+                                                                       minutes: reminderTime >= 0 ? reminderTime : emailTime))
             }
+            EmailScheduleRow(store: emailSchedule)
+            PastEntriesRow(store: emailSchedule)
         } header: {
             Text("Reminders")
-        } footer: {
-            VStack(alignment: .leading, spacing: 6) {
-                if dailyReminder {
-                    Text(reminderPreviews
-                        ? "One notification a day, with a past entry to look back on: the start of it and its photo, which can be seen without unlocking your phone. Skipped once you've written that day."
-                        : "One notification a day, saying there's a past entry to look back on, without showing it. Skipped once you've written that day.")
-                }
-                if !isPro {
-                    Text("Choosing your email's days is part of Dabble Me PRO.")
-                }
-            }
         }
-    }
-
-    func minutesBinding(_ minutes: Binding<Int>) -> Binding<Date> {
-        Binding(get: { ReminderSettings.date(fromMinutes: minutes.wrappedValue) },
-                set: { minutes.wrappedValue = ReminderSettings.minutes(from: $0) })
-    }
-
-    func remindersChanged(turnedOn: Bool) async {
-        if turnedOn, !(await ReminderScheduler.shared.requestPermission()) {
-            notificationsDenied = true
-            dailyReminder = false
-            return
-        }
-        notificationsDenied = false
-        await ReminderScheduler.shared.reschedule(for: model)
+        .task { await emailSchedule.load(with: model) }
     }
 
     // MARK: - On-device AI
@@ -293,12 +238,10 @@ private extension SettingsView {
         }
     }
 
-    func requestDeletion() async {
-        do {
-            deletionEmail = try await model.requestAccountDeletion()
-        } catch {
-            deletionError = error.localizedDescription
-        }
+    /// The browser itself, not the page inside the app: that one's signed out along with the app.
+    func continueDeletionInBrowser() async {
+        await model.signOut()
+        await UIApplication.shared.open(AppConfig.webURL("settings/delete-account"))
     }
 }
 

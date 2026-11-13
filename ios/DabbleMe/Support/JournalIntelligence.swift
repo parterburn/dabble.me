@@ -505,6 +505,114 @@ enum JournalIntelligence {
         text.count > limit ? String(text.prefix(limit)) + "…" : text
     }
 
+    // MARK: - The year's Rewind
+
+    /// The lines Apple Intelligence adds to a year's Rewind: what its biggest month held, a phrase
+    /// for each person named most, the line of the year (picked from the writer's own sentences,
+    /// never written), and the year in six words. Each is checked against the entries it came
+    /// from and left out if it doesn't hold up or the model won't answer. `progress` goes 0…1.
+    static func rewindStory(for rewind: Rewind, progress: @MainActor (Double) -> Void) async -> RewindStory {
+        var story = RewindStory()
+        let people = Array(rewind.people.prefix(3))
+        let steps = Double(3 + people.count)
+        var done = 0.0
+        func step() { done += 1; progress(done / steps) }
+
+        func dated(_ entries: [Rewind.Entry], limit: Int) -> String {
+            let each = max(180, limit / max(entries.count, 1))
+            return clipped(entries.map { "\($0.day.formatted(.dateTime.month(.abbreviated).day())): \(clipped($0.text, limit: each))" }
+                .joined(separator: "\n"), limit: limit)
+        }
+
+        if let month = rewind.biggestMonth {
+            let source = dated(rewind.entries(inMonth: month.month), limit: 2600)
+            let reply = try? await respond(
+                instructions: """
+                You write one line for a year in review of someone's private journal. From their entries for one \
+                month, write a single sentence of at most 22 words, speaking to the writer as "you", that names two \
+                or three specific things that happened that month. Use only what the entries say: never add a \
+                person, place or event that isn't in them. Plain and warm, no exclamation marks, no preamble, no \
+                quotation marks.
+                """,
+                journalText: true, prompt: "Entries from \(Rewind.monthName(month.month)):\n\(source)", temperature: 0.5)
+            if let line = reply.map(oneLine), line.count <= 220, namesAreGrounded(line, in: source) {
+                story.monthCaption = line.prefix(1).uppercased() + line.dropFirst()
+            }
+        }
+        step()
+
+        for person in people {
+            let source = dated(rewind.entries(mentioning: person), limit: 2200)
+            let reply = try? await respond(
+                instructions: """
+                You write a short caption for a year in review of someone's private journal. From the entries \
+                that mention one person, write one phrase of at most 10 words about what that person did or what \
+                the year was like for them, starting with a verb in the past tense, like "Turned 8 and went all \
+                in on football." Do not start with their name. Use only what the entries say. No preamble, no \
+                quotation marks.
+                """,
+                journalText: true, prompt: "The person: \(person.name)\n\nEntries:\n\(source)", temperature: 0.5)
+            if let line = reply.map(oneLine), line.count <= 90, namesAreGrounded(line, in: source) {
+                story.peopleCaptions[person.id] = line
+            }
+            step()
+        }
+
+        let candidates = rewind.lineCandidates()
+        if candidates.count >= 3 {
+            let list = candidates.enumerated().map { "\($0.offset + 1). \($0.element.text)" }.joined(separator: "\n")
+            let reply = try? await respond(
+                instructions: """
+                These are numbered sentences from someone's private journal this year. Reply with only the number \
+                of the one that best captures the heart of their year: a realization, something they're grateful \
+                for, or something they'd want to remember. Just the number.
+                """,
+                journalText: true, prompt: list, temperature: 0.2)
+            if let number = reply.flatMap({ $0.split(whereSeparator: { !$0.isNumber }).first }).flatMap({ Int($0) }),
+               candidates.indices.contains(number - 1) {
+                story.line = candidates[number - 1].text
+                story.lineDay = candidates[number - 1].day.iso
+            }
+        }
+        step()
+
+        var notes: [String] = []
+        if let caption = story.monthCaption, let month = rewind.biggestMonth { notes.append("\(Rewind.monthName(month.month)): \(caption)") }
+        for person in people { notes.append("\(person.name): \(story.peopleCaptions[person.id] ?? "in \(person.count) entries")") }
+        if !rewind.places.isEmpty { notes.append("Places: \(rewind.places.prefix(5).map(\.name).joined(separator: ", "))") }
+        if !rewind.hashtags.isEmpty { notes.append("Hashtags: \(rewind.hashtags.prefix(5).map(\.tag).joined(separator: ", "))") }
+        if let line = story.line { notes.append("They wrote: \(line)") }
+        if notes.count >= 2 {
+            let source = notes.joined(separator: "\n")
+            // Another go if the first doesn't hold up.
+            for _ in 0..<3 where story.sixWords == nil {
+                let reply = try? await respond(
+                    instructions: """
+                    From notes about someone's year in their journal, write exactly six words that sum the year up, \
+                    as two or three very short phrases each ending in a period, like "Gate open. Boys outside. \
+                    Grateful, mostly." Count the words: there must be six. Use only things in the notes. Reply with \
+                    the six words and nothing else.
+                    """,
+                    journalText: true, prompt: source, temperature: 0.8)
+                // Each short phrase starts with a capital, so they're checked one at a time: a name
+                // inside one still has to be in the notes.
+                // Asked for six; it counts loosely, so four to eight are taken (the card says "a few").
+                if let line = reply.map(oneLine), (4...8).contains(Rewind.wordCount(in: line)),
+                   line.split(separator: ".").allSatisfy({ namesAreGrounded($0.trimmingCharacters(in: .whitespaces), in: source) }) {
+                    story.sixWords = line
+                }
+            }
+        }
+        step()
+        return story
+    }
+
+    /// A reply as one clean line: no wrapping quotes, no line breaks.
+    private static func oneLine(_ reply: String) -> String {
+        reply.split(whereSeparator: \.isNewline).first.map(String.init)?
+            .trimmingCharacters(in: CharacterSet(charactersIn: "\"“”' ").union(.whitespaces)) ?? ""
+    }
+
     /// `journalText`: the prompt is the writer's own entry, which can be about hard things (a fight,
     /// a frustrating night with the kids). Apple's default guardrails reject much of that outright, so
     /// those use the guardrails Apple provides for working with the user's own, possibly sensitive,

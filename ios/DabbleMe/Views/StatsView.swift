@@ -13,6 +13,8 @@ struct StatsView: View {
             if let stats {
                 ScrollView {
                     VStack(alignment: .leading, spacing: 28) {
+                        // In its season (November to January): the year's Rewind, or what it takes.
+                        RewindCard(stats: stats, today: model.today?.day ?? JournalDay(localDate: .now))
                         tiles(stats)
                         if showsOverview(stats) {
                             StatsOverview(stats: stats, today: model.today?.day ?? JournalDay(localDate: .now))

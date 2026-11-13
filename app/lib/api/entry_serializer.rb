@@ -33,6 +33,8 @@ module Api
         image_url: entry.display_image_url,
         image_processing: entry.uploading_image?,
         hashtags: entry.hashtags || [],
+        # For the app's year in review (the whole entry's words, where preview_text is capped).
+        word_count: entry.word_count.to_i,
         # Hashtags with a date set on dabble.me (birthdays, anniversaries), and how long it had
         # been on this entry's day, worded like the web's tag tooltip. The timeline shows these.
         dated_hashtags: dated_hashtags,

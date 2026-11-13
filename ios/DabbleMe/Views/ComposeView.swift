@@ -914,7 +914,9 @@ private struct LinkAddressField: UIViewRepresentable {
         field.autocapitalizationType = .none
         field.autocorrectionType = .no
         field.spellCheckingType = .no
-        field.keyboardType = .URL
+        // The ordinary keyboard, not the URL one: swapping keyboards as the field took over could
+        // leave the entry with the typing while the field looked ready for it.
+        field.keyboardType = .default
         field.returnKeyType = .done
         field.accessibilityLabel = "Link address"
         field.delegate = context.coordinator
