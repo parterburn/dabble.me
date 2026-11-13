@@ -180,7 +180,7 @@ struct JournalView: View {
                             .buttonBorderShape(.capsule)
                             .controlSize(.large)
                             .fontWeight(.medium)
-                            .padding(.top, 10)
+                            .padding(.top, 21) // as far under the title as the icon is over it
                     }
                 }
                 .refreshable { await model.refresh() }
