@@ -28,7 +28,9 @@
 
     <% if pro_cancel_warning %>
       <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="alert">
-        You may need to cancel your paid subscription separately at
+        <%# Gumroad and PayPal bill on their own, so the account must be cancelled there.
+            A Stripe plan with no customer on file may have nothing left to cancel. %>
+        You <%= current_user.plan_type_unlinked == "Stripe" ? "may" : "will" %> need to cancel your paid subscription separately at
         <strong class="font-semibold"><%= current_user.plan_type_unlinked %></strong>
         if billing is active there.
       </div>

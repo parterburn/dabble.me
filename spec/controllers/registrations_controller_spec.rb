@@ -328,12 +328,26 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(response.body).to match(/delete your account/i)
     end
 
-    it "says a subscription billed elsewhere may need cancelling there" do
-      sign_in FactoryBot.create(:user, plan: "PRO Monthly Gumroad")
-      get :delete_account
-      text = Nokogiri::HTML(response.body).at_css("[role=alert]").text.squish
+    it "says a subscription billed at Gumroad or PayPal will need cancelling there" do
+      { "PRO Monthly Gumroad" => "Gumroad", "PRO Yearly PayPal" => "PayPal" }.each do |plan, service|
+        sign_in FactoryBot.create(:user, plan: plan)
+        get :delete_account
+        text = Nokogiri::HTML(response.body).at_css("[role=alert]").text.squish
 
-      expect(text).to eq("You may need to cancel your paid subscription separately at Gumroad if billing is active there.")
+        expect(text).to eq("You will need to cancel your paid subscription separately at #{service} if billing is active there.")
+      end
+    end
+
+    it "says a Stripe plan with no customer on file may need cancelling, and nothing when there is one" do
+      sign_in FactoryBot.create(:user, plan: "PRO Monthly PayHere", stripe_id: nil)
+      get :delete_account
+      expect(Nokogiri::HTML(response.body).at_css("[role=alert]").text.squish).to start_with("You may need to cancel your paid subscription separately at Stripe")
+
+      linked = FactoryBot.create(:user, plan: "PRO Monthly PayHere")
+      linked.update_column(:stripe_id, "cus_123")
+      sign_in linked
+      get :delete_account
+      expect(response.body).not_to include("cancel your paid subscription")
     end
 
     it "says nothing about cancelling when the plan has no billing service" do
