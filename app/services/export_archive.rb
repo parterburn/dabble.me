@@ -9,8 +9,11 @@ class ExportArchive
 
   Result = Struct.new(:entry_count, :image_count, :skipped_image_count, keyword_init: true)
 
-  def initialize(entries)
+  # description says what the export holds ("Entries from 2021"); the
+  # documents carry it under their title.
+  def initialize(entries, description: nil)
     @entries = entries.unscope(:order)
+    @description = description
   end
 
   def write_to(path)
@@ -37,11 +40,11 @@ class ExportArchive
       end
 
       zip.put_next_entry("journal.md")
-      zip.write(ExportMarkdown.header)
+      zip.write(ExportMarkdown.header(@description))
       each_entry { |entry| zip.write(ExportMarkdown.entry(entry, image: written[entry.id])) }
 
       zip.put_next_entry("journal.html")
-      zip.write(ExportHtml.header(result.entry_count))
+      zip.write(ExportHtml.header(result.entry_count, @description))
       each_entry(newest_first: true) { |entry| zip.write(ExportHtml.entry(entry, image: written[entry.id])) }
       zip.write(ExportHtml.footer)
 

@@ -8,8 +8,12 @@ module ExportMarkdown
 
   module_function
 
-  def header
-    "# Dabble Me journal\n\n"
+  # description: what the document holds when it isn't the whole journal,
+  # such as "Entries from 2021".
+  def header(description = nil)
+    text = +"# Dabble Me journal\n\n"
+    text << "#{description}\n\n" if description.present? && description != "All entries"
+    text
   end
 
   # image is the photo's path inside a ZIP, when there is one to point to.
@@ -23,9 +27,9 @@ module ExportMarkdown
 
   # The whole document in pieces, oldest entry first, read in batches so a
   # long journal is never all in memory.
-  def stream(entries)
+  def stream(entries, description: nil)
     Enumerator.new do |yielder|
-      yielder << header
+      yielder << header(description)
       ids = entries.unscope(:order).order(:date, :id).pluck(:id)
       ids.each_slice(BATCH_SIZE) do |slice|
         by_id = Entry.unscoped.where(id: slice).index_by(&:id)

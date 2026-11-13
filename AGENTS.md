@@ -89,7 +89,7 @@ If Redis loses cron keys while Sidekiq stays up, reload from disk without restar
 
 ### Encryption at rest
 
-Journal text and account secrets are encrypted with Active Record Encryption: `entries.body`, `original_email_body` and `original_email`; `users.user_key` and `image_key` (deterministic, so exact lookups work), `first_name`, `last_name`, `past_filter`, `otp_auth_secret` and `otp_recovery_secret`; `hashtags.tag`.
+Journal text and account secrets are encrypted with Active Record Encryption: `entries.body`, `original_email_body` and `original_email`; `users.user_key` and `image_key` (deterministic, so exact lookups work), `first_name`, `last_name`, `past_filter`, `otp_auth_secret` and `otp_recovery_secret`; `hashtags.tag`; `exports.search_term`.
 
 - Never read these columns in SQL (`LIKE`, regex, `ORDER BY`, `= ''`). Match entry text with `Entry::Matcher`; compare and sort the others in Ruby. `pluck` decrypts.
 - Development and test use fixed, insecure fallback keys, so no setup is needed. Production needs the three key variables; `EncryptionCheck.verify!` stops a web or worker process that lacks them or holds different keys from the process that started first.
@@ -117,7 +117,7 @@ Admin pages (`/admin/*` and `/sidekiq`) have two extra gates on top of `users.ad
 
 ### Exports
 
-`entries#export` with `.md` streams the journal as Markdown on the spot (`ExportMarkdown`). Any other request becomes an `Export`, for everything or for one year or search: `ExportEntriesJob` builds a ZIP with `ExportArchive` (`journal.html` from `ExportHtml`, `journal.md`, `entries.json`, `images/`), `ExportStore` uploads it privately, and `UserMailer.export_ready` emails a link. Asking for the same thing again within `Export::LIMIT_PERIOD` (12 hours) downloads the last export; `exports.scope` says what an export holds (`all`, `year:2021`, or `search:` with a keyed digest, never the search words). A person can start `Export::HOURLY_LIMIT` (10) exports an hour.
+The Export page is `/entries/export` (`ExportsController#new`, linked from the account menu); with `.md` it streams the journal as Markdown on the spot (`ExportMarkdown`). Its form posts back to the same path (`#create`): `download=markdown` streams the Markdown, anything else starts an `Export`, for everything or for one year or search. `ExportEntriesJob` builds a ZIP with `ExportArchive` (`journal.html` from `ExportHtml`, `journal.md`, `entries.json`, `images/`), `ExportStore` uploads it privately, and `UserMailer.export_ready` emails a link. Asking for the same thing again within `Export::LIMIT_PERIOD` (12 hours) downloads the last export; `exports.scope` says what an export holds (`all`, `year:2021`, or `search:` with a keyed digest). The search words are kept in `exports.search_term`, encrypted, only to name the file and title its documents. A person can start `Export::HOURLY_LIMIT` (10) exports an hour.
 
 - The emailed link goes to `ExportsController`, which needs a sign-in and only shows an export to its owner. `download` redirects to a storage link that lasts `Export::LINK_LIFETIME`. Never attach an export to an email or link to its file directly.
 - Exports are private: stored under `exports/` with no public ACL, in `AWS_EXPORTS_BUCKET` when set (`AWS_EXPORTS_REGION` if its region differs). Don't write them under `uploads/`, which is served publicly.

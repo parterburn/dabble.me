@@ -253,7 +253,11 @@ module ApplicationHelper
           },
           {
             q: "Can I import from OhLife or other services?",
-            a: "Yes! PRO members can visit the <a href='#{Rails.application.routes.url_helpers.import_path}' class='text-accent hover:text-primary underline'>Importer</a> to import entries from OhLife, Day One, Ahhlife, and Trailmix.life."
+            a: "Yes! PRO members can visit <a href='#{Rails.application.routes.url_helpers.import_path}' class='text-accent hover:text-primary underline'>Import Entries</a> to bring in entries from Day One, OhLife, Ahhlife, and Trailmix.life."
+          },
+          {
+            q: "How do I export my entries?",
+            a: "Visit <a href='#{Rails.application.routes.url_helpers.export_entries_path}' class='text-accent hover:text-primary underline'>Export Entries</a>, under your account menu. You can export everything or one year, as a ZIP with your journal as a web page, Markdown and JSON plus your photos, or as a single Markdown file. Exporting is free on every plan."
           },
           {
             q: "Can I get a refund?",
@@ -317,7 +321,7 @@ module ApplicationHelper
           },
           {
             q: "What happens to my data if I delete my account?",
-            a: "<div class='mt-2'>If you <em>delete</em> your account, all of your entries and your account data will be permanently deleted from active systems within a reasonable period, subject to backup retention and legal requirements.</div><div class='mt-2'>Delete your account <a href='#{Rails.application.routes.url_helpers.delete_account_path}' class='text-accent hover:text-primary underline'>here</a>.</div><div class='mt-2'>You can export your data at any time from the <a href='#{Rails.application.routes.url_helpers.settings_path(anchor: 'export')}' class='text-accent hover:text-primary underline'>settings page</a>.</div>"
+            a: "<div class='mt-2'>If you <em>delete</em> your account, all of your entries and your account data will be permanently deleted from active systems within a reasonable period, subject to backup retention and legal requirements.</div><div class='mt-2'>Delete your account <a href='#{Rails.application.routes.url_helpers.delete_account_path}' class='text-accent hover:text-primary underline'>here</a>.</div><div class='mt-2'>You can export your data at any time from the <a href='#{Rails.application.routes.url_helpers.export_entries_path}' class='text-accent hover:text-primary underline'>Export Entries</a> page.</div>"
           },
           {
             q: "I'm new and didn't get my scheduled email. How come?",

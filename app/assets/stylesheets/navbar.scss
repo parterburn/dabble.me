@@ -241,3 +241,25 @@
     }
   }
 }
+
+// Phones: a rule above Settings sets the account links apart from the
+// journal links before them in the collapsed menu.
+@media (max-width: 767px) {
+  .navbar-default .navbar-nav > li.s-nav-account {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+  }
+
+  // Bootstrap caps an open menu at 340px and scrolls inside it, which hid
+  // Logout once the menu grew. The navbar scrolls with the page on phones, so
+  // the menu can be as tall as its links.
+  .navbar-fixed-top .navbar-collapse {
+    max-height: none;
+  }
+
+  // Pinned in the Home Screen web app, so there it stops at the screen's edge.
+  .web-app .navbar-fixed-top .navbar-collapse {
+    max-height: calc(100vh - 51px);
+  }
+}
