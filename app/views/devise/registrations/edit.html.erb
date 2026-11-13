@@ -11,12 +11,12 @@
   <div class="space-y-6">
     <% if current_user.is_pro? %>
       <section class="card p-6 sm:p-8">
-        <span class="inline-flex items-center rounded-full bg-accent px-3 py-1 text-xs font-medium text-cream-100">PRO</span>
-        <p class="mt-3 text-primary">
-          Thanks for subscribing to <%= link_to current_user.plan_name, subscribe_path, class: "text-link font-medium" %>.
+        <p class="text-primary">
+          Thanks for subscribing to
+          <span class="mx-0.5 inline-flex items-center rounded-full bg-accent px-3 py-1 align-middle text-xs font-medium text-cream-100">PRO</span>
         </p>
         <% if current_user.plan_type_unlinked.present? %>
-          <p class="mt-1 text-sm text-muted">
+          <p class="mt-2 text-sm text-muted">
             Manage your subscription and payment history at <%= link_to current_user.plan_type_unlinked, billing_path, target: :_blank, class: "text-link" %>.
           </p>
         <% end %>
