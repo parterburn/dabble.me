@@ -34,6 +34,10 @@ struct JournalView: View {
     @State private var barChanged = Date.distantPast
     @State private var isDragging = false
     @State private var handledStatsRequest = 0
+    /// The list of the Journal's views is open under the title.
+    @State private var choosingMode = false
+    /// Bumped to scroll the timeline to its oldest entry (a long press on the "me" mark).
+    @State private var scrollToEnd = 0
     /// Bumped to scroll the timeline to its newest entry (after the List view is back on screen).
     @State private var scrollToTop = 0
     /// Tapping the timeline scrubber: a calendar of written days, and the day picked from it.
@@ -57,23 +61,12 @@ struct JournalView: View {
                     } else {
                         ToolbarItem(placement: .topBarLeading) { brandMark }
                     }
-                    // The title is the menu of the Journal's views, a size up from a plain title
-                    // with a chevron in the tint, so it reads as something to open.
+                    // The title opens the Journal's views: a size up from a plain title, with a
+                    // chevron in the tint, so it reads as something to open. A tap opens them, and so
+                    // does pulling down on it. (The app's own list, not a system menu: that can't be
+                    // opened by a pull, or show the view that's on in olive.)
                     ToolbarItem(placement: .principal) {
-                        Menu {
-                            // Buttons, not a Picker: no checkmark. The view that's showing has its
-                            // filled icon, in olive (a menu colours an icon, not a row's words).
-                            ForEach(JournalMode.allCases) { option in
-                                Button { mode = option } label: {
-                                    Label {
-                                        Text(option.rawValue)
-                                    } icon: {
-                                        option == mode ? Self.selectedIcon(option.icon + "-full") : appIcon(option.icon)
-                                    }
-                                }
-                                .accessibilityAddTraits(option == mode ? .isSelected : [])
-                            }
-                        } label: {
+                        Button { choosingMode = true } label: {
                             HStack(spacing: 7) {
                                 Text(mode.rawValue)
                                     .font(.title3.weight(.semibold))
@@ -84,10 +77,14 @@ struct JournalView: View {
                                     .frame(width: 12, height: 12)
                                     .foregroundStyle(.tint)
                             }
-                            .padding(.horizontal, 6)
+                            .frame(minWidth: 190, minHeight: 44)
                             .contentShape(.rect)
                         }
                         .buttonStyle(.plain)
+                        .simultaneousGesture(DragGesture(minimumDistance: 12).onEnded { drag in
+                            if drag.translation.height > 16, abs(drag.translation.width) < 60 { choosingMode = true }
+                        })
+                        .popover(isPresented: $choosingMode, arrowEdge: .top) { modeList }
                         .accessibilityLabel(mode.rawValue)
                         .accessibilityHint("Chooses another view of your journal")
                     }
@@ -131,10 +128,38 @@ struct JournalView: View {
         }
     }
 
-    /// A filled icon in the app's olive, as an image a menu shows in its own colours.
-    private static func selectedIcon(_ name: String) -> Image {
-        guard let icon = UIImage(named: name), let olive = UIColor(named: "AccentColor") else { return appIcon(name) }
-        return Image(uiImage: icon.withTintColor(olive, renderingMode: .alwaysOriginal))
+    /// The Journal's views, in a popover under the title: the one showing in olive, with its
+    /// filled icon.
+    private var modeList: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(JournalMode.allCases) { option in
+                let isOn = option == mode
+                Button {
+                    choosingMode = false
+                    mode = option
+                } label: {
+                    HStack(spacing: 14) {
+                        appIcon(isOn ? option.icon + "-full" : option.icon)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 22, height: 22)
+                        Text(option.rawValue)
+                            .font(.body.weight(isOn ? .semibold : .regular))
+                        Spacer(minLength: 24)
+                    }
+                    .foregroundStyle(isOn ? AnyShapeStyle(.tint) : AnyShapeStyle(.primary))
+                    .padding(.horizontal, 20)
+                    .frame(height: 50)
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("JournalMode-\(option.rawValue)")
+                .accessibilityAddTraits(isOn ? .isSelected : [])
+            }
+        }
+        .padding(.vertical, 8)
+        .frame(minWidth: 210)
+        .presentationCompactAdaptation(.popover)
     }
 
     @ViewBuilder
@@ -218,6 +243,26 @@ struct JournalView: View {
                         proxy.scrollTo(first.id, anchor: .top)
                     } else {
                         proxy.scrollTo(PlaceholderID(month: month.key, index: 0), anchor: .top)
+                    }
+                }
+            }
+            .onChange(of: scrollToEnd) {
+                guard let month = model.months.last else { return }
+                @MainActor func toTheEnd() {
+                    if let last = model.monthEntries[month.key]?.last {
+                        proxy.scrollTo(last.id, anchor: .bottom)
+                    } else {
+                        proxy.scrollTo(PlaceholderID(month: month.key, index: max(month.count - 1, 0)), anchor: .bottom)
+                    }
+                }
+                withAnimation { toTheEnd() }
+                Task { @MainActor in
+                    await model.loadMonths(around: month.key)
+                    // Again once the rows on the way are their real heights: a long list's first
+                    // jump lands a little short of its end.
+                    for _ in 0..<2 {
+                        try? await Task.sleep(for: .milliseconds(450))
+                        toTheEnd()
                     }
                 }
             }
@@ -337,12 +382,28 @@ struct JournalView: View {
     }
 
     private var brandMark: some View {
-        Image("Logo")
-            .resizable()
-            .scaledToFit()
-            .frame(width: 44, height: 44) // the size of the + button opposite
-            .clipShape(.circle)
-            .accessibilityHidden(true)
+        // A button for the bar's sake (a bar gives its buttons their touches): a tap does nothing;
+        // held, it's the timeline from its other end, the oldest entry.
+        Button {} label: {
+            Image("Logo")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 44, height: 44) // the size of the + button opposite
+                .clipShape(.circle)
+                .contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+        .simultaneousGesture(LongPressGesture(minimumDuration: 0.6).onEnded { _ in
+            path = NavigationPath()
+            mode = .list
+            Task {
+                try? await Task.sleep(for: .milliseconds(80))
+                scrollToEnd += 1
+            }
+        })
+        .accessibilityIdentifier("JournalBrandMark")
+        .accessibilityLabel("Dabble Me")
+        .accessibilityHint("Touch and hold for your oldest entry")
     }
 
     private func startWriting() {

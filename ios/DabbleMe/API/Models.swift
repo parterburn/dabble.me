@@ -363,6 +363,8 @@ struct YearDays: Decodable, Sendable {
     let days: [String]
     /// The year's hashtags, most used first (nil from an older server).
     var topHashtags: [HashtagCount]? = nil
+    /// The days with a photo and its address (nil from an older server).
+    var photos: [String: String]? = nil
 }
 
 struct HashtagCount: Decodable, Sendable, Hashable, Identifiable {

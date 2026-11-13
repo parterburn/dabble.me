@@ -230,7 +230,7 @@ private struct YearSection: View {
                     Spacer(minLength: 8)
                     summary
                 }
-                WritingHeatmap(year: year, days: days ?? [], today: today, onSelect: { day in
+                WritingHeatmap(year: year, days: days ?? [], photos: loaded[year]?.photos ?? [:], today: today, onSelect: { day in
                     model.statsDay = StatsDay(day: day)
                 }, onWrite: write)
                 .id(year) // each year opens at its newest weeks
@@ -421,6 +421,8 @@ private struct StatTile: View {
 private struct WritingHeatmap: View {
     let year: Int
     let days: Set<String>
+    /// The days with a photo (YYYY-MM-DD) and its address: each shows as a thumbnail in its square.
+    var photos: [String: String] = [:]
     let today: JournalDay
     /// A day with an entry was tapped.
     let onSelect: (JournalDay) -> Void
@@ -505,6 +507,19 @@ private struct WritingHeatmap: View {
                                             if let day = week[index], day > today {
                                                 RoundedRectangle(cornerRadius: cell * 0.23)
                                                     .strokeBorder(Color.secondary.opacity(0.22), lineWidth: 1)
+                                            }
+                                        }
+                                        // A day with a photo: the photo, tiny (pinch for more of it).
+                                        .overlay {
+                                            if let day = week[index], let url = EntrySummary.thumbnailURL(photos[day.iso], width: 96) {
+                                                AsyncImage(url: url) { image in
+                                                    image.resizable().scaledToFill()
+                                                } placeholder: {
+                                                    Color.clear
+                                                }
+                                                .frame(width: cell, height: cell)
+                                                .clipShape(.rect(cornerRadius: cell * 0.23))
+                                                .allowsHitTesting(false)
                                             }
                                         }
                                         .frame(width: cell, height: cell)

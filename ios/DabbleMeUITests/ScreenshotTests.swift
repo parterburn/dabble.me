@@ -81,8 +81,7 @@ final class ScreenshotTests: XCTestCase {
             XCTAssertTrue(title.waitForExistence(timeout: 10))
             title.tap()
             // The menu's items, not the tab bar's buttons of the same name.
-        let inMenu = app.collectionViews.buttons[mode]
-        let item = inMenu.waitForExistence(timeout: 2) ? inMenu : app.buttons[mode].firstMatch
+        let item = app.buttons["JournalMode-\(mode)"]
             XCTAssertTrue(item.waitForExistence(timeout: 5))
             item.tap()
         }

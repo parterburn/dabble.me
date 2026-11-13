@@ -34,8 +34,7 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(title.waitForExistence(timeout: 10))
         title.tap()
         // The menu's items, not the tab bar's buttons of the same name.
-        let inMenu = app.collectionViews.buttons[mode]
-        let item = inMenu.waitForExistence(timeout: 2) ? inMenu : app.buttons[mode].firstMatch
+        let item = app.buttons["JournalMode-\(mode)"]
         XCTAssertTrue(item.waitForExistence(timeout: 5))
         item.tap()
     }
@@ -1140,15 +1139,30 @@ final class JournalViewsTests: XCTestCase {
         let title = app.navigationBars.buttons["Journal"]
         XCTAssertTrue(title.waitForExistence(timeout: 10))
         title.tap()
-        let photos = app.collectionViews.buttons["Photos"].exists ? app.collectionViews.buttons["Photos"] : app.buttons["Photos"].firstMatch
+        let photos = app.buttons["JournalMode-Photos"]
         XCTAssertTrue(photos.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["JournalMode-Journal"].isSelected, "The view that's showing is marked")
         sleep(1)
         snap("journal-menu-open")
         photos.tap()
         XCTAssertTrue(app.navigationBars.buttons["Photos"].waitForExistence(timeout: 10))
-        app.navigationBars.buttons["Photos"].tap()
+        // Pulling down on the title opens the list too.
+        let bar = app.navigationBars.buttons["Photos"]
+        bar.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            .press(forDuration: 0.05, thenDragTo: bar.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).withOffset(CGVector(dx: 0, dy: 60)))
+        XCTAssertTrue(app.buttons["JournalMode-Stats"].waitForExistence(timeout: 5), "A pull down opens the views")
+        XCTAssertTrue(app.buttons["JournalMode-Photos"].isSelected)
         sleep(1)
         snap("journal-menu-open-photos")
+        app.buttons["JournalMode-Journal"].tap()
+
+        // Held, the "me" mark goes to the journal's other end: its oldest entry.
+        XCTAssertTrue(app.navigationBars.buttons["Journal"].waitForExistence(timeout: 10))
+        app.buttons["JournalBrandMark"].press(forDuration: 1.2)
+        sleep(2)
+        snap("journal-oldest")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Moved into the new apartment")).firstMatch.waitForExistence(timeout: 10),
+                      "The oldest entry is in view")
     }
 
     /// Screenshots, for looking over: each of the Journal's views (and Today and Search) with an
