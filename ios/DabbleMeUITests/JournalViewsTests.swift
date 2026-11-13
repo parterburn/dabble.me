@@ -1165,6 +1165,36 @@ final class JournalViewsTests: XCTestCase {
                       "The oldest entry is in view")
     }
 
+    /// A long journal (1,500 entries, most of its months not loaded): holding the "me" mark
+    /// reaches the oldest entry, and the scrubber dragged to its foot does too.
+    /// TEST_RUNNER_DABBLE_BIG_TOKEN (a scratch account with 1,500 entries, numbered from the newest).
+    func testLongJournalJumpsToItsEnd() throws {
+        guard let big = ProcessInfo.processInfo.environment["DABBLE_BIG_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_BIG_TOKEN") }
+        let app = XCUIApplication()
+        app.launchArguments = ["-DabbleDebugAccessToken", big, "-DabbleServerOverride", testServer]
+        app.launch()
+        tab(app, "Journal").tap()
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Entry number 1. ")).firstMatch.waitForExistence(timeout: 20))
+        let oldest = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Entry number 1500.")).firstMatch
+
+        app.buttons["JournalBrandMark"].press(forDuration: 1.2)
+        let reached = oldest.waitForExistence(timeout: 15)
+        snap("long-journal-held")
+        XCTAssertTrue(reached, "Holding the mark reaches the oldest entry")
+
+        // Back to the top (the Journal tab again), then the scrubber to its foot.
+        tab(app, "Journal").tap()
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Entry number 1. ")).firstMatch.waitForExistence(timeout: 15))
+        app.swipeUp()
+        let scrubber = app.otherElements["Timeline scrubber"]
+        XCTAssertTrue(scrubber.waitForExistence(timeout: 5))
+        scrubber.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            .press(forDuration: 0.2, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.97)), withVelocity: .slow, thenHoldForDuration: 0.5)
+        let scrubbed = oldest.waitForExistence(timeout: 15)
+        snap("long-journal-scrubbed")
+        XCTAssertTrue(scrubbed, "The scrubber's foot is the oldest month")
+    }
+
     /// Screenshots, for looking over: each of the Journal's views (and Today and Search) with an
     /// empty journal, and on a free account. TEST_RUNNER_DABBLE_EMPTY_TOKEN and _FREE_TOKEN.
     func testSnapEmptyAndFreeViews() throws {
