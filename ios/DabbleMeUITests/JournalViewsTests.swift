@@ -555,6 +555,9 @@ final class JournalViewsTests: XCTestCase {
         app.buttons["Send"].tap()
         sleep(1)
         XCTAssertFalse((field.value as? String ?? "").contains("sunrise"), "Sending clears the field")
+        XCTAssertTrue(app.keyboards.firstMatch.exists, "The keyboard stays up for the next reply")
+        sleep(3)
+        XCTAssertFalse((field.value as? String ?? "").contains("sunrise"), "And it stays cleared")
         // A shake while the reflection is up leaves it there (no random memory in its place).
         XCUIDevice.shared.system.open(URL(string: "me.dabble.app:/shake")!) // Debug stand-in for a shake
         XCTAssertFalse(app.staticTexts["A Random Memory"].waitForExistence(timeout: 3), "A shake doesn't replace the reflection")
