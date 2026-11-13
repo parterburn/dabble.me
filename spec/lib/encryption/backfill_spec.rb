@@ -33,6 +33,12 @@ RSpec.describe Encryption::Backfill do
     tag
   end
 
+  let!(:export) do
+    export = user.exports.create!(scope: Export.scope_for(search_term: 'coffee'), search_term: 'placeholder')
+    store_plaintext(export, 'search_term', 'coffee')
+    export
+  end
+
   before do
     make_legacy(user)
     make_legacy(other_user)
@@ -43,6 +49,7 @@ RSpec.describe Encryption::Backfill do
     expect(status['Entry'].remaining).to eq(3)
     expect(status['User'].remaining).to eq(2)
     expect(status['Hashtag'].remaining).to eq(1)
+    expect(status['Export'].remaining).to eq(1)
   end
 
   it 'rehearses without writing anything' do
@@ -58,6 +65,7 @@ RSpec.describe Encryption::Backfill do
     expect(results['Entry'].changed).to eq(3)
     expect(results['User'].changed).to eq(2)
     expect(results['Hashtag'].changed).to eq(1)
+    expect(results['Export'].changed).to eq(1)
 
     %w[body original_email_body original_email].each do |column|
       expect(ciphertext?(stored_value(entry, column))).to be(true), "#{column} is not ciphertext"
@@ -65,6 +73,7 @@ RSpec.describe Encryption::Backfill do
     expect(ciphertext?(stored_value(empty_entry, 'body'))).to be(true)
     expect(ciphertext?(stored_value(user, 'user_key'))).to be(true)
     expect(ciphertext?(stored_value(hashtag, 'tag'))).to be(true)
+    expect(ciphertext?(stored_value(export, 'search_term'))).to be(true)
 
     reloaded = Entry.find(entry.id)
     expect(reloaded.body).to eq("<p>café ☃ #tag</p>")
@@ -74,6 +83,7 @@ RSpec.describe Encryption::Backfill do
     expect(User.find_by(user_key: user.user_key)).to eq(user)
     expect(User.find(user.id).first_name).to eq('Ann')
     expect(Hashtag.find(hashtag.id).tag).to eq('Birthday')
+    expect(Export.find(export.id).search_term).to eq('coffee')
 
     expect(backfill.status.values.sum(&:remaining)).to eq(0)
   end
