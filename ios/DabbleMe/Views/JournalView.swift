@@ -38,6 +38,8 @@ struct JournalView: View {
     @State private var choosingMode = false
     /// Bumped to scroll the timeline to its oldest entry (a long press on the "me" mark).
     @State private var scrollToEnd = 0
+    /// A jump to a far month that's still being brought home (`settle`).
+    @State private var jump: Task<Void, Never>?
     /// Bumped to scroll the timeline to its newest entry (after the List view is back on screen).
     @State private var scrollToTop = 0
     /// Tapping the timeline scrubber: a calendar of written days, and the day picked from it.
@@ -237,6 +239,7 @@ struct JournalView: View {
                 await model.refresh()
             }
             .onChange(of: scrollToTop) {
+                jump?.cancel()
                 guard let month = model.months.first else { return }
                 withAnimation {
                     if let first = model.monthEntries[month.key]?.first {
@@ -248,24 +251,11 @@ struct JournalView: View {
             }
             .onChange(of: scrollToEnd) {
                 guard let month = model.months.last else { return }
-                @MainActor func toTheEnd() {
-                    if let last = model.monthEntries[month.key]?.last {
-                        proxy.scrollTo(last.id, anchor: .bottom)
-                    } else {
-                        proxy.scrollTo(PlaceholderID(month: month.key, index: max(month.count - 1, 0)), anchor: .bottom)
-                    }
-                }
-                withAnimation { toTheEnd() }
-                Task { @MainActor in
-                    await model.loadMonths(around: month.key)
-                    // Again once the rows on the way are their real heights: a long list's first
-                    // jump lands a little short of its end.
-                    for _ in 0..<2 {
-                        try? await Task.sleep(for: .milliseconds(450))
-                        toTheEnd()
-                    }
-                }
+                jump?.cancel()
+                jump = Task { await settle(proxy, on: month, atItsEnd: true) }
             }
+            // A finger on the list takes over from a jump that's still settling.
+            .onChange(of: isDragging) { _, dragging in if dragging { jump?.cancel() } }
             .onScrollGeometryChange(for: CGFloat.self) { geometry in
                 let scrollable = geometry.contentSize.height - geometry.containerSize.height
                 return scrollable > 0 ? min(max((geometry.contentOffset.y + geometry.contentInsets.top) / scrollable, 0), 1) : 0
@@ -279,6 +269,7 @@ struct JournalView: View {
             .overlay(alignment: .trailing) {
                 if model.months.count >= 3 {
                     TimelineScrubber(months: model.months, progress: scrollProgress, isScrolling: isScrolling, onSelect: { month in
+                        jump?.cancel()
                         // Jump to the month's first row: its first entry if loaded, else its first placeholder.
                         if let first = model.monthEntries[month.key]?.first {
                             proxy.scrollTo(first.id, anchor: .top)
@@ -286,8 +277,10 @@ struct JournalView: View {
                             proxy.scrollTo(PlaceholderID(month: month.key, index: 0), anchor: .top)
                         }
                     }, onRelease: { month in
-                        // Load where the scrubber landed now, rather than waiting for rows to settle.
-                        Task { await model.loadMonths(around: month.key) }
+                        // Load where the scrubber landed now, and make sure the list really is
+                        // there: a far jump lands short (below).
+                        jump?.cancel()
+                        jump = Task { await settle(proxy, on: month, atItsEnd: false) }
                     }, onTap: {
                         model.showsDayPicker = true
                     })
@@ -304,6 +297,42 @@ struct JournalView: View {
             .toolbarVisibility(barHidden ? .hidden : .visible, for: .navigationBar)
             .animation(.easeInOut(duration: 0.2), value: barHidden)
         }
+    }
+
+    /// Makes a far jump arrive. The list only guesses the heights of rows it hasn't drawn, and
+    /// real rows (photos, long entries) are taller than its guess, so one jump across years of
+    /// them stops short. This loads the month, then jumps again and again, each from nearer with
+    /// more rows measured, until the month is on screen and stays there.
+    @MainActor
+    private func settle(_ proxy: ScrollViewProxy, on month: MonthCount, atItsEnd: Bool) async {
+        func go() {
+            let entries = model.monthEntries[month.key]
+            if atItsEnd {
+                if let last = entries?.last {
+                    proxy.scrollTo(last.id, anchor: .bottom)
+                } else {
+                    proxy.scrollTo(PlaceholderID(month: month.key, index: max(month.count - 1, 0)), anchor: .bottom)
+                }
+            } else if let first = entries?.first {
+                proxy.scrollTo(first.id, anchor: .top)
+            } else {
+                proxy.scrollTo(PlaceholderID(month: month.key, index: 0), anchor: .top)
+            }
+        }
+        withAnimation { go() }
+        await model.loadMonths(around: month.key)
+        // Arrived once the month has its entries and has stayed put for a few looks. (It may
+        // have been loading already, in which case the wait above was no wait at all.)
+        var arrived = 0
+        for _ in 0..<40 {
+            guard !Task.isCancelled else { return }
+            go()
+            try? await Task.sleep(for: .milliseconds(200))
+            arrived = model.monthEntries[month.key] != nil && model.isMonthVisible(month.key) ? arrived + 1 : 0
+            if arrived >= 3 { break }
+        }
+        guard !Task.isCancelled else { return }
+        go()
     }
 
     /// A month's rows under its sticky "Month YYYY" header (an expanded entry's date floats down

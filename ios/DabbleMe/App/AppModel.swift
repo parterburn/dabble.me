@@ -243,6 +243,11 @@ final class AppModel {
         visibleMonths.remove(key)
     }
 
+    /// Whether the month's header is on screen (a jump there has arrived).
+    func isMonthVisible(_ key: String) -> Bool {
+        visibleMonths.contains(key)
+    }
+
     func isStale(_ key: String) -> Bool {
         staleMonths.contains(key)
     }
@@ -264,6 +269,11 @@ final class AppModel {
         loadingMonths.insert(key)
         defer { loadingMonths.remove(key) }
         do {
+            #if DEBUG
+            // -DabbleDebugMonthDelay <seconds>: a slow connection, for tests of far jumps.
+            let delay = UserDefaults.standard.double(forKey: "DabbleDebugMonthDelay")
+            if delay > 0 { try await Task.sleep(for: .seconds(delay)) }
+            #endif
             let page: EntryPage = try await api.get("api/v1/entries",
                                                     query: ["year": String(month.year), "month": String(month.month), "per": "50"])
             monthEntries[key] = page.entries
