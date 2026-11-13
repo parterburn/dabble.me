@@ -18,7 +18,7 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 
 **Promotional text (170)**
 
-> Rediscover what you wrote on this day years ago, keep your writing streak going, and see your year in photos and stats. Private, and yours to keep.
+> Write a few lines in the app, or just reply to our email. Dabble Me keeps them private and brings them back on this day, every year. No feed, no ads.
 
 **Description (4,000)**
 
