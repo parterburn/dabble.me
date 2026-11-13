@@ -73,7 +73,7 @@ struct RootView: View {
         }
         .preferredColorScheme(theme.colorScheme)
         .onOpenURL { url in
-            // From the widget: me.dabble.app:/write, :/today, :/today/edit ("Add to today"), or
+            // From the widget: me.dabble.app:/write, :/today, :/today/edit ("Edit today"), or
             // :/entry/<id> (the entry it shows).
             // (Sign-in callbacks never get here; the web sign-in session handles them.)
             guard model.isSignedIn, url.scheme == "me.dabble.app" else { return }

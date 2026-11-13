@@ -15,7 +15,7 @@ final class AppModel {
     var searchRequest: String?
     /// Set when a writing reminder is tapped; Today opens the composer.
     var composeRequest = false
-    /// The widget's "Add to today": Today opens today's entry for editing once it has it.
+    /// The widget's "Edit today": Today opens today's entry for editing once it has it.
     var editTodayRequest = false
     /// Bumped when the Search tab is tapped while already showing, to focus the search field.
     var searchFocusRequest = 0

@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 extension View {
     /// Long-press to preview an entry (Peek), with Open to go to it.
@@ -21,14 +22,22 @@ extension View {
     /// Write Entry (when `write` is given). `summary` is the day's entry when it's already to hand.
     func dayPreview(_ day: JournalDay, isWritten: Bool, summary: EntrySummary? = nil, model: AppModel,
                     open: @escaping () -> Void, write: (() -> Void)?) -> some View {
-        contextMenu {
-            if isWritten {
-                Button(action: open) { Label("Open", icon: "slab-expand") }
-            } else if let write {
-                Button(action: write) { Label("Write Entry", icon: "slab-plus") }
-            }
-        } preview: {
-            DayPreview(day: day, isWritten: isWritten, summary: summary, model: model)
+        background {
+            AreaContextMenu(
+                preview: { DayPreview(day: day, isWritten: isWritten, summary: summary, model: model) },
+                menu: {
+                    if isWritten {
+                        return UIMenu(children: [UIAction(title: "Open", image: UIImage(named: "slab-expand")) { _ in open() }])
+                    } else if let write {
+                        return UIMenu(children: [UIAction(title: "Write Entry", image: UIImage(named: "slab-plus")) { _ in write() }])
+                    }
+                    return UIMenu(children: [])
+                },
+                // A tap on the day's entry opens it; on "Nothing written", it just closes.
+                commit: isWritten ? open : nil
+            )
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
         }
     }
 }
@@ -190,11 +199,130 @@ private struct EntryPreviewMenu: ViewModifier {
     let open: () -> Void
 
     func body(content: Content) -> some View {
-        content.contextMenu {
-            Button { open() } label: { Label("Open", icon: "slab-expand") }
-        } preview: {
-            EntryPreview(summary: summary)
+        content.background {
+            AreaContextMenu(
+                preview: { EntryPreview(summary: summary) },
+                menu: { UIMenu(children: [UIAction(title: "Open", image: UIImage(named: "slab-expand")) { _ in open() }]) },
+                commit: open
+            )
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
         }
+    }
+}
+
+/// A UIKit context menu for a view that isn't a list row (a photo in the grid, a day's square):
+/// like SwiftUI's, but a tap on the preview can act (`commit`), where SwiftUI's only closes. The
+/// view itself takes no touches, so taps, scrolling and pinches around it work as before: the
+/// menu belongs to the scroll view (or the screen) it sits in, which asks its marks whose spot was
+/// held.
+private struct AreaContextMenu<Preview: View>: UIViewRepresentable {
+    let preview: () -> Preview
+    let menu: () -> UIMenu
+    let commit: (() -> Void)?
+
+    func makeUIView(context: Context) -> AreaMenuMark {
+        let mark = AreaMenuMark()
+        mark.isUserInteractionEnabled = false
+        mark.backgroundColor = .clear
+        return mark
+    }
+
+    func updateUIView(_ mark: AreaMenuMark, context: Context) {
+        let preview = preview
+        mark.preview = {
+            let controller = UIHostingController(rootView: preview())
+            controller.view.backgroundColor = .systemBackground
+            controller.preferredContentSize = controller.sizeThatFits(in: CGSize(width: 340, height: CGFloat.greatestFiniteMagnitude))
+            return controller
+        }
+        mark.menu = menu
+        mark.commit = commit
+        mark.attach()
+    }
+}
+
+/// Where a held view is, and what holding it shows.
+final class AreaMenuMark: UIView {
+    var preview: (() -> UIViewController)?
+    var menu: (() -> UIMenu)?
+    var commit: (() -> Void)?
+
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        attach()
+    }
+
+    /// Joins the menu of the nearest scroll view around it (else of the SwiftUI view it's drawn in).
+    func attach() {
+        guard window != nil else { return }
+        var host = superview
+        while let view = host, !(view is UIScrollView), !String(describing: type(of: view)).contains("HostingView") { host = view.superview }
+        guard let host else { return }
+        let existing = host.interactions.compactMap { $0 as? AreaMenuInteraction }.first
+        let interaction = existing ?? {
+            let dispatcher = AreaMenuDispatcher()
+            let interaction = AreaMenuInteraction(delegate: dispatcher)
+            interaction.dispatcher = dispatcher
+            host.addInteraction(interaction)
+            return interaction
+        }()
+        interaction.dispatcher?.marks.add(self)
+    }
+}
+
+/// Keeps its delegate alive (an interaction holds it weakly).
+private final class AreaMenuInteraction: UIContextMenuInteraction {
+    var dispatcher: AreaMenuDispatcher?
+}
+
+private final class AreaMenuDispatcher: NSObject, UIContextMenuInteractionDelegate {
+    let marks = NSHashTable<AreaMenuMark>.weakObjects()
+    private weak var held: AreaMenuMark?
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                configurationForMenuAtLocation location: CGPoint) -> UIContextMenuConfiguration? {
+        guard let host = interaction.view else { return nil }
+        // The mark under the finger; between small neighbors (a grid of days), the nearest within reach.
+        let reach: CGFloat = 4
+        let candidates = marks.allObjects.filter { $0.window != nil && $0.preview != nil }.map { mark -> (AreaMenuMark, CGRect) in
+            (mark, mark.convert(mark.bounds, to: host))
+        }.filter { $0.1.insetBy(dx: -reach, dy: -reach).contains(location) }
+        guard let mark = candidates.min(by: { distance(from: location, to: $0.1) < distance(from: location, to: $1.1) })?.0,
+              let preview = mark.preview, let menu = mark.menu else { return nil }
+        held = mark
+        return UIContextMenuConfiguration(identifier: nil, previewProvider: preview, actionProvider: { _ in menu() })
+    }
+
+    private func distance(from point: CGPoint, to rect: CGRect) -> CGFloat {
+        hypot(point.x - rect.midX, point.y - rect.midY)
+    }
+
+    /// The preview rises from the held view's place, not from the whole scroll view.
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configuration: UIContextMenuConfiguration,
+                                highlightPreviewForItemWithIdentifier identifier: NSCopying) -> UITargetedPreview? {
+        targeted()
+    }
+
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction, configuration: UIContextMenuConfiguration,
+                                dismissalPreviewForItemWithIdentifier identifier: NSCopying) -> UITargetedPreview? {
+        targeted()
+    }
+
+    private func targeted() -> UITargetedPreview? {
+        guard let held, held.window != nil else { return nil }
+        let parameters = UIPreviewParameters()
+        parameters.backgroundColor = .clear
+        return UITargetedPreview(view: held, parameters: parameters)
+    }
+
+    /// A tap on the preview: what it previews, once the menu has gone (it may bring up a sheet).
+    func contextMenuInteraction(_ interaction: UIContextMenuInteraction,
+                                willPerformPreviewActionForMenuWith configuration: UIContextMenuConfiguration,
+                                animator: UIContextMenuInteractionCommitAnimating) {
+        guard let commit = held?.commit else { return }
+        animator.preferredCommitStyle = .dismiss
+        animator.addCompletion { commit() }
     }
 }
 

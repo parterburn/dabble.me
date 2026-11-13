@@ -39,6 +39,22 @@ final class JournalViewsTests: XCTestCase {
         item.tap()
     }
 
+    /// A tap on a held photo's preview opens its entry (in the Photos grid and in Jump to a Day).
+    func testTappingAPreviewOpensItsEntry() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        switchJournal(app, from: "Journal", to: "Photos")
+        let photo = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Photo from")).firstMatch
+        XCTAssertTrue(photo.waitForExistence(timeout: 15))
+        photo.press(forDuration: 1.2)
+        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
+        sleep(1)
+        snap("photo-held")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)).tap() // on the preview
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10), "The entry opens")
+        snap("photo-preview-tapped")
+    }
+
     /// A tap on the "me" mark from another of the Journal's views is the way back to the list.
     func testTheMarkLeadsBackToTheList() throws {
         let app = launch()
@@ -1009,6 +1025,18 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.buttons["Open"].waitForNonExistence(timeout: 5))
         sleep(1)
 
+        // Held again, and the preview itself tapped: the day comes up, as Open brings it.
+        square(daysAgo: 1).press(forDuration: 1.2)
+        let previewed = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to")).firstMatch
+        XCTAssertTrue(previewed.waitForExistence(timeout: 10))
+        sleep(1)
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.32)).tap() // the preview's text
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "· Yesterday")).firstMatch.waitForExistence(timeout: 10),
+                      "A tap on the preview opens the day")
+        snap("stats-day-preview-tapped")
+        app.buttons["Close"].firstMatch.tap()
+        sleep(1)
+
         // Eleven days ago: nothing written.
         square(daysAgo: 11).press(forDuration: 1.2)
         let write = app.buttons["Write Entry"]
@@ -1874,9 +1902,9 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertEqual(editor.value as? String, "A quiet day at home.")
         app.buttons["Cancel"].tap()
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
-        // The widget's "Add to today" link does the same.
+        // The widget's "Edit today" link does the same.
         XCUIDevice.shared.system.open(URL(string: "me.dabble.app:/today/edit")!)
-        XCTAssertTrue(editor.waitForExistence(timeout: 10), "Add to today opens today's entry for editing")
+        XCTAssertTrue(editor.waitForExistence(timeout: 10), "Edit today opens today's entry for editing")
         XCTAssertEqual(editor.value as? String, "A quiet day at home.")
         app.buttons["Cancel"].tap()
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
@@ -1890,6 +1918,26 @@ final class JournalViewsTests: XCTestCase {
         delete.tap()
         app.buttons["Hold to Delete"].press(forDuration: 2.6)
         XCTAssertTrue(write.waitForExistence(timeout: 15), "Today is unwritten again")
+    }
+
+    /// Today's corner: the journal's entry count most of the year, and the year's Rewind by name
+    /// around the new year. Either way it opens Stats.
+    func testTodayCornerNamesTheRewindAroundTheNewYear() throws {
+        let year = Calendar.current.component(.year, from: .now)
+        var app = launch()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label ENDSWITH 'entries'")).firstMatch.waitForExistence(timeout: 15))
+        XCTAssertFalse(app.buttons["\(year) Rewind"].exists)
+        snap("today-corner-count")
+        app.terminate()
+
+        app = launch(["-DabbleDebugRewindYear", String(year)])
+        let rewind = app.buttons["\(year) Rewind"]
+        XCTAssertTrue(rewind.waitForExistence(timeout: 15))
+        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label ENDSWITH 'entries'")).firstMatch.exists)
+        snap("today-corner-rewind")
+        rewind.tap()
+        XCTAssertTrue(app.navigationBars.buttons["Stats"].waitForExistence(timeout: 10), "It opens Stats")
+        XCTAssertTrue(app.buttons["\(year) Rewind"].waitForExistence(timeout: 15), "With the Rewind at its top")
     }
 
     /// Stats offers the year's Rewind in its season: it opens full screen and is tapped through

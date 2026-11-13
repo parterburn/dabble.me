@@ -21,6 +21,17 @@ enum RewindSeason {
         default: return nil
         }
     }
+
+    /// The weeks around the new year (December 15 to January 15) when Today's corner names the
+    /// Rewind in place of the entry count.
+    static func isHeadline(on day: JournalDay) -> Bool {
+        let parts = day.iso.split(separator: "-").compactMap { Int($0) }
+        guard parts.count == 3 else { return false }
+        #if DEBUG
+        if UserDefaults.standard.integer(forKey: "DabbleDebugRewindYear") > 0 { return true }
+        #endif
+        return (parts[1] == 12 && parts[2] >= 15) || (parts[1] == 1 && parts[2] <= 15)
+    }
 }
 
 /// A year of the journal, worked out on the device for its Rewind: counts, the people and places
