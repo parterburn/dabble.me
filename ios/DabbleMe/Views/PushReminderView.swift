@@ -1,10 +1,9 @@
 import SwiftUI
 import UIKit
 
-/// Settings → Reminders → Push: the daily notification. Whether it's on, when and on which days,
-/// and whether the past entry it carries is shown in it or only mentioned. (Which past entries
-/// can come up is on Past Entries, shared with the email.) Kept on this device; the reminders
-/// are rebuilt as anything changes.
+/// Settings → Reminders → Push: the daily notification. Whether it's on, when and on which days.
+/// (Whether it comes with a past entry, and which, is on Include Past Entries, shared with the
+/// email.) Kept on this device; the reminders are rebuilt as anything changes.
 struct PushReminderView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.openURL) private var openURL
@@ -13,14 +12,13 @@ struct PushReminderView: View {
     @AppStorage(ReminderSettings.timeKey) private var time = ReminderSettings.followsEmail
     @AppStorage(ReminderSettings.emailTimeKey) private var emailTime = ReminderSettings.defaultTime
     @AppStorage(ReminderSettings.daysKey) private var days = EmailSchedule.allDays.joined(separator: ",")
-    @AppStorage(ReminderSettings.previewsKey) private var showsPreviews = true
     @State private var notificationsDenied = false
     #if DEBUG
     @State private var pending = 0
     #endif
 
     /// Everything that changes what's scheduled.
-    private var settings: String { "\(isOn)|\(time)|\(days)|\(showsPreviews)" }
+    private var settings: String { "\(isOn)|\(time)|\(days)" }
 
     var body: some View {
         Form {
@@ -56,14 +54,6 @@ struct PushReminderView: View {
                     }
                 } header: {
                     Text("Days")
-                }
-
-                Section {
-                    Toggle("Show Entry Previews", isOn: $showsPreviews)
-                } footer: {
-                    Text(showsPreviews
-                        ? "With a past entry (Settings › Include Past Entries), the notification shows the start of it and its photo, which can be seen without unlocking your phone."
-                        : "With a past entry (Settings › Include Past Entries), the notification says there's one to look back on, without showing it.")
                 }
             }
         }

@@ -107,13 +107,11 @@ final class HabitTests: XCTestCase {
         if (daily.value as? String) != "1" { daily.switches.firstMatch.tap() }
         let allow = springboard.buttons["Allow"]
         if allow.waitForExistence(timeout: 5) { allow.tap() }
-        // Its days, and whether the past entry it carries is shown (on to begin with). Which past
-        // entries can come up is on Past Entries, for both kinds of notification.
-        let previews = app.switches["Show Entry Previews"]
-        XCTAssertTrue(previews.waitForExistence(timeout: 5))
-        XCTAssertEqual(previews.value as? String, "1")
+        // Its days, and nothing about past entries: whether it comes with one, and which, is on
+        // Include Past Entries, for both kinds of notification.
+        XCTAssertTrue(app.buttons["Saturday"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.switches["Show Entry Previews"].exists)
         XCTAssertFalse(app.switches["Include Entries Over a Year Old"].exists)
-        XCTAssertTrue(app.buttons["Saturday"].exists)
 
         let scheduled = app.descendants(matching: .any).matching(NSPredicate(format: "label MATCHES %@", "[1-9][0-9]* reminders scheduled")).firstMatch
         XCTAssertTrue(scheduled.waitForExistence(timeout: 15), "Turning reminders on should schedule notifications")
@@ -132,7 +130,7 @@ final class HabitTests: XCTestCase {
         for day in ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"] { app.buttons[day].tap() }
     }
 
-    /// The daily reminder as it arrives: the entry to look back on (previews are on). Touch and
+    /// The daily reminder as it arrives: the entry to look back on. Touch and
     /// hold it for Read the Memory, which opens that entry.
     func testDailyReminderShowsAMemoryAndOpensIt() throws {
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")

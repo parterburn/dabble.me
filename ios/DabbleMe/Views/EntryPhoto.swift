@@ -43,7 +43,7 @@ struct EntryPhoto: View {
                     Text("Processing photos…")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    Text("Feel free to leave; this runs in the background.")
+                    Text("Runs in the background; okay to leave.")
                         .font(.caption)
                         .foregroundStyle(.tertiary)
                 }

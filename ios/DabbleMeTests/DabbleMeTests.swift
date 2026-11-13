@@ -565,8 +565,6 @@ struct ReminderTests {
         #expect(plan.emailHour == 21)
         #expect(ReminderScheduler.label(for: plan.days[0], on: "2026-11-20") == "On This Day · 3 years ago")
         #expect(ReminderScheduler.label(for: plan.days[1], on: "2026-11-21") == "Rewind · 7 days ago")
-        #expect(ReminderScheduler.teaser(for: plan.days[0], on: "2026-11-20") == "You have 2 memories from this day.")
-        #expect(ReminderScheduler.teaser(for: plan.days[1], on: "2026-11-21") == "You have a memory from 7 days ago.")
     }
 }
 
