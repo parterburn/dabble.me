@@ -67,7 +67,7 @@ struct PushReminderView: View {
                 }
             }
         }
-        .navigationTitle("Push")
+        .navigationTitle("Push Notifications")
         .navigationBarTitleDisplayMode(.inline)
         .task { notificationsDenied = await ReminderScheduler.shared.isDenied() }
         .onChange(of: isOn) { _, on in Task { await turned(on: on) } }
