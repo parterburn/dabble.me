@@ -1344,6 +1344,15 @@ final class JournalViewsTests: XCTestCase {
         nudge(-70)
         sleep(6) // Spotify's player loads
         snap("entry-song-player")
+        // Once Spotify's page is in it, a quick swipe (no pause before letting go) leaves the
+        // actions out, and they stay out to be tapped.
+        let middle = playing.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.5))
+        middle.press(forDuration: 0.05, thenDragTo: middle.withOffset(CGVector(dx: -120, dy: 0)), withVelocity: 400, thenHoldForDuration: 0)
+        sleep(2)
+        snap("entry-song-player-loaded-swiped")
+        XCTAssertTrue(app.buttons["Open in Spotify"].isHittable, "The actions stay out after the swipe")
+        XCTAssertTrue(playing.exists, "And the player wasn't put away")
+        nudge(130) // back
 
         second.tap()
         XCTAssertTrue(player("Rick Astley – Never Gonna Give You Up").waitForExistence(timeout: 5), "One song at a time: the one tapped")
