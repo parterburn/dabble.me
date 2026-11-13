@@ -39,6 +39,20 @@ final class JournalViewsTests: XCTestCase {
         item.tap()
     }
 
+    /// A tap on the "me" mark from another of the Journal's views is the way back to the list.
+    func testTheMarkLeadsBackToTheList() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        var current = "Journal"
+        for mode in ["Stats", "Photos", "Playlist"] {
+            switchJournal(app, from: current, to: mode)
+            XCTAssertTrue(app.navigationBars.buttons[mode].waitForExistence(timeout: 5))
+            app.buttons["JournalBrandMark"].tap()
+            XCTAssertTrue(app.navigationBars.buttons["Journal"].waitForExistence(timeout: 5), "The mark leads back from \(mode)")
+            current = "Journal"
+        }
+    }
+
     func testJournalStatsAndPhotos() throws {
         // The default square size, whatever an earlier run pinched it to (the tap below is measured).
         let app = launch(["-stats.heatmapCell", "13"])

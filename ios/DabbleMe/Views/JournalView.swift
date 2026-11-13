@@ -411,9 +411,11 @@ struct JournalView: View {
     }
 
     private var brandMark: some View {
-        // A button for the bar's sake (a bar gives its buttons their touches): a tap does nothing;
-        // held, it's the timeline from its other end, the oldest entry.
-        Button {} label: {
+        // A tap is the way back to the list from Stats, Photos or the Playlist (on the list it
+        // does nothing); held, it's the timeline from its other end, the oldest entry.
+        Button {
+            if mode != .list { mode = .list }
+        } label: {
             Image("Logo")
                 .resizable()
                 .scaledToFit()
@@ -432,7 +434,7 @@ struct JournalView: View {
         })
         .accessibilityIdentifier("JournalBrandMark")
         .accessibilityLabel("Dabble Me")
-        .accessibilityHint("Touch and hold for your oldest entry")
+        .accessibilityHint(mode == .list ? "Touch and hold for your oldest entry" : "Shows your journal as a list")
     }
 
     private func startWriting() {
