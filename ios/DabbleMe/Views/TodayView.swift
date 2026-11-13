@@ -262,20 +262,20 @@ struct TodayView: View {
         .accessibilityLabel("Edit Today's Entry")
     }
 
-    /// "1,204 entries ›": every entry in the journal. Tapping it opens Stats.
+    /// "▮ 1,204 entries": every entry in the journal, behind the Stats icon. Tapping it opens Stats.
     private func entryCountButton(_ count: Int) -> some View {
         Button {
             model.selectedTab = .journal
             model.statsRequest += 1
         } label: {
-            // The chevron says it goes somewhere.
-            HStack(spacing: 4) {
-                Text("\(count.formatted()) \(count == 1 ? "entry" : "entries")")
-                    .monospacedDigit()
-                appIcon("slab-angle-right")
+            // The Stats icon says where it goes.
+            HStack(spacing: 5) {
+                appIcon("slab-chart-bar")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 11, height: 11)
+                    .frame(width: 15, height: 15)
+                Text("\(count.formatted()) \(count == 1 ? "entry" : "entries")")
+                    .monospacedDigit()
             }
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(.tint)

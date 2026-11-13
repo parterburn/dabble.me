@@ -16,7 +16,7 @@ enum JournalMode: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .list: "slab-list"
-        case .stats: "slab-signal-bars"
+        case .stats: "slab-chart-bar"
         case .photos: "slab-images"
         case .playlist: "slab-music"
         }
@@ -105,7 +105,8 @@ struct JournalView: View {
             if model.me?.maySeeStats == false {
                 ProInfoView(feature: .stats, showsDoneButton: false)
             } else {
-                StatsView()
+                // Its Entries and Photos tiles go to those views.
+                StatsView { mode = $0 }
             }
         case .photos: PhotoGridView { path.append($0) }
         case .playlist: PlaylistView { path.append($0) }

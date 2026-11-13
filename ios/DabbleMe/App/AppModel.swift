@@ -458,8 +458,20 @@ final class AppModel {
 
     /// The days (YYYY-MM-DD) with an entry in a calendar year, for Stats' earlier years.
     func writingDays(year: Int) async throws -> [String] {
-        let days: YearDays = try await api.get("api/v1/stats/days", query: ["year": String(year)])
-        return days.days
+        try await statsYear(year).days
+    }
+
+    /// A calendar year for Stats: its days with an entry, and its hashtags.
+    func statsYear(_ year: Int) async throws -> YearDays {
+        try await api.get("api/v1/stats/days", query: ["year": String(year)])
+    }
+
+    /// A day's entry as the timeline has it (text capped), for a quick look: Stats' day grid.
+    func entrySummary(on day: JournalDay) async throws -> EntrySummary? {
+        let parts = day.monthKey.split(separator: "-")
+        guard parts.count == 2 else { return nil }
+        let page: EntryPage = try await api.get("api/v1/entries", query: ["year": String(parts[0]), "month": String(parts[1]), "per": "50"])
+        return page.entries.first { $0.date == day.iso }
     }
 
     func stats() async throws -> JournalStats {

@@ -48,7 +48,7 @@ final class JournalViewsTests: XCTestCase {
         journal.tap()
 
         switchJournal(app, from: "Journal", to: "Stats")
-        XCTAssertTrue(app.staticTexts["Words"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.statTile("Words").waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["Entries per Month"].exists)
         sleep(1)
         snap("journal-stats")
@@ -58,6 +58,7 @@ final class JournalViewsTests: XCTestCase {
         // the row above, or the bottom of the column before on a Sunday.
         let heatmap = app.otherElements["Writing days in \(Calendar.current.component(.year, from: .now))"]
         XCTAssertTrue(heatmap.waitForExistence(timeout: 5))
+        app.raiseStats()
         let pitch: CGFloat = 13 + 3, monthRow: CGFloat = 2 + 16 + 4
         let todayRow = Calendar(identifier: .gregorian).component(.weekday, from: .now) - 1
         // Today's column is up to four weeks from the right edge: the year's days to come follow it.
@@ -451,11 +452,11 @@ final class JournalViewsTests: XCTestCase {
         let app = launch()
         tab(app, "Journal").tap()
         switchJournal(app, from: "Journal", to: "Stats")
-        XCTAssertTrue(app.staticTexts["Words"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.statTile("Words").waitForExistence(timeout: 10))
         tab(app, "Journal").tap()
         let newest = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
         XCTAssertTrue(newest.waitForExistence(timeout: 10))
-        XCTAssertFalse(app.staticTexts["Words"].exists)
+        XCTAssertFalse(app.statTile("Words").exists)
 
         app.swipeUp(); app.swipeUp(); app.swipeUp()
         XCTAssertFalse(newest.isHittable)
@@ -913,6 +914,162 @@ final class JournalViewsTests: XCTestCase {
         snap("pull-up-random-memory")
     }
 
+    /// Under the tiles, Stats is one year at a time: picking another from the year's menu turns the
+    /// grid, the months and the hashtags to it. A month held in the bars is named in full.
+    func testStatsFollowTheYearPicked() throws {
+        let app = launch(["-stats.heatmapCell", "13"])
+        tab(app, "Journal").tap()
+        switchJournal(app, from: "Journal", to: "Stats")
+        let thisYear = Calendar.current.component(.year, from: .now)
+        let menu = app.buttons["Year, \(thisYear)"]
+        XCTAssertTrue(menu.waitForExistence(timeout: 10))
+        func bringUp(_ element: XCUIElement) {
+            for _ in 0..<6 where !(element.exists && element.isHittable && element.frame.minY < 520) { app.swipeUp(velocity: .slow) }
+        }
+        bringUp(app.staticTexts["Entries per Month"])
+        sleep(1)
+        snap("stats-year-section")
+
+        // A month held: its name in full under the bars (seen in the screenshot, taken mid-hold).
+        let bars = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Entries per month")).firstMatch
+        XCTAssertTrue(bars.waitForExistence(timeout: 5))
+        let named = expectation(description: "The month is named while it's held")
+        DispatchQueue.global().asyncAfter(deadline: .now() + 1.2) {
+            if app.staticTexts.matching(identifier: "StatsSelectedMonth").firstMatch.exists { named.fulfill() }
+            self.snap("stats-month-held")
+        }
+        bars.coordinate(withNormalizedOffset: CGVector(dx: 0.82, dy: 0.5)).press(forDuration: 3)
+        wait(for: [named], timeout: 5)
+
+        // Last year: the demo wrote once, about Bruges (#travel).
+        app.swipeDown(); app.swipeDown()
+        menu.tap()
+        app.buttons[String(thisYear - 1)].tap()
+        let summary = app.staticTexts.matching(identifier: "StatsYearSummary").firstMatch
+        XCTAssertTrue(app.staticTexts.matching(identifier: "StatsYearSummary").matching(NSPredicate(format: "label BEGINSWITH %@", "1 entry")).firstMatch.waitForExistence(timeout: 10),
+                      "The year's own count: \(summary.label)")
+        let hashtags = app.staticTexts["Top Hashtags in \(thisYear - 1)"]
+        bringUp(hashtags)
+        XCTAssertTrue(hashtags.waitForExistence(timeout: 10), "The hashtags are the year's")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "#travel, 1 ")).firstMatch.exists)
+        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "#hiking")).firstMatch.exists)
+        snap("stats-last-year")
+    }
+
+    /// A day held down in the year's grid: its entry in a popover, or, for a day gone by without
+    /// one, the offer to write it (which opens the composer on that day).
+    func testHoldingADayInTheGridShowsItOrOffersToWriteIt() throws {
+        let app = launch(["-stats.heatmapCell", "13"])
+        tab(app, "Journal").tap()
+        switchJournal(app, from: "Journal", to: "Stats")
+        let calendar = Calendar(identifier: .gregorian)
+        let heatmap = app.otherElements["Writing days in \(calendar.component(.year, from: .now))"]
+        XCTAssertTrue(heatmap.waitForExistence(timeout: 10))
+        app.raiseStats()
+        // Where a day `back` days ago sits: today's column is up to four weeks from the right edge.
+        func square(daysAgo back: Int) -> XCUICoordinate {
+            let pitch: CGFloat = 13 + 3, monthRow: CGFloat = 2 + 16 + 4
+            let today = calendar.startOfDay(for: .now)
+            let day = calendar.date(byAdding: .day, value: -back, to: today)!
+            func sunday(_ date: Date) -> Date { calendar.date(byAdding: .day, value: -(calendar.component(.weekday, from: date) - 1), to: date)! }
+            let yearEnd = calendar.date(from: DateComponents(year: calendar.component(.year, from: .now), month: 12, day: 31))!
+            let ahead = min(4, (calendar.dateComponents([.day], from: sunday(today), to: yearEnd).day ?? 0) / 7)
+            let column = ahead + (calendar.dateComponents([.day], from: sunday(day), to: sunday(today)).day ?? 0) / 7
+            let row = calendar.component(.weekday, from: day) - 1
+            return heatmap.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: heatmap.frame.width - 6.5 - CGFloat(column) * pitch, dy: monthRow + CGFloat(row) * pitch + 6.5))
+        }
+        // Yesterday (always written): the entry.
+        square(daysAgo: 1).press(forDuration: 0.9)
+        sleep(2)
+        snap("stats-day-held")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to")).firstMatch.waitForExistence(timeout: 10),
+                      "Yesterday's entry is previewed")
+        sleep(1)
+        snap("stats-day-held")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.62)).tap() // away from it: closes it
+        sleep(1)
+
+        // Eleven days ago: nothing written, with unwritten days around it.
+        snap("stats-day-held-closed")
+        square(daysAgo: 11).press(forDuration: 0.9)
+        sleep(1)
+        snap("stats-day-write")
+        let write = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Write entry for ")).firstMatch
+        XCTAssertTrue(write.waitForExistence(timeout: 5), "A day without an entry offers one")
+        snap("stats-day-write")
+        let day = calendar.date(byAdding: .day, value: -11, to: .now)!
+        write.tap()
+        XCTAssertTrue(app.textViews["Entry"].waitForExistence(timeout: 10), "The composer opens")
+        let date = day.formatted(.dateTime.month(.abbreviated).day().year())
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", date, date)).firstMatch.waitForExistence(timeout: 5),
+                      "On that day: \(date)")
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+    }
+
+    /// A web address pasted over selected words links them, instead of replacing them.
+    func testPastingAnAddressOverSelectedTextLinksIt() throws {
+        UIPasteboard.general.string = "https://example.com/trail"
+        let app = launch()
+        tab(app, "Journal").tap()
+        app.buttons["New Entry"].tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        editor.tap()
+        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+        if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap() } // a draft from an earlier run
+        editor.typeText("Trailhead")
+        editor.doubleTap() // selects the word
+        let paste = app.menuItems["Paste"]
+        XCTAssertTrue(paste.waitForExistence(timeout: 5))
+        paste.tap()
+        let allow = app.alerts.buttons["Allow Paste"]
+        if allow.waitForExistence(timeout: 2) { allow.tap() }
+        sleep(1)
+        snap("compose-paste-link")
+        XCTAssertEqual(editor.value as? String, "Trailhead", "The word stays; the address isn't pasted in as text")
+        // (The word's link shows in the screenshot: the editor doesn't offer its links to the tests.)
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+    }
+
+    /// Stats' tiles go to what they count: Entries to the Journal, Photos to the photo grid, the
+    /// streak to its year in the year card, and Words to the top hashtags.
+    func testStatsTilesGoToWhatTheyCount() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        switchJournal(app, from: "Journal", to: "Stats")
+        XCTAssertTrue(app.statTile("Words").waitForExistence(timeout: 10))
+        snap("stats-tiles")
+
+        app.statTile("Photos").tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Photo from'")).firstMatch.waitForExistence(timeout: 10), "Photos opens the grid")
+        switchJournal(app, from: "Photos", to: "Stats")
+        XCTAssertTrue(app.statTile("Words").waitForExistence(timeout: 10))
+
+        app.statTile("Words").tap()
+        let hashtags = app.staticTexts["Top Hashtags This Year"]
+        XCTAssertTrue(hashtags.waitForExistence(timeout: 5))
+        sleep(1)
+        XCTAssertLessThan(hashtags.frame.minY, 320, "Words scrolls to the hashtags")
+        snap("stats-words-to-hashtags")
+        app.swipeDown(); app.swipeDown()
+
+        let streak = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Streak'")).firstMatch
+        XCTAssertTrue(streak.waitForExistence(timeout: 5))
+        streak.tap()
+        let summary = app.staticTexts.matching(identifier: "StatsYearSummary").firstMatch
+        XCTAssertTrue(summary.waitForExistence(timeout: 5))
+        sleep(1)
+        XCTAssertLessThan(summary.frame.minY, 320, "The streak scrolls to its year")
+        snap("stats-streak-to-year")
+        app.swipeDown(); app.swipeDown()
+
+        app.statTile("Entries").tap()
+        XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 10), "Entries opens the Journal's list")
+    }
+
     /// An entry with songs has Spotify's player under it, showing the first (in bold above) and
     /// not started. A tap on another song puts that one in the player; a swipe left puts the
     /// player away, and a tap on a song brings it back.
@@ -1183,8 +1340,8 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
 
-    /// Where there's a camera, Add Photos offers it as well as the library. (The simulator has
-    /// none, so the menu is switched on for the test.)
+    /// Where there's a camera, it has a button of its own beside Add Photos. (The simulator has
+    /// none, so the button is switched on for the test.)
     func testAddPhotosOffersTheCamera() throws {
         let app = launch(["-DabbleDebugCameraMenu", "YES"])
         tab(app, "Journal").tap()
@@ -1193,11 +1350,12 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(editor.waitForExistence(timeout: 10))
         editor.tap()
         if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
-        app.buttons["Add Photos"].tap()
+        // With no photos yet, the library and the camera are each one tap away.
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Choose Photos"].exists)
-        snap("add-photos-menu")
-        app.buttons["Choose Photos"].tap()
+        XCTAssertTrue(app.buttons["Add Photos"].exists)
+        snap("add-photos-buttons")
+        app.buttons["Add Photos"].tap()
+        XCTAssertFalse(app.buttons["Choose Photos"].waitForExistence(timeout: 2), "Straight to the library, no menu")
         sleep(2)
         snap("add-photos-library")
     }
@@ -1512,7 +1670,7 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(count.waitForExistence(timeout: 15))
         snap("today-entry-count")
         count.tap()
-        XCTAssertTrue(app.staticTexts["Words"].waitForExistence(timeout: 10), "Stats, in the Journal tab")
+        XCTAssertTrue(app.statTile("Words").waitForExistence(timeout: 10), "Stats, in the Journal tab")
         let thisYear = Calendar.current.component(.year, from: .now)
         func summary(_ pattern: String) -> Bool {
             app.staticTexts.matching(identifier: "StatsYearSummary").matching(NSPredicate(format: "label MATCHES %@", pattern))

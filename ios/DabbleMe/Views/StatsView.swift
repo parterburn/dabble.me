@@ -1,52 +1,49 @@
 import Charts
 import SwiftUI
 
-/// Journal > Stats: totals, the longest streak, a year of writing days (this year or an earlier one), recent months and the past
-/// year's hashtags. Counts only; it never shows entry text.
+/// Journal > Stats: the whole journal's totals in tiles, then one year at a time (this year, or
+/// another picked from the year's menu): its writing days, entries per month and hashtags. Counts
+/// only, but for a day held down in the grid, which shows that day's entry.
 struct StatsView: View {
+    /// Another of the Journal's views (the Entries and Photos tiles open theirs).
+    var show: (JournalMode) -> Void = { _ in }
     @Environment(AppModel.self) private var model
     @State private var stats: JournalStats?
     @State private var error: String?
+    /// The year everything under the tiles is about; nil is this year. Here so the Streak tile can
+    /// turn it to its year.
+    @State private var year: Int?
+    /// A day without an entry, picked in the grid to write one for.
+    @State private var writing: StatsDay?
+
+    fileprivate typealias Anchor = StatsAnchor
 
     var body: some View {
         Group {
             if let stats {
+                ScrollViewReader { proxy in
                 ScrollView {
                     VStack(alignment: .leading, spacing: 28) {
                         // In its season (November to January): the year's Rewind, or what it takes.
                         RewindCard(stats: stats, today: model.today?.day ?? JournalDay(localDate: .now))
-                        tiles(stats)
+                        tiles(stats) { anchor in
+                            withAnimation(.snappy(duration: 0.3)) { proxy.scrollTo(anchor, anchor: .top) }
+                        }
                         if showsOverview(stats) {
                             StatsOverview(stats: stats, today: model.today?.day ?? JournalDay(localDate: .now))
                         }
-                        YearCard(stats: stats, today: model.today?.day ?? JournalDay(localDate: .now))
-                        StatsCard(title: "Entries per Month") {
-                            MonthBars(months: stats.months)
-                        }
-                        if !stats.topHashtags.isEmpty {
-                            StatsCard(title: "Top Hashtags This Year") {
-                                HashtagBars(hashtags: stats.topHashtags, canSearch: model.me?.canSearch == true) { tag in
-                                    model.search(hashtag: tag)
-                                }
-                            }
-                        }
-                        if let connectors = model.me?.aiConnectors {
-                            ConnectorCallout(
-                                title: "Sentiment analysis",
-                                message: "Analyze your writing over time with the Claude or ChatGPT plugin.",
-                                guide: connectors.guideUrl,
-                                prompt: Self.sentimentPrompt
-                            )
-                        }
+                        YearSection(stats: stats, today: model.today?.day ?? JournalDay(localDate: .now), picked: $year,
+                                    write: model.me?.canWrite == false ? nil : { writing = StatsDay(day: $0) })
                         if !showsOverview(stats) { footer(stats) } // the overview says these
                     }
                     .padding()
                     .frame(maxWidth: 680)
                     .frame(maxWidth: .infinity)
                 }
+                }
             } else if let error {
                 ContentUnavailableView {
-                    Label("Couldn't load your stats", icon: "slab-signal-bars")
+                    Label("Couldn't load your stats", icon: "slab-chart-bar")
                 } description: {
                     Text(error)
                 } actions: {
@@ -58,20 +55,37 @@ struct StatsView: View {
         }
         .refreshable { await load() }
         .task { if stats == nil { await load() } }
+        // An entry for a day picked in the grid; the numbers are counted again once it's written.
+        .sheet(item: $writing, onDismiss: { Task { await load() } }) { day in
+            ComposeView(mode: .new, day: day.day)
+        }
     }
 
-    /// Something to ask Claude or ChatGPT with the Dabble Me connector on.
-    static let sentimentPrompt = "Using my Dabble Me journal, do a sentiment analysis of my entries from the past year: how my mood trended month by month, what lifted it and what weighed on it, and the people, places and themes that show up when I'm at my best."
+    /// Something to ask Claude or ChatGPT with the Dabble Me connector on, about the year shown.
+    static func sentimentPrompt(year: Int) -> String {
+        "Using my Dabble Me journal, do a sentiment analysis of my entries from \(year): how my mood trended month by month, what lifted it and what weighed on it, and the people, places and themes that show up when I'm at my best."
+    }
 
-    private func tiles(_ stats: JournalStats) -> some View {
+    /// Each tile goes to what it counts: the Journal, the Photos, the streak's year in the year
+    /// card below, and (for words, which aren't counted one by one) the hashtags.
+    private func tiles(_ stats: JournalStats, scrollTo: @escaping (Anchor) -> Void) -> some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
-            StatTile(value: stats.totalEntries.formatted(), label: stats.totalEntries == 1 ? "Entry" : "Entries", icon: "slab-book")
-            StatTile(value: stats.photoEntries.formatted(), label: "Photos", icon: "slab-images")
+            StatTile(value: stats.totalEntries.formatted(), label: stats.totalEntries == 1 ? "Entry" : "Entries", icon: "slab-book",
+                     hint: "Opens your journal") { show(.list) }
+            StatTile(value: stats.photoEntries.formatted(), label: "Photos", icon: "slab-images",
+                     hint: "Opens your photos") { show(.photos) }
             // The longest streak, with the year it was in ("Streak • 2024"). The year's own entries
             // are beside the year below.
             StatTile(value: days(stats.longestStreak), label: stats.longestStreakYear.map { "Streak • \(String($0))" } ?? "Longest Streak",
-                     icon: "slab-fire")
-            StatTile(value: stats.totalWords.formatted(.number.notation(.compactName)), label: "Words", icon: "slab-language")
+                     icon: "slab-fire", hint: "Shows that year") {
+                if let streakYear = stats.longestStreakYear {
+                    year = streakYear == Int((model.today?.day ?? JournalDay(localDate: .now)).year) ? nil : streakYear
+                }
+                scrollTo(.year)
+            }
+            StatTile(value: stats.totalWords.formatted(.number.notation(.compactName)), label: "Words", icon: "slab-language",
+                     hint: stats.topHashtags.isEmpty ? nil : "Shows your top hashtags",
+                     action: stats.topHashtags.isEmpty ? nil : { scrollTo(.hashtags) })
         }
     }
 
@@ -165,18 +179,23 @@ private struct StatsOverview: View {
     }
 }
 
-/// A year of writing days. Its title is the year ("2026"), with a small chevron when there are
-/// earlier years to choose from a menu. On the right, the year's entries and the share of its
-/// days with one ("37 entries • 11% of days"); for this year that's of the days so far, and the
-/// days still to come are the paler squares.
-private struct YearCard: View {
+/// What a Stats tile can scroll to.
+fileprivate enum StatsAnchor { case year, hashtags }
+
+/// Everything in Stats that's about one year, under that year's menu: its days in a grid (tap a
+/// written day to read it; hold any day for a look at its entry, or to write one), its entries
+/// per month, its hashtags and a prompt for an AI connector. This year until another's picked;
+/// an earlier year's numbers are loaded as it is.
+private struct YearSection: View {
     let stats: JournalStats
     let today: JournalDay
-    @Environment(AppModel.self) private var model
     /// The year shown; nil is this year.
-    @State private var picked: Int?
-    /// Earlier years' days, loaded as they're picked.
-    @State private var loaded: [Int: Set<String>] = [:]
+    @Binding var picked: Int?
+    /// Writes an entry for a day that has none (nil for someone who can't write in the app).
+    var write: ((JournalDay) -> Void)?
+    @Environment(AppModel.self) private var model
+    /// The years loaded: their days, and their hashtags.
+    @State private var loaded: [Int: YearDays] = [:]
     @State private var failed: Int?
 
     private var thisYear: Int { Int(today.year) ?? 0 }
@@ -186,31 +205,68 @@ private struct YearCard: View {
         let first = min(stats.firstEntryDay.flatMap { Int($0.year) } ?? thisYear, thisYear)
         return Array((first...thisYear).reversed())
     }
-    /// The year's days with an entry, or nil while an earlier year's are loading.
+    /// The year's days with an entry, or nil while an earlier year's are loading. This year's
+    /// come with the stats.
     private var days: Set<String>? {
-        year == thisYear ? Set(stats.writingDays.filter { $0.hasPrefix("\(today.year)-") }) : loaded[year]
+        year == thisYear ? Set(stats.writingDays.filter { $0.hasPrefix("\(today.year)-") }) : loaded[year].map { Set($0.days) }
+    }
+    /// January to December of the year, counted from its days.
+    private var months: [MonthCount] {
+        var counts = [Int](repeating: 0, count: 12)
+        for day in days ?? [] {
+            if let month = Int(day.dropFirst(5).prefix(2)), (1...12).contains(month) { counts[month - 1] += 1 }
+        }
+        return counts.enumerated().map { MonthCount(year: year, month: $0.offset + 1, count: $0.element) }
+    }
+    /// The year's hashtags; this year's are the past twelve months' until its own arrive (and
+    /// stay so with an older server).
+    private var hashtags: [HashtagCount] {
+        loaded[year]?.topHashtags ?? (year == thisYear ? stats.topHashtags : [])
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline) {
-                title
-                Spacer(minLength: 8)
-                summary
+        VStack(alignment: .leading, spacing: 28) {
+            VStack(alignment: .leading, spacing: 14) {
+                HStack(alignment: .center) {
+                    title
+                    Spacer(minLength: 8)
+                    summary
+                }
+                WritingHeatmap(year: year, days: days ?? [], today: today, onSelect: { day in
+                    model.statsDay = StatsDay(day: day)
+                }, onWrite: write)
+                .id(year) // each year opens at its newest weeks
+                if failed == year {
+                    Text("Couldn't load \(String(year)).")
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                }
             }
-            WritingHeatmap(year: year, days: days ?? [], today: today) { day in
-                model.statsDay = StatsDay(day: day)
+            .id(StatsAnchor.year)
+            StatsCard(title: "Entries per Month") {
+                MonthBars(months: months)
             }
-            .id(year) // each year opens at its newest weeks
-            if failed == year {
-                Text("Couldn't load \(String(year)).")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
+            if !hashtags.isEmpty {
+                StatsCard(title: year == thisYear ? "Top Hashtags This Year" : "Top Hashtags in \(String(year))") {
+                    HashtagBars(hashtags: hashtags, canSearch: model.me?.canSearch == true) { tag in
+                        model.search(hashtag: tag)
+                    }
+                }
+                .id(StatsAnchor.hashtags)
+            }
+            if let connectors = model.me?.aiConnectors {
+                ConnectorCallout(
+                    title: "Sentiment analysis",
+                    message: "Analyze your writing in \(String(year)) with the Claude or ChatGPT plugin.",
+                    guide: connectors.guideUrl,
+                    prompt: StatsView.sentimentPrompt(year: year)
+                )
             }
         }
-        .task(id: year) { await load(year) }
+        .task(id: "\(year)|\(stats.totalEntries)") { await load(year) }
     }
 
+    /// The year, large, in a pill with a chevron: the menu that turns the whole section to another.
     @ViewBuilder
     private var title: some View {
         if years.count > 1 {
@@ -219,24 +275,29 @@ private struct YearCard: View {
                     ForEach(years, id: \.self) { Text(String($0)).tag($0) }
                 }
             } label: {
-                HStack(spacing: 5) {
+                HStack(spacing: 8) {
                     Text(String(year))
-                        .font(.headline)
+                        .font(.system(.title2, design: .serif, weight: .semibold))
+                        .monospacedDigit()
                         .foregroundStyle(.primary)
                     appIcon("slab-angle-down")
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 11, height: 11)
-                        .foregroundStyle(.secondary)
+                        .frame(width: 12, height: 12)
+                        .foregroundStyle(.tint)
                 }
-                .contentShape(.rect)
+                .padding(.leading, 14)
+                .padding(.trailing, 12)
+                .padding(.vertical, 7)
+                .background(Color.secondary.opacity(0.1), in: .capsule)
+                .contentShape(.capsule)
             }
-            .buttonStyle(.plain) // the title's own black and the chevron's grey, not the tint
+            .buttonStyle(.plain) // the year's own black, not the tint
             .accessibilityLabel("Year, \(String(year))")
             .accessibilityHint("Chooses another year")
         } else {
             Text(String(year))
-                .font(.headline)
+                .font(.system(.title2, design: .serif, weight: .semibold))
                 .accessibilityAddTraits(.isHeader)
         }
     }
@@ -274,14 +335,14 @@ private struct YearCard: View {
         return min(max(Int((Double(written) * 100 / Double(total)).rounded()), 1), 99)
     }
 
+    /// This year's too: its days come with the stats, but its hashtags (the calendar year's) don't.
     private func load(_ year: Int) async {
-        guard year != thisYear, loaded[year] == nil else { return }
         failed = nil
         do {
-            loaded[year] = Set(try await model.writingDays(year: year))
+            loaded[year] = try await model.statsYear(year)
         } catch is CancellationError {
         } catch {
-            failed = year
+            if year != thisYear, loaded[year] == nil { failed = year }
         }
     }
 }
@@ -304,9 +365,22 @@ private struct StatTile: View {
     let value: String
     let label: String
     let icon: String
+    var hint: String?
+    /// Where a tap goes (nowhere, for a tile with nothing to show).
+    var action: (() -> Void)?
 
     var body: some View {
-        // The icon beside the number (not above it), in light grey: it labels, it isn't a button.
+        if let action {
+            Button(action: action) { tile }
+                .buttonStyle(.plain)
+                .accessibilityHint(hint ?? "")
+        } else {
+            tile
+        }
+    }
+
+    private var tile: some View {
+        // The icon beside the number (not above it), in light grey.
         HStack(alignment: .center, spacing: 10) {
             appIcon(icon)
                 .resizable()
@@ -329,13 +403,15 @@ private struct StatTile: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .background(Color.secondary.opacity(0.08), in: .rect(cornerRadius: 14))
+        .contentShape(.rect(cornerRadius: 14))
         .accessibilityElement(children: .combine)
     }
 }
 
 /// A calendar year of days as week columns (Sunday on top), like a contribution graph and the
-/// web's. This year's days still to come are paler, so the grid shows how much of the year is
-/// left, and it opens with today a few weeks from its right edge. Month names along the top, Mon / Wed / Fri down the side. Pinch to make the
+/// web's. This year's days still to come are outlines only, so the grid shows how much of the year is
+/// left, and it opens with today a few weeks from its right edge. Hold a day for a look at its
+/// entry, or (a day gone by without one) to write it. Month names along the top, Mon / Wed / Fri down the side. Pinch to make the
 /// squares bigger (easier to tap a day) or smaller (more of the year at once); the size is kept.
 private struct WritingHeatmap: View {
     let year: Int
@@ -343,9 +419,22 @@ private struct WritingHeatmap: View {
     let today: JournalDay
     /// A day with an entry was tapped.
     let onSelect: (JournalDay) -> Void
+    /// Writes an entry for a day held down that has none (nil: not offered).
+    var onWrite: ((JournalDay) -> Void)?
 
     @AppStorage("stats.heatmapCell") private var cellSize: Double = 13
     @State private var pinchStart: Double?
+    /// The day held down, and its square (the popover points at it).
+    @State private var held: HeldDay?
+    /// Where a finger's down on the grid, while it stays put (a hold, once it's been there a while).
+    @GestureState private var press: CGPoint?
+
+    struct HeldDay: Identifiable {
+        let day: JournalDay
+        let isWritten: Bool
+        let square: CGRect
+        var id: String { day.iso }
+    }
     private static let sizes = 9.0...32.0
     private let labelRow: CGFloat = 16
 
@@ -415,6 +504,14 @@ private struct WritingHeatmap: View {
                                 ForEach(0..<7, id: \.self) { index in
                                     RoundedRectangle(cornerRadius: cell * 0.23)
                                         .fill(fill(for: week[index]))
+                                        .overlay {
+                                            // Days still to come: an outline in the grey of a day
+                                            // gone by unwritten, with nothing in it.
+                                            if let day = week[index], day > today {
+                                                RoundedRectangle(cornerRadius: cell * 0.23)
+                                                    .strokeBorder(Color.secondary.opacity(0.22), lineWidth: 1)
+                                            }
+                                        }
                                         .frame(width: cell, height: cell)
                                 }
                             }
@@ -425,8 +522,30 @@ private struct WritingHeatmap: View {
                     // written day (on an empty neighbor or a gap) still opens the nearest one.
                     .contentShape(.rect)
                     .gesture(SpatialTapGesture().onEnded { tap in
+                        guard held == nil else { return } // the end of a hold isn't a tap
                         if let day = writtenDay(near: tap.location, in: weeks) { onSelect(day) }
                     })
+                    // Held down: the day's entry in a popover, or the offer to write one. (A long
+                    // press of SwiftUI's own doesn't say where, and loses to the scrolling here.)
+                    .simultaneousGesture(DragGesture(minimumDistance: 0).updating($press) { value, press, _ in
+                        press = abs(value.translation.width) < 8 && abs(value.translation.height) < 8 ? value.startLocation : nil
+                    })
+                    .task(id: press) {
+                        guard let point = press else { return }
+                        try? await Task.sleep(for: .milliseconds(450))
+                        guard !Task.isCancelled, press == point else { return }
+                        held = heldDay(at: point, in: weeks)
+                    }
+                    .popover(item: $held, attachmentAnchor: .rect(.rect(held?.square ?? .zero)), arrowEdge: .bottom) { held in
+                        DayPopover(held: held) {
+                            self.held = nil
+                            onSelect(held.day)
+                        } write: {
+                            self.held = nil
+                            onWrite?(held.day)
+                        }
+                    }
+                    .sensoryFeedback(.impact(weight: .light), trigger: held?.id) { _, new in new != nil }
                 }
                 .padding(.vertical, 2)
             }
@@ -474,6 +593,28 @@ private struct WritingHeatmap: View {
         .accessibilityHidden(true)
     }
 
+    /// The day held at `point`: one gone by without an entry (to write it), or a written one (the
+    /// nearest, as for a tap).
+    private func heldDay(at point: CGPoint, in weeks: [[JournalDay?]]) -> HeldDay? {
+        let pitch = cell + gap
+        func square(_ day: JournalDay) -> CGRect {
+            for (column, week) in weeks.enumerated() {
+                if let row = week.firstIndex(where: { $0?.iso == day.iso }) {
+                    return CGRect(x: CGFloat(column) * pitch, y: CGFloat(row) * pitch, width: cell, height: cell)
+                }
+            }
+            return CGRect(origin: point, size: .zero)
+        }
+        // The day in the square under the finger, if it's one gone by without an entry: a written
+        // neighbour doesn't take the hold, as it does a tap.
+        let column = Int(point.x / pitch), row = Int(point.y / pitch)
+        if onWrite != nil, weeks.indices.contains(column), (0..<7).contains(row),
+           let day = weeks[column][row], !(day > today), !days.contains(day.iso) {
+            return HeldDay(day: day, isWritten: false, square: square(day))
+        }
+        return writtenDay(near: point, in: weeks).map { HeldDay(day: $0, isWritten: true, square: square($0)) }
+    }
+
     /// The written day under `point`, or else the closest written one within a square of it.
     private func writtenDay(near point: CGPoint, in weeks: [[JournalDay?]]) -> JournalDay? {
         let pitch = cell + gap
@@ -493,15 +634,97 @@ private struct WritingHeatmap: View {
     private func fill(for day: JournalDay?) -> AnyShapeStyle {
         guard let day else { return AnyShapeStyle(.clear) }
         if days.contains(day.iso) { return AnyShapeStyle(.tint) }
-        // Days still to come are paler than the ones that went by unwritten.
-        return AnyShapeStyle(Color.secondary.opacity(day > today ? 0.06 : 0.14))
+        // Days still to come are empty (outlined, above); the ones that went by unwritten are grey.
+        return day > today ? AnyShapeStyle(.clear) : AnyShapeStyle(Color.secondary.opacity(0.14))
     }
 }
 
-/// One bar per month (a single series, so no legend). Tap or drag to read a month's count.
+/// What comes up over a day held down in the grid: its entry, as the Journal's long-press shows
+/// one (tap it to read the day), or, for a day without one, the offer to write it.
+private struct DayPopover: View {
+    let held: WritingHeatmap.HeldDay
+    let open: () -> Void
+    let write: () -> Void
+    @Environment(AppModel.self) private var model
+    @State private var summary: EntrySummary?
+    @State private var failed = false
+    @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
+
+    /// The day, the start of its entry and its photo, small enough to sit over the grid.
+    private func preview(_ summary: EntrySummary) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(held.day.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year()))
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.tint)
+            let text = summary.excerpt.replacingOccurrences(of: #"https?://open\.spotify\.com/\S+"#, with: "", options: .regularExpression)
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            if !text.isEmpty {
+                Text(text)
+                    .font(.system(.callout, design: fontStyle.design))
+                    .lineSpacing(3)
+                    .lineLimit(summary.imageURL == nil ? 9 : 5)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            if summary.imageURL != nil, !summary.imageProcessing {
+                AsyncImage(url: summary.thumbnailURL(width: 600)) { image in
+                    image.resizable().scaledToFill()
+                } placeholder: {
+                    Color.secondary.opacity(0.12)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(height: 130)
+                .clipShape(.rect(cornerRadius: 10))
+            }
+        }
+        .padding(16)
+        .frame(width: 280, alignment: .topLeading)
+        .contentShape(.rect)
+    }
+
+    var body: some View {
+        Group {
+            if !held.isWritten {
+                Button(action: write) {
+                    Label("Write entry for \(held.day.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().year()))", icon: "slab-edit")
+                        .font(.subheadline.weight(.semibold))
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 14)
+                }
+            } else if let summary {
+                Button(action: open) { preview(summary) }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Opens the day")
+            } else if failed {
+                Text("Couldn't load this day.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .padding()
+            } else {
+                ProgressView().frame(width: 220, height: 110)
+            }
+        }
+        .presentationCompactAdaptation(.popover)
+        .task {
+            guard held.isWritten else { return }
+            do {
+                summary = try await model.entrySummary(on: held.day)
+                failed = summary == nil
+            } catch is CancellationError {
+            } catch {
+                failed = true
+            }
+        }
+    }
+}
+
+/// One bar per month (a single series, so no legend). Tap or drag to read a month: its count over
+/// its bar, and its name in full ("March 2025") where the months' initials were.
 private struct MonthBars: View {
     let months: [MonthCount]
     @State private var selected: String?
+
+    private var selectedMonth: MonthCount? { months.first { $0.key == selected } }
 
     var body: some View {
         Chart(months) { month in
@@ -521,7 +744,9 @@ private struct MonthBars: View {
             AxisMarks(values: months.map(\.key)) { value in
                 AxisValueLabel {
                     if let key = value.as(String.self) {
+                        // Kept (unseen) while a month is picked, so the chart doesn't change height.
                         Text(JournalDay(key + "-01")?.formatted(.dateTime.month(.narrow)) ?? "")
+                            .opacity(selectedMonth == nil ? 1 : 0)
                     }
                 }
             }
@@ -532,8 +757,16 @@ private struct MonthBars: View {
                 AxisValueLabel()
             }
         }
+        .overlay(alignment: .bottom) {
+            if let selectedMonth {
+                Text(selectedMonth.title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .accessibilityIdentifier("StatsSelectedMonth")
+            }
+        }
         .frame(height: 160)
-        .accessibilityElement()
+        .accessibilityElement(children: .contain)
         .accessibilityLabel("Entries per month")
         .accessibilityValue(months.map { "\(MonthCount(key: $0.key, count: 0)?.shortTitle ?? $0.key): \($0.count)" }.joined(separator: ", "))
     }

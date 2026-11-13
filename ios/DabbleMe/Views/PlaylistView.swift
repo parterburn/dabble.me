@@ -285,7 +285,7 @@ struct SpotifyPlayer: UIViewRepresentable {
             view.loadHTMLString(Self.page(for: trackID, autoplay: starts), baseURL: AppConfig.productionURL)
         } else if coordinator.plays != plays {
             coordinator.plays = plays
-            view.evaluateJavaScript("window.dabblePlay && window.dabblePlay()")
+            view.evaluateJavaScript("window.dabblePlay && window.dabblePlay()") // kept if the player isn't ready yet
         }
     }
 
@@ -303,12 +303,16 @@ struct SpotifyPlayer: UIViewRepresentable {
         <div id="player"></div>
         <script src="https://open.spotify.com/embed/iframe-api/v1" async></script>
         <script>
+        // A tap on Play can come before Spotify's player is there, or before it's ready: it's kept
+        // until then.
+        var wants = \(autoplay), ready = false, player = null;
+        window.dabblePlay = function () { if (ready) { player.play(); } else { wants = true; } };
         window.onSpotifyIframeApiReady = function (api) {
           api.createController(document.getElementById('player'),
             { uri: 'spotify:track:\(trackID)', width: '100%', height: \(Int(height)) },
             function (controller) {
-              window.dabblePlay = function () { controller.play(); };
-              \(autoplay ? "controller.addListener('ready', window.dabblePlay);" : "")
+              player = controller;
+              controller.addListener('ready', function () { ready = true; if (wants) { controller.play(); } });
             });
         };
         </script>

@@ -39,6 +39,8 @@ final class RichTextEditorModel {
     private var linkRange = NSRange(location: 0, length: 0)
 
     @ObservationIgnored fileprivate weak var textView: UITextView?
+    /// Links are PRO: without them, a pasted address stays plain text.
+    @ObservationIgnored var allowsLinks = true
 
     init(blocks: [DocumentBlock] = []) {
         initialBlocks = blocks
@@ -237,6 +239,18 @@ final class RichTextEditorModel {
         textDidChange()
     }
 
+    /// A web address pasted over selected text links the text, instead of taking its place.
+    fileprivate func link(_ url: URL, onSelection range: NSRange) -> Bool {
+        guard allowsLinks, let textView, range.length > 0, NSMaxRange(range) <= textView.textStorage.length,
+              // Words, not just a line break or spaces.
+              !textView.textStorage.attributedSubstring(from: range).string.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
+        textView.textStorage.addAttribute(.link, value: url, range: range)
+        textView.selectedRange = NSRange(location: NSMaxRange(range), length: 0)
+        endLink()
+        textDidChange()
+        return true
+    }
+
     func removeLink() {
         defer { endLink() }
         guard let textView, linkRange.length > 0, NSMaxRange(linkRange) <= textView.textStorage.length else { return }
@@ -325,6 +339,30 @@ final class RichTextEditorModel {
     }
 }
 
+/// The editor's text view. Pasting a web address while text is selected makes the text a link to
+/// it (anything else pastes as usual).
+final class EditorTextView: UITextView {
+    /// Links the selection; false when it didn't (links aren't allowed, nothing to link).
+    var linksSelection: ((URL, NSRange) -> Bool)?
+
+    override func paste(_ sender: Any?) {
+        if selectedRange.length > 0, let url = Self.address(in: UIPasteboard.general), linksSelection?(url, selectedRange) == true { return }
+        super.paste(sender)
+    }
+
+    /// The pasteboard's contents when they're one web address and nothing else.
+    static func address(in pasteboard: UIPasteboard) -> URL? {
+        address(from: pasteboard.string ?? pasteboard.url?.absoluteString)
+    }
+
+    static func address(from text: String?) -> URL? {
+        guard let text = text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty,
+              !text.contains(where: \.isWhitespace), let url = URL(string: text),
+              let scheme = url.scheme?.lowercased(), scheme == "http" || scheme == "https", url.host() != nil else { return nil }
+        return url
+    }
+}
+
 struct RichTextEditor: UIViewRepresentable {
     let model: RichTextEditorModel
     /// The bar over the keyboard: the composer's buttons at each end (photos on the left; tags
@@ -337,7 +375,8 @@ struct RichTextEditor: UIViewRepresentable {
     var row: AnyView? = nil
 
     func makeUIView(context: Context) -> UITextView {
-        let textView = UITextView()
+        let textView = EditorTextView()
+        textView.linksSelection = { [model] url, range in model.link(url, onSelection: range) }
         textView.delegate = context.coordinator
         textView.allowsEditingTextAttributes = true // B / I / U in the edit menu too
         textView.backgroundColor = .clear

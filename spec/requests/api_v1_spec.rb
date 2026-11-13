@@ -723,12 +723,14 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       expect(response).to have_http_status(:forbidden)
     end
 
-    it "lists a year's writing days" do
-      create(:entry, user: pro_user, date: "2024-03-02", body: "<p>One</p>")
-      create(:entry, user: pro_user, date: "2024-11-30", body: "<p>Two</p>")
-      create(:entry, user: pro_user, date: "2025-01-01", body: "<p>Next year</p>")
+    it "lists a year's writing days and its hashtags" do
+      create(:entry, user: pro_user, date: "2024-03-02", body: "<p>One #trail</p>")
+      create(:entry, user: pro_user, date: "2024-11-30", body: "<p>Two #trail #home</p>")
+      create(:entry, user: pro_user, date: "2025-01-01", body: "<p>Next year #later</p>")
+      create(:entry, user: pro_user, date: "2023-12-31", body: "<p>The year before #earlier</p>")
       get "/api/v1/stats/days", params: { year: 2024 }, headers: auth(pro_user)
-      expect(json).to eq("year" => 2024, "days" => %w[2024-03-02 2024-11-30])
+      expect(json).to eq("year" => 2024, "days" => %w[2024-03-02 2024-11-30],
+                         "top_hashtags" => [{ "tag" => "trail", "count" => 2 }, { "tag" => "home", "count" => 1 }])
       get "/api/v1/stats/days", headers: auth(free_user)
       expect(response).to have_http_status(:forbidden)
     end

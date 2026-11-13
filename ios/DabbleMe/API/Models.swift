@@ -348,11 +348,13 @@ struct JournalStats: Decodable, Sendable, Equatable {
     var firstEntryDay: JournalDay? { firstEntryDate.flatMap(JournalDay.init) }
 }
 
-/// GET /api/v1/stats/days?year=: the days with an entry in one calendar year.
+/// GET /api/v1/stats/days?year=: one calendar year, for Stats' year picker.
 struct YearDays: Decodable, Sendable {
     let year: Int
-    /// YYYY-MM-DD, oldest first.
+    /// YYYY-MM-DD days with an entry, oldest first.
     let days: [String]
+    /// The year's hashtags, most used first (nil from an older server).
+    var topHashtags: [HashtagCount]? = nil
 }
 
 struct HashtagCount: Decodable, Sendable, Hashable, Identifiable {
