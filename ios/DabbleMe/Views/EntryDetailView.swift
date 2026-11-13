@@ -464,6 +464,8 @@ struct ReflectionSheet: View {
     /// After the reflection, a chat about the entry (on the device, never saved).
     @State private var chat: ReflectionChat?
     @State private var draft = ""
+    /// Counts the replies sent: each gets a field of its own.
+    @State private var field = 0
     @State private var detent = PresentationDetent.medium
     @FocusState private var replying: Bool
 
@@ -560,6 +562,7 @@ struct ReflectionSheet: View {
             TextField("Reply to keep talking it through…", text: $draft, axis: .vertical)
                 .lineLimit(1...5)
                 .focused($replying)
+                .id(field) // a new one after each send (see `send`)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
                 .background(Color.primary.opacity(0.06), in: .rect(cornerRadius: 20))
@@ -667,10 +670,14 @@ struct ReflectionSheet: View {
     private func send() {
         guard let text = reflection.text else { return }
         let message = draft
+        let wasTyping = replying
         draft = ""
-        // The keyboard commits a pending autocorrection as Send is tapped, which puts the text
-        // back: clear it again once that's happened.
+        // A fresh field for the next reply. The keyboard can put the sent words back in the old
+        // one (a pending autocorrection or dictation, committed as Send is tapped), or leave them
+        // showing though the draft is empty; a new field has none of that to bring back.
+        field += 1
         Task { @MainActor in
+            if wasTyping { replying = true } // the keyboard stays up, on the new field
             try? await Task.sleep(for: .milliseconds(80))
             draft = ""
         }
