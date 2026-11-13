@@ -18,7 +18,7 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 
 **Promotional text (170)**
 
-> Like your private timeline: write a few lines a day, in the app or by email, then Rewind to this day a year ago, or to your whole year. No feed, no ads.
+> Like your private timeline: write a few lines a day, in the app or by email. Then Rewind to this day a year ago, five years ago, or to your whole year.
 
 **Description (4,000)**
 
