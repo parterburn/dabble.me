@@ -67,7 +67,10 @@ struct EntryDetailView: View {
                 // doesn't start by itself: a tap on a song, or on the player's own button, does.
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     if let song, !playerHidden {
-                        SongPlayerBar(song: song, plays: songPlays) { playerHidden = true }
+                        SongPlayerBar(song: song, plays: songPlays, openPlaylist: {
+                            model.selectedTab = .journal
+                            model.journalModeRequest = .playlist
+                        }) { playerHidden = true }
                     }
                 }
                 .animation(.snappy(duration: 0.25), value: playerHidden)
@@ -85,6 +88,7 @@ struct EntryDetailView: View {
         }
         .navigationTitle(entry?.day?.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year()) ?? "")
         .navigationBarTitleDisplayMode(.inline)
+        .slabBackButton()
         .toolbar {
             if let entry {
                 ToolbarItem(placement: .principal) { dateTitle(for: entry) }

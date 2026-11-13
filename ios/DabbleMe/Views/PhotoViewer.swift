@@ -122,6 +122,7 @@ struct PhotoMenu: View {
 /// Full-screen photo, under the band it's shared with (how long ago it was): pinch or double-tap
 /// to zoom, swipe down or tap ✕ to close. Save keeps the original photo, without the band.
 struct PhotoViewer: View {
+    @Environment(AppModel.self) private var model
     let photo: RemotePhoto
     @Environment(\.dismiss) private var dismiss
     @State private var saveResult: PhotoSaveResult?
@@ -178,12 +179,24 @@ struct PhotoViewer: View {
         .opacity(dragOffset == 0 ? 1 : 0)
     }
 
-    /// Save and Share, labelled, at the bottom center (as in Photos), rather than a ⋯ menu (which
-    /// sometimes didn't open) or bare icons (easy to miss).
+    /// Photos (to the Journal's grid of them), Save and Share, labelled, at the bottom center (as
+    /// in Photos), rather than a ⋯ menu (which sometimes didn't open) or bare icons (easy to
+    /// miss). Photos is down here with them, not at the top left, where it read as a way back.
     @ViewBuilder
     private var actionBar: some View {
         if photo.image != nil, let data = photo.data {
-            HStack(spacing: 12) {
+            HStack(spacing: 10) {
+                Button {
+                    // Whatever the photo was opened over (a day's or a random entry's sheet) closes too.
+                    model.statsDay = nil
+                    model.showsRandomEntry = false
+                    model.selectedTab = .journal
+                    model.journalModeRequest = .photos
+                    dismiss()
+                } label: {
+                    pill("Photos", icon: "slab-images")
+                }
+                .accessibilityHint("Shows all your photos")
                 Button {
                     Task { saveResult = await PhotoActions.save(data) }
                 } label: {
@@ -211,7 +224,7 @@ struct PhotoViewer: View {
         }
             .font(.body.weight(.semibold))
             .foregroundStyle(.white)
-            .padding(.horizontal, 20)
+            .padding(.horizontal, 16)
             .frame(minHeight: 48)
             .background(.black.opacity(0.45), in: .capsule)
             .background(.ultraThinMaterial.opacity(0.6), in: .capsule)

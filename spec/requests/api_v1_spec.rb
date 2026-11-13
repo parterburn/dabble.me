@@ -807,6 +807,15 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
   end
 
   describe "/api/v1/email_schedule" do
+    it "keeps the days when the email is turned off, to turn it back on with" do
+      pro_user.update!(frequency: %w[Mon Wed])
+      patch "/api/v1/email_schedule", params: { days: [] }, headers: auth(pro_user), as: :json
+      expect(json).to include("days" => [], "previous_days" => %w[Mon Wed])
+      expect(pro_user.reload.frequency).to eq([])
+      patch "/api/v1/email_schedule", params: { days: %w[Mon Wed] }, headers: auth(pro_user), as: :json
+      expect(json["days"]).to eq(%w[Mon Wed])
+    end
+
     it "shows the schedule with time zones" do
       get "/api/v1/email_schedule", headers: auth(free_user)
       expect(response).to have_http_status(:ok)

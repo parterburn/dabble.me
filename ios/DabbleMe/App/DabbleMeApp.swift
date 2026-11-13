@@ -182,7 +182,14 @@ struct MainTabs: View {
             model.reopensDayPicker = false
             model.showsDayPicker = true
         }) { DayEntriesSheet(day: $0.day) }
+        .sheet(item: $model.composingDay) { ComposeView(mode: .new, day: $0.day) }
         .sheet(isPresented: $model.showsDayPicker, onDismiss: {
+            // Write Entry on a day without one: the composer, once the calendar has closed.
+            if let day = model.writeAfterDayPicker {
+                model.writeAfterDayPicker = nil
+                model.composingDay = StatsDay(day: day)
+                return
+            }
             guard let day = model.pickedDay else { return }
             model.pickedDay = nil
             model.dayPickerOpensOn = day

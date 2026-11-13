@@ -370,7 +370,10 @@ struct HashtagList: Decodable, Sendable {
 
 /// GET/PATCH /api/v1/email_schedule: when the "How was your day?" email arrives.
 struct EmailSchedule: Decodable, Sendable, Equatable {
+    /// None: the email is off.
     var days: [String]
+    /// The days it had when it was last turned off (nil from an older server).
+    var previousDays: [String]? = nil
     var hour: Int
     var timezone: String
     /// PRO: any days. Free: Sunday or nothing.

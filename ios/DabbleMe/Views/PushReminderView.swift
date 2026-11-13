@@ -57,6 +57,7 @@ struct PushReminderView: View {
                 }
             }
         }
+        .slabBackButton()
         .navigationTitle("Push Notifications")
         .navigationBarTitleDisplayMode(.inline)
         .task { notificationsDenied = await ReminderScheduler.shared.isDenied() }

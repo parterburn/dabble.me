@@ -13,7 +13,7 @@ module Api
         render json: schedule_json
       end
 
-      # PATCH { days: ["Mon", ...], hour: 0-23, timezone: "Pacific Time (US & Canada)",
+      # PATCH { days: ["Mon", ...] (none: off), hour: 0-23, timezone: "Pacific Time (US & Canada)",
       #         include_past_entries: true, past_filter: "work, doctor", include_old_entries: true }
       # (any of them)
       def update
@@ -25,6 +25,8 @@ module Api
             return render_error(:forbidden, 'pro_required', 'Choosing more days is part of Dabble Me PRO.')
           end
 
+          # Turning the email off keeps its days, to turn it back on with (`previous_days`).
+          user.previous_frequency = user.frequency if days.empty? && Array(user.frequency).any?
           user.frequency = DAYS & days
         end
         if params.key?(:hour)
@@ -64,6 +66,8 @@ module Api
         user = current_user.reload
         {
           days: DAYS & Array(user.frequency),
+          # The days it had when it was last turned off (the app's switch turns it back on with them).
+          previous_days: (DAYS & Array(user.previous_frequency)) & (user.is_pro? ? DAYS : ['Sun']),
           hour: user.send_time.hour,
           timezone: user.send_timezone,
           can_choose_days: user.is_pro?,

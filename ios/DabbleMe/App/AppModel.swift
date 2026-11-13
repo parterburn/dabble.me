@@ -23,6 +23,9 @@ final class AppModel {
     var journalTopRequest = 0
     /// The Journal shows Stats (Today's count for the year was tapped).
     var statsRequest = 0
+    /// Another of the Journal's views, asked for from elsewhere: Photos from the photo viewer,
+    /// the Playlist from an entry's song player.
+    var journalModeRequest: JournalMode?
     /// Shake the phone for a random memory (a preview sheet); `openEntryRequest` opens it in Journal.
     var showsRandomEntry = false
     /// A day tapped in Stats → Past Year: its entries come up in a sheet, presented with the
@@ -37,6 +40,10 @@ final class AppModel {
     var reopensDayPicker = false
     /// The day last looked at from the calendar: it opens on that month again.
     var dayPickerOpensOn: JournalDay?
+    /// A day without an entry picked to write one for (Stats' grid, the calendar): the composer
+    /// opens on it. From the calendar it waits (`writeAfterDayPicker`) until that sheet has closed.
+    var composingDay: StatsDay?
+    var writeAfterDayPicker: JournalDay?
     let lock = AppLock()
 
     func search(hashtag: String) {
@@ -464,6 +471,12 @@ final class AppModel {
     /// A calendar year for Stats: its days with an entry, and its hashtags.
     func statsYear(_ year: Int) async throws -> YearDays {
         try await api.get("api/v1/stats/days", query: ["year": String(year)])
+    }
+
+    /// A month's entries as the timeline has them, by day (YYYY-MM-DD): the calendar's previews.
+    func entrySummaries(year: Int, month: Int) async throws -> [String: EntrySummary] {
+        let page: EntryPage = try await api.get("api/v1/entries", query: ["year": String(year), "month": String(month), "per": "50"])
+        return Dictionary(page.entries.map { ($0.date, $0) }, uniquingKeysWith: { first, _ in first })
     }
 
     /// A day's entry as the timeline has it (text capped), for a quick look: Stats' day grid.

@@ -69,7 +69,7 @@ struct PastEntriesRow: View {
     let store: EmailScheduleStore
 
     var body: some View {
-        NavigationLink {
+        PaneLink {
             PastEntriesView(store: store)
         } label: {
             LabeledContent("Include Past Entries", value: store.schedule.map { $0.includePastEntries ? "On" : "Off" } ?? "")
@@ -134,6 +134,7 @@ struct PastEntriesView: View {
         // Shows the words as saved ("work, doctor") once they are.
         .onChange(of: store.schedule?.pastFilter) { if !filterFocused { filterDraft = nil } }
         .onDisappear(perform: saveFilter)
+        .slabBackButton()
         .navigationTitle("Past Entries")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Couldn't save your settings", isPresented: .present($store.error)) {
@@ -158,7 +159,7 @@ struct EmailScheduleRow: View {
 
     var body: some View {
         let isPro = model.me?.isPro == true
-        NavigationLink {
+        PaneLink {
             EmailScheduleView(store: store)
         } label: {
             LabeledContent("Email", value: store.schedule.map(Self.summary) ?? "")
@@ -183,8 +184,10 @@ struct EmailScheduleRow: View {
     }
 }
 
-/// The Email Notifications page: which days, what hour and in which time zone the daily email
-/// goes out. Saves as you change it. (Which past entry it includes is on Past Entries.)
+/// The Email Notifications page, like Push Notifications: a switch, and under it (while it's on)
+/// which days, what hour and in which time zone the daily email goes out. Off is no days; back on
+/// is the days it had before. Saves as you change it. (Which past entry it includes is on Past
+/// Entries.)
 struct EmailScheduleView: View {
     let store: EmailScheduleStore
     @Environment(AppModel.self) private var model
@@ -194,8 +197,30 @@ struct EmailScheduleView: View {
         Form {
             if let schedule = store.schedule {
                 Section {
+                    Toggle("Email Notifications", isOn: Binding(get: { !schedule.days.isEmpty }, set: { on in
+                        store.save(with: model) { schedule in
+                            if on {
+                                // The days it had, or Sunday (what a new account starts with).
+                                let before = (schedule.previousDays ?? []).filter { schedule.canChooseDays || $0 == "Sun" }
+                                schedule.days = before.isEmpty ? ["Sun"] : before
+                            } else {
+                                schedule.previousDays = schedule.days
+                                schedule.days = []
+                            }
+                        }
+                    }))
+                } footer: {
+                    Text("A \"How was your day?\" email on the days you choose. Reply to it and your reply is that day's entry.")
+                }
+            }
+            if let schedule = store.schedule, !schedule.days.isEmpty {
+                Section {
                     DayPicker(days: schedule.days, canChooseAll: schedule.canChooseDays) { days in
-                        store.save(with: model) { $0.days = days }
+                        // The last day switched off turns the email off, keeping it to come back to.
+                        store.save(with: model) { schedule in
+                            if days.isEmpty { schedule.previousDays = schedule.days }
+                            schedule.days = days
+                        }
                     }
                 } header: {
                     Text("Days")
@@ -208,7 +233,7 @@ struct EmailScheduleView: View {
                             Text(Self.hourLabel(hour)).tag(hour)
                         }
                     }
-                    NavigationLink {
+                    PaneLink {
                         TimeZonePicker(zones: schedule.timeZones, selected: schedule.timezone) { zone in
                             store.save(with: model) { $0.timezone = zone }
                         }
@@ -216,9 +241,10 @@ struct EmailScheduleView: View {
                         LabeledContent("Time Zone", value: Self.shortName(schedule.timezone))
                     }
                 }
-                .disabled(schedule.days.isEmpty)
             }
         }
+        .animation(.default, value: store.schedule?.days.isEmpty)
+        .slabBackButton()
         .navigationTitle("Email Notifications")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Couldn't save your email schedule", isPresented: .present($store.error)) {
@@ -311,6 +337,7 @@ private struct TimeZonePicker: View {
             }
         }
         .searchable(text: $query, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search time zones")
+        .slabBackButton()
         .navigationTitle("Time Zone")
         .navigationBarTitleDisplayMode(.inline)
     }

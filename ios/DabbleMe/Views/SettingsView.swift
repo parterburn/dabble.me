@@ -69,7 +69,7 @@ struct SettingsView: View {
                             LabeledContent("Plan", value: me.isPro ? "PRO" : "Free")
                         }
                         // Dates for #tags (PRO, like the web settings); greyed out for free accounts.
-                        NavigationLink {
+                        PaneLink {
                             TagDatesView()
                         } label: {
                             Label("Manage Hashtags", icon: "slab-tag")
@@ -80,10 +80,9 @@ struct SettingsView: View {
 
                 remindersSection
                 intelligenceSection
-                privacySection
 
-                Section {
-                    NavigationLink {
+                Section("App") {
+                    PaneLink {
                         WidgetSettingsView()
                     } label: {
                         Label {
@@ -96,7 +95,7 @@ struct SettingsView: View {
                                 .frame(width: 22, height: 22)
                         }
                     }
-                    NavigationLink {
+                    PaneLink {
                         AccessibilitySettingsView()
                     } label: {
                         LabeledContent {
@@ -109,6 +108,7 @@ struct SettingsView: View {
                     Toggle(isOn: $shakeForRandomEntry) {
                         Label("Shake for Random Entry", icon: "slab-dice")
                     }
+                    lockToggle
                 }
 
                 Section {
@@ -122,7 +122,7 @@ struct SettingsView: View {
                     Link(destination: model.me?.securityUrl ?? AppConfig.webURL("security")) {
                         ExternalLinkLabel("Account Security", icon: "slab-shield")
                     }
-                    Link(destination: URL(string: "#export", relativeTo: AppConfig.webURL("users/edit"))!.absoluteURL) {
+                    Link(destination: AppConfig.webURL("entries/export")) {
                         ExternalLinkLabel("Export Entries", icon: "slab-arrow-up-from-line")
                     }
                 } header: {
@@ -185,7 +185,7 @@ private extension SettingsView {
     var remindersSection: some View {
         Section {
             // Each kind on a page of its own; then what either can look back on.
-            NavigationLink {
+            PaneLink {
                 PushReminderView()
             } label: {
                 LabeledContent("Push", value: ReminderSettings.summary(enabled: dailyReminder, days: ReminderSettings.days(from: reminderDays),
@@ -217,25 +217,23 @@ private extension SettingsView {
         }
     }
 
-    // MARK: - Privacy
+    // MARK: - Lock
 
-    @ViewBuilder
-    var privacySection: some View {
+    /// Face ID (or Touch ID) to open the app: the last of the App rows.
+    private var lockToggle: some View {
         let lock = model.lock
-        Section {
-            Toggle("Require \(lock.methodName)", isOn: Binding(
-                get: { lock.isEnabled },
-                set: { enabled in
-                    Task {
-                        await lock.setEnabled(enabled)
-                        WidgetSync.update(from: model)
-                    }
+        return Toggle(isOn: Binding(
+            get: { lock.isEnabled },
+            set: { enabled in
+                Task {
+                    await lock.setEnabled(enabled)
+                    WidgetSync.update(from: model)
                 }
-            ))
-            .disabled(!lock.isAvailable)
-        } header: {
-            Text("Privacy")
+            }
+        )) {
+            Label("Require \(lock.methodName)", icon: "slab-lock")
         }
+        .disabled(!lock.isAvailable)
     }
 
     /// The browser itself, not the page inside the app: that one's signed out along with the app.

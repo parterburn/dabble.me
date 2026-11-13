@@ -13,8 +13,6 @@ struct StatsView: View {
     /// The year everything under the tiles is about; nil is this year. Here so the Streak tile can
     /// turn it to its year.
     @State private var year: Int?
-    /// A day without an entry, picked in the grid to write one for.
-    @State private var writing: StatsDay?
 
     fileprivate typealias Anchor = StatsAnchor
 
@@ -33,7 +31,7 @@ struct StatsView: View {
                             StatsOverview(stats: stats, today: model.today?.day ?? JournalDay(localDate: .now))
                         }
                         YearSection(stats: stats, today: model.today?.day ?? JournalDay(localDate: .now), picked: $year,
-                                    write: model.me?.canWrite == false ? nil : { writing = StatsDay(day: $0) })
+                                    write: model.me?.canWrite == false ? nil : { model.composingDay = StatsDay(day: $0) })
                         if !showsOverview(stats) { footer(stats) } // the overview says these
                     }
                     .padding()
@@ -55,9 +53,9 @@ struct StatsView: View {
         }
         .refreshable { await load() }
         .task { if stats == nil { await load() } }
-        // An entry for a day picked in the grid; the numbers are counted again once it's written.
-        .sheet(item: $writing, onDismiss: { Task { await load() } }) { day in
-            ComposeView(mode: .new, day: day.day)
+        // An entry written for a day picked in the grid: the numbers are counted again after it.
+        .onChange(of: model.composingDay == nil) { _, closed in
+            if closed { Task { await load() } }
         }
     }
 
@@ -410,7 +408,7 @@ private struct StatTile: View {
 
 /// A calendar year of days as week columns (Sunday on top), like a contribution graph and the
 /// web's. This year's days still to come are outlines only, so the grid shows how much of the year is
-/// left, and it opens with today a few weeks from its right edge. Hold a day for a look at its
+/// left, and it opens with today a few weeks from its right edge. Hold a day for a preview of its
 /// entry, or (a day gone by without one) to write it. Month names along the top, Mon / Wed / Fri down the side. Pinch to make the
 /// squares bigger (easier to tap a day) or smaller (more of the year at once); the size is kept.
 private struct WritingHeatmap: View {
@@ -424,17 +422,7 @@ private struct WritingHeatmap: View {
 
     @AppStorage("stats.heatmapCell") private var cellSize: Double = 13
     @State private var pinchStart: Double?
-    /// The day held down, and its square (the popover points at it).
-    @State private var held: HeldDay?
-    /// Where a finger's down on the grid, while it stays put (a hold, once it's been there a while).
-    @GestureState private var press: CGPoint?
-
-    struct HeldDay: Identifiable {
-        let day: JournalDay
-        let isWritten: Bool
-        let square: CGRect
-        var id: String { day.iso }
-    }
+    @Environment(AppModel.self) private var model
     private static let sizes = 9.0...32.0
     private let labelRow: CGFloat = 16
 
@@ -513,6 +501,8 @@ private struct WritingHeatmap: View {
                                             }
                                         }
                                         .frame(width: cell, height: cell)
+                                        .modifier(HeldSquare(day: week[index], days: days, today: today, reach: gap / 2,
+                                                             model: model, open: onSelect, write: onWrite))
                                 }
                             }
                             .id(column)
@@ -522,30 +512,8 @@ private struct WritingHeatmap: View {
                     // written day (on an empty neighbor or a gap) still opens the nearest one.
                     .contentShape(.rect)
                     .gesture(SpatialTapGesture().onEnded { tap in
-                        guard held == nil else { return } // the end of a hold isn't a tap
                         if let day = writtenDay(near: tap.location, in: weeks) { onSelect(day) }
                     })
-                    // Held down: the day's entry in a popover, or the offer to write one. (A long
-                    // press of SwiftUI's own doesn't say where, and loses to the scrolling here.)
-                    .simultaneousGesture(DragGesture(minimumDistance: 0).updating($press) { value, press, _ in
-                        press = abs(value.translation.width) < 8 && abs(value.translation.height) < 8 ? value.startLocation : nil
-                    })
-                    .task(id: press) {
-                        guard let point = press else { return }
-                        try? await Task.sleep(for: .milliseconds(450))
-                        guard !Task.isCancelled, press == point else { return }
-                        held = heldDay(at: point, in: weeks)
-                    }
-                    .popover(item: $held, attachmentAnchor: .rect(.rect(held?.square ?? .zero)), arrowEdge: .bottom) { held in
-                        DayPopover(held: held) {
-                            self.held = nil
-                            onSelect(held.day)
-                        } write: {
-                            self.held = nil
-                            onWrite?(held.day)
-                        }
-                    }
-                    .sensoryFeedback(.impact(weight: .light), trigger: held?.id) { _, new in new != nil }
                 }
                 .padding(.vertical, 2)
             }
@@ -593,28 +561,6 @@ private struct WritingHeatmap: View {
         .accessibilityHidden(true)
     }
 
-    /// The day held at `point`: one gone by without an entry (to write it), or a written one (the
-    /// nearest, as for a tap).
-    private func heldDay(at point: CGPoint, in weeks: [[JournalDay?]]) -> HeldDay? {
-        let pitch = cell + gap
-        func square(_ day: JournalDay) -> CGRect {
-            for (column, week) in weeks.enumerated() {
-                if let row = week.firstIndex(where: { $0?.iso == day.iso }) {
-                    return CGRect(x: CGFloat(column) * pitch, y: CGFloat(row) * pitch, width: cell, height: cell)
-                }
-            }
-            return CGRect(origin: point, size: .zero)
-        }
-        // The day in the square under the finger, if it's one gone by without an entry: a written
-        // neighbour doesn't take the hold, as it does a tap.
-        let column = Int(point.x / pitch), row = Int(point.y / pitch)
-        if onWrite != nil, weeks.indices.contains(column), (0..<7).contains(row),
-           let day = weeks[column][row], !(day > today), !days.contains(day.iso) {
-            return HeldDay(day: day, isWritten: false, square: square(day))
-        }
-        return writtenDay(near: point, in: weeks).map { HeldDay(day: $0, isWritten: true, square: square($0)) }
-    }
-
     /// The written day under `point`, or else the closest written one within a square of it.
     private func writtenDay(near point: CGPoint, in weeks: [[JournalDay?]]) -> JournalDay? {
         let pitch = cell + gap
@@ -639,81 +585,24 @@ private struct WritingHeatmap: View {
     }
 }
 
-/// What comes up over a day held down in the grid: its entry, as the Journal's long-press shows
-/// one (tap it to read the day), or, for a day without one, the offer to write it.
-private struct DayPopover: View {
-    let held: WritingHeatmap.HeldDay
-    let open: () -> Void
-    let write: () -> Void
-    @Environment(AppModel.self) private var model
-    @State private var summary: EntrySummary?
-    @State private var failed = false
-    @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
+/// A square of the grid, held down: the day's preview and menu (`dayPreview`), for a day that's
+/// been (not one still to come). The hold reaches half a gap past the square, which is small.
+private struct HeldSquare: ViewModifier {
+    let day: JournalDay?
+    let days: Set<String>
+    let today: JournalDay
+    let reach: CGFloat
+    let model: AppModel
+    let open: (JournalDay) -> Void
+    let write: ((JournalDay) -> Void)?
 
-    /// The day, the start of its entry and its photo, small enough to sit over the grid.
-    private func preview(_ summary: EntrySummary) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(held.day.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year()))
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.tint)
-            let text = summary.excerpt.replacingOccurrences(of: #"https?://open\.spotify\.com/\S+"#, with: "", options: .regularExpression)
-                .trimmingCharacters(in: .whitespacesAndNewlines)
-            if !text.isEmpty {
-                Text(text)
-                    .font(.system(.callout, design: fontStyle.design))
-                    .lineSpacing(3)
-                    .lineLimit(summary.imageURL == nil ? 9 : 5)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            if summary.imageURL != nil, !summary.imageProcessing {
-                AsyncImage(url: summary.thumbnailURL(width: 600)) { image in
-                    image.resizable().scaledToFill()
-                } placeholder: {
-                    Color.secondary.opacity(0.12)
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: 130)
-                .clipShape(.rect(cornerRadius: 10))
-            }
-        }
-        .padding(16)
-        .frame(width: 280, alignment: .topLeading)
-        .contentShape(.rect)
-    }
-
-    var body: some View {
-        Group {
-            if !held.isWritten {
-                Button(action: write) {
-                    Label("Write entry for \(held.day.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().year()))", icon: "slab-edit")
-                        .font(.subheadline.weight(.semibold))
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 14)
-                }
-            } else if let summary {
-                Button(action: open) { preview(summary) }
-                    .buttonStyle(.plain)
-                    .accessibilityHint("Opens the day")
-            } else if failed {
-                Text("Couldn't load this day.")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .padding()
-            } else {
-                ProgressView().frame(width: 220, height: 110)
-            }
-        }
-        .presentationCompactAdaptation(.popover)
-        .task {
-            guard held.isWritten else { return }
-            do {
-                summary = try await model.entrySummary(on: held.day)
-                failed = summary == nil
-            } catch is CancellationError {
-            } catch {
-                failed = true
-            }
+    func body(content: Content) -> some View {
+        if let day, !(day > today) {
+            content
+                .contentShape(Rectangle().inset(by: -reach))
+                .dayPreview(day, isWritten: days.contains(day.iso), model: model, open: { open(day) }, write: write.map { write in { write(day) } })
+        } else {
+            content
         }
     }
 }
@@ -872,7 +761,7 @@ struct DayEntriesSheet: View {
                             }
                         }
                     }
-                    .padding(.bottom, 8)
+                    .padding(.bottom, EntryStepBar.clearance) // the last entry's end scrolls clear of the bar
                 }
                 // Links work here too: a #tag closes this and searches for it; a web page opens (dabble.me's
                 // in the app).
@@ -884,16 +773,18 @@ struct DayEntriesSheet: View {
                     }
                     return WebLinks.open(url)
                 })
-                // Always in view under the entry, as in A Random Memory: Open, between the
+                // Always in view over the entry's end, as in A Random Memory: Open, between the
                 // entries before and after this one.
-                EntryStepBar(entry: entries.first, isLoading: isStepping) { id in
-                    Task { await step(to: id) }
-                } open: {
-                    // The Journal opens it (this sheet also comes up over Search).
-                    guard let entry = entries.first else { return }
-                    model.selectedTab = .journal
-                    model.openEntryRequest = entry.id
-                    dismiss()
+                .overlay(alignment: .bottom) {
+                    EntryStepBar(entry: entries.first, isLoading: isStepping) { id in
+                        Task { await step(to: id) }
+                    } open: {
+                        // The Journal opens it (this sheet also comes up over Search).
+                        guard let entry = entries.first else { return }
+                        model.selectedTab = .journal
+                        model.openEntryRequest = entry.id
+                        dismiss()
+                    }
                 }
             } else if let error {
                 ContentUnavailableView("Couldn't load this day", systemImage: "exclamationmark.triangle", description: Text(error))

@@ -53,6 +53,8 @@ struct ComposeView: View {
     @State private var isSuggestingTags = false
     @State private var suggestionError: String?
     @State private var pickingPhotos = false
+    /// A free account tapped Photos: a note that they're part of PRO.
+    @State private var explainingProPhotos = false
     @State private var takingPhoto = false
     /// Photos taken with the camera: they ride along in `photoItems` under made-up identifiers,
     /// which the photo picker doesn't know, so the picker works on `libraryItems` instead.
@@ -124,7 +126,7 @@ struct ComposeView: View {
                 if isSimplified { simplifiedBanner }
                 Divider()
                 RichTextEditor(model: editor,
-                               leading: model.me?.canAddPhotos == true ? AnyView(photosButton) : nil,
+                               leading: AnyView(model.me?.canAddPhotos == true ? AnyView(photosButton) : AnyView(proPhotosButton)),
                                trailing: AnyView(tagAndLinkButtons),
                                barKey: "\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)",
                                row: openRow)
@@ -223,6 +225,11 @@ struct ComposeView: View {
             #if DEBUG
             .task { await attachDebugPhotos() }
             #endif
+            .alert("Photos are a PRO feature", isPresented: $explainingProPhotos) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("With Dabble Me PRO you can add up to \(photoLimit) photos to an entry.")
+            }
             .onChange(of: editor.revision) { scheduleDraftSave() }
             .onChange(of: date) { scheduleDraftSave() }
             .onChange(of: scenePhase) { _, phase in
@@ -282,6 +289,18 @@ struct ComposeView: View {
     }
 
     private var attachedPhotoCount: Int { photoItems.count + (existingPhotoURL == nil ? 0 : 1) }
+
+    /// The bar's left on a free account: the Photos button is there, and says photos come with PRO.
+    private var proPhotosButton: some View {
+        Button { explainingProPhotos = true } label: {
+            appIcon("slab-images")
+                .frame(width: 40, height: 36)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Add Photos")
+        .accessibilityHint("Part of Dabble Me PRO")
+    }
 
     /// The bar's left: Photos (PRO). With none yet, the library and (where there's one) the camera,
     /// each a tap away; with some it's their stack, which shows or hides the photo row (selected

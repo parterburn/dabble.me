@@ -33,11 +33,98 @@ struct SheetCloseButton: View {
                 .frame(width: 18, height: 18)
                 .foregroundStyle(onDark ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
                 .frame(width: 44, height: 44)
-                .background(onDark ? Color.white.opacity(0.25) : Color.primary.opacity(0.08), in: .circle)
+                .modifier(RoundButtonBacking(overPhoto: onDark))
                 .contentShape(.circle)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Close")
+    }
+}
+
+/// What's behind a round button: a light circle on a sheet, or, over a photo, the dark translucent
+/// one the photo viewer's Save and Share have, which stands out on any picture.
+struct RoundButtonBacking: ViewModifier {
+    var overPhoto = false
+
+    func body(content: Content) -> some View {
+        if overPhoto {
+            content
+                .background(.black.opacity(0.45), in: .circle)
+                .background(.ultraThinMaterial.opacity(0.6), in: .circle)
+                .overlay(Circle().strokeBorder(.white.opacity(0.18)))
+        } else {
+            content.background(Color.primary.opacity(0.08), in: .circle)
+        }
+    }
+}
+
+/// A row that opens a page of its own, with the Slab right arrow at its end in place of the
+/// system's chevron (the link itself is laid over the row, unseen).
+struct PaneLink<Destination: View, Label: View>: View {
+    @ViewBuilder var destination: () -> Destination
+    @ViewBuilder var label: () -> Label
+    @Environment(\.isEnabled) private var isEnabled
+
+    var body: some View {
+        HStack(spacing: 8) {
+            label()
+                .frame(maxWidth: .infinity, alignment: .leading)
+            appIcon("slab-angle-right")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 12, height: 12)
+                .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
+        }
+        .opacity(isEnabled ? 1 : 0.5)
+        .background {
+            NavigationLink(destination: destination) { EmptyView() }
+                .opacity(0)
+                .accessibilityHidden(true)
+        }
+        .contentShape(.rect)
+        // One button to VoiceOver, named by the row (the link under it has no label of its own).
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+    }
+}
+
+extension View {
+    /// The Slab left arrow for a pushed page's Back, in place of the system chevron.
+    func slabBackButton() -> some View { modifier(SlabBackButton()) }
+}
+
+private struct SlabBackButton: ViewModifier {
+    @Environment(\.dismiss) private var dismiss
+
+    func body(content: Content) -> some View {
+        content
+            .navigationBarBackButtonHidden(true)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { dismiss() } label: {
+                        appIcon("slab-angle-left")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 18, height: 18)
+                    }
+                    .tint(.primary)
+                    .accessibilityLabel("Back")
+                }
+            }
+    }
+}
+
+/// A page without the system's Back button would lose the swipe back from the left edge: the
+/// swipe is kept for any page that isn't the first.
+extension UINavigationController: @retroactive UIGestureRecognizerDelegate {
+    open override func viewDidLoad() {
+        super.viewDidLoad()
+        interactivePopGestureRecognizer?.delegate = self
+    }
+
+    public func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        viewControllers.count > 1
     }
 }
 
