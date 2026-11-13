@@ -39,6 +39,22 @@ final class JournalViewsTests: XCTestCase {
         item.tap()
     }
 
+    /// A tap on a held photo's preview opens its entry (in the Photos grid and in Jump to a Day).
+    func testTappingAPreviewOpensItsEntry() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        switchJournal(app, from: "Journal", to: "Photos")
+        let photo = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Photo from")).firstMatch
+        XCTAssertTrue(photo.waitForExistence(timeout: 15))
+        photo.press(forDuration: 1.2)
+        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
+        sleep(1)
+        snap("photo-held")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)).tap() // on the preview
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10), "The entry opens")
+        snap("photo-preview-tapped")
+    }
+
     /// A tap on the "me" mark from another of the Journal's views is the way back to the list.
     func testTheMarkLeadsBackToTheList() throws {
         let app = launch()
@@ -1007,6 +1023,18 @@ final class JournalViewsTests: XCTestCase {
         snap("stats-day-held")
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.97)).tap() // away from it: closes it
         XCTAssertTrue(app.buttons["Open"].waitForNonExistence(timeout: 5))
+        sleep(1)
+
+        // Held again, and the preview itself tapped: the day comes up, as Open brings it.
+        square(daysAgo: 1).press(forDuration: 1.2)
+        let previewed = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to")).firstMatch
+        XCTAssertTrue(previewed.waitForExistence(timeout: 10))
+        sleep(1)
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.32)).tap() // the preview's text
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "· Yesterday")).firstMatch.waitForExistence(timeout: 10),
+                      "A tap on the preview opens the day")
+        snap("stats-day-preview-tapped")
+        app.buttons["Close"].firstMatch.tap()
         sleep(1)
 
         // Eleven days ago: nothing written.
