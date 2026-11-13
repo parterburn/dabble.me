@@ -161,8 +161,8 @@ In `ios/AppStore/Screenshots/` (`iPhone 6.3in`, `iPad 13in`, and the header and 
 
 **Header and search-results images** (`Header and Search Results/`, rendered by `source/render.sh` from the iPhone screenshots):
 
-- Header (3840 × 1646): the wordmark, "Your life, written down and remembered." and "Write a few lines today. See them again on this day, every year." in the centre, with phones either side. iPhone shows about the middle four fifths of its width, under the back and share buttons at the top corners, so nothing that matters sits outside that.
-- Search results (3840 × 2560): Today under "A year ago today, you wrote this", Write under "A few lines now is all it takes", Journal under "Years of your life, one scroll away".
+- Header (3840 × 1646): the wordmark, "Your life, written down and remembered." and "Write a few lines today, then rewind to them years from now." in the centre, with phones either side. iPhone shows about the middle four fifths of its width, under the back and share buttons at the top corners, so nothing that matters sits outside that.
+- Search results (3840 × 2560): Today under "A year ago today, you wrote this", Write under "A few lines now is all it takes", Journal under "Your life's private timeline".
 
 ## Decisions
 
