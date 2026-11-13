@@ -113,7 +113,7 @@ In `ios/AppStore/Screenshots/` (`iPhone 6.3in`, `iPad 13in`, and the header and 
 1. Today: the date, today's prompt, and On This Day
 2. Journal timeline with photos and month sections
 3. An entry with formatting, a list and a photo
-4. Writing an entry with the formatting bar, photos and on-device hashtag suggestions
+4. Writing an entry: the keyboard up, with its photos and the editor bar
 5. Journal > Photos
 6. Journal > Stats
 7. Search: your hashtags this year

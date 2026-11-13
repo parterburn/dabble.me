@@ -5,7 +5,7 @@
 #   bundle exec rails ios:demo_account
 #
 # Creates (or resets) demo@dabble.ex / dabble-demo as a PRO account with a year of made-up
-# entries, a few photos (Unsplash-licensed, via picsum.photos), and "On This Day" entries
+# entries, a few photos (Unsplash-licensed, from images.unsplash.com), and "On This Day" entries
 # for today's date. Prints an access token for the iOS app's -DabbleDebugAccessToken
 # launch argument so screenshot automation can skip the web sign-in sheet.
 namespace :ios do
@@ -22,16 +22,16 @@ namespace :ios do
     user.entries.destroy_all
 
     today = Time.current.in_time_zone(user.send_timezone).to_date
-    photo = ->(id) { "https://picsum.photos/id/#{id}/1600/1200" }
+    photo = ->(id) { "https://images.unsplash.com/photo-#{id}?w=1600&h=1200&fit=crop&fm=jpg&q=80" }
 
     entries = [
-      [today - 1, <<~HTML, 1043],
+      [today - 1, <<~HTML, "1426604966848-d7adac402bff"],
         <p>Finally made it to <strong>Yosemite</strong>. We started the Mist Trail before sunrise and had Vernal Fall almost to ourselves.</p>
         <p>Things I want to remember:</p>
         <ul><li>The rainbow in the spray halfway up</li><li>Sam singing badly the entire descent</li><li>Cold sandwiches have never tasted better</li></ul>
         <p>Legs are wrecked. Heart is full. #hiking #travel</p>
       HTML
-      [today - 2, <<~HTML, 1060],
+      [today - 2, <<~HTML, "1442512595331-e89e73853f31"],
         <p>Slow Saturday. Made pour-over with the beans from the farmers market and read on the porch until noon.</p>
         <p>I keep noticing how much better I feel on the days I don't check my phone first thing. <em>Note to self: keep the phone in the kitchen.</em></p>
       HTML
@@ -39,7 +39,7 @@ namespace :ios do
         <p>Big presentation went well. I was nervous all morning, but once I started talking it felt like a conversation instead of a performance.</p>
         <p>Maya pulled me aside afterwards and said it was the clearest version of the plan she's heard. Taking that one with me. #work #gratitude</p>
       HTML
-      [today - 5, <<~HTML, 1062],
+      [today - 5, <<~HTML, "1583337130417-3346a1be7dee"],
         <p>Biscuit has discovered the heated blanket and will not be leaving it until spring. #Biscuit</p>
       HTML
       [today - 7, <<~HTML, nil],
@@ -47,13 +47,13 @@ namespace :ios do
         <p>Three things I'm grateful for today:</p>
         <ol><li>A body that keeps healing</li><li>The crisp fall air</li><li>Dad calling just to say hi</li></ol>
       HTML
-      [today - 9, <<~HTML, 225],
+      [today - 9, <<~HTML, "1564890369478-c89ca6d9cde9"],
         <p>Rainy day. Tea, soup, and the last hundred pages of <em>The Overstory</em>. Some books make you want to go stand next to a tree for a while. Saved my favorite line at www.goodreads.com. #reading</p>
       HTML
       [today - 12, <<~HTML, nil],
         <p>Hard conversation with Jordan tonight. We didn't fix everything, but we listened to each other, which felt like the real win.</p>
       HTML
-      [today - 15, <<~HTML, 429],
+      [today - 15, <<~HTML, "1577069861033-55d04cec4ef5"],
         <p>Last farmers market of the season. Bought far too many raspberries and zero regrets. Made jam with Sam after dinner. #cooking</p>
       HTML
       [today - 19, <<~HTML, nil],
@@ -64,7 +64,7 @@ namespace :ios do
         <p>Planning the cabin weekend. The list so far:</p>
         <ol><li><div><b>Food</b></div><ol><li>Chili for Friday night</li><li>Pancake mix, and the good maple syrup from the farm stand up the road</li></ol></li><li><div><b>Games</b></div><ul><li>Cards</li><li>The puzzle nobody finished last year</li></ul></li></ol>
       HTML
-      [today - 24, <<~HTML, 1039],
+      [today - 24, <<~HTML, "1432405972618-c60b0225b8f9"],
         <p>Day trip to the falls. The trail was muddy and the waterfall was <strong>roaring</strong> after all the rain. #hiking</p>
       HTML
       [today - 31, <<~HTML, nil],
@@ -79,7 +79,7 @@ namespace :ios do
         <blockquote>The best time to plant a tree was twenty years ago. The second best time is now.</blockquote>
         <p style="color: #555555">Worth remembering the next time I put something off.</p>
       HTML
-      [today - 52, <<~HTML, 1015],
+      [today - 52, <<~HTML, "1601439678777-b2b3c56fa627"],
         <p>Norway, day 3. Hiked up to Preikestolen and sat at the edge for an hour. I don't think a photo can hold a view like that. #travel</p>
       HTML
       [today - 75, <<~HTML, nil],
@@ -88,7 +88,7 @@ namespace :ios do
       [today - 120, <<~HTML, nil],
         <p>One year at the new job. I was so scared to make the leap, and it's turned out to be one of the best decisions I've made. #work</p>
       HTML
-      [today - 1.year, <<~HTML, 164],
+      [today - 1.year, <<~HTML, "1534351590666-13e3e96b5017"],
         <p>Bruges! Wandered the canals all afternoon and ate an unreasonable number of waffles. Sam says I'm "a waffle person now." I've accepted it. #travel</p>
       HTML
       [today - 2.years, <<~HTML, nil],
