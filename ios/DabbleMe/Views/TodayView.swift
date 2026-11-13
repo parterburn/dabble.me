@@ -278,7 +278,7 @@ struct TodayView: View {
         return year
     }
 
-    /// "▮ 1,204 entries": every entry in the journal, behind the Stats icon (or "⏪ 2026 Rewind",
+    /// "▮ 1,204": every entry in the journal, behind the Stats icon (or "⏪ 2026 Rewind",
     /// around the new year). Tapping it opens Stats.
     private func entryCountButton(_ count: Int) -> some View {
         Button {
@@ -298,7 +298,7 @@ struct TodayView: View {
                         .resizable()
                         .scaledToFit()
                         .frame(width: 15, height: 15)
-                    Text("\(count.formatted()) \(count == 1 ? "entry" : "entries")")
+                    Text(verbatim: count.formatted())
                         .monospacedDigit()
                 }
             }
