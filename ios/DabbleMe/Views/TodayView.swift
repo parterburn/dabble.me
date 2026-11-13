@@ -8,6 +8,7 @@ struct TodayView: View {
     @State private var path = NavigationPath()
     @State private var composing = false
     @State private var showingProInfo = false
+    @AppStorage(ShakeSetting.storageKey) private var shakeForRandomEntry = true
     /// A prompt Apple Intelligence wrote from recent entries (PRO, on device), for this day only.
     /// With Apple Intelligence on (PRO), Today's prompt is written from recent entries on the device,
     /// once a day (kept for that day), instead of the general daily prompt.
@@ -349,14 +350,22 @@ struct TodayView: View {
             // Meanwhile, a look back that's free: the random memory sheet (also a shake away),
             // once there's an entry from a day before today to come up in it.
             if (model.me?.entryCount ?? 0) - (today.entry == nil ? 0 : 1) >= 1 {
+                // Olive words, not a button's shape: it says what a shake does (a tap does it too),
+                // or "See" for someone who's switched the shake off.
                 Button {
                     model.showsRandomEntry = true
                 } label: {
-                    Label("See a Random Memory", icon: "slab-dice")
+                    // The dice close to its words (a Label leaves more room between them).
+                    HStack(spacing: 8) {
+                        appIcon("slab-dice")
+                        Text(shakeForRandomEntry ? "Shake for a Random Entry" : "See a Random Entry")
+                    }
                         .fontWeight(.medium)
+                        .foregroundStyle(.tint)
+                        .padding(.vertical, 6)
+                        .contentShape(.rect)
                 }
-                .buttonStyle(.bordered)
-                .controlSize(.large)
+                .buttonStyle(.plain)
                 .plainRow()
             }
         }
