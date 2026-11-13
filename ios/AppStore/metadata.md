@@ -1,4 +1,4 @@
-# App Store listing: Dabble Me – Private Journal
+# App Store listing: Dabble Me – Daily Journal
 
 Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Character limits are noted where Apple enforces one. Keep this in sync with what the shipped build actually does.
 
@@ -8,11 +8,11 @@ The voice: a few lines a day, kept private, and handed back to you later. No str
 
 | Field | Value |
 |---|---|
-| Name (30) | Dabble Me – Private Journal |
-| Subtitle (30) | Daily diary, photos & memories |
+| Name (30) | Dabble Me – Daily Journal |
+| Subtitle (30) | Private timeline of your life |
 | Primary category | Lifestyle |
 | Secondary category | Productivity |
-| Content rights | Does not contain, show, or access third-party content |
+| Content rights | Contains, shows, or accesses third-party content, with the necessary rights: Journal > Playlist plays an entry's songs in Spotify's own embedded player. Everything else is the account holder's own writing and photos |
 | Age rating | 4+ (no objectionable content; entries are private and never shared with other users) |
 | Copyright | 2026 Dabble Dev LLC |
 
@@ -75,10 +75,10 @@ The first version on the store (1.0 was submitted and never released).
 >
 > Free accounts can read their journal, write and delete entries, get Apple Intelligence reflections, prompts and hashtag suggestions, and set a daily reminder. Photos, links, editing, search, stats, On This Day, the year in review, and AI connections are part of Dabble Me PRO.
 
-**Keywords (100)**: these don't repeat words already in the name, which Apple indexes anyway, and use no third-party trademarks (guideline 2.3.7).
+**Keywords (100)**: these don't repeat words already in the name or subtitle, which Apple indexes anyway, and use no third-party trademarks (guideline 2.3.7).
 
 ```
-diary,daily,memories,on this day,rewind,timeline,reflection,gratitude,photo,writing,prompts,email,ai
+diary,memories,on this day,rewind,reflection,gratitude,photo,writing,prompts,email,ai,one,line,year
 ```
 
 **What's New**: leave blank; a first version doesn't show one.
@@ -162,7 +162,7 @@ In `ios/AppStore/Screenshots/` (`iPhone 6.3in`, `iPad 13in`, and the header and 
 **Header and search-results images** (`Header and Search Results/`, rendered by `source/render.sh` from the iPhone screenshots):
 
 - Header (3840 × 1646): the wordmark, "Your life, written down and remembered." and "Write a few lines today, then rewind to them years from now." in the centre, with phones either side. iPhone shows about the middle four fifths of its width, under the back and share buttons at the top corners, so nothing that matters sits outside that.
-- Search results (3840 × 2560): Today under "A year ago today, you wrote this", Write under "A few lines now is all it takes", Journal under "Your life's private timeline".
+- Search results (3840 × 2560): Today under "A year ago today, you wrote this", Write under "A few lines now is all it takes", Journal under "A private timeline of your life".
 
 ## Decisions
 
