@@ -102,7 +102,8 @@ struct JournalView: View {
                 .onChange(of: model.openEntryRequest, initial: true) { _, id in
                     guard let id else { return }
                     model.openEntryRequest = nil
-                    mode = .list
+                    mode = model.openEntryOver ?? .list
+                    model.openEntryOver = nil
                     path.append(EntryRoute(id: id))
                 }
                 // Also on first appearing: the Journal tab may not exist yet when Today asks.

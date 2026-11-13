@@ -199,46 +199,71 @@ private struct SongButton: View {
 }
 
 /// Spotify's player for a song, docked above the tab bar: on the Playlist, and under an entry that
-/// has a song. Swipe it left to put it away (or, under an entry, right for the Playlist); the
-/// button beside it opens the song in Spotify.
+/// has a song. It swipes like a row of a list: to the left, Open in Spotify and an X that puts
+/// the player away (keep swiping and it goes); to the right, under an entry, the Playlist (keep
+/// swiping to go there).
 struct SongPlayerBar: View {
     let song: Song
     /// Counts the times the song was asked to play. Each new one starts it; with none (an entry
     /// just opened) the player waits for its own play button.
     var plays = 0
-    /// A swipe to the right goes to the Playlist (nil on the Playlist itself).
+    /// A swipe to the right offers the Playlist (nil on the Playlist itself).
     var openPlaylist: (() -> Void)?
     let close: () -> Void
-    /// Follows the swipe that puts it away.
-    @State private var slide: CGFloat = 0
+    @Environment(\.openURL) private var openURL
+    /// Where the player rests (0, or moved aside to show its actions), and the swipe under way.
+    @State private var rest: CGFloat = 0
+    @State private var drag: CGFloat = 0
+    @State private var isLeaving = false
+
+    private static let action: CGFloat = 58
+    /// Past this, letting go does the swipe's own action (the X, the Playlist).
+    private static let commit: CGFloat = 190
+    private var trailing: CGFloat { Self.action * 2 }
+    private var leading: CGFloat { openPlaylist == nil ? 0 : Self.action }
+    /// The player's place: it follows the finger, more stiffly past where its actions end.
+    private var x: CGFloat {
+        if isLeaving { return rest }
+        let wanted = rest + drag
+        return openPlaylist == nil ? min(wanted, 0) : wanted
+    }
+    private var isArmed: Bool { x < -Self.commit || x > Self.commit }
 
     var body: some View {
-        HStack(spacing: 10) {
-            SpotifyPlayer(trackID: song.trackID ?? "", plays: plays, swipedLeft: putAway, swipedRight: { openPlaylist?() })
+        ZStack {
+            HStack(spacing: 0) {
+                if let openPlaylist {
+                    action("slab-music", "Open Playlist", prominent: x > Self.commit, action: openPlaylist)
+                        .opacity(x > 4 ? 1 : 0)
+                }
+                Spacer(minLength: 0)
+                Group {
+                    action("slab-external-link", "Open in Spotify", prominent: false) {
+                        openURL(song.spotifyUrl)
+                        settle(at: 0)
+                    }
+                    action("slab-close", "Hide Player", prominent: x < -Self.commit, action: putAway)
+                }
+                .opacity(x < -4 ? 1 : 0)
+            }
+            SpotifyPlayer(trackID: song.trackID ?? "", plays: plays, panned: panned)
                 .frame(height: SpotifyPlayer.height)
                 .clipShape(.rect(cornerRadius: 12))
+                .offset(x: x)
                 .accessibilityLabel("Spotify player, \(song.label)")
-            Link(destination: song.spotifyUrl) {
-                appIcon("slab-external-link")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 16, height: 16)
-                    .foregroundStyle(.primary)
-                    .frame(width: 36, height: 36)
-                    .background(Color.primary.opacity(0.08), in: .circle)
-            }
-            .accessibilityLabel("Open in Spotify")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(.bar)
-        .offset(x: slide)
-        // Off the web view (which has a swipe of its own, below): around it and on the button.
-        .simultaneousGesture(DragGesture(minimumDistance: 20).onEnded { drag in
-            guard abs(drag.translation.height) < 50 else { return }
-            if drag.translation.width < -60 { putAway() } else if drag.translation.width > 60 { openPlaylist?() }
+        // Around the web view (which reports its own drags, above): the actions, once showing.
+        .simultaneousGesture(DragGesture(minimumDistance: 15).onChanged { value in
+            if abs(value.translation.width) > abs(value.translation.height) { drag = value.translation.width }
+        }.onEnded { value in
+            panned(value.translation.width, velocity: value.predictedEndTranslation.width - value.translation.width, ended: true)
         })
+        .sensoryFeedback(.impact(weight: .light), trigger: isArmed) { _, armed in armed }
         .accessibilityAction(named: "Hide Player", putAway)
+        .accessibilityAction(named: "Open in Spotify") { openURL(song.spotifyUrl) }
         .accessibilityActions {
             if let openPlaylist { Button("Open Playlist", action: openPlaylist) }
         }
@@ -247,10 +272,54 @@ struct SongPlayerBar: View {
         .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
+    /// A round button behind the player; the one a full swipe would press fills in.
+    private func action(_ icon: String, _ label: String, prominent: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            appIcon(icon)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 16, height: 16)
+                .foregroundStyle(prominent ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
+                .frame(width: 44, height: 44)
+                .background(prominent ? AnyShapeStyle(.tint) : AnyShapeStyle(Color.primary.opacity(0.08)), in: .circle)
+                .frame(width: Self.action)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+    }
+
+    /// A swipe on the player, from the web view or around it: it follows, and on letting go either
+    /// does the swipe's action (far enough, or flicked), rests with its actions showing, or closes.
+    private func panned(_ translation: CGFloat, velocity: CGFloat, ended: Bool) {
+        guard !isLeaving else { return }
+        guard ended else { drag = translation; return }
+        let end = rest + translation
+        drag = 0
+        rest = end // from where the finger left it
+        if end < -Self.commit || (velocity < -700 && end < -60) {
+            putAway()
+        } else if let openPlaylist, end > Self.commit || (velocity > 700 && end > 60) {
+            settle(at: 0)
+            openPlaylist()
+        } else if end < -trailing / 2 {
+            settle(at: -trailing)
+        } else if leading > 0, end > leading / 2 {
+            settle(at: leading)
+        } else {
+            settle(at: 0)
+        }
+    }
+
+    private func settle(at place: CGFloat) {
+        withAnimation(.snappy(duration: 0.25)) { rest = place }
+    }
+
     /// Slides off to the left, then goes (which stops the music).
     private func putAway() {
-        guard slide == 0 else { return }
-        withAnimation(.easeIn(duration: 0.2)) { slide = -1400 } completion: { close() }
+        guard !isLeaving else { return }
+        isLeaving = true
+        withAnimation(.easeIn(duration: 0.2)) { rest = -1400 } completion: { close() }
     }
 }
 
@@ -261,8 +330,9 @@ struct SpotifyPlayer: UIViewRepresentable {
     static let height: CGFloat = 80
     let trackID: String
     var plays = 0
-    var swipedLeft: () -> Void = {}
-    var swipedRight: () -> Void = {}
+    /// A sideways drag on the player (the web view takes touches for itself): how far, how fast
+    /// when let go, and whether it has been.
+    var panned: (_ translation: CGFloat, _ velocity: CGFloat, _ ended: Bool) -> Void = { _, _, _ in }
 
     func makeUIView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
@@ -274,22 +344,16 @@ struct SpotifyPlayer: UIViewRepresentable {
         view.scrollView.isScrollEnabled = false
         view.scrollView.backgroundColor = .clear
         view.navigationDelegate = context.coordinator
-        // The web view takes touches for itself, so the swipe that puts the player away is its own.
-        let swipe = UISwipeGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.swiped))
-        swipe.direction = .left
-        swipe.delegate = context.coordinator
-        view.addGestureRecognizer(swipe)
-        let right = UISwipeGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.swipedToTheRight))
-        right.direction = .right
-        right.delegate = context.coordinator
-        view.addGestureRecognizer(right)
+        // The web view takes touches for itself, so the drag that moves the player aside is its own.
+        let pan = UIPanGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.pan(_:)))
+        pan.delegate = context.coordinator
+        view.addGestureRecognizer(pan)
         return view
     }
 
     func updateUIView(_ view: WKWebView, context: Context) {
         let coordinator = context.coordinator
-        coordinator.swipedLeft = swipedLeft
-        coordinator.swipedRight = swipedRight
+        coordinator.panned = panned
         if coordinator.trackID != trackID {
             // A song that comes with a new request to play starts; one that's only shown waits.
             let starts = coordinator.plays != plays
@@ -335,11 +399,23 @@ struct SpotifyPlayer: UIViewRepresentable {
     final class Coordinator: NSObject, WKNavigationDelegate, UIGestureRecognizerDelegate {
         var trackID: String?
         var plays = 0
-        var swipedLeft: () -> Void = {}
-        var swipedRight: () -> Void = {}
+        var panned: (CGFloat, CGFloat, Bool) -> Void = { _, _, _ in }
 
-        @objc func swiped() { swipedLeft() }
-        @objc func swipedToTheRight() { swipedRight() }
+        @objc func pan(_ recognizer: UIPanGestureRecognizer) {
+            let translation = recognizer.translation(in: recognizer.view).x
+            switch recognizer.state {
+            case .changed: panned(translation, 0, false)
+            case .ended, .cancelled, .failed: panned(translation, recognizer.velocity(in: recognizer.view).x, true)
+            default: break
+            }
+        }
+
+        /// Sideways drags only: up and down is the page's.
+        func gestureRecognizerShouldBegin(_ recognizer: UIGestureRecognizer) -> Bool {
+            guard let pan = recognizer as? UIPanGestureRecognizer else { return true }
+            let velocity = pan.velocity(in: pan.view)
+            return abs(velocity.x) > abs(velocity.y)
+        }
 
         func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { true }
 

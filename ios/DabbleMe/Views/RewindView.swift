@@ -544,9 +544,11 @@ struct RewindView: View {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 96), spacing: 4)], spacing: 4) {
                     ForEach(rewind.photos.reversed()) { entry in
                         Button {
-                            // The Journal opens it, once this has closed.
+                            // The Journal opens it, once this has closed, over its Photos: going
+                            // back from the entry lands among the pictures, not in the list.
                             dismiss()
                             model.selectedTab = .journal
+                            model.openEntryOver = .photos
                             model.openEntryRequest = entry.id
                         } label: {
                             Color.black.opacity(0.08)

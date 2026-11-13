@@ -1233,7 +1233,24 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(player("The Killers – Mr. Brightside").waitForExistence(timeout: 10), "The first song is in the player")
         XCTAssertTrue(first.isSelected)
         XCTAssertFalse(second.isSelected)
-        XCTAssertTrue(app.links["Open in Spotify"].exists || app.buttons["Open in Spotify"].exists)
+        // A short swipe either way shows the player's actions, as a list row's: the Playlist on
+        // one side, Open in Spotify and the X on the other.
+        let playing = player("The Killers – Mr. Brightside")
+        func nudge(_ dx: CGFloat) {
+            let start = playing.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            start.press(forDuration: 0.1, thenDragTo: start.withOffset(CGVector(dx: dx, dy: 0)), withVelocity: .slow, thenHoldForDuration: 0.3)
+        }
+        nudge(-110)
+        XCTAssertTrue(app.buttons["Hide Player"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Open in Spotify"].isHittable)
+        sleep(1)
+        snap("entry-song-player-swiped")
+        nudge(110) // back
+        nudge(70)
+        XCTAssertTrue(app.buttons["Open Playlist"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Open Playlist"].isHittable)
+        snap("entry-song-player-swiped-right")
+        nudge(-70)
         sleep(6) // Spotify's player loads
         snap("entry-song-player")
 
@@ -1339,8 +1356,8 @@ final class JournalViewsTests: XCTestCase {
         // The player, with a way out to Spotify beside it (no close button: it's swiped away).
         let player = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Spotify player, The Weeknd – Blinding Lights")).firstMatch
         XCTAssertTrue(player.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.links["Open in Spotify"].exists || app.buttons["Open in Spotify"].exists)
         XCTAssertFalse(app.buttons["Close Player"].exists)
+        XCTAssertFalse(app.buttons["Open Playlist"].exists, "Already on the Playlist")
         XCTAssertEqual(song.value as? String, "Playing")
         sleep(6) // Spotify's player loads
         snap("playlist-playing")
