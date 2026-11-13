@@ -1902,9 +1902,9 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertEqual(editor.value as? String, "A quiet day at home.")
         app.buttons["Cancel"].tap()
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
-        // The widget's "Edit today's entry" link does the same.
+        // The widget's "Edit today" link does the same.
         XCUIDevice.shared.system.open(URL(string: "me.dabble.app:/today/edit")!)
-        XCTAssertTrue(editor.waitForExistence(timeout: 10), "Edit today's entry opens today's entry for editing")
+        XCTAssertTrue(editor.waitForExistence(timeout: 10), "Edit today opens today's entry for editing")
         XCTAssertEqual(editor.value as? String, "A quiet day at home.")
         app.buttons["Cancel"].tap()
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }

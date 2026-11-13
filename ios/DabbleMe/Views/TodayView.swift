@@ -113,7 +113,7 @@ struct TodayView: View {
                 model.composeRequest = false
                 composing = true
             }
-            // From the widget's "Edit today's entry": today's entry, open for editing, once Today has
+            // From the widget's "Edit today": today's entry, open for editing, once Today has
             // loaded it (the app may be starting up). Nothing written after all: write it.
             .onChange(of: "\(model.editTodayRequest)|\(model.today?.date ?? "")|\(model.today?.entry?.id ?? 0)", initial: true) {
                 guard model.editTodayRequest, let today = model.today else { return }
