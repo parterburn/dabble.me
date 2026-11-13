@@ -154,8 +154,9 @@ struct RandomEntrySheet: View {
 }
 
 /// The bottom of an entry's sheet: Open, with an arrow each side for the entry before it and the
-/// one after (greyed out at either end of the journal).
+/// one after (greyed out at either end of the journal; left out when it's the journal's only entry).
 struct EntryStepBar: View {
+    @Environment(AppModel.self) private var model
     let entry: EntryDetail?
     var isLoading = false
     /// Shows the entry with this id in the sheet.
@@ -164,18 +165,24 @@ struct EntryStepBar: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            arrow("slab-angle-left", "Previous Entry", to: entry?.previousEntry)
+            if hasNeighbours { arrow("slab-angle-left", "Previous Entry", to: entry?.previousEntry) }
             Button(action: open) {
                 Label("Open", icon: "slab-expand").frame(maxWidth: .infinity, minHeight: 26)
             }
             .buttonStyle(.borderedProminent)
             .disabled(entry == nil)
-            arrow("slab-angle-right", "Next Entry", to: entry?.nextEntry)
+            if hasNeighbours { arrow("slab-angle-right", "Next Entry", to: entry?.nextEntry) }
         }
         // Medium weight, like the app's other main buttons, a size down from them.
         .fontWeight(.medium)
         .controlSize(.regular)
         .buttonBorderShape(.capsule)
+    }
+
+    /// Whether there's another entry to step to. While the entry loads, the journal's count says.
+    private var hasNeighbours: Bool {
+        guard let entry else { return (model.me?.entryCount ?? 2) > 1 }
+        return entry.previousEntry != nil || entry.nextEntry != nil
     }
 
     private func arrow(_ icon: String, _ label: String, to neighbour: EntryNeighbour?) -> some View {

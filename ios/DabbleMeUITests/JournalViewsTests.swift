@@ -1509,6 +1509,31 @@ final class JournalViewsTests: XCTestCase {
         previews.switches.firstMatch.tap() // back to the default: no previews
     }
 
+    /// Settings → Delete Account: with the deletion link on its way the app signs out (the rest
+    /// happens on dabble.me). TEST_RUNNER_DABBLE_DELETION_TOKEN: a token of its own, since signing
+    /// out spends it (the free demo account's will do).
+    func testRequestingDeletionSignsOut() throws {
+        guard let spare = ProcessInfo.processInfo.environment["DABBLE_DELETION_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_DELETION_TOKEN") }
+        let app = XCUIApplication()
+        app.launchArguments = ["-DabbleDebugAccessToken", spare, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launch()
+        XCTAssertTrue(tab(app, "Settings").waitForExistence(timeout: 15))
+        tab(app, "Settings").tap()
+        let delete = app.buttons["Delete Account…"]
+        for _ in 0..<6 where !(delete.exists && delete.isHittable) { app.swipeUp() }
+        delete.tap()
+        let send = app.buttons["Email Me a Deletion Link"]
+        XCTAssertTrue(send.waitForExistence(timeout: 5))
+        snap("delete-account-confirm")
+        send.tap()
+        let sent = app.alerts["Check your email"]
+        XCTAssertTrue(sent.waitForExistence(timeout: 10))
+        snap("delete-account-sent")
+        sent.buttons["OK"].tap()
+        XCTAssertTrue(app.buttons["I Already Have an Account"].waitForExistence(timeout: 10), "Signed out, back at the first page")
+        snap("delete-account-signed-out")
+    }
+
     /// A free account writes without photos or links, can delete but not edit, and has no Stats.
     /// TEST_RUNNER_DABBLE_FREE_TOKEN.
     func testFreeAccountLimits() throws {
@@ -1525,6 +1550,11 @@ final class JournalViewsTests: XCTestCase {
         // Meanwhile, a random memory (free): the same sheet as shaking the phone.
         app.buttons["Try a Random Memory"].tap()
         XCTAssertTrue(app.staticTexts["A Random Memory"].waitForExistence(timeout: 5))
+        // The journal's only entry: Open, with no arrows to step to another.
+        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Previous Entry"].exists)
+        XCTAssertFalse(app.buttons["Next Entry"].exists)
+        snap("random-only-entry")
         app.buttons["Close"].tap()
         XCTAssertTrue(app.staticTexts["A Random Memory"].waitForNonExistence(timeout: 5))
 

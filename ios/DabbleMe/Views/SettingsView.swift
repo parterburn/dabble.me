@@ -149,13 +149,14 @@ struct SettingsView: View {
                             Button("Sign Out", role: .destructive) { Task { await model.signOut() } }
                         }
                     Button("Delete Account…", role: .destructive) { confirmingDeletion = true }
-                        // Deleting takes three deliberate steps: confirm here, open the emailed link, then
-                        // confirm with your password on dabble.me (and it can still be undone for an hour).
+                        // Deleting takes three deliberate steps: confirm here (which signs the app out),
+                        // open the emailed link, then confirm with your password on dabble.me (and it can
+                        // still be undone for an hour).
                         .confirmationDialog("Delete your Dabble Me account?", isPresented: $confirmingDeletion, titleVisibility: .visible) {
                             Button("Email Me a Deletion Link", role: .destructive) { Task { await requestDeletion() } }
                             Button("Cancel", role: .cancel) {}
                         } message: {
-                            Text("We'll email you a link to finish on dabble.me, where you'll confirm with your password. You can export your entries there first.")
+                            Text("We'll email you a link to finish on dabble.me, where you'll confirm with your password, and sign you out of the app. You can export your entries there first.")
                         }
                 } footer: {
                     if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
@@ -168,10 +169,11 @@ struct SettingsView: View {
             .toolbar(removing: .title) // the heading in the list is the title
             .toolbarVisibility(.hidden, for: .navigationBar) // like Today: no empty bar above it
             .task { canLinkToSubscribe = await Storefront.current?.countryCode == "USA" }
+            // The rest happens on dabble.me, so the app signs out here (as Sign Out does).
             .alert("Check your email", isPresented: .present($deletionEmail)) {
-                Button("OK", role: .cancel) {}
+                Button("OK", role: .cancel) { Task { await model.signOut() } }
             } message: {
-                Text("We sent a link to \(deletionEmail ?? "your email") to finish deleting your account. Nothing has been deleted yet.")
+                Text("We sent a link to \(deletionEmail ?? "your email") to finish deleting your account on dabble.me. Nothing has been deleted yet. You'll be signed out of the app now.")
             }
             .alert("Couldn't send the email", isPresented: .present($deletionError)) {
                 Button("OK", role: .cancel) {}

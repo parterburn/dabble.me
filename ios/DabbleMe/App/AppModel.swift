@@ -121,22 +121,29 @@ final class AppModel {
         }
         UserDefaults.standard.set(true, forKey: Self.signedOutKey)
         await WebLinks.clearWebsiteData()
-        ReminderScheduler.shared.removeAll()
         DraftStore.clearAll()
-        WidgetSync.clear()
-        // Today's on-device prompt is written from the journal; don't leave it behind.
-        UserDefaults.standard.removeObject(forKey: "ai.prompt.day")
-        UserDefaults.standard.removeObject(forKey: "ai.prompt.text")
-        UserDefaults.standard.removeObject(forKey: "ai.stats.key")
-        UserDefaults.standard.removeObject(forKey: "ai.stats.text")
+        clearJournalCopies()
         lock.reset()
         resetSession()
     }
 
+    /// The session ended on the server's side (the token was revoked, or the account deleted on
+    /// dabble.me): back to the sign-in page, with nothing of the journal left to show up later.
     private func didLoseSession() {
         guard isSignedIn else { return }
+        clearJournalCopies()
         resetSession()
         signInError = APIError.signedOut.errorDescription
+    }
+
+    /// What the app keeps of the journal outside itself: the reminders waiting to go out (each
+    /// with an entry), the widget's snapshot, and what Apple Intelligence wrote from it.
+    private func clearJournalCopies() {
+        ReminderScheduler.shared.removeAll()
+        WidgetSync.clear()
+        for key in ["ai.prompt.day", "ai.prompt.text", "ai.stats.key", "ai.stats.text"] {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
     }
 
     private func resetSession() {
@@ -382,7 +389,8 @@ final class AppModel {
         await loadToday()
     }
 
-    /// Emails a link to the web deletion page. Nothing is deleted from the app itself.
+    /// Emails a link to the web deletion page. Nothing is deleted from the app itself; Settings
+    /// signs out once the email's on its way, since the rest happens on dabble.me.
     func requestAccountDeletion() async throws -> String {
         struct Empty: Encodable, Sendable {}
         let response: AccountDeletionRequest = try await api.post("api/v1/account/deletion_request", Empty())
