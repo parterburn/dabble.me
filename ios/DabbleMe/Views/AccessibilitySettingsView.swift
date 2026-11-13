@@ -55,6 +55,7 @@ struct AccessibilitySettingsView: View {
             }
 
         }
+        .slabBackButton()
         .navigationTitle("Theme")
         .navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(.selection, trigger: textSize)

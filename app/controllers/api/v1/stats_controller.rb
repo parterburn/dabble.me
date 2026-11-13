@@ -10,12 +10,15 @@ module Api
         render json: JournalStats.new(current_user).as_json
       end
 
-      # GET /api/v1/stats/days?year=2024 — the days with an entry in one calendar year, for
-      # looking back through Stats' year of writing days. { year: 2024, days: ["2024-01-03", ...] }
+      # GET /api/v1/stats/days?year=2024 — one calendar year, for looking back through Stats: the
+      # days with an entry and the year's hashtags.
+      # { year: 2024, days: ["2024-01-03", ...], top_hashtags: [{ tag:, count: }] }
       def days
         stats = JournalStats.new(current_user)
         year = params[:year].to_s.match?(/\A\d{4}\z/) ? params[:year].to_i : stats.today.year
-        render json: { year: year, days: stats.writing_days_in(year) }
+        first = Date.new(year, 1, 1)
+        render json: { year: year, days: stats.writing_days_in(year),
+                       top_hashtags: HashtagCounts.new(current_user, since: first, upto: first.end_of_year).top(10) }
       end
     end
   end

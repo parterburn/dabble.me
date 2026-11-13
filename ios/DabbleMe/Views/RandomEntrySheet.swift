@@ -52,30 +52,35 @@ struct RandomEntrySheet: View {
             // The dice rolls again (as another shake does).
             SheetHeader(title: "A Random Memory") {
                 SheetIconButton(icon: "slab-dice", label: "Another") { Task { await load() } }
-                    .disabled(isLoading)
+                    .allowsHitTesting(!isLoading)
                     .accessibilityHint("Shows another random memory")
             }
-            if let entry {
-                preview(entry)
-                    .id(entry.id)
-                    .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .opacity))
-            } else if let error {
-                ContentUnavailableView {
-                    Label("No memory to show", icon: "slab-dice")
-                } description: {
-                    Text(error)
+            Group {
+                if let entry {
+                    preview(entry)
+                        .id(entry.id)
+                        .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .opacity))
+                } else if let error {
+                    ContentUnavailableView {
+                        Label("No memory to show", icon: "slab-dice")
+                    } description: {
+                        Text(error)
+                    }
+                } else {
+                    ProgressView().frame(maxWidth: .infinity, minHeight: 200)
                 }
-            } else {
-                ProgressView().frame(maxWidth: .infinity, minHeight: 200)
             }
-            // Open, between the entries before and after this one.
-            EntryStepBar(entry: entry, isLoading: isLoading) { id in
-                Task { await load(id) }
-            } open: {
-                guard let entry else { return }
-                model.selectedTab = .journal
-                model.openEntryRequest = entry.id
-                dismiss()
+            .frame(maxHeight: .infinity, alignment: .top)
+            // Open, between the entries before and after this one, floating over the entry's end.
+            .overlay(alignment: .bottom) {
+                EntryStepBar(entry: entry, isLoading: isLoading) { id in
+                    Task { await load(id) }
+                } open: {
+                    guard let entry else { return }
+                    model.selectedTab = .journal
+                    model.openEntryRequest = entry.id
+                    dismiss()
+                }
             }
         }
         .padding([.horizontal, .top], 20)
@@ -121,7 +126,7 @@ struct RandomEntrySheet: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.bottom, 8)
+            .padding(.bottom, EntryStepBar.clearance) // the entry's end scrolls clear of the bar over it
         }
         .scrollIndicators(.automatic)
         .frame(maxHeight: .infinity, alignment: .top)
@@ -153,8 +158,9 @@ struct RandomEntrySheet: View {
     }
 }
 
-/// The bottom of an entry's sheet: Open, with an arrow each side for the entry before it and the
-/// one after (greyed out at either end of the journal; left out when it's the journal's only entry).
+/// The bottom of an entry's sheet, floating over the entry: Open, with an arrow each side, in the
+/// same olive, for the entry before it and the one after (greyed out at either end of the
+/// journal; left out when it's the journal's only entry).
 struct EntryStepBar: View {
     @Environment(AppModel.self) private var model
     let entry: EntryDetail?
@@ -177,7 +183,12 @@ struct EntryStepBar: View {
         .fontWeight(.medium)
         .controlSize(.regular)
         .buttonBorderShape(.capsule)
+        // No panel behind it: the buttons float over the entry, lifted a little off its words.
+        .shadow(color: .black.opacity(0.16), radius: 8, y: 3)
     }
+
+    /// Room to leave under an entry that scrolls beneath the bar.
+    static let clearance: CGFloat = 76
 
     /// Whether there's another entry to step to. While the entry loads, the journal's count says.
     private var hasNeighbours: Bool {
@@ -195,8 +206,11 @@ struct EntryStepBar: View {
                 .frame(width: 14, height: 14)
                 .frame(width: 24, height: 26)
         }
-        .buttonStyle(.bordered)
-        .disabled(neighbour == nil || isLoading)
+        .buttonStyle(.borderedProminent) // Open's own olive, so the three read as one bar
+        // Greyed out only at the journal's end. While another entry loads the arrows wait without
+        // dimming: both used to blink with every tap.
+        .disabled(neighbour == nil)
+        .allowsHitTesting(!isLoading)
         .accessibilityLabel(label)
         .accessibilityValue(neighbour?.day?.long ?? "")
     }

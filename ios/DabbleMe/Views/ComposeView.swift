@@ -53,6 +53,8 @@ struct ComposeView: View {
     @State private var isSuggestingTags = false
     @State private var suggestionError: String?
     @State private var pickingPhotos = false
+    /// A free account tapped Photos: a note that they're part of PRO.
+    @State private var explainingProPhotos = false
     @State private var takingPhoto = false
     /// Photos taken with the camera: they ride along in `photoItems` under made-up identifiers,
     /// which the photo picker doesn't know, so the picker works on `libraryItems` instead.
@@ -60,11 +62,15 @@ struct ComposeView: View {
     @State private var removesExistingPhoto = false
     @Environment(\.scenePhase) private var scenePhase
     private let draftKey: String
+    /// Opened for a day of its own, which today's date doesn't then replace.
+    private let startsOnDay: Bool
     private let originalBlocks: [DocumentBlock]
 
-    init(mode: Mode, onSaved: @escaping (EntryDetail) -> Void = { _ in }) {
+    /// `day`: a new entry for that day (Stats' grid), not today.
+    init(mode: Mode, day: JournalDay? = nil, onSaved: @escaping (EntryDetail) -> Void = { _ in }) {
         self.mode = mode
         self.onSaved = onSaved
+        startsOnDay = day != nil
         let entry: EntryDetail? = if case .edit(let entry) = mode { entry } else { nil }
         let original = entry?.document ?? []
         let key = DraftStore.key(forEntry: entry?.id)
@@ -78,7 +84,7 @@ struct ComposeView: View {
         draftKey = key
         originalBlocks = original
         _restoredDraft = State(initialValue: draft)
-        if let date = draft?.date.flatMap(JournalDay.init) ?? entry?.day { _date = State(initialValue: date.localDate) }
+        if let date = day ?? draft?.date.flatMap(JournalDay.init) ?? entry?.day { _date = State(initialValue: date.localDate) }
         _editor = State(initialValue: RichTextEditorModel(blocks: draft?.blocks ?? original))
     }
 
@@ -120,7 +126,7 @@ struct ComposeView: View {
                 if isSimplified { simplifiedBanner }
                 Divider()
                 RichTextEditor(model: editor,
-                               leading: model.me?.canAddPhotos == true ? AnyView(photosButton) : nil,
+                               leading: AnyView(model.me?.canAddPhotos == true ? AnyView(photosButton) : AnyView(proPhotosButton)),
                                trailing: AnyView(tagAndLinkButtons),
                                barKey: "\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)",
                                row: openRow)
@@ -219,14 +225,20 @@ struct ComposeView: View {
             #if DEBUG
             .task { await attachDebugPhotos() }
             #endif
+            .alert("Photos are a PRO feature", isPresented: $explainingProPhotos) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("With Dabble Me PRO you can add up to \(photoLimit) photos to an entry.")
+            }
             .onChange(of: editor.revision) { scheduleDraftSave() }
             .onChange(of: date) { scheduleDraftSave() }
             .onChange(of: scenePhase) { _, phase in
                 if phase != .active { saveDraftNow() }
             }
             .onAppear {
+                editor.allowsLinks = model.me?.mayAddLinks == true
                 // Today's date in the journal's time zone, preferring the freshest source.
-                if isNew, restoredDraft?.date == nil, let today = model.today?.day ?? model.me.flatMap({ JournalDay($0.today) }) {
+                if isNew, !startsOnDay, restoredDraft?.date == nil, let today = model.today?.day ?? model.me.flatMap({ JournalDay($0.today) }) {
                     date = today.localDate
                 }
             }
@@ -278,22 +290,49 @@ struct ComposeView: View {
 
     private var attachedPhotoCount: Int { photoItems.count + (existingPhotoURL == nil ? 0 : 1) }
 
-    /// The bar's left: Photos (PRO). With none yet it opens the picker; with some it's their stack,
-    /// which shows or hides the photo row (selected while it's open).
+    /// The bar's left on a free account: the Photos button is there, and says photos come with PRO.
+    private var proPhotosButton: some View {
+        Button { explainingProPhotos = true } label: {
+            appIcon("slab-images")
+                .frame(width: 40, height: 36)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Add Photos")
+        .accessibilityHint("Part of Dabble Me PRO")
+    }
+
+    /// The bar's left: Photos (PRO). With none yet, the library and (where there's one) the camera,
+    /// each a tap away; with some it's their stack, which shows or hides the photo row (selected
+    /// while it's open).
     @ViewBuilder
     private var photosButton: some View {
         if attachedPhotoCount == 0 {
-            addPhotos {
-                appIcon("slab-images")
-                    .frame(width: 40, height: 36)
+            HStack(spacing: 2) {
+                Button { pickingPhotos = true } label: {
+                    appIcon("slab-images")
+                        .frame(width: 40, height: 36)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Add Photos")
+                if CameraPicker.isAvailable || showsCameraMenuForTesting {
+                    Button { takingPhoto = CameraPicker.isAvailable } label: {
+                        appIcon("slab-camera")
+                            .frame(width: 40, height: 36)
+                            .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Take Photo")
+                }
             }
-            .accessibilityLabel("Add Photos")
         } else {
             photoStack
         }
     }
 
-    /// Add photos: from the library, or (where there's a camera) a menu to take one or choose.
+    /// Add more photos (the photo row's button): from the library, or (where there's a camera) a
+    /// menu to take one or choose.
     @ViewBuilder
     private func addPhotos(@ViewBuilder label: () -> some View) -> some View {
         if CameraPicker.isAvailable || showsCameraMenuForTesting {

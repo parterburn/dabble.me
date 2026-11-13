@@ -8,6 +8,7 @@ struct TodayView: View {
     @State private var path = NavigationPath()
     @State private var composing = false
     @State private var showingProInfo = false
+    @AppStorage(ShakeSetting.storageKey) private var shakeForRandomEntry = true
     /// A prompt Apple Intelligence wrote from recent entries (PRO, on device), for this day only.
     /// With Apple Intelligence on (PRO), Today's prompt is written from recent entries on the device,
     /// once a day (kept for that day), instead of the general daily prompt.
@@ -262,20 +263,27 @@ struct TodayView: View {
         .accessibilityLabel("Edit Today's Entry")
     }
 
-    /// "1,204 entries ›": every entry in the journal. Tapping it opens Stats.
+    /// In Rewind's season, for someone it's ready for (PRO, with enough entries this year), the
+    /// count wears Rewind's icon: Stats opens with the year's Rewind at its top.
+    private var rewindIsOn: Bool {
+        guard model.me?.isPro == true, let today = model.today, let day = today.day, let year = RewindSeason.year(on: day) else { return false }
+        return String(year) != day.year || (today.entriesThisYear ?? 0) >= RewindSeason.minimumEntries
+    }
+
+    /// "▮ 1,204 entries": every entry in the journal, behind the Stats icon. Tapping it opens Stats.
     private func entryCountButton(_ count: Int) -> some View {
         Button {
             model.selectedTab = .journal
             model.statsRequest += 1
         } label: {
-            // The chevron says it goes somewhere.
-            HStack(spacing: 4) {
-                Text("\(count.formatted()) \(count == 1 ? "entry" : "entries")")
-                    .monospacedDigit()
-                appIcon("slab-angle-right")
+            // The Stats icon says where it goes.
+            HStack(spacing: 5) {
+                appIcon(rewindIsOn ? "slab-backward" : "slab-chart-bar")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 11, height: 11)
+                    .frame(width: rewindIsOn ? 17 : 15, height: rewindIsOn ? 17 : 15)
+                Text("\(count.formatted()) \(count == 1 ? "entry" : "entries")")
+                    .monospacedDigit()
             }
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(.tint)
@@ -339,16 +347,27 @@ struct TodayView: View {
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .plainRow()
-            // Meanwhile, a look back that's free: the random memory sheet (also a shake away).
-            Button {
-                model.showsRandomEntry = true
-            } label: {
-                Label("Try a Random Memory", icon: "slab-dice")
-                    .fontWeight(.medium)
+            // Meanwhile, a look back that's free: the random memory sheet (also a shake away),
+            // once there's an entry from a day before today to come up in it.
+            if (model.me?.entryCount ?? 0) - (today.entry == nil ? 0 : 1) >= 1 {
+                // Olive words, not a button's shape: it says what a shake does (a tap does it too),
+                // or "See" for someone who's switched the shake off.
+                Button {
+                    model.showsRandomEntry = true
+                } label: {
+                    // The dice close to its words (a Label leaves more room between them).
+                    HStack(spacing: 8) {
+                        appIcon("slab-dice")
+                        Text(shakeForRandomEntry ? "Shake for a Random Entry" : "See a Random Entry")
+                    }
+                        .fontWeight(.medium)
+                        .foregroundStyle(.tint)
+                        .padding(.vertical, 6)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .plainRow()
             }
-            .buttonStyle(.bordered)
-            .controlSize(.large)
-            .plainRow()
         }
         // One section per memory, so its date sticks at the top while you scroll through it.
         ForEach(today.onThisDay) { memory in

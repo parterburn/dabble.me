@@ -16,7 +16,7 @@ enum JournalMode: String, CaseIterable, Identifiable {
     var icon: String {
         switch self {
         case .list: "slab-list"
-        case .stats: "slab-signal-bars"
+        case .stats: "slab-chart-bar"
         case .photos: "slab-images"
         case .playlist: "slab-music"
         }
@@ -48,13 +48,6 @@ struct JournalView: View {
             modeContent
                 .navigationTitle(mode.rawValue)
                 .navigationBarTitleDisplayMode(.inline)
-                .toolbarTitleMenu {
-                    Picker("View", selection: $mode) {
-                        ForEach(JournalMode.allCases) { mode in
-                            Label(mode.rawValue, icon: mode.icon).tag(mode)
-                        }
-                    }
-                }
                 .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
                 .toolbar {
                     // The "me" mark, always in view.
@@ -63,6 +56,40 @@ struct JournalView: View {
                             .sharedBackgroundVisibility(.hidden)
                     } else {
                         ToolbarItem(placement: .topBarLeading) { brandMark }
+                    }
+                    // The title is the menu of the Journal's views, a size up from a plain title
+                    // with a chevron in the tint, so it reads as something to open.
+                    ToolbarItem(placement: .principal) {
+                        Menu {
+                            // Buttons, not a Picker: no checkmark. The view that's showing has its
+                            // filled icon, in olive (a menu colours an icon, not a row's words).
+                            ForEach(JournalMode.allCases) { option in
+                                Button { mode = option } label: {
+                                    Label {
+                                        Text(option.rawValue)
+                                    } icon: {
+                                        option == mode ? Self.selectedIcon(option.icon + "-full") : appIcon(option.icon)
+                                    }
+                                }
+                                .accessibilityAddTraits(option == mode ? .isSelected : [])
+                            }
+                        } label: {
+                            HStack(spacing: 7) {
+                                Text(mode.rawValue)
+                                    .font(.title3.weight(.semibold))
+                                    .foregroundStyle(.primary)
+                                appIcon("slab-angle-down")
+                                    .resizable()
+                                    .scaledToFit()
+                                    .frame(width: 12, height: 12)
+                                    .foregroundStyle(.tint)
+                            }
+                            .padding(.horizontal, 6)
+                            .contentShape(.rect)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityLabel(mode.rawValue)
+                        .accessibilityHint("Chooses another view of your journal")
                     }
                     ToolbarItem(placement: .primaryAction) {
                         Button { startWriting() } label: { Label("New Entry", icon: "slab-plus") }
@@ -85,6 +112,12 @@ struct JournalView: View {
                     path = NavigationPath()
                     mode = .stats
                 }
+                .onChange(of: model.journalModeRequest, initial: true) { _, request in
+                    guard let request else { return }
+                    model.journalModeRequest = nil
+                    path = NavigationPath()
+                    mode = request
+                }
                 .onChange(of: model.journalTopRequest) {
                     path = NavigationPath()
                     mode = .list
@@ -97,6 +130,12 @@ struct JournalView: View {
         }
     }
 
+    /// A filled icon in the app's olive, as an image a menu shows in its own colours.
+    private static func selectedIcon(_ name: String) -> Image {
+        guard let icon = UIImage(named: name), let olive = UIColor(named: "AccentColor") else { return appIcon(name) }
+        return Image(uiImage: icon.withTintColor(olive, renderingMode: .alwaysOriginal))
+    }
+
     @ViewBuilder
     private var modeContent: some View {
         switch mode {
@@ -105,7 +144,8 @@ struct JournalView: View {
             if model.me?.maySeeStats == false {
                 ProInfoView(feature: .stats, showsDoneButton: false)
             } else {
-                StatsView()
+                // Its Entries and Photos tiles go to those views.
+                StatsView { mode = $0 }
             }
         case .photos: PhotoGridView { path.append($0) }
         case .playlist: PlaylistView { path.append($0) }
@@ -129,10 +169,18 @@ struct JournalView: View {
                 ContentUnavailableView {
                     Label("No entries yet", icon: "slab-envelope")
                 } description: {
-                    Text("Reply to your Dabble Me email and your entry will show up here.")
+                    // Only for someone who can't write in the app: otherwise the button is the way in.
+                    if model.me?.canWrite != true {
+                        Text("Reply to your Dabble Me email and your entry will show up here.")
+                    }
                 } actions: {
                     if model.me?.canWrite == true {
                         Button("Write Your First Entry") { composing = true }
+                            .buttonStyle(.borderedProminent)
+                            .buttonBorderShape(.capsule)
+                            .controlSize(.large)
+                            .fontWeight(.medium)
+                            .padding(.top, 21) // as far under the title as the icon is over it
                     }
                 }
                 .refreshable { await model.refresh() }

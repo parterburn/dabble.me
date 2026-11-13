@@ -267,7 +267,7 @@ struct RewindView: View {
                 Big(rewind.entries.count.formatted(), size: 130)
                 Text(rewind.entries.count == 1 ? "time" : "times").font(.system(.title, design: .serif, weight: .semibold))
             }
-            Text("Every dot is a day you wrote something.")
+            Text("Every bright square is a day you wrote something.")
                 .font(.system(.body, design: .serif))
                 .opacity(0.85)
             YearDots(year: year, days: rewind.days, through: model.today?.day ?? JournalDay(localDate: .now))
@@ -674,44 +674,78 @@ private struct Print: View {
     }
 }
 
-/// The year as twelve rows of dots, a month each: filled for a day with an entry, faint for one
-/// without, fainter still for days yet to come.
+/// The year as Stats draws it: a column a week (Sunday on top), the months named along the top,
+/// here all on one screen. A square is filled for a day with an entry, faint for one without, and
+/// fainter still for days yet to come.
 private struct YearDots: View {
     let year: Int
     let days: Set<String>
     let through: JournalDay
 
+    /// The year's weeks, each Sunday to Saturday (nil outside the year).
+    private var weeks: [[String?]] {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .gmt
+        guard let start = calendar.date(from: DateComponents(year: year, month: 1, day: 1)),
+              let end = calendar.date(from: DateComponents(year: year, month: 12, day: 31)),
+              var day = calendar.date(byAdding: .day, value: -(calendar.component(.weekday, from: start) - 1), to: start) else { return [] }
+        var weeks: [[String?]] = []
+        while day <= end {
+            var week: [String?] = []
+            for _ in 0..<7 {
+                week.append(day >= start && day <= end ? JournalDay(localDate: day, calendar: calendar).iso : nil)
+                day = calendar.date(byAdding: .day, value: 1, to: day) ?? day
+            }
+            weeks.append(week)
+        }
+        return weeks
+    }
+
     var body: some View {
+        let weeks = weeks
         GeometryReader { geometry in
-            let label: CGFloat = 16
-            let gap: CGFloat = 2.5
-            let dot = max(3, (geometry.size.width - label - gap * 31) / 31)
-            VStack(alignment: .leading, spacing: gap) {
-                ForEach(1...12, id: \.self) { month in
-                    HStack(spacing: gap) {
-                        Text(String(Rewind.monthName(month).prefix(1)))
+            let gap: CGFloat = 1.5
+            let count = CGFloat(max(weeks.count, 1))
+            let cell = max(2, (geometry.size.width - gap * (count - 1)) / count)
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: gap) {
+                    ForEach(Array(weeks.enumerated()), id: \.offset) { index, week in
+                        Text(monthLabel(weeks, at: index) ?? "")
                             .font(.system(size: 9, weight: .semibold))
-                            .opacity(0.6)
-                            .frame(width: label, alignment: .leading)
-                        ForEach(1...31, id: \.self) { day in
-                            Circle()
-                                .opacity(opacity(month, day))
-                                .frame(width: dot, height: dot)
+                            .opacity(0.65)
+                            .fixedSize()
+                            .frame(width: cell, height: 11, alignment: .leading)
+                    }
+                }
+                HStack(alignment: .top, spacing: gap) {
+                    ForEach(Array(weeks.enumerated()), id: \.offset) { _, week in
+                        VStack(spacing: gap) {
+                            ForEach(0..<7, id: \.self) { row in
+                                RoundedRectangle(cornerRadius: cell * 0.25)
+                                    .opacity(opacity(week[row]))
+                                    .frame(width: cell, height: cell)
+                            }
                         }
                     }
                 }
             }
         }
-        .aspectRatio(31.0 / 12.6, contentMode: .fit)
+        .aspectRatio(53.0 / 10.2, contentMode: .fit)
         .accessibilityElement()
         .accessibilityLabel("Calendar of \(String(year)): \(days.count) days with an entry")
     }
 
-    private func opacity(_ month: Int, _ day: Int) -> Double {
-        let iso = String(format: "%04d-%02d-%02d", year, month, day)
-        guard JournalDay(iso) != nil else { return 0 } // no such day (February 30)
+    /// "JAN" over the first whole week of each month.
+    private func monthLabel(_ weeks: [[String?]], at index: Int) -> String? {
+        func month(_ week: [String?]) -> String? { week.compactMap { $0 }.last.map { String($0.dropFirst(5).prefix(2)) } }
+        guard let this = month(weeks[index]), index == 0 || month(weeks[index - 1]) != this, let number = Int(this) else { return nil }
+        return Calendar.current.shortMonthSymbols[number - 1].uppercased()
+    }
+
+    private func opacity(_ iso: String?) -> Double {
+        guard let iso else { return 0 }
         if days.contains(iso) { return 1 }
-        return iso > through.iso ? 0.08 : 0.2
+        return iso > through.iso ? 0.07 : 0.2
     }
 }
 
@@ -757,10 +791,11 @@ struct RewindCard: View {
                         .opacity(0.9)
                 }
                 Spacer(minLength: 8)
-                appIcon("slab-angle-right")
+                // Rewind, as on a tape deck, where another card would have an arrow.
+                appIcon("slab-backward")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 16, height: 16)
+                    .frame(width: 26, height: 26)
             }
             .foregroundStyle(.white)
             .padding(.horizontal, 18)

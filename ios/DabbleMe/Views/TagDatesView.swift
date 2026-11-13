@@ -84,6 +84,7 @@ struct TagDatesView: View {
         .toolbar {
             if list?.hashtags.isEmpty == false { EditButton() }
         }
+        .slabBackButton()
         .navigationTitle("Manage Hashtags")
         .navigationBarTitleDisplayMode(.inline)
         .sheet(item: Binding(get: { adding.map(NewTag.init) }, set: { adding = $0?.tag })) { new in

@@ -14,7 +14,7 @@ final class HabitTests: XCTestCase {
 
     private func launch(_ extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", "http://localhost:3000"] + extra
+        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", testServer] + extra
         app.launch()
         return app
     }

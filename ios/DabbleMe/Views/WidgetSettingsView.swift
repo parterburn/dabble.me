@@ -45,6 +45,7 @@ struct WidgetSettingsView: View {
                 footer
             }
         }
+        .slabBackButton()
         .navigationTitle("Home Screen Widget")
         .navigationBarTitleDisplayMode(.inline)
         .onChange(of: content) { _, content in WidgetSync.setContent(content, model: model) }

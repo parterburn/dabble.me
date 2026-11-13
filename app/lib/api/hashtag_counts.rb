@@ -1,7 +1,8 @@
 # frozen_string_literal: true
 
 module Api
-  # How often each #hashtag appears in a user's entries since a date (one count per entry),
+  # How often each #hashtag appears in a user's entries since a date, or between two (one count
+  # per entry),
   # matched case-insensitively. An entry that spells a tag two ways counts once, in its first
   # spelling.
   #
@@ -12,9 +13,11 @@ module Api
   class HashtagCounts
     RECENT_PAGE_SIZE = 200
 
-    def initialize(user, since:)
+    # `upto` (a date, included) ends the span: a calendar year's tags, say.
+    def initialize(user, since:, upto: nil)
       @user = user
       @since = since
+      @upto = upto
     end
 
     def top(limit)
@@ -55,10 +58,10 @@ module Api
 
     private
 
-    attr_reader :user, :since
+    attr_reader :user, :since, :upto
 
     def entries_since
-      user.entries.unscope(:order).where(date: since.beginning_of_day..)
+      user.entries.unscope(:order).where(date: since.beginning_of_day..upto&.end_of_day)
     end
 
     def tags_in(body)

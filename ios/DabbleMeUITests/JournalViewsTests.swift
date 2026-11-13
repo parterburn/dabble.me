@@ -15,7 +15,7 @@ final class JournalViewsTests: XCTestCase {
 
     private func launch(_ extra: [String] = []) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", "http://localhost:3000"] + extra
+        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", testServer] + extra
         app.launch()
         return app
     }
@@ -48,7 +48,7 @@ final class JournalViewsTests: XCTestCase {
         journal.tap()
 
         switchJournal(app, from: "Journal", to: "Stats")
-        XCTAssertTrue(app.staticTexts["Words"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.statTile("Words").waitForExistence(timeout: 10))
         XCTAssertTrue(app.staticTexts["Entries per Month"].exists)
         sleep(1)
         snap("journal-stats")
@@ -58,6 +58,7 @@ final class JournalViewsTests: XCTestCase {
         // the row above, or the bottom of the column before on a Sunday.
         let heatmap = app.otherElements["Writing days in \(Calendar.current.component(.year, from: .now))"]
         XCTAssertTrue(heatmap.waitForExistence(timeout: 5))
+        app.raiseStats()
         let pitch: CGFloat = 13 + 3, monthRow: CGFloat = 2 + 16 + 4
         let todayRow = Calendar(identifier: .gregorian).component(.weekday, from: .now) - 1
         // Today's column is up to four weeks from the right edge: the year's days to come follow it.
@@ -373,7 +374,7 @@ final class JournalViewsTests: XCTestCase {
             throw XCTSkip("Set TEST_RUNNER_DABBLE_EMPTY_TOKEN to an account with no entries")
         }
         let app = XCUIApplication()
-        app.launchArguments = ["-DabbleDebugAccessToken", empty, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launchArguments = ["-DabbleDebugAccessToken", empty, "-DabbleServerOverride", testServer]
         app.launch()
         XCTAssertTrue(app.staticTexts["Rewind"].waitForExistence(timeout: 15))
         XCTAssertFalse(app.staticTexts["On This Day"].exists)
@@ -387,7 +388,7 @@ final class JournalViewsTests: XCTestCase {
             throw XCTSkip("Set TEST_RUNNER_DABBLE_EMPTY_TOKEN to a PRO account with no hashtags")
         }
         let app = XCUIApplication()
-        app.launchArguments = ["-DabbleDebugAccessToken", empty, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launchArguments = ["-DabbleDebugAccessToken", empty, "-DabbleServerOverride", testServer]
         app.launch()
         let write = app.buttons["Write Today's Entry"]
         XCTAssertTrue(write.waitForExistence(timeout: 15))
@@ -432,7 +433,7 @@ final class JournalViewsTests: XCTestCase {
     func testAIPromptKeepsPastInThePast() throws {
         guard let token = ProcessInfo.processInfo.environment["DABBLE_EMPTY_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_EMPTY_TOKEN") }
         let app = XCUIApplication()
-        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", testServer]
         app.launch()
         let another = app.buttons["Another Prompt"]
         guard another.waitForExistence(timeout: 60) else { throw XCTSkip("Apple Intelligence isn't available here") }
@@ -451,11 +452,11 @@ final class JournalViewsTests: XCTestCase {
         let app = launch()
         tab(app, "Journal").tap()
         switchJournal(app, from: "Journal", to: "Stats")
-        XCTAssertTrue(app.staticTexts["Words"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.statTile("Words").waitForExistence(timeout: 10))
         tab(app, "Journal").tap()
         let newest = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
         XCTAssertTrue(newest.waitForExistence(timeout: 10))
-        XCTAssertFalse(app.staticTexts["Words"].exists)
+        XCTAssertFalse(app.statTile("Words").exists)
 
         app.swipeUp(); app.swipeUp(); app.swipeUp()
         XCTAssertFalse(newest.isHittable)
@@ -913,6 +914,353 @@ final class JournalViewsTests: XCTestCase {
         snap("pull-up-random-memory")
     }
 
+    /// Under the tiles, Stats is one year at a time: picking another from the year's menu turns the
+    /// grid, the months and the hashtags to it. A month held in the bars is named in full.
+    func testStatsFollowTheYearPicked() throws {
+        let app = launch(["-stats.heatmapCell", "13"])
+        tab(app, "Journal").tap()
+        switchJournal(app, from: "Journal", to: "Stats")
+        let thisYear = Calendar.current.component(.year, from: .now)
+        let menu = app.buttons["Year, \(thisYear)"]
+        XCTAssertTrue(menu.waitForExistence(timeout: 10))
+        func bringUp(_ element: XCUIElement) {
+            for _ in 0..<6 where !(element.exists && element.isHittable && element.frame.minY < 520) { app.swipeUp(velocity: .slow) }
+        }
+        bringUp(app.staticTexts["Entries per Month"])
+        sleep(1)
+        snap("stats-year-section")
+
+        // A month held: its name in full under the bars (seen in the screenshot, taken mid-hold).
+        let bars = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Entries per month")).firstMatch
+        XCTAssertTrue(bars.waitForExistence(timeout: 5))
+        let named = expectation(description: "The month is named while it's held")
+        DispatchQueue.global().asyncAfter(deadline: .now() + 1.2) {
+            if app.staticTexts.matching(identifier: "StatsSelectedMonth").firstMatch.exists { named.fulfill() }
+            self.snap("stats-month-held")
+        }
+        bars.coordinate(withNormalizedOffset: CGVector(dx: 0.82, dy: 0.5)).press(forDuration: 3)
+        wait(for: [named], timeout: 5)
+
+        // Last year: the demo wrote once, about Bruges (#travel).
+        app.swipeDown(); app.swipeDown()
+        menu.tap()
+        app.buttons[String(thisYear - 1)].tap()
+        let summary = app.staticTexts.matching(identifier: "StatsYearSummary").firstMatch
+        XCTAssertTrue(app.staticTexts.matching(identifier: "StatsYearSummary").matching(NSPredicate(format: "label BEGINSWITH %@", "1 entry")).firstMatch.waitForExistence(timeout: 10),
+                      "The year's own count: \(summary.label)")
+        let hashtags = app.staticTexts["Top Hashtags in \(thisYear - 1)"]
+        bringUp(hashtags)
+        XCTAssertTrue(hashtags.waitForExistence(timeout: 10), "The hashtags are the year's")
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "#travel, 1 ")).firstMatch.exists)
+        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "#hiking")).firstMatch.exists)
+        snap("stats-last-year")
+    }
+
+    /// A day held down in the year's grid: its entry in a preview with Open, or, for a day gone by
+    /// without one, "Nothing written on this day." with Write Entry (the composer, on that day).
+    func testHoldingADayInTheGridShowsItOrOffersToWriteIt() throws {
+        let app = launch(["-stats.heatmapCell", "13"])
+        tab(app, "Journal").tap()
+        switchJournal(app, from: "Journal", to: "Stats")
+        let calendar = Calendar(identifier: .gregorian)
+        let heatmap = app.otherElements["Writing days in \(calendar.component(.year, from: .now))"]
+        XCTAssertTrue(heatmap.waitForExistence(timeout: 10))
+        app.raiseStats()
+        // Where a day `back` days ago sits: today's column is up to four weeks from the right edge.
+        func square(daysAgo back: Int) -> XCUICoordinate {
+            let pitch: CGFloat = 13 + 3, monthRow: CGFloat = 2 + 16 + 4
+            let today = calendar.startOfDay(for: .now)
+            let day = calendar.date(byAdding: .day, value: -back, to: today)!
+            func sunday(_ date: Date) -> Date { calendar.date(byAdding: .day, value: -(calendar.component(.weekday, from: date) - 1), to: date)! }
+            let yearEnd = calendar.date(from: DateComponents(year: calendar.component(.year, from: .now), month: 12, day: 31))!
+            let ahead = min(4, (calendar.dateComponents([.day], from: sunday(today), to: yearEnd).day ?? 0) / 7)
+            let column = ahead + (calendar.dateComponents([.day], from: sunday(day), to: sunday(today)).day ?? 0) / 7
+            let row = calendar.component(.weekday, from: day) - 1
+            return heatmap.coordinate(withNormalizedOffset: .zero)
+                .withOffset(CGVector(dx: heatmap.frame.width - 6.5 - CGFloat(column) * pitch, dy: monthRow + CGFloat(row) * pitch + 6.5))
+        }
+        // Yesterday (always written): the entry, previewed as the Journal previews one, with Open.
+        square(daysAgo: 1).press(forDuration: 1.2)
+        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10), "A written day has Open")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to")).firstMatch.waitForExistence(timeout: 10),
+                      "Yesterday's entry is previewed")
+        sleep(1)
+        snap("stats-day-held")
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.97)).tap() // away from it: closes it
+        XCTAssertTrue(app.buttons["Open"].waitForNonExistence(timeout: 5))
+        sleep(1)
+
+        // Eleven days ago: nothing written.
+        square(daysAgo: 11).press(forDuration: 1.2)
+        let write = app.buttons["Write Entry"]
+        XCTAssertTrue(write.waitForExistence(timeout: 5), "A day without an entry offers one")
+        XCTAssertTrue(app.staticTexts["Nothing written on this day."].exists)
+        sleep(1)
+        snap("stats-day-write")
+        let day = calendar.date(byAdding: .day, value: -11, to: .now)!
+        write.tap()
+        XCTAssertTrue(app.textViews["Entry"].waitForExistence(timeout: 10), "The composer opens")
+        let date = day.formatted(.dateTime.month(.abbreviated).day().year())
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", date, date)).firstMatch.waitForExistence(timeout: 5),
+                      "On that day: \(date)")
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+    }
+
+    /// A web address pasted over selected words links them, instead of replacing them.
+    func testPastingAnAddressOverSelectedTextLinksIt() throws {
+        UIPasteboard.general.string = "https://example.com/trail"
+        let app = launch()
+        tab(app, "Journal").tap()
+        app.buttons["New Entry"].tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        editor.tap()
+        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+        if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap() } // a draft from an earlier run
+        editor.typeText("Trailhead")
+        editor.doubleTap() // selects the word
+        let paste = app.menuItems["Paste"]
+        XCTAssertTrue(paste.waitForExistence(timeout: 5))
+        paste.tap()
+        let allow = app.alerts.buttons["Allow Paste"]
+        if allow.waitForExistence(timeout: 2) { allow.tap() }
+        sleep(1)
+        snap("compose-paste-link")
+        XCTAssertEqual(editor.value as? String, "Trailhead", "The word stays; the address isn't pasted in as text")
+        // (The word's link shows in the screenshot: the editor doesn't offer its links to the tests.)
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+    }
+
+    /// Settings → Email is a switch, like Push: off hides its days and time (and the row says Off);
+    /// back on, the days it had are back.
+    func testEmailNotificationsSwitch() throws {
+        let app = launch()
+        tab(app, "Settings").tap()
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Email'")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        snap("settings-sections")
+        row.tap()
+        let email = app.switches["Email Notifications"]
+        XCTAssertTrue(email.waitForExistence(timeout: 10))
+        XCTAssertEqual(email.value as? String, "1", "The demo's email is on (Sundays)")
+        XCTAssertEqual(app.buttons["Sunday"].value as? String, "On")
+        snap("email-on")
+        email.switches.firstMatch.tap()
+        XCTAssertTrue(app.buttons["Sunday"].waitForNonExistence(timeout: 5), "Off: no days or time")
+        snap("email-off")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Email' AND label CONTAINS 'Off'")).firstMatch.waitForExistence(timeout: 10))
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Email'")).firstMatch.tap()
+        XCTAssertTrue(email.waitForExistence(timeout: 10))
+        email.switches.firstMatch.tap()
+        XCTAssertTrue(app.buttons["Sunday"].waitForExistence(timeout: 5), "On again")
+        XCTAssertEqual(app.buttons["Sunday"].value as? String, "On", "With the day it had")
+        XCTAssertEqual(app.buttons["Monday"].value as? String, "Off")
+    }
+
+    /// The photo viewer's Photos button goes to the Journal's grid of photos; a swipe to the right
+    /// on an entry's song player goes to the Playlist.
+    func testPhotoViewerAndSongPlayerLeadToTheirViews() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Last farmers market")).firstMatch
+        app.scrollTo(row)
+        app.openTimelineEntry(row)
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
+        snap("entry-back-arrow")
+        let player = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "Spotify player, ")).firstMatch
+        XCTAssertTrue(player.waitForExistence(timeout: 10))
+        player.swipeRight()
+        XCTAssertTrue(app.buttons["The Weeknd – Blinding Lights"].waitForExistence(timeout: 10), "The Playlist")
+        XCTAssertTrue(app.navigationBars.buttons["Playlist"].exists || app.navigationBars.staticTexts["Playlist"].exists)
+        snap("journal-title-menu")
+
+        switchJournal(app, from: "Playlist", to: "Journal")
+        app.scrollTo(row)
+        app.openTimelineEntry(row)
+        let photo = app.buttons["Entry photo"].firstMatch
+        XCTAssertTrue(photo.waitForExistence(timeout: 15))
+        sleep(2)
+        photo.tap()
+        let photos = app.buttons["Photos"]
+        XCTAssertTrue(app.buttons["Close"].waitForExistence(timeout: 5))
+        XCTAssertTrue(photos.waitForExistence(timeout: 5))
+        sleep(1)
+        snap("photo-viewer")
+        photos.tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Photo from'")).firstMatch.waitForExistence(timeout: 10), "The photo grid")
+    }
+
+    /// Jump to a Day's calendar: the Slab arrows step through the months, and a day held down
+    /// previews its entry (with Open) or offers Write Entry.
+    func testCalendarStepsMonthsAndPreviewsDays() throws {
+        let app = launch()
+        tab(app, "Search").tap()
+        app.buttons["Jump to a Day"].tap()
+        let now = Date.now, calendar = Calendar.current
+        XCTAssertTrue(app.buttons[now.formatted(.dateTime.month(.wide).year())].waitForExistence(timeout: 10), "It opens on this month")
+        sleep(1)
+        snap("calendar")
+        XCTAssertFalse(app.buttons["Next Month"].isEnabled, "Nothing after this month")
+        app.buttons["Previous Month"].tap()
+        let before = calendar.date(byAdding: .month, value: -1, to: now)!
+        XCTAssertTrue(app.buttons[before.formatted(.dateTime.month(.wide).year())].waitForExistence(timeout: 5), "The month before")
+        app.buttons["Next Month"].tap()
+        XCTAssertTrue(app.buttons[now.formatted(.dateTime.month(.wide).year())].waitForExistence(timeout: 5))
+
+        func day(_ back: Int) -> XCUIElement {
+            let date = calendar.date(byAdding: .day, value: -back, to: now)!
+            return app.buttons.matching(NSPredicate(format: "label CONTAINS %@", date.formatted(.dateTime.month(.wide).day()) + ",")).firstMatch
+        }
+        // Held: yesterday's entry, with Open.
+        if calendar.component(.day, from: now) > 1 {
+            day(1).press(forDuration: 1.2)
+            XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
+            XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to")).firstMatch.waitForExistence(timeout: 10))
+            sleep(1)
+            snap("calendar-day-held")
+            app.buttons["Open"].tap()
+            XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "· Yesterday")).firstMatch.waitForExistence(timeout: 10), "Open brings the day up")
+        }
+    }
+
+    /// The Journal's title is a menu of its views: the one showing has its filled icon, and no
+    /// checkmark; picking another shows it.
+    func testJournalTitleMenu() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let title = app.navigationBars.buttons["Journal"]
+        XCTAssertTrue(title.waitForExistence(timeout: 10))
+        title.tap()
+        let photos = app.collectionViews.buttons["Photos"].exists ? app.collectionViews.buttons["Photos"] : app.buttons["Photos"].firstMatch
+        XCTAssertTrue(photos.waitForExistence(timeout: 5))
+        sleep(1)
+        snap("journal-menu-open")
+        photos.tap()
+        XCTAssertTrue(app.navigationBars.buttons["Photos"].waitForExistence(timeout: 10))
+        app.navigationBars.buttons["Photos"].tap()
+        sleep(1)
+        snap("journal-menu-open-photos")
+    }
+
+    /// Screenshots, for looking over: each of the Journal's views (and Today and Search) with an
+    /// empty journal, and on a free account. TEST_RUNNER_DABBLE_EMPTY_TOKEN and _FREE_TOKEN.
+    func testSnapEmptyAndFreeViews() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let empty = env["DABBLE_EMPTY_TOKEN"], let free = env["DABBLE_FREE_TOKEN"] else { throw XCTSkip("Needs the empty and free tokens") }
+        for (name, token) in [("empty", empty), ("free", free)] {
+            let app = XCUIApplication()
+            app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", testServer]
+            app.launch()
+            XCTAssertTrue(tab(app, "Journal").waitForExistence(timeout: 15))
+            sleep(3)
+            snap("\(name)-today")
+            tab(app, "Journal").tap()
+            sleep(3)
+            snap("\(name)-journal")
+            var current = "Journal"
+            for mode in ["Stats", "Photos", "Playlist"] {
+                switchJournal(app, from: current, to: mode)
+                current = mode
+                sleep(3)
+                snap("\(name)-\(mode.lowercased())")
+            }
+            tab(app, "Search").tap()
+            sleep(3)
+            snap("\(name)-search")
+            app.terminate()
+        }
+    }
+
+    /// Stats' tiles go to what they count: Entries to the Journal, Photos to the photo grid, the
+    /// streak to its year in the year card, and Words to the top hashtags.
+    func testStatsTilesGoToWhatTheyCount() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        switchJournal(app, from: "Journal", to: "Stats")
+        XCTAssertTrue(app.statTile("Words").waitForExistence(timeout: 10))
+        snap("stats-tiles")
+
+        app.statTile("Photos").tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Photo from'")).firstMatch.waitForExistence(timeout: 10), "Photos opens the grid")
+        switchJournal(app, from: "Photos", to: "Stats")
+        XCTAssertTrue(app.statTile("Words").waitForExistence(timeout: 10))
+
+        app.statTile("Words").tap()
+        let hashtags = app.staticTexts["Top Hashtags This Year"]
+        XCTAssertTrue(hashtags.waitForExistence(timeout: 5))
+        sleep(1)
+        XCTAssertLessThan(hashtags.frame.minY, 320, "Words scrolls to the hashtags")
+        snap("stats-words-to-hashtags")
+        app.swipeDown(); app.swipeDown()
+
+        let streak = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS 'Streak'")).firstMatch
+        XCTAssertTrue(streak.waitForExistence(timeout: 5))
+        streak.tap()
+        let summary = app.staticTexts.matching(identifier: "StatsYearSummary").firstMatch
+        XCTAssertTrue(summary.waitForExistence(timeout: 5))
+        sleep(1)
+        XCTAssertLessThan(summary.frame.minY, 320, "The streak scrolls to its year")
+        snap("stats-streak-to-year")
+        app.swipeDown(); app.swipeDown()
+
+        app.statTile("Entries").tap()
+        XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 10), "Entries opens the Journal's list")
+    }
+
+    /// An entry with songs has Spotify's player under it, showing the first (in bold above) and
+    /// not started. A tap on another song puts that one in the player; a swipe left puts the
+    /// player away, and a tap on a song brings it back.
+    func testEntryWithSongsHasThePlayerUnderIt() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Last farmers market")).firstMatch
+        app.scrollTo(row)
+        app.openTimelineEntry(row)
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
+        func player(_ song: String) -> XCUIElement {
+            app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Spotify player, \(song)")).firstMatch
+        }
+        let first = app.buttons["The Killers – Mr. Brightside"], second = app.buttons["Rick Astley – Never Gonna Give You Up"]
+        XCTAssertTrue(player("The Killers – Mr. Brightside").waitForExistence(timeout: 10), "The first song is in the player")
+        XCTAssertTrue(first.isSelected)
+        XCTAssertFalse(second.isSelected)
+        XCTAssertTrue(app.links["Open in Spotify"].exists || app.buttons["Open in Spotify"].exists)
+        sleep(6) // Spotify's player loads
+        snap("entry-song-player")
+
+        second.tap()
+        XCTAssertTrue(player("Rick Astley – Never Gonna Give You Up").waitForExistence(timeout: 5), "One song at a time: the one tapped")
+        XCTAssertFalse(player("The Killers – Mr. Brightside").exists)
+        XCTAssertTrue(second.isSelected)
+        XCTAssertFalse(first.isSelected)
+
+        player("Rick Astley – Never Gonna Give You Up").swipeLeft()
+        XCTAssertTrue(player("Rick Astley – Never Gonna Give You Up").waitForNonExistence(timeout: 5), "A swipe left puts the player away")
+        XCTAssertFalse(second.isSelected)
+        snap("entry-song-player-hidden")
+        first.tap()
+        XCTAssertTrue(player("The Killers – Mr. Brightside").waitForExistence(timeout: 5), "A tap on a song brings the player back")
+    }
+
+    /// A web address in a row (Today's and the Journal's are the same row) is a link without
+    /// expanding or opening the entry first: a tap on it goes to the browser.
+    func testALinkInARowOpensWithoutOpeningTheEntry() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "The Overstory")).firstMatch
+        app.scrollTo(row)
+        let link = app.links.matching(NSPredicate(format: "label CONTAINS %@", "goodreads")).firstMatch
+        XCTAssertTrue(link.waitForExistence(timeout: 5), "The address is a link in the row")
+        link.tap()
+        let safari = XCUIApplication(bundleIdentifier: "com.apple.mobilesafari")
+        XCTAssertTrue(safari.wait(for: .runningForeground, timeout: 15), "The link opens in the browser")
+        app.activate()
+        XCTAssertFalse(app.buttons["Edit Entry"].waitForExistence(timeout: 3), "The entry itself didn't open")
+    }
+
     /// An entry's Spotify songs show in its long-press preview.
     func testSongsShowInPreviews() throws {
         let app = launch()
@@ -982,12 +1330,17 @@ final class JournalViewsTests: XCTestCase {
                        "Only entries with songs")
         snap("playlist")
         song.tap()
-        XCTAssertTrue(app.buttons["Close Player"].waitForExistence(timeout: 5))
+        // The player, with a way out to Spotify beside it (no close button: it's swiped away).
+        let player = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Spotify player, The Weeknd – Blinding Lights")).firstMatch
+        XCTAssertTrue(player.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.links["Open in Spotify"].exists || app.buttons["Open in Spotify"].exists)
+        XCTAssertFalse(app.buttons["Close Player"].exists)
         XCTAssertEqual(song.value as? String, "Playing")
         sleep(6) // Spotify's player loads
         snap("playlist-playing")
-        app.buttons["Close Player"].tap()
-        XCTAssertTrue(app.buttons["Close Player"].waitForNonExistence(timeout: 5))
+        player.swipeLeft()
+        XCTAssertTrue(player.waitForNonExistence(timeout: 5), "A swipe left puts the player away")
+        XCTAssertNotEqual(song.value as? String, "Playing")
         // The row itself opens the entry.
         app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "Slow Saturday")).firstMatch.tap()
         XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
@@ -1127,8 +1480,8 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
 
-    /// Where there's a camera, Add Photos offers it as well as the library. (The simulator has
-    /// none, so the menu is switched on for the test.)
+    /// Where there's a camera, it has a button of its own beside Add Photos. (The simulator has
+    /// none, so the button is switched on for the test.)
     func testAddPhotosOffersTheCamera() throws {
         let app = launch(["-DabbleDebugCameraMenu", "YES"])
         tab(app, "Journal").tap()
@@ -1137,11 +1490,12 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(editor.waitForExistence(timeout: 10))
         editor.tap()
         if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
-        app.buttons["Add Photos"].tap()
+        // With no photos yet, the library and the camera are each one tap away.
         XCTAssertTrue(app.buttons["Take Photo"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Choose Photos"].exists)
-        snap("add-photos-menu")
-        app.buttons["Choose Photos"].tap()
+        XCTAssertTrue(app.buttons["Add Photos"].exists)
+        snap("add-photos-buttons")
+        app.buttons["Add Photos"].tap()
+        XCTAssertFalse(app.buttons["Choose Photos"].waitForExistence(timeout: 2), "Straight to the library, no menu")
         sleep(2)
         snap("add-photos-library")
     }
@@ -1456,7 +1810,7 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(count.waitForExistence(timeout: 15))
         snap("today-entry-count")
         count.tap()
-        XCTAssertTrue(app.staticTexts["Words"].waitForExistence(timeout: 10), "Stats, in the Journal tab")
+        XCTAssertTrue(app.statTile("Words").waitForExistence(timeout: 10), "Stats, in the Journal tab")
         let thisYear = Calendar.current.component(.year, from: .now)
         func summary(_ pattern: String) -> Bool {
             app.staticTexts.matching(identifier: "StatsYearSummary").matching(NSPredicate(format: "label MATCHES %@", pattern))
@@ -1516,7 +1870,7 @@ final class JournalViewsTests: XCTestCase {
     func testDeletingTheAccountSignsOutAndOpensTheBrowser() throws {
         guard let spare = ProcessInfo.processInfo.environment["DABBLE_DELETION_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_DELETION_TOKEN") }
         let app = XCUIApplication()
-        app.launchArguments = ["-DabbleDebugAccessToken", spare, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launchArguments = ["-DabbleDebugAccessToken", spare, "-DabbleServerOverride", testServer]
         app.launch()
         XCTAssertTrue(tab(app, "Settings").waitForExistence(timeout: 15))
         tab(app, "Settings").tap()
@@ -1542,7 +1896,7 @@ final class JournalViewsTests: XCTestCase {
     func testFreeAccountLimits() throws {
         guard let free = ProcessInfo.processInfo.environment["DABBLE_FREE_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_FREE_TOKEN") }
         let app = XCUIApplication()
-        app.launchArguments = ["-DabbleDebugAccessToken", free, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launchArguments = ["-DabbleDebugAccessToken", free, "-DabbleServerOverride", testServer]
         app.launch()
 
         // On This Day is PRO: Today says so (no throwback in its place).
@@ -1551,7 +1905,7 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertFalse(app.staticTexts["Rewind"].exists)
         snap("free-on-this-day")
         // Meanwhile, a random memory (free): the same sheet as shaking the phone.
-        app.buttons["Try a Random Memory"].tap()
+        app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", "for a Random Entry")).firstMatch.tap()
         XCTAssertTrue(app.staticTexts["A Random Memory"].waitForExistence(timeout: 5))
         // The journal's only entry: Open, with no arrows to step to another.
         XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 5))
@@ -1570,7 +1924,14 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
         XCTAssertTrue(app.buttons["Hashtags"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["Link"].exists, "Links are PRO")
-        XCTAssertFalse(app.buttons["Add Photos"].exists, "Photos are PRO")
+        // Photos are PRO: the button is there, and says so.
+        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+        editor.tap()
+        XCTAssertTrue(app.buttons["Add Photos"].waitForExistence(timeout: 5))
+        app.buttons["Add Photos"].tap()
+        XCTAssertTrue(app.alerts["Photos are a PRO feature"].waitForExistence(timeout: 5))
+        snap("free-photos-pro")
+        app.alerts.buttons["OK"].tap()
         snap("free-compose-bar")
         app.buttons["Cancel"].tap()
         if app.buttons["Discard Changes"].waitForExistence(timeout: 2) { app.buttons["Discard Changes"].tap() }
@@ -1616,7 +1977,7 @@ final class JournalViewsTests: XCTestCase {
     func testEmailScheduleFreeAccount() throws {
         guard let free = ProcessInfo.processInfo.environment["DABBLE_FREE_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_FREE_TOKEN") }
         let app = XCUIApplication()
-        app.launchArguments = ["-DabbleDebugAccessToken", free, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launchArguments = ["-DabbleDebugAccessToken", free, "-DabbleServerOverride", testServer]
         app.launch()
         tab(app, "Settings").tap()
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Email'")).firstMatch

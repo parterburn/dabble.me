@@ -15,6 +15,62 @@ extension View {
     }
 }
 
+extension View {
+    /// Long-press a day (a square of Stats' grid, a date in Jump to a Day): its entry in the
+    /// Journal's preview, with Open; or, for a day without one, that nothing's written, with
+    /// Write Entry (when `write` is given). `summary` is the day's entry when it's already to hand.
+    func dayPreview(_ day: JournalDay, isWritten: Bool, summary: EntrySummary? = nil, model: AppModel,
+                    open: @escaping () -> Void, write: (() -> Void)?) -> some View {
+        contextMenu {
+            if isWritten {
+                Button(action: open) { Label("Open", icon: "slab-expand") }
+            } else if let write {
+                Button(action: write) { Label("Write Entry", icon: "slab-plus") }
+            }
+        } preview: {
+            DayPreview(day: day, isWritten: isWritten, summary: summary, model: model)
+        }
+    }
+}
+
+/// The preview for a day: its entry (looked up when it wasn't passed in; the frame is set first,
+/// since iOS sizes a preview when it opens), or the date over "Nothing written on this day."
+private struct DayPreview: View {
+    let day: JournalDay
+    let isWritten: Bool
+    let summary: EntrySummary?
+    /// Passed in: a preview doesn't inherit the app's environment.
+    let model: AppModel
+    @State private var loaded: EntrySummary?
+    @State private var failed = false
+
+    var body: some View {
+        if let summary = summary ?? loaded {
+            EntryPreview(summary: summary)
+                .frame(maxHeight: summary == self.summary ? nil : 420, alignment: .top)
+        } else {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(day.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year()))
+                    .font(.headline)
+                if !isWritten || failed {
+                    Text(isWritten ? "Couldn't load this day." : "Nothing written on this day.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    ProgressView().frame(maxWidth: .infinity, minHeight: 200)
+                }
+            }
+            .padding()
+            .frame(width: 340, alignment: .topLeading)
+            .frame(height: isWritten ? 420 : nil, alignment: .top)
+            .task {
+                guard isWritten else { return }
+                loaded = try? await model.entrySummary(on: day)
+                failed = loaded == nil
+            }
+        }
+    }
+}
+
 private struct EntryRowMenu: ViewModifier {
     let summary: EntrySummary
     let actions: EntryActions

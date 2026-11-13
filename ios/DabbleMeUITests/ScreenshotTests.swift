@@ -13,7 +13,7 @@ final class ScreenshotTests: XCTestCase {
             .map { "https://images.unsplash.com/photo-\($0)?w=2400&h=1800&fit=crop&fm=jpg&q=80" }.joined(separator: ",")
 
         let app = XCUIApplication()
-        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", "http://localhost:3000",
+        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", testServer,
                                "-DabbleDebugComposePhotoURLs", photos, "-readingTextSize", "1"]
         app.launch()
 
@@ -89,7 +89,7 @@ final class ScreenshotTests: XCTestCase {
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Photo from'")).firstMatch.waitForExistence(timeout: 10))
         shot("05-photos")
         journalView("Photos", "Stats")
-        XCTAssertTrue(app.staticTexts["Words"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.statTile("Words").waitForExistence(timeout: 10))
         shot("06-stats")
         journalView("Stats", "Journal")
 

@@ -5,7 +5,7 @@ import WebKit
 /// Journal > Playlist: every entry with a song, newest first, by month. Each row is the day, a
 /// few lines of the entry in smaller type (no photo), and its songs, always shown. Tap a song to
 /// play it in Spotify's own player, docked at the bottom (a preview, or the whole song for someone
-/// signed in to Spotify there); tap the row to open the entry.
+/// signed in to Spotify there; swipe it left to put it away); tap the row to open the entry.
 struct PlaylistView: View {
     var open: (EntryRoute) -> Void = { _ in }
     @Environment(AppModel.self) private var model
@@ -15,6 +15,8 @@ struct PlaylistView: View {
     @State private var error: String?
     /// The song in the player.
     @State private var playing: Song?
+    /// Counts the taps on Play: each starts the player's song.
+    @State private var plays = 0
 
     /// The loaded entries by month, newest first.
     private var months: [(key: String, title: String, entries: [EntrySummary])] {
@@ -76,7 +78,7 @@ struct PlaylistView: View {
             }
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            if let playing { PlayerBar(song: playing) { self.playing = nil } }
+            if let playing { SongPlayerBar(song: playing, plays: plays) { self.playing = nil } }
         }
         .animation(.snappy(duration: 0.25), value: playing)
         .refreshable { await load(reset: true) }
@@ -88,8 +90,7 @@ struct PlaylistView: View {
         if playing == song {
             playing = nil
         } else {
-            // Heard with the ringer switched off too, as music is.
-            try? AVAudioSession.sharedInstance().setCategory(.playback)
+            plays += 1
             playing = song
         }
     }
@@ -197,42 +198,71 @@ private struct SongButton: View {
     }
 }
 
-/// Spotify's player for the song, docked above the tab bar, with a close button.
-private struct PlayerBar: View {
+/// Spotify's player for a song, docked above the tab bar: on the Playlist, and under an entry that
+/// has a song. Swipe it left to put it away (or, under an entry, right for the Playlist); the
+/// button beside it opens the song in Spotify.
+struct SongPlayerBar: View {
     let song: Song
+    /// Counts the times the song was asked to play. Each new one starts it; with none (an entry
+    /// just opened) the player waits for its own play button.
+    var plays = 0
+    /// A swipe to the right goes to the Playlist (nil on the Playlist itself).
+    var openPlaylist: (() -> Void)?
     let close: () -> Void
+    /// Follows the swipe that puts it away.
+    @State private var slide: CGFloat = 0
 
     var body: some View {
         HStack(spacing: 10) {
-            SpotifyPlayer(trackID: song.trackID ?? "")
+            SpotifyPlayer(trackID: song.trackID ?? "", plays: plays, swipedLeft: putAway, swipedRight: { openPlaylist?() })
                 .frame(height: SpotifyPlayer.height)
                 .clipShape(.rect(cornerRadius: 12))
                 .accessibilityLabel("Spotify player, \(song.label)")
-            Button(action: close) {
-                appIcon("slab-close")
+            Link(destination: song.spotifyUrl) {
+                appIcon("slab-external-link")
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 14, height: 14)
+                    .frame(width: 16, height: 16)
                     .foregroundStyle(.primary)
                     .frame(width: 36, height: 36)
                     .background(Color.primary.opacity(0.08), in: .circle)
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Close Player")
+            .accessibilityLabel("Open in Spotify")
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(.bar)
+        .offset(x: slide)
+        // Off the web view (which has a swipe of its own, below): around it and on the button.
+        .simultaneousGesture(DragGesture(minimumDistance: 20).onEnded { drag in
+            guard abs(drag.translation.height) < 50 else { return }
+            if drag.translation.width < -60 { putAway() } else if drag.translation.width > 60 { openPlaylist?() }
+        })
+        .accessibilityAction(named: "Hide Player", putAway)
+        .accessibilityActions {
+            if let openPlaylist { Button("Open Playlist", action: openPlaylist) }
+        }
+        // Heard with the ringer switched off too, as music is (the player's own button included).
+        .onAppear { try? AVAudioSession.sharedInstance().setCategory(.playback) }
         .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+
+    /// Slides off to the left, then goes (which stops the music).
+    private func putAway() {
+        guard slide == 0 else { return }
+        withAnimation(.easeIn(duration: 0.2)) { slide = -1400 } completion: { close() }
     }
 }
 
-/// Spotify's embedded player (its iFrame API) for one track, started as soon as it's ready. What
-/// plays is up to Spotify: a preview, or the whole song for someone signed in to Spotify in it.
-/// Nothing is asked of Spotify until a song is played.
-private struct SpotifyPlayer: UIViewRepresentable {
+/// Spotify's embedded player (its iFrame API) for one track. It starts the song when asked to
+/// (`plays`), and otherwise shows it ready to play. What plays is up to Spotify: a preview, or the
+/// whole song for someone signed in to Spotify in it.
+struct SpotifyPlayer: UIViewRepresentable {
     static let height: CGFloat = 80
     let trackID: String
+    var plays = 0
+    var swipedLeft: () -> Void = {}
+    var swipedRight: () -> Void = {}
 
     func makeUIView(context: Context) -> WKWebView {
         let configuration = WKWebViewConfiguration()
@@ -244,13 +274,32 @@ private struct SpotifyPlayer: UIViewRepresentable {
         view.scrollView.isScrollEnabled = false
         view.scrollView.backgroundColor = .clear
         view.navigationDelegate = context.coordinator
+        // The web view takes touches for itself, so the swipe that puts the player away is its own.
+        let swipe = UISwipeGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.swiped))
+        swipe.direction = .left
+        swipe.delegate = context.coordinator
+        view.addGestureRecognizer(swipe)
+        let right = UISwipeGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.swipedToTheRight))
+        right.direction = .right
+        right.delegate = context.coordinator
+        view.addGestureRecognizer(right)
         return view
     }
 
     func updateUIView(_ view: WKWebView, context: Context) {
-        guard context.coordinator.trackID != trackID else { return }
-        context.coordinator.trackID = trackID
-        view.loadHTMLString(Self.page(for: trackID), baseURL: AppConfig.productionURL)
+        let coordinator = context.coordinator
+        coordinator.swipedLeft = swipedLeft
+        coordinator.swipedRight = swipedRight
+        if coordinator.trackID != trackID {
+            // A song that comes with a new request to play starts; one that's only shown waits.
+            let starts = coordinator.plays != plays
+            coordinator.trackID = trackID
+            coordinator.plays = plays
+            view.loadHTMLString(Self.page(for: trackID, autoplay: starts), baseURL: AppConfig.productionURL)
+        } else if coordinator.plays != plays {
+            coordinator.plays = plays
+            view.evaluateJavaScript("window.dabblePlay && window.dabblePlay()") // kept if the player isn't ready yet
+        }
     }
 
     static func dismantleUIView(_ view: WKWebView, coordinator: Coordinator) {
@@ -260,24 +309,39 @@ private struct SpotifyPlayer: UIViewRepresentable {
     func makeCoordinator() -> Coordinator { Coordinator() }
 
     /// `trackID` is letters and digits only (`Song.trackID`).
-    private static func page(for trackID: String) -> String {
+    static func page(for trackID: String, autoplay: Bool) -> String {
         """
         <!doctype html><meta name="viewport" content="width=device-width,initial-scale=1">
         <style>html,body{margin:0;background:transparent;overflow:hidden}</style>
         <div id="player"></div>
         <script src="https://open.spotify.com/embed/iframe-api/v1" async></script>
         <script>
+        // A tap on Play can come before Spotify's player is there, or before it's ready: it's kept
+        // until then.
+        var wants = \(autoplay), ready = false, player = null;
+        window.dabblePlay = function () { if (ready) { player.play(); } else { wants = true; } };
         window.onSpotifyIframeApiReady = function (api) {
           api.createController(document.getElementById('player'),
             { uri: 'spotify:track:\(trackID)', width: '100%', height: \(Int(height)) },
-            function (controller) { controller.addListener('ready', function () { controller.play(); }); });
+            function (controller) {
+              player = controller;
+              controller.addListener('ready', function () { ready = true; if (wants) { controller.play(); } });
+            });
         };
         </script>
         """
     }
 
-    final class Coordinator: NSObject, WKNavigationDelegate {
+    final class Coordinator: NSObject, WKNavigationDelegate, UIGestureRecognizerDelegate {
         var trackID: String?
+        var plays = 0
+        var swipedLeft: () -> Void = {}
+        var swipedRight: () -> Void = {}
+
+        @objc func swiped() { swipedLeft() }
+        @objc func swipedToTheRight() { swipedRight() }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { true }
 
         /// Links in the player (the Spotify logo, the song's page) open outside the app.
         func webView(_ webView: WKWebView, decidePolicyFor action: WKNavigationAction) async -> WKNavigationActionPolicy {

@@ -11,7 +11,7 @@ final class FlowTests: XCTestCase {
             throw XCTSkip("Needs a local server and TEST_RUNNER_DABBLE_TOKEN (rails ios:demo_account)")
         }
         app = XCUIApplication()
-        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", "http://localhost:3000"]
+        app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", testServer]
         app.launch()
     }
 
@@ -243,7 +243,7 @@ final class FlowTests: XCTestCase {
     @discardableResult
     private func api(_ method: String, _ path: String, body: [String: Any]? = nil) throws -> [String: Any] {
         let token = try XCTUnwrap(ProcessInfo.processInfo.environment["DABBLE_TOKEN"])
-        var request = URLRequest(url: URL(string: "http://localhost:3000/api/v1/\(path)")!)
+        var request = URLRequest(url: URL(string: "\(testServer)/api/v1/\(path)")!)
         request.httpMethod = method
         request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         if let body {

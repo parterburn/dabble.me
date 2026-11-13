@@ -1,5 +1,24 @@
 import XCTest
 
+/// The server the UI tests run against: the local one, or TEST_RUNNER_DABBLE_SERVER when
+/// something else on the Mac has taken port 3000 on localhost (this Mac's own address reaches it).
+let testServer = ProcessInfo.processInfo.environment["DABBLE_SERVER"] ?? "http://localhost:3000"
+
+extension XCUIApplication {
+    /// One of Stats' tiles, by what it counts ("Words", "Photos"…): a button, or plain text when
+    /// there's nowhere for it to go.
+    /// Stats, moved up a little: its year grid starts under the tiles, partly behind the tab bar.
+    func raiseStats() {
+        coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.62))
+            .press(forDuration: 0.05, thenDragTo: coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)))
+        sleep(1)
+    }
+
+    func statTile(_ label: String) -> XCUIElement {
+        descendants(matching: .any).matching(NSPredicate(format: "label ENDSWITH %@ AND label MATCHES %@", label, "^[0-9].*")).firstMatch
+    }
+}
+
 extension XCUIElement {
     /// Taps a timeline row on its text, near the top: a tap on its photo opens the photo instead.
     /// Below the sticky month header, which covers a row scrolled up to the top of the list.

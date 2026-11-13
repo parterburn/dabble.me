@@ -550,6 +550,28 @@ struct TrailingSongLinkTests {
 }
 
 @MainActor
+struct EditorPasteTests {
+    /// Only one web address, alone, links the selection it's pasted over.
+    @Test func aPastedAddressIsOneWebAddressAndNothingElse() {
+        #expect(EditorTextView.address(from: " https://example.com/a?b=1\n")?.absoluteString == "https://example.com/a?b=1")
+        #expect(EditorTextView.address(from: "see https://example.com") == nil)
+        #expect(EditorTextView.address(from: "example.com") == nil)
+        #expect(EditorTextView.address(from: "mailto:a@example.com") == nil)
+        #expect(EditorTextView.address(from: nil) == nil)
+    }
+}
+
+struct SpotifyPlayerTests {
+    /// An entry's player shows its song without starting it; a tap on a song is what plays.
+    @Test func thePlayerOnlyStartsWhenAsked() {
+        let shown = SpotifyPlayer.page(for: "abc123", autoplay: false)
+        let played = SpotifyPlayer.page(for: "abc123", autoplay: true)
+        #expect(shown.contains("spotify:track:abc123") && shown.contains("var wants = false"))
+        #expect(played.contains("var wants = true"))
+    }
+}
+
+@MainActor
 struct ReminderTests {
     private func plan(_ json: String) throws -> ReminderPlan {
         try APIClient.decoder.decode(ReminderPlan.self, from: Data(json.utf8))
