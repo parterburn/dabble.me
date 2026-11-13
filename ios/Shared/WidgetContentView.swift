@@ -82,8 +82,8 @@ VStack(spacing: 0) {
     @ViewBuilder
     private var status: some View {
         if entry.wroteToday {
-            // Written already: the check stays, and a tap opens today's entry to add to.
-            WidgetLabel("Add to today", icon: "widget-check")
+            // Written already: a tap opens today's entry for editing, and the pencil says so.
+            WidgetLabel("Edit today's entry", icon: "widget-write", shrinksToFit: true)
                 .foregroundStyle(Color.sage)
         } else {
             WidgetLabel("Write today", icon: "widget-write")
@@ -207,7 +207,7 @@ VStack(spacing: 0) {
                 .font(.headline)
                 .widgetAccentable()
             Text(entry.date.formatted(.dateTime.weekday(.wide).day()))
-            Text(entry.wroteToday ? "Add to today" : "Tap to write today")
+            Text(entry.wroteToday ? "Edit today's entry" : "Tap to write today")
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

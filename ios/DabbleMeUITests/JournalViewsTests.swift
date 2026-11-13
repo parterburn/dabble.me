@@ -1874,9 +1874,9 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertEqual(editor.value as? String, "A quiet day at home.")
         app.buttons["Cancel"].tap()
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
-        // The widget's "Add to today" link does the same.
+        // The widget's "Edit today's entry" link does the same.
         XCUIDevice.shared.system.open(URL(string: "me.dabble.app:/today/edit")!)
-        XCTAssertTrue(editor.waitForExistence(timeout: 10), "Add to today opens today's entry for editing")
+        XCTAssertTrue(editor.waitForExistence(timeout: 10), "Edit today's entry opens today's entry for editing")
         XCTAssertEqual(editor.value as? String, "A quiet day at home.")
         app.buttons["Cancel"].tap()
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
@@ -1890,6 +1890,26 @@ final class JournalViewsTests: XCTestCase {
         delete.tap()
         app.buttons["Hold to Delete"].press(forDuration: 2.6)
         XCTAssertTrue(write.waitForExistence(timeout: 15), "Today is unwritten again")
+    }
+
+    /// Today's corner: the journal's entry count most of the year, and the year's Rewind by name
+    /// around the new year. Either way it opens Stats.
+    func testTodayCornerNamesTheRewindAroundTheNewYear() throws {
+        let year = Calendar.current.component(.year, from: .now)
+        var app = launch()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label ENDSWITH 'entries'")).firstMatch.waitForExistence(timeout: 15))
+        XCTAssertFalse(app.buttons["\(year) Rewind"].exists)
+        snap("today-corner-count")
+        app.terminate()
+
+        app = launch(["-DabbleDebugRewindYear", String(year)])
+        let rewind = app.buttons["\(year) Rewind"]
+        XCTAssertTrue(rewind.waitForExistence(timeout: 15))
+        XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label ENDSWITH 'entries'")).firstMatch.exists)
+        snap("today-corner-rewind")
+        rewind.tap()
+        XCTAssertTrue(app.navigationBars.buttons["Stats"].waitForExistence(timeout: 10), "It opens Stats")
+        XCTAssertTrue(app.buttons["\(year) Rewind"].waitForExistence(timeout: 15), "With the Rewind at its top")
     }
 
     /// Stats offers the year's Rewind in its season: it opens full screen and is tapped through

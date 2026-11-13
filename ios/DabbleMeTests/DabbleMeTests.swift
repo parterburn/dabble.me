@@ -680,5 +680,9 @@ struct RewindTests {
         #expect(RewindSeason.year(on: try #require(JournalDay("2027-01-15"))) == 2026)
         #expect(RewindSeason.year(on: try #require(JournalDay("2027-02-01"))) == nil)
         #expect(RewindSeason.year(on: try #require(JournalDay("2026-10-31"))) == nil)
+        // Today's corner names it for a month around the new year.
+        for (day, named) in [("2026-12-14", false), ("2026-12-15", true), ("2027-01-01", true), ("2027-01-15", true), ("2027-01-16", false), ("2026-11-20", false)] {
+            #expect(RewindSeason.isHeadline(on: try #require(JournalDay(day))) == named)
+        }
     }
 }

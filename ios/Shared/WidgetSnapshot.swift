@@ -89,7 +89,7 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     /// Links the widget opens (the app's registered URL scheme, shared with OAuth sign-in).
     static let writeURL = URL(string: "me.dabble.app:/write")!
     static let todayURL = URL(string: "me.dabble.app:/today")!
-    /// Today's entry, open for editing (the widget's "Add to today", once today's written).
+    /// Today's entry, open for editing (the widget's "Edit today's entry", once today's written).
     static let editTodayURL = URL(string: "me.dabble.app:/today/edit")!
     static func entryURL(_ id: Int) -> URL { URL(string: "me.dabble.app:/entry/\(id)")! }
 }

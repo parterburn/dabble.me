@@ -113,7 +113,7 @@ struct TodayView: View {
                 model.composeRequest = false
                 composing = true
             }
-            // From the widget's "Add to today": today's entry, open for editing, once Today has
+            // From the widget's "Edit today's entry": today's entry, open for editing, once Today has
             // loaded it (the app may be starting up). Nothing written after all: write it.
             .onChange(of: "\(model.editTodayRequest)|\(model.today?.date ?? "")|\(model.today?.entry?.id ?? 0)", initial: true) {
                 guard model.editTodayRequest, let today = model.today else { return }
@@ -268,14 +268,18 @@ struct TodayView: View {
         .accessibilityLabel("Edit Today's Entry")
     }
 
-    /// In Rewind's season, for someone it's ready for (PRO, with enough entries this year), the
-    /// count wears Rewind's icon: Stats opens with the year's Rewind at its top.
-    private var rewindIsOn: Bool {
-        guard model.me?.isPro == true, let today = model.today, let day = today.day, let year = RewindSeason.year(on: day) else { return false }
-        return String(year) != day.year || (today.entriesThisYear ?? 0) >= RewindSeason.minimumEntries
+    /// Around the new year (December 15 to January 15), for someone it's ready for (PRO, with
+    /// enough entries this year), the corner names the year's Rewind in place of the count: Stats
+    /// opens with it at its top. Its year, or nil the rest of the time.
+    private var rewindYear: Int? {
+        guard model.me?.isPro == true, let today = model.today, let day = today.day, RewindSeason.isHeadline(on: day),
+              let year = RewindSeason.year(on: day),
+              String(year) != day.year || (today.entriesThisYear ?? 0) >= RewindSeason.minimumEntries else { return nil }
+        return year
     }
 
-    /// "▮ 1,204 entries": every entry in the journal, behind the Stats icon. Tapping it opens Stats.
+    /// "▮ 1,204 entries": every entry in the journal, behind the Stats icon (or "⏪ 2026 Rewind",
+    /// around the new year). Tapping it opens Stats.
     private func entryCountButton(_ count: Int) -> some View {
         Button {
             model.selectedTab = .journal
@@ -283,12 +287,20 @@ struct TodayView: View {
         } label: {
             // The Stats icon says where it goes.
             HStack(spacing: 5) {
-                appIcon(rewindIsOn ? "slab-backward" : "slab-chart-bar")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: rewindIsOn ? 17 : 15, height: rewindIsOn ? 17 : 15)
-                Text("\(count.formatted()) \(count == 1 ? "entry" : "entries")")
-                    .monospacedDigit()
+                if let rewindYear {
+                    appIcon("slab-backward")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 17, height: 17)
+                    Text(verbatim: "\(rewindYear) Rewind")
+                } else {
+                    appIcon("slab-chart-bar")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 15, height: 15)
+                    Text("\(count.formatted()) \(count == 1 ? "entry" : "entries")")
+                        .monospacedDigit()
+                }
             }
             .font(.subheadline.weight(.semibold))
             .foregroundStyle(.tint)
@@ -297,8 +309,8 @@ struct TodayView: View {
             .contentShape(.rect)
         }
         .buttonStyle(.borderless)
-        .accessibilityLabel(count == 1 ? "1 entry" : "\(count) entries")
-        .accessibilityHint("Shows your stats")
+        .accessibilityLabel(Text(verbatim: rewindYear.map { "\($0) Rewind" } ?? (count == 1 ? "1 entry" : "\(count) entries")))
+        .accessibilityHint(rewindYear == nil ? "Shows your stats" : "Shows your stats and your Rewind")
     }
 
     /// On This Day when there's something from this exact date in past years; otherwise a Rewind
