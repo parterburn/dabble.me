@@ -330,6 +330,16 @@ struct RewindStory: Codable, Equatable, Sendable {
     }
 
     private static func key(for rewind: Rewind) -> String {
-        "3|\(rewind.entries.count)|\(rewind.wordCount)|\(rewind.entries.last?.id ?? 0)|\(rewind.people.prefix(3).map(\.id).joined(separator: ","))"
+        "4|\(rewind.entries.count)|\(fingerprint(of: rewind.entries))|\(rewind.people.prefix(3).map(\.id).joined(separator: ","))"
+    }
+
+    /// The entries' words in a number that's the same from one launch to the next (`Hasher`'s
+    /// isn't): an edit that keeps the word count still makes the story be written again.
+    private static func fingerprint(of entries: [Rewind.Entry]) -> String {
+        var hash: UInt64 = 0xcbf2_9ce4_8422_2325 // FNV-1a
+        for entry in entries {
+            for byte in "\(entry.id)|\(entry.text)\n".utf8 { hash = (hash ^ UInt64(byte)) &* 0x100_0000_01b3 }
+        }
+        return String(hash, radix: 16)
     }
 }

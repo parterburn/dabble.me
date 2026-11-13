@@ -575,14 +575,16 @@ struct RewindTests {
                      updatedAt: "\(date)T12:00:00Z", previewText: text, songs: songs)
     }
 
-    private var year: Rewind {
+    private var year: Rewind { rewind() }
+
+    private func rewind(year: Int = 2026, quietDay: String = "Quiet Saturday at home.") -> Rewind {
         let song = Song(title: "Holocene", artists: ["Bon Iver"], spotifyUrl: URL(string: "https://open.spotify.com/track/abc")!)
-        return Rewind.build(year: 2026, summaries: [
+        return Rewind.build(year: year, summaries: [
             summary(1, "2026-01-03", "Leo and Silas built a fort. **Great** day. #Leo", tags: ["Leo"]),
             summary(2, "2026-01-10", "Leo lost a tooth in Denver. https://open.spotify.com/track/abc", songs: [song]),
             summary(3, "2026-03-07", "Flew to Lisbon with Katelyn. I felt lucky to be there with her.", image: "https://x.test/a.jpg"),
             summary(4, "2026-03-14", "Then Silas rode a bike while Alex cheered. #bikes #Leo", tags: ["bikes", "Leo"]),
-            summary(5, "2026-03-21", "Quiet Saturday at home.", songs: [song]),
+            summary(5, "2026-03-21", quietDay, songs: [song]),
             summary(6, "2025-12-31", "Last year's entry about Leo."),
         ], ownName: "Alex", tagDates: [TagDate(id: 1, tag: "Leo", date: "2018-01-18")])
     }
@@ -622,6 +624,18 @@ struct RewindTests {
     @Test func offersTheWritersOwnSentencesForLineOfTheYear() {
         let lines = year.lineCandidates().map(\.text)
         #expect(lines == ["I felt lucky to be there with her."])
+    }
+
+    /// The story Apple Intelligence wrote is kept until an entry changes, even by an edit that
+    /// leaves the count of words and the people as they were.
+    @Test func aSavedStoryIsDroppedWhenAnEntryIsEdited() {
+        let written = rewind()
+        defer { UserDefaults.standard.removeObject(forKey: "rewind.story.2026") }
+        RewindStory(line: "Quiet Saturday at home.", lineDay: "2026-03-21").save(for: written)
+        #expect(RewindStory.saved(for: rewind())?.line == "Quiet Saturday at home.")
+        let edited = rewind(quietDay: "Rainy Saturday at home.")
+        #expect(edited.wordCount == written.wordCount && edited.people == written.people)
+        #expect(RewindStory.saved(for: edited) == nil)
     }
 
     @Test func theSeasonIsNovemberToJanuary() throws {
