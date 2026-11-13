@@ -116,8 +116,10 @@ extension EntrySummary {
 
     static func thumbnailURL(_ imageUrl: String?, width: Int) -> URL? {
         guard let imageUrl else { return nil }
-        let resized = imageUrl.replacingOccurrences(of: "/cdn-cgi/image/quality=95/",
-                                                    with: "/cdn-cgi/image/width=\(width),quality=85,fit=cover/")
+        // Whatever options the address came with (the server's are "quality=100"), as the web does.
+        let resized = imageUrl.replacingOccurrences(of: #"/cdn-cgi/image/[^/]+/"#,
+                                                    with: "/cdn-cgi/image/width=\(width),quality=85,fit=cover/",
+                                                    options: .regularExpression)
         return URL(string: resized)
     }
 }

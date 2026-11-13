@@ -32,6 +32,9 @@ final class AppModel {
     /// random memory's at the top of the app (from inside Stats it didn't always appear).
     var statsDay: StatsDay?
     var openEntryRequest: Int?
+    /// The Journal view an entry opens over, so Back lands there (the list unless set: Rewind's
+    /// photos open over the Photos grid).
+    var openEntryOver: JournalMode?
     /// Jump to a Day: the calendar of written days (from the Journal's scrubber, Search, or a
     /// day's sheet). The day picked comes up in the day sheet (`statsDay`) once the calendar has
     /// closed; `reopensDayPicker` brings the calendar back after a day's sheet closes.

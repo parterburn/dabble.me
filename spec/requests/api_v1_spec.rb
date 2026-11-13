@@ -730,7 +730,8 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       create(:entry, user: pro_user, date: "2023-12-31", body: "<p>The year before #earlier</p>")
       get "/api/v1/stats/days", params: { year: 2024 }, headers: auth(pro_user)
       expect(json).to eq("year" => 2024, "days" => %w[2024-03-02 2024-11-30],
-                         "top_hashtags" => [{ "tag" => "trail", "count" => 2 }, { "tag" => "home", "count" => 1 }])
+                         "top_hashtags" => [{ "tag" => "trail", "count" => 2 }, { "tag" => "home", "count" => 1 }],
+                         "photos" => {})
       get "/api/v1/stats/days", headers: auth(free_user)
       expect(response).to have_http_status(:forbidden)
     end
@@ -752,7 +753,8 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       expect(response).to have_http_status(:ok)
       expect(json).to include(
         "total_entries" => 5, "total_words" => 11, "current_streak" => 3, "longest_streak" => 3, "longest_streak_year" => 2026,
-        "entries_this_year" => 5, "first_entry_date" => "2026-01-01", "photo_entries" => 0
+        "entries_this_year" => 5, "entries_by_year" => [{ "year" => 2026, "count" => 5 }],
+        "first_entry_date" => "2026-01-01", "photo_entries" => 0
       )
       expect(json["writing_days"]).to eq(%w[2026-01-01 2026-01-02 2026-06-18 2026-06-19 2026-06-20])
       expect(json["months"].size).to eq(12)

@@ -248,18 +248,23 @@ struct TodayView: View {
 
     // MARK: - On This Day
 
-    /// The olive pencil beside today's date: straight into editing today's entry (or to its edit
-    /// page on dabble.me, for one the app can't edit).
+    /// The pencil beside today's date, a round button like the Journal's New Entry: straight into
+    /// editing today's entry, to add to the day (or to its edit page on dabble.me, for one the app
+    /// can't edit).
     private func editTodayButton(_ entry: EntryDetail) -> some View {
         Button {
             Task { await actions.edit(entry.id, model: model) }
         } label: {
             appIcon("slab-edit")
-                .foregroundStyle(.tint)
-                .frame(width: 44, height: 32, alignment: .trailing)
-                .contentShape(.rect)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 20, height: 20)
+                .foregroundStyle(.primary)
+                .frame(width: 44, height: 44)
+                .modifier(ToolbarCircle())
+                .contentShape(.circle)
         }
-        .buttonStyle(.borderless)
+        .buttonStyle(.plain)
         .accessibilityLabel("Edit Today's Entry")
     }
 
@@ -351,14 +356,14 @@ struct TodayView: View {
             // once there's an entry from a day before today to come up in it.
             if (model.me?.entryCount ?? 0) - (today.entry == nil ? 0 : 1) >= 1 {
                 // Olive words, not a button's shape: it says what a shake does (a tap does it too),
-                // or "See" for someone who's switched the shake off.
+                // or, for someone who's switched the shake off, what pulling past Today's end does.
                 Button {
                     model.showsRandomEntry = true
                 } label: {
                     // The dice close to its words (a Label leaves more room between them).
                     HStack(spacing: 8) {
                         appIcon("slab-dice")
-                        Text(shakeForRandomEntry ? "Shake for a Random Entry" : "See a Random Entry")
+                        Text(shakeForRandomEntry ? "Shake for a Random Entry" : "Keep scrolling for a Random Memory")
                     }
                         .fontWeight(.medium)
                         .foregroundStyle(.tint)
@@ -445,5 +450,19 @@ private struct TodayCard: View {
             .padding(.horizontal, 16)
             .padding(.top, 2)
             .padding(.bottom, 10)
+    }
+}
+
+/// The circle a navigation bar gives its buttons (glass, where there is glass), for a button of
+/// the same standing that isn't in a bar.
+private struct ToolbarCircle: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.glassEffect(.regular.interactive(), in: .circle)
+        } else {
+            content
+                .background(Color(uiColor: .secondarySystemBackground), in: .circle)
+                .shadow(color: .black.opacity(0.08), radius: 4, y: 1)
+        }
     }
 }

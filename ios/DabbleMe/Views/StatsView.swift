@@ -230,7 +230,7 @@ private struct YearSection: View {
                     Spacer(minLength: 8)
                     summary
                 }
-                WritingHeatmap(year: year, days: days ?? [], today: today, onSelect: { day in
+                WritingHeatmap(year: year, days: days ?? [], photos: loaded[year]?.photos ?? [:], today: today, onSelect: { day in
                     model.statsDay = StatsDay(day: day)
                 }, onWrite: write)
                 .id(year) // each year opens at its newest weeks
@@ -264,13 +264,20 @@ private struct YearSection: View {
         .task(id: "\(year)|\(stats.totalEntries)") { await load(year) }
     }
 
+    private func menuTitle(_ year: Int) -> String {
+        guard let count = stats.entriesByYear?.first(where: { $0.year == year })?.count ?? (stats.entriesByYear == nil ? nil : 0) else { return String(year) }
+        return "\(year) • \(count == 1 ? "1 entry" : "\(count.formatted()) entries")"
+    }
+
     /// The year, large, in a pill with a chevron: the menu that turns the whole section to another.
     @ViewBuilder
     private var title: some View {
         if years.count > 1 {
             Menu {
                 Picker("Year", selection: Binding(get: { year }, set: { picked = $0 == thisYear ? nil : $0 })) {
-                    ForEach(years, id: \.self) { Text(String($0)).tag($0) }
+                    // In the menu, each year with its entries ("2026 • 23 entries"); the pill shows
+                    // the year alone.
+                    ForEach(years, id: \.self) { Text(menuTitle($0)).tag($0) }
                 }
             } label: {
                 HStack(spacing: 8) {
@@ -414,6 +421,8 @@ private struct StatTile: View {
 private struct WritingHeatmap: View {
     let year: Int
     let days: Set<String>
+    /// The days with a photo (YYYY-MM-DD) and its address: each shows as a thumbnail in its square.
+    var photos: [String: String] = [:]
     let today: JournalDay
     /// A day with an entry was tapped.
     let onSelect: (JournalDay) -> Void
@@ -498,6 +507,19 @@ private struct WritingHeatmap: View {
                                             if let day = week[index], day > today {
                                                 RoundedRectangle(cornerRadius: cell * 0.23)
                                                     .strokeBorder(Color.secondary.opacity(0.22), lineWidth: 1)
+                                            }
+                                        }
+                                        // A day with a photo: the photo, tiny (pinch for more of it).
+                                        .overlay {
+                                            if let day = week[index], let url = EntrySummary.thumbnailURL(photos[day.iso], width: 96) {
+                                                AsyncImage(url: url) { image in
+                                                    image.resizable().scaledToFill()
+                                                } placeholder: {
+                                                    Color.clear
+                                                }
+                                                .frame(width: cell, height: cell)
+                                                .clipShape(.rect(cornerRadius: cell * 0.23))
+                                                .allowsHitTesting(false)
                                             }
                                         }
                                         .frame(width: cell, height: cell)

@@ -34,8 +34,7 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(title.waitForExistence(timeout: 10))
         title.tap()
         // The menu's items, not the tab bar's buttons of the same name.
-        let inMenu = app.collectionViews.buttons[mode]
-        let item = inMenu.waitForExistence(timeout: 2) ? inMenu : app.buttons[mode].firstMatch
+        let item = app.buttons["JournalMode-\(mode)"]
         XCTAssertTrue(item.waitForExistence(timeout: 5))
         item.tap()
     }
@@ -944,7 +943,13 @@ final class JournalViewsTests: XCTestCase {
         // Last year: the demo wrote once, about Bruges (#travel).
         app.swipeDown(); app.swipeDown()
         menu.tap()
-        app.buttons[String(thisYear - 1)].tap()
+        // The menu gives each year its entries; the pill, once picked, only the year.
+        let lastYear = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "\(thisYear - 1) • 1 entry")).firstMatch
+        XCTAssertTrue(lastYear.waitForExistence(timeout: 5))
+        sleep(1)
+        snap("stats-year-menu")
+        lastYear.tap()
+        XCTAssertTrue(app.buttons["Year, \(thisYear - 1)"].waitForExistence(timeout: 5))
         let summary = app.staticTexts.matching(identifier: "StatsYearSummary").firstMatch
         XCTAssertTrue(app.staticTexts.matching(identifier: "StatsYearSummary").matching(NSPredicate(format: "label BEGINSWITH %@", "1 entry")).firstMatch.waitForExistence(timeout: 10),
                       "The year's own count: \(summary.label)")
@@ -1134,15 +1139,30 @@ final class JournalViewsTests: XCTestCase {
         let title = app.navigationBars.buttons["Journal"]
         XCTAssertTrue(title.waitForExistence(timeout: 10))
         title.tap()
-        let photos = app.collectionViews.buttons["Photos"].exists ? app.collectionViews.buttons["Photos"] : app.buttons["Photos"].firstMatch
+        let photos = app.buttons["JournalMode-Photos"]
         XCTAssertTrue(photos.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["JournalMode-Journal"].isSelected, "The view that's showing is marked")
         sleep(1)
         snap("journal-menu-open")
         photos.tap()
         XCTAssertTrue(app.navigationBars.buttons["Photos"].waitForExistence(timeout: 10))
-        app.navigationBars.buttons["Photos"].tap()
+        // Pulling down on the title opens the list too.
+        let bar = app.navigationBars.buttons["Photos"]
+        bar.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            .press(forDuration: 0.05, thenDragTo: bar.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).withOffset(CGVector(dx: 0, dy: 60)))
+        XCTAssertTrue(app.buttons["JournalMode-Stats"].waitForExistence(timeout: 5), "A pull down opens the views")
+        XCTAssertTrue(app.buttons["JournalMode-Photos"].isSelected)
         sleep(1)
         snap("journal-menu-open-photos")
+        app.buttons["JournalMode-Journal"].tap()
+
+        // Held, the "me" mark goes to the journal's other end: its oldest entry.
+        XCTAssertTrue(app.navigationBars.buttons["Journal"].waitForExistence(timeout: 10))
+        app.buttons["JournalBrandMark"].press(forDuration: 1.2)
+        sleep(2)
+        snap("journal-oldest")
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Moved into the new apartment")).firstMatch.waitForExistence(timeout: 10),
+                      "The oldest entry is in view")
     }
 
     /// Screenshots, for looking over: each of the Journal's views (and Today and Search) with an
@@ -1227,7 +1247,24 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(player("The Killers – Mr. Brightside").waitForExistence(timeout: 10), "The first song is in the player")
         XCTAssertTrue(first.isSelected)
         XCTAssertFalse(second.isSelected)
-        XCTAssertTrue(app.links["Open in Spotify"].exists || app.buttons["Open in Spotify"].exists)
+        // A short swipe either way shows the player's actions, as a list row's: the Playlist on
+        // one side, Open in Spotify and the X on the other.
+        let playing = player("The Killers – Mr. Brightside")
+        func nudge(_ dx: CGFloat) {
+            let start = playing.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            start.press(forDuration: 0.1, thenDragTo: start.withOffset(CGVector(dx: dx, dy: 0)), withVelocity: .slow, thenHoldForDuration: 0.3)
+        }
+        nudge(-110)
+        XCTAssertTrue(app.buttons["Hide Player"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Open in Spotify"].isHittable)
+        sleep(1)
+        snap("entry-song-player-swiped")
+        nudge(110) // back
+        nudge(70)
+        XCTAssertTrue(app.buttons["Open Playlist"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Open Playlist"].isHittable)
+        snap("entry-song-player-swiped-right")
+        nudge(-70)
         sleep(6) // Spotify's player loads
         snap("entry-song-player")
 
@@ -1333,8 +1370,8 @@ final class JournalViewsTests: XCTestCase {
         // The player, with a way out to Spotify beside it (no close button: it's swiped away).
         let player = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Spotify player, The Weeknd – Blinding Lights")).firstMatch
         XCTAssertTrue(player.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.links["Open in Spotify"].exists || app.buttons["Open in Spotify"].exists)
         XCTAssertFalse(app.buttons["Close Player"].exists)
+        XCTAssertFalse(app.buttons["Open Playlist"].exists, "Already on the Playlist")
         XCTAssertEqual(song.value as? String, "Playing")
         sleep(6) // Spotify's player loads
         snap("playlist-playing")
@@ -1822,7 +1859,7 @@ final class JournalViewsTests: XCTestCase {
         let menu = app.buttons["Year, \(thisYear)"]
         XCTAssertTrue(menu.exists)
         menu.tap()
-        app.buttons[String(thisYear - 1)].tap()
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", String(thisYear - 1))).firstMatch.tap()
         XCTAssertTrue(app.otherElements["Writing days in \(thisYear - 1)"].waitForExistence(timeout: 10))
         XCTAssertTrue(summary("1 entry • 1% of days"))
         snap("stats-year-earlier")

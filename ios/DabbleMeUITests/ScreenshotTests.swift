@@ -14,7 +14,8 @@ final class ScreenshotTests: XCTestCase {
 
         let app = XCUIApplication()
         app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", testServer,
-                               "-DabbleDebugComposePhotoURLs", photos, "-readingTextSize", "1"]
+                               "-DabbleDebugComposePhotoURLs", photos, "-readingTextSize", "1",
+                               "-stats.heatmapCell", "13"] // Stats' grid at its own size, whatever a test pinched it to
         app.launch()
 
         // iPhone has a bottom tab bar; iPad shows tabs at the top as plain buttons.
@@ -80,8 +81,7 @@ final class ScreenshotTests: XCTestCase {
             XCTAssertTrue(title.waitForExistence(timeout: 10))
             title.tap()
             // The menu's items, not the tab bar's buttons of the same name.
-        let inMenu = app.collectionViews.buttons[mode]
-        let item = inMenu.waitForExistence(timeout: 2) ? inMenu : app.buttons[mode].firstMatch
+        let item = app.buttons["JournalMode-\(mode)"]
             XCTAssertTrue(item.waitForExistence(timeout: 5))
             item.tap()
         }

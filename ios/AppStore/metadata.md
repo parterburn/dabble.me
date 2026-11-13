@@ -37,22 +37,22 @@ The first version on the store (1.0 was submitted and never released).
 > • Shake your phone, or keep pulling at the bottom of Today, for a random memory you'd forgotten
 >
 > A FEW LINES A DAY
-> • Bold, italic and underline, links, and lists that start as you type "- " or "1."
+> • Bold, italic and underline, lists that start as you type "- " or "1.", and links (paste an address over a word to link it)
 > • Add up to 8 photos. Several become a collage automatically
 > • Edit entries later: the words, the photos, even the date
 > • A writing prompt for today, written from your recent days (on devices with Apple Intelligence)
 > • Unfinished entries are saved as you type, even if the app closes
-> • Prefer email? Reply to Dabble Me's "How was your day?" email and it becomes an entry too. Choose its days, time and time zone right in the app
+> • Prefer email? Reply to Dabble Me's "How was your day?" email and it becomes an entry too. Choose its days, time and time zone, or switch it off, right in the app
 >
 > A NUDGE WHEN YOU WANT ONE
 > • One notification a day, at the time and on the days you choose, skipped once you've written. It can bring a past entry with it, photo and all
 > • Home Screen and Lock Screen widgets with today's date, a way straight into writing, and today's prompt or a past entry: your choice, with a live preview
 >
 > YOUR WHOLE JOURNAL, ONE SCROLL AWAY
-> • Every month in one timeline, with a scrubber: drag to jump years back, or pick a day from a calendar
+> • Every month in one timeline, with a scrubber: drag to jump years back, or pick a day from a calendar. Hold an empty day to write the entry it never got
 > • Photos: every day you captured, in one grid
-> • Playlist: the songs you saved with your entries, ready to play
-> • Stats: a year of writing at a glance (tap any day to read it), your entries by month, and your most-used hashtags
+> • Playlist: the songs you saved with your entries, ready to play, and a player under any entry that has one
+> • Stats, a year at a time: your writing days at a glance (tap one to read it, hold one to preview it), your entries by month, and your most-used hashtags
 > • Search every word you've ever written, or tap your #hashtags
 > • Give a #hashtag a date (a birthday, an anniversary) and see how old your kids were, or how long it had been, in every entry
 > • Tap an entry to read it right in the timeline; swipe or touch and hold for a reflection, edit and more
@@ -153,7 +153,7 @@ In `ios/AppStore/Screenshots/` (`iPhone 6.3in`, `iPad 13in`, and the header and 
 3. An entry with formatting, a list and a photo
 4. Writing an entry: the keyboard up, with its photos and the editor bar
 5. Journal > Photos
-6. Journal > Stats
+6. Journal > Stats (the 2026 Rewind card shows in its season, November to January)
 7. Search: your hashtags this year
 8. Search results for #hiking
 
@@ -167,6 +167,6 @@ In `ios/AppStore/Screenshots/` (`iPhone 6.3in`, `iPad 13in`, and the header and 
 ## Decisions
 
 - **In-app purchase:** ship as a free companion app (guideline 3.1.3(f)) with no in-app purchasing. On the **US App Store only**, Settings → Plan links to dabble.me/subscribe (US storefront exception in guideline 3.1.1(a), May 2025), detected with StoreKit's `Storefront.current`; elsewhere the plan is plain text. If App Review objects, drop the link.
-- **Free vs PRO in the app:** free accounts read, write and delete text entries, use the on-device Apple Intelligence features (reflections, Today's prompt, hashtag suggestions), set the daily reminder (which can bring a past entry), and see the Photos view, the Playlist and the widget; photos, links, editing, search (and its hashtag cloud), Stats (and the year in review at the top of it), On This Day, choosing the email's days, and AI connections are PRO. Dictation is the keyboard's own (no in-app mic). Face ID lock and drafts are for everyone.
+- **Free vs PRO in the app:** (the editor's Photos button shows for free accounts and says photos come with PRO) free accounts read, write and delete text entries, use the on-device Apple Intelligence features (reflections, Today's prompt, hashtag suggestions), set the daily reminder (which can bring a past entry), and see the Photos view, the Playlist and the widget; photos, links, editing, search (and its hashtag cloud), Stats (and the year in review at the top of it), On This Day, choosing the email's days, and AI connections are PRO. Dictation is the keyboard's own (no in-app mic). Face ID lock and drafts are for everyone.
 - **Account deletion:** Settings → Delete Account signs the app out and opens dabble.me/settings/delete-account in the browser, where it's confirmed with the password (and can be undone for an hour by signing back in). No email step.
 - **iPad:** supported from the first version, so the submission needs the 13" iPad screenshot set too.

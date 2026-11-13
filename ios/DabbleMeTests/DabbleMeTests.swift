@@ -561,6 +561,20 @@ struct EditorPasteTests {
     }
 }
 
+struct ThumbnailTests {
+    /// A photo's address is asked for at the size it's shown, whatever options it came with;
+    /// one that isn't through the resizer is left as it is.
+    @Test func thumbnailsAskForASmallerCopy() {
+        let full = "https://dabble.me/cdn-cgi/image/quality=100/https://cdn.example/uploads/a/2026-11-12/photo.jpg"
+        #expect(EntrySummary.thumbnailURL(full, width: 96)?.absoluteString
+            == "https://dabble.me/cdn-cgi/image/width=96,quality=85,fit=cover/https://cdn.example/uploads/a/2026-11-12/photo.jpg")
+        #expect(EntrySummary.thumbnailURL("https://dabble.me/cdn-cgi/image/quality=95/https://cdn.example/p.jpg", width: 400)?.absoluteString
+            == "https://dabble.me/cdn-cgi/image/width=400,quality=85,fit=cover/https://cdn.example/p.jpg")
+        #expect(EntrySummary.thumbnailURL("https://cdn.example/p.jpg", width: 96)?.absoluteString == "https://cdn.example/p.jpg")
+        #expect(EntrySummary.thumbnailURL(nil, width: 96) == nil)
+    }
+}
+
 struct SpotifyPlayerTests {
     /// An entry's player shows its song without starting it; a tap on a song is what plays.
     @Test func thePlayerOnlyStartsWhenAsked() {
