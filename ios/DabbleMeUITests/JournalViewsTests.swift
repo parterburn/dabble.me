@@ -39,6 +39,20 @@ final class JournalViewsTests: XCTestCase {
         item.tap()
     }
 
+    /// A tap on the "me" mark from another of the Journal's views is the way back to the list.
+    func testTheMarkLeadsBackToTheList() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        var current = "Journal"
+        for mode in ["Stats", "Photos", "Playlist"] {
+            switchJournal(app, from: current, to: mode)
+            XCTAssertTrue(app.navigationBars.buttons[mode].waitForExistence(timeout: 5))
+            app.buttons["JournalBrandMark"].tap()
+            XCTAssertTrue(app.navigationBars.buttons["Journal"].waitForExistence(timeout: 5), "The mark leads back from \(mode)")
+            current = "Journal"
+        }
+    }
+
     func testJournalStatsAndPhotos() throws {
         // The default square size, whatever an earlier run pinched it to (the tap below is measured).
         let app = launch(["-stats.heatmapCell", "13"])
@@ -1165,6 +1179,83 @@ final class JournalViewsTests: XCTestCase {
                       "The oldest entry is in view")
     }
 
+    /// A long journal (1,500 entries, most of its months not loaded): holding the "me" mark
+    /// reaches the oldest entry, and the scrubber dragged to its foot does too.
+    /// TEST_RUNNER_DABBLE_BIG_TOKEN (a scratch account with 1,500 entries, numbered from the newest).
+    func testLongJournalJumpsToItsEnd() throws {
+        guard let big = ProcessInfo.processInfo.environment["DABBLE_BIG_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_BIG_TOKEN") }
+        let app = XCUIApplication()
+        // Months that take a while to arrive, as on a phone's connection.
+        app.launchArguments = ["-DabbleDebugAccessToken", big, "-DabbleServerOverride", testServer, "-DabbleDebugMonthDelay", "1.2"]
+        app.launch()
+        tab(app, "Journal").tap()
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Entry number 1. ")).firstMatch.waitForExistence(timeout: 20))
+        let oldest = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Entry number 1500.")).firstMatch
+
+        app.buttons["JournalBrandMark"].press(forDuration: 1.2)
+        let reached = oldest.waitForExistence(timeout: 15)
+        snap("long-journal-held")
+        XCTAssertTrue(reached, "Holding the mark reaches the oldest entry")
+
+        // Back to the top (the Journal tab again), then the scrubber to its foot.
+        tab(app, "Journal").tap()
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Entry number 1. ")).firstMatch.waitForExistence(timeout: 15))
+        app.swipeUp()
+        let scrubber = app.otherElements["Timeline scrubber"]
+        XCTAssertTrue(scrubber.waitForExistence(timeout: 5))
+        scrubber.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            .press(forDuration: 0.2, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.97)), withVelocity: .fast, thenHoldForDuration: 0.1)
+        let scrubbed = oldest.waitForExistence(timeout: 15)
+        snap("long-journal-scrubbed")
+        XCTAssertTrue(scrubbed, "The scrubber's foot is the oldest month")
+    }
+
+    /// The same journal once most of its months are loaded (rows of very different heights, which
+    /// the list can only guess at until it draws them): the scrubber swept down and back up it,
+    /// then the mark held, and the scrubber let go of in the middle.
+    func testLongLoadedJournalJumpsWhereAsked() throws {
+        guard let big = ProcessInfo.processInfo.environment["DABBLE_BIG_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_BIG_TOKEN") }
+        let app = XCUIApplication()
+        app.launchArguments = ["-DabbleDebugAccessToken", big, "-DabbleServerOverride", testServer, "-DabbleDebugMonthDelay", "0.6"]
+        app.launch()
+        tab(app, "Journal").tap()
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Entry number 1. ")).firstMatch.waitForExistence(timeout: 20))
+        app.swipeUp()
+        let scrubber = app.otherElements["Timeline scrubber"]
+        XCTAssertTrue(scrubber.waitForExistence(timeout: 5))
+        func point(_ y: Double) -> XCUICoordinate { app.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: y)) }
+        // Down the journal in steps, pausing so the months passed load.
+        var y = 0.5
+        scrubber.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).press(forDuration: 0.2, thenDragTo: point(y), withVelocity: .slow, thenHoldForDuration: 0.3)
+        while y < 0.9 {
+            let next = y + 0.08
+            let thumb = app.otherElements["Timeline scrubber"]
+            thumb.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).press(forDuration: 0.2, thenDragTo: point(next), withVelocity: .slow, thenHoldForDuration: 0.3)
+            sleep(2)
+            y = next
+        }
+        tab(app, "Journal").tap()
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Entry number 1. ")).firstMatch.waitForExistence(timeout: 15))
+
+        app.buttons["JournalBrandMark"].press(forDuration: 1.2)
+        let reached = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Entry number 1500.")).firstMatch.waitForExistence(timeout: 12)
+        snap("loaded-journal-held")
+        XCTAssertTrue(reached, "Holding the mark reaches the oldest entry")
+
+        // Back up, and a quick drag that lets go in the middle: the month in the scrubber's
+        // label is the month the list shows.
+        tab(app, "Journal").tap()
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Entry number 1. ")).firstMatch.waitForExistence(timeout: 15))
+        app.swipeUp()
+        app.otherElements["Timeline scrubber"].coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+            .press(forDuration: 0.2, thenDragTo: point(0.62), withVelocity: .fast, thenHoldForDuration: 0.1)
+        sleep(6)
+        snap("loaded-journal-scrubbed-middle")
+        let year = String((app.otherElements["Timeline scrubber"].value as? String ?? "").suffix(4))
+        XCTAssertTrue(["2018", "2019", "2020"].contains(year), "Let go of in the middle of the journal's years (\(year))")
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ENDSWITH %@", year)).firstMatch.exists, "The list is in the year the scrubber says")
+    }
+
     /// Screenshots, for looking over: each of the Journal's views (and Today and Search) with an
     /// empty journal, and on a free account. TEST_RUNNER_DABBLE_EMPTY_TOKEN and _FREE_TOKEN.
     func testSnapEmptyAndFreeViews() throws {
@@ -1267,6 +1358,15 @@ final class JournalViewsTests: XCTestCase {
         nudge(-70)
         sleep(6) // Spotify's player loads
         snap("entry-song-player")
+        // Once Spotify's page is in it, a quick swipe (no pause before letting go) leaves the
+        // actions out, and they stay out to be tapped.
+        let middle = playing.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0.5))
+        middle.press(forDuration: 0.05, thenDragTo: middle.withOffset(CGVector(dx: -120, dy: 0)), withVelocity: 400, thenHoldForDuration: 0)
+        sleep(2)
+        snap("entry-song-player-loaded-swiped")
+        XCTAssertTrue(app.buttons["Open in Spotify"].isHittable, "The actions stay out after the swipe")
+        XCTAssertTrue(playing.exists, "And the player wasn't put away")
+        nudge(130) // back
 
         second.tap()
         XCTAssertTrue(player("Rick Astley – Never Gonna Give You Up").waitForExistence(timeout: 5), "One song at a time: the one tapped")

@@ -53,6 +53,17 @@ struct PhotoGridView: View {
         }
         .refreshable { await load(reset: true) }
         .task { if entries.isEmpty { await load(reset: true) } }
+        // A photo that was still processing is ready: its square shows it.
+        .onChange(of: model.photosFinished) { Task { await refreshNewest() } }
+    }
+
+    /// The newest page again, laid over what's loaded (a photo just finished is among the
+    /// latest), so someone far down the grid keeps their place and the pages under it.
+    private func refreshNewest() async {
+        guard !entries.isEmpty, let result = try? await model.photoEntries(page: 1) else { return }
+        let fresh = Dictionary(result.entries.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
+        let known = Set(entries.map(\.id))
+        entries = result.entries.filter { !known.contains($0.id) } + entries.map { fresh[$0.id] ?? $0 }
     }
 
     private func load(reset: Bool) async {

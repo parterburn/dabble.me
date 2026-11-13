@@ -215,6 +215,8 @@ struct SongPlayerBar: View {
     @State private var rest: CGFloat = 0
     @State private var drag: CGFloat = 0
     @State private var isLeaving = false
+    /// A swipe is under way (and hasn't been let go of yet).
+    @State private var isSwiping = false
 
     private static let action: CGFloat = 58
     /// Past this, letting go does the swipe's own action (the X, the Playlist).
@@ -257,9 +259,9 @@ struct SongPlayerBar: View {
         .background(.bar)
         // Around the web view (which reports its own drags, above): the actions, once showing.
         .simultaneousGesture(DragGesture(minimumDistance: 15).onChanged { value in
-            if abs(value.translation.width) > abs(value.translation.height) { drag = value.translation.width }
+            if abs(value.translation.width) > abs(value.translation.height) { panned(value.translation.width, velocity: 0, ended: false) }
         }.onEnded { value in
-            panned(value.translation.width, velocity: value.predictedEndTranslation.width - value.translation.width, ended: true)
+            panned(value.translation.width, velocity: value.velocity.width, ended: true)
         })
         .sensoryFeedback(.impact(weight: .light), trigger: isArmed) { _, armed in armed }
         .accessibilityAction(named: "Hide Player", putAway)
@@ -293,8 +295,12 @@ struct SongPlayerBar: View {
     /// does the swipe's action (far enough, or flicked), rests with its actions showing, or closes.
     private func panned(_ translation: CGFloat, velocity: CGFloat, ended: Bool) {
         guard !isLeaving else { return }
-        guard ended else { drag = translation; return }
-        let end = rest + translation
+        guard ended else { isSwiping = true; drag = translation; return }
+        // One swipe is let go of once, though both the web view and the bar around it say so:
+        // counted twice, it would land twice as far, or spring back.
+        guard isSwiping else { return }
+        isSwiping = false
+        let end = rest + drag
         drag = 0
         rest = end // from where the finger left it
         if end < -Self.commit || (velocity < -700 && end < -60) {
@@ -402,10 +408,11 @@ struct SpotifyPlayer: UIViewRepresentable {
         var panned: (CGFloat, CGFloat, Bool) -> Void = { _, _, _ in }
 
         @objc func pan(_ recognizer: UIPanGestureRecognizer) {
-            let translation = recognizer.translation(in: recognizer.view).x
+            // Measured against the window: the player itself moves with the drag.
+            let translation = recognizer.translation(in: nil).x
             switch recognizer.state {
             case .changed: panned(translation, 0, false)
-            case .ended, .cancelled, .failed: panned(translation, recognizer.velocity(in: recognizer.view).x, true)
+            case .ended, .cancelled, .failed: panned(translation, recognizer.velocity(in: nil).x, true)
             default: break
             }
         }

@@ -221,6 +221,9 @@ final class AppModel {
             async let todayRequest: TodaySummary = api.get("api/v1/today")
             async let meRequest: Me = api.get("api/v1/me")
             (today, me) = try await (todayRequest, meRequest)
+            // A photo still being processed (added from the web, or before the app was last
+            // closed): watched, so Today shows it when it's ready.
+            if let entry = today?.entry, entry.imageProcessing { watchProcessing(id: entry.id) }
             // An older server: the year's count comes from the month index, so that's refreshed too.
             if today?.entriesThisYear == nil, hasLoaded, let list: MonthList = try? await api.get("api/v1/entries/months") {
                 months = list.months
@@ -238,6 +241,11 @@ final class AppModel {
 
     func monthDisappeared(_ key: String) {
         visibleMonths.remove(key)
+    }
+
+    /// Whether the month's header is on screen (a jump there has arrived).
+    func isMonthVisible(_ key: String) -> Bool {
+        visibleMonths.contains(key)
     }
 
     func isStale(_ key: String) -> Bool {
@@ -261,6 +269,11 @@ final class AppModel {
         loadingMonths.insert(key)
         defer { loadingMonths.remove(key) }
         do {
+            #if DEBUG
+            // -DabbleDebugMonthDelay <seconds>: a slow connection, for tests of far jumps.
+            let delay = UserDefaults.standard.double(forKey: "DabbleDebugMonthDelay")
+            if delay > 0 { try await Task.sleep(for: .seconds(delay)) }
+            #endif
             let page: EntryPage = try await api.get("api/v1/entries",
                                                     query: ["year": String(month.year), "month": String(month.month), "per": "50"])
             monthEntries[key] = page.entries
@@ -351,8 +364,12 @@ final class AppModel {
         return batch.uploads.map(\.uploadedImageKey)
     }
 
-    /// Re-fetches an entry until its photo or collage finishes processing, so the timeline's
-    /// placeholder turns into the real image without a manual refresh.
+    /// Counts the photos that have finished processing while the app watched: views with their
+    /// own lists (Photos) load again when it moves.
+    private(set) var photosFinished = 0
+
+    /// Re-fetches an entry until its photo or collage finishes processing, so the placeholder
+    /// turns into the real image, in the timeline and on Today, without a manual refresh.
     func watchProcessing(id: Int) {
         guard !processingWatches.contains(id) else { return }
         processingWatches.insert(id)
@@ -362,7 +379,16 @@ final class AppModel {
                 try? await Task.sleep(for: .seconds(5))
                 guard let self, self.isSignedIn else { return }
                 guard let entry = try? await self.entry(id: id) else { continue }
-                if !entry.imageProcessing { return }
+                if !entry.imageProcessing {
+                    // Today holds its own copy of today's entry (and of the ones it looks back
+                    // on), and so do the views that list photos: they pick the photo up too.
+                    if self.today?.entry?.id == id || self.today?.onThisDay.contains(where: { $0.id == id }) == true
+                        || self.today?.throwback?.id == id {
+                        await self.loadToday()
+                    }
+                    self.photosFinished += 1
+                    return
+                }
             }
         }
     }
