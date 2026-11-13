@@ -944,7 +944,13 @@ final class JournalViewsTests: XCTestCase {
         // Last year: the demo wrote once, about Bruges (#travel).
         app.swipeDown(); app.swipeDown()
         menu.tap()
-        app.buttons[String(thisYear - 1)].tap()
+        // The menu gives each year its entries; the pill, once picked, only the year.
+        let lastYear = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "\(thisYear - 1) • 1 entry")).firstMatch
+        XCTAssertTrue(lastYear.waitForExistence(timeout: 5))
+        sleep(1)
+        snap("stats-year-menu")
+        lastYear.tap()
+        XCTAssertTrue(app.buttons["Year, \(thisYear - 1)"].waitForExistence(timeout: 5))
         let summary = app.staticTexts.matching(identifier: "StatsYearSummary").firstMatch
         XCTAssertTrue(app.staticTexts.matching(identifier: "StatsYearSummary").matching(NSPredicate(format: "label BEGINSWITH %@", "1 entry")).firstMatch.waitForExistence(timeout: 10),
                       "The year's own count: \(summary.label)")
@@ -1822,7 +1828,7 @@ final class JournalViewsTests: XCTestCase {
         let menu = app.buttons["Year, \(thisYear)"]
         XCTAssertTrue(menu.exists)
         menu.tap()
-        app.buttons[String(thisYear - 1)].tap()
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", String(thisYear - 1))).firstMatch.tap()
         XCTAssertTrue(app.otherElements["Writing days in \(thisYear - 1)"].waitForExistence(timeout: 10))
         XCTAssertTrue(summary("1 entry • 1% of days"))
         snap("stats-year-earlier")

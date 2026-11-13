@@ -264,13 +264,20 @@ private struct YearSection: View {
         .task(id: "\(year)|\(stats.totalEntries)") { await load(year) }
     }
 
+    private func menuTitle(_ year: Int) -> String {
+        guard let count = stats.entriesByYear?.first(where: { $0.year == year })?.count ?? (stats.entriesByYear == nil ? nil : 0) else { return String(year) }
+        return "\(year) • \(count == 1 ? "1 entry" : "\(count.formatted()) entries")"
+    }
+
     /// The year, large, in a pill with a chevron: the menu that turns the whole section to another.
     @ViewBuilder
     private var title: some View {
         if years.count > 1 {
             Menu {
                 Picker("Year", selection: Binding(get: { year }, set: { picked = $0 == thisYear ? nil : $0 })) {
-                    ForEach(years, id: \.self) { Text(String($0)).tag($0) }
+                    // In the menu, each year with its entries ("2026 • 23 entries"); the pill shows
+                    // the year alone.
+                    ForEach(years, id: \.self) { Text(menuTitle($0)).tag($0) }
                 }
             } label: {
                 HStack(spacing: 8) {

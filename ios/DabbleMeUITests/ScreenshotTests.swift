@@ -14,7 +14,8 @@ final class ScreenshotTests: XCTestCase {
 
         let app = XCUIApplication()
         app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", testServer,
-                               "-DabbleDebugComposePhotoURLs", photos, "-readingTextSize", "1"]
+                               "-DabbleDebugComposePhotoURLs", photos, "-readingTextSize", "1",
+                               "-stats.heatmapCell", "13"] // Stats' grid at its own size, whatever a test pinched it to
         app.launch()
 
         // iPhone has a bottom tab bar; iPad shows tabs at the top as plain buttons.

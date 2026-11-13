@@ -23,6 +23,8 @@ module Api
         # The year the longest streak ended in (the app labels it "Streak • 2024").
         longest_streak_year: longest_streak_end&.year,
         entries_this_year: entries_this_year,
+        # Every year with an entry, newest first, for the app's year menu ("2026 • 23 entries").
+        entries_by_year: dates.group_by(&:year).map { |year, days| { year: year, count: days.size } }.sort_by { |row| -row[:year] },
         writing_days: dates.select { |date| date > today - HEATMAP_DAYS && date <= today }.map(&:iso8601),
         months: recent_months,
         busiest_weekday: busiest_weekday,
