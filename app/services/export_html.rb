@@ -9,14 +9,20 @@ module ExportHtml
   ATTRIBUTES = %w[href src alt].freeze
 
   STYLE = <<~CSS
+    * { box-sizing: border-box; }
     body { margin: 0; background: #f4f4ef; color: #222; font: 18px/1.6 Georgia, "Times New Roman", serif; }
     main { max-width: 680px; margin: 0 auto; padding: 32px 16px 64px; }
     h1 { margin: 0 0 4px; font-size: 34px; font-weight: normal; }
-    .summary { margin: 0 0 32px; color: #777; font: 14px/1.4 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
-    article { margin: 0 0 24px; padding: 24px; background: #fff; border: 1px solid #deded6; border-radius: 8px; }
-    article h2 { margin: 0; color: #9c1c1c; font-size: 22px; font-weight: normal; }
-    article .day { margin: 0 0 16px; color: #999; font: 12px/1.4 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; }
-    article img { display: block; max-width: 100%; height: auto; margin: 0 0 16px; border-radius: 4px; }
+    .summary { margin: 0 0 12px; color: #777; font: 14px/1.4 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
+    .order { display: inline-block; margin: 0 0 28px; color: #777; font: 14px/1.4 -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; cursor: pointer; }
+    .entries { display: flex; flex-direction: column; }
+    /* Entries are written newest first; ticking the box flips them. */
+    main:has(#oldest-first:checked) .entries { flex-direction: column-reverse; }
+    /* A long link or run of unbroken text wraps instead of widening the page. */
+    article { min-width: 0; margin: 0 0 24px; padding: 24px; background: #fff; border: 1px solid #deded6; border-radius: 8px; overflow-wrap: anywhere; }
+    article h2 { margin: 0 0 16px; color: #9c1c1c; font-size: 22px; font-weight: normal; }
+    article img { display: block; max-width: 100%; height: auto; border-radius: 4px; }
+    article .photo { display: block; margin: 16px 0 0; }
     article a { color: #5c6652; }
     article > :last-child { margin-bottom: 0; }
   CSS
@@ -38,21 +44,26 @@ module ExportHtml
       <main>
       <h1>Dabble Me journal</h1>
       <p class="summary">#{entry_count} #{entry_count == 1 ? 'entry' : 'entries'}, exported #{Time.current.strftime('%B %-d, %Y')}</p>
+      <label class="order"><input type="checkbox" id="oldest-first"> Oldest first</label>
+      <div class="entries">
     HTML
   end
 
   # image is the photo's path inside the ZIP, when there is one to show.
+  # Entries are written newest first.
   def entry(entry, image: nil)
     html = +%(<article id="#{entry.date.strftime('%Y-%m-%d')}">\n)
-    html << "<h2>#{entry.date.strftime('%B %-d, %Y')}</h2>\n"
-    html << %(<p class="day">#{entry.date.strftime('%A')}</p>\n)
-    html << %(<img src="#{ERB::Util.html_escape(image)}" alt="Photo">\n) if image
+    html << "<h2>#{entry.date.strftime('%A, %B %-d, %Y')}</h2>\n"
     html << "#{sanitizer.sanitize(entry.formatted_body, tags: TAGS, attributes: ATTRIBUTES)}\n" if entry.body.present?
+    if image
+      src = ERB::Util.html_escape(image)
+      html << %(<a class="photo" href="#{src}" target="_blank" rel="noopener"><img src="#{src}" alt="Photo"></a>\n)
+    end
     html << "</article>\n"
   end
 
   def footer
-    "</main>\n</body>\n</html>\n"
+    "</div>\n</main>\n</body>\n</html>\n"
   end
 
   def sanitizer

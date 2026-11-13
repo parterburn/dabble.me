@@ -42,7 +42,7 @@ class ExportArchive
 
       zip.put_next_entry("journal.html")
       zip.write(ExportHtml.header(result.entry_count))
-      each_entry { |entry| zip.write(ExportHtml.entry(entry, image: written[entry.id])) }
+      each_entry(newest_first: true) { |entry| zip.write(ExportHtml.entry(entry, image: written[entry.id])) }
       zip.write(ExportHtml.footer)
 
       # Each entry exactly as it was written, for moving the journal elsewhere.
@@ -65,10 +65,10 @@ class ExportArchive
     @ids ||= @entries.order(:date, :id).pluck(:id)
   end
 
-  def each_entry
-    return enum_for(:each_entry) unless block_given?
+  def each_entry(newest_first: false, &block)
+    return enum_for(:each_entry, newest_first: newest_first) unless block
 
-    ids.each_slice(BATCH_SIZE) do |slice|
+    (newest_first ? ids.reverse : ids).each_slice(BATCH_SIZE) do |slice|
       by_id = Entry.unscoped.where(id: slice).index_by(&:id)
       slice.each { |id| yield by_id[id] if by_id[id] }
     end

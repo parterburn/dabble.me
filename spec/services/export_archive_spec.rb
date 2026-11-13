@@ -44,8 +44,12 @@ RSpec.describe ExportArchive do
     expect(files['journal.md']).not_to include('someone else')
 
     page = Nokogiri::HTML(files['journal.html'])
-    expect(page.css('article h2').map(&:text)).to eq(['March 1, 2026', 'March 2, 2026', 'March 3, 2026'])
-    expect(page.css('article img').map { |img| img['src'] }).to eq(%w[images/2026-03-02.jpg images/2026-03-03.png])
+    expect(page.css('.entries > article h2').map(&:text)).to eq(['Tuesday, March 3, 2026', 'Monday, March 2, 2026', 'Sunday, March 1, 2026'])
+    expect(page.css('article img').map { |img| img['src'] }).to eq(%w[images/2026-03-03.png images/2026-03-02.jpg])
+    photo = page.at_css('article#2026-03-02 a.photo')
+    expect(photo.to_h).to include('href' => 'images/2026-03-02.jpg', 'target' => '_blank')
+    expect(photo.previous_element.text).to eq('Second café day')
+    expect(page.at_css('input#oldest-first')).to be_present
     expect(page.at_css('article#2026-03-01 b').text).to eq('day')
     expect(page.at_css('.summary').text).to start_with('3 entries')
     expect(files['journal.html']).not_to include('someone else')
