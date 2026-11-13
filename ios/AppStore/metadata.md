@@ -18,7 +18,7 @@ Copy for App Store Connect (app ID 6832151292, bundle ID `me.dabble.ios`). Chara
 
 **Promotional text (170)**
 
-> Write a few lines in the app, or just reply to our email. Dabble Me keeps them private and brings them back on this day, every year. No feed, no ads.
+> Like your private timeline: write a few lines a day, in the app or by email, then Rewind to this day a year ago, or to your whole year. No feed, no ads.
 
 **Description (4,000)**
 
