@@ -1183,6 +1183,29 @@ final class JournalViewsTests: XCTestCase {
         snap("calendar-empty-day")
     }
 
+    /// The title's list can be picked from in one move: down from the title without lifting,
+    /// and letting go over a view.
+    func testDraggingDownFromTheTitlePicksAView() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let title = app.navigationBars.buttons["Journal"]
+        XCTAssertTrue(title.waitForExistence(timeout: 10))
+        // Open it once to see where Photos is, then close it again.
+        title.tap()
+        let photos = app.buttons["JournalMode-Photos"]
+        XCTAssertTrue(photos.waitForExistence(timeout: 5))
+        let target = photos.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).screenPoint
+        app.buttons["JournalMode-Journal"].tap()
+        XCTAssertTrue(photos.waitForNonExistence(timeout: 5))
+        sleep(1)
+        let start = title.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        let end = app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: target.x, dy: target.y))
+        start.press(forDuration: 0.1, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.8)
+        XCTAssertTrue(app.navigationBars.buttons["Photos"].waitForExistence(timeout: 5), "Letting go over Photos shows Photos")
+        XCTAssertTrue(photos.waitForNonExistence(timeout: 5), "And the list closes")
+        switchJournal(app, from: "Photos", to: "Journal")
+    }
+
     /// The Journal's title is a menu of its views: the one showing has its filled icon, and no
     /// checkmark; picking another shows it.
     func testJournalTitleMenu() throws {
@@ -2212,17 +2235,12 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
         sleep(1)
         snap("shake-memory")
+        // Beside Open: another random memory. No arrows to the entries either side.
+        XCTAssertFalse(app.buttons["Previous Entry"].exists || app.buttons["Next Entry"].exists)
         app.buttons["Another"].tap()
-        sleep(1)
-        // The arrows beside Open step to the entry before or after (one is off at either end).
-        let previous = app.buttons["Previous Entry"], next = app.buttons["Next Entry"]
-        XCTAssertTrue(previous.exists && next.exists)
-        let arrow = previous.isEnabled ? previous : next
-        let before = arrow.value as? String
-        arrow.tap()
         sleep(2)
-        XCTAssertNotEqual(arrow.value as? String, before, "A different entry is showing")
-        snap("shake-memory-stepped")
+        XCTAssertTrue(app.buttons["Open"].exists, "Still a memory, in the same sheet")
+        snap("shake-memory-another")
         // Close: still reading the same entry underneath.
         app.buttons["Close"].tap()
         XCTAssertTrue(app.staticTexts["A Random Memory"].waitForNonExistence(timeout: 5))

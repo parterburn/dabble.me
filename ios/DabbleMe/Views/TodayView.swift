@@ -24,6 +24,8 @@ struct TodayView: View {
     @State private var actions = EntryActions()
     /// How far past the bottom Today is pulled: far enough, and letting go opens a random memory.
     @State private var bottomPull: CGFloat = 0
+    /// How far Today is pulled down from its top (a pull to refresh), for the spinner.
+    @State private var topPull: CGFloat = 0
     private let randomMemoryPull: CGFloat = 90
 
     var body: some View {
@@ -79,7 +81,27 @@ struct TodayView: View {
             // inside the sheets and entry pages below, so they don't inherit a pull-to-refresh.
             .refreshable {
                 withAnimation(.snappy(duration: 0.25)) { expanded = [] }
+                // Long enough to see it happen.
+                async let pause: Void? = try? Task.sleep(for: .milliseconds(600))
                 await model.loadToday()
+                _ = await pause
+            }
+            // The pull's own spinner: iOS keeps its one in the navigation bar, which Today hides.
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                -(geometry.contentOffset.y + geometry.contentInsets.top)
+            } action: { _, overscroll in
+                topPull = max(0, overscroll)
+            }
+            .overlay(alignment: .top) {
+                if topPull > 18 {
+                    ProgressView()
+                        .controlSize(.regular)
+                        .opacity(min(1, (topPull - 18) / 30))
+                        // In the middle of the gap the pull opens above the page.
+                        .offset(y: max(4, topPull / 2 - 12))
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
             }
             .timelinePinsDates()
             .frame(maxWidth: 680)
@@ -150,6 +172,7 @@ struct TodayView: View {
             }
             // Once written, the new entry opens in full under the closing composer.
             .sheet(isPresented: $composing) { ComposeView(mode: .new) { path.append(EntryRoute(id: $0.id)) } }
+            .onChange(of: model.todayTabTaps) { retypeWordmark() }
             // A link to Today: its own page, whatever entry was left open over it.
             .onChange(of: model.todayRootRequest) { path = NavigationPath() }
             // And one written for another day from here ("Write Yesterday's Entry").

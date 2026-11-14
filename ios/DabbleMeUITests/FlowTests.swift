@@ -325,6 +325,24 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(title(1).waitForExistence(timeout: 10), "Down and right is the entry after")
     }
 
+    /// An open entry's back arrow, held, opens Jump to a Day (a tap still goes back).
+    func testHoldingAnEntrysBackArrowJumpsToADay() throws {
+        openJournal()
+        let entry = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
+        XCTAssertTrue(entry.waitForExistence(timeout: 10))
+        app.openTimelineEntry(entry)
+        let back = app.descendants(matching: .any)["Back"].firstMatch
+        XCTAssertTrue(back.waitForExistence(timeout: 10))
+        back.press(forDuration: 1.0)
+        XCTAssertTrue(app.staticTexts["Jump to a Day"].waitForExistence(timeout: 5), "Held, the arrow opens the calendar")
+        snap("jump-sheet")
+        app.buttons["Close"].tap()
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 5), "Still on the entry")
+        back.tap()
+        XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 10), "A tap goes back")
+    }
+
     private func snap(_ name: String) {
         guard let dir = ProcessInfo.processInfo.environment["DABBLE_DEBUG_DIR"] else { return }
         try? XCUIScreen.main.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: "\(dir)/\(name).png"))

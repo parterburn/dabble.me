@@ -9,7 +9,7 @@ struct DayPickerSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            SheetHeader(title: "Jump to a Day")
+            SheetHeader(title: "Jump to a Day", icon: "slab-calendar")
             DayPickerCalendar { dismiss() }
                 .frame(maxWidth: 420)
                 .frame(maxWidth: .infinity)

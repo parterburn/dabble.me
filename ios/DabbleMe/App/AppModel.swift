@@ -53,6 +53,8 @@ final class AppModel {
     var openEntryRequest: Int?
     /// An entry to open on Today (one just written from there for another day).
     var todayEntryRequest: Int?
+    /// Counts taps on the Today tab: its wordmark types itself out for each.
+    var todayTabTaps = 0
     /// Bumped to bring Today back to its own page (a link to it, with an entry left open there).
     var todayRootRequest = 0
     /// A dabble.me link tapped before the app could act on it (signed out, or still loading):

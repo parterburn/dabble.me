@@ -114,7 +114,8 @@ struct EntryDetailView: View {
         }
         .navigationTitle(entry?.day?.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year()) ?? "")
         .navigationBarTitleDisplayMode(.inline)
-        .slabBackButton()
+        // The arrow held, like the date: Jump to a Day.
+        .slabBackButton(onHold: { if let entry { jumpToADay(from: entry) } })
         .toolbar {
             if let entry {
                 // Down in On This Day, the bar says so in place of the entry's date.
@@ -448,7 +449,7 @@ private struct EntryBody: View {
 }
 
 /// On This Day, under an entry: its calendar day in other years, earlier and later, laid out as
-/// on Today (each under how far off it is, as the Journal's row: a tap expands a long one, or
+/// on Today (each under its month and year, as the Journal's row: a tap expands a long one, or
 /// opens it). A free account sees how many would be there (On This Day is PRO).
 private struct SameDaySection: View {
     let entry: EntryDetail
@@ -494,7 +495,6 @@ private struct SameDaySection: View {
             }
         }
         .padding(.horizontal)
-        .onDisappear { headingPassed = false }
         if sameDay.available {
             ForEach(sameDay.entries) { other in
                 Section {
@@ -504,23 +504,33 @@ private struct SameDaySection: View {
                         .padding(.horizontal)
                         .padding(.bottom, other.id == sameDay.entries.last?.id ? 24 : 8)
                 } header: {
-                    MonthHeader(title: title(for: other), isDay: true)
-                        .padding(.horizontal)
-                        .frame(height: Self.headerHeight)
-                        .padding(.top, 8)
-                        .background(Color(uiColor: .systemBackground)) // the entry scrolls under it
+                    PinnedMonthHeader(title: other.day?.monthTitle ?? other.date)
                 }
             }
         }
     }
+}
 
-    /// "1 year later • November 2025", "2 years earlier • November 2022": as seen from this entry.
-    private func title(for other: EntrySummary) -> String {
-        let month = other.day?.monthTitle ?? other.date
-        let gap = (Int(other.date.prefix(4)) ?? 0) - (Int(entry.date.prefix(4)) ?? 0)
-        guard gap != 0 else { return month }
-        let years = abs(gap) == 1 ? "1 year" : "\(abs(gap)) years"
-        return "\(years) \(gap < 0 ? "earlier" : "later") • \(month)"
+/// "November 2015" over one of On This Day's entries. In the page it has no backing; held at the
+/// top (pinned under the bar) it takes a see-through one like the bar's own, so the entry
+/// passing under it blurs as it does under the bar, and the two read as one header.
+private struct PinnedMonthHeader: View {
+    let title: String
+    @State private var isPinned = false
+
+    var body: some View {
+        MonthHeader(title: title, isDay: true)
+            .padding(.horizontal)
+            .frame(height: SameDaySection.headerHeight)
+            .padding(.top, 8)
+            // (The material alone is greyer than the bar: the page's own color goes over it.)
+            .background {
+                if isPinned {
+                    Rectangle().fill(.ultraThinMaterial).overlay(Color(uiColor: .systemBackground).opacity(0.72))
+                }
+            }
+            // Pinned, it sits at the very top of the scroll view's space (the bar's foot).
+            .onGeometryChange(for: Bool.self) { $0.frame(in: .scrollView).minY <= 0.5 } action: { isPinned = $0 }
     }
 }
 
@@ -993,8 +1003,12 @@ private struct PullForMore: ViewModifier {
     let next: (() async -> Void)?
 
     @State private var pull: CGFloat = 0
-    /// How far the finger has moved sideways in this drag.
+    /// How far the finger has moved sideways in this drag. Kept after the finger lifts (the
+    /// scroll view says so a moment later, and the choice is read then) until the next touch.
     @State private var sideways: CGFloat = 0
+    /// The pull has gone far enough. It stays so while the finger wanders a little back up on
+    /// its way to one side, until it's most of the way home.
+    @State private var reached = false
     @State private var isRunning = false
     private let threshold: CGFloat = 90
     /// Sideways travel that moves the choice off the middle.
@@ -1011,7 +1025,7 @@ private struct PullForMore: ViewModifier {
         }
     }
     /// Far enough, on something there is to do.
-    private var armed: Bool { pull >= threshold && action(for: choice) != nil }
+    private var armed: Bool { reached && action(for: choice) != nil }
 
     func body(content: Content) -> some View {
         if reflect == nil, previous == nil, next == nil {
@@ -1022,13 +1036,16 @@ private struct PullForMore: ViewModifier {
                     -(geometry.contentOffset.y + geometry.contentInsets.top)
                 } action: { _, overscroll in
                     pull = max(0, overscroll)
+                    if pull >= threshold { reached = true } else if pull < threshold * 0.5 { reached = false }
                 }
                 // Where the finger is, side to side, while the list itself follows it down.
-                .simultaneousGesture(DragGesture(minimumDistance: 0)
-                    .onChanged { sideways = $0.translation.width }
-                    .onEnded { _ in Task { @MainActor in sideways = 0 } })
+                .simultaneousGesture(DragGesture(minimumDistance: 0).onChanged { sideways = $0.translation.width })
                 .onScrollPhaseChange { old, new in
-                    guard old == .interacting, new != .interacting, armed, !isRunning, let action = action(for: choice) else { return }
+                    // A new touch starts in the middle.
+                    if new == .interacting, old != .interacting { sideways = 0 }
+                    guard old == .interacting, new != .interacting else { return }
+                    defer { reached = false }
+                    guard armed, !isRunning, let action = action(for: choice) else { return }
                     isRunning = true
                     Task {
                         await action()
@@ -1044,7 +1061,7 @@ private struct PullForMore: ViewModifier {
                         }
                         .frame(maxWidth: 360)
                         .opacity(min(1, (pull - 8) / 40))
-                        .frame(height: min(pull, threshold), alignment: .center)
+                        .frame(height: min(max(pull, reached ? threshold * 0.6 : 0), threshold), alignment: .center)
                         .clipped()
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)

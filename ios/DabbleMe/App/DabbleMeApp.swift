@@ -167,6 +167,7 @@ struct MainTabs: View {
             set: { tab in
                 if tab == .search, model.selectedTab == .search { model.searchFocusRequest += 1 }
                 if tab == .journal, model.selectedTab == .journal { model.journalTopRequest += 1 }
+                if tab == .today { model.todayTabTaps += 1 }
                 model.selectedTab = tab
             }
         )
