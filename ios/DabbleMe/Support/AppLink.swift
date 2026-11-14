@@ -30,15 +30,16 @@ enum AppLink: Equatable {
 
 extension AppModel {
     /// Goes where a dabble.me link points. A day's link opens its entry; a day without one opens
-    /// the composer on it (not a day still to come).
+    /// the composer on it (not a day still to come, by the journal's own today).
     func open(_ link: AppLink) {
         // Not yet (signed out, or the journal's still loading): kept, and followed once it can be.
         guard isSignedIn, hasLoaded else { pendingLink = link; return }
         switch link {
         case .journal:
-            // The Journal itself: its list, whatever view or entry was left open there.
+            // The Journal itself: its list, whatever view or entry was left open there. (A request
+            // the Journal also acts on when it first appears: its tab may not exist yet.)
             selectedTab = .journal
-            journalTopRequest += 1
+            journalModeRequest = .list
         case .today:
             selectedTab = .today
             todayRootRequest += 1
@@ -56,7 +57,7 @@ extension AppModel {
                 do {
                     if let entry = try await entrySummary(on: day) {
                         openEntryRequest = entry.id
-                    } else if me?.canWrite != false, day.localDate <= .now {
+                    } else if me?.canWrite != false, day <= (today?.day ?? JournalDay(localDate: .now)) {
                         composingDay = StatsDay(day: day)
                     }
                 } catch is CancellationError {

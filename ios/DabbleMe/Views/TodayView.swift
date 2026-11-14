@@ -10,6 +10,9 @@ struct TodayView: View {
     @State private var showingProInfo = false
     /// How many times the wordmark's been tapped to type itself out, and whether it's at it.
     @State private var retypes = 0
+    /// Taps on the Today tab, over the app's life: the wordmark types itself out on every tenth.
+    @AppStorage("today.tabTaps") private var tabTaps = 0
+    private static let tapsBetweenTyping = 10
     @State private var isRetyping = false
     @AppStorage(ShakeSetting.storageKey) private var shakeForRandomEntry = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -37,7 +40,8 @@ struct TodayView: View {
                     // entries the journal holds ("1,204 entries") beside it.
                     HStack(alignment: .center) {
                         // An easter egg: tapped, it types itself out again, as it does at launch.
-                        Wordmark(size: 28, typesOut: retypes > 0, showsCursor: isRetyping)
+                        // (Only while it's at it: scrolled away and back, it's simply there.)
+                        Wordmark(size: 28, typesOut: isRetyping, showsCursor: isRetyping)
                             .id(retypes)
                             .contentShape(.rect)
                             .onTapGesture { retypeWordmark() }
@@ -141,8 +145,15 @@ struct TodayView: View {
             .sensoryFeedback(.impact(weight: .light), trigger: bottomPull >= randomMemoryPull) { _, armed in armed }
             // A request to write (a reminder, the widget, a quick action). One that prefers
             // yesterday waits for Today to load, then asks whether yesterday's been written.
-            .onChange(of: "\(model.composeRequest)|\(model.today?.date ?? "")", initial: true) {
+            .onChange(of: "\(model.composeRequest)|\(model.today?.date ?? "")|\(model.me != nil)", initial: true) {
                 guard model.composeRequest else { return }
+                if model.composeByMorningRule {
+                    // "New Entry" from the widget, a link or the app's icon: morning by the
+                    // journal's clock, which waits for the account (a cold start).
+                    guard model.today != nil, let me = model.me else { return }
+                    model.composeByMorningRule = false
+                    model.composePrefersYesterday = AppModel.isMorning(at: .now, in: me.timezoneIdentifier.flatMap(TimeZone.init(identifier:)))
+                }
                 guard model.composePrefersYesterday else {
                     model.composeRequest = false
                     composing = true
@@ -172,7 +183,11 @@ struct TodayView: View {
             }
             // Once written, the new entry opens in full under the closing composer.
             .sheet(isPresented: $composing) { ComposeView(mode: .new) { path.append(EntryRoute(id: $0.id)) } }
-            .onChange(of: model.todayTabTaps) { retypeWordmark() }
+            // Now and then (every tenth tap on the Today tab), not every time.
+            .onChange(of: model.todayTabTaps) {
+                tabTaps += 1
+                if tabTaps % Self.tapsBetweenTyping == 0 { retypeWordmark() }
+            }
             // A link to Today: its own page, whatever entry was left open over it.
             .onChange(of: model.todayRootRequest) { path = NavigationPath() }
             // And one written for another day from here ("Write Yesterday's Entry").

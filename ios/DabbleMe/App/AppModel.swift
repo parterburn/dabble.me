@@ -18,6 +18,9 @@ final class AppModel {
     /// With `composeRequest`, from a morning reminder or the widget in the morning: yesterday's
     /// entry instead, when it hasn't been written (people who write about a day the next morning).
     var composePrefersYesterday = false
+    /// With `composeRequest`: whether it prefers yesterday is still to be worked out, from the
+    /// journal's own time of day, once the account and Today have loaded.
+    var composeByMorningRule = false
     /// Up to this time of day (10:00 AM, in minutes), writing is likely about the day before.
     static let morningEnds = 10 * 60
 
@@ -25,7 +28,9 @@ final class AppModel {
     /// morning it's yesterday's, if that isn't written; otherwise today's.
     func requestNewEntry() {
         selectedTab = .today
-        composePrefersYesterday = Self.isMorning(at: .now, in: me?.timezoneIdentifier.flatMap(TimeZone.init(identifier:)))
+        // Whether it's morning is the journal's clock's to say: decided once the account has
+        // loaded (the app may only just be starting), by Today.
+        composeByMorningRule = true
         composeRequest = true
     }
 
