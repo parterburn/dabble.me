@@ -204,6 +204,30 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       expect(json["prompts"].size).to eq(1)
     end
 
+    it "lists an entry's calendar day in other years, newest first" do
+      earlier = create(:entry, user: pro_user, date: Time.zone.local(2023, 6, 20), body: "<p>The year before</p>")
+      later = create(:entry, user: pro_user, date: Time.zone.local(2025, 6, 20), body: "<p>The year after</p>")
+      create(:entry, user: free_user, date: Time.zone.local(2023, 6, 20), body: "<p>Someone else's</p>")
+
+      get "/api/v1/entries/#{middle.id}/same_day", headers: auth(pro_user)
+      expect(json).to include("available" => true, "count" => 2)
+      expect(json["entries"].map { |e| [e["id"], e["date"]] }).to eq([[later.id, "2025-06-20"], [earlier.id, "2023-06-20"]])
+
+      get "/api/v1/entries/#{older.id}/same_day", headers: auth(pro_user)
+      expect(json).to eq("available" => true, "count" => 0, "entries" => [])
+    end
+
+    it "tells a free account how many there are, without the entries" do
+      mine = create(:entry, user: free_user, date: Time.zone.local(2024, 6, 20), body: "<p>Mine</p>")
+      create(:entry, user: free_user, date: Time.zone.local(2023, 6, 20), body: "<p>The year before</p>")
+
+      get "/api/v1/entries/#{mine.id}/same_day", headers: auth(free_user)
+      expect(json).to eq("available" => false, "count" => 1, "entries" => [])
+
+      get "/api/v1/entries/#{middle.id}/same_day", headers: auth(free_user)
+      expect(response).to have_http_status(:not_found)
+    end
+
         it "summarizes today: today's entry, On This Day with years ago, and a prompt" do
       Inspiration.create!(category: "Question", body: "What surprised you today?")
       travel_to Time.find_zone(pro_user.send_timezone).local(2026, 6, 20, 12) do

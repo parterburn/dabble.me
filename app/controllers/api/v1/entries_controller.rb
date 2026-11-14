@@ -8,7 +8,7 @@ module Api
       # Free accounts can write and delete; editing, photos and links are PRO.
       before_action :require_pro!, only: %i[update on_this_day memory_days]
       before_action :require_pro_for_photos!, only: :create
-      before_action :set_entry, only: %i[show update destroy]
+      before_action :set_entry, only: %i[show same_day update destroy]
 
       # GET /api/v1/entries?page=&per=&year=&month=&photos=1&songs=1 (photos: only entries with
       # a photo; songs: only entries with a Spotify song, for the app's Playlist)
@@ -36,6 +36,17 @@ module Api
 
       def show
         render json: { entry: EntrySerializer.full(@entry) }
+      end
+
+      # GET /api/v1/entries/:id/same_day: the entry's calendar day in other years, for On This Day
+      # under an entry in the app. PRO gets the entries; a free account only how many there are.
+      def same_day
+        others = OnThisDay.other_years(@entry)
+        render json: {
+          available: current_user.is_pro?,
+          count: others.count,
+          entries: current_user.is_pro? ? others.map { |other| EntrySerializer.summary(other) } : []
+        }
       end
 
       # GET /api/v1/entries/months: every month with entries, newest first, for the

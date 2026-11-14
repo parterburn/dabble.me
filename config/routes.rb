@@ -53,6 +53,7 @@ Rails.application.routes.draw do
           get :days
           get :memory_days
         end
+        get :same_day, on: :member
       end
       get 'search', to: 'searches#show'
       get 'stats', to: 'stats#show'
