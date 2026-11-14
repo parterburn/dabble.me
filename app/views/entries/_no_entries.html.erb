@@ -26,6 +26,14 @@
       </p>
     <% end %>
     <div class="clearfix"></div>
+    <%# The iOS app, for someone who'd rather write there than by email (a beta, on TestFlight). %>
+    <div style="max-width: 500px; margin: 10px auto 24px; padding: 18px 20px; border-radius: 16px; background: #F3F2EC;">
+      <p style="margin: 0 0 12px;">
+        <strong>On an iPhone or iPad?</strong>
+        Read and write your journal in the Dabble Me app, now in beta.
+      </p>
+      <%= link_to "Get the iOS app", ApplicationHelper.ios_testflight_url, class: "btn btn-primary", target: "_blank", rel: "noopener noreferrer" %>
+    </div>
     <div class="s-no-entries-cta">
       <% if current_user.is_pro? %>
         <%= link_to "Write your first entry", new_entry_path, class: "btn btn-primary btn-lg" %>

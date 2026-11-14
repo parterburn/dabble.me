@@ -18,6 +18,9 @@ final class AppModel {
     /// With `composeRequest`, from a morning reminder or the widget in the morning: yesterday's
     /// entry instead, when it hasn't been written (people who write about a day the next morning).
     var composePrefersYesterday = false
+    /// With `composeRequest`: whether it prefers yesterday is still to be worked out, from the
+    /// journal's own time of day, once the account and Today have loaded.
+    var composeByMorningRule = false
     /// Up to this time of day (10:00 AM, in minutes), writing is likely about the day before.
     static let morningEnds = 10 * 60
 
@@ -25,8 +28,19 @@ final class AppModel {
     /// morning it's yesterday's, if that isn't written; otherwise today's.
     func requestNewEntry() {
         selectedTab = .today
-        composePrefersYesterday = ReminderSettings.minutes(from: .now) <= Self.morningEnds
+        // Whether it's morning is the journal's clock's to say: decided once the account has
+        // loaded (the app may only just be starting), by Today.
+        composeByMorningRule = true
         composeRequest = true
+    }
+
+    /// Morning by the journal's clock, as the web's new-entry page judges it, so the two agree
+    /// for someone away from their journal's time zone (the device's clock until that's known).
+    static func isMorning(at date: Date, in zone: TimeZone?) -> Bool {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = zone ?? .current
+        let parts = calendar.dateComponents([.hour, .minute, .second], from: date)
+        return (parts.hour ?? 0) * 3600 + (parts.minute ?? 0) * 60 + (parts.second ?? 0) <= morningEnds * 60
     }
     /// The widget's "Edit today": Today opens today's entry for editing once it has it.
     var editTodayRequest = false
@@ -41,16 +55,22 @@ final class AppModel {
     var journalModeRequest: JournalMode?
     /// Shake the phone for a random memory (a preview sheet); `openEntryRequest` opens it in Journal.
     var showsRandomEntry = false
-    /// A day tapped in Stats → Past Year: its entries come up in a sheet, presented with the
-    /// random memory's at the top of the app (from inside Stats it didn't always appear).
-    var statsDay: StatsDay?
     var openEntryRequest: Int?
+    /// An entry to open on Today (one just written from there for another day).
+    var todayEntryRequest: Int?
+    /// Counts taps on the Today tab: its wordmark types itself out for each.
+    var todayTabTaps = 0
+    /// Bumped to bring Today back to its own page (a link to it, with an entry left open there).
+    var todayRootRequest = 0
+    /// A dabble.me link tapped before the app could act on it (signed out, or still loading):
+    /// followed once the journal has loaded.
+    var pendingLink: AppLink?
     /// The Journal view an entry opens over, so Back lands there (the list unless set: Rewind's
     /// photos open over the Photos grid).
     var openEntryOver: JournalMode?
-    /// Jump to a Day: the calendar, as a sheet (from the Journal's scrubber or Search) or a
-    /// dropdown (the Journal's "me" mark, a day sheet's calendar button). A written day picked
-    /// comes up in the day sheet (`statsDay`) once the calendar has closed.
+    /// Jump to a Day: the calendar's sheet (from the Journal's scrubber or its "me" mark held,
+    /// Search, or an open entry's date held). A written day picked opens its entry in full once
+    /// the calendar has closed.
     var showsDayPicker = false
     var pickedDay: JournalDay?
     /// The day last looked at from the calendar: it opens on that month again.
@@ -317,8 +337,8 @@ final class AppModel {
         do { return try await entrySummary(on: yesterday) == nil } catch { return false }
     }
 
-    /// After the Jump to a Day calendar closes: the day picked comes up in its sheet, or, for a
-    /// day without an entry, the composer opens on it.
+    /// After the Jump to a Day calendar closes: the day picked opens its entry in full, or, for
+    /// a day without an entry, the composer opens on it.
     func finishDayPicker() {
         if let day = writeAfterDayPicker {
             writeAfterDayPicker = nil
@@ -326,7 +346,23 @@ final class AppModel {
         } else if let day = pickedDay {
             pickedDay = nil
             dayPickerOpensOn = day
-            statsDay = StatsDay(day: day)
+            openDay(day)
+        }
+    }
+
+    /// Opens a written day's entry in full, in the Journal: over its list, or over the view it
+    /// was picked from (Stats' grid), so Back lands there.
+    func openDay(_ day: JournalDay, over mode: JournalMode? = nil) {
+        Task {
+            do {
+                guard let entry = try await entrySummary(on: day) else { return }
+                selectedTab = .journal
+                openEntryOver = mode
+                openEntryRequest = entry.id
+            } catch is CancellationError {
+            } catch {
+                report(error)
+            }
         }
     }
 

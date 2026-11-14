@@ -1,4 +1,5 @@
 import Foundation
+import NaturalLanguage
 #if canImport(FoundationModels)
 import FoundationModels
 #endif
@@ -41,11 +42,11 @@ enum JournalIntelligence {
         }
     }
 
-    /// Up to 3 hashtags for an entry, minus ones already in it. Once the writer has hashtags, only
-    /// from those (the model picks from the list; anything else it says is dropped). With none yet,
-    /// it suggests new ones.
-    static func suggestHashtags(for text: String, from existing: [String]) async throws -> [String] {
-        guard !existing.isEmpty else { return try await suggestNewHashtags(for: text) }
+    /// Hashtags for an entry, minus ones already in it. Once the writer has hashtags, up to 3 and
+    /// only from those (the model picks from the list; anything else it says is dropped). With
+    /// none yet, up to 5 new ones: the people it names first, then what it's about.
+    static func suggestHashtags(for text: String, from existing: [String], firstName: String? = nil) async throws -> [String] {
+        guard !existing.isEmpty else { return try await suggestNewHashtags(for: text, firstName: firstName) }
         let already = Set(hashtags(in: text).map { $0.lowercased() })
         let candidates = existing.filter { !already.contains($0.lowercased()) }
         guard !candidates.isEmpty else { throw Failure.noMatchingHashtags }
@@ -68,24 +69,63 @@ enum JournalIntelligence {
         return Array(picked.prefix(3))
     }
 
-    private static func suggestNewHashtags(for text: String) async throws -> [String] {
-        let reply = try await respond(
-            instructions: """
-            You suggest hashtags for a private journal entry. Reply with 1 to 3 hashtags that directly describe \
-            what the entry is about (a person, pet, place, activity or theme), separated by spaces, and nothing \
-            else. Each starts with # and is a single lowercase word or joinedword, like #climbing #family.
-            """,
-            prompt: "Journal entry:\n\(clipped(text, limit: 2500))",
-            temperature: 0.2
-        )
-        let already = Set(hashtags(in: text).map { $0.lowercased() })
-        var seen = Set<String>()
+    /// How many hashtags a writer without any yet is offered.
+    static let newWriterSuggestions = 5
+
+    private static func suggestNewHashtags(for text: String, firstName: String?) async throws -> [String] {
+        let people = names(in: text, excluding: firstName)
+        let already = hashtags(in: text)
+        // The names are worth offering even when the model has nothing to add (or isn't there).
+        let reply: String
+        do {
+            reply = try await respond(
+                instructions: """
+                You suggest hashtags for a private journal entry. Reply with up to 5 hashtags that directly describe \
+                what the entry is about (a pet, place, activity or theme), separated by spaces, and nothing \
+                else. Each starts with # and is a single lowercase word or joinedword, like #climbing #family.
+                """,
+                prompt: "Journal entry:\n\(clipped(text, limit: 2500))",
+                temperature: 0.2
+            )
+        } catch {
+            guard !people.isEmpty else { throw error }
+            reply = ""
+        }
         // Usually "#a #b"; tolerate bare words too.
         let found = hashtags(in: reply)
-        let words = found.isEmpty ? reply.split(whereSeparator: { !$0.isLetter && !$0.isNumber && $0 != "_" }).map(String.init).filter { $0.first?.isLetter == true } : found
-        let picked = words.map { $0.lowercased() }.filter { !already.contains($0) && seen.insert($0).inserted }
+        let topics = found.isEmpty ? reply.split(whereSeparator: { !$0.isLetter && !$0.isNumber && $0 != "_" }).map(String.init).filter { $0.first?.isLetter == true } : found
+        let picked = newSuggestions(people: people, topics: topics.map { $0.lowercased() }, already: already)
         guard !picked.isEmpty else { throw Failure.noAnswer }
-        return Array(picked.prefix(3))
+        return picked
+    }
+
+    /// The people an entry names, as tags of their own (their names as written), then its topics,
+    /// each once and none that's in the entry already: `newWriterSuggestions` at most, with room
+    /// kept for a couple of topics when it names a crowd.
+    static func newSuggestions(people: [String], topics: [String], already: [String]) -> [String] {
+        var seen = Set(already.map { $0.lowercased() })
+        let names = people.filter { seen.insert($0.lowercased()).inserted }
+        let rest = topics.filter { seen.insert($0.lowercased()).inserted }
+        let room = max(newWriterSuggestions - min(rest.count, 2), 0)
+        return Array((names.prefix(room) + rest).prefix(newWriterSuggestions))
+    }
+
+    /// The first names of the people a text mentions, in the order they come up (Apple's name
+    /// recognition, on the device), without the writer's own.
+    static func names(in text: String, excluding ownName: String?) -> [String] {
+        let tagger = NLTagger(tagSchemes: [.nameType])
+        tagger.string = text
+        var names: [String] = []
+        var seen = Set([ownName?.lowercased()].compactMap { $0 })
+        tagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .nameType,
+                             options: [.omitWhitespace, .omitPunctuation, .joinNames]) { tag, range in
+            if tag == .personalName, let first = text[range].split(separator: " ").first.map(String.init),
+               first.count > 1, first.allSatisfy({ $0.isLetter }), seen.insert(first.lowercased()).inserted {
+                names.append(first)
+            }
+            return true
+        }
+        return names
     }
 
     /// A short, warm response to an entry, ending with a question: the on-device version of the

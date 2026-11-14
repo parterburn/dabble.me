@@ -32,19 +32,24 @@
               <a href="<%= best_journaling_apps_with_mcp_path %>" class="text-sm text-muted hover:text-primary transition-colors">AI Journaling Guide</a>
             </li>
             <li>
-              <a href="<%= privacy_path %>" class="text-sm text-muted hover:text-primary transition-colors">Privacy Policy</a>
+              <a href="<%= journal_app_path %>" class="text-sm text-muted hover:text-primary transition-colors">iOS App</a>
             </li>
             <li>
-              <a href="<%= terms_path %>" class="text-sm text-muted hover:text-primary transition-colors">Terms of Service</a>
+              <a href="<%= how_to_start_journaling_path %>" class="text-sm text-muted hover:text-primary transition-colors">How to Start Journaling</a>
             </li>
           </ul>
         </div>
       </div>
 
-      <!-- Left: Copyright and social -->
+      <!-- Right: Copyright, legal and social -->
       <div class="flex flex-col gap-4">
         <p class="text-sm text-subtle">
           &copy; <%= Time.now.year %> Dabble Dev LLC
+        </p>
+        <p class="text-sm text-muted">
+          <a href="<%= privacy_path %>" class="hover:text-primary transition-colors">Privacy Policy</a>
+          <span class="mx-1 text-subtle" aria-hidden="true">&middot;</span>
+          <a href="<%= terms_path %>" class="hover:text-primary transition-colors">Terms of Service</a>
         </p>
         <div class="flex items-center gap-x-4">
           <a href="https://x.com/parterburn" target="_blank" rel="noopener" class="text-subtle hover:text-primary transition-colors" aria-label="Twitter">

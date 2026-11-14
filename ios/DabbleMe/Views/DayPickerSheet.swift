@@ -1,15 +1,15 @@
 import SwiftUI
 
-/// Jump to a Day (from the Journal's timeline scrubber or Search): iOS's month
-/// calendar with a dot under each day you wrote. A written day comes up in the day sheet; a day
-/// without an entry opens the composer on it. Opened again, it's on the month of the day last
-/// looked at.
+/// Jump to a Day (from the Journal's timeline scrubber or its "me" mark held, Search, or an open
+/// entry's date held): iOS's month calendar with a dot under each day you wrote, from the first
+/// of them on. A written day opens its entry in full; a day without one opens the composer on
+/// it. Opened again, it's on the month of the day last looked at.
 struct DayPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            SheetHeader(title: "Jump to a Day")
+            SheetHeader(title: "Jump to a Day", icon: "slab-calendar")
             DayPickerCalendar { dismiss() }
                 .frame(maxWidth: 420)
                 .frame(maxWidth: .infinity)
@@ -21,8 +21,7 @@ struct DayPickerSheet: View {
     }
 }
 
-/// The calendar itself, for the sheet and for the dropdowns (under the Journal's "me" mark, and
-/// a day sheet's calendar button). What
+/// The sheet's calendar. What
 /// was picked is left with the model (`pickedDay`, or `writeAfterDayPicker` for a day without an
 /// entry), which acts on it once this has closed (`finishDayPicker`).
 struct DayPickerCalendar: View {
@@ -32,7 +31,7 @@ struct DayPickerCalendar: View {
     @State private var days: Set<String>?
 
     var body: some View {
-        WrittenDaysCalendar(opensOn: model.dayPickerOpensOn, written: days ?? []) { day in
+        WrittenDaysCalendar(opensOn: model.dayPickerOpensOn, written: days ?? [], startsAtFirstWritten: true) { day in
             Task { await pick(day) }
         }
         .task { days = await loadedDays() }
@@ -54,34 +53,5 @@ struct DayPickerCalendar: View {
             model.pickedDay = day
         }
         close()
-    }
-}
-
-extension View {
-    /// Jump to a Day as a dropdown from this view (the Journal's "me" mark, held).
-    func dayPickerDropdown(isPresented: Binding<Bool>) -> some View {
-        modifier(DayPickerDropdown(isPresented: isPresented))
-    }
-}
-
-private struct DayPickerDropdown: ViewModifier {
-    @Binding var isPresented: Bool
-    @Environment(AppModel.self) private var model
-
-    func body(content: Content) -> some View {
-        content
-            .popover(isPresented: $isPresented) {
-                DayPickerCalendar { isPresented = false }
-                    .calendarDropdownSize()
-                    .presentationCompactAdaptation(.popover)
-            }
-            .onChange(of: isPresented) { _, open in
-                guard !open else { return }
-                // The day's sheet (or the composer) once the dropdown has gone.
-                Task {
-                    try? await Task.sleep(for: .milliseconds(400))
-                    model.finishDayPicker()
-                }
-            }
     }
 }

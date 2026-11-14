@@ -1,0 +1,359 @@
+<% content_for :title, "How to Start Journaling (and Keep Going) + 70 Journal Prompts" %>
+<% content_for :social_title, "How to start journaling, and keep going" %>
+<% content_for :description, "A simple way to start a journal and stick with it: write one line a day, tie it to a habit you already have, and use these 70 journal prompts when you're stuck." %>
+<% content_for :keywords, "how to start journaling,journaling for beginners,journal prompts,daily journal prompts,what to write in a journal,gratitude journal prompts,how to keep a journal,journaling tips" %>
+
+<%
+first_week = [
+  ["Day 1", "Write one sentence about today. That's the whole entry."],
+  ["Day 2", "Name one thing you ate, saw or heard that you liked."],
+  ["Day 3", "Who did you talk to today? Write down one thing they said."],
+  ["Day 4", "What took up most of your attention today?"],
+  ["Day 5", "Write about something small that went well."],
+  ["Day 6", "What are you looking forward to this week?"],
+  ["Day 7", "Read your six entries. Write a line about what you notice."]
+]
+# Each group is its own heading on the page, for someone looking for that kind of prompt.
+prompt_groups = [
+  {
+    id: "daily-journal-prompts", title: "Daily journal prompts", note: "For the day you just had.",
+    prompts: [
+      "What is one thing from today you'd like to remember in a year?",
+      "What surprised you today?",
+      "What did you spend the most time on, and was it worth it?",
+      "What made you laugh today?",
+      "What was the best part of the day? The worst?",
+      "What did you eat today that you'd happily eat again?",
+      "What did you put off today, and why?",
+      "Where did you go today, and what was it like there?",
+      "What is on your mind as the day ends?",
+      "If today had a title, what would it be?"
+    ]
+  },
+  {
+    id: "journal-prompts-about-people", title: "Journal prompts about people", note: "The people are what you'll most want to read about later.",
+    prompts: [
+      "Who did you spend time with today? What did you talk about?",
+      "What is something someone said this week that stuck with you?",
+      "Who made your day easier, and did they know it?",
+      "Who have you been meaning to call? What would you tell them?",
+      "Describe someone you saw today as if to a person who has never met them.",
+      "What is a small habit of someone you love that you'd miss?",
+      "Who did you help today, or who helped you?",
+      "What did you learn about someone this week?",
+      "Who is on your mind, and why?"
+    ]
+  },
+  {
+    id: "what-to-write-in-a-journal", title: "What to write in a journal when nothing happened", note: "Ordinary days are the ones you forget first, which is the reason to write them down.",
+    prompts: [
+      "What did your morning look like, step by step?",
+      "What is the weather doing, and how does the light look right now?",
+      "What are you reading, watching or listening to at the moment?",
+      "What is a song that was in your head today?",
+      "What does your desk, kitchen or bedside table look like tonight?",
+      "What did you buy this week, and how much did it cost?",
+      "What is a phrase or joke that keeps coming up at home lately?",
+      "What is your usual order at the place you go most?",
+      "What is slightly broken in your home that you keep meaning to fix?",
+      "What did you do today that you do most days and never think about?"
+    ]
+  },
+  {
+    id: "gratitude-journal-prompts", title: "Gratitude journal prompts", note: "Specific beats general: one real thing, not a list of virtues.",
+    prompts: [
+      "What is one thing that went right today?",
+      "Who are you glad to have around this week?",
+      "What is something you own that quietly makes life better?",
+      "What did your body let you do today?",
+      "What is a problem you used to have that you don't have any more?",
+      "What is something about where you live that you'd miss if you moved?",
+      "What did someone do for you recently that they didn't have to?",
+      "What is a small comfort you had today?",
+      "What is something you were worried about that turned out fine?"
+    ]
+  },
+  {
+    id: "journal-prompts-for-work", title: "Journal prompts for work and the things you make", note: "A work journal is the easiest way to remember what you actually did.",
+    prompts: [
+      "What did you finish today?",
+      "What are you stuck on, and what have you already tried?",
+      "What is one decision you made today, and what was the reasoning?",
+      "What did you learn this week that you didn't know last week?",
+      "What is taking longer than it should, and why do you think that is?",
+      "Who at work did something well? What was it?",
+      "What would you do differently if you started this project again?",
+      "What are you proud of that nobody noticed?",
+      "What is the next small step on the thing you care about most?"
+    ]
+  },
+  {
+    id: "journal-prompts-for-hard-days", title: "Journal prompts for hard days", note: "You don't have to fix anything on the page. Writing it down is enough.",
+    prompts: [
+      "What happened, in plain words, without explaining it?",
+      "What are you feeling right now, and where do you feel it?",
+      "What part of this is in your hands, and what part isn't?",
+      "What would you say to a friend who had this day?",
+      "What do you need tonight?",
+      "What is one thing that was still okay today?",
+      "What are you afraid will happen? How likely is it, really?",
+      "What has helped the last time you felt like this?"
+    ]
+  },
+  {
+    id: "journal-prompts-for-reflection", title: "Journal prompts for looking back and ahead", note: "Good for a Sunday, a birthday or the end of a year.",
+    prompts: [
+      "What has changed since this time last year?",
+      "What did you believe a year ago that you don't believe now?",
+      "What is something you started this year that you want to keep?",
+      "What do you want more of in the next few months? Less of?",
+      "What would make next week a good one?",
+      "What are you looking forward to?",
+      "What is a place you want to go back to, and why?",
+      "What would you tell yourself at the start of this year?",
+      "What do you hope you remember about this stretch of your life?"
+    ]
+  },
+  {
+    id: "journal-prompts-for-parents", title: "Journal prompts about your kids", note: "They change faster than you can keep track of. A line a day catches it.",
+    prompts: [
+      "What did your child say today that you want to remember word for word?",
+      "What are they into right now?",
+      "What is something they can do this month that they couldn't last month?",
+      "What made them laugh today?",
+      "What is a word they say wrong that you hope they never fix?",
+      "What did bedtime look like tonight?"
+    ]
+  }
+]
+prompt_count = prompt_groups.sum { |group| group[:prompts].size }
+faq_items = [
+  {
+    question: "How do I start journaling if I've never done it?",
+    answer: "Write one sentence about today, tonight. Don't buy anything or plan a routine first. Do the same tomorrow at about the same time. After a week you have a journal, and you can decide then whether you want to write more."
+  },
+  {
+    question: "How long should a journal entry be?",
+    answer: "As long as you feel like writing, and one line counts. A short entry you actually write is worth more than a long one you keep meaning to. Most days two or three sentences is plenty."
+  },
+  {
+    question: "What should I write about in a journal?",
+    answer: "What happened and who was there. The plain facts of a day (where you went, what you ate, what someone said) are what you'll enjoy reading back most. When nothing comes to mind, answer a single prompt."
+  },
+  {
+    question: "What's the best time of day to journal?",
+    answer: "Whenever you'll actually do it. Evenings suit most people because the day is fresh. If mornings are when you have a quiet minute, write about yesterday then."
+  },
+  {
+    question: "What if I miss a day?",
+    answer: "Skip it and write today. Trying to catch up on a week of missed entries is how most journals end. Yesterday is fine to fill in the next morning; anything older, let go."
+  },
+  {
+    question: "Do I have to journal every day?",
+    answer: "No. Every day is easiest to keep up because you never have to decide whether today is a journal day, but a few times a week still adds up to a record of your life."
+  },
+  {
+    question: "Is it better to journal on paper or in an app?",
+    answer: "Use whichever you'll keep using. Paper is quiet and private but hard to search and easy to lose. An app or an email journal is always with you, can hold photos, and can show you what you wrote on this day in past years."
+  },
+  {
+    question: "Do I need journal prompts?",
+    answer: "No, but they help on days when you don't know where to start. One question is enough. Answer it in a line or two and you're done."
+  }
+]
+structured_data = [
+  article_json_ld(
+    headline: "How to Start Journaling (and Keep Going)",
+    path: how_to_start_journaling_path,
+    published: "2026-11-14",
+    modified: "2026-11-14",
+    about: ["Journaling", "Journal prompts", "Journaling for beginners"]
+  ),
+  {
+    "@type": "FAQPage",
+    mainEntity: faq_items.map do |item|
+      { "@type": "Question", name: item[:question], acceptedAnswer: { "@type": "Answer", text: item[:answer] } }
+    end
+  }
+]
+%>
+
+<% content_for :head do %>
+  <%= json_ld_script_tag structured_data %>
+<% end %>
+
+<section class="py-12 lg:py-20">
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+    <header class="text-center">
+      <p class="text-sm font-semibold tracking-wide text-accent uppercase">Guide · November 2026</p>
+      <h1 class="mt-4 font-serif text-4xl sm:text-5xl tracking-tight">
+        How to start journaling, and keep going
+      </h1>
+      <p class="mt-5 text-lg leading-relaxed text-muted">
+        A lot of journals are abandoned within a few weeks, and it is rarely for lack of things to say. The plan was
+        too big. Here is a smaller one, and <a href="#journal-prompts" class="text-accent hover:text-primary underline"><%= prompt_count %> journal prompts</a>
+        for the days you don't know what to write.
+      </p>
+    </header>
+
+    <nav class="mt-10 card p-5 text-sm" aria-label="On this page">
+      <p class="font-semibold text-primary">On this page</p>
+      <ul class="mt-3 grid sm:grid-cols-2 gap-x-6 gap-y-2 text-muted">
+        <li><a href="#start-small" class="underline hover:text-primary">Start smaller than you think</a></li>
+        <li><a href="#pick-a-time" class="underline hover:text-primary">Pick one time of day</a></li>
+        <li><a href="#first-week" class="underline hover:text-primary">A first week, one line a day</a></li>
+        <li><a href="#nothing-happened" class="underline hover:text-primary">What to write when nothing happened</a></li>
+        <li><a href="#missed-a-day" class="underline hover:text-primary">If you miss a day</a></li>
+        <li><a href="#paper-or-app" class="underline hover:text-primary">Paper, an app or email</a></li>
+        <li><a href="#journal-prompts" class="underline hover:text-primary"><%= prompt_count %> journal prompts</a></li>
+        <li><a href="#faq" class="underline hover:text-primary">Common questions</a></li>
+      </ul>
+    </nav>
+
+    <section class="mt-14" id="start-small">
+      <h2 class="font-serif text-3xl text-primary">Start smaller than you think</h2>
+      <p class="mt-4 text-muted leading-relaxed">
+        The usual way to start a journal is to buy a nice notebook and promise yourself a page a day. A page is a
+        lot. On a tired Tuesday it feels like homework, so you skip it, and a skipped day makes the next one easier
+        to skip.
+      </p>
+      <p class="mt-4 text-muted leading-relaxed">
+        Promise one sentence instead. One sentence is too small to put off, and it still counts: a year of single
+        sentences is 365 days you would otherwise have lost. Most days you will write more than one, because
+        starting was the hard part. But the promise stays at one.
+      </p>
+    </section>
+
+    <section class="mt-14" id="pick-a-time">
+      <h2 class="font-serif text-3xl text-primary">Pick one time of day, and tie it to something you already do</h2>
+      <p class="mt-4 text-muted leading-relaxed">
+        “I'll write when I have a minute” does not survive a busy week. Choose a moment that already happens every
+        day and attach the journal to it: after you brush your teeth, when you get into bed, with your first coffee.
+        The existing habit does the remembering for you.
+      </p>
+      <p class="mt-4 text-muted leading-relaxed">
+        Evenings work for most people, because the day is still fresh. Mornings work too. Plenty of people write
+        about yesterday over breakfast, and a night's sleep often makes it clearer what mattered.
+      </p>
+    </section>
+
+    <section class="mt-14" id="first-week">
+      <h2 class="font-serif text-3xl text-primary">A first week, one line a day</h2>
+      <p class="mt-4 text-muted leading-relaxed">
+        If you'd like to be told exactly what to do, do this. Each one takes about a minute.
+      </p>
+      <ol class="mt-6 space-y-4 text-muted">
+        <% first_week.each do |day, task| %>
+          <li class="flex gap-4">
+            <span class="font-semibold text-primary w-14 shrink-0"><%= day %></span>
+            <span><%= task %></span>
+          </li>
+        <% end %>
+      </ol>
+    </section>
+
+    <section class="mt-14" id="nothing-happened">
+      <h2 class="font-serif text-3xl text-primary">What to write when nothing happened</h2>
+      <p class="mt-4 text-muted leading-relaxed">
+        Something did. It just wasn't news. The entries people treasure years later are almost never the big days,
+        which they'd remember anyway. They are the ordinary ones: what was for dinner, what the baby couldn't say
+        yet, what the commute was like at the old job. Write down the plain facts:
+      </p>
+      <ul class="mt-4 list-disc pl-5 space-y-2 text-muted">
+        <li>Where you were, and who was with you</li>
+        <li>One thing someone said</li>
+        <li>What you ate, watched, read or listened to</li>
+        <li>What you were worried about, and what you were looking forward to</li>
+      </ul>
+      <p class="mt-4 text-muted leading-relaxed">
+        You don't need to be insightful or write well. Nobody else is going to read it.
+      </p>
+    </section>
+
+    <section class="mt-14" id="missed-a-day">
+      <h2 class="font-serif text-3xl text-primary">If you miss a day, don't catch up</h2>
+      <p class="mt-4 text-muted leading-relaxed">
+        You will miss days. The mistake is treating a gap as a debt. Sitting down to reconstruct last week is a
+        chore, and a journal that feels like a chore gets closed for good. Write today's entry and leave the gap
+        alone. Yesterday is close enough to fill in the next morning. Anything older, let it go.
+      </p>
+    </section>
+
+    <section class="mt-14" id="paper-or-app">
+      <h2 class="font-serif text-3xl text-primary">Paper, an app or email</h2>
+      <p class="mt-4 text-muted leading-relaxed">
+        The best place to keep a journal is the one you'll still be using in three months. Each has its trade-offs:
+      </p>
+      <ul class="mt-4 space-y-3 text-muted">
+        <li><strong class="text-primary">Paper.</strong> Quiet, private and pleasant to write in. Hard to search, easy to leave at home, and gone if you lose it.</li>
+        <li><strong class="text-primary">A journal app.</strong> Always in your pocket, holds photos, and can show you old entries. You have to remember to open it.</li>
+        <li><strong class="text-primary">Email.</strong> A message arrives asking about your day and you reply to it. Nothing to open and nothing to remember, which is why it tends to last.</li>
+      </ul>
+    </section>
+
+    <section class="mt-14 card p-6 bg-accent/5 border-accent/20">
+      <h2 class="font-serif text-2xl text-primary">A journal that asks you first</h2>
+      <p class="mt-3 text-muted leading-relaxed">
+        Dabble Me is built around the ideas on this page. It emails you a prompt, and your reply becomes that day's
+        entry. There is also an <a href="<%= journal_app_path %>" class="text-accent hover:text-primary underline">app for iPhone and iPad</a>
+        if you'd rather write there. Either way, it brings your old entries back to you, so the journal starts
+        paying you back for keeping it.
+      </p>
+      <div class="mt-5 flex flex-col sm:flex-row gap-3">
+        <a href="<%= new_user_registration_path %>" class="btn btn-primary">Start your journal</a>
+        <a href="<%= root_path(anchor: 'features') %>" class="btn btn-secondary">See how it works</a>
+      </div>
+    </section>
+
+    <section class="mt-16" id="journal-prompts">
+      <h2 class="font-serif text-3xl text-primary"><%= prompt_count %> journal prompts for when you're stuck</h2>
+      <p class="mt-4 text-muted leading-relaxed">
+        Pick one. Answer it in a line or two. That is today's entry done. They're grouped by what kind of day it is.
+      </p>
+
+      <% prompt_groups.each do |group| %>
+        <div class="mt-10" id="<%= group[:id] %>">
+          <h3 class="font-serif text-2xl text-primary"><%= group[:title] %></h3>
+          <p class="mt-2 text-sm text-subtle"><%= group[:note] %></p>
+          <ol class="mt-4 list-decimal pl-5 space-y-2 text-muted">
+            <% group[:prompts].each do |prompt| %>
+              <li><%= prompt %></li>
+            <% end %>
+          </ol>
+        </div>
+      <% end %>
+    </section>
+
+    <section class="mt-16">
+      <h2 class="font-serif text-3xl text-primary">What a year of journaling gives you</h2>
+      <p class="mt-4 text-muted leading-relaxed">
+        Not much, at first. The first month of a journal is the least rewarding, because you remember all of it
+        anyway. The return comes later, and it compounds. A year in, you can read what an ordinary Thursday was
+        like. Five years in, you can watch yourself change your mind, see how long a hard stretch really lasted,
+        and find the exact words your kid used at three. None of that is available to buy later. You can only get
+        it by having written it down at the time, a line a day.
+      </p>
+    </section>
+
+    <section class="mt-16" id="faq">
+      <h2 class="font-serif text-3xl text-primary">Common questions</h2>
+      <div class="mt-6 space-y-5">
+        <% faq_items.each do |item| %>
+          <article class="card p-6">
+            <h3 class="font-serif text-xl text-primary"><%= item[:question] %></h3>
+            <p class="mt-2 text-sm leading-relaxed text-muted"><%= item[:answer] %></p>
+          </article>
+        <% end %>
+      </div>
+    </section>
+
+    <section class="mt-16 card p-8 text-center">
+      <h2 class="font-serif text-3xl text-primary">Write the first line tonight</h2>
+      <p class="mt-3 text-muted">Dabble Me will ask how your day went. All you have to do is reply.</p>
+      <div class="mt-6 flex flex-col sm:flex-row justify-center gap-3">
+        <a href="<%= new_user_registration_path %>" class="btn btn-primary">Start your journal</a>
+        <a href="<%= journal_app_path %>" class="btn btn-secondary">Get the iPhone app</a>
+      </div>
+    </section>
+  </div>
+</section>

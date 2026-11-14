@@ -11,6 +11,8 @@ struct Me: Decodable, Sendable, Equatable {
     let plan: String
     let isPro: Bool
     let timezone: String?
+    /// The journal's time zone by its IANA name ("America/Denver"; nil from an older server).
+    var timezoneIdentifier: String? = nil
     /// Today's date in the user's journal time zone (YYYY-MM-DD).
     let today: String
     let entryCount: Int

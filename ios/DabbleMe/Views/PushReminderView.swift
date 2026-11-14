@@ -44,7 +44,12 @@ struct PushReminderView: View {
                     }
                 }
             } footer: {
-                Text("One notification a day. It's skipped on a day you've already written.")
+                // A morning reminder (10 or earlier) is for the day before: see NotificationRouter.
+                if isOn, (time >= 0 ? time : emailTime) <= AppModel.morningEnds {
+                    Text("One notification a day. It's skipped on a day you've already written. Set for 10 AM or earlier, tapping it opens yesterday's entry to write, or today's if yesterday is already written.")
+                } else {
+                    Text("One notification a day. It's skipped on a day you've already written.")
+                }
             }
 
             if isOn {

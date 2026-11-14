@@ -23,6 +23,9 @@
 
 //= link logos/me-avatar.png
 
+// The iOS app's screenshots, for /journal-app.
+//= link_tree ../images/ios-app
+
 //= link application.css
 //= link oauth_consent_bundle.css
 //= link application.js

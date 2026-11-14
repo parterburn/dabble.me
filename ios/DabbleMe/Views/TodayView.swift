@@ -8,7 +8,14 @@ struct TodayView: View {
     @State private var path = NavigationPath()
     @State private var composing = false
     @State private var showingProInfo = false
+    /// How many times the wordmark's been tapped to type itself out, and whether it's at it.
+    @State private var retypes = 0
+    /// Taps on the Today tab, over the app's life: the wordmark types itself out on every tenth.
+    @AppStorage("today.tabTaps") private var tabTaps = 0
+    private static let tapsBetweenTyping = 10
+    @State private var isRetyping = false
     @AppStorage(ShakeSetting.storageKey) private var shakeForRandomEntry = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// A prompt Apple Intelligence wrote from recent entries (PRO, on device), for this day only.
     /// With Apple Intelligence on (PRO), Today's prompt is written from recent entries on the device,
     /// once a day (kept for that day), instead of the general daily prompt.
@@ -20,6 +27,8 @@ struct TodayView: View {
     @State private var actions = EntryActions()
     /// How far past the bottom Today is pulled: far enough, and letting go opens a random memory.
     @State private var bottomPull: CGFloat = 0
+    /// How far Today is pulled down from its top (a pull to refresh), for the spinner.
+    @State private var topPull: CGFloat = 0
     private let randomMemoryPull: CGFloat = 90
 
     var body: some View {
@@ -30,7 +39,13 @@ struct TodayView: View {
                     // The header (the nav bar is hidden here): the wordmark, small, with how many
                     // entries the journal holds ("1,204 entries") beside it.
                     HStack(alignment: .center) {
-                        Wordmark(size: 28)
+                        // An easter egg: tapped, it types itself out again, as it does at launch.
+                        // (Only while it's at it: scrolled away and back, it's simply there.)
+                        Wordmark(size: 28, typesOut: isRetyping, showsCursor: isRetyping)
+                            .id(retypes)
+                            .contentShape(.rect)
+                            .onTapGesture { retypeWordmark() }
+                            .sensoryFeedback(.impact(weight: .light), trigger: retypes)
                         Spacer(minLength: 8)
                         // Nothing to count yet: no "0 entries".
                         if let count = model.me?.entryCount, count > 0 {
@@ -70,7 +85,27 @@ struct TodayView: View {
             // inside the sheets and entry pages below, so they don't inherit a pull-to-refresh.
             .refreshable {
                 withAnimation(.snappy(duration: 0.25)) { expanded = [] }
+                // Long enough to see it happen.
+                async let pause: Void? = try? Task.sleep(for: .milliseconds(600))
                 await model.loadToday()
+                _ = await pause
+            }
+            // The pull's own spinner: iOS keeps its one in the navigation bar, which Today hides.
+            .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                -(geometry.contentOffset.y + geometry.contentInsets.top)
+            } action: { _, overscroll in
+                topPull = max(0, overscroll)
+            }
+            .overlay(alignment: .top) {
+                if topPull > 18 {
+                    ProgressView()
+                        .controlSize(.regular)
+                        .opacity(min(1, (topPull - 18) / 30))
+                        // In the middle of the gap the pull opens above the page.
+                        .offset(y: max(4, topPull / 2 - 12))
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
+                }
             }
             .timelinePinsDates()
             .frame(maxWidth: 680)
@@ -110,8 +145,15 @@ struct TodayView: View {
             .sensoryFeedback(.impact(weight: .light), trigger: bottomPull >= randomMemoryPull) { _, armed in armed }
             // A request to write (a reminder, the widget, a quick action). One that prefers
             // yesterday waits for Today to load, then asks whether yesterday's been written.
-            .onChange(of: "\(model.composeRequest)|\(model.today?.date ?? "")", initial: true) {
+            .onChange(of: "\(model.composeRequest)|\(model.today?.date ?? "")|\(model.me != nil)", initial: true) {
                 guard model.composeRequest else { return }
+                if model.composeByMorningRule {
+                    // "New Entry" from the widget, a link or the app's icon: morning by the
+                    // journal's clock, which waits for the account (a cold start).
+                    guard model.today != nil, let me = model.me else { return }
+                    model.composeByMorningRule = false
+                    model.composePrefersYesterday = AppModel.isMorning(at: .now, in: me.timezoneIdentifier.flatMap(TimeZone.init(identifier:)))
+                }
                 guard model.composePrefersYesterday else {
                     model.composeRequest = false
                     composing = true
@@ -139,13 +181,38 @@ struct TodayView: View {
                     composing = true
                 }
             }
-            .sheet(isPresented: $composing) { ComposeView(mode: .new) }
+            // Once written, the new entry opens in full under the closing composer.
+            .sheet(isPresented: $composing) { ComposeView(mode: .new) { path.append(EntryRoute(id: $0.id)) } }
+            // Now and then (every tenth tap on the Today tab), not every time.
+            .onChange(of: model.todayTabTaps) {
+                tabTaps += 1
+                if tabTaps % Self.tapsBetweenTyping == 0 { retypeWordmark() }
+            }
+            // A link to Today: its own page, whatever entry was left open over it.
+            .onChange(of: model.todayRootRequest) { path = NavigationPath() }
+            // And one written for another day from here ("Write Yesterday's Entry").
+            .onChange(of: model.todayEntryRequest) { _, id in
+                guard let id else { return }
+                model.todayEntryRequest = nil
+                path.append(EntryRoute(id: id))
+            }
             .sheet(isPresented: $showingProInfo) { ProInfoView(feature: .writing) }
             .alert("Couldn't write a prompt", isPresented: .present($promptError)) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(promptError ?? "")
             }
+        }
+    }
+
+    /// Types the wordmark out again, its cursor blinking a little after the last letter.
+    private func retypeWordmark() {
+        guard !isRetyping, !reduceMotion else { return }
+        isRetyping = true
+        retypes += 1
+        Task {
+            try? await Task.sleep(for: .milliseconds(Wordmark.typingDuration + 1500))
+            isRetyping = false
         }
     }
 

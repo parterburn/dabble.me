@@ -46,6 +46,13 @@ RSpec.describe UserMailer do
       expect(body).to include("settings?token=")
       expect(body).not_to include("/settings/#{user.user_key}")
     end
+
+    it "points to the iOS app's beta, in both parts" do
+      email = described_class.welcome_email(user)
+
+      expect(email.html_part.body.decoded).to include(%(href="#{ApplicationHelper.ios_testflight_url}"))
+      expect(email.text_part.body.decoded).to include(ApplicationHelper.ios_testflight_url)
+    end
   end
 
   describe "#passkey_added" do

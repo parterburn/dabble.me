@@ -41,9 +41,19 @@ struct Wordmark: View {
     var size: CGFloat = 64
     var typesOut = false
     var showsCursor = false
+    /// How many letters are typed so far (nil: all of them, nothing being typed).
     @State private var typed: Int?
     @State private var cursorOn = true
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    /// One that types itself out starts with nothing written, from its first frame (not written
+    /// out in full for a moment first).
+    init(size: CGFloat = 64, typesOut: Bool = false, showsCursor: Bool = false) {
+        self.size = size
+        self.typesOut = typesOut
+        self.showsCursor = showsCursor
+        _typed = State(initialValue: typesOut ? 0 : nil)
+    }
 
     static let letters = Array("Dabble me.")
 
@@ -57,17 +67,18 @@ struct Wordmark: View {
     var body: some View {
         line(Self.letters.count)
             .hidden()
-            .overlay(alignment: .leading) { line(typed ?? Self.letters.count) }
+            .overlay(alignment: .leading) { line(reduceMotion ? Self.letters.count : typed ?? Self.letters.count) }
             .accessibilityElement()
             .accessibilityLabel("Dabble Me")
-            .onAppear { if typesOut, !reduceMotion, typed == nil { typed = 0 } }
             .task {
-                guard typesOut, !reduceMotion else { return }
+                // Once: not again each time it comes back into view (scrolled to, a tab returned to).
+                guard typesOut, !reduceMotion, typed == 0 else { return }
                 try? await Task.sleep(for: .milliseconds(200))
                 for (index, pause) in Self.pauses.enumerated() {
                     typed = index + 1
                     try? await Task.sleep(for: .milliseconds(pause))
                 }
+                typed = nil
             }
             .task(id: showsCursor) {
                 // The site's blink: on and off every 0.65 seconds.

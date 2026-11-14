@@ -1,6 +1,5 @@
 <% title 'Settings — Dabble me.' %>
 <% content_for :tailwind, true %>
-<% email_address = "#{@user.user_key}@#{ENV['SMTP_DOMAIN']}" %>
 
 <div class="tw mx-auto max-w-2xl pt-4 pb-16 sm:pt-8">
   <header class="mb-8">
@@ -13,7 +12,7 @@
       <section class="card p-6 sm:p-8">
         <p class="text-primary">
           Thanks for subscribing to
-          <span class="mx-0.5 inline-flex items-center rounded-full bg-accent px-3 py-1 align-middle text-xs font-medium text-cream-100">PRO</span>
+          <%= link_to "PRO", subscribe_path, class: "mx-0.5 inline-flex items-center rounded-full bg-accent px-3 py-1 align-middle text-xs font-medium text-cream-100 no-underline hover:opacity-90" %>
         </p>
         <% if current_user.plan_type_unlinked.present? %>
           <p class="mt-2 text-sm text-muted">
@@ -30,30 +29,6 @@
         <%= link_to "Subscribe now", subscribe_path, class: "button-primary mt-5" %>
       </section>
     <% end %>
-
-    <section class="card p-6 sm:p-8">
-      <h2 class="font-serif text-2xl text-primary">Send directly from your email</h2>
-      <p class="mt-1 text-sm text-muted">Post to your journal by sending an email to your unique address.</p>
-
-      <div class="mt-5 flex flex-col gap-3 rounded-lg border border-subtle bg-surface-elevated p-3 sm:flex-row sm:items-center">
-        <code class="min-w-0 flex-1 break-all px-1 font-mono text-sm text-primary"><%= email_address %></code>
-        <div class="flex shrink-0 items-center gap-2">
-          <%= link_to posting_address_path, class: "button-icon", rel: "tooltip", title: "Get a new address", "aria-label": "Get a new posting address" do %>
-            <span class="slab-icon slab-icon--arrows-rotate" aria-hidden="true"></span>
-          <% end %>
-          <button type="button" class="j-copy-to-clipboard button-secondary" data-content="<%= email_address %>">
-            <span class="slab-icon slab-icon--copy" aria-hidden="true"></span>
-            Copy
-          </button>
-        </div>
-      </div>
-
-      <p class="mt-4 text-sm text-muted">
-        Emailing this address creates a new Dabble Me entry in your account — keep it secret! If it gets out,
-        <%= link_to "get a new address", posting_address_path, class: "text-link" %>.
-        If the subject line is blank, the entry is saved under the date the email is sent. To save it under a different date, put that date in the subject line as YYYY-MM-DD.
-      </p>
-    </section>
 
     <%= render partial: 'user_settings', locals: { form_path: registration_path(resource_name) } %>
   </div>

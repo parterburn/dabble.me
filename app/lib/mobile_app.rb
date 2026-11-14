@@ -16,6 +16,13 @@ module MobileApp
   # delivers the callback only to the app that started the session.
   REDIRECT_SCHEME = 'me.dabble.app'
   REDIRECT_URI = "#{REDIRECT_SCHEME}:/oauth/callback"
+  # The app's ID for universal links: Apple team ID, then the bundle ID.
+  APP_ID = 'B79A4CAS56.me.dabble.ios'
+  # dabble.me pages the app opens itself when their link is tapped on a phone that has it
+  # (the Journal, Today, a new entry, a day's entry, Rewind, which is in the app's Stats). Apple's
+  # pattern syntax: ? is one character, * any number. Everything else stays on the web.
+  LINK_PATHS = %w[/entries /entries/ /today /write /entries/new /entries/19??/*/* /entries/20??/*/*
+                  /rewind /rewind/ /rewind/*].freeze
 
   module_function
 

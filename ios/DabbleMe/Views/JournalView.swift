@@ -36,8 +36,12 @@ struct JournalView: View {
     @State private var handledStatsRequest = 0
     /// The list of the Journal's views is open under the title.
     @State private var choosingMode = false
-    /// Jump to a Day, as a dropdown under the "me" mark (held).
-    @State private var jumpingToDay = false
+    /// Where the list's rows are on screen, and the one the finger is over when it's dragged down
+    /// from the title without lifting.
+    @State private var modeFrames: [JournalMode: CGRect] = [:]
+    @State private var draggedOver: JournalMode?
+    @State private var pulledOpenAt = Date.distantPast
+    /// The "me" mark was held (for Jump to a Day): the tap that ends the hold isn't one.
     @State private var heldMark = false
     /// A jump to a far month that's still being brought home (`settle`).
     @State private var jump: Task<Void, Never>?
@@ -66,27 +70,48 @@ struct JournalView: View {
                     }
                     // The title opens the Journal's views: a size up from a plain title, with a
                     // chevron in the tint, so it reads as something to open. A tap opens them, and so
-                    // does pulling down on it. (The app's own list, not a system menu: that can't be
-                    // opened by a pull, or show the view that's on in olive.)
+                    // does pulling down on it: keep the finger down and carry on to a view, and letting
+                    // go there picks it, as a system menu would. (The app's own list, not a system
+                    // menu: that can't show the view that's on in olive.)
                     ToolbarItem(placement: .principal) {
                         Button { choosingMode = true } label: {
                             HStack(spacing: 7) {
                                 Text(mode.rawValue)
                                     .font(.title3.weight(.semibold))
                                     .foregroundStyle(.primary)
+                                // Large enough to say the title opens something.
                                 appIcon("slab-angle-down")
                                     .resizable()
                                     .scaledToFit()
-                                    .frame(width: 12, height: 12)
+                                    .frame(width: 18, height: 18)
                                     .foregroundStyle(.tint)
                             }
                             .frame(minWidth: 190, minHeight: 44)
                             .contentShape(.rect)
                         }
                         .buttonStyle(.plain)
-                        .simultaneousGesture(DragGesture(minimumDistance: 12).onEnded { drag in
-                            if drag.translation.height > 16, abs(drag.translation.width) < 60 { choosingMode = true }
-                        })
+                        .simultaneousGesture(DragGesture(minimumDistance: 12, coordinateSpace: .global)
+                            .onChanged { drag in
+                                // Pulled down: the list opens under the finger, which is then over
+                                // one of its rows or none.
+                                if !choosingMode, drag.translation.height > 16, abs(drag.translation.width) < 60 {
+                                    choosingMode = true
+                                    pulledOpenAt = .now
+                                }
+                                guard choosingMode else { return }
+                                let over = modeFrames.first { $0.value.contains(drag.location) }?.key
+                                if over != draggedOver { draggedOver = over }
+                            }
+                            .onEnded { _ in
+                                // Let go over a view: that's the one. Let go elsewhere, and the list
+                                // stays open; so it does after a quick pull that's over before the
+                                // list is there to choose from (its first row lands under the finger).
+                                defer { draggedOver = nil }
+                                guard let picked = draggedOver, Date.now.timeIntervalSince(pulledOpenAt) > 0.35 else { return }
+                                choosingMode = false
+                                mode = picked
+                            })
+                        .sensoryFeedback(.selection, trigger: draggedOver) { _, over in over != nil }
                         .popover(isPresented: $choosingMode, arrowEdge: .top) { modeList }
                         .accessibilityLabel(mode.rawValue)
                         .accessibilityHint("Chooses another view of your journal")
@@ -95,7 +120,8 @@ struct JournalView: View {
                         Button { startWriting() } label: { Label("New Entry", icon: "slab-plus") }
                     }
                 }
-                .sheet(isPresented: $composing) { ComposeView(mode: .new) }
+                // Once written, the new entry opens in full under the closing composer.
+                .sheet(isPresented: $composing) { ComposeView(mode: .new) { path.append(EntryRoute(id: $0.id)) } }
                 .entryActionSheets(actions)
                 // "Open" from the shake-for-a-memory sheet, or the widget's entry. Also on first
                 // appearing: the Journal tab may not exist yet when the request comes.
@@ -154,14 +180,18 @@ struct JournalView: View {
                     .padding(.horizontal, 20)
                     .frame(height: 50)
                     .contentShape(.rect)
+                    // Under a finger dragged down from the title.
+                    .background(draggedOver == option ? Color.primary.opacity(0.08) : .clear)
                 }
                 .buttonStyle(.plain)
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { modeFrames[option] = $0 }
                 .accessibilityIdentifier("JournalMode-\(option.rawValue)")
                 .accessibilityAddTraits(isOn ? .isSelected : [])
             }
         }
         .padding(.vertical, 8)
         .frame(minWidth: 210)
+        .onDisappear { modeFrames = [:]; draggedOver = nil }
         .presentationCompactAdaptation(.popover)
     }
 
@@ -400,11 +430,11 @@ struct JournalView: View {
     }
 
     private var brandMark: some View {
-        // A tap is the way back to the list from Stats, Photos or the Playlist (on the list it
-        // does nothing); held, Jump to a Day's calendar drops down from it.
+        // A tap is the way back to the list from Stats, Photos or the Playlist, and on the list
+        // it's back to the top; held, it's Jump to a Day's calendar.
         Button {
             // Not the tap that ends a hold.
-            if heldMark { heldMark = false } else if mode != .list { mode = .list }
+            if heldMark { heldMark = false } else if mode != .list { mode = .list } else { scrollToTop += 1 }
         } label: {
             Image("Logo")
                 .resizable()
@@ -416,14 +446,13 @@ struct JournalView: View {
         .buttonStyle(.plain)
         .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in
             heldMark = true
-            jumpingToDay = true
+            model.showsDayPicker = true
         })
-        .dayPickerDropdown(isPresented: $jumpingToDay)
-        .onChange(of: jumpingToDay) { _, open in if !open { heldMark = false } }
+        .onChange(of: model.showsDayPicker) { _, open in if !open { heldMark = false } }
         .accessibilityIdentifier("JournalBrandMark")
         .accessibilityLabel("Dabble Me")
-        .accessibilityHint(mode == .list ? "Touch and hold to jump to a day" : "Shows your journal as a list")
-        .accessibilityAction(named: "Jump to a Day") { jumpingToDay = true }
+        .accessibilityHint(mode == .list ? "Scrolls to the top. Touch and hold to jump to a day." : "Shows your journal as a list")
+        .accessibilityAction(named: "Jump to a Day") { model.showsDayPicker = true }
     }
 
     private func startWriting() {

@@ -168,6 +168,10 @@ final class RichTextEditorModel {
     }
 
     func endLink() {
+        // The keyboard goes back to the entry while the address field is still there to hand it
+        // over. Left holding it as its row is taken down (another row opened in its place), the
+        // field kept the typing, and the next one opened only looked ready for it.
+        if isEditingLink, let textView, !textView.isFirstResponder, textView.window != nil { textView.becomeFirstResponder() }
         unmarkLinkedText()
         isEditingLink = false
         linkOpenedBySelection = false

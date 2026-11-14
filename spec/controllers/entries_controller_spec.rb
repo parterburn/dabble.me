@@ -189,6 +189,44 @@ RSpec.describe EntriesController, type: :controller do
       expect(response.status).to eq 200
       expect(response.body).to have_content('NEW ENTRY')
     end
+
+    context 'in the morning (up to 10 AM in the journal\'s time zone)' do
+      include ActiveSupport::Testing::TimeHelpers
+
+      let(:zone) { Time.find_zone(user.send_timezone) }
+      let(:date_field) { Nokogiri::HTML(response.body).at_css('input[name="entry[date]"]')['value'] }
+
+      before { sign_in user }
+
+      it 'dates the new entry yesterday when yesterday has no entry' do
+        travel_to zone.local(2026, 6, 20, 8, 30) do
+          get :new
+          expect(date_field).to eq 'June 19, 2026'
+        end
+      end
+
+      it 'dates it today when yesterday is written' do
+        create(:entry, user: user, date: Date.new(2026, 6, 19).to_s)
+        travel_to zone.local(2026, 6, 20, 8, 30) do
+          get :new
+          expect(date_field).to eq 'June 20, 2026'
+        end
+      end
+
+      it 'dates it today after 10 AM' do
+        travel_to zone.local(2026, 6, 20, 10, 1) do
+          get :new
+          expect(date_field).to eq 'June 20, 2026'
+        end
+      end
+
+      it 'keeps a day asked for by name' do
+        travel_to zone.local(2026, 6, 20, 8, 30) do
+          get :new, params: { day: '2026-06-01' }
+          expect(date_field).to eq 'June 1, 2026'
+        end
+      end
+    end
   end
 
   describe 'create' do
@@ -370,6 +408,14 @@ RSpec.describe EntriesController, type: :controller do
     # A PRO account with no entries of its own yet.
     let(:pro) { FactoryBot.create(:user, plan: 'PRO Monthly PayHere') }
     let(:today) { Time.now.in_time_zone(pro.send_timezone).to_date }
+
+    it "points someone with no entries yet (the first page after signing up) to the iOS app's beta" do
+      sign_in pro
+      get :today
+
+      expect(response.body).to include('Check your email at')
+      expect(Nokogiri::HTML(response.body).at_css(%(a[href="#{ApplicationHelper.ios_testflight_url}"])).text).to eq 'Get the iOS app'
+    end
 
     it "shows today's entry labelled TODAY, without a greeting, search or the latest entry" do
       sign_in pro

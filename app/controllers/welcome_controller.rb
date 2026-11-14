@@ -48,7 +48,15 @@ class WelcomeController < ApplicationController
   end
 
   def best_journaling_apps_with_mcp
-    # Guide to vendor-supported journaling apps with MCP.
+    # Guide to the journaling apps that connect to ChatGPT and Claude, in plain language.
+  end
+
+  def journal_app
+    # The iOS app, with its screenshots.
+  end
+
+  def how_to_start_journaling
+    # A beginner's guide to keeping a journal, with journal prompts.
   end
 
   def privacy

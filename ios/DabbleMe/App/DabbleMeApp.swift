@@ -76,6 +76,13 @@ struct RootView: View {
             // From the widget: me.dabble.app:/write, :/today, :/today/edit ("Edit today"), or
             // :/entry/<id> (the entry it shows).
             // (Sign-in callbacks never get here; the web sign-in session handles them.)
+            // A dabble.me link tapped elsewhere on the phone (a universal link). One the app has
+            // no page for goes back to the browser; one that arrives signed out, or before the
+            // journal has loaded, is kept and followed after.
+            if url.scheme == "https" {
+                if let link = AppLink(url) { model.open(link) } else { UIApplication.shared.open(url) }
+                return
+            }
             guard model.isSignedIn, url.scheme == "me.dabble.app" else { return }
             #if DEBUG
             // UI tests can't shake the simulator: me.dabble.app:/shake does the same.
@@ -98,7 +105,10 @@ struct RootView: View {
         }
         // A Home Screen quick action that launched the app waits until it has loaded.
         .onChange(of: model.hasLoaded, initial: true) { _, loaded in
-            if loaded { QuickActionRouter.shared.performPending() }
+            if loaded {
+                QuickActionRouter.shared.performPending()
+                model.openPendingLink()
+            }
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
@@ -157,6 +167,7 @@ struct MainTabs: View {
             set: { tab in
                 if tab == .search, model.selectedTab == .search { model.searchFocusRequest += 1 }
                 if tab == .journal, model.selectedTab == .journal { model.journalTopRequest += 1 }
+                if tab == .today { model.todayTabTaps += 1 }
                 model.selectedTab = tab
             }
         )
@@ -175,10 +186,18 @@ struct MainTabs: View {
             }
         }
         .sheet(isPresented: $model.showsRandomEntry) { RandomEntrySheet() }
-        // One sheet at a time: a day without an entry picked from the day sheet's calendar opens
-        // the composer once that sheet has closed.
-        .sheet(item: $model.statsDay, onDismiss: { model.finishDayPicker() }) { DayEntriesSheet(day: $0.day).id($0.id) }
-        .sheet(item: $model.composingDay) { ComposeView(mode: .new, day: $0.day) }
+        // Once written, the entry opens in full: on Today if that's where it was started,
+        // otherwise in the Journal.
+        .sheet(item: $model.composingDay) {
+            ComposeView(mode: .new, day: $0.day) { entry in
+                if model.selectedTab == .today {
+                    model.todayEntryRequest = entry.id
+                } else {
+                    model.selectedTab = .journal
+                    model.openEntryRequest = entry.id
+                }
+            }
+        }
         // A day picked there: its sheet, or the composer, once the calendar has closed.
         .sheet(isPresented: $model.showsDayPicker, onDismiss: { model.finishDayPicker() }) { DayPickerSheet() }
         .onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in

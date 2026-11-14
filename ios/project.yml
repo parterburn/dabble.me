@@ -9,8 +9,8 @@ options:
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    MARKETING_VERSION: "1.1"
-    CURRENT_PROJECT_VERSION: "64"
+    MARKETING_VERSION: "1.1.2"
+    CURRENT_PROJECT_VERSION: "67"
     # Dabble Dev LLC. Change if you sign with a different Apple Developer team.
     DEVELOPMENT_TEAM: B79A4CAS56
     CODE_SIGN_STYLE: Automatic

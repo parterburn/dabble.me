@@ -91,10 +91,12 @@ struct PaneLink<Destination: View, Label: View>: View {
 
 extension View {
     /// The Slab left arrow for a pushed page's Back, in place of the system chevron.
-    func slabBackButton() -> some View { modifier(SlabBackButton()) }
+    /// `onHold`: what touching and holding the arrow does (an entry's: Jump to a Day).
+    func slabBackButton(onHold: (() -> Void)? = nil) -> some View { modifier(SlabBackButton(onHold: onHold)) }
 }
 
 private struct SlabBackButton: ViewModifier {
+    var onHold: (() -> Void)?
     @Environment(\.dismiss) private var dismiss
 
     func body(content: Content) -> some View {
@@ -102,16 +104,34 @@ private struct SlabBackButton: ViewModifier {
             .navigationBarBackButtonHidden(true)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button { dismiss() } label: {
-                        appIcon("slab-angle-left")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 18, height: 18)
+                    if let onHold {
+                        // Not a Button: in the toolbar that becomes a UIKit bar button, which
+                        // never sees a long press. This keeps its own gestures (a hold isn't a tap).
+                        arrow
+                            .frame(width: 44, height: 44)
+                            .contentShape(.rect)
+                            .onTapGesture { dismiss() }
+                            .onLongPressGesture(minimumDuration: 0.45, perform: onHold)
+                            .accessibilityElement()
+                            .accessibilityLabel("Back")
+                            .accessibilityAddTraits(.isButton)
+                            .accessibilityAction { dismiss() }
+                            .accessibilityAction(named: "Jump to a Day", onHold)
+                    } else {
+                        Button { dismiss() } label: { arrow }
+                            .tint(.primary)
+                            .accessibilityLabel("Back")
                     }
-                    .tint(.primary)
-                    .accessibilityLabel("Back")
                 }
             }
+    }
+
+    private var arrow: some View {
+        appIcon("slab-angle-left")
+            .resizable()
+            .scaledToFit()
+            .frame(width: 18, height: 18)
+            .foregroundStyle(.primary)
     }
 }
 
@@ -128,54 +148,22 @@ extension UINavigationController: @retroactive UIGestureRecognizerDelegate {
     }
 }
 
-/// The top of a sheet: its title centered between a round button for the sheet's own action (when
-/// it has one) at the left and the X at the right.
-struct SheetHeader<Leading: View>: View {
+/// The top of a sheet: its icon and title at the left (as a label, not a button) and the X at
+/// the right.
+struct SheetHeader: View {
     let title: String
-    @ViewBuilder var leading: Leading
+    let icon: String
 
     var body: some View {
-        ZStack {
-            Text(title)
+        HStack {
+            Label(title, icon: icon)
                 .font(.headline)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
-                .padding(.horizontal, 52) // clear of the buttons either side
                 .accessibilityAddTraits(.isHeader)
-            HStack {
-                leading
-                Spacer()
-                SheetCloseButton()
-            }
+            Spacer()
+            SheetCloseButton()
         }
-    }
-}
-
-extension SheetHeader where Leading == EmptyView {
-    init(title: String) {
-        self.init(title: title) { EmptyView() }
-    }
-}
-
-/// A sheet header's round icon button (the X's twin).
-struct SheetIconButton: View {
-    let icon: String
-    let label: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            appIcon(icon)
-                .resizable()
-                .scaledToFit()
-                .frame(width: 18, height: 18)
-                .foregroundStyle(.primary)
-                .frame(width: 44, height: 44)
-                .background(Color.primary.opacity(0.08), in: .circle)
-                .contentShape(.circle)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(label)
     }
 }
 
