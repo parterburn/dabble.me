@@ -206,6 +206,22 @@
   line-height: inherit;
   color: inherit;
 }
+/*
+ * Select boxes: the browser's own arrow sits hard against the right edge whatever
+ * the padding, so it's replaced with one that has room (the chevron the icons
+ * use, in olive). In the utilities' layer and important, as they are, so its
+ * padding wins over field-input's by being the more specific rule.
+ */
+@layer utilities {
+  .tw select:not([multiple]) {
+    appearance: none !important;
+    padding-right: 2.75rem !important;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%235c5d4b' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6l4 4 4-4'/%3E%3C/svg%3E") !important;
+    background-repeat: no-repeat !important;
+    background-position: right 0.875rem center !important;
+    background-size: 1rem 1rem !important;
+  }
+}
 .tw :where(ul, ol) {
   padding: 0;
   list-style: none;
