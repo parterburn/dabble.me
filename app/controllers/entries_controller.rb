@@ -129,7 +129,7 @@ class EntriesController < ApplicationController
   end
 
   def new
-    @entry = Entry.new
+    @entry = Entry.new(date: morning_entry_date)
   end
 
   def calendar
@@ -337,6 +337,21 @@ class EntriesController < ApplicationController
   end
 
   private
+
+  # Up to 10 AM (the journal's time zone), a new entry is likely about the day before: it's
+  # dated yesterday when yesterday has no entry yet. A day asked for by name (?day=) is used
+  # as is, and nil leaves the form on today. The iOS app's "New Entry" does the same.
+  MORNING_ENDS = 10.hours
+
+  def morning_entry_date
+    return if params[:day].present?
+
+    now = Time.current.in_time_zone(current_user.send_timezone.presence || "UTC")
+    return if now.seconds_since_midnight > MORNING_ENDS
+
+    yesterday = now.to_date - 1
+    yesterday unless current_user.existing_entry(yesterday.to_s)
+  end
 
   def entry_params
     # NOTE: `:image` is intentionally NOT permitted here. Entry#image is a
