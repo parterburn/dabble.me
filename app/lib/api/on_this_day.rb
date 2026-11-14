@@ -16,5 +16,13 @@ module Api
       scope = day_ranges.map { |range| user.entries.where(date: range) }.reduce(:or)
       scope ? scope.to_a : []
     end
+
+    # An entry's calendar day in the journal's other years, earlier and later, newest first.
+    def other_years(entry)
+      entry.user.entries
+           .where("DATE_PART('month', date) = ? AND DATE_PART('day', date) = ?", entry.date.month, entry.date.day)
+           .where.not(id: entry.id)
+           .reorder(date: :desc)
+    end
   end
 end

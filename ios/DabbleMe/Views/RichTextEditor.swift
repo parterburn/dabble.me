@@ -53,6 +53,10 @@ final class RichTextEditorModel {
         return RichText.blocks(from: textView.attributedText)
     }
 
+    func unfocus() {
+        textView?.resignFirstResponder()
+    }
+
     func focus() {
         textView?.becomeFirstResponder()
     }

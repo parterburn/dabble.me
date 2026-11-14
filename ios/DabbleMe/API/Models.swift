@@ -169,6 +169,14 @@ struct EntryDetail: Decodable, Sendable, Identifiable, Hashable {
     }
 }
 
+/// GET /api/v1/entries/:id/same_day: the entry's calendar day in other years, newest first.
+/// A free account gets only how many there are (`available` false, no entries).
+struct SameDayEntries: Decodable, Sendable {
+    let available: Bool
+    let count: Int
+    let entries: [EntrySummary]
+}
+
 struct DatedHashtag: Decodable, Sendable, Hashable, Identifiable {
     let tag: String
     let date: String
@@ -294,6 +302,19 @@ struct JournalDay: Hashable, Sendable, Comparable {
         case 1: return "Yesterday"
         case ..<60: return "\(days) days ago"
         default: return Self.span(days: days).joined(separator: " and ") + " ago"
+        }
+    }
+
+    /// What an empty new entry asks about this day: "How has today been?", "How was yesterday?",
+    /// or the day by name ("How was Tuesday, November 3?", with its year when it isn't this one).
+    func writingQuestion(today: JournalDay) -> String {
+        switch relative(to: today) {
+        case "Today": return "How has today been?"
+        case "Yesterday": return "How was yesterday?"
+        default:
+            let named = year == today.year ? formatted(.dateTime.weekday(.wide).month(.wide).day())
+                                           : formatted(.dateTime.weekday(.wide).month(.wide).day().year())
+            return "How was \(named)?"
         }
     }
 

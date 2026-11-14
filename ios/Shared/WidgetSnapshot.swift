@@ -115,7 +115,7 @@ enum WidgetContent: String, CaseIterable, Identifiable, Sendable {
 
         var title: String {
             switch self {
-            case .prompt: "Today's Prompt"
+            case .prompt: "A Prompt for You"
             case .rewind: "Rewind"
             }
         }

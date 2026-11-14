@@ -35,7 +35,7 @@ struct TodayWidgetContent: View {
         switch family {
         case .accessoryCircular: circular
         case .accessoryRectangular: rectangular
-        case .accessoryInline: Text(entry.wroteToday ? "✓ \(inlineDate)" : "Write today · \(inlineDate)")
+        case .accessoryInline: Text(entry.wroteToday ? "✓ \(inlineDate)" : "New entry · \(inlineDate)")
         case .systemMedium: medium
         default: small
         }
@@ -86,7 +86,7 @@ VStack(spacing: 0) {
             WidgetLabel("Edit today", icon: "widget-check")
                 .foregroundStyle(Color.sage)
         } else {
-            WidgetLabel("Write today", icon: "widget-write")
+            WidgetLabel("New entry", icon: "widget-write")
                 .foregroundStyle(Color.sage)
         }
     }
@@ -174,7 +174,7 @@ VStack(spacing: 0) {
                     Text(note)
                         .font(.system(.subheadline, design: .serif))
                 } else if !entry.wroteToday, let prompt = entry.prompt {
-                    Text("Today's prompt")
+                    Text("A prompt for you")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(Color.widgetLabel)
                     Text(prompt)
@@ -207,7 +207,7 @@ VStack(spacing: 0) {
                 .font(.headline)
                 .widgetAccentable()
             Text(entry.date.formatted(.dateTime.weekday(.wide).day()))
-            Text(entry.wroteToday ? "Edit today" : "Tap to write today")
+            Text(entry.wroteToday ? "Edit today" : "New entry")
                 .foregroundStyle(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)

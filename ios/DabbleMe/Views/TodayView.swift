@@ -108,10 +108,25 @@ struct TodayView: View {
                 }
             }
             .sensoryFeedback(.impact(weight: .light), trigger: bottomPull >= randomMemoryPull) { _, armed in armed }
-            .onChange(of: model.composeRequest, initial: true) { _, requested in
-                guard requested else { return }
+            // A request to write (a reminder, the widget, a quick action). One that prefers
+            // yesterday waits for Today to load, then asks whether yesterday's been written.
+            .onChange(of: "\(model.composeRequest)|\(model.today?.date ?? "")", initial: true) {
+                guard model.composeRequest else { return }
+                guard model.composePrefersYesterday else {
+                    model.composeRequest = false
+                    composing = true
+                    return
+                }
+                guard model.today != nil else { return }
                 model.composeRequest = false
-                composing = true
+                model.composePrefersYesterday = false
+                Task {
+                    if model.me?.canWrite != false, let yesterday = model.yesterday, await model.yesterdayIsUnwritten() {
+                        model.composingDay = StatsDay(day: yesterday)
+                    } else {
+                        composing = true
+                    }
+                }
             }
             // From the widget's "Edit today": today's entry, open for editing, once Today has
             // loaded it (the app may be starting up). Nothing written after all: write it.
@@ -202,15 +217,7 @@ struct TodayView: View {
                         .font(.callout)
                         .foregroundStyle(.secondary)
                 } else {
-                    Button {
-                        composing = true
-                    } label: {
-                        Text("Write Today's Entry")
-                            .fontWeight(.medium) // the main call to action
-                            .frame(maxWidth: .infinity, minHeight: 30)
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .controlSize(.large)
+                    writeButtons(today)
                 }
             }
             .padding(20)
@@ -223,6 +230,49 @@ struct TodayView: View {
                 await writePrompt(for: today, quietly: true)
             }
         }
+    }
+
+    /// The main call to action, and under it, while yesterday has no entry, a quieter way to
+    /// write that one instead (for people who write about a day the morning after).
+    @ViewBuilder
+    private func writeButtons(_ today: TodaySummary) -> some View {
+        let yesterday = model.yesterday
+        VStack(spacing: 10) {
+            Button {
+                composing = true
+            } label: {
+                Text("Write Today's Entry")
+                    .fontWeight(.medium) // the main call to action
+                    .frame(maxWidth: .infinity, minHeight: 30)
+            }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            if let yesterday, isUnwritten(yesterday) {
+                Button {
+                    model.composingDay = StatsDay(day: yesterday)
+                } label: {
+                    Text("Write Yesterday's Entry")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.tint)
+                        .frame(maxWidth: .infinity, minHeight: 28)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .padding(.bottom, -6) // the card's own padding is enough under a line of text
+            }
+        }
+        // Yesterday's month, if the Journal hasn't loaded it (it loads its newest by itself).
+        .task(id: "\(yesterday?.monthKey ?? "")|\(model.hasLoaded)") {
+            if let yesterday, model.hasLoaded { await model.loadMonth(yesterday.monthKey) }
+        }
+    }
+
+    /// Nothing written on that day, as far as the Journal's months say: false until they've loaded.
+    private func isUnwritten(_ day: JournalDay) -> Bool {
+        guard model.hasLoaded else { return false }
+        guard model.months.contains(where: { $0.key == day.monthKey }) else { return true }
+        guard let entries = model.monthEntries[day.monthKey] else { return false }
+        return !entries.contains { $0.date == day.iso }
     }
 
     /// `quietly`: the automatic one when Today opens; if it fails, the general prompt stays.

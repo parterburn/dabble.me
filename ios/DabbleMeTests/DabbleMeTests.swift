@@ -179,6 +179,18 @@ struct WidgetPhotoTests {
     }
 }
 
+struct WritingQuestionTests {
+    /// The composer's placeholder: today, yesterday, or the day by name (its year when not this one).
+    @Test func asksAboutTheDayBeingWritten() throws {
+        let today = try #require(JournalDay("2026-11-14"))
+        func question(_ iso: String) throws -> String { try #require(JournalDay(iso)).writingQuestion(today: today) }
+        #expect(try question("2026-11-14") == "How has today been?")
+        #expect(try question("2026-11-13") == "How was yesterday?")
+        #expect(try question("2026-11-03") == "How was Tuesday, November 3?")
+        #expect(try question("2025-11-03") == "How was Monday, November 3, 2025?")
+    }
+}
+
 struct ShareCardTests {
     /// The same wording and rounding as the daily email's "Rewind 3 months and 1 week".
     @Test func relativeDatesAreDaysUnderSixtyThenTwoUnits() throws {

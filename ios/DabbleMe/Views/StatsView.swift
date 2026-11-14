@@ -738,20 +738,36 @@ struct DayEntriesSheet: View {
     /// The day of the entry stepped to with the arrows beside Open (nil: the day it opened on).
     @State private var steppedTo: JournalDay?
     @State private var isStepping = false
+    @State private var choosingDay = false
     @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 17
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
     @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            // The calendar picks another day: this closes and it opens, on this day's month.
+            // The calendar drops down from its button, on this day's month, to pick another day:
+            // a written one takes this sheet's place, and one without an entry opens the composer
+            // once this has closed.
             SheetHeader(title: "Jump to a Day") {
                 SheetIconButton(icon: "slab-calendar", label: "Jump to a Day") {
                     model.dayPickerOpensOn = steppedTo ?? day
-                    model.reopensDayPicker = true
-                    dismiss()
+                    choosingDay = true
                 }
                 .accessibilityIdentifier("DayDrawerCalendar")
+                .popover(isPresented: $choosingDay) {
+                    DayPickerCalendar { choosingDay = false }
+                        .calendarDropdownSize()
+                        .presentationCompactAdaptation(.popover)
+                }
+                .onChange(of: choosingDay) { _, open in
+                    guard !open else { return }
+                    guard model.writeAfterDayPicker == nil else { dismiss(); return }
+                    // The day picked, once the dropdown has gone.
+                    Task {
+                        try? await Task.sleep(for: .milliseconds(400))
+                        model.finishDayPicker()
+                    }
+                }
             }
             if let entries {
                 ScrollView {

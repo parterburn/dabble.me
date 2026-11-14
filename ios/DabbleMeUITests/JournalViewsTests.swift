@@ -39,7 +39,7 @@ final class JournalViewsTests: XCTestCase {
         item.tap()
     }
 
-    /// A tap on a held photo's preview opens its entry (in the Photos grid and in Jump to a Day).
+    /// A tap on a held photo's preview opens its entry (in the Photos grid).
     func testTappingAPreviewOpensItsEntry() throws {
         let app = launch()
         tab(app, "Journal").tap()
@@ -1143,37 +1143,34 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Photo from'")).firstMatch.waitForExistence(timeout: 10), "The photo grid")
     }
 
-    /// Jump to a Day's calendar: the Slab arrows step through the months, and a day held down
-    /// previews its entry (with Open) or offers Write Entry.
-    func testCalendarStepsMonthsAndPreviewsDays() throws {
+    /// Jump to a Day's calendar: a written day comes up in its sheet, and a day without an
+    /// entry opens the composer on it.
+    func testCalendarOpensWrittenDaysAndWritesOnEmptyOnes() throws {
         let app = launch()
         tab(app, "Search").tap()
         app.buttons["Jump to a Day"].tap()
         let now = Date.now, calendar = Calendar.current
-        XCTAssertTrue(app.buttons[now.formatted(.dateTime.month(.wide).year())].waitForExistence(timeout: 10), "It opens on this month")
+        XCTAssertTrue(app.buttons["Previous Month"].waitForExistence(timeout: 10), "The calendar opens")
+        XCTAssertFalse(app.buttons["Next Month"].isEnabled, "Nothing after this month")
         sleep(1)
         snap("calendar")
-        XCTAssertFalse(app.buttons["Next Month"].isEnabled, "Nothing after this month")
-        app.buttons["Previous Month"].tap()
-        let before = calendar.date(byAdding: .month, value: -1, to: now)!
-        XCTAssertTrue(app.buttons[before.formatted(.dateTime.month(.wide).year())].waitForExistence(timeout: 5), "The month before")
-        app.buttons["Next Month"].tap()
-        XCTAssertTrue(app.buttons[now.formatted(.dateTime.month(.wide).year())].waitForExistence(timeout: 5))
-
-        func day(_ back: Int) -> XCUIElement {
-            let date = calendar.date(byAdding: .day, value: -back, to: now)!
-            return app.buttons.matching(NSPredicate(format: "label CONTAINS %@", date.formatted(.dateTime.month(.wide).day()) + ",")).firstMatch
+        // The demo journal has yesterday's entry and none three days ago; both are in this
+        // month from the 4th on.
+        guard calendar.component(.day, from: now) > 3 else { return }
+        func day(_ back: Int) -> (label: String, cell: XCUIElement) {
+            let label = calendar.date(byAdding: .day, value: -back, to: now)!.formatted(.dateTime.month(.wide).day())
+            return (label, app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", label)).firstMatch)
         }
-        // Held: yesterday's entry, with Open.
-        if calendar.component(.day, from: now) > 1 {
-            day(1).press(forDuration: 1.2)
-            XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
-            XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to")).firstMatch.waitForExistence(timeout: 10))
-            sleep(1)
-            snap("calendar-day-held")
-            app.buttons["Open"].tap()
-            XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "· Yesterday")).firstMatch.waitForExistence(timeout: 10), "Open brings the day up")
-        }
+        day(1).cell.tap()
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "· Yesterday")).firstMatch.waitForExistence(timeout: 10), "A written day comes up")
+        app.buttons["DayDrawerCalendar"].tap()
+        let empty = day(3)
+        XCTAssertTrue(empty.cell.waitForExistence(timeout: 10), "The calendar again")
+        empty.cell.tap()
+        let date = app.buttons["Entry date"]
+        XCTAssertTrue(date.waitForExistence(timeout: 10), "A day without an entry opens the composer")
+        XCTAssertTrue((date.value as? String)?.contains(empty.label) == true, "Dated \(empty.label): \(date.value ?? "")")
+        snap("calendar-empty-day")
     }
 
     /// The Journal's title is a menu of its views: the one showing has its filled icon, and no
@@ -1201,17 +1198,21 @@ final class JournalViewsTests: XCTestCase {
         snap("journal-menu-open-photos")
         app.buttons["JournalMode-Journal"].tap()
 
-        // Held, the "me" mark goes to the journal's other end: its oldest entry.
+        // Held, the "me" mark drops Jump to a Day's calendar down; a written day comes up.
         XCTAssertTrue(app.navigationBars.buttons["Journal"].waitForExistence(timeout: 10))
         app.buttons["JournalBrandMark"].press(forDuration: 1.2)
-        sleep(2)
-        snap("journal-oldest")
-        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Moved into the new apartment")).firstMatch.waitForExistence(timeout: 10),
-                      "The oldest entry is in view")
+        XCTAssertTrue(app.buttons["Previous Month"].waitForExistence(timeout: 10), "The calendar drops down")
+        sleep(1)
+        snap("journal-mark-held")
+        guard Calendar.current.component(.day, from: .now) > 1 else { return }
+        let yesterday = Calendar.current.date(byAdding: .day, value: -1, to: .now)!.formatted(.dateTime.month(.wide).day())
+        app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", yesterday)).firstMatch.tap()
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "· Yesterday")).firstMatch.waitForExistence(timeout: 10),
+                      "The day picked comes up in its sheet")
     }
 
-    /// A long journal (1,500 entries, most of its months not loaded): holding the "me" mark
-    /// reaches the oldest entry, and the scrubber dragged to its foot does too.
+    /// A long journal (1,500 entries, most of its months not loaded): the scrubber dragged to
+    /// its foot reaches the oldest entry.
     /// TEST_RUNNER_DABBLE_BIG_TOKEN (a scratch account with 1,500 entries, numbered from the newest).
     func testLongJournalJumpsToItsEnd() throws {
         guard let big = ProcessInfo.processInfo.environment["DABBLE_BIG_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_BIG_TOKEN") }
@@ -1223,14 +1224,6 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Entry number 1. ")).firstMatch.waitForExistence(timeout: 20))
         let oldest = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Entry number 1500.")).firstMatch
 
-        app.buttons["JournalBrandMark"].press(forDuration: 1.2)
-        let reached = oldest.waitForExistence(timeout: 15)
-        snap("long-journal-held")
-        XCTAssertTrue(reached, "Holding the mark reaches the oldest entry")
-
-        // Back to the top (the Journal tab again), then the scrubber to its foot.
-        tab(app, "Journal").tap()
-        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Entry number 1. ")).firstMatch.waitForExistence(timeout: 15))
         app.swipeUp()
         let scrubber = app.otherElements["Timeline scrubber"]
         XCTAssertTrue(scrubber.waitForExistence(timeout: 5))
@@ -1243,7 +1236,7 @@ final class JournalViewsTests: XCTestCase {
 
     /// The same journal once most of its months are loaded (rows of very different heights, which
     /// the list can only guess at until it draws them): the scrubber swept down and back up it,
-    /// then the mark held, and the scrubber let go of in the middle.
+    /// then let go of in the middle.
     func testLongLoadedJournalJumpsWhereAsked() throws {
         guard let big = ProcessInfo.processInfo.environment["DABBLE_BIG_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_BIG_TOKEN") }
         let app = XCUIApplication()
@@ -1268,15 +1261,8 @@ final class JournalViewsTests: XCTestCase {
         tab(app, "Journal").tap()
         XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Entry number 1. ")).firstMatch.waitForExistence(timeout: 15))
 
-        app.buttons["JournalBrandMark"].press(forDuration: 1.2)
-        let reached = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Entry number 1500.")).firstMatch.waitForExistence(timeout: 12)
-        snap("loaded-journal-held")
-        XCTAssertTrue(reached, "Holding the mark reaches the oldest entry")
-
-        // Back up, and a quick drag that lets go in the middle: the month in the scrubber's
-        // label is the month the list shows.
-        tab(app, "Journal").tap()
-        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Entry number 1. ")).firstMatch.waitForExistence(timeout: 15))
+        // A quick drag that lets go in the middle: the month in the scrubber's label is the
+        // month the list shows.
         app.swipeUp()
         app.otherElements["Timeline scrubber"].coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
             .press(forDuration: 0.2, thenDragTo: point(0.62), withVelocity: .fast, thenHoldForDuration: 0.1)
@@ -1692,7 +1678,7 @@ final class JournalViewsTests: XCTestCase {
         jump.tap()
         // The demo's Biscuit entry is five days ago, in the month the calendar opens on.
         let date = Calendar.current.date(byAdding: .day, value: -5, to: .now)!
-        let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", date.formatted(.dateTime.month(.wide).day()))).firstMatch
+        let day = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", date.formatted(.dateTime.month(.wide).day()))).firstMatch
         XCTAssertTrue(day.waitForExistence(timeout: 10))
         day.tap()
         XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
@@ -1709,7 +1695,7 @@ final class JournalViewsTests: XCTestCase {
         // The drawer's calendar button (Search has one of the same name behind the sheet).
         app.buttons["DayDrawerCalendar"].tap()
         let earlier = Calendar.current.date(byAdding: .day, value: -12, to: .now)!
-        let earlierDay = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", earlier.formatted(.dateTime.month(.wide).day()))).firstMatch
+        let earlierDay = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", earlier.formatted(.dateTime.month(.wide).day()))).firstMatch
         XCTAssertTrue(earlierDay.waitForExistence(timeout: 10), "The calendar is on the month last looked at")
         sleep(1)
         snap("day-picker-reopened")
@@ -1728,7 +1714,7 @@ final class JournalViewsTests: XCTestCase {
         jump.tap()
         // Four days ago: "Big presentation went well… #work #gratitude".
         let date = Calendar.current.date(byAdding: .day, value: -4, to: .now)!
-        let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", date.formatted(.dateTime.month(.wide).day()))).firstMatch
+        let day = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", date.formatted(.dateTime.month(.wide).day()))).firstMatch
         XCTAssertTrue(day.waitForExistence(timeout: 10))
         day.tap()
         XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
@@ -2043,8 +2029,8 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(memory.waitForExistence(timeout: 5), "The preview shows the start of a memory")
         snap("widget-entry")
 
-        // Today's Prompt (the demo hasn't written today): the prompt, with or without previews.
-        app.staticTexts["Today's Prompt"].tap()
+        // A Prompt for You (the demo hasn't written today): the prompt, with or without previews.
+        app.staticTexts["A Prompt for You"].tap()
         XCTAssertTrue(memory.waitForNonExistence(timeout: 5))
         XCTAssertFalse(count.exists)
         snap("widget-prompt")
