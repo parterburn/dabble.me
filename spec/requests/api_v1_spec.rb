@@ -48,6 +48,12 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
     end
   end
 
+  it "names the journal's time zone as the app's clock knows it" do
+    pro_user.update!(send_timezone: "Mountain Time (US & Canada)")
+    get "/api/v1/me", headers: auth(pro_user)
+    expect(json).to include("timezone" => "Mountain Time (US & Canada)", "timezone_identifier" => "America/Denver")
+  end
+
   describe "GET /api/v1/me" do
     it "describes a free account" do
       get "/api/v1/me", headers: auth(free_user)

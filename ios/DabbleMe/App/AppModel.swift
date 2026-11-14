@@ -25,8 +25,17 @@ final class AppModel {
     /// morning it's yesterday's, if that isn't written; otherwise today's.
     func requestNewEntry() {
         selectedTab = .today
-        composePrefersYesterday = ReminderSettings.minutes(from: .now) <= Self.morningEnds
+        composePrefersYesterday = Self.isMorning(at: .now, in: me?.timezoneIdentifier.flatMap(TimeZone.init(identifier:)))
         composeRequest = true
+    }
+
+    /// Morning by the journal's clock, as the web's new-entry page judges it, so the two agree
+    /// for someone away from their journal's time zone (the device's clock until that's known).
+    static func isMorning(at date: Date, in zone: TimeZone?) -> Bool {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = zone ?? .current
+        let parts = calendar.dateComponents([.hour, .minute, .second], from: date)
+        return (parts.hour ?? 0) * 3600 + (parts.minute ?? 0) * 60 + (parts.second ?? 0) <= morningEnds * 60
     }
     /// The widget's "Edit today": Today opens today's entry for editing once it has it.
     var editTodayRequest = false
@@ -44,6 +53,11 @@ final class AppModel {
     var openEntryRequest: Int?
     /// An entry to open on Today (one just written from there for another day).
     var todayEntryRequest: Int?
+    /// Bumped to bring Today back to its own page (a link to it, with an entry left open there).
+    var todayRootRequest = 0
+    /// A dabble.me link tapped before the app could act on it (signed out, or still loading):
+    /// followed once the journal has loaded.
+    var pendingLink: AppLink?
     /// The Journal view an entry opens over, so Back lands there (the list unless set: Rewind's
     /// photos open over the Photos grid).
     var openEntryOver: JournalMode?

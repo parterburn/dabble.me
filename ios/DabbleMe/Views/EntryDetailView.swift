@@ -66,7 +66,11 @@ struct EntryDetailView: View {
                 .environment(\.timelinePinTop, SameDaySection.headerHeight + 8)
                 .navigationDestination(item: $opened) { EntryDetailView(entryID: $0.id) }
                 // Again when the entry moves to another day.
-                .task(id: "\(entry.id)|\(entry.date)") { sameDay = await model.sameDay(as: entry.id) }
+                .task(id: "\(entry.id)|\(entry.date)") {
+                    let loaded = await model.sameDay(as: entry.id)
+                    // Still this entry's (it can change while the answer's on its way).
+                    if !Task.isCancelled, self.entry?.id == entry.id { sameDay = loaded }
+                }
                 .id(entry.id) // each entry starts at its top (the title's swipe steps between them)
                 .simultaneousGesture(swipeForActions)
                 .overlay(alignment: .trailing) { swipeHint }
@@ -258,6 +262,10 @@ struct EntryDetailView: View {
         do {
             let other = try await model.entry(id: neighbour.id)
             playerHidden = false
+            // On This Day is the entry's own: the one left behind's doesn't show under this one
+            // while its own loads.
+            sameDay = nil
+            readingOnThisDay = false
             withAnimation(.easeInOut(duration: 0.2)) { entry = other }
         } catch is CancellationError {
         } catch {

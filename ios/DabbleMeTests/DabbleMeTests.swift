@@ -179,6 +179,22 @@ struct WidgetPhotoTests {
     }
 }
 
+struct MorningRuleTests {
+    /// "New Entry" before 10 AM is yesterday's if unwritten: by the journal's clock, not the phone's.
+    @MainActor @Test func morningIsJudgedInTheJournalsTimeZone() throws {
+        let denver = try #require(TimeZone(identifier: "America/Denver"))
+        let tokyo = try #require(TimeZone(identifier: "Asia/Tokyo"))
+        // 9:30 AM in Denver (16:30 UTC) is 1:30 AM the next day in Tokyo; 10:00 is still morning, 10:01 isn't.
+        let nineThirty = try #require(ISO8601DateFormatter().date(from: "2026-11-14T16:30:00Z"))
+        #expect(AppModel.isMorning(at: nineThirty, in: denver))
+        #expect(AppModel.isMorning(at: nineThirty.addingTimeInterval(30 * 60), in: denver))
+        #expect(!AppModel.isMorning(at: nineThirty.addingTimeInterval(31 * 60), in: denver))
+        // The same moments in a journal kept on Tokyo time: 1:30 AM, then 3 PM.
+        #expect(AppModel.isMorning(at: nineThirty, in: tokyo))
+        #expect(!AppModel.isMorning(at: nineThirty.addingTimeInterval(-11 * 3600), in: tokyo))
+    }
+}
+
 struct AppLinkTests {
     /// The dabble.me pages the app opens itself; anything else is left to the browser.
     @Test func readsTheLinksTheAppOpens() throws {

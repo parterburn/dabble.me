@@ -76,14 +76,14 @@ struct RootView: View {
             // From the widget: me.dabble.app:/write, :/today, :/today/edit ("Edit today"), or
             // :/entry/<id> (the entry it shows).
             // (Sign-in callbacks never get here; the web sign-in session handles them.)
-            guard model.isSignedIn else { return }
             // A dabble.me link tapped elsewhere on the phone (a universal link). One the app has
-            // no page for goes back to the browser.
+            // no page for goes back to the browser; one that arrives signed out, or before the
+            // journal has loaded, is kept and followed after.
             if url.scheme == "https" {
                 if let link = AppLink(url) { model.open(link) } else { UIApplication.shared.open(url) }
                 return
             }
-            guard url.scheme == "me.dabble.app" else { return }
+            guard model.isSignedIn, url.scheme == "me.dabble.app" else { return }
             #if DEBUG
             // UI tests can't shake the simulator: me.dabble.app:/shake does the same.
             if url.path == "/shake" {
@@ -105,7 +105,10 @@ struct RootView: View {
         }
         // A Home Screen quick action that launched the app waits until it has loaded.
         .onChange(of: model.hasLoaded, initial: true) { _, loaded in
-            if loaded { QuickActionRouter.shared.performPending() }
+            if loaded {
+                QuickActionRouter.shared.performPending()
+                model.openPendingLink()
+            }
         }
         .onChange(of: scenePhase) { _, phase in
             switch phase {

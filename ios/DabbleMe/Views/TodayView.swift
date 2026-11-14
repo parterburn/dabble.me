@@ -150,6 +150,8 @@ struct TodayView: View {
             }
             // Once written, the new entry opens in full under the closing composer.
             .sheet(isPresented: $composing) { ComposeView(mode: .new) { path.append(EntryRoute(id: $0.id)) } }
+            // A link to Today: its own page, whatever entry was left open over it.
+            .onChange(of: model.todayRootRequest) { path = NavigationPath() }
             // And one written for another day from here ("Write Yesterday's Entry").
             .onChange(of: model.todayEntryRequest) { _, id in
                 guard let id else { return }

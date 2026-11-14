@@ -32,11 +32,16 @@ extension AppModel {
     /// Goes where a dabble.me link points. A day's link opens its entry; a day without one opens
     /// the composer on it (not a day still to come).
     func open(_ link: AppLink) {
+        // Not yet (signed out, or the journal's still loading): kept, and followed once it can be.
+        guard isSignedIn, hasLoaded else { pendingLink = link; return }
         switch link {
         case .journal:
+            // The Journal itself: its list, whatever view or entry was left open there.
             selectedTab = .journal
+            journalTopRequest += 1
         case .today:
             selectedTab = .today
+            todayRootRequest += 1
         case .newEntry:
             // As the web's own page does: in the morning, yesterday's entry if it's unwritten.
             requestNewEntry()
@@ -46,12 +51,26 @@ extension AppModel {
         case .day(let day):
             selectedTab = .journal
             Task {
-                if let entry = try? await entrySummary(on: day) {
-                    openEntryRequest = entry.id
-                } else if me?.canWrite != false, day.localDate <= .now {
-                    composingDay = StatsDay(day: day)
+                // The composer only once the day is known to be empty: if the lookup fails,
+                // writing there could add to an entry nobody's looking at.
+                do {
+                    if let entry = try await entrySummary(on: day) {
+                        openEntryRequest = entry.id
+                    } else if me?.canWrite != false, day.localDate <= .now {
+                        composingDay = StatsDay(day: day)
+                    }
+                } catch is CancellationError {
+                } catch {
+                    timelineError = error.localizedDescription
                 }
             }
         }
+    }
+
+    /// Follows a link that arrived before the app was ready for it.
+    func openPendingLink() {
+        guard isSignedIn, hasLoaded, let link = pendingLink else { return }
+        pendingLink = nil
+        open(link)
     }
 }

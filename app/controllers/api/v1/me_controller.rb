@@ -13,6 +13,8 @@ module Api
           plan: user.is_pro? ? 'pro' : 'free',
           is_pro: user.is_pro?,
           timezone: user.send_timezone,
+          # The same zone by its IANA name ("America/Denver"), which the app's clock understands.
+          timezone_identifier: ActiveSupport::TimeZone[user.send_timezone.to_s]&.tzinfo&.name,
           today: Mcp::Tools::Helpers.default_entry_date_iso8601(user),
           entry_count: user.entries.count,
           can_write: true,
