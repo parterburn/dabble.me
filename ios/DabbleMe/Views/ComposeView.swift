@@ -15,6 +15,8 @@ struct ComposeView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var editor: RichTextEditorModel
     @State private var date = Date()
+    @State private var choosingDate = false
+    @State private var heldPhotoStack = false
     @State private var photoItems: [PhotosPickerItem] = []
     /// Prepared photos keyed by picker item, so re-selecting doesn't redo the work.
     @State private var prepared: [PhotosPickerItem: PreparedPhoto] = [:]
@@ -132,7 +134,8 @@ struct ComposeView: View {
                                row: openRow)
                     .overlay(alignment: .topLeading) {
                         if editor.isEmpty {
-                            Text("How was your day?")
+                            // About the day being written: today, yesterday, or another by name.
+                            Text(JournalDay(localDate: date).writingQuestion(today: model.today?.day ?? JournalDay(localDate: .now)))
                                 .font(Font(RichText.Style.journal.baseFont))
                                 .foregroundStyle(.tertiary)
                                 .padding(.top, 16)
@@ -252,10 +255,26 @@ struct ComposeView: View {
 
     /// The entry's date, which can be changed: for a new entry, and to move one being edited to
     /// another day.
+    /// It opens a calendar under it, which marks the days that already have an entry.
     private var dateTitle: some View {
-        DatePicker("Date", selection: $date, in: ...Date.now, displayedComponents: .date)
-            .labelsHidden()
-            .accessibilityLabel("Entry date")
+        Button {
+            // The keyboard down while it's open, so the whole month fits; back up after.
+            editor.unfocus()
+            choosingDate = true
+        } label: {
+            Text(date.formatted(date: .abbreviated, time: .omitted))
+                .font(.body.weight(.medium))
+                .foregroundStyle(.tint)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 6)
+                .background(.tint.opacity(0.12), in: .capsule)
+                .contentShape(.capsule)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Entry date")
+        .accessibilityValue(date.formatted(date: .complete, time: .omitted))
+        .popover(isPresented: $choosingDate) { EntryDatePopover(date: $date) }
+        .onChange(of: choosingDate) { _, open in if !open { editor.focus() } }
     }
 
     /// The entry's photos: its current one (editing) and those being added.
@@ -414,10 +433,13 @@ struct ComposeView: View {
         }
     }
 
-    /// The attached photos as a little stack; tap to show or hide the photo row.
+    /// The attached photos as a little stack; tap to show or hide the photo row. Held, it goes
+    /// straight to the library to choose more (no menu on the way).
     private var photoStack: some View {
         let thumbs = Array(photoItems.prefix(3))
         return Button {
+            // Not the tap that ends a hold.
+            if heldPhotoStack { heldPhotoStack = false; return }
             showsPhotoDrawer.toggle()
             if showsPhotoDrawer { showsHashtagBar = false; showsAskRow = false; editor.endLink() } // one row at a time
         } label: {
@@ -446,10 +468,16 @@ struct ComposeView: View {
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .simultaneousGesture(LongPressGesture(minimumDuration: 0.45).onEnded { _ in
+            heldPhotoStack = true
+            pickingPhotos = true
+        })
+        .onChange(of: pickingPhotos) { _, picking in if !picking { heldPhotoStack = false } }
         .accessibilityLabel("Photos")
         .accessibilityValue(attachedPhotoCount == 1 ? "1 photo" : "\(attachedPhotoCount) photos")
         .accessibilityAddTraits(showsPhotoDrawer ? .isSelected : [])
         .accessibilityHint(showsPhotoDrawer ? "Hides the photos" : "Shows the photos")
+        .accessibilityAction(named: "Choose Photos") { pickingPhotos = true }
     }
 
     /// Makes it obvious the app is working (photo uploads can take a while on cellular).

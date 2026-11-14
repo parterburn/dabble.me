@@ -129,7 +129,7 @@ final class FlowTests: XCTestCase {
         // The demo's Biscuit entry is five days ago, in the month the calendar opens on.
         let date = Calendar.current.date(byAdding: .day, value: -5, to: .now)!
         let label = date.formatted(.dateTime.month(.wide).day())
-        let day = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", label)).firstMatch
+        let day = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", label)).firstMatch
         XCTAssertTrue(day.waitForExistence(timeout: 10), "\(label) is in the calendar")
         day.tap()
         let text = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "Biscuit has discovered", "Biscuit has discovered")).firstMatch
@@ -264,6 +264,29 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(app.tabBars.buttons["Journal"].waitForExistence(timeout: 15))
         app.tabBars.buttons["Journal"].tap()
         XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 15))
+    }
+
+    /// The composer's date opens a calendar under it (a dot marks the days already written),
+    /// and picking a day there dates the entry and closes it.
+    func testEntryDateIsPickedFromTheCalendar() throws {
+        openJournal()
+        app.buttons["New Entry"].tap()
+        let date = app.buttons["Entry date"]
+        XCTAssertTrue(date.waitForExistence(timeout: 5))
+        date.tap()
+        // Three days ago (in the month before, early in a month).
+        let picked = Calendar.current.date(byAdding: .day, value: -3, to: .now)!
+        let label = picked.formatted(.dateTime.month(.wide).day())
+        let day = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", label)).firstMatch
+        XCTAssertTrue(app.buttons["Previous Month"].waitForExistence(timeout: 5), "The date opens the calendar")
+        if Calendar.current.component(.day, from: .now) <= 3 { app.buttons["Previous Month"].tap() }
+        XCTAssertTrue(day.waitForExistence(timeout: 10), "\(label) is in the calendar")
+        sleep(1) // the dots
+        snap("entry-date")
+        day.tap()
+        XCTAssertTrue(app.buttons["Previous Month"].waitForNonExistence(timeout: 5), "Picking a day closes the calendar")
+        XCTAssertTrue((date.value as? String)?.contains(label) == true, "The entry is dated \(label): \(date.value ?? "")")
+        snap("entry-date-picked")
     }
 
     private func snap(_ name: String) {

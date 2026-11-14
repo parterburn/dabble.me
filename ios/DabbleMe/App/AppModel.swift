@@ -15,6 +15,19 @@ final class AppModel {
     var searchRequest: String?
     /// Set when a writing reminder is tapped; Today opens the composer.
     var composeRequest = false
+    /// With `composeRequest`, from a morning reminder or the widget in the morning: yesterday's
+    /// entry instead, when it hasn't been written (people who write about a day the next morning).
+    var composePrefersYesterday = false
+    /// Up to this time of day (10:00 AM, in minutes), writing is likely about the day before.
+    static let morningEnds = 10 * 60
+
+    /// "New Entry" from outside the app (the widget, the Home Screen quick action): in the
+    /// morning it's yesterday's, if that isn't written; otherwise today's.
+    func requestNewEntry() {
+        selectedTab = .today
+        composePrefersYesterday = ReminderSettings.minutes(from: .now) <= Self.morningEnds
+        composeRequest = true
+    }
     /// The widget's "Edit today": Today opens today's entry for editing once it has it.
     var editTodayRequest = false
     /// Bumped when the Search tab is tapped while already showing, to focus the search field.
@@ -35,12 +48,11 @@ final class AppModel {
     /// The Journal view an entry opens over, so Back lands there (the list unless set: Rewind's
     /// photos open over the Photos grid).
     var openEntryOver: JournalMode?
-    /// Jump to a Day: the calendar of written days (from the Journal's scrubber, Search, or a
-    /// day's sheet). The day picked comes up in the day sheet (`statsDay`) once the calendar has
-    /// closed; `reopensDayPicker` brings the calendar back after a day's sheet closes.
+    /// Jump to a Day: the calendar, as a sheet (from the Journal's scrubber or Search) or a
+    /// dropdown (the Journal's "me" mark, a day sheet's calendar button). A written day picked
+    /// comes up in the day sheet (`statsDay`) once the calendar has closed.
     var showsDayPicker = false
     var pickedDay: JournalDay?
-    var reopensDayPicker = false
     /// The day last looked at from the calendar: it opens on that month again.
     var dayPickerOpensOn: JournalDay?
     /// A day without an entry picked to write one for (Stats' grid, the calendar): the composer
@@ -292,6 +304,32 @@ final class AppModel {
 
     // MARK: - Entries
 
+    /// The day before today (the journal's today, once it's known).
+    var yesterday: JournalDay? {
+        guard let day = today?.day, let date = Calendar.current.date(byAdding: .day, value: -1, to: day.localDate) else { return nil }
+        return JournalDay(localDate: date)
+    }
+
+    /// Asked of the server, so an entry sent by email counts. If it can't be reached: written,
+    /// as far as anyone knows (and so today's entry is the one to write).
+    func yesterdayIsUnwritten() async -> Bool {
+        guard let yesterday else { return false }
+        do { return try await entrySummary(on: yesterday) == nil } catch { return false }
+    }
+
+    /// After the Jump to a Day calendar closes: the day picked comes up in its sheet, or, for a
+    /// day without an entry, the composer opens on it.
+    func finishDayPicker() {
+        if let day = writeAfterDayPicker {
+            writeAfterDayPicker = nil
+            composingDay = StatsDay(day: day)
+        } else if let day = pickedDay {
+            pickedDay = nil
+            dayPickerOpensOn = day
+            statsDay = StatsDay(day: day)
+        }
+    }
+
     /// Every day with an entry (YYYY-MM-DD), for the Journal's jump-to-a-day calendar.
     func entryDays() async throws -> [String] {
         struct DayList: Decodable { let days: [String] }
@@ -514,6 +552,12 @@ final class AppModel {
         guard parts.count == 2 else { return nil }
         let page: EntryPage = try await api.get("api/v1/entries", query: ["year": String(parts[0]), "month": String(parts[1]), "per": "50"])
         return page.entries.first { $0.date == day.iso }
+    }
+
+    /// An entry's calendar day in other years, for On This Day under it (nil from a server
+    /// without the endpoint, or when it can't be reached: the entry just shows without it).
+    func sameDay(as entryID: Int) async -> SameDayEntries? {
+        try? await api.get("api/v1/entries/\(entryID)/same_day")
     }
 
     func stats() async throws -> JournalStats {

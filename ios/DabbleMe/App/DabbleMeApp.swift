@@ -90,7 +90,7 @@ struct RootView: View {
                 return
             }
             model.selectedTab = .today
-            if url.path == "/write" { model.composeRequest = true }
+            if url.path == "/write" { model.requestNewEntry() }
             if url.path == "/today/edit" { model.editTodayRequest = true }
         }
         .task(id: model.isSignedIn) {
@@ -175,26 +175,12 @@ struct MainTabs: View {
             }
         }
         .sheet(isPresented: $model.showsRandomEntry) { RandomEntrySheet() }
-        // One sheet at a time: the day sheet's calendar button closes it, then opens the calendar;
-        // a day picked there closes the calendar, then opens its sheet.
-        .sheet(item: $model.statsDay, onDismiss: {
-            guard model.reopensDayPicker else { return }
-            model.reopensDayPicker = false
-            model.showsDayPicker = true
-        }) { DayEntriesSheet(day: $0.day) }
+        // One sheet at a time: a day without an entry picked from the day sheet's calendar opens
+        // the composer once that sheet has closed.
+        .sheet(item: $model.statsDay, onDismiss: { model.finishDayPicker() }) { DayEntriesSheet(day: $0.day).id($0.id) }
         .sheet(item: $model.composingDay) { ComposeView(mode: .new, day: $0.day) }
-        .sheet(isPresented: $model.showsDayPicker, onDismiss: {
-            // Write Entry on a day without one: the composer, once the calendar has closed.
-            if let day = model.writeAfterDayPicker {
-                model.writeAfterDayPicker = nil
-                model.composingDay = StatsDay(day: day)
-                return
-            }
-            guard let day = model.pickedDay else { return }
-            model.pickedDay = nil
-            model.dayPickerOpensOn = day
-            model.statsDay = StatsDay(day: day)
-        }) { DayPickerSheet { model.pickedDay = $0 } }
+        // A day picked there: its sheet, or the composer, once the calendar has closed.
+        .sheet(isPresented: $model.showsDayPicker, onDismiss: { model.finishDayPicker() }) { DayPickerSheet() }
         .onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in
             // The open sheet picks another itself; otherwise show one. Not while locked, and not
             // over anything else that's up (a reflection, writing or editing, any sheet).

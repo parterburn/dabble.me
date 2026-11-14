@@ -29,6 +29,8 @@ struct EntryDetailView: View {
     @State private var song: Song?
     @State private var songPlays = 0
     @State private var playerHidden = false
+    /// The entry's calendar day in other years: On This Day, under it.
+    @State private var sameDay: SameDayEntries?
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
     @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
 
@@ -47,7 +49,16 @@ struct EntryDetailView: View {
                         .contentShape(.rect)
                         .simultaneousGesture(pinchToResize)
                         .offset(x: swipeOffset)
+                    if let sameDay, sameDay.count > 0 {
+                        SameDaySection(entry: entry, sameDay: sameDay)
+                            .padding(.horizontal)
+                            .padding(.bottom, 24)
+                            .frame(maxWidth: 680, alignment: .leading)
+                            .frame(maxWidth: .infinity)
+                    }
                 }
+                // Again when the entry moves to another day.
+                .task(id: "\(entry.id)|\(entry.date)") { sameDay = await model.sameDay(as: entry.id) }
                 .simultaneousGesture(swipeForActions)
                 .overlay(alignment: .trailing) { swipeHint }
                 .modifier(PullToReflect(action: canReflect(entry) ? { await reflect(on: entry) } : nil))
@@ -361,6 +372,62 @@ private struct EntryBody: View {
                 EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing, day: entry.day)
             }
         }
+    }
+}
+
+/// On This Day, under an entry: its calendar day in other years, earlier and later, laid out as
+/// on Today (each under how far off it is, as the Journal's row: a tap expands a long one, or
+/// opens it). A free account sees how many would be there (On This Day is PRO).
+private struct SameDaySection: View {
+    let entry: EntryDetail
+    let sameDay: SameDayEntries
+    @State private var expanded: Set<Int> = []
+    @State private var opened: EntryRoute?
+    /// The rows' swipe actions belong to lists; here an entry's actions are on its own page.
+    @State private var actions = EntryActions()
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Divider()
+                .padding(.top, 10)
+                .padding(.bottom, 28)
+            HStack(spacing: 8) {
+                // Light grey: a label's icon, as on Today.
+                appIcon("slab-backward")
+                    .foregroundStyle(.tertiary)
+                    .accessibilityHidden(true)
+                Text("On This Day")
+                    .font(.system(.title3, design: .serif, weight: .semibold))
+                    .accessibilityAddTraits(.isHeader)
+            }
+            if sameDay.available {
+                ForEach(sameDay.entries) { other in
+                    MonthHeader(title: title(for: other), isDay: true)
+                        .padding(.top, 16)
+                        .padding(.bottom, 8)
+                    TimelineEntryRow(entry: other, isExpanded: expanded.contains(other.id), actions: actions,
+                                     onExpand: { withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(other.id) } },
+                                     onOpen: { opened = EntryRoute(id: other.id) })
+                }
+            } else {
+                Text(sameDay.count == 1
+                     ? "1 entry from another year would show here with Dabble Me PRO."
+                     : "\(sameDay.count) entries from other years would show here with Dabble Me PRO.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .padding(.top, 10)
+            }
+        }
+        .navigationDestination(item: $opened) { EntryDetailView(entryID: $0.id) }
+    }
+
+    /// "1 year later • November 2025", "2 years earlier • November 2022": as seen from this entry.
+    private func title(for other: EntrySummary) -> String {
+        let month = other.day?.monthTitle ?? other.date
+        let gap = (Int(other.date.prefix(4)) ?? 0) - (Int(entry.date.prefix(4)) ?? 0)
+        guard gap != 0 else { return month }
+        let years = abs(gap) == 1 ? "1 year" : "\(abs(gap)) years"
+        return "\(years) \(gap < 0 ? "earlier" : "later") • \(month)"
     }
 }
 

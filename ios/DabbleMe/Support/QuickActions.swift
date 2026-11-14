@@ -12,8 +12,7 @@ enum QuickAction: String {
     func perform(in model: AppModel) {
         switch self {
         case .newEntry:
-            model.selectedTab = .today
-            model.composeRequest = true
+            model.requestNewEntry()
         case .journal:
             model.selectedTab = .journal
         case .search:

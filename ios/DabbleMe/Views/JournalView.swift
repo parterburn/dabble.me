@@ -36,8 +36,9 @@ struct JournalView: View {
     @State private var handledStatsRequest = 0
     /// The list of the Journal's views is open under the title.
     @State private var choosingMode = false
-    /// Bumped to scroll the timeline to its oldest entry (a long press on the "me" mark).
-    @State private var scrollToEnd = 0
+    /// Jump to a Day, as a dropdown under the "me" mark (held).
+    @State private var jumpingToDay = false
+    @State private var heldMark = false
     /// A jump to a far month that's still being brought home (`settle`).
     @State private var jump: Task<Void, Never>?
     /// Bumped to scroll the timeline to its newest entry (after the List view is back on screen).
@@ -249,11 +250,6 @@ struct JournalView: View {
                     }
                 }
             }
-            .onChange(of: scrollToEnd) {
-                guard let month = model.months.last else { return }
-                jump?.cancel()
-                jump = Task { await settle(proxy, on: month, atItsEnd: true) }
-            }
             // A finger on the list takes over from a jump that's still settling.
             .onChange(of: isDragging) { _, dragging in if dragging { jump?.cancel() } }
             .onScrollGeometryChange(for: CGFloat.self) { geometry in
@@ -280,7 +276,7 @@ struct JournalView: View {
                         // Load where the scrubber landed now, and make sure the list really is
                         // there: a far jump lands short (below).
                         jump?.cancel()
-                        jump = Task { await settle(proxy, on: month, atItsEnd: false) }
+                        jump = Task { await settle(proxy, on: month) }
                     }, onTap: {
                         model.showsDayPicker = true
                     })
@@ -304,16 +300,9 @@ struct JournalView: View {
     /// them stops short. This loads the month, then jumps again and again, each from nearer with
     /// more rows measured, until the month is on screen and stays there.
     @MainActor
-    private func settle(_ proxy: ScrollViewProxy, on month: MonthCount, atItsEnd: Bool) async {
+    private func settle(_ proxy: ScrollViewProxy, on month: MonthCount) async {
         func go() {
-            let entries = model.monthEntries[month.key]
-            if atItsEnd {
-                if let last = entries?.last {
-                    proxy.scrollTo(last.id, anchor: .bottom)
-                } else {
-                    proxy.scrollTo(PlaceholderID(month: month.key, index: max(month.count - 1, 0)), anchor: .bottom)
-                }
-            } else if let first = entries?.first {
+            if let first = model.monthEntries[month.key]?.first {
                 proxy.scrollTo(first.id, anchor: .top)
             } else {
                 proxy.scrollTo(PlaceholderID(month: month.key, index: 0), anchor: .top)
@@ -412,9 +401,10 @@ struct JournalView: View {
 
     private var brandMark: some View {
         // A tap is the way back to the list from Stats, Photos or the Playlist (on the list it
-        // does nothing); held, it's the timeline from its other end, the oldest entry.
+        // does nothing); held, Jump to a Day's calendar drops down from it.
         Button {
-            if mode != .list { mode = .list }
+            // Not the tap that ends a hold.
+            if heldMark { heldMark = false } else if mode != .list { mode = .list }
         } label: {
             Image("Logo")
                 .resizable()
@@ -424,17 +414,16 @@ struct JournalView: View {
                 .contentShape(.circle)
         }
         .buttonStyle(.plain)
-        .simultaneousGesture(LongPressGesture(minimumDuration: 0.6).onEnded { _ in
-            path = NavigationPath()
-            mode = .list
-            Task {
-                try? await Task.sleep(for: .milliseconds(80))
-                scrollToEnd += 1
-            }
+        .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in
+            heldMark = true
+            jumpingToDay = true
         })
+        .dayPickerDropdown(isPresented: $jumpingToDay)
+        .onChange(of: jumpingToDay) { _, open in if !open { heldMark = false } }
         .accessibilityIdentifier("JournalBrandMark")
         .accessibilityLabel("Dabble Me")
-        .accessibilityHint(mode == .list ? "Touch and hold for your oldest entry" : "Shows your journal as a list")
+        .accessibilityHint(mode == .list ? "Touch and hold to jump to a day" : "Shows your journal as a list")
+        .accessibilityAction(named: "Jump to a Day") { jumpingToDay = true }
     }
 
     private func startWriting() {

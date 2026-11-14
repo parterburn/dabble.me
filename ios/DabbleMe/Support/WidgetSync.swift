@@ -38,7 +38,7 @@ enum WidgetSync {
     }
 
     /// The entry whose start shows on the widget, when previews are on: for Rewind, On This Day's
-    /// first memory or else the past entry Today shows as its Rewind; for Today's Prompt, today's
+    /// first memory or else the past entry Today shows as its Rewind; for A Prompt for You, today's
     /// own entry once it's written.
     private static func shownEntry(_ today: TodaySummary, content: WidgetContent, model: AppModel) -> (title: String, text: String, id: Int, entry: EntrySummary)? {
         let title: String
