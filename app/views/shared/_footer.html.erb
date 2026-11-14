@@ -7,15 +7,13 @@
         <p class="muted float-left">
           <%= link_to "Features", root_path(s: 0, anchor: "features"), title: "Features", style: "font-size: 15px;" %>
           &nbsp;&middot;&nbsp;
+          <%= link_to "iOS App", ApplicationHelper.ios_testflight_url, title: "Dabble Me for iPhone and iPad (beta)", style: "font-size: 15px;", target: "_blank", rel: "noopener noreferrer" %>
+          &nbsp;&middot;&nbsp;
           <%= link_to "Support", support_path, title: "Support & FAQs", style: "font-size: 15px;" %>
           <% if user_signed_in? %>
             &nbsp;&middot;&nbsp;
             <%= link_to "AI Connector", mcp_server_docs_path, title: "Connect ChatGPT or Claude to your journal", style: "font-size: 15px;" %>
           <% end %>
-          &nbsp;&middot;&nbsp;
-          <%= link_to "Privacy", privacy_path, title: "Privacy Policy", style: "font-size: 15px;" %>
-          &nbsp;&middot;&nbsp;
-          <%= link_to "Terms", terms_path, title: "Terms of Service", style: "font-size: 15px;" %>
           <% if current_user && current_user.is_free? %>
             &nbsp;&middot;&nbsp;
             <%= link_to "Subscribe to Pro", subscribe_path, title: "Subscribe Now", style: "font-size: 15px;" %>
@@ -37,6 +35,10 @@
           <%= link_to 'https://paularterburn.com/', title: "Made by Paul Arterburn", style: "font-size: 15px;" do %>
             © <%= Time.now.year %> Dabble Dev LLC
           <% end %>
+          &nbsp;&middot;&nbsp;
+          <%= link_to "Privacy", privacy_path, title: "Privacy Policy", style: "font-size: 15px;" %>
+          &nbsp;&middot;&nbsp;
+          <%= link_to "Terms", terms_path, title: "Terms of Service", style: "font-size: 15px;" %>
         </p>
       </div>
     </div>

@@ -21,13 +21,18 @@ describe 'Pages' do
     expect(page).to have_title 'Support and FAQs — Dabble me.'
   end
 
-  it 'explains mobile journaling through MCP AI connectors' do
+  it 'points to the iOS beta and to connecting Claude or ChatGPT, in plain words' do
     visit support_path
 
     expect(page).to have_content 'Is there a mobile app?'
-    expect(page).to have_content 'connect Dabble Me to ChatGPT, Claude, or another MCP-compatible AI app'
-    expect(page).to have_content 'use voice prompts where the AI app supports them'
-    expect(page).to have_link('connect Dabble Me to ChatGPT, Claude, or another MCP-compatible AI app', href: mcp_server_docs_path)
+    expect(page).to have_link('join the beta to install it', href: ApplicationHelper.ios_testflight_url, visible: :all)
+    expect(page).to have_link('connect Dabble Me to Claude or ChatGPT', href: mcp_server_docs_path, visible: :all)
+
+    expect(page).to have_content 'How do I connect Dabble Me to Claude or ChatGPT?'
+    expect(page).to have_link('add the Dabble Me plugin for Claude', href: ApplicationHelper.claude_plugin_directory_url, visible: :all)
+    expect(page).to have_link('add the Dabble Me app for ChatGPT', href: ApplicationHelper.chatgpt_plugin_directory_url, visible: :all)
+    # The developers' words stay on the technical reference.
+    expect(page.find('#mcp', visible: :all).text(:all)).not_to match(/OAuth|Streamable|search_entries|MCP/)
   end
 
   it 'has correct title for Privacy page' do
@@ -151,21 +156,70 @@ describe 'Pages' do
     expect(description).to include('Day One alternative')
   end
 
-  it 'publishes a guide to journaling apps with MCP' do
+  it 'publishes a plain-language guide to journaling apps that work with ChatGPT and Claude' do
     visit best_journaling_apps_with_mcp_path
 
-    expect(page).to have_title 'Best Journaling Apps with MCP / Claude and ChatGPT Connectors — Dabble me.'
-    expect(page).to have_content 'Best journaling apps with MCP'
-    expect(page).to have_content 'Claude & ChatGPT Connectors'
-    expect(page).to have_content 'How this guide evaluates an AI journal with MCP'
-    expect(page).to have_content 'Prompts that show why MCP matters'
-    expect(page).to have_content 'Using voice in my favorite AI tool, help me process my day out loud'
+    expect(page).to have_title 'Best Journaling Apps for ChatGPT and Claude (2026 Guide) — Dabble me.'
+    expect(page).to have_content 'Best journaling apps for ChatGPT and Claude'
+    expect(page).to have_content 'What you can ask once your journal is connected'
+    expect(page).to have_content 'What to look for in a journal that connects to AI'
+    expect(page).to have_content 'Let me talk through my day out loud'
     expect(page).to have_content 'Dabble Me'
     expect(page).to have_content 'Day One'
     expect(page).to have_content 'Find every time I mentioned burnout'
 
     page_text = page.text
-    expect(page_text.index('Prompts that show why MCP matters')).to be < page_text.index('1. Dabble Me')
+    expect(page_text.index('What you can ask once your journal is connected')).to be < page_text.index('1. Dabble Me')
+
+    # Written for people choosing a journal: the developers' words stay on the technical page.
+    # ("MCP" is named once, in the questions, for anyone who arrives with it.)
+    main = page.find('main').text
+    %w[OAuth PKCE stdio CLI HTTPS].each { |jargon| expect(main).not_to include(jargon) }
+    expect(main.scan('MCP').size).to be <= 3
+
+    # Its questions are on the page and in its structured data.
+    expect(page).to have_content 'Is my journal still private?'
+    expect(page.html).to include('"@type":"FAQPage"')
+  end
+
+  it 'describes the iOS app with its screenshots and a way to get it' do
+    visit journal_app_path
+
+    expect(page).to have_title 'Dabble Me Journal App for iPhone and iPad — Dabble me.'
+    expect(page).to have_css 'h1', text: 'A private journal app for iPhone and iPad'
+    expect(page).to have_link('Get the iOS app (beta)', href: ApplicationHelper.ios_testflight_url)
+    # Seven screens, each with a description for people who can't see it and its size (no layout shift).
+    shots = page.all('main img')
+    expect(shots.size).to eq 7
+    expect(shots).to all(satisfy { |img| img[:alt].length > 40 && img[:width].present? && img[:height].present? })
+    # The first is the page's main picture; the rest wait until they're scrolled to.
+    expect(shots.first[:fetchpriority]).to eq 'high'
+    expect(shots.first[:loading]).to be_blank
+    expect(shots.drop(1).map { |img| img[:loading] }).to all(eq 'lazy')
+    expect(page.find('main').text.split.size).to be >= 600
+    expect(page.html).to include('"@type":"MobileApplication"', '"@type":"FAQPage"')
+  end
+
+  it 'publishes a guide to starting a journal, with the prompts its title promises' do
+    visit how_to_start_journaling_path
+
+    expect(page).to have_title 'How to Start Journaling (and Keep Going) + 70 Journal Prompts — Dabble me.'
+    expect(page).to have_css 'h1', text: 'How to start journaling, and keep going'
+    expect(page).to have_css 'h2', text: '70 journal prompts'
+    expect(page.all('#journal-prompts ol li').size).to eq 70
+    expect(page).to have_css 'h3', text: 'Gratitude journal prompts'
+    expect(page).to have_link('app for iPhone and iPad', href: journal_app_path)
+    expect(page.find('main').text.split.size).to be >= 1200
+    expect(page.html).to include('"@type":"FAQPage"')
+  end
+
+  it 'links both from the footer, with the legal pages beside the copyright' do
+    visit root_path
+
+    footer_lists = page.all('footer ul')
+    expect(footer_lists[1].all('a').map(&:text)).to eq(['AI Connector', 'AI Journaling Guide', 'iOS App', 'How to Start Journaling'])
+    expect(page).to have_css('footer p a', text: 'Privacy Policy')
+    expect(page).to have_css('footer p a', text: 'Terms of Service')
   end
 
   describe 'SEO metadata' do
@@ -228,7 +282,8 @@ describe 'Pages' do
     end
 
     it 'gives every article the properties Google recommends' do
-      [day_one_alternative_path, day_one_ai_journaling_path, best_journaling_apps_with_mcp_path, mcp_server_docs_path].each do |path|
+      [day_one_alternative_path, day_one_ai_journaling_path, best_journaling_apps_with_mcp_path, mcp_server_docs_path,
+       journal_app_path, how_to_start_journaling_path].each do |path|
         visit path
 
         article = json_ld_nodes.find { |node| %w[Article TechArticle].include?(node['@type']) }

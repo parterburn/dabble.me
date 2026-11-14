@@ -39,8 +39,20 @@
   <priority>0.8</priority>
 </url>
 <url>
+  <loc>https://dabble.me/journal-app</loc>
+  <lastmod>2026-11-14</lastmod>
+  <changefreq>monthly</changefreq>
+  <priority>0.8</priority>
+</url>
+<url>
+  <loc>https://dabble.me/how-to-start-journaling</loc>
+  <lastmod>2026-11-14</lastmod>
+  <changefreq>monthly</changefreq>
+  <priority>0.8</priority>
+</url>
+<url>
   <loc>https://dabble.me/best-journaling-apps-with-mcp</loc>
-  <lastmod>2026-07-24</lastmod>
+  <lastmod>2026-11-14</lastmod>
   <changefreq>monthly</changefreq>
   <priority>0.7</priority>
 </url>

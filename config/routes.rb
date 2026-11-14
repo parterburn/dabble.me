@@ -159,6 +159,8 @@ Rails.application.routes.draw do
   get 'dabble-me-vs-day-one-ai-journaling', to: 'welcome#day_one_ai_journaling', as: :day_one_ai_journaling
   get 'day-one-alternative',            to: 'welcome#day_one_alternative', as: :day_one_alternative
   get 'best-journaling-apps-with-mcp',  to: 'welcome#best_journaling_apps_with_mcp', as: :best_journaling_apps_with_mcp
+  get 'journal-app',                    to: 'welcome#journal_app', as: :journal_app
+  get 'how-to-start-journaling',        to: 'welcome#how_to_start_journaling', as: :how_to_start_journaling
   match 'mcp', to: 'mcp#invoke', via: %i[get post], format: :json, as: :mcp
 
   # Redirects for old routes

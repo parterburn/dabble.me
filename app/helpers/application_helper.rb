@@ -1,11 +1,11 @@
 module ApplicationHelper
-  # Anthropic docs: remote MCP / custom connectors (URL + optional OAuth in UI).
-  def self.claude_remote_mcp_connectors_url
-    "https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp"
-  end
-
   def self.claude_plugin_directory_url
     "https://claude.ai/customize/plugins/id/6b2f67b8-6341-42d1-a2f1-d63df3107efe%40anthropic-plugin-directory"
+  end
+
+  # The iOS app's public beta (TestFlight), until it's in the App Store.
+  def self.ios_testflight_url
+    "https://testflight.apple.com/join/mYj4vrFZ"
   end
 
   def self.chatgpt_plugin_directory_url
@@ -191,38 +191,32 @@ module ApplicationHelper
   def self.faqs
     main_domain = ENV.fetch(primary_domain_env_key, "")
     routes = Rails.application.routes.url_helpers
-    base = site_public_base_url
-    mcp_endpoint = mcp_server_url
-    claude_url = claude_remote_mcp_connectors_url
+    link = "text-accent hover:text-primary underline"
+    # In plain words: the endpoint, sign-in details and tool names are on the technical reference.
     mcp_connect_answer = <<~HTML.squish
-      <p class="text-muted mb-3"><span class="font-semibold">Requirements:</span> a PRO subscription. Connected apps can be reviewed and removed on
-      <a href="#{routes.security_path(anchor: 'connected-apps')}" class="text-accent hover:text-primary underline">Account security</a>.</p>
-      <p class="text-muted mb-3">In your MCP client, add a remote MCP connector using this endpoint (Streamable HTTP, OAuth when prompted):</p>
-      <p class="mb-3"><code class="text-base select-all break-all bg-olive-200 px-2 py-1 text-olive-900">#{ERB::Util.html_escape(mcp_endpoint)}</code></p>
-      <p class="text-muted mb-3">Complete the browser sign-in and approve access. For connector UI details, see
-      <a href="#{ERB::Util.html_escape(claude_url)}" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">Anthropic’s guide to remote MCP connectors</a>.</p>
-      <p class="text-muted mb-3">For Claude and ChatGPT steps and privacy notes, see the
-      <a href="#{routes.mcp_server_docs_path}" class="text-accent hover:text-primary underline">AI Connector guide</a>. For authentication details and the complete live tool reference, see the
-      <a href="#{routes.mcp_server_developer_docs_path}" class="text-accent hover:text-primary underline">technical reference</a>.</p>
-      <p class="text-muted mb-2"><span class="font-semibold">Example prompts</span> (plain language—the client calls tools for you):</p>
-      <ul class="list-disc pl-5 space-y-1.5 text-muted text-sm mb-3">
-        <li><span class="font-medium text-primary">Look back:</span> “What did I write about travel last year?” or “Show entries from March with #gratitude.”</li>
-        <li><span class="font-medium text-primary">Scan a range:</span> “List my entries from last month, newest first.”</li>
-        <li><span class="font-medium text-primary">Patterns:</span> “How often did I journal this year? What hashtags show up most?”</li>
-        <li><span class="font-medium text-primary">Log something:</span> “Add a journal note for today: …” (creates or appends that day’s entry, same rules as the web app).</li>
+      <p class="text-muted mb-3">Dabble Me works with the AI assistant you already use. Once it's connected, you can ask
+      Claude or ChatGPT about your past entries, or have it save a new one for you.</p>
+      <ul class="list-disc pl-5 space-y-1.5 text-muted mb-3">
+        <li><span class="font-medium text-primary">Claude:</span>
+        <a href="#{ERB::Util.html_escape(claude_plugin_directory_url)}" class="#{link}" target="_blank" rel="noopener noreferrer">add the Dabble Me plugin for Claude</a>.</li>
+        <li><span class="font-medium text-primary">ChatGPT:</span>
+        <a href="#{ERB::Util.html_escape(chatgpt_plugin_directory_url)}" class="#{link}" target="_blank" rel="noopener noreferrer">add the Dabble Me app for ChatGPT</a>.</li>
       </ul>
-      <p class="text-muted mb-2"><span class="font-semibold">Tools behind those requests:</span>
-      <code class="text-sm">search_entries</code> (keyword or phrase, optional dates),
-      <code class="text-sm">list_entries</code> (date range),
-      <code class="text-sm">analyze_entries</code> (counts, hashtags, volume),
-      <code class="text-sm">get_image_upload_url</code> (prepare a direct upload for local image bytes), and
-      <code class="text-sm">create_entry</code> (body text and/or one optional image via <code class="text-sm">image_url</code> when a public https URL exists, optional date).</p>
-      <p class="text-muted mb-3"><span class="font-semibold">Opening a day in the browser:</span> <code class="text-sm select-all">#{ERB::Util.html_escape(base)}/entries/YYYY/M/D</code> with <span class="font-medium">unpadded</span> month and day (example:
-      <a href="#{ERB::Util.html_escape(base)}/entries/2026/4/21" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">#{ERB::Util.html_escape(base)}/entries/2026/4/21</a>).
-      New web entries: <a href="#{ERB::Util.html_escape(base)}/write" class="text-accent hover:text-primary underline" target="_blank" rel="noopener noreferrer">#{ERB::Util.html_escape(base)}/write</a>.</p>
-      <p class="text-muted mb-3">To disconnect an app, open
-      <a href="#{routes.security_path(anchor: "connected-apps")}" class="text-accent hover:text-primary underline">Account security</a>
-      and see <span class="font-semibold">Connected apps</span>.</p>
+      <p class="text-muted mb-3">Then sign in to Dabble Me when it asks, and approve the connection. That's all there is to set up.
+      You'll need a <span class="font-semibold">PRO subscription</span>.</p>
+      <p class="text-muted mb-2"><span class="font-semibold">Things to ask</span>, in your own words:</p>
+      <ul class="list-disc pl-5 space-y-1.5 text-muted text-sm mb-3">
+        <li><span class="font-medium text-primary">Look back:</span> “What did I write about travel last year?” or “Show me March's entries with #gratitude.”</li>
+        <li><span class="font-medium text-primary">Catch up:</span> “Summarize what I wrote last month.”</li>
+        <li><span class="font-medium text-primary">See patterns:</span> “How often did I journal this year? Which hashtags come up most?”</li>
+        <li><span class="font-medium text-primary">Write:</span> “Add this to today's journal: …” (it adds to today's entry if you've already written one).</li>
+      </ul>
+      <p class="text-muted mb-3">To disconnect an assistant, open
+      <a href="#{routes.security_path(anchor: "connected-apps")}" class="#{link}">Account security</a>
+      and remove it under <span class="font-semibold">Connected apps</span>. It loses access right away.</p>
+      <p class="text-muted mb-3">More about how it works and what's shared is in the
+      <a href="#{routes.mcp_server_docs_path}" class="#{link}">AI Connector guide</a>. Using a different AI app, or building something? See the
+      <a href="#{routes.mcp_server_developer_docs_path}" class="#{link}">technical reference</a>.</p>
     HTML
 
     {
@@ -244,7 +238,7 @@ module ApplicationHelper
           },
           {
             html_id: "mcp",
-            q: "How do I connect to Dabble Me to Claude or other MCP-compatible apps?",
+            q: "How do I connect Dabble Me to Claude or ChatGPT?",
             a: mcp_connect_answer
           },
           {
@@ -279,7 +273,7 @@ module ApplicationHelper
           },
           {
             q: "Is there a mobile app?",
-            a: "<span class='font-semibold'>No — and that’s intentional.</span> There’s no standalone Dabble Me app in the App Store or Google Play. Most people write by replying to the daily email using the email app already on their phone, and the website is fully mobile-friendly for browsing or editing entries. PRO members can also <a href='#{routes.mcp_server_docs_path}' class='text-accent hover:text-primary underline'>connect Dabble Me to ChatGPT, Claude, or another MCP-compatible AI app</a>. Once connected, you can use that app on the go—and use voice prompts where the AI app supports them—to find memories, reflect on past entries, or add a new journal entry."
+            a: "<span class='font-semibold'>Yes, for iPhone and iPad, in beta.</span> Dabble Me for iOS is available now through Apple's TestFlight: <a href='#{ios_testflight_url}' class='text-accent hover:text-primary underline' target='_blank' rel='noopener noreferrer'>join the beta to install it</a>. Read your journal, write new entries, and get a daily reminder; photos, editing, search and On This Day are part of PRO.<div class='mt-2'>There's no Android app yet. On any phone you can still write by replying to the daily email from your mail app, and the website works well on a small screen. PRO members can also <a href='#{routes.mcp_server_docs_path}' class='text-accent hover:text-primary underline'>connect Dabble Me to Claude or ChatGPT</a> and journal from those apps, by voice if you like.</div>"
           },
           {
             q: "Is this really free?",

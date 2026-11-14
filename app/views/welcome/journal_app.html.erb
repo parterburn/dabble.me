@@ -1,0 +1,246 @@
+<% content_for :title, "Dabble Me Journal App for iPhone and iPad" %>
+<% content_for :social_title, "Dabble Me for iPhone and iPad: a private journal app" %>
+<% content_for :description, "A private journal app for iPhone and iPad. Write a few lines a day, add photos, and see what you wrote on this day in past years. Free to try in beta." %>
+<% content_for :keywords, "journal app,journal app for iPhone,private journal app,diary app iPhone,daily journal app,iPad journal app,photo journal app,Dabble Me iOS" %>
+
+<%
+testflight_url = ApplicationHelper.ios_testflight_url
+# What each screen is for, beside a picture of it (the App Store's screenshots, from a demo journal).
+screens = [
+  {
+    image: "ios-app/today.webp", title: "Today",
+    heading: "One question, and one place to answer it",
+    text: "Open the app to a prompt for today and a single button to write. Under it, On This Day shows what you wrote on this date in earlier years, so there is something to read even on a day you have nothing to say.",
+    alt: "The Today screen of the Dabble Me app: a writing prompt, a Write Today's Entry button, and an entry from this day a year ago with its photo"
+  },
+  {
+    image: "ios-app/write.webp", title: "Write",
+    heading: "Write a few lines, add a few photos",
+    text: "A plain page with the keyboard up. Lists, bold and links when you want them, up to eight photos from your library or camera, and #hashtags to find things by later. If yesterday is still blank, it offers to write that one too.",
+    alt: "Writing an entry in the Dabble Me app, with a bulleted list, two attached photos and the keyboard open"
+  },
+  {
+    image: "ios-app/journal.webp", title: "Journal",
+    heading: "Your whole journal, one scroll",
+    text: "Every entry in order with its photo, grouped by month. Drag the side of the screen to move through years in a second, or jump straight to a day from a calendar that marks the days you wrote.",
+    alt: "The Journal timeline in the Dabble Me app, listing entries by date under November 2026 with a photo of Yosemite"
+  },
+  {
+    image: "ios-app/entry.webp", title: "Read",
+    heading: "Read an entry the way you wrote it",
+    text: "An entry opens full screen in a reading typeface. Pinch to change the text size, swipe the date to move to the entry before or after, and scroll on to see the same date in other years.",
+    alt: "A full journal entry in the Dabble Me app about a hike in Yosemite, with a list of things to remember and a photo"
+  },
+  {
+    image: "ios-app/photos.webp", title: "Photos",
+    heading: "Every photo you've kept, in one grid",
+    text: "The Photos view is your journal as pictures. Tap one to open what you wrote that day.",
+    alt: "The Photos view in the Dabble Me app: a grid of journal photos, each labelled with its date"
+  },
+  {
+    image: "ios-app/stats.webp", title: "Stats",
+    heading: "See the habit take shape",
+    text: "How many entries, words and photos you have, the days you wrote this year, and the hashtags you use most. In winter, Rewind turns your year into a short story to tap through.",
+    alt: "The Stats view in the Dabble Me app, showing entry, photo and word counts, a summary of the year and a grid of days written"
+  },
+  {
+    image: "ios-app/search.webp", title: "Search",
+    heading: "Find the day you're thinking of",
+    text: "Search for a word, a phrase or a #hashtag and get every entry that mentions it, newest first.",
+    alt: "Search results in the Dabble Me app for the hashtag hiking, showing two matching entries"
+  }
+]
+faq_items = [
+  {
+    question: "Is the Dabble Me app free?",
+    answer: "Yes. The app is free to download, with no purchases inside it. On a free account you can read your journal, write and delete entries, set a daily reminder and use the Home Screen widget. Photos, editing, search, Stats and On This Day are part of Dabble Me PRO, which is $4 a month or $40 a year."
+  },
+  {
+    question: "Is it in the App Store?",
+    answer: "Not yet. The app is in public beta through TestFlight, Apple's own app for trying new apps. Install TestFlight from the App Store, open the invitation link, and Dabble Me installs like any other app."
+  },
+  {
+    question: "Do I have to use the app to keep a Dabble Me journal?",
+    answer: "No. Dabble Me started as a journal you keep by replying to an email, and that still works. The app, the email and the website all write to the same journal, so use whichever is closest to hand."
+  },
+  {
+    question: "Is my journal private in the app?",
+    answer: "Yes. Your journal is yours alone: there is no feed, no sharing and no followers. You can lock the app with Face ID, and the app's AI features (reflections, writing prompts and hashtag suggestions) run on your iPhone with Apple Intelligence, so your entries are not sent anywhere for them."
+  },
+  {
+    question: "Which iPhones and iPads does it work on?",
+    answer: "Any iPhone or iPad running iOS 18 or later. The Apple Intelligence features need a device and iOS version that support Apple Intelligence; everything else works without it."
+  },
+  {
+    question: "Is there an Android app?",
+    answer: "Not yet. On Android you can write by replying to the daily email, use the website, or connect your journal to ChatGPT or Claude."
+  }
+]
+structured_data = [
+  article_json_ld(
+    headline: "Dabble Me Journal App for iPhone and iPad",
+    path: journal_app_path,
+    published: "2026-11-14",
+    modified: "2026-11-14",
+    about: ["Journal app", "iPhone journal app", "Private journaling"]
+  ),
+  {
+    "@type": "MobileApplication",
+    name: "Dabble Me",
+    operatingSystem: "iOS 18 or later",
+    applicationCategory: "LifestyleApplication",
+    description: content_for(:description),
+    url: "#{structured_data_base_url}#{journal_app_path}",
+    installUrl: testflight_url,
+    offers: { "@type": "Offer", price: "0.00", priceCurrency: "USD" }
+  },
+  {
+    "@type": "FAQPage",
+    mainEntity: faq_items.map do |item|
+      { "@type": "Question", name: item[:question], acceptedAnswer: { "@type": "Answer", text: item[:answer] } }
+    end
+  }
+]
+%>
+
+<% content_for :head do %>
+  <%= json_ld_script_tag structured_data %>
+<% end %>
+
+<section class="py-12 lg:py-20">
+  <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
+    <header class="grid lg:grid-cols-2 gap-10 items-center">
+      <div class="text-center lg:text-left">
+        <p class="text-sm font-semibold tracking-wide text-accent uppercase">iPhone &amp; iPad · Public beta</p>
+        <h1 class="mt-4 font-serif text-4xl sm:text-5xl tracking-tight">
+          A private journal app for iPhone and iPad
+        </h1>
+        <p class="mt-5 text-lg leading-relaxed text-muted">
+          Dabble Me is a private timeline of your life. Write a few lines about your day, add some photos, and
+          rewind to any of it later. The app is the quickest way to do all three.
+        </p>
+        <div class="mt-8 flex flex-col sm:flex-row justify-center lg:justify-start gap-3">
+          <a href="<%= testflight_url %>" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Get the iOS app (beta)</a>
+          <a href="<%= new_user_registration_path %>" class="btn btn-secondary">Create a free account</a>
+        </div>
+        <p class="mt-4 text-sm text-subtle">Free to download. Installs through Apple's TestFlight.</p>
+      </div>
+      <%# The page's main picture: loaded first, with its size given so nothing shifts. %>
+      <div class="flex justify-center">
+        <%= image_tag screens.first[:image], alt: screens.first[:alt], width: 330, height: 718, fetchpriority: "high",
+                      class: "w-64 sm:w-72 h-auto rounded-[2rem] border border-subtle shadow-xl" %>
+      </div>
+    </header>
+
+    <section class="mt-20">
+      <h2 class="font-serif text-3xl text-primary text-center">What's in the app</h2>
+      <p class="mt-3 text-muted text-center max-w-2xl mx-auto">
+        Four tabs: Today, Journal, Search and Settings. Here is what you'll find in them.
+      </p>
+
+      <div class="mt-12 space-y-16">
+        <% screens.drop(1).each_with_index do |screen, index| %>
+          <div class="grid md:grid-cols-2 gap-8 md:gap-12 items-center">
+            <div class="flex justify-center <%= index.odd? ? 'md:order-2' : '' %>">
+              <%= image_tag screen[:image], alt: screen[:alt], width: 330, height: 718, loading: "lazy",
+                            class: "w-60 sm:w-64 h-auto rounded-[2rem] border border-subtle shadow-lg" %>
+            </div>
+            <div>
+              <p class="text-sm font-semibold tracking-wide text-accent uppercase"><%= screen[:title] %></p>
+              <h3 class="mt-2 font-serif text-2xl text-primary"><%= screen[:heading] %></h3>
+              <p class="mt-3 text-muted leading-relaxed"><%= screen[:text] %></p>
+            </div>
+          </div>
+        <% end %>
+      </div>
+    </section>
+
+    <section class="mt-20">
+      <h2 class="font-serif text-3xl text-primary">The small things that keep you writing</h2>
+      <div class="mt-6 grid sm:grid-cols-2 gap-5">
+        <div class="card p-5">
+          <h3 class="font-serif text-xl text-primary">A reminder with a memory in it</h3>
+          <p class="mt-2 text-sm leading-relaxed text-muted">One notification a day, at the time you choose, showing an entry from your past. It stays quiet on days you've already written.</p>
+        </div>
+        <div class="card p-5">
+          <h3 class="font-serif text-xl text-primary">A widget on your Home Screen</h3>
+          <p class="mt-2 text-sm leading-relaxed text-muted">Today's date and a prompt, or a look back at an old entry. One tap opens a new entry.</p>
+        </div>
+        <div class="card p-5">
+          <h3 class="font-serif text-xl text-primary">Reflections that stay on your phone</h3>
+          <p class="mt-2 text-sm leading-relaxed text-muted">Pull down on an entry for a short reflection and a question to think about, written on your device by Apple Intelligence. Nothing is sent anywhere.</p>
+        </div>
+        <div class="card p-5">
+          <h3 class="font-serif text-xl text-primary">A lock, if you want one</h3>
+          <p class="mt-2 text-sm leading-relaxed text-muted">Turn on Face ID and the app opens only for you.</p>
+        </div>
+        <div class="card p-5">
+          <h3 class="font-serif text-xl text-primary">Shake for a random memory</h3>
+          <p class="mt-2 text-sm leading-relaxed text-muted">Give your phone a shake and an entry from somewhere in your journal comes up.</p>
+        </div>
+        <div class="card p-5">
+          <h3 class="font-serif text-xl text-primary">Songs from the day</h3>
+          <p class="mt-2 text-sm leading-relaxed text-muted">Paste a Spotify link into an entry and it becomes part of the memory. The Playlist view collects them all.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="mt-20 card p-6 bg-accent/5 border-accent/20">
+      <h2 class="font-serif text-2xl text-primary">App, email or web: it's one journal</h2>
+      <p class="mt-3 text-muted leading-relaxed">
+        Dabble Me began as a journal you keep by replying to an email, and plenty of people still write that way.
+        Whatever you write in the app shows up on the web, and an email reply shows up in the app. Not sure where to
+        begin? Read <a href="<%= how_to_start_journaling_path %>" class="text-accent hover:text-primary underline">how to start journaling</a>,
+        with prompts for your first week.
+      </p>
+    </section>
+
+    <section class="mt-16">
+      <h2 class="font-serif text-3xl text-primary">Free and PRO</h2>
+      <div class="mt-6 grid sm:grid-cols-2 gap-5">
+        <div class="card p-5">
+          <h3 class="font-serif text-xl text-primary">Free</h3>
+          <ul class="mt-3 list-disc pl-5 space-y-2 text-sm text-muted">
+            <li>Read your whole journal</li>
+            <li>Write and delete entries</li>
+            <li>A daily reminder and the Home Screen widget</li>
+            <li>On-device reflections, prompts and hashtag suggestions</li>
+          </ul>
+        </div>
+        <div class="card p-5">
+          <h3 class="font-serif text-xl text-primary">PRO · $4/month or $40/year</h3>
+          <ul class="mt-3 list-disc pl-5 space-y-2 text-sm text-muted">
+            <li>Photos in your entries</li>
+            <li>Editing entries and adding links</li>
+            <li>Search, Stats and Rewind</li>
+            <li>On This Day</li>
+          </ul>
+        </div>
+      </div>
+      <p class="mt-4 text-sm text-subtle">
+        There are no purchases inside the app. <a href="<%= subscribe_path %>" class="underline hover:text-primary">See what PRO includes</a>.
+      </p>
+    </section>
+
+    <section class="mt-16" id="faq">
+      <h2 class="font-serif text-3xl text-primary">Common questions</h2>
+      <div class="mt-6 space-y-5">
+        <% faq_items.each do |item| %>
+          <article class="card p-6">
+            <h3 class="font-serif text-xl text-primary"><%= item[:question] %></h3>
+            <p class="mt-2 text-sm leading-relaxed text-muted"><%= item[:answer] %></p>
+          </article>
+        <% end %>
+      </div>
+    </section>
+
+    <section class="mt-16 card p-8 text-center">
+      <h2 class="font-serif text-3xl text-primary">Start with today</h2>
+      <p class="mt-3 text-muted">Get the app, write a few lines tonight, and let it bring them back to you next year.</p>
+      <div class="mt-6 flex flex-col sm:flex-row justify-center gap-3">
+        <a href="<%= testflight_url %>" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Get the iOS app (beta)</a>
+        <a href="<%= new_user_registration_path %>" class="btn btn-secondary">Create a free account</a>
+      </div>
+    </section>
+  </div>
+</section>

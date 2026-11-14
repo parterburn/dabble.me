@@ -409,6 +409,14 @@ RSpec.describe EntriesController, type: :controller do
     let(:pro) { FactoryBot.create(:user, plan: 'PRO Monthly PayHere') }
     let(:today) { Time.now.in_time_zone(pro.send_timezone).to_date }
 
+    it "points someone with no entries yet (the first page after signing up) to the iOS app's beta" do
+      sign_in pro
+      get :today
+
+      expect(response.body).to include('Check your email at')
+      expect(Nokogiri::HTML(response.body).at_css(%(a[href="#{ApplicationHelper.ios_testflight_url}"])).text).to eq 'Get the iOS app'
+    end
+
     it "shows today's entry labelled TODAY, without a greeting, search or the latest entry" do
       sign_in pro
       write(pro, 'Something from last week', today - 6)

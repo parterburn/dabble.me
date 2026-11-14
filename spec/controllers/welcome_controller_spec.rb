@@ -7,7 +7,7 @@ RSpec.describe WelcomeController, type: :controller do
     it 'should show the welcome page to non-logged in users' do
       get :index
       expect(response.status).to eq 200
-      expect(response.body).to have_content("A journal you might actually stick with.")
+      expect(response.body).to have_content("Your life, written down and remembered.")
     end
 
     it 'calls past entries Rewind, with the Slab backward icon and a sample heading like the real email' do

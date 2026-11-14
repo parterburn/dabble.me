@@ -1,62 +1,93 @@
-<% content_for :title, "Best Journaling Apps with MCP / Claude and ChatGPT Connectors" %>
-<% content_for :social_title, "Best journaling apps with MCP / Claude and ChatGPT Connectors" %>
-<% content_for :description, "A practical guide to journaling apps with vendor-supported MCP integrations for Claude and ChatGPT, including Dabble Me and Day One, setup differences, security, and AI reflection prompts." %>
-<% content_for :keywords, "best journaling apps with MCP,Claude ChatGPT connectors,AI journal with MCP,personal journal MCP server,journal app for ChatGPT,Claude journal integration,journal app for AI reflection" %>
+<% content_for :title, "Best Journaling Apps for ChatGPT and Claude (2026 Guide)" %>
+<% content_for :social_title, "Best journaling apps that work with ChatGPT and Claude" %>
+<% content_for :description, "Which journaling apps let ChatGPT and Claude look through your past entries and save new ones? A plain-English guide to Dabble Me and Day One, what you can ask, and how to keep your journal private." %>
+<% content_for :keywords, "journaling app for ChatGPT,journal app that works with Claude,AI journaling app,best journaling apps for AI,connect journal to ChatGPT,ChatGPT journal,Claude journal,journaling apps with MCP" %>
 
-<% content_for :head do %>
-  <%= json_ld_script_tag article_json_ld(
-    headline: "Best Journaling Apps with MCP / Claude and ChatGPT Connectors",
+<%
+# Plain language throughout: the page is for people choosing a journal, not for developers
+# (who have /mcp-server/developers). "MCP" appears once, in the questions, for anyone who
+# arrives with that word.
+faq_items = [
+  {
+    question: "What does it mean to connect a journal to ChatGPT or Claude?",
+    answer: "It lets the AI assistant look things up in your journal and save new entries when you ask, so you don't have to copy and paste. You approve the connection first, and you can remove it whenever you like."
+  },
+  {
+    question: "Is my journal still private?",
+    answer: "Your journal stays in your journaling app. When you ask a question, the entries needed to answer it are sent to the company behind the assistant (OpenAI for ChatGPT, Anthropic for Claude) so it can reply. It's worth checking that company's settings for how it keeps your chats."
+  },
+  {
+    question: "Do I need to be technical to set it up?",
+    answer: "Not with Dabble Me: you add it from ChatGPT's or Claude's own app directory and sign in. Day One's connection takes some setup on a Mac."
+  },
+  {
+    question: "Does it cost extra?",
+    answer: "Connecting an AI assistant is part of Dabble Me PRO. ChatGPT and Claude each decide which of their own plans can use connected apps."
+  },
+  {
+    question: "Can I journal by talking?",
+    answer: "Yes. Talk through your day with ChatGPT or Claude in voice mode, then ask it to save what you said as today's journal entry."
+  },
+  {
+    question: "Is this the same thing as MCP?",
+    answer: "Yes. MCP (Model Context Protocol) is the technical name for the standard that lets AI assistants connect to other apps. ChatGPT and Claude usually call these connectors, apps or plugins."
+  }
+]
+structured_data = [
+  article_json_ld(
+    headline: "Best Journaling Apps for ChatGPT and Claude",
     path: "/best-journaling-apps-with-mcp",
     published: "2026-07-23",
-    modified: "2026-07-24"
-  ) %>
+    modified: "2026-11-14",
+    about: ["AI journaling", "Journaling apps for ChatGPT", "Journaling apps for Claude"]
+  ),
+  {
+    "@type": "FAQPage",
+    mainEntity: faq_items.map do |item|
+      { "@type": "Question", name: item[:question], acceptedAnswer: { "@type": "Answer", text: item[:answer] } }
+    end
+  }
+]
+%>
+
+<% content_for :head do %>
+  <%= json_ld_script_tag structured_data %>
 <% end %>
 
 <section class="py-12 lg:py-20">
   <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
     <header class="text-center">
-      <p class="text-sm font-semibold tracking-wide text-accent uppercase">Buyer’s guide · July 2026</p>
+      <p class="text-sm font-semibold tracking-wide text-accent uppercase">Guide · Updated November 2026</p>
       <h1 class="mt-4 font-serif text-4xl sm:text-5xl tracking-tight">
-        Best journaling apps with MCP
-        <span class="block mt-3 font-sans text-xl sm:text-2xl font-medium tracking-normal text-muted">Claude &amp; ChatGPT Connectors</span>
+        Best journaling apps for ChatGPT and Claude
+        <span class="block mt-3 font-sans text-xl sm:text-2xl font-medium tracking-normal text-muted">Journals your AI assistant can read and write in</span>
       </h1>
       <p class="mt-5 text-lg leading-relaxed text-muted max-w-3xl mx-auto">
-        The useful question is not simply whether a journal “has AI.” It is whether the journal offers a clear,
-        permissioned Model Context Protocol server that your chosen AI assistant can use for real retrieval and writing.
+        Some journals can now connect to the AI assistant you already use. Once connected, you can ask ChatGPT or
+        Claude about your own past entries, or have it save a new one for you. Here is which journaling apps do this
+        today, what it is like, and what to check before you connect something as personal as a journal.
       </p>
     </header>
 
-    <section class="mt-14 card p-6 bg-accent/5 border-accent/20">
-      <h2 class="font-serif text-2xl text-primary">How this guide evaluates an AI journal with MCP</h2>
-      <ul class="mt-4 grid sm:grid-cols-2 gap-3 text-sm text-muted">
-        <li><strong class="text-primary">Official ownership:</strong> the journal vendor operates or publishes the MCP server.</li>
-        <li><strong class="text-primary">Useful tools:</strong> search, reading, reflection, or writing—not a marketing-only integration.</li>
-        <li><strong class="text-primary">Clear consent:</strong> the user explicitly chooses what the client can access.</li>
-        <li><strong class="text-primary">Client fit:</strong> remote URL or local process matches where the AI client runs.</li>
-        <li><strong class="text-primary">Revocation:</strong> there is a documented way to remove access.</li>
-        <li><strong class="text-primary">Data clarity:</strong> users are told that retrieved text reaches the AI provider.</li>
-      </ul>
-    </section>
-
     <section class="mt-16" id="example-prompts">
-      <h2 class="font-serif text-3xl text-primary">Prompts that show why MCP matters</h2>
+      <h2 class="font-serif text-3xl text-primary">What you can ask once your journal is connected</h2>
       <p class="mt-3 text-muted max-w-3xl">
-        Ask in plain language inside Claude, ChatGPT, or another MCP-compatible AI app. The strongest prompts below
-        are emphasized so you can scan for common starting points—including voice-first journaling on the go.
+        Ask in your own words, typed or spoken. The assistant looks through your journal and answers from what you
+        actually wrote. A few to try:
       </p>
       <div class="mt-6 grid sm:grid-cols-2 gap-5">
         <%
           prompts = [
-            { bold: true,  text: "Summarize my last month's journal entries and cite the dates behind each theme." },
-            { bold: false, text: "Find every time I mentioned burnout. What situations usually came before it?" },
-            { bold: true,  text: "Using voice in my favorite AI tool, help me process my day out loud—then save it as today's journal entry with the key moments." },
+            { bold: true,  text: "Summarize my journal from last month, and tell me which days each theme came from." },
+            { bold: false, text: "Find every time I mentioned burnout. What was usually going on beforehand?" },
+            { bold: true,  text: "Let me talk through my day out loud, then save it as today's journal entry with the key moments." },
             { bold: false, text: "How has the way I write about my new job changed since January?" },
-            { bold: false, text: "What people and places appeared most often in my journal this year?" },
-            { bold: true,  text: "Talk me through tonight, then add this reflection to today's journal without overwriting anything already there." },
-            { bold: false, text: "Show me entries tagged #gratitude from the last six months." },
-            { bold: false, text: "Compare how I wrote about sleep in March versus June. What changed?" },
-            { bold: true,  text: "Find every time I mentioned burnout, then help me draft tomorrow's intention as a new journal entry." },
-            { bold: false, text: "List entries from last week and pull out anything that still feels unfinished." }
+            { bold: false, text: "Which people and places came up most in my journal this year?" },
+            { bold: true,  text: "Add this to today's journal entry without changing what's already there." },
+            { bold: false, text: "Show me what I wrote under #gratitude in the last six months." },
+            { bold: false, text: "Compare how I wrote about sleep in March and in June. What changed?" },
+            { bold: true,  text: "What was I doing on this day in past years?" },
+            { bold: false, text: "Look at last week's entries and pull out anything that still feels unfinished." }
           ]
         %>
         <% prompts.each do |prompt| %>
@@ -67,38 +98,50 @@
       </div>
     </section>
 
+    <section class="mt-14 card p-6 bg-accent/5 border-accent/20">
+      <h2 class="font-serif text-2xl text-primary">What to look for in a journal that connects to AI</h2>
+      <ul class="mt-4 grid sm:grid-cols-2 gap-3 text-sm text-muted">
+        <li><strong class="text-primary">Made by the journal itself:</strong> the connection comes from the company that makes the journal, not someone else.</li>
+        <li><strong class="text-primary">Actually useful:</strong> it can search and read your entries and save new ones.</li>
+        <li><strong class="text-primary">You approve it:</strong> nothing connects until you sign in and say yes.</li>
+        <li><strong class="text-primary">Works where you are:</strong> on your phone and the web, not only on one computer.</li>
+        <li><strong class="text-primary">Easy to disconnect:</strong> one place to remove access, without changing your password.</li>
+        <li><strong class="text-primary">Honest about your writing:</strong> it tells you that the entries you ask about are sent to the AI company to answer you.</li>
+      </ul>
+    </section>
+
     <section class="mt-16">
       <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
         <h2 class="font-serif text-3xl text-primary">1. Dabble Me</h2>
-        <span class="badge badge-accent text-xs font-semibold dark:text-olive-800">BEST FOR EMAIL-FIRST, REMOTE MCP</span>
+        <span class="badge badge-accent text-xs font-semibold dark:text-olive-800">EASIEST TO SET UP · WORKS ON ANY DEVICE</span>
       </div>
       <p class="mt-4 text-muted leading-relaxed">
-        Dabble Me is a private email journal with an official remote MCP server. You write by replying to scheduled
-        email prompts or using the web app, then connect Claude, ChatGPT, or another compatible remote client with one
-        HTTPS URL. OAuth binds the tools to your account.
+        Dabble Me is a private journal you write by replying to an email, or on the web. It connects to ChatGPT and
+        Claude from their own app directories: add Dabble Me, sign in, and you are done. There is nothing to install,
+        so it works anywhere you use ChatGPT or Claude, including your phone.
       </p>
       <div class="mt-6 grid sm:grid-cols-2 gap-5">
         <div class="card p-5">
-          <h3 class="font-serif text-xl text-primary">Strengths</h3>
+          <h3 class="font-serif text-xl text-primary">What's good</h3>
           <ul class="mt-3 list-disc pl-5 space-y-2 text-sm text-muted">
-            <li>No local MCP server, CLI, or Mac requirement</li>
-            <li>Purpose-built search, date listing, and pattern analysis</li>
-            <li>Create or append entries from natural language</li>
-            <li>OAuth, PKCE, new-connection email alerts, and connected-app revocation</li>
+            <li>Nothing to install, and no computer needed</li>
+            <li>Finds entries by word, date or #hashtag, and spots patterns over time</li>
+            <li>Saves a new entry, or adds to today's, when you ask</li>
+            <li>Emails you when a new app connects, and lets you remove any app in one step</li>
           </ul>
         </div>
         <div class="card p-5">
-          <h3 class="font-serif text-xl text-primary">Considerations</h3>
+          <h3 class="font-serif text-xl text-primary">Worth knowing</h3>
           <ul class="mt-3 list-disc pl-5 space-y-2 text-sm text-muted">
-            <li>MCP tools require Dabble Me PRO</li>
-            <li>It is a hosted service, not a local-only journal database</li>
-            <li>One account journal rather than Day One-style per-journal selection</li>
-            <li>The connected AI provider receives content selected for a prompt</li>
+            <li>Connecting an AI assistant needs Dabble Me PRO</li>
+            <li>Your journal is kept by Dabble Me, not only on your own device</li>
+            <li>One journal per account</li>
+            <li>The entries you ask about are sent to the AI company to answer you</li>
           </ul>
         </div>
       </div>
       <div class="mt-5 flex flex-wrap gap-3">
-        <a href="<%= mcp_server_docs_path %>" class="btn btn-primary">Dabble Me MCP setup</a>
+        <a href="<%= mcp_server_docs_path %>" class="btn btn-primary">How to connect Dabble Me</a>
         <a href="<%= new_user_registration_path %>" class="btn btn-secondary">Create an account</a>
       </div>
     </section>
@@ -106,70 +149,85 @@
     <section class="mt-16">
       <div class="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2">
         <h2 class="font-serif text-3xl text-primary">2. Day One</h2>
-        <span class="badge text-xs font-semibold">BEST FOR LOCAL MCP ON MAC</span>
+        <span class="badge text-xs font-semibold">BEST IF YOU ALREADY USE DAY ONE ON A MAC</span>
       </div>
       <p class="mt-4 text-muted leading-relaxed">
-        Day One provides an official local MCP server through its Mac app and CLI. It uses stdio rather than a hosted
-        remote URL, and users grant MCP access to selected Day One journals. It is a strong fit for established Day One
-        users who want the MCP data path to begin on their own Mac.
+        Day One is a long-established journaling app. Its connection to AI assistants runs on your own Mac: you
+        install the Day One Mac app and a small command-line tool, then choose which of your journals to share. It is
+        a good fit if your journal already lives in Day One and you are comfortable with a little setup.
       </p>
       <div class="mt-6 grid sm:grid-cols-2 gap-5">
         <div class="card p-5">
-          <h3 class="font-serif text-xl text-primary">Strengths</h3>
+          <h3 class="font-serif text-xl text-primary">What's good</h3>
           <ul class="mt-3 list-disc pl-5 space-y-2 text-sm text-muted">
-            <li>Official server integrated with the Day One Mac ecosystem</li>
-            <li>Local process with no MCP-server network calls</li>
-            <li>Per-journal access control</li>
-            <li>Read, search, and create journal entries</li>
+            <li>Made and supported by Day One</li>
+            <li>Runs on your own Mac</li>
+            <li>You choose which journals to share</li>
+            <li>Can read, search and add entries</li>
           </ul>
         </div>
         <div class="card p-5">
-          <h3 class="font-serif text-xl text-primary">Considerations</h3>
+          <h3 class="font-serif text-xl text-primary">Worth knowing</h3>
           <ul class="mt-3 list-disc pl-5 space-y-2 text-sm text-muted">
-            <li>Currently requires Day One for Mac and the Day One CLI</li>
-            <li>Local stdio setup is more technical than pasting a remote URL</li>
-            <li>The Mac app and authorized journal must remain available</li>
-            <li>The AI client still typically sends retrieved content to its model provider</li>
+            <li>Needs a Mac with Day One and its command-line tool installed</li>
+            <li>Setup takes more steps than adding an app from a directory</li>
+            <li>Only works while that Mac and the Day One app are available</li>
+            <li>The entries you ask about are still sent to the AI company to answer you</li>
           </ul>
         </div>
       </div>
       <div class="mt-5 flex flex-wrap gap-3">
-        <a href="https://dayoneapp.com/guides/day-one-for-mac/day-one-mcp-server/" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">Official Day One MCP guide</a>
+        <a href="https://dayoneapp.com/guides/day-one-for-mac/day-one-mcp-server/" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">Day One's setup guide</a>
         <a href="<%= day_one_ai_journaling_path %>" class="btn btn-secondary">Compare with Dabble Me</a>
         <a href="<%= day_one_alternative_path %>" class="btn btn-secondary">Import Day One journals</a>
       </div>
     </section>
 
     <section class="mt-16">
-      <h2 class="font-serif text-3xl text-primary">What about community MCP servers?</h2>
+      <h2 class="font-serif text-3xl text-primary">What about add-ons made by someone else?</h2>
       <p class="mt-4 text-muted leading-relaxed">
-        Community servers can connect plain-text folders, note databases, and older journal tools. They may be useful,
-        but they require more diligence: inspect the source, confirm which files or accounts the process can read,
-        understand whether it sends data to another service, pin versions, and verify how credentials are stored.
-        For intimate journal data, prefer a server operated by the journal provider or code you can audit and run yourself.
+        You will also find add-ons, made by people other than the journal's own company, that connect notes folders
+        or older journaling apps to AI. Some are good. But a journal is about as personal as writing gets, so take
+        care: check who made it, what it can read on your computer, and whether it sends your writing anywhere else.
+        When in doubt, use a connection made by the company that makes your journal.
       </p>
     </section>
 
     <section class="mt-16">
-      <h2 class="font-serif text-3xl text-primary">Questions to ask before connecting your journal</h2>
+      <h2 class="font-serif text-3xl text-primary">Questions to ask before you connect your journal</h2>
       <ol class="mt-5 list-decimal pl-5 space-y-3 text-muted">
-        <li>Who operates the MCP server, and does its domain or package belong to the journal vendor?</li>
-        <li>Does it use OAuth, local app authorization, or a long-lived API key?</li>
-        <li>Can tool arguments select another account, folder, or journal?</li>
-        <li>Which tools write or delete data? Does the client confirm write actions?</li>
-        <li>How do you revoke the client without changing your journal password?</li>
-        <li>Which text is sent to the AI provider when you request a summary or search?</li>
-        <li>Can you see clear tool names and descriptions before approving access?</li>
+        <li>Who made the connection: the journal's own company, or someone else?</li>
+        <li>Do you sign in on the journal's own sign-in page, or paste in a password or key that never expires?</li>
+        <li>Can it reach only your journal?</li>
+        <li>Can it change or delete entries, and does the assistant check with you first?</li>
+        <li>How do you disconnect it, and can you do that without changing your password?</li>
+        <li>What gets sent to the AI company when you ask for a summary?</li>
+        <li>Can you see what it is able to do before you say yes?</li>
       </ol>
     </section>
 
+    <section class="mt-16" id="faq">
+      <h2 class="font-serif text-3xl text-primary">Common questions</h2>
+      <div class="mt-6 space-y-5">
+        <% faq_items.each do |item| %>
+          <article class="card p-6">
+            <h3 class="font-serif text-xl text-primary"><%= item[:question] %></h3>
+            <p class="mt-2 text-sm leading-relaxed text-muted"><%= item[:answer] %></p>
+          </article>
+        <% end %>
+      </div>
+    </section>
+
     <section class="mt-16 card p-8 text-center">
-      <h2 class="font-serif text-3xl text-primary">Want a personal journal MCP server without local setup?</h2>
-      <p class="mt-3 text-muted">Connect Dabble Me by URL, approve OAuth, and start reflecting with the AI assistant you already use.</p>
+      <h2 class="font-serif text-3xl text-primary">Want a journal that works with the AI you already use?</h2>
+      <p class="mt-3 text-muted">Start a Dabble Me journal, add it to ChatGPT or Claude, and ask about your own life.</p>
       <div class="mt-6 flex flex-col sm:flex-row justify-center gap-3">
         <a href="<%= new_user_registration_path %>" class="btn btn-primary">Start journaling</a>
-        <a href="<%= mcp_server_developer_docs_path %>" class="btn btn-secondary">Read the technical documentation</a>
+        <a href="<%= mcp_server_docs_path %>" class="btn btn-secondary">See how connecting works</a>
       </div>
+      <p class="mt-5 text-sm text-muted">
+        Building something? <a href="<%= mcp_server_developer_docs_path %>" class="underline hover:text-primary">Read the technical documentation</a>.
+      </p>
     </section>
   </div>
 </section>
