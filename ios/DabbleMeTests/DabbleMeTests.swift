@@ -179,6 +179,42 @@ struct WidgetPhotoTests {
     }
 }
 
+struct AppLinkTests {
+    /// The dabble.me pages the app opens itself; anything else is left to the browser.
+    @Test func readsTheLinksTheAppOpens() throws {
+        func link(_ address: String) throws -> AppLink? { AppLink(try #require(URL(string: address))) }
+        #expect(try link("https://dabble.me/entries/") == .journal)
+        #expect(try link("https://dabble.me/entries") == .journal)
+        #expect(try link("https://dabble.me/today") == .today)
+        #expect(try link("https://dabble.me/entries/new") == .newEntry)
+        #expect(try link("https://dabble.me/write") == .newEntry)
+        #expect(try link("https://dabble.me/entries/2026/11/13") == .day(try #require(JournalDay("2026-11-13"))))
+        #expect(try link("https://dabble.me/entries/2026/4/2?ref=email") == .day(try #require(JournalDay("2026-04-02"))))
+        #expect(try link("https://dabble.me/rewind") == .stats)
+        #expect(try link("https://dabble.me/rewind/") == .stats)
+        #expect(try link("https://dabble.me/rewind/2026") == .stats)
+        #expect(try link("https://dabble.me/rewind/2026/share") == nil)
+        #expect(try link("https://dabble.me/entries/2026") == nil)
+        #expect(try link("https://dabble.me/entries/export") == nil)
+        #expect(try link("https://dabble.me/settings") == nil)
+        #expect(try link("https://example.com/today") == nil)
+        #expect(try link("https://dabble.me/entries/2026/13/40") == nil)
+    }
+}
+
+struct NewHashtagSuggestionTests {
+    /// A writer with no hashtags yet: the people named first, then topics, five at most, none
+    /// twice and none that's in the entry already.
+    @MainActor @Test func namesComeFirstThenTopics() {
+        #expect(JournalIntelligence.newSuggestions(people: ["Maya", "Sam"], topics: ["climbing", "kids", "maya", "school", "gym"], already: ["kids"])
+                == ["Maya", "Sam", "climbing", "school", "gym"])
+        // A crowd leaves room for a couple of topics.
+        #expect(JournalIntelligence.newSuggestions(people: ["Ann", "Bo", "Cy", "Di", "Ed", "Flo"], topics: ["party", "birthday", "cake"], already: [])
+                == ["Ann", "Bo", "Cy", "party", "birthday"])
+        #expect(JournalIntelligence.newSuggestions(people: [], topics: ["a", "b", "c", "d", "e", "f"], already: []) == ["a", "b", "c", "d", "e"])
+    }
+}
+
 struct WritingQuestionTests {
     /// The composer's placeholder: today, yesterday, or the day by name (its year when not this one).
     @Test func asksAboutTheDayBeingWritten() throws {

@@ -187,8 +187,7 @@ struct PhotoViewer: View {
         if photo.image != nil, let data = photo.data {
             HStack(spacing: 10) {
                 Button {
-                    // Whatever the photo was opened over (a day's or a random entry's sheet) closes too.
-                    model.statsDay = nil
+                    // Whatever the photo was opened over (a random entry's sheet) closes too.
                     model.showsRandomEntry = false
                     model.selectedTab = .journal
                     model.journalModeRequest = .photos

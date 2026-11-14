@@ -41,16 +41,15 @@ final class AppModel {
     var journalModeRequest: JournalMode?
     /// Shake the phone for a random memory (a preview sheet); `openEntryRequest` opens it in Journal.
     var showsRandomEntry = false
-    /// A day tapped in Stats → Past Year: its entries come up in a sheet, presented with the
-    /// random memory's at the top of the app (from inside Stats it didn't always appear).
-    var statsDay: StatsDay?
     var openEntryRequest: Int?
+    /// An entry to open on Today (one just written from there for another day).
+    var todayEntryRequest: Int?
     /// The Journal view an entry opens over, so Back lands there (the list unless set: Rewind's
     /// photos open over the Photos grid).
     var openEntryOver: JournalMode?
-    /// Jump to a Day: the calendar, as a sheet (from the Journal's scrubber or Search) or a
-    /// dropdown (the Journal's "me" mark, a day sheet's calendar button). A written day picked
-    /// comes up in the day sheet (`statsDay`) once the calendar has closed.
+    /// Jump to a Day: the calendar's sheet (from the Journal's scrubber or its "me" mark held,
+    /// Search, or an open entry's date held). A written day picked opens its entry in full once
+    /// the calendar has closed.
     var showsDayPicker = false
     var pickedDay: JournalDay?
     /// The day last looked at from the calendar: it opens on that month again.
@@ -317,8 +316,8 @@ final class AppModel {
         do { return try await entrySummary(on: yesterday) == nil } catch { return false }
     }
 
-    /// After the Jump to a Day calendar closes: the day picked comes up in its sheet, or, for a
-    /// day without an entry, the composer opens on it.
+    /// After the Jump to a Day calendar closes: the day picked opens its entry in full, or, for
+    /// a day without an entry, the composer opens on it.
     func finishDayPicker() {
         if let day = writeAfterDayPicker {
             writeAfterDayPicker = nil
@@ -326,7 +325,23 @@ final class AppModel {
         } else if let day = pickedDay {
             pickedDay = nil
             dayPickerOpensOn = day
-            statsDay = StatsDay(day: day)
+            openDay(day)
+        }
+    }
+
+    /// Opens a written day's entry in full, in the Journal: over its list, or over the view it
+    /// was picked from (Stats' grid), so Back lands there.
+    func openDay(_ day: JournalDay, over mode: JournalMode? = nil) {
+        Task {
+            do {
+                guard let entry = try await entrySummary(on: day) else { return }
+                selectedTab = .journal
+                openEntryOver = mode
+                openEntryRequest = entry.id
+            } catch is CancellationError {
+            } catch {
+                report(error)
+            }
         }
     }
 

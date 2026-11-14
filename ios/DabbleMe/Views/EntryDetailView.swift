@@ -13,6 +13,7 @@ struct EntryDetailView: View {
     @State private var actionError: String?
     @State private var editing = false
     @State private var isDeleting = false
+    @State private var isStepping = false
     @State private var pinchStart: ReadingTextSize?
     @State private var textSizeHUD: String?
     @State private var reflection: EntryReflection?
@@ -31,6 +32,9 @@ struct EntryDetailView: View {
     @State private var playerHidden = false
     /// The entry's calendar day in other years: On This Day, under it.
     @State private var sameDay: SameDayEntries?
+    /// Scrolled down into On This Day (its heading has gone under the bar), and an entry opened from it.
+    @State private var readingOnThisDay = false
+    @State private var opened: EntryRoute?
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
     @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
 
@@ -42,26 +46,33 @@ struct EntryDetailView: View {
         Group {
             if let entry {
                 ScrollView {
-                    EntryBody(entry: entry, song: playerHidden ? nil : song, play: play)
-                        .padding()
-                        .frame(maxWidth: 680, alignment: .leading)
-                        .frame(maxWidth: .infinity)
-                        .contentShape(.rect)
-                        .simultaneousGesture(pinchToResize)
-                        .offset(x: swipeOffset)
-                    if let sameDay, sameDay.count > 0 {
-                        SameDaySection(entry: entry, sameDay: sameDay)
-                            .padding(.horizontal)
-                            .padding(.bottom, 24)
-                            .frame(maxWidth: 680, alignment: .leading)
-                            .frame(maxWidth: .infinity)
+                    // Lazy, for its pinned headers: under On This Day, each entry's "1 year
+                    // later • November 2025" stays at the top while it's read, as on Today.
+                    LazyVStack(alignment: .leading, spacing: 0, pinnedViews: .sectionHeaders) {
+                        EntryBody(entry: entry, song: playerHidden ? nil : song, play: play)
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(.rect)
+                            .simultaneousGesture(pinchToResize)
+                            .offset(x: swipeOffset)
+                        if let sameDay, sameDay.count > 0 {
+                            SameDaySection(entry: entry, sameDay: sameDay, headingPassed: $readingOnThisDay) { opened = EntryRoute(id: $0) }
+                        }
                     }
+                    .frame(maxWidth: 680)
+                    .frame(maxWidth: .infinity)
                 }
+                // A long expanded entry's date floats down under its pinned header.
+                .environment(\.timelinePinTop, SameDaySection.headerHeight + 8)
+                .navigationDestination(item: $opened) { EntryDetailView(entryID: $0.id) }
                 // Again when the entry moves to another day.
                 .task(id: "\(entry.id)|\(entry.date)") { sameDay = await model.sameDay(as: entry.id) }
+                .id(entry.id) // each entry starts at its top (the title's swipe steps between them)
                 .simultaneousGesture(swipeForActions)
                 .overlay(alignment: .trailing) { swipeHint }
-                .modifier(PullToReflect(action: canReflect(entry) ? { await reflect(on: entry) } : nil))
+                .modifier(PullForMore(reflect: canReflect(entry) ? { await reflect(on: entry) } : nil,
+                                      previous: entry.previousEntry.map { neighbour in { await step(to: neighbour) } },
+                                      next: entry.nextEntry.map { neighbour in { await step(to: neighbour) } }))
                 .overlay {
                     if let textSizeHUD {
                         Text(textSizeHUD)
@@ -102,7 +113,10 @@ struct EntryDetailView: View {
         .slabBackButton()
         .toolbar {
             if let entry {
-                ToolbarItem(placement: .principal) { dateTitle(for: entry) }
+                // Down in On This Day, the bar says so in place of the entry's date.
+                ToolbarItem(placement: .principal) {
+                    if readingOnThisDay, sameDay?.count ?? 0 > 0 { onThisDayTitle } else { dateTitle(for: entry) }
+                }
                 ToolbarItem(placement: .primaryAction) { editButton(for: entry) }
             }
         }
@@ -235,7 +249,46 @@ struct EntryDetailView: View {
         }
     }
 
-    /// Tap: the date or how long ago it was.
+    /// Swiping the title: the entry before this one by date (a swipe right, as if pulling it in
+    /// from the left) or the one after (a swipe left), in place.
+    private func step(to neighbour: EntryNeighbour?) async {
+        guard let neighbour, !isStepping else { return }
+        isStepping = true
+        defer { isStepping = false }
+        do {
+            let other = try await model.entry(id: neighbour.id)
+            playerHidden = false
+            withAnimation(.easeInOut(duration: 0.2)) { entry = other }
+        } catch is CancellationError {
+        } catch {
+            actionError = error.localizedDescription
+        }
+    }
+
+    private func jumpToADay(from entry: EntryDetail) {
+        model.dayPickerOpensOn = entry.day
+        model.showsDayPicker = true
+    }
+
+    /// The bar's title while On This Day is what's being read: its heading, as it is on the page.
+    private var onThisDayTitle: some View {
+        HStack(spacing: 8) {
+            appIcon("slab-backward")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 20, height: 20)
+                .foregroundStyle(.tertiary)
+                .accessibilityHidden(true)
+            Text("On This Day")
+                .font(.system(.headline, design: .serif, weight: .semibold))
+        }
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isHeader)
+        .transition(.opacity)
+    }
+
+    /// Tap: the date or how long ago it was. Swipe: the entry before or after. Hold: Jump to a Day.
     private func dateTitle(for entry: EntryDetail) -> some View {
         let full = entry.day?.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year()) ?? entry.date
         let today = model.today?.day ?? JournalDay(localDate: .now)
@@ -248,14 +301,25 @@ struct EntryDetailView: View {
             .contentTransition(.opacity)
             .padding(.horizontal, 8)
             .padding(.vertical, 6)
+            // All the room between the bar's buttons, so there's something to swipe.
+            .frame(maxWidth: .infinity)
             .contentShape(.rect)
             .onTapGesture { showsRelativeDate.toggle() }
+            // Held: Jump to a Day's calendar, on this entry's month.
+            .onLongPressGesture(minimumDuration: 0.45) { jumpToADay(from: entry) }
+            .gesture(DragGesture(minimumDistance: 24).onEnded { drag in
+                guard abs(drag.translation.width) > abs(drag.translation.height) * 1.5 else { return }
+                Task { await step(to: drag.translation.width > 0 ? entry.previousEntry : entry.nextEntry) }
+            })
             .accessibilityElement()
             .accessibilityLabel(entry.day?.long ?? entry.date)
             .accessibilityValue(relative)
             .accessibilityAddTraits(.isButton)
-            .accessibilityHint("Switches between the date and how long ago it was")
+            .accessibilityHint("Switches between the date and how long ago it was. Swipe for the entry before or after.")
             .accessibilityAction { showsRelativeDate.toggle() }
+            .accessibilityAction(named: "Jump to a Day") { jumpToADay(from: entry) }
+            .accessibilityAction(named: "Previous Entry") { Task { await step(to: entry.previousEntry) } }
+            .accessibilityAction(named: "Next Entry") { Task { await step(to: entry.nextEntry) } }
             .animation(.easeOut(duration: 0.15), value: showsRelativeDate)
     }
 
@@ -381,11 +445,18 @@ private struct EntryBody: View {
 private struct SameDaySection: View {
     let entry: EntryDetail
     let sameDay: SameDayEntries
+    /// Its heading has scrolled up under the bar (which then shows it in the entry's date's place).
+    @Binding var headingPassed: Bool
+    let onOpen: (Int) -> Void
     @State private var expanded: Set<Int> = []
-    @State private var opened: EntryRoute?
     /// The rows' swipe actions belong to lists; here an entry's actions are on its own page.
     @State private var actions = EntryActions()
 
+    /// The pinned "1 year later • November 2025" headers' height.
+    static let headerHeight: CGFloat = 36
+
+    // The page's lazy stack takes these as its own rows and sections (no container around them),
+    // so the sections' headers pin.
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Divider()
@@ -400,25 +471,39 @@ private struct SameDaySection: View {
                     .font(.system(.title3, design: .serif, weight: .semibold))
                     .accessibilityAddTraits(.isHeader)
             }
-            if sameDay.available {
-                ForEach(sameDay.entries) { other in
-                    MonthHeader(title: title(for: other), isDay: true)
-                        .padding(.top, 16)
-                        .padding(.bottom, 8)
-                    TimelineEntryRow(entry: other, isExpanded: expanded.contains(other.id), actions: actions,
-                                     onExpand: { withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(other.id) } },
-                                     onOpen: { opened = EntryRoute(id: other.id) })
-                }
-            } else {
+            // Gone under the bar (the scroll view's space starts at the bar's foot).
+            .onGeometryChange(for: Bool.self) { $0.frame(in: .scrollView).maxY < 0 } action: { passed in
+                withAnimation(.easeOut(duration: 0.15)) { headingPassed = passed }
+            }
+            if !sameDay.available {
                 Text(sameDay.count == 1
                      ? "1 entry from another year would show here with Dabble Me PRO."
                      : "\(sameDay.count) entries from other years would show here with Dabble Me PRO.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .padding(.top, 10)
+                    .padding(.bottom, 24)
             }
         }
-        .navigationDestination(item: $opened) { EntryDetailView(entryID: $0.id) }
+        .padding(.horizontal)
+        .onDisappear { headingPassed = false }
+        if sameDay.available {
+            ForEach(sameDay.entries) { other in
+                Section {
+                    TimelineEntryRow(entry: other, isExpanded: expanded.contains(other.id), actions: actions,
+                                     onExpand: { withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(other.id) } },
+                                     onOpen: { onOpen(other.id) })
+                        .padding(.horizontal)
+                        .padding(.bottom, other.id == sameDay.entries.last?.id ? 24 : 8)
+                } header: {
+                    MonthHeader(title: title(for: other), isDay: true)
+                        .padding(.horizontal)
+                        .frame(height: Self.headerHeight)
+                        .padding(.top, 8)
+                        .background(Color(uiColor: .systemBackground)) // the entry scrolls under it
+                }
+            }
+        }
     }
 
     /// "1 year later • November 2025", "2 years earlier • November 2022": as seen from this entry.
@@ -889,27 +974,53 @@ struct HashtagPill: View {
 }
 
 
-/// Pull down on an entry to get a reflection; without Apple Intelligence there's nothing to pull for.
-/// Not `.refreshable`: its bare spinner reads as "reload". The pull says what it does ("Pull to
-/// reflect…", then "Release to reflect" with a tap of haptics) and fires when you let go.
-private struct PullToReflect: ViewModifier {
-    let action: (() async -> Void)?
+/// Pull down on an entry for one of three things, and let go: a reflection (the middle, and what
+/// a straight pull gives, where Apple Intelligence is on), or with the finger moved to one side,
+/// the entry before (left) or after (right). Not `.refreshable`: its bare spinner reads as
+/// "reload". The three show as the pull begins, the one chosen ringed and named, and fill in
+/// (with a tap of haptics) once the pull is far enough to act on.
+private struct PullForMore: ViewModifier {
+    let reflect: (() async -> Void)?
+    let previous: (() async -> Void)?
+    let next: (() async -> Void)?
+
     @State private var pull: CGFloat = 0
+    /// How far the finger has moved sideways in this drag.
+    @State private var sideways: CGFloat = 0
     @State private var isRunning = false
     private let threshold: CGFloat = 90
+    /// Sideways travel that moves the choice off the middle.
+    private let sidestep: CGFloat = 44
 
-    private var armed: Bool { pull >= threshold }
+    private enum Choice: Hashable { case previous, reflect, next }
+
+    private var choice: Choice { sideways < -sidestep ? .previous : sideways > sidestep ? .next : .reflect }
+    private func action(for choice: Choice) -> (() async -> Void)? {
+        switch choice {
+        case .previous: previous
+        case .reflect: reflect
+        case .next: next
+        }
+    }
+    /// Far enough, on something there is to do.
+    private var armed: Bool { pull >= threshold && action(for: choice) != nil }
 
     func body(content: Content) -> some View {
-        if let action {
+        if reflect == nil, previous == nil, next == nil {
+            content
+        } else {
             content
                 .onScrollGeometryChange(for: CGFloat.self) { geometry in
                     -(geometry.contentOffset.y + geometry.contentInsets.top)
                 } action: { _, overscroll in
                     pull = max(0, overscroll)
                 }
+                // Where the finger is, side to side, while the list itself follows it down.
+                .simultaneousGesture(DragGesture(minimumDistance: 0)
+                    .onChanged { sideways = $0.translation.width }
+                    .onEnded { _ in Task { @MainActor in sideways = 0 } })
                 .onScrollPhaseChange { old, new in
-                    guard old == .interacting, new != .interacting, armed, !isRunning else { return }
+                    guard old == .interacting, new != .interacting, armed, !isRunning, let action = action(for: choice) else { return }
                     isRunning = true
                     Task {
                         await action()
@@ -918,19 +1029,46 @@ private struct PullToReflect: ViewModifier {
                 }
                 .overlay(alignment: .top) {
                     if pull > 8, !isRunning {
-                        Label(armed ? "Release to reflect" : "Pull to reflect on this entry", icon: "slab-sparkles")
-                            .font(.subheadline.weight(.medium))
-                            .foregroundStyle(armed ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
-                            .opacity(min(1, (pull - 8) / 40))
-                            .frame(height: min(pull, threshold))
-                            .allowsHitTesting(false)
-                            .accessibilityHidden(true)
+                        HStack(spacing: 0) {
+                            option(.previous, "Previous", icon: "slab-angle-left")
+                            option(.reflect, "Reflection", icon: "slab-sparkles")
+                            option(.next, "Next", icon: "slab-angle-right")
+                        }
+                        .frame(maxWidth: 360)
+                        .opacity(min(1, (pull - 8) / 40))
+                        .frame(height: min(pull, threshold), alignment: .center)
+                        .clipped()
+                        .allowsHitTesting(false)
+                        .accessibilityHidden(true)
                     }
                 }
                 .sensoryFeedback(.impact(weight: .light), trigger: armed) { _, isArmed in isArmed }
+                .sensoryFeedback(.selection, trigger: choice) { _, _ in pull > 8 }
                 .animation(.easeOut(duration: 0.15), value: armed)
-        } else {
-            content
+                .animation(.easeOut(duration: 0.15), value: choice)
         }
+    }
+
+    /// One of the three: its icon, ringed and named while it's the one chosen, tinted once the
+    /// pull is far enough. One there's nothing behind (no entry before this, no Apple
+    /// Intelligence) is faint.
+    private func option(_ option: Choice, _ title: String, icon: String) -> some View {
+        let available = action(for: option) != nil
+        let chosen = choice == option && available
+        let style: AnyShapeStyle = chosen && armed ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary)
+        return VStack(spacing: 4) {
+            appIcon(icon)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 20, height: 20)
+                .frame(width: 44, height: 44)
+                .overlay { if chosen { Circle().strokeBorder(style, lineWidth: 1.5) } }
+            Text(title)
+                .font(.caption.weight(.medium))
+                .opacity(chosen ? 1 : 0)
+        }
+        .foregroundStyle(style)
+        .opacity(available ? 1 : 0.25)
+        .frame(maxWidth: .infinity)
     }
 }

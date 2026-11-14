@@ -2,8 +2,8 @@ import SwiftUI
 import UIKit
 
 /// The composer's date: iOS's own month calendar in a popover under the date, with a dot under
-/// each day that already has an entry. Any day up to today can be picked (a written one too:
-/// writing there adds to its entry); picking one closes it.
+/// each day that already has an entry. Any day from the first entry's up to today can be picked
+/// (a written one too: writing there adds to its entry); picking one closes it.
 struct EntryDatePopover: View {
     @Binding var date: Date
     @Environment(AppModel.self) private var model
@@ -11,7 +11,8 @@ struct EntryDatePopover: View {
     @State private var written: Set<String> = []
 
     var body: some View {
-        WrittenDaysCalendar(selected: date, written: written) { day in
+        // Not before the first entry: a journal starts where it started.
+        WrittenDaysCalendar(selected: date, written: written, startsAtFirstWritten: true) { day in
             date = day.localDate
             dismiss()
         }
@@ -39,6 +40,8 @@ struct WrittenDaysCalendar: UIViewRepresentable {
     /// The month it opens on, when that isn't the selected day's or this one.
     var opensOn: JournalDay? = nil
     let written: Set<String>
+    /// No further back than the first written day.
+    var startsAtFirstWritten = false
     let onPick: (JournalDay) -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -66,6 +69,9 @@ struct WrittenDaysCalendar: UIViewRepresentable {
         context.coordinator.parent = self
         guard context.coordinator.written != written else { return }
         context.coordinator.written = written
+        if startsAtFirstWritten, let first = written.min().flatMap(JournalDay.init)?.localDate, first < .now {
+            view.availableDateRange = DateInterval(start: first, end: .now)
+        }
         // The month on screen; others ask for their dots as they come into view.
         let month = view.visibleDateComponents
         let prefix = String(format: "%04d-%02d-", month.year ?? 0, month.month ?? 0)

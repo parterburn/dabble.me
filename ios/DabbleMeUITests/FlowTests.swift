@@ -32,13 +32,13 @@ final class FlowTests: XCTestCase {
             try? XCUIScreen.main.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: dir + "/after-save.png"))
             try? app.debugDescription.write(toFile: dir + "/after-save.txt", atomically: true, encoding: .utf8)
         }
+        // The new entry opens in full; back from it, it's in the timeline.
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10), "The new entry never opened")
+        app.navigationBars.buttons.element(boundBy: 0).tap()
+        XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 10), "Could not get back to the journal")
         let saved = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", "Testing the app after saving")).firstMatch
         XCTAssertTrue(saved.waitForExistence(timeout: 10), "New entry missing from the timeline")
-        app.openTimelineEntry(saved)
-        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10), "Entry detail never opened")
-        app.navigationBars.buttons.element(boundBy: 0).tap()
-        XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 10), "Could not get back to the journal")
     }
 
     /// Text size is a pinch on the entry (there's no setting for it any more).
@@ -114,9 +114,8 @@ final class FlowTests: XCTestCase {
         snap("journal-scrubbed")
     }
 
-    /// Tapping (not dragging) the scrubber opens a calendar of written days; picking one brings
-    /// that day up in the day sheet, where Open opens its entry and the calendar button goes back
-    /// to the calendar.
+    /// Tapping (not dragging) the scrubber opens a calendar of written days; picking one opens
+    /// that day's entry in full.
     func testTappingScrubberJumpsToADay() throws {
         openJournal()
         scrubToBottom() // start far from the day picked below
@@ -133,17 +132,9 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(day.waitForExistence(timeout: 10), "\(label) is in the calendar")
         day.tap()
         let text = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "Biscuit has discovered", "Biscuit has discovered")).firstMatch
-        XCTAssertTrue(text.waitForExistence(timeout: 10), "The day comes up in its sheet")
-        XCTAssertTrue(app.buttons["Open"].exists)
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10), "The day's entry opens in full")
+        XCTAssertTrue(text.waitForExistence(timeout: 10), "It's that day's")
         snap("day-picked")
-        // Back to the calendar from the sheet, and pick the day again.
-        app.buttons["Jump to a Day"].tap()
-        XCTAssertTrue(app.staticTexts["Jump to a Day"].waitForExistence(timeout: 5), "The calendar again")
-        XCTAssertTrue(day.waitForExistence(timeout: 10))
-        day.tap()
-        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
-        app.buttons["Open"].tap()
-        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10), "Open opens the day's entry")
     }
 
     /// The medium widget's entry half opens that entry (me.dabble.app:/entry/<id>).
@@ -287,6 +278,51 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(app.buttons["Previous Month"].waitForNonExistence(timeout: 5), "Picking a day closes the calendar")
         XCTAssertTrue((date.value as? String)?.contains(label) == true, "The entry is dated \(label): \(date.value ?? "")")
         snap("entry-date-picked")
+    }
+
+    /// Swiping an open entry's date steps to the entry before it (right) and back (left).
+    func testSwipingAnEntrysDateStepsBetweenEntries() throws {
+        openJournal()
+        let entry = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
+        XCTAssertTrue(entry.waitForExistence(timeout: 10))
+        app.openTimelineEntry(entry)
+        // Yesterday's entry; the one before it is the day before's.
+        func title(_ ago: Int) -> XCUIElement {
+            let date = Calendar.current.date(byAdding: .day, value: -ago, to: .now)!
+            return app.buttons[date.formatted(.dateTime.weekday(.wide).month(.wide).day().year())]
+        }
+        XCTAssertTrue(title(1).waitForExistence(timeout: 10))
+        title(1).swipeRight()
+        XCTAssertTrue(title(2).waitForExistence(timeout: 10), "A swipe right is the entry before")
+        snap("entry-swiped-back")
+        title(2).swipeLeft()
+        XCTAssertTrue(title(1).waitForExistence(timeout: 10), "A swipe left is the entry after")
+    }
+
+    /// Pulling an open entry down and to one side, then letting go, steps to the entry before
+    /// it (left) or after (right).
+    func testPullingAnEntryDownAndAsideStepsBetweenEntries() throws {
+        openJournal()
+        let entry = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
+        XCTAssertTrue(entry.waitForExistence(timeout: 10))
+        app.openTimelineEntry(entry)
+        func title(_ ago: Int) -> XCUIElement {
+            let date = Calendar.current.date(byAdding: .day, value: -ago, to: .now)!
+            return app.buttons[date.formatted(.dateTime.weekday(.wide).month(.wide).day().year())]
+        }
+        XCTAssertTrue(title(1).waitForExistence(timeout: 10))
+        func pull(toward x: Double) {
+            let scroll = app.scrollViews.firstMatch
+            scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
+                .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: x, dy: 0.8)),
+                       withVelocity: .slow, thenHoldForDuration: 1.5)
+        }
+        pull(toward: 0.2)
+        XCTAssertTrue(title(2).waitForExistence(timeout: 10), "Down and left is the entry before")
+        pull(toward: 0.8)
+        XCTAssertTrue(title(1).waitForExistence(timeout: 10), "Down and right is the entry after")
     }
 
     private func snap(_ name: String) {

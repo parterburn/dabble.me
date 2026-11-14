@@ -53,7 +53,6 @@ struct ComposeView: View {
     @State private var allTags: [String] = []
     @State private var suggestedTags: [String] = []
     @State private var isSuggestingTags = false
-    @State private var suggestionError: String?
     @State private var pickingPhotos = false
     /// A free account tapped Photos: a note that they're part of PRO.
     @State private var explainingProPhotos = false
@@ -215,11 +214,6 @@ struct ComposeView: View {
             }
             .photosPicker(isPresented: $pickingPhotos, selection: libraryItems, maxSelectionCount: photoLimit - cameraItems.count,
                           selectionBehavior: .ordered, matching: .images, preferredItemEncoding: .current)
-            .alert("No hashtag suggestions", isPresented: .present($suggestionError)) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(suggestionError ?? "")
-            }
             .onChange(of: photoItems) { old, new in
                 // Newly added photos go into the stack; the drawer closes to keep room for writing.
                 if new.count > old.count { showsPhotoDrawer = false }
@@ -401,6 +395,7 @@ struct ComposeView: View {
                     editor.endLink()
                     Task { recentTags = (try? await model.recentHashtags()) ?? [] }
                     Task { if allTags.isEmpty { allTags = ((try? await model.allHashtags()) ?? []).map(\.tag) } }
+                    Task { await suggestHashtags() }
                 }
             } label: {
                 appIcon("slab-tag")
@@ -508,10 +503,10 @@ struct ComposeView: View {
         return photos.count == 1 ? "Uploading photo…" : "Uploading photo \(uploadedCount + 1) of \(photos.count)…"
     }
 
-    /// Tags to tap in: Suggest (on-device suggestions for what's written, where Apple Intelligence
-    /// is on) first, then its suggestions and the writer's tags that match a word in the entry
-    /// (both highlighted), then the most recently used tags. A tag already in the entry isn't
-    /// offered again.
+    /// Tags to tap in: on-device suggestions for what's written (where Apple Intelligence is on;
+    /// they come by themselves as the row opens) and the writer's tags that match a word in the
+    /// entry (both highlighted), then the most recently used tags. A tag already in the entry
+    /// isn't offered again.
     private var hashtagSuggestions: some View {
         let text = editor.plainText
         let inEntry = Set(JournalIntelligence.hashtags(in: text).map { $0.lowercased() })
@@ -521,17 +516,13 @@ struct ComposeView: View {
         let tags = (suggestedTags + matching + recentTags).filter { seen.insert($0.lowercased()).inserted }
         return ScrollView(.horizontal) {
             HStack(spacing: 8) {
-                if JournalIntelligence.canSuggestHashtags(for: model.me) {
-                    // The same size while it works: the word stays (hidden) under the spinner.
-                    // Not disabled while it works (that greys it out): extra taps are ignored.
-                    Button { if !isSuggestingTags { Task { await suggestHashtags() } } } label: {
-                        Text("Suggest")
-                            .opacity(isSuggestingTags ? 0 : 1)
-                            .overlay { if isSuggestingTags { ProgressView().controlSize(.small).tint(.white) } }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .buttonBorderShape(.capsule)
-                    .accessibilityLabel("Suggest Hashtags")
+                // Suggestions for what's written come by themselves when the row opens; until
+                // they're in, a spinner where they'll appear.
+                if isSuggestingTags {
+                    ProgressView()
+                        .controlSize(.small)
+                        .frame(height: 30)
+                        .accessibilityLabel("Suggesting hashtags")
                 }
                 ForEach(tags, id: \.self) { tag in
                     Button("#\(tag)") {
@@ -645,17 +636,18 @@ struct ComposeView: View {
         }
     }
 
+    /// Suggestions for what's written so far (on the device, where Apple Intelligence is on),
+    /// each time the hashtag row opens. Quietly: with none that fit, or none to be had, the row
+    /// just has the recent hashtags.
     private func suggestHashtags() async {
-        guard !isSuggestingTags else { return }
+        let text = editor.plainText
+        guard JournalIntelligence.canSuggestHashtags(for: model.me), !isSuggestingTags,
+              !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
         isSuggestingTags = true
         defer { isSuggestingTags = false }
-        do {
-            let existing = try await model.allHashtags().map(\.tag)
-            suggestedTags = try await JournalIntelligence.suggestHashtags(for: editor.plainText, from: existing)
-        } catch is CancellationError {
-        } catch {
-            suggestionError = error.localizedDescription
-        }
+        guard let existing = try? await model.allHashtags().map(\.tag),
+              let suggested = try? await JournalIntelligence.suggestHashtags(for: text, from: existing, firstName: model.me?.firstName) else { return }
+        suggestedTags = suggested
     }
 
     /// One compact row: thumbnails, "Add More", and the count (several photos become a collage).
@@ -664,7 +656,7 @@ struct ComposeView: View {
         ScrollView(.horizontal) {
             HStack(spacing: 10) {
                 if photoItems.count < photoLimit {
-                    // The thumbnails' size, in the accent like Suggest.
+                    // The thumbnails' size, in the accent.
                     addPhotos {
                         appIcon("slab-images")
                             .foregroundStyle(.white)

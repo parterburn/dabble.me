@@ -230,8 +230,9 @@ private struct YearSection: View {
                     Spacer(minLength: 8)
                     summary
                 }
+                // A written day opens its entry in full, over Stats (Back comes back here).
                 WritingHeatmap(year: year, days: days ?? [], photos: loaded[year]?.photos ?? [:], today: today, onSelect: { day in
-                    model.statsDay = StatsDay(day: day)
+                    model.openDay(day, over: .stats)
                 }, onWrite: write)
                 .id(year) // each year opens at its newest weeks
                 if failed == year {
@@ -723,149 +724,8 @@ private struct HashtagBars: View {
 
 /// A day's entries, from Stats → Past Year, in a sheet like A Random Memory: each one whole and
 /// scrollable, with Open to go to it in the Journal.
-/// A day tapped in Stats → Past Year or picked in Jump to a Day (`AppModel.statsDay`).
+/// A day to write an entry for (`AppModel.composingDay`): the composer's sheet opens on it.
 struct StatsDay: Identifiable {
     let day: JournalDay
     var id: String { day.iso }
-}
-
-struct DayEntriesSheet: View {
-    let day: JournalDay
-    @Environment(AppModel.self) private var model
-    @Environment(\.dismiss) private var dismiss
-    @State private var entries: [EntryDetail]?
-    @State private var error: String?
-    /// The day of the entry stepped to with the arrows beside Open (nil: the day it opened on).
-    @State private var steppedTo: JournalDay?
-    @State private var isStepping = false
-    @State private var choosingDay = false
-    @ScaledMetric(relativeTo: .body) private var bodySize: CGFloat = 17
-    @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
-    @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            // The calendar drops down from its button, on this day's month, to pick another day:
-            // a written one takes this sheet's place, and one without an entry opens the composer
-            // once this has closed.
-            SheetHeader(title: "Jump to a Day") {
-                SheetIconButton(icon: "slab-calendar", label: "Jump to a Day") {
-                    model.dayPickerOpensOn = steppedTo ?? day
-                    choosingDay = true
-                }
-                .accessibilityIdentifier("DayDrawerCalendar")
-                .popover(isPresented: $choosingDay) {
-                    DayPickerCalendar { choosingDay = false }
-                        .calendarDropdownSize()
-                        .presentationCompactAdaptation(.popover)
-                }
-                .onChange(of: choosingDay) { _, open in
-                    guard !open else { return }
-                    guard model.writeAfterDayPicker == nil else { dismiss(); return }
-                    // The day picked, once the dropdown has gone.
-                    Task {
-                        try? await Task.sleep(for: .milliseconds(400))
-                        model.finishDayPicker()
-                    }
-                }
-            }
-            if let entries {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 28) {
-                        ForEach(entries) { entry in
-                            VStack(alignment: .leading, spacing: 12) {
-                                // "Sunday, Nov 9, 2025 · 1 year ago", as A Random Memory dates its entry.
-                                Text(model.dateLine(for: entry.day, fallback: entry.date))
-                                    .font(.subheadline.weight(.semibold))
-                                    .foregroundStyle(.tint)
-                                if let document = entry.document {
-                                    DocumentText(blocks: RichText.droppingTrailing(hashtags: (entry.datedHashtags ?? []).map(\.tag), songLinks: !entry.songs.isEmpty, from: document), font: .system(size: bodySize * textSize.scale, design: fontStyle.design),
-                                                 scale: textSize.scale, bodySize: bodySize)
-                                } else {
-                                    Text(RichText.linkingURLs(in: RichText.linkingHashtags(in: AttributedString.journal(RichText.droppingTrailing(hashtags: (entry.datedHashtags ?? []).map(\.tag), songLinks: !entry.songs.isEmpty, from: entry.bodyText)))))
-                                        .font(.system(size: bodySize * textSize.scale, design: fontStyle.design))
-                                        .lineSpacing(5)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                }
-                                if !entry.songs.isEmpty {
-                                    SongList(songs: entry.songs)
-                                }
-                                if let dated = entry.datedHashtags, !dated.isEmpty {
-                                    DatedHashtagRow(hashtags: dated)
-                                }
-                                if entry.imageProcessing || entry.imageURL != nil {
-                                    EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing, day: entry.day)
-                                }
-                            }
-                        }
-                    }
-                    .padding(.bottom, EntryStepBar.clearance) // the last entry's end scrolls clear of the bar
-                }
-                // Links work here too: a #tag closes this and searches for it; a web page opens (dabble.me's
-                // in the app).
-                .environment(\.openURL, OpenURLAction { url in
-                    if let tag = RichText.hashtag(from: url) {
-                        dismiss()
-                        model.search(hashtag: tag)
-                        return .handled
-                    }
-                    return WebLinks.open(url)
-                })
-                // Always in view over the entry's end, as in A Random Memory: Open, between the
-                // entries before and after this one.
-                .overlay(alignment: .bottom) {
-                    EntryStepBar(entry: entries.first, isLoading: isStepping) { id in
-                        Task { await step(to: id) }
-                    } open: {
-                        // The Journal opens it (this sheet also comes up over Search).
-                        guard let entry = entries.first else { return }
-                        model.selectedTab = .journal
-                        model.openEntryRequest = entry.id
-                        dismiss()
-                    }
-                }
-            } else if let error {
-                ContentUnavailableView("Couldn't load this day", systemImage: "exclamationmark.triangle", description: Text(error))
-            } else {
-                ProgressView().frame(maxWidth: .infinity, minHeight: 200)
-            }
-        }
-        .padding([.horizontal, .top], 20)
-        // The Open bar sits at the sheet's foot, as far from its bottom edge as from its sides
-        // (the home indicator's safe area on top of the padding left a gap under it).
-        .padding(.bottom, 22)
-        .frame(maxHeight: .infinity, alignment: .top)
-        .ignoresSafeArea(.container, edges: .bottom)
-        .presentationDetents([.medium, .large])
-        .presentationDragIndicator(.visible)
-        .task { await load() }
-    }
-
-    /// The entry before or after: it takes the sheet, under its own date.
-    private func step(to id: Int) async {
-        guard !isStepping else { return }
-        isStepping = true
-        defer { isStepping = false }
-        do {
-            let entry = try await model.entry(id: id)
-            withAnimation(.snappy) {
-                entries = [entry]
-                steppedTo = entry.day
-            }
-        } catch is CancellationError {
-        } catch {
-            self.error = error.localizedDescription
-        }
-    }
-
-    /// The day's entries, each in full.
-    private func load() async {
-        do {
-            let loaded = try await model.entries(on: day)
-            if loaded.isEmpty { error = "No entries on this day." } else { entries = loaded }
-        } catch is CancellationError {
-        } catch {
-            self.error = error.localizedDescription
-        }
-    }
 }

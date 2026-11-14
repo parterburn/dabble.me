@@ -57,14 +57,9 @@ final class ScreenshotTests: XCTestCase {
         let tip = app.buttons["Continue"]
         if tip.waitForExistence(timeout: 2) { tip.tap() }
         editor.typeText("Slow Saturday. Made pour-over with the beans from the farmers market and read on the porch until noon.\nGrateful for:\n- Quiet mornings\nThe first cold brew of fall")
-        app.buttons["Hashtags"].tap() // the row: Suggest, then recent tags
-        let suggest = app.buttons["Suggest Hashtags"]
-        if suggest.waitForExistence(timeout: 3) {
-            suggest.tap()
-            _ = app.buttons.matching(NSPredicate(format: "label BEGINSWITH '#'")).firstMatch.waitForExistence(timeout: 60)
-        } else {
-            app.tap()
-        }
+        app.buttons["Hashtags"].tap() // the row: suggestions for what's written, then recent tags
+        _ = app.buttons.matching(NSPredicate(format: "label BEGINSWITH '#'")).firstMatch.waitForExistence(timeout: 60)
+        _ = app.descendants(matching: .any)["Suggesting hashtags"].waitForNonExistence(timeout: 60)
         // Open the photo drawer from the stack, so the shot shows the photos (the bar and its
         // rows sit on the keyboard, so the keyboard stays up).
         app.buttons["Photos"].tap()

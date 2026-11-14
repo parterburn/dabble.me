@@ -36,8 +36,7 @@ struct JournalView: View {
     @State private var handledStatsRequest = 0
     /// The list of the Journal's views is open under the title.
     @State private var choosingMode = false
-    /// Jump to a Day, as a dropdown under the "me" mark (held).
-    @State private var jumpingToDay = false
+    /// The "me" mark was held (for Jump to a Day): the tap that ends the hold isn't one.
     @State private var heldMark = false
     /// A jump to a far month that's still being brought home (`settle`).
     @State private var jump: Task<Void, Never>?
@@ -74,10 +73,11 @@ struct JournalView: View {
                                 Text(mode.rawValue)
                                     .font(.title3.weight(.semibold))
                                     .foregroundStyle(.primary)
+                                // Large enough to say the title opens something.
                                 appIcon("slab-angle-down")
                                     .resizable()
                                     .scaledToFit()
-                                    .frame(width: 12, height: 12)
+                                    .frame(width: 18, height: 18)
                                     .foregroundStyle(.tint)
                             }
                             .frame(minWidth: 190, minHeight: 44)
@@ -95,7 +95,8 @@ struct JournalView: View {
                         Button { startWriting() } label: { Label("New Entry", icon: "slab-plus") }
                     }
                 }
-                .sheet(isPresented: $composing) { ComposeView(mode: .new) }
+                // Once written, the new entry opens in full under the closing composer.
+                .sheet(isPresented: $composing) { ComposeView(mode: .new) { path.append(EntryRoute(id: $0.id)) } }
                 .entryActionSheets(actions)
                 // "Open" from the shake-for-a-memory sheet, or the widget's entry. Also on first
                 // appearing: the Journal tab may not exist yet when the request comes.
@@ -400,11 +401,11 @@ struct JournalView: View {
     }
 
     private var brandMark: some View {
-        // A tap is the way back to the list from Stats, Photos or the Playlist (on the list it
-        // does nothing); held, Jump to a Day's calendar drops down from it.
+        // A tap is the way back to the list from Stats, Photos or the Playlist, and on the list
+        // it's back to the top; held, it's Jump to a Day's calendar.
         Button {
             // Not the tap that ends a hold.
-            if heldMark { heldMark = false } else if mode != .list { mode = .list }
+            if heldMark { heldMark = false } else if mode != .list { mode = .list } else { scrollToTop += 1 }
         } label: {
             Image("Logo")
                 .resizable()
@@ -416,14 +417,13 @@ struct JournalView: View {
         .buttonStyle(.plain)
         .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in
             heldMark = true
-            jumpingToDay = true
+            model.showsDayPicker = true
         })
-        .dayPickerDropdown(isPresented: $jumpingToDay)
-        .onChange(of: jumpingToDay) { _, open in if !open { heldMark = false } }
+        .onChange(of: model.showsDayPicker) { _, open in if !open { heldMark = false } }
         .accessibilityIdentifier("JournalBrandMark")
         .accessibilityLabel("Dabble Me")
-        .accessibilityHint(mode == .list ? "Touch and hold to jump to a day" : "Shows your journal as a list")
-        .accessibilityAction(named: "Jump to a Day") { jumpingToDay = true }
+        .accessibilityHint(mode == .list ? "Scrolls to the top. Touch and hold to jump to a day." : "Shows your journal as a list")
+        .accessibilityAction(named: "Jump to a Day") { model.showsDayPicker = true }
     }
 
     private func startWriting() {

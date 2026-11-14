@@ -8,7 +8,11 @@ struct TodayView: View {
     @State private var path = NavigationPath()
     @State private var composing = false
     @State private var showingProInfo = false
+    /// How many times the wordmark's been tapped to type itself out, and whether it's at it.
+    @State private var retypes = 0
+    @State private var isRetyping = false
     @AppStorage(ShakeSetting.storageKey) private var shakeForRandomEntry = true
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     /// A prompt Apple Intelligence wrote from recent entries (PRO, on device), for this day only.
     /// With Apple Intelligence on (PRO), Today's prompt is written from recent entries on the device,
     /// once a day (kept for that day), instead of the general daily prompt.
@@ -30,7 +34,12 @@ struct TodayView: View {
                     // The header (the nav bar is hidden here): the wordmark, small, with how many
                     // entries the journal holds ("1,204 entries") beside it.
                     HStack(alignment: .center) {
-                        Wordmark(size: 28)
+                        // An easter egg: tapped, it types itself out again, as it does at launch.
+                        Wordmark(size: 28, typesOut: retypes > 0, showsCursor: isRetyping)
+                            .id(retypes)
+                            .contentShape(.rect)
+                            .onTapGesture { retypeWordmark() }
+                            .sensoryFeedback(.impact(weight: .light), trigger: retypes)
                         Spacer(minLength: 8)
                         // Nothing to count yet: no "0 entries".
                         if let count = model.me?.entryCount, count > 0 {
@@ -139,13 +148,31 @@ struct TodayView: View {
                     composing = true
                 }
             }
-            .sheet(isPresented: $composing) { ComposeView(mode: .new) }
+            // Once written, the new entry opens in full under the closing composer.
+            .sheet(isPresented: $composing) { ComposeView(mode: .new) { path.append(EntryRoute(id: $0.id)) } }
+            // And one written for another day from here ("Write Yesterday's Entry").
+            .onChange(of: model.todayEntryRequest) { _, id in
+                guard let id else { return }
+                model.todayEntryRequest = nil
+                path.append(EntryRoute(id: id))
+            }
             .sheet(isPresented: $showingProInfo) { ProInfoView(feature: .writing) }
             .alert("Couldn't write a prompt", isPresented: .present($promptError)) {
                 Button("OK", role: .cancel) {}
             } message: {
                 Text(promptError ?? "")
             }
+        }
+    }
+
+    /// Types the wordmark out again, its cursor blinking a little after the last letter.
+    private func retypeWordmark() {
+        guard !isRetyping, !reduceMotion else { return }
+        isRetyping = true
+        retypes += 1
+        Task {
+            try? await Task.sleep(for: .milliseconds(Wordmark.typingDuration + 1500))
+            isRetyping = false
         }
     }
 

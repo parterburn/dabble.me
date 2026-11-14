@@ -76,7 +76,14 @@ struct RootView: View {
             // From the widget: me.dabble.app:/write, :/today, :/today/edit ("Edit today"), or
             // :/entry/<id> (the entry it shows).
             // (Sign-in callbacks never get here; the web sign-in session handles them.)
-            guard model.isSignedIn, url.scheme == "me.dabble.app" else { return }
+            guard model.isSignedIn else { return }
+            // A dabble.me link tapped elsewhere on the phone (a universal link). One the app has
+            // no page for goes back to the browser.
+            if url.scheme == "https" {
+                if let link = AppLink(url) { model.open(link) } else { UIApplication.shared.open(url) }
+                return
+            }
+            guard url.scheme == "me.dabble.app" else { return }
             #if DEBUG
             // UI tests can't shake the simulator: me.dabble.app:/shake does the same.
             if url.path == "/shake" {
@@ -175,10 +182,18 @@ struct MainTabs: View {
             }
         }
         .sheet(isPresented: $model.showsRandomEntry) { RandomEntrySheet() }
-        // One sheet at a time: a day without an entry picked from the day sheet's calendar opens
-        // the composer once that sheet has closed.
-        .sheet(item: $model.statsDay, onDismiss: { model.finishDayPicker() }) { DayEntriesSheet(day: $0.day).id($0.id) }
-        .sheet(item: $model.composingDay) { ComposeView(mode: .new, day: $0.day) }
+        // Once written, the entry opens in full: on Today if that's where it was started,
+        // otherwise in the Journal.
+        .sheet(item: $model.composingDay) {
+            ComposeView(mode: .new, day: $0.day) { entry in
+                if model.selectedTab == .today {
+                    model.todayEntryRequest = entry.id
+                } else {
+                    model.selectedTab = .journal
+                    model.openEntryRequest = entry.id
+                }
+            }
+        }
         // A day picked there: its sheet, or the composer, once the calendar has closed.
         .sheet(isPresented: $model.showsDayPicker, onDismiss: { model.finishDayPicker() }) { DayPickerSheet() }
         .onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in
