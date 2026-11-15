@@ -7,6 +7,7 @@ struct EntryDetailView: View {
 
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.backTrail) private var backTrail
     @Environment(\.openURL) private var openURL
     @State private var entry: EntryDetail?
     @State private var loadError: String?
@@ -62,6 +63,9 @@ struct EntryDetailView: View {
                             .padding(.bottom, 6)
                             .contentShape(.rect)
                             .simultaneousGesture(pinchToResize)
+                            // The swipe for Actions is the entry's own: it starts on its card,
+                            // not on On This Day under it.
+                            .simultaneousGesture(swipeForActions)
                             .offset(x: swipeOffset)
                         if let sameDay, sameDay.count > 0 {
                             SameDaySection(entry: entry, sameDay: sameDay, headingPassed: $readingOnThisDay,
@@ -81,7 +85,10 @@ struct EntryDetailView: View {
                         .frame(maxWidth: 680)
                         .frame(maxWidth: .infinity)
                 })
-                .navigationDestination(item: $opened) { EntryDetailView(entryID: $0.id) }
+                .navigationDestination(item: $opened) {
+                    EntryDetailView(entryID: $0.id)
+                        .environment(\.backTrail, trail + [BackStep(title: entry.day?.formatted(.dateTime.month(.abbreviated).day().year()) ?? entry.date) { opened = nil }])
+                }
                 // Again when the entry moves to another day.
                 .task(id: "\(entry.id)|\(entry.date)") {
                     let loaded = await model.sameDay(as: entry.id)
@@ -94,7 +101,6 @@ struct EntryDetailView: View {
                     }
                 }
                 .id(entry.id) // each entry starts at its top (the title's swipe steps between them)
-                .simultaneousGesture(swipeForActions)
                 .overlay(alignment: .trailing) { swipeHint }
                 .modifier(PullForMore(reflect: canReflect(entry) ? { await reflect(on: entry) } : nil,
                                       previous: entry.previousEntry.map { neighbour in { await step(to: neighbour) } },
@@ -136,8 +142,8 @@ struct EntryDetailView: View {
         }
         .navigationTitle(entry?.day?.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year()) ?? "")
         .navigationBarTitleDisplayMode(.inline)
-        // The arrow held, like the date: Jump to a Day.
-        .slabBackButton(onHold: { if let entry { jumpToADay(from: entry) } })
+        // The arrow held: everywhere there is to go back to, once that's more than one place.
+        .slabBackButton(trail: trail.reversed())
         .toolbar {
             if let entry {
                 // Down in On This Day, the bar says so in place of the entry's date.
@@ -218,7 +224,10 @@ struct EntryDetailView: View {
                     // Formatting the app can't represent (styles, quotes, images) stays web-only so nothing gets lost.
                     if entry.document != nil { editing = true } else { openURL(entry.webEditURL) }
                 }
-                .onLongPressGesture(minimumDuration: 0.45) { showingActions = true }
+                .onLongPressGesture(minimumDuration: 0.45) {
+                    HoldHaptic.play()
+                    showingActions = true
+                }
                 .accessibilityElement()
                 .accessibilityLabel("Edit Entry")
                 .accessibilityAddTraits(.isButton)
@@ -230,8 +239,29 @@ struct EntryDetailView: View {
     /// Swipe left anywhere on the entry for its actions (a right swipe is iOS's "go back"). The
     /// text follows your finger and the Actions bolt comes in from the right; let go past the
     /// threshold to open them.
+    /// The pages behind this one, the furthest first: where the first entry was opened from
+    /// (this one, when nothing's been handed down), then each entry opened from On This Day.
+    private var trail: [BackStep] {
+        guard backTrail.isEmpty else { return backTrail }
+        let title = switch model.selectedTab {
+        case .today: "Today"
+        case .search: "Search"
+        default: "Journal"
+        }
+        // From further up: the entries opened over this one go first, then this one.
+        return [BackStep(title: title) {
+            guard opened != nil else { dismiss(); return }
+            opened = nil
+            Task {
+                try? await Task.sleep(for: .milliseconds(50))
+                dismiss()
+            }
+        }]
+    }
+
     private var swipeForActions: some Gesture {
-        DragGesture(minimumDistance: 30)
+        // (Measured on the screen: the card it's on moves with the swipe.)
+        DragGesture(minimumDistance: 30, coordinateSpace: .global)
             .onChanged { value in
                 let dx = value.translation.width, dy = value.translation.height
                 guard dx < 0, abs(dy) < abs(dx) * 0.5 else {
@@ -346,7 +376,10 @@ struct EntryDetailView: View {
             .contentShape(.rect)
             .onTapGesture { showsRelativeDate.toggle() }
             // Held: Jump to a Day's calendar, on this entry's month.
-            .onLongPressGesture(minimumDuration: 0.45) { jumpToADay(from: entry) }
+            .onLongPressGesture(minimumDuration: 0.45) {
+                HoldHaptic.play()
+                jumpToADay(from: entry)
+            }
             .gesture(DragGesture(minimumDistance: 24).onEnded { drag in
                 guard abs(drag.translation.width) > abs(drag.translation.height) * 1.5 else { return }
                 Task { await step(to: drag.translation.width > 0 ? entry.previousEntry : entry.nextEntry) }
@@ -565,6 +598,8 @@ private struct SameDaySection: View {
                         if passed { passedMonths.insert(other.id) } else { passedMonths.remove(other.id) }
                     }
                 MemoryRow(entry: other) { onOpen(other.id) }
+                    // Held: the entry in the Journal's preview, with Open.
+                    .modifier(MemoryPreview(entry: other) { onOpen(other.id) })
                     .padding(.horizontal)
                     .padding(.bottom, other.id == sameDay.entries.last?.id ? 24 : 4)
             }
@@ -594,35 +629,56 @@ private struct MemoryRow: View {
     }
 
     var body: some View {
-        Button(action: open) {
-            HStack(alignment: .top, spacing: 14) {
-                VStack(spacing: 0) {
-                    Text(entry.day?.weekdayShort.uppercased() ?? "")
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                    Text(entry.day?.dayNumber ?? "")
-                        .font(.title3.weight(.semibold))
-                        .monospacedDigit()
-                }
-                .frame(width: 42)
-                Text(preview)
-                    .font(.system(size: textSize * readingSize.scale, design: fontStyle.design))
-                    .foregroundStyle(.primary.opacity(0.82))
-                    .lineSpacing(3)
-                    .lineLimit(3)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                if let url = entry.thumbnailURL(width: 300, height: 300) {
-                    EntryThumbnail(url: url)
-                }
-            }
-            .padding(.vertical, 4)
+        // A tap, not a Button: a button would also open the entry at the end of a sideways swipe
+        // that began and ended on it.
+        row
             .contentShape(.rect)
+            .onTapGesture(perform: open)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("\(entry.day?.long ?? entry.date). \(preview)")
+            .accessibilityHint("Opens the entry")
+            .accessibilityAddTraits(.isButton)
+            .accessibilityAction(.default, open)
+    }
+
+    private var row: some View {
+        HStack(alignment: .top, spacing: 14) {
+            VStack(spacing: 0) {
+                Text(entry.day?.weekdayShort.uppercased() ?? "")
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                Text(entry.day?.dayNumber ?? "")
+                    .font(.title3.weight(.semibold))
+                    .monospacedDigit()
+            }
+            .frame(width: 42)
+            Text(preview)
+                .font(.system(size: textSize * readingSize.scale, design: fontStyle.design))
+                .foregroundStyle(.primary.opacity(0.82))
+                .lineSpacing(3)
+                .lineLimit(3)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            if let url = entry.thumbnailURL(width: 300, height: 300) {
+                EntryThumbnail(url: url)
+            }
         }
-        .buttonStyle(.plain)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(entry.day?.long ?? entry.date). \(preview)")
-        .accessibilityHint("Opens the entry")
+        .padding(.vertical, 4)
+    }
+}
+
+/// Touch and hold an On This Day row: that entry's preview, as a day's in Stats.
+private struct MemoryPreview: ViewModifier {
+    let entry: EntrySummary
+    let open: () -> Void
+    @Environment(AppModel.self) private var model
+
+    func body(content: Content) -> some View {
+        if let day = entry.day {
+            content.dayPreview(day, isWritten: true, summary: entry, model: model, open: open, write: nil)
+        } else {
+            content
+        }
     }
 }
 

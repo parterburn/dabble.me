@@ -446,6 +446,7 @@ struct JournalView: View {
         .buttonStyle(.plain)
         .simultaneousGesture(LongPressGesture(minimumDuration: 0.5).onEnded { _ in
             heldMark = true
+            HoldHaptic.play()
             model.showsDayPicker = true
         })
         .onChange(of: model.showsDayPicker) { _, open in if !open { heldMark = false } }
