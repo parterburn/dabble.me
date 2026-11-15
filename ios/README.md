@@ -79,6 +79,8 @@ The simulator reaches `localhost` directly. On a phone, "localhost" is the phone
 
 **Stats** (Journal > Stats, PRO): the whole journal's totals in four tiles that each go somewhere (the Journal, Photos, the streak's year, the hashtags), then one year at a time under a year menu: the day grid, entries per month, the year's hashtags (`GET /api/v1/stats/days?year=`) and a prompt for an AI connector. Holding a day in the grid previews its entry with Open, or says nothing's written and offers Write Entry (`dayPreview`).
 
+**An open entry** (`EntryDetailView`) sits in a card, with On This Day under it (`SameDaySection`): the same date in other years, a tap opening one over it and a hold previewing it. The swipe left for Actions starts on the card only. Once an entry has been opened from another's On This Day, the back arrow held lists everywhere to go back to (each entry behind it, then Today, the Journal or Search), handed down as `backTrail`; a tap still goes back one.
+
 **Calendars** are iOS's own month view with a dot under each written day (`WrittenDaysCalendar`, a `UICalendarView`), from the first entry's day to today. Jump to a Day (`DayPickerSheet`: from the timeline scrubber, the Journal's "me" mark held, Search, or an open entry's date held) opens a written day's entry in full and opens the composer on a day without one; the round button with today's date in its header turns the calendar back to this month. The composer's date is the same calendar in a popover under it.
 
 **Chrome.** Pushed pages use the Slab left arrow (`slabBackButton()`), and rows that open a page end in the Slab right arrow (`PaneLink`). Round buttons over a photo (the viewer's X) share the dark translucent backing of its Save and Share (`RoundButtonBacking`).

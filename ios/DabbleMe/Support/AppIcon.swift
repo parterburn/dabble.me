@@ -89,14 +89,37 @@ struct PaneLink<Destination: View, Label: View>: View {
     }
 }
 
+/// A tap you can feel when a touch-and-hold takes (the "me" mark, an entry's date or pencil, the
+/// composer's photos): the hold did something, where a tap would have done something else.
+@MainActor
+enum HoldHaptic {
+    static func play() {
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+    }
+}
+
 extension View {
     /// The Slab left arrow for a pushed page's Back, in place of the system chevron.
-    /// `onHold`: what touching and holding the arrow does (an entry's: Jump to a Day).
-    func slabBackButton(onHold: (() -> Void)? = nil) -> some View { modifier(SlabBackButton(onHold: onHold)) }
+    /// `trail`: the pages behind this one, the nearest first. Touching and holding the arrow
+    /// lists them, as the system's Back does, to go back more than one at once.
+    func slabBackButton(trail: [BackStep] = []) -> some View { modifier(SlabBackButton(trail: trail)) }
+}
+
+/// A page to go back to: its name, and what takes you there.
+struct BackStep: Identifiable, Sendable {
+    let id = UUID()
+    let title: String
+    let go: @MainActor () -> Void
+}
+
+extension EnvironmentValues {
+    /// The pages behind an open entry (where it was opened from, then each entry opened from
+    /// another's On This Day), the furthest first.
+    @Entry var backTrail: [BackStep] = []
 }
 
 private struct SlabBackButton: ViewModifier {
-    var onHold: (() -> Void)?
+    var trail: [BackStep] = []
     @Environment(\.dismiss) private var dismiss
 
     func body(content: Content) -> some View {
@@ -104,19 +127,19 @@ private struct SlabBackButton: ViewModifier {
             .navigationBarBackButtonHidden(true)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    if let onHold {
-                        // Not a Button: in the toolbar that becomes a UIKit bar button, which
-                        // never sees a long press. This keeps its own gestures (a hold isn't a tap).
-                        arrow
-                            .frame(width: 44, height: 44)
-                            .contentShape(.rect)
-                            .onTapGesture { dismiss() }
-                            .onLongPressGesture(minimumDuration: 0.45, perform: onHold)
-                            .accessibilityElement()
-                            .accessibilityLabel("Back")
-                            .accessibilityAddTraits(.isButton)
-                            .accessibilityAction { dismiss() }
-                            .accessibilityAction(named: "Jump to a Day", onHold)
+                    if trail.count > 1 {
+                        // A tap goes back one; held, it's a menu of everywhere to go back to.
+                        Menu {
+                            ForEach(trail) { step in
+                                Button(step.title) { step.go() }
+                            }
+                        } label: {
+                            arrow
+                        } primaryAction: {
+                            dismiss()
+                        }
+                        .tint(.primary)
+                        .accessibilityLabel("Back")
                     } else {
                         Button { dismiss() } label: { arrow }
                             .tint(.primary)

@@ -251,7 +251,8 @@ final class JournalViewsTests: XCTestCase {
         sleep(1)
         snap("entry-relative-date")
         title.tap()
-        app.swipeLeft() // the entry's Actions
+        // The entry's Actions: a swipe left on its card.
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.2)).press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.2)))
         let reflect = app.buttons["Reflection"]
         if reflect.waitForExistence(timeout: 3) {
             reflect.tap()
@@ -351,7 +352,7 @@ final class JournalViewsTests: XCTestCase {
 
         app.openTimelineEntry(row)
         XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
-        app.scrollViews.firstMatch.swipeLeft()
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.2)).press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.2)))
         XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout: 5), "Swiping left on the entry shows its actions")
         snap("entry-swipe-actions")
         app.buttons["Edit"].tap()

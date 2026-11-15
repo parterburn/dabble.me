@@ -325,22 +325,35 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(title(1).waitForExistence(timeout: 10), "Down and right is the entry after")
     }
 
-    /// An open entry's back arrow, held, opens Jump to a Day (a tap still goes back).
-    func testHoldingAnEntrysBackArrowJumpsToADay() throws {
-        openJournal()
-        let entry = app.descendants(matching: .any)
-            .matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
-        XCTAssertTrue(entry.waitForExistence(timeout: 10))
-        app.openTimelineEntry(entry)
+    /// With an entry opened from another's On This Day, the back arrow held lists everywhere to
+    /// go back to (the entry before, then where that was opened from); a row there, held,
+    /// previews its entry.
+    func testHoldingBackListsWhereToGoBackTo() throws {
+        let memory = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "First snow of the year")).firstMatch
+        XCTAssertTrue(memory.waitForExistence(timeout: 20))
+        app.openTimelineEntry(memory)
+        let other = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Bruges! Wandered the canals")).firstMatch
+        XCTAssertTrue(other.waitForExistence(timeout: 10))
+        // Held: the entry's preview, with Open.
+        other.press(forDuration: 1.0)
+        let open = app.buttons["Open"]
+        XCTAssertTrue(open.waitForExistence(timeout: 5), "A held row previews its entry")
+        sleep(1)
+        snap("entry-on-this-day-preview")
+        open.tap()
+        let year = Calendar.current.component(.year, from: .now)
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", String(year - 1))).firstMatch.waitForExistence(timeout: 10))
         let back = app.descendants(matching: .any)["Back"].firstMatch
         XCTAssertTrue(back.waitForExistence(timeout: 10))
         back.press(forDuration: 1.0)
-        XCTAssertTrue(app.staticTexts["Jump to a Day"].waitForExistence(timeout: 5), "Held, the arrow opens the calendar")
-        snap("jump-sheet")
-        app.buttons["Close"].tap()
-        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 5), "Still on the entry")
-        back.tap()
-        XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 10), "A tap goes back")
+        let before = app.collectionViews.buttons.matching(NSPredicate(format: "label ENDSWITH %@", String(year - 2))).firstMatch
+        XCTAssertTrue(before.waitForExistence(timeout: 5), "The entry it was opened from")
+        let root = app.collectionViews.buttons["Today"]
+        XCTAssertTrue(root.exists, "And where that one was opened from")
+        snap("entry-back-menu")
+        root.tap()
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForNonExistence(timeout: 10), "All the way back in one go")
+        XCTAssertTrue(app.staticTexts["On This Day"].waitForExistence(timeout: 10))
     }
 
     /// A swipe in from the left edge of an open entry goes back, as it does anywhere in iOS.
@@ -370,6 +383,10 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(other.waitForExistence(timeout: 10), "The year after is listed under the entry")
         sleep(1)
         snap("entry-on-this-day")
+        // The swipe for Actions is the card's: under it, on On This Day, a swipe does nothing.
+        other.swipeLeft()
+        XCTAssertFalse(app.buttons["Delete"].waitForExistence(timeout: 2), "No Actions from a swipe outside the card")
+        XCTAssertTrue(app.staticTexts["On This Day"].exists)
         other.tap()
         let year = Calendar.current.component(.year, from: .now) - 1
         let title = app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", String(year))).firstMatch

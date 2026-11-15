@@ -465,6 +465,7 @@ struct ComposeView: View {
         .buttonStyle(.plain)
         .simultaneousGesture(LongPressGesture(minimumDuration: 0.45).onEnded { _ in
             heldPhotoStack = true
+            HoldHaptic.play()
             pickingPhotos = true
         })
         .onChange(of: pickingPhotos) { _, picking in if !picking { heldPhotoStack = false } }
