@@ -51,6 +51,24 @@ final class WidgetTests: XCTestCase {
         if springboard.buttons["Done"].exists { springboard.buttons["Done"].tap() }
         sleep(3)
         snapshot(springboard, "widget-home")
+
+        // The widget chooses what it shows for itself: touch and hold it, Edit Widget.
+        springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.2)).press(forDuration: 1.5)
+        let editWidget = springboard.buttons["Edit Widget"]
+        XCTAssertTrue(editWidget.waitForExistence(timeout: 5), "The widget can be edited")
+        editWidget.tap()
+        sleep(2)
+        snapshot(springboard, "widget-edit")
+        let choice = springboard.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Same as in the App")).firstMatch
+        XCTAssertTrue(choice.waitForExistence(timeout: 5), "It starts on the app's setting")
+        choice.tap()
+        let rewind = springboard.buttons["Rewind, With the Entry"]
+        XCTAssertTrue(rewind.waitForExistence(timeout: 5))
+        snapshot(springboard, "widget-edit-options")
+        rewind.tap()
+        springboard.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.9)).tap() // out of the editor
+        sleep(3)
+        snapshot(springboard, "widget-home-rewind")
     }
 
     private func snapshot(_ app: XCUIApplication, _ name: String) {

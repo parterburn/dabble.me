@@ -255,6 +255,12 @@ final class ReminderScheduler {
         if !stale.isEmpty { center.removePendingNotificationRequests(withIdentifiers: stale) }
     }
 
+    /// The coming days' entries to look back on, for the widget (which shows them whether or
+    /// not reminders are on).
+    func lookBacks(for model: AppModel) async -> ReminderPlan? {
+        await plan(for: model, session: session)
+    }
+
     /// The coming days' memories, fetched again when the journal has changed or half an hour on.
     private func plan(for model: AppModel, session: Int) async -> ReminderPlan? {
         let key = "\(model.today?.date ?? "")|\(model.me?.entryCount ?? 0)|\(model.today?.entry?.updatedAt ?? "")"

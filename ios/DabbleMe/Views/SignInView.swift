@@ -139,7 +139,7 @@ private struct WelcomeView: View {
                         Text("Start Your Journal")
                             .frame(maxWidth: .infinity, minHeight: 30)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .filledButtonStyle()
                     .controlSize(.large)
 
                     Button {
@@ -275,7 +275,7 @@ private struct LockedGlimpse<Content: View>: View {
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
                 Button("Start Your Journal") { Task { await model.signIn(createAccount: true) } }
-                    .buttonStyle(.borderedProminent)
+                    .filledButtonStyle()
                 Button("Sign In") { Task { await model.signIn() } }
                     .font(.subheadline)
             }

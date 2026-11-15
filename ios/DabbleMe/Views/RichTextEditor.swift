@@ -84,6 +84,30 @@ final class RichTextEditorModel {
         textDidChange()
     }
 
+    /// Tags the entry's own words: a "#" before the first use of each of `tags` that's a word
+    /// in it and isn't a hashtag there already. The cursor stays where it was. Returns the
+    /// ones it tagged.
+    @discardableResult
+    func tagWords(matching tags: [String]) -> [String] {
+        guard let textView else { return [] }
+        let storage = textView.textStorage
+        var cursor = textView.selectedRange
+        var tagged: [String] = []
+        for tag in tags {
+            let pattern = "(?<![#\\w])" + NSRegularExpression.escapedPattern(for: tag) + "(?!\\w)"
+            guard let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
+                  let match = regex.firstMatch(in: storage.string, range: NSRange(location: 0, length: storage.length)) else { continue }
+            let attributes = storage.attributes(at: match.range.location, effectiveRange: nil)
+            storage.insert(NSAttributedString(string: "#", attributes: attributes), at: match.range.location)
+            if match.range.location < cursor.location { cursor.location += 1 }
+            tagged.append(tag)
+        }
+        guard !tagged.isEmpty else { return [] }
+        textView.selectedRange = cursor
+        textDidChange()
+        return tagged
+    }
+
     /// Adds an "Ask Me" question as its own bold paragraph at the end, with the cursor on a fresh
     /// line under it, ready for the answer.
     func addQuestion(_ question: String) {

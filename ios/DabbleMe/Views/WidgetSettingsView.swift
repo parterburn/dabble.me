@@ -87,9 +87,9 @@ struct WidgetSettingsView: View {
     @ViewBuilder
     private var footer: some View {
         if content.source == .rewind, model.me?.isPro != true {
-            Text("On This Day is part of Dabble Me PRO, so the widget looks back at another past entry instead. Add a widget by touching and holding your home screen.")
+            Text("On This Day is part of Dabble Me PRO, so the widget looks back at another past entry instead. Add a widget by touching and holding your home screen. A widget can also choose for itself: touch and hold it, then Edit Widget.")
         } else {
-            Text("Add a widget by touching and holding your home screen.")
+            Text("Add a widget by touching and holding your home screen. A widget can also choose for itself: touch and hold it, then Edit Widget.")
         }
     }
 }

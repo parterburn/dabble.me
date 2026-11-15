@@ -235,7 +235,7 @@ struct JournalView: View {
                 } actions: {
                     if model.me?.canWrite == true {
                         Button("Write Your First Entry") { composing = true }
-                            .buttonStyle(.borderedProminent)
+                            .filledButtonStyle()
                             .buttonBorderShape(.capsule)
                             .controlSize(.large)
                             .fontWeight(.medium)

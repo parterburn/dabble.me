@@ -99,6 +99,12 @@ enum HoldHaptic {
 }
 
 extension View {
+    /// The app's filled button: the olive fill with white words, or in Dark Mode (where the
+    /// olive is pale) with dark olive ones, which white is too faint against.
+    func filledButtonStyle() -> some View {
+        buttonStyle(.borderedProminent).foregroundStyle(Color("OnAccent"))
+    }
+
     /// The Slab left arrow for a pushed page's Back, in place of the system chevron.
     /// `trail`: the pages behind this one, the nearest first. Touching and holding the arrow
     /// lists them, as the system's Back does, to go back more than one at once.

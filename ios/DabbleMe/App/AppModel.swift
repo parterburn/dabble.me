@@ -511,7 +511,10 @@ final class AppModel {
     func refreshRemindersInBackground() async {
         BackgroundRefresh.schedule()
         guard isSignedIn else { return }
-        if let today: TodaySummary = try? await api.get("api/v1/today") { self.today = today }
+        if let today: TodaySummary = try? await api.get("api/v1/today") {
+            self.today = today
+            WidgetSync.update(from: self) // the widget's day, and its look backs for the days ahead
+        }
         await ReminderScheduler.shared.reschedule(for: self)
     }
 

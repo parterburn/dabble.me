@@ -286,7 +286,7 @@ struct SongPlayerBar: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: 16, height: 16)
-                .foregroundStyle(prominent ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
+                .foregroundStyle(prominent ? AnyShapeStyle(Color("OnAccent")) : AnyShapeStyle(.primary))
                 .frame(width: 44, height: 44)
                 .background(prominent ? AnyShapeStyle(.tint) : AnyShapeStyle(Color.primary.opacity(0.08)), in: .circle)
                 .frame(width: Self.action)

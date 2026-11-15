@@ -952,6 +952,13 @@ final class JournalViewsTests: XCTestCase {
                    withVelocity: .slow, thenHoldForDuration: 0.3)
         XCTAssertTrue(app.staticTexts["A Random Memory"].waitForExistence(timeout: 10))
         snap("pull-up-random-memory")
+        // Another at the foot picks again; the round button by the X opens the entry in full.
+        XCTAssertTrue(app.buttons["Another"].waitForExistence(timeout: 5))
+        app.buttons["Another"].tap()
+        XCTAssertTrue(app.staticTexts["A Random Memory"].exists)
+        sleep(1)
+        app.buttons["Open"].tap()
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10), "Open goes to the entry in the Journal")
     }
 
     /// Under the tiles, Stats is one year at a time: picking another from the year's menu turns the
@@ -1419,7 +1426,9 @@ final class JournalViewsTests: XCTestCase {
         nudge(110) // back
         nudge(70)
         XCTAssertTrue(app.buttons["Open Playlist"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Open Playlist"].isHittable)
+        // On screen (not `isHittable`: with Spotify's page loaded beside it, that reads false
+        // for a button that's plainly out).
+        XCTAssertGreaterThanOrEqual(app.buttons["Open Playlist"].frame.minX, 0)
         snap("entry-song-player-swiped-right")
         nudge(-70)
         sleep(6) // Spotify's player loads
@@ -1515,6 +1524,58 @@ final class JournalViewsTests: XCTestCase {
         snap("compose-hashtag-row")
         chip.tap()
         XCTAssertEqual(editor.value as? String, "Went #Hiking with Sam. More hiking soon.")
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+    }
+
+    /// The composer's calendar button lists what was on the phone's calendar that day; a tap on
+    /// one puts it in the entry as a heading to write under.
+    func testCalendarRowAddsAnEventToTheEntry() throws {
+        let app = launch(["-DabbleDebugCalendar", "YES"]) // a made-up day, not the simulator's calendar
+        tab(app, "Journal").tap()
+        app.buttons["New Entry"].tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        editor.tap()
+        if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap(); editor.tap() } // a draft from an earlier run
+        app.buttons["Calendar"].tap()
+        // (Set in capitals, and read that way here.)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ==[c] %@", "On your calendar")).firstMatch.waitForExistence(timeout: 5))
+        let lunch = app.buttons["Lunch with Sam, 12:30 PM"]
+        XCTAssertTrue(lunch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Leo's birthday, All day"].exists)
+        sleep(1)
+        snap("compose-calendar-row")
+        lunch.tap()
+        XCTAssertTrue((editor.value as? String)?.contains("Lunch with Sam") == true)
+        XCTAssertTrue(lunch.waitForNonExistence(timeout: 5), "The row closes once one's picked")
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+    }
+
+    /// The hashtag icon held: every tag of the writer's that's a word in the entry is tagged
+    /// where it's written, in one go, and the row stays shut.
+    func testHoldingTheHashtagIconTagsMatchingWords() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        app.buttons["New Entry"].tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 10))
+        editor.tap()
+        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+        if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap(); editor.tap() } // a draft from an earlier run
+        editor.typeText("Went hiking and did some cooking. Biscuit came too.")
+        app.buttons["Hashtags"].press(forDuration: 1.0)
+        let notice = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Tagged ")).firstMatch
+        XCTAssertTrue(notice.waitForExistence(timeout: 10))
+        snap("compose-auto-tag")
+        let text = editor.value as? String ?? ""
+        XCTAssertTrue(text.contains("#hiking") && text.contains("#cooking"), text)
+        XCTAssertFalse(app.buttons["#travel"].exists, "The row of suggestions stays shut")
+        // Again: nothing left to tag.
+        sleep(3)
+        app.buttons["Hashtags"].press(forDuration: 1.0)
+        XCTAssertTrue(app.staticTexts["No words match your hashtags"].waitForExistence(timeout: 10))
         app.buttons["Cancel"].tap()
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
@@ -2252,8 +2313,7 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
         sleep(1)
         snap("shake-memory")
-        // Beside Open: another random memory. No arrows to the entries either side.
-        XCTAssertFalse(app.buttons["Previous Entry"].exists || app.buttons["Next Entry"].exists)
+        // At the foot: another random memory.
         app.buttons["Another"].tap()
         sleep(2)
         XCTAssertTrue(app.buttons["Open"].exists, "Still a memory, in the same sheet")
