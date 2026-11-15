@@ -6,6 +6,7 @@ import SwiftUI
 /// it. Opened again, it's on the month of the day last looked at.
 struct DayPickerSheet: View {
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppModel.self) private var model
     /// Bumped by the header's Today button: the calendar turns to this month.
     @State private var todayTaps = 0
 
@@ -26,7 +27,7 @@ struct DayPickerSheet: View {
     /// little square, in a round button like the X beside it.
     private var todayButton: some View {
         Button { todayTaps += 1 } label: {
-            Text(Date.now.formatted(.dateTime.day()))
+            Text(model.today?.day?.dayNumber ?? Date.now.formatted(.dateTime.day()))
                 .font(.system(size: 13, weight: .bold, design: .rounded))
                 .monospacedDigit()
                 .frame(width: 24, height: 22)
@@ -54,7 +55,7 @@ struct DayPickerCalendar: View {
     @State private var days: Set<String>?
 
     var body: some View {
-        WrittenDaysCalendar(opensOn: model.dayPickerOpensOn, written: days ?? [], startsAtFirstWritten: true, showsToday: showsToday) { day in
+        WrittenDaysCalendar(opensOn: model.dayPickerOpensOn, written: days ?? [], startsAtFirstWritten: true, showsToday: showsToday, today: model.today?.day) { day in
             Task { await pick(day) }
         }
         .task { days = await loadedDays() }

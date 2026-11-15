@@ -44,14 +44,19 @@ struct WrittenDaysCalendar: UIViewRepresentable {
     var startsAtFirstWritten = false
     /// Changes each time the calendar should turn to this month (a Today button beside it).
     var showsToday = 0
+    /// Today by the journal's clock, which can be a day off the phone's (travelling).
+    var today: JournalDay?
     let onPick: (JournalDay) -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
+    /// The last day to pick: today, the later of the phone's and the journal's.
+    private var lastDay: Date { max(.now, today?.localDate ?? .now) }
+
     func makeUIView(context: Context) -> UICalendarView {
         let view = UICalendarView()
         view.calendar = .current
-        view.availableDateRange = DateInterval(start: .distantPast, end: .now)
+        view.availableDateRange = DateInterval(start: .distantPast, end: lastDay)
         view.tintColor = UIColor(named: "AccentColor")
         view.delegate = context.coordinator
         let selection = UICalendarSelectionSingleDate(delegate: context.coordinator)
@@ -69,13 +74,13 @@ struct WrittenDaysCalendar: UIViewRepresentable {
 
     func updateUIView(_ view: UICalendarView, context: Context) {
         if context.coordinator.parent.showsToday != showsToday {
-            view.setVisibleDateComponents(Calendar.current.dateComponents([.year, .month], from: .now), animated: true)
+            view.setVisibleDateComponents(Calendar.current.dateComponents([.year, .month], from: today?.localDate ?? .now), animated: true)
         }
         context.coordinator.parent = self
         guard context.coordinator.written != written else { return }
         context.coordinator.written = written
-        if startsAtFirstWritten, let first = written.min().flatMap(JournalDay.init)?.localDate, first < .now {
-            view.availableDateRange = DateInterval(start: first, end: .now)
+        if startsAtFirstWritten, let first = written.min().flatMap(JournalDay.init)?.localDate, first < lastDay {
+            view.availableDateRange = DateInterval(start: first, end: lastDay)
         }
         // The month on screen; others ask for their dots as they come into view.
         let month = view.visibleDateComponents

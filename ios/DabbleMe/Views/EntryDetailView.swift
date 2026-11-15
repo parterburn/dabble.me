@@ -86,7 +86,12 @@ struct EntryDetailView: View {
                 .task(id: "\(entry.id)|\(entry.date)") {
                     let loaded = await model.sameDay(as: entry.id)
                     // Still this entry's (it can change while the answer's on its way).
-                    if !Task.isCancelled, self.entry?.id == entry.id { sameDay = loaded }
+                    if !Task.isCancelled, self.entry?.id == entry.id {
+                        sameDay = loaded
+                        // Only the months still listed (the day can change, and its list with it).
+                        passedMonths.formIntersection(loaded?.entries.map(\.id) ?? [])
+                        if passedMonths.isEmpty, loaded?.entries.isEmpty != false { readingOnThisDay = false }
+                    }
                 }
                 .id(entry.id) // each entry starts at its top (the title's swipe steps between them)
                 .simultaneousGesture(swipeForActions)
@@ -175,11 +180,12 @@ struct EntryDetailView: View {
         .sensoryFeedback(.selection, trigger: textSize)
         .disabled(isDeleting)
         .task { await load() }
-        // The first song is the one shown, and again if an edit takes the shown one away.
-        .onChange(of: entry?.songs, initial: true) { _, songs in
-            guard let songs, song.map(songs.contains) != true else { return }
-            song = songs.first { $0.trackID != nil }
+        // An edit that takes the playing song away takes the player with it.
+        .onChange(of: entry?.songs) { _, songs in
+            guard let song, songs?.contains(song) != true else { return }
+            self.song = nil
             songPlays = 0
+            playerHidden = true
         }
         .task(id: entry?.imageProcessing) {
             // Swap the placeholder for the finished photo/collage as soon as it's ready.
@@ -445,20 +451,25 @@ private struct EntryBody: View {
         !entry.bodyText.isEmpty || entry.datedHashtags?.isEmpty == false || !entry.songs.isEmpty
     }
 
+    private var hasPhoto: Bool { entry.imageProcessing || entry.imageURL != nil }
+
     // The writing keeps the well's padding; the photo, after it, runs to the well's edges and is
     // its foot (the well rounds the corners).
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if hasWriting {
-                writing.padding()
+                // (A little less above: the first line's own height adds to it.)
+                writing.padding([.horizontal, .bottom]).padding(.top, 12)
             }
             // Text first: Dabble Me is about the writing; photos follow it.
-            if entry.imageProcessing || entry.imageURL != nil {
+            if hasPhoto {
                 EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing, day: entry.day, cornerRadius: 0)
                     .frame(maxWidth: .infinity)
                     .padding(.top, hasWriting ? 4 : 0)
             }
         }
+        // An entry with nothing in it is an empty well, not a line where one collapsed.
+        .frame(minHeight: hasWriting || hasPhoto ? nil : 56)
     }
 
     private var writing: some View {
@@ -570,6 +581,18 @@ private struct MemoryRow: View {
     @AppStorage(ReadingTextSize.storageKey) private var readingSize = ReadingTextSize.standard
     @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
 
+    /// The entry's words, without the dated tags and song links at their end (as a Journal row
+    /// leaves them off); an entry that's only a photo or a song says so.
+    private var preview: String {
+        let songs = entry.songs ?? []
+        let text = RichText.droppingTrailing(hashtags: (entry.datedHashtags ?? []).map(\.tag), songLinks: !songs.isEmpty, from: entry.excerpt)
+            .replacingOccurrences(of: #"https?://open\.spotify\.com/\S+"#, with: "", options: .regularExpression)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if !text.isEmpty { return text }
+        if entry.imageURL != nil || entry.imageProcessing { return "📷 Photo" }
+        return songs.first.map { "🎶 \($0.label)" } ?? entry.excerpt
+    }
+
     var body: some View {
         Button(action: open) {
             HStack(alignment: .top, spacing: 14) {
@@ -582,14 +605,14 @@ private struct MemoryRow: View {
                         .monospacedDigit()
                 }
                 .frame(width: 42)
-                Text(entry.excerpt.isEmpty ? "📷 Photo" : entry.excerpt)
+                Text(preview)
                     .font(.system(size: textSize * readingSize.scale, design: fontStyle.design))
                     .foregroundStyle(.primary.opacity(0.82))
                     .lineSpacing(3)
                     .lineLimit(3)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                if let url = entry.thumbnailURL(width: 300) {
+                if let url = entry.thumbnailURL(width: 300, height: 300) {
                     EntryThumbnail(url: url)
                 }
             }
@@ -598,7 +621,7 @@ private struct MemoryRow: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(entry.day?.long ?? entry.date). \(entry.excerpt)")
+        .accessibilityLabel("\(entry.day?.long ?? entry.date). \(preview)")
         .accessibilityHint("Opens the entry")
     }
 }
@@ -994,21 +1017,45 @@ private struct ChatBubble: View {
 struct DatedHashtagRow: View {
     let hashtags: [DatedHashtag]
     @Environment(\.openURL) private var openURL
+    /// All of them, wrapped, after a tap on "+2".
+    @State private var showsAll = false
 
     var body: some View {
-        // One line, however many there are: it scrolls sideways rather than wrapping down the page.
-        ScrollView(.horizontal) {
-            pills
+        // One line: as many as fit, then "+2" for the rest, which wraps them all down the page.
+        // (Not a line that scrolls sideways: rows and the open entry have swipes of their own.)
+        if showsAll || hashtags.count < 2 {
+            FlowLayout(spacing: 6) { pills(hashtags.count) }
+        } else {
+            ViewThatFits(in: .horizontal) {
+                ForEach((1...hashtags.count).reversed(), id: \.self) { count in
+                    HStack(spacing: 6) { pills(count) }
+                }
+            }
         }
-        .scrollIndicators(.hidden)
-        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
-        // Its own height: a horizontal scroll view would otherwise take what it's offered.
-        .fixedSize(horizontal: false, vertical: true)
     }
 
-    private var pills: some View {
-        HStack(spacing: 8) {
-            ForEach(hashtags) { hashtag in
+    @ViewBuilder
+    private func pills(_ count: Int) -> some View {
+        pillButtons(hashtags.prefix(count))
+        if count < hashtags.count {
+            Button {
+                withAnimation(.snappy(duration: 0.25)) { showsAll = true }
+            } label: {
+                Text("+\(hashtags.count - count)")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.tint)
+                    .padding(.horizontal, 9)
+                    .padding(.vertical, 4)
+                    .background(.tint.opacity(0.12), in: .rect(cornerRadius: 8))
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("\(hashtags.count - count) more dated tags")
+        }
+    }
+
+    private func pillButtons(_ shown: ArraySlice<DatedHashtag>) -> some View {
+        Group {
+            ForEach(shown) { hashtag in
                 Button {
                     search(hashtag)
                 } label: {
@@ -1060,7 +1107,7 @@ struct HashtagPill: View {
                 .scrollIndicators(.hidden)
                 .scrollBounceBehavior(.basedOnSize)
         }
-        .background(.tint.opacity(0.12), in: .rect(cornerRadius: 12))
+        .background(.tint.opacity(0.12), in: .rect(cornerRadius: 8))
     }
 
     private var line: some View {
@@ -1076,14 +1123,16 @@ struct HashtagPill: View {
         }
         .lineLimit(1)
         .fixedSize()
-        .padding(.horizontal, 12)
-        .padding(.vertical, 7)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 4)
     }
 
     /// The age as the pill has room for it: "7 years, 11 months" (or "… and 11 months since
-    /// entry", from an older server) → "7yrs, 11mos"; "in 3 months" → "In 3mos"; "today" → "Today".
+    /// entry", from an older server) → "7yrs, 11mos"; a tag dated after the entry, "3 months from
+    /// entry" → "In 3mos"; "today" → "Today".
     static func shortAge(_ age: String) -> String {
         var short = age.replacingOccurrences(of: " since entry", with: "").replacingOccurrences(of: " and ", with: ", ")
+        if short.hasSuffix(" from entry") { short = "in " + short.dropLast(" from entry".count) }
         for (unit, abbreviation) in [("years", "yrs"), ("year", "yr"), ("months", "mos"), ("month", "mo"),
                                      ("weeks", "wks"), ("week", "wk"), ("days", "days"), ("day", "day")] {
             short = short.replacingOccurrences(of: "(\\d+) \(unit)\\b", with: "$1\(abbreviation)", options: .regularExpression)

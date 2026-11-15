@@ -161,7 +161,7 @@ private struct PlaylistRow: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             // The day's photo, small, as On This Day shows one under an entry.
-            if let url = entry.thumbnailURL(width: 300) {
+            if let url = entry.thumbnailURL(width: 300, height: 300) {
                 EntryThumbnail(url: url)
             }
         }

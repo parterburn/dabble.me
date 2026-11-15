@@ -374,8 +374,8 @@ final class FlowTests: XCTestCase {
         let year = Calendar.current.component(.year, from: .now) - 1
         let title = app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", String(year))).firstMatch
         XCTAssertTrue(title.waitForExistence(timeout: 10), "A tap opens that year's entry")
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "Bruges!", "Bruges!")).firstMatch.waitForExistence(timeout: 10)
-                      || app.textViews.firstMatch.exists)
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "Bruges! Wandered", "Bruges! Wandered")).firstMatch.waitForExistence(timeout: 10),
+                      "And it's that entry's writing")
     }
 
     private func snap(_ name: String) {

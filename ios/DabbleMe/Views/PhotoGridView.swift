@@ -121,15 +121,16 @@ private struct PhotoCell: View {
 extension EntrySummary {
     /// A smaller copy of the photo through Cloudflare image resizing when the URL supports it
     /// (production photos are served via /cdn-cgi/image/), else the original.
-    func thumbnailURL(width: Int) -> URL? {
-        Self.thumbnailURL(imageUrl, width: width)
+    func thumbnailURL(width: Int, height: Int? = nil) -> URL? {
+        Self.thumbnailURL(imageUrl, width: width, height: height)
     }
 
-    static func thumbnailURL(_ imageUrl: String?, width: Int) -> URL? {
+    /// With a height too, the server crops to that shape (a square thumbnail).
+    static func thumbnailURL(_ imageUrl: String?, width: Int, height: Int? = nil) -> URL? {
         guard let imageUrl else { return nil }
         // Whatever options the address came with (the server's are "quality=100"), as the web does.
         let resized = imageUrl.replacingOccurrences(of: #"/cdn-cgi/image/[^/]+/"#,
-                                                    with: "/cdn-cgi/image/width=\(width),quality=85,fit=cover/",
+                                                    with: "/cdn-cgi/image/width=\(width),\(height.map { "height=\($0)," } ?? "")quality=85,fit=cover/",
                                                     options: .regularExpression)
         return URL(string: resized)
     }

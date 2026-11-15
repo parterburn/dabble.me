@@ -187,7 +187,8 @@ struct DatedTagAgeTests {
         #expect(HashtagPill.shortAge("9 years, 2 days") == "9yrs, 2days")
         #expect(HashtagPill.shortAge("3 weeks, 1 day") == "3wks, 1day")
         #expect(HashtagPill.shortAge("1 month") == "1mo")
-        #expect(HashtagPill.shortAge("in 3 months, 2 days") == "In 3mos, 2days")
+        // A tag dated after the entry.
+        #expect(HashtagPill.shortAge("3 months and 2 days from entry") == "In 3mos, 2days")
         #expect(HashtagPill.shortAge("today") == "Today")
     }
 }

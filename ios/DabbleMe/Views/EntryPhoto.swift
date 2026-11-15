@@ -67,8 +67,15 @@ struct EntryThumbnail: View {
     let url: URL
 
     var body: some View {
-        AsyncImage(url: url) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.12) }
+        AsyncImage(url: url) { phase in
+            switch phase {
+            case .success(let image): image.resizable().scaledToFill()
+            case .failure: appIcon("slab-image").foregroundStyle(.secondary)
+            default: Color.clear
+            }
+        }
             .frame(width: 64, height: 64)
+            .background(Color.secondary.opacity(0.12))
             .clipShape(.rect(cornerRadius: 10))
             .accessibilityHidden(true)
     }

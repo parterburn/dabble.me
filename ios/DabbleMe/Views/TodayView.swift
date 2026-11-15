@@ -229,7 +229,10 @@ struct TodayView: View {
             // whole width: the date is the title right above.
             row(entry.summary, showsDate: false)
                 .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 16, leading: 32, bottom: 24, trailing: 32))
+                // 16 in from the card on every side (the row pads itself 6 above and below, and
+                // the card is inset 2 at its top and 10 at its foot; a line's own height adds a
+                // little over the first one).
+                .listRowInsets(EdgeInsets(top: 9, leading: 32, bottom: 20, trailing: 32))
                 .listRowBackground(TodayCard())
         } else {
             VStack(alignment: .leading, spacing: 14) {
