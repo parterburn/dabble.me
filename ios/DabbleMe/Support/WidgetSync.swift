@@ -51,15 +51,18 @@ enum WidgetSync {
     /// first, or else the day's Rewind), saved with the snapshot. Without it the widget had
     /// nothing to look back on from midnight until the app was next opened.
     private static func updateUpcoming(from model: AppModel) async {
-        guard let today = model.today?.date, let plan = await ReminderScheduler.shared.lookBacks(for: model) else { return }
-        guard model.isSignedIn, model.today?.date == today else { return }
+        guard let today = model.today?.date, let account = model.me?.id,
+              let plan = await ReminderScheduler.shared.lookBacks(for: model) else { return }
+        // Still this account and day (asked again after each wait: someone can sign out, and
+        // into another journal, while a photo's on its way).
+        func isCurrent() -> Bool { model.isSignedIn && model.me?.id == account && model.today?.date == today }
+        guard isCurrent() else { return }
         var days: [WidgetSnapshot.Day] = []
         for memory in plan.days where memory.date > today {
-            guard days.count < daysAhead else { break }
+            guard days.count < daysAhead, isCurrent() else { break }
             days.append(await lookBack(memory, withPhoto: days.count < photosAhead))
         }
-        // Still the same day as when this began (photos take a moment).
-        guard var snapshot = WidgetSnapshot.load(), snapshot.day == today, snapshot.upcoming ?? [] != days else { return }
+        guard isCurrent(), var snapshot = WidgetSnapshot.load(), snapshot.day == today, snapshot.upcoming ?? [] != days else { return }
         snapshot.upcoming = days.isEmpty ? nil : days
         snapshot.save()
         removePhotos(except: snapshot.photoNames)
