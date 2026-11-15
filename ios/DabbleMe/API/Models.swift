@@ -307,6 +307,25 @@ struct JournalDay: Hashable, Sendable, Comparable {
         }
     }
 
+    /// How long ago this day was, for an open entry's title: "Today", "Yesterday", whole days up
+    /// to 60 ("36 days ago"), then years and months by the calendar, in full and without days
+    /// ("2 months ago", "5 years, 2 months ago", "3 years ago"), to the nearest month.
+    func ago(from today: JournalDay) -> String {
+        let days = Self.utc.dateComponents([.day], from: date, to: today.date).day ?? 0
+        guard days >= 0 else { return "In the future" }
+        switch days {
+        case 0: return "Today"
+        case 1: return "Yesterday"
+        case ...60: return "\(days) days ago"
+        default: break
+        }
+        let span = Self.utc.dateComponents([.year, .month, .day], from: date, to: today.date)
+        // Over half a month more counts as the next month.
+        let months = (span.year ?? 0) * 12 + (span.month ?? 0) + ((span.day ?? 0) > 15 ? 1 : 0)
+        let parts = [(months / 12, "year"), (months % 12, "month")].filter { $0.0 > 0 }.map { "\($0.0) \($0.1)\($0.0 == 1 ? "" : "s")" }
+        return parts.joined(separator: ", ") + " ago"
+    }
+
     /// What an empty new entry asks about this day: "How has today been?", "How was yesterday?",
     /// or the day by name ("How was Tuesday, November 3?", with its year when it isn't this one).
     func writingQuestion(today: JournalDay) -> String {

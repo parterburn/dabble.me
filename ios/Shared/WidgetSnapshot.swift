@@ -1,8 +1,9 @@
 import Foundation
 
-/// What the home-screen widget shows, written by the app into the shared App Group.
-/// Whether today is written, a writing prompt and, only if the person turns previews on in
-/// Settings → Home Screen Widget, the start of an entry.
+/// What the home-screen widget has to show, written by the app into the shared App Group:
+/// whether today is written, a writing prompt, and the start of today's entry and of one to look
+/// back on. Which of those a widget puts on the Home Screen is the person's choice (in
+/// Settings → Home Screen Widget, or on the widget itself): entry text only with previews on.
 struct WidgetSnapshot: Codable, Equatable, Sendable {
     static let appGroup = "group.me.dabble.ios"
     static let storageKey = "widget.snapshot"
@@ -23,14 +24,50 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     /// ("You have a memory from 36 days ago."), for Rewind without previews.
     var memoryNote: String? = nil
     var prompt: String?
-    /// With previews on: an entry (a look back, or today's own), e.g. "1 year ago · 2025",
-    /// "31 days ago" or "Today's entry", and the start of its text.
-    var entryTitle: String? = nil
-    var entryText: String? = nil
-    /// The shown entry, so tapping it on the widget opens it.
-    var entryID: Int? = nil
-    /// The shown entry's photo, a small copy saved in the App Group (`photoURL(named:)`).
-    var entryPhoto: String? = nil
+    /// Today's own entry once it's written, and the entry to look back on (On This Day's first,
+    /// or else the day's Rewind), for a widget with previews on.
+    var todayEntry: Shown? = nil
+    var rewindEntry: Shown? = nil
+
+    /// An entry as a widget shows it: a label ("1 year ago · 2025", "31 days ago", "Today's
+    /// entry"), the start of its text, its id (a tap on it opens it) and its photo, a small copy
+    /// saved in the App Group (`photoURL(named:)`).
+    struct Shown: Codable, Equatable, Sendable {
+        var title: String
+        var text: String
+        var id: Int
+        var photo: String? = nil
+    }
+    /// Rewind for the days after `day`, so the widget has something to look back on each
+    /// morning without the app being opened first.
+    var upcoming: [Day]? = nil
+
+    /// One later day's look back: the same things the snapshot holds for its own day.
+    struct Day: Codable, Equatable, Sendable {
+        var day: String
+        /// Entries on this date in earlier years (nil when the look back is another past entry).
+        var memories: Int? = nil
+        var memoryNote: String? = nil
+        var entryTitle: String? = nil
+        var entryText: String? = nil
+        var entryID: Int? = nil
+        var entryPhoto: String? = nil
+    }
+
+    /// The entry a widget with `content` shows on the snapshot's own day: none without previews.
+    func shown(for content: WidgetContent) -> Shown? {
+        switch content {
+        case .prompt, .memoryCount: nil
+        case .promptEntry: todayEntry
+        case .memoryEntry: rewindEntry
+        }
+    }
+
+    /// The look back kept for `date`, when it's a later day than the snapshot's own.
+    func lookBack(on date: Date, calendar: Calendar = .current) -> Day? {
+        let iso = Self.iso(date, calendar: calendar)
+        return iso == day ? nil : upcoming?.first { $0.day == iso }
+    }
 
     static var defaults: UserDefaults? { UserDefaults(suiteName: appGroup) }
 

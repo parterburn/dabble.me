@@ -83,19 +83,6 @@ struct SettingsView: View {
 
                 Section("App") {
                     PaneLink {
-                        WidgetSettingsView()
-                    } label: {
-                        Label {
-                            Text("Home Screen Widget")
-                        } icon: {
-                            // No Slab widget icon: an SF Symbol, sized like the Slab ones.
-                            Image(systemName: "widget.small")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 22, height: 22)
-                        }
-                    }
-                    PaneLink {
                         AccessibilitySettingsView()
                     } label: {
                         LabeledContent {
@@ -184,7 +171,7 @@ private extension SettingsView {
     @ViewBuilder
     var remindersSection: some View {
         Section {
-            // Each kind on a page of its own; then what either can look back on.
+            // Each kind on a page of its own; then what any of them can look back on.
             PaneLink {
                 PushReminderView()
             } label: {
@@ -192,6 +179,12 @@ private extension SettingsView {
                                                                        minutes: reminderTime >= 0 ? reminderTime : emailTime))
             }
             EmailScheduleRow(store: emailSchedule)
+            // The widget's a nudge to write too, and its look backs are the reminders' own.
+            PaneLink {
+                WidgetSettingsView()
+            } label: {
+                LabeledContent("Home Screen Widget", value: WidgetSnapshot.content.source.title)
+            }
             PastEntriesRow(store: emailSchedule)
         } header: {
             Text("Reminders")

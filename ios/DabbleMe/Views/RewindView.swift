@@ -45,7 +45,7 @@ struct RewindView: View {
                         .multilineTextAlignment(.center)
                         .foregroundStyle(Tone.paper.text.opacity(0.7))
                     Button("Close") { dismiss() }
-                        .buttonStyle(.borderedProminent)
+                        .filledButtonStyle()
                         .buttonBorderShape(.capsule)
                 } else {
                     ProgressView(value: progress)

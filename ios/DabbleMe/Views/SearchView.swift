@@ -415,7 +415,7 @@ struct ConnectorCallout: View {
                         }
                         .frame(minHeight: 20)
                     }
-                    .buttonStyle(.borderedProminent)
+                    .filledButtonStyle()
                 }
                 Link(destination: guide) {
                     Text("Connect AI Assistant")

@@ -319,7 +319,7 @@ struct TodayView: View {
                     .fontWeight(.medium) // the main call to action
                     .frame(maxWidth: .infinity, minHeight: 30)
             }
-            .buttonStyle(.borderedProminent)
+            .filledButtonStyle()
             .controlSize(.large)
             if let yesterday, isUnwritten(yesterday) {
                 Button {

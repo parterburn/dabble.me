@@ -17,6 +17,12 @@ struct ComposeView: View {
     @State private var date = Date()
     @State private var choosingDate = false
     @State private var heldPhotoStack = false
+    /// Bumped when the calendar row's contents change, so the bar over the keyboard resizes.
+    @State private var calendarRowKey = 0
+    /// The tag icon was held (so the tap that ends the hold doesn't also open its row), and
+    /// what that did, said for a moment over the entry: "Tagged #Leo and #Sam".
+    @State private var heldTagIcon = false
+    @State private var autoTagNotice: String?
     @State private var photoItems: [PhotosPickerItem] = []
     /// Prepared photos keyed by picker item, so re-selecting doesn't redo the work.
     @State private var prepared: [PhotosPickerItem: PreparedPhoto] = [:]
@@ -38,6 +44,8 @@ struct ComposeView: View {
     /// Prompt (Apple Intelligence, the sparkles): a row with one question about the draft. Closing
     /// and opening it again asks a new one.
     @State private var showsAskRow = false
+    /// The calendar row: what was on the phone's calendar on the day being written about.
+    @State private var showsCalendarRow = false
     @State private var question: String?
     @State private var askedQuestions: [String] = []
     @State private var isAsking = false
@@ -129,8 +137,25 @@ struct ComposeView: View {
                 RichTextEditor(model: editor,
                                leading: AnyView(model.me?.canAddPhotos == true ? AnyView(photosButton) : AnyView(proPhotosButton)),
                                trailing: AnyView(tagAndLinkButtons),
-                               barKey: "\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)",
+                               barKey: "\(showsCalendarRow)|\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)",
                                row: openRow)
+                    // Low in the page, over the bar: clear of the entry's first lines.
+                    .overlay(alignment: .bottom) {
+                        if let autoTagNotice {
+                            Text(autoTagNotice)
+                                .font(.subheadline.weight(.medium))
+                                .lineLimit(2)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(.regularMaterial, in: .capsule)
+                                .padding(.bottom, 68)
+                                .padding(.horizontal, 24)
+                                .transition(.opacity)
+                                .allowsHitTesting(false)
+                                .accessibilityAddTraits(.updatesFrequently)
+                        }
+                    }
                     .overlay(alignment: .topLeading) {
                         if editor.isEmpty {
                             // About the day being written: today, yesterday, or another by name.
@@ -210,7 +235,7 @@ struct ComposeView: View {
             }
             .onChange(of: editor.isEditingLink) { _, editing in
                 // One row at a time (the link row also opens by selecting a link).
-                if editing { showsHashtagBar = false; showsAskRow = false; showsPhotoDrawer = false }
+                if editing { showsHashtagBar = false; showsAskRow = false; showsPhotoDrawer = false; showsCalendarRow = false }
             }
             .photosPicker(isPresented: $pickingPhotos, selection: libraryItems, maxSelectionCount: photoLimit - cameraItems.count,
                           selectionBehavior: .ordered, matching: .images, preferredItemEncoding: .current)
@@ -281,6 +306,11 @@ struct ComposeView: View {
             AnyView(hashtagSuggestions)
         } else if showsAskRow {
             AnyView(askRow)
+        } else if showsCalendarRow {
+            AnyView(CalendarRow(day: date, changed: { calendarRowKey += 1 }) { event in
+                editor.addQuestion(event.title)
+                showsCalendarRow = false
+            })
         } else if showsPhotoDrawer, attachedPhotoCount > 0 {
             AnyView(photoBar)
         } else {
@@ -387,11 +417,32 @@ struct ComposeView: View {
                 .accessibilityLabel("Link")
                 .accessibilityAddTraits(editor.isEditingLink ? .isSelected : [])
             }
+            // What was on the calendar that day, for everyone: a reminder of what to write about.
             Button {
+                showsCalendarRow.toggle()
+                if showsCalendarRow {
+                    showsHashtagBar = false
+                    showsAskRow = false
+                    showsPhotoDrawer = false
+                    editor.endLink()
+                }
+            } label: {
+                appIcon("slab-calendar")
+                    .frame(width: 40, height: 36)
+                    .background(showsCalendarRow ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Calendar")
+            .accessibilityHint("Shows what was on your calendar that day")
+            .accessibilityAddTraits(showsCalendarRow ? .isSelected : [])
+            Button {
+                // Not the tap that ends a hold.
+                if heldTagIcon { heldTagIcon = false; return }
                 showsHashtagBar.toggle()
                 if showsHashtagBar {
                     showsPhotoDrawer = false
                     showsAskRow = false
+                    showsCalendarRow = false
                     editor.endLink()
                     Task { recentTags = (try? await model.recentHashtags()) ?? [] }
                     Task { if allTags.isEmpty { allTags = ((try? await model.allHashtags()) ?? []).map(\.tag) } }
@@ -403,12 +454,20 @@ struct ComposeView: View {
                     .background(showsHashtagBar ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
             }
             .buttonStyle(.plain)
+            // Held: tags the entry's own words with the hashtags they match, in one go.
+            .simultaneousGesture(LongPressGesture(minimumDuration: 0.45).onEnded { _ in
+                heldTagIcon = true
+                HoldHaptic.play()
+                Task { await tagMatchingWords() }
+            })
             .accessibilityLabel("Hashtags")
             .accessibilityAddTraits(showsHashtagBar ? .isSelected : [])
+            .accessibilityAction(named: "Tag Matching Words") { Task { await tagMatchingWords() } }
             if canAsk {
                 Button {
                     showsAskRow.toggle()
                     if showsAskRow {
+                        showsCalendarRow = false
                         showsHashtagBar = false
                         showsPhotoDrawer = false
                         editor.endLink()
@@ -436,7 +495,7 @@ struct ComposeView: View {
             // Not the tap that ends a hold.
             if heldPhotoStack { heldPhotoStack = false; return }
             showsPhotoDrawer.toggle()
-            if showsPhotoDrawer { showsHashtagBar = false; showsAskRow = false; editor.endLink() } // one row at a time
+            if showsPhotoDrawer { showsHashtagBar = false; showsAskRow = false; showsCalendarRow = false; editor.endLink() } // one row at a time
         } label: {
             HStack(spacing: 8) {
                 ZStack {
@@ -587,7 +646,7 @@ struct ComposeView: View {
                     self.question = nil
                     showsAskRow = false
                 }
-                .buttonStyle(.borderedProminent)
+                .filledButtonStyle()
                 .buttonBorderShape(.capsule)
                 .accessibilityHint("Adds the question to your entry to answer")
             } else {
@@ -637,6 +696,23 @@ struct ComposeView: View {
         }
     }
 
+    /// The tag icon held: every hashtag the writer has used that's a word in the entry gets its
+    /// "#" there ("Dinner with Leo" → "Dinner with #Leo"). Only their own tags and the entry's
+    /// own words: nothing's made up or added at the end.
+    private func tagMatchingWords() async {
+        if allTags.isEmpty { allTags = ((try? await model.allHashtags()) ?? []).map(\.tag) }
+        let text = editor.plainText
+        let inEntry = Set(JournalIntelligence.hashtags(in: text).map { $0.lowercased() })
+        let matching = JournalIntelligence.tags(allTags, matchingWordsIn: text).filter { !inEntry.contains($0.lowercased()) }
+        let tagged = editor.tagWords(matching: matching)
+        let notice = tagged.isEmpty ? "No words match your hashtags"
+                                    : "Tagged " + ListFormatter.localizedString(byJoining: tagged.map { "#\($0)" })
+        withAnimation(.easeOut(duration: 0.15)) { autoTagNotice = notice }
+        UIAccessibility.post(notification: .announcement, argument: notice)
+        try? await Task.sleep(for: .seconds(2.5))
+        if autoTagNotice == notice { withAnimation(.easeOut(duration: 0.3)) { autoTagNotice = nil } }
+    }
+
     /// Suggestions for what's written so far (on the device, where Apple Intelligence is on),
     /// each time the hashtag row opens. Quietly: with none that fit, or none to be had, the row
     /// just has the recent hashtags.
@@ -660,7 +736,7 @@ struct ComposeView: View {
                     // The thumbnails' size, in the accent.
                     addPhotos {
                         appIcon("slab-images")
-                            .foregroundStyle(.white)
+                            .foregroundStyle(Color("OnAccent"))
                             .frame(width: 56, height: 56)
                             .background(Color.accentColor, in: .rect(cornerRadius: 8))
                     }
@@ -913,6 +989,101 @@ private extension View {
 /// The link row: the address, with Insert (or Update for a link that's there, which can also be
 /// removed with the trash, at the far right). Opened from the Link button it takes the keyboard; opened by selecting
 /// a link, the selection stays until the address is tapped.
+/// The composer's calendar row: what was on the phone's calendar on the entry's day, each a tap
+/// away from being a heading in the entry to write under. iOS asks for the calendar the first
+/// time it's opened; without it, the row says how to allow it.
+private struct CalendarRow: View {
+    let day: Date
+    /// The row's height may have changed (the events came in).
+    let changed: () -> Void
+    let pick: (DayEvent) -> Void
+    @State private var access = DayCalendar.access
+    @State private var events: [DayEvent]?
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text("On your calendar")
+                .font(.caption.weight(.semibold))
+                .textCase(.uppercase)
+                .foregroundStyle(.tint)
+                .padding(.bottom, 4)
+                .accessibilityAddTraits(.isHeader)
+            switch access {
+            case .denied:
+                HStack(spacing: 10) {
+                    Text("Allow Dabble Me to see your calendar in Settings to have your day here.")
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Button("Settings") {
+                        if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                    }
+                    .buttonStyle(.bordered)
+                    .buttonBorderShape(.capsule)
+                }
+                .font(.subheadline)
+                .padding(.vertical, 6)
+            case .notAsked:
+                ProgressView().controlSize(.small).padding(.vertical, 10)
+            case .allowed:
+                if let events, events.isEmpty {
+                    Text("Nothing on your calendar this day.")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 8)
+                } else if let events {
+                    list(events)
+                }
+            }
+        }
+        .padding(.horizontal)
+        .padding(.top, 10)
+        .task(id: day) {
+            if access == .notAsked {
+                _ = await DayCalendar.requestAccess()
+                access = DayCalendar.access
+            }
+            events = DayCalendar.events(on: day)
+            changed()
+        }
+    }
+
+    /// A handful show at once; a busier day scrolls.
+    private func list(_ events: [DayEvent]) -> some View {
+        ScrollView {
+            VStack(spacing: 0) {
+                ForEach(events) { event in
+                    Button { pick(event) } label: {
+                        HStack(spacing: 12) {
+                            Text(event.time)
+                                .font(.footnote.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                                .frame(width: 72, alignment: .leading)
+                            Text(event.title)
+                                .font(.system(.subheadline, design: .serif))
+                                .lineLimit(1)
+                            Spacer(minLength: 0)
+                            appIcon("slab-plus")
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 12, height: 12)
+                                .foregroundStyle(.tertiary)
+                        }
+                        .padding(.vertical, 9)
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("\(event.title), \(event.time)")
+                    .accessibilityHint("Adds it to your entry as a heading")
+                    if event.id != events.last?.id { Divider() }
+                }
+            }
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .frame(height: min(CGFloat(events.count), 5) * 38)
+    }
+}
+
 private struct LinkRow: View {
     @Bindable var editor: RichTextEditorModel
 
@@ -929,7 +1100,7 @@ private struct LinkRow: View {
                 .padding(.vertical, 7)
                 .background(Color.secondary.opacity(0.12), in: .capsule)
             Button(editor.isExistingLink ? "Update" : "Insert", action: apply)
-                .buttonStyle(.borderedProminent)
+                .filledButtonStyle()
                 .buttonBorderShape(.capsule)
                 .disabled(!canApply)
             if editor.isExistingLink {

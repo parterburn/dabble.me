@@ -300,9 +300,9 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(title(1).waitForExistence(timeout: 10), "A swipe left is the entry after")
     }
 
-    /// Pulling an open entry down and to one side, then letting go, steps to the entry before
-    /// it (left) or after (right).
-    func testPullingAnEntryDownAndAsideStepsBetweenEntries() throws {
+    /// The floating group at the bottom right of an open entry: the arrows step to the entry
+    /// before and after. It steps aside while the page is scrolled down, and is back at its foot.
+    func testFloatingArrowsStepBetweenEntries() throws {
         openJournal()
         let entry = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
@@ -313,16 +313,14 @@ final class FlowTests: XCTestCase {
             return app.buttons[date.formatted(.dateTime.weekday(.wide).month(.wide).day().year())]
         }
         XCTAssertTrue(title(1).waitForExistence(timeout: 10))
-        func pull(toward x: Double) {
-            let scroll = app.scrollViews.firstMatch
-            scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.25))
-                .press(forDuration: 0.05, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: x, dy: 0.8)),
-                       withVelocity: .slow, thenHoldForDuration: 1.5)
-        }
-        pull(toward: 0.2)
-        XCTAssertTrue(title(2).waitForExistence(timeout: 10), "Down and left is the entry before")
-        pull(toward: 0.8)
-        XCTAssertTrue(title(1).waitForExistence(timeout: 10), "Down and right is the entry after")
+        let previous = app.buttons["Previous Entry"], next = app.buttons["Next Entry"]
+        XCTAssertTrue(previous.waitForExistence(timeout: 5))
+        snap("entry-floating-actions")
+        previous.tap()
+        XCTAssertTrue(title(2).waitForExistence(timeout: 10), "The left arrow is the entry before")
+        next.tap()
+        XCTAssertTrue(title(1).waitForExistence(timeout: 10), "The right arrow is the entry after")
+        XCTAssertTrue(next.isHittable)
     }
 
     /// With an entry opened from another's On This Day, the back arrow held lists everywhere to

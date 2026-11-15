@@ -10,45 +10,57 @@ struct DabbleMeWidgets: WidgetBundle {
 
 struct TodayWidget: Widget {
     var body: some WidgetConfiguration {
-        StaticConfiguration(kind: "Today", provider: Provider()) { entry in
+        // (The same kind as before it could be edited: widgets already out keep their place.)
+        AppIntentConfiguration(kind: "Today", intent: TodayWidgetIntent.self, provider: Provider()) { entry in
             TodayWidgetView(entry: entry)
                 .containerBackground(for: .widget) { Color.paper }
         }
         .configurationDisplayName("Today")
-        .description("Today's date and a nudge to write (on the Lock Screen, your entries this year). Choose what shows beside the date in the app's Settings.")
+        .description("Today's date and a nudge to write (on the Lock Screen, your entries this year). Touch and hold the widget to choose what shows beside the date.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }
 
-struct Provider: TimelineProvider {
+struct Provider: AppIntentTimelineProvider {
     func placeholder(in context: Context) -> WidgetEntry { .placeholder }
 
-    func getSnapshot(in context: Context, completion: @escaping (WidgetEntry) -> Void) {
-        completion(context.isPreview ? .placeholder : entry(at: .now))
+    func snapshot(for configuration: TodayWidgetIntent, in context: Context) async -> WidgetEntry {
+        context.isPreview ? .placeholder : entry(at: .now, showing: configuration.show)
     }
 
-    func getTimeline(in context: Context, completion: @escaping (Timeline<WidgetEntry>) -> Void) {
+    func timeline(for configuration: TodayWidgetIntent, in context: Context) async -> Timeline<WidgetEntry> {
         // Today now, then a fresh day at midnight (the app reloads the widget when it learns more).
         let midnight = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: 1, to: .now) ?? .now)
-        completion(Timeline(entries: [entry(at: .now), entry(at: midnight)], policy: .after(midnight)))
+        return Timeline(entries: [entry(at: .now, showing: configuration.show), entry(at: midnight, showing: configuration.show)],
+                        policy: .after(midnight))
     }
 
-    private func entry(at date: Date) -> WidgetEntry {
+    private func entry(at date: Date, showing option: WidgetShowOption) -> WidgetEntry {
         guard let snapshot = WidgetSnapshot.load() else {
             return WidgetEntry(date: date, signedIn: false, wroteToday: false, yearCount: 0, memories: nil, prompt: nil)
         }
         let state = snapshot.state(on: date)
         let isToday = snapshot.day == WidgetSnapshot.iso(date)
-        let content = WidgetSnapshot.content
-        let showsEntry = isToday && content.showsPreviews
+        // This widget's own choice, or the app's.
+        let content = option.content ?? WidgetSnapshot.content
+        // A day the app hasn't been opened on yet: the look back it left for it.
+        if content.source == .rewind, let later = snapshot.lookBack(on: date) {
+            let showsEntry = content == .memoryEntry
+            return WidgetEntry(date: date, signedIn: true, wroteToday: false, yearCount: state.yearCount,
+                               memories: later.memories, prompt: nil,
+                               memoryNote: content == .memoryCount ? later.memoryNote : nil,
+                               entryTitle: showsEntry ? later.entryTitle : nil,
+                               entryText: showsEntry ? later.entryText : nil,
+                               entryID: showsEntry ? later.entryID : nil,
+                               photo: showsEntry ? later.entryPhoto.flatMap(Self.photo(named:)) : nil)
+        }
+        let shown = isToday ? snapshot.shown(for: content) : nil
         return WidgetEntry(date: date, signedIn: true, wroteToday: state.wroteToday, yearCount: state.yearCount,
                            memories: content.source == .rewind ? state.memories : nil,
                            prompt: isToday ? snapshot.prompt : nil,
                            memoryNote: isToday && content == .memoryCount ? snapshot.memoryNote : nil,
-                           entryTitle: showsEntry ? snapshot.entryTitle : nil,
-                           entryText: showsEntry ? snapshot.entryText : nil,
-                           entryID: showsEntry ? snapshot.entryID : nil,
-                           photo: showsEntry ? snapshot.entryPhoto.flatMap(Self.photo(named:)) : nil)
+                           entryTitle: shown?.title, entryText: shown?.text, entryID: shown?.id,
+                           photo: shown?.photo.flatMap(Self.photo(named:)))
     }
 
     /// The entry's photo copy from the App Group (the app saves it small for the widget).

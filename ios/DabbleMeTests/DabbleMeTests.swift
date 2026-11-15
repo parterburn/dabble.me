@@ -170,12 +170,30 @@ struct WidgetPhotoTests {
         for file in [neighbor, keep, old] { try Data("x".utf8).write(to: file) }
         defer { try? FileManager.default.removeItem(at: neighbor); try? FileManager.default.removeItem(at: keep) }
 
-        WidgetSync.removePhotos(except: "entry-1.jpg")
+        WidgetSync.removePhotos(except: ["entry-1.jpg"])
 
         #expect(FileManager.default.fileExists(atPath: neighbor.path), "Files outside WidgetPhotos are left alone")
         #expect(FileManager.default.fileExists(atPath: keep.path))
         #expect(!FileManager.default.fileExists(atPath: old.path))
         #expect(folder.lastPathComponent == "WidgetPhotos")
+    }
+}
+
+struct EntryAgoTests {
+    /// An open entry's title: days up to 60, then years and months in full, without days.
+    @Test func agoIsDaysThenYearsAndMonths() throws {
+        let today = try #require(JournalDay("2026-11-15"))
+        func ago(_ iso: String) throws -> String { try #require(JournalDay(iso)).ago(from: today) }
+        #expect(try ago("2026-11-15") == "Today")
+        #expect(try ago("2026-11-14") == "Yesterday")
+        #expect(try ago("2026-10-31") == "15 days ago")
+        #expect(try ago("2026-09-16") == "60 days ago")
+        #expect(try ago("2026-09-15") == "2 months ago")
+        #expect(try ago("2026-08-25") == "3 months ago") // 2 months and 21 days: nearer three
+        #expect(try ago("2025-11-15") == "1 year ago")
+        #expect(try ago("2025-11-03") == "1 year ago")
+        #expect(try ago("2021-09-12") == "5 years, 2 months ago")
+        #expect(try ago("2021-11-25") == "5 years ago") // 4 years, 11 months and 21 days
     }
 }
 
@@ -491,6 +509,17 @@ struct WidgetSnapshotTests {
     @Test func aNewYearStartsTheCountAgain() {
         let newYear = calendar.date(from: DateComponents(year: 2027, month: 1, day: 1, hour: 9))!
         #expect(snapshot(day: "2026-12-31", wrote: true, count: 40).state(on: newYear, calendar: calendar).yearCount == 0)
+    }
+
+    /// The days after the snapshot's own have the look back the app left for each: the widget
+    /// keeps showing Rewind without the app being opened that day.
+    @Test func laterDaysHaveTheirOwnLookBack() {
+        var saved = snapshot(day: "2026-11-08", wrote: true, count: 36, memories: 2)
+        saved.upcoming = [.init(day: "2026-11-09", memories: 3), .init(day: "2026-11-10", memoryNote: "You have a memory from 36 days ago.")]
+        #expect(saved.lookBack(on: date(8), calendar: calendar) == nil) // its own day: the snapshot itself
+        #expect(saved.lookBack(on: date(9), calendar: calendar)?.memories == 3)
+        #expect(saved.lookBack(on: date(10), calendar: calendar)?.memoryNote == "You have a memory from 36 days ago.")
+        #expect(saved.lookBack(on: date(11), calendar: calendar) == nil)
     }
 
     /// A snapshot saved by a build that still tracked the streak has no count yet.

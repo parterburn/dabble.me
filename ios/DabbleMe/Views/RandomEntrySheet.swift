@@ -35,8 +35,8 @@ extension UIWindow {
 }
 
 /// A random entry as a preview, over whatever you were reading: an accidental shake never
-/// replaces it. Open goes to the entry in Journal, and the button beside it (or another shake)
-/// picks again.
+/// replaces it. The round button beside the X opens the entry in Journal, and Another (or
+/// another shake) picks again.
 struct RandomEntrySheet: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
@@ -49,7 +49,7 @@ struct RandomEntrySheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SheetHeader(title: "A Random Memory", icon: "slab-dice")
+            SheetHeader(title: "A Random Memory", icon: "slab-dice") { openButton }
             Group {
                 if let entry {
                     preview(entry)
@@ -66,11 +66,11 @@ struct RandomEntrySheet: View {
                 }
             }
             .frame(maxHeight: .infinity, alignment: .top)
-            // Another (as a shake gives) and Open, centered, floating over the entry's end.
+            // Another (as a shake gives), centered, floating over the entry's end.
             .overlay(alignment: .bottom) { bar }
         }
         .padding([.horizontal, .top], 20)
-        // The Open bar sits at the sheet's foot, as far from its bottom edge as from its sides
+        // Another sits at the sheet's foot, as far from its bottom edge as from its sides
         // (the home indicator's safe area on top of the padding left a gap under it).
         .padding(.bottom, 22)
         .frame(maxHeight: .infinity, alignment: .top)
@@ -131,36 +131,43 @@ struct RandomEntrySheet: View {
     /// Room to leave under an entry that scrolls beneath the bar.
     private static let barClearance: CGFloat = 76
 
-    /// The sheet's foot: another random memory, then Open, in the same olive.
-    private var bar: some View {
-        HStack(spacing: 12) {
-            Button { Task { await load() } } label: {
-                appIcon("slab-arrows-rotate")
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 16, height: 16)
-                    .frame(width: 24, height: 26)
-            }
-            // While another loads it waits without dimming (it would blink with every tap).
-            .allowsHitTesting(!isLoading)
-            .accessibilityLabel("Another")
-            .accessibilityHint("Shows another random memory")
-            Button {
-                guard let entry else { return }
-                model.selectedTab = .journal
-                model.openEntryRequest = entry.id
-                dismiss()
-            } label: {
-                Label("Open", icon: "slab-expand").frame(width: 150, height: 26)
-            }
-            .disabled(entry == nil)
+    /// Opens the entry in full, in the Journal: a round button like the X beside it.
+    private var openButton: some View {
+        Button {
+            guard let entry else { return }
+            model.selectedTab = .journal
+            model.openEntryRequest = entry.id
+            dismiss()
+        } label: {
+            appIcon("slab-expand")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 18, height: 18)
+                .foregroundStyle(.primary)
+                .frame(width: 44, height: 44)
+                .modifier(RoundButtonBacking(overPhoto: false))
+                .contentShape(.circle)
         }
-        .buttonStyle(.borderedProminent)
+        .buttonStyle(.plain)
+        .disabled(entry == nil)
+        .accessibilityLabel("Open")
+        .accessibilityHint("Opens this entry in the Journal")
+    }
+
+    /// The sheet's foot: another random memory.
+    private var bar: some View {
+        Button { Task { await load() } } label: {
+            Label("Another", icon: "slab-arrows-rotate").frame(width: 150, height: 26)
+        }
+        // While another loads it waits without dimming (it would blink with every tap).
+        .allowsHitTesting(!isLoading)
+        .accessibilityHint("Shows another random memory")
+        .filledButtonStyle()
         // Medium weight, like the app's other main buttons, a size down from them.
         .fontWeight(.medium)
         .controlSize(.regular)
         .buttonBorderShape(.capsule)
-        // No panel behind them: they float over the entry, lifted a little off its words.
+        // No panel behind it: it floats over the entry, lifted a little off its words.
         .shadow(color: .black.opacity(0.16), radius: 8, y: 3)
         .frame(maxWidth: .infinity)
     }

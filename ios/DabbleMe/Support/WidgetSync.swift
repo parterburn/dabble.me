@@ -2,8 +2,8 @@ import Foundation
 import UIKit
 import WidgetKit
 
-/// Keeps the home-screen widget's snapshot (the year's entry count, written today, today's prompt and, only with
-/// previews turned on, the start of an entry) in step with the app. The prompt is the
+/// Keeps the home-screen widget's snapshot (the year's entry count, written today, today's prompt
+/// and the start of today's entry and of one to look back on) in step with the app. The prompt is the
 /// personal one Apple Intelligence wrote for today when there is one. Settings → Home Screen
 /// Widget decides what goes on it; the Face ID lock doesn't (it guards the app, and the person
 /// chose what the widget shows).
@@ -12,6 +12,10 @@ enum WidgetSync {
     static func update(from model: AppModel) {
         guard model.isSignedIn, let today = model.today else { return }
         let memories = today.onThisDay
+        // Both entries a widget might show, whatever's chosen now: each widget can choose for
+        // itself (Edit Widget), and shouldn't have to wait for the app to be opened again.
+        let written = shownEntry(today, content: .promptEntry, model: model)
+        let lookBack = shownEntry(today, content: .memoryEntry, model: model)
         let snapshot = WidgetSnapshot(
             day: today.date,
             wroteToday: today.entry != nil,
@@ -20,14 +24,77 @@ enum WidgetSync {
             memoriesFirstYear: memories.compactMap { $0.day.flatMap { Int($0.year) } }.min(),
             memoryNote: memoryNote(today),
             prompt: personalPrompt(for: today.date, model: model) ?? today.prompt,
-            entryTitle: shownEntry(today, content: WidgetSnapshot.content, model: model)?.title,
-            entryText: shownEntry(today, content: WidgetSnapshot.content, model: model)?.text,
-            entryID: shownEntry(today, content: WidgetSnapshot.content, model: model)?.id,
-            entryPhoto: photo(for: shownEntry(today, content: WidgetSnapshot.content, model: model)?.entry, model: model)
+            todayEntry: written.map { .init(title: $0.title, text: $0.text, id: $0.id, photo: photo(for: $0.entry, model: model)) },
+            rewindEntry: lookBack.map { .init(title: $0.title, text: $0.text, id: $0.id, photo: photo(for: $0.entry, model: model)) },
+            // The days ahead as last worked out, until they're worked out again (below).
+            upcoming: WidgetSnapshot.load()?.upcoming.flatMap { days in
+                let later = days.filter { $0.day > today.date }
+                return later.isEmpty ? nil : later
+            }
         )
-        guard snapshot != WidgetSnapshot.load() else { return }
+        if snapshot != WidgetSnapshot.load() {
+            snapshot.save()
+            removePhotos(except: snapshot.photoNames)
+            WidgetCenter.shared.reloadAllTimelines()
+        }
+        Task { await updateUpcoming(from: model) }
+    }
+
+    // MARK: - The days ahead
+
+    /// How many later days the widget is given a look back for, and how many of those with
+    /// their photo (previews on).
+    private static let daysAhead = 14
+    private static let photosAhead = 7
+
+    /// Rewind for the coming days (the entries the daily reminder would show: On This Day's
+    /// first, or else the day's Rewind), saved with the snapshot. Without it the widget had
+    /// nothing to look back on from midnight until the app was next opened.
+    private static func updateUpcoming(from model: AppModel) async {
+        guard let today = model.today?.date, let account = model.me?.id,
+              let plan = await ReminderScheduler.shared.lookBacks(for: model) else { return }
+        // Still this account and day (asked again after each wait: someone can sign out, and
+        // into another journal, while a photo's on its way).
+        func isCurrent() -> Bool { model.isSignedIn && model.me?.id == account && model.today?.date == today }
+        guard isCurrent() else { return }
+        var days: [WidgetSnapshot.Day] = []
+        for memory in plan.days where memory.date > today {
+            guard days.count < daysAhead, isCurrent() else { break }
+            days.append(await lookBack(memory, withPhoto: days.count < photosAhead))
+        }
+        guard isCurrent(), var snapshot = WidgetSnapshot.load(), snapshot.day == today, snapshot.upcoming ?? [] != days else { return }
+        snapshot.upcoming = days.isEmpty ? nil : days
         snapshot.save()
+        removePhotos(except: snapshot.photoNames)
         WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    /// One later day, as a widget will show it: a count or a note, and (for one with previews on)
+    /// the entry's start and its photo's small copy.
+    private static func lookBack(_ memory: ReminderPlan.Day, withPhoto: Bool) async -> WidgetSnapshot.Day {
+        let entryDay = JournalDay(memory.entry.date), day = JournalDay(memory.date)
+        let ago = entryDay.flatMap { entry in day.map { entry.relative(to: $0) } }
+        var result = WidgetSnapshot.Day(day: memory.date)
+        if memory.isOnThisDay {
+            result.memories = memory.count
+        } else if let ago {
+            result.memoryNote = "You have a memory from \(ago.prefix(1).lowercased() + ago.dropFirst())."
+        }
+        if memory.isOnThisDay, let entryDay, let day, let years = Int(day.year).flatMap({ now in Int(entryDay.year).map { now - $0 } }) {
+            result.entryTitle = "\(years == 1 ? "1 year ago" : "\(years) years ago") · \(entryDay.year)"
+        } else {
+            result.entryTitle = ago ?? "Rewind"
+        }
+        result.entryText = String(memory.entry.excerpt.prefix(400))
+        result.entryID = memory.entry.id
+        if withPhoto, let url = EntrySummary.thumbnailURL(memory.entry.imageUrl, width: 700) {
+            let name = "entry-\(memory.entry.id).jpg"
+            if let file = WidgetSnapshot.photoURL(named: name) {
+                let saved = FileManager.default.fileExists(atPath: file.path)
+                if saved { result.entryPhoto = name } else if await download(url, to: file) { result.entryPhoto = name }
+            }
+        }
+        return result
     }
 
     private static func personalPrompt(for day: String, model: AppModel) -> String? {
@@ -76,20 +143,17 @@ enum WidgetSync {
 
     // MARK: - The entry's photo
 
-    /// The file name of the shown entry's photo once its small copy is saved; until then nil, and
-    /// the copy is fetched (then the widget updates again). Other entries' copies are removed.
-    /// `cleansUp` is for the widget's own updates; the settings preview leaves the files alone.
-    private static func photo(for entry: EntrySummary?, model: AppModel, cleansUp: Bool = true) -> String? {
-        guard let entry, let url = entry.thumbnailURL(width: 700) else {
-            if cleansUp { removePhotos(except: nil) }
-            return nil
-        }
+    /// The file name of an entry's photo once its small copy is saved; until then nil, and the
+    /// copy is fetched (then the widget updates again). `fetches` is off for the settings
+    /// preview, which fetches its own.
+    private static func photo(for entry: EntrySummary?, model: AppModel, fetches: Bool = true) -> String? {
+        guard let entry, let url = entry.thumbnailURL(width: 700) else { return nil }
         let name = "entry-\(entry.id).jpg"
         guard let file = WidgetSnapshot.photoURL(named: name) else { return nil }
         if FileManager.default.fileExists(atPath: file.path) { return name }
+        guard fetches else { return nil }
         Task {
             guard await download(url, to: file) else { return }
-            if cleansUp { removePhotos(except: name) }
             update(from: model)
         }
         return nil
@@ -137,10 +201,10 @@ enum WidgetSync {
 
     /// Deletes the widget's other photo copies: only inside `WidgetSnapshot.photoFolder`, never the
     /// rest of the App Group (its shared settings live there too).
-    static func removePhotos(except keep: String?) {
+    static func removePhotos(except keep: Set<String>) {
         guard let folder = WidgetSnapshot.photoFolder,
               let files = try? FileManager.default.contentsOfDirectory(atPath: folder.path) else { return }
-        for file in files where file != keep {
+        for file in files where !keep.contains(file) {
             try? FileManager.default.removeItem(at: folder.appending(path: file))
         }
     }
@@ -162,7 +226,7 @@ enum WidgetSync {
                            prompt: personalPrompt(for: today.date, model: model) ?? today.prompt,
                            memoryNote: content == .memoryCount ? memoryNote(today) : nil,
                            entryTitle: shown?.title, entryText: shown?.text, entryID: shown?.id,
-                           photo: photo(for: shown?.entry, model: model, cleansUp: false)
+                           photo: photo(for: shown?.entry, model: model, fetches: false)
                                .flatMap(WidgetSnapshot.photoURL(named:)).flatMap { UIImage(contentsOfFile: $0.path) })
     }
 
@@ -170,7 +234,14 @@ enum WidgetSync {
         WidgetSnapshot.clear()
         WidgetSnapshot.defaults?.removeObject(forKey: WidgetSnapshot.showMemoriesKey)
         WidgetSnapshot.defaults?.removeObject(forKey: WidgetSnapshot.contentKey)
-        removePhotos(except: nil)
+        removePhotos(except: [])
         WidgetCenter.shared.reloadAllTimelines()
+    }
+}
+
+private extension WidgetSnapshot {
+    /// Every photo copy the snapshot points at: its own day's and the days' ahead.
+    var photoNames: Set<String> {
+        Set(([todayEntry?.photo, rewindEntry?.photo] + (upcoming ?? []).map(\.entryPhoto)).compactMap { $0 })
     }
 }
