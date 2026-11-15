@@ -1126,6 +1126,7 @@ final class JournalViewsTests: XCTestCase {
         app.openTimelineEntry(row)
         XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
         snap("entry-back-arrow")
+        app.buttons["The Killers – Mr. Brightside"].tap()
         let player = app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "Spotify player, ")).firstMatch
         XCTAssertTrue(player.waitForExistence(timeout: 10))
         player.swipeRight()
@@ -1160,6 +1161,14 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertFalse(app.buttons["Next Month"].isEnabled, "Nothing after this month")
         sleep(1)
         snap("calendar")
+        // Turned back a couple of months, the header's Today button brings this one back.
+        app.buttons["Previous Month"].tap()
+        app.buttons["Previous Month"].tap()
+        XCTAssertTrue(app.buttons["Next Month"].isEnabled)
+        app.buttons["Go to Today"].tap()
+        sleep(1)
+        XCTAssertFalse(app.buttons["Next Month"].isEnabled, "Back on this month")
+        snap("calendar-today-button")
         // The demo journal has yesterday's entry and none three days ago; both are in this
         // month from the 4th on.
         guard calendar.component(.day, from: now) > 3 else { return }
@@ -1384,7 +1393,14 @@ final class JournalViewsTests: XCTestCase {
             app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Spotify player, \(song)")).firstMatch
         }
         let first = app.buttons["The Killers – Mr. Brightside"], second = app.buttons["Rick Astley – Never Gonna Give You Up"]
-        XCTAssertTrue(player("The Killers – Mr. Brightside").waitForExistence(timeout: 10), "The first song is in the player")
+        // No player until a song is tapped: opening an entry asks nothing of Spotify.
+        XCTAssertTrue(first.waitForExistence(timeout: 10))
+        sleep(1)
+        XCTAssertFalse(app.descendants(matching: .any).matching(NSPredicate(format: "label BEGINSWITH %@", "Spotify player, ")).firstMatch.exists)
+        XCTAssertFalse(first.isSelected)
+        snap("entry-song-no-player")
+        first.tap()
+        XCTAssertTrue(player("The Killers – Mr. Brightside").waitForExistence(timeout: 10), "The tapped song is in the player")
         XCTAssertTrue(first.isSelected)
         XCTAssertFalse(second.isSelected)
         // A short swipe either way shows the player's actions, as a list row's: the Playlist on

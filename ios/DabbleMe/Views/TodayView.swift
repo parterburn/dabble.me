@@ -98,8 +98,11 @@ struct TodayView: View {
             }
             .overlay(alignment: .top) {
                 if topPull > 18 {
+                    // The size and grey of iOS's own, as the Journal's pull shows it.
                     ProgressView()
-                        .controlSize(.regular)
+                        .controlSize(.large)
+                        .scaleEffect(0.82)
+                        .tint(Color(uiColor: .secondaryLabel))
                         .opacity(min(1, (topPull - 18) / 30))
                         // In the middle of the gap the pull opens above the page.
                         .offset(y: max(4, topPull / 2 - 12))
@@ -222,10 +225,14 @@ struct TodayView: View {
     private func todaySection(_ today: TodaySummary) -> some View {
         if let entry = today.entry {
             // On the prompt box's Paper card, so today stands apart from On This Day. The card is
-            // the row's background, so the entry keeps its swipes.
-            row(entry.summary)
+            // the row's background, so the entry keeps its swipes. Its words run the card's
+            // whole width: the date is the title right above.
+            row(entry.summary, showsDate: false)
                 .listRowSeparator(.hidden)
-                .listRowInsets(EdgeInsets(top: 16, leading: 32, bottom: 24, trailing: 32))
+                // 16 in from the card on every side (the row pads itself 6 above and below, and
+                // the card is inset 2 at its top and 10 at its foot; a line's own height adds a
+                // little over the first one).
+                .listRowInsets(EdgeInsets(top: 9, leading: 32, bottom: 20, trailing: 32))
                 .listRowBackground(TodayCard())
         } else {
             VStack(alignment: .leading, spacing: 14) {
@@ -522,8 +529,8 @@ struct TodayView: View {
     }
 
     /// The Journal's row: tap to expand a long one (or open it); swipe right for Actions, left to Open.
-    private func row(_ entry: EntrySummary) -> some View {
-        TimelineEntryRow(entry: entry, isExpanded: expanded.contains(entry.id), actions: actions,
+    private func row(_ entry: EntrySummary, showsDate: Bool = true) -> some View {
+        TimelineEntryRow(entry: entry, showsDate: showsDate, isExpanded: expanded.contains(entry.id), actions: actions,
                          onExpand: { withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(entry.id) } },
                          onOpen: { path.append(EntryRoute(id: entry.id)) })
             .entryRowMenu(entry, actions: actions) { path.append(EntryRoute(id: entry.id)) }

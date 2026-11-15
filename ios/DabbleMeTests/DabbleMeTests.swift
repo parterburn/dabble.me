@@ -179,6 +179,20 @@ struct WidgetPhotoTests {
     }
 }
 
+struct DatedTagAgeTests {
+    /// A dated tag's age, as its pill shows it: units abbreviated, two at most, from either wording the server has used.
+    @MainActor @Test func agesAreAbbreviatedOnThePill() {
+        #expect(HashtagPill.shortAge("7 years, 11 months") == "7yrs, 11mos")
+        #expect(HashtagPill.shortAge("1 year and 5 months since entry") == "1yr, 5mos")
+        #expect(HashtagPill.shortAge("9 years, 2 days") == "9yrs, 2days")
+        #expect(HashtagPill.shortAge("3 weeks, 1 day") == "3wks, 1day")
+        #expect(HashtagPill.shortAge("1 month") == "1mo")
+        // A tag dated after the entry.
+        #expect(HashtagPill.shortAge("3 months and 2 days from entry") == "In 3mos, 2days")
+        #expect(HashtagPill.shortAge("today") == "Today")
+    }
+}
+
 struct MorningRuleTests {
     /// "New Entry" before 10 AM is yesterday's if unwritten: by the journal's clock, not the phone's.
     @MainActor @Test func morningIsJudgedInTheJournalsTimeZone() throws {

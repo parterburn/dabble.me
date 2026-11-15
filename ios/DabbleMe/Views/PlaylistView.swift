@@ -114,7 +114,7 @@ struct PlaylistView: View {
 }
 
 /// One entry in the Playlist: laid out like a Journal row (the date in its own column), with a
-/// shorter, smaller preview and the songs under it.
+/// shorter, smaller preview, the songs under it and its photo as a small square beside them.
 private struct PlaylistRow: View {
     let entry: EntrySummary
     let playing: Song?
@@ -158,6 +158,11 @@ private struct PlaylistRow: View {
                 ForEach(entry.songs ?? [], id: \.self) { song in
                     SongButton(song: song, isPlaying: playing == song) { play(song) }
                 }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            // The day's photo, small, as On This Day shows one under an entry.
+            if let url = entry.thumbnailURL(width: 300, height: 300) {
+                EntryThumbnail(url: url)
             }
         }
         .padding(.vertical, 6)

@@ -8,6 +8,8 @@ import SwiftUI
 struct TimelineEntryRow: View {
     let entry: EntrySummary
     var showsYear = false
+    /// The weekday and day in a column at the left. Not for Today's Entry, under its own date.
+    var showsDate = true
     let isExpanded: Bool
     let actions: EntryActions
     let onExpand: () -> Void
@@ -121,9 +123,9 @@ struct TimelineEntryRow: View {
             }
         }
         // At least as tall as the date beside it, so a one-line entry doesn't crowd the divider.
-        .frame(maxWidth: .infinity, minHeight: 56, alignment: .topLeading)
-        .padding(.leading, Self.avatarColumn + Self.gutter)
-        .overlay(alignment: .topLeading) { floatingDate }
+        .frame(maxWidth: .infinity, minHeight: showsDate ? 56 : nil, alignment: .topLeading)
+        .padding(.leading, showsDate ? Self.avatarColumn + Self.gutter : 0)
+        .overlay(alignment: .topLeading) { if showsDate { floatingDate } }
         .padding(.vertical, 6)
         .contentShape(.rect)
         .onTapGesture {
