@@ -149,21 +149,29 @@ extension UINavigationController: @retroactive UIGestureRecognizerDelegate {
 }
 
 /// The top of a sheet: its icon and title at the left (as a label, not a button) and the X at
-/// the right.
-struct SheetHeader: View {
+/// the right, after a round button of the sheet's own when it has one.
+struct SheetHeader<Accessory: View>: View {
     let title: String
     let icon: String
+    @ViewBuilder var accessory: Accessory
 
     var body: some View {
-        HStack {
+        HStack(spacing: 10) {
             Label(title, icon: icon)
                 .font(.headline)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .accessibilityAddTraits(.isHeader)
             Spacer()
+            accessory
             SheetCloseButton()
         }
+    }
+}
+
+extension SheetHeader where Accessory == EmptyView {
+    init(title: String, icon: String) {
+        self.init(title: title, icon: icon) { EmptyView() }
     }
 }
 

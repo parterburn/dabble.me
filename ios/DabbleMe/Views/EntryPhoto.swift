@@ -10,6 +10,9 @@ struct EntryPhoto: View {
     var size: Size = .full
     /// The entry's day, for the "3 years ago" band on a shared photo.
     var day: JournalDay? = nil
+    /// The full photo's corners: square where it runs to the edges of a card that rounds them
+    /// itself (an open entry's well).
+    var cornerRadius: CGFloat = 12
 
     var body: some View {
         if isProcessing {
@@ -27,7 +30,7 @@ struct EntryPhoto: View {
                 .frame(width: 56, height: 56)
                 .clipShape(.rect(cornerRadius: 8))
             case .full:
-                FullEntryPhoto(url: url, day: day)
+                FullEntryPhoto(url: url, day: day, cornerRadius: cornerRadius)
                     .id(url)
             }
         }
@@ -35,7 +38,7 @@ struct EntryPhoto: View {
 
     private var placeholder: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: size == .full ? 12 : 8)
+            RoundedRectangle(cornerRadius: size == .full ? cornerRadius : 8)
                 .fill(Color.secondary.opacity(0.12))
             if size == .full {
                 VStack(spacing: 10) {
@@ -58,15 +61,30 @@ struct EntryPhoto: View {
     }
 }
 
+/// An entry's photo as a small square beside a few lines of it (On This Day under an entry, the
+/// Playlist): there to say the day has a photo, not to be looked at closely.
+struct EntryThumbnail: View {
+    let url: URL
+
+    var body: some View {
+        AsyncImage(url: url) { $0.resizable().scaledToFill() } placeholder: { Color.secondary.opacity(0.12) }
+            .frame(width: 64, height: 64)
+            .clipShape(.rect(cornerRadius: 10))
+            .accessibilityHidden(true)
+    }
+}
+
 /// Tap to view full screen (pinch/double-tap to zoom); long-press to Save or Share.
 private struct FullEntryPhoto: View {
     @State private var photo: RemotePhoto
     @State private var showingViewer = false
     @State private var saveResult: PhotoSaveResult?
     @Namespace private var zoom
+    private let cornerRadius: CGFloat
 
-    init(url: URL, day: JournalDay?) {
+    init(url: URL, day: JournalDay?, cornerRadius: CGFloat = 12) {
         _photo = State(initialValue: RemotePhoto(url: url, day: day))
+        self.cornerRadius = cornerRadius
     }
 
     var body: some View {
@@ -87,8 +105,8 @@ private struct FullEntryPhoto: View {
                 Color.secondary.opacity(0.12).frame(height: 240)
             }
         }
-        .clipShape(.rect(cornerRadius: 12))
-        .contentShape(.rect(cornerRadius: 12))
+        .clipShape(.rect(cornerRadius: cornerRadius))
+        .contentShape(.rect(cornerRadius: cornerRadius))
         .matchedTransitionSource(id: "photo", in: zoom)
         .onTapGesture { if photo.image != nil { showingViewer = true } }
         .contextMenu {

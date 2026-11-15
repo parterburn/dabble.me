@@ -42,6 +42,8 @@ struct WrittenDaysCalendar: UIViewRepresentable {
     let written: Set<String>
     /// No further back than the first written day.
     var startsAtFirstWritten = false
+    /// Changes each time the calendar should turn to this month (a Today button beside it).
+    var showsToday = 0
     let onPick: (JournalDay) -> Void
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -66,6 +68,9 @@ struct WrittenDaysCalendar: UIViewRepresentable {
     }
 
     func updateUIView(_ view: UICalendarView, context: Context) {
+        if context.coordinator.parent.showsToday != showsToday {
+            view.setVisibleDateComponents(Calendar.current.dateComponents([.year, .month], from: .now), animated: true)
+        }
         context.coordinator.parent = self
         guard context.coordinator.written != written else { return }
         context.coordinator.written = written

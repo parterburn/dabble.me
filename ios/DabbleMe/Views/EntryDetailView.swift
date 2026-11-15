@@ -24,16 +24,18 @@ struct EntryDetailView: View {
     /// Tapping the title switches between the date and how long ago it was (remembered).
     @AppStorage("entry.showsRelativeDate") private var showsRelativeDate = false
     @State private var hideHUD: Task<Void, Never>?
-    /// The song in the player under the entry (its first, until another is tapped), how many
-    /// times a song's been tapped to play (none: the player only shows it), and whether the
-    /// player's been swiped away.
+    /// The song for the player under the entry (the one tapped), how many times a song's been
+    /// tapped to play, and whether the player's out of sight: it is until a song is tapped
+    /// (nothing is asked of Spotify just for opening an entry), and again once swiped away.
     @State private var song: Song?
     @State private var songPlays = 0
-    @State private var playerHidden = false
+    @State private var playerHidden = true
     /// The entry's calendar day in other years: On This Day, under it.
     @State private var sameDay: SameDayEntries?
     /// Scrolled down into On This Day (its heading has gone under the bar), and an entry opened from it.
     @State private var readingOnThisDay = false
+    /// The entries under On This Day whose month headings have scrolled up past the top.
+    @State private var passedMonths: Set<Int> = []
     @State private var opened: EntryRoute?
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
     @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
@@ -46,24 +48,39 @@ struct EntryDetailView: View {
         Group {
             if let entry {
                 ScrollView {
-                    // Lazy, for its pinned headers: under On This Day, each entry's "1 year
-                    // later • November 2025" stays at the top while it's read, as on Today.
-                    LazyVStack(alignment: .leading, spacing: 0, pinnedViews: .sectionHeaders) {
+                    LazyVStack(alignment: .leading, spacing: 0) {
+                        // In a well, as today's entry is on Today: the entry that was opened, set
+                        // apart from the other years' under it.
                         EntryBody(entry: entry, song: playerHidden ? nil : song, play: play)
-                            .padding()
                             .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color("Paper"))
+                            // (The photo, at the well's foot, takes its corners.)
+                            .clipShape(.rect(cornerRadius: 16))
+                            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.quaternary))
+                            .padding(.horizontal, 12)
+                            .padding(.top, 8)
+                            .padding(.bottom, 6)
                             .contentShape(.rect)
                             .simultaneousGesture(pinchToResize)
                             .offset(x: swipeOffset)
                         if let sameDay, sameDay.count > 0 {
-                            SameDaySection(entry: entry, sameDay: sameDay, headingPassed: $readingOnThisDay) { opened = EntryRoute(id: $0) }
+                            SameDaySection(entry: entry, sameDay: sameDay, headingPassed: $readingOnThisDay,
+                                           passedMonths: $passedMonths) { opened = EntryRoute(id: $0) }
                         }
                     }
                     .frame(maxWidth: 680)
                     .frame(maxWidth: .infinity)
                 }
-                // A long expanded entry's date floats down under its pinned header.
-                .environment(\.timelinePinTop, SameDaySection.headerHeight + 8)
+                // Under On This Day, the month of the entry being read stays at the top, as on
+                // Today. It's part of the bar (not a header pinned in the page), so the bar's own
+                // backing runs on under it and the two are one header.
+                .modifier(TopBarExtension(isShown: pinnedMonth != nil) {
+                    MonthHeader(title: pinnedMonth ?? "", isDay: true)
+                        .padding(.horizontal)
+                        .frame(height: SameDaySection.headerHeight)
+                        .frame(maxWidth: 680)
+                        .frame(maxWidth: .infinity)
+                })
                 .navigationDestination(item: $opened) { EntryDetailView(entryID: $0.id) }
                 // Again when the entry moves to another day.
                 .task(id: "\(entry.id)|\(entry.date)") {
@@ -262,11 +279,12 @@ struct EntryDetailView: View {
         defer { isStepping = false }
         do {
             let other = try await model.entry(id: neighbour.id)
-            playerHidden = false
+            playerHidden = true
             // On This Day is the entry's own: the one left behind's doesn't show under this one
             // while its own loads.
             sameDay = nil
             readingOnThisDay = false
+            passedMonths = []
             withAnimation(.easeInOut(duration: 0.2)) { entry = other }
         } catch is CancellationError {
         } catch {
@@ -277,6 +295,13 @@ struct EntryDetailView: View {
     private func jumpToADay(from entry: EntryDetail) {
         model.dayPickerOpensOn = entry.day
         model.showsDayPicker = true
+    }
+
+    /// "November 2015": the month of the On This Day entry being read (the last whose heading has
+    /// gone past the top), or nil above them.
+    private var pinnedMonth: String? {
+        guard readingOnThisDay, let current = sameDay?.entries.last(where: { passedMonths.contains($0.id) }) else { return nil }
+        return current.day?.monthTitle ?? current.date
     }
 
     /// The bar's title while On This Day is what's being read: its heading, as it is on the page.
@@ -415,7 +440,28 @@ private struct EntryBody: View {
 
     private var bodyFont: Font { .system(size: bodySize * textSize.scale, design: fontStyle.design) }
 
+    /// Something to read over the photo: the writing, its dated tags or its songs.
+    private var hasWriting: Bool {
+        !entry.bodyText.isEmpty || entry.datedHashtags?.isEmpty == false || !entry.songs.isEmpty
+    }
+
+    // The writing keeps the well's padding; the photo, after it, runs to the well's edges and is
+    // its foot (the well rounds the corners).
     var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if hasWriting {
+                writing.padding()
+            }
+            // Text first: Dabble Me is about the writing; photos follow it.
+            if entry.imageProcessing || entry.imageURL != nil {
+                EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing, day: entry.day, cornerRadius: 0)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, hasWriting ? 4 : 0)
+            }
+        }
+    }
+
+    private var writing: some View {
         VStack(alignment: .leading, spacing: 20) {
             // Dated #tags and Spotify links at the end of the entry aren't shown twice: their pills
             // and the songs are right under it.
@@ -439,38 +485,32 @@ private struct EntryBody: View {
             if !entry.songs.isEmpty {
                 SongList(songs: entry.songs, selected: song, select: play)
             }
-
-            // Text first: Dabble Me is about the writing; photos follow it.
-            if entry.imageProcessing || entry.imageURL != nil {
-                EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing, day: entry.day)
-            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
-/// On This Day, under an entry: its calendar day in other years, earlier and later, laid out as
-/// on Today (each under its month and year, as the Journal's row: a tap expands a long one, or
-/// opens it). A free account sees how many would be there (On This Day is PRO).
+/// On This Day, under an entry: its calendar day in other years, earlier and later, each under
+/// its month and year. Quieter than Today's rows (a few lines and a small photo), so a short
+/// entry isn't drowned out by a long one from another year; a tap opens it. A free account sees
+/// how many would be there (On This Day is PRO).
 private struct SameDaySection: View {
     let entry: EntryDetail
     let sameDay: SameDayEntries
     /// Its heading has scrolled up under the bar (which then shows it in the entry's date's place).
     @Binding var headingPassed: Bool
+    /// The entries whose month headings have scrolled up past the top (the bar then shows the
+    /// last one's month).
+    @Binding var passedMonths: Set<Int>
     let onOpen: (Int) -> Void
-    @State private var expanded: Set<Int> = []
-    /// The rows' swipe actions belong to lists; here an entry's actions are on its own page.
-    @State private var actions = EntryActions()
 
-    /// The pinned "1 year later • November 2025" headers' height.
+    /// A month heading's height, in the page and in the bar.
     static let headerHeight: CGFloat = 36
 
-    // The page's lazy stack takes these as its own rows and sections (no container around them),
-    // so the sections' headers pin.
+    // The page's lazy stack takes these as its own rows (no container around them).
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Divider()
-                .padding(.top, 10)
-                .padding(.bottom, 28)
+            // (No rule over it: the entry's well ends just above.)
             HStack(spacing: 8) {
                 // Light grey: a label's icon, as on Today.
                 appIcon("slab-backward")
@@ -480,6 +520,7 @@ private struct SameDaySection: View {
                     .font(.system(.title3, design: .serif, weight: .semibold))
                     .accessibilityAddTraits(.isHeader)
             }
+            .padding(.top, 18)
             // Gone under the bar (the scroll view's space starts at the bar's foot).
             .onGeometryChange(for: Bool.self) { $0.frame(in: .scrollView).maxY < 0 } action: { passed in
                 withAnimation(.easeOut(duration: 0.15)) { headingPassed = passed }
@@ -497,40 +538,83 @@ private struct SameDaySection: View {
         .padding(.horizontal)
         if sameDay.available {
             ForEach(sameDay.entries) { other in
-                Section {
-                    TimelineEntryRow(entry: other, isExpanded: expanded.contains(other.id), actions: actions,
-                                     onExpand: { withAnimation(.snappy(duration: 0.25)) { _ = expanded.insert(other.id) } },
-                                     onOpen: { onOpen(other.id) })
-                        .padding(.horizontal)
-                        .padding(.bottom, other.id == sameDay.entries.last?.id ? 24 : 8)
-                } header: {
-                    PinnedMonthHeader(title: other.day?.monthTitle ?? other.date)
-                }
+                MonthHeader(title: other.day?.monthTitle ?? other.date, isDay: true)
+                    .padding(.horizontal)
+                    .frame(height: Self.headerHeight)
+                    .padding(.top, 8)
+                    // At the top: the bar takes its month over. The scroll view's space starts at
+                    // the bar's foot, and the bar's month line, once there is one, lies over the
+                    // first of it: so the first heading hands over as it reaches the bar, and each
+                    // one after as it reaches the line. One scrolled far enough away to be
+                    // unloaded keeps what it last said.
+                    .onGeometryChange(for: Bool.self) { [lineShown = !passedMonths.isEmpty] proxy in
+                        // (Part way under the line, so the same month isn't read twice at once.)
+                        proxy.frame(in: .scrollView).minY <= (lineShown ? Self.headerHeight * 0.45 : 0)
+                    } action: { passed in
+                        if passed { passedMonths.insert(other.id) } else { passedMonths.remove(other.id) }
+                    }
+                MemoryRow(entry: other) { onOpen(other.id) }
+                    .padding(.horizontal)
+                    .padding(.bottom, other.id == sameDay.entries.last?.id ? 24 : 4)
             }
         }
     }
 }
 
-/// "November 2015" over one of On This Day's entries. In the page it has no backing; held at the
-/// top (pinned under the bar) it takes a see-through one like the bar's own, so the entry
-/// passing under it blurs as it does under the bar, and the two read as one header.
-private struct PinnedMonthHeader: View {
-    let title: String
-    @State private var isPinned = false
+/// One of On This Day's entries under an open entry: its date in the Journal's column, the start
+/// of it (three lines) and its photo small beside it. The whole row opens the entry.
+private struct MemoryRow: View {
+    let entry: EntrySummary
+    let open: () -> Void
+    @ScaledMetric(relativeTo: .callout) private var textSize: CGFloat = 16
+    @AppStorage(ReadingTextSize.storageKey) private var readingSize = ReadingTextSize.standard
+    @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
 
     var body: some View {
-        MonthHeader(title: title, isDay: true)
-            .padding(.horizontal)
-            .frame(height: SameDaySection.headerHeight)
-            .padding(.top, 8)
-            // (The material alone is greyer than the bar: the page's own color goes over it.)
-            .background {
-                if isPinned {
-                    Rectangle().fill(.ultraThinMaterial).overlay(Color(uiColor: .systemBackground).opacity(0.72))
+        Button(action: open) {
+            HStack(alignment: .top, spacing: 14) {
+                VStack(spacing: 0) {
+                    Text(entry.day?.weekdayShort.uppercased() ?? "")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(entry.day?.dayNumber ?? "")
+                        .font(.title3.weight(.semibold))
+                        .monospacedDigit()
+                }
+                .frame(width: 42)
+                Text(entry.excerpt.isEmpty ? "📷 Photo" : entry.excerpt)
+                    .font(.system(size: textSize * readingSize.scale, design: fontStyle.design))
+                    .foregroundStyle(.primary.opacity(0.82))
+                    .lineSpacing(3)
+                    .lineLimit(3)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                if let url = entry.thumbnailURL(width: 300) {
+                    EntryThumbnail(url: url)
                 }
             }
-            // Pinned, it sits at the very top of the scroll view's space (the bar's foot).
-            .onGeometryChange(for: Bool.self) { $0.frame(in: .scrollView).minY <= 0.5 } action: { isPinned = $0 }
+            .padding(.vertical, 4)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(entry.day?.long ?? entry.date). \(entry.excerpt)")
+        .accessibilityHint("Opens the entry")
+    }
+}
+
+/// A strip under the navigation bar that reads as part of it: iOS 26 runs the bar's own
+/// see-through backing on under it (`safeAreaBar`); before that it has the bar material.
+private struct TopBarExtension<Strip: View>: ViewModifier {
+    let isShown: Bool
+    @ViewBuilder var strip: Strip
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.safeAreaBar(edge: .top, spacing: 0) { if isShown { strip } }
+        } else {
+            content.safeAreaInset(edge: .top, spacing: 0) { if isShown { strip.background(.bar) } }
+        }
     }
 }
 
@@ -904,14 +988,26 @@ private struct ChatBubble: View {
     }
 }
 
-/// Hashtags with a date (like the web's "Tags:"): each pill shows how long it had been on this
-/// entry's day ("3 years and 5 months"). Tap to search; long-press for the tag's date.
+/// Hashtags with a date (like the web's "Tags:"), on one line that scrolls sideways: each pill
+/// shows how long it had been on this entry's day, briefly ("3yrs, 5mos"). Tap to search;
+/// long-press for the tag's date, with the age in full.
 struct DatedHashtagRow: View {
     let hashtags: [DatedHashtag]
     @Environment(\.openURL) private var openURL
 
     var body: some View {
-        FlowLayout(spacing: 8) {
+        // One line, however many there are: it scrolls sideways rather than wrapping down the page.
+        ScrollView(.horizontal) {
+            pills
+        }
+        .scrollIndicators(.hidden)
+        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
+        // Its own height: a horizontal scroll view would otherwise take what it's offered.
+        .fixedSize(horizontal: false, vertical: true)
+    }
+
+    private var pills: some View {
+        HStack(spacing: 8) {
             ForEach(hashtags) { hashtag in
                 Button {
                     search(hashtag)
@@ -950,7 +1046,7 @@ struct DatedHashtagRow: View {
 }
 
 /// The app's #tag pill: the tag in olive on a light olive card, with its age beside it for a
-/// dated tag ("#Leo  3 years and 4 months"), on one line. Under entries, in the Actions sheet, and
+/// dated tag ("#Leo  3yrs, 4mos"), on one line. Under entries, in the Actions sheet, and
 /// anywhere tags show. One too long for the space it's given scrolls sideways inside its card.
 struct HashtagPill: View {
     let tag: String
@@ -984,9 +1080,14 @@ struct HashtagPill: View {
         .padding(.vertical, 7)
     }
 
-    /// "3 years and 4 months since entry" → "3 years and 4 months" (the pill is under the entry).
+    /// The age as the pill has room for it: "7 years, 11 months" (or "… and 11 months since
+    /// entry", from an older server) → "7yrs, 11mos"; "in 3 months" → "In 3mos"; "today" → "Today".
     static func shortAge(_ age: String) -> String {
-        let short = age.replacingOccurrences(of: " since entry", with: "")
+        var short = age.replacingOccurrences(of: " since entry", with: "").replacingOccurrences(of: " and ", with: ", ")
+        for (unit, abbreviation) in [("years", "yrs"), ("year", "yr"), ("months", "mos"), ("month", "mo"),
+                                     ("weeks", "wks"), ("week", "wk"), ("days", "days"), ("day", "day")] {
+            short = short.replacingOccurrences(of: "(\\d+) \(unit)\\b", with: "$1\(abbreviation)", options: .regularExpression)
+        }
         return short.prefix(1).uppercased() + short.dropFirst()
     }
 }
@@ -1039,7 +1140,9 @@ private struct PullForMore: ViewModifier {
                     if pull >= threshold { reached = true } else if pull < threshold * 0.5 { reached = false }
                 }
                 // Where the finger is, side to side, while the list itself follows it down.
-                .simultaneousGesture(DragGesture(minimumDistance: 0).onChanged { sideways = $0.translation.width })
+                // (Not from the first point of a touch: a drag that takes every touch at once
+                // keeps the swipe in from the left edge from going back.)
+                .simultaneousGesture(DragGesture(minimumDistance: 20).onChanged { sideways = $0.translation.width })
                 .onScrollPhaseChange { old, new in
                     // A new touch starts in the middle.
                     if new == .interacting, old != .interacting { sideways = 0 }

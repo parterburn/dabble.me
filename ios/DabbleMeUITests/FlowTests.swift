@@ -343,6 +343,41 @@ final class FlowTests: XCTestCase {
         XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 10), "A tap goes back")
     }
 
+    /// A swipe in from the left edge of an open entry goes back, as it does anywhere in iOS.
+    func testSwipingFromTheLeftEdgeLeavesAnEntry() throws {
+        openJournal()
+        let entry = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
+        XCTAssertTrue(entry.waitForExistence(timeout: 10))
+        app.openTimelineEntry(entry)
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
+        sleep(1)
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.0, dy: 0.5))
+            .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.5)))
+        XCTAssertTrue(app.navigationBars["Journal"].waitForExistence(timeout: 5), "The edge swipe goes back to the Journal")
+        XCTAssertFalse(app.buttons["Edit Entry"].exists)
+    }
+
+    /// Under an open entry, On This Day lists the same date in other years, briefly; a tap on
+    /// one opens that entry.
+    func testOnThisDayUnderAnEntryOpensTheOtherYears() throws {
+        let memory = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "First snow of the year")).firstMatch
+        XCTAssertTrue(memory.waitForExistence(timeout: 20))
+        app.openTimelineEntry(memory)
+        XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts["On This Day"].waitForExistence(timeout: 10))
+        let other = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Bruges! Wandered the canals")).firstMatch
+        XCTAssertTrue(other.waitForExistence(timeout: 10), "The year after is listed under the entry")
+        sleep(1)
+        snap("entry-on-this-day")
+        other.tap()
+        let year = Calendar.current.component(.year, from: .now) - 1
+        let title = app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", String(year))).firstMatch
+        XCTAssertTrue(title.waitForExistence(timeout: 10), "A tap opens that year's entry")
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@ OR value CONTAINS %@", "Bruges!", "Bruges!")).firstMatch.waitForExistence(timeout: 10)
+                      || app.textViews.firstMatch.exists)
+    }
+
     private func snap(_ name: String) {
         guard let dir = ProcessInfo.processInfo.environment["DABBLE_DEBUG_DIR"] else { return }
         try? XCUIScreen.main.screenshot().pngRepresentation.write(to: URL(fileURLWithPath: "\(dir)/\(name).png"))
