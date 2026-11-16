@@ -178,6 +178,30 @@ struct ReflectionChatSummaryTests {
         #expect(transcript.count <= 2100)
     }
 
+    /// A companion's turn is kept as the question it ends on: that's what was answered next.
+    @Test func companionTurnsComeDownToTheirQuestion() {
+        #expect(JournalIntelligence.closingQuestion(in: "That walk sounds lovely. It stayed with you. **What made it stick?**") == "What made it stick?")
+        #expect(JournalIntelligence.closingQuestion(in: "Was it the light? Or the quiet?\nWhich would you go back for?") == "Which would you go back for?")
+        #expect(JournalIntelligence.closingQuestion(in: "That sounds like a good day.") == nil)
+        let conversation = [ReflectionChat.Message(fromWriter: false, text: "A long, kind paragraph about the day. **What made it stick?**"),
+                            ReflectionChat.Message(fromWriter: true, text: "The sunrise.")]
+        #expect(JournalIntelligence.summaryTranscript(conversation) == "Companion: What made it stick?\nMe: The sunrise.")
+    }
+
+    /// The model's reply is read as a question and an answer, whatever it gets wrong about the form.
+    @Test func readsTheQuestionAndTheAnswer() {
+        typealias Summary = JournalIntelligence.ChatSummary
+        let asked = "What made it stick?"
+        #expect(JournalIntelligence.parseChatSummary("QUESTION: What made the sunrise stay with me?\nANSWER: The light on the water, and that nobody else was up.", askedFirst: asked)
+                == Summary(question: "What made the sunrise stay with me?", answer: "The light on the water, and that nobody else was up."))
+        #expect(JournalIntelligence.parseChatSummary("**Question:** \"Why the sunrise?\"\n**Answer:** It was quiet.", askedFirst: asked)
+                == Summary(question: "Why the sunrise?", answer: "It was quiet."))
+        // No question written, or no labels at all: the reflection's own question stands in.
+        #expect(JournalIntelligence.parseChatSummary("ANSWER: It was quiet.", askedFirst: asked) == Summary(question: asked, answer: "It was quiet."))
+        #expect(JournalIntelligence.parseChatSummary("It was quiet.", askedFirst: asked) == Summary(question: asked, answer: "It was quiet."))
+        #expect(JournalIntelligence.parseChatSummary("QUESTION: Why?\nANSWER:", askedFirst: asked) == nil)
+    }
+
     @Test func shortChatsAreKeptWhole() {
         let conversation = [ReflectionChat.Message(fromWriter: true, text: "The sunrise."),
                             ReflectionChat.Message(fromWriter: false, text: "What made it stick?")]

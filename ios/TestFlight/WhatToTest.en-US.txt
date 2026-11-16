@@ -1,3 +1,9 @@
+Reflection has three changes.
+
+- The send button is an up arrow.
+- There's a play button next to the X. Tap it and the reflection is read aloud; tap again to stop. It should play with the ring switch on silent, stop when you close the sheet, and quiet any music while it speaks. How does the voice sound? (A better one can be downloaded in Settings, Accessibility, Spoken Content, Voices.)
+- "Sum Up & Add to Entry" now gives you the question you were asked, reworded so it makes sense by itself, in bold, and your answer under it, cleaned up. Check that the answer is what you said, in your words, with nothing added or interpreted, and that typos or dictation slips are fixed. Try it after one answer and after several. Then add it and look at the entry.
+
 The Format button now opens Apple's formatting panel, and entries can have strikethrough.
 
 - While writing, select some words and tap the "A" button. A short panel should slide up with Bold, Italic, Underline, Strikethrough and list buttons, and nothing else (no fonts, colors or alignment).

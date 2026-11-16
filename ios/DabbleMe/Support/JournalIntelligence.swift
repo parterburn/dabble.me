@@ -184,32 +184,87 @@ enum JournalIntelligence {
     "as an AI".
     """
 
-    /// A reflection chat summed up as a few sentences to add to the entry, in the writer's own
-    /// voice and from what they said (not the companion's suggestions).
-    static func chatSummary(entry: String, conversation: [ReflectionChat.Message]) async throws -> String {
-        let transcript = summaryTranscript(conversation)
-        return try await respond(
+    /// What a reflection chat leaves in the entry: the question the writer was asked, reworded
+    /// to stand on its own, and their answer, tidied.
+    struct ChatSummary: Equatable, Sendable {
+        var question: String
+        var answer: String
+    }
+
+    /// A reflection chat as a question and its answer to add to the entry: what the writer was
+    /// asked (the reflection's own closing question first, which the chat's messages don't
+    /// hold), and what they said, in their words, cleaned up. Not a summary of what it meant.
+    static func chatSummary(entry: String, reflection: String, conversation: [ReflectionChat.Message]) async throws -> ChatSummary {
+        let asked = closingQuestion(in: reflection)
+        let opening = ReflectionChat.Message(fromWriter: false, text: asked ?? clipped(reflection, limit: 240))
+        let transcript = summaryTranscript([opening] + conversation)
+        let reply = try await respond(
             instructions: """
-            Write a short addendum to the writer's journal entry that captures what they said and realized while \
-            talking it through. Write in the writer's own first-person voice, as if they wrote it in their journal: \
-            two to four sentences, under 80 words. Use only what the writer said; the companion's questions are \
-            just prompts, never facts. No headings, quotes or labels, and don't mention a conversation, a \
-            companion or AI. Reply with only the sentences.
+            The writer talked through their journal entry by answering a companion's questions. Turn that into \
+            a note for their journal, in two parts.
+
+            QUESTION: one short question saying what they were asked, in plain words, reworded so it makes \
+            sense by itself to someone who never saw the conversation. If they were asked several things, the \
+            one question their answers add up to.
+
+            ANSWER: what the writer said, cleaned up. Their own words, in their first-person voice, with typos, \
+            dictation slips, filler and repeats fixed and the pieces joined into sentences that read well. Keep \
+            everything they said and every detail. Add nothing they didn't say: no interpretation, no advice, \
+            no feelings they didn't name, and nothing from the companion's side.
+
+            Don't mention a conversation, a companion or AI. Reply in exactly this form and nothing else:
+            QUESTION: (the question)
+            ANSWER: (the answer)
             """,
             journalText: true,
-            prompt: "The entry:\n\(clipped(entry, limit: 1500))\n\nTalking it through:\n\(transcript)",
-            temperature: 0.4
+            prompt: "The entry, for context only:\n\(clipped(entry, limit: 1200))\n\nThe questions and the writer's answers:\n\(transcript)",
+            temperature: 0.3
         )
+        guard let summary = parseChatSummary(reply, askedFirst: asked) else { throw Failure.noAnswer }
+        return summary
+    }
+
+    /// The last question in a piece of the companion's writing ("…and that stayed with you. **What
+    /// made it stick?**" gives "What made it stick?"), or nil when it doesn't ask one.
+    static func closingQuestion(in text: String) -> String? {
+        let plain = text.replacingOccurrences(of: "*", with: "").replacingOccurrences(of: "_", with: "")
+        guard let mark = plain.lastIndex(of: "?") else { return nil }
+        let before = plain[..<mark]
+        let start = before.lastIndex(where: { ".!?\n".contains($0) }).map { plain.index(after: $0) } ?? plain.startIndex
+        let question = plain[start...mark].trimmingCharacters(in: .whitespacesAndNewlines)
+        return question.count > 1 ? question : nil
+    }
+
+    /// Reads the model's "QUESTION: … ANSWER: …" reply. Without its labels the whole reply is the
+    /// answer, under the question the reflection asked; with no answer at all there's nothing.
+    static func parseChatSummary(_ reply: String, askedFirst: String?) -> ChatSummary? {
+        func tidy(_ text: Substring) -> String {
+            text.trimmingCharacters(in: .whitespacesAndNewlines)
+                .replacingOccurrences(of: "**", with: "")
+                .trimmingCharacters(in: CharacterSet(charactersIn: "\"“”()").union(.whitespacesAndNewlines))
+        }
+        if let answerLabel = reply.range(of: "ANSWER:", options: .caseInsensitive) {
+            let answer = tidy(reply[answerLabel.upperBound...])
+            var question = askedFirst ?? ""
+            if let questionLabel = reply.range(of: "QUESTION:", options: .caseInsensitive), questionLabel.upperBound <= answerLabel.lowerBound {
+                let written = tidy(reply[questionLabel.upperBound..<answerLabel.lowerBound])
+                if !written.isEmpty { question = written }
+            }
+            return answer.isEmpty ? nil : ChatSummary(question: question, answer: answer)
+        }
+        let answer = tidy(reply[...])
+        return answer.isEmpty ? nil : ChatSummary(question: askedFirst ?? "", answer: answer)
     }
 
     /// The chat for the summary, fitted to the model's small context: the most recent turns that
     /// fit, working back from the end (so a late realization isn't the part left out), with the
-    /// companion's turns shortened first, since what the writer said is what the summary is made of.
+    /// companion's turns shortened first, since what the writer said is what the summary is made of:
+    /// each to the question it ends on, when it asks one (that's what the writer answered next).
     static func summaryTranscript(_ conversation: [ReflectionChat.Message], limit: Int = 2000) -> String {
         var lines: [String] = []
         var used = 0
         for message in conversation.reversed() {
-            let text = message.fromWriter ? message.text : clipped(message.text, limit: 240)
+            let text = message.fromWriter ? message.text : closingQuestion(in: message.text) ?? clipped(message.text, limit: 240)
             let line = "\(message.fromWriter ? "Me" : "Companion"): \(text)"
             if used + line.count > limit, !lines.isEmpty { break }
             lines.insert(used + line.count > limit ? clipped(line, limit: limit) : line, at: 0)

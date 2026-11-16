@@ -1,3 +1,4 @@
+import AVFoundation
 import SwiftUI
 
 /// One entry. Pinch to change text size; pull down for a reflection (PRO, Apple Intelligence);
@@ -938,6 +939,63 @@ struct DocumentText: View {
     }
 }
 
+/// Reads a reflection aloud with the phone's own voice (on the device; nothing is sent anywhere).
+@MainActor
+@Observable
+final class ReflectionSpeaker: NSObject, AVSpeechSynthesizerDelegate {
+    private(set) var isSpeaking = false
+    @ObservationIgnored private let synthesizer = AVSpeechSynthesizer()
+
+    override init() {
+        super.init()
+        synthesizer.delegate = self
+    }
+
+    func toggle(_ text: String) {
+        if isSpeaking { stop() } else { speak(text) }
+    }
+
+    func speak(_ text: String) {
+        guard !text.isEmpty else { return }
+        // Asked for by a tap, so it's heard with the ring switch off; other audio dips under it.
+        try? AVAudioSession.sharedInstance().setCategory(.playback, mode: .spokenAudio, options: .duckOthers)
+        try? AVAudioSession.sharedInstance().setActive(true)
+        let utterance = AVSpeechUtterance(string: text)
+        utterance.voice = Self.bestVoice()
+        isSpeaking = true
+        synthesizer.speak(utterance)
+    }
+
+    func stop() {
+        guard isSpeaking else { return }
+        synthesizer.stopSpeaking(at: .immediate)
+        finished()
+    }
+
+    /// The best voice the phone has for its language: a Premium or Enhanced one when the writer
+    /// has downloaded one (Settings → Accessibility → Spoken Content → Voices), else the default.
+    private static func bestVoice() -> AVSpeechSynthesisVoice? {
+        let language = AVSpeechSynthesisVoice.currentLanguageCode()
+        // (Only a better one than the default counts: among the default-quality voices are the
+        // novelty ones, and the phone's own pick for the language is the one to use.)
+        let better = AVSpeechSynthesisVoice.speechVoices().filter { $0.language == language && $0.quality.rawValue > AVSpeechSynthesisVoiceQuality.default.rawValue }
+        return better.max { $0.quality.rawValue < $1.quality.rawValue } ?? AVSpeechSynthesisVoice(language: language)
+    }
+
+    private func finished() {
+        isSpeaking = false
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+    }
+
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didFinish utterance: AVSpeechUtterance) {
+        Task { @MainActor in self.finished() }
+    }
+
+    nonisolated func speechSynthesizer(_ synthesizer: AVSpeechSynthesizer, didCancel utterance: AVSpeechUtterance) {
+        Task { @MainActor in self.finished() }
+    }
+}
+
 /// A reflection's sheet: open while Apple Intelligence writes it (`text` is nil until then).
 struct EntryReflection: Identifiable {
     let id = UUID()
@@ -958,8 +1016,10 @@ struct ReflectionSheet: View {
     @State private var summary = SummaryPhase.offer
 
     private enum SummaryPhase: Equatable {
-        case offer, working, preview(String), saving(String), added, failed(String), dismissed
+        case offer, working, preview(JournalIntelligence.ChatSummary), saving(JournalIntelligence.ChatSummary), added, failed(String), dismissed
     }
+    /// Reads the reflection aloud (the phone's own voice, on the device).
+    @State private var speaker = ReflectionSpeaker()
     /// After the reflection, a chat about the entry (on the device, never saved).
     @State private var chat: ReflectionChat?
     @State private var draft = ""
@@ -976,6 +1036,21 @@ struct ReflectionSheet: View {
                     .font(.headline)
                     .accessibilityAddTraits(.isHeader)
                 Spacer()
+                if let text = reflection.text {
+                    // Read aloud, or stop: beside the X, on the same kind of circle.
+                    Button {
+                        speaker.toggle(String(AttributedString.journal(text).characters))
+                    } label: {
+                        appIcon(speaker.isSpeaking ? "stop.fill" : "play.fill")
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(.primary)
+                            .frame(width: 44, height: 44)
+                            .modifier(RoundButtonBacking())
+                            .contentShape(.circle)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(speaker.isSpeaking ? "Stop Reading" : "Read Aloud")
+                }
                 SheetCloseButton()
             }
             ScrollViewReader { proxy in
@@ -1048,6 +1123,7 @@ struct ReflectionSheet: View {
         }
         .padding([.horizontal, .top], 20)
         .padding(.bottom, reflection.text != nil ? 8 : 0)
+        .onDisappear { speaker.stop() }
         .presentationDragIndicator(.visible)
         .presentationDetents([.medium, .large], selection: $detent)
         // Room to read the conversation while typing.
@@ -1067,7 +1143,7 @@ struct ReflectionSheet: View {
                 .accessibilityIdentifier("ReflectionReply")
                 .onSubmit(send)
             Button(action: send) {
-                appIcon("slab-send")
+                appIcon("slab-arrow-up")
                     .resizable()
                     .scaledToFit()
                     .frame(width: 18, height: 18)
@@ -1092,7 +1168,7 @@ struct ReflectionSheet: View {
         VStack(alignment: .leading, spacing: 10) {
             switch summary {
             case .offer:
-                Text("If you'd like to keep any of this, I can sum up our conversation and add it to this day's entry.")
+                Text("If you'd like to keep this, I can add the question and your answer, tidied up, to this day's entry.")
                     .foregroundStyle(.secondary)
                 Button {
                     replying = false // the keyboard down, so the summary shows
@@ -1108,8 +1184,8 @@ struct ReflectionSheet: View {
                     Text("Summing up…").foregroundStyle(.secondary)
                 }
             case .preview(let text), .saving(let text):
-                // As it'll read in the entry.
-                (Text("Reflection: ").bold() + Text(text))
+                // As it'll read in the entry: the question in bold, the answer under it.
+                (Text(text.question.isEmpty ? "" : text.question + "\n").bold() + Text(text.answer))
                     .font(.system(.body, design: .serif))
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -1143,21 +1219,23 @@ struct ReflectionSheet: View {
     private func summarize(_ chat: ReflectionChat) async {
         summary = .working
         do {
-            let text = try await JournalIntelligence.chatSummary(entry: reflection.entryText, conversation: chat.messages)
+            let text = try await JournalIntelligence.chatSummary(entry: reflection.entryText, reflection: reflection.text ?? "",
+                                                                 conversation: chat.messages)
             summary = .preview(text)
         } catch {
             summary = .failed(error.localizedDescription)
         }
     }
 
-    /// Adds the summary at the end of the entry as its own paragraph, starting "Reflection:" in
-    /// bold, through the usual edit.
-    private func addToEntry(_ text: String) async {
+    /// Adds the question and the answer at the end of the entry, through the usual edit: the
+    /// question as a bold paragraph and the answer under it, as a prompt answered while writing is.
+    private func addToEntry(_ text: JournalIntelligence.ChatSummary) async {
         guard let id = reflection.entryID, let document = reflection.document else { return }
         summary = .saving(text)
         do {
-            let paragraph = DocumentBlock.paragraph(DocumentRun("Reflection:", bold: true), DocumentRun(" " + text))
-            let updated = try await model.updateEntry(id: id, document: document + [paragraph])
+            var added = [DocumentBlock.paragraph(DocumentRun(text.answer))]
+            if !text.question.isEmpty { added.insert(.paragraph(DocumentRun(text.question, bold: true)), at: 0) }
+            let updated = try await model.updateEntry(id: id, document: document + added)
             onEntryUpdated(updated)
             summary = .added
         } catch {
