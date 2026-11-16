@@ -37,8 +37,9 @@ Settings, Calendars:
 
 An open entry no longer sits in a rounded card.
 
-- Open an entry that has other years under it (On This Day). The entry, and the bar above it, should be on the warm paper color, ending in a faint line; On This Day below should be on white (in light mode).
-- Open an entry with nothing under it. The whole page should be the paper color, top to bottom.
+- Open an entry that has other years under it (On This Day). The entry, and the bar above it, should be on white (in light mode), ending in a faint line; On This Day below should be on the warm paper color.
+- "On This Day" should be at the left, in line with the entry's text, with a little more room above it than before.
+- Open an entry with nothing under it. The whole page should be white, top to bottom.
 - An entry's photo should run edge to edge.
-- Pull the page down at the top: no white should show above the entry.
+- Pull the page down at the top: no paper color should show above the entry.
 - Swipe left on the entry for its Actions, pinch to resize the text, and check both still work. Try dark mode and an iPad too.

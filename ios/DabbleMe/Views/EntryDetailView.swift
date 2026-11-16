@@ -57,9 +57,9 @@ struct EntryDetailView: View {
             if let entry {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
-                        // The entry that was opened is on the Paper color, from the bar down to
-                        // its last line or its photo: no card around it. Other years' entries,
-                        // when there are any, follow on the page's own background.
+                        // The entry that was opened is on the page's own background (white, in
+                        // light mode), from the bar down to its last line or its photo: no card
+                        // around it. Other years' entries, when there are any, follow on Paper.
                         EntryBody(entry: entry, song: playerHidden ? nil : song, play: play)
                             .frame(maxWidth: 680, alignment: .leading)
                             .frame(maxWidth: .infinity)
@@ -70,11 +70,11 @@ struct EntryDetailView: View {
                             // not on On This Day under it.
                             .simultaneousGesture(swipeForActions)
                             .offset(x: swipeOffset)
-                            // (Behind the swipe, not moved by it.) The Paper runs on above the
-                            // entry too, under the bar and when the page is pulled down.
-                            .background(Color("Paper"))
+                            // (Behind the swipe, not moved by it.) Its background runs on above
+                            // the entry too, under the bar and when the page is pulled down.
+                            .background(Color(.systemBackground))
                             .background(alignment: .top) {
-                                Color("Paper").frame(height: 1200).offset(y: -1200)
+                                Color(.systemBackground).frame(height: 1200).offset(y: -1200)
                             }
                             // A soft line where the entry ends and On This Day begins.
                             .overlay(alignment: .bottom) {
@@ -95,17 +95,19 @@ struct EntryDetailView: View {
                         if let sameDay, sameDay.count > 0 {
                             SameDaySection(entry: entry, sameDay: sameDay, reading: reading,
                                            today: model.today?.day ?? JournalDay(localDate: .now)) { opened = EntryRoute(id: $0) }
-                                .frame(maxWidth: 680)
+                                // (Each of its rows: from the leading edge of the column, as
+                                // the entry is. Without the alignment its heading sat centered.)
+                                .frame(maxWidth: 680, alignment: .leading)
                                 .frame(maxWidth: .infinity)
                         }
                     }
                     // Room for the last lines to scroll clear of the floating actions.
                     .padding(.bottom, 64)
                 }
-                // Under and after the entry: the page's own background when On This Day
-                // follows (white, in light mode), so the two read apart; with nothing after
-                // the entry, Paper all the way down.
-                .background(hasOnThisDay ? Color(.systemBackground) : Color("Paper"))
+                // Under and after the entry: Paper when On This Day follows, so the two read
+                // apart; with nothing after the entry, the page's own background all the way
+                // down.
+                .background(hasOnThisDay ? Color("Paper") : Color(.systemBackground))
                 // The floating actions step aside while a long entry is scrolled down through,
                 // and come back on the way up, at the entry's foot and at the page's.
                 .onScrollGeometryChange(for: ScrollSpot.self) { geometry in
@@ -659,7 +661,8 @@ private struct SameDaySection: View {
                     .font(.system(.title3, design: .serif, weight: .semibold))
                     .accessibilityAddTraits(.isHeader)
             }
-            .padding(.top, 18)
+            // Clear of the entry and the line it ends in.
+            .padding(.top, 28)
             // Gone under the bar (the scroll view's space starts at the bar's foot).
             .onGeometryChange(for: Bool.self) { $0.frame(in: .scrollView).maxY < 0 } action: { passed in
                 withAnimation(.easeOut(duration: 0.15)) { reading.headingPassed = passed }
