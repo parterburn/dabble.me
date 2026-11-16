@@ -223,6 +223,15 @@ struct EntryAgoTests {
         #expect(try ago("2021-09-12") == "5 years, 2 months ago")
         #expect(try ago("2021-11-25") == "5 years ago") // 4 years, 11 months and 21 days
     }
+
+    /// A photo's band uses the same wording, so a long span keeps its months: the daily email's
+    /// wording (`relative(to:)`) drops them once they're under 5% of the span.
+    @Test func aLongSpanKeepsItsMonths() throws {
+        let today = try #require(JournalDay("2026-11-15"))
+        let day = try #require(JournalDay("2012-08-10"))
+        #expect(day.ago(from: today) == "14 years, 3 months ago")
+        #expect(day.relative(to: today) == "14 years ago")
+    }
 }
 
 struct DatedTagAgeTests {

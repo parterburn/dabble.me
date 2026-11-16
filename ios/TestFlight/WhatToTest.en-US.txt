@@ -1,12 +1,6 @@
-Face ID now comes up as the app opens, instead of after the logo has typed itself out.
+The date band on a photo now says how long ago it was to the nearest month.
 
-- With the Face ID lock on, open the app from closed. The Face ID prompt should appear at once, while "Dabble me." is still typing.
-- Do the same coming back to the app after it has locked in the background.
-- Cancel Face ID. The Face ID symbol should be there to tap, and tapping it should ask again. It must not ask again by itself in a loop.
-- Check that Face ID is never skipped: the app should not sit on the lock screen with no prompt.
-- On a phone with Touch ID or a passcode only, the lock should still ask.
-
-The logo on the Today tab types at its original, slower speed again.
-
-- Tap "Dabble me." at the top of Today. It should type itself out unhurriedly (about a second).
-- The launch screen keeps the faster typing from the last build.
+- Open a photo from an entry that is several years old and not near its anniversary. The band above it should read like "14 years, 3 months ago", not just "14 years ago".
+- Share that photo. The shared image's band should say the same.
+- It should match the date under the title when you open that entry in full.
+- A photo from under two months ago still reads in days ("36 days ago"), and one from today reads "Today".
