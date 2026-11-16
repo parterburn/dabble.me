@@ -22,4 +22,10 @@ Settings, Calendars:
 - The explanation at the top should sit close under the title, without a large gap above it.
 - At the bottom there is a note on where to add or remove calendar accounts.
 
-An open entry with a photo: the card's bottom corners are now square, where the photo ends. Without a photo they stay rounded.
+An open entry no longer sits in a rounded card.
+
+- Open an entry that has other years under it (On This Day). The entry, and the bar above it, should be on the warm paper color, ending in a faint line; On This Day below should be on white (in light mode).
+- Open an entry with nothing under it. The whole page should be the paper color, top to bottom.
+- An entry's photo should run edge to edge.
+- Pull the page down at the top: no white should show above the entry.
+- Swipe left on the entry for its Actions, pinch to resize the text, and check both still work. Try dark mode and an iPad too.
