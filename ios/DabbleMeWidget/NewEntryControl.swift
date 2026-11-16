@@ -8,7 +8,9 @@ struct NewEntryControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: "me.dabble.ios.control.new-entry") {
             ControlWidgetButton(action: NewEntryIntent()) {
-                Label("New Entry", systemImage: "square.and.pencil")
+                // The "me" mark, as a custom symbol (`dabble.me` in WidgetIcons.xcassets): a
+                // control's icon has to be a symbol, which iOS tints itself.
+                Label("New Entry", image: "dabble.me")
             }
         }
         .displayName("New Entry")

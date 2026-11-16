@@ -207,16 +207,16 @@ struct WidgetPhotoTests {
     }
 }
 
-struct NewEntryRequestTests {
+struct NewEntryControlRequestTests {
     /// The control's word to the app is heard once, and only for a minute.
     @Test func isTakenOnceAndExpires() {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
-        NewEntryRequest.record(at: now)
-        #expect(NewEntryRequest.take(at: now.addingTimeInterval(2)))
-        #expect(!NewEntryRequest.take(at: now.addingTimeInterval(3)))
-        NewEntryRequest.record(at: now)
-        #expect(!NewEntryRequest.take(at: now.addingTimeInterval(NewEntryRequest.lifetime + 1)))
-        #expect(!NewEntryRequest.take(at: now.addingTimeInterval(4)), "An expired one is gone too")
+        NewEntryControlRequest.record(at: now)
+        #expect(NewEntryControlRequest.take(at: now.addingTimeInterval(2)))
+        #expect(!NewEntryControlRequest.take(at: now.addingTimeInterval(3)))
+        NewEntryControlRequest.record(at: now)
+        #expect(!NewEntryControlRequest.take(at: now.addingTimeInterval(NewEntryControlRequest.lifetime + 1)))
+        #expect(!NewEntryControlRequest.take(at: now.addingTimeInterval(4)), "An expired one is gone too")
     }
 }
 

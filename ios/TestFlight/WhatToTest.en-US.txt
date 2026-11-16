@@ -1,6 +1,7 @@
 New: a "New Entry" control.
 
 - Add it: open Control Center, touch and hold an empty spot, Add a Control, and search for Dabble Me. It can also go on the Lock Screen's bottom buttons, and on the Action button (Settings, Action Button, Controls).
+- Its icon should be a small serif "me", not a pencil. Check it's legible in Control Center and on the Lock Screen.
 - Tap it. Dabble Me should open with the composer up.
 - Before 10 AM, with yesterday unwritten, the composer should be on yesterday; otherwise on today.
 - Try it with the app closed completely, with it in the background, and with the Face ID lock on.

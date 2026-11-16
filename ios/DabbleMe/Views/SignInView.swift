@@ -57,7 +57,7 @@ struct Wordmark: View {
         _typed = State(initialValue: typesOut ? 0 : nil)
     }
 
-    static let letters = Array("Dabble me.")
+    nonisolated static let letters = Array("Dabble me.")
 
     /// How fast it types. Quick (about 0.6 seconds in all) where something waits on it, as the
     /// app does on the splash; unhurried (about 1.1) where nothing does, as on Today.
