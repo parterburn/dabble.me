@@ -67,6 +67,8 @@ final class RichTextEditorModel {
     private(set) var revision = 0
     /// Non-blank characters written so far.
     private(set) var characterCount = 0
+    /// The text has the keyboard.
+    fileprivate(set) var isFocused = false
 
     /// Set while the link row is open; `linkText` is what the user is typing.
     var isEditingLink = false
@@ -200,6 +202,23 @@ final class RichTextEditorModel {
         textView.scrollRangeToVisible(textView.selectedRange)
         textDidChange()
         focus()
+    }
+
+    /// Puts words that were spoken (Dictation) where the cursor is, as if typed there.
+    func insertDictated(_ heard: String) {
+        guard let textView else { return }
+        let storage = textView.textStorage
+        let range = textView.selectedRange
+        let previous = range.location > 0 ? (storage.string as NSString).substring(with: NSRange(location: range.location - 1, length: 1)).last : nil
+        let words = Dictation.insertion(of: heard, after: previous)
+        guard !words.isEmpty else { return }
+        var attributes = textView.typingAttributes
+        attributes[.link] = nil
+        attributes[.backgroundColor] = nil
+        storage.replaceCharacters(in: range, with: NSAttributedString(string: words, attributes: attributes))
+        textView.selectedRange = NSRange(location: range.location + (words as NSString).length, length: 0)
+        textView.scrollRangeToVisible(textView.selectedRange)
+        textDidChange()
     }
 
     /// Replaces everything in the editor (e.g. "Start Over" on a restored draft).
@@ -683,10 +702,12 @@ struct RichTextEditor: UIViewRepresentable {
         }
 
         func textViewDidBeginEditing(_ textView: UITextView) {
+            model.isFocused = true
             padBottomForBar()
         }
 
         func textViewDidEndEditing(_ textView: UITextView) {
+            model.isFocused = false
             // Once the keyboard (and the bar) has gone, or stayed for the link's address.
             DispatchQueue.main.async { [weak self] in self?.padBottomForBar() }
         }

@@ -1,3 +1,19 @@
+New: speak your entry.
+
+- Open the composer. On iOS 26 there is a microphone button at the far right of the bar over the keyboard, after the "?" button. (On iOS 18 it isn't there.)
+- Tap it. The first time, allow the microphone; it may then say it is downloading what it needs, once. After that a "Listening" row appears over the buttons.
+- Talk for a few sentences. The words show in the row as you say them, and go into the entry a sentence at a time, where the cursor is.
+- Tap Done, or the microphone again. The last words should land in the entry and the row should close.
+- Check the punctuation and names against what you said. Is it better than the keyboard's dictation?
+- Type some words, put the cursor in the middle of them, and speak: the new sentence should go in at the cursor with a space before it.
+- Start speaking and tap Save straight away: the last sentence should be saved with the rest.
+- While it is listening, open the hashtag or "?" row, or swipe the keyboard down: listening should stop and keep what you said.
+- Try it in airplane mode after the first use. It should still work; nothing you say leaves the phone.
+- Try a long entry (a minute or two of talking) and say whether the phone gets warm or the words fall behind.
+- If you turn the microphone off for Dabble Me in Settings and tap the button, the row should say so and offer Settings.
+
+The buttons over the keyboard while writing are olive now, not black. Check them in light and dark mode.
+
 Switching rows above the keyboard should never leave an empty band over your writing.
 
 - While writing with a photo attached, tap "?" (the prompt), then the photos button, then "?" again, a few times, quickly and slowly. Each row should replace the last cleanly. Watch for a blank strip between the row and your text, and say which switch caused it if you see one.

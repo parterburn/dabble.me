@@ -222,6 +222,38 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
 
+    /// The bar's microphone: what's said goes into the entry where the cursor is. (A made-up
+    /// sentence here, since the simulator has no transcriber.)
+    func testSpeakingAnEntry() throws {
+        let app = launch(["-DabbleDebugDictation", "YES"])
+        if app.buttons["Write Today's Entry"].waitForExistence(timeout: 15) {
+            app.buttons["Write Today's Entry"].tap()
+        } else {
+            tab(app, "Journal").tap()
+            app.buttons["New Entry"].tap()
+        }
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        editor.tap()
+        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+        if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap() }
+        editor.typeText("A slow evening.")
+        app.buttons["Speak Your Entry"].tap()
+        XCTAssertTrue(app.staticTexts["DictationHearing"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Stop Listening"].exists)
+        sleep(1)
+        snap("compose-dictation")
+        // A sentence at a time, after what was typed, spaced as if typed.
+        let heard = NSPredicate(format: "value CONTAINS %@", "A slow evening. We walked along the river after dinner. Leo found a heron standing in the shallows.")
+        wait(for: [expectation(for: heard, evaluatedWith: editor)], timeout: 15)
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["Speak Your Entry"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["DictationHearing"].exists)
+        snap("compose-dictation-done")
+        app.buttons["Cancel"].tap()
+        app.buttons["Discard"].tap()
+    }
+
     func testTodayPromptEntrySummaryAndSettings() throws {
         let app = launch()
         // With Apple Intelligence on, Today writes its own prompt (no button to ask for one).

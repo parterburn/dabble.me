@@ -56,6 +56,8 @@ struct ComposeView: View {
     /// Prompt (Apple Intelligence, the sparkles): a row with one question about the draft. Closing
     /// and opening it again asks a new one.
     @State private var showsAskRow = false
+    /// Speaking the entry (the bar's microphone): what's heard goes in where the cursor is.
+    @State private var dictation = Dictation()
 
     @State private var question: String?
     @State private var askedQuestions: [String] = []
@@ -81,6 +83,7 @@ struct ComposeView: View {
     @State private var cameraItems: [PhotosPickerItem] = []
     @State private var removesExistingPhoto = false
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.openURL) private var openURL
     private let draftKey: String
     /// Opened for a day of its own, which today's date doesn't then replace.
     private let startsOnDay: Bool
@@ -145,10 +148,11 @@ struct ComposeView: View {
                 if restoredDraft != nil { draftBanner }
                 if isSimplified { simplifiedBanner }
                 Divider()
+                // The bar's icons are olive, not black: there are a lot of them, next to the writing.
                 RichTextEditor(model: editor,
-                               leading: AnyView(model.me?.canAddPhotos == true ? AnyView(photosButton) : AnyView(proPhotosButton)),
-                               trailing: AnyView(tagAndLinkButtons),
-                               barKey: "\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)",
+                               leading: AnyView((model.me?.canAddPhotos == true ? AnyView(photosButton) : AnyView(proPhotosButton)).foregroundStyle(.tint)),
+                               trailing: AnyView(tagAndLinkButtons.foregroundStyle(.tint)),
+                               barKey: "\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(dictation.isActive)|\(editor.isEditingLink)",
                                row: openRow)
                     // Low in the page, over the bar: clear of the entry's first lines.
                     .overlay(alignment: .bottom) {
@@ -199,7 +203,8 @@ struct ComposeView: View {
                             .accessibilityLabel("Saving")
                             .padding(.horizontal, 8)
                     } else {
-                        Button("Save") { Task { await save() } }
+                        // Whatever's still being heard goes in first.
+                        Button("Save") { Task { await dictation.finish(); await save() } }
                             .disabled(!canSave)
                     }
                 }
@@ -250,6 +255,21 @@ struct ComposeView: View {
                 // One row at a time (the link row also opens by selecting a link).
                 if editing { showsHashtagBar = false; showsAskRow = false; showsPhotoDrawer = false }
             }
+            // One row at a time: another one opening ends the listening, as does the keyboard
+            // (and the bar with it) going away, or the app.
+            .onChange(of: showsHashtagBar || showsAskRow || showsPhotoDrawer || editor.isEditingLink) { _, open in
+                if open { dictation.stop(); dictation.clearProblem() }
+            }
+            .onChange(of: editor.isFocused) { _, focused in
+                if !focused, dictation.state == .listening { dictation.stop() }
+            }
+            .onDisappear { dictation.cancel() }
+            // Why it couldn't listen is said for a while, then the row closes.
+            .task(id: dictation.problem) {
+                guard dictation.problem != nil else { return }
+                try? await Task.sleep(for: .seconds(8))
+                if !Task.isCancelled { dictation.clearProblem() }
+            }
             .photosPicker(isPresented: $pickingPhotos, selection: libraryItems, maxSelectionCount: photoLimit - cameraItems.count,
                           selectionBehavior: .ordered, matching: .images, preferredItemEncoding: .current)
             .onChange(of: photoItems) { old, new in
@@ -268,6 +288,7 @@ struct ComposeView: View {
             .onChange(of: editor.revision) { scheduleDraftSave() }
             .onChange(of: date) { scheduleDraftSave() }
             .onChange(of: scenePhase) { _, phase in
+                if phase == .background { dictation.stop() }
                 if phase != .active { saveDraftNow() }
             }
             .onAppear {
@@ -315,6 +336,8 @@ struct ComposeView: View {
     private var openRow: AnyView? {
         let row: AnyView? = if editor.isEditingLink {
             AnyView(LinkRow(editor: editor))
+        } else if dictation.isActive || dictation.problem != nil {
+            AnyView(dictationRow)
         } else if showsHashtagBar {
             AnyView(hashtagSuggestions)
         } else if showsAskRow {
@@ -410,8 +433,8 @@ struct ComposeView: View {
         #endif
     }
 
-    /// The bar's right: Format (iOS's formatting panel), Link (PRO; shows or hides the link row), Tags (the hashtag row), then Prompt
-    /// (the question mark) at the far edge. Each row button is selected while its row is open; one row at a time.
+    /// The bar's right: Format (iOS's formatting panel), Link (PRO; shows or hides the link row), Tags (the hashtag row), Prompt
+    /// (the question mark), then the microphone (speak the entry) at the far edge. Each row button is selected while its row is open; one row at a time.
     private var tagAndLinkButtons: some View {
         HStack(spacing: 6) {
             // Format: iOS's own formatting panel, with what an entry keeps (bold, italic,
@@ -485,6 +508,92 @@ struct ComposeView: View {
             .accessibilityLabel("Prompt")
             .accessibilityHint("Shows what was on your calendar that day and a question to write about")
             .accessibilityAddTraits(showsAskRow ? .isSelected : [])
+            if Dictation.isSupported { dictationButton }
+        }
+    }
+
+    /// Speak the entry: starts and stops the listening. Selected while it's on.
+    private var dictationButton: some View {
+        Button {
+            if dictation.isActive {
+                dictation.stop()
+            } else {
+                showsHashtagBar = false
+                showsAskRow = false
+                showsPhotoDrawer = false
+                editor.endLink()
+                dictation.start { editor.insertDictated($0) }
+            }
+        } label: {
+            appIcon("slab-microphone")
+                .frame(width: 40, height: 36)
+                .background(dictation.isActive ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(dictation.isActive ? "Stop Listening" : "Speak Your Entry")
+        .accessibilityHint("What you say is written into the entry, on your phone")
+        .accessibilityAddTraits(dictation.isActive ? .isSelected : [])
+    }
+
+    /// What's being heard, set like the prompt's row: a title, then the words as they come (the
+    /// last of them, when there are more than fit). They go into the entry a sentence at a time.
+    private var dictationRow: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(dictationTitle)
+                .font(.caption.weight(.semibold))
+                .textCase(.uppercase)
+                .foregroundStyle(.tint)
+                .padding(.bottom, 4)
+                .accessibilityAddTraits(.isHeader)
+            HStack(alignment: .center, spacing: 12) {
+                if let problem = dictation.problem {
+                    Text(problem.message)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if problem == .microphoneDenied, let settings = URL(string: UIApplication.openSettingsURLString) {
+                        Button("Settings") { openURL(settings) }
+                            .font(.subheadline.weight(.semibold))
+                    }
+                } else {
+                    TypingDots(size: .small)
+                    Text(dictationLine)
+                        .foregroundStyle(dictation.hearing.isEmpty ? .secondary : .primary)
+                        .lineLimit(2)
+                        .truncationMode(.head)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier("DictationHearing")
+                    if dictation.state == .listening {
+                        Button("Done") { dictation.stop() }
+                            .font(.subheadline.weight(.semibold))
+                    }
+                }
+            }
+            .font(.subheadline)
+            .frame(minHeight: askLineHeight)
+        }
+        .padding(.horizontal)
+        .padding(.top, 10)
+    }
+
+    private var dictationTitle: String {
+        if dictation.problem != nil { return "Speak your entry" }
+        return switch dictation.state {
+        case .idle, .preparing: "Getting ready"
+        case .listening: "Listening"
+        case .finishing: "Finishing"
+        }
+    }
+
+    private var dictationLine: String {
+        if !dictation.hearing.isEmpty { return dictation.hearing }
+        if let progress = dictation.downloadProgress {
+            return "Downloading what's needed to listen, just this once… \(Int(progress * 100))%"
+        }
+        return switch dictation.state {
+        case .idle, .preparing: "One moment…"
+        case .listening: "Say what's on your mind. It stays on your phone."
+        case .finishing: "Writing the last of it down…"
         }
     }
 

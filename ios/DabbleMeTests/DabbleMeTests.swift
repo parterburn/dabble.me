@@ -896,3 +896,14 @@ struct RewindTests {
         }
     }
 }
+
+struct DictationTests {
+    /// What's heard arrives with stray spaces around it; in the entry it reads as typed.
+    @Test func spokenWordsAreSpacedLikeTypedOnes() {
+        #expect(Dictation.insertion(of: "Today I walked.", after: nil) == "Today I walked.")
+        #expect(Dictation.insertion(of: " It was quiet. ", after: ".") == " It was quiet.")
+        #expect(Dictation.insertion(of: " It was quiet.", after: " ") == "It was quiet.")
+        #expect(Dictation.insertion(of: " It was quiet.", after: "\n") == "It was quiet.")
+        #expect(Dictation.insertion(of: "  \n", after: ".") == "")
+    }
+}
