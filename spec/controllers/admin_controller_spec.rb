@@ -361,4 +361,116 @@ RSpec.describe AdminController, type: :controller do
       expect(response).to redirect_to(admin_stats_path)
     end
   end
+
+  describe 'notices' do
+    def deliveries
+      ActionMailer::Base.deliveries
+    end
+
+    # The shared context gives three accounts an entry: user, paid_user and free_ai.
+    before do
+      allow(ServiceNoticeJob).to receive(:perform_later)
+      deliveries.clear
+    end
+
+    it 'keeps everyone but admins out of the page, the preview and the send' do
+      get :notices
+      expect(response).to redirect_to(new_user_session_url)
+
+      sign_in user
+      get :notices
+      expect(response).to redirect_to(entries_path)
+      post :preview_notice, params: { message: 'Hello' }
+      expect(response).to redirect_to(entries_path)
+      post :create_notice, params: { message: 'Hello', confirm_count: '3' }
+      expect(response).to redirect_to(entries_path)
+
+      expect(deliveries).to be_empty
+      expect(ServiceNotice.count).to eq(0)
+    end
+
+    it 'asks an admin for a passkey before anything can be sent' do
+      sign_in superuser
+      post :create_notice, params: { confirm_count: '3' }
+
+      expect(response).to redirect_to(security_path)
+      expect(ServiceNotice.count).to eq(0)
+    end
+
+    it 'shows how many accounts a notice goes to and what it says' do
+      sign_in_admin superuser
+      get :notices
+
+      expect(response.status).to eq 200
+      expect(response.body).to have_content('Type 3 to confirm')
+      expect(response.body).to have_button('Send to 3 accounts')
+      expect(response.body).to have_content('Export your Dabble Me journal')
+      expect(response.body).to have_content('No notice has been sent.')
+    end
+
+    it 'emails a preview to the admin alone and keeps the message in the form' do
+      sign_in_admin superuser
+      post :preview_notice, params: { message: 'We are closing.' }
+
+      expect(deliveries.map(&:to)).to eq([[superuser.email]])
+      expect(deliveries.first.subject).to eq('[Preview] Export your Dabble Me journal')
+      expect(deliveries.first.text_part.body.to_s).to include('We are closing.')
+      expect(response.body).to have_field('message', with: 'We are closing.')
+      expect(response.body).to have_content('Preview sent to your own address.')
+      expect(ServiceNotice.count).to eq(0)
+      expect(ServiceNoticeJob).not_to have_received(:perform_later)
+    end
+
+    it 'does not preview or send a message with a link in it' do
+      sign_in_admin superuser
+
+      post :preview_notice, params: { message: 'Go to https://example.com' }
+      expect(response.body).to have_content("can't contain links")
+      post :create_notice, params: { message: 'Go to https://example.com', confirm_count: '3' }
+      expect(response.status).to eq 422
+
+      expect(deliveries).to be_empty
+      expect(ServiceNotice.count).to eq(0)
+    end
+
+    it 'sends nothing until the number of accounts is typed' do
+      sign_in_admin superuser
+
+      ['', '2', 'yes'].each do |typed|
+        post :create_notice, params: { message: 'We are closing.', confirm_count: typed }
+
+        expect(response.status).to eq 422
+        expect(response.body).to have_content('Type 3 to confirm.')
+        expect(response.body).to have_field('message', with: 'We are closing.')
+      end
+      expect(ServiceNotice.count).to eq(0)
+      expect(ServiceNoticeJob).not_to have_received(:perform_later)
+    end
+
+    it 'records the notice and queues it once the number matches' do
+      sign_in_admin superuser
+      post :create_notice, params: { message: 'We are closing.', confirm_count: '3' }
+
+      notice = ServiceNotice.last
+      expect(notice).to have_attributes(message: 'We are closing.', sent_by: superuser, recipients_count: 3)
+      expect(ServiceNoticeJob).to have_received(:perform_later).with(notice.id)
+      expect(response).to redirect_to(admin_notices_path)
+      expect(flash[:notice]).to eq('Notice queued for 3 accounts. They go out at 120 a minute.')
+    end
+
+    it 'refuses a second notice within 24 hours and says when the last went out' do
+      ServiceNotice.create!(message: 'First', sent_by: superuser, recipients_count: 3, sent_on: Date.current, created_at: 1.hour.ago)
+      sign_in_admin superuser
+
+      get :notices
+      expect(response.body).to have_content('The next one can be sent 24 hours after it.')
+      expect(response.body).not_to have_button('Send to 3 accounts')
+      expect(response.body).to have_content('0 of 3')
+
+      post :create_notice, params: { message: 'Second', confirm_count: '3' }
+      expect(response.status).to eq 422
+      expect(ServiceNotice.count).to eq(1)
+      expect(ServiceNoticeJob).not_to have_received(:perform_later)
+    end
+  end
 end

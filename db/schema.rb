@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_13_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_16_000000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -229,6 +229,23 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_13_000000) do
     t.index ["user_id"], name: "index_payments_on_user_id"
   end
 
+  create_table "service_notice_deliveries", force: :cascade do |t|
+    t.bigint "service_notice_id", null: false
+    t.bigint "user_id", null: false
+    t.datetime "created_at", null: false
+    t.index ["service_notice_id", "user_id"], name: "index_service_notice_deliveries_on_notice_and_user", unique: true
+    t.index ["user_id"], name: "index_service_notice_deliveries_on_user_id"
+  end
+
+  create_table "service_notices", force: :cascade do |t|
+    t.text "message"
+    t.bigint "sent_by_id"
+    t.integer "recipients_count", default: 0, null: false
+    t.date "sent_on", null: false
+    t.datetime "created_at", null: false
+    t.index ["sent_on"], name: "index_service_notices_on_sent_on", unique: true
+  end
+
   create_table "users", id: :serial, force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -310,5 +327,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_13_000000) do
   add_foreign_key "oauth_access_grants", "users", column: "resource_owner_id"
   add_foreign_key "oauth_access_tokens", "oauth_applications", column: "application_id"
   add_foreign_key "oauth_access_tokens", "users", column: "resource_owner_id"
+  add_foreign_key "service_notice_deliveries", "service_notices", on_delete: :cascade
+  add_foreign_key "service_notice_deliveries", "users", on_delete: :cascade
   add_foreign_key "webauthn_credentials", "users"
 end

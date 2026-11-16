@@ -131,6 +131,14 @@ Letters to subscribers live in `newsletters/<name>/`: one Markdown `letter.md`, 
 - `rake 'newsletter:preview[name,email]'` emails every variant to one account. `rake 'newsletter:send[name]'` prints who would get what and sends only with `SEND=yes`; `PLAN=` limits it to one plan and `LIMIT=` to a number of emails. A send is refused while a letter contains `TODO` or `MAILING_ADDRESS` is unset.
 - The unsubscribe link (`/updates/unsubscribe`, `EmailUpdatesController`) takes the same signed token as the settings links and accepts a one-click POST without CSRF.
 
+### Service notices
+
+`/admin/notices` (`AdminController#notices`) sends the one email that goes to everyone with a journal: a reminder to export it, under an optional message the admin types. It is for a shutdown, a change of operator, or anything else every writer has to hear about, so it ignores `send_updates` and `frequency`.
+
+- It is narrow on purpose, because it reaches every writer from the real domain. `ServiceNoticeMailer` fixes the subject and body. The admin's message is plain text, at most `ServiceNotice::MESSAGE_LIMIT` characters, with no links. The audience is always `ServiceNotice.recipients`: accounts with an entry that aren't being deleted. One goes out per `ServiceNotice::COOLDOWN` (24 hours), and a unique `sent_on` keeps two clicks from sending two. Don't add a subject field, HTML, links, audience filters or a second template unless asked.
+- "Send me a preview" emails the admin alone. Sending to everyone needs the recipient count typed back.
+- `ServiceNoticeJob` queues one `ServiceNoticeDeliveryJob` per person at `ServiceNotice::PER_MINUTE`. `service_notice_deliveries` keeps a retried job from emailing anyone twice, and the page shows how many of each notice have gone out.
+
 ### iOS app
 
 SwiftUI app in `ios/` (see `ios/README.md`). Generate the project with `cd ios && xcodegen generate`; `DabbleMe.xcodeproj` is gitignored. It talks to `/api/v1` (`app/controllers/api/v1/`) with Doorkeeper tokens from the first-party `MobileApp` client, which `db:migrate` / `db:seed` register. The API specs are in `spec/requests/api_v1_spec.rb`.

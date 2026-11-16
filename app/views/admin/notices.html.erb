@@ -1,0 +1,87 @@
+<% title "Admin notices" %>
+<% content_for :tailwind, true %>
+<% count = number_with_delimiter(@recipient_count) %>
+
+<div class="tw mx-auto max-w-6xl pt-4 pb-16 sm:pt-8">
+  <%= render "admin/header", title: "Notices",
+        intro: "The one email that goes to everyone with a journal, whatever their email settings: a reminder to export it, under an optional message from you. For a shutdown, a change of operator, or anything else every writer has to hear about." %>
+
+  <div class="grid gap-6 lg:grid-cols-[3fr_2fr]">
+    <div class="card p-6 sm:p-8">
+      <%= form_with url: admin_notices_path, method: :post, class: "space-y-5" do %>
+        <%= render "devise/shared/error_messages", resource: @service_notice %>
+
+        <div>
+          <label for="message" class="field-label">Your message (optional)</label>
+          <%= text_area_tag :message, @service_notice.message, rows: 8, maxlength: ServiceNotice::MESSAGE_LIMIT, class: "field-input" %>
+          <p class="field-help">
+            Goes at the top of the email, under the greeting. Plain text, up to <%= number_with_delimiter(ServiceNotice::MESSAGE_LIMIT) %> characters.
+            Links aren't allowed: the email already links to the export page.
+          </p>
+        </div>
+
+        <div>
+          <%= button_tag "Send me a preview", type: "submit", formaction: preview_admin_notice_path, class: "button-secondary" %>
+          <p class="field-help">Emails this notice to you alone. Read it before sending to everyone.</p>
+        </div>
+
+        <hr class="border-subtle">
+
+        <% if @blocker %>
+          <p class="text-sm text-primary"><%= @blocker %></p>
+        <% else %>
+          <div>
+            <label for="confirm_count" class="field-label">Type <%= @recipient_count %> to confirm</label>
+            <%= text_field_tag :confirm_count, nil, inputmode: "numeric", autocomplete: "off", class: "field-input max-w-xs" %>
+            <p class="field-help">
+              This goes to <%= count %> <%= "account".pluralize(@recipient_count) %>: everyone with at least one entry.
+              It can't be unsent, and another can't go out for 24 hours.
+            </p>
+          </div>
+          <%= button_tag "Send to #{count} #{'account'.pluralize(@recipient_count)}", type: "submit", class: "button-danger" %>
+        <% end %>
+      <% end %>
+    </div>
+
+    <div class="card p-6">
+      <h2 class="font-serif text-2xl text-primary">What the email says</h2>
+      <p class="mt-1 text-sm text-muted">Fixed, apart from your message.</p>
+      <div class="mt-4 space-y-3 text-sm text-primary">
+        <p><span class="text-muted">Subject:</span> <%= ServiceNoticeMailer::SUBJECT %></p>
+        <p>Hey [first name],</p>
+        <p class="text-muted">[Your message]</p>
+        <p>This is a reminder to keep a copy of your Dabble Me journal for yourself.</p>
+        <p class="font-medium">Export your journal</p>
+        <p>You'll be asked to sign in. Choose to export everything, and you'll get an email with a link to a ZIP file holding all of your entries and photos. It opens in any web browser and needs no account.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="mt-6">
+    <%= render layout: "admin/section", locals: { title: "Sent", intro: "Emails go out at #{ServiceNotice::PER_MINUTE} a minute, so a large send takes a while to finish." } do %>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Sent</th>
+            <th>By</th>
+            <th>Delivered</th>
+            <th>Message</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% @past_notices.each do |past| %>
+            <tr>
+              <td class="whitespace-nowrap"><%= past.created_at.utc.strftime("%Y-%m-%d %H:%M UTC") %></td>
+              <td class="whitespace-nowrap"><%= past.sent_by&.email || "—" %></td>
+              <td class="whitespace-nowrap"><%= number_with_delimiter(@delivered.fetch(past.id, 0)) %> of <%= number_with_delimiter(past.recipients_count) %></td>
+              <td class="max-w-md truncate" title="<%= past.message %>"><%= past.message.presence || "—" %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+      <% if @past_notices.empty? %>
+        <p class="px-5 py-8 text-center text-sm text-muted">No notice has been sent.</p>
+      <% end %>
+    <% end %>
+  </div>
+</div>

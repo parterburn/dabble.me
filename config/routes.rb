@@ -86,6 +86,9 @@ Rails.application.routes.draw do
       get 'admin/stats' => 'admin#stats', as: 'admin_stats'
       post 'admin/stats/capture' => 'admin#capture_stats', as: 'capture_admin_stats'
       get 'admin/photos' => 'admin#photos', as: 'admin_photos'
+      get 'admin/notices' => 'admin#notices', as: 'admin_notices'
+      post 'admin/notices' => 'admin#create_notice'
+      post 'admin/notices/preview' => 'admin#preview_notice', as: 'preview_admin_notice'
       get 'admin/oauth' => 'admin#oauth_apps', as: 'admin_oauth_apps'
       delete 'admin/oauth/:application_id' => 'admin#destroy_oauth_app', as: 'admin_oauth_app'
       mount AdminPasskeyGate.new(Sidekiq::Web) => "/sidekiq"

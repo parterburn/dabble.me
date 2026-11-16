@@ -99,6 +99,42 @@ class AdminController < ApplicationController
     redirect_to edit_admin_user_path(user), notice: "Upgrade email sent to #{user.email}."
   end
 
+  # The one email that goes to everyone with a journal (ServiceNotice): a
+  # reminder to export it, under an optional message typed here.
+  def notices
+    load_notices
+  end
+
+  # Emails the notice to the admin alone, to read before it goes to everyone.
+  def preview_notice
+    load_notices
+    if @service_notice.valid?
+      ServiceNoticeMailer.export_reminder(current_user, message: @service_notice.message, preview: true).deliver_now
+      flash.now[:notice] = "Preview sent to your own address. Nothing went to anyone else."
+    end
+    render :notices
+  end
+
+  # Sends the notice. The count typed has to match the number of people it
+  # goes to, so nobody sends it without reading that number.
+  def create_notice
+    load_notices
+    typed = params[:confirm_count].to_s.gsub(/[^\d]/, "")
+    if @blocker
+      @service_notice.errors.add(:base, @blocker)
+    elsif @service_notice.valid? && typed != @recipient_count.to_s
+      @service_notice.errors.add(:base, "Type #{@recipient_count} to confirm. That is how many accounts this goes to.")
+    end
+    return render(:notices, status: :unprocessable_entity) if @service_notice.errors.any?
+
+    sent = ServiceNotice.send_to_everyone!(message: @service_notice.message, sent_by: current_user)
+    if sent
+      redirect_to admin_notices_path, notice: "Notice queued for #{sent.recipients_count} accounts. They go out at #{ServiceNotice::PER_MINUTE} a minute."
+    else
+      redirect_to admin_notices_path, alert: "A notice has already gone out today. Nothing was sent."
+    end
+  end
+
   def photos
     # `uploading_image_at` is required by Entry#uploading_image? (called through
     # image_code → display_image_url in the view). Keep `:id` for AR identity
@@ -124,6 +160,14 @@ class AdminController < ApplicationController
   end
 
   private
+
+  def load_notices
+    @service_notice = ServiceNotice.new(message: params[:message])
+    @recipient_count = ServiceNotice.recipients.count
+    @blocker = ServiceNotice.blocker
+    @past_notices = ServiceNotice.order(created_at: :desc).limit(20).includes(:sent_by)
+    @delivered = ServiceNoticeDelivery.where(service_notice_id: @past_notices.map(&:id)).group(:service_notice_id).count
+  end
 
   def per_page
     params[:per].presence || 300
