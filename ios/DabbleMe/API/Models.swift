@@ -293,12 +293,12 @@ struct JournalDay: Hashable, Sendable, Comparable {
 
     static func < (lhs: JournalDay, rhs: JournalDay) -> Bool { lhs.iso < rhs.iso }
 
-    /// Between a span's two units, wherever the app says how long ago: "2 years + 3 months ago".
-    static let unitJoiner = " + "
+    /// Between a span's two units, wherever the app says how long ago: "2 years, 3 months ago".
+    static let unitJoiner = ", "
 
     /// How long ago this day was, as the daily email words it (`Entry#look_back_label` on the
     /// server): "Today", "Yesterday", whole days under 60 ("36 days ago"), then the two largest
-    /// units ("3 months + 1 week ago", "1 year + 2 months ago", "3 years ago").
+    /// units ("3 months, 1 week ago", "1 year, 2 months ago", "3 years ago").
     func relative(to today: JournalDay) -> String {
         let days = Self.utc.dateComponents([.day], from: date, to: today.date).day ?? 0
         guard days >= 0 else { return "In the future" }
@@ -312,7 +312,7 @@ struct JournalDay: Hashable, Sendable, Comparable {
 
     /// How long ago this day was, for an open entry's title: "Today", "Yesterday", whole days up
     /// to 60 ("36 days ago"), then years and months by the calendar, in full and without days
-    /// ("2 months ago", "5 years + 2 months ago", "3 years ago"), to the nearest month.
+    /// ("2 months ago", "5 years, 2 months ago", "3 years ago"), to the nearest month.
     func ago(from today: JournalDay) -> String {
         let days = Self.utc.dateComponents([.day], from: date, to: today.date).day ?? 0
         guard days >= 0 else { return "In the future" }

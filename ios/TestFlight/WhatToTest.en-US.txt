@@ -35,10 +35,10 @@ New: a "New Entry" control.
 - Try it with the app closed completely, with it in the background, and with the Face ID lock on.
 - "New Entry" should also be in the Shortcuts app under Dabble Me.
 
-How long ago something was now reads the same everywhere: "2 years + 3 months ago".
+How long ago something was now reads the same everywhere: "2 years, 3 months ago".
 
-- A photo's date band keeps its months: open a photo several years old and not near its anniversary. It should read like "14 years + 3 months ago", not "14 years ago", and the shared image should say the same.
-- The date under an open entry's title, Today's Rewind, the widget and the push reminder all use "+" between the two units.
+- A photo's date band keeps its months: open a photo several years old and not near its anniversary. It should read like "14 years, 3 months ago", not "14 years ago", and the shared image should say the same.
+- The date under an open entry's title, Today's Rewind, the widget and the push reminder all put a comma between the two units ("1 year, 2 months ago").
 
 Writing an entry:
 
