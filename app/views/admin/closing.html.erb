@@ -1,7 +1,8 @@
 <% title "Admin closing" %>
 <% content_for :tailwind, true %>
 <% date = ->(day) { day.strftime("%B %-d, %Y") } %>
-<% announced = @closure.persisted? %>
+<% closure = site_closure %>
+<% announced = closure.present? %>
 
 <div class="tw mx-auto max-w-6xl pt-4 pb-16 sm:pt-8">
   <%= render "admin/header", title: "Closing",
@@ -12,22 +13,25 @@
       <p class="text-sm text-primary">
         <% if !announced %>
           <span class="font-medium">Dabble Me is open.</span> No closing has been announced.
-        <% elsif @closure.closed? %>
-          <span class="font-medium">Dabble Me closed on <%= date.(@closure.closes_on_was || @closure.closes_on) %>.</span>
+        <% elsif closure.closed? %>
+          <span class="font-medium">Dabble Me closed after <%= date.(closure.closes_on) %>.</span>
           People can still sign in and export. Nothing has been deleted.
         <% else %>
-          <span class="font-medium">Dabble Me closes on <%= date.(@closure.closes_on_was || @closure.closes_on) %>.</span>
+          <span class="font-medium">Dabble Me's last day is <%= date.(closure.closes_on) %>.</span>
           New accounts and new subscriptions are already off.
         <% end %>
       </p>
 
       <%= form_with url: admin_closing_path, method: :post, class: "mt-6 space-y-5" do %>
-        <%= render "devise/shared/error_messages", resource: @closure %>
+        <%= render "devise/shared/error_messages", resource: @form %>
 
         <div>
-          <label for="closes_on" class="field-label"><%= announced ? "Move the closing date" : "Closing date" %></label>
-          <%= date_field_tag :closes_on, @closure.closes_on&.iso8601, min: Date.current.iso8601, class: "field-input max-w-xs" %>
-          <p class="field-help">The last day the site works. 90 days from the first notice gives people time to export. Today's date closes it now.</p>
+          <label for="closes_on" class="field-label"><%= announced ? "Move the last day" : "Last day" %></label>
+          <%= date_field_tag :closes_on, @form.closes_on&.iso8601, min: SiteClosure.today.iso8601, class: "field-input max-w-xs" %>
+          <p class="field-help">
+            The last day the site works. It closes when that day ends, Pacific time, so nobody in the US loses it early.
+            90 days from the first notice gives people time to export. Today's date closes it tonight.
+          </p>
         </div>
 
         <div>
@@ -52,13 +56,13 @@
         <div>
           <p class="font-medium">As soon as you announce it</p>
           <ul class="mt-1 list-disc space-y-1 pl-5 text-muted">
-            <li>Nobody new can sign up or subscribe.</li>
+            <li>Nobody new can sign up, subscribe or pay.</li>
             <li>Every page shows a banner with the date and a link to export.</li>
             <li>The <%= link_to "goodbye page", goodbye_path, class: "text-link" %> explains what is happening.</li>
           </ul>
         </div>
         <div>
-          <p class="font-medium">On the closing date</p>
+          <p class="font-medium">When the last day ends</p>
           <ul class="mt-1 list-disc space-y-1 pl-5 text-muted">
             <li>The journal and the public site are replaced by the goodbye page.</li>
             <li>The journal emails stop.</li>
@@ -70,7 +74,7 @@
           <ul class="mt-1 list-disc space-y-1 pl-5 text-muted">
             <li>Email anyone. Send a <%= link_to "notice", admin_notices_path, class: "text-link" %> for that.</li>
             <li>Cancel subscriptions. The goodbye page tells PRO members they won't be charged again, so cancel them in Stripe the same day.</li>
-            <li>Delete anything. The pages tell people their journal is deleted <%= SiteClosure::DELETION_DELAY.in_days.to_i %> days after the closing date; that is done by hand.</li>
+            <li>Delete anything. The pages tell people their journal is deleted <%= SiteClosure::DELETION_DELAY.in_days.to_i %> days after the last day; that is done by hand.</li>
           </ul>
         </div>
       </div>

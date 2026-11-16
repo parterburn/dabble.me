@@ -100,28 +100,20 @@ class AdminController < ApplicationController
   end
 
   # Where an admin announces that Dabble Me is closing, moves the date, or
-  # calls it off (SiteClosure).
+  # calls it off (SiteClosure). The form has its own unsaved record, so a date
+  # that is refused never shows up in the banner as if it were the real one.
   def closing
-    @closure = site_closure || SiteClosure.new(closes_on: Date.current + 90)
+    @form = SiteClosure.new(closes_on: site_closure&.closes_on || SiteClosure.today + 90)
   end
 
   def announce_closing
-    @closure = site_closure || SiteClosure.new
-    @closure.closes_on = begin
-      Date.iso8601(params[:closes_on].to_s)
-    rescue Date::Error
-      nil
-    end
-    if params[:confirm].to_s.strip != SiteClosure::CONFIRMATION
-      @closure.validate
-      @closure.errors.add(:base, "Type #{SiteClosure::CONFIRMATION} to confirm.")
-      return render(:closing, status: :unprocessable_entity)
-    end
+    @form = SiteClosure.new(closes_on: closing_date_param)
+    @form.validate
+    @form.errors.add(:base, "Type #{SiteClosure::CONFIRMATION} to confirm.") if params[:confirm].to_s.strip != SiteClosure::CONFIRMATION
+    return render(:closing, status: :unprocessable_entity) if @form.errors.any?
 
-    @closure = SiteClosure.announce(closes_on: @closure.closes_on, announced_by: current_user)
-    return render(:closing, status: :unprocessable_entity) if @closure.errors.any?
-
-    redirect_to admin_closing_path, notice: "Dabble Me now closes on #{@closure.closes_on.strftime('%B %-d, %Y')}."
+    closure = SiteClosure.announce(closes_on: @form.closes_on, announced_by: current_user)
+    redirect_to admin_closing_path, notice: "Dabble Me now closes after #{closure.closes_on.strftime('%B %-d, %Y')}."
   end
 
   def cancel_closing
@@ -152,6 +144,8 @@ class AdminController < ApplicationController
     typed = params[:confirm_count].to_s.gsub(/[^\d]/, "")
     if @blocker
       @service_notice.errors.add(:base, @blocker)
+    elsif @recipient_count.zero?
+      @service_notice.errors.add(:base, "There is nobody to send this to.")
     elsif @service_notice.valid? && typed != @recipient_count.to_s
       @service_notice.errors.add(:base, "Type #{@recipient_count} to confirm. That is how many accounts this goes to.")
     end
@@ -161,8 +155,11 @@ class AdminController < ApplicationController
     if sent
       redirect_to admin_notices_path, notice: "Notice queued for #{sent.recipients_count} accounts. They go out at #{ServiceNotice::PER_MINUTE} a minute."
     else
-      redirect_to admin_notices_path, alert: "A notice has already gone out today. Nothing was sent."
+      redirect_to admin_notices_path, alert: "A notice has already gone out in the last 24 hours. Nothing was sent."
     end
+  rescue ServiceNotice::NotQueued => e
+    Sentry.capture_exception(e)
+    redirect_to admin_notices_path, alert: "The notice could not be queued, so nothing was sent. Try again in a minute."
   end
 
   def photos
@@ -190,6 +187,14 @@ class AdminController < ApplicationController
   end
 
   private
+
+  # The date typed into the closing form, or nil when it isn't one.
+  # Date.iso8601 raises a plain ArgumentError for some input, not Date::Error.
+  def closing_date_param
+    Date.iso8601(params[:closes_on].to_s)
+  rescue ArgumentError
+    nil
+  end
 
   def load_notices
     @service_notice = ServiceNotice.new(message: params[:message])

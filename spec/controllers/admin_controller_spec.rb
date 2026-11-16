@@ -458,6 +458,28 @@ RSpec.describe AdminController, type: :controller do
       expect(flash[:notice]).to eq('Notice queued for 3 accounts. They go out at 120 a minute.')
     end
 
+    it 'records nothing and says so when the emails cannot be queued' do
+      allow(ServiceNoticeJob).to receive(:perform_later).and_raise(RuntimeError, 'queue is down')
+      sign_in_admin superuser
+      post :create_notice, params: { message: 'We are closing.', confirm_count: '3' }
+
+      expect(response).to redirect_to(admin_notices_path)
+      expect(flash[:alert]).to include('could not be queued, so nothing was sent')
+      expect(ServiceNotice.count).to eq(0)
+    end
+
+    it 'has nothing to send when nobody has a journal' do
+      Entry.delete_all
+      sign_in_admin superuser
+
+      get :notices
+      expect(response.body).to have_content('There is nobody to send this to.')
+
+      post :create_notice, params: { confirm_count: '0' }
+      expect(response.status).to eq 422
+      expect(ServiceNotice.count).to eq(0)
+    end
+
     it 'refuses a second notice within 24 hours and says when the last went out' do
       ServiceNotice.create!(message: 'First', sent_by: superuser, recipients_count: 3, sent_on: Date.current, created_at: 1.hour.ago)
       sign_in_admin superuser
@@ -475,14 +497,20 @@ RSpec.describe AdminController, type: :controller do
   end
 
   describe 'closing' do
+    let(:today) { SiteClosure.today }
+
+    def long_date(day)
+      day.strftime('%B %-d, %Y')
+    end
+
     it 'keeps everyone but admins from announcing or calling off a closing' do
-      post :announce_closing, params: { closes_on: (Date.current + 90).iso8601, confirm: 'CLOSE' }
+      post :announce_closing, params: { closes_on: (today + 90).iso8601, confirm: 'CLOSE' }
       expect(response).to redirect_to(new_user_session_url)
 
       sign_in user
       get :closing
       expect(response).to redirect_to(entries_path)
-      post :announce_closing, params: { closes_on: (Date.current + 90).iso8601, confirm: 'CLOSE' }
+      post :announce_closing, params: { closes_on: (today + 90).iso8601, confirm: 'CLOSE' }
       expect(response).to redirect_to(entries_path)
       delete :cancel_closing
       expect(response).to redirect_to(entries_path)
@@ -496,7 +524,7 @@ RSpec.describe AdminController, type: :controller do
 
       expect(response.status).to eq 200
       expect(response.body).to have_content('Dabble Me is open.')
-      expect(response.body).to have_field('closes_on', with: (Date.current + 90).iso8601)
+      expect(response.body).to have_field('closes_on', with: (today + 90).iso8601)
       expect(response.body).to have_button('Announce the closing')
       expect(response.body).not_to have_button('Call off the closing')
     end
@@ -505,7 +533,7 @@ RSpec.describe AdminController, type: :controller do
       sign_in_admin superuser
 
       ['', 'close it', 'yes'].each do |typed|
-        post :announce_closing, params: { closes_on: (Date.current + 90).iso8601, confirm: typed }
+        post :announce_closing, params: { closes_on: (today + 90).iso8601, confirm: typed }
 
         expect(response.status).to eq 422
         expect(response.body).to have_content('Type CLOSE to confirm.')
@@ -516,38 +544,58 @@ RSpec.describe AdminController, type: :controller do
     it 'refuses a date in the past or one it cannot read' do
       sign_in_admin superuser
 
-      post :announce_closing, params: { closes_on: (Date.current - 1).iso8601, confirm: 'CLOSE' }
+      post :announce_closing, params: { closes_on: (today - 1).iso8601, confirm: 'CLOSE' }
       expect(response.status).to eq 422
       expect(response.body).to have_content("can't be in the past")
 
-      post :announce_closing, params: { closes_on: 'soon', confirm: 'CLOSE' }
-      expect(response.status).to eq 422
+      ['soon', '', "2027-01-01#{'x' * 200}"].each do |typed|
+        post :announce_closing, params: { closes_on: typed, confirm: 'CLOSE' }
+        expect(response.status).to eq 422
+      end
 
       expect(SiteClosure.announced?).to be(false)
     end
 
     it 'announces the closing, then moves the date' do
       sign_in_admin superuser
-      post :announce_closing, params: { closes_on: (Date.current + 90).iso8601, confirm: 'CLOSE' }
+      post :announce_closing, params: { closes_on: (today + 90).iso8601, confirm: 'CLOSE' }
 
       expect(response).to redirect_to(admin_closing_path)
-      expect(SiteClosure.current).to have_attributes(closes_on: Date.current + 90, announced_by: superuser)
+      expect(SiteClosure.current).to have_attributes(closes_on: today + 90, announced_by: superuser)
 
       get :closing
-      expect(response.body).to have_content("Dabble Me closes on #{(Date.current + 90).strftime('%B %-d, %Y')}.")
+      expect(response.body).to have_content("Dabble Me's last day is #{long_date(today + 90)}.")
+      expect(response.body).to have_field('closes_on', with: (today + 90).iso8601)
       expect(response.body).to have_button('Move the date')
 
-      post :announce_closing, params: { closes_on: (Date.current + 120).iso8601, confirm: 'CLOSE' }
+      post :announce_closing, params: { closes_on: (today + 120).iso8601, confirm: 'CLOSE' }
       expect(SiteClosure.count).to eq(1)
-      expect(SiteClosure.current.closes_on).to eq(Date.current + 120)
+      expect(SiteClosure.current.closes_on).to eq(today + 120)
+    end
+
+    it 'keeps showing the real last day when a new one is refused' do
+      SiteClosure.announce(closes_on: today + 30, announced_by: superuser)
+      sign_in_admin superuser
+
+      post :announce_closing, params: { closes_on: '', confirm: 'CLOSE' }
+      expect(response.status).to eq 422
+      expect(response.body).to have_content("Dabble Me's last day is #{long_date(today + 30)}.")
+
+      post :announce_closing, params: { closes_on: (today + 99).iso8601, confirm: '' }
+      expect(response.status).to eq 422
+      expect(response.body).to have_content("Dabble Me is closing. Its last day is #{long_date(today + 30)}.")
+      expect(response.body).not_to have_content("Its last day is #{long_date(today + 99)}")
+      expect(response.body).to have_field('closes_on', with: (today + 99).iso8601)
+
+      expect(SiteClosure.current.closes_on).to eq(today + 30)
     end
 
     it 'calls the closing off' do
-      SiteClosure.announce(closes_on: Date.current, announced_by: superuser)
+      SiteClosure.announce(closes_on: today, announced_by: superuser).update_columns(closes_on: today - 1)
       sign_in_admin superuser
 
       get :closing
-      expect(response.body).to have_content('Dabble Me closed on')
+      expect(response.body).to have_content('Dabble Me closed after')
 
       delete :cancel_closing
       expect(response).to redirect_to(admin_closing_path)

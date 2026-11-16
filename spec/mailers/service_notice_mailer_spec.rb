@@ -17,7 +17,7 @@ RSpec.describe ServiceNoticeMailer do
     text = mail.text_part.body.to_s
     expect(html).to include('Hey Ann,', 'keep a copy of your Dabble Me journal', '/entries/export"', "not a newsletter")
     expect(text).to include('Hey Ann,', 'Export your journal: http', '/entries/export', "not a newsletter")
-    expect(html).not_to include('unsubscribe')
+    expect(html).not_to include('Stop further notices')
   end
 
   it "puts the admin's message under the greeting, as plain text with its line breaks" do
@@ -37,6 +37,19 @@ RSpec.describe ServiceNoticeMailer do
     text = described_class.export_reminder(user, message: '  ').deliver_now.text_part.body.to_s
 
     expect(text).to include("Hey Ann,\n\nThis is a reminder")
+  end
+
+  it "links a person's own copy to the page that stops further notices, for one-click unsubscribe" do
+    notice = ServiceNotice.create!(sent_on: Date.current, created_at: Time.current)
+    delivery = ServiceNoticeDelivery.create!(service_notice: notice, user: user, created_at: Time.current)
+    mail = described_class.export_reminder(user, delivery: delivery).deliver_now
+
+    stop_url = mail.header['List-Unsubscribe'].value[/\A<(.+)>\z/, 1]
+    expect(stop_url).to match(%r{\Ahttps?://[^/]+/notices/stop\?token=.+})
+    expect(mail.header['List-Unsubscribe-Post'].value).to eq('List-Unsubscribe=One-Click')
+    expect(mail.html_part.body.to_s).to include('Stop further notices like this one')
+    expect(mail.text_part.body.to_s).to include("Stop further notices like this one: #{stop_url}")
+    expect(ServiceNoticeDelivery.find_by_stop_token(Rack::Utils.parse_query(URI(stop_url).query)['token'])).to eq(delivery)
   end
 
   it 'marks a preview in the subject' do

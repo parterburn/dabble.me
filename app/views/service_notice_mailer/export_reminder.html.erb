@@ -17,4 +17,7 @@
 <p style="color: #777; font-size: 13px;">
   You're getting this because you have a journal at Dabble Me. It's a notice about your account, not a newsletter,
   so it's sent whatever your email settings are. Questions? Just reply.
+  <% if @stop_url %>
+    <%= link_to "Stop further notices like this one", @stop_url, style: "color: #777;" %>.
+  <% end %>
 </p>

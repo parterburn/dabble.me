@@ -3,9 +3,9 @@
   <% date = ->(day) { day.strftime("%B %-d, %Y") } %>
   <div class="col-md-8 col-md-offset-2 alert alert-warning" role="status">
     <% if site_closure.closed? %>
-      Dabble Me closed on <%= date.(site_closure.closes_on) %>. Journals are deleted after <%= date.(site_closure.deletes_on) %>.
+      Dabble Me closed after <%= date.(site_closure.closes_on) %>. Journals are deleted after <%= date.(site_closure.deletes_on) %>.
     <% else %>
-      Dabble Me is closing on <%= date.(site_closure.closes_on) %>.
+      Dabble Me is closing. Its last day is <%= date.(site_closure.closes_on) %>.
     <% end %>
     <%= link_to "Export your journal", export_entries_path %> ·
     <%= link_to "What's happening", goodbye_path %>

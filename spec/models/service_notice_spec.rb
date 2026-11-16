@@ -31,6 +31,19 @@ RSpec.describe ServiceNotice do
 
       expect(described_class.recipients).to be_empty
     end
+
+    it 'leaves out someone who stopped notices in the last year, and brings them back after it' do
+      stopped = writer
+      notice = described_class.create!(sent_on: Date.current, created_at: 2.days.ago)
+      delivery = ServiceNoticeDelivery.create!(service_notice: notice, user: stopped, created_at: 2.days.ago)
+      expect(described_class.recipients).to contain_exactly(stopped)
+
+      delivery.stop!
+      expect(described_class.recipients).to be_empty
+
+      delivery.update_columns(stopped_at: 13.months.ago)
+      expect(described_class.recipients).to contain_exactly(stopped)
+    end
   end
 
   describe 'the message' do
@@ -44,6 +57,15 @@ RSpec.describe ServiceNotice do
     it 'can be as long as the limit and no longer' do
       expect(described_class.new(message: 'a' * described_class::MESSAGE_LIMIT)).to be_valid
       expect(described_class.new(message: 'a' * (described_class::MESSAGE_LIMIT + 1))).not_to be_valid
+    end
+
+    it 'counts a line break as one character, as the form does' do
+      lines = (["a" * 99] * 20).join("\r\n")
+      notice = described_class.new(message: lines)
+
+      expect(lines.length).to be > described_class::MESSAGE_LIMIT
+      expect(notice).to be_valid
+      expect(notice.message).not_to include("\r")
     end
 
     it 'cannot carry a link' do
@@ -75,6 +97,22 @@ RSpec.describe ServiceNotice do
       expect(described_class.count).to eq(1)
       expect(ServiceNoticeJob).to have_received(:perform_later).once
     end
+
+    it 'checks the 24 hours itself, so a send just after midnight UTC is refused too' do
+      described_class.create!(sent_on: Time.current.utc.to_date - 1, created_at: 1.hour.ago)
+
+      expect(described_class.send_to_everyone!(message: nil, sent_by: admin)).to be_nil
+      expect(described_class.count).to eq(1)
+      expect(ServiceNoticeJob).not_to have_received(:perform_later)
+    end
+
+    it 'records nothing when the emails cannot be queued, so it can be tried again' do
+      allow(ServiceNoticeJob).to receive(:perform_later).and_raise(RuntimeError, 'queue is down')
+
+      expect { described_class.send_to_everyone!(message: nil, sent_by: admin) }.to raise_error(described_class::NotQueued)
+      expect(described_class.count).to eq(0)
+      expect(described_class.blocker).to be_nil
+    end
   end
 
   describe '.blocker' do
@@ -90,17 +128,36 @@ RSpec.describe ServiceNotice do
   end
 
   describe '#queue_deliveries!' do
-    it 'queues one email per person, paced at PER_MINUTE' do
-      first = writer
-      second = writer
-      notice = described_class.create!(sent_on: Date.current, created_at: Time.current)
-      queued = []
-      allow(ServiceNoticeDeliveryJob).to receive(:set) do |wait:|
-        double(perform_later: nil).tap { |job| allow(job).to receive(:perform_later) { |*args| queued << [wait, *args] } }
-      end
+    let(:notice) { described_class.create!(sent_on: Date.current, created_at: Time.current) }
+    let(:queued) { [] }
 
-      expect(notice.queue_deliveries!).to eq(2)
-      expect(queued).to contain_exactly([0.seconds, notice.id, first.id], [0.5.seconds, notice.id, second.id])
+    before do
+      stub_const('ServiceNotice::BATCH_SIZE', 2)
+      allow(ActiveJob).to receive(:perform_all_later) { |jobs| queued.concat(jobs) }
+    end
+
+    it 'queues a batch of people in one call, paced at PER_MINUTE, and says who' do
+      first, second, _third = Array.new(3) { writer }
+      now = Time.current
+
+      expect(notice.queue_deliveries!).to eq([first.id, second.id])
+      expect(ActiveJob).to have_received(:perform_all_later).once
+      expect(queued.map(&:arguments)).to eq([[notice.id, first.id], [notice.id, second.id]])
+      expect(queued.map { |job| (job.scheduled_at - now).round(1) }).to eq([0.0, 0.5])
+    end
+
+    it 'carries on after the last person queued, keeping the pace' do
+      _first, second, third = Array.new(3) { writer }
+      now = Time.current
+
+      expect(notice.queue_deliveries!(after_id: second.id, offset: 2)).to eq([third.id])
+      expect(queued.map(&:arguments)).to eq([[notice.id, third.id]])
+      expect((queued.first.scheduled_at - now).round(1)).to eq(1.0)
+    end
+
+    it 'queues nothing when nobody is left' do
+      expect(notice.queue_deliveries!).to eq([])
+      expect(ActiveJob).not_to have_received(:perform_all_later)
     end
   end
 end

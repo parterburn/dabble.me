@@ -23,4 +23,14 @@ RSpec.describe 'Pay redirects', type: :request do
 
     expect(response).to redirect_to("#{payment_link}?prefilled_amount=3500")
   end
+
+  it 'sends both to the goodbye page once a closing is announced' do
+    SiteClosure.announce(closes_on: SiteClosure.today + 30, announced_by: nil)
+
+    get '/pay'
+    expect(response).to redirect_to('/goodbye')
+
+    get '/pay/35'
+    expect(response).to redirect_to('/goodbye')
+  end
 end

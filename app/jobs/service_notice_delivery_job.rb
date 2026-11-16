@@ -15,7 +15,7 @@ class ServiceNoticeDeliveryJob < ActiveJob::Base
     delivery = ServiceNoticeDelivery.create!(service_notice: notice, user: user, created_at: Time.current)
 
     begin
-      ServiceNoticeMailer.export_reminder(user, message: notice.message).deliver_now
+      ServiceNoticeMailer.export_reminder(user, message: notice.message, delivery: delivery).deliver_now
     rescue StandardError
       delivery.destroy
       raise

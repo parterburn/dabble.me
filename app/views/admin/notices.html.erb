@@ -29,12 +29,15 @@
 
         <% if @blocker %>
           <p class="text-sm text-primary"><%= @blocker %></p>
+        <% elsif @recipient_count.zero? %>
+          <p class="text-sm text-primary">There is nobody to send this to.</p>
         <% else %>
           <div>
             <label for="confirm_count" class="field-label">Type <%= @recipient_count %> to confirm</label>
             <%= text_field_tag :confirm_count, nil, inputmode: "numeric", autocomplete: "off", class: "field-input max-w-xs" %>
             <p class="field-help">
-              This goes to <%= count %> <%= "account".pluralize(@recipient_count) %>: everyone with at least one entry.
+              This goes to <%= count %> <%= "account".pluralize(@recipient_count) %>: everyone with at least one entry,
+              apart from anyone who used an earlier notice's link to stop them.
               It can't be unsent, and another can't go out for 24 hours.
             </p>
           </div>
@@ -53,6 +56,7 @@
         <p>This is a reminder to keep a copy of your Dabble Me journal for yourself.</p>
         <p class="font-medium">Export your journal</p>
         <p>You'll be asked to sign in. Choose to export everything, and you'll get an email with a link to a ZIP file holding all of your entries and photos. It opens in any web browser and needs no account.</p>
+        <p class="text-muted">A footer says why they got it and links to a page where they can stop further notices.</p>
       </div>
     </div>
   </div>

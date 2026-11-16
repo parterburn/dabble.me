@@ -94,8 +94,8 @@ class ApplicationController < ActionController::Base
     @site_closure = SiteClosure.current
   end
 
-  # From the closing date on, sends the journal and marketing pages to the
-  # goodbye page. Admins still see everything.
+  # Once the closing day has ended, sends the journal and marketing pages to
+  # the goodbye page. Admins still see everything.
   def show_goodbye_when_closed
     return unless controller_path.in?(PAGES_CLOSED_WITH_THE_SITE) && site_closure&.closed?
     return if controller_path == "welcome" && action_name.in?(%w[goodbye privacy terms])
@@ -105,7 +105,8 @@ class ApplicationController < ActionController::Base
   end
 
   # From the day a closing is announced, turns away new accounts and new
-  # payments. Used as a before_action where either starts.
+  # payments. Used as a before_action where either starts. The /pay redirects
+  # in config/routes.rb make the same check.
   def refuse_when_closing
     redirect_to goodbye_path if site_closure
   end
@@ -122,6 +123,8 @@ class ApplicationController < ActionController::Base
 
   def handle_timeout(exception)
     Sentry.capture_message("Timeout error", level: :error, extra: { params: filtered_params_for_sentry, url: request.url })
+    # No closing banner lookup on the way out: the database may be why it timed out.
+    @site_closure = nil unless defined?(@site_closure)
     render "errors/timeout", layout: "marketing", status: 504
   end
 

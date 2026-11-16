@@ -233,6 +233,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_16_010000) do
     t.bigint "service_notice_id", null: false
     t.bigint "user_id", null: false
     t.datetime "created_at", null: false
+    t.datetime "stopped_at"
     t.index ["service_notice_id", "user_id"], name: "index_service_notice_deliveries_on_notice_and_user", unique: true
     t.index ["user_id"], name: "index_service_notice_deliveries_on_user_id"
   end

@@ -18,6 +18,8 @@ class CreateServiceNotices < ActiveRecord::Migration[8.1]
       t.references :service_notice, null: false, foreign_key: { on_delete: :cascade }, index: false
       t.references :user, null: false, foreign_key: { on_delete: :cascade }, index: false
       t.datetime :created_at, null: false
+      # When the person asked for no more notices, from the link in this one.
+      t.datetime :stopped_at
       # One copy of a notice per person, however often a job is retried.
       t.index %i[service_notice_id user_id], unique: true, name: "index_service_notice_deliveries_on_notice_and_user"
       t.index :user_id

@@ -114,6 +114,9 @@ Rails.application.routes.draw do
   end
 
   # The unsubscribe link in product-update emails (EmailUpdatesController).
+  # The "stop further notices" link in a service notice (NoticeStopsController).
+  get 'notices/stop', to: 'notice_stops#show', as: 'notice_stop'
+  post 'notices/stop', to: 'notice_stops#create'
   get 'updates/unsubscribe', to: 'email_updates#show', as: 'email_updates'
   post 'updates/unsubscribe', to: 'email_updates#destroy'
 
@@ -176,9 +179,10 @@ Rails.application.routes.draw do
   get 'pricing',                        to: redirect('/#pricing')
   get 'subscribe',                      to: "welcome#subscribe"
   get 'pro',                            to: redirect('/subscribe')
-  get 'pay',                            to: redirect { ENV['PAYMENT_LINK'] }
+  # No new payments once a closing is announced (SiteClosure).
+  get 'pay',                            to: redirect { SiteClosure.announced? ? '/goodbye' : ENV['PAYMENT_LINK'] }
   get 'pay/:amount',                    to: redirect { |params, _req|
-    "#{ENV['PAYMENT_LINK']}?prefilled_amount=#{params[:amount].to_i * 100}"
+    SiteClosure.announced? ? '/goodbye' : "#{ENV['PAYMENT_LINK']}?prefilled_amount=#{params[:amount].to_i * 100}"
   }, constraints: { amount: /\d+/ }
   match 'payment_notify',               to: 'payments#payment_notify', via: [:post]
   get 'ohlife-alternative',             to: 'welcome#ohlife_alternative'

@@ -6,6 +6,7 @@ RSpec.describe 'Closing Dabble Me', type: :request do
   let(:user) { FactoryBot.create(:user, plan: 'PRO Monthly PayHere') }
   let(:admin) { FactoryBot.create(:user, admin: true) }
   let(:signup) { { user: { email: 'new@example.com', password: 'a long password', first_name: 'New' } } }
+  let(:today) { SiteClosure.today }
 
   def long_date(day)
     day.strftime('%B %-d, %Y')
@@ -25,7 +26,7 @@ RSpec.describe 'Closing Dabble Me', type: :request do
   end
 
   context 'once a closing is announced' do
-    let(:closes_on) { Date.current + 30 }
+    let(:closes_on) { today + 30 }
 
     before { SiteClosure.announce(closes_on: closes_on, announced_by: admin) }
 
@@ -48,29 +49,43 @@ RSpec.describe 'Closing Dabble Me', type: :request do
       expect(response).to redirect_to(goodbye_path)
     end
 
-    it 'puts the date on the public pages and explains it on the goodbye page' do
+    it 'puts the last day on the public pages and explains it on the goodbye page' do
       get root_path
-      expect(response.body).to include("Dabble Me is closing on #{long_date(closes_on)}", goodbye_path)
+      expect(response.body).to include("Its last day is #{long_date(closes_on)}", goodbye_path)
 
       get goodbye_path
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include('Dabble Me is closing', "will close on #{long_date(closes_on)}",
+      expect(response.body).to include('Dabble Me is closing', "Its last day is #{long_date(closes_on)}",
+                                       "keeps working through #{long_date(closes_on)}",
                                        "until #{long_date(closes_on + 30)}", export_entries_path)
     end
 
-    it 'leaves the journal working, with the date and a link to export above it' do
+    it 'leaves the journal working, with the last day and a link to export above it' do
       sign_in user
       get new_entry_path
 
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("Dabble Me is closing on #{long_date(closes_on)}", 'Export your journal')
+      expect(response.body).to include("Dabble Me is closing. Its last day is #{long_date(closes_on)}", 'Export your journal')
     end
   end
 
-  context 'from the closing date' do
-    let(:closes_on) { Date.current }
+  context 'on the last day' do
+    before { SiteClosure.announce(closes_on: today, announced_by: admin) }
 
-    before { SiteClosure.announce(closes_on: closes_on, announced_by: admin) }
+    it 'still works' do
+      get root_path
+      expect(response).to have_http_status(:ok)
+
+      sign_in user
+      get new_entry_path
+      expect(response).to have_http_status(:ok)
+    end
+  end
+
+  context 'once the last day has ended' do
+    let(:closes_on) { today - 1 }
+
+    before { SiteClosure.announce(closes_on: today, announced_by: admin).update_columns(closes_on: closes_on) }
 
     it 'replaces the public site with the goodbye page, keeping the terms and privacy policy' do
       [root_path, '/support', '/journal-app'].each do |path|
@@ -80,7 +95,7 @@ RSpec.describe 'Closing Dabble Me', type: :request do
 
       get goodbye_path
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include('Dabble Me has closed', "closed on #{long_date(closes_on)}", "until #{long_date(closes_on + 30)}")
+      expect(response.body).to include('Dabble Me has closed', "last day was #{long_date(closes_on)}", "until #{long_date(closes_on + 30)}")
 
       ['/privacy', '/terms'].each do |path|
         get path
@@ -107,7 +122,7 @@ RSpec.describe 'Closing Dabble Me', type: :request do
       sign_in user
       get export_entries_path
       expect(response).to have_http_status(:ok)
-      expect(response.body).to include("Dabble Me closed on #{long_date(closes_on)}")
+      expect(response.body).to include("Dabble Me closed after #{long_date(closes_on)}")
 
       get edit_user_registration_path
       expect(response).to have_http_status(:ok)
@@ -128,6 +143,18 @@ RSpec.describe 'Closing Dabble Me', type: :request do
       expect(response).to have_http_status(:ok)
       get new_user_registration_path
       expect(response).to have_http_status(:ok)
+    end
+  end
+
+  describe 'error pages' do
+    it 'render without looking the closing up, so they work with the database down' do
+      SiteClosure.announce(closes_on: today + 30, announced_by: admin)
+      expect(SiteClosure).not_to receive(:current)
+
+      %w[/404 /500 /504].each do |path|
+        get path
+        expect(response.body).not_to include('Dabble Me is closing')
+      end
     end
   end
 end

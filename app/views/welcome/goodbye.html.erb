@@ -11,16 +11,16 @@
 
       <div class="mt-8 space-y-5 text-lg leading-relaxed text-muted">
         <% if closure.closed? %>
-          <p>Dabble Me closed on <%= date.(closure.closes_on) %>. The journal emails have stopped and the site is closed.</p>
+          <p>Dabble Me's last day was <%= date.(closure.closes_on) %>. The journal emails have stopped and the site is closed.</p>
           <p>
             <span class="text-primary font-medium">Your journal is still yours.</span>
             You can sign in and export all of it until <%= date.(closure.deletes_on) %>. After that day every journal is permanently deleted.
           </p>
         <% else %>
-          <p>Dabble Me will close on <%= date.(closure.closes_on) %>. From today it isn't taking new accounts or new subscriptions.</p>
+          <p>Dabble Me is closing. Its last day is <%= date.(closure.closes_on) %>, and from today it isn't taking new accounts or new subscriptions.</p>
           <p>
             <span class="text-primary font-medium">If you have a journal here, please export it.</span>
-            Everything keeps working until <%= date.(closure.closes_on) %>. On that day the site and the journal emails stop.
+            Everything keeps working through <%= date.(closure.closes_on) %>. After that day the site and the journal emails stop.
             You can still sign in to export until <%= date.(closure.deletes_on) %>, and after that day every journal is permanently deleted.
           </p>
         <% end %>
