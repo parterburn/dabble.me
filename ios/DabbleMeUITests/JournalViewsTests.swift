@@ -60,7 +60,7 @@ final class JournalViewsTests: XCTestCase {
         let app = launch()
         tab(app, "Journal").tap()
         var current = "Journal"
-        for mode in ["Stats", "Photos", "Playlist"] {
+        for mode in ["Stats", "Photos", "Songs"] {
             switchJournal(app, from: current, to: mode)
             XCTAssertTrue(app.navigationBars.buttons[mode].waitForExistence(timeout: 5))
             app.buttons["JournalBrandMark"].tap()
@@ -821,7 +821,7 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertLessThan(email.frame.minY, row.frame.minY, "Under Email")
         snap("settings-reminders")
         row.tap()
-        XCTAssertTrue(app.switches["Use Entries Only From the Past Year"].waitForExistence(timeout: 5), "The demo account has entries over a year old")
+        XCTAssertTrue(app.switches["Limit Entries to the Past Year"].waitForExistence(timeout: 5), "The demo account has entries over a year old")
         let words = app.textFields["Words, separated by commas"]
         words.tap()
         words.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 12) + "waffles\n")
@@ -1215,10 +1215,10 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(player.waitForExistence(timeout: 10))
         player.swipeRight()
         XCTAssertTrue(app.buttons["The Weeknd – Blinding Lights"].waitForExistence(timeout: 10), "The Playlist")
-        XCTAssertTrue(app.navigationBars.buttons["Playlist"].exists || app.navigationBars.staticTexts["Playlist"].exists)
+        XCTAssertTrue(app.navigationBars.buttons["Songs"].exists || app.navigationBars.staticTexts["Songs"].exists)
         snap("journal-title-menu")
 
-        switchJournal(app, from: "Playlist", to: "Journal")
+        switchJournal(app, from: "Songs", to: "Journal")
         app.scrollTo(row)
         app.openTimelineEntry(row)
         let photo = app.buttons["Entry photo"].firstMatch
@@ -1439,7 +1439,7 @@ final class JournalViewsTests: XCTestCase {
             sleep(3)
             snap("\(name)-journal")
             var current = "Journal"
-            for mode in ["Stats", "Photos", "Playlist"] {
+            for mode in ["Stats", "Photos", "Songs"] {
                 switchJournal(app, from: current, to: mode)
                 current = mode
                 sleep(3)
@@ -1526,10 +1526,10 @@ final class JournalViewsTests: XCTestCase {
         snap("entry-song-player-swiped")
         nudge(110) // back
         nudge(70)
-        XCTAssertTrue(app.buttons["Open Playlist"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Open Songs"].waitForExistence(timeout: 5))
         // On screen (not `isHittable`: with Spotify's page loaded beside it, that reads false
         // for a button that's plainly out).
-        XCTAssertGreaterThanOrEqual(app.buttons["Open Playlist"].frame.minX, 0)
+        XCTAssertGreaterThanOrEqual(app.buttons["Open Songs"].frame.minX, 0)
         snap("entry-song-player-swiped-right")
         nudge(-70)
         sleep(6) // Spotify's player loads
@@ -1606,6 +1606,29 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
         app.collectionViews.firstMatch.swipeDown()
         XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5), "Over the results")
+    }
+
+    /// Search's keyboard put away with nothing typed: the bar goes back to how it rests, without
+    /// the X that closes an open search left beside it.
+    func testPuttingTheKeyboardAwayClosesAnEmptySearch() throws {
+        let app = launch()
+        tab(app, "Search").tap()
+        let field = app.searchFields.firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 10))
+        let atRest = app.buttons.count
+        field.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        sleep(1)
+        snap("search-open")
+        let whileOpen = app.buttons.count
+        // Swiped down, over the page.
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3))
+            .press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.55)))
+        XCTAssertTrue(app.keyboards.firstMatch.waitForNonExistence(timeout: 5))
+        sleep(1)
+        snap("search-keyboard-away")
+        XCTAssertLessThan(app.buttons.count, whileOpen, "The open search's X is gone with the keyboard")
+        XCTAssertEqual(app.buttons.count, atRest)
     }
 
     /// Tapping a hashtag in the row tags the word where it's already written (keeping its
@@ -1691,7 +1714,7 @@ final class JournalViewsTests: XCTestCase {
     func testPlaylistListsEntriesWithSongsAndPlaysOne() throws {
         let app = launch()
         tab(app, "Journal").tap()
-        switchJournal(app, from: "Journal", to: "Playlist")
+        switchJournal(app, from: "Journal", to: "Songs")
         let song = app.buttons["The Weeknd – Blinding Lights"]
         XCTAssertTrue(song.waitForExistence(timeout: 15))
         XCTAssertTrue(app.buttons["The Killers – Mr. Brightside"].exists)
@@ -1704,7 +1727,7 @@ final class JournalViewsTests: XCTestCase {
         let player = app.descendants(matching: .any).matching(NSPredicate(format: "label == %@", "Spotify player, The Weeknd – Blinding Lights")).firstMatch
         XCTAssertTrue(player.waitForExistence(timeout: 5))
         XCTAssertFalse(app.buttons["Close Player"].exists)
-        XCTAssertFalse(app.buttons["Open Playlist"].exists, "Already on the Playlist")
+        XCTAssertFalse(app.buttons["Open Songs"].exists, "Already on the Playlist")
         XCTAssertEqual(song.value as? String, "Playing")
         sleep(6) // Spotify's player loads
         snap("playlist-playing")

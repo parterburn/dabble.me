@@ -284,23 +284,23 @@ module ApplicationHelper
             q: "What should I journal about?",
             a: "<ul class='list-disc pl-2 space-y-2 ml-3'>
             <li>
-              <span class='font-semibold'>The One Framework</span>
+              <span class='font-semibold!'>The One Framework</span>
               — if journaling feels overwhelming, start here. Every evening, write just three things: <em>1 win from the day, 1 point of tension or stress, and 1 bit of gratitude</em>. That's it. Five minutes, no pressure, and you'll start to see patterns in what lifts you up and what weighs you down. Popularized by <a href='https://www.sahilbloom.com/newsletter/the-1-1-1-method-forecasts-for-the-future-more' target='_blank' class='text-accent hover:text-primary underline'>Sahil Bloom</a>, this simple framework makes journaling finally stick.
             </li>
             <li>
-              <span class='font-semibold'>Travel Log</span>
+              <span class='font-semibold!'>Travel Log</span>
               — capture the places you go while you're still there. The name of that tiny restaurant, the street performer who made you cry, the wrong turn that led to the best view of the trip. Use #Paris or #RoadTrip2025 to group your adventures, and when the daily email resurfaces that random Tuesday in Tokyo three years later, you'll be right back on that train platform.
             </li>
             <li>
-              <span class='font-semibold'>Relationship Time Capsule</span>
+              <span class='font-semibold!'>Relationship Time Capsule</span>
               — write about the people you love while the moments are fresh. The thing your partner said that made you laugh, the weird inside joke your best friend started, the look on your mom's face when you surprised her. Tag entries with #Sarah or #Dad and build a searchable archive of the people who matter most—one that will guarantee you future smiles.
             </li>
             <li>
-              <span class='font-semibold'>Career Wins &amp; Lessons</span>
+              <span class='font-semibold!'>Career Wins &amp; Lessons</span>
               — it's easy to forget what you've accomplished at work by the time performance reviews roll around. Jot down the projects you crushed, the feedback you received, the hard conversations you navigated. Tag with #Work or #Promotion, and when you need to update your resume or negotiate a raise, you'll have receipts.
             </li>
             <li>
-              <span class='font-semibold'>Gratitude Before Bed</span>
+              <span class='font-semibold!'>Gratitude Before Bed</span>
               — end each day with one thing you're thankful for and tag it with #Gratitude. Over time, you'll build a searchable database of hundreds of small joys. When a tough day hits, scroll back through your gratitude entries and remember: your life is fuller than it feels right now.
             </li>
           </ul>"

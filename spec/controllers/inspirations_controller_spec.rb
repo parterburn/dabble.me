@@ -30,5 +30,20 @@ RSpec.describe InspirationsController, type: :controller do
       expect(response.status).to eq 200
       expect(response.body).to have_content('Add new inspiration')
     end
+
+    it "counts each inspiration's entries, without asking once per inspiration" do
+      used = Inspiration.create!(category: 'Question', body: 'What surprised you?')
+      Inspiration.create!(category: 'Question', body: 'Never used')
+      3.times { |n| FactoryBot.create(:entry, user: user, inspiration: used, date: n.days.ago) }
+      sign_in_admin superuser
+
+      counts = []
+      listener = ->(*, payload) { counts << payload[:sql] if payload[:sql].match?(/COUNT\(\*\).*FROM "entries"/i) }
+      ActiveSupport::Notifications.subscribed(listener, 'sql.active_record') { get :index }
+
+      rows = Nokogiri::HTML(response.body).css('tbody tr').to_h { |row| [row.css('td')[3].text.strip, row.css('td')[1].text.strip] }
+      expect(rows).to include('What surprised you?' => '3', 'Never used' => '0')
+      expect(counts.size).to eq(1)
+    end
   end
 end

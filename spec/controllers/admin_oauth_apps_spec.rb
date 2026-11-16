@@ -67,6 +67,24 @@ RSpec.describe AdminController, type: :controller do
       expect(page).not_to have_content('evil.example')
     end
 
+    it "gives each person on a shared client (the iOS app) a line of their own, with their own dates" do
+      app = MobileApp.ensure_application!
+      first = FactoryBot.create(:user, email: 'first@example.com')
+      second = FactoryBot.create(:user, email: 'second@example.com')
+      Doorkeeper::AccessToken.create!(application: app, resource_owner_id: first.id, scopes: MobileApp::SCOPE, created_at: Time.utc(2026, 11, 2))
+      Doorkeeper::AccessToken.create!(application: app, resource_owner_id: second.id, scopes: MobileApp::SCOPE, created_at: Time.utc(2026, 11, 9))
+      sign_in_admin admin
+      get :oauth_apps, params: { name: MobileApp::NAME }
+
+      rows = Nokogiri::HTML(response.body).css('table').last.css('tbody tr')
+      expect(rows.size).to eq(2)
+      # Most recently connected first; the registration's own cells are on the first line only.
+      expect(rows[0].text.squish).to include(MobileApp::NAME, 'second@example.com', '2026-11-09')
+      expect(rows[0].text).not_to include('first@example.com')
+      expect(rows[1].text.squish).to include('first@example.com', '2026-11-02')
+      expect(rows[1].text).not_to include(MobileApp::NAME)
+    end
+
     it "doesn't offer to delete the iOS app" do
       MobileApp.ensure_application!
       sign_in_admin admin

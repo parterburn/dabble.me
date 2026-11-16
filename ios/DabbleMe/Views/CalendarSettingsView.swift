@@ -10,6 +10,15 @@ struct CalendarSettingsView: View {
 
     var body: some View {
         List {
+            // What the calendars are for, before the list of them.
+            Section {
+                Text(explanation)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .listRowBackground(Color.clear)
+                    .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 8, trailing: 4))
+            }
             switch access {
             case .notAsked:
                 Section {
@@ -19,8 +28,6 @@ struct CalendarSettingsView: View {
                             load()
                         }
                     }
-                } footer: {
-                    Text(explanation)
                 }
             case .denied:
                 Section {
@@ -29,15 +36,11 @@ struct CalendarSettingsView: View {
                     Button("Open Settings") {
                         if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
                     }
-                } footer: {
-                    Text(explanation)
                 }
             case .allowed:
                 if calendars.isEmpty {
                     Section {
                         Text("No calendars on this phone.").foregroundStyle(.secondary)
-                    } footer: {
-                        Text(explanation)
                     }
                 }
                 ForEach(accounts, id: \.self) { account in
@@ -58,8 +61,6 @@ struct CalendarSettingsView: View {
                         }
                     } header: {
                         if !account.isEmpty { Text(account) }
-                    } footer: {
-                        if account == accounts.last { Text(explanation) }
                     }
                 }
             }
@@ -73,7 +74,7 @@ struct CalendarSettingsView: View {
     }
 
     private var explanation: String {
-        "When you write, the ? button lists what was on these calendars that day, as a reminder. Events are read on your phone and aren't sent to Dabble Me."
+        "When you're writing an entry, the ? button shows what was on your calendar that day, as a reminder of what happened. Choose which calendars it reads. Events stay on your phone and aren't sent to Dabble Me."
     }
 
     private var accounts: [String] {

@@ -70,32 +70,41 @@
           <tbody>
             <% @oauth_apps.registrations.each do |registration| %>
               <% application = registration.application %>
-              <tr>
-                <td><%= day.(application.created_at) %></td>
-                <td><%= application.name %></td>
-                <td class="whitespace-normal break-all text-xs"><%= safe_join(application.redirect_uri.to_s.split, tag.br) %></td>
-                <td class="whitespace-normal">
-                  <% if registration.users_connected.empty? %>
-                    <span class="text-muted">None</span>
-                  <% else %>
-                    <%= safe_join(registration.users_connected.first(5).map { |id| link_to(emails[id] || "User #{id}", edit_admin_user_path(id), class: "text-link") }, ", ") %>
-                    <% if registration.users_connected.size > 5 %>
-                      <span class="text-muted">and <%= registration.users_connected.size - 5 %> more</span>
+              <%# A client several people share (the iOS app's one registration) has a line for
+                  each of them, with their own dates; the registration's own cells span them. %>
+              <% users = registration.users_connected %>
+              <% lines = [users.size, 1].max %>
+              <% lines.times do |line| %>
+                <% user_id = users[line] %>
+                <tr>
+                  <% if line.zero? %>
+                    <td rowspan="<%= lines %>" class="align-top"><%= day.(application.created_at) %></td>
+                    <td rowspan="<%= lines %>" class="align-top"><%= application.name %></td>
+                    <td rowspan="<%= lines %>" class="align-top whitespace-normal break-all text-xs"><%= safe_join(application.redirect_uri.to_s.split, tag.br) %></td>
+                  <% end %>
+                  <td>
+                    <% if user_id %>
+                      <%= link_to(emails[user_id] || "User #{user_id}", edit_admin_user_path(user_id), class: "text-link") %>
+                    <% else %>
+                      <span class="text-muted">None</span>
                     <% end %>
+                  </td>
+                  <%# One user: the registration's dates. Several: each user's own. %>
+                  <td><%= day.(users.size > 1 ? registration.user_tokens[user_id] : registration.last_token_at) %></td>
+                  <td><%= day.(users.size > 1 ? registration.user_calls[user_id] : registration.last_call_at) %></td>
+                  <% if line.zero? %>
+                    <td rowspan="<%= lines %>" class="align-top">
+                      <% if registration.mobile_app? %>
+                        <span class="text-xs text-muted">iOS app</span>
+                      <% else %>
+                        <%= button_to "Delete", admin_oauth_app_path(application.id, name: params[:name].presence, email: params[:email].presence),
+                              method: :delete, class: "text-sm font-medium text-red-700 hover:text-red-800 hover:underline",
+                              data: { confirm: "Delete this #{application.name} registration?#{" #{registration.users_connected.size} connected user(s) will need to connect again." if registration.users_connected.any?}" } %>
+                      <% end %>
+                    </td>
                   <% end %>
-                </td>
-                <td><%= day.(registration.last_token_at) %></td>
-                <td><%= day.(registration.last_call_at) %></td>
-                <td>
-                  <% if registration.mobile_app? %>
-                    <span class="text-xs text-muted">iOS app</span>
-                  <% else %>
-                    <%= button_to "Delete", admin_oauth_app_path(application.id, name: params[:name].presence, email: params[:email].presence),
-                          method: :delete, class: "text-sm font-medium text-red-700 hover:text-red-800 hover:underline",
-                          data: { confirm: "Delete this #{application.name} registration?#{" #{registration.users_connected.size} connected user(s) will need to connect again." if registration.users_connected.any?}" } %>
-                  <% end %>
-                </td>
-              </tr>
+                </tr>
+              <% end %>
             <% end %>
           </tbody>
         </table>

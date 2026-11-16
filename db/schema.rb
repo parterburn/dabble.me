@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_16_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_16_020000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -92,6 +92,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_16_010000) do
     t.datetime "uploading_image_at", precision: nil
     t.text "image_error"
     t.integer "word_count"
+    t.index ["inspiration_id"], name: "index_entries_on_inspiration_id"
     t.index ["user_id", "date"], name: "index_entries_on_user_id_and_date", order: { date: :desc }
     t.index ["user_id"], name: "index_entries_on_user_id"
   end

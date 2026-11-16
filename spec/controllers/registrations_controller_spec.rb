@@ -170,7 +170,7 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(box['checked']).to eq('checked')
       expect(box['value']).to eq('0')
       expect(page.at_css('input[type=hidden][name="user[way_back_past_entries]"]')['value']).to eq('1')
-      expect(page.text).to include('Use entries only from the past year')
+      expect(page.text).to include('Limit entries to the past year')
     end
 
     it 'puts the choices away with the email box unticked, but not for someone on the iOS app' do

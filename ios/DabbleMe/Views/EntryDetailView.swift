@@ -72,6 +72,17 @@ struct EntryDetailView: View {
                             .simultaneousGesture(swipeForActions)
                             .offset(x: swipeOffset)
                             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { cardHeight = $0 }
+                            // The bolt the swipe brings in, beside the card: level with its
+                            // middle, or with the middle of what shows of a card taller than
+                            // the screen.
+                            .overlay(alignment: .trailing) {
+                                swipeHint.visualEffect { [height = cardHeight] content, proxy in
+                                    let middle = proxy.size.height / 2
+                                    guard let visible = proxy.bounds(of: .scrollView) else { return content.offset(y: 0) }
+                                    let top = max(middle - height / 2, visible.minY), bottom = min(middle + height / 2, visible.maxY)
+                                    return content.offset(y: bottom > top ? (top + bottom) / 2 - middle : 0)
+                                }
+                            }
                         if let sameDay, sameDay.count > 0 {
                             SameDaySection(entry: entry, sameDay: sameDay, reading: reading,
                                            today: model.today?.day ?? JournalDay(localDate: .now)) { opened = EntryRoute(id: $0) }
@@ -126,7 +137,6 @@ struct EntryDetailView: View {
                     }
                 }
                 .id(entry.id) // each entry starts at its top (the title's swipe steps between them)
-                .overlay(alignment: .trailing) { swipeHint }
                 .overlay(alignment: .bottom) { floatingActions(for: entry) }
                 .modifier(PullToReflect(action: canReflect(entry) ? { await reflect(on: entry) } : nil))
                 .overlay {
@@ -310,7 +320,7 @@ struct EntryDetailView: View {
 
     private var swipeArmed: Bool { -swipeOffset >= swipeThreshold }
 
-    /// The bolt that slides in from the right edge as the entry is swiped.
+    /// The bolt that slides in from the right edge as the entry is swiped (beside its card).
     @ViewBuilder
     private var swipeHint: some View {
         if swipeOffset < -4 {
@@ -572,7 +582,8 @@ private struct EntryBody: View {
     }
 
     private var writing: some View {
-        VStack(alignment: .leading, spacing: 20) {
+        // (The gap a Journal row has between an entry's words, its tags and its songs.)
+        VStack(alignment: .leading, spacing: 10) {
             // Dated #tags and Spotify links at the end of the entry aren't shown twice: their pills
             // and the songs are right under it.
             let pilled = (entry.datedHashtags ?? []).map(\.tag)
@@ -1192,7 +1203,9 @@ private struct ChatBubble: View {
                 .padding(.leading, 40)
                 .textSelection(.enabled)
         } else if message.text.isEmpty, isReplying {
-            ProgressView()
+            // The reply being written: the app's typing dots, where its words will be.
+            TypingDots()
+                .accessibilityLabel("Writing a reply")
                 .frame(maxWidth: .infinity, alignment: .leading)
         } else {
             // Light Markdown, like the reflection: it bolds its question too.
