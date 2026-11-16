@@ -249,7 +249,7 @@ VStack(spacing: 0) {
 private struct WidgetLabel: View {
     let title: String
     let icon: String
-    /// For a long date ("2 years and 3 months ago"): a little smaller rather than cut off.
+    /// For a long date ("2 years + 3 months ago"): a little smaller rather than cut off.
     var shrinksToFit = false
 
     init(_ title: String, icon: String, shrinksToFit: Bool = false) {

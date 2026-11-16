@@ -220,7 +220,7 @@ struct EntryAgoTests {
         #expect(try ago("2026-08-25") == "3 months ago") // 2 months and 21 days: nearer three
         #expect(try ago("2025-11-15") == "1 year ago")
         #expect(try ago("2025-11-03") == "1 year ago")
-        #expect(try ago("2021-09-12") == "5 years, 2 months ago")
+        #expect(try ago("2021-09-12") == "5 years + 2 months ago")
         #expect(try ago("2021-11-25") == "5 years ago") // 4 years, 11 months and 21 days
     }
 
@@ -229,7 +229,7 @@ struct EntryAgoTests {
     @Test func aLongSpanKeepsItsMonths() throws {
         let today = try #require(JournalDay("2026-11-15"))
         let day = try #require(JournalDay("2012-08-10"))
-        #expect(day.ago(from: today) == "14 years, 3 months ago")
+        #expect(day.ago(from: today) == "14 years + 3 months ago")
         #expect(day.relative(to: today) == "14 years ago")
     }
 }
@@ -332,9 +332,9 @@ struct ShareCardTests {
         #expect(try ago(36) == "36 days ago")
         #expect(try ago(59) == "59 days ago")
         #expect(try ago(60) == "2 months ago")
-        #expect(try ago(97) == "3 months and 1 week ago")
+        #expect(try ago(97) == "3 months + 1 week ago")
         #expect(try ago(365) == "12 months ago")
-        #expect(try ago(430) == "1 year and 2 months ago")
+        #expect(try ago(430) == "1 year + 2 months ago")
         #expect(try ago(1096) == "3 years ago")
         #expect(JournalDay.span(days: 97) == ["3 months", "1 week"])
     }

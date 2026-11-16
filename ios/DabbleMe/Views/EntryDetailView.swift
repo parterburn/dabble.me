@@ -45,6 +45,12 @@ struct EntryDetailView: View {
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
     @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
 
+    /// The well's shape: its bottom corners are square when the entry ends in a photo.
+    private static func well(for entry: EntryDetail) -> UnevenRoundedRectangle {
+        let foot: CGFloat = entry.imageProcessing || entry.imageURL != nil ? 0 : 16
+        return UnevenRoundedRectangle(topLeadingRadius: 16, bottomLeadingRadius: foot, bottomTrailingRadius: foot, topTrailingRadius: 16)
+    }
+
     /// The entry shown: the one opened, or the one it was merged into when its date was changed
     /// to a day that had one.
     private var id: Int { entry?.id ?? entryID }
@@ -59,9 +65,10 @@ struct EntryDetailView: View {
                         EntryBody(entry: entry, song: playerHidden ? nil : song, play: play)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color("Paper"))
-                            // (The photo, at the well's foot, takes its corners.)
-                            .clipShape(.rect(cornerRadius: 16))
-                            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.quaternary))
+                            // Rounded, but square at the foot under a photo, which ends the
+                            // well with its own straight edge.
+                            .clipShape(Self.well(for: entry))
+                            .overlay(Self.well(for: entry).strokeBorder(.quaternary))
                             .padding(.horizontal, 12)
                             .padding(.top, 8)
                             .padding(.bottom, 6)

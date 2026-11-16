@@ -1,6 +1,17 @@
-The date band on a photo now says how long ago it was to the nearest month.
+How long ago something was now reads the same everywhere: "2 years + 3 months ago".
 
-- Open a photo from an entry that is several years old and not near its anniversary. The band above it should read like "14 years, 3 months ago", not just "14 years ago".
-- Share that photo. The shared image's band should say the same.
-- It should match the date under the title when you open that entry in full.
-- A photo from under two months ago still reads in days ("36 days ago"), and one from today reads "Today".
+- A photo's date band keeps its months: open a photo several years old and not near its anniversary. It should read like "14 years + 3 months ago", not "14 years ago", and the shared image should say the same.
+- The date under an open entry's title, Today's Rewind, the widget and the push reminder all use "+" between the two units.
+
+Writing an entry:
+
+- There is a new Format button (an "A") left of the link button. It opens a menu with Bold, Italic and Underline. Select some words and try each; with nothing selected, it should apply to what you type next. Check the keyboard stays up and the selection isn't lost.
+- Tap the "?" button. Your calendar's events for that day should be listed with no "ON YOUR CALENDAR" title above them. On a day with no events, nothing about the calendar should show at all.
+- With calendar access turned off for Dabble Me, on an entry that has no prompt to show, the title should appear over the line asking you to allow access.
+
+Settings, Calendars:
+
+- The explanation at the top should sit close under the title, without a large gap above it.
+- At the bottom there is a note on where to add or remove calendar accounts.
+
+An open entry with a photo: the card's bottom corners are now square, where the photo ends. Without a photo they stay rounded.

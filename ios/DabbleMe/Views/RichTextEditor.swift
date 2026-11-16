@@ -154,6 +154,22 @@ final class RichTextEditorModel {
         characterCount = trimmed.count
     }
 
+    // MARK: - Formatting
+
+    /// The text view's own formatting, from the bar's Format menu: on the selection, or, with
+    /// nothing selected, on what's typed next.
+    func toggleBold() { format { $0.toggleBoldface(nil) } }
+    func toggleItalic() { format { $0.toggleItalics(nil) } }
+    func toggleUnderline() { format { $0.toggleUnderline(nil) } }
+
+    private func format(_ change: (UITextView) -> Void) {
+        guard let textView else { return }
+        let hadSelection = textView.selectedRange.length > 0
+        change(textView)
+        // The entry changed only if words were restyled (the draft is saved, Save lights up).
+        if hadSelection { textDidChange() }
+    }
+
     // MARK: - Links
 
     /// The link (its whole range and address) that `range` touches, if any.

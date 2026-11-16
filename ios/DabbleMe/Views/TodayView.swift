@@ -500,7 +500,7 @@ struct TodayView: View {
         }
     }
 
-    /// "2 years and 3 months ago • August 2024": on one line, and the day itself is on the row
+    /// "2 years + 3 months ago • August 2024": on one line, and the day itself is on the row
     /// under it (SAT 10).
     private static func throwbackTitle(_ entry: EntrySummary, today: TodaySummary) -> String {
         guard let day = entry.day else { return entry.date }
