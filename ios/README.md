@@ -17,6 +17,8 @@ xcodegen generate        # creates DabbleMe.xcodeproj (gitignored; project.yml i
 open DabbleMe.xcodeproj
 ```
 
+Xcode Cloud has no project to open after cloning, so `ci_scripts/ci_post_clone.sh` installs XcodeGen and generates it there.
+
 Debug builds point at `http://localhost:3000` and Release builds at `https://dabble.me` (the `DABBLE_BASE_URL` setting in `project.yml`). To use a local server:
 
 ```bash
