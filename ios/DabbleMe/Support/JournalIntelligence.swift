@@ -503,9 +503,16 @@ enum JournalIntelligence {
                 prompt: "Facts:\n" + facts.map { "- \($0)" }.joined(separator: "\n"),
                 temperature: 0.5
             )
-            if !overviewUsesAName(reply, facts: source) { return reply }
+            // (The model now and then opens with a small letter: "you've written…".)
+            if !overviewUsesAName(reply, facts: source) { return capitalizingFirst(reply) }
         }
         throw Failure.noAnswer
+    }
+
+    /// The text with its first letter a capital.
+    static func capitalizingFirst(_ text: String) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.prefix(1).uppercased() + trimmed.dropFirst()
     }
 
     /// Whether an overview names someone: a capitalized word that isn't in the facts, either inside

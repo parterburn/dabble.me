@@ -150,7 +150,8 @@ private struct StatsOverview: View {
     @State private var failed = false
 
     private var key: String { "2|\(today.iso)|\(stats.totalEntries)|\(stats.totalWords)" }
-    private var text: String? { savedKey == key && !savedText.isEmpty ? savedText : nil }
+    /// (One kept from before overviews were given their capital gets it here.)
+    private var text: String? { savedKey == key && !savedText.isEmpty ? JournalIntelligence.capitalizingFirst(savedText) : nil }
     /// What shows if the model can't write one: the plainest facts, as before.
     private var fallback: String { JournalIntelligence.statsFacts(stats, today: today).prefix(3).joined(separator: " ") }
 
