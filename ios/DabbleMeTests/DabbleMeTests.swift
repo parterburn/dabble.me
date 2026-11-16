@@ -242,6 +242,9 @@ struct AppLinkTests {
         #expect(try link("https://dabble.me/search/") == .search(nil))
         #expect(try link("https://dabble.me/search?search%5Bterm%5D=hiking%20OR%20camping") == .search("hiking OR camping"))
         #expect(try link("https://dabble.me/search?search[term]=") == .search(nil))
+        // As the web's search form writes it: "+" for a space, "%2B" for a plus.
+        #expect(try link("https://dabble.me/search?search%5Bterm%5D=hiking+OR+camping") == .search("hiking OR camping"))
+        #expect(try link("https://dabble.me/search?search%5Bterm%5D=C%2B%2B+notes") == .search("C++ notes"))
         #expect(try link("https://dabble.me/rewind") == .stats)
         #expect(try link("https://dabble.me/rewind/") == .stats)
         #expect(try link("https://dabble.me/rewind/2026") == .stats)
