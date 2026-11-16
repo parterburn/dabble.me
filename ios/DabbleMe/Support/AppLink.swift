@@ -21,8 +21,11 @@ enum AppLink: Equatable {
         case ["today"]: self = .today
         case ["write"], ["entries", "new"]: self = .newEntry
         case ["search"]:
-            let term = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?
-                .first { $0.name == "search[term]" || $0.name == "term" || $0.name == "q" }?.value?
+            // As a form sends it: a space is "+" (and a real plus "%2B"), so the "+" goes to a
+            // space before the percent-escapes are read.
+            let term = URLComponents(url: url, resolvingAgainstBaseURL: false)?.percentEncodedQueryItems?
+                .first { ["search[term]", "term", "q"].contains($0.name.removingPercentEncoding ?? $0.name) }?.value?
+                .replacingOccurrences(of: "+", with: " ").removingPercentEncoding?
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             self = .search(term?.isEmpty == false ? term : nil)
         case ["rewind"]: self = .stats
