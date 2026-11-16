@@ -65,7 +65,9 @@ final class RichTextEditorModel {
     var plainText: String { textView?.text ?? "" }
 
     /// Tags the entry: the first time the word is already written ("Leo", "biscuit"), a "#" goes
-    /// in front of it, keeping the writer's capitalization; otherwise "#tag" is added at the end.
+    /// in front of it, keeping the writer's capitalization, and the cursor stays where it was
+    /// (the writer goes on typing where they were). Otherwise "#tag" is added at the end, with
+    /// the cursor after it.
     func addHashtag(_ tag: String) {
         guard let textView else { return }
         let storage = textView.textStorage
@@ -73,8 +75,16 @@ final class RichTextEditorModel {
         if let regex = try? NSRegularExpression(pattern: pattern, options: .caseInsensitive),
            let match = regex.firstMatch(in: storage.string, range: NSRange(location: 0, length: storage.length)) {
             let attributes = storage.attributes(at: match.range.location, effectiveRange: nil)
+            var cursor = textView.selectedRange
             storage.insert(NSAttributedString(string: "#", attributes: attributes), at: match.range.location)
-            textView.selectedRange = NSRange(location: match.range.location + match.range.length + 1, length: 0)
+            // Where it was, in the text as it now is: a "#" that went in before it moves it
+            // along by one, and one inside a selection makes that one longer.
+            if match.range.location < cursor.location {
+                cursor.location += 1
+            } else if match.range.location < cursor.location + cursor.length {
+                cursor.length += 1
+            }
+            textView.selectedRange = cursor
             textDidChange()
             return
         }

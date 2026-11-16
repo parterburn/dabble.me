@@ -1,3 +1,9 @@
+Choosing a suggested hashtag no longer moves the cursor.
+
+- While writing, open the hashtags row and tap a suggestion for a word that's already in your entry (say "Leo"). A "#" should go in front of that word, and the cursor should stay exactly where you were typing.
+- Try it with the cursor before the word, after it, and in the middle of a different line, and with some text selected.
+- A suggestion for a word that isn't in the entry still adds "#tag" at the end and puts the cursor after it.
+
 New: a "New Entry" control.
 
 - Add it: open Control Center, touch and hold an empty spot, Add a Control, and search for Dabble Me. It can also go on the Lock Screen's bottom buttons, and on the Action button (Settings, Action Button, Controls).
