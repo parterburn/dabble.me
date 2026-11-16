@@ -1,0 +1,10 @@
+The medium widget's right side now opens the Today tab instead of a single entry.
+
+- Widget set to Rewind with entry previews, on a day with On This Day entries: tap the entry on the right. Today should open and scroll to that entry, with its date pinned above it.
+- Same widget on a day with no On This Day entries (it shows a Rewind): tap it. Today should scroll down to the Rewind entry.
+- Widget set to Rewind without previews ("You have 3 memories from this day."): tap the right side. Today should scroll to the On This Day title.
+- Widget set to A Prompt for You with previews, after writing today: tap today's entry on the right. Today should open at the top, not the entry's own page.
+- Try each with the app closed completely, and with an entry left open on the Today tab.
+- The date side and the small widget still open Today at the top.
+
+Check that the text on the widget's right side hasn't changed color.

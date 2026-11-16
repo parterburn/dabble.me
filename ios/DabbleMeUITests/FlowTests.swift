@@ -137,7 +137,9 @@ final class FlowTests: XCTestCase {
         snap("day-picked")
     }
 
-    /// The medium widget's entry half opens that entry (me.dabble.app:/entry/<id>).
+    /// An older build's medium widget opened the entry it showed (me.dabble.app:/entry/<id>),
+    /// and that link still works. (Today's widget opens Today, scrolled to the entry; one Today
+    /// doesn't list opens the same way as here.)
     func testWidgetEntryLinkOpensTheEntry() throws {
         let today = Calendar.current.dateComponents([.year, .month], from: .now)
         let id = try entryID(year: today.year!, month: today.month!)

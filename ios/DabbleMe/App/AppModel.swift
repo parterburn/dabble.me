@@ -81,6 +81,8 @@ final class AppModel {
     var todayTabTaps = 0
     /// Bumped to bring Today back to its own page (a link to it, with an entry left open there).
     var todayRootRequest = 0
+    /// Something on Today to scroll to (the widget's right side was tapped), once Today has it.
+    var todayFocusRequest: TodayFocus?
     /// A dabble.me link tapped before the app could act on it (signed out, or still loading):
     /// followed once the journal has loaded.
     var pendingLink: AppLink?

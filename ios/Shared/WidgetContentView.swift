@@ -25,6 +25,16 @@ struct WidgetEntry: TimelineEntry {
     /// The label over today's own entry (the rest are look-backs).
     static let todayTitle = "Today's entry"
 
+    /// Where a tap on the medium widget's right side goes: Today, scrolled to what's shown
+    /// there (the entry looked back on, or just the look back when it's a count or a note).
+    /// Today's own entry, a prompt or nothing: Today itself.
+    var detailURL: URL {
+        if let entryID, entryText != nil {
+            return entryTitle == Self.todayTitle ? WidgetSnapshot.todayURL : WidgetSnapshot.todayEntryURL(entryID)
+        }
+        return memories != nil || memoryNote != nil ? WidgetSnapshot.todayLookBackURL : WidgetSnapshot.todayURL
+    }
+
     static let placeholder = WidgetEntry(date: .now, signedIn: true, wroteToday: false, yearCount: 36, memories: nil,
                                          prompt: "What made you smile today?")
 }
@@ -106,8 +116,8 @@ VStack(spacing: 0) {
         }
     }
 
-    /// Two halves, each its own link: the date side opens Today (to write, edit or read, from
-    /// there), and an entry shown on the right opens that entry to read.
+    /// Two halves, each its own link, both to Today: the date side to its top (to write, edit
+    /// or read, from there), and the right side to what it shows (`WidgetEntry.detailURL`).
     private var medium: some View {
         HStack(alignment: .top, spacing: 16) {
             Link(destination: WidgetSnapshot.todayURL) {
@@ -120,8 +130,10 @@ VStack(spacing: 0) {
 
     @ViewBuilder
     private var mediumDetail: some View {
-        if let id = entry.entryID, entry.entryText != nil {
-            Link(destination: WidgetSnapshot.entryURL(id)) { mediumDetailContent }
+        // A link only where it goes somewhere of its own (inside one, text takes the link's
+        // tint); the rest falls through to the widget's own, Today.
+        if entry.detailURL != WidgetSnapshot.todayURL || entry.entryID != nil {
+            Link(destination: entry.detailURL) { mediumDetailContent }
         } else {
             mediumDetailContent
         }
@@ -183,11 +195,13 @@ VStack(spacing: 0) {
                         .foregroundStyle(Color.widgetLabel)
                     Text(memories == 1 ? "You have a memory from this day." : "You have \(memories) memories from this day.")
                         .font(.system(.subheadline, design: .serif))
+                        .foregroundStyle(Color(uiColor: .label)) // not the link's tint
                 } else if let note = entry.memoryNote {
                     WidgetLabel("Rewind", icon: "widget-rewind")
                         .foregroundStyle(Color.widgetLabel)
                     Text(note)
                         .font(.system(.subheadline, design: .serif))
+                        .foregroundStyle(Color(uiColor: .label)) // not the link's tint
                 } else if !entry.wroteToday, let prompt = entry.prompt {
                     Text("A prompt for you")
                         .font(.caption.weight(.semibold))

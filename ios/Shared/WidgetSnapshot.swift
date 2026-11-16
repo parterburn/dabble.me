@@ -152,7 +152,10 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
 
     /// Links the widget opens (the app's registered URL scheme, shared with OAuth sign-in).
     static let todayURL = URL(string: "me.dabble.app:/today")!
-    static func entryURL(_ id: Int) -> URL { URL(string: "me.dabble.app:/entry/\(id)")! }
+    /// Today, scrolled to the look back (On This Day, or the Rewind).
+    static let todayLookBackURL = URL(string: "me.dabble.app:/today/lookback")!
+    /// Today, scrolled to that entry among its look backs.
+    static func todayEntryURL(_ id: Int) -> URL { URL(string: "me.dabble.app:/today/entry/\(id)")! }
 }
 
 /// What the medium widget shows beside today's date: today's prompt or a look back (Rewind),
