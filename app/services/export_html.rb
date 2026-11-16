@@ -5,7 +5,7 @@
 module ExportHtml
   # What an entry's own HTML may keep. Anything that could run code, or style
   # the page around it, is dropped.
-  TAGS = %w[p br div span strong b em i u a ul ol li blockquote hr img].freeze
+  TAGS = %w[p br div span strong b em i u s strike del a ul ol li blockquote hr img].freeze
   ATTRIBUTES = %w[href src alt].freeze
 
   STYLE = <<~CSS

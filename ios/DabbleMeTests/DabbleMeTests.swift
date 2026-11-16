@@ -178,6 +178,30 @@ struct ReflectionChatSummaryTests {
         #expect(transcript.count <= 2100)
     }
 
+    /// A companion's turn is kept as the question it ends on: that's what was answered next.
+    @Test func companionTurnsComeDownToTheirQuestion() {
+        #expect(JournalIntelligence.closingQuestion(in: "That walk sounds lovely. It stayed with you. **What made it stick?**") == "What made it stick?")
+        #expect(JournalIntelligence.closingQuestion(in: "Was it the light? Or the quiet?\nWhich would you go back for?") == "Which would you go back for?")
+        #expect(JournalIntelligence.closingQuestion(in: "That sounds like a good day.") == nil)
+        let conversation = [ReflectionChat.Message(fromWriter: false, text: "A long, kind paragraph about the day. **What made it stick?**"),
+                            ReflectionChat.Message(fromWriter: true, text: "The sunrise.")]
+        #expect(JournalIntelligence.summaryTranscript(conversation) == "Companion: What made it stick?\nMe: The sunrise.")
+    }
+
+    /// The model's reply is read as a question and an answer, whatever it gets wrong about the form.
+    @Test func readsTheQuestionAndTheAnswer() {
+        typealias Summary = JournalIntelligence.ChatSummary
+        let asked = "What made it stick?"
+        #expect(JournalIntelligence.parseChatSummary("QUESTION: What made the sunrise stay with me?\nANSWER: The light on the water, and that nobody else was up.", askedFirst: asked)
+                == Summary(question: "What made the sunrise stay with me?", answer: "The light on the water, and that nobody else was up."))
+        #expect(JournalIntelligence.parseChatSummary("**Question:** \"Why the sunrise?\"\n**Answer:** It was quiet.", askedFirst: asked)
+                == Summary(question: "Why the sunrise?", answer: "It was quiet."))
+        // No question written, or no labels at all: the reflection's own question stands in.
+        #expect(JournalIntelligence.parseChatSummary("ANSWER: It was quiet.", askedFirst: asked) == Summary(question: asked, answer: "It was quiet."))
+        #expect(JournalIntelligence.parseChatSummary("It was quiet.", askedFirst: asked) == Summary(question: asked, answer: "It was quiet."))
+        #expect(JournalIntelligence.parseChatSummary("QUESTION: Why?\nANSWER:", askedFirst: asked) == nil)
+    }
+
     @Test func shortChatsAreKeptWhole() {
         let conversation = [ReflectionChat.Message(fromWriter: true, text: "The sunrise."),
                             ReflectionChat.Message(fromWriter: false, text: "What made it stick?")]
@@ -233,17 +257,31 @@ struct EntryAgoTests {
         #expect(try ago("2026-08-25") == "3 months ago") // 2 months and 21 days: nearer three
         #expect(try ago("2025-11-15") == "1 year ago")
         #expect(try ago("2025-11-03") == "1 year ago")
-        #expect(try ago("2021-09-12") == "5 years + 2 months ago")
+        #expect(try ago("2021-09-12") == "5 years, 2 months ago")
         #expect(try ago("2021-11-25") == "5 years ago") // 4 years, 11 months and 21 days
     }
 
-    /// A photo's band uses the same wording, so a long span keeps its months: the daily email's
-    /// wording (`relative(to:)`) drops them once they're under 5% of the span.
+    /// A long span keeps its months (a photo's band once read "14 years ago" for this).
     @Test func aLongSpanKeepsItsMonths() throws {
         let today = try #require(JournalDay("2026-11-15"))
         let day = try #require(JournalDay("2012-08-10"))
-        #expect(day.ago(from: today) == "14 years + 3 months ago")
-        #expect(day.relative(to: today) == "14 years ago")
+        #expect(day.ago(from: today) == "14 years, 3 months ago")
+    }
+
+    /// Counted in days back: days through 60, then months and years, never weeks.
+    @Test func sixtyDaysIsTheLastCountedInDays() throws {
+        let today = try #require(JournalDay("2026-11-09"))
+        func ago(_ days: Int) throws -> String {
+            let date = try #require(Calendar(identifier: .gregorian).date(byAdding: .day, value: -days, to: today.localDate))
+            return JournalDay(localDate: date).ago(from: today)
+        }
+        #expect(try ago(36) == "36 days ago")
+        #expect(try ago(60) == "60 days ago")
+        #expect(try ago(61) == "2 months ago")
+        #expect(try ago(97) == "3 months ago") // 3 months and 5 days
+        #expect(try ago(365) == "1 year ago")
+        #expect(try ago(430) == "1 year, 2 months ago")
+        #expect(try ago(1096) == "3 years ago")
     }
 }
 
@@ -333,25 +371,6 @@ struct WritingQuestionTests {
 }
 
 struct ShareCardTests {
-    /// The same wording and rounding as the daily email's "Rewind 3 months and 1 week".
-    @Test func relativeDatesAreDaysUnderSixtyThenTwoUnits() throws {
-        let today = try #require(JournalDay("2026-11-09"))
-        func ago(_ days: Int) throws -> String {
-            let date = try #require(Calendar(identifier: .gregorian).date(byAdding: .day, value: -days, to: today.localDate))
-            return JournalDay(localDate: date).relative(to: today)
-        }
-        #expect(try ago(0) == "Today")
-        #expect(try ago(1) == "Yesterday")
-        #expect(try ago(36) == "36 days ago")
-        #expect(try ago(59) == "59 days ago")
-        #expect(try ago(60) == "2 months ago")
-        #expect(try ago(97) == "3 months + 1 week ago")
-        #expect(try ago(365) == "12 months ago")
-        #expect(try ago(430) == "1 year + 2 months ago")
-        #expect(try ago(1096) == "3 years ago")
-        #expect(JournalDay.span(days: 97) == ["3 months", "1 week"])
-    }
-
     @MainActor
     @Test func cardAddsABandAboveThePhotoAtItsWidth() {
         let photo = UIGraphicsImageRenderer(size: CGSize(width: 800, height: 600), format: {
@@ -465,7 +484,7 @@ struct RichTextTests {
                    DocumentRun("Sam", link: "https://example.com/sam")),
         DocumentBlock(type: .bullet, runs: [DocumentRun("eggs")]),
         DocumentBlock(type: .bullet, runs: [DocumentRun("toast", bold: true, italic: true)]),
-        .paragraph(DocumentRun("Afterwards")),
+        .paragraph(DocumentRun("Afterwards, "), DocumentRun("a nap", strike: true), DocumentRun(" a walk", underline: true, strike: true)),
         DocumentBlock(type: .rule),
         DocumentBlock(type: .number, runs: [DocumentRun("one")]),
         DocumentBlock(type: .number, runs: [DocumentRun("two")]),
@@ -475,7 +494,7 @@ struct RichTextTests {
         let text = RichText.attributedString(from: Self.sample, style: Self.style).string
         // One line per paragraph (Return starts the next; paragraph spacing makes the gap); a
         // line break inside a paragraph is a line separator.
-        #expect(text == "Morning run, then coffee\u{2028}with Sam\n• eggs\n• toast\nAfterwards\n⸻\n1. one\n2. two")
+        #expect(text == "Morning run, then coffee\u{2028}with Sam\n• eggs\n• toast\nAfterwards, a nap a walk\n⸻\n1. one\n2. two")
     }
 
     @Test func roundTripsFormatting() {

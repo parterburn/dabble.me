@@ -293,26 +293,14 @@ struct JournalDay: Hashable, Sendable, Comparable {
 
     static func < (lhs: JournalDay, rhs: JournalDay) -> Bool { lhs.iso < rhs.iso }
 
-    /// Between a span's two units, wherever the app says how long ago: "2 years + 3 months ago".
-    static let unitJoiner = " + "
+    /// Between a span's two units, wherever the app says how long ago: "2 years, 3 months ago".
+    static let unitJoiner = ", "
 
-    /// How long ago this day was, as the daily email words it (`Entry#look_back_label` on the
-    /// server): "Today", "Yesterday", whole days under 60 ("36 days ago"), then the two largest
-    /// units ("3 months + 1 week ago", "1 year + 2 months ago", "3 years ago").
-    func relative(to today: JournalDay) -> String {
-        let days = Self.utc.dateComponents([.day], from: date, to: today.date).day ?? 0
-        guard days >= 0 else { return "In the future" }
-        switch days {
-        case 0: return "Today"
-        case 1: return "Yesterday"
-        case ..<60: return "\(days) days ago"
-        default: return Self.span(days: days).joined(separator: Self.unitJoiner) + " ago"
-        }
-    }
-
-    /// How long ago this day was, for an open entry's title: "Today", "Yesterday", whole days up
-    /// to 60 ("36 days ago"), then years and months by the calendar, in full and without days
-    /// ("2 months ago", "5 years + 2 months ago", "3 years ago"), to the nearest month.
+    /// How long ago this day was, said one way wherever the app says it (an open entry's title, a
+    /// photo's band, Today's Rewind, the widget, a reminder): "Today", "Yesterday", whole days up
+    /// to 60 ("36 days ago"), then years and months by the calendar, without days ("2 months
+    /// ago", "5 years, 2 months ago", "3 years ago"), to the nearest month. (The daily email
+    /// words its own, on the server.)
     func ago(from today: JournalDay) -> String {
         let days = Self.utc.dateComponents([.day], from: date, to: today.date).day ?? 0
         guard days >= 0 else { return "In the future" }
@@ -332,7 +320,7 @@ struct JournalDay: Hashable, Sendable, Comparable {
     /// What an empty new entry asks about this day: "How has today been?", "How was yesterday?",
     /// or the day by name ("How was Tuesday, November 3?", with its year when it isn't this one).
     func writingQuestion(today: JournalDay) -> String {
-        switch relative(to: today) {
+        switch ago(from: today) {
         case "Today": return "How has today been?"
         case "Yesterday": return "How was yesterday?"
         default:
@@ -340,29 +328,6 @@ struct JournalDay: Hashable, Sendable, Comparable {
                                            : formatted(.dateTime.weekday(.wide).month(.wide).day().year())
             return "How was \(named)?"
         }
-    }
-
-    /// A number of days in its largest units, at most `depth` of them: ["3 months", "1 week"].
-    /// The rounding is the server's (Jekyll::Timeago with a 0.05 threshold): a year is 365 days, a
-    /// month 30 (up to a year's worth) and a week 7 (up to a month's), and a smaller unit is left
-    /// out when what remains is under 5% of the span.
-    static func span(days: Int, depth: Int = 2) -> [String] {
-        var parts: [String] = []
-        var remaining = days
-        while parts.count < depth, remaining > 0 {
-            let (unit, length): (String, Int) = switch remaining {
-            case ...6: ("day", 1)
-            case ...30: ("week", 7)
-            case ...365: ("month", 30)
-            default: ("year", 365)
-            }
-            let count = remaining / length
-            parts.append("\(count) \(unit)\(count == 1 ? "" : "s")")
-            let left = remaining - count * length
-            guard left >= Int((Double(remaining) * 0.05).rounded(.down)) else { break }
-            remaining = left
-        }
-        return parts
     }
 
     private static let utc: Calendar = {

@@ -18,7 +18,17 @@ struct ComposeView: View {
     @State private var choosingDate = false
     @State private var heldPhotoStack = false
     /// Two lines of a question in the prompt row (it scales with the text size).
-    @ScaledMetric(relativeTo: .subheadline) private var askLineHeight: CGFloat = 42
+    /// Room for a three-line prompt from the start, so one being written, and then shown, doesn't
+    /// move the day's events under it.
+    @ScaledMetric(relativeTo: .subheadline) private var askLineHeight: CGFloat = 62
+    /// The "?" row's content, as tall as it is: the row is that tall, up to `askRowMaxHeight`,
+    /// and scrolls past it. Nothing until it's measured, each time the row opens: a height kept
+    /// from the last time would be an empty band over the entry while this one's content (its
+    /// question, the day's events) is still coming in.
+    @State private var askRowHeight: CGFloat = 0
+    private static let askRowMaxHeight: CGFloat = 236
+    /// The entry's day has events on the calendar (they're listed under the prompt).
+    @State private var hasAgenda = false
     /// Bumped when the calendar row's contents change, so the bar over the keyboard resizes.
     @State private var calendarRowKey = 0
     /// The tag icon was held (so the tap that ends the hold doesn't also open its row), and
@@ -400,17 +410,14 @@ struct ComposeView: View {
         #endif
     }
 
-    /// The bar's right: Format (a menu of bold, italic and underline), Link (PRO; shows or hides the link row), Tags (the hashtag row), then Prompt
+    /// The bar's right: Format (iOS's formatting panel), Link (PRO; shows or hides the link row), Tags (the hashtag row), then Prompt
     /// (the question mark) at the far edge. Each row button is selected while its row is open; one row at a time.
     private var tagAndLinkButtons: some View {
         HStack(spacing: 6) {
-            // Format: the text view's own bold, italic and underline (also in the menu over a
-            // selection), for the selected words or, with none, what's typed next.
-            Menu {
-                Button { editor.toggleBold() } label: { Label("Bold", icon: "bold") }
-                Button { editor.toggleItalic() } label: { Label("Italic", icon: "italic") }
-                Button { editor.toggleUnderline() } label: { Label("Underline", icon: "underline") }
-            } label: {
+            // Format: iOS's own formatting panel, with what an entry keeps (bold, italic,
+            // underline, strikethrough and lists), for the selected words or, with none, what's
+            // typed next.
+            Button { editor.showFormatting() } label: {
                 appIcon("slab-format")
                     .frame(width: 40, height: 36)
                     .contentShape(.rect)
@@ -461,6 +468,8 @@ struct ComposeView: View {
             Button {
                 showsAskRow.toggle()
                 if showsAskRow {
+                    askRowHeight = 0
+                    hasAgenda = false
                     showsHashtagBar = false
                     showsPhotoDrawer = false
                     editor.endLink()
@@ -619,14 +628,24 @@ struct ComposeView: View {
     /// One question about the draft (Apple Intelligence, on the device): Insert puts it in the entry.
     /// For another, close the row and open it again.
     private var askRow: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // The day's events over the question: what happened, then something to answer.
-            CalendarRow(day: date, hidesWhenEmpty: canAsk, changed: { calendarRowKey += 1 }) { event in
-                editor.addQuestion(event.title)
-                showsAskRow = false
+        // One scrolling section, flush under the bar's line: the question, then the day's events.
+        ScrollView {
+            VStack(alignment: .leading, spacing: 0) {
+                if canAsk { askLine }
+                CalendarRow(day: date, hidesWhenEmpty: canAsk, changed: { hasEvents in
+                    hasAgenda = hasEvents
+                    calendarRowKey += 1
+                }) { event in
+                    editor.addQuestion(event.title)
+                    showsAskRow = false
+                }
             }
-            if canAsk { askLine }
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { askRowHeight = $0 }
         }
+        .scrollBounceBehavior(.basedOnSize)
+        // (A busy day runs past the row's foot: its scroll bar shows for a moment, to say so.)
+        .scrollIndicatorsFlash(onAppear: true)
+        .frame(height: min(max(askRowHeight, 1), Self.askRowMaxHeight))
     }
 
     private func insertQuestion() {
@@ -636,12 +655,13 @@ struct ComposeView: View {
         showsAskRow = false
     }
 
-    /// The question, set like the events over it but from the left edge: a tap on the row puts
+    /// The question, set like the events under it but from the left edge: a tap on the row puts
     /// it in the entry. Headed as Today's card heads its prompt: "A prompt for you" when it's
-    /// written on the device for this writer, "Today's prompt" for the day's general one.
+    /// written on the device for this writer, "Today's prompt" for the day's general one; and,
+    /// with events listed under it, "… / Agenda", the one heading for both.
     private var askLine: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(JournalIntelligence.isEnabled(for: model.me) ? "A prompt for you" : "Today's prompt")
+            Text((JournalIntelligence.isEnabled(for: model.me) ? "A prompt for you" : "Today's prompt") + (hasAgenda ? " / Agenda" : ""))
                 .font(.caption.weight(.semibold))
                 .textCase(.uppercase)
                 .foregroundStyle(.tint)
@@ -674,8 +694,9 @@ struct ComposeView: View {
                 }
             }
             .font(.subheadline)
-            // Two lines tall from the start: the question, when it comes, doesn't move the page.
-            .frame(minHeight: askLineHeight)
+            // Three lines tall from the start: the question, while it's written and when it
+            // comes, doesn't move the events under it.
+            .frame(minHeight: askLineHeight, alignment: .top)
             .contentShape(.rect)
             .onTapGesture(perform: insertQuestion)
         }
@@ -1013,13 +1034,14 @@ private extension View {
 /// a link, the selection stays until the address is tapped.
 /// The composer's calendar row: what was on the phone's calendar on the entry's day, each a tap
 /// away from being a heading in the entry to write under. iOS asks for the calendar the first
-/// time it's opened; without it, the row says how to allow it.
+/// time it's opened; without it, the row says how to allow it. It scrolls with the question
+/// over it, as one section.
 private struct CalendarRow: View {
     let day: Date
-    /// With a question under it, a day with nothing on it shows nothing here.
+    /// With a question over it, a day with nothing on it shows nothing here.
     var hidesWhenEmpty = false
-    /// The row's height may have changed (the events came in).
-    let changed: () -> Void
+    /// The day's been read (the row's height may have changed): whether it has events to list.
+    let changed: (Bool) -> Void
     let pick: (DayEvent) -> Void
     @State private var access = DayCalendar.access
     @State private var events: [DayEvent]?
@@ -1084,9 +1106,9 @@ private struct CalendarRow: View {
             }
         }
         .padding(.horizontal)
-        .padding(.top, 10)
-        // A little room before what's under it (the prompt).
-        .padding(.bottom, 6)
+        // Close under the question; with none over it, the events start right at the row's top.
+        .padding(.top, hidesWhenEmpty ? 4 : (access == .allowed && events?.isEmpty == false ? 0 : 10))
+        .padding(.bottom, 2)
     }
 
     private func load() async {
@@ -1095,47 +1117,41 @@ private struct CalendarRow: View {
             access = DayCalendar.access
         }
         events = DayCalendar.events(on: day)
-        changed()
+        changed(access == .allowed && events?.isEmpty == false)
     }
 
     /// The width of the events' time column.
     static let timeColumn: CGFloat = 72
 
-    /// A few show at once; a busier day scrolls.
+    /// All of the day's events: the section they're in scrolls.
     private func list(_ events: [DayEvent]) -> some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                ForEach(events) { event in
-                    Button { pick(event) } label: {
-                        HStack(spacing: 12) {
-                            Text(event.time)
-                                .font(.footnote.monospacedDigit())
-                                .foregroundStyle(.secondary)
-                                .frame(width: Self.timeColumn, alignment: .leading)
-                            Text(event.title)
-                                .font(.system(.subheadline, design: .serif))
-                                .lineLimit(1)
-                            Spacer(minLength: 0)
-                            appIcon("slab-plus")
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 12, height: 12)
-                                .foregroundStyle(.secondary)
-                        }
-                        .padding(.vertical, 9)
-                        .contentShape(.rect)
+        VStack(spacing: 0) {
+            ForEach(events) { event in
+                Button { pick(event) } label: {
+                    HStack(spacing: 12) {
+                        Text(event.time)
+                            .font(.footnote.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                            .frame(width: Self.timeColumn, alignment: .leading)
+                        Text(event.title)
+                            .font(.system(.subheadline, design: .serif))
+                            .lineLimit(1)
+                        Spacer(minLength: 0)
+                        appIcon("slab-plus")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 12, height: 12)
+                            .foregroundStyle(.secondary)
                     }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("\(event.title), \(event.time)")
-                    .accessibilityHint("Adds it to your entry as a heading")
-                    if event.id != events.last?.id { Divider() }
+                    .padding(.vertical, 9)
+                    .contentShape(.rect)
                 }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(event.title), \(event.time)")
+                .accessibilityHint("Adds it to your entry as a heading")
+                if event.id != events.last?.id { Divider() }
             }
         }
-        .scrollBounceBehavior(.basedOnSize)
-        // Three show; a busier day scrolls (its scroll bar shows for a moment, to say so).
-        .scrollIndicatorsFlash(onAppear: true)
-        .frame(height: min(CGFloat(events.count), 3) * 38)
     }
 }
 

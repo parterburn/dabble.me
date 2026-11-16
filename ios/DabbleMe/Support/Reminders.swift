@@ -289,9 +289,9 @@ final class ReminderScheduler {
         return plan
     }
 
-    /// "On This Day · 3 years ago", "Rewind · 2 months + 1 week ago": as of the day it shows.
+    /// "On This Day · 3 years ago", "Rewind · 2 months ago": as of the day it shows.
     static func label(for memory: ReminderPlan.Day, on iso: String) -> String {
-        let ago = JournalDay(memory.entry.date).flatMap { entry in JournalDay(iso).map { entry.relative(to: $0) } } ?? ""
+        let ago = JournalDay(memory.entry.date).flatMap { entry in JournalDay(iso).map { entry.ago(from: $0) } } ?? ""
         let name = memory.isOnThisDay ? "On This Day" : "Rewind"
         return ago.isEmpty ? name : "\(name) · \(ago)"
     }
@@ -302,7 +302,7 @@ final class ReminderScheduler {
             return memory.count == 1 ? "You have an entry from this day in past years."
                                      : "You have \(memory.count) entries from this day in past years."
         }
-        let ago = JournalDay(memory.entry.date).flatMap { entry in JournalDay(iso).map { entry.relative(to: $0) } } ?? ""
+        let ago = JournalDay(memory.entry.date).flatMap { entry in JournalDay(iso).map { entry.ago(from: $0) } } ?? ""
         return ago.isEmpty ? "You have an entry to look back on." : "You have an entry from \(ago.prefix(1).lowercased() + ago.dropFirst())."
     }
 

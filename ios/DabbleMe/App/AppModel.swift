@@ -554,7 +554,7 @@ final class AppModel {
     func dateLine(for day: JournalDay?, fallback: String) -> String {
         guard let day else { return fallback }
         let today = today?.day ?? JournalDay(localDate: .now)
-        return "\(day.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year())) · \(day.relative(to: today))"
+        return "\(day.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year())) · \(day.ago(from: today))"
     }
 
     /// An on-device Apple Intelligence reflection on an entry (PRO). Only the entry itself: with other
@@ -562,7 +562,7 @@ final class AppModel {
     func reflection(on entry: EntryDetail) async throws -> EntryReflection {
         let today = today?.day ?? JournalDay(localDate: .now)
         let text = try await JournalIntelligence.reflection(on: entry.bodyText, date: entry.day?.long ?? entry.date,
-                                                            ago: entry.day?.relative(to: today) ?? "",
+                                                            ago: entry.day?.ago(from: today) ?? "",
                                                             today: today.long, firstName: me?.firstName, recent: [])
         return EntryReflection(date: entry.day?.long ?? entry.date, text: text)
     }

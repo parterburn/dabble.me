@@ -5,6 +5,9 @@ import SwiftUI
 /// symbol fades in below it. Tap the symbol to try again after a cancel.
 struct LockScreen: View {
     @Environment(AppModel.self) private var model
+    /// Unlocked, and only holding the wordmark where it is until the app is ready behind it:
+    /// no Face ID symbol, nothing to tap.
+    var isHeld = false
     @State private var showsUnlock = false
 
     var body: some View {
@@ -21,8 +24,10 @@ struct LockScreen: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Unlock with \(model.lock.methodName)")
-                .opacity(showsUnlock ? 1 : 0)
+                .opacity(showsUnlock && !isHeld ? 1 : 0)
                 .offset(y: 120)
+                .allowsHitTesting(!isHeld)
+                .accessibilityHidden(isHeld)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .background(Color("Paper").ignoresSafeArea())
@@ -36,7 +41,7 @@ struct LockScreen: View {
                 for _ in 0..<40 where UIApplication.shared.applicationState != .active {
                     try? await Task.sleep(for: .milliseconds(50))
                 }
-                await model.lock.authenticate()
+                if model.lock.isLocked { await model.lock.authenticate() }
             }
     }
 
