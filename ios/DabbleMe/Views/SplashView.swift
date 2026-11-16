@@ -29,7 +29,7 @@ struct SplashView: View {
     private func play() async {
         // The wordmark types itself; then a beat with it whole before the app appears. Short:
         // this is the least anyone waits at launch, however fast the journal loads.
-        let typing = reduceMotion ? 0 : Wordmark.typingDuration
+        let typing = reduceMotion ? 0 : Wordmark.typingDuration()
         try? await Task.sleep(for: .milliseconds(typing + (reduceMotion ? 400 : 250)))
         minimumShown = true
         // Never hold the app back for long.

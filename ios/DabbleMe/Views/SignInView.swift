@@ -41,6 +41,7 @@ struct Wordmark: View {
     var size: CGFloat = 64
     var typesOut = false
     var showsCursor = false
+    var pace = Pace.quick
     /// How many letters are typed so far (nil: all of them, nothing being typed).
     @State private var typed: Int?
     @State private var cursorOn = true
@@ -48,23 +49,38 @@ struct Wordmark: View {
 
     /// One that types itself out starts with nothing written, from its first frame (not written
     /// out in full for a moment first).
-    init(size: CGFloat = 64, typesOut: Bool = false, showsCursor: Bool = false) {
+    init(size: CGFloat = 64, typesOut: Bool = false, showsCursor: Bool = false, pace: Pace = .quick) {
         self.size = size
         self.typesOut = typesOut
         self.showsCursor = showsCursor
+        self.pace = pace
         _typed = State(initialValue: typesOut ? 0 : nil)
     }
 
     static let letters = Array("Dabble me.")
 
-    /// A pause, then a little unevenly, like someone typing, with a beat before the period.
-    /// Quick (about 0.6 seconds in all): the splash and the Face ID lock both wait on it.
-    private static let leadIn = 100
-    private static let pauses: [Int] = (1...letters.count).map { index in
-        index == letters.count - 1 ? 110 : 32 + (index * 37) % 28
+    /// How fast it types. Quick (about 0.6 seconds in all) where something waits on it, as the
+    /// app does on the splash; unhurried (about 1.1) where nothing does, as on Today.
+    enum Pace {
+        case quick, unhurried
+
+        /// The pause before the first letter, in milliseconds.
+        var leadIn: Int { self == .quick ? 100 : 200 }
+
+        /// After each letter: a little unevenly, like someone typing, with a beat before the period.
+        var pauses: [Int] {
+            (1...Wordmark.letters.count).map { index in
+                let beforePeriod = index == Wordmark.letters.count - 1
+                switch self {
+                case .quick: return beforePeriod ? 110 : 32 + (index * 37) % 28
+                case .unhurried: return beforePeriod ? 180 : 55 + (index * 37) % 45
+                }
+            }
+        }
     }
+
     /// How long typing it out takes, in milliseconds.
-    static let typingDuration = leadIn + pauses.reduce(0, +)
+    static func typingDuration(_ pace: Pace = .quick) -> Int { pace.leadIn + pace.pauses.reduce(0, +) }
 
     var body: some View {
         line(Self.letters.count)
@@ -75,8 +91,8 @@ struct Wordmark: View {
             .task {
                 // Once: not again each time it comes back into view (scrolled to, a tab returned to).
                 guard typesOut, !reduceMotion, typed == 0 else { return }
-                try? await Task.sleep(for: .milliseconds(Self.leadIn))
-                for (index, pause) in Self.pauses.enumerated() {
+                try? await Task.sleep(for: .milliseconds(pace.leadIn))
+                for (index, pause) in pace.pauses.enumerated() {
                     typed = index + 1
                     try? await Task.sleep(for: .milliseconds(pause))
                 }
