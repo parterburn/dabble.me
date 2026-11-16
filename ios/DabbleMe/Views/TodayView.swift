@@ -54,6 +54,7 @@ struct TodayView: View {
                                 entryCountButton(count)
                             }
                         }
+                        .id(TodayFocus.top.anchor)
                         .plainRow()
                         // Today's date titles the day's section. No year: it's always today.
                         // Once today's written, a pencil at the far right edits it (PRO).
@@ -213,7 +214,7 @@ struct TodayView: View {
         // Once the list has its rows (the app may be starting up, or coming to this tab).
         try? await Task.sleep(for: .milliseconds(350))
         // An entry a little down from the top, so its date (pinned above it) has room.
-        let anchor: UnitPoint = focus == .lookBack ? .top : UnitPoint(x: 0.5, y: 0.2)
+        let anchor: UnitPoint = if case .entry = focus { UnitPoint(x: 0.5, y: 0.2) } else { .top }
         withAnimation(reduceMotion ? nil : .snappy(duration: 0.35)) { proxy.scrollTo(focus.anchor, anchor: anchor) }
     }
 
@@ -222,7 +223,7 @@ struct TodayView: View {
     private func lists(_ focus: TodayFocus) -> Bool {
         guard let today = model.today else { return false }
         switch focus {
-        case .lookBack: return true
+        case .top, .lookBack: return true
         case .entry(let id):
             if today.onThisDay.contains(where: { $0.id == id }) { return true }
             return today.onThisDayAvailable && today.onThisDay.isEmpty && today.throwback?.id == id

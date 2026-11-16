@@ -150,11 +150,11 @@ struct WidgetContentTests {
         #expect(entry().detailURL == WidgetSnapshot.todayURL)
     }
 
-    /// And the app reads those links back (not Today's own, or an older widget's).
+    /// And the app reads those links back (not an older widget's).
     @Test func readsTheWidgetsLinks() throws {
         #expect(TodayFocus(WidgetSnapshot.todayEntryURL(7)) == .entry(7))
         #expect(TodayFocus(WidgetSnapshot.todayLookBackURL) == .lookBack)
-        #expect(TodayFocus(WidgetSnapshot.todayURL) == nil)
+        #expect(TodayFocus(WidgetSnapshot.todayURL) == .top)
         for old in ["me.dabble.app:/entry/7", "me.dabble.app:/today/edit", "me.dabble.app:/write", "me.dabble.app:/today/entry/x"] {
             #expect(TodayFocus(try #require(URL(string: old))) == nil)
         }

@@ -39,16 +39,19 @@ enum AppLink: Equatable {
     }
 }
 
-/// What Today scrolls to when the medium widget's right side is tapped: the entry it shows, or
-/// the look back as a whole (On This Day, or the Rewind) when it shows a count or a note.
+/// What Today scrolls to when the widget is tapped: its top (the date side, and today's own
+/// entry or a prompt on the right), the entry the right side shows, or the look back as a whole
+/// (On This Day, or the Rewind) when that's a count or a note.
 enum TodayFocus: Equatable {
+    case top
     case entry(Int)
     case lookBack
 
-    /// me.dabble.app:/today/entry/<id> and :/today/lookback (`WidgetSnapshot`'s links).
+    /// me.dabble.app:/today, :/today/entry/<id> and :/today/lookback (`WidgetSnapshot`'s links).
     init?(_ url: URL) {
         let parts = url.path.split(separator: "/").map(String.init)
         switch parts {
+        case ["today"]: self = .top
         case ["today", "lookback"]: self = .lookBack
         case let entry where entry.count == 3 && entry[0] == "today" && entry[1] == "entry":
             guard let id = Int(entry[2]) else { return nil }
@@ -60,6 +63,7 @@ enum TodayFocus: Equatable {
     /// The row's id in Today's list.
     var anchor: String {
         switch self {
+        case .top: "today-top"
         case .entry(let id): "today-entry-\(id)"
         case .lookBack: "today-lookback"
         }
