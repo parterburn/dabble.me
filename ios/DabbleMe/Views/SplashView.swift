@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// The launch animation when signed in: "Dabble me." typed onto the page, then the site's blinking
-/// cursor, until the journal is ready (at most a couple of seconds). Signed out, the welcome
+/// cursor, until the journal is ready (about 0.9 seconds at least, 2 at most). Signed out, the welcome
 /// screen types the wordmark itself instead. With Reduce Motion it's the wordmark,
 /// already written. It never takes touches, so nothing waits on it.
 struct SplashView: View {
@@ -27,9 +27,10 @@ struct SplashView: View {
     }
 
     private func play() async {
-        // The wordmark types itself; then the cursor blinks a moment before the app appears.
+        // The wordmark types itself; then a beat with it whole before the app appears. Short:
+        // this is the least anyone waits at launch, however fast the journal loads.
         let typing = reduceMotion ? 0 : Wordmark.typingDuration
-        try? await Task.sleep(for: .milliseconds(typing + (reduceMotion ? 600 : 700)))
+        try? await Task.sleep(for: .milliseconds(typing + (reduceMotion ? 400 : 250)))
         minimumShown = true
         // Never hold the app back for long.
         try? await Task.sleep(for: .milliseconds(1200))

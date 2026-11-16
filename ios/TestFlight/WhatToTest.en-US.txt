@@ -8,3 +8,9 @@ The medium widget's right side now opens the Today tab instead of a single entry
 - The date side and the small widget still open Today at the top.
 
 Check that the text on the widget's right side hasn't changed color.
+
+The launch screen is faster.
+
+- Open the app from closed. "Dabble me." should still type itself out, but in about half the time, and the app should appear under a second after launch on a good connection (it was nearly two).
+- Does the typing still read as typing, or is it now too quick to enjoy?
+- With the Face ID lock on, the Face ID prompt should come sooner too.
