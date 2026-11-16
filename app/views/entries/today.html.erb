@@ -57,6 +57,19 @@
       </div>
     <% end %>
 
+    <% if @years_ago_count.to_i.positive? %>
+      <%# A free account: that they're there, and what shows them. %>
+      <div class="col-md-8 col-md-offset-1 well entry s-on-this-day-pro">
+        <p style="margin: 0 0 8px;">
+          <strong>On This Day</strong>
+        </p>
+        <p style="margin: 0;">
+          You have <%= pluralize(@years_ago_count, "entry") %> from this day in past years.
+          <%= link_to "Dabble Me PRO", subscribe_path %> brings them back to you here each year.
+        </p>
+      </div>
+    <% end %>
+
     <% if current_user.is_pro? && @years_ago_entries.present? %>
       <% @years_ago_entries.each do |_years_back, back_year_entry| %>
         <div class="col-md-8 col-md-offset-1 well entry entry--sticky-header" id="entry-<%= back_year_entry.id %>">

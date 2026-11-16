@@ -333,6 +333,9 @@ final class JournalViewsTests: XCTestCase {
         // A long swipe opens the sheet straight away; a shorter one shows the Actions button.
         if app.buttons["Actions"].waitForExistence(timeout: 2) { app.buttons["Actions"].tap() }
         XCTAssertTrue(app.buttons["Edit"].waitForExistence(timeout: 10))
+        // From a list the sheet starts with Open (the entry in full), above the rest.
+        XCTAssertTrue(app.buttons["Open"].exists)
+        XCTAssertLessThan(app.buttons["Open"].frame.minY, app.buttons["Edit"].frame.minY)
         XCTAssertTrue(app.buttons.matching(identifier: "ActionsSheetTag").matching(NSPredicate(format: "label == %@", "#work")).firstMatch.exists, "The entry's tags are in the Actions sheet")
         snap("timeline-actions-sheet")
         app.buttons["Edit"].tap()
@@ -350,10 +353,15 @@ final class JournalViewsTests: XCTestCase {
             app.buttons["Close"].tap()
         }
 
-        app.openTimelineEntry(row)
+        // Open, from the sheet, is the entry in full.
+        row.swipeLeft()
+        app.buttons["Actions"].tap()
+        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
+        app.buttons["Open"].tap()
         XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.2)).press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.2)))
         XCTAssertTrue(app.buttons["Delete"].waitForExistence(timeout: 5), "Swiping left on the entry shows its actions")
+        XCTAssertFalse(app.buttons["Open"].exists, "It's open already: no Open here")
         snap("entry-swipe-actions")
         app.buttons["Edit"].tap()
         XCTAssertTrue(app.textViews["Entry"].waitForExistence(timeout: 10))
@@ -639,7 +647,7 @@ final class JournalViewsTests: XCTestCase {
         let asked = question.label
         XCTAssertTrue(asked.hasSuffix("?"), "It's a question: \(asked)")
         snap("prompt-row")
-        app.buttons["Insert"].tap()
+        app.staticTexts["AskMeQuestion"].tap() // the row itself puts it in
         XCTAssertTrue((editor.value as? String ?? "").contains(asked), "Add puts the question in the entry")
         app.buttons["Cancel"].tap()
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
@@ -725,13 +733,86 @@ final class JournalViewsTests: XCTestCase {
         pickTimeZone(app, "Mountain")
     }
 
-    /// Settings → Reminders → Past Entries, for push and email notifications alike: on/off, words
-    /// that leave entries out, and entries over a year old.
+    /// Whether a past entry itself shows is each place's own switch, on its own page: the
+    /// email's off (an email stays in an inbox) leaves the push reminder's and the widget's.
+    func testPastEntrySwitchesAreSeparate() throws {
+        let app = launch()
+        tab(app, "Settings").tap()
+        let emailRow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Email'")).firstMatch
+        let pushRow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Push'")).firstMatch
+        let widgetRow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Home Screen Widget'")).firstMatch
+        XCTAssertTrue(emailRow.waitForExistence(timeout: 10))
+        let show = app.switches["Show Past Entry"]
+        func set(_ toggle: XCUIElement, _ on: Bool) {
+            if (toggle.value as? String == "1") != on { toggle.switches.firstMatch.tap() }
+        }
+        // The email's off.
+        emailRow.tap()
+        XCTAssertTrue(show.waitForExistence(timeout: 5))
+        set(show, false)
+        sleep(2)
+        snap("email-show-past-entry")
+        app.buttons["Back"].firstMatch.tap()
+
+        // The push reminder's is its own, and still on.
+        pushRow.tap()
+        let pushSwitch = app.switches["Push Notifications"]
+        XCTAssertTrue(pushSwitch.waitForExistence(timeout: 5))
+        let pushWasOn = pushSwitch.value as? String == "1"
+        if !pushWasOn {
+            pushSwitch.switches.firstMatch.tap()
+            let allow = XCUIApplication(bundleIdentifier: "com.apple.springboard").buttons["Allow"]
+            if allow.waitForExistence(timeout: 3) { allow.tap() }
+        }
+        if show.waitForExistence(timeout: 5) {
+            XCTAssertEqual(show.value as? String, "1", "The push reminder keeps its own")
+            snap("push-show-past-entry")
+        }
+        if !pushWasOn, pushSwitch.value as? String == "1" { pushSwitch.switches.firstMatch.tap() }
+        app.buttons["Back"].firstMatch.tap()
+
+        // And a widget on Rewind still looks back.
+        widgetRow.tap()
+        XCTAssertTrue(app.staticTexts["Rewind"].waitForExistence(timeout: 5))
+        app.staticTexts["Rewind"].tap()
+        let count = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "from this day")).firstMatch
+        XCTAssertTrue(count.waitForExistence(timeout: 10), "Rewind still looks back with the email's past entry off")
+        app.staticTexts["A Prompt for You"].tap() // back to the default
+        app.buttons["Back"].firstMatch.tap()
+
+        // Put the demo account back.
+        emailRow.tap()
+        XCTAssertTrue(show.waitForExistence(timeout: 5))
+        set(show, true)
+        sleep(2)
+    }
+
+    /// Settings → Calendars: the phone's calendars, each with a switch, for the composer's "?".
+    func testCalendarsSettingsListsThePhonesCalendars() throws {
+        let app = launch()
+        tab(app, "Settings").tap()
+        let row = app.buttons["Calendars"]
+        for _ in 0..<4 where !row.exists { app.swipeUp() }
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
+        row.tap()
+        XCTAssertTrue(app.navigationBars["Calendars"].waitForExistence(timeout: 5))
+        let first = app.switches.firstMatch
+        XCTAssertTrue(first.waitForExistence(timeout: 5), "The simulator has a calendar (given access: see the iOS README)")
+        sleep(1)
+        snap("settings-calendars")
+        let was = first.value as? String
+        first.switches.firstMatch.tap()
+        XCTAssertNotEqual(first.value as? String, was)
+        first.switches.firstMatch.tap() // as it was
+    }
+
+    /// Settings → Reminders → Past Entries: the filters push, email and the widget share (words
+    /// that leave entries out, and entries over a year old), there whichever switches are on.
     func testPastEntriesForNotifications() throws {
         let app = launch()
         tab(app, "Settings").tap()
-        // Reminders: Push and Email, each to a page of its own, then Include Past Entries under them.
-        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Include Past Entries'")).firstMatch
+        // Reminders: Push and Email, each to a page of its own, then Past Entry Filters under them.
+        let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Past Entry Filters'")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10))
         let push = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Push'")).firstMatch
         let email = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Email'")).firstMatch
@@ -740,31 +821,26 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertLessThan(email.frame.minY, row.frame.minY, "Under Email")
         snap("settings-reminders")
         row.tap()
-        let include = app.switches["Include Past Entries in Notifications"]
-        XCTAssertTrue(include.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.switches["Include Entries Over a Year Old"].exists, "The demo account has entries over a year old")
+        XCTAssertTrue(app.switches["Use Entries Only From the Past Year"].waitForExistence(timeout: 5), "The demo account has entries over a year old")
         let words = app.textFields["Words, separated by commas"]
         words.tap()
         words.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 12) + "waffles\n")
-        XCTAssertTrue(app.staticTexts["1 entry is left out of past entries."].waitForExistence(timeout: 10))
+        let leftOut = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "1 entry is left out of the past entries in push notifications, emails and the widget.")).firstMatch
+        XCTAssertTrue(leftOut.waitForExistence(timeout: 10))
         snap("past-entries")
-
-        // Off hides the rest (and the row says so); on brings it back, with the words saved.
-        include.switches.firstMatch.tap()
-        XCTAssertTrue(words.waitForNonExistence(timeout: 5))
-        include.switches.firstMatch.tap()
-        XCTAssertTrue(words.waitForExistence(timeout: 5))
         XCTAssertEqual(words.value as? String, "waffles")
+        // (Whether each shows the entry itself is on its own page, not here.)
+        XCTAssertFalse(app.switches["Show Past Entry"].exists)
 
         // Put the demo account back.
         words.tap()
         words.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 12) + "\n")
-        XCTAssertTrue(app.staticTexts["1 entry is left out of past entries."].waitForNonExistence(timeout: 10))
-        // The email's page is its days and time; past entries aren't repeated there.
+        XCTAssertTrue(leftOut.waitForNonExistence(timeout: 10))
+        // The row says what's left out; the email's page has its own switch for showing one.
         app.navigationBars.buttons.element(boundBy: 0).tap()
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Email'")).firstMatch.tap()
         XCTAssertTrue(app.navigationBars["Email Notifications"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.switches["Include a Past Entry"].exists)
+        XCTAssertTrue(app.switches["Show Past Entry"].waitForExistence(timeout: 5))
     }
 
     /// Settings → Manage Hashtags: dated tags, adding one by name, and removing it.
@@ -1322,6 +1398,31 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ENDSWITH %@", year)).firstMatch.exists, "The list is in the year the scrubber says")
     }
 
+    /// Around the new year Today's corner names the Rewind for everyone: with no entries yet it
+    /// leads to what a Rewind takes, and on a free account to the page that says it's part of
+    /// PRO. TEST_RUNNER_DABBLE_EMPTY_TOKEN and _FREE_TOKEN.
+    func testRewindIsNamedForEmptyAndFreeAccounts() throws {
+        let env = ProcessInfo.processInfo.environment
+        guard let empty = env["DABBLE_EMPTY_TOKEN"], let free = env["DABBLE_FREE_TOKEN"] else { throw XCTSkip("Needs the empty and free tokens") }
+        let year = Calendar.current.component(.year, from: .now)
+        for (name, token) in [("empty", empty), ("free", free)] {
+            let app = XCUIApplication()
+            app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", testServer,
+                                   "-DabbleDebugRewindYear", String(year), "-DabbleDebugForgetRewindTap", "YES"]
+            app.launch()
+            let rewind = app.buttons["\(year) Rewind"]
+            XCTAssertTrue(rewind.waitForExistence(timeout: 20), "Named in Today's corner (\(name))")
+            rewind.tap()
+            let said = name == "free"
+                ? app.staticTexts["\(year) Rewind and Stats are PRO features"]
+                : app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Your Rewind will be ready with")).firstMatch
+            XCTAssertTrue(said.waitForExistence(timeout: 15), "Stats says what it takes (\(name))")
+            sleep(1)
+            snap("rewind-stats-\(name)")
+            app.terminate()
+        }
+    }
+
     /// Screenshots, for looking over: each of the Journal's views (and Today and Search) with an
     /// empty journal, and on a free account. TEST_RUNNER_DABBLE_EMPTY_TOKEN and _FREE_TOKEN.
     func testSnapEmptyAndFreeViews() throws {
@@ -1528,8 +1629,8 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
 
-    /// The composer's calendar button lists what was on the phone's calendar that day; a tap on
-    /// one puts it in the entry as a heading to write under.
+    /// The composer's "?" (what to write about) lists what was on the phone's calendar that day
+    /// over its question; a tap on an event puts it in the entry as a heading to write under.
     func testCalendarRowAddsAnEventToTheEntry() throws {
         let app = launch(["-DabbleDebugCalendar", "YES"]) // a made-up day, not the simulator's calendar
         tab(app, "Journal").tap()
@@ -1538,12 +1639,17 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(editor.waitForExistence(timeout: 10))
         editor.tap()
         if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap(); editor.tap() } // a draft from an earlier run
-        app.buttons["Calendar"].tap()
+        XCTAssertFalse(app.buttons["Calendar"].exists, "No button of its own")
+        app.buttons["Prompt"].tap()
         // (Set in capitals, and read that way here.)
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ==[c] %@", "On your calendar")).firstMatch.waitForExistence(timeout: 5))
         let lunch = app.buttons["Lunch with Sam, 12:30 PM"]
         XCTAssertTrue(lunch.waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["Leo's birthday, All day"].exists)
+        // The question's under the events, in a line that's two lines tall before it comes.
+        XCTAssertTrue(app.staticTexts["AskMeQuestion"].waitForExistence(timeout: 60))
+        XCTAssertGreaterThan(app.staticTexts["AskMeQuestion"].frame.minY, lunch.frame.maxY)
+        XCTAssertFalse(app.buttons["Insert"].exists, "The question's row is the button")
         sleep(1)
         snap("compose-calendar-row")
         lunch.tap()
@@ -2028,17 +2134,27 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(write.waitForExistence(timeout: 15), "Today is unwritten again")
     }
 
-    /// Today's corner: the journal's entry count most of the year, and the year's Rewind by name
-    /// around the new year. Either way it opens Stats.
+    /// Today's corner: the last five days as dots for someone who's written in them (Stats says
+    /// what they mean), and the year's Rewind by name around the new year, until it's been
+    /// tapped. Either way it opens Stats.
     func testTodayCornerNamesTheRewindAroundTheNewYear() throws {
         let year = Calendar.current.component(.year, from: .now)
         var app = launch()
-        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label ENDSWITH 'entries'")).firstMatch.waitForExistence(timeout: 15))
+        // (Its label is the journal's count; the dots are what's drawn.)
+        let count = app.buttons.matching(NSPredicate(format: "label ENDSWITH 'entries'")).firstMatch
+        XCTAssertTrue(count.waitForExistence(timeout: 15))
         XCTAssertFalse(app.buttons["\(year) Rewind"].exists)
+        sleep(2) // the last five days come in
+        XCTAssertTrue((count.value as? String)?.hasSuffix("of the last 5 days have entries.") == true, "\(count.value ?? "")")
+        XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label ENDSWITH 'entries'")).firstMatch.exists, "Dots, not the number")
         snap("today-corner-count")
+        count.tap()
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ENDSWITH %@", "of the last 5 days have entries.")).firstMatch.waitForExistence(timeout: 15),
+                      "Stats spells the dots out")
+        snap("stats-last-five-days")
         app.terminate()
 
-        app = launch(["-DabbleDebugRewindYear", String(year)])
+        app = launch(["-DabbleDebugRewindYear", String(year), "-DabbleDebugForgetRewindTap", "YES"])
         let rewind = app.buttons["\(year) Rewind"]
         XCTAssertTrue(rewind.waitForExistence(timeout: 15))
         XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label ENDSWITH 'entries'")).firstMatch.exists)
@@ -2046,6 +2162,10 @@ final class JournalViewsTests: XCTestCase {
         rewind.tap()
         XCTAssertTrue(app.navigationBars.buttons["Stats"].waitForExistence(timeout: 10), "It opens Stats")
         XCTAssertTrue(app.buttons["\(year) Rewind"].waitForExistence(timeout: 15), "With the Rewind at its top")
+        // Tapped once: back on Today the corner's its usual self.
+        tab(app, "Today").tap()
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label ENDSWITH 'entries'")).firstMatch.waitForExistence(timeout: 10))
+        XCTAssertFalse(app.buttons["\(year) Rewind"].exists)
     }
 
     /// Stats offers the year's Rewind in its season: it opens full screen and is tapped through
@@ -2254,7 +2374,8 @@ final class JournalViewsTests: XCTestCase {
         // Stats (from the Journal title's menu): a PRO screen.
         app.navigationBars.buttons["Journal"].tap()
         app.buttons["Stats"].tap()
-        XCTAssertTrue(app.staticTexts["Stats are a PRO feature"].waitForExistence(timeout: 10))
+        // (In the Rewind's season, November to January, the page names it too.)
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ENDSWITH %@ OR label ENDSWITH %@", "Stats are a PRO feature", "Stats are PRO features")).firstMatch.waitForExistence(timeout: 10))
         snap("free-stats")
 
         // Reminders: the daily one is for everyone.
@@ -2266,7 +2387,8 @@ final class JournalViewsTests: XCTestCase {
         snap("free-reminders")
     }
 
-    /// A free account sees Daily Email greyed out with the rest of Reminders. TEST_RUNNER_DABBLE_FREE_TOKEN.
+    /// A free account can open the email's page (on or off, and whether it shows a past entry);
+    /// choosing more days than Sunday stays PRO. TEST_RUNNER_DABBLE_FREE_TOKEN.
     func testEmailScheduleFreeAccount() throws {
         guard let free = ProcessInfo.processInfo.environment["DABBLE_FREE_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_FREE_TOKEN") }
         let app = XCUIApplication()
@@ -2275,7 +2397,12 @@ final class JournalViewsTests: XCTestCase {
         tab(app, "Settings").tap()
         let row = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Email'")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 10))
-        XCTAssertFalse(row.isEnabled)
+        XCTAssertTrue(row.isEnabled)
+        row.tap()
+        XCTAssertTrue(app.navigationBars["Email Notifications"].waitForExistence(timeout: 5))
+        if app.switches["Email Notifications"].value as? String == "1" {
+            XCTAssertTrue(app.switches["Show Past Entry"].waitForExistence(timeout: 5))
+        }
         snap("email-schedule-free")
     }
 

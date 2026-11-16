@@ -63,7 +63,11 @@ module Api
       # GET /api/v1/entries/days — every date with an entry (YYYY-MM-DD, newest first), for the
       # Journal's jump-to-a-day calendar. Dates only.
       def days
-        dates = current_user.entries.unscope(:order).distinct.pluck(Arel.sql("DATE(date)"))
+        entries = current_user.entries.unscope(:order)
+        # `since=2026-10-25`: only the days from then on (the app's row of the last five days).
+        since = Date.iso8601(params[:since].to_s) rescue nil
+        entries = entries.where(date: since.beginning_of_day..) if since
+        dates = entries.distinct.pluck(Arel.sql("DATE(date)"))
         render json: { days: dates.compact.sort.reverse.map(&:iso8601) }
       end
 

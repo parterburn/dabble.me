@@ -53,6 +53,10 @@ You've probably seen the news lately: data breaches keep getting bigger and more
 
 I spent a good part of this year making Dabble Me more private and secure. I updated the systems it runs on, and your entries are now encrypted, which means they're stored in a scrambled form. If anyone ever stole a copy of the database, they couldn't read a word of it.
 
+## 💾 Keep your own copy
+
+You can now [export your whole journal]({{export_url}}): every entry and photo in one download, as a page you can read, plain text, and data. I'd do it once a year as a backup. Your writing is yours, and it should live somewhere you control too.
+
 ## ➕ Other updates
 
 - **A fresh look.** A new logo, a cleaner design, and a site that's easier to find your way around.

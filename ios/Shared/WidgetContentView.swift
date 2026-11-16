@@ -8,6 +8,9 @@ struct WidgetEntry: TimelineEntry {
     let wroteToday: Bool
     /// Entries written so far in `date`'s year.
     let yearCount: Int
+    /// Whether each of the last five days was written, oldest first (today last); nil when
+    /// that isn't known.
+    var lastFiveDays: [Bool]? = nil
     let memories: Int?
     let prompt: String?
     /// With nothing on this day in past years: "You have a memory from 36 days ago."
@@ -79,11 +82,23 @@ VStack(spacing: 0) {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
+    /// Under the date: the last five days, each a small dot that's filled if it was written
+    /// (today's last). Quiet on purpose: what's been written lately, not a count or a streak.
+    /// (An older build's snapshot doesn't say: then whether today's written, in words.)
     @ViewBuilder
     private var status: some View {
-        if entry.wroteToday {
-            // Written already: the check stays, and a tap opens today's entry for editing.
-            WidgetLabel("Edit today", icon: "widget-check")
+        if let days = entry.lastFiveDays {
+            HStack(spacing: 5) {
+                ForEach(Array(days.enumerated()), id: \.offset) { _, written in
+                    Circle()
+                        .fill(written ? AnyShapeStyle(Color.sage) : AnyShapeStyle(Color.primary.opacity(0.12)))
+                        .frame(width: 8, height: 8)
+                }
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(entry.wroteToday ? "Written today" : "Not written today yet")
+        } else if entry.wroteToday {
+            WidgetLabel("Written today", icon: "widget-check")
                 .foregroundStyle(Color.sage)
         } else {
             WidgetLabel("New entry", icon: "widget-write")
@@ -91,11 +106,11 @@ VStack(spacing: 0) {
         }
     }
 
-    /// Two halves, each its own link: the date side writes today's entry (or opens it to add to,
-    /// once it's written), and an entry shown on the right opens that entry to read.
+    /// Two halves, each its own link: the date side opens Today (to write, edit or read, from
+    /// there), and an entry shown on the right opens that entry to read.
     private var medium: some View {
         HStack(alignment: .top, spacing: 16) {
-            Link(destination: entry.wroteToday ? WidgetSnapshot.editTodayURL : WidgetSnapshot.writeURL) {
+            Link(destination: WidgetSnapshot.todayURL) {
                 small
             }
             .frame(maxWidth: 130)

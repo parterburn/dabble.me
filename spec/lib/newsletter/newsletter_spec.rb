@@ -50,6 +50,26 @@ RSpec.describe Newsletter do
     expect(newsletter.recipient?(pro)).to be(true)
   end
 
+  it 'can take in quiet free accounts that have written a few entries' do
+    directory = Pathname(Dir.mktmpdir).join('wide')
+    FileUtils.cp_r(Rails.root.join('spec/fixtures/newsletters/sample'), directory)
+    config = YAML.safe_load_file(directory.join('newsletter.yml'))
+    config['audiences']['free']['or_entries_at_least'] = 5
+    directory.join('newsletter.yml').write(config.to_yaml)
+    wide = described_class.new('wide', directory)
+
+    writer = FactoryBot.create(:user, plan: 'Free', last_sign_in_at: 6.years.ago)
+    5.times { |n| FactoryBot.create(:entry, user: writer, body: 'text', date: 6.years.ago + n.days, created_at: 6.years.ago) }
+    dabbler = FactoryBot.create(:user, plan: 'Free', last_sign_in_at: 6.years.ago)
+    4.times { |n| FactoryBot.create(:entry, user: dabbler, body: 'text', date: 6.years.ago + n.days, created_at: 6.years.ago) }
+    bounced = FactoryBot.create(:user, plan: 'Free', last_sign_in_at: 6.years.ago, emails_bounced: 1)
+    5.times { |n| FactoryBot.create(:entry, user: bounced, body: 'text', date: 6.years.ago + n.days, created_at: 6.years.ago) }
+    recent = FactoryBot.create(:user, plan: 'Free', last_sign_in_at: 1.month.ago)
+
+    expect(wide.audience('free')).to contain_exactly(writer, recent)
+    expect(newsletter.audience('free')).to contain_exactly(recent)
+  end
+
   it 'refuses a newsletter whose variants leave someone without a letter' do
     directory = Pathname(Dir.mktmpdir)
     directory.join('letter.md').write("---\nsubject: Hi\n---\n\nBody\n")
@@ -183,6 +203,7 @@ RSpec.describe Newsletter do
     expect(rewind.letter).not_to be_unfinished
 
     letters.each do |letter|
+      expect(letter.text).to include('export your whole journal (https://test/entries/export)', 'once a year as a backup')
       # No jargon in the words people read; a link's URL can say mcp.
       expect(letter.text.gsub(%r{https?://\S+}, '')).not_to match(/\bbeta\b|MCP|end-to-end/i)
       expect(letter.html).to include('<a href="https://dabble.me/mcp-server">')

@@ -312,13 +312,15 @@ final class EntryActions {
 }
 
 extension View {
-    func entryActionSheets(_ actions: EntryActions) -> some View {
-        modifier(EntryActionSheets(actions: actions))
+    /// `open`: how this list opens an entry in full (the Actions sheet's Open).
+    func entryActionSheets(_ actions: EntryActions, open: @escaping (Int) -> Void) -> some View {
+        modifier(EntryActionSheets(actions: actions, open: open))
     }
 }
 
 private struct EntryActionSheets: ViewModifier {
     @Bindable var actions: EntryActions
+    let open: (Int) -> Void
     @Environment(AppModel.self) private var model
     @Environment(\.openURL) private var openURL
 
@@ -331,11 +333,13 @@ private struct EntryActionSheets: ViewModifier {
                 ReflectionSheet(reflection: reflection)
             }
             .sheet(item: $actions.sheet) { entry in
-                EntryActionsSheet(entry: entry, canReflect: JournalIntelligence.isEnabled(for: model.me) && !entry.bodyText.isEmpty,
+                EntryActionsSheet(entry: entry, canOpen: true,
+                                  canReflect: JournalIntelligence.isEnabled(for: model.me) && !entry.bodyText.isEmpty,
                                   canEdit: model.me?.canEdit == true,
                                   canDelete: model.me?.mayDelete == true) { action in
                     actions.sheet = nil
                     switch action {
+                    case .open: open(entry.id)
                     case .reflect: Task { await actions.reflect(on: entry.id, model: model) }
                     case .edit: if entry.document != nil { actions.editing = entry } else { openURL(entry.webEditURL) }
                     case .delete: Task { await actions.delete(entry, model: model) }

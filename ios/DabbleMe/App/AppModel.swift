@@ -12,6 +12,24 @@ final class AppModel {
 
     /// Selected tab, and a search another screen asked for (e.g. tapping a #hashtag).
     var selectedTab: Tab = .today
+    /// Bumped when what the widget shows is chosen (it's kept in the shared settings, which
+    /// views can't watch): Settings' rows that say what it is are drawn again.
+    var widgetChoiceChanges = 0
+    /// The days written in the past few weeks (YYYY-MM-DD), once fetched: for the row of the
+    /// last five days on Today, in Stats and on the widget.
+    var recentWrittenDays: [String]?
+
+    /// Whether each of the last five days was written, oldest first (today's last, by what
+    /// Today says of it): five dots, never a count. Nil until the days are known.
+    var lastFiveDays: [Bool]? {
+        guard let recentWrittenDays, let today, let day = today.day else { return nil }
+        let written = Set(recentWrittenDays)
+        return (0..<5).reversed().map { back in
+            guard back > 0 else { return today.entry != nil }
+            guard let date = Calendar.current.date(byAdding: .day, value: -back, to: day.localDate) else { return false }
+            return written.contains(JournalDay(localDate: date).iso)
+        }
+    }
     var searchRequest: String?
     /// Set when a writing reminder is tapped; Today opens the composer.
     var composeRequest = false
@@ -183,7 +201,9 @@ final class AppModel {
     private func clearJournalCopies() {
         ReminderScheduler.shared.removeAll()
         WidgetSync.clear()
-        for key in ["ai.prompt.day", "ai.prompt.text", "ai.stats.key", "ai.stats.text"] {
+        // (And that this account opened its Rewind from Today, and what its push reminder shows.)
+        for key in ["ai.prompt.day", "ai.prompt.text", "ai.stats.key", "ai.stats.text", "today.rewindTapped",
+                    ReminderSettings.includesPastEntryKey] {
             UserDefaults.standard.removeObject(forKey: key)
         }
     }
@@ -192,6 +212,7 @@ final class AppModel {
         isSignedIn = false
         me = nil
         today = nil
+        recentWrittenDays = nil
         months = []
         monthEntries = [:]
         loadingMonths = []
@@ -367,9 +388,10 @@ final class AppModel {
     }
 
     /// Every day with an entry (YYYY-MM-DD), for the Journal's jump-to-a-day calendar.
-    func entryDays() async throws -> [String] {
+    func entryDays(since: String? = nil) async throws -> [String] {
         struct DayList: Decodable { let days: [String] }
-        let list: DayList = try await api.get("api/v1/entries/days")
+        // `since` (YYYY-MM-DD): only the days from then on. (An older server sends them all.)
+        let list: DayList = try await api.get("api/v1/entries/days", query: since.map { ["since": $0] } ?? [:])
         return list.days
     }
 

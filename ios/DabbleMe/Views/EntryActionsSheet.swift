@@ -1,13 +1,15 @@
 import SwiftUI
 
 /// An entry's actions in a sheet from the bottom (swipe left → Actions in a list, or swipe left on
-/// the entry itself): Reflect, Edit, Delete, and its #tags. Dated tags show how long it had been on
+/// the entry itself): Open (from a list: the entry in full), Reflect, Edit, Delete, and its #tags. Dated tags show how long it had been on
 /// that day ("3 years and 4 months since entry") without opening the entry. Delete confirms right
 /// in its button: tap, then hold it until it fills.
 struct EntryActionsSheet: View {
-    enum Action { case reflect, edit, delete, web, search(String) }
+    enum Action { case open, reflect, edit, delete, web, search(String) }
 
     let entry: EntryDetail
+    /// From a list: the entry can be opened in full. (Not from the entry's own page.)
+    var canOpen = false
     let canReflect: Bool
     let canEdit: Bool
     /// Free accounts can delete but not edit.
@@ -20,7 +22,7 @@ struct EntryActionsSheet: View {
     }
 
     private var height: CGFloat {
-        let actions = (canReflect ? 1 : 0) + (canEdit ? 1 : 0) + (canDelete ? 1 : 0)
+        let actions = (canOpen ? 1 : 0) + (canReflect ? 1 : 0) + (canEdit ? 1 : 0) + (canDelete ? 1 : 0)
         // Pills wrap, a few to a row; a dated one, with its age beside it, mostly has a row to itself.
         let dated = tags.count(where: { $0.age != nil })
         let pillRows = CGFloat(dated + (tags.count - dated + 2) / 3) * 44
@@ -34,6 +36,9 @@ struct EntryActionsSheet: View {
                     .font(.subheadline.weight(.semibold))
                     .foregroundStyle(.secondary)
                     .padding(.bottom, 4)
+                if canOpen {
+                    row("Open", "slab-expand", .open)
+                }
                 if canReflect {
                     row("Reflection", "slab-sparkles", .reflect)
                 }

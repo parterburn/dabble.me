@@ -14,9 +14,13 @@ struct DabbleMeApp: App {
         if let token = UserDefaults.standard.string(forKey: "DabbleDebugAccessToken"), !token.isEmpty {
             KeychainStore.save(OAuthTokens(accessToken: token, refreshToken: nil, expiresAt: nil))
         }
+        // -DabbleDebugForgetRewindTap YES: Today's corner names the Rewind again (UI tests).
+        if UserDefaults.standard.bool(forKey: "DabbleDebugForgetRewindTap") { UserDefaults.standard.removeObject(forKey: "today.rewindTapped") }
         // -DabbleDebugSignedOut YES starts signed out (the welcome screens).
         if UserDefaults.standard.bool(forKey: "DabbleDebugSignedOut") { KeychainStore.delete() }
         #endif
+        // A pull to refresh shows the app's own dots (`refreshDots`), not iOS's spinner as well.
+        UIRefreshControl.appearance().tintColor = .clear
         let model = AppModel()
         _model = State(initialValue: model)
         NotificationRouter.shared.model = model
@@ -73,8 +77,8 @@ struct RootView: View {
         }
         .preferredColorScheme(theme.colorScheme)
         .onOpenURL { url in
-            // From the widget: me.dabble.app:/write, :/today, :/today/edit ("Edit today"), or
-            // :/entry/<id> (the entry it shows).
+            // From the widget: me.dabble.app:/today (its date side), or :/entry/<id> (the entry
+            // it shows). :/write and :/today/edit are what older builds' widgets opened.
             // (Sign-in callbacks never get here; the web sign-in session handles them.)
             // A dabble.me link tapped elsewhere on the phone (a universal link). One the app has
             // no page for goes back to the browser; one that arrives signed out, or before the

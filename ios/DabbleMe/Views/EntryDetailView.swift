@@ -23,10 +23,9 @@ struct EntryDetailView: View {
     @State private var swipeOffset: CGFloat = 0
     private let swipeThreshold: CGFloat = 80
     /// Tapping the title switches between the date and how long ago it was (remembered).
-    /// The title says how long ago the entry was, in place of its date: after a few seconds on
-    /// each entry or its first scroll, and whenever the date's tapped (which then leaves it as chosen).
+    /// The title says how long ago the entry was, in place of its date: while the page is
+    /// scrolled down (back at the top, it's the date again), and when the date's tapped.
     @State private var showsRelativeDate = false
-    @State private var dateWasTapped = false
     /// The floating actions are out of the way: while scrolling down through a long entry.
     @State private var actionsHidden = false
     /// How tall the entry's card is, to know when its foot has come into view.
@@ -74,7 +73,8 @@ struct EntryDetailView: View {
                             .offset(x: swipeOffset)
                             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { cardHeight = $0 }
                         if let sameDay, sameDay.count > 0 {
-                            SameDaySection(entry: entry, sameDay: sameDay, reading: reading) { opened = EntryRoute(id: $0) }
+                            SameDaySection(entry: entry, sameDay: sameDay, reading: reading,
+                                           today: model.today?.day ?? JournalDay(localDate: .now)) { opened = EntryRoute(id: $0) }
                         }
                     }
                     .frame(maxWidth: 680)
@@ -100,13 +100,16 @@ struct EntryDetailView: View {
                         hidden = new.offset > old.offset
                     }
                     if hidden != actionsHidden { withAnimation(.snappy(duration: 0.25)) { actionsHidden = hidden } }
-                    // The first scroll turns the title from the date to how long ago it was.
-                    if new.offset > 12, !showsRelativeDate, !dateWasTapped { showsRelativeDate = true }
+                    // Scrolled down, the title says how long ago the entry was; back at the top, its date.
+                    let down = new.offset > 12
+                    if down != (old.offset > 12), down != showsRelativeDate { showsRelativeDate = down }
                 }
                 // Under On This Day, the month of the entry being read stays at the top, as on
                 // Today. It's part of the bar (not a header pinned in the page), so the bar's own
                 // backing runs on under it and the two are one header.
-                .modifier(TopBarExtension { PinnedMonth(reading: reading, entries: sameDay?.entries ?? []) })
+                .modifier(TopBarExtension {
+                    PinnedMonth(reading: reading, entries: sameDay?.entries ?? [], today: model.today?.day ?? JournalDay(localDate: .now))
+                })
                 .navigationDestination(item: $opened) {
                     EntryDetailView(entryID: $0.id)
                         .environment(\.backTrail, trail + [BackStep(title: entry.day?.formatted(.dateTime.month(.abbreviated).day().year()) ?? entry.date) { opened = nil }])
@@ -124,7 +127,7 @@ struct EntryDetailView: View {
                 }
                 .id(entry.id) // each entry starts at its top (the title's swipe steps between them)
                 .overlay(alignment: .trailing) { swipeHint }
-                .overlay(alignment: .bottomTrailing) { floatingActions(for: entry) }
+                .overlay(alignment: .bottom) { floatingActions(for: entry) }
                 .modifier(PullToReflect(action: canReflect(entry) ? { await reflect(on: entry) } : nil))
                 .overlay {
                     if let textSizeHUD {
@@ -185,6 +188,7 @@ struct EntryDetailView: View {
                                   canDelete: model.me?.mayDelete == true) { action in
                     showingActions = false
                     switch action {
+                    case .open: break // it's open
                     case .reflect: Task { await reflect(on: entry) }
                     case .edit: if entry.document != nil { editing = true } else { openURL(entry.webEditURL) }
                     case .delete: Task { await delete() }
@@ -346,6 +350,7 @@ struct EntryDetailView: View {
             sameDay = nil
             reading.headingPassed = false
             reading.passedMonths = []
+            showsRelativeDate = false
             withAnimation(.easeInOut(duration: 0.2)) { entry = other }
         } catch is CancellationError {
         } catch {
@@ -393,13 +398,6 @@ struct EntryDetailView: View {
             .frame(maxWidth: .infinity)
             .contentShape(.rect)
             .onTapGesture { toggleDate() }
-            // The date first, then how long ago that was, on every entry.
-            .task(id: entry.id) {
-                showsRelativeDate = false
-                dateWasTapped = false
-                try? await Task.sleep(for: .seconds(5))
-                if !Task.isCancelled, !dateWasTapped { showsRelativeDate = true }
-            }
             // Held: Jump to a Day's calendar, on this entry's month.
             .onLongPressGesture(minimumDuration: 0.45) {
                 HoldHaptic.play()
@@ -421,22 +419,20 @@ struct EntryDetailView: View {
             .animation(.easeOut(duration: 0.3), value: showsRelativeDate)
     }
 
-    /// Reflect, and the entry before and after, in one group at the bottom right (over the
-    /// song player when there is one): the obvious way to do what a pull down and a swipe on
+    /// The entry before, Reflect and the entry after, in one group at the bottom's middle (over
+    /// the song player when there is one): the obvious way to do what a pull down and a swipe on
     /// the date also do. Without Apple Intelligence it's just the two arrows; an arrow with
     /// nowhere to go is dimmed, so the group keeps its shape.
     private func floatingActions(for entry: EntryDetail) -> some View {
         HStack(spacing: 0) {
+            floatingAction("slab-angle-left", "Previous Entry", isOn: entry.previousEntry != nil) { await step(to: entry.previousEntry) }
             if canReflect(entry) {
                 floatingAction("slab-sparkles", "Reflect on This Entry") { await reflect(on: entry) }
-                Divider().frame(height: 22).padding(.horizontal, 2)
             }
-            floatingAction("slab-angle-left", "Previous Entry", isOn: entry.previousEntry != nil) { await step(to: entry.previousEntry) }
             floatingAction("slab-angle-right", "Next Entry", isOn: entry.nextEntry != nil) { await step(to: entry.nextEntry) }
         }
         .padding(.horizontal, 6)
         .modifier(GlassCapsule())
-        .padding(.trailing, 16)
         .padding(.bottom, 10)
         .opacity(actionsHidden ? 0 : 1)
         .offset(y: actionsHidden ? 24 : 0)
@@ -463,7 +459,6 @@ struct EntryDetailView: View {
     }
 
     private func toggleDate() {
-        dateWasTapped = true
         showsRelativeDate.toggle()
     }
 
@@ -562,14 +557,14 @@ private struct EntryBody: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if hasWriting {
-                // (A little less above: the first line's own height adds to it.)
-                writing.padding([.horizontal, .bottom]).padding(.top, 12)
+                // (A little less above: the first line's own height adds to it. And under it,
+                // before a photo, the gap Today's card has between an entry's words and its photo.)
+                writing.padding(.horizontal).padding(.top, 12).padding(.bottom, hasPhoto ? 10 : 16)
             }
             // Text first: Dabble Me is about the writing; photos follow it.
             if hasPhoto {
                 EntryPhoto(url: entry.imageURL, isProcessing: entry.imageProcessing, day: entry.day, cornerRadius: 0)
                     .frame(maxWidth: .infinity)
-                    .padding(.top, hasWriting ? 4 : 0)
             }
         }
         // An entry with nothing in it is an empty well, not a line where one collapsed.
@@ -614,6 +609,15 @@ private struct SameDaySection: View {
     let sameDay: SameDayEntries
     /// How far down On This Day the page has been read (the bar follows it).
     let reading: ReadingSpot
+    /// Today, by the journal's clock: how long ago each entry was is said from now, as
+    /// everywhere else, not from the open entry.
+    let today: JournalDay
+
+    /// "November 2021 • 5 years ago".
+    static func title(for entry: EntrySummary, today: JournalDay) -> String {
+        guard let day = entry.day else { return entry.date }
+        return "\(day.monthTitle) • \(day.ago(from: today))"
+    }
     let onOpen: (Int) -> Void
 
     /// A month heading's height, in the page and in the bar.
@@ -650,7 +654,7 @@ private struct SameDaySection: View {
         .padding(.horizontal)
         if sameDay.available {
             ForEach(sameDay.entries) { other in
-                MonthHeader(title: other.day?.monthTitle ?? other.date, isDay: true)
+                MonthHeader(title: Self.title(for: other, today: today), isDay: true)
                     .padding(.horizontal)
                     .frame(height: Self.headerHeight)
                     .padding(.top, 8)
@@ -812,10 +816,11 @@ private struct EntryTitle<OnThisDay: View, DateTitle: View>: View {
 private struct PinnedMonth: View {
     let reading: ReadingSpot
     let entries: [EntrySummary]
+    let today: JournalDay
 
     var body: some View {
         if reading.headingPassed, let current = entries.last(where: { reading.passedMonths.contains($0.id) }) {
-            MonthHeader(title: current.day?.monthTitle ?? current.date, isDay: true)
+            MonthHeader(title: SameDaySection.title(for: current, today: today), isDay: true)
                 .padding(.horizontal)
                 .frame(height: SameDaySection.headerHeight)
                 .frame(maxWidth: 680)
@@ -978,8 +983,7 @@ struct ReflectionSheet: View {
                                 .id("bottom")
                         } else {
                             VStack(spacing: 12) {
-                                ProgressView()
-                                    .controlSize(.large)
+                                TypingDots(size: .large)
                                 Text("Generating…")
                                     .font(.headline)
                                     .foregroundStyle(.secondary)
@@ -1074,7 +1078,7 @@ struct ReflectionSheet: View {
                 .buttonBorderShape(.capsule)
             case .working:
                 HStack(spacing: 8) {
-                    ProgressView().controlSize(.small)
+                    TypingDots(size: .small)
                     Text("Summing up…").foregroundStyle(.secondary)
                 }
             case .preview(let text), .saving(let text):

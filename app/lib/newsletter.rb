@@ -59,9 +59,10 @@ class Newsletter
   end
 
   # Everyone on a plan who should get this newsletter: not deleted and still
-  # taking product updates. Free accounts must also have shown some life
-  # lately and never bounced, since mail to dead addresses is what gets a
-  # sender blocked.
+  # taking product updates. Free accounts must also never have bounced, and
+  # have shown some life lately (`active_within_months`) or have written a
+  # few entries ever (`or_entries_at_least`), since mail to dead addresses is
+  # what gets a sender blocked.
   def audience(plan)
     raise Error, "#{key} does not go to #{plan} accounts" unless plans.include?(plan)
 
@@ -70,7 +71,11 @@ class Newsletter
 
     scope = scope.where("plan IS NULL OR plan NOT ILIKE '%pro%'").where(emails_bounced: [0, nil])
     months = @audiences.dig("free", "active_within_months")
-    months ? active_since(scope, months.to_i.months.ago) : scope
+    return scope unless months
+
+    active = active_since(scope, months.to_i.months.ago)
+    entries = @audiences.dig("free", "or_entries_at_least")
+    entries ? active.or(scope.where(id: writers_of(entries.to_i))) : active
   end
 
   def recipient?(user)
@@ -121,6 +126,7 @@ class Newsletter
       "rewind_url" => "https://#{host}/rewind/#{year}",
       "write_url" => "https://#{host}/write",
       "subscribe_url" => "https://#{host}/subscribe",
+      "export_url" => "https://#{host}/entries/export",
       "settings_url" => "https://#{host}/settings?token=#{CGI.escape(user.email_settings_token)}"
     }
   end
@@ -135,6 +141,11 @@ class Newsletter
   def active_since(scope, time)
     writers = Entry.unscoped.where(created_at: time..).select(:user_id)
     scope.where("users.current_sign_in_at >= :time OR users.last_sign_in_at >= :time OR users.id IN (#{writers.to_sql})", time: time)
+  end
+
+  # Whoever has written at least this many entries, whenever that was.
+  def writers_of(count)
+    Entry.unscoped.group(:user_id).having("COUNT(*) >= ?", count).select(:user_id)
   end
 
   def check!
