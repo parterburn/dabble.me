@@ -66,7 +66,9 @@ final class Dictation {
     }
 
     /// Starts listening. Each stretch that's settled (about a sentence) goes to `insert`.
-    func start(insert: @escaping @MainActor (String) -> Void) {
+    /// `canListen` is asked once it's ready (the model can take a while to come down the first
+    /// time): if the writer has put the keyboard away by then, the microphone isn't turned on.
+    func start(canListen: @escaping @MainActor () -> Bool = { true }, insert: @escaping @MainActor (String) -> Void) {
         guard state == .idle else { return }
         problem = nil
         hearing = ""
@@ -76,7 +78,7 @@ final class Dictation {
                 if Self.isDebugFake {
                     try await pretend(insert)
                 } else if #available(iOS 26.0, *) {
-                    try await listen(insert)
+                    try await listen(insert, canListen: canListen)
                 }
             } catch is CancellationError {
             } catch let problem as Problem {
@@ -119,12 +121,13 @@ final class Dictation {
     func clearProblem() { problem = nil }
 
     @available(iOS 26.0, *)
-    private func listen(_ insert: @escaping @MainActor (String) -> Void) async throws {
+    private func listen(_ insert: @escaping @MainActor (String) -> Void, canListen: @MainActor () -> Bool) async throws {
         guard await AVAudioApplication.requestRecordPermission() else { throw Problem.microphoneDenied }
         guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: .current) else { throw Problem.language }
         let transcriber = SpeechTranscriber(locale: locale, transcriptionOptions: [], reportingOptions: [.volatileResults], attributeOptions: [])
         try await install(transcriber)
         try Task.checkCancellation()
+        guard canListen() else { throw CancellationError() }
 
         let analyzer = SpeechAnalyzer(modules: [transcriber])
         guard let format = await SpeechAnalyzer.bestAvailableAudioFormat(compatibleWith: [transcriber]) else { throw Problem.unavailable }

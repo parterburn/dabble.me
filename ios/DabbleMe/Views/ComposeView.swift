@@ -203,8 +203,7 @@ struct ComposeView: View {
                             .accessibilityLabel("Saving")
                             .padding(.horizontal, 8)
                     } else {
-                        // Whatever's still being heard goes in first.
-                        Button("Save") { Task { await dictation.finish(); await save() } }
+                        Button("Save") { Task { await save() } }
                             .disabled(!canSave)
                     }
                 }
@@ -522,7 +521,7 @@ struct ComposeView: View {
                 showsAskRow = false
                 showsPhotoDrawer = false
                 editor.endLink()
-                dictation.start { editor.insertDictated($0) }
+                dictation.start(canListen: { editor.isFocused }) { editor.insertDictated($0) }
             }
         } label: {
             appIcon("slab-microphone")
@@ -1098,8 +1097,12 @@ struct ComposeView: View {
     }
 
     private func save(merging: Bool = false) async {
+        // (Not twice: a second tap while the first is still at work.)
+        guard !isSaving else { return }
         isSaving = true
         defer { isSaving = false }
+        // Whatever's still being heard goes in first.
+        await dictation.finish()
         do {
             switch mode {
             case .new:
