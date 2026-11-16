@@ -120,6 +120,7 @@ struct RootView: View {
                 model.openPendingLink()
             }
         }
+        .onReceive(NotificationCenter.default.publisher(for: NewEntryRequest.notification)) { _ in openRequestedNewEntry() }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .background:
@@ -127,6 +128,13 @@ struct RootView: View {
                 if model.isSignedIn { BackgroundRefresh.schedule() }
             case .active:
                 model.lock.willEnterForeground()
+                // The New Entry control (or shortcut) brought the app forward. Looked for again
+                // in a moment: its word can arrive just after the app does.
+                openRequestedNewEntry()
+                Task {
+                    try? await Task.sleep(for: .milliseconds(700))
+                    openRequestedNewEntry()
+                }
                 // Pick up entries that arrived by email while the app was in the background.
                 if model.isSignedIn, model.hasLoaded {
                     Task { await model.refresh() }
@@ -162,6 +170,12 @@ struct RootView: View {
         } else {
             SignInView()
         }
+    }
+
+    /// New Entry, asked for from the control or a shortcut: the composer, by the morning rule
+    /// (kept until the app has signed in and loaded, like a link).
+    private func openRequestedNewEntry() {
+        if NewEntryRequest.take() { model.open(.newEntry) }
     }
 }
 

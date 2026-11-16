@@ -1,3 +1,11 @@
+New: a "New Entry" control.
+
+- Add it: open Control Center, touch and hold an empty spot, Add a Control, and search for Dabble Me. It can also go on the Lock Screen's bottom buttons, and on the Action button (Settings, Action Button, Controls).
+- Tap it. Dabble Me should open with the composer up.
+- Before 10 AM, with yesterday unwritten, the composer should be on yesterday; otherwise on today.
+- Try it with the app closed completely, with it in the background, and with the Face ID lock on.
+- "New Entry" should also be in the Shortcuts app under Dabble Me.
+
 How long ago something was now reads the same everywhere: "2 years + 3 months ago".
 
 - A photo's date band keeps its months: open a photo several years old and not near its anniversary. It should read like "14 years + 3 months ago", not "14 years ago", and the shared image should say the same.
