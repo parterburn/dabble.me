@@ -17,7 +17,9 @@ struct CalendarSettingsView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 8, trailing: 4))
+                    // In from the card's rounded corner, which cut off the first letter, and in
+                    // line with the rows' own text under it.
+                    .listRowInsets(EdgeInsets(top: 10, leading: 20, bottom: 8, trailing: 20))
             }
             switch access {
             case .notAsked:

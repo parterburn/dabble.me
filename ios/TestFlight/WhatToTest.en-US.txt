@@ -1,3 +1,10 @@
+The "?" row while writing is rearranged.
+
+- The prompt is now on top and the day's calendar events are under it. With events, the heading reads "A PROMPT FOR YOU / AGENDA"; without, just "A PROMPT FOR YOU".
+- The whole row scrolls as one piece on a busy day, and its content sits flush under the line above it, with no gap where events get cut off.
+- Open it and watch while the prompt is being written: the events underneath should not jump when the prompt appears. (A prompt longer than three lines can still nudge them.)
+- Settings, Calendars: the "W" of "When you're writing…" should no longer be clipped at the top left.
+
 A prompt or calendar event now goes in where your cursor is, not at the end of the entry.
 
 - Write three paragraphs. Put the cursor in the middle one, tap "?", and tap an event or the prompt. It should appear in bold right under that paragraph, with the cursor on a new line beneath it. The third paragraph should still be below.
