@@ -19,6 +19,9 @@ class SendHourlyEntriesWorker
   )
 
   def perform
+    # No journal prompts once Dabble Me has closed (SiteClosure).
+    return if SiteClosure.closed?
+
     random_inspiration = Inspiration.random
     sent_in_hour = 0
     failed_in_hour = 0

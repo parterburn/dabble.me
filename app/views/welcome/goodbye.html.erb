@@ -1,0 +1,48 @@
+<% closure = site_closure %>
+<% date = ->(day) { day.strftime("%B %-d, %Y") } %>
+<% content_for :title, closure.closed? ? "Dabble Me has closed" : "Dabble Me is closing" %>
+
+<section class="py-12 lg:py-20">
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+    <div class="max-w-2xl mx-auto">
+      <h1 class="font-serif text-4xl sm:text-5xl tracking-tight">
+        <%= closure.closed? ? "Dabble Me has closed" : "Dabble Me is closing" %>
+      </h1>
+
+      <div class="mt-8 space-y-5 text-lg leading-relaxed text-muted">
+        <% if closure.closed? %>
+          <p>Dabble Me closed on <%= date.(closure.closes_on) %>. The journal emails have stopped and the site is closed.</p>
+          <p>
+            <span class="text-primary font-medium">Your journal is still yours.</span>
+            You can sign in and export all of it until <%= date.(closure.deletes_on) %>. After that day every journal is permanently deleted.
+          </p>
+        <% else %>
+          <p>Dabble Me will close on <%= date.(closure.closes_on) %>. From today it isn't taking new accounts or new subscriptions.</p>
+          <p>
+            <span class="text-primary font-medium">If you have a journal here, please export it.</span>
+            Everything keeps working until <%= date.(closure.closes_on) %>. On that day the site and the journal emails stop.
+            You can still sign in to export until <%= date.(closure.deletes_on) %>, and after that day every journal is permanently deleted.
+          </p>
+        <% end %>
+
+        <p>
+          <a href="<%= export_entries_path %>" class="inline-flex items-center justify-center rounded-lg bg-olive-900 px-6 py-3 text-base font-medium text-white hover:bg-olive-800 transition-colors">Export your journal</a>
+        </p>
+
+        <p>
+          You'll be asked to sign in. Choose to export everything, and you'll get an email with a link to a ZIP file holding all of your entries and photos.
+          It opens in any web browser and needs no account.
+        </p>
+        <p>
+          If you pay for PRO, you won't be charged again. To have your journal deleted sooner, sign in and delete your account from
+          <a href="<%= edit_user_registration_path %>" class="text-accent hover:text-primary underline">your settings</a>.
+        </p>
+        <p>
+          Questions go to <a href="mailto:hello@<%= ENV['MAIN_DOMAIN'] %>" class="text-accent hover:text-primary underline">hello@<%= ENV['MAIN_DOMAIN'] %></a>.
+          Dabble Me's code stays <a href="https://github.com/parterburn/dabble.me" class="text-accent hover:text-primary underline">open source</a> for anyone who wants to run their own.
+        </p>
+        <p>Thank you for writing here.</p>
+      </div>
+    </div>
+  </div>
+</section>

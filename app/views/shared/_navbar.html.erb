@@ -57,6 +57,9 @@
               <span class="visible-xs-inline-block">Admin</span>
             </a>
             <ul class="dropdown-menu" role="menu">
+              <li class="<%= 'active' if current_page?(admin_closing_path) %>">
+                <%= link_to "Closing", admin_closing_path, title: "Admin Closing" %>
+              </li>
               <li class="<%= 'active' if current_page?(inspirations_path) %>">
                 <%= link_to "Inspirations", inspirations_path, title: "Inspirations" %>
               </li>

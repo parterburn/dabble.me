@@ -139,6 +139,14 @@ Letters to subscribers live in `newsletters/<name>/`: one Markdown `letter.md`, 
 - "Send me a preview" emails the admin alone. Sending to everyone needs the recipient count typed back.
 - `ServiceNoticeJob` queues one `ServiceNoticeDeliveryJob` per person at `ServiceNotice::PER_MINUTE`. `service_notice_deliveries` keeps a retried job from emailing anyone twice, and the page shows how many of each notice have gone out.
 
+### Closing the service
+
+`/admin/closing` (`AdminController#closing`) is the switch for shutting Dabble Me down. An admin picks a closing date and types `CLOSE`; that writes the one `SiteClosure` row. The date can be moved, and "Call off the closing" deletes the row and puts everything back.
+
+- **From the announcement:** `refuse_when_closing` sends sign-up (`RegistrationsController#new`/`#create`), `PaymentsController#checkout` and `/subscribe` to `/goodbye`. Both layouts show a banner with the date (`shared/_closing_banner`, `shared/_marketing_closing_banner`), and the marketing navbar's "Get started" becomes "Export your journal".
+- **From the closing date:** `ApplicationController#show_goodbye_when_closed` redirects the marketing pages and the journal (`PAGES_CLOSED_WITH_THE_SITE`) to `/goodbye`, and `SendHourlyEntriesWorker` sends nothing. Sign-in, exports, account settings, `/privacy`, `/terms` and the admin pages keep working, and admins still see the journal. The API, MCP and inbound email are left alone.
+- It emails nobody (send a service notice), cancels no Stripe subscriptions and deletes no data. The pages tell people journals are deleted `SiteClosure::DELETION_DELAY` (30 days) after the closing date; that is done by hand.
+
 ### iOS app
 
 SwiftUI app in `ios/` (see `ios/README.md`). Generate the project with `cd ios && xcodegen generate`; `DabbleMe.xcodeproj` is gitignored. It talks to `/api/v1` (`app/controllers/api/v1/`) with Doorkeeper tokens from the first-party `MobileApp` client, which `db:migrate` / `db:seed` register. The API specs are in `spec/requests/api_v1_spec.rb`.

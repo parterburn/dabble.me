@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_16_000000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_16_010000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -244,6 +244,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_16_000000) do
     t.date "sent_on", null: false
     t.datetime "created_at", null: false
     t.index ["sent_on"], name: "index_service_notices_on_sent_on", unique: true
+  end
+
+  create_table "site_closures", force: :cascade do |t|
+    t.date "closes_on", null: false
+    t.bigint "announced_by_id"
+    t.boolean "singleton", default: true, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["singleton"], name: "index_site_closures_on_singleton", unique: true
   end
 
   create_table "users", id: :serial, force: :cascade do |t|

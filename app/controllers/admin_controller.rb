@@ -99,6 +99,36 @@ class AdminController < ApplicationController
     redirect_to edit_admin_user_path(user), notice: "Upgrade email sent to #{user.email}."
   end
 
+  # Where an admin announces that Dabble Me is closing, moves the date, or
+  # calls it off (SiteClosure).
+  def closing
+    @closure = site_closure || SiteClosure.new(closes_on: Date.current + 90)
+  end
+
+  def announce_closing
+    @closure = site_closure || SiteClosure.new
+    @closure.closes_on = begin
+      Date.iso8601(params[:closes_on].to_s)
+    rescue Date::Error
+      nil
+    end
+    if params[:confirm].to_s.strip != SiteClosure::CONFIRMATION
+      @closure.validate
+      @closure.errors.add(:base, "Type #{SiteClosure::CONFIRMATION} to confirm.")
+      return render(:closing, status: :unprocessable_entity)
+    end
+
+    @closure = SiteClosure.announce(closes_on: @closure.closes_on, announced_by: current_user)
+    return render(:closing, status: :unprocessable_entity) if @closure.errors.any?
+
+    redirect_to admin_closing_path, notice: "Dabble Me now closes on #{@closure.closes_on.strftime('%B %-d, %Y')}."
+  end
+
+  def cancel_closing
+    SiteClosure.reopen!
+    redirect_to admin_closing_path, notice: "The closing is called off. Dabble Me is open again."
+  end
+
   # The one email that goes to everyone with a journal (ServiceNotice): a
   # reminder to export it, under an optional message typed here.
   def notices

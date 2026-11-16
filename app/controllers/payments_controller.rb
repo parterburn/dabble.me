@@ -5,6 +5,8 @@ class PaymentsController < ApplicationController
   skip_before_action :authenticate_user!, only: [:payment_notify]
   skip_before_action :authenticate_admin!, only: [:success, :checkout, :billing, :payment_notify]
   skip_before_action :verify_authenticity_token, only: [:success, :checkout, :billing, :payment_notify]
+  # No new subscriptions once a closing is announced. Billing and webhooks carry on.
+  before_action :refuse_when_closing, only: [:checkout]
 
   def index
     payments = Payment.all

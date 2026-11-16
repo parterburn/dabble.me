@@ -86,6 +86,9 @@ Rails.application.routes.draw do
       get 'admin/stats' => 'admin#stats', as: 'admin_stats'
       post 'admin/stats/capture' => 'admin#capture_stats', as: 'capture_admin_stats'
       get 'admin/photos' => 'admin#photos', as: 'admin_photos'
+      get 'admin/closing' => 'admin#closing', as: 'admin_closing'
+      post 'admin/closing' => 'admin#announce_closing'
+      delete 'admin/closing' => 'admin#cancel_closing'
       get 'admin/notices' => 'admin#notices', as: 'admin_notices'
       post 'admin/notices' => 'admin#create_notice'
       post 'admin/notices/preview' => 'admin#preview_notice', as: 'preview_admin_notice'
@@ -154,6 +157,7 @@ Rails.application.routes.draw do
   get 'play',                           to: redirect('/entries/songs')
   get 'search',                         to: 'searches#show'
   get 'write',                          to: redirect('/entries/new')
+  get 'goodbye',                        to: 'welcome#goodbye'
   get 'privacy',                        to: 'welcome#privacy'
   get 'terms',                          to: 'welcome#terms'
   get 'support',                        to: 'welcome#support'
