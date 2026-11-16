@@ -1,7 +1,7 @@
 import Foundation
 
 /// A dabble.me page the app opens itself when its link is tapped (a universal link): the Journal,
-/// Today, a new entry, a day's entry, or Rewind (which the app has in Stats). The server lists the same pages for iOS
+/// Today, a new entry, a day's entry, Search, or Rewind (which the app has in Stats). The server lists the same pages for iOS
 /// (`MobileApp::LINK_PATHS`, served at /.well-known/apple-app-site-association).
 enum AppLink: Equatable {
     case journal, today, newEntry
@@ -9,6 +9,9 @@ enum AppLink: Equatable {
     case stats
     /// https://dabble.me/entries/2026/11/13
     case day(JournalDay)
+    /// https://dabble.me/search, and with what the web's own search links carry
+    /// (?search[term]=hiking): the Search tab, with that searched for.
+    case search(String?)
 
     init?(_ url: URL) {
         guard url.scheme == "https", let host = url.host()?.lowercased(), host == "dabble.me" || host == "www.dabble.me" else { return nil }
@@ -17,6 +20,11 @@ enum AppLink: Equatable {
         case ["entries"]: self = .journal
         case ["today"]: self = .today
         case ["write"], ["entries", "new"]: self = .newEntry
+        case ["search"]:
+            let term = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems?
+                .first { $0.name == "search[term]" || $0.name == "term" || $0.name == "q" }?.value?
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            self = .search(term?.isEmpty == false ? term : nil)
         case ["rewind"]: self = .stats
         case let rewind where rewind.count == 2 && rewind[0] == "rewind" && Int(rewind[1]) != nil: self = .stats
         default:
@@ -49,6 +57,10 @@ extension AppModel {
         case .stats:
             selectedTab = .journal
             statsRequest += 1
+        case .search(let term):
+            // The tab; with something to look for, that search run in it.
+            if let term { searchRequest = term }
+            selectedTab = .search
         case .day(let day):
             selectedTab = .journal
             Task {
