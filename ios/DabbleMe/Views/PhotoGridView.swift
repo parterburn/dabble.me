@@ -51,8 +51,7 @@ struct PhotoGridView: View {
                 }
             }
         }
-        .refreshDots()
-        .refreshable { await load(reset: true) }
+        .refreshDots { await load(reset: true) }
         .task { if entries.isEmpty { await load(reset: true) } }
         // A photo that was still processing is ready: its square shows it.
         .onChange(of: model.photosFinished) { Task { await refreshNewest() } }

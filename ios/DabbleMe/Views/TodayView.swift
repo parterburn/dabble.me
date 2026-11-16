@@ -83,14 +83,13 @@ struct TodayView: View {
             .environment(\.defaultMinListRowHeight, 1) // rows as tall as their content (the section titles)
             // Pull to reset: collapses expanded entries and reloads today. On the list itself,
             // inside the sheets and entry pages below, so they don't inherit a pull-to-refresh.
-            .refreshable {
+            .refreshDots {
                 withAnimation(.snappy(duration: 0.25)) { expanded = [] }
                 // Long enough to see it happen.
                 async let pause: Void? = try? Task.sleep(for: .milliseconds(600))
                 await model.loadToday()
                 _ = await pause
             }
-            .refreshDots()
             .timelinePinsDates()
             .frame(maxWidth: 680)
             .frame(maxWidth: .infinity)

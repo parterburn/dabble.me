@@ -77,8 +77,8 @@ struct RootView: View {
         }
         .preferredColorScheme(theme.colorScheme)
         .onOpenURL { url in
-            // From the widget: me.dabble.app:/write, :/today, :/today/edit ("Edit today"), or
-            // :/entry/<id> (the entry it shows).
+            // From the widget: me.dabble.app:/today (its date side), or :/entry/<id> (the entry
+            // it shows). :/write and :/today/edit are what older builds' widgets opened.
             // (Sign-in callbacks never get here; the web sign-in session handles them.)
             // A dabble.me link tapped elsewhere on the phone (a universal link). One the app has
             // no page for goes back to the browser; one that arrives signed out, or before the

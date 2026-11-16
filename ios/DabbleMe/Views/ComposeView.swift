@@ -1011,12 +1011,18 @@ private struct CalendarRow: View {
     @Environment(\.openURL) private var openURL
 
     var body: some View {
-        if hidesWhenEmpty, access == .allowed, events?.isEmpty != false {
-            // Nothing to show (yet, or at all): still here to load the day.
-            Color.clear.frame(height: 0).task(id: day) { await load() }
-        } else {
-            section
+        Group {
+            // With a question under it there's no need to say there's nothing here: a day
+            // with nothing on it, or a calendar that isn't allowed, shows nothing. (That can
+            // be allowed in Settings → Calendars.)
+            if hidesWhenEmpty, access == .denied || (access == .allowed && events?.isEmpty != false) {
+                Color.clear.frame(height: 0)
+            } else {
+                section
+            }
         }
+        // (On the two together: the day's read once, whichever is showing.)
+        .task(id: day) { await load() }
     }
 
     private var section: some View {
@@ -1058,7 +1064,6 @@ private struct CalendarRow: View {
         .padding(.top, 10)
         // A little room before what's under it (the prompt).
         .padding(.bottom, 6)
-        .task(id: day) { await load() }
     }
 
     private func load() async {

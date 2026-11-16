@@ -21,7 +21,11 @@ struct PushReminderView: View {
     #endif
 
     /// Everything that changes what's scheduled.
-    private var settings: String { "\(isOn)|\(time)|\(days)|\(showsPastEntryStored)" }
+    /// Bumped whenever the past-entry switch is set: its first setting can be to the value it
+    /// already stood at by default, which wouldn't otherwise count as a change.
+    @State private var pastEntrySets = 0
+
+    private var settings: String { "\(isOn)|\(time)|\(days)|\(showsPastEntryStored)|\(pastEntrySets)" }
 
     var body: some View {
         Form {
@@ -65,7 +69,12 @@ struct PushReminderView: View {
                 }
                 Section {
                     Toggle("Show Past Entry", isOn: Binding(get: { ReminderSettings.includesPastEntry ?? emailShowsPastEntry },
-                                                            set: { showsPastEntryStored = $0 }))
+                                                            set: { shows in
+                        showsPastEntryStored = shows
+                        // (Written even when it's the default: from here on it's this switch's own.)
+                        UserDefaults.standard.set(shows, forKey: ReminderSettings.includesPastEntryKey)
+                        pastEntrySets += 1
+                    }))
                 } footer: {
                     Text("The notification can show an entry to look back on: its first lines and its photo. With this off it only says how many there are.")
                 }

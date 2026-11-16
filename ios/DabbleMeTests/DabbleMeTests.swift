@@ -523,13 +523,16 @@ struct WidgetSnapshotTests {
         #expect(saved.rewind(on: date(11), calendar: calendar).known == false)
 
         // Planned (the reminders' picks, today's included): the plan says, even when it's "none".
-        saved.rewindPlanned = true
+        saved.plannedThrough = "2026-11-21"
         saved.upcoming = [.init(day: "2026-11-08", memories: 1), .init(day: "2026-11-09", memories: 3)]
         #expect(saved.rewind(on: date(8), calendar: calendar).day?.memories == 1)
         #expect(saved.rewind(on: date(11), calendar: calendar).known && saved.rewind(on: date(11), calendar: calendar).day == nil)
-        // Past entries switched off: nothing planned on any day.
+        // Nothing to look back on: nothing planned on any day it reaches.
         saved.upcoming = nil
         #expect(saved.rewind(on: date(8), calendar: calendar).known && saved.rewind(on: date(8), calendar: calendar).day == nil)
+        // Past where the plan reached (the app not opened in weeks): not known, so the widget
+        // goes by what the snapshot itself says rather than by an empty plan.
+        #expect(saved.rewind(on: date(22), calendar: calendar).known == false)
     }
 
     /// The widget's row of the last five days: each written or not, today's last, and moving on

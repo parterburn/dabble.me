@@ -155,8 +155,7 @@ struct SearchView: View {
             .listStyle(.plain)
             .timelinePinsDates()
             // Pull to reset: collapses expanded results and runs the search again.
-            .refreshDots()
-            .refreshable {
+            .refreshDots {
                 withAnimation(.snappy(duration: 0.25)) { expanded = [] }
                 query = submitted
                 await search(reset: true, keepingResults: true)

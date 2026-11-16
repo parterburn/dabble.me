@@ -333,6 +333,13 @@ class User < ActiveRecord::Base
     @random_entries ||= entries.where.not(id: past_filter_entry_ids)
   end
 
+  # Signed in to the iOS app (a token of its that hasn't been revoked). Its push reminder and
+  # widget look back on past entries too, whatever the email does.
+  def uses_mobile_app?
+    app_id = MobileApp.application_id
+    app_id.present? && Doorkeeper::AccessToken.where(resource_owner_id: id, application_id: app_id, revoked_at: nil).exists?
+  end
+
   def send_devise_notification(notification, *args)
     devise_mailer.send(notification, self, *args).deliver_later
   end

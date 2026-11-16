@@ -173,6 +173,24 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(page.text).to include('Use entries only from the past year')
     end
 
+    it 'puts the choices away with the email box unticked, but not for someone on the iOS app' do
+      6.times { |n| FactoryBot.create(:entry, user: paid_user, body: 'text', date: 2.years.ago + n.days) }
+      sign_in paid_user
+      get :edit
+      hidden_with_emails = 'group-has-[[data-past-entries]:not(:checked)]:hidden'
+      expect(Nokogiri::HTML(response.body).at_css('#user_past_filter').parent['class']).to eq(hidden_with_emails)
+      expect(response.body).not_to include("iOS app's reminders and widget")
+    end
+
+    it 'keeps the choices in view for someone signed in to the iOS app, whose reminders use them' do
+      6.times { |n| FactoryBot.create(:entry, user: paid_user, body: 'text', date: 2.years.ago + n.days) }
+      Doorkeeper::AccessToken.create!(resource_owner_id: paid_user.id, application: MobileApp.ensure_application!, scopes: MobileApp::SCOPE)
+      sign_in paid_user
+      get :edit
+      expect(Nokogiri::HTML(response.body).at_css('#user_past_filter').parent['class'].to_s).to eq('')
+      expect(response.body).to include("These also choose the past entries in the iOS app's reminders and widget.")
+    end
+
     it 'leaves "only the past year" unticked while older entries are on' do
       6.times { |n| FactoryBot.create(:entry, user: paid_user, body: 'text', date: 2.years.ago + n.days) }
       sign_in paid_user

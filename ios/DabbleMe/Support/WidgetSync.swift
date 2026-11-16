@@ -32,7 +32,8 @@ enum WidgetSync {
                 let current = days.filter { $0.day >= today.date }
                 return current.isEmpty ? nil : current
             },
-            rewindPlanned: saved?.rewindPlanned
+            // (A plan worked out on an earlier day still holds for the days it reached.)
+            plannedThrough: saved?.plannedThrough.flatMap { $0 >= today.date ? $0 : nil }
         )
         snapshot.writtenDays = writtenDays(saved?.writtenDays, today: today)
         if snapshot != saved {
@@ -55,19 +56,25 @@ enum WidgetSync {
         return days.sorted()
     }
 
-    /// What the last fetch of the written days was for: fetched again when the journal's changed.
+    /// What the last fetch of the written days was for (fetched again when the journal's
+    /// changed), and the one under way: the widget's updated from several places at once.
     private static var writtenDaysKey: String?
+    private static var writtenDaysFetching: String?
 
     /// The past few weeks' written days, for the widget's row of the last five (kept a while
     /// ahead: the row moves on a day at midnight without the app).
     private static func updateWrittenDays(from model: AppModel) async {
         guard let today = model.today, let account = model.me?.id else { return }
         let key = "\(account)|\(today.date)|\(model.me?.entryCount ?? 0)|\(today.entry?.id ?? 0)"
-        guard key != writtenDaysKey || WidgetSnapshot.load()?.writtenDays == nil || model.recentWrittenDays == nil,
-              let all = try? await model.entryDays(), let day = today.day,
-              let from = Calendar.current.date(byAdding: .day, value: -21, to: day.localDate) else { return }
+        guard key != writtenDaysFetching,
+              key != writtenDaysKey || WidgetSnapshot.load()?.writtenDays == nil || model.recentWrittenDays == nil,
+              let day = today.day, let from = Calendar.current.date(byAdding: .day, value: -21, to: day.localDate) else { return }
         let earliest = WidgetSnapshot.iso(from)
-        let recent = all.filter { $0 >= earliest }.sorted()
+        writtenDaysFetching = key
+        defer { if writtenDaysFetching == key { writtenDaysFetching = nil } }
+        // Three weeks' worth, not the whole journal's.
+        guard let days = try? await model.entryDays(since: earliest) else { return }
+        let recent = days.filter { $0 >= earliest }.sorted()
         guard model.isSignedIn, model.me?.id == account, model.today?.date == today.date else { return }
         // For the app's own rows of them too (Today's corner, Stats).
         model.recentWrittenDays = recent
@@ -100,13 +107,16 @@ enum WidgetSync {
         guard isCurrent() else { return }
         var days: [WidgetSnapshot.Day] = []
         for memory in plan.days where memory.date >= today {
-            guard days.count <= daysAhead, isCurrent() else { break }
+            guard days.count < daysAhead, isCurrent() else { break }
             days.append(await lookBack(memory, withPhoto: days.count < photosAhead))
         }
+        // The plan runs from today for as many days as were asked for.
+        let through = JournalDay(today).flatMap { Calendar.current.date(byAdding: .day, value: daysAhead - 1, to: $0.localDate) }
+            .map { JournalDay(localDate: $0).iso } ?? today
         guard isCurrent(), var snapshot = WidgetSnapshot.load(), snapshot.day == today,
-              snapshot.upcoming ?? [] != days || snapshot.rewindPlanned != true else { return }
+              snapshot.upcoming ?? [] != days || snapshot.plannedThrough != through else { return }
         snapshot.upcoming = days.isEmpty ? nil : days
-        snapshot.rewindPlanned = true
+        snapshot.plannedThrough = through
         snapshot.save()
         removePhotos(except: snapshot.photoNames)
         WidgetCenter.shared.reloadAllTimelines()
@@ -268,7 +278,7 @@ enum WidgetSync {
     static func previewEntry(for content: WidgetContent, model: AppModel) -> WidgetEntry {
         guard let today = model.today else { return .placeholder }
         // Rewind as the widget has it: the day's planned look back.
-        if content.source == .rewind, let saved = WidgetSnapshot.load(), saved.day == today.date, saved.rewindPlanned == true {
+        if content.source == .rewind, let saved = WidgetSnapshot.load(), saved.day == today.date, saved.rewind(on: .now).known {
             let day = saved.upcoming?.first { $0.day == today.date }
             let showsEntry = content == .memoryEntry
             return WidgetEntry(date: .now, signedIn: true, wroteToday: today.entry != nil,

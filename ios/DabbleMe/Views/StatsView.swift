@@ -69,8 +69,7 @@ struct StatsView: View {
                 ProgressView()
             }
         }
-        .refreshDots()
-        .refreshable { await load() }
+        .refreshDots { await load() }
         .task { if stats == nil { await load() } }
         // An entry written for a day picked in the grid: the numbers are counted again after it.
         .onChange(of: model.composingDay == nil) { _, closed in

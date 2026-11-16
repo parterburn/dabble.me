@@ -94,6 +94,15 @@ RSpec.describe EntryMailer do
       expect(html).to include(">1 entry</a> from this day in past years.")
     end
 
+    it "counts only last year's when the account uses entries only from the past year" do
+      create(:entry, user: user, date: Date.new(2025, 11, 8), body: "Limelight Hotel")
+      create(:entry, user: user, date: Date.new(2023, 11, 8), body: "A walk")
+      user.update!(send_past_entry: false, plan: "PRO Forever", way_back_past_entries: false)
+      html, = deliver(nil)
+
+      expect(html).to include(">1 entry</a> from this day in past years.")
+    end
+
     it "tells a newer writer they'll rewind to past entries once they have a few" do
       Entry.where(user: user).where.not(id: past_entries.first(2).map(&:id)).delete_all
       html, text = deliver(nil)

@@ -81,8 +81,7 @@ struct PlaylistView: View {
             if let playing { SongPlayerBar(song: playing, plays: plays) { self.playing = nil } }
         }
         .animation(.snappy(duration: 0.25), value: playing)
-        .refreshDots()
-        .refreshable { await load(reset: true) }
+        .refreshDots { await load(reset: true) }
         .task { if entries.isEmpty { await load(reset: true) } }
     }
 

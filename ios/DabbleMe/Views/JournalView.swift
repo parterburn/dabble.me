@@ -243,8 +243,7 @@ struct JournalView: View {
                             .padding(.top, 21) // as far under the title as the icon is over it
                     }
                 }
-                .refreshDots()
-                .refreshable { await model.refresh() }
+                .refreshDots { await model.refresh() }
             }
         } else {
             timeline
@@ -267,8 +266,7 @@ struct JournalView: View {
             .scrollIndicators(.hidden) // the timeline scrubber replaces the standard indicator
             .timelinePinsDates()
             // Pull to reset: collapses expanded entries and picks up new ones.
-            .refreshDots()
-            .refreshable {
+            .refreshDots {
                 withAnimation(.snappy(duration: 0.25)) { expanded = [] }
                 await model.refresh()
             }

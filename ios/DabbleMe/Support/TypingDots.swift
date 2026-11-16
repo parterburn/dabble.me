@@ -57,32 +57,43 @@ struct TypingDots: View {
 }
 
 extension View {
-    /// A pull to refresh shown with the app's dots instead of iOS's spinner (which the app
-    /// keeps clear: see `DabbleMeApp`). On the scrolling view, beside its `.refreshable`.
-    func refreshDots() -> some View { modifier(RefreshDots()) }
+    /// `.refreshable`, shown with the app's dots instead of iOS's spinner (which the app keeps
+    /// clear: see `DabbleMeApp`): they come in with the pull and keep going until the refresh
+    /// is done. On the scrolling view, in `.refreshable`'s place.
+    func refreshDots(_ action: @escaping @MainActor () async -> Void) -> some View { modifier(RefreshDots(action: action)) }
 }
 
 private struct RefreshDots: ViewModifier {
+    let action: @MainActor () async -> Void
     @State private var pull: CGFloat = 0
+    /// The refresh is under way (the pull's been let go, and may have settled back).
+    @State private var isRefreshing = false
     /// How far a pull goes before letting go refreshes (iOS's own distance, near enough).
     private let threshold: CGFloat = 70
 
     func body(content: Content) -> some View {
         content
+            .refreshable { @MainActor in
+                isRefreshing = true
+                await action()
+                isRefreshing = false
+            }
             .onScrollGeometryChange(for: CGFloat.self) { geometry in
                 -(geometry.contentOffset.y + geometry.contentInsets.top)
             } action: { _, overscroll in
                 pull = max(0, overscroll)
             }
             .overlay(alignment: .top) {
-                if pull > 14 {
-                    TypingDots(size: .regular, progress: min(1, pull / threshold))
-                        .opacity(min(1, (pull - 14) / 24))
-                        // In the middle of the gap the pull opens above the page.
-                        .offset(y: max(2, pull / 2 - 10))
+                if pull > 14 || isRefreshing {
+                    TypingDots(size: .regular, progress: isRefreshing ? nil : min(1, pull / threshold))
+                        .opacity(isRefreshing ? 1 : min(1, (pull - 14) / 24))
+                        // In the middle of the gap the pull opens above the page (or, once the
+                        // page has settled with the refresh still going, of the gap it's left).
+                        .offset(y: max(isRefreshing ? 18 : 2, pull / 2 - 10))
                         .allowsHitTesting(false)
                         .accessibilityHidden(true)
                 }
             }
+            .animation(.easeOut(duration: 0.2), value: isRefreshing)
     }
 }

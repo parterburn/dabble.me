@@ -45,9 +45,11 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     /// The days written lately (YYYY-MM-DD, the past few weeks'), for the row of the last five
     /// days under the date. Optional: snapshots saved by older builds don't have it.
     var writtenDays: [String]? = nil
-    /// `upcoming` has been worked out, `day` included: it, not the fields above, says what a
-    /// Rewind widget shows today. (Not set by older builds, or before the first answer.)
-    var rewindPlanned: Bool? = nil
+    /// The last day `upcoming` was worked out for (YYYY-MM-DD): up to it, `upcoming`, not the
+    /// fields above, says what a Rewind widget shows, a day with nothing in it included. Past
+    /// it (the app not opened for a couple of weeks) nothing's known. Not set by older builds,
+    /// or before the first answer.
+    var plannedThrough: String? = nil
 
     /// One later day's look back: the same things the snapshot holds for its own day.
     struct Day: Codable, Equatable, Sendable {
@@ -70,13 +72,15 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
         }
     }
 
-    /// What a Rewind widget looks back on, on `date`. `known` once the days have been planned
-    /// (then `day` is that day's look back, or nil when there's nothing to look back on), and for a later day that has one; otherwise the snapshot's
-    /// own fields say (its own day, before the plan's come).
+    /// What a Rewind widget looks back on, on `date`. `known` for a day the plan reaches (then
+    /// `day` is that day's look back, or nil when there's nothing to look back on), and for a
+    /// later day that has one; otherwise the snapshot's own fields say (its own day, before
+    /// the plan's come or past where it reached).
     func rewind(on date: Date, calendar: Calendar = .current) -> (known: Bool, day: Day?) {
         let iso = Self.iso(date, calendar: calendar)
         let planned = upcoming?.first { $0.day == iso }
-        return (rewindPlanned == true || (iso != day && planned != nil), planned)
+        let reached = plannedThrough.map { iso >= day && iso <= $0 } ?? false
+        return (reached || (iso != day && planned != nil), planned)
     }
 
     static var defaults: UserDefaults? { UserDefaults(suiteName: appGroup) }
@@ -147,10 +151,7 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     }
 
     /// Links the widget opens (the app's registered URL scheme, shared with OAuth sign-in).
-    static let writeURL = URL(string: "me.dabble.app:/write")!
     static let todayURL = URL(string: "me.dabble.app:/today")!
-    /// Today's entry, open for editing (the widget's "Edit today", once today's written).
-    static let editTodayURL = URL(string: "me.dabble.app:/today/edit")!
     static func entryURL(_ id: Int) -> URL { URL(string: "me.dabble.app:/entry/\(id)")! }
 }
 

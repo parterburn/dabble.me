@@ -197,6 +197,10 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       create(:entry, user: pro_user, date: Time.zone.local(2024, 6, 3, 18), body: "<p>Same day</p>")
       get "/api/v1/entries/days", headers: auth(pro_user)
       expect(json["days"]).to eq(%w[2025-01-02 2024-06-20 2024-06-03])
+
+      # From a date on: the app's row of the last few days needn't be sent the whole journal.
+      get "/api/v1/entries/days", params: { since: "2024-06-10" }, headers: auth(pro_user)
+      expect(json["days"]).to eq(%w[2025-01-02 2024-06-20])
     end
 
     it "lists a random handful of the curated writing prompts" do

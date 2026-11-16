@@ -201,7 +201,9 @@ final class AppModel {
     private func clearJournalCopies() {
         ReminderScheduler.shared.removeAll()
         WidgetSync.clear()
-        for key in ["ai.prompt.day", "ai.prompt.text", "ai.stats.key", "ai.stats.text"] {
+        // (And that this account opened its Rewind from Today, and what its push reminder shows.)
+        for key in ["ai.prompt.day", "ai.prompt.text", "ai.stats.key", "ai.stats.text", "today.rewindTapped",
+                    ReminderSettings.includesPastEntryKey] {
             UserDefaults.standard.removeObject(forKey: key)
         }
     }
@@ -386,9 +388,10 @@ final class AppModel {
     }
 
     /// Every day with an entry (YYYY-MM-DD), for the Journal's jump-to-a-day calendar.
-    func entryDays() async throws -> [String] {
+    func entryDays(since: String? = nil) async throws -> [String] {
         struct DayList: Decodable { let days: [String] }
-        let list: DayList = try await api.get("api/v1/entries/days")
+        // `since` (YYYY-MM-DD): only the days from then on. (An older server sends them all.)
+        let list: DayList = try await api.get("api/v1/entries/days", query: since.map { ["since": $0] } ?? [:])
         return list.days
     }
 

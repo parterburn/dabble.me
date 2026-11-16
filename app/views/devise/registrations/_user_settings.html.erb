@@ -76,7 +76,10 @@
     <% unless from_email_link %>
       <%# Which past entries only matters with them on: unticked, the two choices under it are
           put away (by CSS alone, so they're still sent with the form and keep their values;
-          a browser without :has() just shows them all). %>
+          a browser without :has() just shows them all). Not for someone on the iOS app: its
+          push reminder and widget go by the same two choices whatever the email does. %>
+      <% uses_app = user.uses_mobile_app? %>
+      <% with_emails = uses_app ? "" : "group-has-[[data-past-entries]:not(:checked)]:hidden" %>
       <div class="group mt-5 space-y-5 border-t border-subtle pt-5">
         <%= f.label :send_past_entry, class: "flex cursor-pointer items-start gap-3" do %>
           <%= f.check_box :send_past_entry, class: "checkbox mt-1", data: { past_entries: true } %>
@@ -85,7 +88,7 @@
 
         <%# Words to leave out: once there are a few entries for a past one to be picked from. %>
         <% if user.entries.count > 5 %>
-          <div class="group-has-[[data-past-entries]:not(:checked)]:hidden">
+          <div class="<%= with_emails %>">
             <%= f.label :past_filter, "Leave out past entries that mention", class: "field-label" %>
             <% if user.is_pro? %>
               <%= f.text_field :past_filter, class: "field-input", placeholder: "Comma-separated words" %>
@@ -105,12 +108,15 @@
             (ticked: way_back_past_entries is off): the past entry is then last year's from
             this day, or else one from the past 12 months, never one from further back. %>
         <% if user.is_pro? && user.entries.where("date < (?)", 1.year.ago).any? %>
-          <div class="group-has-[[data-past-entries]:not(:checked)]:hidden">
+          <div class="<%= with_emails %>">
             <%= f.label :way_back_past_entries, class: "flex cursor-pointer items-start gap-3" do %>
               <%= f.check_box :way_back_past_entries, { class: "checkbox mt-1", checked: user.way_back_past_entries == false }, "0", "1" %>
               <span class="text-primary">Use entries only from the past year</span>
             <% end %>
           </div>
+        <% end %>
+        <% if uses_app && user.entries.count > 5 %>
+          <p class="field-help">These also choose the past entries in the iOS app's reminders and widget.</p>
         <% end %>
       </div>
 
