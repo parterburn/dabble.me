@@ -37,7 +37,7 @@ struct PlaylistView: View {
             if entries.isEmpty {
                 if let error {
                     ContentUnavailableView {
-                        Label("Couldn't load your playlist", icon: "slab-music")
+                        Label("Couldn't load your songs", icon: "slab-music")
                     } description: {
                         Text(error)
                     } actions: {
@@ -240,7 +240,7 @@ struct SongPlayerBar: View {
         ZStack {
             HStack(spacing: 0) {
                 if let openPlaylist {
-                    action("slab-music", "Open Playlist", prominent: x > Self.commit, action: openPlaylist)
+                    action("slab-music", "Open Songs", prominent: x > Self.commit, action: openPlaylist)
                         .opacity(x > 4 ? 1 : 0)
                 }
                 Spacer(minLength: 0)
@@ -272,7 +272,7 @@ struct SongPlayerBar: View {
         .accessibilityAction(named: "Hide Player", putAway)
         .accessibilityAction(named: "Open in Spotify") { openURL(song.spotifyUrl) }
         .accessibilityActions {
-            if let openPlaylist { Button("Open Playlist", action: openPlaylist) }
+            if let openPlaylist { Button("Open Songs", action: openPlaylist) }
         }
         // Heard with the ringer switched off too, as music is (the player's own button included).
         .onAppear { try? AVAudioSession.sharedInstance().setCategory(.playback) }

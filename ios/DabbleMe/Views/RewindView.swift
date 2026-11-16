@@ -441,7 +441,7 @@ struct RewindView: View {
                 }
             }
             if rewind.songs.count > 4 {
-                Text("And \(rewind.songs.count - 4) more in Journal › Playlist.")
+                Text("And \(rewind.songs.count - 4) more in Journal › Songs.")
                     .font(.footnote)
                     .opacity(0.75)
             }

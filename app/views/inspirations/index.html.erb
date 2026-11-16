@@ -39,7 +39,7 @@
                 <% end %>
               <% end %>
             </td>
-            <td><%= number_with_delimiter(i.entries.count) %></td>
+            <td><%= number_with_delimiter(@entry_counts.fetch(i.id, 0)) %></td>
             <td class="whitespace-nowrap"><%= i.category %></td>
             <td class="min-w-64 whitespace-normal"><%= i.body.html_safe %></td>
           </tr>

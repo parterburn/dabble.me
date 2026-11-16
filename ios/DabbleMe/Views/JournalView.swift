@@ -4,12 +4,13 @@ struct EntryRoute: Hashable {
     let id: Int
 }
 
-/// The Journal tab's views, picked from the menu on its title.
+/// The Journal tab's views, picked from the menu on its title, in the menu's order: Stats is
+/// the one looked at least, so it's last.
 enum JournalMode: String, CaseIterable, Identifiable {
     case list = "Journal"
-    case stats = "Stats"
     case photos = "Photos"
-    case playlist = "Playlist"
+    case playlist = "Songs"
+    case stats = "Stats"
 
     var id: Self { self }
 

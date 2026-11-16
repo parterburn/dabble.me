@@ -185,7 +185,9 @@ struct ComposeView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     if isSaving {
-                        ProgressView()
+                        TypingDots(size: .small)
+                            .accessibilityLabel("Saving")
+                            .padding(.horizontal, 8)
                     } else {
                         Button("Save") { Task { await save() } }
                             .disabled(!canSave)

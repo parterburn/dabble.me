@@ -9,7 +9,9 @@ module Admin
   # "connected" to a client while they hold an unrevoked access token for it;
   # refresh tokens keep that working after the access token itself expires.
   class OauthApps
-    Registration = Struct.new(:application, :users_connected, :last_token_at, :last_call_at, keyword_init: true) do
+    # `user_tokens` and `user_calls`: each connected user's own last token and last MCP call
+    # ({ user id => time }), for a client many people share (the iOS app's).
+    Registration = Struct.new(:application, :users_connected, :last_token_at, :last_call_at, :user_tokens, :user_calls, keyword_init: true) do
       def redirect_hosts
         Admin::OauthApps.redirect_hosts(application)
       end
@@ -97,16 +99,22 @@ module Admin
         apps = applications.order(created_at: :desc).to_a
         ids = apps.map(&:id)
         active = Doorkeeper::AccessToken.where(application_id: ids, revoked_at: nil)
-        users = active.distinct.pluck(:application_id, :resource_owner_id).group_by(&:first).transform_values { |pairs| pairs.map(&:last) }
+        # Each connected user's newest live token, by client: who's connected, most recent first.
+        user_tokens = active.group(:application_id, :resource_owner_id).maximum(:created_at)
+                            .each_with_object(Hash.new { |hash, key| hash[key] = {} }) { |((app_id, user_id), at), by_app| by_app[app_id][user_id] = at }
+        user_calls = McpToolInvocation.where(oauth_application_id: ids).group(:oauth_application_id, :user_id).maximum(:created_at)
+                                      .each_with_object(Hash.new { |hash, key| hash[key] = {} }) { |((app_id, user_id), at), by_app| by_app[app_id][user_id] = at }
         last_token = Doorkeeper::AccessToken.where(application_id: ids).group(:application_id).maximum(:created_at)
-        last_call = McpToolInvocation.where(oauth_application_id: ids).group(:oauth_application_id).maximum(:created_at)
 
         apps.map do |application|
+          tokens = user_tokens.fetch(application.id, {})
           Registration.new(
             application: application,
-            users_connected: users.fetch(application.id, []),
+            users_connected: tokens.sort_by { |_user_id, at| at }.reverse.map(&:first),
             last_token_at: last_token[application.id],
-            last_call_at: last_call[application.id]
+            last_call_at: user_calls.fetch(application.id, {}).values.compact.max,
+            user_tokens: tokens,
+            user_calls: user_calls.fetch(application.id, {})
           )
         end
       end

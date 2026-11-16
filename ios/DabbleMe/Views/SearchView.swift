@@ -47,6 +47,11 @@ struct SearchView: View {
                             isSearchActive = true
                             isSearchFocused = true
                         }
+                        // The keyboard put away with nothing typed: search is over, and the bar
+                        // goes back to how it rests (not left open with its X beside it).
+                        .onChange(of: isSearchFocused) { _, focused in
+                            if !focused, query.isEmpty, isSearchActive { isSearchActive = false }
+                        }
                         .onSubmit(of: .search) { Task { await search(reset: true) } }
                         .onChange(of: query) { _, newValue in
                             if newValue.isEmpty { clear() }

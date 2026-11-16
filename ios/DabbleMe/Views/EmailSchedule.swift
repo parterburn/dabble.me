@@ -145,7 +145,7 @@ struct PastEntriesView: View {
                 // one from the past 12 months, never one from further back.
                 if schedule.canChooseDays, schedule.hasOldEntries {
                     Section {
-                        Toggle("Use Entries Only From the Past Year", isOn: Binding(get: { !schedule.includeOldEntries }, set: { on in
+                        Toggle("Limit Entries to the Past Year", isOn: Binding(get: { !schedule.includeOldEntries }, set: { on in
                             store.save(with: model) { $0.includeOldEntries = !on }
                         }))
                     } footer: {

@@ -111,7 +111,7 @@
           <div class="<%= with_emails %>">
             <%= f.label :way_back_past_entries, class: "flex cursor-pointer items-start gap-3" do %>
               <%= f.check_box :way_back_past_entries, { class: "checkbox mt-1", checked: user.way_back_past_entries == false }, "0", "1" %>
-              <span class="text-primary">Use entries only from the past year</span>
+              <span class="text-primary">Limit entries to the past year</span>
             <% end %>
           </div>
         <% end %>

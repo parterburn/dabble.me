@@ -5,6 +5,9 @@ class InspirationsController < ApplicationController
   def index
     @inspirations = Inspiration.all.order(:category, :id)
     @last_updated = Inspiration.all.order(:updated_at).last
+    # Every inspiration's entries counted in one query (the page used to ask once per row,
+    # each a read of the whole entries table).
+    @entry_counts = Entry.unscoped.where.not(inspiration_id: nil).group(:inspiration_id).count
   end
 
   def new
