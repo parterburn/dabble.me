@@ -122,7 +122,7 @@ struct JournalView: View {
                 }
                 // Once written, the new entry opens in full under the closing composer.
                 .sheet(isPresented: $composing) { ComposeView(mode: .new) { path.append(EntryRoute(id: $0.id)) } }
-                .entryActionSheets(actions)
+                .entryActionSheets(actions) { path.append(EntryRoute(id: $0)) }
                 // "Open" from the shake-for-a-memory sheet, or the widget's entry. Also on first
                 // appearing: the Journal tab may not exist yet when the request comes.
                 .onChange(of: model.openEntryRequest, initial: true) { _, id in
@@ -201,7 +201,8 @@ struct JournalView: View {
         case .list: content
         case .stats:
             if model.me?.maySeeStats == false {
-                ProInfoView(feature: .stats, showsDoneButton: false)
+                ProInfoView(feature: .stats, showsDoneButton: false,
+                            rewindYear: RewindSeason.year(on: model.today?.day ?? JournalDay(localDate: .now)))
             } else {
                 // Its Entries and Photos tiles go to those views.
                 StatsView { mode = $0 }
@@ -242,6 +243,7 @@ struct JournalView: View {
                             .padding(.top, 21) // as far under the title as the icon is over it
                     }
                 }
+                .refreshDots()
                 .refreshable { await model.refresh() }
             }
         } else {
@@ -265,6 +267,7 @@ struct JournalView: View {
             .scrollIndicators(.hidden) // the timeline scrubber replaces the standard indicator
             .timelinePinsDates()
             // Pull to reset: collapses expanded entries and picks up new ones.
+            .refreshDots()
             .refreshable {
                 withAnimation(.snappy(duration: 0.25)) { expanded = [] }
                 await model.refresh()

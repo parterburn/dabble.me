@@ -24,6 +24,24 @@ struct StatsView: View {
                     VStack(alignment: .leading, spacing: 28) {
                         // In its season (November to January): the year's Rewind, or what it takes.
                         RewindCard(stats: stats, today: model.today?.day ?? JournalDay(localDate: .now))
+                        // The dots from Today's corner (and the widget), at the right as they were there,
+                        // with what they say beside them: under the Rewind's card, over the tiles.
+                        // (Not with none of the five written: Today doesn't show them then either.)
+                        if let days = model.lastFiveDays, days.contains(true) {
+                            HStack(spacing: 10) {
+                                Text(LastFiveDays.sentence(days))
+                                    .font(.subheadline)
+                                    .foregroundStyle(.secondary)
+                                LastFiveDays(days: days, size: 9)
+                                    .accessibilityHidden(true)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .trailing)
+                            .padding(.trailing, 4)
+                            // Close between the two: a caption, not a section.
+                            .padding(.top, -10)
+                            .padding(.bottom, -14)
+                            .accessibilityElement(children: .combine)
+                        }
                         tiles(stats) { anchor in
                             withAnimation(.snappy(duration: 0.3)) { proxy.scrollTo(anchor, anchor: .top) }
                         }
@@ -51,6 +69,7 @@ struct StatsView: View {
                 ProgressView()
             }
         }
+        .refreshDots()
         .refreshable { await load() }
         .task { if stats == nil { await load() } }
         // An entry written for a day picked in the grid: the numbers are counted again after it.
@@ -322,7 +341,7 @@ private struct YearSection: View {
                 .minimumScaleFactor(0.8)
                 .accessibilityIdentifier("StatsYearSummary")
         } else if failed != year {
-            ProgressView().controlSize(.small)
+            TypingDots(size: .small)
         }
     }
 

@@ -2,8 +2,8 @@ import SwiftUI
 import UIKit
 
 /// Settings → Reminders → Push: the daily notification. Whether it's on, when and on which days.
-/// (Whether it comes with a past entry, and which, is on Include Past Entries, shared with the
-/// email.) Kept on this device; the reminders are rebuilt as anything changes.
+/// And whether it shows the past entry it looks back on, or just says there is one. (Which
+/// entries can come up is on Past Entry Filters, shared with the email and the widget.) Kept on this device; the reminders are rebuilt as anything changes.
 struct PushReminderView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.openURL) private var openURL
@@ -12,13 +12,16 @@ struct PushReminderView: View {
     @AppStorage(ReminderSettings.timeKey) private var time = ReminderSettings.followsEmail
     @AppStorage(ReminderSettings.emailTimeKey) private var emailTime = ReminderSettings.defaultTime
     @AppStorage(ReminderSettings.daysKey) private var days = EmailSchedule.allDays.joined(separator: ",")
+    @AppStorage(ReminderSettings.includesPastEntryKey) private var showsPastEntryStored = true
+    /// The email's past-entry switch, which this one follows until it's set here.
+    var emailShowsPastEntry = true
     @State private var notificationsDenied = false
     #if DEBUG
     @State private var pending = 0
     #endif
 
     /// Everything that changes what's scheduled.
-    private var settings: String { "\(isOn)|\(time)|\(days)" }
+    private var settings: String { "\(isOn)|\(time)|\(days)|\(showsPastEntryStored)" }
 
     var body: some View {
         Form {
@@ -59,6 +62,12 @@ struct PushReminderView: View {
                     }
                 } header: {
                     Text("Days")
+                }
+                Section {
+                    Toggle("Show Past Entry", isOn: Binding(get: { ReminderSettings.includesPastEntry ?? emailShowsPastEntry },
+                                                            set: { showsPastEntryStored = $0 }))
+                } footer: {
+                    Text("The notification can show an entry to look back on: its first lines and its photo. With this off it only says how many there are.")
                 }
             }
         }

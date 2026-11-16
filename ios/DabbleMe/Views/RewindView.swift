@@ -768,6 +768,7 @@ struct RewindCard: View {
     }
 
     var body: some View {
+        // (PRO: a free account's Stats is the page that says what PRO has, the Rewind included.)
         if let year, model.me?.isPro == true {
             Group {
                 if let count {
@@ -812,10 +813,15 @@ struct RewindCard: View {
     }
 
     private func soon(_ year: Int, needs: Int) -> some View {
+        note(year, "Your Rewind will be ready with \(needs == 1 ? "1 more entry" : "\(needs) more entries").")
+    }
+
+    /// The Rewind's card when there isn't one to open: its name and why not yet.
+    private func note(_ year: Int, _ text: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text("\(String(year)) Rewind")
                 .font(.custom("InstrumentSerif-Regular", size: 32))
-            Text("Your Rewind will be ready with \(needs == 1 ? "1 more entry" : "\(needs) more entries").")
+            Text(text)
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
         }

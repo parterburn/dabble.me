@@ -42,7 +42,7 @@ struct EntryPhoto: View {
                 .fill(Color.secondary.opacity(0.12))
             if size == .full {
                 VStack(spacing: 10) {
-                    ProgressView()
+                    TypingDots()
                     Text("Processing photos…")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
@@ -52,7 +52,7 @@ struct EntryPhoto: View {
                 }
                 .padding()
             } else {
-                ProgressView().controlSize(.small)
+                TypingDots(size: .small)
             }
         }
         .frame(width: size == .thumbnail ? 56 : nil, height: size == .full ? 220 : 56)

@@ -7,14 +7,21 @@ module Api
     # picks it. That's the first On This Day entry (PRO), or else the day's Rewind
     # (Api::Throwback). Days with nothing to look back on are left out.
     #
-    # Which past entries can come up is the account's choice, the same for the push reminder and
-    # the daily email (GET/PATCH /api/v1/email_schedule): none at all with past entries off,
-    # none with the left-out words, and only the past year's (so no On This Day) without entries
-    # over a year old. `email_hour` is the hour the daily email goes out, which the reminder's
-    # time starts from.
+    # Which past entries can come up is the account's choice, shared by the daily email, the push
+    # reminder and the app's widget (GET/PATCH /api/v1/email_schedule): none with the left-out
+    # words, and only the past year's (so no On This Day) without entries over a year old.
     #
-    #   { email_hour: 20, days: [{ date: "2026-11-12", kind: "on_this_day" | "rewind", count: 2,
-    #                              entry: { id:, date:, excerpt:, image_url: } }] }
+    # Whether there's a past entry at all is each one's own switch. The account's
+    # (`send_past_entry`) is the email's: the app has its own for the push reminder and the
+    # widget, and asks with `all=1` for the days whatever the email's says. Without `all` (older
+    # app builds, which had the one switch for everything) the days are empty when it's off.
+    # `include_past_entries` says which way the email's is, for an app that hasn't been told yet
+    # what its push reminder should do. `email_hour` is the hour the daily email goes out, which
+    # the reminder's time starts from.
+    #
+    #   { email_hour: 20, include_past_entries: true,
+    #     days: [{ date: "2026-11-12", kind: "on_this_day" | "rewind", count: 2,
+    #              entry: { id:, date:, excerpt:, image_url: } }] }
     #
     # The excerpt and photo are for a notification, which can show on a lock screen: the app only
     # uses them when the person has entry previews on.
@@ -24,8 +31,10 @@ module Api
       def show
         days = params[:days].to_s.match?(/\A\d+\z/) ? params[:days].to_i.clamp(1, MAX_DAYS) : 14
         today = OnThisDay.today_for(current_user)
-        upcoming = current_user.send_past_entry == false ? [] : (0...days).filter_map { |offset| day_json(today + offset) }
-        render json: { email_hour: current_user.send_time.hour, days: upcoming }
+        email_includes = current_user.send_past_entry != false
+        every = ActiveModel::Type::Boolean.new.cast(params[:all])
+        upcoming = every || email_includes ? (0...days).filter_map { |offset| day_json(today + offset) } : []
+        render json: { email_hour: current_user.send_time.hour, include_past_entries: email_includes, days: upcoming }
       end
 
       private
@@ -44,6 +53,9 @@ module Api
         return nil unless entry
 
         summary = EntrySerializer.summary(entry)
+        # A photo still uploading has a stand-in picture for an address: not for a widget or a
+        # notification, which keep what they're given.
+        summary[:image_url] = nil if summary[:image_processing]
         {
           date: date.iso8601,
           kind: memories.any? ? 'on_this_day' : 'rewind',

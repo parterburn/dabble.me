@@ -12,6 +12,24 @@ final class AppModel {
 
     /// Selected tab, and a search another screen asked for (e.g. tapping a #hashtag).
     var selectedTab: Tab = .today
+    /// Bumped when what the widget shows is chosen (it's kept in the shared settings, which
+    /// views can't watch): Settings' rows that say what it is are drawn again.
+    var widgetChoiceChanges = 0
+    /// The days written in the past few weeks (YYYY-MM-DD), once fetched: for the row of the
+    /// last five days on Today, in Stats and on the widget.
+    var recentWrittenDays: [String]?
+
+    /// Whether each of the last five days was written, oldest first (today's last, by what
+    /// Today says of it): five dots, never a count. Nil until the days are known.
+    var lastFiveDays: [Bool]? {
+        guard let recentWrittenDays, let today, let day = today.day else { return nil }
+        let written = Set(recentWrittenDays)
+        return (0..<5).reversed().map { back in
+            guard back > 0 else { return today.entry != nil }
+            guard let date = Calendar.current.date(byAdding: .day, value: -back, to: day.localDate) else { return false }
+            return written.contains(JournalDay(localDate: date).iso)
+        }
+    }
     var searchRequest: String?
     /// Set when a writing reminder is tapped; Today opens the composer.
     var composeRequest = false
@@ -192,6 +210,7 @@ final class AppModel {
         isSignedIn = false
         me = nil
         today = nil
+        recentWrittenDays = nil
         months = []
         monthEntries = [:]
         loadingMonths = []

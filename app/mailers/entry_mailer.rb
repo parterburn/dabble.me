@@ -15,6 +15,12 @@ class EntryMailer < ActionMailer::Base
       @entries_this_year = user.entries.where(date: send_date.beginning_of_year.beginning_of_day..send_date.end_of_day).count
     end
     @random_entry = user.random_entry(@send_day.strftime('%Y-%m-%d'))
+    # With the past entry itself left out of the email (an email stays in an inbox): just how
+    # many there are from this day in past years, without the words left out of past entries.
+    unless user.send_past_entry?
+      on_this_day = Api::OnThisDay.entries(user, today: @send_day.to_date).map(&:id)
+      @past_entries_on_this_day = on_this_day.any? ? user.random_entries.unscope(:order).where(id: on_this_day).count : 0
+    end
     if @random_entry.present?
       @random_entry_image_link = @random_entry.image_url_cdn(cloudflare: false)
       @random_entry_image_url = @random_entry.image_url_cdn

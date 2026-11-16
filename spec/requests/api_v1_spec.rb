@@ -735,6 +735,25 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       end
     end
 
+    it "keeps the email's switch to the email: with all=1 the days come whatever it says" do
+      zone = Time.find_zone(pro_user.send_timezone)
+      travel_to zone.local(2026, 6, 20, 12) do
+        recent = create(:entry, user: pro_user, date: Time.zone.local(2026, 6, 13), body: "<p>A week back</p>")
+        get "/api/v1/reminders", params: { days: 1, all: 1 }, headers: auth(pro_user)
+        expect(json["include_past_entries"]).to be(true)
+
+        pro_user.update!(send_past_entry: false)
+        get "/api/v1/reminders", params: { days: 1, all: 1 }, headers: auth(pro_user)
+        expect(json["include_past_entries"]).to be(false)
+        expect(json["days"].first["entry"]["id"]).to eq(recent.id)
+
+        # The left-out words still hold for the app's push reminder and widget.
+        pro_user.update!(past_filter: "week")
+        get "/api/v1/reminders", params: { days: 1, all: 1 }, headers: auth(pro_user)
+        expect(json["days"]).to eq([])
+      end
+    end
+
     it "leaves out days with nothing to look back on, and On This Day on a free plan" do
       zone = Time.find_zone(free_user.send_timezone)
       travel_to zone.local(2026, 6, 20, 12) do

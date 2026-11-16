@@ -14,9 +14,13 @@ struct DabbleMeApp: App {
         if let token = UserDefaults.standard.string(forKey: "DabbleDebugAccessToken"), !token.isEmpty {
             KeychainStore.save(OAuthTokens(accessToken: token, refreshToken: nil, expiresAt: nil))
         }
+        // -DabbleDebugForgetRewindTap YES: Today's corner names the Rewind again (UI tests).
+        if UserDefaults.standard.bool(forKey: "DabbleDebugForgetRewindTap") { UserDefaults.standard.removeObject(forKey: "today.rewindTapped") }
         // -DabbleDebugSignedOut YES starts signed out (the welcome screens).
         if UserDefaults.standard.bool(forKey: "DabbleDebugSignedOut") { KeychainStore.delete() }
         #endif
+        // A pull to refresh shows the app's own dots (`refreshDots`), not iOS's spinner as well.
+        UIRefreshControl.appearance().tintColor = .clear
         let model = AppModel()
         _model = State(initialValue: model)
         NotificationRouter.shared.model = model

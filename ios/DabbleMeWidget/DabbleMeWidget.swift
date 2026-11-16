@@ -43,19 +43,22 @@ struct Provider: AppIntentTimelineProvider {
         let isToday = snapshot.day == WidgetSnapshot.iso(date)
         // This widget's own choice, or the app's.
         let content = option.content ?? WidgetSnapshot.content
-        // A day the app hasn't been opened on yet: the look back it left for it.
-        if content.source == .rewind, let later = snapshot.lookBack(on: date) {
+        // The look back planned for the day (today's, or a day the app hasn't been opened on
+        // yet). None planned (nothing to look back on): the prompt, when there's one.
+        let rewind = snapshot.rewind(on: date)
+        if content.source == .rewind, rewind.known {
+            let day = rewind.day
             let showsEntry = content == .memoryEntry
-            return WidgetEntry(date: date, signedIn: true, wroteToday: false, yearCount: state.yearCount,
-                               memories: later.memories, prompt: nil,
-                               memoryNote: content == .memoryCount ? later.memoryNote : nil,
-                               entryTitle: showsEntry ? later.entryTitle : nil,
-                               entryText: showsEntry ? later.entryText : nil,
-                               entryID: showsEntry ? later.entryID : nil,
-                               photo: showsEntry ? later.entryPhoto.flatMap(Self.photo(named:)) : nil)
+            return WidgetEntry(date: date, signedIn: true, wroteToday: state.wroteToday, yearCount: state.yearCount, lastFiveDays: snapshot.lastFiveDays(on: date),
+                               memories: day?.memories, prompt: isToday ? snapshot.prompt : nil,
+                               memoryNote: content == .memoryCount ? day?.memoryNote : nil,
+                               entryTitle: showsEntry ? day?.entryTitle : nil,
+                               entryText: showsEntry ? day?.entryText : nil,
+                               entryID: showsEntry ? day?.entryID : nil,
+                               photo: showsEntry ? day?.entryPhoto.flatMap(Self.photo(named:)) : nil)
         }
         let shown = isToday ? snapshot.shown(for: content) : nil
-        return WidgetEntry(date: date, signedIn: true, wroteToday: state.wroteToday, yearCount: state.yearCount,
+        return WidgetEntry(date: date, signedIn: true, wroteToday: state.wroteToday, yearCount: state.yearCount, lastFiveDays: snapshot.lastFiveDays(on: date),
                            memories: content.source == .rewind ? state.memories : nil,
                            prompt: isToday ? snapshot.prompt : nil,
                            memoryNote: isToday && content == .memoryCount ? snapshot.memoryNote : nil,
@@ -76,6 +79,7 @@ struct TodayWidgetView: View {
 
     var body: some View {
         TodayWidgetContent(entry: entry, family: family)
-            .widgetURL(entry.wroteToday ? WidgetSnapshot.editTodayURL : WidgetSnapshot.writeURL)
+            // Today, written or not: writing, editing and reading all start from there.
+            .widgetURL(WidgetSnapshot.todayURL)
     }
 }

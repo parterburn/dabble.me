@@ -12,6 +12,12 @@ enum ReminderSettings {
     static let emailTimeKey = "reminders.emailMinutes"
     /// The days it goes out ("Sun"…"Sat", comma-separated; every day unless chosen).
     static let daysKey = "reminders.days"
+    /// Whether the push reminder shows the past entry itself (its words and photo), or just
+    /// that there is one: its own switch on the Push page (the email and the widget have
+    /// theirs). Until it's set here, it goes by the email's, as it did when one switch covered
+    /// them all.
+    static let includesPastEntryKey = "reminders.daily.pastEntry"
+    static var includesPastEntry: Bool? { UserDefaults.standard.object(forKey: includesPastEntryKey) as? Bool }
     static let followsEmail = -1
     static let defaultTime = 20 * 60 // 8:00 PM, until the email's hour is known
 
@@ -76,6 +82,9 @@ enum ReminderSettings {
 /// GET /api/v1/reminders: the entry to look back on for each of the coming days.
 struct ReminderPlan: Decodable, Sendable {
     let emailHour: Int
+    /// Whether the daily email includes a past entry (nil from an older server): what the
+    /// push reminder does until its own switch is set.
+    var includePastEntries: Bool? = nil
     let days: [Day]
 
     struct Day: Decodable, Sendable {
@@ -193,7 +202,8 @@ final class ReminderScheduler {
         if let plan { defaults.set(plan.emailHour * 60, forKey: ReminderSettings.emailTimeKey) }
         let minutes = ReminderSettings.minutes
         let weekdays = Set(ReminderSettings.days)
-        // (None, with past entries switched off in Settings: then it's the plain nudge.)
+        // (With the push reminder's past entry switched off: how many there are, not the entry.)
+        let showsPastEntry = ReminderSettings.includesPastEntry ?? plan?.includePastEntries ?? true
         let memories = Dictionary((plan?.days ?? []).map { ($0.date, $0) }, uniquingKeysWith: { first, _ in first })
         let wroteToday = model.today?.entry != nil
 
@@ -207,7 +217,7 @@ final class ReminderScheduler {
             content.title = "How was your day?"
             content.sound = .default
             content.userInfo = ["destination": "today"]
-            if let memory = memories[iso] {
+            if let memory = memories[iso], showsPastEntry {
                 content.categoryIdentifier = Self.memoryCategory
                 content.userInfo["entryID"] = memory.entry.id
                 // The memory is the notification: its label for a title, no "How was your day?".
@@ -215,6 +225,11 @@ final class ReminderScheduler {
                 content.body = memory.entry.excerpt.isEmpty ? "📷 Photo" : Self.clipped(memory.entry.excerpt)
                 if let attachment = await photo(for: memory, on: iso) { content.attachments = [attachment] }
                 guard isCurrent() else { return } // signed out while the photo came down
+            } else if let memory = memories[iso] {
+                // That there's something to look back on, and how much: none of its words.
+                content.categoryIdentifier = Self.memoryCategory
+                content.userInfo["entryID"] = memory.entry.id
+                content.body = Self.count(for: memory, on: iso)
             } else {
                 content.body = "Take a minute to write it down in Dabble Me."
             }
@@ -265,7 +280,7 @@ final class ReminderScheduler {
     private func plan(for model: AppModel, session: Int) async -> ReminderPlan? {
         let key = "\(model.today?.date ?? "")|\(model.me?.entryCount ?? 0)|\(model.today?.entry?.updatedAt ?? "")"
         if let cached, cached.key == key, Date().timeIntervalSince(cached.at) < 30 * 60 { return cached.plan }
-        guard let plan: ReminderPlan = try? await model.api.get("api/v1/reminders", query: ["days": String(days)]) else {
+        guard let plan: ReminderPlan = try? await model.api.get("api/v1/reminders", query: ["days": String(days), "all": "1"]) else {
             return cached?.plan // an older server, or offline: what was known (or just the nudge)
         }
         // Not kept if the account signed out while it was on its way (the caller drops it too).
@@ -281,6 +296,16 @@ final class ReminderScheduler {
         return ago.isEmpty ? name : "\(name) · \(ago)"
     }
 
+    /// "You have 3 entries from this day in past years.", "You have an entry from 2 months ago."
+    static func count(for memory: ReminderPlan.Day, on iso: String) -> String {
+        if memory.isOnThisDay {
+            return memory.count == 1 ? "You have an entry from this day in past years."
+                                     : "You have \(memory.count) entries from this day in past years."
+        }
+        let ago = JournalDay(memory.entry.date).flatMap { entry in JournalDay(iso).map { entry.relative(to: $0) } } ?? ""
+        return ago.isEmpty ? "You have an entry to look back on." : "You have an entry from \(ago.prefix(1).lowercased() + ago.dropFirst())."
+    }
+
     private static func clipped(_ text: String, limit: Int = 220) -> String {
         guard text.count > limit else { return text }
         let cut = text.prefix(limit)
@@ -289,7 +314,8 @@ final class ReminderScheduler {
 
     /// The memory's photo, a small copy for the notification (which takes the file for itself).
     private func photo(for memory: ReminderPlan.Day, on iso: String) async -> UNNotificationAttachment? {
-        guard let url = EntrySummary.thumbnailURL(memory.entry.imageUrl, width: 700),
+        guard !EntrySummary.isUploadingPlaceholder(memory.entry.imageUrl),
+              let url = EntrySummary.thumbnailURL(memory.entry.imageUrl, width: 700),
               let (data, response) = try? await URLSession.shared.data(from: url),
               (response as? HTTPURLResponse).map({ (200..<300).contains($0.statusCode) }) ?? true else { return nil }
         let file = FileManager.default.temporaryDirectory.appending(path: "reminder-\(iso)-\(memory.entry.id).jpg")

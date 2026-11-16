@@ -108,7 +108,7 @@ final class HabitTests: XCTestCase {
         let allow = springboard.buttons["Allow"]
         if allow.waitForExistence(timeout: 5) { allow.tap() }
         // Its days, and nothing about past entries: whether it comes with one, and which, is on
-        // Include Past Entries, for both kinds of notification.
+        // Past Entries, for every kind of reminder.
         XCTAssertTrue(app.buttons["Saturday"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.switches["Show Entry Previews"].exists)
         XCTAssertFalse(app.switches["Include Entries Over a Year Old"].exists)

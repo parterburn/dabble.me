@@ -17,6 +17,8 @@ struct ComposeView: View {
     @State private var date = Date()
     @State private var choosingDate = false
     @State private var heldPhotoStack = false
+    /// Two lines of a question in the prompt row (it scales with the text size).
+    @ScaledMetric(relativeTo: .subheadline) private var askLineHeight: CGFloat = 42
     /// Bumped when the calendar row's contents change, so the bar over the keyboard resizes.
     @State private var calendarRowKey = 0
     /// The tag icon was held (so the tap that ends the hold doesn't also open its row), and
@@ -44,8 +46,7 @@ struct ComposeView: View {
     /// Prompt (Apple Intelligence, the sparkles): a row with one question about the draft. Closing
     /// and opening it again asks a new one.
     @State private var showsAskRow = false
-    /// The calendar row: what was on the phone's calendar on the day being written about.
-    @State private var showsCalendarRow = false
+
     @State private var question: String?
     @State private var askedQuestions: [String] = []
     @State private var isAsking = false
@@ -137,7 +138,7 @@ struct ComposeView: View {
                 RichTextEditor(model: editor,
                                leading: AnyView(model.me?.canAddPhotos == true ? AnyView(photosButton) : AnyView(proPhotosButton)),
                                trailing: AnyView(tagAndLinkButtons),
-                               barKey: "\(showsCalendarRow)|\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)",
+                               barKey: "\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)",
                                row: openRow)
                     // Low in the page, over the bar: clear of the entry's first lines.
                     .overlay(alignment: .bottom) {
@@ -235,7 +236,7 @@ struct ComposeView: View {
             }
             .onChange(of: editor.isEditingLink) { _, editing in
                 // One row at a time (the link row also opens by selecting a link).
-                if editing { showsHashtagBar = false; showsAskRow = false; showsPhotoDrawer = false; showsCalendarRow = false }
+                if editing { showsHashtagBar = false; showsAskRow = false; showsPhotoDrawer = false }
             }
             .photosPicker(isPresented: $pickingPhotos, selection: libraryItems, maxSelectionCount: photoLimit - cameraItems.count,
                           selectionBehavior: .ordered, matching: .images, preferredItemEncoding: .current)
@@ -306,11 +307,7 @@ struct ComposeView: View {
             AnyView(hashtagSuggestions)
         } else if showsAskRow {
             AnyView(askRow)
-        } else if showsCalendarRow {
-            AnyView(CalendarRow(day: date, changed: { calendarRowKey += 1 }) { event in
-                editor.addQuestion(event.title)
-                showsCalendarRow = false
-            })
+
         } else if showsPhotoDrawer, attachedPhotoCount > 0 {
             AnyView(photoBar)
         } else {
@@ -417,24 +414,6 @@ struct ComposeView: View {
                 .accessibilityLabel("Link")
                 .accessibilityAddTraits(editor.isEditingLink ? .isSelected : [])
             }
-            // What was on the calendar that day, for everyone: a reminder of what to write about.
-            Button {
-                showsCalendarRow.toggle()
-                if showsCalendarRow {
-                    showsHashtagBar = false
-                    showsAskRow = false
-                    showsPhotoDrawer = false
-                    editor.endLink()
-                }
-            } label: {
-                appIcon("slab-calendar")
-                    .frame(width: 40, height: 36)
-                    .background(showsCalendarRow ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
-            }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Calendar")
-            .accessibilityHint("Shows what was on your calendar that day")
-            .accessibilityAddTraits(showsCalendarRow ? .isSelected : [])
             Button {
                 // Not the tap that ends a hold.
                 if heldTagIcon { heldTagIcon = false; return }
@@ -442,7 +421,6 @@ struct ComposeView: View {
                 if showsHashtagBar {
                     showsPhotoDrawer = false
                     showsAskRow = false
-                    showsCalendarRow = false
                     editor.endLink()
                     Task { recentTags = (try? await model.recentHashtags()) ?? [] }
                     Task { if allTags.isEmpty { allTags = ((try? await model.allHashtags()) ?? []).map(\.tag) } }
@@ -463,27 +441,26 @@ struct ComposeView: View {
             .accessibilityLabel("Hashtags")
             .accessibilityAddTraits(showsHashtagBar ? .isSelected : [])
             .accessibilityAction(named: "Tag Matching Words") { Task { await tagMatchingWords() } }
-            if canAsk {
-                Button {
-                    showsAskRow.toggle()
-                    if showsAskRow {
-                        showsCalendarRow = false
-                        showsHashtagBar = false
-                        showsPhotoDrawer = false
-                        editor.endLink()
-                        question = nil
-                        Task { await ask() }
-                    }
-                } label: {
-                    appIcon("slab-question")
-                        .frame(width: 40, height: 36)
-                        .background(showsAskRow ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+            // "What should I write about?": what was on the calendar that day (for everyone)
+            // and, where there's one to be had, a question to answer.
+            Button {
+                showsAskRow.toggle()
+                if showsAskRow {
+                    showsHashtagBar = false
+                    showsPhotoDrawer = false
+                    editor.endLink()
+                    question = nil
+                    if canAsk { Task { await ask() } }
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Prompt")
-                .accessibilityHint("Shows a question to write about")
-                .accessibilityAddTraits(showsAskRow ? .isSelected : [])
+            } label: {
+                appIcon("slab-question")
+                    .frame(width: 40, height: 36)
+                    .background(showsAskRow ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Prompt")
+            .accessibilityHint("Shows what was on your calendar that day and a question to write about")
+            .accessibilityAddTraits(showsAskRow ? .isSelected : [])
         }
     }
 
@@ -495,7 +472,7 @@ struct ComposeView: View {
             // Not the tap that ends a hold.
             if heldPhotoStack { heldPhotoStack = false; return }
             showsPhotoDrawer.toggle()
-            if showsPhotoDrawer { showsHashtagBar = false; showsAskRow = false; showsCalendarRow = false; editor.endLink() } // one row at a time
+            if showsPhotoDrawer { showsHashtagBar = false; showsAskRow = false; editor.endLink() } // one row at a time
         } label: {
             HStack(spacing: 8) {
                 ZStack {
@@ -540,8 +517,7 @@ struct ComposeView: View {
         ZStack {
             Color.black.opacity(0.25).ignoresSafeArea()
             VStack(spacing: 12) {
-                ProgressView()
-                    .controlSize(.large)
+                TypingDots(size: .large)
                 Text(savingMessage)
                     .font(.headline)
                     .monospacedDigit()
@@ -579,8 +555,7 @@ struct ComposeView: View {
                 // Suggestions for what's written come by themselves when the row opens; until
                 // they're in, a spinner where they'll appear.
                 if isSuggestingTags {
-                    ProgressView()
-                        .controlSize(.small)
+                    TypingDots(size: .small)
                         .frame(height: 30)
                         .accessibilityLabel("Suggesting hashtags")
                 }
@@ -629,36 +604,68 @@ struct ComposeView: View {
     /// One question about the draft (Apple Intelligence, on the device): Insert puts it in the entry.
     /// For another, close the row and open it again.
     private var askRow: some View {
-        HStack(alignment: .center, spacing: 10) {
-            if isAsking {
-                ProgressView().controlSize(.small)
-                Text("Generating prompt…")
-                    .foregroundStyle(.secondary)
-                Spacer(minLength: 0)
-            } else if let question {
-                Text(question)
-                    .font(.system(.subheadline, design: .serif))
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityIdentifier("AskMeQuestion")
-                Button("Insert") {
-                    editor.addQuestion(question)
-                    self.question = nil
-                    showsAskRow = false
-                }
-                .filledButtonStyle()
-                .buttonBorderShape(.capsule)
-                .accessibilityHint("Adds the question to your entry to answer")
-            } else {
-                Text(askError ?? "")
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+        VStack(alignment: .leading, spacing: 0) {
+            // The day's events over the question: what happened, then something to answer.
+            CalendarRow(day: date, hidesWhenEmpty: canAsk, changed: { calendarRowKey += 1 }) { event in
+                editor.addQuestion(event.title)
+                showsAskRow = false
             }
+            if canAsk { askLine }
         }
-        .font(.subheadline)
-        .fontWeight(.medium)
+    }
+
+    private func insertQuestion() {
+        guard let question, !isAsking else { return }
+        editor.addQuestion(question)
+        self.question = nil
+        showsAskRow = false
+    }
+
+    /// The question, set like the events over it but from the left edge: a tap on the row puts
+    /// it in the entry. Headed as Today's card heads its prompt: "A prompt for you" when it's
+    /// written on the device for this writer, "Today's prompt" for the day's general one.
+    private var askLine: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(JournalIntelligence.isEnabled(for: model.me) ? "A prompt for you" : "Today's prompt")
+                .font(.caption.weight(.semibold))
+                .textCase(.uppercase)
+                .foregroundStyle(.tint)
+                .padding(.bottom, 4)
+                .accessibilityAddTraits(.isHeader)
+            HStack(alignment: .center, spacing: 12) {
+                if isAsking {
+                    TypingDots(size: .small)
+                    Text("Generating prompt…")
+                        .foregroundStyle(.secondary)
+                    Spacer(minLength: 0)
+                } else if let question {
+                    Text(question)
+                        .font(.system(.subheadline, design: .serif, weight: .semibold))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier("AskMeQuestion")
+                        // (A tap on it, VoiceOver's too, is the row's.)
+                        .accessibilityHint("Adds the question to your entry to answer")
+                    appIcon("slab-plus")
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 12, height: 12)
+                        .foregroundStyle(.secondary)
+                        .accessibilityHidden(true)
+                } else {
+                    Text(askError ?? "")
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+            }
+            .font(.subheadline)
+            // Two lines tall from the start: the question, when it comes, doesn't move the page.
+            .frame(minHeight: askLineHeight)
+            .contentShape(.rect)
+            .onTapGesture(perform: insertQuestion)
+        }
         .padding(.horizontal)
-        .padding(.top, 8)
+        .padding(.top, 10)
         .animation(.easeOut(duration: 0.2), value: question)
     }
 
@@ -791,7 +798,7 @@ struct ComposeView: View {
                 } else {
                     ZStack {
                         Color.secondary.opacity(0.12)
-                        ProgressView().controlSize(.small)
+                        TypingDots(size: .small)
                     }
                 }
             }
@@ -994,6 +1001,8 @@ private extension View {
 /// time it's opened; without it, the row says how to allow it.
 private struct CalendarRow: View {
     let day: Date
+    /// With a question under it, a day with nothing on it shows nothing here.
+    var hidesWhenEmpty = false
     /// The row's height may have changed (the events came in).
     let changed: () -> Void
     let pick: (DayEvent) -> Void
@@ -1002,6 +1011,15 @@ private struct CalendarRow: View {
     @Environment(\.openURL) private var openURL
 
     var body: some View {
+        if hidesWhenEmpty, access == .allowed, events?.isEmpty != false {
+            // Nothing to show (yet, or at all): still here to load the day.
+            Color.clear.frame(height: 0).task(id: day) { await load() }
+        } else {
+            section
+        }
+    }
+
+    private var section: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("On your calendar")
                 .font(.caption.weight(.semibold))
@@ -1012,7 +1030,7 @@ private struct CalendarRow: View {
             switch access {
             case .denied:
                 HStack(spacing: 10) {
-                    Text("Allow Dabble Me to see your calendar in Settings to have your day here.")
+                    Text("Allow access to your calendar to see events for this day.")
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     Button("Settings") {
@@ -1038,17 +1056,24 @@ private struct CalendarRow: View {
         }
         .padding(.horizontal)
         .padding(.top, 10)
-        .task(id: day) {
-            if access == .notAsked {
-                _ = await DayCalendar.requestAccess()
-                access = DayCalendar.access
-            }
-            events = DayCalendar.events(on: day)
-            changed()
-        }
+        // A little room before what's under it (the prompt).
+        .padding(.bottom, 6)
+        .task(id: day) { await load() }
     }
 
-    /// A handful show at once; a busier day scrolls.
+    private func load() async {
+        if access == .notAsked {
+            _ = await DayCalendar.requestAccess()
+            access = DayCalendar.access
+        }
+        events = DayCalendar.events(on: day)
+        changed()
+    }
+
+    /// The width of the events' time column.
+    static let timeColumn: CGFloat = 72
+
+    /// A few show at once; a busier day scrolls.
     private func list(_ events: [DayEvent]) -> some View {
         ScrollView {
             VStack(spacing: 0) {
@@ -1058,7 +1083,7 @@ private struct CalendarRow: View {
                             Text(event.time)
                                 .font(.footnote.monospacedDigit())
                                 .foregroundStyle(.secondary)
-                                .frame(width: 72, alignment: .leading)
+                                .frame(width: Self.timeColumn, alignment: .leading)
                             Text(event.title)
                                 .font(.system(.subheadline, design: .serif))
                                 .lineLimit(1)
@@ -1067,7 +1092,7 @@ private struct CalendarRow: View {
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 12, height: 12)
-                                .foregroundStyle(.tertiary)
+                                .foregroundStyle(.secondary)
                         }
                         .padding(.vertical, 9)
                         .contentShape(.rect)
@@ -1080,7 +1105,9 @@ private struct CalendarRow: View {
             }
         }
         .scrollBounceBehavior(.basedOnSize)
-        .frame(height: min(CGFloat(events.count), 5) * 38)
+        // Three show; a busier day scrolls (its scroll bar shows for a moment, to say so).
+        .scrollIndicatorsFlash(onAppear: true)
+        .frame(height: min(CGFloat(events.count), 3) * 38)
     }
 }
 

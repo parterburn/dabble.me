@@ -38,9 +38,16 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
         var id: Int
         var photo: String? = nil
     }
-    /// Rewind for the days after `day`, so the widget has something to look back on each
-    /// morning without the app being opened first.
+    /// Rewind for `day` and the days after it, so the widget has something to look back on each
+    /// morning without the app being opened first. They're the reminders' own picks, so the
+    /// filters in Settings → Reminders → Past Entries hold (the words left out, over a year old).
     var upcoming: [Day]? = nil
+    /// The days written lately (YYYY-MM-DD, the past few weeks'), for the row of the last five
+    /// days under the date. Optional: snapshots saved by older builds don't have it.
+    var writtenDays: [String]? = nil
+    /// `upcoming` has been worked out, `day` included: it, not the fields above, says what a
+    /// Rewind widget shows today. (Not set by older builds, or before the first answer.)
+    var rewindPlanned: Bool? = nil
 
     /// One later day's look back: the same things the snapshot holds for its own day.
     struct Day: Codable, Equatable, Sendable {
@@ -63,10 +70,13 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
         }
     }
 
-    /// The look back kept for `date`, when it's a later day than the snapshot's own.
-    func lookBack(on date: Date, calendar: Calendar = .current) -> Day? {
+    /// What a Rewind widget looks back on, on `date`. `known` once the days have been planned
+    /// (then `day` is that day's look back, or nil when there's nothing to look back on), and for a later day that has one; otherwise the snapshot's
+    /// own fields say (its own day, before the plan's come).
+    func rewind(on date: Date, calendar: Calendar = .current) -> (known: Bool, day: Day?) {
         let iso = Self.iso(date, calendar: calendar)
-        return iso == day ? nil : upcoming?.first { $0.day == iso }
+        let planned = upcoming?.first { $0.day == iso }
+        return (rewindPlanned == true || (iso != day && planned != nil), planned)
     }
 
     static var defaults: UserDefaults? { UserDefaults(suiteName: appGroup) }
@@ -116,6 +126,19 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
             return (wroteToday, count, memories > 0 ? memories : nil)
         }
         return (false, count, nil)
+    }
+
+    /// Whether each of the five days up to `date` was written, oldest first (the last is
+    /// `date` itself); nil when the snapshot doesn't say (an older build's).
+    func lastFiveDays(on date: Date, calendar: Calendar = .current) -> [Bool]? {
+        guard let writtenDays else { return nil }
+        let written = Set(writtenDays)
+        let today = Self.iso(date, calendar: calendar)
+        return (0..<5).reversed().map { back in
+            let iso = calendar.date(byAdding: .day, value: -back, to: date).map { Self.iso($0, calendar: calendar) } ?? ""
+            // Today's by the snapshot's own word when it's the snapshot's day.
+            return iso == today && iso == day ? wroteToday : written.contains(iso)
+        }
     }
 
     static func iso(_ date: Date, calendar: Calendar = .current) -> String {

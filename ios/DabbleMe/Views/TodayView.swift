@@ -12,6 +12,8 @@ struct TodayView: View {
     @State private var retypes = 0
     /// Taps on the Today tab, over the app's life: the wordmark types itself out on every tenth.
     @AppStorage("today.tabTaps") private var tabTaps = 0
+    /// The year whose Rewind has been opened from Today's corner (it's named there until then).
+    @AppStorage("today.rewindTapped") private var rewindTapped = 0
     private static let tapsBetweenTyping = 10
     @State private var isRetyping = false
     @AppStorage(ShakeSetting.storageKey) private var shakeForRandomEntry = true
@@ -27,8 +29,6 @@ struct TodayView: View {
     @State private var actions = EntryActions()
     /// How far past the bottom Today is pulled: far enough, and letting go opens a random memory.
     @State private var bottomPull: CGFloat = 0
-    /// How far Today is pulled down from its top (a pull to refresh), for the spinner.
-    @State private var topPull: CGFloat = 0
     private let randomMemoryPull: CGFloat = 90
 
     var body: some View {
@@ -47,8 +47,8 @@ struct TodayView: View {
                             .onTapGesture { retypeWordmark() }
                             .sensoryFeedback(.impact(weight: .light), trigger: retypes)
                         Spacer(minLength: 8)
-                        // Nothing to count yet: no "0 entries".
-                        if let count = model.me?.entryCount, count > 0 {
+                        // Nothing to count yet: no "0 entries" (but the Rewind's named all the same).
+                        if let count = model.me?.entryCount, count > 0 || rewindYear != nil {
                             entryCountButton(count)
                         }
                     }
@@ -90,30 +90,11 @@ struct TodayView: View {
                 await model.loadToday()
                 _ = await pause
             }
-            // The pull's own spinner: iOS keeps its one in the navigation bar, which Today hides.
-            .onScrollGeometryChange(for: CGFloat.self) { geometry in
-                -(geometry.contentOffset.y + geometry.contentInsets.top)
-            } action: { _, overscroll in
-                topPull = max(0, overscroll)
-            }
-            .overlay(alignment: .top) {
-                if topPull > 18 {
-                    // The size and grey of iOS's own, as the Journal's pull shows it.
-                    ProgressView()
-                        .controlSize(.large)
-                        .scaleEffect(0.82)
-                        .tint(Color(uiColor: .secondaryLabel))
-                        .opacity(min(1, (topPull - 18) / 30))
-                        // In the middle of the gap the pull opens above the page.
-                        .offset(y: max(4, topPull / 2 - 12))
-                        .allowsHitTesting(false)
-                        .accessibilityHidden(true)
-                }
-            }
+            .refreshDots()
             .timelinePinsDates()
             .frame(maxWidth: 680)
             .frame(maxWidth: .infinity)
-            .entryActionSheets(actions)
+            .entryActionSheets(actions) { path.append(EntryRoute(id: $0)) }
             .navigationTitle("Today") // back-button label on entries opened from here
             .toolbarVisibility(.hidden, for: .navigationBar)
             .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
@@ -261,7 +242,7 @@ struct TodayView: View {
                                 Task { await writePrompt(for: today) }
                             } label: {
                                 if isWritingPrompt {
-                                    ProgressView().controlSize(.small)
+                                    TypingDots(size: .small)
                                 } else {
                                     appIcon("slab-arrows-rotate")
                                         .resizable()
@@ -392,24 +373,28 @@ struct TodayView: View {
         .accessibilityLabel("Edit Today's Entry")
     }
 
-    /// Around the new year (December 15 to January 15), for someone it's ready for (PRO, with
-    /// enough entries this year), the corner names the year's Rewind in place of the count: Stats
-    /// opens with it at its top. Its year, or nil the rest of the time.
+    /// Around the new year (December 15 to January 15) the corner names the year's Rewind, for
+    /// everyone: Stats opens with it at its top, or (a free account, a year with too few
+    /// entries) with what it takes to have one. Once it's been tapped here, the corner's its
+    /// usual self again. Its year, or nil the rest of the time.
     private var rewindYear: Int? {
-        guard model.me?.isPro == true, let today = model.today, let day = today.day, RewindSeason.isHeadline(on: day),
-              let year = RewindSeason.year(on: day),
-              String(year) != day.year || (today.entriesThisYear ?? 0) >= RewindSeason.minimumEntries else { return nil }
+        guard let day = model.today?.day, RewindSeason.isHeadline(on: day),
+              let year = RewindSeason.year(on: day), year != rewindTapped else { return nil }
         return year
     }
 
-    /// "▮ 1,204": every entry in the journal, behind the Stats icon (or "⏪ 2026 Rewind",
-    /// around the new year). Tapping it opens Stats.
+    /// Today's corner, which opens Stats: the last five days as dots (filled where written) for
+    /// someone who's written in them; otherwise how many entries the journal holds ("1,204
+    /// entries"), which is also what shows until the days are known. Around the new year,
+    /// "⏪ 2026 Rewind" until it's been tapped.
     private func entryCountButton(_ count: Int) -> some View {
-        Button {
+        let days = model.lastFiveDays
+        let showsDots = days?.contains(true) == true
+        return Button {
+            if let rewindYear { rewindTapped = rewindYear }
             model.selectedTab = .journal
             model.statsRequest += 1
         } label: {
-            // The Stats icon says where it goes.
             HStack(spacing: 5) {
                 if let rewindYear {
                     appIcon("slab-backward")
@@ -417,12 +402,11 @@ struct TodayView: View {
                         .scaledToFit()
                         .frame(width: 17, height: 17)
                     Text(verbatim: "\(rewindYear) Rewind")
+                } else if showsDots, let days {
+                    LastFiveDays(days: days, size: 9)
+                        .padding(.vertical, 5)
                 } else {
-                    appIcon("slab-chart-bar")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: 15, height: 15)
-                    Text(verbatim: count.formatted())
+                    Text(verbatim: count == 1 ? "1 entry" : "\(count.formatted()) entries")
                         .monospacedDigit()
                 }
             }
@@ -430,10 +414,13 @@ struct TodayView: View {
             .foregroundStyle(.tint)
             .lineLimit(1)
             .padding(.vertical, 4)
+            // (Room to tap: the dots alone are small.)
+            .padding(.leading, 12)
             .contentShape(.rect)
         }
         .buttonStyle(.borderless)
         .accessibilityLabel(Text(verbatim: rewindYear.map { "\($0) Rewind" } ?? (count == 1 ? "1 entry" : "\(count) entries")))
+        .accessibilityValue(rewindYear == nil ? days.map(LastFiveDays.sentence) ?? "" : "")
         .accessibilityHint(rewindYear == nil ? "Shows your stats" : "Shows your stats and your Rewind")
     }
 
@@ -549,6 +536,36 @@ private extension View {
     func plainRow() -> some View {
         listRowSeparator(.hidden)
             .listRowBackground(Color.clear)
+    }
+}
+
+/// The last five days as a row of dots, oldest first and today's last, each filled if it was
+/// written. Up to five and no further: nothing to lose that can't be had back within the week.
+/// The widget has the same row; Stats says what it means.
+struct LastFiveDays: View {
+    let days: [Bool]
+    var size: CGFloat = 8
+
+    var body: some View {
+        HStack(spacing: size * 0.6) {
+            ForEach(Array(days.enumerated()), id: \.offset) { _, written in
+                Circle()
+                    .fill(written ? AnyShapeStyle(.tint) : AnyShapeStyle(Color.primary.opacity(0.12)))
+                    .frame(width: size, height: size)
+            }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Self.sentence(days))
+    }
+
+    /// "3 of the last 5 days have entries."
+    static func sentence(_ days: [Bool]) -> String {
+        let written = days.filter { $0 }.count
+        switch written {
+        case 0: return "None of the last \(days.count) days have entries."
+        case days.count: return "All of the last \(days.count) days have entries."
+        default: return "\(written) of the last \(days.count) days \(written == 1 ? "has an entry" : "have entries")."
+        }
     }
 }
 

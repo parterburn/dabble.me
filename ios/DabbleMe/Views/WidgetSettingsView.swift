@@ -86,10 +86,17 @@ struct WidgetSettingsView: View {
 
     @ViewBuilder
     private var footer: some View {
-        if content.source == .rewind, model.me?.isPro != true {
-            Text("On This Day is part of Dabble Me PRO, so the widget looks back at another past entry instead. Add a widget by touching and holding your home screen. A widget can also choose for itself: touch and hold it, then Edit Widget.")
+        let adding = "Add a widget by touching and holding your home screen. A widget can also choose for itself: touch and hold it, then Edit Widget."
+        if content.source == .rewind {
+            // Rewind is the reminders' past entry, with their left-out words.
+            let rule = "Entries left out in Reminders → Past Entry Filters never show here."
+            if model.me?.isPro != true {
+                Text("On This Day is part of Dabble Me PRO, so the widget looks back at another past entry instead. \(rule) \(adding)")
+            } else {
+                Text("\(rule) \(adding)")
+            }
         } else {
-            Text("Add a widget by touching and holding your home screen. A widget can also choose for itself: touch and hold it, then Edit Widget.")
+            Text(adding)
         }
     }
 }
