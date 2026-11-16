@@ -86,6 +86,12 @@ Rails.application.routes.draw do
       get 'admin/stats' => 'admin#stats', as: 'admin_stats'
       post 'admin/stats/capture' => 'admin#capture_stats', as: 'capture_admin_stats'
       get 'admin/photos' => 'admin#photos', as: 'admin_photos'
+      get 'admin/closing' => 'admin#closing', as: 'admin_closing'
+      post 'admin/closing' => 'admin#announce_closing'
+      delete 'admin/closing' => 'admin#cancel_closing'
+      get 'admin/notices' => 'admin#notices', as: 'admin_notices'
+      post 'admin/notices' => 'admin#create_notice'
+      post 'admin/notices/preview' => 'admin#preview_notice', as: 'preview_admin_notice'
       get 'admin/oauth' => 'admin#oauth_apps', as: 'admin_oauth_apps'
       delete 'admin/oauth/:application_id' => 'admin#destroy_oauth_app', as: 'admin_oauth_app'
       mount AdminPasskeyGate.new(Sidekiq::Web) => "/sidekiq"
@@ -108,6 +114,9 @@ Rails.application.routes.draw do
   end
 
   # The unsubscribe link in product-update emails (EmailUpdatesController).
+  # The "stop further notices" link in a service notice (NoticeStopsController).
+  get 'notices/stop', to: 'notice_stops#show', as: 'notice_stop'
+  post 'notices/stop', to: 'notice_stops#create'
   get 'updates/unsubscribe', to: 'email_updates#show', as: 'email_updates'
   post 'updates/unsubscribe', to: 'email_updates#destroy'
 
@@ -151,6 +160,7 @@ Rails.application.routes.draw do
   get 'play',                           to: redirect('/entries/songs')
   get 'search',                         to: 'searches#show'
   get 'write',                          to: redirect('/entries/new')
+  get 'goodbye',                        to: 'welcome#goodbye'
   get 'privacy',                        to: 'welcome#privacy'
   get 'terms',                          to: 'welcome#terms'
   get 'support',                        to: 'welcome#support'
@@ -169,9 +179,13 @@ Rails.application.routes.draw do
   get 'pricing',                        to: redirect('/#pricing')
   get 'subscribe',                      to: "welcome#subscribe"
   get 'pro',                            to: redirect('/subscribe')
-  get 'pay',                            to: redirect { ENV['PAYMENT_LINK'] }
-  get 'pay/:amount',                    to: redirect { |params, _req|
-    "#{ENV['PAYMENT_LINK']}?prefilled_amount=#{params[:amount].to_i * 100}"
+  # No new payments once a closing is announced (SiteClosure). Temporary
+  # redirects, because a browser keeps a 301 for good: it would go on sending
+  # people to the payment link after a closing, or to /goodbye after one is
+  # called off, without asking the server again.
+  get 'pay',                            to: redirect(status: 302) { SiteClosure.announced? ? '/goodbye' : ENV['PAYMENT_LINK'] }
+  get 'pay/:amount',                    to: redirect(status: 302) { |params, _req|
+    SiteClosure.announced? ? '/goodbye' : "#{ENV['PAYMENT_LINK']}?prefilled_amount=#{params[:amount].to_i * 100}"
   }, constraints: { amount: /\d+/ }
   match 'payment_notify',               to: 'payments#payment_notify', via: [:post]
   get 'ohlife-alternative',             to: 'welcome#ohlife_alternative'

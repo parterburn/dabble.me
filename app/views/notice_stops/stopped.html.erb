@@ -1,0 +1,18 @@
+<% title 'Notices stopped — Dabble me.' %>
+<% content_for :tailwind, true %>
+
+<div class="tw mx-auto max-w-2xl pt-4 pb-16 sm:pt-8">
+  <header class="mb-8">
+    <h1 class="font-serif text-4xl tracking-tight text-primary sm:text-5xl">You won't get further notices</h1>
+    <p class="mt-2 text-muted">For <%= @delivery.user.first_name.presence || @delivery.user.masked_email %></p>
+  </header>
+
+  <section class="card p-6 sm:p-8">
+    <p class="text-primary">
+      We won't send you any more notices like that one for the next year. Your journal emails haven't changed.
+    </p>
+    <p class="mt-3 text-sm text-muted">
+      You can still <%= link_to "export your journal", export_entries_path, class: "text-link" %> at any time.
+    </p>
+  </section>
+</div>

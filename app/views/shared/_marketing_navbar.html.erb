@@ -61,10 +61,16 @@
             Log in
           </a>
           
-          <!-- Get started CTA (always visible) -->
-          <a href="<%= new_user_registration_path %>" class="inline-flex items-center justify-center text-base font-medium px-4 py-2 rounded-full bg-olive-900 text-cream-100 hover:bg-olive-950 transition-colors">
-            Get started
-          </a>
+          <!-- Get started CTA (always visible). Once a closing is announced it leads to the export instead. -->
+          <% if site_closure %>
+            <a href="<%= export_entries_path %>" class="inline-flex items-center justify-center text-base font-medium px-4 py-2 rounded-full bg-olive-900 text-cream-100 hover:bg-olive-950 transition-colors">
+              Export your journal
+            </a>
+          <% else %>
+            <a href="<%= new_user_registration_path %>" class="inline-flex items-center justify-center text-base font-medium px-4 py-2 rounded-full bg-olive-900 text-cream-100 hover:bg-olive-950 transition-colors">
+              Get started
+            </a>
+          <% end %>
 
           <!-- Mobile menu button -->
           <button

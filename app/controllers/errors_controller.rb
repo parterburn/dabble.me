@@ -1,6 +1,9 @@
 class ErrorsController < ApplicationController
   layout 'marketing'
   skip_before_action :verify_authenticity_token
+  # An error page must render with the database down, so it skips the closing
+  # banner's lookup (ApplicationController#site_closure).
+  before_action { @site_closure = nil }
 
   def not_found
     respond_to do |format|

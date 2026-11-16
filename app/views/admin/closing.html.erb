@@ -1,0 +1,83 @@
+<% title "Admin closing" %>
+<% content_for :tailwind, true %>
+<% date = ->(day) { day.strftime("%B %-d, %Y") } %>
+<% closure = site_closure %>
+<% announced = closure.present? %>
+
+<div class="tw mx-auto max-w-6xl pt-4 pb-16 sm:pt-8">
+  <%= render "admin/header", title: "Closing",
+        intro: "Where you announce that Dabble Me is closing. One date does everything below, and it can be moved or called off until the journals are deleted." %>
+
+  <div class="grid gap-6 lg:grid-cols-[3fr_2fr]">
+    <div class="card p-6 sm:p-8">
+      <p class="text-sm text-primary">
+        <% if !announced %>
+          <span class="font-medium">Dabble Me is open.</span> No closing has been announced.
+        <% elsif closure.closed? %>
+          <span class="font-medium">Dabble Me closed after <%= date.(closure.closes_on) %>.</span>
+          People can still sign in and export. Nothing has been deleted.
+        <% else %>
+          <span class="font-medium">Dabble Me's last day is <%= date.(closure.closes_on) %>.</span>
+          New accounts and new subscriptions are already off.
+        <% end %>
+      </p>
+
+      <%= form_with url: admin_closing_path, method: :post, class: "mt-6 space-y-5" do %>
+        <%= render "devise/shared/error_messages", resource: @form %>
+
+        <div>
+          <label for="closes_on" class="field-label"><%= announced ? "Move the last day" : "Last day" %></label>
+          <%= date_field_tag :closes_on, @form.closes_on&.iso8601, min: SiteClosure.today.iso8601, class: "field-input max-w-xs" %>
+          <p class="field-help">
+            The last day the site works. It closes when that day ends, Pacific time, so nobody in the US loses it early.
+            90 days from the first notice gives people time to export. Today's date closes it tonight.
+          </p>
+        </div>
+
+        <div>
+          <label for="confirm" class="field-label">Type <%= SiteClosure::CONFIRMATION %> to confirm</label>
+          <%= text_field_tag :confirm, nil, autocomplete: "off", class: "field-input max-w-xs" %>
+        </div>
+
+        <%= button_tag(announced ? "Move the date" : "Announce the closing", type: "submit", class: "button-danger") %>
+      <% end %>
+
+      <% if announced %>
+        <hr class="my-6 border-subtle">
+        <%= button_to "Call off the closing", admin_closing_path, method: :delete, class: "button-secondary",
+              data: { confirm: "Reopen Dabble Me? Signups and subscriptions come back, and the banner and goodbye page go away." } %>
+        <p class="field-help">Puts everything back as it was. It doesn't tell anyone: send a notice if people were told it was closing.</p>
+      <% end %>
+    </div>
+
+    <div class="card p-6">
+      <h2 class="font-serif text-2xl text-primary">What the date does</h2>
+      <div class="mt-4 space-y-4 text-sm text-primary">
+        <div>
+          <p class="font-medium">As soon as you announce it</p>
+          <ul class="mt-1 list-disc space-y-1 pl-5 text-muted">
+            <li>Nobody new can sign up, subscribe or pay.</li>
+            <li>Every page shows a banner with the date and a link to export.</li>
+            <li>The <%= link_to "goodbye page", goodbye_path, class: "text-link" %> explains what is happening.</li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-medium">When the last day ends</p>
+          <ul class="mt-1 list-disc space-y-1 pl-5 text-muted">
+            <li>The journal and the public site are replaced by the goodbye page.</li>
+            <li>The journal emails stop.</li>
+            <li>People can still sign in, export and delete their account.</li>
+          </ul>
+        </div>
+        <div>
+          <p class="font-medium">What it doesn't do</p>
+          <ul class="mt-1 list-disc space-y-1 pl-5 text-muted">
+            <li>Email anyone. Send a <%= link_to "notice", admin_notices_path, class: "text-link" %> for that.</li>
+            <li>Cancel subscriptions. The goodbye page tells PRO members they won't be charged again, so cancel them in Stripe the same day.</li>
+            <li>Delete anything. The pages tell people their journal is deleted <%= SiteClosure::DELETION_DELAY.in_days.to_i %> days after the last day; that is done by hand.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

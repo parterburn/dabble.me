@@ -1,0 +1,14 @@
+<%# Shown on every marketing page once a closing is announced (SiteClosure). %>
+<% if site_closure && !current_page?(goodbye_path) %>
+  <% date = ->(day) { day.strftime("%B %-d, %Y") } %>
+  <div class="bg-surface border-b border-subtle" role="status">
+    <p class="mx-auto max-w-7xl px-4 py-3 text-center text-sm text-primary sm:px-6 lg:px-8">
+      <% if site_closure.closed? %>
+        Dabble Me closed after <%= date.(site_closure.closes_on) %>. Journals are deleted after <%= date.(site_closure.deletes_on) %>.
+      <% else %>
+        Dabble Me is closing and isn't taking new accounts. Its last day is <%= date.(site_closure.closes_on) %>.
+      <% end %>
+      <a href="<%= goodbye_path %>" class="text-accent hover:text-primary underline">What's happening</a>
+    </p>
+  </div>
+<% end %>

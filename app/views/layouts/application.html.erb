@@ -47,6 +47,7 @@
       <%= render 'shared/navbar' %>
 
       <div id="main-container" class="clear-top <%= params[:controller].in?(['admin', 'payments', 'inspirations']) ? 'container-fluid' : 'container' %>">
+        <%= render 'shared/closing_banner' %>
         <% if notice %>
           <div class="col-md-8 col-md-offset-2 alert alert-success"><%= notice.html_safe %></div>
           <div class="clearfix"></div>

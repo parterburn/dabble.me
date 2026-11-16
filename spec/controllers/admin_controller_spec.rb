@@ -361,4 +361,245 @@ RSpec.describe AdminController, type: :controller do
       expect(response).to redirect_to(admin_stats_path)
     end
   end
+
+  describe 'notices' do
+    def deliveries
+      ActionMailer::Base.deliveries
+    end
+
+    # The shared context gives three accounts an entry: user, paid_user and free_ai.
+    before do
+      allow(ServiceNoticeJob).to receive(:perform_later)
+      deliveries.clear
+    end
+
+    it 'keeps everyone but admins out of the page, the preview and the send' do
+      get :notices
+      expect(response).to redirect_to(new_user_session_url)
+
+      sign_in user
+      get :notices
+      expect(response).to redirect_to(entries_path)
+      post :preview_notice, params: { message: 'Hello' }
+      expect(response).to redirect_to(entries_path)
+      post :create_notice, params: { message: 'Hello', confirm_count: '3' }
+      expect(response).to redirect_to(entries_path)
+
+      expect(deliveries).to be_empty
+      expect(ServiceNotice.count).to eq(0)
+    end
+
+    it 'asks an admin for a passkey before anything can be sent' do
+      sign_in superuser
+      post :create_notice, params: { confirm_count: '3' }
+
+      expect(response).to redirect_to(security_path)
+      expect(ServiceNotice.count).to eq(0)
+    end
+
+    it 'shows how many accounts a notice goes to and what it says' do
+      sign_in_admin superuser
+      get :notices
+
+      expect(response.status).to eq 200
+      expect(response.body).to have_content('Type 3 to confirm')
+      expect(response.body).to have_button('Send to 3 accounts')
+      expect(response.body).to have_content('Export your Dabble Me journal')
+      expect(response.body).to have_content('No notice has been sent.')
+    end
+
+    it 'emails a preview to the admin alone and keeps the message in the form' do
+      sign_in_admin superuser
+      post :preview_notice, params: { message: 'We are closing.' }
+
+      expect(deliveries.map(&:to)).to eq([[superuser.email]])
+      expect(deliveries.first.subject).to eq('[Preview] Export your Dabble Me journal')
+      expect(deliveries.first.text_part.body.to_s).to include('We are closing.')
+      expect(response.body).to have_field('message', with: 'We are closing.')
+      expect(response.body).to have_content('Preview sent to your own address.')
+      expect(ServiceNotice.count).to eq(0)
+      expect(ServiceNoticeJob).not_to have_received(:perform_later)
+    end
+
+    it 'does not preview or send a message with a link in it' do
+      sign_in_admin superuser
+
+      post :preview_notice, params: { message: 'Go to https://example.com' }
+      expect(response.body).to have_content("can't contain links")
+      post :create_notice, params: { message: 'Go to https://example.com', confirm_count: '3' }
+      expect(response.status).to eq 422
+
+      expect(deliveries).to be_empty
+      expect(ServiceNotice.count).to eq(0)
+    end
+
+    it 'sends nothing until the number of accounts is typed' do
+      sign_in_admin superuser
+
+      ['', '2', 'yes'].each do |typed|
+        post :create_notice, params: { message: 'We are closing.', confirm_count: typed }
+
+        expect(response.status).to eq 422
+        expect(response.body).to have_content('Type 3 to confirm.')
+        expect(response.body).to have_field('message', with: 'We are closing.')
+      end
+      expect(ServiceNotice.count).to eq(0)
+      expect(ServiceNoticeJob).not_to have_received(:perform_later)
+    end
+
+    it 'records the notice and queues it once the number matches' do
+      sign_in_admin superuser
+      post :create_notice, params: { message: 'We are closing.', confirm_count: '3' }
+
+      notice = ServiceNotice.last
+      expect(notice).to have_attributes(message: 'We are closing.', sent_by: superuser, recipients_count: 3)
+      expect(ServiceNoticeJob).to have_received(:perform_later).with(notice.id)
+      expect(response).to redirect_to(admin_notices_path)
+      expect(flash[:notice]).to eq('Notice queued for 3 accounts. They go out at 120 a minute.')
+    end
+
+    it 'records nothing and says so when the emails cannot be queued' do
+      allow(ServiceNoticeJob).to receive(:perform_later).and_raise(RuntimeError, 'queue is down')
+      sign_in_admin superuser
+      post :create_notice, params: { message: 'We are closing.', confirm_count: '3' }
+
+      expect(response).to redirect_to(admin_notices_path)
+      expect(flash[:alert]).to include('could not be queued, so nothing was sent')
+      expect(ServiceNotice.count).to eq(0)
+    end
+
+    it 'has nothing to send when nobody has a journal' do
+      Entry.delete_all
+      sign_in_admin superuser
+
+      get :notices
+      expect(response.body).to have_content('There is nobody to send this to.')
+
+      post :create_notice, params: { confirm_count: '0' }
+      expect(response.status).to eq 422
+      expect(ServiceNotice.count).to eq(0)
+    end
+
+    it 'refuses a second notice within 24 hours and says when the last went out' do
+      ServiceNotice.create!(message: 'First', sent_by: superuser, recipients_count: 3, sent_on: Date.current, created_at: 1.hour.ago)
+      sign_in_admin superuser
+
+      get :notices
+      expect(response.body).to have_content('The next one can be sent 24 hours after it.')
+      expect(response.body).not_to have_button('Send to 3 accounts')
+      expect(response.body).to have_content('0 of 3')
+
+      post :create_notice, params: { message: 'Second', confirm_count: '3' }
+      expect(response.status).to eq 422
+      expect(ServiceNotice.count).to eq(1)
+      expect(ServiceNoticeJob).not_to have_received(:perform_later)
+    end
+  end
+
+  describe 'closing' do
+    let(:today) { SiteClosure.today }
+
+    def long_date(day)
+      day.strftime('%B %-d, %Y')
+    end
+
+    it 'keeps everyone but admins from announcing or calling off a closing' do
+      post :announce_closing, params: { closes_on: (today + 90).iso8601, confirm: 'CLOSE' }
+      expect(response).to redirect_to(new_user_session_url)
+
+      sign_in user
+      get :closing
+      expect(response).to redirect_to(entries_path)
+      post :announce_closing, params: { closes_on: (today + 90).iso8601, confirm: 'CLOSE' }
+      expect(response).to redirect_to(entries_path)
+      delete :cancel_closing
+      expect(response).to redirect_to(entries_path)
+
+      expect(SiteClosure.announced?).to be(false)
+    end
+
+    it 'says Dabble Me is open and suggests a date 90 days out' do
+      sign_in_admin superuser
+      get :closing
+
+      expect(response.status).to eq 200
+      expect(response.body).to have_content('Dabble Me is open.')
+      expect(response.body).to have_field('closes_on', with: (today + 90).iso8601)
+      expect(response.body).to have_button('Announce the closing')
+      expect(response.body).not_to have_button('Call off the closing')
+    end
+
+    it 'announces nothing until CLOSE is typed' do
+      sign_in_admin superuser
+
+      ['', 'close it', 'yes'].each do |typed|
+        post :announce_closing, params: { closes_on: (today + 90).iso8601, confirm: typed }
+
+        expect(response.status).to eq 422
+        expect(response.body).to have_content('Type CLOSE to confirm.')
+      end
+      expect(SiteClosure.announced?).to be(false)
+    end
+
+    it 'refuses a date in the past or one it cannot read' do
+      sign_in_admin superuser
+
+      post :announce_closing, params: { closes_on: (today - 1).iso8601, confirm: 'CLOSE' }
+      expect(response.status).to eq 422
+      expect(response.body).to have_content("can't be in the past")
+
+      ['soon', '', "2027-01-01#{'x' * 200}"].each do |typed|
+        post :announce_closing, params: { closes_on: typed, confirm: 'CLOSE' }
+        expect(response.status).to eq 422
+      end
+
+      expect(SiteClosure.announced?).to be(false)
+    end
+
+    it 'announces the closing, then moves the date' do
+      sign_in_admin superuser
+      post :announce_closing, params: { closes_on: (today + 90).iso8601, confirm: 'CLOSE' }
+
+      expect(response).to redirect_to(admin_closing_path)
+      expect(SiteClosure.current).to have_attributes(closes_on: today + 90, announced_by: superuser)
+
+      get :closing
+      expect(response.body).to have_content("Dabble Me's last day is #{long_date(today + 90)}.")
+      expect(response.body).to have_field('closes_on', with: (today + 90).iso8601)
+      expect(response.body).to have_button('Move the date')
+
+      post :announce_closing, params: { closes_on: (today + 120).iso8601, confirm: 'CLOSE' }
+      expect(SiteClosure.count).to eq(1)
+      expect(SiteClosure.current.closes_on).to eq(today + 120)
+    end
+
+    it 'keeps showing the real last day when a new one is refused' do
+      SiteClosure.announce(closes_on: today + 30, announced_by: superuser)
+      sign_in_admin superuser
+
+      post :announce_closing, params: { closes_on: '', confirm: 'CLOSE' }
+      expect(response.status).to eq 422
+      expect(response.body).to have_content("Dabble Me's last day is #{long_date(today + 30)}.")
+
+      post :announce_closing, params: { closes_on: (today + 99).iso8601, confirm: '' }
+      expect(response.status).to eq 422
+      expect(response.body).to have_content("Dabble Me is closing. Its last day is #{long_date(today + 30)}.")
+      expect(response.body).not_to have_content("Its last day is #{long_date(today + 99)}")
+      expect(response.body).to have_field('closes_on', with: (today + 99).iso8601)
+
+      expect(SiteClosure.current.closes_on).to eq(today + 30)
+    end
+
+    it 'calls the closing off' do
+      SiteClosure.announce(closes_on: today, announced_by: superuser).update_columns(closes_on: today - 1)
+      sign_in_admin superuser
+
+      get :closing
+      expect(response.body).to have_content('Dabble Me closed after')
+
+      delete :cancel_closing
+      expect(response).to redirect_to(admin_closing_path)
+      expect(SiteClosure.announced?).to be(false)
+    end
+  end
 end

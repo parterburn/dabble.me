@@ -7,8 +7,14 @@ class ApplicationController < ActionController::Base
   before_action :configure_permitted_parameters, if: :devise_controller?
   before_action :identify_current_user_to_sentry
   before_action :require_admin_passkey
+  before_action :show_goodbye_when_closed
   after_action :set_webmcp_discovery_headers
-  helper_method :webmcp_catalog
+  helper_method :webmcp_catalog, :site_closure
+
+  # The pages that give way to the goodbye page once Dabble Me has closed:
+  # the marketing site and the journal. Signing in, exporting, account
+  # settings and the admin pages keep working, and so do the API and MCP.
+  PAGES_CLOSED_WITH_THE_SITE = %w[welcome entries searches import].freeze
 
   rescue_from Rack::Timeout::RequestTimeoutException, with: :handle_timeout
 
@@ -81,6 +87,30 @@ class ApplicationController < ActionController::Base
     end
   end
 
+  # The closing an admin has announced (SiteClosure), or nil while open.
+  def site_closure
+    return @site_closure if defined?(@site_closure)
+
+    @site_closure = SiteClosure.current
+  end
+
+  # Once the closing day has ended, sends the journal and marketing pages to
+  # the goodbye page. Admins still see everything.
+  def show_goodbye_when_closed
+    return unless controller_path.in?(PAGES_CLOSED_WITH_THE_SITE) && site_closure&.closed?
+    return if controller_path == "welcome" && action_name.in?(%w[goodbye privacy terms])
+    return if current_user&.admin?
+
+    redirect_to goodbye_path
+  end
+
+  # From the day a closing is announced, turns away new accounts and new
+  # payments. Used as a before_action where either starts. The /pay redirects
+  # in config/routes.rb make the same check.
+  def refuse_when_closing
+    redirect_to goodbye_path if site_closure
+  end
+
   def admin_passkey_exempt?
     controller_path == "passkeys/verifications" ||
       (controller_path == "sessions" && action_name == "destroy")
@@ -93,6 +123,8 @@ class ApplicationController < ActionController::Base
 
   def handle_timeout(exception)
     Sentry.capture_message("Timeout error", level: :error, extra: { params: filtered_params_for_sentry, url: request.url })
+    # No closing banner lookup on the way out: the database may be why it timed out.
+    @site_closure = nil unless defined?(@site_closure)
     render "errors/timeout", layout: "marketing", status: 504
   end
 

@@ -1,0 +1,20 @@
+<% title 'Stop notices — Dabble me.' %>
+<% content_for :tailwind, true %>
+
+<div class="tw mx-auto max-w-2xl pt-4 pb-16 sm:pt-8">
+  <header class="mb-8">
+    <h1 class="font-serif text-4xl tracking-tight text-primary sm:text-5xl">Stop notices like this one</h1>
+    <p class="mt-2 text-muted">For <%= @delivery.user.first_name.presence || @delivery.user.masked_email %></p>
+  </header>
+
+  <section class="card p-6 sm:p-8">
+    <p class="text-primary">
+      Notices are the rare emails about your journal itself, such as a reminder to export it. If you've read this one,
+      you can stop any that follow it. Your journal emails are a separate setting and won't change.
+    </p>
+    <%= button_to "Stop further notices", notice_stop_path(token: params[:token]), method: :post, class: "button-primary mt-5 w-full sm:w-auto" %>
+    <p class="mt-4 text-sm text-muted">
+      <%= link_to "Export your journal", export_entries_path, class: "text-link" %> first if you haven't yet.
+    </p>
+  </section>
+</div>

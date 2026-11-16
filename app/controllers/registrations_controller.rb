@@ -3,6 +3,8 @@ class RegistrationsController < Devise::RegistrationsController
   layout :choose_layout
   before_action :require_user, only: [:security, :delete_account, :update, :edit, :posting_address, :reset_posting_address]
   prepend_before_action :check_captcha, only: [:create]
+  # No new accounts once a closing is announced. Prepended last, so it runs first.
+  prepend_before_action :refuse_when_closing, only: [:new, :create]
 
   def edit
     cookies.permanent[:viewed_settings] = true

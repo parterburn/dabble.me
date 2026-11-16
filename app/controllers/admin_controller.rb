@@ -99,6 +99,69 @@ class AdminController < ApplicationController
     redirect_to edit_admin_user_path(user), notice: "Upgrade email sent to #{user.email}."
   end
 
+  # Where an admin announces that Dabble Me is closing, moves the date, or
+  # calls it off (SiteClosure). The form has its own unsaved record, so a date
+  # that is refused never shows up in the banner as if it were the real one.
+  def closing
+    @form = SiteClosure.new(closes_on: site_closure&.closes_on || SiteClosure.today + 90)
+  end
+
+  def announce_closing
+    @form = SiteClosure.new(closes_on: closing_date_param)
+    @form.validate
+    @form.errors.add(:base, "Type #{SiteClosure::CONFIRMATION} to confirm.") if params[:confirm].to_s.strip != SiteClosure::CONFIRMATION
+    return render(:closing, status: :unprocessable_entity) if @form.errors.any?
+
+    closure = SiteClosure.announce(closes_on: @form.closes_on, announced_by: current_user)
+    redirect_to admin_closing_path, notice: "Dabble Me now closes after #{closure.closes_on.strftime('%B %-d, %Y')}."
+  end
+
+  def cancel_closing
+    SiteClosure.reopen!
+    redirect_to admin_closing_path, notice: "The closing is called off. Dabble Me is open again."
+  end
+
+  # The one email that goes to everyone with a journal (ServiceNotice): a
+  # reminder to export it, under an optional message typed here.
+  def notices
+    load_notices
+  end
+
+  # Emails the notice to the admin alone, to read before it goes to everyone.
+  def preview_notice
+    load_notices
+    if @service_notice.valid?
+      ServiceNoticeMailer.export_reminder(current_user, message: @service_notice.message, preview: true).deliver_now
+      flash.now[:notice] = "Preview sent to your own address. Nothing went to anyone else."
+    end
+    render :notices
+  end
+
+  # Sends the notice. The count typed has to match the number of people it
+  # goes to, so nobody sends it without reading that number.
+  def create_notice
+    load_notices
+    typed = params[:confirm_count].to_s.gsub(/[^\d]/, "")
+    if @blocker
+      @service_notice.errors.add(:base, @blocker)
+    elsif @recipient_count.zero?
+      @service_notice.errors.add(:base, "There is nobody to send this to.")
+    elsif @service_notice.valid? && typed != @recipient_count.to_s
+      @service_notice.errors.add(:base, "Type #{@recipient_count} to confirm. That is how many accounts this goes to.")
+    end
+    return render(:notices, status: :unprocessable_entity) if @service_notice.errors.any?
+
+    sent = ServiceNotice.send_to_everyone!(message: @service_notice.message, sent_by: current_user)
+    if sent
+      redirect_to admin_notices_path, notice: "Notice queued for #{sent.recipients_count} accounts. They go out at #{ServiceNotice::PER_MINUTE} a minute."
+    else
+      redirect_to admin_notices_path, alert: "A notice has already gone out in the last 24 hours. Nothing was sent."
+    end
+  rescue ServiceNotice::NotQueued => e
+    Sentry.capture_exception(e)
+    redirect_to admin_notices_path, alert: "The notice could not be queued, so nothing was sent. Try again in a minute."
+  end
+
   def photos
     # `uploading_image_at` is required by Entry#uploading_image? (called through
     # image_code → display_image_url in the view). Keep `:id` for AR identity
@@ -124,6 +187,22 @@ class AdminController < ApplicationController
   end
 
   private
+
+  # The date typed into the closing form, or nil when it isn't one.
+  # Date.iso8601 raises a plain ArgumentError for some input, not Date::Error.
+  def closing_date_param
+    Date.iso8601(params[:closes_on].to_s)
+  rescue ArgumentError
+    nil
+  end
+
+  def load_notices
+    @service_notice = ServiceNotice.new(message: params[:message])
+    @recipient_count = ServiceNotice.recipients.count
+    @blocker = ServiceNotice.blocker
+    @past_notices = ServiceNotice.order(created_at: :desc).limit(20).includes(:sent_by)
+    @delivered = ServiceNoticeDelivery.where(service_notice_id: @past_notices.map(&:id)).group(:service_notice_id).count
+  end
 
   def per_page
     params[:per].presence || 300

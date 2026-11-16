@@ -1,0 +1,14 @@
+Hey <%= @user.first_name_or_fallback %>,
+
+<% if @message %><%= raw @message %>
+
+<% end %>This is a reminder to keep a copy of your Dabble Me journal for yourself.
+
+Export your journal: <%= raw @export_url %>
+
+You'll be asked to sign in. Choose to export everything, and you'll get an email with a link to a ZIP file holding all of your entries and photos. It opens in any web browser and needs no account.
+
+You're getting this because you have a journal at Dabble Me. It's a notice about your account, not a newsletter, so it's sent whatever your email settings are. Questions? Just reply.
+<% if @stop_url %>
+Stop further notices like this one: <%= raw @stop_url %>
+<% end %>
