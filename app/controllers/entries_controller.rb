@@ -88,6 +88,9 @@ class EntriesController < ApplicationController
     @today_entry = current_user.entries.includes(:inspiration).where(date: @user_today.all_day).first
     set_hashtags
     set_sidebar_stats
+    # A free account: how many entries there are from this day in past years, not the entries
+    # (the daily email's "You have 3 entries from this day in past years" links here).
+    @years_ago_count = on_this_day_entries.count unless current_user.is_pro?
     return unless current_user.is_pro?
 
     set_years_ago
@@ -110,10 +113,13 @@ class EntriesController < ApplicationController
 
   # Every entry written on this month and day in an earlier year, as
   # [years back, entry] pairs, most recent year first.
+  def on_this_day_entries
+    current_user.entries.where("extract(month from date) = ? AND extract(day from date) = ?", @user_today.month, @user_today.day)
+                .where("date < ?", @user_today.beginning_of_year)
+  end
+
   def set_years_ago
-    on_this_day = current_user.entries.includes(:inspiration)
-                              .where("extract(month from date) = ? AND extract(day from date) = ?", @user_today.month, @user_today.day)
-                              .where("date < ?", @user_today.beginning_of_year)
+    on_this_day = on_this_day_entries.includes(:inspiration)
     @years_ago_entries = on_this_day.map { |entry| [@user_today.year - entry.date.year, entry] }.sort_by { |years_back, entry| [years_back, entry.id] }
   end
 

@@ -82,6 +82,12 @@ struct SettingsView: View {
                 intelligenceSection
 
                 Section("App") {
+                    // Which calendars the composer's "?" lists the day's events from.
+                    PaneLink {
+                        CalendarSettingsView()
+                    } label: {
+                        Label("Calendars", icon: "slab-calendar")
+                    }
                     PaneLink {
                         AccessibilitySettingsView()
                     } label: {
@@ -151,8 +157,20 @@ struct SettingsView: View {
                         Text("You'll be signed out of the app, and your browser will open dabble.me, where you finish deleting your account with your password. You can export your entries there first.")
                     }
                 } footer: {
-                    if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String {
-                        Text("Dabble Me for iOS \(version)")
+                    // The app's name and version, centered at the foot: a tap goes to its page.
+                    if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
+                       let page = URL(string: "https://dabble.me/journal-app") {
+                        Button { openURL(page) } label: {
+                            Text("Dabble Me for iOS \(version)")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity)
+                                .padding(.top, 20)
+                                .padding(.bottom, 28)
+                                .contentShape(.rect)
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityHint("Opens the app's page on dabble.me")
                     }
                 }
             }
@@ -173,7 +191,7 @@ private extension SettingsView {
         Section {
             // Each kind on a page of its own; then what any of them can look back on.
             PaneLink {
-                PushReminderView()
+                PushReminderView(emailShowsPastEntry: emailSchedule.schedule?.includePastEntries ?? true)
             } label: {
                 LabeledContent("Push", value: ReminderSettings.summary(enabled: dailyReminder, days: ReminderSettings.days(from: reminderDays),
                                                                        minutes: reminderTime >= 0 ? reminderTime : emailTime))
@@ -183,6 +201,7 @@ private extension SettingsView {
             PaneLink {
                 WidgetSettingsView()
             } label: {
+                let _ = model.widgetChoiceChanges // redrawn when the choice changes
                 LabeledContent("Home Screen Widget", value: WidgetSnapshot.content.source.title)
             }
             PastEntriesRow(store: emailSchedule)
@@ -245,6 +264,9 @@ struct ProInfoView: View {
 
     let feature: Feature
     var showsDoneButton = true
+    /// In its season, Stats' page names the year's Rewind too: Today's corner leads here for
+    /// everyone, and a free account should know there'd be one.
+    var rewindYear: Int?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -269,7 +291,7 @@ struct ProInfoView: View {
         switch feature {
         case .writing: "Writing in the app is a PRO feature"
         case .search: "Search is a PRO feature"
-        case .stats: "Stats are a PRO feature"
+        case .stats: rewindYear.map { "\(String($0)) Rewind and Stats are PRO features" } ?? "Stats are a PRO feature"
         }
     }
 
@@ -280,7 +302,11 @@ struct ProInfoView: View {
         case .search:
             "With Dabble Me PRO you can search every entry you've ever written."
         case .stats:
-            "With Dabble Me PRO you can see your streaks, writing days, words and top hashtags."
+            if let rewindYear {
+                "With Dabble Me PRO you get your \(String(rewindYear)) Rewind, a look back on the year you wrote down, along with your streaks, writing days, words and top hashtags."
+            } else {
+                "With Dabble Me PRO you can see your streaks, writing days, words and top hashtags."
+            }
         }
     }
 }

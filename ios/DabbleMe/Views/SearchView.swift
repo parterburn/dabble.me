@@ -64,7 +64,7 @@ struct SearchView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar(removing: .title) // the tab says where you are
             .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
-            .entryActionSheets(actions)
+            .entryActionSheets(actions) { path.append(EntryRoute(id: $0)) }
         }
     }
 
@@ -155,7 +155,7 @@ struct SearchView: View {
             .listStyle(.plain)
             .timelinePinsDates()
             // Pull to reset: collapses expanded results and runs the search again.
-            .refreshable {
+            .refreshDots {
                 withAnimation(.snappy(duration: 0.25)) { expanded = [] }
                 query = submitted
                 await search(reset: true, keepingResults: true)

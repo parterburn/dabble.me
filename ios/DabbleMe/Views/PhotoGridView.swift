@@ -51,7 +51,7 @@ struct PhotoGridView: View {
                 }
             }
         }
-        .refreshable { await load(reset: true) }
+        .refreshDots { await load(reset: true) }
         .task { if entries.isEmpty { await load(reset: true) } }
         // A photo that was still processing is ready: its square shows it.
         .onChange(of: model.photosFinished) { Task { await refreshNewest() } }
@@ -123,6 +123,12 @@ extension EntrySummary {
     /// (production photos are served via /cdn-cgi/image/), else the original.
     func thumbnailURL(width: Int, height: Int? = nil) -> URL? {
         Self.thumbnailURL(imageUrl, width: width, height: height)
+    }
+
+    /// The stand-in picture an entry has while its photo uploads ("Images Uploading"): fine on
+    /// a page that will load the real one, not for a widget or a notification, which keep it.
+    static func isUploadingPlaceholder(_ imageUrl: String?) -> Bool {
+        imageUrl?.hasSuffix("/uploading.png") == true
     }
 
     /// With a height too, the server crops to that shape (a square thumbnail).

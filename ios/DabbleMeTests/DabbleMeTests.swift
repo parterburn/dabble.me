@@ -512,14 +512,41 @@ struct WidgetSnapshotTests {
     }
 
     /// The days after the snapshot's own have the look back the app left for each: the widget
-    /// keeps showing Rewind without the app being opened that day.
-    @Test func laterDaysHaveTheirOwnLookBack() {
+    /// keeps showing Rewind without the app being opened that day. Its own day goes by its own
+    /// fields until the days have been planned, and by the plan from then on.
+    @Test func daysHaveTheirPlannedLookBack() {
         var saved = snapshot(day: "2026-11-08", wrote: true, count: 36, memories: 2)
         saved.upcoming = [.init(day: "2026-11-09", memories: 3), .init(day: "2026-11-10", memoryNote: "You have a memory from 36 days ago.")]
-        #expect(saved.lookBack(on: date(8), calendar: calendar) == nil) // its own day: the snapshot itself
-        #expect(saved.lookBack(on: date(9), calendar: calendar)?.memories == 3)
-        #expect(saved.lookBack(on: date(10), calendar: calendar)?.memoryNote == "You have a memory from 36 days ago.")
-        #expect(saved.lookBack(on: date(11), calendar: calendar) == nil)
+        #expect(saved.rewind(on: date(8), calendar: calendar).known == false) // its own day: the snapshot itself
+        #expect(saved.rewind(on: date(9), calendar: calendar).day?.memories == 3)
+        #expect(saved.rewind(on: date(10), calendar: calendar).day?.memoryNote == "You have a memory from 36 days ago.")
+        #expect(saved.rewind(on: date(11), calendar: calendar).known == false)
+
+        // Planned (the reminders' picks, today's included): the plan says, even when it's "none".
+        saved.plannedThrough = "2026-11-21"
+        saved.upcoming = [.init(day: "2026-11-08", memories: 1), .init(day: "2026-11-09", memories: 3)]
+        #expect(saved.rewind(on: date(8), calendar: calendar).day?.memories == 1)
+        #expect(saved.rewind(on: date(11), calendar: calendar).known && saved.rewind(on: date(11), calendar: calendar).day == nil)
+        // Nothing to look back on: nothing planned on any day it reaches.
+        saved.upcoming = nil
+        #expect(saved.rewind(on: date(8), calendar: calendar).known && saved.rewind(on: date(8), calendar: calendar).day == nil)
+        // Past where the plan reached (the app not opened in weeks): not known, so the widget
+        // goes by what the snapshot itself says rather than by an empty plan.
+        #expect(saved.rewind(on: date(22), calendar: calendar).known == false)
+    }
+
+    /// The widget's row of the last five days: each written or not, today's last, and moving on
+    /// a day at midnight without the app being opened.
+    @Test func theLastFiveDaysMoveOnWithTheDate() {
+        var saved = snapshot(day: "2026-11-08", wrote: true, count: 36)
+        #expect(saved.lastFiveDays(on: date(8), calendar: calendar) == nil) // an older build's snapshot
+        saved.writtenDays = ["2026-11-03", "2026-11-05", "2026-11-06", "2026-11-08"]
+        #expect(saved.lastFiveDays(on: date(8), calendar: calendar) == [false, true, true, false, true])
+        // The next day, unopened: yesterday's still there, today's not written yet.
+        #expect(saved.lastFiveDays(on: date(9), calendar: calendar) == [true, true, false, true, false])
+        // Today's goes by what the snapshot says of today.
+        saved.wroteToday = false
+        #expect(saved.lastFiveDays(on: date(8), calendar: calendar)?.last == false)
     }
 
     /// A snapshot saved by a build that still tracked the streak has no count yet.

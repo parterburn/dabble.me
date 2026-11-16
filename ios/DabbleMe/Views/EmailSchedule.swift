@@ -50,6 +50,8 @@ final class EmailScheduleStore {
                 if sent == generation { schedule = saved } // nothing newer is waiting
                 // The push reminder carries the same past entries: built again with the choice.
                 await ReminderScheduler.shared.settingsChanged(for: model)
+                // And a Rewind widget's.
+                WidgetSync.update(from: model)
             } catch is CancellationError {
                 return
             } catch {
@@ -63,24 +65,40 @@ final class EmailScheduleStore {
     }
 }
 
-/// Settings → Reminders → Include Past Entries: a summary row ("On", "Off"), under Push and
-/// Email, that opens the choices both notifications share.
+/// Settings → Reminders → Past Entry Filters: a summary row ("2 words", "None"), under Push,
+/// Email and the widget, that opens what all three share.
 struct PastEntriesRow: View {
     let store: EmailScheduleStore
+    @Environment(AppModel.self) private var model
+
+    /// Past entries start coming up, and so can be filtered, with more than five entries.
+    @MainActor static func showsWords(_ model: AppModel) -> Bool { (model.me?.entryCount ?? 0) > 5 }
 
     var body: some View {
-        PaneLink {
-            PastEntriesView(store: store)
-        } label: {
-            LabeledContent("Include Past Entries", value: store.schedule.map { $0.includePastEntries ? "On" : "Off" } ?? "")
+        // Nothing to filter yet (a new journal): no row.
+        if Self.showsWords(model) || (store.schedule.map { $0.canChooseDays && $0.hasOldEntries } ?? false) {
+            PaneLink {
+                PastEntriesView(store: store)
+            } label: {
+                LabeledContent("Past Entry Filters", value: summary)
+            }
+            .disabled(store.schedule == nil)
         }
-        .disabled(store.schedule == nil)
+    }
+
+    private var summary: String {
+        guard let schedule = store.schedule else { return "" }
+        let words = schedule.pastFilter.split(separator: ",").count
+        let parts = [words == 0 ? nil : words == 1 ? "1 word" : "\(words) words",
+                     schedule.hasOldEntries && !schedule.includeOldEntries ? "Past year" : nil].compactMap { $0 }
+        return parts.isEmpty ? "None" : parts.joined(separator: " · ")
     }
 }
 
-/// The past entry a notification can carry, for the push reminder and the daily email alike
-/// (like the web settings): whether there is one, words that leave entries out, and whether
-/// entries over a year old can come up (those two are PRO). Saves as you change it.
+/// Which past entries can come up to look back on, in the push reminder, the daily email and
+/// the widget alike (the account's own, like the web settings; PRO): words that leave entries
+/// out, and whether entries over a year old can. (Whether each shows the entry itself is its
+/// own switch, on its own page.) Saves as you change it.
 struct PastEntriesView: View {
     let store: EmailScheduleStore
     @Environment(AppModel.self) private var model
@@ -88,18 +106,15 @@ struct PastEntriesView: View {
     @State private var filterDraft: String?
     @FocusState private var filterFocused: Bool
 
+    /// Words to leave out are offered once the journal has a few entries.
+    private var showsWords: Bool { PastEntriesRow.showsWords(model) }
+
     var body: some View {
         @Bindable var store = store
         Form {
             if let schedule = store.schedule {
-                Section {
-                    Toggle("Include Past Entries in Notifications", isOn: Binding(get: { schedule.includePastEntries }, set: { on in
-                        store.save(with: model) { $0.includePastEntries = on }
-                    }))
-                } footer: {
-                    Text("Push and email notifications can each come with one of your past entries to look back on.")
-                }
-                if schedule.includePastEntries {
+                // Words to leave out: once there are a few entries for a past one to be picked from.
+                if showsWords {
                     Section {
                         // PRO, like the web; greyed out for free accounts.
                         VStack(alignment: .leading, spacing: 6) {
@@ -115,17 +130,26 @@ struct PastEntriesView: View {
                         }
                         .padding(.vertical, 2)
                         .disabled(!schedule.canChooseDays)
-                        if schedule.canChooseDays, schedule.hasOldEntries {
-                            Toggle("Include Entries Over a Year Old", isOn: Binding(get: { schedule.includeOldEntries }, set: { on in
-                                store.save(with: model) { $0.includeOldEntries = on }
-                            }))
-                        }
                     } footer: {
                         if !schedule.canChooseDays {
                             Text("Leaving out entries is part of Dabble Me PRO.")
                         } else if !schedule.pastFilter.isEmpty {
-                            Text("\(schedule.filteredCount == 1 ? "1 entry is" : "\(schedule.filteredCount.formatted()) entries are") left out of past entries.")
+                            Text("\(schedule.filteredCount == 1 ? "1 entry is" : "\(schedule.filteredCount.formatted()) entries are") left out of the past entries in push notifications, emails and the widget.")
+                        } else {
+                            Text("Entries with these words never come up as past entries in push notifications, emails or the widget.")
                         }
+                    }
+                }
+                // For a journal that goes back over a year (PRO). The switch is the account's
+                // setting turned round: on, a past entry is last year's from this day or else
+                // one from the past 12 months, never one from further back.
+                if schedule.canChooseDays, schedule.hasOldEntries {
+                    Section {
+                        Toggle("Use Entries Only From the Past Year", isOn: Binding(get: { !schedule.includeOldEntries }, set: { on in
+                            store.save(with: model) { $0.includeOldEntries = !on }
+                        }))
+                    } footer: {
+                        Text("With this on, a past entry is last year's from this day, or else one from the past 12 months.")
                     }
                 }
             }
@@ -135,7 +159,7 @@ struct PastEntriesView: View {
         .onChange(of: store.schedule?.pastFilter) { if !filterFocused { filterDraft = nil } }
         .onDisappear(perform: saveFilter)
         .slabBackButton()
-        .navigationTitle("Past Entries")
+        .navigationTitle("Past Entry Filters")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Couldn't save your settings", isPresented: .present($store.error)) {
             Button("OK", role: .cancel) {}
@@ -158,13 +182,13 @@ struct EmailScheduleRow: View {
     @Environment(AppModel.self) private var model
 
     var body: some View {
-        let isPro = model.me?.isPro == true
         PaneLink {
             EmailScheduleView(store: store)
         } label: {
             LabeledContent("Email", value: store.schedule.map(Self.summary) ?? "")
         }
-        .disabled(!isPro || store.schedule == nil)
+        // (Free accounts too: on or off for Sundays, and whether it shows a past entry.)
+        .disabled(store.schedule == nil)
     }
 
     /// "Every day · 8 PM", "Weekdays · 7 AM", "Sundays · 8 PM", "Mon, Wed, Fri · 9 PM", "Off".
@@ -240,6 +264,17 @@ struct EmailScheduleView: View {
                     } label: {
                         LabeledContent("Time Zone", value: Self.shortName(schedule.timezone))
                     }
+                }
+                Section {
+                    Toggle("Show Past Entry", isOn: Binding(get: { schedule.includePastEntries }, set: { on in
+                        // The push reminder keeps what it had, now as its own.
+                        if ReminderSettings.includesPastEntry == nil {
+                            UserDefaults.standard.set(schedule.includePastEntries, forKey: ReminderSettings.includesPastEntryKey)
+                        }
+                        store.save(with: model) { $0.includePastEntries = on }
+                    }))
+                } footer: {
+                    Text("The email can include one of your past entries to look back on, which then stays in your inbox with it. With this off it only says how many there are from this day.")
                 }
             }
         }

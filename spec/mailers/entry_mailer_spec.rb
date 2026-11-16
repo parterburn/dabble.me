@@ -74,6 +74,35 @@ RSpec.describe EntryMailer do
       expect(text).to include("Rewind 1 year • Fri, Nov 7, 2025 you wrote...")
     end
 
+    it "says how many entries there are from this day when the past entry itself is left out" do
+      create(:entry, user: user, date: Date.new(2025, 11, 8), body: "Limelight Hotel")
+      create(:entry, user: user, date: Date.new(2023, 11, 8), body: "A walk")
+      user.update!(send_past_entry: false)
+      html, text = deliver(nil)
+
+      expect(html).to match(%r{You have <a class="hover-line" href="[^"]*/today">2 entries</a> from this day in past years\.})
+      expect(text).to include("You have 2 entries from this day in past years:")
+      expect(html + text).not_to include("Limelight Hotel", "you wrote...")
+    end
+
+    it "leaves the words left out of past entries out of that count too" do
+      create(:entry, user: user, date: Date.new(2025, 11, 8), body: "Limelight Hotel")
+      create(:entry, user: user, date: Date.new(2023, 11, 8), body: "A walk")
+      user.update!(send_past_entry: false, plan: "PRO Forever", past_filter: "limelight")
+      html, = deliver(nil)
+
+      expect(html).to include(">1 entry</a> from this day in past years.")
+    end
+
+    it "counts only last year's when the account uses entries only from the past year" do
+      create(:entry, user: user, date: Date.new(2025, 11, 8), body: "Limelight Hotel")
+      create(:entry, user: user, date: Date.new(2023, 11, 8), body: "A walk")
+      user.update!(send_past_entry: false, plan: "PRO Forever", way_back_past_entries: false)
+      html, = deliver(nil)
+
+      expect(html).to include(">1 entry</a> from this day in past years.")
+    end
+
     it "tells a newer writer they'll rewind to past entries once they have a few" do
       Entry.where(user: user).where.not(id: past_entries.first(2).map(&:id)).delete_all
       html, text = deliver(nil)

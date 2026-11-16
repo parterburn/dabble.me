@@ -38,9 +38,18 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
         var id: Int
         var photo: String? = nil
     }
-    /// Rewind for the days after `day`, so the widget has something to look back on each
-    /// morning without the app being opened first.
+    /// Rewind for `day` and the days after it, so the widget has something to look back on each
+    /// morning without the app being opened first. They're the reminders' own picks, so the
+    /// filters in Settings → Reminders → Past Entries hold (the words left out, over a year old).
     var upcoming: [Day]? = nil
+    /// The days written lately (YYYY-MM-DD, the past few weeks'), for the row of the last five
+    /// days under the date. Optional: snapshots saved by older builds don't have it.
+    var writtenDays: [String]? = nil
+    /// The last day `upcoming` was worked out for (YYYY-MM-DD): up to it, `upcoming`, not the
+    /// fields above, says what a Rewind widget shows, a day with nothing in it included. Past
+    /// it (the app not opened for a couple of weeks) nothing's known. Not set by older builds,
+    /// or before the first answer.
+    var plannedThrough: String? = nil
 
     /// One later day's look back: the same things the snapshot holds for its own day.
     struct Day: Codable, Equatable, Sendable {
@@ -63,10 +72,15 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
         }
     }
 
-    /// The look back kept for `date`, when it's a later day than the snapshot's own.
-    func lookBack(on date: Date, calendar: Calendar = .current) -> Day? {
+    /// What a Rewind widget looks back on, on `date`. `known` for a day the plan reaches (then
+    /// `day` is that day's look back, or nil when there's nothing to look back on), and for a
+    /// later day that has one; otherwise the snapshot's own fields say (its own day, before
+    /// the plan's come or past where it reached).
+    func rewind(on date: Date, calendar: Calendar = .current) -> (known: Bool, day: Day?) {
         let iso = Self.iso(date, calendar: calendar)
-        return iso == day ? nil : upcoming?.first { $0.day == iso }
+        let planned = upcoming?.first { $0.day == iso }
+        let reached = plannedThrough.map { iso >= day && iso <= $0 } ?? false
+        return (reached || (iso != day && planned != nil), planned)
     }
 
     static var defaults: UserDefaults? { UserDefaults(suiteName: appGroup) }
@@ -118,16 +132,26 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
         return (false, count, nil)
     }
 
+    /// Whether each of the five days up to `date` was written, oldest first (the last is
+    /// `date` itself); nil when the snapshot doesn't say (an older build's).
+    func lastFiveDays(on date: Date, calendar: Calendar = .current) -> [Bool]? {
+        guard let writtenDays else { return nil }
+        let written = Set(writtenDays)
+        let today = Self.iso(date, calendar: calendar)
+        return (0..<5).reversed().map { back in
+            let iso = calendar.date(byAdding: .day, value: -back, to: date).map { Self.iso($0, calendar: calendar) } ?? ""
+            // Today's by the snapshot's own word when it's the snapshot's day.
+            return iso == today && iso == day ? wroteToday : written.contains(iso)
+        }
+    }
+
     static func iso(_ date: Date, calendar: Calendar = .current) -> String {
         let parts = calendar.dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
     }
 
     /// Links the widget opens (the app's registered URL scheme, shared with OAuth sign-in).
-    static let writeURL = URL(string: "me.dabble.app:/write")!
     static let todayURL = URL(string: "me.dabble.app:/today")!
-    /// Today's entry, open for editing (the widget's "Edit today", once today's written).
-    static let editTodayURL = URL(string: "me.dabble.app:/today/edit")!
     static func entryURL(_ id: Int) -> URL { URL(string: "me.dabble.app:/entry/\(id)")! }
 }
 

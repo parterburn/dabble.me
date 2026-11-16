@@ -16,7 +16,8 @@ enum WidgetSync {
         // itself (Edit Widget), and shouldn't have to wait for the app to be opened again.
         let written = shownEntry(today, content: .promptEntry, model: model)
         let lookBack = shownEntry(today, content: .memoryEntry, model: model)
-        let snapshot = WidgetSnapshot(
+        let saved = WidgetSnapshot.load()
+        var snapshot = WidgetSnapshot(
             day: today.date,
             wroteToday: today.entry != nil,
             yearCount: model.entriesThisYear ?? 0,
@@ -26,18 +27,63 @@ enum WidgetSync {
             prompt: personalPrompt(for: today.date, model: model) ?? today.prompt,
             todayEntry: written.map { .init(title: $0.title, text: $0.text, id: $0.id, photo: photo(for: $0.entry, model: model)) },
             rewindEntry: lookBack.map { .init(title: $0.title, text: $0.text, id: $0.id, photo: photo(for: $0.entry, model: model)) },
-            // The days ahead as last worked out, until they're worked out again (below).
-            upcoming: WidgetSnapshot.load()?.upcoming.flatMap { days in
-                let later = days.filter { $0.day > today.date }
-                return later.isEmpty ? nil : later
-            }
+            // Today and the days ahead as last worked out, until they're worked out again (below).
+            upcoming: saved?.upcoming.flatMap { days in
+                let current = days.filter { $0.day >= today.date }
+                return current.isEmpty ? nil : current
+            },
+            // (A plan worked out on an earlier day still holds for the days it reached.)
+            plannedThrough: saved?.plannedThrough.flatMap { $0 >= today.date ? $0 : nil }
         )
-        if snapshot != WidgetSnapshot.load() {
+        snapshot.writtenDays = writtenDays(saved?.writtenDays, today: today)
+        if snapshot != saved {
             snapshot.save()
             removePhotos(except: snapshot.photoNames)
             WidgetCenter.shared.reloadAllTimelines()
         }
-        Task { await updateUpcoming(from: model) }
+        Task {
+            await updateWrittenDays(from: model)
+            await updateUpcoming(from: model)
+        }
+    }
+
+    /// The days written lately as last fetched, with today's put right by what Today says now
+    /// (an entry written or deleted since).
+    private static func writtenDays(_ saved: [String]?, today: TodaySummary) -> [String]? {
+        guard var days = saved else { return nil }
+        days.removeAll { $0 == today.date }
+        if today.entry != nil { days.append(today.date) }
+        return days.sorted()
+    }
+
+    /// What the last fetch of the written days was for (fetched again when the journal's
+    /// changed), and the one under way: the widget's updated from several places at once.
+    private static var writtenDaysKey: String?
+    private static var writtenDaysFetching: String?
+
+    /// The past few weeks' written days, for the widget's row of the last five (kept a while
+    /// ahead: the row moves on a day at midnight without the app).
+    private static func updateWrittenDays(from model: AppModel) async {
+        guard let today = model.today, let account = model.me?.id else { return }
+        let key = "\(account)|\(today.date)|\(model.me?.entryCount ?? 0)|\(today.entry?.id ?? 0)"
+        guard key != writtenDaysFetching,
+              key != writtenDaysKey || WidgetSnapshot.load()?.writtenDays == nil || model.recentWrittenDays == nil,
+              let day = today.day, let from = Calendar.current.date(byAdding: .day, value: -21, to: day.localDate) else { return }
+        let earliest = WidgetSnapshot.iso(from)
+        writtenDaysFetching = key
+        defer { if writtenDaysFetching == key { writtenDaysFetching = nil } }
+        // Three weeks' worth, not the whole journal's.
+        guard let days = try? await model.entryDays(since: earliest) else { return }
+        let recent = days.filter { $0 >= earliest }.sorted()
+        guard model.isSignedIn, model.me?.id == account, model.today?.date == today.date else { return }
+        // For the app's own rows of them too (Today's corner, Stats).
+        model.recentWrittenDays = recent
+        guard var snapshot = WidgetSnapshot.load(), snapshot.day == today.date else { return }
+        writtenDaysKey = key
+        guard snapshot.writtenDays != recent else { return }
+        snapshot.writtenDays = recent
+        snapshot.save()
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     // MARK: - The days ahead
@@ -47,9 +93,11 @@ enum WidgetSync {
     private static let daysAhead = 14
     private static let photosAhead = 7
 
-    /// Rewind for the coming days (the entries the daily reminder would show: On This Day's
-    /// first, or else the day's Rewind), saved with the snapshot. Without it the widget had
-    /// nothing to look back on from midnight until the app was next opened.
+    /// Rewind for today and the coming days (the entries the daily reminder would show: On This
+    /// Day's first, or else the day's Rewind), saved with the snapshot. Without the days ahead
+    /// the widget had nothing to look back on from midnight until the app was next opened. And
+    /// with today's from the same place, one rule holds every day: the filters in Settings →
+    /// Reminders → Past Entries (never the words left out there).
     private static func updateUpcoming(from model: AppModel) async {
         guard let today = model.today?.date, let account = model.me?.id,
               let plan = await ReminderScheduler.shared.lookBacks(for: model) else { return }
@@ -58,12 +106,17 @@ enum WidgetSync {
         func isCurrent() -> Bool { model.isSignedIn && model.me?.id == account && model.today?.date == today }
         guard isCurrent() else { return }
         var days: [WidgetSnapshot.Day] = []
-        for memory in plan.days where memory.date > today {
+        for memory in plan.days where memory.date >= today {
             guard days.count < daysAhead, isCurrent() else { break }
             days.append(await lookBack(memory, withPhoto: days.count < photosAhead))
         }
-        guard isCurrent(), var snapshot = WidgetSnapshot.load(), snapshot.day == today, snapshot.upcoming ?? [] != days else { return }
+        // The plan runs from today for as many days as were asked for.
+        let through = JournalDay(today).flatMap { Calendar.current.date(byAdding: .day, value: daysAhead - 1, to: $0.localDate) }
+            .map { JournalDay(localDate: $0).iso } ?? today
+        guard isCurrent(), var snapshot = WidgetSnapshot.load(), snapshot.day == today,
+              snapshot.upcoming ?? [] != days || snapshot.plannedThrough != through else { return }
         snapshot.upcoming = days.isEmpty ? nil : days
+        snapshot.plannedThrough = through
         snapshot.save()
         removePhotos(except: snapshot.photoNames)
         WidgetCenter.shared.reloadAllTimelines()
@@ -87,7 +140,8 @@ enum WidgetSync {
         }
         result.entryText = String(memory.entry.excerpt.prefix(400))
         result.entryID = memory.entry.id
-        if withPhoto, let url = EntrySummary.thumbnailURL(memory.entry.imageUrl, width: 700) {
+        if withPhoto, !EntrySummary.isUploadingPlaceholder(memory.entry.imageUrl),
+           let url = EntrySummary.thumbnailURL(memory.entry.imageUrl, width: 700) {
             let name = "entry-\(memory.entry.id).jpg"
             if let file = WidgetSnapshot.photoURL(named: name) {
                 let saved = FileManager.default.fileExists(atPath: file.path)
@@ -147,7 +201,9 @@ enum WidgetSync {
     /// copy is fetched (then the widget updates again). `fetches` is off for the settings
     /// preview, which fetches its own.
     private static func photo(for entry: EntrySummary?, model: AppModel, fetches: Bool = true) -> String? {
-        guard let entry, let url = entry.thumbnailURL(width: 700) else { return nil }
+        // (Not while it's uploading: the stand-in picture isn't one to keep.)
+        guard let entry, !entry.imageProcessing, !EntrySummary.isUploadingPlaceholder(entry.imageUrl),
+              let url = entry.thumbnailURL(width: 700) else { return nil }
         let name = "entry-\(entry.id).jpg"
         guard let file = WidgetSnapshot.photoURL(named: name) else { return nil }
         if FileManager.default.fileExists(atPath: file.path) { return name }
@@ -163,6 +219,7 @@ enum WidgetSync {
     /// preview can redraw with it.
     static func preparePreviewPhoto(for content: WidgetContent, model: AppModel) async {
         guard let today = model.today, let entry = shownEntry(today, content: content, model: model)?.entry,
+              !entry.imageProcessing, !EntrySummary.isUploadingPlaceholder(entry.imageUrl),
               let url = entry.thumbnailURL(width: 700), let file = WidgetSnapshot.photoURL(named: "entry-\(entry.id).jpg"),
               !FileManager.default.fileExists(atPath: file.path) else { return }
         _ = await download(url, to: file)
@@ -211,6 +268,7 @@ enum WidgetSync {
 
     static func setContent(_ content: WidgetContent, model: AppModel) {
         WidgetSnapshot.content = content
+        model.widgetChoiceChanges += 1
         update(from: model)
         WidgetCenter.shared.reloadAllTimelines()
     }
@@ -219,9 +277,21 @@ enum WidgetSync {
     /// Widget's preview). The same rules as the widget, Face ID included.
     static func previewEntry(for content: WidgetContent, model: AppModel) -> WidgetEntry {
         guard let today = model.today else { return .placeholder }
+        // Rewind as the widget has it: the day's planned look back.
+        if content.source == .rewind, let saved = WidgetSnapshot.load(), saved.day == today.date, saved.rewind(on: .now).known {
+            let day = saved.upcoming?.first { $0.day == today.date }
+            let showsEntry = content == .memoryEntry
+            return WidgetEntry(date: .now, signedIn: true, wroteToday: today.entry != nil,
+                               yearCount: model.entriesThisYear ?? 0, lastFiveDays: WidgetSnapshot.load()?.lastFiveDays(on: .now), memories: day?.memories,
+                               prompt: personalPrompt(for: today.date, model: model) ?? today.prompt,
+                               memoryNote: content == .memoryCount ? day?.memoryNote : nil,
+                               entryTitle: showsEntry ? day?.entryTitle : nil, entryText: showsEntry ? day?.entryText : nil,
+                               entryID: showsEntry ? day?.entryID : nil,
+                               photo: showsEntry ? day?.entryPhoto.flatMap(WidgetSnapshot.photoURL(named:)).flatMap { UIImage(contentsOfFile: $0.path) } : nil)
+        }
         let shown = shownEntry(today, content: content, model: model)
         return WidgetEntry(date: .now, signedIn: true, wroteToday: today.entry != nil,
-                           yearCount: model.entriesThisYear ?? 0,
+                           yearCount: model.entriesThisYear ?? 0, lastFiveDays: WidgetSnapshot.load()?.lastFiveDays(on: .now),
                            memories: content.source == .rewind && !today.onThisDay.isEmpty ? today.onThisDay.count : nil,
                            prompt: personalPrompt(for: today.date, model: model) ?? today.prompt,
                            memoryNote: content == .memoryCount ? memoryNote(today) : nil,

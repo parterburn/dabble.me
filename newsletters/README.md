@@ -22,6 +22,7 @@ audiences:             # who it goes to: pro, free, or both
     reply_to: hello@dabble.me
     mailgun_domain: updates.dabble.me
     active_within_months: 18
+    or_entries_at_least: 5
 
 variants:              # each person gets the first variant for their plan they qualify for
   - name: rewind
@@ -39,7 +40,7 @@ variants:              # each person gets the first variant for their plan they 
 Who is in each audience:
 
 - **pro**: PRO accounts that haven't turned off "Send me updates about Dabble Me".
-- **free**: free accounts that haven't turned updates off, have never bounced an email, and (with `active_within_months`) signed in or wrote an entry that recently.
+- **free**: free accounts that haven't turned updates off, have never bounced an email, and (with `active_within_months`) signed in or wrote an entry that recently. With `or_entries_at_least` as well, an account with that many entries is in however long it's been quiet.
 
 An audience can set `from`, `reply_to` and `mailgun_domain` to send from its own address and Mailgun domain. Without them it uses the app's.
 

@@ -113,6 +113,10 @@
       <p>
         <b>Keep writing...once you have a few entries, you'll rewind to one of them here!</b>
       </p>
+    <% elsif @past_entries_on_this_day.to_i.positive? %>
+      <p>
+        You have <%= link_to pluralize(@past_entries_on_this_day, "entry"), today_url, class: "hover-line" %> from this day in past years.
+      </p>
     <% end %>
     <p>
       <% if @user.entries.size.positive? %>
