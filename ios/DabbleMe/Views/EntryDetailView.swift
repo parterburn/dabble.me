@@ -584,7 +584,7 @@ private struct EntryBody: View {
             if hasWriting {
                 // (A little less above: the first line's own height adds to it. And under it,
                 // before a photo, the gap Today's card has between an entry's words and its photo.)
-                writing.padding(.horizontal).padding(.top, 12).padding(.bottom, hasPhoto ? 10 : 16)
+                writing.padding(.horizontal).padding(.top, 12).padding(.bottom, hasPhoto ? 10 : 28)
             }
             // Text first: Dabble Me is about the writing; photos follow it.
             if hasPhoto {

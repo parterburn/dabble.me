@@ -254,6 +254,30 @@ final class JournalViewsTests: XCTestCase {
         app.buttons["Discard"].tap()
     }
 
+    /// The bar's Format button opens iOS's formatting panel in the keyboard's place.
+    func testFormatPanelOpens() throws {
+        let app = launch()
+        if app.buttons["Write Today's Entry"].waitForExistence(timeout: 15) {
+            app.buttons["Write Today's Entry"].tap()
+        } else {
+            tab(app, "Journal").tap()
+            app.buttons["New Entry"].tap()
+        }
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        editor.tap()
+        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+        if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap() }
+        editor.typeText("A slow evening.")
+        app.buttons["Format"].tap()
+        XCTAssertTrue(app.staticTexts["Format"].waitForExistence(timeout: 5), "The formatting panel is up, not hidden behind the keyboard")
+        XCTAssertFalse(app.keyboards.firstMatch.exists)
+        app.buttons["close"].tap()
+        // Back to writing: the keyboard and its bar return.
+        XCTAssertTrue(app.buttons["Format"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.keyboards.firstMatch.exists)
+    }
+
     func testTodayPromptEntrySummaryAndSettings() throws {
         let app = launch()
         // With Apple Intelligence on, Today writes its own prompt (no button to ask for one).

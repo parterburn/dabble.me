@@ -1,3 +1,24 @@
+The rows over the keyboard (prompt, hashtags, link, photos) are on the warm paper color.
+
+- Open each row while writing. The row and the buttons under it should sit on paper, apart from the white page you are writing on.
+- Look at the keyboard's rounded top corners while a row is open: paper should show behind them, not the page's color. Check dark mode too.
+- With no row open, the buttons float over the page as before.
+
+Fixed: the Format button while writing did nothing.
+
+- Tap the "A" button over the keyboard. The keyboard should go down and the Format panel (Bold, Italic, Underline, Strikethrough, lists) should take its place.
+- Close it with its X or by swiping it down: the keyboard and the buttons should come back, with your selection as it was.
+
+The "?" row is tighter.
+
+- With calendar events that day, the prompt should sit close over them, with a line between the prompt and the first event, and no empty gap.
+- While the prompt is being written the events may move up a little when it arrives. Say if that is distracting.
+
+An entry without a photo has more room under its last line.
+
+- Open an entry with no photo that has On This Day under it. The gap under the last line of writing should match the gap above the "On This Day" heading.
+- An entry with a photo should look as it did.
+
 New: speak your entry.
 
 - Open the composer. On iOS 26 there is a microphone button at the far right of the bar over the keyboard, after the "?" button. (On iOS 18 it isn't there.)

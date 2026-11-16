@@ -569,7 +569,8 @@ struct ComposeView: View {
                 }
             }
             .font(.subheadline)
-            .frame(minHeight: askLineHeight)
+            // (Two lines tall, as what's heard can run to.)
+            .frame(minHeight: 42)
         }
         .padding(.horizontal)
         .padding(.top, 10)
@@ -802,14 +803,15 @@ struct ComposeView: View {
                 }
             }
             .font(.subheadline)
-            // Three lines tall from the start: the question, while it's written and when it
-            // comes, doesn't move the events under it.
-            .frame(minHeight: askLineHeight, alignment: .top)
+            // Three lines tall while it's being written, so the events under it aren't pushed
+            // down when it comes; then as tall as the question, with the events close under it.
+            .frame(minHeight: question == nil ? askLineHeight : nil, alignment: .top)
             .contentShape(.rect)
             .onTapGesture(perform: insertQuestion)
         }
         .padding(.horizontal)
         .padding(.top, 10)
+        .padding(.bottom, hasAgenda ? 6 : 0)
         .animation(.easeOut(duration: 0.2), value: question)
     }
 
@@ -1238,6 +1240,8 @@ private struct CalendarRow: View {
     /// All of the day's events: the section they're in scrolls.
     private func list(_ events: [DayEvent]) -> some View {
         VStack(spacing: 0) {
+            // Under a question: a line between it and the first event.
+            if hidesWhenEmpty { Divider() }
             ForEach(events) { event in
                 Button { pick(event) } label: {
                     HStack(spacing: 12) {
