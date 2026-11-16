@@ -43,7 +43,7 @@ struct TodayView: View {
                         HStack(alignment: .center) {
                             // An easter egg: tapped, it types itself out again, as it does at launch.
                             // (Only while it's at it: scrolled away and back, it's simply there.)
-                            Wordmark(size: 28, typesOut: isRetyping, showsCursor: isRetyping)
+                            Wordmark(size: 28, typesOut: isRetyping, showsCursor: isRetyping, pace: .unhurried)
                                 .id(retypes)
                                 .contentShape(.rect)
                                 .onTapGesture { retypeWordmark() }
@@ -236,7 +236,7 @@ struct TodayView: View {
         isRetyping = true
         retypes += 1
         Task {
-            try? await Task.sleep(for: .milliseconds(Wordmark.typingDuration + 1500))
+            try? await Task.sleep(for: .milliseconds(Wordmark.typingDuration(.unhurried) + 1500))
             isRetyping = false
         }
     }

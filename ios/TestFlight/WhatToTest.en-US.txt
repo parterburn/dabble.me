@@ -1,16 +1,12 @@
-The medium widget's right side now opens the Today tab instead of a single entry.
+Face ID now comes up as the app opens, instead of after the logo has typed itself out.
 
-- Widget set to Rewind with entry previews, on a day with On This Day entries: tap the entry on the right. Today should open and scroll to that entry, with its date pinned above it.
-- Same widget on a day with no On This Day entries (it shows a Rewind): tap it. Today should scroll down to the Rewind entry.
-- Widget set to Rewind without previews ("You have 3 memories from this day."): tap the right side. Today should scroll to the On This Day title.
-- Widget set to A Prompt for You with previews, after writing today: tap today's entry on the right. Today should open at the top, not the entry's own page.
-- Try each with the app closed completely, and with an entry left open on the Today tab.
-- The date side and the small widget open Today at the top, even with Today scrolled down or an entry left open on it.
+- With the Face ID lock on, open the app from closed. The Face ID prompt should appear at once, while "Dabble me." is still typing.
+- Do the same coming back to the app after it has locked in the background.
+- Cancel Face ID. The Face ID symbol should be there to tap, and tapping it should ask again. It must not ask again by itself in a loop.
+- Check that Face ID is never skipped: the app should not sit on the lock screen with no prompt.
+- On a phone with Touch ID or a passcode only, the lock should still ask.
 
-Check that the text on the widget's right side hasn't changed color.
+The logo on the Today tab types at its original, slower speed again.
 
-The launch screen is faster.
-
-- Open the app from closed. "Dabble me." should still type itself out, but in about half the time, and the app should appear under a second after launch on a good connection (it was nearly two).
-- Does the typing still read as typing, or is it now too quick to enjoy?
-- With the Face ID lock on, the Face ID prompt should come sooner too.
+- Tap "Dabble me." at the top of Today. It should type itself out unhurriedly (about a second).
+- The launch screen keeps the faster typing from the last build.
