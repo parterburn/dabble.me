@@ -25,9 +25,14 @@ enum NewEntryRequest {
     static let lifetime: TimeInterval = 60
 
     static func post(at date: Date = .now) {
-        WidgetSnapshot.defaults?.set(date.timeIntervalSince1970, forKey: key)
+        record(at: date)
         // Heard when the intent runs in the app itself; otherwise the app looks when it comes forward.
         NotificationCenter.default.post(name: notification, object: nil)
+    }
+
+    /// Leaves the word without announcing it.
+    static func record(at date: Date = .now) {
+        WidgetSnapshot.defaults?.set(date.timeIntervalSince1970, forKey: key)
     }
 
     /// Whether New Entry was just asked for. Once: asking again says no.
