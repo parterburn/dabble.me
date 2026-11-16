@@ -709,7 +709,9 @@ struct RichTextEditor: UIViewRepresentable {
             var covered: CGFloat = 0
             if let bar = textView.inputAccessoryView, let barWindow = bar.window, let window = textView.window {
                 let space = barWindow.screen.coordinateSpace
-                let barTop = bar.convert(bar.bounds, to: space).minY
+                // (The bar's own top: it can be taller than what it shows for a moment.)
+                let shown = (bar as? EditorBar)?.shownHeight ?? bar.bounds.height
+                let barTop = bar.convert(bar.bounds, to: space).maxY - shown
                 // The text view's frame, not its (scrolled) bounds.
                 let textBottom = (textView.superview ?? window).convert(textView.frame, to: space).maxY
                 covered = max(0, textBottom - barTop)
@@ -818,8 +820,11 @@ final class EditorBar: UIView {
     required init?(coder: NSCoder) { fatalError("init(coder:) has not been implemented") }
 
     override var intrinsicContentSize: CGSize {
-        CGSize(width: UIView.noIntrinsicMetric, height: rowHeight + Self.toolbarHeight)
+        CGSize(width: UIView.noIntrinsicMetric, height: shownHeight)
     }
+
+    /// The buttons and the row open over them.
+    var shownHeight: CGFloat { rowHeight + Self.toolbarHeight }
 
     func setRow(_ row: AnyView?) {
         // A closed row is taken down, not just hidden, so reopening one starts it afresh (the link
@@ -850,10 +855,20 @@ final class EditorBar: UIView {
             laidOutWidth = bounds.width
             updateRowHeight() // a wrapping prompt takes more lines when narrower
         }
-        backdrop.frame = bounds
-        rowHost.view.frame = CGRect(x: 0, y: 0, width: bounds.width, height: rowHeight)
+        // From the bar's foot up: the buttons, then the row right on top of them, and the backing
+        // behind just those. The keyboard can leave the bar taller than that for a moment after
+        // a row closes or gives way to a shorter one; whatever's above stays clear, so the entry
+        // shows through it and not an empty band.
+        let top = max(0, bounds.height - Self.toolbarHeight - rowHeight)
+        backdrop.frame = CGRect(x: 0, y: top, width: bounds.width, height: bounds.height - top)
+        rowHost.view.frame = CGRect(x: 0, y: top, width: bounds.width, height: rowHeight)
         toolbar.frame = CGRect(x: 0, y: bounds.height - Self.toolbarHeight, width: bounds.width, height: Self.toolbarHeight)
         onLayout?()
+    }
+
+    /// (And a touch up there is the entry's, not the bar's.)
+    override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        point.y >= bounds.height - Self.toolbarHeight - rowHeight && super.point(inside: point, with: event)
     }
 
     override func didMoveToWindow() {

@@ -1,3 +1,9 @@
+Switching rows above the keyboard should never leave an empty band over your writing.
+
+- While writing with a photo attached, tap "?" (the prompt), then the photos button, then "?" again, a few times, quickly and slowly. Each row should replace the last cleanly. Watch for a blank strip between the row and your text, and say which switch caused it if you see one.
+- Try the same with the hashtag and link rows, and on a day with many calendar events.
+- After a row closes, the last lines of your entry should scroll clear of the bar, and you should be able to tap text just above the bar.
+
 The "?" row while writing is rearranged.
 
 - The prompt is now on top and the day's calendar events are under it. With events, the heading reads "A PROMPT FOR YOU / AGENDA"; without, just "A PROMPT FOR YOU".

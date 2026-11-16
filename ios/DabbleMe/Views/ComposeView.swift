@@ -22,8 +22,10 @@ struct ComposeView: View {
     /// move the day's events under it.
     @ScaledMetric(relativeTo: .subheadline) private var askLineHeight: CGFloat = 62
     /// The "?" row's content, as tall as it is: the row is that tall, up to `askRowMaxHeight`,
-    /// and scrolls past it.
-    @State private var askRowHeight: CGFloat = 120
+    /// and scrolls past it. Nothing until it's measured, each time the row opens: a height kept
+    /// from the last time would be an empty band over the entry while this one's content (its
+    /// question, the day's events) is still coming in.
+    @State private var askRowHeight: CGFloat = 0
     private static let askRowMaxHeight: CGFloat = 236
     /// The entry's day has events on the calendar (they're listed under the prompt).
     @State private var hasAgenda = false
@@ -466,6 +468,8 @@ struct ComposeView: View {
             Button {
                 showsAskRow.toggle()
                 if showsAskRow {
+                    askRowHeight = 0
+                    hasAgenda = false
                     showsHashtagBar = false
                     showsPhotoDrawer = false
                     editor.endLink()
