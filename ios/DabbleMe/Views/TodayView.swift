@@ -33,158 +33,200 @@ struct TodayView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            // A list (not a plain scroll view) so On This Day rows swipe like the Journal's.
-            List {
-                if let today = model.today {
-                    // The header (the nav bar is hidden here): the wordmark, small, with how many
-                    // entries the journal holds ("1,204 entries") beside it.
-                    HStack(alignment: .center) {
-                        // An easter egg: tapped, it types itself out again, as it does at launch.
-                        // (Only while it's at it: scrolled away and back, it's simply there.)
-                        Wordmark(size: 28, typesOut: isRetyping, showsCursor: isRetyping)
-                            .id(retypes)
-                            .contentShape(.rect)
-                            .onTapGesture { retypeWordmark() }
-                            .sensoryFeedback(.impact(weight: .light), trigger: retypes)
-                        Spacer(minLength: 8)
-                        // Nothing to count yet: no "0 entries" (but the Rewind's named all the same).
-                        if let count = model.me?.entryCount, count > 0 || rewindYear != nil {
-                            entryCountButton(count)
+            // (In a reader, so a tap on the widget can scroll to what it showed.)
+            ScrollViewReader { proxy in
+                // A list (not a plain scroll view) so On This Day rows swipe like the Journal's.
+                List {
+                    if let today = model.today {
+                        // The header (the nav bar is hidden here): the wordmark, small, with how many
+                        // entries the journal holds ("1,204 entries") beside it.
+                        HStack(alignment: .center) {
+                            // An easter egg: tapped, it types itself out again, as it does at launch.
+                            // (Only while it's at it: scrolled away and back, it's simply there.)
+                            Wordmark(size: 28, typesOut: isRetyping, showsCursor: isRetyping)
+                                .id(retypes)
+                                .contentShape(.rect)
+                                .onTapGesture { retypeWordmark() }
+                                .sensoryFeedback(.impact(weight: .light), trigger: retypes)
+                            Spacer(minLength: 8)
+                            // Nothing to count yet: no "0 entries" (but the Rewind's named all the same).
+                            if let count = model.me?.entryCount, count > 0 || rewindYear != nil {
+                                entryCountButton(count)
+                            }
                         }
-                    }
-                    .plainRow()
-                    // Today's date titles the day's section. No year: it's always today.
-                    // Once today's written, a pencil at the far right edits it (PRO).
-                    HStack(spacing: 8) {
-                        SectionTitle(today.day?.formatted(.dateTime.weekday(.wide).month(.wide).day()) ?? today.date,
-                                     icon: "slab-calendar")
-                            .accessibilityLabel(today.day?.long ?? today.date)
-                        Spacer(minLength: 8)
-                        if let entry = today.entry, model.me?.canEdit == true {
-                            editTodayButton(entry)
+                        .id(TodayFocus.top.anchor)
+                        .plainRow()
+                        // Today's date titles the day's section. No year: it's always today.
+                        // Once today's written, a pencil at the far right edits it (PRO).
+                        HStack(spacing: 8) {
+                            SectionTitle(today.day?.formatted(.dateTime.weekday(.wide).month(.wide).day()) ?? today.date,
+                                         icon: "slab-calendar")
+                                .accessibilityLabel(today.day?.long ?? today.date)
+                            Spacer(minLength: 8)
+                            if let entry = today.entry, model.me?.canEdit == true {
+                                editTodayButton(entry)
+                            }
                         }
+                            .plainRow()
+                            // Close above the prompt card (which has its own space); a little more
+                            // above today's entry, whose card starts at the row's edge.
+                            .listRowInsets(EdgeInsets(top: 14, leading: 20, bottom: today.entry == nil ? 0 : 8, trailing: 20))
+                        todaySection(today)
+                        onThisDaySection(today)
+                    } else if let error = model.timelineError {
+                        ContentUnavailableView("Couldn't load today", systemImage: "wifi.exclamationmark", description: Text(error))
+                            .plainRow()
+                    } else {
+                        ProgressView().frame(maxWidth: .infinity, minHeight: 200)
+                            .plainRow()
                     }
-                        .plainRow()
-                        // Close above the prompt card (which has its own space); a little more
-                        // above today's entry, whose card starts at the row's edge.
-                        .listRowInsets(EdgeInsets(top: 14, leading: 20, bottom: today.entry == nil ? 0 : 8, trailing: 20))
-                    todaySection(today)
-                    onThisDaySection(today)
-                } else if let error = model.timelineError {
-                    ContentUnavailableView("Couldn't load today", systemImage: "wifi.exclamationmark", description: Text(error))
-                        .plainRow()
-                } else {
-                    ProgressView().frame(maxWidth: .infinity, minHeight: 200)
-                        .plainRow()
                 }
-            }
-            .listStyle(.plain)
-            .listSectionSpacing(0) // a memory's date sits right under its section's title
-            .environment(\.defaultMinListRowHeight, 1) // rows as tall as their content (the section titles)
-            // Pull to reset: collapses expanded entries and reloads today. On the list itself,
-            // inside the sheets and entry pages below, so they don't inherit a pull-to-refresh.
-            .refreshDots {
-                withAnimation(.snappy(duration: 0.25)) { expanded = [] }
-                // Long enough to see it happen.
-                async let pause: Void? = try? Task.sleep(for: .milliseconds(600))
-                await model.loadToday()
-                _ = await pause
-            }
-            .timelinePinsDates()
-            .frame(maxWidth: 680)
-            .frame(maxWidth: .infinity)
-            .entryActionSheets(actions) { path.append(EntryRoute(id: $0)) }
-            .navigationTitle("Today") // back-button label on entries opened from here
-            .toolbarVisibility(.hidden, for: .navigationBar)
-            .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
-            // An easter egg: keep pulling up past the bottom and let go for a random memory, in the
-            // same sheet as a shake. Only on letting go of a drag (a flick that bounces doesn't count).
-            .onScrollGeometryChange(for: CGFloat.self) { geometry in
-                // Past the furthest it can scroll. Content shorter than the screen (still loading)
-                // can't scroll at all, so it isn't "past the bottom" until it's actually pulled.
-                let visible = geometry.containerSize.height - geometry.contentInsets.top - geometry.contentInsets.bottom
-                let maxOffset = max(geometry.contentSize.height - visible, 0) - geometry.contentInsets.top
-                return geometry.contentOffset.y - maxOffset
-            } action: { _, overscroll in
-                bottomPull = max(0, overscroll)
-            }
-            .onScrollPhaseChange { old, new in
-                guard old == .interacting, new != .interacting, bottomPull >= randomMemoryPull,
-                      model.hasLoaded, !model.months.isEmpty, !model.showsRandomEntry else { return }
-                model.showsRandomEntry = true
-            }
-            .overlay(alignment: .bottom) {
-                if bottomPull > 12 {
-                    let armed = bottomPull >= randomMemoryPull
-                    Text(armed ? "Let go for a random memory" : "Keep pulling for a random memory")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundStyle(armed ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
-                        .opacity(min(1, (bottomPull - 12) / 40))
-                        .padding(.bottom, 12)
-                        .allowsHitTesting(false)
-                        .accessibilityHidden(true)
+                .listStyle(.plain)
+                .listSectionSpacing(0) // a memory's date sits right under its section's title
+                .environment(\.defaultMinListRowHeight, 1) // rows as tall as their content (the section titles)
+                // Pull to reset: collapses expanded entries and reloads today. On the list itself,
+                // inside the sheets and entry pages below, so they don't inherit a pull-to-refresh.
+                .refreshDots {
+                    withAnimation(.snappy(duration: 0.25)) { expanded = [] }
+                    // Long enough to see it happen.
+                    async let pause: Void? = try? Task.sleep(for: .milliseconds(600))
+                    await model.loadToday()
+                    _ = await pause
                 }
-            }
-            .sensoryFeedback(.impact(weight: .light), trigger: bottomPull >= randomMemoryPull) { _, armed in armed }
-            // A request to write (a reminder, the widget, a quick action). One that prefers
-            // yesterday waits for Today to load, then asks whether yesterday's been written.
-            .onChange(of: "\(model.composeRequest)|\(model.today?.date ?? "")|\(model.me != nil)", initial: true) {
-                guard model.composeRequest else { return }
-                if model.composeByMorningRule {
-                    // "New Entry" from the widget, a link or the app's icon: morning by the
-                    // journal's clock, which waits for the account (a cold start).
-                    guard model.today != nil, let me = model.me else { return }
-                    model.composeByMorningRule = false
-                    model.composePrefersYesterday = AppModel.isMorning(at: .now, in: me.timezoneIdentifier.flatMap(TimeZone.init(identifier:)))
+                .timelinePinsDates()
+                .frame(maxWidth: 680)
+                .frame(maxWidth: .infinity)
+                .entryActionSheets(actions) { path.append(EntryRoute(id: $0)) }
+                .navigationTitle("Today") // back-button label on entries opened from here
+                .toolbarVisibility(.hidden, for: .navigationBar)
+                .navigationDestination(for: EntryRoute.self) { EntryDetailView(entryID: $0.id) }
+                // An easter egg: keep pulling up past the bottom and let go for a random memory, in the
+                // same sheet as a shake. Only on letting go of a drag (a flick that bounces doesn't count).
+                .onScrollGeometryChange(for: CGFloat.self) { geometry in
+                    // Past the furthest it can scroll. Content shorter than the screen (still loading)
+                    // can't scroll at all, so it isn't "past the bottom" until it's actually pulled.
+                    let visible = geometry.containerSize.height - geometry.contentInsets.top - geometry.contentInsets.bottom
+                    let maxOffset = max(geometry.contentSize.height - visible, 0) - geometry.contentInsets.top
+                    return geometry.contentOffset.y - maxOffset
+                } action: { _, overscroll in
+                    bottomPull = max(0, overscroll)
                 }
-                guard model.composePrefersYesterday else {
+                .onScrollPhaseChange { old, new in
+                    guard old == .interacting, new != .interacting, bottomPull >= randomMemoryPull,
+                          model.hasLoaded, !model.months.isEmpty, !model.showsRandomEntry else { return }
+                    model.showsRandomEntry = true
+                }
+                .overlay(alignment: .bottom) {
+                    if bottomPull > 12 {
+                        let armed = bottomPull >= randomMemoryPull
+                        Text(armed ? "Let go for a random memory" : "Keep pulling for a random memory")
+                            .font(.subheadline.weight(.medium))
+                            .foregroundStyle(armed ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
+                            .opacity(min(1, (bottomPull - 12) / 40))
+                            .padding(.bottom, 12)
+                            .allowsHitTesting(false)
+                            .accessibilityHidden(true)
+                    }
+                }
+                .sensoryFeedback(.impact(weight: .light), trigger: bottomPull >= randomMemoryPull) { _, armed in armed }
+                // A request to write (a reminder, the widget, a quick action). One that prefers
+                // yesterday waits for Today to load, then asks whether yesterday's been written.
+                .onChange(of: "\(model.composeRequest)|\(model.today?.date ?? "")|\(model.me != nil)", initial: true) {
+                    guard model.composeRequest else { return }
+                    if model.composeByMorningRule {
+                        // "New Entry" from the widget, a link or the app's icon: morning by the
+                        // journal's clock, which waits for the account (a cold start).
+                        guard model.today != nil, let me = model.me else { return }
+                        model.composeByMorningRule = false
+                        model.composePrefersYesterday = AppModel.isMorning(at: .now, in: me.timezoneIdentifier.flatMap(TimeZone.init(identifier:)))
+                    }
+                    guard model.composePrefersYesterday else {
+                        model.composeRequest = false
+                        composing = true
+                        return
+                    }
+                    guard model.today != nil else { return }
                     model.composeRequest = false
-                    composing = true
-                    return
+                    model.composePrefersYesterday = false
+                    Task {
+                        if model.me?.canWrite != false, let yesterday = model.yesterday, await model.yesterdayIsUnwritten() {
+                            model.composingDay = StatsDay(day: yesterday)
+                        } else {
+                            composing = true
+                        }
+                    }
                 }
-                guard model.today != nil else { return }
-                model.composeRequest = false
-                model.composePrefersYesterday = false
-                Task {
-                    if model.me?.canWrite != false, let yesterday = model.yesterday, await model.yesterdayIsUnwritten() {
-                        model.composingDay = StatsDay(day: yesterday)
+                // From the widget's "Edit today": today's entry, open for editing, once Today has
+                // loaded it (the app may be starting up). Nothing written after all: write it.
+                .onChange(of: "\(model.editTodayRequest)|\(model.today?.date ?? "")|\(model.today?.entry?.id ?? 0)", initial: true) {
+                    guard model.editTodayRequest, let today = model.today else { return }
+                    model.editTodayRequest = false
+                    if let entry = today.entry {
+                        if model.me?.canEdit == true { Task { await actions.edit(entry.id, model: model) } }
                     } else {
                         composing = true
                     }
                 }
-            }
-            // From the widget's "Edit today": today's entry, open for editing, once Today has
-            // loaded it (the app may be starting up). Nothing written after all: write it.
-            .onChange(of: "\(model.editTodayRequest)|\(model.today?.date ?? "")|\(model.today?.entry?.id ?? 0)", initial: true) {
-                guard model.editTodayRequest, let today = model.today else { return }
-                model.editTodayRequest = false
-                if let entry = today.entry {
-                    if model.me?.canEdit == true { Task { await actions.edit(entry.id, model: model) } }
-                } else {
-                    composing = true
+                // Once written, the new entry opens in full under the closing composer.
+                .sheet(isPresented: $composing) { ComposeView(mode: .new) { path.append(EntryRoute(id: $0.id)) } }
+                // Now and then (every tenth tap on the Today tab), not every time.
+                .onChange(of: model.todayTabTaps) {
+                    tabTaps += 1
+                    if tabTaps % Self.tapsBetweenTyping == 0 { retypeWordmark() }
+                }
+                // A link to Today: its own page, whatever entry was left open over it.
+                .onChange(of: model.todayRootRequest) { path = NavigationPath() }
+                // And one written for another day from here ("Write Yesterday's Entry").
+                .onChange(of: model.todayEntryRequest) { _, id in
+                    guard let id else { return }
+                    model.todayEntryRequest = nil
+                    path.append(EntryRoute(id: id))
+                }
+                .sheet(isPresented: $showingProInfo) { ProInfoView(feature: .writing) }
+                .alert("Couldn't write a prompt", isPresented: .present($promptError)) {
+                    Button("OK", role: .cancel) {}
+                } message: {
+                    Text(promptError ?? "")
+                }
+                // From the widget's right side: the entry it showed, or the look back, scrolled to
+                // once Today has loaded.
+                .onChange(of: "\(model.todayFocusRequest.map { $0.anchor } ?? "")|\(model.today?.date ?? "")", initial: true) {
+                    guard let focus = model.todayFocusRequest, model.today != nil else { return }
+                    model.todayFocusRequest = nil
+                    Task { await show(focus, with: proxy) }
                 }
             }
-            // Once written, the new entry opens in full under the closing composer.
-            .sheet(isPresented: $composing) { ComposeView(mode: .new) { path.append(EntryRoute(id: $0.id)) } }
-            // Now and then (every tenth tap on the Today tab), not every time.
-            .onChange(of: model.todayTabTaps) {
-                tabTaps += 1
-                if tabTaps % Self.tapsBetweenTyping == 0 { retypeWordmark() }
+        }
+    }
+
+    /// Scrolls to what the widget showed. An entry Today doesn't list (the widget's a day
+    /// behind, or its look back passed over one Today shows) is looked for once more in a fresh
+    /// Today, and failing that opens in the Journal, as the widget's entries used to.
+    private func show(_ focus: TodayFocus, with proxy: ScrollViewProxy) async {
+        if !lists(focus) { await model.loadToday() }
+        guard lists(focus) else {
+            if case .entry(let id) = focus {
+                model.selectedTab = .journal
+                model.openEntryRequest = id
             }
-            // A link to Today: its own page, whatever entry was left open over it.
-            .onChange(of: model.todayRootRequest) { path = NavigationPath() }
-            // And one written for another day from here ("Write Yesterday's Entry").
-            .onChange(of: model.todayEntryRequest) { _, id in
-                guard let id else { return }
-                model.todayEntryRequest = nil
-                path.append(EntryRoute(id: id))
-            }
-            .sheet(isPresented: $showingProInfo) { ProInfoView(feature: .writing) }
-            .alert("Couldn't write a prompt", isPresented: .present($promptError)) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(promptError ?? "")
-            }
+            return
+        }
+        // Once the list has its rows (the app may be starting up, or coming to this tab).
+        try? await Task.sleep(for: .milliseconds(350))
+        // An entry a little down from the top, so its date (pinned above it) has room.
+        let anchor: UnitPoint = if case .entry = focus { UnitPoint(x: 0.5, y: 0.2) } else { .top }
+        withAnimation(reduceMotion ? nil : .snappy(duration: 0.35)) { proxy.scrollTo(focus.anchor, anchor: anchor) }
+    }
+
+    /// Whether Today's list has a row for it: the look back's title always, an entry when it's
+    /// among On This Day's or is the Rewind shown in their place.
+    private func lists(_ focus: TodayFocus) -> Bool {
+        guard let today = model.today else { return false }
+        switch focus {
+        case .top, .lookBack: return true
+        case .entry(let id):
+            if today.onThisDay.contains(where: { $0.id == id }) { return true }
+            return today.onThisDayAvailable && today.onThisDay.isEmpty && today.throwback?.id == id
         }
     }
 
@@ -440,10 +482,12 @@ struct TodayView: View {
     @ViewBuilder
     private func throwbackSection(_ throwback: EntrySummary?, today: TodaySummary) -> some View {
         SectionTitle("Rewind", icon: "slab-backward")
+            .id(TodayFocus.lookBack.anchor)
             .sectionTitleRow()
         if let throwback {
             Section {
                 row(throwback)
+                    .id(TodayFocus.entry(throwback.id).anchor)
                     .timelineRowLayout()
             } header: {
                 MonthHeader(title: Self.throwbackTitle(throwback, today: today), isDay: true)
@@ -468,6 +512,7 @@ struct TodayView: View {
     private func memoriesSection(_ today: TodaySummary) -> some View {
         // A little more under it than a Rewind's: several days can follow, each with its own date.
         SectionTitle("On This Day", icon: "slab-backward")
+            .id(TodayFocus.lookBack.anchor)
             .sectionTitleRow(bottom: 10)
         if !today.onThisDayAvailable {
             Text("See what you wrote on this date in past years with Dabble Me PRO.")
@@ -500,6 +545,7 @@ struct TodayView: View {
         ForEach(today.onThisDay) { memory in
             Section {
                 row(memory)
+                    .id(TodayFocus.entry(memory.id).anchor)
                     .timelineRowLayout()
             } header: {
                 MonthHeader(title: Self.memoryTitle(memory), isDay: true)

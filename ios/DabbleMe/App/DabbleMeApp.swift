@@ -77,8 +77,10 @@ struct RootView: View {
         }
         .preferredColorScheme(theme.colorScheme)
         .onOpenURL { url in
-            // From the widget: me.dabble.app:/today (its date side), or :/entry/<id> (the entry
-            // it shows). :/write and :/today/edit are what older builds' widgets opened.
+            // From the widget: me.dabble.app:/today (Today at its top: the date side, and
+            // today's own entry on the right), or, from its right side, :/today/entry/<id> and
+            // :/today/lookback (Today, scrolled to what it shows).
+            // :/entry/<id>, :/write and :/today/edit are what older builds' widgets opened.
             // (Sign-in callbacks never get here; the web sign-in session handles them.)
             // A dabble.me link tapped elsewhere on the phone (a universal link). One the app has
             // no page for goes back to the browser; one that arrives signed out, or before the
@@ -101,6 +103,10 @@ struct RootView: View {
                 return
             }
             model.selectedTab = .today
+            if let focus = TodayFocus(url) {
+                model.todayRootRequest += 1 // its own page, whatever entry was left open over it
+                model.todayFocusRequest = focus
+            }
             if url.path == "/write" { model.requestNewEntry() }
             if url.path == "/today/edit" { model.editTodayRequest = true }
         }

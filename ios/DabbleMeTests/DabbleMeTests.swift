@@ -131,6 +131,34 @@ struct WidgetContentTests {
         // The values saved by earlier builds still read.
         #expect(WidgetContent(rawValue: "memoryCount") == .memoryCount && WidgetContent(rawValue: "memoryEntry") == .memoryEntry)
     }
+
+    /// The medium widget's right side opens Today, scrolled to what it shows.
+    @Test func rightSideLinksToWhatItShows() {
+        func entry(memories: Int? = nil, note: String? = nil, title: String? = nil, text: String? = nil, id: Int? = nil) -> WidgetEntry {
+            WidgetEntry(date: .now, signedIn: true, wroteToday: false, yearCount: 3, memories: memories, prompt: "Hi",
+                        memoryNote: note, entryTitle: title, entryText: text, entryID: id)
+        }
+        // An entry looked back on: Today, at that entry (a photo alone, without words, too).
+        #expect(entry(memories: 2, title: "1 year ago · 2025", text: "Snow.", id: 7).detailURL.absoluteString == "me.dabble.app:/today/entry/7")
+        #expect(entry(title: "31 days ago", text: "", id: 9).detailURL.absoluteString == "me.dabble.app:/today/entry/9")
+        // Today's own entry: Today, where it's at the top.
+        #expect(entry(title: WidgetEntry.todayTitle, text: "Rain.", id: 8).detailURL == WidgetSnapshot.todayURL)
+        // A count or a note, without the entry: the look back.
+        #expect(entry(memories: 2).detailURL == WidgetSnapshot.todayLookBackURL)
+        #expect(entry(note: "You have a memory from 36 days ago.").detailURL == WidgetSnapshot.todayLookBackURL)
+        // A prompt: Today.
+        #expect(entry().detailURL == WidgetSnapshot.todayURL)
+    }
+
+    /// And the app reads those links back (not an older widget's).
+    @Test func readsTheWidgetsLinks() throws {
+        #expect(TodayFocus(WidgetSnapshot.todayEntryURL(7)) == .entry(7))
+        #expect(TodayFocus(WidgetSnapshot.todayLookBackURL) == .lookBack)
+        #expect(TodayFocus(WidgetSnapshot.todayURL) == .top)
+        for old in ["me.dabble.app:/entry/7", "me.dabble.app:/today/edit", "me.dabble.app:/write", "me.dabble.app:/today/entry/x"] {
+            #expect(TodayFocus(try #require(URL(string: old))) == nil)
+        }
+    }
 }
 
 @MainActor

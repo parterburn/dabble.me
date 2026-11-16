@@ -58,11 +58,13 @@ struct Wordmark: View {
     static let letters = Array("Dabble me.")
 
     /// A pause, then a little unevenly, like someone typing, with a beat before the period.
+    /// Quick (about 0.6 seconds in all): the splash and the Face ID lock both wait on it.
+    private static let leadIn = 100
     private static let pauses: [Int] = (1...letters.count).map { index in
-        index == letters.count - 1 ? 180 : 55 + (index * 37) % 45
+        index == letters.count - 1 ? 110 : 32 + (index * 37) % 28
     }
     /// How long typing it out takes, in milliseconds.
-    static let typingDuration = 200 + pauses.reduce(0, +)
+    static let typingDuration = leadIn + pauses.reduce(0, +)
 
     var body: some View {
         line(Self.letters.count)
@@ -73,7 +75,7 @@ struct Wordmark: View {
             .task {
                 // Once: not again each time it comes back into view (scrolled to, a tab returned to).
                 guard typesOut, !reduceMotion, typed == 0 else { return }
-                try? await Task.sleep(for: .milliseconds(200))
+                try? await Task.sleep(for: .milliseconds(Self.leadIn))
                 for (index, pause) in Self.pauses.enumerated() {
                     typed = index + 1
                     try? await Task.sleep(for: .milliseconds(pause))
