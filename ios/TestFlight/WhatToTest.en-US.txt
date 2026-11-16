@@ -1,12 +1,31 @@
-Face ID now comes up as the app opens, instead of after the logo has typed itself out.
+New: a "New Entry" control.
 
-- With the Face ID lock on, open the app from closed. The Face ID prompt should appear at once, while "Dabble me." is still typing.
-- Do the same coming back to the app after it has locked in the background.
-- Cancel Face ID. The Face ID symbol should be there to tap, and tapping it should ask again. It must not ask again by itself in a loop.
-- Check that Face ID is never skipped: the app should not sit on the lock screen with no prompt.
-- On a phone with Touch ID or a passcode only, the lock should still ask.
+- Add it: open Control Center, touch and hold an empty spot, Add a Control, and search for Dabble Me. It can also go on the Lock Screen's bottom buttons, and on the Action button (Settings, Action Button, Controls).
+- Tap it. Dabble Me should open with the composer up.
+- Before 10 AM, with yesterday unwritten, the composer should be on yesterday; otherwise on today.
+- Try it with the app closed completely, with it in the background, and with the Face ID lock on.
+- "New Entry" should also be in the Shortcuts app under Dabble Me.
 
-The logo on the Today tab types at its original, slower speed again.
+How long ago something was now reads the same everywhere: "2 years + 3 months ago".
 
-- Tap "Dabble me." at the top of Today. It should type itself out unhurriedly (about a second).
-- The launch screen keeps the faster typing from the last build.
+- A photo's date band keeps its months: open a photo several years old and not near its anniversary. It should read like "14 years + 3 months ago", not "14 years ago", and the shared image should say the same.
+- The date under an open entry's title, Today's Rewind, the widget and the push reminder all use "+" between the two units.
+
+Writing an entry:
+
+- There is a new Format button (an "A") left of the link button. It opens a menu with Bold, Italic and Underline. Select some words and try each; with nothing selected, it should apply to what you type next. Check the keyboard stays up and the selection isn't lost.
+- Tap the "?" button. Your calendar's events for that day should be listed with no "ON YOUR CALENDAR" title above them. On a day with no events, nothing about the calendar should show at all.
+- With calendar access turned off for Dabble Me, on an entry that has no prompt to show, the title should appear over the line asking you to allow access.
+
+Settings, Calendars:
+
+- The explanation at the top should sit close under the title, without a large gap above it.
+- At the bottom there is a note on where to add or remove calendar accounts.
+
+An open entry no longer sits in a rounded card.
+
+- Open an entry that has other years under it (On This Day). The entry, and the bar above it, should be on the warm paper color, ending in a faint line; On This Day below should be on white (in light mode).
+- Open an entry with nothing under it. The whole page should be the paper color, top to bottom.
+- An entry's photo should run edge to edge.
+- Pull the page down at the top: no white should show above the entry.
+- Swipe left on the entry for its Actions, pinch to resize the text, and check both still work. Try dark mode and an iPad too.

@@ -45,6 +45,9 @@ struct EntryDetailView: View {
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
     @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
 
+    /// Other years' entries follow the one that's open.
+    private var hasOnThisDay: Bool { (sameDay?.count ?? 0) > 0 }
+
     /// The entry shown: the one opened, or the one it was merged into when its date was changed
     /// to a day that had one.
     private var id: Int { entry?.id ?? entryID }
@@ -54,23 +57,29 @@ struct EntryDetailView: View {
             if let entry {
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
-                        // In a well, as today's entry is on Today: the entry that was opened, set
-                        // apart from the other years' under it.
+                        // The entry that was opened is on the Paper color, from the bar down to
+                        // its last line or its photo: no card around it. Other years' entries,
+                        // when there are any, follow on the page's own background.
                         EntryBody(entry: entry, song: playerHidden ? nil : song, play: play)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color("Paper"))
-                            // (The photo, at the well's foot, takes its corners.)
-                            .clipShape(.rect(cornerRadius: 16))
-                            .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.quaternary))
-                            .padding(.horizontal, 12)
-                            .padding(.top, 8)
-                            .padding(.bottom, 6)
+                            .frame(maxWidth: 680, alignment: .leading)
+                            .frame(maxWidth: .infinity)
+                            .padding(.top, 4)
                             .contentShape(.rect)
                             .simultaneousGesture(pinchToResize)
                             // The swipe for Actions is the entry's own: it starts on its card,
                             // not on On This Day under it.
                             .simultaneousGesture(swipeForActions)
                             .offset(x: swipeOffset)
+                            // (Behind the swipe, not moved by it.) The Paper runs on above the
+                            // entry too, under the bar and when the page is pulled down.
+                            .background(Color("Paper"))
+                            .background(alignment: .top) {
+                                Color("Paper").frame(height: 1200).offset(y: -1200)
+                            }
+                            // A soft line where the entry ends and On This Day begins.
+                            .overlay(alignment: .bottom) {
+                                if hasOnThisDay { Rectangle().fill(.quaternary).frame(height: 1) }
+                            }
                             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { cardHeight = $0 }
                             // The bolt the swipe brings in, beside the card: level with its
                             // middle, or with the middle of what shows of a card taller than
@@ -86,13 +95,17 @@ struct EntryDetailView: View {
                         if let sameDay, sameDay.count > 0 {
                             SameDaySection(entry: entry, sameDay: sameDay, reading: reading,
                                            today: model.today?.day ?? JournalDay(localDate: .now)) { opened = EntryRoute(id: $0) }
+                                .frame(maxWidth: 680)
+                                .frame(maxWidth: .infinity)
                         }
                     }
-                    .frame(maxWidth: 680)
-                    .frame(maxWidth: .infinity)
                     // Room for the last lines to scroll clear of the floating actions.
                     .padding(.bottom, 64)
                 }
+                // Under and after the entry: the page's own background when On This Day
+                // follows (white, in light mode), so the two read apart; with nothing after
+                // the entry, Paper all the way down.
+                .background(hasOnThisDay ? Color(.systemBackground) : Color("Paper"))
                 // The floating actions step aside while a long entry is scrolled down through,
                 // and come back on the way up, at the entry's foot and at the page's.
                 .onScrollGeometryChange(for: ScrollSpot.self) { geometry in
@@ -562,8 +575,7 @@ private struct EntryBody: View {
 
     private var hasPhoto: Bool { entry.imageProcessing || entry.imageURL != nil }
 
-    // The writing keeps the well's padding; the photo, after it, runs to the well's edges and is
-    // its foot (the well rounds the corners).
+    // The writing is padded; the photo, after it, runs edge to edge and ends the entry.
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if hasWriting {
@@ -577,7 +589,7 @@ private struct EntryBody: View {
                     .frame(maxWidth: .infinity)
             }
         }
-        // An entry with nothing in it is an empty well, not a line where one collapsed.
+        // An entry with nothing in it still takes a little room, not a line where it collapsed.
         .frame(minHeight: hasWriting || hasPhoto ? nil : 56)
     }
 
@@ -637,7 +649,7 @@ private struct SameDaySection: View {
     // The page's lazy stack takes these as its own rows (no container around them).
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // (No rule over it: the entry's well ends just above.)
+            // (No rule of its own over it: the entry ends in a soft line just above.)
             HStack(spacing: 8) {
                 // Light grey: a label's icon, as on Today.
                 appIcon("slab-backward")

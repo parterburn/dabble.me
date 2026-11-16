@@ -400,10 +400,23 @@ struct ComposeView: View {
         #endif
     }
 
-    /// The bar's right: Link (PRO; shows or hides the link row), Tags (the hashtag row), then Prompt
+    /// The bar's right: Format (a menu of bold, italic and underline), Link (PRO; shows or hides the link row), Tags (the hashtag row), then Prompt
     /// (the question mark) at the far edge. Each row button is selected while its row is open; one row at a time.
     private var tagAndLinkButtons: some View {
         HStack(spacing: 6) {
+            // Format: the text view's own bold, italic and underline (also in the menu over a
+            // selection), for the selected words or, with none, what's typed next.
+            Menu {
+                Button { editor.toggleBold() } label: { Label("Bold", icon: "bold") }
+                Button { editor.toggleItalic() } label: { Label("Italic", icon: "italic") }
+                Button { editor.toggleUnderline() } label: { Label("Underline", icon: "underline") }
+            } label: {
+                appIcon("slab-format")
+                    .frame(width: 40, height: 36)
+                    .contentShape(.rect)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel("Format")
             if model.me?.mayAddLinks == true {
                 Button {
                     if editor.isEditingLink { editor.endLink() } else { editor.beginLink() }
@@ -1016,8 +1029,10 @@ private struct CalendarRow: View {
         Group {
             // With a question under it there's no need to say there's nothing here: a day
             // with nothing on it, or a calendar that isn't allowed, shows nothing. (That can
-            // be allowed in Settings → Calendars.)
-            if hidesWhenEmpty, access == .denied || (access == .allowed && events?.isEmpty != false) {
+            // be allowed in Settings → Calendars.) While the day's still being read, nothing
+            // either way.
+            if (hidesWhenEmpty && (access == .denied || (access == .allowed && events?.isEmpty == true)))
+                || (access == .allowed && events == nil) {
                 Color.clear.frame(height: 0)
             } else {
                 section
@@ -1029,12 +1044,16 @@ private struct CalendarRow: View {
 
     private var section: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("On your calendar")
-                .font(.caption.weight(.semibold))
-                .textCase(.uppercase)
-                .foregroundStyle(.tint)
-                .padding(.bottom, 4)
-                .accessibilityAddTraits(.isHeader)
+            // Titled only while the calendar isn't allowed, over the line that says how to allow
+            // it. Over the day's events the title says nothing they don't.
+            if access != .allowed {
+                Text("On your calendar")
+                    .font(.caption.weight(.semibold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(.tint)
+                    .padding(.bottom, 4)
+                    .accessibilityAddTraits(.isHeader)
+            }
             switch access {
             case .denied:
                 HStack(spacing: 10) {
@@ -1053,6 +1072,8 @@ private struct CalendarRow: View {
                 ProgressView().controlSize(.small).padding(.vertical, 10)
             case .allowed:
                 if let events, events.isEmpty {
+                    // (Only when this row is all the "?" button has to show: an empty panel
+                    // would look broken.)
                     Text("Nothing on your calendar this day.")
                         .font(.subheadline)
                         .foregroundStyle(.secondary)

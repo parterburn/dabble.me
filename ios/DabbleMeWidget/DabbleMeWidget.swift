@@ -5,6 +5,7 @@ import WidgetKit
 struct DabbleMeWidgets: WidgetBundle {
     var body: some Widget {
         TodayWidget()
+        NewEntryControl()
     }
 }
 

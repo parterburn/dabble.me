@@ -17,7 +17,7 @@ struct CalendarSettingsView: View {
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                     .listRowBackground(Color.clear)
-                    .listRowInsets(EdgeInsets(top: 4, leading: 4, bottom: 8, trailing: 4))
+                    .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 8, trailing: 4))
             }
             switch access {
             case .notAsked:
@@ -63,8 +63,16 @@ struct CalendarSettingsView: View {
                         if !account.isEmpty { Text(account) }
                     }
                 }
+                // Accounts are the phone's, not the app's: where to add or remove one. (iOS has
+                // no link an app may open to that page, so it's spelled out.)
+                Section {
+                } footer: {
+                    Text("To add or remove a calendar account, open the Settings app, then Apps → Calendar → Calendar Accounts.")
+                }
             }
         }
+        // The explanation sits close under the title, not a card's distance below it.
+        .contentMargins(.top, 8, for: .scrollContent)
         .slabBackButton()
         .navigationTitle("Calendars")
         .navigationBarTitleDisplayMode(.inline)

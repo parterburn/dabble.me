@@ -293,9 +293,12 @@ struct JournalDay: Hashable, Sendable, Comparable {
 
     static func < (lhs: JournalDay, rhs: JournalDay) -> Bool { lhs.iso < rhs.iso }
 
+    /// Between a span's two units, wherever the app says how long ago: "2 years + 3 months ago".
+    static let unitJoiner = " + "
+
     /// How long ago this day was, as the daily email words it (`Entry#look_back_label` on the
     /// server): "Today", "Yesterday", whole days under 60 ("36 days ago"), then the two largest
-    /// units ("3 months and 1 week ago", "1 year and 2 months ago", "3 years ago").
+    /// units ("3 months + 1 week ago", "1 year + 2 months ago", "3 years ago").
     func relative(to today: JournalDay) -> String {
         let days = Self.utc.dateComponents([.day], from: date, to: today.date).day ?? 0
         guard days >= 0 else { return "In the future" }
@@ -303,13 +306,13 @@ struct JournalDay: Hashable, Sendable, Comparable {
         case 0: return "Today"
         case 1: return "Yesterday"
         case ..<60: return "\(days) days ago"
-        default: return Self.span(days: days).joined(separator: " and ") + " ago"
+        default: return Self.span(days: days).joined(separator: Self.unitJoiner) + " ago"
         }
     }
 
     /// How long ago this day was, for an open entry's title: "Today", "Yesterday", whole days up
     /// to 60 ("36 days ago"), then years and months by the calendar, in full and without days
-    /// ("2 months ago", "5 years, 2 months ago", "3 years ago"), to the nearest month.
+    /// ("2 months ago", "5 years + 2 months ago", "3 years ago"), to the nearest month.
     func ago(from today: JournalDay) -> String {
         let days = Self.utc.dateComponents([.day], from: date, to: today.date).day ?? 0
         guard days >= 0 else { return "In the future" }
@@ -323,7 +326,7 @@ struct JournalDay: Hashable, Sendable, Comparable {
         // Over half a month more counts as the next month.
         let months = (span.year ?? 0) * 12 + (span.month ?? 0) + ((span.day ?? 0) > 15 ? 1 : 0)
         let parts = [(months / 12, "year"), (months % 12, "month")].filter { $0.0 > 0 }.map { "\($0.0) \($0.1)\($0.0 == 1 ? "" : "s")" }
-        return parts.joined(separator: ", ") + " ago"
+        return parts.joined(separator: Self.unitJoiner) + " ago"
     }
 
     /// What an empty new entry asks about this day: "How has today been?", "How was yesterday?",

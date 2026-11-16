@@ -207,6 +207,19 @@ struct WidgetPhotoTests {
     }
 }
 
+struct NewEntryRequestTests {
+    /// The control's word to the app is heard once, and only for a minute.
+    @Test func isTakenOnceAndExpires() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        NewEntryRequest.record(at: now)
+        #expect(NewEntryRequest.take(at: now.addingTimeInterval(2)))
+        #expect(!NewEntryRequest.take(at: now.addingTimeInterval(3)))
+        NewEntryRequest.record(at: now)
+        #expect(!NewEntryRequest.take(at: now.addingTimeInterval(NewEntryRequest.lifetime + 1)))
+        #expect(!NewEntryRequest.take(at: now.addingTimeInterval(4)), "An expired one is gone too")
+    }
+}
+
 struct EntryAgoTests {
     /// An open entry's title: days up to 60, then years and months in full, without days.
     @Test func agoIsDaysThenYearsAndMonths() throws {
@@ -220,8 +233,17 @@ struct EntryAgoTests {
         #expect(try ago("2026-08-25") == "3 months ago") // 2 months and 21 days: nearer three
         #expect(try ago("2025-11-15") == "1 year ago")
         #expect(try ago("2025-11-03") == "1 year ago")
-        #expect(try ago("2021-09-12") == "5 years, 2 months ago")
+        #expect(try ago("2021-09-12") == "5 years + 2 months ago")
         #expect(try ago("2021-11-25") == "5 years ago") // 4 years, 11 months and 21 days
+    }
+
+    /// A photo's band uses the same wording, so a long span keeps its months: the daily email's
+    /// wording (`relative(to:)`) drops them once they're under 5% of the span.
+    @Test func aLongSpanKeepsItsMonths() throws {
+        let today = try #require(JournalDay("2026-11-15"))
+        let day = try #require(JournalDay("2012-08-10"))
+        #expect(day.ago(from: today) == "14 years + 3 months ago")
+        #expect(day.relative(to: today) == "14 years ago")
     }
 }
 
@@ -323,9 +345,9 @@ struct ShareCardTests {
         #expect(try ago(36) == "36 days ago")
         #expect(try ago(59) == "59 days ago")
         #expect(try ago(60) == "2 months ago")
-        #expect(try ago(97) == "3 months and 1 week ago")
+        #expect(try ago(97) == "3 months + 1 week ago")
         #expect(try ago(365) == "12 months ago")
-        #expect(try ago(430) == "1 year and 2 months ago")
+        #expect(try ago(430) == "1 year + 2 months ago")
         #expect(try ago(1096) == "3 years ago")
         #expect(JournalDay.span(days: 97) == ["3 months", "1 week"])
     }
