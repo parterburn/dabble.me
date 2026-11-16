@@ -12,7 +12,7 @@ RSpec.describe "Universal links for the iOS app", type: :request do
     expect(details.size).to eq(1)
     expect(details.first["appIDs"]).to eq(["B79A4CAS56.me.dabble.ios"])
     paths = details.first["components"].map { |component| component["/"] }
-    expect(paths).to include("/entries", "/today", "/entries/new", "/entries/20??/*/*", "/rewind", "/rewind/*")
+    expect(paths).to include("/entries", "/today", "/entries/new", "/entries/20??/*/*", "/search", "/rewind", "/rewind/*")
     # Pages the app has no screen for stay on the web.
     expect(paths).not_to include("/entries/*", "/*", "/settings")
   end

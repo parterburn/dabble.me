@@ -109,8 +109,8 @@ struct ReminderPlan: Decodable, Sendable {
 /// date in an earlier year, or else the day's Rewind, as Today shows). Today's is skipped once
 /// today is written. With a past entry, it's that entry: "Rewind · 22 days ago" over the start of
 /// it, and its photo (iOS's own Show Previews setting hides both on a locked phone). Without one,
-/// "How was your day?". A tap opens Today (or, from a reminder set for 10 AM or earlier, the
-/// composer: on yesterday if it's unwritten); touch and hold offers reading the memory or writing.
+/// "How was your day?". A tap opens Today, whatever time it's set for (to write, read or edit
+/// from there, as the widget's date does); touch and hold offers reading the memory or writing.
 /// Everything is scheduled on the device, two weeks ahead, and rebuilt whenever the app opens or
 /// something changes (and now and then in the background), so there's no server push to set up.
 @MainActor
@@ -349,12 +349,10 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate, @unc
     func userNotificationCenter(_ center: UNUserNotificationCenter, didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
         let info = response.notification.request.content.userInfo
-        // A tap opens Today, or from a morning reminder (set for 10 or earlier) goes straight to
-        // writing: yesterday's entry if it isn't written, else today's. Touch and hold for the
-        // rest: "Read the Memory" opens that entry, and "New Entry" today's composer.
+        // A tap opens Today. Touch and hold for the rest: "Read the Memory" opens that entry,
+        // and "New Entry" today's composer.
         let reading = response.actionIdentifier == ReminderScheduler.readAction ? info["entryID"] as? Int : nil
         let writing = response.actionIdentifier == ReminderScheduler.writeAction
-        let tapped = response.actionIdentifier == UNNotificationDefaultActionIdentifier
         nonisolated(unsafe) let done = completionHandler
         DispatchQueue.main.async {
             MainActor.assumeIsolated {
@@ -364,12 +362,7 @@ final class NotificationRouter: NSObject, UNUserNotificationCenterDelegate, @unc
                         model.openEntryRequest = reading
                     } else {
                         model.selectedTab = .today
-                        if writing {
-                            model.composeRequest = true
-                        } else if tapped, ReminderSettings.minutes <= AppModel.morningEnds {
-                            model.composePrefersYesterday = true
-                            model.composeRequest = true
-                        }
+                        if writing { model.composeRequest = true }
                     }
                 }
             }

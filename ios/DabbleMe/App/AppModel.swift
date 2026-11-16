@@ -31,10 +31,11 @@ final class AppModel {
         }
     }
     var searchRequest: String?
-    /// Set when a writing reminder is tapped; Today opens the composer.
+    /// Set when New Entry is asked for from outside Today (a reminder's "New Entry", a quick
+    /// action, a link); Today opens the composer.
     var composeRequest = false
-    /// With `composeRequest`, from a morning reminder or the widget in the morning: yesterday's
-    /// entry instead, when it hasn't been written (people who write about a day the next morning).
+    /// With `composeRequest`, in the morning: yesterday's entry instead, when it hasn't been
+    /// written (people who write about a day the next morning).
     var composePrefersYesterday = false
     /// With `composeRequest`: whether it prefers yesterday is still to be worked out, from the
     /// journal's own time of day, once the account and Today have loaded.
