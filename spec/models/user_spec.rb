@@ -4,6 +4,10 @@ describe User do
   let(:user) { User.create(email: Faker::Internet.email, password: Faker::Internet.password(min_length: 8), first_name: Faker::Name.first_name, last_name: Faker::Name.last_name) }
 
   describe '.with_name_matching' do
+    # The file's `before` gives `user` entries in every example. A fixed name
+    # here, because Faker can hand out "Zora", which these searches would match.
+    let(:user) { FactoryBot.create(:user, first_name: 'Hester', last_name: 'Brandt') }
+
     let!(:zora) { FactoryBot.create(:user, first_name: 'Zorabel', last_name: 'Quenneville', plan: 'PRO Monthly PayHere') }
     let!(:free_zora) { FactoryBot.create(:user, first_name: 'Zorabel', last_name: nil, plan: 'Free') }
     let!(:legacy) { FactoryBot.create(:user, first_name: 'Ottoline', last_name: 'Quennell') }
