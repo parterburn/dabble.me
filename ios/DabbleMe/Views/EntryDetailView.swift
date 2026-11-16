@@ -644,7 +644,7 @@ private struct SameDaySection: View {
     let onOpen: (Int) -> Void
 
     /// A month heading's height, in the page and in the bar.
-    static let headerHeight: CGFloat = 36
+    nonisolated static let headerHeight: CGFloat = 36
 
     // The page's lazy stack takes these as its own rows (no container around them).
     var body: some View {

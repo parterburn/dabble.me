@@ -120,7 +120,7 @@ struct RootView: View {
                 model.openPendingLink()
             }
         }
-        .onReceive(NotificationCenter.default.publisher(for: NewEntryRequest.notification)) { _ in openRequestedNewEntry() }
+        .onReceive(NotificationCenter.default.publisher(for: NewEntryControlRequest.notification)) { _ in openRequestedNewEntry() }
         .onChange(of: scenePhase) { _, phase in
             switch phase {
             case .background:
@@ -175,7 +175,7 @@ struct RootView: View {
     /// New Entry, asked for from the control or a shortcut: the composer, by the morning rule
     /// (kept until the app has signed in and loaded, like a link).
     private func openRequestedNewEntry() {
-        if NewEntryRequest.take() { model.open(.newEntry) }
+        if NewEntryControlRequest.take() { model.open(.newEntry) }
     }
 }
 

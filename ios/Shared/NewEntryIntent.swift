@@ -11,7 +11,7 @@ struct NewEntryIntent: AppIntent {
 
     @MainActor
     func perform() async throws -> some IntentResult {
-        NewEntryRequest.post()
+        NewEntryControlRequest.post()
         return .result()
     }
 }
@@ -19,7 +19,7 @@ struct NewEntryIntent: AppIntent {
 /// The intent's word to the app that New Entry was asked for. Kept in the App Group, so it
 /// arrives whichever process ran the intent, and for a moment only: one the app didn't pick up
 /// (it was signed out, say) doesn't open the composer some later day.
-enum NewEntryRequest {
+enum NewEntryControlRequest {
     static let key = "control.newEntryRequestedAt"
     static let notification = Notification.Name("me.dabble.app.newEntryRequested")
     static let lifetime: TimeInterval = 60
