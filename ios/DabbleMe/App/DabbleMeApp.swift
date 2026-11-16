@@ -60,9 +60,10 @@ struct RootView: View {
     /// The typing animation, once per launch, when signed in (the welcome screen has its own).
     @State private var showsSplash = true
     /// Just unlocked, with the app not yet back in front (Face ID's own sheet is still going
-    /// away): no privacy cover over the journal for that moment, or the "me" mark flashes up
-    /// after the lock screen like a second splash.
-    @State private var isComingBackFromUnlock = false
+    /// away) or the journal not yet loaded: the lock screen's wordmark stays where it was typed
+    /// until both are, so the logo is simply held a little longer. (Without it the privacy
+    /// cover's "me" mark flashed up after the lock screen like a second splash.)
+    @State private var holdsWordmark = false
 
     var body: some View {
         Group {
@@ -149,20 +150,33 @@ struct RootView: View {
         }
         .overlay {
             if model.isSignedIn, model.lock.isEnabled {
-                if model.lock.isLocked {
-                    LockScreen()
-                } else if scenePhase != .active, !isComingBackFromUnlock {
+                if model.lock.isLocked || holdsWordmark {
+                    // (One view for both, so the wordmark goes on typing through the unlock.)
+                    LockScreen(isHeld: !model.lock.isLocked)
+                        .transition(.opacity)
+                } else if scenePhase != .active {
                     PrivacyCover() // hides the journal in the app switcher
                 }
             }
         }
         .onChange(of: model.lock.isLocked) { _, locked in
+            guard !locked else { holdsWordmark = false; return }
             // Unlocking happens while Face ID has the app inactive; it's active a moment later.
-            if !locked, scenePhase != .active { isComingBackFromUnlock = true }
+            holdsWordmark = true
+            releaseWordmark(active: scenePhase == .active, loaded: model.hasLoaded)
+            // Never for long: a journal that won't load says so on its own page.
+            Task {
+                try? await Task.sleep(for: .seconds(2))
+                releaseWordmark(active: true, loaded: true)
+            }
         }
         .onChange(of: scenePhase) { _, phase in
-            // In front again, or gone to the background after all: the cover is back on duty.
-            if phase != .inactive { isComingBackFromUnlock = false }
+            // Gone to the background after all: the privacy cover's job again.
+            if phase == .background { holdsWordmark = false }
+            releaseWordmark(active: phase == .active, loaded: model.hasLoaded)
+        }
+        .onChange(of: model.hasLoaded) { _, loaded in
+            releaseWordmark(active: scenePhase == .active, loaded: loaded)
         }
         .overlay {
             // With the lock on, the lock screen types the wordmark instead.
@@ -182,6 +196,12 @@ struct RootView: View {
         } else {
             SignInView()
         }
+    }
+
+    /// Lets go of the wordmark held after an unlock, once the app is in front with its journal.
+    private func releaseWordmark(active: Bool, loaded: Bool) {
+        guard holdsWordmark, active, loaded else { return }
+        withAnimation(.easeOut(duration: 0.35)) { holdsWordmark = false }
     }
 
     /// New Entry, asked for from the control or a shortcut: the composer, by the morning rule

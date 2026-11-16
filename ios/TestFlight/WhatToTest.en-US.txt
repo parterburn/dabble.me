@@ -1,6 +1,7 @@
 No more second splash after unlocking.
 
-- With the Face ID lock on, open the app and unlock. The typed "Dabble me." should give way straight to your journal. The square "me" logo should not flash up in between.
+- With the Face ID lock on, open the app and unlock. The typed "Dabble me." should stay exactly where it is, without the Face ID symbol, until your journal is ready, then fade to it. The square "me" logo should not flash up in between.
+- From a cold start on a slow connection, the logo should hold no longer than about two seconds after unlocking.
 - The "me" logo should still cover your journal in the app switcher (swipe up and pause), and when Control Center or a notification is pulled down over the app.
 
 Choosing a suggested hashtag no longer moves the cursor.
