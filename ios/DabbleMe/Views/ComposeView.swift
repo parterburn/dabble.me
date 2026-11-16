@@ -400,17 +400,14 @@ struct ComposeView: View {
         #endif
     }
 
-    /// The bar's right: Format (a menu of bold, italic and underline), Link (PRO; shows or hides the link row), Tags (the hashtag row), then Prompt
+    /// The bar's right: Format (iOS's formatting panel), Link (PRO; shows or hides the link row), Tags (the hashtag row), then Prompt
     /// (the question mark) at the far edge. Each row button is selected while its row is open; one row at a time.
     private var tagAndLinkButtons: some View {
         HStack(spacing: 6) {
-            // Format: the text view's own bold, italic and underline (also in the menu over a
-            // selection), for the selected words or, with none, what's typed next.
-            Menu {
-                Button { editor.toggleBold() } label: { Label("Bold", icon: "bold") }
-                Button { editor.toggleItalic() } label: { Label("Italic", icon: "italic") }
-                Button { editor.toggleUnderline() } label: { Label("Underline", icon: "underline") }
-            } label: {
+            // Format: iOS's own formatting panel, with what an entry keeps (bold, italic,
+            // underline, strikethrough and lists), for the selected words or, with none, what's
+            // typed next.
+            Button { editor.showFormatting() } label: {
                 appIcon("slab-format")
                     .frame(width: 40, height: 36)
                     .contentShape(.rect)

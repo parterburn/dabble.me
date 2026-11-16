@@ -1,3 +1,13 @@
+The Format button now opens Apple's formatting panel, and entries can have strikethrough.
+
+- While writing, select some words and tap the "A" button. A short panel should slide up with Bold, Italic, Underline, Strikethrough and list buttons, and nothing else (no fonts, colors or alignment).
+- Try each of the four styles. The buttons should light up to match the selected words. Does the selection stay visible while the panel is open?
+- Tap a list button with a few lines selected: they should become "• " bullets or "1. 2. 3." items. Tap it again: back to plain lines.
+- With nothing selected, turn on Bold, close the panel and type: the new words should be bold.
+- Close the panel with its X, and by swiping it down. The keyboard should come back both times.
+- Save an entry with struck-through words, then reopen it in the app and on dabble.me: the strikethrough should still be there in both.
+- Select words, tap Format in the pop-up menu, then More…: the same short panel, without the list buttons.
+
 No more second splash after unlocking.
 
 - With the Face ID lock on, open the app and unlock. The typed "Dabble me." should stay exactly where it is, without the Face ID symbol, until your journal is ready, then fade to it. The square "me" logo should not flash up in between.

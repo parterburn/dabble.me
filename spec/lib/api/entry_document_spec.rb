@@ -20,6 +20,14 @@ RSpec.describe Api::EntryDocument do
       ])
     end
 
+    it "reads struck-through text, however it's marked up" do
+      html = "<p>Keep <s>this</s>, <strike>that</strike> and <del>the <b>other</b></del>.</p>"
+      expect(described_class.from_html(html)).to eq([
+        paragraph(run("Keep "), run("this", strike: true), run(", "), run("that", strike: true), run(" and "),
+                  run("the ", strike: true), run("other", strike: true, bold: true), run("."))
+      ])
+    end
+
     it "reads the formatting the web editor produces" do
       html = %(<p>I <b>loved</b> <i>it</i>, <u>really</u>. <a href="https://x.test" target="_blank">Link</a></p>) +
              "<ul><li>one</li><li><strong>two</strong></li></ul><ol><li>first</li></ol>"
@@ -125,6 +133,13 @@ RSpec.describe Api::EntryDocument do
   end
 
   describe ".to_html" do
+    it "writes struck-through text as <s>, and reads it back the same" do
+      document = [paragraph(run("Not "), run("this", strike: true), run(" but "), run("that", strike: true, underline: true, bold: true))]
+      html = described_class.to_html(document)
+      expect(html).to eq("<p>Not <s>this</s> but <strong><u><s>that</s></u></strong></p>")
+      expect(described_class.from_html(html)).to eq(document)
+    end
+
     it "renders blocks with escaping and grouped lists" do
       html = described_class.to_html([
         paragraph(run("A <tag> & "), run("bold", bold: true, italic: true), run("\nnext line")),
