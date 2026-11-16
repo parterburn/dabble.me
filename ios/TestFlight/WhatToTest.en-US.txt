@@ -1,3 +1,9 @@
+A prompt or calendar event now goes in where your cursor is, not at the end of the entry.
+
+- Write three paragraphs. Put the cursor in the middle one, tap "?", and tap an event or the prompt. It should appear in bold right under that paragraph, with the cursor on a new line beneath it. The third paragraph should still be below.
+- Put the cursor on an empty line in the middle of the entry and do the same. It should land on that empty line, not push down to the bottom.
+- With the cursor at the very end, and in an empty entry, it should behave as before: the heading, then the cursor under it.
+
 How long ago something was now follows one rule everywhere.
 
 - Up to 60 days back it's counted in days ("36 days ago"). Past that it's years and months to the nearest month ("2 months ago", "12 years, 5 months ago"), never weeks.

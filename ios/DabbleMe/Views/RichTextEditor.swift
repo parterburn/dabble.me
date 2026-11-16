@@ -163,22 +163,40 @@ final class RichTextEditorModel {
         return tagged
     }
 
-    /// Adds an "Ask Me" question as its own bold paragraph at the end, with the cursor on a fresh
-    /// line under it, ready for the answer.
+    /// Adds a prompt or a calendar event as its own bold paragraph where the writer is, with the
+    /// cursor on a fresh line under it, ready for the answer: on the cursor's line when that
+    /// line is empty (wherever in the entry it is), otherwise right under the line it's on.
+    /// Nothing else in the entry moves, and the writer isn't sent to its end.
     func addQuestion(_ question: String) {
         guard let textView else { return }
         let storage = textView.textStorage
+        let string = storage.string as NSString
         let style = RichText.Style.journal
         var bold = style.baseAttributes
         bold[.font] = style.baseFont.with(bold: true, italic: false)
-        let lead = storage.length == 0 || storage.string.hasSuffix("\n") ? "" : "\n"
-        storage.beginEditing()
-        storage.append(NSAttributedString(string: lead, attributes: style.baseAttributes))
-        storage.append(NSAttributedString(string: question, attributes: bold))
-        storage.append(NSAttributedString(string: "\n", attributes: style.baseAttributes))
-        storage.endEditing()
+
+        // The cursor's line, without the line break that ends it.
+        let cursor = min(NSMaxRange(textView.selectedRange), string.length)
+        let line = string.paragraphRange(for: NSRange(location: cursor, length: 0))
+        var length = line.length
+        while length > 0, let last = UnicodeScalar(string.character(at: line.location + length - 1)), CharacterSet.newlines.contains(last) {
+            length -= 1
+        }
+        let content = NSRange(location: line.location, length: length)
+        let isEmptyLine = string.substring(with: content).trimmingCharacters(in: .whitespaces).isEmpty
+
+        let added = NSMutableAttributedString()
+        // Under a line with writing on it, on a line of its own.
+        if !isEmptyLine { added.append(NSAttributedString(string: "\n", attributes: style.baseAttributes)) }
+        added.append(NSAttributedString(string: question, attributes: bold))
+        added.append(NSAttributedString(string: "\n", attributes: style.baseAttributes))
+        // An empty line is taken over (any stray spaces on it go); otherwise it goes in at the
+        // line's end, before the break that ends it.
+        let target = isEmptyLine ? content : NSRange(location: NSMaxRange(content), length: 0)
+        storage.replaceCharacters(in: target, with: added)
+
         textView.typingAttributes = style.baseAttributes
-        textView.selectedRange = NSRange(location: storage.length, length: 0)
+        textView.selectedRange = NSRange(location: target.location + added.length, length: 0)
         textView.scrollRangeToVisible(textView.selectedRange)
         textDidChange()
         focus()
