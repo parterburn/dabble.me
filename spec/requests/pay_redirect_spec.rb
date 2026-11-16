@@ -33,4 +33,21 @@ RSpec.describe 'Pay redirects', type: :request do
     get '/pay/35'
     expect(response).to redirect_to('/goodbye')
   end
+
+  it 'redirects temporarily either way, so a browser asks again after a closing is announced or called off' do
+    get '/pay'
+    expect(response).to have_http_status(:found)
+    get '/pay/35'
+    expect(response).to have_http_status(:found)
+
+    SiteClosure.announce(closes_on: SiteClosure.today + 30, announced_by: nil)
+    get '/pay'
+    expect(response).to have_http_status(:found)
+    get '/pay/35'
+    expect(response).to have_http_status(:found)
+
+    SiteClosure.reopen!
+    get '/pay'
+    expect(response).to redirect_to(payment_link)
+  end
 end

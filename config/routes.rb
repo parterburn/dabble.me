@@ -179,9 +179,12 @@ Rails.application.routes.draw do
   get 'pricing',                        to: redirect('/#pricing')
   get 'subscribe',                      to: "welcome#subscribe"
   get 'pro',                            to: redirect('/subscribe')
-  # No new payments once a closing is announced (SiteClosure).
-  get 'pay',                            to: redirect { SiteClosure.announced? ? '/goodbye' : ENV['PAYMENT_LINK'] }
-  get 'pay/:amount',                    to: redirect { |params, _req|
+  # No new payments once a closing is announced (SiteClosure). Temporary
+  # redirects, because a browser keeps a 301 for good: it would go on sending
+  # people to the payment link after a closing, or to /goodbye after one is
+  # called off, without asking the server again.
+  get 'pay',                            to: redirect(status: 302) { SiteClosure.announced? ? '/goodbye' : ENV['PAYMENT_LINK'] }
+  get 'pay/:amount',                    to: redirect(status: 302) { |params, _req|
     SiteClosure.announced? ? '/goodbye' : "#{ENV['PAYMENT_LINK']}?prefilled_amount=#{params[:amount].to_i * 100}"
   }, constraints: { amount: /\d+/ }
   match 'payment_notify',               to: 'payments#payment_notify', via: [:post]
