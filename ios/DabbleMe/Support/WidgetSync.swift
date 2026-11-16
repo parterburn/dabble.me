@@ -126,7 +126,7 @@ enum WidgetSync {
     /// the entry's start and its photo's small copy.
     private static func lookBack(_ memory: ReminderPlan.Day, withPhoto: Bool) async -> WidgetSnapshot.Day {
         let entryDay = JournalDay(memory.entry.date), day = JournalDay(memory.date)
-        let ago = entryDay.flatMap { entry in day.map { entry.relative(to: $0) } }
+        let ago = entryDay.flatMap { entry in day.map { entry.ago(from: $0) } }
         var result = WidgetSnapshot.Day(day: memory.date)
         if memory.isOnThisDay {
             result.memories = memory.count
@@ -178,7 +178,7 @@ enum WidgetSync {
                 title = [years, memory.day?.year].compactMap { $0 }.joined(separator: " · ")
             } else if let rewind = today.throwback, let day = rewind.day, let now = today.day {
                 entry = rewind
-                title = day.relative(to: now) // "2 years, 3 months ago": the icon says it's a look back
+                title = day.ago(from: now) // "2 years, 3 months ago": the icon says it's a look back
             } else {
                 return nil
             }
@@ -191,7 +191,7 @@ enum WidgetSync {
     /// 36 days ago." (the past entry Today shows as its Rewind).
     static func memoryNote(_ today: TodaySummary) -> String? {
         guard today.onThisDay.isEmpty, let day = today.throwback?.day, let now = today.day else { return nil }
-        let ago = day.relative(to: now)
+        let ago = day.ago(from: now)
         return "You have a memory from \(ago.prefix(1).lowercased() + ago.dropFirst())."
     }
 

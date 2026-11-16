@@ -131,9 +131,8 @@ struct PhotoViewer: View {
     /// The photo under its band ("1 year, 9 months ago"), as it's shared. Save still saves the original.
     @State private var card: UIImage?
 
-    /// "14 years, 3 months ago", to the nearest month, as an open entry's title says it (not
-    /// `relative(to:)`, which drops the months once they're under 5% of the span), when the
-    /// photo's day is known.
+    /// "14 years, 3 months ago", to the nearest month, as everywhere else, when the photo's
+    /// day is known.
     private var bandLabel: String? { photo.day?.ago(from: JournalDay(localDate: .now)) }
 
     var body: some View {

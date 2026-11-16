@@ -487,7 +487,7 @@ enum JournalIntelligence {
         entries.filter { !$0.excerpt.isEmpty }.map { entry in
             guard let day = entry.day else { return "- \(entry.excerpt)" }
             let date = day.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
-            return "- \(day.relative(to: today)) (\(date)): \(entry.excerpt)"
+            return "- \(day.ago(from: today)) (\(date)): \(entry.excerpt)"
         }
     }
 

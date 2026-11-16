@@ -1,3 +1,8 @@
+How long ago something was now follows one rule everywhere.
+
+- Up to 60 days back it's counted in days ("36 days ago"). Past that it's years and months to the nearest month ("2 months ago", "12 years, 5 months ago"), never weeks.
+- Check it reads the same for one entry in each place: under the title when the entry is open, on its photo's band, on Today's Rewind, on the widget, and in the push reminder.
+
 Reflection has three changes.
 
 - The send button is an up arrow.

@@ -261,13 +261,27 @@ struct EntryAgoTests {
         #expect(try ago("2021-11-25") == "5 years ago") // 4 years, 11 months and 21 days
     }
 
-    /// A photo's band uses the same wording, so a long span keeps its months: the daily email's
-    /// wording (`relative(to:)`) drops them once they're under 5% of the span.
+    /// A long span keeps its months (a photo's band once read "14 years ago" for this).
     @Test func aLongSpanKeepsItsMonths() throws {
         let today = try #require(JournalDay("2026-11-15"))
         let day = try #require(JournalDay("2012-08-10"))
         #expect(day.ago(from: today) == "14 years, 3 months ago")
-        #expect(day.relative(to: today) == "14 years ago")
+    }
+
+    /// Counted in days back: days through 60, then months and years, never weeks.
+    @Test func sixtyDaysIsTheLastCountedInDays() throws {
+        let today = try #require(JournalDay("2026-11-09"))
+        func ago(_ days: Int) throws -> String {
+            let date = try #require(Calendar(identifier: .gregorian).date(byAdding: .day, value: -days, to: today.localDate))
+            return JournalDay(localDate: date).ago(from: today)
+        }
+        #expect(try ago(36) == "36 days ago")
+        #expect(try ago(60) == "60 days ago")
+        #expect(try ago(61) == "2 months ago")
+        #expect(try ago(97) == "3 months ago") // 3 months and 5 days
+        #expect(try ago(365) == "1 year ago")
+        #expect(try ago(430) == "1 year, 2 months ago")
+        #expect(try ago(1096) == "3 years ago")
     }
 }
 
@@ -357,25 +371,6 @@ struct WritingQuestionTests {
 }
 
 struct ShareCardTests {
-    /// The same wording and rounding as the daily email's "Rewind 3 months and 1 week".
-    @Test func relativeDatesAreDaysUnderSixtyThenTwoUnits() throws {
-        let today = try #require(JournalDay("2026-11-09"))
-        func ago(_ days: Int) throws -> String {
-            let date = try #require(Calendar(identifier: .gregorian).date(byAdding: .day, value: -days, to: today.localDate))
-            return JournalDay(localDate: date).relative(to: today)
-        }
-        #expect(try ago(0) == "Today")
-        #expect(try ago(1) == "Yesterday")
-        #expect(try ago(36) == "36 days ago")
-        #expect(try ago(59) == "59 days ago")
-        #expect(try ago(60) == "2 months ago")
-        #expect(try ago(97) == "3 months, 1 week ago")
-        #expect(try ago(365) == "12 months ago")
-        #expect(try ago(430) == "1 year, 2 months ago")
-        #expect(try ago(1096) == "3 years ago")
-        #expect(JournalDay.span(days: 97) == ["3 months", "1 week"])
-    }
-
     @MainActor
     @Test func cardAddsABandAboveThePhotoAtItsWidth() {
         let photo = UIGraphicsImageRenderer(size: CGSize(width: 800, height: 600), format: {

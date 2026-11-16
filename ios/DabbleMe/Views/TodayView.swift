@@ -505,7 +505,7 @@ struct TodayView: View {
     private static func throwbackTitle(_ entry: EntrySummary, today: TodaySummary) -> String {
         guard let day = entry.day else { return entry.date }
         guard let now = today.day else { return day.monthTitle }
-        return "\(day.relative(to: now)) • \(day.monthTitle)"
+        return "\(day.ago(from: now)) • \(day.monthTitle)"
     }
 
     @ViewBuilder
