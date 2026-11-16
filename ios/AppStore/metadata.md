@@ -148,16 +148,20 @@ The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resour
 
 In `ios/AppStore/Screenshots/` (`iPhone 6.3in`, `iPad 13in`, and the header and search-results images rendered from them): **iPhone 6.3"** at 1206 × 2622 (iPhone 18 Pro simulator) and **13" iPad** at 2064 × 2752, both from the made-up demo account (never a real journal), via `ScreenshotTests` (see `ios/README.md`):
 
-1. Today: the date, today's prompt, and On This Day
+1. Today: the date, a prompt, On This Day, and the last five days as dots
 2. Journal timeline with photos and month sections
-3. An entry with formatting, a list and a photo
-4. Writing an entry: the keyboard up, with its photos and the editor bar
-5. Journal > Photos
-6. Journal > Stats (the 2026 Rewind card shows in its season, November to January)
-7. Search: your hashtags this year
-8. Search results for #hiking
+3. An entry in its card, with formatting, a list and a photo
+4. A past entry with the same day in other years under it (On This Day)
+5. Writing an entry: the keyboard up, with its photos and the editor bar
+6. What to write about: the day's calendar events over a prompt (the "?" button)
+7. Journal > Photos
+8. Journal > Stats (the 2026 Rewind card shows in its season, November to January)
+9. Search: your hashtags this year
+10. Search results for #hiking
 
-`bundle exec rails ios:demo_account` seeds that account locally, with its photos straight from Unsplash. It needs valid AWS credentials in `.env` to store them (a different `AWS_ACCESS_KEY_ID` set in the shell wins over `.env`, so unset it first).
+The calendar events in 6 are made up (`-DabbleDebugCalendar YES`), like the rest of the demo account.
+
+`bundle exec rails ios:demo_account` seeds that account locally, with its photos straight from Unsplash. It needs valid AWS credentials in `.env` to store them. A different `AWS_ACCESS_KEY_ID` set in the shell wins over `.env`, so run it as `env -u AWS_ACCESS_KEY_ID -u AWS_SECRET_ACCESS_KEY bundle exec rails ios:demo_account`; the last line it prints should say how many entries have photos.
 
 **Header and search-results images** (`Header and Search Results/`, rendered by `source/render.sh` from the iPhone screenshots):
 
