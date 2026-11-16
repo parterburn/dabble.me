@@ -821,11 +821,11 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertLessThan(email.frame.minY, row.frame.minY, "Under Email")
         snap("settings-reminders")
         row.tap()
-        XCTAssertTrue(app.switches["Include Entries Over a Year Old"].waitForExistence(timeout: 5), "The demo account has entries over a year old")
+        XCTAssertTrue(app.switches["Use Entries Only From the Past Year"].waitForExistence(timeout: 5), "The demo account has entries over a year old")
         let words = app.textFields["Words, separated by commas"]
         words.tap()
         words.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 12) + "waffles\n")
-        let leftOut = app.staticTexts["1 entry is left out of the past entries in push notifications, emails and the widget."]
+        let leftOut = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "1 entry is left out of the past entries in push notifications, emails and the widget.")).firstMatch
         XCTAssertTrue(leftOut.waitForExistence(timeout: 10))
         snap("past-entries")
         XCTAssertEqual(words.value as? String, "waffles")

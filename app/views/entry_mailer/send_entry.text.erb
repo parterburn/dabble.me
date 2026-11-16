@@ -35,7 +35,7 @@ View entry: <%= day_entry_url(year: @random_entry.date.year, month: @random_entr
 <% elsif @user.send_past_entry? %>
 Keep writing...once you have a few entries, you'll rewind to one of them here!
 <% elsif @past_entries_on_this_day.to_i.positive? %>
-You have <%= pluralize(@past_entries_on_this_day, "entry") %> from this day in past years: <%= entries_url %>
+You have <%= pluralize(@past_entries_on_this_day, "entry") %> from this day in past years: <%= today_url %>
 <% end %>
 
 <% if @user.is_pro? %>

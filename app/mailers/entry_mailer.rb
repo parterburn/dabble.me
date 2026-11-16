@@ -17,6 +17,7 @@ class EntryMailer < ActionMailer::Base
     @random_entry = user.random_entry(@send_day.strftime('%Y-%m-%d'))
     # With the past entry itself left out of the email (an email stays in an inbox): just how
     # many there are from this day in past years, without the words left out of past entries.
+    # It links to Today, which lists them on PRO and says they're part of PRO otherwise.
     unless user.send_past_entry?
       on_this_day = Api::OnThisDay.entries(user, today: @send_day.to_date).map(&:id)
       @past_entries_on_this_day = on_this_day.any? ? user.random_entries.unscope(:order).where(id: on_this_day).count : 0

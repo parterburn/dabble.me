@@ -74,32 +74,43 @@
     </div>
 
     <% unless from_email_link %>
-      <div class="mt-5 space-y-5 border-t border-subtle pt-5">
+      <%# Which past entries only matters with them on: unticked, the two choices under it are
+          put away (by CSS alone, so they're still sent with the form and keep their values;
+          a browser without :has() just shows them all). %>
+      <div class="group mt-5 space-y-5 border-t border-subtle pt-5">
         <%= f.label :send_past_entry, class: "flex cursor-pointer items-start gap-3" do %>
-          <%= f.check_box :send_past_entry, class: "checkbox mt-1" %>
+          <%= f.check_box :send_past_entry, class: "checkbox mt-1", data: { past_entries: true } %>
           <span class="text-primary">Include past entries in emails</span>
         <% end %>
 
-        <div>
-          <%= f.label :past_filter, "Leave out past entries that mention", class: "field-label" %>
-          <% if user.is_pro? %>
-            <%= f.text_field :past_filter, class: "field-input", placeholder: "Comma-separated words" %>
-            <% if user.past_filter.present? %>
-              <p class="field-help">
-                <%= link_to pluralize(user.past_filter_entry_ids.length, "entry"), search_path(search: { term: user.past_filter.split(',').map(&:strip).join(" OR ") }), class: "text-link" %>
-                being filtered out of past entries.
-              </p>
+        <%# Words to leave out: once there are a few entries for a past one to be picked from. %>
+        <% if user.entries.count > 5 %>
+          <div class="group-has-[[data-past-entries]:not(:checked)]:hidden">
+            <%= f.label :past_filter, "Leave out past entries that mention", class: "field-label" %>
+            <% if user.is_pro? %>
+              <%= f.text_field :past_filter, class: "field-input", placeholder: "Comma-separated words" %>
+              <% if user.past_filter.present? %>
+                <p class="field-help">
+                  <%= link_to pluralize(user.past_filter_entry_ids.length, "entry"), search_path(search: { term: user.past_filter.split(',').map(&:strip).join(" OR ") }), class: "text-link" %>
+                  being filtered out of past entries.
+                </p>
+              <% end %>
+            <% else %>
+              <%= f.text_field :past_filter, class: "field-input cursor-not-allowed bg-surface-elevated text-muted", placeholder: "Comma-separated words", readonly: "readonly", value: "", rel: "tooltip", title: "Upgrade to PRO for this feature." %>
             <% end %>
-          <% else %>
-            <%= f.text_field :past_filter, class: "field-input cursor-not-allowed bg-surface-elevated text-muted", placeholder: "Comma-separated words", readonly: "readonly", value: "", rel: "tooltip", title: "Upgrade to PRO for this feature." %>
-          <% end %>
-        </div>
+          </div>
+        <% end %>
 
+        <%# Only for a journal that goes back over a year. The box is the setting turned round
+            (ticked: way_back_past_entries is off): the past entry is then last year's from
+            this day, or else one from the past 12 months, never one from further back. %>
         <% if user.is_pro? && user.entries.where("date < (?)", 1.year.ago).any? %>
-          <%= f.label :way_back_past_entries, class: "flex cursor-pointer items-start gap-3" do %>
-            <%= f.check_box :way_back_past_entries, class: "checkbox mt-1" %>
-            <span class="text-primary">Include past entries that are over a year old</span>
-          <% end %>
+          <div class="group-has-[[data-past-entries]:not(:checked)]:hidden">
+            <%= f.label :way_back_past_entries, class: "flex cursor-pointer items-start gap-3" do %>
+              <%= f.check_box :way_back_past_entries, { class: "checkbox mt-1", checked: user.way_back_past_entries == false }, "0", "1" %>
+              <span class="text-primary">Use entries only from the past year</span>
+            <% end %>
+          </div>
         <% end %>
       </div>
 

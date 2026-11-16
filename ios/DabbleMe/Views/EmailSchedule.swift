@@ -69,14 +69,21 @@ final class EmailScheduleStore {
 /// Email and the widget, that opens what all three share.
 struct PastEntriesRow: View {
     let store: EmailScheduleStore
+    @Environment(AppModel.self) private var model
+
+    /// Past entries start coming up, and so can be filtered, with more than five entries.
+    @MainActor static func showsWords(_ model: AppModel) -> Bool { (model.me?.entryCount ?? 0) > 5 }
 
     var body: some View {
-        PaneLink {
-            PastEntriesView(store: store)
-        } label: {
-            LabeledContent("Past Entry Filters", value: summary)
+        // Nothing to filter yet (a new journal): no row.
+        if Self.showsWords(model) || (store.schedule.map { $0.canChooseDays && $0.hasOldEntries } ?? false) {
+            PaneLink {
+                PastEntriesView(store: store)
+            } label: {
+                LabeledContent("Past Entry Filters", value: summary)
+            }
+            .disabled(store.schedule == nil)
         }
-        .disabled(store.schedule == nil)
     }
 
     private var summary: String {
@@ -99,37 +106,50 @@ struct PastEntriesView: View {
     @State private var filterDraft: String?
     @FocusState private var filterFocused: Bool
 
+    /// Words to leave out are offered once the journal has a few entries.
+    private var showsWords: Bool { PastEntriesRow.showsWords(model) }
+
     var body: some View {
         @Bindable var store = store
         Form {
             if let schedule = store.schedule {
-                Section {
-                    // PRO, like the web; greyed out for free accounts.
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text("Leave out entries with these words (separate them with commas)")
-                            .font(.subheadline)
-                            .foregroundStyle(.secondary)
-                        TextField("Words, separated by commas", text: Binding(get: { filterDraft ?? schedule.pastFilter }, set: { filterDraft = $0 }))
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                            .submitLabel(.done)
-                            .focused($filterFocused)
-                            .onSubmit(saveFilter)
+                // Words to leave out: once there are a few entries for a past one to be picked from.
+                if showsWords {
+                    Section {
+                        // PRO, like the web; greyed out for free accounts.
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Leave out entries with these words (separate them with commas)")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                            TextField("Words, separated by commas", text: Binding(get: { filterDraft ?? schedule.pastFilter }, set: { filterDraft = $0 }))
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .submitLabel(.done)
+                                .focused($filterFocused)
+                                .onSubmit(saveFilter)
+                        }
+                        .padding(.vertical, 2)
+                        .disabled(!schedule.canChooseDays)
+                    } footer: {
+                        if !schedule.canChooseDays {
+                            Text("Leaving out entries is part of Dabble Me PRO.")
+                        } else if !schedule.pastFilter.isEmpty {
+                            Text("\(schedule.filteredCount == 1 ? "1 entry is" : "\(schedule.filteredCount.formatted()) entries are") left out of the past entries in push notifications, emails and the widget.")
+                        } else {
+                            Text("Entries with these words never come up as past entries in push notifications, emails or the widget.")
+                        }
                     }
-                    .padding(.vertical, 2)
-                    .disabled(!schedule.canChooseDays)
-                    if schedule.canChooseDays, schedule.hasOldEntries {
-                        Toggle("Include Entries Over a Year Old", isOn: Binding(get: { schedule.includeOldEntries }, set: { on in
-                            store.save(with: model) { $0.includeOldEntries = on }
+                }
+                // For a journal that goes back over a year (PRO). The switch is the account's
+                // setting turned round: on, a past entry is last year's from this day or else
+                // one from the past 12 months, never one from further back.
+                if schedule.canChooseDays, schedule.hasOldEntries {
+                    Section {
+                        Toggle("Use Entries Only From the Past Year", isOn: Binding(get: { !schedule.includeOldEntries }, set: { on in
+                            store.save(with: model) { $0.includeOldEntries = !on }
                         }))
-                    }
-                } footer: {
-                    if !schedule.canChooseDays {
-                        Text("Leaving out entries is part of Dabble Me PRO.")
-                    } else if !schedule.pastFilter.isEmpty {
-                        Text("\(schedule.filteredCount == 1 ? "1 entry is" : "\(schedule.filteredCount.formatted()) entries are") left out of the past entries in push notifications, emails and the widget.")
-                    } else {
-                        Text("These choose which past entries can come up in push notifications, emails and the widget.")
+                    } footer: {
+                        Text("With this on, a past entry is last year's from this day, or else one from the past 12 months.")
                     }
                 }
             }

@@ -149,6 +149,37 @@ RSpec.describe RegistrationsController, type: :controller do
       expect(response.body).to have_content("#{user.user_key}@#{ENV['SMTP_DOMAIN']}")
     end
 
+    it 'leaves the past-entry choices out for a journal they would not apply to yet' do
+      sign_in paid_user
+      get :edit
+      page = Nokogiri::HTML(response.body)
+      # A new journal: nothing to leave out yet, and nothing over a year old.
+      expect(page.at_css('#user_past_filter')).to be_nil
+      expect(page.at_css('input[type=checkbox]#user_way_back_past_entries')).to be_nil
+    end
+
+    it 'offers them to a longer journal, with "only the past year" ticked while older entries are off' do
+      6.times { |n| FactoryBot.create(:entry, user: paid_user, body: 'text', date: 2.years.ago + n.days) }
+      paid_user.update!(way_back_past_entries: false)
+      sign_in paid_user
+      get :edit
+      page = Nokogiri::HTML(response.body)
+      expect(page.at_css('#user_past_filter')).to be_present
+      # The box is the setting turned round: ticked sends 0, unticked 1.
+      box = page.at_css('input[type=checkbox]#user_way_back_past_entries')
+      expect(box['checked']).to eq('checked')
+      expect(box['value']).to eq('0')
+      expect(page.at_css('input[type=hidden][name="user[way_back_past_entries]"]')['value']).to eq('1')
+      expect(page.text).to include('Use entries only from the past year')
+    end
+
+    it 'leaves "only the past year" unticked while older entries are on' do
+      6.times { |n| FactoryBot.create(:entry, user: paid_user, body: 'text', date: 2.years.ago + n.days) }
+      sign_in paid_user
+      get :edit
+      expect(Nokogiri::HTML(response.body).at_css('input[type=checkbox]#user_way_back_past_entries')['checked']).to be_nil
+    end
+
     it 'renders edit when a user entry has an unclosed angle bracket followed by 400+ words and a hashtag' do
       filler = (1..410).map { |i| "word#{i}<br>" }.join(' ')
       paid_user.entries.create!(date: Time.current, body: "<p>Note <sigh #{filler} #resilience</p>")

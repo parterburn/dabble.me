@@ -111,7 +111,7 @@ final class HabitTests: XCTestCase {
         // Past Entries, for every kind of reminder.
         XCTAssertTrue(app.buttons["Saturday"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.switches["Show Entry Previews"].exists)
-        XCTAssertFalse(app.switches["Include Entries Over a Year Old"].exists)
+        XCTAssertFalse(app.switches["Use Entries Only From the Past Year"].exists)
 
         let scheduled = app.descendants(matching: .any).matching(NSPredicate(format: "label MATCHES %@", "[1-9][0-9]* reminders scheduled")).firstMatch
         XCTAssertTrue(scheduled.waitForExistence(timeout: 15), "Turning reminders on should schedule notifications")

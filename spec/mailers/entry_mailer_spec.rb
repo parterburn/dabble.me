@@ -80,7 +80,7 @@ RSpec.describe EntryMailer do
       user.update!(send_past_entry: false)
       html, text = deliver(nil)
 
-      expect(html).to match(%r{You have <a class="hover-line" href="[^"]*/entries">2 entries</a> from this day in past years\.})
+      expect(html).to match(%r{You have <a class="hover-line" href="[^"]*/today">2 entries</a> from this day in past years\.})
       expect(text).to include("You have 2 entries from this day in past years:")
       expect(html + text).not_to include("Limelight Hotel", "you wrote...")
     end

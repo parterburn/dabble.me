@@ -115,7 +115,7 @@
       </p>
     <% elsif @past_entries_on_this_day.to_i.positive? %>
       <p>
-        You have <%= link_to pluralize(@past_entries_on_this_day, "entry"), entries_url, class: "hover-line" %> from this day in past years.
+        You have <%= link_to pluralize(@past_entries_on_this_day, "entry"), today_url, class: "hover-line" %> from this day in past years.
       </p>
     <% end %>
     <p>

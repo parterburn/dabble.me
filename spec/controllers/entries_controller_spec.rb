@@ -445,6 +445,21 @@ RSpec.describe EntriesController, type: :controller do
       expect(body).not_to have_content('Something from last week')
     end
 
+    it 'tells a free account how many entries it has from this day, without showing them' do
+      free = FactoryBot.create(:user, plan: 'Free')
+      sign_in free
+      write(free, 'One year back', today.prev_year(1))
+      write(free, 'Five years back', today.prev_year(5))
+      write(free, 'Same year, other day', today - 40)
+      allow_any_instance_of(User).to receive(:random_entry).and_return(nil)
+      get :today
+      note = Nokogiri::HTML(response.body).at_css('.s-on-this-day-pro')
+
+      expect(note.text.squish).to include('You have 2 entries from this day in past years. Dabble Me PRO brings them back to you here each year.')
+      expect(note.at_css('a')['href']).to eq(subscribe_path)
+      expect(response.body).not_to include('One year back', 'Five years back')
+    end
+
     it 'shows every entry written on this day in earlier years, however far back' do
       sign_in pro
       write(pro, 'One year back', today.prev_year(1))
