@@ -1,3 +1,8 @@
+No more second splash after unlocking.
+
+- With the Face ID lock on, open the app and unlock. The typed "Dabble me." should give way straight to your journal. The square "me" logo should not flash up in between.
+- The "me" logo should still cover your journal in the app switcher (swipe up and pause), and when Control Center or a notification is pulled down over the app.
+
 Choosing a suggested hashtag no longer moves the cursor.
 
 - While writing, open the hashtags row and tap a suggestion for a word that's already in your entry (say "Leo"). A "#" should go in front of that word, and the cursor should stay exactly where you were typing.

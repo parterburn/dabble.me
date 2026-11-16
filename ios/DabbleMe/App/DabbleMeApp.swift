@@ -59,6 +59,10 @@ struct RootView: View {
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.system
     /// The typing animation, once per launch, when signed in (the welcome screen has its own).
     @State private var showsSplash = true
+    /// Just unlocked, with the app not yet back in front (Face ID's own sheet is still going
+    /// away): no privacy cover over the journal for that moment, or the "me" mark flashes up
+    /// after the lock screen like a second splash.
+    @State private var isComingBackFromUnlock = false
 
     var body: some View {
         Group {
@@ -147,10 +151,18 @@ struct RootView: View {
             if model.isSignedIn, model.lock.isEnabled {
                 if model.lock.isLocked {
                     LockScreen()
-                } else if scenePhase != .active {
+                } else if scenePhase != .active, !isComingBackFromUnlock {
                     PrivacyCover() // hides the journal in the app switcher
                 }
             }
+        }
+        .onChange(of: model.lock.isLocked) { _, locked in
+            // Unlocking happens while Face ID has the app inactive; it's active a moment later.
+            if !locked, scenePhase != .active { isComingBackFromUnlock = true }
+        }
+        .onChange(of: scenePhase) { _, phase in
+            // In front again, or gone to the background after all: the cover is back on duty.
+            if phase != .inactive { isComingBackFromUnlock = false }
         }
         .overlay {
             // With the lock on, the lock screen types the wordmark instead.
