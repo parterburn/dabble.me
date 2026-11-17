@@ -358,6 +358,33 @@ final class JournalViewsTests: XCTestCase {
         app.buttons["Discard"].tap()
     }
 
+    /// Today's Write button held, with a template: the entry starts from it, whatever the
+    /// setting says. A tap writes a blank one, as ever.
+    func testHoldingWriteStartsFromTheTemplate() throws {
+        let app = launch(["-DabbleDebugTemplate", "What went well today?", "-template.auto", "NO"])
+        let write = app.buttons["Write Today's Entry"]
+        XCTAssertTrue(write.waitForExistence(timeout: 15))
+        write.press(forDuration: 0.9)
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        if app.buttons["Start Over"].waitForExistence(timeout: 2) { app.buttons["Start Over"].tap() }
+        XCTAssertEqual(editor.value as? String, "What went well today?")
+        XCTAssertFalse(app.buttons["Save"].isEnabled, "Nothing of the writer's own to save yet")
+        snap("today-held-write")
+        // It's in already: the lightbulb row doesn't offer it again.
+        app.buttons["Prompt"].tap()
+        XCTAssertTrue(app.staticTexts["AskMeQuestion"].waitForExistence(timeout: 60))
+        XCTAssertFalse(app.buttons["Use Template"].exists)
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+        XCTAssertTrue(editor.waitForNonExistence(timeout: 5))
+        // A tap: a blank entry.
+        write.tap()
+        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        XCTAssertEqual(editor.value as? String ?? "", "")
+        app.buttons["Cancel"].tap()
+    }
+
     /// Set to start new entries, the template is there when the composer opens, and there's
     /// nothing to save until something's written.
     func testNewEntriesStartWithTheTemplate() throws {

@@ -253,7 +253,7 @@ struct MainTabs: View {
         // Once written, the entry opens in full: on Today if that's where it was started,
         // otherwise in the Journal.
         .sheet(item: $model.composingDay) {
-            ComposeView(mode: .new, day: $0.day) { entry in
+            ComposeView(mode: .new, day: $0.day, withTemplate: $0.withTemplate) { entry in
                 if model.selectedTab == .today {
                     model.todayEntryRequest = entry.id
                 } else {

@@ -928,3 +928,15 @@ struct ShareTextTests {
         #expect(EntryActionsSheet.sharedText(date: "Monday, November 16, 2026", body: "  \n") == nil)
     }
 }
+
+struct WhatToTestNotesTests {
+    /// TestFlight cuts a build's "What to Test" off at 4,000 characters (Xcode Cloud warns, and
+    /// the end is lost): the notes are rewritten for each build, not added to.
+    @Test func theNotesFitTestFlight() throws {
+        let notes = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appending(path: "TestFlight/WhatToTest.en-US.txt")
+        let text = try String(contentsOf: notes, encoding: .utf8)
+        #expect(text.count <= 4000, "WhatToTest.en-US.txt is \(text.count) characters: rewrite it for this build")
+        #expect(!text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+    }
+}
