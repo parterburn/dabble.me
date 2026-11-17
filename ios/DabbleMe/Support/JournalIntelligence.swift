@@ -300,11 +300,12 @@ enum JournalIntelligence {
         return sentences(text).filter { sentence in
             if keys.contains(key(sentence)) { return false }
             // Or all but word for word ("I was really glad Katelyn came with me" after "I was
-            // really glad that Katelyn came with me").
+            // really glad that Katelyn came with me"): most of that sentence's words and none of
+            // its own. One new word ("not glad") makes it something the entry doesn't say.
             let its = words(sentence)
             guard its.count >= 5 else { return true }
             return !wordSets.contains { other in
-                Double(its.intersection(other).count) / Double(its.union(other).count) >= 0.75
+                its.isSubset(of: other) && Double(its.count) / Double(other.count) >= 0.75
             }
         }.joined().trimmingCharacters(in: .whitespacesAndNewlines)
     }

@@ -209,6 +209,8 @@ struct ReflectionChatSummaryTests {
         // All but word for word is a repeat too.
         #expect(JournalIntelligence.removingSentences(of: "I was really glad Katelyn attended with me. Mostly I'm tired of it dragging on.",
                                                       alreadyIn: "I was really glad that Katelyn attended with me.") == "Mostly I'm tired of it dragging on.")
+        // A word of its own changes what it says: it stays.
+        #expect(JournalIntelligence.removingSentences(of: "I was not glad Katelyn came with me.", alreadyIn: "I was glad Katelyn came with me.") == "I was not glad Katelyn came with me.")
     }
 
 }
