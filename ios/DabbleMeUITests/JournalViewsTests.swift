@@ -289,14 +289,14 @@ final class JournalViewsTests: XCTestCase {
         return editor
     }
 
-    /// The hashtag row's "Add Matched", at its left: the words in the entry that are the
+    /// The hashtag row's "Tag Words", at its left: the words in the entry that are the
     /// writer's hashtags, tagged in one go. Only while there are some.
     func testHashtagRowAddsTheMatchedOnes() throws {
         let app = launch(["-tips.shown.tag", "NO"])
         let editor = openComposer(app)
         editor.typeText("Went hiking and did some cooking after.")
         app.buttons["Hashtags"].tap()
-        let add = app.buttons["Add Matched"]
+        let add = app.buttons["Tag Words"]
         XCTAssertTrue(add.waitForExistence(timeout: 20))
         let hiking = app.buttons["#hiking"]
         XCTAssertTrue(hiking.exists)
