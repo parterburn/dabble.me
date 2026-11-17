@@ -270,6 +270,8 @@ final class RichTextEditorModel {
             sheet.largestUndimmedDetentIdentifier = detent
             sheet.delegate = delegate
         }
+        // The keyboard goes down for it: left up, it (and the bar) covers the panel entirely.
+        textView.resignFirstResponder()
         presenter.present(panel, animated: true)
     }
 
@@ -811,15 +813,15 @@ final class EditorBar: UIView {
     let toolbar = UIToolbar()
     private let rowHost = UIHostingController<AnyView>(rootView: AnyView(EmptyView()))
     /// Behind the whole bar while a row is open, so the row reads on its own and not over the
-    /// entry's text: the editor's own background. That's the sheet's, which in Dark Mode is the
-    /// raised grey, not the black the plain system background is out here in the keyboard's window.
+    /// entry's text: Paper, a tray for the row and the buttons, apart from the page being written on.
     private let backdrop: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor { traits in
-            UIColor.systemBackground.resolvedColor(with: traits.modifyingTraits { $0.userInterfaceLevel = .elevated })
-        }
+        view.backgroundColor = UIColor(named: "Paper")
         return view
     }()
+    /// How far the tray runs on under the keyboard's top edge: its corners are round, and
+    /// what's behind them should be the tray, not the page.
+    private static let underKeyboard: CGFloat = 40
     private var rowHeight: CGFloat = 0
     private var hasRow = false
     /// Called when the bar is laid out or joins or leaves the screen (see `keepTextClear`).
@@ -881,7 +883,7 @@ final class EditorBar: UIView {
         // a row closes or gives way to a shorter one; whatever's above stays clear, so the entry
         // shows through it and not an empty band.
         let top = max(0, bounds.height - Self.toolbarHeight - rowHeight)
-        backdrop.frame = CGRect(x: 0, y: top, width: bounds.width, height: bounds.height - top)
+        backdrop.frame = CGRect(x: 0, y: top, width: bounds.width, height: bounds.height - top + Self.underKeyboard)
         rowHost.view.frame = CGRect(x: 0, y: top, width: bounds.width, height: rowHeight)
         toolbar.frame = CGRect(x: 0, y: bounds.height - Self.toolbarHeight, width: bounds.width, height: Self.toolbarHeight)
         onLayout?()
