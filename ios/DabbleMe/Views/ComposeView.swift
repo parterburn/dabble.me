@@ -653,7 +653,7 @@ struct ComposeView: View {
                 if !matched.isEmpty {
                     rowButton("Auto Tag") {
                         Task { await tagMatchingWords() }
-                        showTipOnce("tag", "Next time, touch and hold the tag button to tag the words that match your hashtags straight away.")
+                        showTipOnce("tag", "Next time, touch and hold the tag button to auto tag the words that match your hashtags straight away.")
                     }
                     .accessibilityHint("Tags the words in the entry that match your hashtags")
                 }
