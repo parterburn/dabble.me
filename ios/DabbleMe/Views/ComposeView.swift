@@ -21,7 +21,7 @@ struct ComposeView: View {
     /// Room for a three-line prompt from the start, so one being written, and then shown, doesn't
     /// move the day's events under it.
     @ScaledMetric(relativeTo: .subheadline) private var askLineHeight: CGFloat = 62
-    /// The "?" row's content, as tall as it is: the row is that tall, up to `askRowMaxHeight`,
+    /// The lightbulb row's content, as tall as it is: the row is that tall, up to `askRowMaxHeight`,
     /// and scrolls past it. Nothing until it's measured, each time the row opens: a height kept
     /// from the last time would be an empty band over the entry while this one's content (its
     /// question, the day's events) is still coming in.
@@ -88,6 +88,13 @@ struct ComposeView: View {
     /// Opened for a day of its own, which today's date doesn't then replace.
     private let startsOnDay: Bool
     private let originalBlocks: [DocumentBlock]
+    /// The writer's template (Settings → Entry Template), as it was when this opened.
+    private let template: [DocumentBlock]
+    /// The editor holds the template and nothing else yet (a new entry set to start with it):
+    /// there's nothing to save until something's written.
+    @State private var isUntouchedTemplate: Bool
+    /// The lightbulb button was held (so the tap that ends the hold doesn't also open its row).
+    @State private var heldAskIcon = false
 
     /// `day`: a new entry for that day (Stats' grid), not today.
     init(mode: Mode, day: JournalDay? = nil, onSaved: @escaping (EntryDetail) -> Void = { _ in }) {
@@ -105,10 +112,16 @@ struct ComposeView: View {
             DraftStore.clear(key)
         }
         draftKey = key
-        originalBlocks = original
+        // A new entry set to start with the template has it from the outset, and again after
+        // Start Over. A draft, as ever, comes first.
+        let template = EntryTemplate.blocks
+        self.template = template
+        let startsWithTemplate = entry == nil && !template.isEmpty && EntryTemplate.addsToNewEntries
+        originalBlocks = startsWithTemplate ? template : original
+        _isUntouchedTemplate = State(initialValue: startsWithTemplate && draft == nil)
         _restoredDraft = State(initialValue: draft)
         if let date = day ?? draft?.date.flatMap(JournalDay.init) ?? entry?.day { _date = State(initialValue: date.localDate) }
-        _editor = State(initialValue: RichTextEditorModel(blocks: draft?.blocks ?? original))
+        _editor = State(initialValue: RichTextEditorModel(blocks: draft?.blocks ?? originalBlocks))
     }
 
     private var isNew: Bool {
@@ -126,7 +139,7 @@ struct ComposeView: View {
     private var hasChanges: Bool { editor.isDirty || !photoItems.isEmpty || restoredDraft != nil || removesExistingPhoto || movedTo != nil }
     private var canSave: Bool {
         guard !isSaving, !isLoadingPhotos else { return false }
-        return isNew ? (!editor.isEmpty || !photos.isEmpty)
+        return isNew ? ((!editor.isEmpty && !isUntouchedTemplate) || !photos.isEmpty)
             : (!editor.isEmpty && (editor.isDirty || restoredDraft != nil || !photos.isEmpty || removesExistingPhoto || movedTo != nil))
     }
 
@@ -284,7 +297,10 @@ struct ComposeView: View {
             } message: {
                 Text("With Dabble Me PRO you can add up to \(photoLimit) photos to an entry.")
             }
-            .onChange(of: editor.revision) { scheduleDraftSave() }
+            .onChange(of: editor.revision) {
+                isUntouchedTemplate = false
+                scheduleDraftSave()
+            }
             .onChange(of: date) { scheduleDraftSave() }
             .onChange(of: scenePhase) { _, phase in
                 if phase == .background { dictation.stop() }
@@ -433,7 +449,7 @@ struct ComposeView: View {
     }
 
     /// The bar's right: Format (iOS's formatting panel), Link (PRO; shows or hides the link row), Tags (the hashtag row), Prompt
-    /// (the question mark), then the microphone (speak the entry) at the far edge. Each row button is selected while its row is open; one row at a time.
+    /// (the lightbulb), then the microphone (speak the entry) at the far edge. Each row button is selected while its row is open; one row at a time.
     private var tagAndLinkButtons: some View {
         HStack(spacing: 6) {
             // Format: iOS's own formatting panel, with what an entry keeps (bold, italic,
@@ -488,6 +504,8 @@ struct ComposeView: View {
             // "What should I write about?": what was on the calendar that day (for everyone)
             // and, where there's one to be had, a question to answer.
             Button {
+                // Not the tap that ends a hold.
+                if heldAskIcon { heldAskIcon = false; return }
                 showsAskRow.toggle()
                 if showsAskRow {
                     askRowHeight = 0
@@ -496,17 +514,29 @@ struct ComposeView: View {
                     showsPhotoDrawer = false
                     editor.endLink()
                     question = nil
-                    if canAsk { Task { await ask() } }
+                    askError = nil
+                    // With a template to offer, a prompt is written when it's asked for.
+                    if canAsk, !offersTemplate { Task { await ask() } }
                 }
             } label: {
-                appIcon("slab-question")
+                appIcon("slab-lightbulb")
                     .frame(width: 40, height: 36)
                     .background(showsAskRow ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
             }
             .buttonStyle(.plain)
+            // Held: the template goes straight in.
+            .simultaneousGesture(LongPressGesture(minimumDuration: 0.45).onEnded { _ in
+                guard !template.isEmpty else { return }
+                heldAskIcon = true
+                HoldHaptic.play()
+                useTemplate()
+            })
             .accessibilityLabel("Prompt")
             .accessibilityHint("Shows what was on your calendar that day and a question to write about")
             .accessibilityAddTraits(showsAskRow ? .isSelected : [])
+            .accessibilityActions {
+                if !template.isEmpty { Button("Use Template") { useTemplate() } }
+            }
             if Dictation.isSupported { dictationButton }
         }
     }
@@ -740,8 +770,8 @@ struct ComposeView: View {
         // One scrolling section, flush under the bar's line: the question, then the day's events.
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                if canAsk { askLine }
-                CalendarRow(day: date, hidesWhenEmpty: canAsk, changed: { hasEvents in
+                if canAsk { askLine } else if offersTemplate { templateLine }
+                CalendarRow(day: date, hidesWhenEmpty: canAsk || offersTemplate, changed: { hasEvents in
                     hasAgenda = hasEvents
                     calendarRowKey += 1
                 }) { event in
@@ -762,6 +792,39 @@ struct ComposeView: View {
         editor.addQuestion(question)
         self.question = nil
         showsAskRow = false
+    }
+
+    /// The template alone, where there's no prompt to be had (an entry being edited, without
+    /// Apple Intelligence).
+    private var templateLine: some View {
+        HStack(spacing: 12) {
+            Text("Your template")
+                .font(.subheadline)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            useTemplateButton
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 10)
+    }
+
+    /// The lightbulb row offers the template (there is one, and new entries don't already start with
+    /// it): a prompt is then written only when it's asked for.
+    private var offersTemplate: Bool { !template.isEmpty && !EntryTemplate.addsToNewEntries }
+
+    private func useTemplate() {
+        editor.addTemplate(template)
+        showsAskRow = false
+    }
+
+    /// "Use Template", at the right of the lightbulb row until a prompt's been asked for.
+    private var useTemplateButton: some View {
+        Button("Use Template") { useTemplate() }
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(Color("OnAccent"))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 7)
+            .background(.tint, in: .capsule)
+            .buttonStyle(.plain)
     }
 
     /// The question, set like the events under it but from the left edge: a tap on the row puts
@@ -796,6 +859,14 @@ struct ComposeView: View {
                         .frame(width: 12, height: 12)
                         .foregroundStyle(.secondary)
                         .accessibilityHidden(true)
+                } else if offersTemplate, askError == nil {
+                    // (A tap on it, VoiceOver's too, is the row's.)
+                    Text(JournalIntelligence.isEnabled(for: model.me) ? "Tap to generate prompt" : "Tap for today's prompt")
+                        .fontWeight(.medium)
+                        .foregroundStyle(.tint)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityAddTraits(.isButton)
+                    useTemplateButton
                 } else {
                     Text(askError ?? "")
                         .foregroundStyle(.secondary)
@@ -805,9 +876,15 @@ struct ComposeView: View {
             .font(.subheadline)
             // Three lines tall while it's being written, so the events under it aren't pushed
             // down when it comes; then as tall as the question, with the events close under it.
-            .frame(minHeight: question == nil ? askLineHeight : nil, alignment: .top)
+            .frame(minHeight: question == nil && !(offersTemplate && !isAsking && askError == nil) ? askLineHeight : nil, alignment: .top)
             .contentShape(.rect)
-            .onTapGesture(perform: insertQuestion)
+            .onTapGesture {
+                if question != nil {
+                    insertQuestion()
+                } else if offersTemplate, !isAsking {
+                    Task { await ask() }
+                }
+            }
         }
         .padding(.horizontal)
         .padding(.top, 10)
@@ -1064,6 +1141,7 @@ struct ComposeView: View {
                 editor.replace(with: originalBlocks)
                 DraftStore.clear(draftKey)
                 restoredDraft = nil
+                isUntouchedTemplate = isNew && !originalBlocks.isEmpty
             }
             .font(.footnote.weight(.semibold))
         }
@@ -1208,7 +1286,7 @@ private struct CalendarRow: View {
                 ProgressView().controlSize(.small).padding(.vertical, 10)
             case .allowed:
                 if let events, events.isEmpty {
-                    // (Only when this row is all the "?" button has to show: an empty panel
+                    // (Only when this row is all the lightbulb button has to show: an empty panel
                     // would look broken.)
                     Text("Nothing on your calendar this day.")
                         .font(.subheadline)

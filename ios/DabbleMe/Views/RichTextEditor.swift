@@ -170,12 +170,27 @@ final class RichTextEditorModel {
     /// line is empty (wherever in the entry it is), otherwise right under the line it's on.
     /// Nothing else in the entry moves, and the writer isn't sent to its end.
     func addQuestion(_ question: String) {
+        let style = RichText.Style.journal
+        var bold = style.baseAttributes
+        bold[.font] = style.baseFont.with(bold: true, italic: false)
+        let added = NSMutableAttributedString(string: question, attributes: bold)
+        added.append(NSAttributedString(string: "\n", attributes: style.baseAttributes))
+        addLines(added)
+    }
+
+    /// Adds the writer's template (Settings → Entry Template) as a prompt goes in: at the
+    /// cursor, on lines of its own, with the cursor after it.
+    func addTemplate(_ blocks: [DocumentBlock]) {
+        guard !blocks.isEmpty else { return }
+        addLines(RichText.attributedString(from: blocks, style: .journal))
+    }
+
+    /// Puts `lines` under the cursor's line (or on it, when it's empty), the cursor after them.
+    private func addLines(_ lines: NSAttributedString) {
         guard let textView else { return }
         let storage = textView.textStorage
         let string = storage.string as NSString
         let style = RichText.Style.journal
-        var bold = style.baseAttributes
-        bold[.font] = style.baseFont.with(bold: true, italic: false)
 
         // The cursor's line, without the line break that ends it.
         let cursor = min(NSMaxRange(textView.selectedRange), string.length)
@@ -190,8 +205,7 @@ final class RichTextEditorModel {
         let added = NSMutableAttributedString()
         // Under a line with writing on it, on a line of its own.
         if !isEmptyLine { added.append(NSAttributedString(string: "\n", attributes: style.baseAttributes)) }
-        added.append(NSAttributedString(string: question, attributes: bold))
-        added.append(NSAttributedString(string: "\n", attributes: style.baseAttributes))
+        added.append(lines)
         // An empty line is taken over (any stray spaces on it go); otherwise it goes in at the
         // line's end, before the break that ends it.
         let target = isEmptyLine ? content : NSRange(location: NSMaxRange(content), length: 0)

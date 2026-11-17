@@ -11,6 +11,19 @@ func appUIIcon(_ name: String) -> UIImage? {
     name.hasPrefix("slab-") ? UIImage(named: name) : UIImage(systemName: name)
 }
 
+/// One of the app's icons set in a line of text, at the text's size and in its color: "the 💡
+/// button", with the button's own icon. Read aloud as `name` (the button's label).
+@MainActor
+func inlineIcon(_ icon: String, named name: String, textStyle: UIFont.TextStyle = .subheadline) -> Text {
+    let side = UIFont.preferredFont(forTextStyle: textStyle).pointSize * 1.05
+    guard let image = appUIIcon(icon) else { return Text(name) }
+    let sized = UIGraphicsImageRenderer(size: CGSize(width: side, height: side)).image { _ in
+        image.draw(in: CGRect(x: 0, y: 0, width: side, height: side))
+    }
+    // (Sat a little under the baseline, so it's centred on the words' height.)
+    return Text(Image(uiImage: sized).renderingMode(.template)).baselineOffset(-side * 0.14).accessibilityLabel(name)
+}
+
 extension Label where Title == Text, Icon == Image {
     /// A label with a Slab icon ("slab-…") or an SF Symbol.
     init(_ title: String, icon: String) {

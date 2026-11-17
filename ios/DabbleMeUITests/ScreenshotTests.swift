@@ -15,7 +15,8 @@ final class ScreenshotTests: XCTestCase {
         let app = XCUIApplication()
         app.launchArguments = ["-DabbleDebugAccessToken", token, "-DabbleServerOverride", testServer,
                                "-DabbleDebugComposePhotoURLs", photos, "-readingTextSize", "1",
-                               "-DabbleDebugCalendar", "YES", // a made-up day's events, for the "?" row
+                               "-DabbleDebugCalendar", "YES", // a made-up day's events, for the lightbulb row
+                               "-DabbleDebugDictation", "YES", // the microphone, which the simulator can't offer
                                "-stats.heatmapCell", "13"] // Stats' grid at its own size, whatever a test pinched it to
         app.launch()
 

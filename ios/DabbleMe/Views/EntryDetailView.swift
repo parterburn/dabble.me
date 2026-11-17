@@ -1016,7 +1016,7 @@ struct ReflectionSheet: View {
     @State private var summary = SummaryPhase.offer
 
     private enum SummaryPhase: Equatable {
-        case offer, working, preview(JournalIntelligence.ChatSummary), saving(JournalIntelligence.ChatSummary), added, failed(String), dismissed
+        case offer, working, preview([JournalIntelligence.ChatSummary]), saving([JournalIntelligence.ChatSummary]), added, failed(String), dismissed
     }
     /// Reads the reflection aloud (the phone's own voice, on the device).
     @State private var speaker = ReflectionSpeaker()
@@ -1184,8 +1184,14 @@ struct ReflectionSheet: View {
                     Text("Summing up…").foregroundStyle(.secondary)
                 }
             case .preview(let text), .saving(let text):
-                // As it'll read in the entry: the question in bold, the answer under it.
-                (Text(text.question.isEmpty ? "" : text.question + "\n").bold() + Text(text.answer))
+                // As it'll read in the entry: each question in bold, its answer under it.
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(Array(text.enumerated()), id: \.offset) { _, part in
+                        Text(part.question.isEmpty ? "" : part.question + "\n").bold() + Text(part.answer)
+                    }
+                }
+                    // (Read as one piece, as it'll be in the entry.)
+                    .accessibilityElement(children: .combine)
                     .font(.system(.body, design: .serif))
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -1227,14 +1233,17 @@ struct ReflectionSheet: View {
         }
     }
 
-    /// Adds the question and the answer at the end of the entry, through the usual edit: the
-    /// question as a bold paragraph and the answer under it, as a prompt answered while writing is.
-    private func addToEntry(_ text: JournalIntelligence.ChatSummary) async {
+    /// Adds the questions and their answers at the end of the entry, through the usual edit: each
+    /// question as a bold paragraph and its answer under it, as a prompt answered while writing is.
+    private func addToEntry(_ text: [JournalIntelligence.ChatSummary]) async {
         guard let id = reflection.entryID, let document = reflection.document else { return }
         summary = .saving(text)
         do {
-            var added = [DocumentBlock.paragraph(DocumentRun(text.answer))]
-            if !text.question.isEmpty { added.insert(.paragraph(DocumentRun(text.question, bold: true)), at: 0) }
+            var added: [DocumentBlock] = []
+            for part in text {
+                if !part.question.isEmpty { added.append(.paragraph(DocumentRun(part.question, bold: true))) }
+                added.append(.paragraph(DocumentRun(part.answer)))
+            }
             let updated = try await model.updateEntry(id: id, document: document + added)
             onEntryUpdated(updated)
             summary = .added

@@ -278,6 +278,97 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.keyboards.firstMatch.exists)
     }
 
+    private func openComposer(_ app: XCUIApplication) -> XCUIElement {
+        if app.buttons["Write Today's Entry"].waitForExistence(timeout: 15) {
+            app.buttons["Write Today's Entry"].tap()
+        } else {
+            tab(app, "Journal").tap()
+            app.buttons["New Entry"].tap()
+        }
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        if app.buttons["Start Over"].waitForExistence(timeout: 2) { app.buttons["Start Over"].tap() }
+        return editor
+    }
+
+    /// With a template (Settings → Entry Template), the lightbulb row offers it beside a prompt that's
+    /// written only when asked for, and holding the lightbulb puts it straight in.
+    func testTheTemplateIsOfferedInThePromptRow() throws {
+        let app = launch(["-DabbleDebugTemplate", "What went well today?", "-template.auto", "NO"])
+        let editor = openComposer(app)
+        editor.typeText("Morning.")
+        app.buttons["Prompt"].tap()
+        let use = app.buttons["Use Template"]
+        XCTAssertTrue(use.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.staticTexts["AskMeQuestion"].exists, "No prompt until it's asked for")
+        snap("template-offer")
+        use.tap()
+        XCTAssertEqual(editor.value as? String, "Morning.\nWhat went well today?")
+        XCTAssertFalse(use.exists, "The row closes")
+
+        // Held, the lightbulb button adds it without opening the row.
+        app.buttons["Prompt"].press(forDuration: 0.9)
+        XCTAssertEqual(editor.value as? String, "Morning.\nWhat went well today?\nWhat went well today?")
+        XCTAssertFalse(use.exists)
+
+        // Asked for, the prompt takes the row and the template's button goes.
+        app.buttons["Prompt"].tap()
+        let ask = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Tap '")).firstMatch
+        XCTAssertTrue(ask.waitForExistence(timeout: 5))
+        ask.tap()
+        XCTAssertTrue(app.staticTexts["AskMeQuestion"].waitForExistence(timeout: 60))
+        XCTAssertFalse(use.exists)
+        snap("template-prompt-asked")
+        app.buttons["Cancel"].tap()
+        app.buttons["Discard"].tap()
+    }
+
+    /// Set to start new entries, the template is there when the composer opens, and there's
+    /// nothing to save until something's written.
+    func testNewEntriesStartWithTheTemplate() throws {
+        let app = launch(["-DabbleDebugTemplate", "What went well today?", "-template.auto", "YES"])
+        let editor = openComposer(app)
+        XCTAssertEqual(editor.value as? String, "What went well today?")
+        XCTAssertFalse(app.buttons["Save"].isEnabled)
+        snap("template-auto")
+        // The lightbulb row is as it is without a template: a prompt, and no button for the template.
+        app.buttons["Prompt"].tap()
+        XCTAssertTrue(app.staticTexts["AskMeQuestion"].waitForExistence(timeout: 60))
+        XCTAssertFalse(app.buttons["Use Template"].exists)
+        app.buttons["Prompt"].tap()
+        editor.typeText(" The walk.")
+        XCTAssertTrue(app.buttons["Save"].isEnabled)
+        app.buttons["Cancel"].tap()
+        app.buttons["Discard"].tap()
+    }
+
+    /// Settings → Entry Template: written like an entry, kept as it's typed.
+    func testWritingATemplateInSettings() throws {
+        let app = launch()
+        tab(app, "Settings").tap()
+        let row = app.buttons["Entry Template"]
+        for _ in 0..<4 where !row.exists || !row.isHittable { app.swipeUp() }
+        row.tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.switches["Start New Entries with It"].exists)
+        editor.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)).tap()
+        // (Whatever an earlier run left behind goes first.)
+        editor.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 30) + "Grateful for")
+        XCTAssertTrue(app.buttons["Format"].exists)
+        snap("template-settings")
+        // Back and in again: it's still there. Then emptied, so no other test starts with it.
+        app.navigationBars.buttons.firstMatch.tap()
+        row.tap()
+        XCTAssertEqual(editor.value as? String, "Grateful for")
+        // (A tap under the words puts the cursor after them.)
+        editor.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)).tap()
+        editor.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 30))
+        XCTAssertEqual(editor.value as? String, "")
+        app.navigationBars.buttons.firstMatch.tap()
+    }
+
     func testTodayPromptEntrySummaryAndSettings() throws {
         let app = launch()
         // With Apple Intelligence on, Today writes its own prompt (no button to ask for one).
@@ -843,7 +934,7 @@ final class JournalViewsTests: XCTestCase {
         sleep(2)
     }
 
-    /// Settings → Calendars: the phone's calendars, each with a switch, for the composer's "?".
+    /// Settings → Calendars: the phone's calendars, each with a switch, for the composer's lightbulb.
     func testCalendarsSettingsListsThePhonesCalendars() throws {
         let app = launch()
         tab(app, "Settings").tap()
@@ -1708,7 +1799,7 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
 
-    /// The composer's "?" (what to write about) lists what was on the phone's calendar that day
+    /// The composer's lightbulb (what to write about) lists what was on the phone's calendar that day
     /// over its question; a tap on an event puts it in the entry as a heading to write under.
     func testCalendarRowAddsAnEventToTheEntry() throws {
         let app = launch(["-DabbleDebugCalendar", "YES"]) // a made-up day, not the simulator's calendar
