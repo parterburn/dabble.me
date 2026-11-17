@@ -1,3 +1,7 @@
+Removed: reading a reflection aloud.
+
+- The play button next to a reflection's X is gone. Everything else about a reflection (the follow-up chat, "Sum Up & Add to Entry") is as it was.
+
 The bar over the keyboard while writing.
 
 - Format (the "A") and Link now show only while words are selected. Select a word: both appear. Put the cursor somewhere without selecting: they go, leaving photos, hashtags and the lightbulb.
