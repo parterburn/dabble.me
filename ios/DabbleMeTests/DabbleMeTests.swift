@@ -468,7 +468,7 @@ struct RichTextTests {
                    DocumentRun("Sam", link: "https://example.com/sam")),
         DocumentBlock(type: .bullet, runs: [DocumentRun("eggs")]),
         DocumentBlock(type: .bullet, runs: [DocumentRun("toast", bold: true, italic: true)]),
-        .paragraph(DocumentRun("Afterwards, "), DocumentRun("a nap", strike: true), DocumentRun(" a walk", underline: true, strike: true)),
+        .paragraph(DocumentRun("Afterwards")),
         DocumentBlock(type: .rule),
         DocumentBlock(type: .number, runs: [DocumentRun("one")]),
         DocumentBlock(type: .number, runs: [DocumentRun("two")]),
@@ -478,7 +478,7 @@ struct RichTextTests {
         let text = RichText.attributedString(from: Self.sample, style: Self.style).string
         // One line per paragraph (Return starts the next; paragraph spacing makes the gap); a
         // line break inside a paragraph is a line separator.
-        #expect(text == "Morning run, then coffee\u{2028}with Sam\n• eggs\n• toast\nAfterwards, a nap a walk\n⸻\n1. one\n2. two")
+        #expect(text == "Morning run, then coffee\u{2028}with Sam\n• eggs\n• toast\nAfterwards\n⸻\n1. one\n2. two")
     }
 
     @Test func roundTripsFormatting() {
@@ -901,6 +901,14 @@ struct EntryTemplateTests {
         #expect(RichText.firstBlank(in: "No room here") == nil)
         EntryTemplate.runs = []
         #expect(UserDefaults.standard.data(forKey: EntryTemplate.runsKey) == nil)
+    }
+
+    /// A draft is kept as typed too: a link in it keeps where it goes.
+    @Test func typedTextKeepsItsLinks() {
+        let typed = [DocumentRun("See "), DocumentRun("the trail", link: "https://example.com/trail"), DocumentRun(" soon")]
+        let text = RichText.attributedString(typed: typed, style: .journal)
+        #expect(RichText.typedRuns(from: text) == typed)
+        #expect(RichText.blocks(from: text) == [DocumentBlock(type: .paragraph, runs: typed)])
     }
 
     /// A template kept by an earlier build (as an entry's blocks) still reads.

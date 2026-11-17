@@ -222,48 +222,35 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
 
-    /// The bar's Format button opens iOS's formatting panel in the keyboard's place.
-    func testFormatPanelOpens() throws {
+    /// Format and Link are for words: in the bar while some are selected, and not otherwise.
+    /// Format is a menu of bold, italic and underline.
+    func testFormatAndLinkShowWithASelection() throws {
         let app = launch()
-        if app.buttons["Write Today's Entry"].waitForExistence(timeout: 15) {
-            app.buttons["Write Today's Entry"].tap()
-        } else {
-            tab(app, "Journal").tap()
-            app.buttons["New Entry"].tap()
-        }
-        let editor = app.textViews["Entry"]
-        XCTAssertTrue(editor.waitForExistence(timeout: 5))
-        editor.tap()
-        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
-        if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap() }
+        let editor = openComposer(app)
         editor.typeText("A slow evening.")
-        app.buttons["Format"].tap()
-        XCTAssertTrue(app.staticTexts["Format"].waitForExistence(timeout: 5), "The formatting panel is up, not hidden behind the keyboard")
-        XCTAssertFalse(app.keyboards.firstMatch.exists)
-        app.buttons["close"].tap()
-        // Back to writing: the keyboard and its bar return.
-        XCTAssertTrue(app.buttons["Format"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.keyboards.firstMatch.exists)
-        // And it opens again, as often as it's asked for.
-        for round in 2...3 {
-            app.buttons["Format"].tap()
-            XCTAssertTrue(app.staticTexts["Format"].waitForExistence(timeout: 5), "The panel opens a \(round == 2 ? "second" : "third") time")
-            XCTAssertFalse(app.keyboards.firstMatch.exists, "The keyboard is down for it")
-            snap("format-panel-\(round)")
-            app.buttons["close"].tap()
-            XCTAssertTrue(app.buttons["Format"].waitForExistence(timeout: 5))
-        }
-        // A tap back in the entry with the panel up closes it (the keyboard would cover it), and
-        // it opens again after.
-        app.buttons["Format"].tap()
-        XCTAssertTrue(app.staticTexts["Format"].waitForExistence(timeout: 5))
-        editor.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.15)).tap()
-        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.staticTexts["Format"].waitForNonExistence(timeout: 5), "The panel isn't left under the keyboard")
-        app.buttons["Format"].tap()
-        XCTAssertTrue(app.staticTexts["Format"].waitForExistence(timeout: 5), "And it opens again")
-        XCTAssertFalse(app.keyboards.firstMatch.exists)
-        app.buttons["close"].tap()
+        XCTAssertFalse(app.buttons["Format"].exists, "Nothing's selected")
+        XCTAssertFalse(app.buttons["Link"].exists)
+        XCTAssertTrue(app.buttons["Hashtags"].exists)
+        // Select a word.
+        editor.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 60, dy: 30)).doubleTap()
+        let format = app.buttons["Format"]
+        XCTAssertTrue(format.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Link"].exists)
+        snap("format-with-selection")
+        format.tap()
+        XCTAssertTrue(app.buttons["Bold"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Italic"].exists)
+        XCTAssertTrue(app.buttons["Underline"].exists)
+        XCTAssertFalse(app.buttons["Strikethrough"].exists)
+        snap("format-menu")
+        app.buttons["Bold"].tap()
+        XCTAssertTrue(app.keyboards.firstMatch.exists, "The keyboard stays up")
+        // The cursor put somewhere, with nothing selected: they go again.
+        editor.typeText(" ")
+        XCTAssertTrue(format.waitForNonExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Link"].exists)
+        app.buttons["Cancel"].tap()
+        app.buttons["Discard"].tap()
     }
 
     private func openComposer(_ app: XCUIApplication) -> XCUIElement {
@@ -280,10 +267,42 @@ final class JournalViewsTests: XCTestCase {
         return editor
     }
 
+    /// The hashtag row's Insert, at its right: every hashtag that fits what's written, in one go.
+    func testHashtagRowInsertsTheOnesThatFit() throws {
+        let app = launch(["-tips.shown.tag", "NO"])
+        let editor = openComposer(app)
+        editor.typeText("Went hiking and did some cooking after.")
+        app.buttons["Hashtags"].tap()
+        let insert = app.buttons["Insert"]
+        XCTAssertTrue(insert.waitForExistence(timeout: 20))
+        XCTAssertTrue(app.buttons["#hiking"].exists)
+        // At the right of the row, clear of the tags.
+        XCTAssertGreaterThan(insert.frame.midX, app.windows.firstMatch.frame.width * 0.7)
+        snap("hashtags-insert")
+        insert.tap()
+        let tip = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "touch and hold the tag button")).firstMatch
+        XCTAssertTrue(tip.waitForExistence(timeout: 5))
+        app.buttons["OK"].tap()
+        let text = editor.value as? String ?? ""
+        XCTAssertTrue(text.contains("#hiking"), text)
+        XCTAssertTrue(text.contains("#cooking"), text)
+        snap("hashtags-inserted")
+        // Held, without the row: only words that are the writer's hashtags are tagged, and
+        // nothing's added at the end.
+        app.buttons["Hashtags"].tap() // closes the row
+        editor.typeText(" Some travel soon.")
+        let before = editor.value as? String ?? ""
+        app.buttons["Hashtags"].press(forDuration: 0.9)
+        XCTAssertTrue(app.staticTexts["Tagged #travel"].waitForExistence(timeout: 5))
+        XCTAssertEqual(editor.value as? String, before.replacingOccurrences(of: "Some travel soon.", with: "Some #travel soon."))
+        app.buttons["Cancel"].tap()
+        app.buttons["Discard"].tap()
+    }
+
     /// With a template (Settings → Entry Template), the lightbulb row offers it beside a prompt that's
     /// written only when asked for, and holding the lightbulb puts it straight in.
     func testTheTemplateIsOfferedInThePromptRow() throws {
-        let app = launch(["-DabbleDebugTemplate", "What went well today?", "-template.auto", "NO"])
+        let app = launch(["-DabbleDebugTemplate", "What went well today?", "-template.auto", "NO", "-tips.shown.lightbulb", "NO"])
         let editor = openComposer(app)
         editor.typeText("Morning.")
         app.buttons["Prompt"].tap()
@@ -292,6 +311,11 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertFalse(app.staticTexts["AskMeQuestion"].exists, "No prompt until it's asked for")
         snap("template-offer")
         use.tap()
+        // The first time, a word about the quicker way.
+        let tip = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "touch and hold the lightbulb")).firstMatch
+        XCTAssertTrue(tip.waitForExistence(timeout: 5))
+        snap("template-tip")
+        app.buttons["OK"].tap()
         XCTAssertEqual(editor.value as? String, "Morning.\nWhat went well today?")
         XCTAssertFalse(use.exists, "The row closes")
 
@@ -345,7 +369,7 @@ final class JournalViewsTests: XCTestCase {
         editor.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)).tap()
         // (Whatever an earlier run left behind goes first.)
         editor.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 30) + "One Win\n- ")
-        XCTAssertTrue(app.buttons["Format"].exists)
+        XCTAssertFalse(app.buttons["Format"].exists, "Format is for selected words")
         snap("template-settings")
         // Back and in again: it's still there. Then emptied, so no other test starts with it.
         app.navigationBars.buttons.firstMatch.tap()
@@ -1310,6 +1334,35 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
 
+    /// A web address pasted by itself goes in as a link: its row opens when it's tapped.
+    func testPastingAnAddressLinksIt() throws {
+        UIPasteboard.general.string = "https://example.com/trail"
+        let app = launch()
+        let editor = openComposer(app)
+        editor.typeText("See ")
+        // The menu at the cursor.
+        editor.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 60, dy: 30)).tap()
+        let paste = app.menuItems["Paste"]
+        if !paste.waitForExistence(timeout: 3) { editor.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 60, dy: 30)).tap() }
+        XCTAssertTrue(paste.waitForExistence(timeout: 5))
+        paste.tap()
+        let allow = app.alerts.buttons["Allow Paste"]
+        if allow.waitForExistence(timeout: 2) { allow.tap() }
+        sleep(1)
+        XCTAssertEqual(editor.value as? String, "See https://example.com/trail")
+        // What's typed after it isn't part of the link.
+        editor.typeText(" soon")
+        XCTAssertEqual(editor.value as? String, "See https://example.com/trail soon")
+        snap("compose-pasted-link")
+        // It's a link: a tap on it opens its row, with its address.
+        editor.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 150, dy: 30)).tap()
+        let address = app.textFields["Link address"]
+        XCTAssertTrue(address.waitForExistence(timeout: 5), "Tapping the pasted address opens its link row")
+        XCTAssertEqual(address.value as? String, "https://example.com/trail")
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+    }
+
     /// Settings → Email is a switch, like Push: off hides its days and time (and the row says Off);
     /// back on, the days it had are back.
     func testEmailNotificationsSwitch() throws {
@@ -1900,11 +1953,6 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.buttons["#hiking"].waitForExistence(timeout: 10))
         sleep(1)
         snap("long-entry-hashtags")
-        app.buttons["Link"].tap()
-        XCTAssertTrue(app.textFields["Link address"].waitForExistence(timeout: 5))
-        sleep(1)
-        snap("long-entry-link")
-        app.buttons["Link"].tap()
         app.buttons["Cancel"].tap()
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
@@ -1972,8 +2020,12 @@ final class JournalViewsTests: XCTestCase {
             XCTAssertTrue(editor.waitForExistence(timeout: 5))
             editor.tap()
         }
-        editor.typeText("Read this: ")
+        editor.typeText("Read this now")
         let link = app.buttons["Link"]
+        XCTAssertFalse(link.exists, "Link is for selected words")
+        // Link a word: select it, tap Link, and type the address.
+        editor.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 40, dy: 30)).doubleTap()
+        XCTAssertTrue(link.waitForExistence(timeout: 5))
         link.tap()
         let address = app.textFields["Link address"]
         XCTAssertTrue(address.waitForExistence(timeout: 5))
@@ -1985,33 +2037,20 @@ final class JournalViewsTests: XCTestCase {
         // Typing goes to the address without tapping it first: Link gave it the keyboard.
         app.typeText("dabble.me/write")
         XCTAssertEqual(address.value as? String, "dabble.me/write")
-        XCTAssertEqual(editor.value as? String, "Read this: ", "Nothing typed into the entry")
-        snap("link-row")
-        app.buttons["Insert"].tap()
-        XCTAssertEqual(editor.value as? String, "Read this: https://dabble.me/write")
-        XCTAssertTrue(address.waitForNonExistence(timeout: 5), "The row closes")
-        editor.typeText(" ok") // the keyboard is back on the entry
-        XCTAssertEqual(editor.value as? String, "Read this: https://dabble.me/write ok")
-        // Link a word: select it, tap Link (the second time the row opens), and type the address.
-        editor.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 40, dy: 30)).doubleTap()
-        link.tap()
-        XCTAssertTrue(address.waitForExistence(timeout: 5))
-        sleep(1)
-        app.typeText("example.com")
-        XCTAssertEqual(address.value as? String, "example.com", "The address has the keyboard again")
+        XCTAssertEqual(editor.value as? String, "Read this now", "Nothing typed into the entry")
         snap("link-row-word") // "Read" stays tinted while its address is typed
         app.buttons["Insert"].tap()
-        XCTAssertTrue(address.waitForNonExistence(timeout: 5))
-        XCTAssertEqual(editor.value as? String, "Read this: https://dabble.me/write ok", "Linking a word doesn't change the text")
+        XCTAssertTrue(address.waitForNonExistence(timeout: 5), "The row closes")
+        XCTAssertEqual(editor.value as? String, "Read this now", "Linking a word doesn't change the text")
         // Tap the link: its row opens (it doesn't leave for the browser).
-        editor.coordinate(withNormalizedOffset: CGVector(dx: 0.6, dy: 0)).withOffset(CGVector(dx: 0, dy: 30)).tap()
+        editor.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 40, dy: 30)).tap()
         XCTAssertTrue(address.waitForExistence(timeout: 5), "Tapping a link opens its row")
         XCTAssertEqual(address.value as? String, "https://dabble.me/write")
         snap("link-row-existing")
         XCTAssertTrue(app.buttons["Update"].exists)
         app.buttons["Remove Link"].tap()
         XCTAssertTrue(address.waitForNonExistence(timeout: 5))
-        XCTAssertEqual(editor.value as? String, "Read this: https://dabble.me/write ok", "The text stays")
+        XCTAssertEqual(editor.value as? String, "Read this now", "The text stays")
         app.buttons["Cancel"].tap()
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
@@ -2028,6 +2067,10 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
         // An empty entry, whatever draft an earlier run left.
         if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap() }
+        editor.typeText("Hello there")
+        let word = editor.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 40, dy: 30))
+        word.doubleTap()
+        XCTAssertTrue(app.buttons["Link"].waitForExistence(timeout: 5))
         app.buttons["Link"].tap()
         let address = app.textFields["Link address"]
         XCTAssertTrue(address.waitForExistence(timeout: 5))
@@ -2036,13 +2079,17 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertEqual(address.value as? String, "abc")
         app.buttons["Hashtags"].tap()
         XCTAssertTrue(address.waitForNonExistence(timeout: 5))
+        // (The word's no longer selected once its row has closed: selected again for another go.)
+        sleep(1)
+        if !app.buttons["Link"].exists { word.doubleTap() }
+        XCTAssertTrue(app.buttons["Link"].waitForExistence(timeout: 5))
         app.buttons["Link"].tap()
         XCTAssertTrue(address.waitForExistence(timeout: 5))
         sleep(1)
         app.typeText("xyz")
         snap("link-after-hashtags")
         XCTAssertEqual(address.value as? String, "xyz", "Typing goes to the link's address")
-        XCTAssertEqual(editor.value as? String ?? "", "", "And not into the entry")
+        XCTAssertEqual(editor.value as? String ?? "", "Hello there", "And not into the entry")
         app.buttons["Cancel"].tap()
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }

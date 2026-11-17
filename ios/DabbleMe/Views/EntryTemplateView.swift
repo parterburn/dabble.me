@@ -19,7 +19,9 @@ struct EntryTemplateView: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 12)
             Divider()
-            RichTextEditor(model: editor, trailing: AnyView(formatButton.foregroundStyle(.tint)))
+            // (Format shows while words are selected, as in the composer.)
+            RichTextEditor(model: editor, trailing: editor.hasSelection ? AnyView(formatButton.foregroundStyle(.tint)) : nil,
+                           barKey: "\(editor.hasSelection)")
                 .overlay(alignment: .topLeading) {
                     if editor.isEmpty {
                         Text("What went well today?")
@@ -41,9 +43,13 @@ struct EntryTemplateView: View {
         .onDisappear { save() }
     }
 
-    /// Bold, italic, underline, strikethrough and lists: iOS's formatting panel, as in an entry.
+    /// Bold, italic and underline for the selected words, as in an entry.
     private var formatButton: some View {
-        Button { editor.showFormatting() } label: {
+        Menu {
+            Button { editor.toggleBold() } label: { Label("Bold", icon: "bold") }
+            Button { editor.toggleItalic() } label: { Label("Italic", icon: "italic") }
+            Button { editor.toggleUnderline() } label: { Label("Underline", icon: "underline") }
+        } label: {
             appIcon("slab-format")
                 .frame(width: 40, height: 36)
                 .contentShape(.rect)

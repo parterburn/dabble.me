@@ -10,34 +10,29 @@ typealias PlatformColor = NSColor
 #endif
 
 // Mirrors Api::EntryDocument on the server: an entry is a list of blocks, each a
-// paragraph, list item or rule, made of runs that may be bold / italic / underlined / struck
-// through / linked.
+// paragraph, list item or rule, made of runs that may be bold / italic / underlined / linked.
 
 struct DocumentRun: Codable, Hashable, Sendable {
     var text: String
     var bold: Bool?
     var italic: Bool?
     var underline: Bool?
-    /// Struck through. (An older server leaves it out of what it sends and drops it from what it's sent.)
-    var strike: Bool?
     var link: String?
 
-    init(_ text: String, bold: Bool = false, italic: Bool = false, underline: Bool = false, strike: Bool = false, link: String? = nil) {
+    init(_ text: String, bold: Bool = false, italic: Bool = false, underline: Bool = false, link: String? = nil) {
         self.text = text
         self.bold = bold ? true : nil
         self.italic = italic ? true : nil
         self.underline = underline ? true : nil
-        self.strike = strike ? true : nil
         self.link = link
     }
 
     var isBold: Bool { bold == true }
     var isItalic: Bool { italic == true }
     var isUnderlined: Bool { underline == true }
-    var isStruck: Bool { strike == true }
 
     func hasSameFormat(as other: DocumentRun) -> Bool {
-        isBold == other.isBold && isItalic == other.isItalic && isUnderlined == other.isUnderlined && isStruck == other.isStruck && link == other.link
+        isBold == other.isBold && isItalic == other.isItalic && isUnderlined == other.isUnderlined && link == other.link
     }
 }
 
@@ -88,7 +83,6 @@ enum RichText {
             var attributes = baseAttributes
             attributes[.font] = baseFont.with(bold: run.isBold, italic: run.isItalic)
             if run.isUnderlined { attributes[.underlineStyle] = NSUnderlineStyle.single.rawValue }
-            if run.isStruck { attributes[.strikethroughStyle] = NSUnderlineStyle.single.rawValue }
             if let link = run.link, let url = URL(string: link) { attributes[.link] = url }
             return attributes
         }
@@ -194,7 +188,7 @@ enum RichText {
             let run = DocumentRun(string.substring(with: range).replacingOccurrences(of: attachmentCharacter, with: ""),
                                   bold: font?.isBold ?? false, italic: font?.isItalic ?? false,
                                   underline: (attributes[.underlineStyle] as? Int ?? 0) != 0,
-                                  strike: (attributes[.strikethroughStyle] as? Int ?? 0) != 0)
+                                  link: (attributes[.link] as? URL)?.absoluteString ?? attributes[.link] as? String)
             guard !run.text.isEmpty else { return }
             if let last = runs.last, last.hasSameFormat(as: run) {
                 runs[runs.count - 1].text += run.text
@@ -434,13 +428,11 @@ enum RichText {
         text.enumerateAttributes(in: range) { attributes, subrange, _ in
             let font = attributes[.font] as? PlatformFont
             let underline = (attributes[.underlineStyle] as? Int ?? 0) != 0
-            let strike = (attributes[.strikethroughStyle] as? Int ?? 0) != 0
             let link = (attributes[.link] as? URL)?.absoluteString ?? attributes[.link] as? String
             runs.append(DocumentRun(string.substring(with: subrange).replacingOccurrences(of: lineSeparator, with: "\n"),
                                     bold: font?.isBold ?? false,
                                     italic: font?.isItalic ?? false,
                                     underline: underline,
-                                    strike: strike,
                                     link: link))
         }
         return runs
