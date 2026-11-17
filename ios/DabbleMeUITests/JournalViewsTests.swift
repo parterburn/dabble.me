@@ -222,38 +222,6 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
 
-    /// The bar's microphone: what's said goes into the entry where the cursor is. (A made-up
-    /// sentence here, since the simulator has no transcriber.)
-    func testSpeakingAnEntry() throws {
-        let app = launch(["-DabbleDebugDictation", "YES"])
-        if app.buttons["Write Today's Entry"].waitForExistence(timeout: 15) {
-            app.buttons["Write Today's Entry"].tap()
-        } else {
-            tab(app, "Journal").tap()
-            app.buttons["New Entry"].tap()
-        }
-        let editor = app.textViews["Entry"]
-        XCTAssertTrue(editor.waitForExistence(timeout: 5))
-        editor.tap()
-        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
-        if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap() }
-        editor.typeText("A slow evening.")
-        app.buttons["Speak Your Entry"].tap()
-        XCTAssertTrue(app.staticTexts["DictationHearing"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Stop Listening"].exists)
-        sleep(1)
-        snap("compose-dictation")
-        // A sentence at a time, after what was typed, spaced as if typed.
-        let heard = NSPredicate(format: "value CONTAINS %@", "A slow evening. We walked along the river after dinner. Leo found a heron standing in the shallows.")
-        wait(for: [expectation(for: heard, evaluatedWith: editor)], timeout: 15)
-        app.buttons["Done"].tap()
-        XCTAssertTrue(app.buttons["Speak Your Entry"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.staticTexts["DictationHearing"].exists)
-        snap("compose-dictation-done")
-        app.buttons["Cancel"].tap()
-        app.buttons["Discard"].tap()
-    }
-
     /// The bar's Format button opens iOS's formatting panel in the keyboard's place.
     func testFormatPanelOpens() throws {
         let app = launch()
@@ -276,6 +244,26 @@ final class JournalViewsTests: XCTestCase {
         // Back to writing: the keyboard and its bar return.
         XCTAssertTrue(app.buttons["Format"].waitForExistence(timeout: 5))
         XCTAssertTrue(app.keyboards.firstMatch.exists)
+        // And it opens again, as often as it's asked for.
+        for round in 2...3 {
+            app.buttons["Format"].tap()
+            XCTAssertTrue(app.staticTexts["Format"].waitForExistence(timeout: 5), "The panel opens a \(round == 2 ? "second" : "third") time")
+            XCTAssertFalse(app.keyboards.firstMatch.exists, "The keyboard is down for it")
+            snap("format-panel-\(round)")
+            app.buttons["close"].tap()
+            XCTAssertTrue(app.buttons["Format"].waitForExistence(timeout: 5))
+        }
+        // A tap back in the entry with the panel up closes it (the keyboard would cover it), and
+        // it opens again after.
+        app.buttons["Format"].tap()
+        XCTAssertTrue(app.staticTexts["Format"].waitForExistence(timeout: 5))
+        editor.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.15)).tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Format"].waitForNonExistence(timeout: 5), "The panel isn't left under the keyboard")
+        app.buttons["Format"].tap()
+        XCTAssertTrue(app.staticTexts["Format"].waitForExistence(timeout: 5), "And it opens again")
+        XCTAssertFalse(app.keyboards.firstMatch.exists)
+        app.buttons["close"].tap()
     }
 
     private func openComposer(_ app: XCUIApplication) -> XCUIElement {
@@ -343,7 +331,8 @@ final class JournalViewsTests: XCTestCase {
         app.buttons["Discard"].tap()
     }
 
-    /// Settings → Entry Template: written like an entry, kept as it's typed.
+    /// Settings → Entry Template: written like an entry, kept as it's typed (blank lines and
+    /// empty list items too: they're where the writing goes).
     func testWritingATemplateInSettings() throws {
         let app = launch()
         tab(app, "Settings").tap()
@@ -355,13 +344,14 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(app.switches["Start New Entries with It"].exists)
         editor.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)).tap()
         // (Whatever an earlier run left behind goes first.)
-        editor.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 30) + "Grateful for")
+        editor.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 30) + "One Win\n- ")
         XCTAssertTrue(app.buttons["Format"].exists)
         snap("template-settings")
         // Back and in again: it's still there. Then emptied, so no other test starts with it.
         app.navigationBars.buttons.firstMatch.tap()
         row.tap()
-        XCTAssertEqual(editor.value as? String, "Grateful for")
+        // As it was typed, the empty list item (where the writing will go) included.
+        XCTAssertEqual(editor.value as? String, "One Win\n• ")
         // (A tap under the words puts the cursor after them.)
         editor.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)).tap()
         editor.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 30))
@@ -1799,8 +1789,8 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
 
-    /// The composer's lightbulb (what to write about) lists what was on the phone's calendar that day
-    /// over its question; a tap on an event puts it in the entry as a heading to write under.
+    /// The composer's lightbulb (what to write about) has a question over a few of the events on
+    /// the phone's calendar that day; a tap on an event puts it in the entry as a heading to write under.
     func testCalendarRowAddsAnEventToTheEntry() throws {
         let app = launch(["-DabbleDebugCalendar", "YES"]) // a made-up day, not the simulator's calendar
         tab(app, "Journal").tap()
@@ -1812,13 +1802,19 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertFalse(app.buttons["Calendar"].exists, "No button of its own")
         app.buttons["Prompt"].tap()
         // (Set in capitals, and read that way here.)
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ==[c] %@", "On your calendar")).firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ==[c] %@", "Writing ideas")).firstMatch.waitForExistence(timeout: 5))
         let lunch = app.buttons["Lunch with Sam, 12:30 PM"]
         XCTAssertTrue(lunch.waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["Leo's birthday, All day"].exists)
-        // The question's under the events, in a line that's two lines tall before it comes.
+        // Three of the day's five, not the whole day.
+        XCTAssertFalse(app.buttons["Pick up the cake, 3:15 PM"].exists)
+        XCTAssertFalse(app.buttons["Book club, 7:00 PM"].exists)
+        // The question's over the events; they stay where they are when it comes.
+        let lunchBefore = lunch.frame.maxY
         XCTAssertTrue(app.staticTexts["AskMeQuestion"].waitForExistence(timeout: 60))
-        XCTAssertGreaterThan(app.staticTexts["AskMeQuestion"].frame.minY, lunch.frame.maxY)
+        XCTAssertLessThan(app.staticTexts["AskMeQuestion"].frame.maxY, app.buttons["Leo's birthday, All day"].frame.minY)
+        sleep(1)
+        XCTAssertEqual(lunch.frame.maxY, lunchBefore, accuracy: 2, "The events don't move when the question arrives")
         XCTAssertFalse(app.buttons["Insert"].exists, "The question's row is the button")
         sleep(1)
         snap("compose-calendar-row")

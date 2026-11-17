@@ -3,7 +3,7 @@ import SwiftUI
 /// Settings → Entry Template: headings or questions an entry can start from, written and
 /// formatted as an entry is. Kept as it's typed; emptied, there's no template.
 struct EntryTemplateView: View {
-    @State private var editor = RichTextEditorModel(blocks: EntryTemplate.blocks)
+    @State private var editor = RichTextEditorModel(typed: EntryTemplate.runs)
     @AppStorage(EntryTemplate.autoKey) private var addsToNewEntries = false
 
     var body: some View {
@@ -54,6 +54,6 @@ struct EntryTemplateView: View {
 
     private func save() {
         guard editor.isDirty else { return }
-        EntryTemplate.blocks = editor.isEmpty ? [] : editor.blocks
+        EntryTemplate.runs = editor.isEmpty ? [] : editor.typedRuns
     }
 }

@@ -181,6 +181,55 @@ enum RichText {
         }
     }
 
+    // MARK: - Text as typed (templates)
+
+    /// The text exactly as it's typed, as styled runs: blank lines and empty list items and
+    /// all. What a template keeps (they're where the writing goes), where the blocks a saved
+    /// entry is made of leave those out.
+    static func typedRuns(from text: NSAttributedString) -> [DocumentRun] {
+        var runs: [DocumentRun] = []
+        let string = text.string as NSString
+        text.enumerateAttributes(in: NSRange(location: 0, length: string.length)) { attributes, range, _ in
+            let font = attributes[.font] as? PlatformFont
+            let run = DocumentRun(string.substring(with: range).replacingOccurrences(of: attachmentCharacter, with: ""),
+                                  bold: font?.isBold ?? false, italic: font?.isItalic ?? false,
+                                  underline: (attributes[.underlineStyle] as? Int ?? 0) != 0,
+                                  strike: (attributes[.strikethroughStyle] as? Int ?? 0) != 0)
+            guard !run.text.isEmpty else { return }
+            if let last = runs.last, last.hasSameFormat(as: run) {
+                runs[runs.count - 1].text += run.text
+            } else {
+                runs.append(run)
+            }
+        }
+        return runs
+    }
+
+    /// `typedRuns` back as editable text.
+    static func attributedString(typed runs: [DocumentRun], style: Style) -> NSAttributedString {
+        let result = NSMutableAttributedString()
+        for run in runs { result.append(NSAttributedString(string: run.text, attributes: style.attributes(for: run))) }
+        applyListIndents(to: result, font: style.baseFont)
+        return result
+    }
+
+    /// Where to start writing in typed text: the end of its first blank line or empty list
+    /// item, or nil when it has none.
+    static func firstBlank(in text: String) -> Int? {
+        let string = text as NSString
+        var location = 0
+        while location <= string.length {
+            let newline = string.range(of: "\n", range: NSRange(location: location, length: string.length - location))
+            let end = newline.location == NSNotFound ? string.length : newline.location
+            let line = string.substring(with: NSRange(location: location, length: end - location))
+            let rest = listPrefix(in: line).map { (line as NSString).substring(from: $0.length) } ?? line
+            if rest.trimmingCharacters(in: .whitespaces).isEmpty { return end }
+            if newline.location == NSNotFound { break }
+            location = end + 1
+        }
+        return nil
+    }
+
     static func blocks(from text: NSAttributedString) -> [DocumentBlock] {
         let string = text.string as NSString
         var blocks: [DocumentBlock] = []
