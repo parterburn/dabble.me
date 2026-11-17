@@ -746,5 +746,7 @@ private struct HashtagBars: View {
 /// A day to write an entry for (`AppModel.composingDay`): the composer's sheet opens on it.
 struct StatsDay: Identifiable {
     let day: JournalDay
+    /// The entry starts from the writer's template (a held Write button on Today).
+    var withTemplate = false
     var id: String { day.iso }
 }

@@ -7,6 +7,8 @@ struct TodayView: View {
     @Environment(AppModel.self) private var model
     @State private var path = NavigationPath()
     @State private var composing = false
+    /// A Write button was held (so the tap that ends the hold doesn't also open the composer).
+    @State private var heldWrite = false
     @State private var showingProInfo = false
     /// How many times the wordmark's been tapped to type itself out, and whether it's at it.
     @State private var retypes = 0
@@ -335,6 +337,8 @@ struct TodayView: View {
         let yesterday = model.yesterday
         VStack(spacing: 10) {
             Button {
+                // Not the tap that ends a hold.
+                if heldWrite { heldWrite = false; return }
                 composing = true
             } label: {
                 Text("Write Today's Entry")
@@ -343,8 +347,15 @@ struct TodayView: View {
             }
             .filledButtonStyle()
             .controlSize(.large)
+            // Held, with a template (Settings → Entry Template): the entry starts from it.
+            // (Through the composer for a given day, as yesterday's is: what it's to start with
+            // travels with the request.)
+            .writesWithTemplate(held: $heldWrite) {
+                model.composingDay = StatsDay(day: today.day ?? JournalDay(localDate: .now), withTemplate: true)
+            }
             if let yesterday, isUnwritten(yesterday) {
                 Button {
+                    if heldWrite { heldWrite = false; return }
                     model.composingDay = StatsDay(day: yesterday)
                 } label: {
                     Text("Write Yesterday's Entry")
@@ -354,6 +365,9 @@ struct TodayView: View {
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
+                .writesWithTemplate(held: $heldWrite) {
+                    model.composingDay = StatsDay(day: yesterday, withTemplate: true)
+                }
                 .padding(.bottom, -6) // the card's own padding is enough under a line of text
             }
         }
@@ -661,6 +675,23 @@ private struct ToolbarCircle: ViewModifier {
             content
                 .background(Color(uiColor: .secondarySystemBackground), in: .circle)
                 .shadow(color: .black.opacity(0.08), radius: 4, y: 1)
+        }
+    }
+}
+
+private extension View {
+    /// A Write button held, when the writer has a template: `write` opens the composer on it.
+    /// Without a template a hold is just a tap. (`held` tells the button's own tap, which
+    /// follows the hold, to do nothing.)
+    func writesWithTemplate(held: Binding<Bool>, write: @escaping () -> Void) -> some View {
+        simultaneousGesture(LongPressGesture(minimumDuration: 0.45).onEnded { _ in
+            guard !EntryTemplate.runs.isEmpty else { return }
+            held.wrappedValue = true
+            HoldHaptic.play()
+            write()
+        })
+        .accessibilityAction(named: "Write with Template") {
+            if !EntryTemplate.runs.isEmpty { write() }
         }
     }
 }

@@ -9,7 +9,7 @@ struct EntryTemplateView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             // (The button's own icon, in the sentence.)
-            Text("A starting point for your entries: headings or questions you answer each time. Add it from the \(inlineIcon("slab-lightbulb", named: "Prompt")) button while writing, or touch and hold that button to add it straight away.")
+            Text("A starting point for your entries: headings or questions you answer each time. Add it from the \(inlineIcon("slab-lightbulb", named: "Prompt")) button while writing, or touch and hold that button to add it straight away. Touch and hold a Write button on Today to start an entry with it.")
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

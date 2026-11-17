@@ -98,8 +98,9 @@ struct ComposeView: View {
     /// The lightbulb button was held (so the tap that ends the hold doesn't also open its row).
     @State private var heldAskIcon = false
 
-    /// `day`: a new entry for that day (Stats' grid), not today.
-    init(mode: Mode, day: JournalDay? = nil, onSaved: @escaping (EntryDetail) -> Void = { _ in }) {
+    /// `day`: a new entry for that day (Stats' grid), not today. `withTemplate`: a new entry
+    /// that starts from the writer's template whatever the setting says (a held Write button).
+    init(mode: Mode, day: JournalDay? = nil, withTemplate: Bool = false, onSaved: @escaping (EntryDetail) -> Void = { _ in }) {
         self.mode = mode
         self.onSaved = onSaved
         startsOnDay = day != nil
@@ -118,7 +119,7 @@ struct ComposeView: View {
         // Start Over. A draft, as ever, comes first.
         let template = EntryTemplate.runs
         self.template = template
-        let startsWithTemplate = entry == nil && !template.isEmpty && EntryTemplate.addsToNewEntries
+        let startsWithTemplate = entry == nil && !template.isEmpty && (EntryTemplate.addsToNewEntries || withTemplate)
         self.startsWithTemplate = startsWithTemplate
         originalBlocks = original
         _isUntouchedTemplate = State(initialValue: startsWithTemplate && draft == nil)
@@ -794,9 +795,9 @@ struct ComposeView: View {
         .padding(.bottom, 10)
     }
 
-    /// The lightbulb row offers the template (there is one, and new entries don't already start with
+    /// The lightbulb row offers the template (there is one, and this entry didn't start with
     /// it): a prompt is then written only when it's asked for.
-    private var offersTemplate: Bool { !template.isEmpty && !EntryTemplate.addsToNewEntries }
+    private var offersTemplate: Bool { !template.isEmpty && !startsWithTemplate }
 
     private func useTemplate() {
         editor.addTemplate(template)

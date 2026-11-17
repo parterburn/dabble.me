@@ -920,3 +920,23 @@ struct EntryTemplateTests {
         #expect(EntryTemplate.runs.map(\.text).joined() == "Grateful for\n• One thing")
     }
 }
+
+struct ShareTextTests {
+    /// Share hands over the entry's date and its words; an entry with no words has none to share.
+    @Test func sharesTheDateThenTheWords() {
+        #expect(EntryActionsSheet.sharedText(date: "Monday, November 16, 2026", body: "A slow evening.\n") == "Monday, November 16, 2026\n\nA slow evening.")
+        #expect(EntryActionsSheet.sharedText(date: "Monday, November 16, 2026", body: "  \n") == nil)
+    }
+}
+
+struct WhatToTestNotesTests {
+    /// TestFlight cuts a build's "What to Test" off at 4,000 characters (Xcode Cloud warns, and
+    /// the end is lost): the notes are rewritten for each build, not added to.
+    @Test func theNotesFitTestFlight() throws {
+        let notes = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appending(path: "TestFlight/WhatToTest.en-US.txt")
+        let text = try String(contentsOf: notes, encoding: .utf8)
+        #expect(text.count <= 4000, "WhatToTest.en-US.txt is \(text.count) characters: rewrite it for this build")
+        #expect(!text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+    }
+}

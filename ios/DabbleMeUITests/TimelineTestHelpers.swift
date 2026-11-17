@@ -5,6 +5,22 @@ import XCTest
 let testServer = ProcessInfo.processInfo.environment["DABBLE_SERVER"] ?? "http://localhost:3000"
 
 extension XCUIApplication {
+    /// An entry's preview (a row or a day held): its date, at the top of it. A tap on the
+    /// preview opens the entry.
+    var entryPreview: XCUIElement { staticTexts["EntryPreviewDate"].firstMatch }
+
+    /// Taps the preview that's up, which opens its entry: just above its menu where it has
+    /// one (a Journal row's), otherwise the middle of the screen, which it covers. (Not by its
+    /// own frame: iOS reports a held preview's off the screen.)
+    func tapEntryPreview() {
+        let menu = buttons.matching(NSPredicate(format: "label IN %@", ["Reflection", "Edit", "More"])).allElementsBoundByIndex
+        if let top = menu.map(\.frame.minY).min() {
+            coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: frame.midX, dy: top - 150)).tap()
+        } else {
+            coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)).tap()
+        }
+    }
+
     /// One of Stats' tiles, by what it counts ("Words", "Photos"…): a button, or plain text when
     /// there's nowhere for it to go.
     /// Stats, moved up a little: its year grid starts under the tiles, partly behind the tab bar.
