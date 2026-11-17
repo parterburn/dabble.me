@@ -191,37 +191,122 @@ enum JournalIntelligence {
         var answer: String
     }
 
-    /// A reflection chat as a question and its answer to add to the entry: what the writer was
-    /// asked (the reflection's own closing question first, which the chat's messages don't
-    /// hold), and what they said, in their words, cleaned up. Not a summary of what it meant.
-    static func chatSummary(entry: String, reflection: String, conversation: [ReflectionChat.Message]) async throws -> ChatSummary {
+    /// A reflection chat as what to add to the entry: each question the writer answered (the
+    /// reflection's own closing question first, which the chat's messages don't hold) with what
+    /// they said to it, in their words, cleaned up. Not a summary of what it meant. Only what's
+    /// new: nothing the entry says already, and no question that was left unanswered.
+    ///
+    /// One question at a time: asked for the whole chat at once, the model writes up the first
+    /// answer and drops the rest.
+    static func chatSummary(entry: String, reflection: String, conversation: [ReflectionChat.Message]) async throws -> [ChatSummary] {
         let asked = closingQuestion(in: reflection)
         let opening = ReflectionChat.Message(fromWriter: false, text: asked ?? clipped(reflection, limit: 240))
-        let transcript = summaryTranscript([opening] + conversation)
-        let reply = try await respond(
-            instructions: """
-            The writer talked through their journal entry by answering a companion's questions. Turn that into \
-            a note for their journal, in two parts.
+        var summaries: [ChatSummary] = []
+        // (The latest few, for a chat that ran long: each is a turn of the model's.)
+        for exchange in exchanges(in: [opening] + conversation).suffix(6) {
+            let reply = try await respond(
+                instructions: """
+                The writer answered a question about their journal entry. Turn that into a note for their \
+                journal, in two parts.
 
-            QUESTION: one short question saying what they were asked, in plain words, reworded so it makes \
-            sense by itself to someone who never saw the conversation. If they were asked several things, the \
-            one question their answers add up to.
+                QUESTION: the question they were asked, in plain words, reworded only as far as it needs to make \
+                sense by itself to someone who never saw the conversation.
 
-            ANSWER: what the writer said, cleaned up. Their own words, in their first-person voice, with typos, \
-            dictation slips, filler and repeats fixed and the pieces joined into sentences that read well. Keep \
-            everything they said and every detail. Add nothing they didn't say: no interpretation, no advice, \
-            no feelings they didn't name, and nothing from the companion's side.
+                ANSWER: what the writer said, written out properly. Their own words, in their first-person \
+                voice, but as finished sentences: a capital at the start of each sentence, on names and on "I", \
+                full stops and commas where they belong, typos and dictation slips fixed, filler and repeats \
+                taken out. For example "went to moms after. she seemd tired tbh" becomes "I went to Mom's \
+                after. She seemed tired." Keep every detail. Add nothing they didn't say: no interpretation, \
+                no advice, no feelings they didn't name.
 
-            Don't mention a conversation, a companion or AI. Reply in exactly this form and nothing else:
-            QUESTION: (the question)
-            ANSWER: (the answer)
-            """,
-            journalText: true,
-            prompt: "The entry, for context only:\n\(clipped(entry, limit: 1200))\n\nThe questions and the writer's answers:\n\(transcript)",
-            temperature: 0.3
-        )
-        guard let summary = parseChatSummary(reply, askedFirst: asked) else { throw Failure.noAnswer }
-        return summary
+                The note goes under the entry, so it has to be new. The entry and the reflection are given only \
+                so you understand what the answer is about: never repeat, quote or restate what the entry \
+                already says, even where the answer goes over it again.
+
+                Don't mention a conversation, a companion or AI. Reply in exactly this form and nothing else:
+                QUESTION: (the question)
+                ANSWER: (the answer)
+                """,
+                journalText: true,
+                prompt: """
+                    The entry (already written; don't repeat it):
+                    \(clipped(entry, limit: 1200))
+
+                    The reflection they read (context only):
+                    \(clipped(reflection, limit: 500))
+
+                    The question they were asked:
+                    \(exchange.question)
+
+                    What the writer said:
+                    \(clipped(exchange.answer, limit: 1500))
+                    """,
+                temperature: 0.3
+            )
+            guard var summary = parseChatSummary(reply, askedFirst: exchange.question) else { continue }
+            summary.question = capitalizingFirst(summary.question)
+            summary.answer = capitalizingFirst(summary.answer)
+            // Whatever the model was told, a sentence lifted from the entry comes out; an answer
+            // that only went over the entry again leaves nothing to add.
+            summary.answer = removingSentences(of: summary.answer, alreadyIn: entry)
+            if !summary.answer.isEmpty { summaries.append(summary) }
+        }
+        guard !summaries.isEmpty else { throw Failure.noAnswer }
+        return summaries
+    }
+
+    /// The chat as the questions the writer answered, each with what they said to it (replies
+    /// sent one after another are one answer). A companion's turn is the question it ends on; one
+    /// the writer didn't answer, as the last can be, isn't here.
+    static func exchanges(in conversation: [ReflectionChat.Message]) -> [(question: String, answer: String)] {
+        var exchanges: [(question: String, answer: String)] = []
+        var question = ""
+        var answer: [String] = []
+        func close() {
+            if !answer.isEmpty { exchanges.append((question, answer.joined(separator: "\n"))) }
+            answer = []
+        }
+        for message in conversation {
+            if message.fromWriter {
+                answer.append(message.text.trimmingCharacters(in: .whitespacesAndNewlines))
+            } else {
+                close()
+                question = closingQuestion(in: message.text) ?? clipped(message.text, limit: 240)
+            }
+        }
+        close()
+        return exchanges
+    }
+
+    /// `text` without the sentences that are in `source` already, word for word or all but
+    /// (whatever their capitals, spacing or punctuation).
+    static func removingSentences(of text: String, alreadyIn source: String) -> String {
+        func key(_ sentence: Substring) -> String {
+            sentence.lowercased().filter { $0.isLetter || $0.isNumber }
+        }
+        func sentences(_ string: String) -> [Substring] {
+            var found: [Substring] = []
+            string.enumerateSubstrings(in: string.startIndex..., options: [.bySentences, .substringNotRequired]) { _, range, _, _ in
+                found.append(string[range])
+            }
+            return found
+        }
+        func words(_ sentence: Substring) -> Set<String> {
+            Set(sentence.lowercased().split(whereSeparator: { !$0.isLetter && !$0.isNumber && $0 != "'" && $0 != "’" }).map(String.init))
+        }
+        // (A few words can be said twice by chance: only a sentence with some length to it counts.)
+        let written = sentences(source).filter { key($0).count >= 16 }
+        let keys = Set(written.map(key)), wordSets = written.map(words)
+        return sentences(text).filter { sentence in
+            if keys.contains(key(sentence)) { return false }
+            // Or all but word for word ("I was really glad Katelyn came with me" after "I was
+            // really glad that Katelyn came with me").
+            let its = words(sentence)
+            guard its.count >= 5 else { return true }
+            return !wordSets.contains { other in
+                Double(its.intersection(other).count) / Double(its.union(other).count) >= 0.75
+            }
+        }.joined().trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// The last question in a piece of the companion's writing ("…and that stayed with you. **What
@@ -254,24 +339,6 @@ enum JournalIntelligence {
         }
         let answer = tidy(reply[...])
         return answer.isEmpty ? nil : ChatSummary(question: askedFirst ?? "", answer: answer)
-    }
-
-    /// The chat for the summary, fitted to the model's small context: the most recent turns that
-    /// fit, working back from the end (so a late realization isn't the part left out), with the
-    /// companion's turns shortened first, since what the writer said is what the summary is made of:
-    /// each to the question it ends on, when it asks one (that's what the writer answered next).
-    static func summaryTranscript(_ conversation: [ReflectionChat.Message], limit: Int = 2000) -> String {
-        var lines: [String] = []
-        var used = 0
-        for message in conversation.reversed() {
-            let text = message.fromWriter ? message.text : closingQuestion(in: message.text) ?? clipped(message.text, limit: 240)
-            let line = "\(message.fromWriter ? "Me" : "Companion"): \(text)"
-            if used + line.count > limit, !lines.isEmpty { break }
-            lines.insert(used + line.count > limit ? clipped(line, limit: limit) : line, at: 0)
-            used += line.count + 1
-        }
-        if lines.count < conversation.count { lines.insert("…", at: 0) }
-        return lines.joined(separator: "\n")
     }
 
     /// Prompt while writing. With nothing much written yet (under a few words), a starting prompt (one

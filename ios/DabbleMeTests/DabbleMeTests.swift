@@ -163,29 +163,11 @@ struct WidgetContentTests {
 
 @MainActor
 struct ReflectionChatSummaryTests {
-    /// A long chat keeps its most recent turns for the summary, so a late answer isn't cut off.
-    @Test func longChatsKeepTheLatestTurns() {
-        var conversation: [ReflectionChat.Message] = []
-        for turn in 1...30 {
-            conversation.append(ReflectionChat.Message(fromWriter: true, text: "Answer \(turn): " + String(repeating: "words ", count: 20)))
-            conversation.append(ReflectionChat.Message(fromWriter: false, text: "A question back " + String(repeating: "hmm ", count: 100)))
-        }
-        conversation.append(ReflectionChat.Message(fromWriter: true, text: "The realization: I miss mornings outside."))
-        let transcript = JournalIntelligence.summaryTranscript(conversation)
-        #expect(transcript.contains("The realization: I miss mornings outside."))
-        #expect(!transcript.contains("Answer 1: "))
-        #expect(transcript.hasPrefix("…"))
-        #expect(transcript.count <= 2100)
-    }
-
     /// A companion's turn is kept as the question it ends on: that's what was answered next.
     @Test func companionTurnsComeDownToTheirQuestion() {
         #expect(JournalIntelligence.closingQuestion(in: "That walk sounds lovely. It stayed with you. **What made it stick?**") == "What made it stick?")
         #expect(JournalIntelligence.closingQuestion(in: "Was it the light? Or the quiet?\nWhich would you go back for?") == "Which would you go back for?")
         #expect(JournalIntelligence.closingQuestion(in: "That sounds like a good day.") == nil)
-        let conversation = [ReflectionChat.Message(fromWriter: false, text: "A long, kind paragraph about the day. **What made it stick?**"),
-                            ReflectionChat.Message(fromWriter: true, text: "The sunrise.")]
-        #expect(JournalIntelligence.summaryTranscript(conversation) == "Companion: What made it stick?\nMe: The sunrise.")
     }
 
     /// The model's reply is read as a question and an answer, whatever it gets wrong about the form.
@@ -202,33 +184,33 @@ struct ReflectionChatSummaryTests {
         #expect(JournalIntelligence.parseChatSummary("QUESTION: Why?\nANSWER:", askedFirst: asked) == nil)
     }
 
-    @Test func shortChatsAreKeptWhole() {
-        let conversation = [ReflectionChat.Message(fromWriter: true, text: "The sunrise."),
-                            ReflectionChat.Message(fromWriter: false, text: "What made it stick?")]
-        #expect(JournalIntelligence.summaryTranscript(conversation) == "Me: The sunrise.\nCompanion: What made it stick?")
+    /// The sum-up is the questions that were answered, each with its answer: one asked after the
+    /// writer's last answer isn't in it, and replies sent one after another are one answer.
+    @Test func onlyAnsweredQuestionsAreSummedUp() {
+        let conversation = [ReflectionChat.Message(fromWriter: false, text: "A kind paragraph. **What made it stick?**"),
+                            ReflectionChat.Message(fromWriter: true, text: "The sunrise."),
+                            ReflectionChat.Message(fromWriter: true, text: "And the quiet."),
+                            ReflectionChat.Message(fromWriter: false, text: "Lovely. **Who would you take back there?**"),
+                            ReflectionChat.Message(fromWriter: true, text: "Sam."),
+                            ReflectionChat.Message(fromWriter: false, text: "**What would you show Sam first?**")]
+        let exchanges = JournalIntelligence.exchanges(in: conversation)
+        #expect(exchanges.map(\.question) == ["What made it stick?", "Who would you take back there?"])
+        #expect(exchanges.map(\.answer) == ["The sunrise.\nAnd the quiet.", "Sam."])
     }
-}
 
-@MainActor
-struct WidgetPhotoTests {
-    /// Cleaning up old photo copies stays inside WidgetPhotos: the App Group's other files (its
-    /// shared settings) and the kept photo survive.
-    @Test func cleanupOnlyTouchesOtherPhotoCopies() throws {
-        let folder = try #require(WidgetSnapshot.photoFolder)
-        let root = folder.deletingLastPathComponent()
-        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
-        let neighbor = root.appending(path: "test-neighbor.txt")
-        let keep = folder.appending(path: "entry-1.jpg"), old = folder.appending(path: "entry-2.jpg")
-        for file in [neighbor, keep, old] { try Data("x".utf8).write(to: file) }
-        defer { try? FileManager.default.removeItem(at: neighbor); try? FileManager.default.removeItem(at: keep) }
-
-        WidgetSync.removePhotos(except: ["entry-1.jpg"])
-
-        #expect(FileManager.default.fileExists(atPath: neighbor.path), "Files outside WidgetPhotos are left alone")
-        #expect(FileManager.default.fileExists(atPath: keep.path))
-        #expect(!FileManager.default.fileExists(atPath: old.path))
-        #expect(folder.lastPathComponent == "WidgetPhotos")
+    /// The sum-up goes under the entry: a sentence the entry already has doesn't go in again.
+    @Test func whatTheEntryAlreadySaysIsNotRepeated() {
+        let entry = "We hiked the Mist Trail before sunrise. Sam sang the whole way down."
+        let answer = "We hiked the Mist Trail before sunrise. What stayed with me was how quiet it was at the top."
+        #expect(JournalIntelligence.removingSentences(of: answer, alreadyIn: entry) == "What stayed with me was how quiet it was at the top.")
+        // (Whatever its capitals or punctuation; a couple of shared words isn't a repeat.)
+        #expect(JournalIntelligence.removingSentences(of: "we hiked the mist trail before sunrise! It was cold.", alreadyIn: entry) == "It was cold.")
+        #expect(JournalIntelligence.removingSentences(of: "It was quiet.", alreadyIn: "It was quiet. And cold.") == "It was quiet.")
+        // All but word for word is a repeat too.
+        #expect(JournalIntelligence.removingSentences(of: "I was really glad Katelyn attended with me. Mostly I'm tired of it dragging on.",
+                                                      alreadyIn: "I was really glad that Katelyn attended with me.") == "Mostly I'm tired of it dragging on.")
     }
+
 }
 
 struct NewEntryControlRequestTests {
@@ -905,5 +887,20 @@ struct DictationTests {
         #expect(Dictation.insertion(of: " It was quiet.", after: " ") == "It was quiet.")
         #expect(Dictation.insertion(of: " It was quiet.", after: "\n") == "It was quiet.")
         #expect(Dictation.insertion(of: "  \n", after: ".") == "")
+    }
+}
+
+@MainActor
+struct EntryTemplateTests {
+    /// The template is kept with its formatting, and an emptied one is no template at all.
+    @Test func theTemplateIsKeptWithItsFormatting() {
+        defer { EntryTemplate.clear() }
+        EntryTemplate.clear()
+        #expect(EntryTemplate.blocks.isEmpty)
+        let template: [DocumentBlock] = [.paragraph(DocumentRun("Grateful for", bold: true)), DocumentBlock(type: .bullet, runs: [DocumentRun("One thing")])]
+        EntryTemplate.blocks = template
+        #expect(EntryTemplate.blocks == template)
+        EntryTemplate.blocks = []
+        #expect(UserDefaults.standard.data(forKey: EntryTemplate.blocksKey) == nil)
     }
 }

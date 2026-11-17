@@ -1,3 +1,26 @@
+Fixed: the New Entry control had no icon.
+
+- In Control Center's Add a Control list (search for Dabble Me), and wherever you've put the control, it should show a small serif "me". If one you added earlier is still blank, remove it and add it again.
+
+Reflection: "Sum Up & Add to Entry" is more careful.
+
+- It now adds each question you answered with what you said to it, one after the other, written out as proper sentences.
+- A question you were asked but didn't answer should not be in it.
+- Nothing your entry already says should be repeated, even if your answer went over it again. Check that what's added is all new.
+- Try it after one answer, after several, and after leaving the last question unanswered.
+
+The "?" button over the keyboard is now a lightbulb. It does what it did.
+
+New: an entry template.
+
+- Settings, App, Entry Template. Write a few headings or questions; the "A" button formats them (bold, lists and so on) as in an entry. Go back and in again: it should still be there.
+- With "Start New Entries with It" off: start an entry and tap the lightbulb. The row should say "Tap to generate prompt" with a "Use Template" button at the right. Tap the button: your template goes in where the cursor is, with its formatting.
+- Tap the lightbulb again and tap "Tap to generate prompt": a prompt is written, and the "+" takes the button's place.
+- Touch and hold the lightbulb button: the template goes straight in, without the row opening.
+- Turn "Start New Entries with It" on and start a new entry: it should open with the template in it, and Save should stay off until you write something. The lightbulb row is then as before, with no "Use Template" button.
+- Empty the template in Settings: everything should be as it was before this build.
+- The template is on this device only: it does not follow you to another phone or the website.
+
 The rows over the keyboard (prompt, hashtags, link, photos) are on the warm paper color.
 
 - Open each row while writing. The row and the buttons under it should sit on paper, apart from the white page you are writing on.

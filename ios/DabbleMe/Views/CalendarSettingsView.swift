@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Settings → Calendars: which of the phone's calendars the composer's "?" row lists events
+/// Settings → Calendars: which of the phone's calendars the composer's lightbulb row lists events
 /// from. All but subscribed ones to begin with.
 struct CalendarSettingsView: View {
     @State private var access = DayCalendar.access
@@ -12,7 +12,7 @@ struct CalendarSettingsView: View {
         List {
             // What the calendars are for, before the list of them.
             Section {
-                Text(explanation)
+                explanation
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -83,8 +83,8 @@ struct CalendarSettingsView: View {
         .onChange(of: scenePhase) { _, phase in if phase == .active { load() } }
     }
 
-    private var explanation: String {
-        "When you're writing an entry, the ? button shows what was on your calendar that day, as a reminder of what happened. Choose which calendars it reads. Events stay on your phone and aren't sent to Dabble Me."
+    private var explanation: Text {
+        Text("When you're writing an entry, the \(inlineIcon("slab-lightbulb", named: "Prompt")) button shows what was on your calendar that day, as a reminder of what happened. Choose which calendars it reads. Events stay on your phone and aren't sent to Dabble Me.")
     }
 
     private var accounts: [String] {

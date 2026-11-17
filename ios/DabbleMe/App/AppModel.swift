@@ -185,6 +185,7 @@ final class AppModel {
         UserDefaults.standard.set(true, forKey: Self.signedOutKey)
         await WebLinks.clearWebsiteData()
         DraftStore.clearAll()
+        EntryTemplate.clear()
         clearJournalCopies()
         lock.reset()
         resetSession()

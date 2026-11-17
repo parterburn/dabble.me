@@ -1,6 +1,7 @@
 import BackgroundTasks
 import SwiftUI
 import UserNotifications
+import WidgetKit
 
 @main
 struct DabbleMeApp: App {
@@ -19,6 +20,13 @@ struct DabbleMeApp: App {
         // -DabbleDebugSignedOut YES starts signed out (the welcome screens).
         if UserDefaults.standard.bool(forKey: "DabbleDebugSignedOut") { KeychainStore.delete() }
         #endif
+        // After an update the New Entry control is drawn afresh: iOS keeps what it drew last,
+        // which for a changed icon is the old one.
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String
+        if UserDefaults.standard.string(forKey: "controls.build") != build {
+            ControlCenter.shared.reloadAllControls()
+            UserDefaults.standard.set(build, forKey: "controls.build")
+        }
         // A pull to refresh shows the app's own dots (`refreshDots`), not iOS's spinner as well.
         UIRefreshControl.appearance().tintColor = .clear
         let model = AppModel()
