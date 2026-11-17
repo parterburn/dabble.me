@@ -1,6 +1,6 @@
 Hashtags row while writing.
 
-- "Insert" at the right is gone. When words in your entry match hashtags you already use, a "Tag Words" button is the first thing in the row, with those hashtags right after it. It tags all of them where they're written. With nothing matched, there is no button.
+- "Insert" at the right is gone. When words in your entry match hashtags you already use, an "Auto Tag" button is the first thing in the row, with those hashtags right after it. It tags all of them where they're written. With nothing matched, there is no button.
 - The three dots (suggestions being looked for) now sit after the matched hashtags, and the suggestions appear there. The matched hashtags should not move when they arrive.
 
 Entry Template (Settings): the Format button is always there, not only while words are selected.

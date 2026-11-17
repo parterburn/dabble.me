@@ -651,7 +651,7 @@ struct ComposeView: View {
             HStack(spacing: 8) {
                 // All of the matched ones in one go: only while there are some.
                 if !matched.isEmpty {
-                    rowButton("Tag Words") {
+                    rowButton("Auto Tag") {
                         Task { await tagMatchingWords() }
                         showTipOnce("tag", "Next time, touch and hold the tag button to tag the words that match your hashtags straight away.")
                     }
@@ -692,7 +692,7 @@ struct ComposeView: View {
     }
 
     /// The writer's own hashtags that are words in the entry and aren't tagged in it yet: what
-    /// "Tag Words" and the held tag button tag.
+    /// "Auto Tag" and the held tag button tag.
     private var matchedTags: [String] {
         let text = editor.plainText
         var seen = Set(JournalIntelligence.hashtags(in: text).map { $0.lowercased() })
@@ -905,7 +905,7 @@ struct ComposeView: View {
         }
     }
 
-    /// The tag icon held, or the hashtag row's "Tag Words": every hashtag the writer has used
+    /// The tag icon held, or the hashtag row's "Auto Tag": every hashtag the writer has used
     /// that's a word in the entry gets its "#" there ("Dinner with Leo" → "Dinner with #Leo").
     /// Only their own tags and the entry's own words: nothing's suggested, made up or added at
     /// the end.
