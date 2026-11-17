@@ -1,3 +1,7 @@
+Writing: the text is the same size as in an open entry.
+
+- Write or edit an entry, then save and look at it. The words should be the same size in both places (the editor's were slightly larger). Check it at a couple of Entry Text Size settings (Settings, Theme).
+
 Hashtags row while writing.
 
 - "Insert" at the right is gone. When words in your entry match hashtags you already use, an "Auto Tag" button is the first thing in the row, with those hashtags right after it. It tags all of them where they're written. With nothing matched, there is no button.

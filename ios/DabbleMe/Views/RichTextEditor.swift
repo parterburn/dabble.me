@@ -8,8 +8,9 @@ extension RichText.Style {
         let body = UIFont.preferredFont(forTextStyle: .body)
         let serif = body.fontDescriptor.withDesign(ReadingFontStyle.current.uiDesign) ?? body.fontDescriptor
         let size = (UserDefaults.standard.object(forKey: ReadingTextSize.storageKey) as? Int).flatMap(ReadingTextSize.init) ?? .standard
-        // A little larger than body text (19pt at the default size), for comfortable writing.
-        return RichText.Style(baseFont: UIFont(descriptor: serif, size: (body.pointSize * 1.12 * size.scale).rounded()), textColor: .label)
+        // The size an open entry is read at (`EntryBody`: body text times the Entry Text Size),
+        // so what's written looks the same once it's saved.
+        return RichText.Style(baseFont: UIFont(descriptor: serif, size: body.pointSize * size.scale), textColor: .label)
     }
 }
 
