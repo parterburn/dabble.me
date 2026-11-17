@@ -1,30 +1,8 @@
-Writing: the text is the same size as in an open entry.
+Nothing new to test in this build: it only updates the App Store screenshots kept with the project. The app is the same as the last build.
 
-- Write or edit an entry, then save and look at it. The words should be the same size and their lines the same distance apart in both places (the editor's text was slightly larger, with its lines closer together), so lines break in the same places. Check it at a couple of Entry Text Size settings (Settings, Theme).
+If you missed that one:
 
-Hashtags row while writing.
-
-- "Insert" at the right is gone. When words in your entry match hashtags you already use, an "Auto Tag" button is the first thing in the row, with those hashtags right after it. It tags all of them where they're written. With nothing matched, there is no button.
-- The three dots (suggestions being looked for) now sit after the matched hashtags, and the suggestions appear there. The matched hashtags should not move when they arrive.
-
-Entry Template (Settings): the Format button is always there, not only while words are selected.
-
-Link: tapping back in your entry cancels it.
-
-- While writing, select a word, tap the Link button and start typing an address. Then tap anywhere else in your entry. The address row should close, the word should not be linked, and the next time you open Link the address field should be empty.
-- Inserting a link, and tapping an existing link to change or remove it, should work as before.
-
-Share: Accessibility Reader should now read the entry.
-
-- Open an entry, swipe left for its Actions, and tap Share. The entry now comes up on a plain page of its own (its date, its words, its photo) with the share sheet over it.
-- Choose Accessibility Reader. It should show and read the entry's date and words. Before, it showed the date and the word "Delete": it reads what's on the screen under the share sheet, which was the Actions list.
-- Try an entry with a photo, one without, and a photo-only entry.
-- Other destinations (Messages, Notes, Copy, Print) should get the words and the photo as before.
-- When the share sheet closes, the plain page should go away and leave you where you were. After sending to something, it stays a moment longer before closing.
-- Sharing a photo from the photo viewer should work as before.
-
-Also in this build, from the last one if you missed it:
-
-- Touch and hold "Write Today's Entry" (or yesterday's) on Today to start from your template.
-- Holding an entry shows its preview with no "Open" in the menu: tap the preview to open it.
-- Reading a reflection aloud is removed.
+- Share (an entry's Actions): the entry now comes up on a plain page of its own with the share sheet over it, so Accessibility Reader reads the entry. Does it?
+- While writing, tapping back in your entry with the Link row open cancels the link.
+- The hashtags row has "Auto Tag" at its left when words in your entry match hashtags you already use.
+- The editor's text is the same size, with the same line spacing, as an open entry.
