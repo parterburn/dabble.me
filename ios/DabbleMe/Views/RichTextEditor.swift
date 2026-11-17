@@ -5,12 +5,16 @@ extension RichText.Style {
     /// Body text in the Entry Font (serif by default) that follows the user's Dynamic Type size
     /// and Entry Text Size.
     static var journal: RichText.Style {
-        let body = UIFont.preferredFont(forTextStyle: .body)
-        let serif = body.fontDescriptor.withDesign(ReadingFontStyle.current.uiDesign) ?? body.fontDescriptor
         let size = (UserDefaults.standard.object(forKey: ReadingTextSize.storageKey) as? Int).flatMap(ReadingTextSize.init) ?? .standard
         // The size an open entry is read at (`EntryBody`: body text times the Entry Text Size),
-        // so what's written looks the same once it's saved.
-        return RichText.Style(baseFont: UIFont(descriptor: serif, size: body.pointSize * size.scale), textColor: .label)
+        // and the same font, made the same way (`SelectableDocumentText`): a font taken from
+        // the body text style sets its lines further apart than one of that size made plainly.
+        // So what's written looks the same once it's saved.
+        let pointSize = UIFont.preferredFont(forTextStyle: .body).pointSize * size.scale
+        let plain = UIFont.systemFont(ofSize: pointSize)
+        let font = plain.fontDescriptor.withDesign(ReadingFontStyle.current.uiDesign).map { UIFont(descriptor: $0, size: pointSize) } ?? plain
+        // Its lines as far apart, too (`EntryBody`'s 5 points at the default size).
+        return RichText.Style(baseFont: font, textColor: .label, lineSpacing: 5 * size.scale)
     }
 }
 
@@ -232,7 +236,8 @@ final class RichTextEditorModel {
             let selection = textView.selectedRange
             let storage = textView.textStorage
             storage.beginEditing()
-            RichText.applyListIndents(to: storage, font: RichText.Style.journal.baseFont)
+            let style = RichText.Style.journal
+            RichText.applyListIndents(to: storage, font: style.baseFont, lineSpacing: style.lineSpacing)
             storage.endEditing()
             textView.selectedRange = selection
         }

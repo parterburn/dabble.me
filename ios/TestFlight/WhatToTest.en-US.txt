@@ -1,6 +1,6 @@
 Writing: the text is the same size as in an open entry.
 
-- Write or edit an entry, then save and look at it. The words should be the same size in both places (the editor's were slightly larger). Check it at a couple of Entry Text Size settings (Settings, Theme).
+- Write or edit an entry, then save and look at it. The words should be the same size and their lines the same distance apart in both places (the editor's text was slightly larger, with its lines closer together), so lines break in the same places. Check it at a couple of Entry Text Size settings (Settings, Theme).
 
 Hashtags row while writing.
 

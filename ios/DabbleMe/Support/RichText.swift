@@ -74,6 +74,8 @@ enum RichText {
     struct Style {
         var baseFont: PlatformFont
         var textColor: PlatformColor
+        /// Extra room between a paragraph's lines (the editor's, to match an open entry's).
+        var lineSpacing: CGFloat = 0
 
         var baseAttributes: [NSAttributedString.Key: Any] {
             [.font: baseFont, .foregroundColor: textColor]
@@ -149,14 +151,15 @@ enum RichText {
             let attributes = segment.run.map(style.attributes(for:)) ?? style.baseAttributes
             result.append(NSAttributedString(string: segment.text, attributes: attributes))
         }
-        applyListIndents(to: result, font: style.baseFont)
+        applyListIndents(to: result, font: style.baseFont, lineSpacing: style.lineSpacing)
         return result
     }
 
     /// Hangs list items: wrapped lines of a "• " or "1. " item line up with its text, not the marker.
     /// Also spaces paragraphs apart (a little under a line), and list items a little less, so each
     /// Return reads as a new paragraph.
-    static func applyListIndents(to text: NSMutableAttributedString, font: PlatformFont) {
+    /// `lineSpacing`: the room between a paragraph's own lines, set with the rest.
+    static func applyListIndents(to text: NSMutableAttributedString, font: PlatformFont, lineSpacing: CGFloat = 0) {
         let string = text.string as NSString
         string.enumerateSubstrings(in: NSRange(location: 0, length: string.length), options: [.byParagraphs, .substringNotRequired]) { _, range, enclosing, _ in
             let line = string.substring(with: range)
@@ -167,10 +170,12 @@ enum RichText {
             let spacing = (font.pointSize * (prefix == nil ? 0.6 : 0.25)).rounded()
             let current = text.attribute(.paragraphStyle, at: enclosing.location, effectiveRange: nil) as? NSParagraphStyle
             guard enclosing.length > 0,
-                  abs((current?.headIndent ?? 0) - indent) > 0.5 || abs((current?.paragraphSpacing ?? 0) - spacing) > 0.5 else { return }
+                  abs((current?.headIndent ?? 0) - indent) > 0.5 || abs((current?.paragraphSpacing ?? 0) - spacing) > 0.5
+                    || abs((current?.lineSpacing ?? 0) - lineSpacing) > 0.5 else { return }
             let style = (current?.mutableCopy() as? NSMutableParagraphStyle) ?? NSMutableParagraphStyle()
             style.headIndent = indent
             style.paragraphSpacing = spacing
+            style.lineSpacing = lineSpacing
             text.addAttribute(.paragraphStyle, value: style, range: enclosing)
         }
     }
@@ -203,7 +208,7 @@ enum RichText {
     static func attributedString(typed runs: [DocumentRun], style: Style) -> NSAttributedString {
         let result = NSMutableAttributedString()
         for run in runs { result.append(NSAttributedString(string: run.text, attributes: style.attributes(for: run))) }
-        applyListIndents(to: result, font: style.baseFont)
+        applyListIndents(to: result, font: style.baseFont, lineSpacing: style.lineSpacing)
         return result
     }
 
