@@ -295,6 +295,16 @@ final class RichTextEditorModel {
         markLinkedText()
     }
 
+    /// The writer went back to the entry (a tap in it) with the link row open from the Link
+    /// button, its address not yet put in: that's the link called off. The row closes and what
+    /// was typed in it goes. (A row open on a link that's there already is the selection's, and
+    /// follows it.)
+    fileprivate func editingBegan() {
+        guard isEditingLink, !linkOpenedBySelection else { return }
+        endLink()
+        linkText = ""
+    }
+
     func endLink() {
         // The keyboard goes back to the entry while the address field is still there to hand it
         // over. Left holding it as its row is taken down (another row opened in its place), the
@@ -589,6 +599,7 @@ struct RichTextEditor: UIViewRepresentable {
         }
 
         func textViewDidBeginEditing(_ textView: UITextView) {
+            model.editingBegan()
             // (Words selected by the touch that brought the keyboard count from here.)
             model.selectionDidChange()
             padBottomForBar()

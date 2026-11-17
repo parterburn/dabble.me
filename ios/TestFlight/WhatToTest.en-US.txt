@@ -1,3 +1,8 @@
+Link: tapping back in your entry cancels it.
+
+- While writing, select a word, tap the Link button and start typing an address. Then tap anywhere else in your entry. The address row should close, the word should not be linked, and the next time you open Link the address field should be empty.
+- Inserting a link, and tapping an existing link to change or remove it, should work as before.
+
 Share: Accessibility Reader should now read the entry.
 
 - Open an entry, swipe left for its Actions, and tap Share. The entry now comes up on a plain page of its own (its date, its words, its photo) with the share sheet over it.

@@ -2106,6 +2106,37 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
 
+    /// The link row, opened on selected words: a tap back in the entry calls the link off. The
+    /// row closes, and the address that was being typed isn't there the next time.
+    func testTappingBackInTheEntryCallsOffTheLink() throws {
+        let app = launch()
+        let editor = openComposer(app)
+        editor.typeText("Read this now\n\nAnd more here")
+        let word = editor.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 40, dy: 30))
+        word.doubleTap()
+        XCTAssertTrue(app.buttons["Link"].waitForExistence(timeout: 5))
+        app.buttons["Link"].tap()
+        let address = app.textFields["Link address"]
+        XCTAssertTrue(address.waitForExistence(timeout: 5))
+        sleep(1)
+        app.typeText("example.com")
+        XCTAssertEqual(address.value as? String, "example.com")
+        // A tap elsewhere in the entry.
+        editor.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 120, dy: 100)).tap()
+        XCTAssertTrue(address.waitForNonExistence(timeout: 5), "The link row closes")
+        XCTAssertTrue(app.keyboards.firstMatch.exists, "Back to writing")
+        XCTAssertEqual(editor.value as? String, "Read this now\n\nAnd more here", "Nothing was linked or typed")
+        // Nothing of it is left: the word selected again and Link tapped, the address is empty.
+        word.doubleTap()
+        XCTAssertTrue(app.buttons["Link"].waitForExistence(timeout: 5))
+        app.buttons["Link"].tap()
+        XCTAssertTrue(address.waitForExistence(timeout: 5))
+        XCTAssertNotEqual(address.value as? String, "example.com")
+        XCTAssertFalse(app.buttons["Update"].exists, "The word wasn't linked")
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+    }
+
     /// The link row takes the keyboard each time it's opened, also after another row (hashtags)
     /// took its place while its field was being typed in.
     func testLinkFieldTakesTheKeyboardAfterAnotherRow() throws {
