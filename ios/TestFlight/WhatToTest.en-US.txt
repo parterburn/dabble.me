@@ -1,8 +1,8 @@
-New: Share Text, in an entry's Actions.
+New: Share, in an entry's Actions.
 
-- Open an entry and swipe left on it (or swipe left on it in the Journal and tap Actions). There is a "Share Text" row above Delete. It opens iOS's share sheet with the entry's date and words.
-- Choose Accessibility Reader there to have the entry read aloud. Copy, Print, Notes and the rest work too. After the first time, the destination you used should be near the front of the sheet.
-- An entry that is only a photo has no Share Text row.
+- Open an entry and swipe left on it (or swipe left on it in the Journal and tap Actions). There is a "Share" row above Delete. It opens iOS's share sheet with the entry's date and words, and its photo if it has one.
+- Choose Accessibility Reader there to have the entry read aloud. Does it read the words when a photo comes along with them? Copy, Print, Messages and the rest work too.
+- An entry that is only a photo shares just the photo. One with only words shares just the words.
 
 Holding an entry for its preview: there is no "Open" in the menu any more.
 

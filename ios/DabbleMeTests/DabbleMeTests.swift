@@ -922,7 +922,7 @@ struct EntryTemplateTests {
 }
 
 struct ShareTextTests {
-    /// Share Text hands over the entry's date and its words; an entry with no words has nothing to share.
+    /// Share hands over the entry's date and its words; an entry with no words has none to share.
     @Test func sharesTheDateThenTheWords() {
         #expect(EntryActionsSheet.sharedText(date: "Monday, November 16, 2026", body: "A slow evening.\n") == "Monday, November 16, 2026\n\nA slow evening.")
         #expect(EntryActionsSheet.sharedText(date: "Monday, November 16, 2026", body: "  \n") == nil)

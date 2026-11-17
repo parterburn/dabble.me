@@ -222,23 +222,25 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
 
-    /// An entry's Actions has Share Text: its words to iOS's share sheet (to be read aloud by
-    /// Accessibility Reader, copied, printed…).
-    func testShareTextOpensTheShareSheet() throws {
+    /// An entry's Actions has Share: its words, and its photo when it has one, to iOS's share
+    /// sheet (to be read aloud by Accessibility Reader, copied, printed, sent…).
+    func testShareOpensTheShareSheet() throws {
         let app = launch()
         tab(app, "Journal").tap()
-        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Big presentation went well")).firstMatch
+        // An entry with words and a photo.
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 10))
         app.openTimelineEntry(row)
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.2)).press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.2)))
-        let share = app.buttons["Share Text"]
+        let share = app.buttons["Share"]
         XCTAssertTrue(share.waitForExistence(timeout: 5))
         XCTAssertLessThan(share.frame.minY, app.buttons["Delete"].frame.minY, "Above Delete")
-        snap("actions-share-text")
+        snap("actions-share")
         share.tap()
-        // iOS's share sheet, with the entry's words in its header.
+        // iOS's share sheet: two things to share, the words and the photo.
         let sheet = app.otherElements["ActivityListView"]
-        XCTAssertTrue(sheet.waitForExistence(timeout: 10), "The share sheet opens")
-        sleep(1)
+        XCTAssertTrue(sheet.waitForExistence(timeout: 20), "The share sheet opens")
+        sleep(2)
         snap("share-sheet")
     }
 

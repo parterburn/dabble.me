@@ -69,10 +69,16 @@ enum PhotoActions {
             item = card
         }
         try? await Task.sleep(for: .milliseconds(350)) // let a context menu finish closing
-        guard var top = UIApplication.shared.connectedScenes.compactMap({ ($0 as? UIWindowScene)?.keyWindow }).first?.rootViewController
+        presentShareSheet([item])
+    }
+
+    /// iOS's share sheet, over whatever's on top.
+    static func presentShareSheet(_ items: [Any]) {
+        guard !items.isEmpty,
+              var top = UIApplication.shared.connectedScenes.compactMap({ ($0 as? UIWindowScene)?.keyWindow }).first?.rootViewController
         else { return }
         while let presented = top.presentedViewController, !presented.isBeingDismissed { top = presented }
-        let sheet = UIActivityViewController(activityItems: [item], applicationActivities: nil)
+        let sheet = UIActivityViewController(activityItems: items, applicationActivities: nil)
         sheet.popoverPresentationController?.sourceView = top.view
         sheet.popoverPresentationController?.sourceRect = CGRect(x: top.view.bounds.midX, y: top.view.bounds.midY, width: 0, height: 0)
         sheet.popoverPresentationController?.permittedArrowDirections = []
