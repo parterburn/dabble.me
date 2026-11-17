@@ -1,3 +1,8 @@
+Spacing under an open entry.
+
+- Open an entry with no photo that has On This Day under it. The gap from its last line to the dividing line should look the same as the gap from that line to the "On This Day" heading.
+- Check it for an entry ending in plain writing, one ending in dated tags (like "#Leo 9yrs"), and one ending in songs.
+
 Fixed: the New Entry control had no icon.
 
 - In Control Center's Add a Control list (search for Dabble Me), and wherever you've put the control, it should show a small serif "me". If one you added earlier is still blank, remove it and add it again.

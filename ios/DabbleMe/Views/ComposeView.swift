@@ -622,7 +622,7 @@ struct ComposeView: View {
         }
         return switch dictation.state {
         case .idle, .preparing: "One moment…"
-        case .listening: "Say what's on your mind. It stays on your phone."
+        case .listening: "Say what's on your mind."
         case .finishing: "Writing the last of it down…"
         }
     }

@@ -577,14 +577,19 @@ private struct EntryBody: View {
     }
 
     private var hasPhoto: Bool { entry.imageProcessing || entry.imageURL != nil }
+    /// The entry's last line is its writing: no dated tags or songs under it.
+    private var endsInWriting: Bool { entry.datedHashtags?.isEmpty != false && entry.songs.isEmpty }
 
     // The writing is padded; the photo, after it, runs edge to edge and ends the entry.
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if hasWriting {
                 // (A little less above: the first line's own height adds to it. And under it,
-                // before a photo, the gap Today's card has between an entry's words and its photo.)
-                writing.padding(.horizontal).padding(.top, 12).padding(.bottom, hasPhoto ? 10 : 28)
+                // before a photo, the gap Today's card has between an entry's words and its photo.
+                // With no photo, as much room as On This Day's heading has above it, to the eye:
+                // a last line of writing has its own height under the letters, which tags and
+                // songs don't, so those get it added.)
+                writing.padding(.horizontal).padding(.top, 12).padding(.bottom, hasPhoto ? 10 : (endsInWriting ? 28 : 32))
             }
             // Text first: Dabble Me is about the writing; photos follow it.
             if hasPhoto {
