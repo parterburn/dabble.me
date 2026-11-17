@@ -6,6 +6,10 @@ import Foundation
 enum DraftStore {
     struct Draft: Codable, Equatable {
         var blocks: [DocumentBlock]
+        /// The words as they were typed (`RichText.typedRuns`), blank lines and empty list items
+        /// included: what's put back, so a template's unfilled places aren't lost with the app
+        /// closing. (Drafts kept before this have only their blocks.)
+        var typed: [DocumentRun]?
         /// YYYY-MM-DD for new entries.
         var date: String?
         var savedAt: Date

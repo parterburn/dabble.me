@@ -468,7 +468,7 @@ struct RichTextTests {
                    DocumentRun("Sam", link: "https://example.com/sam")),
         DocumentBlock(type: .bullet, runs: [DocumentRun("eggs")]),
         DocumentBlock(type: .bullet, runs: [DocumentRun("toast", bold: true, italic: true)]),
-        .paragraph(DocumentRun("Afterwards, "), DocumentRun("a nap", strike: true), DocumentRun(" a walk", underline: true, strike: true)),
+        .paragraph(DocumentRun("Afterwards")),
         DocumentBlock(type: .rule),
         DocumentBlock(type: .number, runs: [DocumentRun("one")]),
         DocumentBlock(type: .number, runs: [DocumentRun("two")]),
@@ -478,7 +478,7 @@ struct RichTextTests {
         let text = RichText.attributedString(from: Self.sample, style: Self.style).string
         // One line per paragraph (Return starts the next; paragraph spacing makes the gap); a
         // line break inside a paragraph is a line separator.
-        #expect(text == "Morning run, then coffee\u{2028}with Sam\n• eggs\n• toast\nAfterwards, a nap a walk\n⸻\n1. one\n2. two")
+        #expect(text == "Morning run, then coffee\u{2028}with Sam\n• eggs\n• toast\nAfterwards\n⸻\n1. one\n2. two")
     }
 
     @Test func roundTripsFormatting() {
@@ -881,28 +881,42 @@ struct RewindTests {
     }
 }
 
-struct DictationTests {
-    /// What's heard arrives with stray spaces around it; in the entry it reads as typed.
-    @Test func spokenWordsAreSpacedLikeTypedOnes() {
-        #expect(Dictation.insertion(of: "Today I walked.", after: nil) == "Today I walked.")
-        #expect(Dictation.insertion(of: " It was quiet. ", after: ".") == " It was quiet.")
-        #expect(Dictation.insertion(of: " It was quiet.", after: " ") == "It was quiet.")
-        #expect(Dictation.insertion(of: " It was quiet.", after: "\n") == "It was quiet.")
-        #expect(Dictation.insertion(of: "  \n", after: ".") == "")
-    }
-}
-
 @MainActor
 struct EntryTemplateTests {
-    /// The template is kept with its formatting, and an emptied one is no template at all.
-    @Test func theTemplateIsKeptWithItsFormatting() {
+    /// The template is kept as it was typed: its formatting, and the blank lines and empty
+    /// list items that are where the writing goes. An emptied one is no template at all.
+    @Test func theTemplateIsKeptAsTyped() {
         defer { EntryTemplate.clear() }
         EntryTemplate.clear()
-        #expect(EntryTemplate.blocks.isEmpty)
-        let template: [DocumentBlock] = [.paragraph(DocumentRun("Grateful for", bold: true)), DocumentBlock(type: .bullet, runs: [DocumentRun("One thing")])]
-        EntryTemplate.blocks = template
-        #expect(EntryTemplate.blocks == template)
-        EntryTemplate.blocks = []
-        #expect(UserDefaults.standard.data(forKey: EntryTemplate.blocksKey) == nil)
+        #expect(EntryTemplate.runs.isEmpty)
+        let template = [DocumentRun("One Win", bold: true), DocumentRun("\n• \n"), DocumentRun("One Bit of Gratitude", bold: true), DocumentRun("\n\n")]
+        EntryTemplate.runs = template
+        #expect(EntryTemplate.runs == template)
+        // Through the editor's text and back, nothing's lost.
+        let text = RichText.attributedString(typed: template, style: .journal)
+        #expect(text.string == "One Win\n• \nOne Bit of Gratitude\n\n")
+        #expect(RichText.typedRuns(from: text) == template)
+        // Writing starts at the first empty item.
+        #expect(RichText.firstBlank(in: text.string) == ("One Win\n• " as NSString).length)
+        #expect(RichText.firstBlank(in: "No room here") == nil)
+        EntryTemplate.runs = []
+        #expect(UserDefaults.standard.data(forKey: EntryTemplate.runsKey) == nil)
+    }
+
+    /// A draft is kept as typed too: a link in it keeps where it goes.
+    @Test func typedTextKeepsItsLinks() {
+        let typed = [DocumentRun("See "), DocumentRun("the trail", link: "https://example.com/trail"), DocumentRun(" soon")]
+        let text = RichText.attributedString(typed: typed, style: .journal)
+        #expect(RichText.typedRuns(from: text) == typed)
+        #expect(RichText.blocks(from: text) == [DocumentBlock(type: .paragraph, runs: typed)])
+    }
+
+    /// A template kept by an earlier build (as an entry's blocks) still reads.
+    @Test func anEarlierBuildsTemplateStillReads() throws {
+        defer { EntryTemplate.clear() }
+        EntryTemplate.clear()
+        let blocks: [DocumentBlock] = [.paragraph(DocumentRun("Grateful for", bold: true)), DocumentBlock(type: .bullet, runs: [DocumentRun("One thing")])]
+        UserDefaults.standard.set(try JSONEncoder().encode(blocks), forKey: EntryTemplate.blocksKey)
+        #expect(EntryTemplate.runs.map(\.text).joined() == "Grateful for\n• One thing")
     }
 }

@@ -1,3 +1,4 @@
+import AVFoundation
 import PhotosUI
 import SwiftUI
 
@@ -17,15 +18,13 @@ struct ComposeView: View {
     @State private var date = Date()
     @State private var choosingDate = false
     @State private var heldPhotoStack = false
-    /// Two lines of a question in the prompt row (it scales with the text size).
-    /// Room for a three-line prompt from the start, so one being written, and then shown, doesn't
-    /// move the day's events under it.
-    @ScaledMetric(relativeTo: .subheadline) private var askLineHeight: CGFloat = 62
     /// The lightbulb row's content, as tall as it is: the row is that tall, up to `askRowMaxHeight`,
     /// and scrolls past it. Nothing until it's measured, each time the row opens: a height kept
     /// from the last time would be an empty band over the entry while this one's content (its
     /// question, the day's events) is still coming in.
     @State private var askRowHeight: CGFloat = 0
+    /// The row's heading, which stays put over what scrolls.
+    @State private var askHeadingHeight: CGFloat = 30
     private static let askRowMaxHeight: CGFloat = 236
     /// The entry's day has events on the calendar (they're listed under the prompt).
     @State private var hasAgenda = false
@@ -45,6 +44,8 @@ struct ComposeView: View {
     @State private var uploadedCount: Int?
     @State private var error: String?
     @State private var confirmingDiscard = false
+    /// Save Draft or Discard was chosen: the composer is closing.
+    @State private var isLeaving = false
     /// Moving the entry onto a day that has one: the server's words for it, while asking to merge.
     @State private var mergeQuestion: String?
     /// An unsaved draft from an earlier session was put back in the editor.
@@ -56,8 +57,6 @@ struct ComposeView: View {
     /// Prompt (Apple Intelligence, the sparkles): a row with one question about the draft. Closing
     /// and opening it again asks a new one.
     @State private var showsAskRow = false
-    /// Speaking the entry (the bar's microphone): what's heard goes in where the cursor is.
-    @State private var dictation = Dictation()
 
     @State private var question: String?
     @State private var askedQuestions: [String] = []
@@ -77,19 +76,22 @@ struct ComposeView: View {
     @State private var pickingPhotos = false
     /// A free account tapped Photos: a note that they're part of PRO.
     @State private var explainingProPhotos = false
+    /// A one-time tip about a touch-and-hold shortcut (`showTipOnce`).
+    @State private var tip: String?
     @State private var takingPhoto = false
     /// Photos taken with the camera: they ride along in `photoItems` under made-up identifiers,
     /// which the photo picker doesn't know, so the picker works on `libraryItems` instead.
     @State private var cameraItems: [PhotosPickerItem] = []
     @State private var removesExistingPhoto = false
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.openURL) private var openURL
     private let draftKey: String
     /// Opened for a day of its own, which today's date doesn't then replace.
     private let startsOnDay: Bool
     private let originalBlocks: [DocumentBlock]
     /// The writer's template (Settings → Entry Template), as it was when this opened.
-    private let template: [DocumentBlock]
+    private let template: [DocumentRun]
+    /// A new entry set to start with the template.
+    private let startsWithTemplate: Bool
     /// The editor holds the template and nothing else yet (a new entry set to start with it):
     /// there's nothing to save until something's written.
     @State private var isUntouchedTemplate: Bool
@@ -114,14 +116,16 @@ struct ComposeView: View {
         draftKey = key
         // A new entry set to start with the template has it from the outset, and again after
         // Start Over. A draft, as ever, comes first.
-        let template = EntryTemplate.blocks
+        let template = EntryTemplate.runs
         self.template = template
         let startsWithTemplate = entry == nil && !template.isEmpty && EntryTemplate.addsToNewEntries
-        originalBlocks = startsWithTemplate ? template : original
+        self.startsWithTemplate = startsWithTemplate
+        originalBlocks = original
         _isUntouchedTemplate = State(initialValue: startsWithTemplate && draft == nil)
         _restoredDraft = State(initialValue: draft)
         if let date = day ?? draft?.date.flatMap(JournalDay.init) ?? entry?.day { _date = State(initialValue: date.localDate) }
-        _editor = State(initialValue: RichTextEditorModel(blocks: draft?.blocks ?? originalBlocks))
+        _editor = State(initialValue: draft == nil && startsWithTemplate ? RichTextEditorModel(typed: template)
+            : draft?.typed.map { RichTextEditorModel(typed: $0, atFirstBlank: false) } ?? RichTextEditorModel(blocks: draft?.blocks ?? originalBlocks))
     }
 
     private var isNew: Bool {
@@ -165,7 +169,7 @@ struct ComposeView: View {
                 RichTextEditor(model: editor,
                                leading: AnyView((model.me?.canAddPhotos == true ? AnyView(photosButton) : AnyView(proPhotosButton)).foregroundStyle(.tint)),
                                trailing: AnyView(tagAndLinkButtons.foregroundStyle(.tint)),
-                               barKey: "\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(dictation.isActive)|\(editor.isEditingLink)",
+                               barKey: "\(editor.hasSelection)|\(CameraPicker.isAvailable)|\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)",
                                row: openRow)
                     // Low in the page, over the bar: clear of the entry's first lines.
                     .overlay(alignment: .bottom) {
@@ -207,7 +211,19 @@ struct ComposeView: View {
                 ToolbarItem(placement: .principal) { dateTitle }
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Cancel") {
-                        if hasChanges { confirmingDiscard = true } else { discardDraft(); dismiss() }
+                        if hasChanges {
+                            // The question's at the foot of the screen: the keyboard, and any row
+                            // open over it, go down so it can be seen.
+                            showsHashtagBar = false
+                            showsAskRow = false
+                            showsPhotoDrawer = false
+                            editor.endLink()
+                            editor.unfocus()
+                            confirmingDiscard = true
+                        } else {
+                            discardDraft()
+                            dismiss()
+                        }
                     }
                 }
                 ToolbarItem(placement: .confirmationAction) {
@@ -222,17 +238,24 @@ struct ComposeView: View {
                 }
             }
             .interactiveDismissDisabled(hasChanges || isSaving)
+            // The question put away without an answer (Keep Writing, or a tap outside it, which
+            // is all an iPhone offers): back to writing, with the keyboard.
+            .onChange(of: confirmingDiscard) { _, asking in
+                if !asking, !isLeaving { editor.focus() }
+            }
             .confirmationDialog(isNew ? "Close this entry?" : "Close without saving your changes?",
                                 isPresented: $confirmingDiscard, titleVisibility: .visible) {
                 // A draft is kept on this device and comes back the next time this is opened.
                 if canSaveDraft {
                     Button("Save Draft") {
+                        isLeaving = true
                         draftSave?.cancel()
                         saveDraftNow()
                         dismiss()
                     }
                 }
                 Button("Discard", role: .destructive) {
+                    isLeaving = true
                     discardDraft()
                     dismiss()
                 }
@@ -267,21 +290,6 @@ struct ComposeView: View {
                 // One row at a time (the link row also opens by selecting a link).
                 if editing { showsHashtagBar = false; showsAskRow = false; showsPhotoDrawer = false }
             }
-            // One row at a time: another one opening ends the listening, as does the keyboard
-            // (and the bar with it) going away, or the app.
-            .onChange(of: showsHashtagBar || showsAskRow || showsPhotoDrawer || editor.isEditingLink) { _, open in
-                if open { dictation.stop(); dictation.clearProblem() }
-            }
-            .onChange(of: editor.isFocused) { _, focused in
-                if !focused, dictation.state == .listening { dictation.stop() }
-            }
-            .onDisappear { dictation.cancel() }
-            // Why it couldn't listen is said for a while, then the row closes.
-            .task(id: dictation.problem) {
-                guard dictation.problem != nil else { return }
-                try? await Task.sleep(for: .seconds(8))
-                if !Task.isCancelled { dictation.clearProblem() }
-            }
             .photosPicker(isPresented: $pickingPhotos, selection: libraryItems, maxSelectionCount: photoLimit - cameraItems.count,
                           selectionBehavior: .ordered, matching: .images, preferredItemEncoding: .current)
             .onChange(of: photoItems) { old, new in
@@ -292,6 +300,11 @@ struct ComposeView: View {
             #if DEBUG
             .task { await attachDebugPhotos() }
             #endif
+            .alert("Tip", isPresented: .present($tip)) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(tip ?? "")
+            }
             .alert("Photos are a PRO feature", isPresented: $explainingProPhotos) {
                 Button("OK", role: .cancel) {}
             } message: {
@@ -303,7 +316,6 @@ struct ComposeView: View {
             }
             .onChange(of: date) { scheduleDraftSave() }
             .onChange(of: scenePhase) { _, phase in
-                if phase == .background { dictation.stop() }
                 if phase != .active { saveDraftNow() }
             }
             .onAppear {
@@ -351,8 +363,6 @@ struct ComposeView: View {
     private var openRow: AnyView? {
         let row: AnyView? = if editor.isEditingLink {
             AnyView(LinkRow(editor: editor))
-        } else if dictation.isActive || dictation.problem != nil {
-            AnyView(dictationRow)
         } else if showsHashtagBar {
             AnyView(hashtagSuggestions)
         } else if showsAskRow {
@@ -448,21 +458,28 @@ struct ComposeView: View {
         #endif
     }
 
-    /// The bar's right: Format (iOS's formatting panel), Link (PRO; shows or hides the link row), Tags (the hashtag row), Prompt
-    /// (the lightbulb), then the microphone (speak the entry) at the far edge. Each row button is selected while its row is open; one row at a time.
+    /// The bar's right: with words selected, Format (a menu of bold, italic and underline) and Link (PRO; shows or hides the link row); always, Tags (the hashtag row), then Prompt
+    /// (the lightbulb) at the far edge. Each row button is selected while its row is open; one row at a time.
     private var tagAndLinkButtons: some View {
         HStack(spacing: 6) {
-            // Format: iOS's own formatting panel, with what an entry keeps (bold, italic,
-            // underline, strikethrough and lists), for the selected words or, with none, what's
-            // typed next.
-            Button { editor.showFormatting() } label: {
-                appIcon("slab-format")
-                    .frame(width: 40, height: 36)
-                    .contentShape(.rect)
+            // Format and Link are for words: there while some are selected, and out of the way
+            // otherwise. Format is the text view's own bold, italic and underline (also in the
+            // menu over a selection).
+            if editor.hasSelection {
+                Menu {
+                    Button { editor.toggleBold() } label: { Label("Bold", icon: "bold") }
+                    Button { editor.toggleItalic() } label: { Label("Italic", icon: "italic") }
+                    Button { editor.toggleUnderline() } label: { Label("Underline", icon: "underline") }
+                } label: {
+                    appIcon("slab-format")
+                        .frame(width: 40, height: 36)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Format")
             }
-            .buttonStyle(.plain)
-            .accessibilityLabel("Format")
-            if model.me?.mayAddLinks == true {
+            // (Link stays while its row is open: the address field has the keyboard then.)
+            if model.me?.mayAddLinks == true, editor.hasSelection || editor.isEditingLink {
                 Button {
                     if editor.isEditingLink { editor.endLink() } else { editor.beginLink() }
                 } label: {
@@ -537,93 +554,6 @@ struct ComposeView: View {
             .accessibilityActions {
                 if !template.isEmpty { Button("Use Template") { useTemplate() } }
             }
-            if Dictation.isSupported { dictationButton }
-        }
-    }
-
-    /// Speak the entry: starts and stops the listening. Selected while it's on.
-    private var dictationButton: some View {
-        Button {
-            if dictation.isActive {
-                dictation.stop()
-            } else {
-                showsHashtagBar = false
-                showsAskRow = false
-                showsPhotoDrawer = false
-                editor.endLink()
-                dictation.start(canListen: { editor.isFocused }) { editor.insertDictated($0) }
-            }
-        } label: {
-            appIcon("slab-microphone")
-                .frame(width: 40, height: 36)
-                .background(dictation.isActive ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(dictation.isActive ? "Stop Listening" : "Speak Your Entry")
-        .accessibilityHint("What you say is written into the entry, on your phone")
-        .accessibilityAddTraits(dictation.isActive ? .isSelected : [])
-    }
-
-    /// What's being heard, set like the prompt's row: a title, then the words as they come (the
-    /// last of them, when there are more than fit). They go into the entry a sentence at a time.
-    private var dictationRow: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(dictationTitle)
-                .font(.caption.weight(.semibold))
-                .textCase(.uppercase)
-                .foregroundStyle(.tint)
-                .padding(.bottom, 4)
-                .accessibilityAddTraits(.isHeader)
-            HStack(alignment: .center, spacing: 12) {
-                if let problem = dictation.problem {
-                    Text(problem.message)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    if problem == .microphoneDenied, let settings = URL(string: UIApplication.openSettingsURLString) {
-                        Button("Settings") { openURL(settings) }
-                            .font(.subheadline.weight(.semibold))
-                    }
-                } else {
-                    TypingDots(size: .small)
-                    Text(dictationLine)
-                        .foregroundStyle(dictation.hearing.isEmpty ? .secondary : .primary)
-                        .lineLimit(2)
-                        .truncationMode(.head)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .accessibilityIdentifier("DictationHearing")
-                    if dictation.state == .listening {
-                        Button("Done") { dictation.stop() }
-                            .font(.subheadline.weight(.semibold))
-                    }
-                }
-            }
-            .font(.subheadline)
-            // (Two lines tall, as what's heard can run to.)
-            .frame(minHeight: 42)
-        }
-        .padding(.horizontal)
-        .padding(.top, 10)
-    }
-
-    private var dictationTitle: String {
-        if dictation.problem != nil { return "Speak your entry" }
-        return switch dictation.state {
-        case .idle, .preparing: "Getting ready"
-        case .listening: "Listening"
-        case .finishing: "Finishing"
-        }
-    }
-
-    private var dictationLine: String {
-        if !dictation.hearing.isEmpty { return dictation.hearing }
-        if let progress = dictation.downloadProgress {
-            return "Downloading what's needed to listen, just this once… \(Int(progress * 100))%"
-        }
-        return switch dictation.state {
-        case .idle, .preparing: "One moment…"
-        case .listening: "Say what's on your mind."
-        case .finishing: "Writing the last of it down…"
         }
     }
 
@@ -710,39 +640,79 @@ struct ComposeView: View {
         let text = editor.plainText
         let inEntry = Set(JournalIntelligence.hashtags(in: text).map { $0.lowercased() })
         var seen = inEntry
-        let matching = JournalIntelligence.tags(allTags + recentTags, matchingWordsIn: text)
-        let highlighted = Set((suggestedTags + matching).map { $0.lowercased() })
-        let tags = (suggestedTags + matching + recentTags).filter { seen.insert($0.lowercased()).inserted }
-        return ScrollView(.horizontal) {
-            HStack(spacing: 8) {
-                // Suggestions for what's written come by themselves when the row opens; until
-                // they're in, a spinner where they'll appear.
-                if isSuggestingTags {
-                    TypingDots(size: .small)
-                        .frame(height: 30)
-                        .accessibilityLabel("Suggesting hashtags")
-                }
-                ForEach(tags, id: \.self) { tag in
-                    Button("#\(tag)") {
-                        editor.addHashtag(tag)
+        let recommended = recommendedTags
+        let highlighted = Set(recommended.map { $0.lowercased() })
+        let tags = (recommended + recentTags).filter { seen.insert($0.lowercased()).inserted }
+        return HStack(spacing: 0) {
+            ScrollView(.horizontal) {
+                HStack(spacing: 8) {
+                    ForEach(tags, id: \.self) { tag in
+                        Button("#\(tag)") {
+                            editor.addHashtag(tag)
+                        }
+                        .buttonStyle(.bordered)
+                        .buttonBorderShape(.capsule)
+                        .tint(highlighted.contains(tag.lowercased()) ? .accentColor : .secondary)
+                        .accessibilityHint("Adds this hashtag to the entry")
                     }
-                    .buttonStyle(.bordered)
-                    .buttonBorderShape(.capsule)
-                    .tint(highlighted.contains(tag.lowercased()) ? .accentColor : .secondary)
-                    .accessibilityHint("Adds this hashtag to the entry")
+                    if tags.isEmpty, !isSuggestingTags {
+                        Text("Your hashtags will show here.")
+                            .foregroundStyle(.secondary)
+                            .frame(height: 30)
+                    }
                 }
-                if tags.isEmpty, !isSuggestingTags {
-                    Text("Your hashtags will show here.")
-                        .foregroundStyle(.secondary)
-                }
+                .padding(.leading)
+                .padding(.trailing, 8)
             }
-            .font(.subheadline)
-            .padding(.horizontal)
-            .padding(.top, 8)
+            .scrollIndicators(.hidden)
+            // At the right, clear of the tags scrolling by: all the ones that fit what's
+            // written, in one go. While they're still being looked for (and none are known
+            // yet), the dots are there in its place.
+            if !recommended.isEmpty {
+                rowButton("Insert") {
+                    insertRecommendedTags()
+                    showTipOnce("tag", "Next time, touch and hold the tag button to tag the words that match your hashtags straight away.")
+                }
+                .accessibilityHint("Adds the suggested hashtags to the entry")
+                .padding(.leading, 4)
+                .padding(.trailing)
+            } else if isSuggestingTags {
+                TypingDots(size: .small)
+                    .frame(height: 30)
+                    .accessibilityLabel("Suggesting hashtags")
+                    .padding(.leading, 4)
+                    .padding(.trailing)
+            }
         }
-        .scrollIndicators(.hidden)
+        .font(.subheadline)
+        .padding(.top, 8)
         // Its own height: a horizontal scroll view would otherwise stretch to share the editor's.
         .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// The hashtags that fit what's written and aren't in it yet: the writer's own tags that
+    /// are words in the entry, then the ones suggested on the device.
+    private var recommendedTags: [String] {
+        let text = editor.plainText
+        var seen = Set(JournalIntelligence.hashtags(in: text).map { $0.lowercased() })
+        let matching = JournalIntelligence.tags(allTags + recentTags, matchingWordsIn: text)
+        return (suggestedTags + matching).filter { seen.insert($0.lowercased()).inserted }
+    }
+
+    /// Adds every recommended hashtag: a "#" before the word where it's written, the rest at
+    /// the end. Said for a moment over the entry, as the held tag button's tagging is. (The
+    /// held button tags matching words only: it doesn't ask for suggestions or add any.)
+    private func insertRecommendedTags() {
+        let tags = recommendedTags
+        guard !tags.isEmpty else { return }
+        for tag in tags { editor.addHashtag(tag) }
+        let notice = "Tagged " + ListFormatter.localizedString(byJoining: tags.map { "#\($0)" })
+        withAnimation(.easeOut(duration: 0.15)) { autoTagNotice = notice }
+        UIAccessibility.post(notification: .announcement, argument: notice)
+        Task {
+            try? await Task.sleep(for: .seconds(2.5))
+            if autoTagNotice == notice { withAnimation(.easeOut(duration: 0.3)) { autoTagNotice = nil } }
+        }
     }
 
     // MARK: - Ask Me
@@ -767,7 +737,23 @@ struct ComposeView: View {
     /// One question about the draft (Apple Intelligence, on the device): Insert puts it in the entry.
     /// For another, close the row and open it again.
     private var askRow: some View {
-        // One scrolling section, flush under the bar's line: the question, then the day's events.
+        // Its heading stays put, flush under the bar's line; what's under it (the question, then
+        // the day's events) is the part that scrolls when there's more than fits.
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Writing ideas")
+                .font(.caption.weight(.semibold))
+                .textCase(.uppercase)
+                .foregroundStyle(.tint)
+                .padding(.horizontal)
+                .padding(.top, 10)
+                .padding(.bottom, 4)
+                .accessibilityAddTraits(.isHeader)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { askHeadingHeight = $0 }
+            askRowContent
+        }
+    }
+
+    private var askRowContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 if canAsk { askLine } else if offersTemplate { templateLine }
@@ -784,7 +770,7 @@ struct ComposeView: View {
         .scrollBounceBehavior(.basedOnSize)
         // (A busy day runs past the row's foot: its scroll bar shows for a moment, to say so.)
         .scrollIndicatorsFlash(onAppear: true)
-        .frame(height: min(max(askRowHeight, 1), Self.askRowMaxHeight))
+        .frame(height: min(max(askRowHeight, 1), max(Self.askRowMaxHeight - askHeadingHeight, 44)))
     }
 
     private func insertQuestion() {
@@ -804,7 +790,8 @@ struct ComposeView: View {
             useTemplateButton
         }
         .padding(.horizontal)
-        .padding(.vertical, 10)
+        .padding(.top, 2)
+        .padding(.bottom, 10)
     }
 
     /// The lightbulb row offers the template (there is one, and new entries don't already start with
@@ -816,9 +803,18 @@ struct ComposeView: View {
         showsAskRow = false
     }
 
-    /// "Use Template", at the right of the lightbulb row until a prompt's been asked for.
+    /// "Use Template", at the right of the lightbulb row until a prompt's been asked for. The
+    /// first time it's used, a word about the quicker way.
     private var useTemplateButton: some View {
-        Button("Use Template") { useTemplate() }
+        rowButton("Use Template") {
+            useTemplate()
+            showTipOnce("lightbulb", "Next time, touch and hold the lightbulb button to add your template straight away.")
+        }
+    }
+
+    /// A small filled button at the right of a row over the keyboard ("Use Template", "Insert").
+    private func rowButton(_ title: String, action: @escaping () -> Void) -> some View {
+        Button(title, action: action)
             .font(.footnote.weight(.semibold))
             .foregroundStyle(Color("OnAccent"))
             .padding(.horizontal, 12)
@@ -827,18 +823,18 @@ struct ComposeView: View {
             .buttonStyle(.plain)
     }
 
+    /// A tip shown the first time a button is used that has a touch-and-hold shortcut, and not again.
+    private func showTipOnce(_ name: String, _ words: String) {
+        let key = "tips.shown.\(name)"
+        guard !UserDefaults.standard.bool(forKey: key) else { return }
+        UserDefaults.standard.set(true, forKey: key)
+        tip = words
+    }
+
     /// The question, set like the events under it but from the left edge: a tap on the row puts
-    /// it in the entry. Headed as Today's card heads its prompt: "A prompt for you" when it's
-    /// written on the device for this writer, "Today's prompt" for the day's general one; and,
-    /// with events listed under it, "… / Agenda", the one heading for both.
+    /// it in the entry. (The row's heading, "Writing ideas", is over it and the events alike.)
     private var askLine: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text((JournalIntelligence.isEnabled(for: model.me) ? "A prompt for you" : "Today's prompt") + (hasAgenda ? " / Agenda" : ""))
-                .font(.caption.weight(.semibold))
-                .textCase(.uppercase)
-                .foregroundStyle(.tint)
-                .padding(.bottom, 4)
-                .accessibilityAddTraits(.isHeader)
             HStack(alignment: .center, spacing: 12) {
                 if isAsking {
                     TypingDots(size: .small)
@@ -874,9 +870,9 @@ struct ComposeView: View {
                 }
             }
             .font(.subheadline)
-            // Three lines tall while it's being written, so the events under it aren't pushed
-            // down when it comes; then as tall as the question, with the events close under it.
-            .frame(minHeight: question == nil && !(offersTemplate && !isAsking && askError == nil) ? askLineHeight : nil, alignment: .top)
+            // As tall as what it holds: a line while the question's being written, then the
+            // question's own two or three. The row grows upward for it (it sits on the bar), so
+            // the events under it stay where they are.
             .contentShape(.rect)
             .onTapGesture {
                 if question != nil {
@@ -887,7 +883,6 @@ struct ComposeView: View {
             }
         }
         .padding(.horizontal)
-        .padding(.top, 10)
         .padding(.bottom, hasAgenda ? 6 : 0)
         .animation(.easeOut(duration: 0.2), value: question)
     }
@@ -928,7 +923,7 @@ struct ComposeView: View {
 
     /// The tag icon held: every hashtag the writer has used that's a word in the entry gets its
     /// "#" there ("Dinner with Leo" → "Dinner with #Leo"). Only their own tags and the entry's
-    /// own words: nothing's made up or added at the end.
+    /// own words: nothing's suggested, made up or added at the end (that's the row's Insert).
     private func tagMatchingWords() async {
         if allTags.isEmpty { allTags = ((try? await model.allHashtags()) ?? []).map(\.tag) }
         let text = editor.plainText
@@ -1138,10 +1133,10 @@ struct ComposeView: View {
                 .foregroundStyle(.secondary)
             Spacer()
             Button("Start Over") {
-                editor.replace(with: originalBlocks)
+                if startsWithTemplate { editor.replace(withTyped: template) } else { editor.replace(with: originalBlocks) }
                 DraftStore.clear(draftKey)
                 restoredDraft = nil
-                isUntouchedTemplate = isNew && !originalBlocks.isEmpty
+                isUntouchedTemplate = startsWithTemplate
             }
             .font(.footnote.weight(.semibold))
         }
@@ -1172,7 +1167,7 @@ struct ComposeView: View {
         if blocks.isEmpty {
             DraftStore.clear(draftKey)
         } else {
-            DraftStore.save(.init(blocks: blocks, date: isNew || movedTo != nil ? JournalDay(localDate: date).iso : nil, savedAt: Date()), key: draftKey)
+            DraftStore.save(.init(blocks: blocks, typed: editor.typedRuns, date: isNew || movedTo != nil ? JournalDay(localDate: date).iso : nil, savedAt: Date()), key: draftKey)
         }
     }
 
@@ -1181,8 +1176,6 @@ struct ComposeView: View {
         guard !isSaving else { return }
         isSaving = true
         defer { isSaving = false }
-        // Whatever's still being heard goes in first.
-        await dictation.finish()
         do {
             switch mode {
             case .new:
@@ -1315,9 +1308,12 @@ private struct CalendarRow: View {
     /// The width of the events' time column.
     static let timeColumn: CGFloat = 72
 
-    /// All of the day's events: the section they're in scrolls.
-    private func list(_ events: [DayEvent]) -> some View {
-        VStack(spacing: 0) {
+    /// As many of the day's events as are worth offering: a few to pick from, not the whole day.
+    static let eventLimit = 3
+
+    private func list(_ all: [DayEvent]) -> some View {
+        let events = Array(all.prefix(Self.eventLimit))
+        return VStack(spacing: 0) {
             // Under a question: a line between it and the first event.
             if hidesWhenEmpty { Divider() }
             ForEach(events) { event in
@@ -1485,7 +1481,13 @@ private struct LinkAddressField: UIViewRepresentable {
 
 /// The camera, for one photo.
 private struct CameraPicker: UIViewControllerRepresentable {
-    static var isAvailable: Bool { UIImagePickerController.isSourceTypeAvailable(.camera) }
+    /// There's a camera, and Dabble Me may use it: not offered once it's been turned off for the
+    /// app (Settings → Privacy → Camera, or "Don't Allow" when first asked), or by Screen Time.
+    static var isAvailable: Bool {
+        guard UIImagePickerController.isSourceTypeAvailable(.camera) else { return false }
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        return status != .denied && status != .restricted
+    }
 
     let onPhoto: (UIImage) -> Void
     @Environment(\.dismiss) private var dismiss

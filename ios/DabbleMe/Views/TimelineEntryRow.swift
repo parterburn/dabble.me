@@ -119,6 +119,8 @@ struct TimelineEntryRow: View {
             if entry.imageProcessing || entry.imageURL != nil {
                 EntryPhoto(url: entry.thumbnailURL(width: 1000), isProcessing: entry.imageProcessing, day: entry.day)
                     .frame(maxWidth: .infinity, maxHeight: 320, alignment: .leading)
+                    // As tall as the photo is at this width (up to that limit), and no taller.
+                    .fixedSize(horizontal: false, vertical: true)
                     .clipShape(.rect(cornerRadius: 12))
             }
         }
@@ -161,8 +163,10 @@ struct TimelineEntryRow: View {
                 .font(bodyFont)
                 .lineSpacing(4)
                 .lineLimit(isExpanded ? nil : Self.previewLines)
-                // Expanded, its full height (a list row would otherwise keep the collapsed height).
-                .fixedSize(horizontal: false, vertical: isExpanded)
+                // Its own height, whole or cut to the preview's lines, whatever the row offers: left
+                // to give way, a collapsed preview lost lines to the photo under it (which took the
+                // room and sat in the middle of it), and an expanded one kept the collapsed height.
+                .fixedSize(horizontal: false, vertical: true)
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .onGeometryChange(for: CGFloat.self, of: \.size.height) { previewHeight = $0 }

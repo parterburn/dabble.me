@@ -79,10 +79,22 @@ final class HabitTests: XCTestCase {
         snap("compose-todays-prompt")
         app.buttons["Prompt"].tap() // closes the row
         editor.typeText("Saved for later.")
+        // Cancel with the keyboard up and a row open: both go down, so the question about the
+        // draft (at the foot of the screen) can be seen.
+        app.buttons["Prompt"].tap()
+        XCTAssertTrue(question.waitForExistence(timeout: 10))
         app.buttons["Cancel"].tap()
         let saveDraft = app.buttons["Save Draft"]
         XCTAssertTrue(saveDraft.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.keyboards.firstMatch.exists, "The keyboard is down")
+        XCTAssertFalse(question.exists, "The row is closed")
         snap("compose-save-draft")
+        // Put away without an answer (a tap outside it), the keyboard comes back.
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.9)).tap()
+        XCTAssertTrue(saveDraft.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 5))
+        app.buttons["Cancel"].tap()
+        XCTAssertTrue(saveDraft.waitForExistence(timeout: 5))
         saveDraft.tap()
         XCTAssertTrue(editor.waitForNonExistence(timeout: 5))
         write.tap()

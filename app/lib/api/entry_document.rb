@@ -6,13 +6,12 @@ module Api
   #   [{ "type" => "paragraph", "runs" => [{ "text" => "Hi ", }, { "text" => "there", "bold" => true }] },
   #    { "type" => "bullet", "runs" => [...] }, { "type" => "number", "runs" => [...] }, { "type" => "rule" }]
   #
-  # Runs may set bold / italic / underline / strike / link; "\n" inside a run is a line break.
+  # Runs may set bold / italic / underline / link; "\n" inside a run is a line break.
   # A list item inside another's list has a "level" (1 for the first list in, up to
   # MAX_LIST_LEVEL); top-level items have none.
   #
   # Only the formatting the web editor (Summernote) and email ingestion produce is
-  # editable: p, div, span, br, b/strong, i/em, u, s/strike/del, a, ul/ol/li and hr (merged
-  # replies).
+  # editable: p, div, span, br, b/strong, i/em, u, a, ul/ol/li and hr (merged replies).
   # Anything else — inline styles, blockquotes, images, unknown attributes, text after a
   # list inside a list item, a list under an item with no text — makes from_html return nil.
   # Such an entry is still editable in the app, from simplified_from_html: the same document
@@ -25,8 +24,7 @@ module Api
     BLOCK_TYPES = %w[paragraph bullet number rule].freeze
     LIST_TAGS = { 'bullet' => 'ul', 'number' => 'ol' }.freeze
     MAX_LIST_LEVEL = 5
-    INLINE_FORMATS = { 'b' => :bold, 'strong' => :bold, 'i' => :italic, 'em' => :italic, 'u' => :underline,
-                       's' => :strike, 'strike' => :strike, 'del' => :strike }.freeze
+    INLINE_FORMATS = { 'b' => :bold, 'strong' => :bold, 'i' => :italic, 'em' => :italic, 'u' => :underline }.freeze
     ALLOWED_ATTRIBUTES = { 'a' => %w[href target rel] }.freeze
     LINK_SCHEMES = %w[http https mailto].freeze
     MAX_BLOCKS = 2_000
@@ -402,7 +400,7 @@ module Api
           raise InvalidDocument, 'entry is too long' if total > MAX_TEXT_BYTES
 
           clean = { 'text' => run['text'] }
-          %w[bold italic underline strike].each { |key| clean[key] = true if run[key] == true }
+          %w[bold italic underline].each { |key| clean[key] = true if run[key] == true }
           link = run['link'].to_s.strip
           clean['link'] = link if link.present? && safe_link?(link)
           clean
@@ -417,7 +415,6 @@ module Api
     def runs_html(runs)
       runs.map do |run|
         html = ERB::Util.html_escape(run['text']).to_s.gsub(/\r\n?|\n/, '<br>')
-        html = "<s>#{html}</s>" if run['strike']
         html = "<u>#{html}</u>" if run['underline']
         html = "<em>#{html}</em>" if run['italic']
         html = "<strong>#{html}</strong>" if run['bold']

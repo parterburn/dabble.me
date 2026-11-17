@@ -1,3 +1,50 @@
+The bar over the keyboard while writing.
+
+- Format (the "A") and Link now show only while words are selected. Select a word: both appear. Put the cursor somewhere without selecting: they go, leaving photos, hashtags and the lightbulb.
+- Format is a short menu again: Bold, Italic, Underline. The slide-up formatting panel and strikethrough are gone.
+- A link is added by selecting words first, or by pasting: a web address pasted by itself goes in as a link (tap it to see or change where it goes), and one pasted over selected words links those words. (Links are part of PRO; on a free account an address pastes as plain text.)
+
+Hashtags row.
+
+- When hashtags fit what you've written, an "Insert" button sits at the right of the row and stays there while the tags scroll. It adds all the highlighted ones in one go.
+- While suggestions are still being looked for and none are known yet, the three dots are in that same spot.
+- The first time you tap Insert, a tip says you can touch and hold the tag button. The hold tags only the words in your entry that match hashtags you already use: it doesn't ask for suggestions or add anything at the end.
+
+Entry template: the first time you tap "Use Template", a tip says you can touch and hold the lightbulb instead.
+
+No camera button when the camera is turned off for Dabble Me.
+
+- In the iPhone's Settings, Dabble Me, turn Camera off. Start an entry: the bar over the keyboard should have the photos button but no camera button, and the photo row's "add more" should go straight to your library.
+- Turn Camera back on: the camera button should be back.
+
+Cancel while writing: the question about your draft can now be seen.
+
+- Write a few words, open a row over the keyboard (hashtags, or the lightbulb), and tap Cancel. The keyboard and the row should go down, with "Save Draft" and "Discard" in view.
+- Tap outside the question (or "Keep Writing", where it's shown): the keyboard should come back.
+
+Removed: speaking an entry.
+
+- The microphone button over the keyboard is gone (the keyboard's own dictation is still there). The bar ends at the lightbulb.
+- Dabble Me no longer asks for the microphone.
+
+Fixed: a template lost its blank lines and empty bullets.
+
+- Settings, Entry Template: write headings with an empty bullet or a blank line under each. Go back and in again: the empty bullets and blank lines should still be there. (A template saved by an earlier build needs its empty lines typing in again.)
+- Use the template in an entry (the lightbulb row, or holding the lightbulb): the empty places come with it, and the cursor starts in the first one.
+- Fill in part of it, leave the app, and come back to the draft: the places you hadn't filled yet should still be there.
+- Save the entry: empty bullets and blank lines you left unfilled are dropped from the saved entry, as before.
+
+The lightbulb row while writing.
+
+- Its heading is now "WRITING IDEAS".
+- While the prompt is being written the row takes one line. When the prompt arrives, the top of the row should rise to fit it; the calendar events under it should not move.
+- At most three of the day's calendar events are listed.
+
+Fixed: gaps around the photo of a long entry before "Show more" is tapped.
+
+- On Today and in the Journal, find an entry long enough to show "Show more" that has a wide photo or collage. The photo should sit right under "Show more" with no empty band above or below it, and the preview should show its full number of lines.
+- Tap "Show more": it should look as it did. Tall photos should still stop at the same height as before.
+
 Spacing under an open entry.
 
 - Open an entry with no photo that has On This Day under it. The gap from its last line to the dividing line should look the same as the gap from that line to the "On This Day" heading.

@@ -32,7 +32,7 @@ module EntriesHelper
     return nil unless body.present?
 
     body = Rinku.auto_link(body, :all, 'target="_blank"')
-    sanitize body, tags: %w(strong em a div span ul ol li b i img br p hr u s strike del em blockquote), attributes: %w(href style src target)
+    sanitize body, tags: %w(strong em a div span ul ol li b i img br p hr u em blockquote), attributes: %w(href style src target)
   end
 
   # Turns each #tag in an entry's HTML into a link that searches for it, the

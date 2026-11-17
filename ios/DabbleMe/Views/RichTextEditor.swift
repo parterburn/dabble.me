@@ -13,62 +13,23 @@ extension RichText.Style {
     }
 }
 
-/// iOS's formatting panel for the editor: which of its controls show, and its word back to
-/// the editor's model as each is used.
-@MainActor
-final class FormatPanel: NSObject, UITextFormattingViewController.Delegate, UISheetPresentationControllerDelegate {
-    private weak var model: RichTextEditorModel?
-
-    init(model: RichTextEditorModel) {
-        self.model = model
-    }
-
-    /// Only what an entry keeps when it's saved: bold, italic, underline and strikethrough,
-    /// and lists. No fonts, sizes, colors, highlights or alignment.
-    static func configuration(lists: Bool) -> UITextFormattingViewController.Configuration {
-        var groups = [UITextFormattingViewController.ComponentGroup(components: [
-            UITextFormattingViewController.Component(componentKey: .fontAttributes, preferredSize: .regular),
-        ])]
-        if lists {
-            groups.append(UITextFormattingViewController.ComponentGroup(components: [
-                UITextFormattingViewController.Component(componentKey: .listStyles, preferredSize: .regular),
-            ]))
-        }
-        return UITextFormattingViewController.Configuration(groups: groups)
-    }
-
-    func textFormattingViewController(_ viewController: UITextFormattingViewController, didChangeValue changeValue: UITextFormattingViewController.ChangeValue) {
-        model?.apply(changeValue)
-        // The buttons then show what the words now are.
-        viewController.formattingDescriptor = model?.formattingDescriptor()
-    }
-
-    /// Its X.
-    func textFormattingDidFinish(_ viewController: UITextFormattingViewController) {
-        viewController.dismiss(animated: true)
-        model?.formattingDidEnd()
-    }
-
-    /// Swiped away.
-    func presentationControllerDidDismiss(_ presentationController: UIPresentationController) {
-        model?.formattingDidEnd()
-    }
-}
-
 /// Owns the UITextView behind `RichTextEditor` so SwiftUI (Save, the link row) can read
 /// the document and drive formatting.
 @MainActor
 @Observable
 final class RichTextEditorModel {
     let initialBlocks: [DocumentBlock]
+    /// Set when the editor starts from text as typed, not from an entry's blocks.
+    let initialTyped: [DocumentRun]?
+    fileprivate let startsAtFirstBlank: Bool
     private(set) var isEmpty: Bool
     private(set) var isDirty = false
     /// Bumped on every change, so the composer can autosave a draft.
     private(set) var revision = 0
     /// Non-blank characters written so far.
     private(set) var characterCount = 0
-    /// The text has the keyboard.
-    fileprivate(set) var isFocused = false
+    /// Some of the text is selected.
+    private(set) var hasSelection = false
 
     /// Set while the link row is open; `linkText` is what the user is typing.
     var isEditingLink = false
@@ -83,20 +44,38 @@ final class RichTextEditorModel {
     private var linkRange = NSRange(location: 0, length: 0)
 
     @ObservationIgnored fileprivate weak var textView: UITextView?
-    /// While the formatting panel is up: its delegate, and the words it's working on.
-    @ObservationIgnored private var formatPanel: FormatPanel?
-    @ObservationIgnored private var formatRange: NSRange?
     /// Links are PRO: without them, a pasted address stays plain text.
     @ObservationIgnored var allowsLinks = true
 
     init(blocks: [DocumentBlock] = []) {
         initialBlocks = blocks
+        initialTyped = nil
+        startsAtFirstBlank = false
         isEmpty = blocks.isEmpty
         characterCount = RichText.segments(for: blocks).map(\.text).joined().count
     }
 
+    /// Starting from text as it was typed (a template: `RichText.typedRuns`), blank lines and
+    /// empty list items included.
+    /// `atFirstBlank`: the cursor starts where the text first leaves room to write (a template),
+    /// not at its end (a draft being picked up again).
+    init(typed runs: [DocumentRun], atFirstBlank: Bool = true) {
+        initialBlocks = []
+        initialTyped = runs
+        startsAtFirstBlank = atFirstBlank
+        let text = runs.map(\.text).joined().trimmingCharacters(in: .whitespacesAndNewlines)
+        isEmpty = text.isEmpty
+        characterCount = text.count
+    }
+
+    /// The text as it's typed, to keep as a template.
+    var typedRuns: [DocumentRun] {
+        guard let textView else { return initialTyped ?? [] }
+        return RichText.typedRuns(from: textView.attributedText)
+    }
+
     var blocks: [DocumentBlock] {
-        guard let textView else { return initialBlocks }
+        guard let textView else { return initialTyped.map { RichText.blocks(from: RichText.attributedString(typed: $0, style: .journal)) } ?? initialBlocks }
         return RichText.blocks(from: textView.attributedText)
     }
 
@@ -180,9 +159,19 @@ final class RichTextEditorModel {
 
     /// Adds the writer's template (Settings → Entry Template) as a prompt goes in: at the
     /// cursor, on lines of its own, with the cursor after it.
-    func addTemplate(_ blocks: [DocumentBlock]) {
-        guard !blocks.isEmpty else { return }
-        addLines(RichText.attributedString(from: blocks, style: .journal))
+    func addTemplate(_ typed: [DocumentRun]) {
+        guard !typed.isEmpty, let textView else { return }
+        let lines = RichText.attributedString(typed: typed, style: .journal)
+        let before = textView.textStorage.length
+        addLines(lines)
+        // The cursor goes where the template first leaves room to write, not after all of it.
+        if let blank = RichText.firstBlank(in: lines.string) {
+            let start = textView.selectedRange.location - lines.length
+            if start >= 0, textView.textStorage.length > before {
+                textView.selectedRange = NSRange(location: start + blank, length: 0)
+                textView.scrollRangeToVisible(textView.selectedRange)
+            }
+        }
     }
 
     /// Puts `lines` under the cursor's line (or on it, when it's empty), the cursor after them.
@@ -218,21 +207,14 @@ final class RichTextEditorModel {
         focus()
     }
 
-    /// Puts words that were spoken (Dictation) where the cursor is, as if typed there.
-    func insertDictated(_ heard: String) {
-        guard let textView else { return }
-        let storage = textView.textStorage
-        let range = textView.selectedRange
-        let previous = range.location > 0 ? (storage.string as NSString).substring(with: NSRange(location: range.location - 1, length: 1)).last : nil
-        let words = Dictation.insertion(of: heard, after: previous)
-        guard !words.isEmpty else { return }
-        var attributes = textView.typingAttributes
-        attributes[.link] = nil
-        attributes[.backgroundColor] = nil
-        storage.replaceCharacters(in: range, with: NSAttributedString(string: words, attributes: attributes))
-        textView.selectedRange = NSRange(location: range.location + (words as NSString).length, length: 0)
-        textView.scrollRangeToVisible(textView.selectedRange)
-        textDidChange()
+    /// `replace(with:)`, with text as typed (a template to start over from).
+    func replace(withTyped runs: [DocumentRun]) {
+        textView?.attributedText = RichText.attributedString(typed: runs, style: .journal)
+        textView?.typingAttributes = RichText.Style.journal.baseAttributes
+        if let textView, let blank = RichText.firstBlank(in: textView.text) { textView.selectedRange = NSRange(location: blank, length: 0) }
+        let text = (textView?.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        isEmpty = text.isEmpty
+        characterCount = text.count
     }
 
     /// Replaces everything in the editor (e.g. "Start Over" on a restored draft).
@@ -262,158 +244,18 @@ final class RichTextEditorModel {
 
     // MARK: - Formatting
 
-    /// The bar's Format button: iOS's own formatting panel, with only what an entry can keep
-    /// (`FormatPanel.configuration`). The app applies each change itself (`apply`), so the
-    /// panel's lists are the editor's own "• " and "1. " lines and nothing is set that saving
-    /// would drop.
-    func showFormatting() {
-        guard let textView, let presenter = sequence(first: textView as UIResponder, next: \.next).first(where: { $0 is UIViewController }) as? UIViewController,
-              presenter.presentedViewController == nil else { return }
-        // The words to format, kept: the panel takes the keyboard's place, and the text view
-        // may give its selection up with it.
-        formatRange = textView.selectedRange
-        let panel = UITextFormattingViewController(configuration: FormatPanel.configuration(lists: true))
-        let delegate = FormatPanel(model: self)
-        formatPanel = delegate
-        panel.delegate = delegate
-        panel.formattingDescriptor = formattingDescriptor()
-        if let sheet = panel.sheetPresentationController {
-            // Short, at the foot, and the entry stays live above it.
-            let detent = UISheetPresentationController.Detent.Identifier("format")
-            sheet.detents = [.custom(identifier: detent) { _ in 250 }]
-            sheet.largestUndimmedDetentIdentifier = detent
-            sheet.delegate = delegate
-        }
-        // The keyboard goes down for it: left up, it (and the bar) covers the panel entirely.
-        textView.resignFirstResponder()
-        presenter.present(panel, animated: true)
-    }
+    /// The text view's own formatting, from the bar's Format menu: on the selection, or, with
+    /// nothing selected, on what's typed next.
+    func toggleBold() { format { $0.toggleBoldface(nil) } }
+    func toggleItalic() { format { $0.toggleItalics(nil) } }
+    func toggleUnderline() { format { $0.toggleUnderline(nil) } }
 
-    /// The panel has gone: back to writing, with the selection it worked on.
-    fileprivate func formattingDidEnd() {
-        formatPanel = nil
+    private func format(_ change: (UITextView) -> Void) {
         guard let textView else { return }
-        textView.becomeFirstResponder()
-        if let formatRange, NSMaxRange(formatRange) <= textView.textStorage.length { textView.selectedRange = formatRange }
-        formatRange = nil
-    }
-
-    /// What the panel's buttons should show as on: from the words being formatted, or, with
-    /// none selected, from what the next ones typed would get.
-    fileprivate func formattingDescriptor() -> UITextFormattingViewController.FormattingDescriptor {
-        guard let textView else { return .init() }
-        let range = formatRange ?? textView.selectedRange
-        var descriptor: UITextFormattingViewController.FormattingDescriptor
-        if range.length > 0, NSMaxRange(range) <= textView.textStorage.length {
-            descriptor = .init(string: textView.attributedText, range: range)
-        } else {
-            descriptor = .init(attributes: textView.typingAttributes)
-        }
-        // The editor's lists are lines of text, which the panel can't see for itself.
-        let kinds = Set(lines(touching: range, in: textView.textStorage.string as NSString).map { RichText.listPrefix(in: $0.text)?.kind })
-        if kinds == [.bullet] { descriptor.textLists = [.disc] } else if kinds == [.number] { descriptor.textLists = [.decimal] } else { descriptor.textLists = [] }
-        return descriptor
-    }
-
-    /// One of the panel's buttons. Anything an entry can't keep (it isn't offered) is ignored.
-    fileprivate func apply(_ change: UITextFormattingViewController.ChangeValue) {
-        guard let textView else { return }
-        switch change {
-        case .bold(let on): setFont(in: textView) { $0.with(bold: on, italic: $0.isItalic) }
-        case .italic(let on): setFont(in: textView) { $0.with(bold: $0.isBold, italic: on) }
-        case .underline(let on): setLine(.underlineStyle, on, in: textView)
-        case .strikethrough(let on): setLine(.strikethroughStyle, on, in: textView)
-        case .textList(let list): setList(list.map { $0 == .decimal ? DocumentBlock.Kind.number : .bullet }, in: textView)
-        default: break
-        }
-    }
-
-    /// The range being formatted, where there's one with words in it.
-    private func formatSelection(in textView: UITextView) -> NSRange? {
-        let range = formatRange ?? textView.selectedRange
-        return range.length > 0 && NSMaxRange(range) <= textView.textStorage.length ? range : nil
-    }
-
-    private func setFont(in textView: UITextView, _ change: (UIFont) -> UIFont) {
-        guard let range = formatSelection(in: textView) else {
-            // Nothing selected: what's typed next.
-            let font = textView.typingAttributes[.font] as? UIFont ?? RichText.Style.journal.baseFont
-            textView.typingAttributes[.font] = change(font)
-            return
-        }
-        let storage = textView.textStorage
-        storage.beginEditing()
-        storage.enumerateAttribute(.font, in: range) { value, subrange, _ in
-            storage.addAttribute(.font, value: change(value as? UIFont ?? RichText.Style.journal.baseFont), range: subrange)
-        }
-        storage.endEditing()
-        textDidChange()
-    }
-
-    private func setLine(_ key: NSAttributedString.Key, _ on: Bool, in textView: UITextView) {
-        guard let range = formatSelection(in: textView) else {
-            if on { textView.typingAttributes[key] = NSUnderlineStyle.single.rawValue } else { textView.typingAttributes[key] = nil }
-            return
-        }
-        if on {
-            textView.textStorage.addAttribute(key, value: NSUnderlineStyle.single.rawValue, range: range)
-        } else {
-            textView.textStorage.removeAttribute(key, range: range)
-        }
-        textDidChange()
-    }
-
-    /// The lines (paragraphs) a range touches, each with where it starts.
-    private func lines(touching range: NSRange, in string: NSString) -> [(text: String, location: Int)] {
-        guard range.location <= string.length else { return [] }
-        let whole = string.paragraphRange(for: NSRange(location: range.location, length: min(range.length, string.length - range.location)))
-        var lines: [(text: String, location: Int)] = []
-        var location = whole.location
-        repeat {
-            let line = string.paragraphRange(for: NSRange(location: location, length: 0))
-            let text = string.substring(with: line).trimmingCharacters(in: .newlines)
-            lines.append((text, line.location))
-            location = NSMaxRange(line)
-        } while location < NSMaxRange(whole) && location < string.length
-        return lines
-    }
-
-    /// Makes the lines being formatted bullets or numbered items (counting from 1), or, with
-    /// nil, plain lines again. An item keeps how far in it's set; an empty line is left alone.
-    private func setList(_ kind: DocumentBlock.Kind?, in textView: UITextView) {
-        let storage = textView.textStorage
-        let range = formatRange ?? textView.selectedRange
-        let touched = lines(touching: range, in: storage.string as NSString)
-        // (One line alone becomes an item even when it's empty: a list to start typing.)
-        var number = touched.count == 1 ? 1 : touched.filter { !$0.text.trimmingCharacters(in: .whitespaces).isEmpty }.count
-        var selection = range
-        storage.beginEditing()
-        // Last line first, so the earlier ones' places hold.
-        for line in touched.reversed() {
-            let existing = RichText.listPrefix(in: line.text)
-            if line.text.trimmingCharacters(in: .whitespaces).isEmpty && touched.count > 1 { continue }
-            let indent = existing?.indentLength ?? 0
-            let marker: String
-            switch kind {
-            case .some(.bullet): marker = RichText.bulletPrefix
-            case .some(.number): marker = "\(number). "
-            default: marker = ""
-            }
-            number -= 1
-            let old = NSRange(location: line.location + indent, length: (existing?.length ?? indent) - indent)
-            storage.replaceCharacters(in: old, with: NSAttributedString(string: marker, attributes: RichText.Style.journal.baseAttributes))
-            // The selection keeps to the same words.
-            let delta = (marker as NSString).length - old.length
-            if old.location < selection.location || (old.location == selection.location && selection.length == 0) {
-                selection.location = max(old.location, selection.location + delta)
-            } else if old.location < NSMaxRange(selection) {
-                selection.length = max(0, selection.length + delta)
-            }
-        }
-        storage.endEditing()
-        if formatRange != nil { formatRange = selection }
-        textView.selectedRange = selection
-        textDidChange()
+        let hadSelection = textView.selectedRange.length > 0
+        change(textView)
+        // The entry changed only if words were restyled (the draft is saved, Save lights up).
+        if hadSelection { textDidChange() }
     }
 
     // MARK: - Links
@@ -487,6 +329,9 @@ final class RichTextEditorModel {
     /// Selecting some or all of a link's text opens the row for it, to change or remove. It stays
     /// while the cursor is still in that link, and closes when it moves off.
     fileprivate func selectionDidChange() {
+        // Words are selected in the text being written (the bar offers Format and Link then).
+        let selecting = textView.map { $0.isFirstResponder && $0.selectedRange.length > 0 } ?? false
+        if selecting != hasSelection { hasSelection = selecting }
         guard let textView, textView.isFirstResponder else { return }
         let selection = textView.selectedRange
         let existing = link(touching: selection, in: textView.textStorage)
@@ -541,6 +386,23 @@ final class RichTextEditorModel {
         textView.textStorage.addAttribute(.link, value: url, range: range)
         textView.selectedRange = NSRange(location: NSMaxRange(range), length: 0)
         endLink()
+        textDidChange()
+        return true
+    }
+
+    /// A web address pasted by itself goes in as its own text, linked to itself, in place of
+    /// whatever was selected (spaces or a line break: words would have been linked instead).
+    /// What's typed after it isn't part of the link.
+    fileprivate func insertLink(_ url: URL, replacing range: NSRange) -> Bool {
+        guard allowsLinks, let textView, NSMaxRange(range) <= textView.textStorage.length else { return false }
+        var attributes = textView.typingAttributes
+        attributes[.backgroundColor] = nil
+        attributes[.link] = url
+        let address = url.absoluteString
+        textView.textStorage.replaceCharacters(in: range, with: NSAttributedString(string: address, attributes: attributes))
+        textView.selectedRange = NSRange(location: range.location + (address as NSString).length, length: 0)
+        textView.typingAttributes[.link] = nil
+        textView.scrollRangeToVisible(textView.selectedRange)
         textDidChange()
         return true
     }
@@ -633,14 +495,19 @@ final class RichTextEditorModel {
     }
 }
 
-/// The editor's text view. Pasting a web address while text is selected makes the text a link to
-/// it (anything else pastes as usual).
+/// The editor's text view. A pasted web address is a link: over selected words it links them,
+/// and by itself it goes in as its own text, linked (anything else pastes as usual).
 final class EditorTextView: UITextView {
     /// Links the selection; false when it didn't (links aren't allowed, nothing to link).
     var linksSelection: ((URL, NSRange) -> Bool)?
+    /// Puts the address in as linked text; false when it didn't (links aren't allowed).
+    var insertsLink: ((URL, NSRange) -> Bool)?
 
     override func paste(_ sender: Any?) {
-        if selectedRange.length > 0, let url = Self.address(in: UIPasteboard.general), linksSelection?(url, selectedRange) == true { return }
+        if let url = Self.address(in: UIPasteboard.general) {
+            if selectedRange.length > 0, linksSelection?(url, selectedRange) == true { return }
+            if insertsLink?(url, selectedRange) == true { return }
+        }
         super.paste(sender)
     }
 
@@ -671,17 +538,21 @@ struct RichTextEditor: UIViewRepresentable {
     func makeUIView(context: Context) -> UITextView {
         let textView = EditorTextView()
         textView.linksSelection = { [model] url, range in model.link(url, onSelection: range) }
+        textView.insertsLink = { [model] url, range in model.insertLink(url, replacing: range) }
         textView.delegate = context.coordinator
         textView.allowsEditingTextAttributes = true // B / I / U in the edit menu too
-        // And its "More…" is the same short panel as the bar's Format button, less the lists:
-        // there the text view applies the changes itself, and its lists aren't the editor's.
-        textView.textFormattingConfiguration = FormatPanel.configuration(lists: false)
         textView.backgroundColor = .clear
         textView.textContainerInset = UIEdgeInsets(top: 16, left: 12, bottom: 24, right: 12)
         textView.keyboardDismissMode = .interactive
         textView.alwaysBounceVertical = true
         textView.linkTextAttributes = [.foregroundColor: UIColor.tintColor, .underlineStyle: NSUnderlineStyle.single.rawValue]
-        textView.attributedText = RichText.attributedString(from: model.initialBlocks, style: .journal)
+        if let typed = model.initialTyped {
+            textView.attributedText = RichText.attributedString(typed: typed, style: .journal)
+            // Ready to write where the template leaves room for it.
+            if model.startsAtFirstBlank, let blank = RichText.firstBlank(in: textView.text) { textView.selectedRange = NSRange(location: blank, length: 0) }
+        } else {
+            textView.attributedText = RichText.attributedString(from: model.initialBlocks, style: .journal)
+        }
         textView.typingAttributes = RichText.Style.journal.baseAttributes
         textView.inputAccessoryView = context.coordinator.makeBar(for: self)
         context.coordinator.keepTextClear(of: textView)
@@ -718,12 +589,13 @@ struct RichTextEditor: UIViewRepresentable {
         }
 
         func textViewDidBeginEditing(_ textView: UITextView) {
-            model.isFocused = true
+            // (Words selected by the touch that brought the keyboard count from here.)
+            model.selectionDidChange()
             padBottomForBar()
         }
 
         func textViewDidEndEditing(_ textView: UITextView) {
-            model.isFocused = false
+            model.selectionDidChange()
             // Once the keyboard (and the bar) has gone, or stayed for the link's address.
             DispatchQueue.main.async { [weak self] in self?.padBottomForBar() }
         }
@@ -926,7 +798,6 @@ extension RichText {
                 if run.isItalic { intent.insert(.emphasized) }
                 if !intent.isEmpty { piece.inlinePresentationIntent = intent }
                 if run.isUnderlined { piece.underlineStyle = .single }
-                if run.isStruck { piece.strikethroughStyle = .single }
                 if let link = run.link, let url = URL(string: link) { piece.link = url }
             }
             result += piece
