@@ -5,11 +5,16 @@ extension RichText.Style {
     /// Body text in the Entry Font (serif by default) that follows the user's Dynamic Type size
     /// and Entry Text Size.
     static var journal: RichText.Style {
-        let body = UIFont.preferredFont(forTextStyle: .body)
-        let serif = body.fontDescriptor.withDesign(ReadingFontStyle.current.uiDesign) ?? body.fontDescriptor
         let size = (UserDefaults.standard.object(forKey: ReadingTextSize.storageKey) as? Int).flatMap(ReadingTextSize.init) ?? .standard
-        // A little larger than body text (19pt at the default size), for comfortable writing.
-        return RichText.Style(baseFont: UIFont(descriptor: serif, size: (body.pointSize * 1.12 * size.scale).rounded()), textColor: .label)
+        // The size an open entry is read at (`EntryBody`: body text times the Entry Text Size),
+        // and the same font, made the same way (`SelectableDocumentText`): a font taken from
+        // the body text style sets its lines further apart than one of that size made plainly.
+        // So what's written looks the same once it's saved.
+        let pointSize = UIFont.preferredFont(forTextStyle: .body).pointSize * size.scale
+        let plain = UIFont.systemFont(ofSize: pointSize)
+        let font = plain.fontDescriptor.withDesign(ReadingFontStyle.current.uiDesign).map { UIFont(descriptor: $0, size: pointSize) } ?? plain
+        // Its lines as far apart, too (`EntryBody`'s 5 points at the default size).
+        return RichText.Style(baseFont: font, textColor: .label, lineSpacing: 5 * size.scale)
     }
 }
 
@@ -231,7 +236,8 @@ final class RichTextEditorModel {
             let selection = textView.selectedRange
             let storage = textView.textStorage
             storage.beginEditing()
-            RichText.applyListIndents(to: storage, font: RichText.Style.journal.baseFont)
+            let style = RichText.Style.journal
+            RichText.applyListIndents(to: storage, font: style.baseFont, lineSpacing: style.lineSpacing)
             storage.endEditing()
             textView.selectedRange = selection
         }
@@ -293,6 +299,16 @@ final class RichTextEditorModel {
         isEditingLink = true
         linkFocusRequest += 1
         markLinkedText()
+    }
+
+    /// The writer went back to the entry (a tap in it) with the link row open from the Link
+    /// button, its address not yet put in: that's the link called off. The row closes and what
+    /// was typed in it goes. (A row open on a link that's there already is the selection's, and
+    /// follows it.)
+    fileprivate func editingBegan() {
+        guard isEditingLink, !linkOpenedBySelection else { return }
+        endLink()
+        linkText = ""
     }
 
     func endLink() {
@@ -589,6 +605,7 @@ struct RichTextEditor: UIViewRepresentable {
         }
 
         func textViewDidBeginEditing(_ textView: UITextView) {
+            model.editingBegan()
             // (Words selected by the touch that brought the keyboard count from here.)
             model.selectionDidChange()
             padBottomForBar()

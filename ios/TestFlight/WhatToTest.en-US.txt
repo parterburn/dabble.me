@@ -1,27 +1,30 @@
-Entry template: hold a Write button to start from it.
+Writing: the text is the same size as in an open entry.
 
-- With a template saved (Settings, Entry Template), touch and hold "Write Today's Entry" on Today. The composer should open with your template in it, even with "Start New Entries with It" off. The same for "Write Yesterday's Entry" when it's showing.
-- A plain tap still opens a blank entry (or the template, if that setting is on).
-- With no template, a hold does what a tap does.
+- Write or edit an entry, then save and look at it. The words should be the same size and their lines the same distance apart in both places (the editor's text was slightly larger, with its lines closer together), so lines break in the same places. Check it at a couple of Entry Text Size settings (Settings, Theme).
 
-New: Share, in an entry's Actions.
+Hashtags row while writing.
 
-- Open an entry and swipe left on it (or swipe left on it in the Journal and tap Actions). There is a "Share" row above Delete. It opens iOS's share sheet with the entry's date and words, and its photo if it has one.
-- Choose Accessibility Reader there to have the entry read aloud. Does it read the words when a photo comes along with them? Copy, Print, Messages and the rest work too.
-- An entry that is only a photo shares just the photo. One with only words shares just the words.
+- "Insert" at the right is gone. When words in your entry match hashtags you already use, an "Auto Tag" button is the first thing in the row, with those hashtags right after it. It tags all of them where they're written. With nothing matched, there is no button.
+- The three dots (suggestions being looked for) now sit after the matched hashtags, and the suggestions appear there. The matched hashtags should not move when they arrive.
 
-Holding an entry for its preview: there is no "Open" in the menu any more.
+Entry Template (Settings): the Format button is always there, not only while words are selected.
 
-- Touch and hold an entry in the Journal: the preview comes up with Reflection, Edit and More under it, but no Open. Tap the preview itself to open the entry.
-- The same for On This Day cards, a photo in Photos, and a written day in Stats or Jump to a Day: just the preview, which a tap opens.
+Link: tapping back in your entry cancels it.
 
-Removed: reading a reflection aloud.
+- While writing, select a word, tap the Link button and start typing an address. Then tap anywhere else in your entry. The address row should close, the word should not be linked, and the next time you open Link the address field should be empty.
+- Inserting a link, and tapping an existing link to change or remove it, should work as before.
 
-- The play button next to a reflection's X is gone. Everything else about a reflection (the follow-up chat, "Sum Up & Add to Entry") is as it was.
+Share: Accessibility Reader should now read the entry.
+
+- Open an entry, swipe left for its Actions, and tap Share. The entry now comes up on a plain page of its own (its date, its words, its photo) with the share sheet over it.
+- Choose Accessibility Reader. It should show and read the entry's date and words. Before, it showed the date and the word "Delete": it reads what's on the screen under the share sheet, which was the Actions list.
+- Try an entry with a photo, one without, and a photo-only entry.
+- Other destinations (Messages, Notes, Copy, Print) should get the words and the photo as before.
+- When the share sheet closes, the plain page should go away and leave you where you were. After sending to something, it stays a moment longer before closing.
+- Sharing a photo from the photo viewer should work as before.
 
 Also in this build, from the last one if you missed it:
 
-- While writing, Format (the "A") and Link show only while words are selected. Format is a short menu: Bold, Italic, Underline.
-- A web address pasted by itself goes in as a link.
-- The hashtags row has an "Insert" button at its right for all the hashtags that fit. Holding the tag button tags only words that match hashtags you already use.
-- The microphone button is gone.
+- Touch and hold "Write Today's Entry" (or yesterday's) on Today to start from your template.
+- Holding an entry shows its preview with no "Open" in the menu: tap the preview to open it.
+- Reading a reflection aloud is removed.
