@@ -73,16 +73,44 @@ enum PhotoActions {
     }
 
     /// iOS's share sheet, over whatever's on top.
-    static func presentShareSheet(_ items: [Any]) {
+    ///
+    /// `page`: what's being shared, put up as a page of its own under the sheet while it's
+    /// open. Some destinations don't take what they're handed and read the screen under the
+    /// sheet instead (Accessibility Reader read the Actions list: its date and "Delete"), so
+    /// what's on the screen is the entry and nothing else. It goes when the sheet does.
+    static func presentShareSheet(_ items: [Any], over page: AnyView? = nil) {
         guard !items.isEmpty,
               var top = UIApplication.shared.connectedScenes.compactMap({ ($0 as? UIWindowScene)?.keyWindow }).first?.rootViewController
         else { return }
         while let presented = top.presentedViewController, !presented.isBeingDismissed { top = presented }
         let sheet = UIActivityViewController(activityItems: items, applicationActivities: nil)
-        sheet.popoverPresentationController?.sourceView = top.view
-        sheet.popoverPresentationController?.sourceRect = CGRect(x: top.view.bounds.midX, y: top.view.bounds.midY, width: 0, height: 0)
+        guard let page else {
+            anchor(sheet, in: top)
+            top.present(sheet, animated: true)
+            return
+        }
+        let host = UIHostingController(rootView: page)
+        host.modalPresentationStyle = .fullScreen
+        host.view.backgroundColor = .systemBackground
+        sheet.completionWithItemsHandler = { [weak host] _, completed, _, _ in
+            // (A moment longer when something took it: it may still be reading the page.)
+            DispatchQueue.main.asyncAfter(deadline: .now() + (completed ? 1.5 : 0)) {
+                host?.dismiss(animated: true)
+            }
+        }
+        anchor(sheet, in: host)
+        top.present(host, animated: true) {
+            host.present(sheet, animated: true)
+        }
+    }
+
+    /// (Where an iPad's popover comes from. An iPhone's sheet comes up from the foot by itself:
+    /// given an anchor, it's put by it instead.)
+    private static func anchor(_ sheet: UIActivityViewController, in presenter: UIViewController) {
+        guard UIDevice.current.userInterfaceIdiom == .pad else { return }
+        sheet.popoverPresentationController?.sourceView = presenter.view
+        sheet.popoverPresentationController?.sourceRect = CGRect(x: presenter.view.bounds.midX, y: presenter.view.bounds.midY, width: 0, height: 0)
         sheet.popoverPresentationController?.permittedArrowDirections = []
-        top.present(sheet, animated: true)
     }
 
     /// Uses add-only access: Dabble Me never asks to read your photo library. Not on the main

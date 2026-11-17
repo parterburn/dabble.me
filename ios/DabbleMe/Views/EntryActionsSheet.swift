@@ -33,11 +33,13 @@ struct EntryActionsSheet: View {
         isPreparingShare = true
         defer { isPreparingShare = false }
         var items: [Any] = []
+        var shownPhoto: UIImage?
         if let sharedText { items.append(sharedText) }
         if let photoURL {
             let photo = RemotePhoto(url: photoURL, day: entry.day)
             await photo.load()
             if let image = photo.image {
+                shownPhoto = image
                 let file = FileManager.default.temporaryDirectory.appending(path: "Dabble Me – \(entry.date).jpg")
                 if let data = image.jpegData(compressionQuality: 0.9), (try? data.write(to: file, options: .atomic)) != nil {
                     items.append(file)
@@ -46,7 +48,14 @@ struct EntryActionsSheet: View {
                 }
             }
         }
-        PhotoActions.presentShareSheet(items)
+        // Under the sheet: the entry on a page of its own (see `presentShareSheet`).
+        PhotoActions.presentShareSheet(items, over: AnyView(SharedEntryPage(date: entry.day?.long ?? entry.date, words: sharedWords, photo: shownPhoto)))
+    }
+
+    /// The entry's words as they read, without its date.
+    private var sharedWords: String {
+        (entry.document.map { RichText.segments(for: $0).map(\.text).joined() }
+            ?? String(AttributedString.journal(entry.bodyText).characters)).trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// The words Share hands over: the entry's date, then what's written. Nil for an entry
@@ -233,5 +242,40 @@ private struct HoldToDeleteButton: View {
             guard !Task.isCancelled else { return }
             withAnimation(.snappy(duration: 0.2)) { armed = false }
         }
+    }
+}
+
+/// What Share is sharing, as a plain page under the share sheet: the entry's date, its words and
+/// its photo, and nothing to tap. For a destination that reads the screen rather than what it's
+/// handed, this is the screen.
+private struct SharedEntryPage: View {
+    let date: String
+    let words: String
+    let photo: UIImage?
+    @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
+
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                Text(date)
+                    .font(.headline)
+                if !words.isEmpty {
+                    Text(words)
+                        .font(.system(.body, design: fontStyle.design))
+                        .lineSpacing(5)
+                }
+                if let photo {
+                    Image(uiImage: photo)
+                        .resizable()
+                        .scaledToFit()
+                        .clipShape(.rect(cornerRadius: 12))
+                        .accessibilityHidden(true)
+                }
+            }
+            .frame(maxWidth: 680, alignment: .leading)
+            .frame(maxWidth: .infinity)
+            .padding(20)
+        }
+        .background(Color(.systemBackground))
     }
 }
