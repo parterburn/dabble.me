@@ -7,13 +7,13 @@ Devise.setup do |config|
   config.secret_key = ENV["DEVISE_SECRET_KEY"]
 
   # ==> Mailer Configuration
-  # Configure the e-mail address which will be shown in Devise::Mailer,
-  # note that it will be overwritten if you use your own mailer class
-  # with default "from" parameter.
+  # Confirmation and any other Devise message that does not set its own from
+  # use this address. Password reset and unlock set theirs in DeviseMailer
+  # ("Dabble Me Support") so this sender stays "Paul // Dabble Me".
   config.mailer_sender = "Paul // Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>"
 
   # Configure the class responsible to send e-mails.
-  # config.mailer = 'Devise::Mailer'
+  config.mailer = 'DeviseMailer'
 
   # ==> ORM configuration
   # Load and configure the ORM. Supports :active_record (default) and

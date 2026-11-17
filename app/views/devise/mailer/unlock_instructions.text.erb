@@ -1,0 +1,10 @@
+Hey <%= @resource.first_name_or_fallback %>,
+
+Your Dabble Me account (<%= @resource.email %>) was locked after too many unsuccessful sign-in attempts. Use the link below to unlock it.
+
+<%= unlock_url(@resource, unlock_token: @token) %>
+
+If this wasn't you, you can ignore this email. The account stays locked until that link is used.
+
+Thanks,
+Dabble Me
