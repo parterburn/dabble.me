@@ -289,34 +289,39 @@ final class JournalViewsTests: XCTestCase {
         return editor
     }
 
-    /// The hashtag row's Insert, at its right: every hashtag that fits what's written, in one go.
-    func testHashtagRowInsertsTheOnesThatFit() throws {
+    /// The hashtag row's "Add Matched", at its left: the words in the entry that are the
+    /// writer's hashtags, tagged in one go. Only while there are some.
+    func testHashtagRowAddsTheMatchedOnes() throws {
         let app = launch(["-tips.shown.tag", "NO"])
         let editor = openComposer(app)
         editor.typeText("Went hiking and did some cooking after.")
         app.buttons["Hashtags"].tap()
-        let insert = app.buttons["Insert"]
-        XCTAssertTrue(insert.waitForExistence(timeout: 20))
-        XCTAssertTrue(app.buttons["#hiking"].exists)
-        // At the right of the row, clear of the tags.
-        XCTAssertGreaterThan(insert.frame.midX, app.windows.firstMatch.frame.width * 0.7)
-        snap("hashtags-insert")
-        insert.tap()
+        let add = app.buttons["Add Matched"]
+        XCTAssertTrue(add.waitForExistence(timeout: 20))
+        let hiking = app.buttons["#hiking"]
+        XCTAssertTrue(hiking.exists)
+        XCTAssertFalse(app.buttons["Insert"].exists)
+        // At the left of the row, before the matched tags, which stay where they are while
+        // suggestions are looked for and when they come.
+        XCTAssertLessThan(add.frame.maxX, hiking.frame.minX)
+        let place = hiking.frame.minX
+        snap("hashtags-add-matched")
+        sleep(6)
+        XCTAssertEqual(hiking.frame.minX, place, accuracy: 1, "The matched tags don't move")
+        snap("hashtags-add-matched-settled")
+        add.tap()
         let tip = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "touch and hold the tag button")).firstMatch
         XCTAssertTrue(tip.waitForExistence(timeout: 5))
         app.buttons["OK"].tap()
-        let text = editor.value as? String ?? ""
-        XCTAssertTrue(text.contains("#hiking"), text)
-        XCTAssertTrue(text.contains("#cooking"), text)
-        snap("hashtags-inserted")
-        // Held, without the row: only words that are the writer's hashtags are tagged, and
-        // nothing's added at the end.
+        // Tagged where they're written, and nothing added at the end.
+        XCTAssertEqual(editor.value as? String, "Went #hiking and did some #cooking after.")
+        XCTAssertTrue(add.waitForNonExistence(timeout: 5), "Nothing left to match")
+        // Held, without the row: the same.
         app.buttons["Hashtags"].tap() // closes the row
         editor.typeText(" Some travel soon.")
-        let before = editor.value as? String ?? ""
         app.buttons["Hashtags"].press(forDuration: 0.9)
         XCTAssertTrue(app.staticTexts["Tagged #travel"].waitForExistence(timeout: 5))
-        XCTAssertEqual(editor.value as? String, before.replacingOccurrences(of: "Some travel soon.", with: "Some #travel soon."))
+        XCTAssertEqual(editor.value as? String, "Went #hiking and did some #cooking after. Some #travel soon.")
         app.buttons["Cancel"].tap()
         app.buttons["Discard"].tap()
     }
@@ -418,7 +423,7 @@ final class JournalViewsTests: XCTestCase {
         editor.coordinate(withNormalizedOffset: CGVector(dx: 0.8, dy: 0.5)).tap()
         // (Whatever an earlier run left behind goes first.)
         editor.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: 30) + "One Win\n- ")
-        XCTAssertFalse(app.buttons["Format"].exists, "Format is for selected words")
+        XCTAssertTrue(app.buttons["Format"].exists, "Format is always there in a template")
         snap("template-settings")
         // Back and in again: it's still there. Then emptied, so no other test starts with it.
         app.navigationBars.buttons.firstMatch.tap()

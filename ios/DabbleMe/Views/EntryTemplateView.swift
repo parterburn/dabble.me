@@ -19,9 +19,8 @@ struct EntryTemplateView: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 12)
             Divider()
-            // (Format shows while words are selected, as in the composer.)
-            RichTextEditor(model: editor, trailing: editor.hasSelection ? AnyView(formatButton.foregroundStyle(.tint)) : nil,
-                           barKey: "\(editor.hasSelection)")
+            // (Format is always there: it's the bar's only button here.)
+            RichTextEditor(model: editor, trailing: AnyView(formatButton.foregroundStyle(.tint)))
                 .overlay(alignment: .topLeading) {
                     if editor.isEmpty {
                         Text("What went well today?")
@@ -43,7 +42,8 @@ struct EntryTemplateView: View {
         .onDisappear { save() }
     }
 
-    /// Bold, italic and underline for the selected words, as in an entry.
+    /// Bold, italic and underline, as in an entry: for the selected words or, with none, for
+    /// what's typed next.
     private var formatButton: some View {
         Menu {
             Button { editor.toggleBold() } label: { Label("Bold", icon: "bold") }

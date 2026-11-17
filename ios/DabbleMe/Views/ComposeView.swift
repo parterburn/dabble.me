@@ -639,81 +639,64 @@ struct ComposeView: View {
     /// isn't offered again.
     private var hashtagSuggestions: some View {
         let text = editor.plainText
-        let inEntry = Set(JournalIntelligence.hashtags(in: text).map { $0.lowercased() })
-        var seen = inEntry
-        let recommended = recommendedTags
-        let highlighted = Set(recommended.map { $0.lowercased() })
-        let tags = (recommended + recentTags).filter { seen.insert($0.lowercased()).inserted }
-        return HStack(spacing: 0) {
-            ScrollView(.horizontal) {
-                HStack(spacing: 8) {
-                    ForEach(tags, id: \.self) { tag in
-                        Button("#\(tag)") {
-                            editor.addHashtag(tag)
-                        }
-                        .buttonStyle(.bordered)
-                        .buttonBorderShape(.capsule)
-                        .tint(highlighted.contains(tag.lowercased()) ? .accentColor : .secondary)
-                        .accessibilityHint("Adds this hashtag to the entry")
+        var seen = Set(JournalIntelligence.hashtags(in: text).map { $0.lowercased() })
+        // In the order they're known: the writer's own tags that are words in the entry (there
+        // at once), then the ones suggested on the device (which take a moment), then the
+        // recent ones. Each kind keeps its place, so the first don't move when the next arrive.
+        let matched = matchedTags
+        seen.formUnion(matched.map { $0.lowercased() })
+        let suggested = suggestedTags.filter { seen.insert($0.lowercased()).inserted }
+        let recent = recentTags.filter { seen.insert($0.lowercased()).inserted }
+        return ScrollView(.horizontal) {
+            HStack(spacing: 8) {
+                // All of the matched ones in one go: only while there are some.
+                if !matched.isEmpty {
+                    rowButton("Add Matched") {
+                        Task { await tagMatchingWords() }
+                        showTipOnce("tag", "Next time, touch and hold the tag button to tag the words that match your hashtags straight away.")
                     }
-                    if tags.isEmpty, !isSuggestingTags {
-                        Text("Your hashtags will show here.")
-                            .foregroundStyle(.secondary)
-                            .frame(height: 30)
-                    }
+                    .accessibilityHint("Tags the words in the entry that match your hashtags")
                 }
-                .padding(.leading)
-                .padding(.trailing, 8)
-            }
-            .scrollIndicators(.hidden)
-            // At the right, clear of the tags scrolling by: all the ones that fit what's
-            // written, in one go. While they're still being looked for (and none are known
-            // yet), the dots are there in its place.
-            if !recommended.isEmpty {
-                rowButton("Insert") {
-                    insertRecommendedTags()
-                    showTipOnce("tag", "Next time, touch and hold the tag button to tag the words that match your hashtags straight away.")
+                ForEach(matched, id: \.self) { hashtagPill($0, highlighted: true) }
+                // Where the suggestions will go, while they're looked for.
+                if isSuggestingTags {
+                    TypingDots(size: .small)
+                        .frame(height: 30)
+                        .accessibilityLabel("Suggesting hashtags")
                 }
-                .accessibilityHint("Adds the suggested hashtags to the entry")
-                .padding(.leading, 4)
-                .padding(.trailing)
-            } else if isSuggestingTags {
-                TypingDots(size: .small)
-                    .frame(height: 30)
-                    .accessibilityLabel("Suggesting hashtags")
-                    .padding(.leading, 4)
-                    .padding(.trailing)
+                ForEach(suggested, id: \.self) { hashtagPill($0, highlighted: true) }
+                ForEach(recent, id: \.self) { hashtagPill($0, highlighted: false) }
+                if matched.isEmpty, suggested.isEmpty, recent.isEmpty, !isSuggestingTags {
+                    Text("Your hashtags will show here.")
+                        .foregroundStyle(.secondary)
+                        .frame(height: 30)
+                }
             }
+            .font(.subheadline)
+            .padding(.horizontal)
+            .padding(.top, 8)
         }
-        .font(.subheadline)
-        .padding(.top, 8)
+        .scrollIndicators(.hidden)
         // Its own height: a horizontal scroll view would otherwise stretch to share the editor's.
         .fixedSize(horizontal: false, vertical: true)
     }
 
-    /// The hashtags that fit what's written and aren't in it yet: the writer's own tags that
-    /// are words in the entry, then the ones suggested on the device.
-    private var recommendedTags: [String] {
-        let text = editor.plainText
-        var seen = Set(JournalIntelligence.hashtags(in: text).map { $0.lowercased() })
-        let matching = JournalIntelligence.tags(allTags + recentTags, matchingWordsIn: text)
-        return (suggestedTags + matching).filter { seen.insert($0.lowercased()).inserted }
+    private func hashtagPill(_ tag: String, highlighted: Bool) -> some View {
+        Button("#\(tag)") {
+            editor.addHashtag(tag)
+        }
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+        .tint(highlighted ? .accentColor : .secondary)
+        .accessibilityHint("Adds this hashtag to the entry")
     }
 
-    /// Adds every recommended hashtag: a "#" before the word where it's written, the rest at
-    /// the end. Said for a moment over the entry, as the held tag button's tagging is. (The
-    /// held button tags matching words only: it doesn't ask for suggestions or add any.)
-    private func insertRecommendedTags() {
-        let tags = recommendedTags
-        guard !tags.isEmpty else { return }
-        for tag in tags { editor.addHashtag(tag) }
-        let notice = "Tagged " + ListFormatter.localizedString(byJoining: tags.map { "#\($0)" })
-        withAnimation(.easeOut(duration: 0.15)) { autoTagNotice = notice }
-        UIAccessibility.post(notification: .announcement, argument: notice)
-        Task {
-            try? await Task.sleep(for: .seconds(2.5))
-            if autoTagNotice == notice { withAnimation(.easeOut(duration: 0.3)) { autoTagNotice = nil } }
-        }
+    /// The writer's own hashtags that are words in the entry and aren't tagged in it yet: what
+    /// "Add Matched" and the held tag button tag.
+    private var matchedTags: [String] {
+        let text = editor.plainText
+        var seen = Set(JournalIntelligence.hashtags(in: text).map { $0.lowercased() })
+        return JournalIntelligence.tags(allTags + recentTags, matchingWordsIn: text).filter { seen.insert($0.lowercased()).inserted }
     }
 
     // MARK: - Ask Me
@@ -922,14 +905,16 @@ struct ComposeView: View {
         }
     }
 
-    /// The tag icon held: every hashtag the writer has used that's a word in the entry gets its
-    /// "#" there ("Dinner with Leo" → "Dinner with #Leo"). Only their own tags and the entry's
-    /// own words: nothing's suggested, made up or added at the end (that's the row's Insert).
+    /// The tag icon held, or the hashtag row's "Add Matched": every hashtag the writer has used
+    /// that's a word in the entry gets its "#" there ("Dinner with Leo" → "Dinner with #Leo").
+    /// Only their own tags and the entry's own words: nothing's suggested, made up or added at
+    /// the end.
     private func tagMatchingWords() async {
         if allTags.isEmpty { allTags = ((try? await model.allHashtags()) ?? []).map(\.tag) }
         let text = editor.plainText
         let inEntry = Set(JournalIntelligence.hashtags(in: text).map { $0.lowercased() })
-        let matching = JournalIntelligence.tags(allTags, matchingWordsIn: text).filter { !inEntry.contains($0.lowercased()) }
+        // (With the recent ones, as the row matches them: the list of all may still be on its way.)
+        let matching = JournalIntelligence.tags(allTags + recentTags, matchingWordsIn: text).filter { !inEntry.contains($0.lowercased()) }
         let tagged = editor.tagWords(matching: matching)
         let notice = tagged.isEmpty ? "No words match your hashtags"
                                     : "Tagged " + ListFormatter.localizedString(byJoining: tagged.map { "#\($0)" })
