@@ -18,7 +18,7 @@ extension View {
 
 extension View {
     /// Long-press a day (a square of Stats' grid, a date in Jump to a Day): its entry in the
-    /// Journal's preview, with Open; or, for a day without one, that nothing's written, with
+    /// Journal's preview, which a tap opens; or, for a day without one, that nothing's written, with
     /// Write Entry (when `write` is given). `summary` is the day's entry when it's already to hand.
     func dayPreview(_ day: JournalDay, isWritten: Bool, summary: EntrySummary? = nil, model: AppModel,
                     open: @escaping () -> Void, write: (() -> Void)?) -> some View {
@@ -26,9 +26,8 @@ extension View {
             AreaContextMenu(
                 preview: { DayPreview(day: day, isWritten: isWritten, summary: summary, model: model) },
                 menu: {
-                    if isWritten {
-                        return UIMenu(children: [UIAction(title: "Open", image: UIImage(named: "slab-expand")) { _ in open() }])
-                    } else if let write {
+                    // (A written day has no menu: a tap on its preview opens it.)
+                    if !isWritten, let write {
                         return UIMenu(children: [UIAction(title: "Write Entry", image: UIImage(named: "slab-plus")) { _ in write() }])
                     }
                     return UIMenu(children: [])
@@ -102,7 +101,7 @@ private struct EntryRowMenu: ViewModifier {
                             Task { await actions.edit(summary.id, model: model) }
                         })
                     }
-                    items.append(UIAction(title: "Open", image: UIImage(named: "slab-expand")) { _ in open() })
+                    // (No Open: a tap on the preview opens the entry.)
                     // The rest (Delete, the entry's tags): the Actions sheet.
                     items.append(UIAction(title: "More", image: UIImage(named: "slab-more")) { _ in
                         Task { await actions.showActions(for: summary.id, model: model) }
@@ -202,7 +201,8 @@ private struct EntryPreviewMenu: ViewModifier {
         content.background {
             AreaContextMenu(
                 preview: { EntryPreview(summary: summary) },
-                menu: { UIMenu(children: [UIAction(title: "Open", image: UIImage(named: "slab-expand")) { _ in open() }]) },
+                // No menu: a tap on the preview opens the entry.
+                menu: { UIMenu(children: []) },
                 commit: open
             )
             .allowsHitTesting(false)
@@ -353,6 +353,7 @@ struct EntryPreview: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(summary.day?.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year()) ?? summary.date)
                 .font(.headline)
+                .accessibilityIdentifier("EntryPreviewDate")
             // The whole entry when it fits; otherwise as much as fits, fading out. Never "…".
             ViewThatFits(in: .vertical) {
                 entryText

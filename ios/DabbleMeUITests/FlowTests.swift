@@ -330,17 +330,20 @@ final class FlowTests: XCTestCase {
     /// previews its entry.
     func testHoldingBackListsWhereToGoBackTo() throws {
         let memory = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "First snow of the year")).firstMatch
-        XCTAssertTrue(memory.waitForExistence(timeout: 20))
+        // (Under the first card and its photo: it's in the list once it's scrolled to.)
+        XCTAssertTrue(app.staticTexts["On This Day"].waitForExistence(timeout: 20))
+        for _ in 0..<4 where !memory.exists { app.swipeUp() }
+        XCTAssertTrue(memory.waitForExistence(timeout: 10))
         app.openTimelineEntry(memory)
         let other = app.buttons.matching(NSPredicate(format: "label CONTAINS %@", "Bruges! Wandered the canals")).firstMatch
         XCTAssertTrue(other.waitForExistence(timeout: 10))
-        // Held: the entry's preview, with Open.
+        // Held: the entry's preview; a tap on it opens the entry.
         other.press(forDuration: 1.0)
-        let open = app.buttons["Open"]
-        XCTAssertTrue(open.waitForExistence(timeout: 5), "A held row previews its entry")
+        let preview = app.entryPreview
+        XCTAssertTrue(preview.waitForExistence(timeout: 5), "A held row previews its entry")
         sleep(1)
         snap("entry-on-this-day-preview")
-        open.tap()
+        app.tapEntryPreview()
         let year = Calendar.current.component(.year, from: .now)
         XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label ENDSWITH %@", String(year - 1))).firstMatch.waitForExistence(timeout: 10))
         let back = app.descendants(matching: .any)["Back"].firstMatch

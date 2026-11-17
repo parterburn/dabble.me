@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// An entry's actions in a sheet from the bottom (swipe left → Actions in a list, or swipe left on
-/// the entry itself): Open (from a list: the entry in full), Reflect, Edit, Delete, and its #tags. Dated tags show how long it had been on
+/// the entry itself): Open (from a list: the entry in full), Reflect, Edit, Share Text, Delete, and its #tags. Dated tags show how long it had been on
 /// that day ("3 years and 4 months since entry") without opening the entry. Delete confirms right
 /// in its button: tap, then hold it until it fills.
 struct EntryActionsSheet: View {
@@ -21,8 +21,23 @@ struct EntryActionsSheet: View {
         return entry.hashtags.map { ($0, dated[$0.lowercased()]) }
     }
 
+    /// What Share Text hands over: the entry's date, then its words. Nil for an entry with none
+    /// (a photo alone).
+    private var sharedText: String? {
+        // As it reads, not as it's stored: the document's own text (list items with their
+        // bullets), or, without one, the entry's text with its Markdown marks taken out.
+        let body = entry.document.map { RichText.segments(for: $0).map(\.text).joined() }
+            ?? String(AttributedString.journal(entry.bodyText).characters)
+        return Self.sharedText(date: entry.day?.long ?? entry.date, body: body)
+    }
+
+    static func sharedText(date: String, body: String) -> String? {
+        let words = body.trimmingCharacters(in: .whitespacesAndNewlines)
+        return words.isEmpty ? nil : date + "\n\n" + words
+    }
+
     private var height: CGFloat {
-        let actions = (canOpen ? 1 : 0) + (canReflect ? 1 : 0) + (canEdit ? 1 : 0) + (canDelete ? 1 : 0)
+        let actions = (canOpen ? 1 : 0) + (canReflect ? 1 : 0) + (canEdit ? 1 : 0) + (canDelete ? 1 : 0) + (sharedText == nil ? 0 : 1)
         // Pills wrap, a few to a row; a dated one, with its age beside it, mostly has a row to itself.
         let dated = tags.count(where: { $0.age != nil })
         let pillRows = CGFloat(dated + (tags.count - dated + 2) / 3) * 44
@@ -44,6 +59,14 @@ struct EntryActionsSheet: View {
                 }
                 if canEdit {
                     row(entry.document != nil ? "Edit" : "Edit on dabble.me", "slab-edit", .edit)
+                }
+                // The entry's words to iOS's share sheet, for whatever's there to take them: read
+                // aloud (Accessibility Reader), copied, printed, sent. Only when asked for.
+                if let sharedText {
+                    ShareLink(item: sharedText) {
+                        Label("Share Text", icon: "slab-arrow-up-from-line")
+                    }
+                    .buttonStyle(ActionRowStyle())
                 }
                 if canDelete {
                     HoldToDeleteButton { perform(.delete) }

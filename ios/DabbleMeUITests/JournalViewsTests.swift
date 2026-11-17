@@ -47,7 +47,7 @@ final class JournalViewsTests: XCTestCase {
         let photo = app.buttons.matching(NSPredicate(format: "label BEGINSWITH %@", "Photo from")).firstMatch
         XCTAssertTrue(photo.waitForExistence(timeout: 15))
         photo.press(forDuration: 1.2)
-        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.entryPreview.waitForExistence(timeout: 10))
         sleep(1)
         snap("photo-held")
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.3)).tap() // on the preview
@@ -220,6 +220,26 @@ final class JournalViewsTests: XCTestCase {
         chip.tap()
         app.buttons["Cancel"].tap()
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+    }
+
+    /// An entry's Actions has Share Text: its words to iOS's share sheet (to be read aloud by
+    /// Accessibility Reader, copied, printed…).
+    func testShareTextOpensTheShareSheet() throws {
+        let app = launch()
+        tab(app, "Journal").tap()
+        let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Big presentation went well")).firstMatch
+        app.openTimelineEntry(row)
+        app.coordinate(withNormalizedOffset: CGVector(dx: 0.85, dy: 0.2)).press(forDuration: 0.05, thenDragTo: app.coordinate(withNormalizedOffset: CGVector(dx: 0.15, dy: 0.2)))
+        let share = app.buttons["Share Text"]
+        XCTAssertTrue(share.waitForExistence(timeout: 5))
+        XCTAssertLessThan(share.frame.minY, app.buttons["Delete"].frame.minY, "Above Delete")
+        snap("actions-share-text")
+        share.tap()
+        // iOS's share sheet, with the entry's words in its header.
+        let sheet = app.otherElements["ActivityListView"]
+        XCTAssertTrue(sheet.waitForExistence(timeout: 10), "The share sheet opens")
+        sleep(1)
+        snap("share-sheet")
     }
 
     /// Format and Link are for words: in the bar while some are selected, and not otherwise.
@@ -538,18 +558,19 @@ final class JournalViewsTests: XCTestCase {
         let yosemite = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to Yosemite")).firstMatch
         XCTAssertTrue(yosemite.waitForExistence(timeout: 10))
         yosemite.press(forDuration: 1.2)
-        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.entryPreview.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Open"].exists, "No Open in the menu: a tap on the preview opens it")
         XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Sam singing badly")).firstMatch.exists,
                       "The preview shows the entry's text, not just the start")
         sleep(1)
         snap("preview-yosemite")
         // Tapping the preview grows it into the entry.
         // The preview sits just above its menu.
-        let menuTop = app.buttons.matching(NSPredicate(format: "label IN %@", ["Reflection", "Edit", "Open"]))
-            .allElementsBoundByIndex.map { $0.frame.minY }.min() ?? app.buttons["Open"].frame.minY
+        let menuTop = app.buttons.matching(NSPredicate(format: "label IN %@", ["Reflection", "Edit", "More"]))
+            .allElementsBoundByIndex.map { $0.frame.minY }.min() ?? app.buttons["More"].frame.minY
         app.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: app.frame.midX, dy: menuTop - 150)).tap()
         XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10), "Tapping the preview opens the entry")
-        XCTAssertTrue(app.buttons["Open"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["More"].waitForNonExistence(timeout: 5))
         sleep(1)
         snap("preview-opened")
         app.navigationBars.buttons.element(boundBy: 0).tap()
@@ -557,11 +578,11 @@ final class JournalViewsTests: XCTestCase {
 
         app.scrollTo(row)
         row.press(forDuration: 1.2)
-        let open = app.buttons["Open"]
-        XCTAssertTrue(open.waitForExistence(timeout: 5))
+        let preview = app.entryPreview
+        XCTAssertTrue(preview.waitForExistence(timeout: 5))
         sleep(1)
         snap("entry-preview")
-        open.tap()
+        app.tapEntryPreview()
         XCTAssertTrue(app.buttons["Edit Entry"].waitForExistence(timeout: 10))
 
         let chip = app.buttons["#Biscuit"].firstMatch
@@ -629,7 +650,8 @@ final class JournalViewsTests: XCTestCase {
         let card = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Bruges!")).firstMatch
         XCTAssertTrue(card.waitForExistence(timeout: 15))
         card.press(forDuration: 1.2)
-        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.entryPreview.waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Open"].exists)
         sleep(2)
         snap("today-preview")
     }
@@ -1269,15 +1291,15 @@ final class JournalViewsTests: XCTestCase {
             return heatmap.coordinate(withNormalizedOffset: .zero)
                 .withOffset(CGVector(dx: heatmap.frame.width - 6.5 - CGFloat(column) * pitch, dy: monthRow + CGFloat(row) * pitch + 6.5))
         }
-        // Yesterday (always written): the entry, previewed as the Journal previews one, with Open.
+        // Yesterday (always written): the entry, previewed as the Journal previews one.
         square(daysAgo: 1).press(forDuration: 1.2)
-        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 10), "A written day has Open")
+        XCTAssertTrue(app.entryPreview.waitForExistence(timeout: 10), "A written day is previewed")
         XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Finally made it to")).firstMatch.waitForExistence(timeout: 10),
                       "Yesterday's entry is previewed")
         sleep(1)
         snap("stats-day-held")
         app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.97)).tap() // away from it: closes it
-        XCTAssertTrue(app.buttons["Open"].waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.entryPreview.waitForNonExistence(timeout: 5))
         sleep(1)
 
         // Held again, and the preview itself tapped: the day's entry opens, as Open opens it.
@@ -1771,7 +1793,7 @@ final class JournalViewsTests: XCTestCase {
         let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Slow Saturday")).firstMatch
         app.scrollTo(row)
         row.press(forDuration: 1.2)
-        XCTAssertTrue(app.buttons["Open"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.entryPreview.waitForExistence(timeout: 5))
         XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Blinding Lights")).firstMatch.exists,
                       "The song is in the preview")
         snap("preview-song")

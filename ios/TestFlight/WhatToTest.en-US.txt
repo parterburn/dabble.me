@@ -1,3 +1,14 @@
+New: Share Text, in an entry's Actions.
+
+- Open an entry and swipe left on it (or swipe left on it in the Journal and tap Actions). There is a "Share Text" row above Delete. It opens iOS's share sheet with the entry's date and words.
+- Choose Accessibility Reader there to have the entry read aloud. Copy, Print, Notes and the rest work too. After the first time, the destination you used should be near the front of the sheet.
+- An entry that is only a photo has no Share Text row.
+
+Holding an entry for its preview: there is no "Open" in the menu any more.
+
+- Touch and hold an entry in the Journal: the preview comes up with Reflection, Edit and More under it, but no Open. Tap the preview itself to open the entry.
+- The same for On This Day cards, a photo in Photos, and a written day in Stats or Jump to a Day: just the preview, which a tap opens.
+
 Removed: reading a reflection aloud.
 
 - The play button next to a reflection's X is gone. Everything else about a reflection (the follow-up chat, "Sum Up & Add to Entry") is as it was.
