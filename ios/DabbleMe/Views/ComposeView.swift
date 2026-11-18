@@ -300,6 +300,13 @@ struct ComposeView: View {
             }
             #if DEBUG
             .task { await attachDebugPhotos() }
+            // A hashtag's being typed: the writer's tags, to offer the ones that start that way
+            // (fetched the first time, unless the hashtag row has brought them already).
+            .onChange(of: editor.typedHashtag != nil) { _, typing in
+                guard typing else { return }
+                if recentTags.isEmpty { Task { recentTags = (try? await model.recentHashtags()) ?? [] } }
+                if allTags.isEmpty { Task { allTags = ((try? await model.allHashtags()) ?? []).map(\.tag) } }
+            }
             #endif
             .alert("Tip", isPresented: .present($tip)) {
                 Button("OK", role: .cancel) {}
@@ -364,6 +371,9 @@ struct ComposeView: View {
     private var openRow: AnyView? {
         let row: AnyView? = if editor.isEditingLink {
             AnyView(LinkRow(editor: editor))
+        } else if let typed = editor.typedHashtag, !hashtagCompletions(for: typed).isEmpty {
+            // A hashtag being typed: the writer's tags that start that way, whatever row was open.
+            AnyView(hashtagCompletionRow(hashtagCompletions(for: typed)))
         } else if showsHashtagBar {
             AnyView(hashtagSuggestions)
         } else if showsAskRow {
@@ -680,6 +690,40 @@ struct ComposeView: View {
         .scrollIndicators(.hidden)
         // Its own height: a horizontal scroll view would otherwise stretch to share the editor's.
         .fixedSize(horizontal: false, vertical: true)
+    }
+
+    /// The writer's hashtags that start with what's being typed after a "#" ("#hik": hiking,
+    /// Hike), the recently used first. Not the one typed out in full already, and none when
+    /// nothing of theirs starts that way: it's a new tag, and the row stays out of its way.
+    private func hashtagCompletions(for typed: String) -> [String] {
+        Self.hashtagCompletions(for: typed, from: recentTags + allTags)
+    }
+
+    static func hashtagCompletions(for typed: String, from tags: [String], limit: Int = 20) -> [String] {
+        let prefix = typed.lowercased()
+        var seen: Set<String> = [prefix]
+        return Array(tags.filter { $0.lowercased().hasPrefix(prefix) && seen.insert($0.lowercased()).inserted }.prefix(limit))
+    }
+
+    /// Shown by itself while a hashtag is being typed: a tap finishes it.
+    private func hashtagCompletionRow(_ tags: [String]) -> some View {
+        ScrollView(.horizontal) {
+            HStack(spacing: 8) {
+                ForEach(tags, id: \.self) { tag in
+                    Button("#\(tag)") { editor.completeHashtag(tag) }
+                        .buttonStyle(.bordered)
+                        .buttonBorderShape(.capsule)
+                        .tint(.accentColor)
+                        .accessibilityHint("Finishes the hashtag you're typing")
+                }
+            }
+            .font(.subheadline)
+            .padding(.horizontal)
+            .padding(.top, 8)
+        }
+        .scrollIndicators(.hidden)
+        .fixedSize(horizontal: false, vertical: true)
+        .accessibilityIdentifier("HashtagCompletions")
     }
 
     private func hashtagPill(_ tag: String, highlighted: Bool) -> some View {

@@ -1,3 +1,11 @@
+Hashtags complete as you type them.
+
+- While writing, type "#" and a letter. A row of your own hashtags that start that way should appear above the keyboard, most recently used first, and narrow as you type more.
+- Tap one: it should finish the hashtag in your tag's own capitals, add a space, and leave the cursor after it. The row should go.
+- Type "#" and a number ("#1"), or a "#" in the middle of a word: no row.
+- Type a hashtag you've never used: no row, and nothing gets in the way.
+- With another row open (photos, the lightbulb), the completions should take its place while you're typing the hashtag and give it back after.
+
 Entry text size: the default is now the middle of five.
 
 - Settings, Theme: the Entry Text Size slider's stops are Smallest, Smaller, Default, Larger, Largest, with Default in the centre. Before, Default was second of five.

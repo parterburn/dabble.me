@@ -78,6 +78,39 @@ struct PromptGroundingTests {
 }
 
 @MainActor
+@MainActor
+struct HashtagTypingTests {
+    /// A "#" and a letter at the cursor is a hashtag being typed; a number first, or a "#" inside a word, isn't.
+    @Test func findsTheHashtagBeingTyped() {
+        func typed(_ text: String, at cursor: Int? = nil) -> String? {
+            let string = text as NSString
+            return RichTextEditorModel.hashtagBeingTyped(in: string, cursor: cursor ?? string.length)?.prefix
+        }
+        #expect(typed("Walked with #L") == "L")
+        #expect(typed("Walked with #Leo_2") == "Leo_2")
+        #expect(typed("#hik") == "hik")
+        #expect(typed("#hiking is fun", at: 4) == "hik") // the cursor inside it: what's before the cursor
+        #expect(typed("Walked with #") == nil)
+        #expect(typed("Room #12") == nil)
+        #expect(typed("#1st") == nil)
+        #expect(typed("C#m") == nil)
+        #expect(typed("##tag") == nil)
+        #expect(typed("#Leo ") == nil)
+        #expect(typed("no tag here") == nil)
+        let found = RichTextEditorModel.hashtagBeingTyped(in: "Hi #Le" as NSString, cursor: 6)
+        #expect(found?.range == NSRange(location: 3, length: 3))
+    }
+
+    /// The writer's tags that start with it, the first of each spelling, without the one typed in full.
+    @Test func offersTagsThatStartThatWay() {
+        let tags = ["hiking", "Leo", "Hike", "leo", "home", "hi"]
+        #expect(ComposeView.hashtagCompletions(for: "hi", from: tags) == ["hiking", "Hike"])
+        #expect(ComposeView.hashtagCompletions(for: "L", from: tags) == ["Leo"])
+        #expect(ComposeView.hashtagCompletions(for: "leo", from: tags).isEmpty)
+        #expect(ComposeView.hashtagCompletions(for: "zz", from: tags).isEmpty)
+    }
+}
+
 struct HashtagMatchingTests {
     /// The writer's tags that are words in the entry come first in the composer's row, without a model.
     @Test func tagsMatchWholeWordsWhateverTheCase() {
