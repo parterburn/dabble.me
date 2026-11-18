@@ -1,8 +1,7 @@
-Nothing new to test in this build: it only updates the App Store screenshots kept with the project. The app is the same as the last build.
+Entry text size: the three larger sizes are a little smaller.
 
-If you missed that one:
+- Settings, Theme, Entry Text Size. Large, Extra Large and Largest are now smaller steps up from Default (8%, 20% and 35% larger; they were 15%, 30% and 50%). Large should read as just slightly bigger than Default.
+- If you had one of those sizes chosen, your entries will look a little smaller than before. Check the Journal, an open entry, and the editor.
+- Small and Default are unchanged.
 
-- Share (an entry's Actions): the entry now comes up on a plain page of its own with the share sheet over it, so Accessibility Reader reads the entry. Does it?
-- While writing, tapping back in your entry with the Link row open cancels the link.
-- The hashtags row has "Auto Tag" at its left when words in your entry match hashtags you already use.
-- The editor's text is the same size, with the same line spacing, as an open entry.
+This build also updates the App Store screenshots kept with the project; nothing to test there.

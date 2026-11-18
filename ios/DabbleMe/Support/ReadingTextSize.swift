@@ -14,9 +14,10 @@ enum ReadingTextSize: Int, CaseIterable, Identifiable {
         switch self {
         case .small: 0.88
         case .standard: 1
-        case .large: 1.15
-        case .extraLarge: 1.3
-        case .largest: 1.5
+        // Gentle steps up from the default: the first is only a little larger.
+        case .large: 1.08
+        case .extraLarge: 1.2
+        case .largest: 1.35
         }
     }
 
