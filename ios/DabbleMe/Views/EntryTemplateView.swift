@@ -19,8 +19,9 @@ struct EntryTemplateView: View {
                 .padding(.horizontal, 20)
                 .padding(.vertical, 12)
             Divider()
-            // (Format is always there: it's the bar's only button here.)
-            RichTextEditor(model: editor, trailing: AnyView(formatButton.foregroundStyle(.tint)), barKey: "\(editor.isFormatted)")
+            // B, I and U, always: as in an entry's bar, and the only buttons here.
+            RichTextEditor(model: editor, trailing: AnyView(formatButtons.foregroundStyle(.tint)),
+                           barKey: "\(editor.isBold)|\(editor.isItalic)|\(editor.isUnderlined)")
                 .overlay(alignment: .topLeading) {
                     if editor.isEmpty {
                         Text("What went well today?")
@@ -42,21 +43,14 @@ struct EntryTemplateView: View {
         .onDisappear { save() }
     }
 
-    /// Bold, italic and underline, as in an entry: for the selected words or, with none, for
-    /// what's typed next.
-    private var formatButton: some View {
-        Menu {
-            Button { editor.toggleBold() } label: { Label("Bold", icon: "bold") }
-            Button { editor.toggleItalic() } label: { Label("Italic", icon: "italic") }
-            Button { editor.toggleUnderline() } label: { Label("Underline", icon: "underline") }
-        } label: {
-            // (Filled in while the words it's for are bold, italic or underlined.)
-            appIcon(editor.isFormatted ? "slab-format-full" : "slab-format")
-                .frame(width: 40, height: 36)
-                .contentShape(.rect)
+    /// Bold, italic and underline, the same letters as an entry's bar: for the selected words or,
+    /// with none, for what's typed next. Each is lit while it's on.
+    private var formatButtons: some View {
+        HStack(spacing: 6) {
+            FormatButton(name: "Bold", letter: .bold, isOn: editor.isBold) { editor.toggleBold() }
+            FormatButton(name: "Italic", letter: .italic, isOn: editor.isItalic) { editor.toggleItalic() }
+            FormatButton(name: "Underline", letter: .underline, isOn: editor.isUnderlined) { editor.toggleUnderline() }
         }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Format")
     }
 
     private func save() {

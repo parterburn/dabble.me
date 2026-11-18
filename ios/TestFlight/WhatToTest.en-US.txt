@@ -1,4 +1,4 @@
-The editor's format bar: a way back out, and the link buttons rearranged.
+The editor's format bar: a way back out, the link buttons rearranged, and B, I, U in the template editor.
 
 GETTING BACK TO THE USUAL BAR
 
@@ -14,3 +14,9 @@ LINKS
 - The trash is now the plain system trash (red), at the far left of the row with the address, away from Update. It should remove the link and leave the words.
 - Check that the trash, the address and Update all fit on one line on a smaller phone.
 - A new link (Insert rather than Update) shows no trash.
+
+TEMPLATE EDITOR
+
+- Settings > Entry Template: the bar over the keyboard now always shows B, I and U, the same letters as the entry editor, instead of the Format menu.
+- Each should be lit while it's on: for selected words, or with nothing selected, for what you type next. Tap one and type to check.
+- Your saved template should be unchanged.

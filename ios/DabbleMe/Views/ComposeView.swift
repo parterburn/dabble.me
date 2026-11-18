@@ -551,31 +551,9 @@ struct ComposeView: View {
         editor.isEditingLink && editor.isExistingLink ? RichTextEditorModel.normalizedURL(editor.linkText) : nil
     }
 
-    /// The three formats, drawn as the letters every editor uses, in a serif like the writing's.
-    private enum FormatLetter {
-        case bold, italic, underline
-
-        var label: Text {
-            switch self {
-            case .bold: Text("B").font(.system(size: 20, weight: .bold, design: .serif))
-            case .italic: Text("I").font(.system(size: 20, weight: .medium, design: .serif)).italic()
-            case .underline: Text("U").font(.system(size: 19, weight: .medium, design: .serif)).underline()
-            }
-        }
-    }
-
-    /// One of the bar's format buttons: lit, like a row's button while its row is open, while
-    /// the format's on.
+    /// One of the bar's format buttons (see `FormatButton`).
     private func formatButton(_ name: String, _ letter: FormatLetter, isOn: Bool, toggle: @escaping () -> Void) -> some View {
-        Button(action: toggle) {
-            letter.label
-                .frame(width: 40, height: 36)
-                .background(isOn ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
-                .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(name)
-        .accessibilityAddTraits(isOn ? .isSelected : [])
+        FormatButton(name: name, letter: letter, isOn: isOn, toggle: toggle)
     }
 
     /// Bold's tap, but not the one that ends the hold that opened the format buttons.
@@ -1651,5 +1629,40 @@ private struct CameraPicker: UIViewControllerRepresentable {
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
             parent.dismiss()
         }
+    }
+}
+
+/// The three formats, drawn as the letters every editor uses, in a serif like the writing's.
+/// (The entry composer's bar and the template editor's.)
+enum FormatLetter {
+    case bold, italic, underline
+
+    var label: Text {
+        switch self {
+        case .bold: Text("B").font(.system(size: 20, weight: .bold, design: .serif))
+        case .italic: Text("I").font(.system(size: 20, weight: .medium, design: .serif)).italic()
+        case .underline: Text("U").font(.system(size: 19, weight: .medium, design: .serif)).underline()
+        }
+    }
+}
+
+/// A format button for an editor's bar: lit, like a row's button while its row is open, while
+/// the format's on.
+struct FormatButton: View {
+    let name: String
+    let letter: FormatLetter
+    let isOn: Bool
+    let toggle: () -> Void
+
+    var body: some View {
+        Button(action: toggle) {
+            letter.label
+                .frame(width: 40, height: 36)
+                .background(isOn ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(name)
+        .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }
