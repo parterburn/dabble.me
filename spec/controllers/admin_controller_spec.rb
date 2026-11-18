@@ -270,7 +270,7 @@ RSpec.describe AdminController, type: :controller do
     it 'emails the user a reset link' do
       sign_in_admin superuser
       expect { post :send_password_reset, params: { id: paid_user.id } }
-        .to have_enqueued_mail(Devise::Mailer, :reset_password_instructions)
+        .to have_enqueued_mail(DeviseMailer, :reset_password_instructions)
       expect(paid_user.reload.reset_password_token).to be_present
       expect(response).to redirect_to(edit_admin_user_path(paid_user))
       expect(flash[:notice]).to eq "Password reset email sent to #{paid_user.email}."
@@ -279,7 +279,7 @@ RSpec.describe AdminController, type: :controller do
     it 'sends nothing for a non-admin' do
       sign_in user
       expect { post :send_password_reset, params: { id: paid_user.id } }
-        .not_to have_enqueued_mail(Devise::Mailer, :reset_password_instructions)
+        .not_to have_enqueued_mail(DeviseMailer, :reset_password_instructions)
       expect(response).to redirect_to(entries_path)
     end
   end

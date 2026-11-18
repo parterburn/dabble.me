@@ -59,7 +59,7 @@ class ImportJob < ActiveJob::Base
     end
 
     ActionMailer::Base.mail(
-      from: "Paul // Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>",
+      from: "Dabble Me Support <hello@#{ENV['MAIN_DOMAIN']}>",
       to: user.email,
       subject: "Image Import is complete",
       body: messages.join("\n\n")

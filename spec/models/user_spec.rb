@@ -374,7 +374,7 @@ describe User do
 
       expect do
         user.send_reset_password_instructions
-      end.to have_enqueued_mail(Devise::Mailer, :reset_password_instructions)
+      end.to have_enqueued_mail(DeviseMailer, :reset_password_instructions)
     end
   end
 
