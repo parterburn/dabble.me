@@ -47,9 +47,6 @@ struct ComposeView: View {
     @State private var isSaving = false
     @State private var uploadedCount: Int?
     @State private var error: String?
-    @State private var confirmingDiscard = false
-    /// Save Draft or Discard was chosen: the composer is closing.
-    @State private var isLeaving = false
     /// Moving the entry onto a day that has one: the server's words for it, while asking to merge.
     @State private var mergeQuestion: String?
     /// An unsaved draft from an earlier session was put back in the editor.
@@ -175,6 +172,7 @@ struct ComposeView: View {
                                leading: isFormattingSelection ? linkButtons.map { AnyView($0.foregroundStyle(.tint)) }
                                    : AnyView((model.me?.canAddPhotos == true ? AnyView(photosButton) : AnyView(proPhotosButton)).foregroundStyle(.tint)),
                                trailing: AnyView((isFormattingSelection ? AnyView(selectionButtons) : AnyView(tagAndLinkButtons)).foregroundStyle(.tint)),
+                               trailingEnd: isFormattingSelection ? AnyView(closeFormatsButton.foregroundStyle(.tint)) : nil,
                                barKey: "\(isFormattingSelection)|\(showsFormatBar)|\(editor.isExistingLink)|\(visitURL != nil)|\(editor.hasSelection)|\(editor.isBold)|\(editor.isItalic)|\(editor.isUnderlined)|\(model.me?.mayAddLinks == true)|\(CameraPicker.isAvailable)|\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)",
                                row: openRow)
                     // Low in the page, over the bar: clear of the entry's first lines.
@@ -216,17 +214,25 @@ struct ComposeView: View {
                 // The date is the title, which leaves more room to write.
                 ToolbarItem(placement: .principal) { dateTitle }
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        if hasChanges {
-                            // The question's at the foot of the screen: the keyboard, and any row
-                            // open over it, go down so it can be seen.
-                            showsHashtagBar = false
-                            showsAskRow = false
-                            showsPhotoDrawer = false
-                            editor.endLink()
-                            editor.unfocus()
-                            confirmingDiscard = true
-                        } else {
+                    // With something to lose, Cancel drops down Save Draft and Discard, no
+                    // question around them: a tap outside it is Keep Writing.
+                    if hasChanges {
+                        Menu("Cancel") {
+                            // A draft is kept on this device and comes back the next time this is opened.
+                            if canSaveDraft {
+                                Button(photoItems.isEmpty && !removesExistingPhoto ? "Save Draft" : "Save Draft (Words Only)") {
+                                    draftSave?.cancel()
+                                    saveDraftNow()
+                                    dismiss()
+                                }
+                            }
+                            Button("Discard", role: .destructive) {
+                                discardDraft()
+                                dismiss()
+                            }
+                        }
+                    } else {
+                        Button("Cancel") {
                             discardDraft()
                             dismiss()
                         }
@@ -244,35 +250,6 @@ struct ComposeView: View {
                 }
             }
             .interactiveDismissDisabled(hasChanges || isSaving)
-            // The question put away without an answer (Keep Writing, or a tap outside it, which
-            // is all an iPhone offers): back to writing, with the keyboard.
-            .onChange(of: confirmingDiscard) { _, asking in
-                if !asking, !isLeaving { editor.focus() }
-            }
-            .confirmationDialog(isNew ? "Close this entry?" : "Close without saving your changes?",
-                                isPresented: $confirmingDiscard, titleVisibility: .visible) {
-                // A draft is kept on this device and comes back the next time this is opened.
-                if canSaveDraft {
-                    Button("Save Draft") {
-                        isLeaving = true
-                        draftSave?.cancel()
-                        saveDraftNow()
-                        dismiss()
-                    }
-                }
-                Button("Discard", role: .destructive) {
-                    isLeaving = true
-                    discardDraft()
-                    dismiss()
-                }
-                Button("Keep Writing", role: .cancel) {}
-            } message: {
-                if canSaveDraft {
-                    Text(photoItems.isEmpty && !removesExistingPhoto
-                        ? "A draft is kept on this device until you come back to it."
-                        : "A draft keeps your words on this device until you come back to it, but not changes to photos.")
-                }
-            }
             // An alert, for its Cancel button (a confirmation dialog shows none here): Cancel puts
             // the date back to the entry's own day.
             .alert(mergeQuestion ?? "", isPresented: .present($mergeQuestion)) {
@@ -494,8 +471,8 @@ struct ComposeView: View {
     }
 
     /// The format bar's left, where Photos is otherwise: Link (PRO; shows or hides the link
-    /// row) and, for a link that's there, Visit and the trash that removes it. They're down
-    /// here, away from the row's Update, so neither is hit by a thumb going for it.
+    /// row) and, for a link that's there, Visit (the external-link symbol), which opens it.
+    /// (The trash that removes it is at the far left of the link row, away from Update.)
     private var linkButtons: AnyView? {
         guard model.me?.mayAddLinks == true else { return nil }
         return AnyView(HStack(spacing: 6) {
@@ -512,30 +489,37 @@ struct ComposeView: View {
             .accessibilityLabel("Link")
             .accessibilityAddTraits(editor.isEditingLink ? .isSelected : [])
             if editor.isEditingLink, editor.isExistingLink {
-                Button("Visit") {
-                    if let visitURL { UIApplication.shared.open(visitURL) }
-                }
-                .font(.subheadline.weight(.medium))
-                .frame(height: 36)
-                .padding(.horizontal, 8)
-                .contentShape(.rect)
-                .buttonStyle(.plain)
-                .disabled(visitURL == nil)
-                .opacity(visitURL == nil ? 0.35 : 1)
-                .accessibilityLabel("Visit Link")
                 Button {
-                    editor.removeLink()
-                    editor.focus()
+                    if let visitURL { UIApplication.shared.open(visitURL) }
                 } label: {
-                    appIcon("slab-trash")
-                        .foregroundStyle(Color.deleteRed)
+                    Image(systemName: "arrow.up.right.square")
+                        .font(.system(size: 17, weight: .medium))
                         .frame(width: 40, height: 36)
                         .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Remove Link")
+                .disabled(visitURL == nil)
+                .opacity(visitURL == nil ? 0.35 : 1)
+                .accessibilityLabel("Visit Link")
             }
         })
+    }
+
+    /// The format bar's way back to the usual one, in a group of its own at the far right: it
+    /// lets go of the selection (the cursor stays at its end), closes the link row and the
+    /// held-open formats. Without it, the only way back from a held Bold was a tap in the text.
+    private var closeFormatsButton: some View {
+        Button {
+            showsFormatBar = false
+            editor.leaveFormatting()
+        } label: {
+            Image(systemName: "xmark")
+                .font(.system(size: 15, weight: .semibold))
+                .frame(width: 36, height: 36)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Close Formatting")
     }
 
     /// Where Visit goes: the address in the link row, as it stands.
@@ -543,31 +527,9 @@ struct ComposeView: View {
         editor.isEditingLink && editor.isExistingLink ? RichTextEditorModel.normalizedURL(editor.linkText) : nil
     }
 
-    /// The three formats, drawn as the letters every editor uses, in a serif like the writing's.
-    private enum FormatLetter {
-        case bold, italic, underline
-
-        var label: Text {
-            switch self {
-            case .bold: Text("B").font(.system(size: 20, weight: .bold, design: .serif))
-            case .italic: Text("I").font(.system(size: 20, weight: .medium, design: .serif)).italic()
-            case .underline: Text("U").font(.system(size: 19, weight: .medium, design: .serif)).underline()
-            }
-        }
-    }
-
-    /// One of the bar's format buttons: lit, like a row's button while its row is open, while
-    /// the format's on.
+    /// One of the bar's format buttons (see `FormatButton`).
     private func formatButton(_ name: String, _ letter: FormatLetter, isOn: Bool, toggle: @escaping () -> Void) -> some View {
-        Button(action: toggle) {
-            letter.label
-                .frame(width: 40, height: 36)
-                .background(isOn ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
-                .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(name)
-        .accessibilityAddTraits(isOn ? .isSelected : [])
+        FormatButton(name: name, letter: letter, isOn: isOn, toggle: toggle)
     }
 
     /// Bold's tap, but not the one that ends the hold that opened the format buttons.
@@ -1338,8 +1300,8 @@ private extension View {
     }
 }
 
-/// The link row: the address, with Insert (or Update for a link that's there; Visit and the
-/// trash that removes it are in the bar below, on the left). Opened from the Link button it takes the keyboard; opened by selecting
+/// The link row: the address, with Insert (or Update for a link that's there, and the trash
+/// that removes it at the far left, the other end from Update; Visit is in the bar below, on the left). Opened from the Link button it takes the keyboard; opened by selecting
 /// a link, the selection stays until the address is tapped.
 /// The composer's calendar row: what was on the phone's calendar on the entry's day, each a tap
 /// away from being a heading in the entry to write under. iOS asks for the calendar the first
@@ -1476,6 +1438,22 @@ private struct LinkRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
+            // A link that's there can be removed: at the row's far end from Update, so a thumb
+            // going for Update doesn't land on it.
+            if editor.isExistingLink {
+                Button {
+                    editor.removeLink()
+                    editor.focus()
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 17, weight: .medium))
+                        .foregroundStyle(Color.deleteRed)
+                        .frame(width: 32, height: 32)
+                        .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Remove Link")
+            }
             // Opened from the Link button, the address takes the keyboard, so typing goes here and
             // not into the entry.
             LinkAddressField(text: $editor.linkText,
@@ -1627,5 +1605,40 @@ private struct CameraPicker: UIViewControllerRepresentable {
         func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
             parent.dismiss()
         }
+    }
+}
+
+/// The three formats, drawn as the letters every editor uses, in a serif like the writing's.
+/// (The entry composer's bar and the template editor's.)
+enum FormatLetter {
+    case bold, italic, underline
+
+    var label: Text {
+        switch self {
+        case .bold: Text("B").font(.system(size: 20, weight: .bold, design: .serif))
+        case .italic: Text("I").font(.system(size: 20, weight: .medium, design: .serif)).italic()
+        case .underline: Text("U").font(.system(size: 19, weight: .medium, design: .serif)).underline()
+        }
+    }
+}
+
+/// A format button for an editor's bar: lit, like a row's button while its row is open, while
+/// the format's on.
+struct FormatButton: View {
+    let name: String
+    let letter: FormatLetter
+    let isOn: Bool
+    let toggle: () -> Void
+
+    var body: some View {
+        Button(action: toggle) {
+            letter.label
+                .frame(width: 40, height: 36)
+                .background(isOn ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(name)
+        .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 }
