@@ -186,7 +186,7 @@ describe 'Pages' do
     visit journal_app_path
 
     expect(page).to have_title 'Dabble Me Journal App for iPhone and iPad — Dabble me.'
-    expect(page).to have_css 'h1', text: 'A private journal app for iPhone and iPad'
+    expect(page).to have_css 'h1', text: 'A daily journal app for iPhone and iPad'
     expect(page).to have_link('Get the iOS app (beta)', href: ApplicationHelper.ios_testflight_url)
     # Seven screens, each with a description for people who can't see it and its size (no layout shift).
     shots = page.all('main img')
