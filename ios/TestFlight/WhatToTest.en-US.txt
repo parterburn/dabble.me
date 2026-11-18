@@ -1,3 +1,11 @@
+Entry text size: the default is now the middle of five.
+
+- Settings, Theme: the Entry Text Size slider's stops are Smallest, Smaller, Default, Larger, Largest, with Default in the centre. Before, Default was second of five.
+- The default is very slightly smaller than it was (1%), and each stop is a slightly bigger step than before (9% of the body size, was 8%).
+- If you had chosen a size before this build, you should land on the nearest new one: Small becomes Smaller, Large becomes Larger, Extra Large and Largest both become Largest. Your entries shouldn't visibly jump in size, except from the old Largest, which comes down a little.
+- If you never changed it, you're on Default.
+- Pinch an open entry to step through the five sizes, and check the editor follows the same size.
+
 The preview you get by touching and holding an entry now says how long ago it was.
 
 - In the Journal, Today, Search or On This Day, touch and hold an entry. Above its text, next to the date, it should say how long ago that was as of today: "36 days ago", "3 years, 2 months ago", or "Today" / "Yesterday".

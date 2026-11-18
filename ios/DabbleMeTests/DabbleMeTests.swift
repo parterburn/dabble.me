@@ -929,6 +929,42 @@ struct ShareTextTests {
     }
 }
 
+struct ReadingTextSizeTests {
+    /// Five stops, the default in the middle at 99%, 9 points of a hundred apart.
+    @Test func theDefaultIsTheMiddleStop() {
+        let sizes = ReadingTextSize.allCases
+        #expect(sizes.count == 5 && sizes[2] == .standard)
+        #expect(abs(ReadingTextSize.standard.scale - 0.99) < 0.0001)
+        for (smaller, larger) in zip(sizes, sizes.dropFirst()) {
+            #expect(abs(larger.scale - smaller.scale - 0.09) < 0.0001)
+        }
+        #expect(sizes.map(\.label) == ["Smallest", "Smaller", "Default", "Larger", "Largest"])
+    }
+
+    /// A size chosen on the old scale lands on the nearest new stop, once.
+    @Test func anOldChoiceIsCarriedOver() throws {
+        #expect(ReadingTextSize.migrated(fromLegacy: 0) == .smaller)   // Small, 92% → 90%
+        #expect(ReadingTextSize.migrated(fromLegacy: 1) == .standard)  // Default, 100% → 99%
+        #expect(ReadingTextSize.migrated(fromLegacy: 2) == .larger)    // Large, 108% → 108%
+        #expect(ReadingTextSize.migrated(fromLegacy: 3) == .largest)   // Extra Large, 116% → 117%
+        #expect(ReadingTextSize.migrated(fromLegacy: 4) == .largest)   // Largest, 124% → 117%
+
+        let name = "ReadingTextSizeTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        // Never chosen: nothing's written, so the new default applies.
+        ReadingTextSize.migrateStoredSize(in: defaults)
+        #expect(defaults.object(forKey: ReadingTextSize.storageKey) == nil)
+        defaults.set(2, forKey: ReadingTextSize.legacyStorageKey)
+        ReadingTextSize.migrateStoredSize(in: defaults)
+        #expect(defaults.integer(forKey: ReadingTextSize.storageKey) == ReadingTextSize.larger.rawValue)
+        // A choice made since isn't overwritten.
+        defaults.set(ReadingTextSize.smallest.rawValue, forKey: ReadingTextSize.storageKey)
+        ReadingTextSize.migrateStoredSize(in: defaults)
+        #expect(defaults.integer(forKey: ReadingTextSize.storageKey) == ReadingTextSize.smallest.rawValue)
+    }
+}
+
 struct WhatToTestNotesTests {
     /// TestFlight cuts a build's "What to Test" off at 4,000 characters (Xcode Cloud warns, and
     /// the end is lost): the notes are rewritten for each build, not added to.

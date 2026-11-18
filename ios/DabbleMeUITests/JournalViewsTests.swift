@@ -1163,12 +1163,12 @@ final class JournalViewsTests: XCTestCase {
             app.navigationBars.buttons.element(boundBy: 0).tap()
         }
         func setSize(_ label: String) {
-            // The slider's stops: Small, Default, Large, Extra Large, Largest.
-            let stops = ["Small": 0.0, "Default": 0.25, "Largest": 1.0]
+            // The slider's stops: Smallest, Smaller, Default, Larger, Largest.
+            let stops = ["Smallest": 0.0, "Default": 0.5, "Largest": 1.0]
             app.sliders["Entry Text Size"].adjust(toNormalizedSliderPosition: stops[label]!)
         }
         let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Ran 5 miles without stopping")).firstMatch
-        accessibility { setSize("Small") }
+        accessibility { setSize("Smallest") }
         tab(app, "Journal").tap()
         app.scrollTo(row)
         let small = row.frame.width * row.frame.height

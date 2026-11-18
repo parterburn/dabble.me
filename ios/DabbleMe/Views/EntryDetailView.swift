@@ -508,7 +508,7 @@ struct EntryDetailView: View {
 
     // MARK: - Pinch to resize text
 
-    /// Each ~25% of pinch moves one text size step (Small … Largest).
+    /// Each ~25% of pinch moves one text size step (Smallest … Largest).
     private var pinchToResize: some Gesture {
         MagnifyGesture(minimumScaleDelta: 0.04)
             .onChanged { value in
