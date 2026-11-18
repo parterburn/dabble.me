@@ -502,6 +502,12 @@ struct PhotoPreparerTests {
 }
 
 struct RichTextTests {
+    @Test func aPreviewShowsADividerAsDashesAndListLinesAsBullets() {
+        let text = "Proud dad.\n\n* * *\n\nDoes email still work?\n- eggs\n* plates\n---\n*starred* words\n- -"
+        #expect(RichText.previewLines(text)
+            == "Proud dad.\n\n———\n\nDoes email still work?\n• eggs\n• plates\n———\n*starred* words\n• -")
+    }
+
     #if canImport(UIKit)
     static var style: RichText.Style { RichText.Style(baseFont: .systemFont(ofSize: 17), textColor: .label) }
     #else

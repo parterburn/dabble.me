@@ -1,4 +1,4 @@
-Two things: the editor's format buttons, and the widget taking turns through a day's On This Day entries.
+Three things: the editor's format buttons, the divider in entry previews, and the widget taking turns through a day's On This Day entries.
 
 FORMAT BUTTONS
 
@@ -8,6 +8,10 @@ FORMAT BUTTONS
 - Hold B with nothing selected: the bar should switch to Link and B, I, U. Tap I and type: it should come out in italics. The bar stays while you type, so you can turn it off again.
 - Then tap somewhere else in the entry: the bar should go back to photos, B, hashtags and prompts.
 - A quick tap on B should still just turn bold on or off, and lifting your finger after a hold should not toggle bold.
+
+DIVIDER IN PREVIEWS
+
+- Find an entry made of two merged together (the full entry shows a short line between them). In the Entries list, and in the preview when you hold an entry, the divider should be a short line of dashes, not a bullet followed by two asterisks.
 
 WIDGET
 

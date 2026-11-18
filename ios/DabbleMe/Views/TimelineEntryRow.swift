@@ -34,7 +34,7 @@ struct TimelineEntryRow: View {
 
     /// Collapsed and expanded are the same text, set the same way: expanding only lifts the line
     /// limit (and swaps in the full text when the server's preview was cut short), so nothing
-    /// shifts. Light Markdown; list lines ("- item") show as bullets. Web addresses are links
+    /// shifts. Light Markdown; list lines ("- item") show as bullets, a divider as dashes. Web addresses are links
     /// either way (a tap on one opens it; anywhere else expands or opens the entry). #hashtags are
     /// tinted, and links once expanded.
     private var styledText: AttributedString {
@@ -46,7 +46,7 @@ struct TimelineEntryRow: View {
                                                songLinks: entry.songs?.isEmpty == false, from: source)
         }
         if source.isEmpty { return AttributedString("📷 Photo") }
-        let text = Self.tighteningParagraphGaps(in: AttributedString.journal(Self.bullets(source)),
+        let text = Self.tighteningParagraphGaps(in: AttributedString.journal(RichText.previewLines(source)),
                                                 fontSize: bodySize * textSize.scale, design: fontStyle.design)
         return RichText.linkingURLs(in: isExpanded ? RichText.linkingHashtags(in: text) : Self.tintingHashtags(in: text))
     }
@@ -66,15 +66,6 @@ struct TimelineEntryRow: View {
             index = next
         }
         return result
-    }
-
-    private static func bullets(_ text: String) -> String {
-        text.split(separator: "\n", omittingEmptySubsequences: false)
-            .map { line in
-                for marker in ["- ", "* "] where line.hasPrefix(marker) { return "• " + line.dropFirst(2) }
-                return String(line)
-            }
-            .joined(separator: "\n")
     }
 
     private static func tintingHashtags(in text: AttributedString) -> AttributedString {
