@@ -1,3 +1,8 @@
+Fixed: holding a link while writing left the entry stuck.
+
+- While writing, link a word, then touch and hold it. iOS's web preview should no longer come up (it took the keyboard away and you couldn't type in the entry again). You get the ordinary Select / Paste menu, and can keep writing.
+- A tap on the link still opens its row to change or remove it.
+
 Entry text size: each step is now 8%.
 
 - Settings, Theme, Entry Text Size. The five sizes are 8% smaller than Default, Default, then 8%, 16% and 24% larger. (They were 12% smaller, then 15%, 30% and 50% larger.) Large should read as just slightly bigger than Default.

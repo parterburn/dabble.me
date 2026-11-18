@@ -679,6 +679,15 @@ struct RichTextEditor: UIViewRepresentable {
             return UIAction { [model] _ in model.linkTapped(in: range) }
         }
 
+        /// A link held in the editor has no menu of iOS's (its web preview, Open Link, Share…).
+        /// That preview took the keyboard and left the text view unable to take it back: the
+        /// entry couldn't be written in again. Here a link is something to edit, which a tap
+        /// does; holding it selects, as with any other word.
+        func textView(_ textView: UITextView, menuConfigurationFor textItem: UITextItem, defaultMenu: UIMenu) -> UITextItem.MenuConfiguration? {
+            if case .link = textItem.content { return nil }
+            return .init(menu: defaultMenu)
+        }
+
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {
             guard range.length == 0 else { return true }
             stopLinkAtItsEnd(in: textView, at: range.location)

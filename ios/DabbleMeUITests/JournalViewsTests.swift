@@ -2145,6 +2145,33 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
 
+    /// A linked word held in the editor: no web preview of iOS's (it took the keyboard and the
+    /// entry couldn't be written in again). Writing carries on.
+    func testHoldingALinkLeavesTheEntryEditable() throws {
+        let app = launch()
+        let editor = openComposer(app)
+        editor.typeText("Read this now")
+        let word = editor.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 40, dy: 30))
+        word.doubleTap()
+        XCTAssertTrue(app.buttons["Link"].waitForExistence(timeout: 5))
+        app.buttons["Link"].tap()
+        XCTAssertTrue(app.textFields["Link address"].waitForExistence(timeout: 5))
+        sleep(1)
+        app.typeText("example.com")
+        app.buttons["Insert"].tap()
+        sleep(1)
+        word.press(forDuration: 1.6)
+        sleep(2)
+        XCTAssertFalse(app.buttons["Open Link"].exists, "No link preview and its menu")
+        XCTAssertTrue(app.keyboards.firstMatch.exists, "The keyboard stays")
+        // On with the entry.
+        editor.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 200, dy: 30)).tap()
+        app.typeText(" more")
+        XCTAssertEqual(editor.value as? String, "Read this now more")
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+    }
+
     /// The link row takes the keyboard each time it's opened, also after another row (hashtags)
     /// took its place while its field was being typed in.
     func testLinkFieldTakesTheKeyboardAfterAnotherRow() throws {
