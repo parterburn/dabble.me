@@ -25,6 +25,14 @@ module Api
       # PATCH { entry_template: [...], entry_template_auto: true, widget_content: "prompt" } (any of them)
       def update
         user = current_user
+        # Read, change and save under the row's lock: two phones each sending one setting at once
+        # would otherwise each save the whole JSON and lose the other's.
+        user.with_lock { apply_update(user) }
+      end
+
+      private
+
+      def apply_update(user)
         settings = user.app_settings_hash
 
         if params.key?(:entry_template)
@@ -48,8 +56,6 @@ module Api
           render_error(:unprocessable_content, 'invalid', 'Could not save your settings.', details: user.errors.full_messages)
         end
       end
-
-      private
 
       def settings_json(user)
         settings = user.app_settings_hash
