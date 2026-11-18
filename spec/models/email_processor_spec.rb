@@ -14,23 +14,26 @@ describe EmailProcessor do
         allow(Sentry).to receive(:capture_message)
       end
 
-      def email_to(token, from:, spf: "Pass")
+      def email_to(token, from:, spf: "Pass", body: "Hello")
         FactoryBot.build(
           :email,
           from: { email: from },
           to: [{ token: token, host: ENV['SMTP_DOMAIN'], email: "#{token}@#{ENV['SMTP_DOMAIN']}" }],
           headers: { "X-Mailgun-Spf" => spf },
-          body: "Hello"
+          body: body
         )
       end
 
       it "ignores mail to the old address from anyone else, without alerting" do
-        expect { EmailProcessor.new(email_to(old_key, from: "stranger@example.com")).process }.not_to change { user.entries.reload.count }
+        expect { EmailProcessor.new(email_to(old_key, from: "stranger@example.com")).process }
+          .not_to change { [user.entries.reload.count, ActionMailer::Base.deliveries.size] }
         expect(Sentry).not_to have_received(:capture_message).with("Inbound entry not associated to user", anything)
       end
 
       it "still accepts a reply to the old address from the account email" do
-        expect { EmailProcessor.new(email_to(old_key, from: user.email)).process }.to change { user.entries.reload.count }.by(1)
+        expect { EmailProcessor.new(email_to(old_key, from: user.email)).process }
+          .to change { user.entries.reload.count }.by(1)
+          .and change { ActionMailer::Base.deliveries.count { |mail| mail.subject == "Your Dabble Me entry was not saved" } }.by(0)
       end
 
       it "alerts when the account email's reply to the old address fails SPF" do
@@ -38,6 +41,38 @@ describe EmailProcessor do
 
         expect { EmailProcessor.new(email).process }.not_to change { user.entries.reload.count }
         expect(Sentry).to have_received(:capture_message).with("Inbound entry not associated to user", hash_including(level: :warning))
+      end
+
+      it "emails a known sender when a reply to the old address is not saved" do
+        user.update!(first_name: "Ada")
+        journal = "Private journal line 9f3c that must not be mailed"
+        email = email_to(old_key, from: user.email, spf: "Fail", body: journal)
+
+        expect { EmailProcessor.new(email).process }
+          .to change { ActionMailer::Base.deliveries.size }.by(1)
+        expect(user.entries.reload).to be_empty
+
+        notice = ActionMailer::Base.deliveries.last
+        body = notice.html_part.body.decoded + notice.text_part.body.decoded
+        expect(notice.to).to eq([user.email])
+        expect(notice[:from].value).to eq("Dabble Me Support <hello@#{ENV['MAIN_DOMAIN']}>")
+        expect(notice.subject).to eq("Your Dabble Me entry was not saved")
+        expect(body).to include("Hey Ada,")
+        expect(body).to include("old posting address")
+        expect(body).to include("could not confirm it was sent from your account email")
+        expect(body).to include("the entry was not saved")
+        expect(body).to include(user.email)
+        expect(body).not_to include(journal)
+        expect(body.gsub(user.email, "")).not_to match(/spf|dkim/i)
+        expect(body).not_to include(old_key)
+        expect(body).not_to include(user.user_key)
+        expect(Sentry).to have_received(:capture_message).with("Inbound entry not associated to user", hash_including(level: :warning))
+      end
+
+      it "does not email a stranger who writes to the old address" do
+        expect { EmailProcessor.new(email_to(old_key, from: "stranger@example.com", body: "Unsolicited note")).process }
+          .not_to change { [user.entries.reload.count, ActionMailer::Base.deliveries.size] }
+        expect(Sentry).not_to have_received(:capture_message).with("Inbound entry not associated to user", anything)
       end
 
       it "accepts mail to the new address" do

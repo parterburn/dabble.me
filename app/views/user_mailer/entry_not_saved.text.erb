@@ -1,0 +1,11 @@
+Hey <%= @user.first_name_or_fallback %>,
+
+We received your email at an old posting address and could not confirm it was sent from your account email (<%= @user.email %>), so the entry was not saved.
+
+Send it again from <%= @user.email %> to your current posting address. You can find that address in your settings:
+<%= posting_address_url %>
+
+If you didn't send this, you can ignore this email.
+
+Thanks,
+Dabble Me

@@ -59,6 +59,15 @@ class UserMailer < ActionMailer::Base
     email.mailgun_options = {tag: 'EntryError'}
   end
 
+  # The inbound email was dropped before it was associated to an account.
+  # This goes to the sender. It does not include the journal text, unlike
+  # failed_entry, which is the internal notice when a known user's save fails.
+  def entry_not_saved(user)
+    @user = user
+    email = mail(to: user.cleaned_to_address, subject: "Your Dabble Me entry was not saved")
+    email.mailgun_options = { tag: "EntryNotSaved" }
+  end
+
   # The link opens the app, which asks for a sign-in before the download.
   def export_ready(export)
     @export = export

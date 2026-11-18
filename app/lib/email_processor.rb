@@ -203,10 +203,17 @@ class EmailProcessor
       # Mail to a reset (retired) posting address lands here, spam included,
       # so only alert when the sender is one of our users: that's someone
       # whose entry was dropped, e.g. a reply to an old address that failed
-      # SPF/DKIM. Everything else is just logged.
-      if @from.present? && User.exists?(email: @from)
+      # SPF/DKIM. Everyone else stays silent.
+      sender = User.find_by(email: @from) if @from.present?
+      if sender
         Sentry.set_user(id: @token, email: @from)
         Sentry.capture_message("Inbound entry not associated to user", level: :warning, extra: { subject: @subject, from: @from })
+        begin
+          # Journal text stays out of the job arguments.
+          UserMailer.entry_not_saved(sender).deliver_later
+        rescue StandardError => _e
+          Sentry.capture_message("Error sending email", level: :error, extra: { email_type: "Entry not saved" })
+        end
       else
         Rails.logger.info("Inbound email matched no user (token: #{@token.inspect})")
       end
