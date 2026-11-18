@@ -85,25 +85,18 @@ struct EntryActionsSheet: View {
         // Pills wrap, a few to a row; a dated one, with its age beside it, mostly has a row to itself.
         let dated = tags.count(where: { $0.age != nil })
         let pillRows = CGFloat(dated + (tags.count - dated + 2) / 3) * 44
-        // (And a line for how long ago, which mostly sits under the date.)
+        // (And a line for how long ago, under the date.)
         return min(70 + (ago == nil ? 0 : 20) + CGFloat(actions) * 62 + (tags.isEmpty ? 0 : 50 + pillRows), 640)
     }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
-                // The date, and beside it how long ago that was; under it when the two don't fit
-                // on a line (the date's written out in full here).
-                ViewThatFits(in: .horizontal) {
-                    HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        dateLine
-                        Spacer(minLength: 0)
-                        agoLine
-                    }
-                    VStack(alignment: .leading, spacing: 2) {
-                        dateLine
-                        agoLine
-                    }
+                // The date in full, and under it, as its subtitle in a quieter color, how long ago
+                // that was. Always a line each.
+                VStack(alignment: .leading, spacing: 2) {
+                    dateLine
+                    agoLine
                 }
                 .padding(.bottom, 4)
                 if canOpen {
@@ -169,9 +162,9 @@ struct EntryActionsSheet: View {
     private var dateLine: some View {
         Text(entry.day?.long ?? entry.date)
             .font(.subheadline.weight(.semibold))
-            .foregroundStyle(.secondary)
+            .foregroundStyle(.primary)
             .lineLimit(1)
-            .fixedSize()
+            .minimumScaleFactor(0.85)
     }
 
     @ViewBuilder
@@ -181,7 +174,6 @@ struct EntryActionsSheet: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
-                .fixedSize()
                 .accessibilityIdentifier("ActionsSheetAgo")
         }
     }

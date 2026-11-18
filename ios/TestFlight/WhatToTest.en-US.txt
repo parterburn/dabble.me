@@ -8,7 +8,6 @@ Entry text size: the default is now the middle of five.
 
 An entry's preview and its Actions sheet now say how long ago it was.
 
-- In the Journal, Today, Search or On This Day, touch and hold an entry. Above its text, next to the date, it should say how long ago that was as of today: "36 days ago", "3 years, 2 months ago", or "Today" / "Yesterday".
-- On a long date the "ago" drops to its own line under the date. Check both look right, and that nothing is cut off.
-- Swipe left on an entry for its Actions (or on the entry itself when it's open). The date at the top of that sheet should say how long ago too, beside it or on the line under it, and the buttons below shouldn't be cut off.
+- In the Journal, Today, Search or On This Day, touch and hold an entry. At the top of the preview is the date in full ("Wednesday, November 12, 2025"), and on its own line under it, in a lighter color, how long ago that was as of today: "36 days ago", "3 years, 2 months ago", or "Today" / "Yesterday".
+- Swipe left on an entry for its Actions (or on the entry itself when it's open). The top of that sheet should read the same way: the full date, then how long ago under it in a lighter color. The buttons below shouldn't be cut off.
 - Both should match what the entry says under its title when you open it in full.
