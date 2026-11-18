@@ -599,15 +599,15 @@ class EmailProcessor
   # own stored image, not a URL from the email.
   def attach_inline_images(entry, files, existing_url: nil)
     image_file = nil
-    extra = nil
-    image_file, content_type, extra = compose_inline_image(files, existing_url)
+    extras = []
+    image_file, content_type, extras = compose_inline_image(files, existing_url)
     return if image_file.blank?
 
     entry.uploading_image = false
     entry.image = uploaded_image_file(image_file, content_type)
     entry.save
   ensure
-    close_tempfile(extra) if extra && extra != image_file
+    Array(extras).each { |file| close_tempfile(file) }
     Array(files).each { |file| close_tempfile(file) }
   end
 
@@ -619,18 +619,36 @@ class EmailProcessor
     nil
   end
 
+  # New inline images are composed first, up to the collage limit. An existing
+  # photo is merged in a second pass so it is not the ninth item that
+  # CollageGenerator drops with .first(MAX_IMAGES).
   def compose_inline_image(files, existing_url)
+    files = Array(files)
+    intermediates = []
     if files.size == 1 && existing_url.blank?
       type = Marcel::MimeType.for(files.first)
       files.first.rewind if files.first.respond_to?(:rewind)
       type = "image/jpeg" unless Entry::ALLOWED_IMAGE_TYPES.include?(type.to_s)
-      return [files.first, type, nil]
+      return [files.first, type, intermediates]
     end
 
-    sources = files.map(&:path)
-    sources << existing_url if existing_url.present?
-    collage = CollageGenerator.new(urls: sources, user: @user, allow_local_paths: true).tempfile
-    [collage, "image/jpeg", collage]
+    inline_source = if files.size == 1
+      files.first.path
+    else
+      staged = CollageGenerator.new(urls: files.map(&:path), user: @user, allow_local_paths: true).tempfile
+      intermediates << staged if staged
+      staged&.path
+    end
+    return [nil, nil, intermediates] if inline_source.blank?
+    return [intermediates.first, "image/jpeg", intermediates] if existing_url.blank?
+
+    merged = CollageGenerator.new(
+      urls: [inline_source, existing_url],
+      user: @user,
+      allow_local_paths: true
+    ).tempfile
+    intermediates << merged if merged
+    [merged, "image/jpeg", intermediates]
   end
 
   def uploaded_image_file(file, content_type)

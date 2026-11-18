@@ -612,6 +612,29 @@ describe EmailProcessor do
     end
   end
 
+  describe '#compose_inline_image' do
+    it "composes eight inline images first, then merges the existing photo" do
+      processor = described_class.allocate
+      processor.instance_variable_set(:@user, paid_user)
+      files = Array.new(CollageGenerator::MAX_IMAGES) { |index| instance_double(Tempfile, path: "/tmp/inline-#{index}.jpg") }
+      staged = instance_double(Tempfile, path: "/tmp/staged.jpg")
+      merged = instance_double(Tempfile, path: "/tmp/merged.jpg")
+      existing = "https://cdn.example.com/existing.jpg"
+      calls = []
+      allow(CollageGenerator).to receive(:new) do |urls:, **|
+        calls << urls
+        instance_double(CollageGenerator, tempfile: urls.include?(existing) ? merged : staged)
+      end
+
+      image, type, extras = processor.send(:compose_inline_image, files, existing)
+
+      expect(calls).to eq([files.map(&:path), ["/tmp/staged.jpg", existing]])
+      expect(image).to eq(merged)
+      expect(type).to eq("image/jpeg")
+      expect(extras).to eq([staged, merged])
+    end
+  end
+
   describe '#ignored_attachment_domain?' do
     subject(:processor) { described_class.allocate }
 

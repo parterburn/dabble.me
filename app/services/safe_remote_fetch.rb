@@ -144,6 +144,8 @@ class SafeRemoteFetch
     @read_timeout = read_timeout
   end
 
+  class BodyTooLarge < StandardError; end
+
   def fetch(url, redirects_left)
     return failure(:too_many_redirects) if redirects_left.negative?
 
@@ -155,15 +157,17 @@ class SafeRemoteFetch
     status, addresses = self.class.lookup(uri.host)
     return failure(status) if addresses.empty?
 
-    response = request(uri, addresses.first)
+    response, body = request(uri, addresses.first)
     case response
     when Net::HTTPRedirection
       follow_redirect(uri, response, redirects_left)
     when Net::HTTPSuccess
-      success(uri, response)
+      success(uri, response, body)
     else
       failure(:http_error)
     end
+  rescue BodyTooLarge
+    failure(:too_large)
   rescue StandardError
     failure(:http_error)
   end
@@ -179,7 +183,12 @@ class SafeRemoteFetch
       open_timeout: @open_timeout,
       read_timeout: @read_timeout
     ) do |http|
-      http.request(Net::HTTP::Get.new(request_path(uri)))
+      captured = nil
+      http.request(Net::HTTP::Get.new(request_path(uri))) do |response|
+        keep = response.is_a?(Net::HTTPSuccess)
+        captured = [response, read_limited_body(response, keep: keep)]
+      end
+      captured
     end
   end
 
@@ -198,17 +207,48 @@ class SafeRemoteFetch
     failure(:invalid_redirect)
   end
 
-  def success(uri, response)
-    declared = response["content-length"]&.to_i
-    return failure(:too_large) if declared && declared > @max_bytes
+  # Content-Length is checked before any read. The socket is then consumed in
+  # chunks, and reading stops as soon as the accumulated size passes the cap.
+  # Redirect and error bodies are discarded the same way so they cannot grow
+  # without a limit. Raising skips Net::HTTP's final full-body read.
+  def read_limited_body(response, keep:)
+    declared = content_length_of(response)
+    raise BodyTooLarge if declared && declared > @max_bytes
+    return +"".b unless response.class.body_permitted?
 
-    body = response.body.to_s
-    return failure(:too_large) if body.bytesize > @max_bytes
+    kept = keep ? +"".b : nil
+    seen = 0
+    response.read_body do |chunk|
+      piece = chunk.to_s.b
+      seen += piece.bytesize
+      raise BodyTooLarge if seen > @max_bytes
 
+      kept << piece if kept
+    end
+    kept || +"".b
+  rescue IOError => e
+    raise unless e.message.include?("read_body called twice")
+
+    piece = response.body.to_s.b
+    raise BodyTooLarge if piece.bytesize > @max_bytes
+
+    keep ? piece : +"".b
+  end
+
+  def content_length_of(response)
+    header = response["content-length"]
+    return nil if header.nil? || header.to_s.strip.empty?
+
+    Integer(header.to_s, 10)
+  rescue ArgumentError
+    nil
+  end
+
+  def success(uri, response, body)
     Result.new(
-      body: body,
+      body: body.to_s,
       content_type: response["content-type"].to_s.split(";").first.to_s.strip,
-      content_length: declared,
+      content_length: content_length_of(response),
       final_url: uri.to_s
     )
   end
