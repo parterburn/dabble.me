@@ -1,10 +1,18 @@
-The widget now takes turns through a day's On This Day entries.
+Two things: the editor's format buttons, and the widget taking turns through a day's On This Day entries.
+
+FORMAT BUTTONS
+
+- Bold, Italic and Underline are now plain letters (B, I, U) and Link is the standard link symbol, not the drawn icons.
+- Select some words: Link is now at the far left of the bar, and B, I, U are on the right.
+- Select a link (or tap one): "Visit" and the trash are beside Link at the bottom left, away from Update. Visit should open the address in the browser; the trash removes the link. The row above has only the address and Update.
+- Hold B with nothing selected: the bar should switch to Link and B, I, U. Tap I and type: it should come out in italics. The bar stays while you type, so you can turn it off again.
+- Then tap somewhere else in the entry: the bar should go back to photos, B, hashtags and prompts.
+- A quick tap on B should still just turn bold on or off, and lifting your finger after a hold should not toggle bold.
+
+WIDGET
 
 - This is for the medium widget set to Rewind with entry previews on, on a day when you have more than one entry from past years.
 - Through the day it should move from one to the next: they share 6 AM to midnight equally. With two, it changes at 3 PM; with three, at noon and 6 PM; with four, at 10:30, 3:00 and 7:30. Before 6 AM it shows the first.
 - Each one has its own label ("3 years ago · 2023"), text and photo.
 - Tap the entry on the widget: Today should open scrolled to the one that was showing.
 - Open the app in the morning so the widget has the day's entries, then look at it again after one of those times. iOS may be a few minutes late changing it.
-- A day with one past entry, or a widget set to a prompt or to Rewind without previews, is unchanged.
-
-Nothing else in the app changed in this build. (It also updates the App Store listing text kept with the project.)

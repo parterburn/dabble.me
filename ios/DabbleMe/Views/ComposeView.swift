@@ -33,6 +33,10 @@ struct ComposeView: View {
     /// The tag icon was held (so the tap that ends the hold doesn't also open its row), and
     /// what that did, said for a moment over the entry: "Tagged #Leo and #Sam".
     @State private var heldTagIcon = false
+    /// Bold was held: the bar shows the format buttons with nothing selected, for what's typed
+    /// next, until the cursor's put somewhere else.
+    @State private var showsFormatBar = false
+    @State private var boldHeldAt: Date?
     @State private var autoTagNotice: String?
     @State private var photoItems: [PhotosPickerItem] = []
     /// Prepared photos keyed by picker item, so re-selecting doesn't redo the work.
@@ -168,10 +172,10 @@ struct ComposeView: View {
                 Divider()
                 // The bar's icons are olive, not black: there are a lot of them, next to the writing.
                 RichTextEditor(model: editor,
-                               leading: isFormattingSelection ? nil
+                               leading: isFormattingSelection ? linkButtons.map { AnyView($0.foregroundStyle(.tint)) }
                                    : AnyView((model.me?.canAddPhotos == true ? AnyView(photosButton) : AnyView(proPhotosButton)).foregroundStyle(.tint)),
                                trailing: AnyView((isFormattingSelection ? AnyView(selectionButtons) : AnyView(tagAndLinkButtons)).foregroundStyle(.tint)),
-                               barKey: "\(isFormattingSelection)|\(editor.hasSelection)|\(editor.isBold)|\(editor.isItalic)|\(editor.isUnderlined)|\(model.me?.mayAddLinks == true)|\(CameraPicker.isAvailable)|\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)",
+                               barKey: "\(isFormattingSelection)|\(showsFormatBar)|\(editor.isExistingLink)|\(visitURL != nil)|\(editor.hasSelection)|\(editor.isBold)|\(editor.isItalic)|\(editor.isUnderlined)|\(model.me?.mayAddLinks == true)|\(CameraPicker.isAvailable)|\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)",
                                row: openRow)
                     // Low in the page, over the bar: clear of the entry's first lines.
                     .overlay(alignment: .bottom) {
@@ -288,6 +292,10 @@ struct ComposeView: View {
                 CameraPicker { image in Task { await addCameraPhoto(image) } }
                     .ignoresSafeArea()
             }
+            // Held open, the format buttons go when the cursor's put somewhere else, and a
+            // selection (which shows them itself) takes over from the hold.
+            .onChange(of: editor.caretMoves) { showsFormatBar = false }
+            .onChange(of: editor.hasSelection) { showsFormatBar = false }
             .onChange(of: editor.isEditingLink) { _, editing in
                 // One row at a time (the link row also opens by selecting a link).
                 if editing { showsHashtagBar = false; showsAskRow = false; showsPhotoDrawer = false }
@@ -470,40 +478,89 @@ struct ComposeView: View {
         #endif
     }
 
-    /// With words selected, the bar is theirs alone: Bold, Italic and Underline, each lit while
-    /// all of them have it, and Link (PRO; shows or hides the link row). Photos, hashtags and
-    /// prompts aren't for a selection, and are out of the way until it's let go.
+    /// With words selected (or Bold held), the bar is the formats' alone: Bold, Italic and
+    /// Underline on the right, each lit while all the words have it; Link on the left
+    /// (`linkButtons`). Photos, hashtags and prompts aren't for a selection, and are out of the
+    /// way until it's let go.
     private var selectionButtons: some View {
         HStack(spacing: 6) {
-            Group {
-                formatButton("Bold", "slab-bold", isOn: editor.isBold) { editor.toggleBold() }
-                formatButton("Italic", "slab-italic", isOn: editor.isItalic) { editor.toggleItalic() }
-                formatButton("Underline", "slab-underline", isOn: editor.isUnderlined) { editor.toggleUnderline() }
+            formatButton("Bold", .bold, isOn: editor.isBold, toggle: toggleBold)
+            formatButton("Italic", .italic, isOn: editor.isItalic) { editor.toggleItalic() }
+            formatButton("Underline", .underline, isOn: editor.isUnderlined) { editor.toggleUnderline() }
+        }
+        // (While the link's address is being typed the words aren't the keyboard's: these wait.)
+        .disabled(editor.isEditingLink && !editor.hasSelection)
+        .opacity(editor.isEditingLink && !editor.hasSelection ? 0.35 : 1)
+    }
+
+    /// The format bar's left, where Photos is otherwise: Link (PRO; shows or hides the link
+    /// row) and, for a link that's there, Visit and the trash that removes it. They're down
+    /// here, away from the row's Update, so neither is hit by a thumb going for it.
+    private var linkButtons: AnyView? {
+        guard model.me?.mayAddLinks == true else { return nil }
+        return AnyView(HStack(spacing: 6) {
+            Button {
+                if editor.isEditingLink { editor.endLink() } else { editor.beginLink() }
+            } label: {
+                Image(systemName: "link")
+                    .font(.system(size: 17, weight: .medium))
+                    .frame(width: 40, height: 36)
+                    .background(editor.isEditingLink ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+                    .contentShape(.rect)
             }
-            // (While the link's address is being typed the words aren't the keyboard's: Link
-            // stays, to close its row, and the others wait.)
-            .disabled(!editor.hasSelection)
-            .opacity(editor.hasSelection ? 1 : 0.35)
-            if model.me?.mayAddLinks == true {
+            .buttonStyle(.plain)
+            .accessibilityLabel("Link")
+            .accessibilityAddTraits(editor.isEditingLink ? .isSelected : [])
+            if editor.isEditingLink, editor.isExistingLink {
+                Button("Visit") {
+                    if let visitURL { UIApplication.shared.open(visitURL) }
+                }
+                .font(.subheadline.weight(.medium))
+                .frame(height: 36)
+                .padding(.horizontal, 8)
+                .contentShape(.rect)
+                .buttonStyle(.plain)
+                .disabled(visitURL == nil)
+                .opacity(visitURL == nil ? 0.35 : 1)
+                .accessibilityLabel("Visit Link")
                 Button {
-                    if editor.isEditingLink { editor.endLink() } else { editor.beginLink() }
+                    editor.removeLink()
+                    editor.focus()
                 } label: {
-                    appIcon("slab-link")
+                    appIcon("slab-trash")
+                        .foregroundStyle(Color.deleteRed)
                         .frame(width: 40, height: 36)
-                        .background(editor.isEditingLink ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+                        .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Link")
-                .accessibilityAddTraits(editor.isEditingLink ? .isSelected : [])
+                .accessibilityLabel("Remove Link")
+            }
+        })
+    }
+
+    /// Where Visit goes: the address in the link row, as it stands.
+    private var visitURL: URL? {
+        editor.isEditingLink && editor.isExistingLink ? RichTextEditorModel.normalizedURL(editor.linkText) : nil
+    }
+
+    /// The three formats, drawn as the letters every editor uses, in a serif like the writing's.
+    private enum FormatLetter {
+        case bold, italic, underline
+
+        var label: Text {
+            switch self {
+            case .bold: Text("B").font(.system(size: 20, weight: .bold, design: .serif))
+            case .italic: Text("I").font(.system(size: 20, weight: .medium, design: .serif)).italic()
+            case .underline: Text("U").font(.system(size: 19, weight: .medium, design: .serif)).underline()
             }
         }
     }
 
     /// One of the bar's format buttons: lit, like a row's button while its row is open, while
     /// the format's on.
-    private func formatButton(_ name: String, _ icon: String, isOn: Bool, toggle: @escaping () -> Void) -> some View {
+    private func formatButton(_ name: String, _ letter: FormatLetter, isOn: Bool, toggle: @escaping () -> Void) -> some View {
         Button(action: toggle) {
-            appIcon(icon)
+            letter.label
                 .frame(width: 40, height: 36)
                 .background(isOn ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
                 .contentShape(.rect)
@@ -513,16 +570,32 @@ struct ComposeView: View {
         .accessibilityAddTraits(isOn ? .isSelected : [])
     }
 
-    /// Words are selected in the entry, or a link's address is being typed for some: the bar
-    /// shows `selectionButtons` and nothing else.
-    private var isFormattingSelection: Bool { editor.hasSelection || editor.isEditingLink }
+    /// Bold's tap, but not the one that ends the hold that opened the format buttons.
+    private func toggleBold() {
+        if let boldHeldAt, Date.now.timeIntervalSince(boldHeldAt) < 0.8 { return }
+        editor.toggleBold()
+    }
+
+    /// Words are selected in the entry, a link's address is being typed for some, or Bold was
+    /// held: the bar shows `linkButtons` and `selectionButtons`, and nothing else.
+    private var isFormattingSelection: Bool { editor.hasSelection || editor.isEditingLink || showsFormatBar }
 
     /// The bar's right, with nothing selected: Bold (for what's typed next), Tags (the hashtag row), then Prompt
     /// (the lightbulb) at the far edge. Each row button is selected while its row is open; one row at a time.
     private var tagAndLinkButtons: some View {
         HStack(spacing: 6) {
             // Bold, always: for what's typed next (lit while that's bold; a tap turns it off).
-            formatButton("Bold", "slab-bold", isOn: editor.isBold) { editor.toggleBold() }
+            formatButton("Bold", .bold, isOn: editor.isBold, toggle: toggleBold)
+                // Held: the other formats, to start typing in italics or underlined.
+                .simultaneousGesture(LongPressGesture(minimumDuration: 0.45).onEnded { _ in
+                    boldHeldAt = .now
+                    HoldHaptic.play()
+                    showsHashtagBar = false
+                    showsAskRow = false
+                    showsPhotoDrawer = false
+                    showsFormatBar = true
+                })
+                .accessibilityAction(named: "Show Italic and Underline") { showsFormatBar = true }
             Button {
                 // Not the tap that ends a hold.
                 if heldTagIcon { heldTagIcon = false; return }
@@ -1265,8 +1338,8 @@ private extension View {
     }
 }
 
-/// The link row: the address, with Insert (or Update for a link that's there, which can also be
-/// removed with the trash, at the far right). Opened from the Link button it takes the keyboard; opened by selecting
+/// The link row: the address, with Insert (or Update for a link that's there; Visit and the
+/// trash that removes it are in the bar below, on the left). Opened from the Link button it takes the keyboard; opened by selecting
 /// a link, the selection stays until the address is tapped.
 /// The composer's calendar row: what was on the phone's calendar on the entry's day, each a tap
 /// away from being a heading in the entry to write under. iOS asks for the calendar the first
@@ -1415,18 +1488,6 @@ private struct LinkRow: View {
                 .filledButtonStyle()
                 .buttonBorderShape(.capsule)
                 .disabled(!canApply)
-            if editor.isExistingLink {
-                Button {
-                    editor.removeLink()
-                    editor.focus()
-                } label: {
-                    appIcon("slab-trash")
-                        .foregroundStyle(Color.deleteRed)
-                        .frame(width: 36, height: 32)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Remove Link")
-            }
         }
         .font(.subheadline)
         .padding(.horizontal)
