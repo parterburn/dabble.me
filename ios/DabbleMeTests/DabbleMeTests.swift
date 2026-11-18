@@ -78,6 +78,52 @@ struct PromptGroundingTests {
 }
 
 @MainActor
+@MainActor
+struct HashtagTypingTests {
+    /// A "#" and a letter at the cursor is a hashtag being typed; a number first, or a "#" inside a word, isn't.
+    @Test func findsTheHashtagBeingTyped() {
+        func typed(_ text: String, at cursor: Int? = nil) -> String? {
+            let string = text as NSString
+            return RichTextEditorModel.hashtagBeingTyped(in: string, cursor: cursor ?? string.length)?.prefix
+        }
+        #expect(typed("Walked with #L") == "L")
+        #expect(typed("Walked with #Leo_2") == "Leo_2")
+        #expect(typed("#hik") == "hik")
+        #expect(typed("#hiking is fun", at: 4) == "hik") // the cursor inside it: what's before the cursor
+        #expect(typed("Walked with #") == nil)
+        #expect(typed("Room #12") == nil)
+        #expect(typed("#1st") == nil)
+        #expect(typed("C#m") == nil)
+        #expect(typed("##tag") == nil)
+        #expect(typed("#Leo ") == nil)
+        #expect(typed("no tag here") == nil)
+        let found = RichTextEditorModel.hashtagBeingTyped(in: "Hi #Le" as NSString, cursor: 6)
+        #expect(found?.range == NSRange(location: 3, length: 3))
+        // Inside one: the whole hashtag is what a choice replaces, not just up to the cursor.
+        let inside = RichTextEditorModel.hashtagBeingTyped(in: "#hiking is fun" as NSString, cursor: 4)
+        #expect(inside?.prefix == "hik")
+        #expect(inside?.range == NSRange(location: 0, length: 7))
+    }
+
+    /// Finishing a hashtag keeps what was typed as it was typed, and adds the rest.
+    @Test func finishingKeepsTheWritersCapitals() {
+        #expect(RichTextEditorModel.completion(of: "l", with: "Leo") == "leo")
+        #expect(RichTextEditorModel.completion(of: "L", with: "leo") == "Leo")
+        #expect(RichTextEditorModel.completion(of: "HI", with: "hiking") == "HIking")
+        #expect(RichTextEditorModel.completion(of: "hik", with: "Hiking") == "hiking")
+        #expect(RichTextEditorModel.completion(of: "x", with: "Leo") == "Leo") // not its beginning: the tag as it is
+    }
+
+    /// The writer's tags that start with it, the first of each spelling, without the one typed in full.
+    @Test func offersTagsThatStartThatWay() {
+        let tags = ["hiking", "Leo", "Hike", "leo", "home", "hi"]
+        #expect(ComposeView.hashtagCompletions(for: "hi", from: tags) == ["hiking", "Hike"])
+        #expect(ComposeView.hashtagCompletions(for: "L", from: tags) == ["Leo"])
+        #expect(ComposeView.hashtagCompletions(for: "leo", from: tags).isEmpty)
+        #expect(ComposeView.hashtagCompletions(for: "zz", from: tags).isEmpty)
+    }
+}
+
 struct HashtagMatchingTests {
     /// The writer's tags that are words in the entry come first in the composer's row, without a model.
     @Test func tagsMatchWholeWordsWhateverTheCase() {
@@ -926,6 +972,40 @@ struct ShareTextTests {
     @Test func sharesTheDateThenTheWords() {
         #expect(EntryActionsSheet.sharedText(date: "Monday, November 16, 2026", body: "A slow evening.\n") == "Monday, November 16, 2026\n\nA slow evening.")
         #expect(EntryActionsSheet.sharedText(date: "Monday, November 16, 2026", body: "  \n") == nil)
+    }
+}
+
+struct ReadingTextSizeTests {
+    /// Five stops, the default in the middle at 99%, each larger than the one before.
+    @Test func theDefaultIsTheMiddleStop() {
+        let sizes = ReadingTextSize.allCases
+        #expect(sizes.count == 5 && sizes[2] == .standard)
+        #expect(sizes.map(\.scale) == [0.90, 0.95, 0.99, 1.05, 1.10])
+        #expect(sizes.map(\.label) == ["Smallest", "Smaller", "Default", "Larger", "Largest"])
+    }
+
+    /// A size chosen on the old scale lands on the nearest new stop, once.
+    @Test func anOldChoiceIsCarriedOver() throws {
+        #expect(ReadingTextSize.migrated(fromLegacy: 0) == .smallest)  // Small, 92% → 90%
+        #expect(ReadingTextSize.migrated(fromLegacy: 1) == .standard)  // Default, 100% → 99%
+        #expect(ReadingTextSize.migrated(fromLegacy: 2) == .largest)   // Large, 108% → 110%
+        #expect(ReadingTextSize.migrated(fromLegacy: 3) == .largest)   // Extra Large, 116% → 110%
+        #expect(ReadingTextSize.migrated(fromLegacy: 4) == .largest)   // Largest, 124% → 110%
+        #expect(ReadingTextSize.migrated(fromLegacy: 9) == .standard)  // not a size at all
+
+        let name = "ReadingTextSizeTests.\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: name))
+        defer { defaults.removePersistentDomain(forName: name) }
+        // Never chosen: nothing's written, so the new default applies.
+        ReadingTextSize.migrateStoredSize(in: defaults)
+        #expect(defaults.object(forKey: ReadingTextSize.storageKey) == nil)
+        defaults.set(2, forKey: ReadingTextSize.legacyStorageKey)
+        ReadingTextSize.migrateStoredSize(in: defaults)
+        #expect(defaults.integer(forKey: ReadingTextSize.storageKey) == ReadingTextSize.largest.rawValue)
+        // A choice made since isn't overwritten.
+        defaults.set(ReadingTextSize.smallest.rawValue, forKey: ReadingTextSize.storageKey)
+        ReadingTextSize.migrateStoredSize(in: defaults)
+        #expect(defaults.integer(forKey: ReadingTextSize.storageKey) == ReadingTextSize.smallest.rawValue)
     }
 }
 

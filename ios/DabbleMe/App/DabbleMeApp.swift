@@ -20,6 +20,8 @@ struct DabbleMeApp: App {
         // -DabbleDebugSignedOut YES starts signed out (the welcome screens).
         if UserDefaults.standard.bool(forKey: "DabbleDebugSignedOut") { KeychainStore.delete() }
         #endif
+        // The Entry Text Size chosen on the old scale, carried to the new one (before any view reads it).
+        ReadingTextSize.migrateStoredSize()
         // After an update the New Entry control is drawn afresh: iOS keeps what it drew last,
         // which for a changed icon is the old one.
         let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String

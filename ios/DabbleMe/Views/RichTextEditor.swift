@@ -35,9 +35,13 @@ final class RichTextEditorModel {
     private(set) var characterCount = 0
     /// Some of the text is selected.
     private(set) var hasSelection = false
-    /// The selected words (or, with none, what's typed next) are bold, italic or underlined, any
-    /// of them: the bar's Format icon is filled in then.
-    private(set) var isFormatted = false
+    /// Whether the selected words, all of them (or, with none selected, what's typed next), are
+    /// bold, italic, underlined: the bar's buttons for each are lit then, and a tap takes it off.
+    private(set) var isBold = false
+    private(set) var isItalic = false
+    private(set) var isUnderlined = false
+    /// Any of the three (the template editor's Format icon is filled in then).
+    var isFormatted: Bool { isBold || isItalic || isUnderlined }
 
     /// Set while the link row is open; `linkText` is what the user is typing.
     var isEditingLink = false
@@ -97,6 +101,74 @@ final class RichTextEditorModel {
 
     /// The entry as plain text (for on-device suggestions).
     var plainText: String { textView?.text ?? "" }
+
+    /// The hashtag being typed at the cursor, without its "#" ("#hik" gives "hik"): the bar
+    /// offers the writer's tags that start that way. Nil with words selected, away from a
+    /// hashtag, or for one that starts with a number ("#1").
+    private(set) var typedHashtag: String?
+    @ObservationIgnored private var typedHashtagRange: NSRange?
+
+    /// The hashtag being typed at `cursor`: `prefix` is its letters up to the cursor, and `range`
+    /// is the whole of it, "#" and all, on past the cursor to where it ends (so finishing one
+    /// from its middle replaces it, and leaves no tail behind). It's one when there's at least
+    /// one character between the "#" and the cursor, the first of them not a number, nothing but
+    /// letters, numbers and "_" in it, and the "#" isn't in the middle of a word ("C#m").
+    static func hashtagBeingTyped(in text: NSString, cursor: Int) -> (range: NSRange, prefix: String)? {
+        guard cursor > 0, cursor <= text.length else { return nil }
+        func isWordCharacter(_ unit: unichar) -> Bool {
+            guard let scalar = UnicodeScalar(unit) else { return true } // half of an emoji or the like: not a break
+            return CharacterSet.alphanumerics.contains(scalar) || scalar == "_"
+        }
+        let hash = unichar(35) // "#"
+        var start = cursor
+        while start > 0, isWordCharacter(text.character(at: start - 1)) { start -= 1 }
+        guard start > 0, start < cursor, text.character(at: start - 1) == hash else { return nil }
+        if start > 1 {
+            let before = text.character(at: start - 2)
+            if before == hash || isWordCharacter(before) { return nil }
+        }
+        let prefix = text.substring(with: NSRange(location: start, length: cursor - start))
+        guard let first = prefix.unicodeScalars.first, !CharacterSet.decimalDigits.contains(first) else { return nil }
+        var end = cursor
+        while end < text.length, isWordCharacter(text.character(at: end)) { end += 1 }
+        return (NSRange(location: start - 1, length: end - start + 1), prefix)
+    }
+
+    private func updateTypedHashtag() {
+        var typed: (range: NSRange, prefix: String)?
+        if let textView, textView.isFirstResponder, textView.selectedRange.length == 0 {
+            typed = Self.hashtagBeingTyped(in: textView.textStorage.string as NSString, cursor: textView.selectedRange.location)
+        }
+        typedHashtagRange = typed?.range
+        if typed?.prefix != typedHashtag { typedHashtag = typed?.prefix }
+    }
+
+    /// What typing `typed` and choosing `tag` leaves written: the letters as the writer typed
+    /// them, capitals and all, then the rest of the tag ("l" and "Leo" give "leo"; "HI" and
+    /// "hiking" give "HIking"). The writer's capitals are theirs to choose, here as when a word
+    /// they've written is tagged where it stands.
+    static func completion(of typed: String, with tag: String) -> String {
+        guard tag.lowercased().hasPrefix(typed.lowercased()), tag.count >= typed.count else { return tag }
+        return typed + tag.dropFirst(typed.count)
+    }
+
+    /// Finishes the hashtag being typed as `tag`, keeping the letters already typed as they
+    /// were typed, with a space after it (unless one's there), and the cursor past that.
+    func completeHashtag(_ tag: String) {
+        guard let textView, let range = typedHashtagRange, NSMaxRange(range) <= textView.textStorage.length else { return }
+        let storage = textView.textStorage
+        let string = storage.string as NSString
+        let attributes = storage.attributes(at: range.location, effectiveRange: nil)
+        let end = NSMaxRange(range)
+        let spaceFollows = end < string.length && UnicodeScalar(string.character(at: end)).map { CharacterSet.whitespacesAndNewlines.contains($0) } == true
+        // (What's typed up to the cursor: the range may run on past it, through the rest of a
+        // hashtag the cursor's inside.)
+        let written = "#" + Self.completion(of: typedHashtag ?? "", with: tag) + (spaceFollows ? "" : " ")
+        storage.replaceCharacters(in: range, with: NSAttributedString(string: written, attributes: attributes))
+        textView.selectedRange = NSRange(location: range.location + (written as NSString).length + (spaceFollows ? 1 : 0), length: 0)
+        textDidChange()
+        updateTypedHashtag()
+    }
 
     /// Tags the entry: the first time the word is already written ("Leo", "biscuit"), a "#" goes
     /// in front of it, keeping the writer's capitalization, and the cursor stays where it was
@@ -249,11 +321,12 @@ final class RichTextEditorModel {
         let trimmed = textView?.text.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         isEmpty = trimmed.isEmpty
         characterCount = trimmed.count
+        updateTypedHashtag()
     }
 
     // MARK: - Formatting
 
-    /// The text view's own formatting, from the bar's Format menu: on the selection, or, with
+    /// The text view's own formatting, from the bar's buttons: on the selection, or, with
     /// nothing selected, on what's typed next.
     func toggleBold() { format { $0.toggleBoldface(nil) } }
     func toggleItalic() { format { $0.toggleItalics(nil) } }
@@ -270,20 +343,25 @@ final class RichTextEditorModel {
 
     private func updateFormatState() {
         guard let textView else { return }
-        func isStyled(_ attributes: [NSAttributedString.Key: Any]) -> Bool {
+        func styles(_ attributes: [NSAttributedString.Key: Any]) -> (bold: Bool, italic: Bool, underlined: Bool) {
             let font = attributes[.font] as? UIFont
-            return font?.isBold == true || font?.isItalic == true || (attributes[.underlineStyle] as? Int ?? 0) != 0
+            return (font?.isBold == true, font?.isItalic == true, (attributes[.underlineStyle] as? Int ?? 0) != 0)
         }
         let range = textView.selectedRange
-        var styled = false
+        var all: (bold: Bool, italic: Bool, underlined: Bool)
         if range.length > 0, NSMaxRange(range) <= textView.textStorage.length {
-            textView.textStorage.enumerateAttributes(in: range) { attributes, _, stop in
-                if isStyled(attributes) { styled = true; stop.pointee = true }
+            // Every selected word has it, as the text view judges before it toggles.
+            all = (true, true, true)
+            textView.textStorage.enumerateAttributes(in: range) { attributes, _, _ in
+                let found = styles(attributes)
+                all = (all.bold && found.bold, all.italic && found.italic, all.underlined && found.underlined)
             }
         } else {
-            styled = isStyled(textView.typingAttributes)
+            all = styles(textView.typingAttributes)
         }
-        if styled != isFormatted { isFormatted = styled }
+        if all.bold != isBold { isBold = all.bold }
+        if all.italic != isItalic { isItalic = all.italic }
+        if all.underlined != isUnderlined { isUnderlined = all.underlined }
     }
 
     // MARK: - Links
@@ -370,6 +448,7 @@ final class RichTextEditorModel {
         // Words are selected in the text being written (the bar offers Format and Link then).
         let selecting = textView.map { $0.isFirstResponder && $0.selectedRange.length > 0 } ?? false
         if selecting != hasSelection { hasSelection = selecting }
+        updateTypedHashtag()
         updateFormatState()
         guard let textView, textView.isFirstResponder else { return }
         let selection = textView.selectedRange

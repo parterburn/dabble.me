@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// An entry's actions in a sheet from the bottom (swipe left → Actions in a list, or swipe left on
-/// the entry itself): Open (from a list: the entry in full), Reflect, Edit, Share, Delete, and its #tags. Dated tags show how long it had been on
+/// the entry itself), under its date and how long ago that was: Open (from a list: the entry in full), Reflect, Edit, Share, Delete, and its #tags. Dated tags show how long it had been on
 /// that day ("3 years and 4 months since entry") without opening the entry. Delete confirms right
 /// in its button: tap, then hold it until it fills.
 struct EntryActionsSheet: View {
@@ -22,6 +22,13 @@ struct EntryActionsSheet: View {
     }
 
     @State private var isPreparingShare = false
+    /// For the journal's own today (optional: nothing here depends on it being there).
+    @Environment(AppModel.self) private var model: AppModel?
+
+    /// How long ago the entry's day was, as of today ("3 years, 2 months ago").
+    private var ago: String? {
+        entry.day.map { $0.ago(from: model?.today?.day ?? JournalDay(localDate: .now)) }
+    }
 
     /// The entry's photo, once it's there to share.
     private var photoURL: URL? { entry.imageProcessing ? nil : entry.imageURL }
@@ -78,16 +85,20 @@ struct EntryActionsSheet: View {
         // Pills wrap, a few to a row; a dated one, with its age beside it, mostly has a row to itself.
         let dated = tags.count(where: { $0.age != nil })
         let pillRows = CGFloat(dated + (tags.count - dated + 2) / 3) * 44
-        return min(70 + CGFloat(actions) * 62 + (tags.isEmpty ? 0 : 50 + pillRows), 640)
+        // (And a line for how long ago, under the date.)
+        return min(70 + (ago == nil ? 0 : 20) + CGFloat(actions) * 62 + (tags.isEmpty ? 0 : 50 + pillRows), 640)
     }
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 10) {
-                Text(entry.day?.long ?? entry.date)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.secondary)
-                    .padding(.bottom, 4)
+                // The date in full, and under it, as its subtitle in a quieter color, how long ago
+                // that was. Always a line each.
+                VStack(alignment: .leading, spacing: 2) {
+                    dateLine
+                    agoLine
+                }
+                .padding(.bottom, 4)
                 if canOpen {
                     row("Open", "slab-expand", .open)
                 }
@@ -146,6 +157,25 @@ struct EntryActionsSheet: View {
         .scrollBounceBehavior(.basedOnSize)
         .presentationDetents([.height(height), .large])
         .presentationDragIndicator(.visible)
+    }
+
+    private var dateLine: some View {
+        Text(entry.day?.long ?? entry.date)
+            .font(.subheadline.weight(.semibold))
+            .foregroundStyle(.primary)
+            .lineLimit(1)
+            .minimumScaleFactor(0.85)
+    }
+
+    @ViewBuilder
+    private var agoLine: some View {
+        if let ago {
+            Text(ago)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .accessibilityIdentifier("ActionsSheetAgo")
+        }
     }
 
     private func row(_ title: String, _ symbol: String, _ action: Action) -> some View {

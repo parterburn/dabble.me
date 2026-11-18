@@ -205,7 +205,7 @@ final class JournalViewsTests: XCTestCase {
         let text = editor.value as? String ?? ""
         XCTAssertTrue(text.contains("• The rainbow"), text)
         XCTAssertTrue(text.contains("• Cold sandwiches"), text)
-        XCTAssertFalse(app.buttons["Bold"].exists)
+        XCTAssertTrue(app.buttons["Bold"].exists, "Bold is always in the bar")
         XCTAssertFalse(app.toolbars.buttons["Dictate"].exists, "Dictation is the keyboard's own")
 
         // The row: suggestions for what's written come by themselves (where Apple Intelligence
@@ -244,35 +244,37 @@ final class JournalViewsTests: XCTestCase {
         snap("share-sheet")
     }
 
-    /// Format and Link are for words: in the bar while some are selected, and not otherwise.
-    /// Format is a menu of bold, italic and underline.
-    func testFormatAndLinkShowWithASelection() throws {
+    /// Bold is always in the bar. With words selected the bar is theirs alone: Bold, Italic,
+    /// Underline and Link, and no photos, hashtags or prompts until the selection's let go.
+    func testTheBarIsTheSelectionsWhileWordsAreSelected() throws {
         let app = launch()
         let editor = openComposer(app)
         editor.typeText("A slow evening.")
-        XCTAssertFalse(app.buttons["Format"].exists, "Nothing's selected")
+        XCTAssertTrue(app.buttons["Bold"].exists, "Nothing's selected: Bold, for what's typed next")
+        XCTAssertFalse(app.buttons["Italic"].exists)
+        XCTAssertFalse(app.buttons["Underline"].exists)
         XCTAssertFalse(app.buttons["Link"].exists)
         XCTAssertTrue(app.buttons["Hashtags"].exists)
+        XCTAssertTrue(app.buttons["Prompt"].exists)
         // Select a word.
         editor.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 60, dy: 30)).doubleTap()
-        let format = app.buttons["Format"]
-        XCTAssertTrue(format.waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Link"].exists)
-        snap("format-with-selection")
-        format.tap()
-        XCTAssertTrue(app.buttons["Bold"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Italic"].exists)
+        XCTAssertTrue(app.buttons["Italic"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Bold"].exists)
         XCTAssertTrue(app.buttons["Underline"].exists)
-        XCTAssertFalse(app.buttons["Strikethrough"].exists)
-        snap("format-menu")
+        XCTAssertTrue(app.buttons["Link"].exists)
+        XCTAssertFalse(app.buttons["Hashtags"].exists, "Not for a selection")
+        XCTAssertFalse(app.buttons["Prompt"].exists)
+        snap("format-with-selection")
         app.buttons["Bold"].tap()
         XCTAssertTrue(app.keyboards.firstMatch.exists, "The keyboard stays up")
         sleep(1)
-        snap("format-filled") // the icon's filled in: the selected word is bold now
-        // The cursor put somewhere, with nothing selected: they go again.
+        XCTAssertTrue(app.buttons["Bold"].isSelected, "Lit: the selected word is bold now")
+        snap("format-bold-lit")
+        // The cursor put somewhere, with nothing selected: the bar's as it was.
         editor.typeText(" ")
-        XCTAssertTrue(format.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Italic"].waitForNonExistence(timeout: 5))
         XCTAssertFalse(app.buttons["Link"].exists)
+        XCTAssertTrue(app.buttons["Hashtags"].exists)
         app.buttons["Cancel"].tap()
         app.buttons["Discard"].tap()
     }
@@ -1163,12 +1165,12 @@ final class JournalViewsTests: XCTestCase {
             app.navigationBars.buttons.element(boundBy: 0).tap()
         }
         func setSize(_ label: String) {
-            // The slider's stops: Small, Default, Large, Extra Large, Largest.
-            let stops = ["Small": 0.0, "Default": 0.25, "Largest": 1.0]
+            // The slider's stops: Smallest, Smaller, Default, Larger, Largest.
+            let stops = ["Smallest": 0.0, "Default": 0.5, "Largest": 1.0]
             app.sliders["Entry Text Size"].adjust(toNormalizedSliderPosition: stops[label]!)
         }
         let row = app.descendants(matching: .any).matching(NSPredicate(format: "label CONTAINS %@", "Ran 5 miles without stopping")).firstMatch
-        accessibility { setSize("Small") }
+        accessibility { setSize("Smallest") }
         tab(app, "Journal").tap()
         app.scrollTo(row)
         let small = row.frame.width * row.frame.height

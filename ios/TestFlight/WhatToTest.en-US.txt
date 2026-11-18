@@ -1,7 +1,26 @@
-A day you didn't write is an open ring, not a faint filled circle.
+The bar over the keyboard has new formatting buttons.
 
-- Today: the corner that opens Stats shows the last five days when you've written at least one of them. A written day is a filled circle. A day with no entry is an open ring in the same color. Size and spacing are unchanged.
-- Stats: the same five marks sit beside the line that says how many of the last five days have entries. Written days are filled; days without an entry are open rings.
-- Home Screen widget: under today's date, the same five marks. A written day is filled; a day with no entry is an open ring. Settings, Home Screen Widget shows the same preview.
+- With nothing selected there's a Bold button left of the hashtag button. Tap it and type: the new words should be bold, and the button lit. Tap again to turn it off.
+- Select some words. The whole bar should change to four buttons, Bold, Italic, Underline and Link, with photos, hashtags and the lightbulb gone. Tap each: it should apply to the selection and light up; tap again to remove it.
+- Tap in the text so nothing's selected: the usual bar comes back.
+- The Bold, Italic and Underline icons are new drawings. Do they sit well beside the others?
+- Link on a free account isn't offered; the other three are.
 
-If none of those five days has an entry, Today still shows your entry count instead of the marks.
+Hashtags complete as you type them.
+
+- While writing, type "#" and a letter. A row of your own hashtags that start that way should appear above the keyboard, most recently used first, and narrow as you type more.
+- Tap one: it should finish the hashtag, add a space, and leave the cursor after it. The row should go. What you typed keeps its capitals: "#l" and the tag Leo gives "#leo"; "#L" gives "#Leo".
+- Type "#" and a number ("#1"), or a "#" in the middle of a word: no row.
+- Type a hashtag you've never used: no row, and nothing gets in the way.
+- With another row open (photos, the lightbulb), the completions should take its place while you're typing the hashtag and give it back after.
+
+Entry text size: Default is now the middle of five stops (Smallest, Smaller, Default, Larger, Largest), at 90, 95, 99, 105 and 110%.
+
+- A size you'd chosen before carries over to the nearest new one: Small becomes Smallest; Large, Extra Large and Largest all become Largest (smaller than the old two biggest).
+- Pinch an open entry to step through the five, and check the editor follows.
+
+An entry's preview and its Actions sheet now say how long ago it was.
+
+- In the Journal, Today, Search or On This Day, touch and hold an entry. At the top of the preview is the date in full ("Wednesday, November 12, 2025"), and on its own line under it, in a lighter color, how long ago that was as of today: "36 days ago", "3 years, 2 months ago", or "Today" / "Yesterday".
+- Swipe left on an entry for its Actions (or on the entry itself when it's open). The top of that sheet should read the same way: the full date, then how long ago under it in a lighter color. The buttons below shouldn't be cut off.
+- Both should match what the entry says under its title when you open it in full.
