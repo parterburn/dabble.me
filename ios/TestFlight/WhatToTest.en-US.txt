@@ -1,3 +1,11 @@
+The bar over the keyboard has new formatting buttons.
+
+- With nothing selected there's a Bold button left of the hashtag button. Tap it and type: the new words should be bold, and the button lit. Tap again to turn it off.
+- Select some words. The whole bar should change to four buttons, Bold, Italic, Underline and Link, with photos, hashtags and the lightbulb gone. Tap each: it should apply to the selection and light up; tap again to remove it.
+- Tap in the text so nothing's selected: the usual bar comes back.
+- The Bold, Italic and Underline icons are new drawings. Do they sit well beside the others?
+- Link on a free account isn't offered; the other three are.
+
 Hashtags complete as you type them.
 
 - While writing, type "#" and a letter. A row of your own hashtags that start that way should appear above the keyboard, most recently used first, and narrow as you type more.
@@ -6,13 +14,10 @@ Hashtags complete as you type them.
 - Type a hashtag you've never used: no row, and nothing gets in the way.
 - With another row open (photos, the lightbulb), the completions should take its place while you're typing the hashtag and give it back after.
 
-Entry text size: the default is now the middle of five.
+Entry text size: Default is now the middle of five stops (Smallest, Smaller, Default, Larger, Largest), at 90, 95, 99, 105 and 110%.
 
-- Settings, Theme: the Entry Text Size slider's stops are Smallest, Smaller, Default, Larger, Largest, with Default in the centre. Before, Default was second of five.
-- The sizes are closer together than before: 90%, 95%, 99%, 105% and 110% of the body size. The default is very slightly smaller than it was (1%).
-- If you had chosen a size before this build, you should land on the nearest new one: Small becomes Smallest; Large, Extra Large and Largest all become Largest. From the old Extra Large or Largest your entries will get noticeably smaller, since the new scale stops at 110%.
-- If you never changed it, you're on Default.
-- Pinch an open entry to step through the five sizes, and check the editor follows the same size.
+- A size you'd chosen before carries over to the nearest new one: Small becomes Smallest; Large, Extra Large and Largest all become Largest (smaller than the old two biggest).
+- Pinch an open entry to step through the five, and check the editor follows.
 
 An entry's preview and its Actions sheet now say how long ago it was.
 

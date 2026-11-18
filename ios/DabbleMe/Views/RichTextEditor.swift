@@ -35,9 +35,13 @@ final class RichTextEditorModel {
     private(set) var characterCount = 0
     /// Some of the text is selected.
     private(set) var hasSelection = false
-    /// The selected words (or, with none, what's typed next) are bold, italic or underlined, any
-    /// of them: the bar's Format icon is filled in then.
-    private(set) var isFormatted = false
+    /// Whether the selected words, all of them (or, with none selected, what's typed next), are
+    /// bold, italic, underlined: the bar's buttons for each are lit then, and a tap takes it off.
+    private(set) var isBold = false
+    private(set) var isItalic = false
+    private(set) var isUnderlined = false
+    /// Any of the three (the template editor's Format icon is filled in then).
+    var isFormatted: Bool { isBold || isItalic || isUnderlined }
 
     /// Set while the link row is open; `linkText` is what the user is typing.
     var isEditingLink = false
@@ -318,7 +322,7 @@ final class RichTextEditorModel {
 
     // MARK: - Formatting
 
-    /// The text view's own formatting, from the bar's Format menu: on the selection, or, with
+    /// The text view's own formatting, from the bar's buttons: on the selection, or, with
     /// nothing selected, on what's typed next.
     func toggleBold() { format { $0.toggleBoldface(nil) } }
     func toggleItalic() { format { $0.toggleItalics(nil) } }
@@ -335,20 +339,25 @@ final class RichTextEditorModel {
 
     private func updateFormatState() {
         guard let textView else { return }
-        func isStyled(_ attributes: [NSAttributedString.Key: Any]) -> Bool {
+        func styles(_ attributes: [NSAttributedString.Key: Any]) -> (bold: Bool, italic: Bool, underlined: Bool) {
             let font = attributes[.font] as? UIFont
-            return font?.isBold == true || font?.isItalic == true || (attributes[.underlineStyle] as? Int ?? 0) != 0
+            return (font?.isBold == true, font?.isItalic == true, (attributes[.underlineStyle] as? Int ?? 0) != 0)
         }
         let range = textView.selectedRange
-        var styled = false
+        var all: (bold: Bool, italic: Bool, underlined: Bool)
         if range.length > 0, NSMaxRange(range) <= textView.textStorage.length {
-            textView.textStorage.enumerateAttributes(in: range) { attributes, _, stop in
-                if isStyled(attributes) { styled = true; stop.pointee = true }
+            // Every selected word has it, as the text view judges before it toggles.
+            all = (true, true, true)
+            textView.textStorage.enumerateAttributes(in: range) { attributes, _, _ in
+                let found = styles(attributes)
+                all = (all.bold && found.bold, all.italic && found.italic, all.underlined && found.underlined)
             }
         } else {
-            styled = isStyled(textView.typingAttributes)
+            all = styles(textView.typingAttributes)
         }
-        if styled != isFormatted { isFormatted = styled }
+        if all.bold != isBold { isBold = all.bold }
+        if all.italic != isItalic { isItalic = all.italic }
+        if all.underlined != isUnderlined { isUnderlined = all.underlined }
     }
 
     // MARK: - Links

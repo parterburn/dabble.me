@@ -168,9 +168,10 @@ struct ComposeView: View {
                 Divider()
                 // The bar's icons are olive, not black: there are a lot of them, next to the writing.
                 RichTextEditor(model: editor,
-                               leading: AnyView((model.me?.canAddPhotos == true ? AnyView(photosButton) : AnyView(proPhotosButton)).foregroundStyle(.tint)),
-                               trailing: AnyView(tagAndLinkButtons.foregroundStyle(.tint)),
-                               barKey: "\(editor.hasSelection)|\(editor.isFormatted)|\(CameraPicker.isAvailable)|\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)",
+                               leading: isFormattingSelection ? nil
+                                   : AnyView((model.me?.canAddPhotos == true ? AnyView(photosButton) : AnyView(proPhotosButton)).foregroundStyle(.tint)),
+                               trailing: AnyView((isFormattingSelection ? AnyView(selectionButtons) : AnyView(tagAndLinkButtons)).foregroundStyle(.tint)),
+                               barKey: "\(isFormattingSelection)|\(editor.hasSelection)|\(editor.isBold)|\(editor.isItalic)|\(editor.isUnderlined)|\(model.me?.mayAddLinks == true)|\(CameraPicker.isAvailable)|\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)",
                                row: openRow)
                     // Low in the page, over the bar: clear of the entry's first lines.
                     .overlay(alignment: .bottom) {
@@ -469,29 +470,21 @@ struct ComposeView: View {
         #endif
     }
 
-    /// The bar's right: with words selected, Format (a menu of bold, italic and underline) and Link (PRO; shows or hides the link row); always, Tags (the hashtag row), then Prompt
-    /// (the lightbulb) at the far edge. Each row button is selected while its row is open; one row at a time.
-    private var tagAndLinkButtons: some View {
+    /// With words selected, the bar is theirs alone: Bold, Italic and Underline, each lit while
+    /// all of them have it, and Link (PRO; shows or hides the link row). Photos, hashtags and
+    /// prompts aren't for a selection, and are out of the way until it's let go.
+    private var selectionButtons: some View {
         HStack(spacing: 6) {
-            // Format and Link are for words: there while some are selected, and out of the way
-            // otherwise. Format is the text view's own bold, italic and underline (also in the
-            // menu over a selection).
-            if editor.hasSelection {
-                Menu {
-                    Button { editor.toggleBold() } label: { Label("Bold", icon: "bold") }
-                    Button { editor.toggleItalic() } label: { Label("Italic", icon: "italic") }
-                    Button { editor.toggleUnderline() } label: { Label("Underline", icon: "underline") }
-                } label: {
-                    // (Filled in while the words it's for are bold, italic or underlined.)
-                appIcon(editor.isFormatted ? "slab-format-full" : "slab-format")
-                        .frame(width: 40, height: 36)
-                        .contentShape(.rect)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Format")
+            Group {
+                formatButton("Bold", "slab-bold", isOn: editor.isBold) { editor.toggleBold() }
+                formatButton("Italic", "slab-italic", isOn: editor.isItalic) { editor.toggleItalic() }
+                formatButton("Underline", "slab-underline", isOn: editor.isUnderlined) { editor.toggleUnderline() }
             }
-            // (Link stays while its row is open: the address field has the keyboard then.)
-            if model.me?.mayAddLinks == true, editor.hasSelection || editor.isEditingLink {
+            // (While the link's address is being typed the words aren't the keyboard's: Link
+            // stays, to close its row, and the others wait.)
+            .disabled(!editor.hasSelection)
+            .opacity(editor.hasSelection ? 1 : 0.35)
+            if model.me?.mayAddLinks == true {
                 Button {
                     if editor.isEditingLink { editor.endLink() } else { editor.beginLink() }
                 } label: {
@@ -503,6 +496,33 @@ struct ComposeView: View {
                 .accessibilityLabel("Link")
                 .accessibilityAddTraits(editor.isEditingLink ? .isSelected : [])
             }
+        }
+    }
+
+    /// One of the bar's format buttons: lit, like a row's button while its row is open, while
+    /// the format's on.
+    private func formatButton(_ name: String, _ icon: String, isOn: Bool, toggle: @escaping () -> Void) -> some View {
+        Button(action: toggle) {
+            appIcon(icon)
+                .frame(width: 40, height: 36)
+                .background(isOn ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+                .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(name)
+        .accessibilityAddTraits(isOn ? .isSelected : [])
+    }
+
+    /// Words are selected in the entry, or a link's address is being typed for some: the bar
+    /// shows `selectionButtons` and nothing else.
+    private var isFormattingSelection: Bool { editor.hasSelection || editor.isEditingLink }
+
+    /// The bar's right, with nothing selected: Bold (for what's typed next), Tags (the hashtag row), then Prompt
+    /// (the lightbulb) at the far edge. Each row button is selected while its row is open; one row at a time.
+    private var tagAndLinkButtons: some View {
+        HStack(spacing: 6) {
+            // Bold, always: for what's typed next (lit while that's bold; a tap turns it off).
+            formatButton("Bold", "slab-bold", isOn: editor.isBold) { editor.toggleBold() }
             Button {
                 // Not the tap that ends a hold.
                 if heldTagIcon { heldTagIcon = false; return }
