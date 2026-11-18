@@ -1,7 +1,7 @@
 Stats now counts again as soon as an entry is written, changed or deleted, wherever in the app that happens.
 
 - Open Journal and switch to Stats. Leave it there.
-- Go to the Today tab and write an entry for a day that has none (or delete one from the Entries list in another way that doesn't leave Stats, such as from Today).
+- Go to the Today tab and write an entry for a day that has none.
 - Go back to Journal: the totals, the streak and the day grid should already include it, without pulling down to refresh.
 - Rewind (PRO, during the Rewind season): with fewer than five entries this year, the card says how many more it takes. Write entries from Today until there are five, then come back to Stats: the card should have changed to the one that opens your Rewind.
 - Editing an entry's text should update the word count in Stats the same way.
