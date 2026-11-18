@@ -338,16 +338,8 @@ struct EntryPreview: View {
     @AppStorage(ReadingTextSize.storageKey) private var textSize = ReadingTextSize.standard
     @AppStorage(ReadingFontStyle.storageKey) private var fontStyle = ReadingFontStyle.serif
 
-    /// Light Markdown from the server; list lines ("- item") show as bullets.
-    private var text: String {
-        (summary.previewText ?? summary.excerpt)
-            .split(separator: "\n", omittingEmptySubsequences: false)
-            .map { line in
-                for marker in ["- ", "* "] where line.hasPrefix(marker) { return "• " + line.dropFirst(2) }
-                return String(line)
-            }
-            .joined(separator: "\n")
-    }
+    /// Light Markdown from the server; list lines ("- item") show as bullets, a divider as dashes.
+    private var text: String { RichText.previewLines(summary.previewText ?? summary.excerpt) }
 
     /// Room for the text (more without a photo), keeping the preview and its menu on one screen.
     private var textLimit: CGFloat { summary.imageURL == nil ? 460 : 250 }

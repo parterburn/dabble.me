@@ -31,9 +31,20 @@ struct Provider: AppIntentTimelineProvider {
 
     func timeline(for configuration: TodayWidgetIntent, in context: Context) async -> Timeline<WidgetEntry> {
         // Today now, then a fresh day at midnight (the app reloads the widget when it learns more).
-        let midnight = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: 1, to: .now) ?? .now)
-        return Timeline(entries: [entry(at: .now, showing: configuration.show), entry(at: midnight, showing: configuration.show)],
-                        policy: .after(midnight))
+        let now = Date.now
+        let midnight = Calendar.current.startOfDay(for: Calendar.current.date(byAdding: .day, value: 1, to: now) ?? now)
+        // On a day with several entries from past years, each of the rest takes its turn at its
+        // time: an entry in the timeline for every turn still to come today.
+        var turns: [Date] = []
+        let content = configuration.show.content ?? WidgetSnapshot.content
+        if content == .memoryEntry, let snapshot = WidgetSnapshot.load() {
+            let rewind = snapshot.rewind(on: now)
+            if rewind.known, let count = rewind.day?.rotation?.count {
+                turns = WidgetSnapshot.rotationTimes(count: count, on: now).filter { $0 > now && $0 < midnight }
+            }
+        }
+        let dates = [now] + turns + [midnight]
+        return Timeline(entries: dates.map { entry(at: $0, showing: configuration.show) }, policy: .after(midnight))
     }
 
     private func entry(at date: Date, showing option: WidgetShowOption) -> WidgetEntry {
@@ -49,14 +60,13 @@ struct Provider: AppIntentTimelineProvider {
         let rewind = snapshot.rewind(on: date)
         if content.source == .rewind, rewind.known {
             let day = rewind.day
-            let showsEntry = content == .memoryEntry
+            // (The one whose turn it is at that time, on a day with several.)
+            let shown = content == .memoryEntry ? day?.shown(at: date) : nil
             return WidgetEntry(date: date, signedIn: true, wroteToday: state.wroteToday, yearCount: state.yearCount, lastFiveDays: snapshot.lastFiveDays(on: date),
                                memories: day?.memories, prompt: isToday ? snapshot.prompt : nil,
                                memoryNote: content == .memoryCount ? day?.memoryNote : nil,
-                               entryTitle: showsEntry ? day?.entryTitle : nil,
-                               entryText: showsEntry ? day?.entryText : nil,
-                               entryID: showsEntry ? day?.entryID : nil,
-                               photo: showsEntry ? day?.entryPhoto.flatMap(Self.photo(named:)) : nil)
+                               entryTitle: shown?.title, entryText: shown?.text, entryID: shown?.id,
+                               photo: shown?.photo.flatMap(Self.photo(named:)))
         }
         let shown = isToday ? snapshot.shown(for: content) : nil
         return WidgetEntry(date: date, signedIn: true, wroteToday: state.wroteToday, yearCount: state.yearCount, lastFiveDays: snapshot.lastFiveDays(on: date),

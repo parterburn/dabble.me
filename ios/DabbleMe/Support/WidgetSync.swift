@@ -133,22 +133,41 @@ enum WidgetSync {
         } else if let ago {
             result.memoryNote = "You have a memory from \(ago.prefix(1).lowercased() + ago.dropFirst())."
         }
-        if memory.isOnThisDay, let entryDay, let day, let years = Int(day.year).flatMap({ now in Int(entryDay.year).map { now - $0 } }) {
-            result.entryTitle = "\(years == 1 ? "1 year ago" : "\(years) years ago") · \(entryDay.year)"
-        } else {
-            result.entryTitle = ago ?? "Rewind"
-        }
-        result.entryText = String(memory.entry.excerpt.prefix(400))
-        result.entryID = memory.entry.id
-        if withPhoto, !EntrySummary.isUploadingPlaceholder(memory.entry.imageUrl),
-           let url = EntrySummary.thumbnailURL(memory.entry.imageUrl, width: 700) {
-            let name = "entry-\(memory.entry.id).jpg"
-            if let file = WidgetSnapshot.photoURL(named: name) {
-                let saved = FileManager.default.fileExists(atPath: file.path)
-                if saved { result.entryPhoto = name } else if await download(url, to: file) { result.entryPhoto = name }
+        let first = await shown(memory.entry, isOnThisDay: memory.isOnThisDay, on: day, ago: ago, withPhoto: withPhoto)
+        result.entryTitle = first.title
+        result.entryText = first.text
+        result.entryID = first.id
+        result.entryPhoto = first.photo
+        // Several from this date in past years: each has its turn on the widget through the day.
+        if memory.isOnThisDay, let all = memory.entries, all.count > 1 {
+            var rotation = [first]
+            for entry in all.prefix(WidgetSnapshot.rotationLimit) where entry.id != memory.entry.id {
+                rotation.append(await shown(entry, isOnThisDay: true, on: day, ago: nil, withPhoto: withPhoto))
             }
+            if rotation.count > 1 { result.rotation = rotation }
         }
         return result
+    }
+
+    /// One entry as a widget shows it: "3 years ago · 2023" (or, for a Rewind, how long ago it
+    /// was) over the start of it, with its photo's small copy when that's wanted.
+    private static func shown(_ entry: ReminderPlan.Entry, isOnThisDay: Bool, on day: JournalDay?, ago: String?,
+                              withPhoto: Bool) async -> WidgetSnapshot.Shown {
+        let entryDay = JournalDay(entry.date)
+        var title = ago ?? "Rewind"
+        if isOnThisDay, let entryDay, let day, let years = Int(day.year).flatMap({ now in Int(entryDay.year).map { now - $0 } }) {
+            title = "\(years == 1 ? "1 year ago" : "\(years) years ago") · \(entryDay.year)"
+        }
+        var shown = WidgetSnapshot.Shown(title: title, text: String(entry.excerpt.prefix(400)), id: entry.id)
+        if withPhoto, !EntrySummary.isUploadingPlaceholder(entry.imageUrl),
+           let url = EntrySummary.thumbnailURL(entry.imageUrl, width: 700) {
+            let name = "entry-\(entry.id).jpg"
+            if let file = WidgetSnapshot.photoURL(named: name) {
+                let saved = FileManager.default.fileExists(atPath: file.path)
+                if saved { shown.photo = name } else if await download(url, to: file) { shown.photo = name }
+            }
+        }
+        return shown
     }
 
     private static func personalPrompt(for day: String, model: AppModel) -> String? {
@@ -280,14 +299,14 @@ enum WidgetSync {
         // Rewind as the widget has it: the day's planned look back.
         if content.source == .rewind, let saved = WidgetSnapshot.load(), saved.day == today.date, saved.rewind(on: .now).known {
             let day = saved.upcoming?.first { $0.day == today.date }
-            let showsEntry = content == .memoryEntry
+            // (The one whose turn it is now, on a day with several.)
+            let shown = content == .memoryEntry ? day?.shown(at: .now) : nil
             return WidgetEntry(date: .now, signedIn: true, wroteToday: today.entry != nil,
                                yearCount: model.entriesThisYear ?? 0, lastFiveDays: WidgetSnapshot.load()?.lastFiveDays(on: .now), memories: day?.memories,
                                prompt: personalPrompt(for: today.date, model: model) ?? today.prompt,
                                memoryNote: content == .memoryCount ? day?.memoryNote : nil,
-                               entryTitle: showsEntry ? day?.entryTitle : nil, entryText: showsEntry ? day?.entryText : nil,
-                               entryID: showsEntry ? day?.entryID : nil,
-                               photo: showsEntry ? day?.entryPhoto.flatMap(WidgetSnapshot.photoURL(named:)).flatMap { UIImage(contentsOfFile: $0.path) } : nil)
+                               entryTitle: shown?.title, entryText: shown?.text, entryID: shown?.id,
+                               photo: shown?.photo.flatMap(WidgetSnapshot.photoURL(named:)).flatMap { UIImage(contentsOfFile: $0.path) })
         }
         let shown = shownEntry(today, content: content, model: model)
         return WidgetEntry(date: .now, signedIn: true, wroteToday: today.entry != nil,
@@ -312,6 +331,7 @@ enum WidgetSync {
 private extension WidgetSnapshot {
     /// Every photo copy the snapshot points at: its own day's and the days' ahead.
     var photoNames: Set<String> {
-        Set(([todayEntry?.photo, rewindEntry?.photo] + (upcoming ?? []).map(\.entryPhoto)).compactMap { $0 })
+        let days = upcoming ?? []
+        return Set(([todayEntry?.photo, rewindEntry?.photo] + days.map(\.entryPhoto) + days.flatMap { ($0.rotation ?? []).map(\.photo) }).compactMap { $0 })
     }
 }

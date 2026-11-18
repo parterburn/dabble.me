@@ -40,6 +40,11 @@ final class RichTextEditorModel {
     private(set) var isBold = false
     private(set) var isItalic = false
     private(set) var isUnderlined = false
+    /// Bumped when the cursor is put somewhere else in the text (a tap, or a selection let go),
+    /// not when it moves because of typing: the bar's held-open format buttons close then.
+    private(set) var caretMoves = 0
+    private var lastSelection = NSRange(location: 0, length: 0)
+    private var lastLength = 0
     /// Any of the three (the template editor's Format icon is filled in then).
     var isFormatted: Bool { isBold || isItalic || isUnderlined }
 
@@ -452,6 +457,11 @@ final class RichTextEditorModel {
         updateFormatState()
         guard let textView, textView.isFirstResponder else { return }
         let selection = textView.selectedRange
+        // Typing moves the cursor too, and changes the text's length with it.
+        let length = textView.textStorage.length
+        if selection.length == 0, length == lastLength, !NSEqualRanges(selection, lastSelection) { caretMoves += 1 }
+        lastSelection = selection
+        lastLength = length
         let existing = link(touching: selection, in: textView.textStorage)
         if isEditingLink, isExistingLink, let existing, NSEqualRanges(existing.range, linkRange) { return }
         if selection.length > 0, let existing {

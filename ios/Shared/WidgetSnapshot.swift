@@ -61,6 +61,47 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
         var entryText: String? = nil
         var entryID: Int? = nil
         var entryPhoto: String? = nil
+        /// A day with several entries from past years: all of them, the one above first. A
+        /// widget with previews on shows each in turn through the day (`shown(at:)`). Nil with
+        /// just the one, and in snapshots saved by older builds.
+        var rotation: [Shown]? = nil
+
+        /// The entry a widget with previews shows at `date`: the one whose turn it is, on a day
+        /// with several, or the day's one.
+        func shown(at date: Date, calendar: Calendar = .current) -> Shown? {
+            if let rotation, rotation.count > 1 {
+                return rotation[WidgetSnapshot.rotationIndex(count: rotation.count, at: date, calendar: calendar)]
+            }
+            guard let entryTitle, let entryText, let entryID else { return nil }
+            return Shown(title: entryTitle, text: entryText, id: entryID, photo: entryPhoto)
+        }
+    }
+
+    // MARK: - Several entries in a day
+
+    /// The hours a day's entries share between them: from 6 in the morning to midnight, the
+    /// 18 hours a widget is likely to be looked at. (The first is also what's there from
+    /// midnight until 6.)
+    static let rotationStartHour = 6
+    static let rotationHours = 18
+    /// As many as take turns in a day; a day with more shows its most recent years'.
+    static let rotationLimit = 6
+
+    /// Whose turn it is at `date`, of `count` entries sharing the day equally: with four, the
+    /// first until 10:30, then 10:30, 15:00 and 19:30.
+    static func rotationIndex(count: Int, at date: Date, calendar: Calendar = .current) -> Int {
+        guard count > 1 else { return 0 }
+        let start = calendar.startOfDay(for: date).addingTimeInterval(TimeInterval(rotationStartHour) * 3600)
+        let turn = TimeInterval(rotationHours) * 3600 / TimeInterval(count)
+        return min(max(Int((date.timeIntervalSince(start) / turn).rounded(.down)), 0), count - 1)
+    }
+
+    /// When each entry after the first takes its turn on `date`'s day.
+    static func rotationTimes(count: Int, on date: Date, calendar: Calendar = .current) -> [Date] {
+        guard count > 1 else { return [] }
+        let start = calendar.startOfDay(for: date).addingTimeInterval(TimeInterval(rotationStartHour) * 3600)
+        let turn = TimeInterval(rotationHours) * 3600 / TimeInterval(count)
+        return (1..<count).map { start.addingTimeInterval(turn * TimeInterval($0)) }
     }
 
     /// The entry a widget with `content` shows on the snapshot's own day: none without previews.

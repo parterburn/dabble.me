@@ -502,6 +502,12 @@ struct PhotoPreparerTests {
 }
 
 struct RichTextTests {
+    @Test func aPreviewShowsADividerAsTheFullEntryDoesAndListLinesAsBullets() {
+        let text = "Proud dad.\n\n* * *\n\nDoes email still work?\n- eggs\n* plates\n---\n*starred* words\n- -"
+        #expect(RichText.previewLines(text)
+            == "Proud dad.\n\n⸻\n\nDoes email still work?\n• eggs\n• plates\n⸻\n*starred* words\n• -")
+    }
+
     #if canImport(UIKit)
     static var style: RichText.Style { RichText.Style(baseFont: .systemFont(ofSize: 17), textColor: .label) }
     #else
@@ -584,6 +590,50 @@ struct HashtagLinkTests {
         var text = AttributedString("#notatag")
         text.link = URL(string: "https://example.com")
         #expect(RichText.linkingHashtags(in: text).runs.first?.link == URL(string: "https://example.com"))
+    }
+}
+
+struct WidgetRotationTests {
+    private var calendar: Calendar {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "America/Denver")!
+        return calendar
+    }
+
+    private func at(_ hour: Int, _ minute: Int = 0) -> Date {
+        calendar.date(from: DateComponents(year: 2026, month: 11, day: 18, hour: hour, minute: minute))!
+    }
+
+    /// Several entries share 6 AM to midnight equally; the first also has the small hours.
+    @Test func entriesTakeTurnsThroughTheDay() {
+        func turn(_ count: Int, _ hour: Int, _ minute: Int = 0) -> Int {
+            WidgetSnapshot.rotationIndex(count: count, at: at(hour, minute), calendar: calendar)
+        }
+        // Four: 4.5 hours each, from 6:00, 10:30, 15:00 and 19:30.
+        #expect(turn(4, 0) == 0)
+        #expect(turn(4, 5, 59) == 0)
+        #expect(turn(4, 10, 29) == 0)
+        #expect(turn(4, 10, 30) == 1)
+        #expect(turn(4, 15) == 2)
+        #expect(turn(4, 19, 30) == 3)
+        #expect(turn(4, 23, 59) == 3)
+        // Two: nine hours each. One: always it.
+        #expect(turn(2, 14, 59) == 0)
+        #expect(turn(2, 15) == 1)
+        #expect(turn(1, 20) == 0)
+        #expect(WidgetSnapshot.rotationTimes(count: 4, on: at(8), calendar: calendar) == [at(10, 30), at(15), at(19, 30)])
+        #expect(WidgetSnapshot.rotationTimes(count: 1, on: at(8), calendar: calendar).isEmpty)
+    }
+
+    /// A day shows the entry whose turn it is; with just the one, that one all day.
+    @Test func aDayShowsTheEntryWhoseTurnItIs() {
+        var day = WidgetSnapshot.Day(day: "2026-11-18", memories: 2, entryTitle: "1 year ago · 2025", entryText: "Snow.", entryID: 7)
+        #expect(day.shown(at: at(20), calendar: calendar)?.id == 7)
+        day.rotation = [.init(title: "1 year ago · 2025", text: "Snow.", id: 7), .init(title: "3 years ago · 2023", text: "Rain.", id: 9)]
+        #expect(day.shown(at: at(9), calendar: calendar)?.id == 7)
+        #expect(day.shown(at: at(20), calendar: calendar) == WidgetSnapshot.Shown(title: "3 years ago · 2023", text: "Rain.", id: 9))
+        // No entry to show (a count alone): nothing.
+        #expect(WidgetSnapshot.Day(day: "2026-11-18", memories: 2).shown(at: at(9), calendar: calendar) == nil)
     }
 }
 
