@@ -46,7 +46,7 @@ class User < ActiveRecord::Base
   encrypts :user_key, :image_key, deterministic: true,
                                   previous: [{ deterministic: true },
                                              { deterministic: true, encryptor: ActiveRecord::Encryption::Encryptor.new }]
-  encrypts :first_name, :last_name, :past_filter, :otp_auth_secret, :otp_recovery_secret
+  encrypts :first_name, :last_name, :past_filter, :otp_auth_secret, :otp_recovery_secret, :app_settings
 
   validates :user_key, uniqueness: true
   validates :image_key, uniqueness: true, allow_nil: true
@@ -127,6 +127,18 @@ class User < ActiveRecord::Base
   def self.blocked_email_domain?(domain)
     normalized = domain.to_s.downcase.sub(/\.\z/, '')
     BLOCKED_EMAIL_DOMAINS.any? { |blocked| normalized == blocked || normalized.end_with?(".#{blocked}") }
+  end
+
+  # The iOS app's account-wide settings (Api::V1::AppSettingsController), kept as encrypted JSON.
+  def app_settings_hash
+    parsed = app_settings.present? ? JSON.parse(app_settings) : {}
+    parsed.is_a?(Hash) ? parsed : {}
+  rescue JSON::ParserError
+    {}
+  end
+
+  def app_settings_hash=(hash)
+    self.app_settings = hash.presence&.to_json
   end
 
   def full_name

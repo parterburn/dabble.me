@@ -48,7 +48,10 @@ struct WidgetSettingsView: View {
         .slabBackButton()
         .navigationTitle("Home Screen Widget")
         .navigationBarTitleDisplayMode(.inline)
-        .onChange(of: content) { _, content in WidgetSync.setContent(content, model: model) }
+        .onChange(of: content) { _, content in
+            WidgetSync.setContent(content, model: model)
+            AccountSettings.changed(.widgetContent, model: model)
+        }
         .task(id: content) {
             await WidgetSync.preparePreviewPhoto(for: content, model: model)
             photoReady += 1
