@@ -45,7 +45,37 @@ class ImageUploader < CarrierWave::Uploader::Base
   end
 
   def content_type_allowlist
-    [/(image|application)\/(png|jpe?g|gif|webp|heic|heif|octet-stream)/]
+    [%r{\Aimage/(?:png|jpe?g|gif|webp|heic|heif)(?:-sequence)?\z}]
+  end
+
+  # CarrierWave remote downloads are limited to objects this app stored.
+  # Browser and email URLs are not fetched through this setter.
+  def download!(uri, remote_headers = {})
+    unless self.class.application_upload_url?(uri)
+      raise CarrierWave::DownloadError, "remote image host is not an application upload"
+    end
+
+    super
+  end
+
+  def self.application_upload_url?(url)
+    uri = URI.parse(url.to_s)
+    return false unless uri.is_a?(URI::HTTP)
+
+    host = uri.host.to_s.downcase
+    return false if host.blank?
+    return true if host == "d10r8m94hrfowu.cloudfront.net"
+
+    bucket = fog_directory.to_s.downcase
+    return false if bucket.blank?
+    return true if host == "#{bucket}.s3.amazonaws.com"
+    return true if host.match?(/\A#{Regexp.escape(bucket)}\.s3[.-][a-z0-9.-]*amazonaws\.com\z/)
+
+    path = uri.path.to_s.delete_prefix("/")
+    s3_host = host == "s3.amazonaws.com" || host.match?(/\As3[.-][a-z0-9.-]*amazonaws\.com\z/)
+    s3_host && path.start_with?("#{bucket}/")
+  rescue URI::InvalidURIError
+    false
   end
 
   def web_image?(file)

@@ -2,19 +2,12 @@
 
 require 'base64'
 require 'image_processing/vips'
-require 'ipaddr'
-require 'net/http'
-require 'resolv'
 require 'uri'
 
 module Mcp
   class EntryCreator
     MAX_IMAGE_BYTES = 20.megabytes
     BASE64_IMAGE_MAX_DIMENSION = 800
-    HTTP_OPEN_TIMEOUT = 15
-    HTTP_READ_TIMEOUT = 60
-    MAX_REDIRECTS = 5
-
     MIME_TO_EXT = {
       'image/jpeg' => '.jpg',
       'image/jpg' => '.jpg',
@@ -22,8 +15,7 @@ module Mcp
       'image/gif' => '.gif',
       'image/webp' => '.webp',
       'image/heic' => '.heic',
-      'image/heif' => '.heif',
-      'application/octet-stream' => '.bin'
+      'image/heif' => '.heif'
     }.freeze
 
     BASE64_RESIZE_OUTPUT_TYPES = {
@@ -33,8 +25,7 @@ module Mcp
       'image/gif' => 'gif',
       'image/webp' => 'webp',
       'image/heic' => 'heic',
-      'image/heif' => 'heif',
-      'application/octet-stream' => 'jpg'
+      'image/heif' => 'heif'
     }.freeze
 
     def initialize(user:)
@@ -168,19 +159,16 @@ module Mcp
     end
 
     def fetch_image_upload_from_url(url_string)
-      uri = parse_public_http_uri(url_string)
-      return uri if uri.is_a?(Hash)
-
-      unless safe_fetch_host?(uri)
-        return { success: false, errors: ['image_url host is not allowed (private or unresolved host)'] }
+      downloaded = SafeRemoteFetch.fetch(
+        url_string,
+        https_only: Rails.env.production?,
+        max_bytes: MAX_IMAGE_BYTES
+      )
+      unless downloaded.ok?
+        return { success: false, errors: [image_url_error(downloaded.error)] }
       end
 
-      downloaded = http_download_image(uri)
-      return downloaded if downloaded.is_a?(Hash)
-
-      body, content_type, filename_hint = downloaded
-      content_type = infer_image_content_type(body, content_type)
-
+      content_type = infer_image_content_type(downloaded.body, downloaded.content_type)
       unless acceptable_image_content_type?(content_type)
         return {
           success: false,
@@ -188,11 +176,35 @@ module Mcp
         }
       end
 
-      ext = extension_for(content_type, filename_hint)
-      build_upload(body, "mcp-image#{ext}", content_type_for_store(content_type))
+      hint = filename_hint(downloaded.final_url)
+      ext = extension_for(content_type, hint)
+      build_upload(downloaded.body, "mcp-image#{ext}", content_type_for_store(content_type))
     rescue StandardError => e
-      Rails.logger.warn("[Mcp::EntryCreator] image_url fetch failed: #{e.class}: #{e.message}")
-      { success: false, errors: ["Could not download image from URL: #{e.message}"] }
+      Rails.logger.warn("[Mcp::EntryCreator] image_url fetch failed: #{e.class}")
+      { success: false, errors: ["Could not download image from URL"] }
+    end
+
+    def image_url_error(error)
+      case error
+      when :https_required
+        "image_url must use https in production"
+      when :credentials
+        "image_url may not contain embedded credentials"
+      when :invalid_url
+        "image_url is not a valid URL"
+      when :too_large
+        "Image from URL is too large (max #{MAX_IMAGE_BYTES / 1.megabyte} MB)"
+      when :private_host, :unresolved_host
+        "image_url host is not allowed (private or unresolved host)"
+      else
+        "Could not download image from URL"
+      end
+    end
+
+    def filename_hint(url)
+      File.basename(URI.parse(url.to_s).path.to_s)
+    rescue URI::InvalidURIError
+      nil
     end
 
     def decode_image_upload_from_base64(raw, mime_hint)
@@ -254,7 +266,7 @@ module Mcp
 
       content_type = content_type_for_store(mime)
       output_type = BASE64_RESIZE_OUTPUT_TYPES.fetch(content_type, 'jpg')
-      output_content_type = content_type == 'application/octet-stream' ? 'image/jpeg' : content_type
+      output_content_type = content_type
       processed = ImageProcessing::Vips
                   .source(input)
                   .resize_to_limit(BASE64_IMAGE_MAX_DIMENSION, BASE64_IMAGE_MAX_DIMENSION)
@@ -273,134 +285,15 @@ module Mcp
       input&.unlink
     end
 
-    def parse_public_http_uri(url_string)
-      uri = URI.parse(url_string)
-      unless uri.is_a?(URI::HTTP) || uri.is_a?(URI::HTTPS)
-        return { success: false, errors: ['image_url must be http or https'] }
-      end
-      return { success: false, errors: ['image_url may not contain embedded credentials'] } if uri.userinfo.present?
-      return { success: false, errors: ['image_url must use https in production'] } if Rails.env.production? && !uri.is_a?(URI::HTTPS)
-
-      uri
-    rescue URI::InvalidURIError
-      { success: false, errors: ['image_url is not a valid URL'] }
-    end
-
-    def safe_fetch_host?(uri)
-      host = uri.host.to_s.downcase
-      return false if host.blank?
-      return false if blocked_hostname?(host)
-
-      addrs = Resolv.getaddresses(host)
-      return false if addrs.empty?
-
-      addrs.all? { |ip| public_ip?(ip) }
-    rescue Resolv::ResolvError, IPAddr::InvalidAddressError
-      false
-    end
-
-    def blocked_hostname?(host)
-      return true if host == 'localhost'
-      return true if host.end_with?('.local')
-      return true if host == 'metadata.google.internal'
-
-      false
-    end
-
-    IPV4_BLOCKED_RANGES = [
-      IPAddr.new('0.0.0.0/8'),
-      IPAddr.new('10.0.0.0/8'),
-      IPAddr.new('100.64.0.0/10'),
-      IPAddr.new('127.0.0.0/8'),
-      IPAddr.new('169.254.0.0/16'),
-      IPAddr.new('172.16.0.0/12'),
-      IPAddr.new('192.0.0.0/24'),
-      IPAddr.new('192.0.2.0/24'),
-      IPAddr.new('192.168.0.0/16'),
-      IPAddr.new('198.18.0.0/15'),
-      IPAddr.new('198.51.100.0/24'),
-      IPAddr.new('203.0.113.0/24'),
-      IPAddr.new('224.0.0.0/4'),
-      IPAddr.new('240.0.0.0/4')
-    ].freeze
-
-    IPV6_BLOCKED_RANGES = [
-      IPAddr.new('::/128'),
-      IPAddr.new('::1/128'),
-      IPAddr.new('::ffff:0:0/96'),
-      IPAddr.new('64:ff9b::/96'),
-      IPAddr.new('100::/64'),
-      IPAddr.new('2001:db8::/32'),
-      IPAddr.new('fc00::/7'),
-      IPAddr.new('fe80::/10'),
-      IPAddr.new('ff00::/8')
-    ].freeze
-
-    def public_ip?(ip)
-      addr = IPAddr.new(ip.to_s)
-      return false if addr.loopback? || addr.private? || addr.link_local?
-
-      if addr.ipv4?
-        IPV4_BLOCKED_RANGES.none? { |range| range.include?(addr) }
-      elsif addr.ipv6?
-        IPV6_BLOCKED_RANGES.none? { |range| range.include?(addr) }
-      else
-        false
-      end
-    rescue IPAddr::InvalidAddressError
-      false
-    end
-
-    def http_download_image(uri, redirects_left = MAX_REDIRECTS)
-      return { success: false, errors: ['Too many redirects when fetching image_url'] } if redirects_left.negative?
-
-      validated_uri = parse_public_http_uri(uri.to_s)
-      return validated_uri if validated_uri.is_a?(Hash)
-
-      unless safe_fetch_host?(validated_uri)
-        return { success: false, errors: ['Redirect target host is not allowed'] }
-      end
-
-      http = Net::HTTP.new(validated_uri.host, validated_uri.port)
-      http.use_ssl = validated_uri.is_a?(URI::HTTPS)
-      http.open_timeout = HTTP_OPEN_TIMEOUT
-      http.read_timeout = HTTP_READ_TIMEOUT
-
-      request = Net::HTTP::Get.new(validated_uri.request_uri)
-      response = http.request(request)
-
-      case response
-      when Net::HTTPSuccess
-        body = response.body.to_s
-        if body.bytesize > MAX_IMAGE_BYTES
-          return { success: false, errors: ["Image from URL is too large (max #{MAX_IMAGE_BYTES / 1.megabyte} MB)"] }
-        end
-
-        ct = response['content-type'].to_s.split(';').first&.strip
-        [body, ct, File.basename(validated_uri.path)]
-      when Net::HTTPRedirection
-        location = response['location'].to_s
-        return { success: false, errors: ['Redirect location missing'] } if location.blank?
-
-        next_uri = URI.join(validated_uri.to_s, location)
-        http_download_image(next_uri, redirects_left - 1)
-      else
-        { success: false, errors: ['Could not download image from URL'] }
-      end
-    end
-
     def acceptable_image_content_type?(content_type)
       ct = content_type.to_s.downcase.strip
-      return true if ct.blank?
+      return false if ct.blank? || ct == "application/octet-stream"
 
       Entry::ALLOWED_IMAGE_TYPES.any? { |allowed| ct == allowed.downcase }
     end
 
     def content_type_for_store(content_type)
-      ct = content_type.to_s.split(';').first&.strip.downcase
-      return 'application/octet-stream' if ct.blank?
-
-      ct
+      content_type.to_s.split(";").first.to_s.strip.downcase
     end
 
     def extension_for(content_type, filename_hint)
@@ -456,13 +349,13 @@ module Mcp
     end
 
     def infer_image_content_type(body, header_type)
-      ct = header_type.to_s.split(';').first&.strip
-      return ct if ct.present?
+      ct = header_type.to_s.split(";").first&.strip&.downcase
+      ct = nil if ct.blank? || ct == "application/octet-stream"
+      return ct if ct.present? && Entry::ALLOWED_IMAGE_TYPES.include?(ct)
 
-      ft = FastImage.type(StringIO.new(body))
-      return "image/#{ft}" if ft.present?
-
-      ''
+      fast = FastImage.type(StringIO.new(body.to_s))
+      mapped = { jpeg: "image/jpeg", png: "image/png", gif: "image/gif", webp: "image/webp" }[fast]
+      mapped.to_s
     end
 
     def serialize(entry)

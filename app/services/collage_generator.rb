@@ -278,21 +278,18 @@ class CollageGenerator
     image
   end
 
-  # Downloads the URL body using Net::HTTP directly. We avoid open-uri because
-  # since Ruby 3.0 it raises "userinfo not supported. [RFC3986]" on any URI
-  # with an `@` that parses as userinfo (happens with some legacy Filestack
-  # filenames), even if we never intended basic auth.
+  # Local paths are Day One imports. Everything else goes through
+  # SafeRemoteFetch, which refuses private hosts and re-checks every redirect.
+  # URLs with embedded credentials are refused.
   #
   # When the server sends a Content-Length header and the received body is
   # shorter, we treat the response as truncated and retry once after a short
   # delay — this is the common S3 read-after-write race when a browser has
   # only just finished PUTting the tmp object. Without this, we hand a
   # half-baked JPEG to libvips and it errors mid-decode.
-  def fetch_bytes(url, redirects_left = MAX_REDIRECTS, truncation_retries_left = MAX_TRUNCATION_RETRIES)
-    return nil if redirects_left.negative?
+  def fetch_bytes(url, _redirects_left = MAX_REDIRECTS, truncation_retries_left = MAX_TRUNCATION_RETRIES)
     return nil if url.blank?
 
-    # Local filesystem paths (used by Day One ZIP import) bypass HTTP only when explicitly enabled.
     local_path = local_image_path(url)
     if local_path
       return nil unless @allow_local_paths
@@ -302,54 +299,33 @@ class CollageGenerator
       return nil
     end
 
-    # Malformed strings (e.g. internal sentinels like "mailgun_collage:…" that
-    # leaked out of the email processor) should be dropped silently rather than
-    # paged to Sentry — they're a caller-contract problem, not a runtime fault
-    # to investigate, and the collage degrades gracefully by skipping the tile.
-    uri = begin
-      URI.parse(url)
-    rescue URI::InvalidURIError
+    # Malformed strings (e.g. internal sentinels like "mailgun_collage:…") are
+    # a caller-contract problem. Skip the tile instead of paging Sentry.
+    return nil unless SafeRemoteFetch.parse_http_uri(url)
+
+    result = SafeRemoteFetch.fetch(
+      url,
+      open_timeout: HTTP_OPEN_TIMEOUT,
+      read_timeout: HTTP_READ_TIMEOUT,
+      redirects_left: MAX_REDIRECTS
+    )
+    return nil unless result.ok?
+
+    body = result.body
+    expected = result.content_length
+    if expected && expected.positive? && body.to_s.bytesize != expected
+      if truncation_retries_left.positive?
+        sleep TRUNCATION_RETRY_DELAY
+        return fetch_bytes(url, MAX_REDIRECTS, truncation_retries_left - 1)
+      end
+      Sentry.capture_message(
+        "Truncated response in CollageGenerator#fetch_bytes",
+        level: :warning,
+        extra: { url: sanitize_url(url), expected: expected, received: body.to_s.bytesize }
+      )
       return nil
     end
-    return nil unless uri.is_a?(URI::HTTP) || uri.is_a?(URI::HTTPS)
-    return nil unless safe_remote_uri?(uri)
-
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.use_ssl = uri.is_a?(URI::HTTPS)
-    http.open_timeout = HTTP_OPEN_TIMEOUT
-    http.read_timeout = HTTP_READ_TIMEOUT
-
-    request = Net::HTTP::Get.new(uri.request_uri)
-    if uri.userinfo
-      user, pass = uri.userinfo.split(":", 2)
-      request.basic_auth(user, pass)
-    end
-
-    response = http.request(request)
-
-    case response
-    when Net::HTTPSuccess
-      body = response.body
-      expected = response["content-length"]&.to_i
-      if expected && expected.positive? && body.to_s.bytesize != expected
-        if truncation_retries_left.positive?
-          sleep TRUNCATION_RETRY_DELAY
-          return fetch_bytes(url, redirects_left, truncation_retries_left - 1)
-        end
-        Sentry.capture_message(
-          "Truncated response in CollageGenerator#fetch_bytes",
-          level: :warning,
-          extra: { url: sanitize_url(url), expected: expected, received: body.to_s.bytesize }
-        )
-        return nil
-      end
-      body
-    when Net::HTTPRedirection
-      location = response["location"]
-      return nil if location.blank?
-
-      fetch_bytes(URI.join(uri, location).to_s, redirects_left - 1, truncation_retries_left)
-    end
+    body
   rescue StandardError => e
     Sentry.capture_exception(e, extra: { url: sanitize_url(url) })
     nil
@@ -371,25 +347,6 @@ class CollageGenerator
   end
 
   def safe_remote_uri?(uri)
-    host = uri.host.to_s.downcase
-    return false if host.blank? || host == "localhost" || host.end_with?(".local") || host == "metadata.google.internal"
-
-    addrs = Resolv.getaddresses(host)
-    return false if addrs.empty?
-
-    addrs.all? do |ip|
-      addr = IPAddr.new(ip.to_s)
-      next false if addr.loopback? || addr.private? || addr.link_local?
-
-      if addr.ipv4?
-        Mcp::EntryCreator::IPV4_BLOCKED_RANGES.none? { |range| range.include?(addr) }
-      elsif addr.ipv6?
-        Mcp::EntryCreator::IPV6_BLOCKED_RANGES.none? { |range| range.include?(addr) }
-      else
-        false
-      end
-    end
-  rescue Resolv::ResolvError, IPAddr::InvalidAddressError
-    false
+    SafeRemoteFetch.public_host?(uri)
   end
 end
