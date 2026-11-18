@@ -3,6 +3,7 @@ import SwiftUI
 /// Settings → Entry Template: headings or questions an entry can start from, written and
 /// formatted as an entry is. Kept as it's typed; emptied, there's no template.
 struct EntryTemplateView: View {
+    @Environment(AppModel.self) private var model
     @State private var editor = RichTextEditorModel(typed: EntryTemplate.runs)
     @AppStorage(EntryTemplate.autoKey) private var addsToNewEntries = false
 
@@ -40,6 +41,7 @@ struct EntryTemplateView: View {
         .onAppear { editor.allowsLinks = false }
         .onChange(of: editor.revision) { save() }
         .onDisappear { save() }
+        .onChange(of: addsToNewEntries) { AccountSettings.changed(.entryTemplateAuto, model: model) }
     }
 
     /// Bold, italic and underline, as in an entry: for the selected words or, with none, for
@@ -62,5 +64,7 @@ struct EntryTemplateView: View {
     private func save() {
         guard editor.isDirty else { return }
         EntryTemplate.runs = editor.isEmpty ? [] : editor.typedRuns
+        // On the account too, so signing out or a new phone doesn't lose it.
+        AccountSettings.changed(.entryTemplate, model: model)
     }
 }

@@ -185,7 +185,9 @@ final class AppModel {
         UserDefaults.standard.set(true, forKey: Self.signedOutKey)
         await WebLinks.clearWebsiteData()
         DraftStore.clearAll()
+        // (Kept on the account: they come back at the next sign-in.)
         EntryTemplate.clear()
+        AccountSettings.clear()
         clearJournalCopies()
         lock.reset()
         resetSession()
@@ -247,6 +249,9 @@ final class AppModel {
             timelineError = nil
             hasLoaded = true
             WidgetSync.update(from: self)
+            // The template and widget choice as the account has them (another phone may have
+            // changed them), or sent up if they were changed here.
+            AccountSettings.sync(with: self)
             Task { await ReminderScheduler.shared.reschedule(for: self) }
             var reloadNow = visibleMonths.intersection(staleMonths)
             if let newest = months.first { reloadNow.insert(newest.key) }
