@@ -559,6 +559,7 @@ RSpec.describe PaymentsController, type: :controller do
       {
         seller_id: ENV['GUMROAD_SELLER_ID'],
         product_id: ENV['GUMROAD_PRODUCT_ID'],
+        short_product_id: 'sFmOD',
         price: '3600',
         recurrence: 'yearly',
         purchaser_id: '1111111111'
