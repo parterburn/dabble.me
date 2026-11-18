@@ -25,8 +25,9 @@ RSpec.describe 'Encrypted columns' do
   end
 
   it 'stores account secrets as ciphertext' do
-    user.update!(otp_auth_secret: 'OTPSECRET', otp_recovery_secret: 'RECOVERY')
-    %w[user_key image_key first_name last_name past_filter otp_auth_secret otp_recovery_secret].each do |column|
+    user.update!(otp_auth_secret: 'OTPSECRET', otp_recovery_secret: 'RECOVERY',
+                 app_settings_hash: { 'entry_template' => [{ 'text' => 'One Win' }] })
+    %w[user_key image_key first_name last_name past_filter otp_auth_secret otp_recovery_secret app_settings].each do |column|
       expect(ciphertext?(stored_value(user, column))).to be(true), "#{column} is not ciphertext"
     end
 
@@ -34,6 +35,7 @@ RSpec.describe 'Encrypted columns' do
     expect(reloaded.first_name).to eq('Ann')
     expect(reloaded.past_filter).to eq('breakup')
     expect(reloaded.otp_auth_secret).to eq('OTPSECRET')
+    expect(reloaded.app_settings_hash).to eq('entry_template' => [{ 'text' => 'One Win' }])
     expect(reloaded.user_key).to eq(user.user_key)
   end
 

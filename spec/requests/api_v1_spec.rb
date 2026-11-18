@@ -882,6 +882,54 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
     end
   end
 
+  describe "/api/v1/app_settings" do
+    let(:template) do
+      [{ "text" => "One Win", "bold" => true }, { "text" => "\n\n" }, { "text" => "One Bit of Gratitude", "bold" => true, "italic" => false }]
+    end
+
+    it "is empty until something's set" do
+      get "/api/v1/app_settings", headers: auth(free_user)
+      expect(response).to have_http_status(:ok)
+      expect(json).to eq("entry_template" => nil, "entry_template_auto" => nil, "widget_content" => nil)
+    end
+
+    it "keeps the template for the next sign-in" do
+      patch "/api/v1/app_settings", params: { entry_template: template, entry_template_auto: true }, headers: auth(free_user), as: :json
+      expect(response).to have_http_status(:ok)
+      expect(json["entry_template"]).to eq([{ "text" => "One Win", "bold" => true }, { "text" => "\n\n" },
+                                            { "text" => "One Bit of Gratitude", "bold" => true }])
+      expect(json["entry_template_auto"]).to be(true)
+
+      get "/api/v1/app_settings", headers: auth(free_user)
+      expect(json["entry_template"].first).to eq("text" => "One Win", "bold" => true)
+    end
+
+    it "changes only what's sent" do
+      patch "/api/v1/app_settings", params: { entry_template: template }, headers: auth(pro_user), as: :json
+      patch "/api/v1/app_settings", params: { widget_content: "memoryEntry" }, headers: auth(pro_user), as: :json
+      expect(json["widget_content"]).to eq("memoryEntry")
+      expect(json["entry_template"].size).to eq(3)
+      expect(json["entry_template_auto"]).to be_nil
+    end
+
+    it "keeps an emptied template as empty, not as never set" do
+      patch "/api/v1/app_settings", params: { entry_template: template }, headers: auth(pro_user), as: :json
+      patch "/api/v1/app_settings", params: { entry_template: [] }, headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:ok)
+      expect(json["entry_template"]).to eq([])
+    end
+
+    it "refuses what isn't a template or a widget choice" do
+      patch "/api/v1/app_settings", params: { widget_content: "everything" }, headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      patch "/api/v1/app_settings", params: { entry_template: [{ "bold" => true }] }, headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      patch "/api/v1/app_settings", params: { entry_template: [{ "text" => "x" * 10_001 }] }, headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(pro_user.reload.app_settings).to be_nil
+    end
+  end
+
   describe "/api/v1/email_schedule" do
     it "keeps the days when the email is turned off, to turn it back on with" do
       pro_user.update!(frequency: %w[Mon Wed])

@@ -151,6 +151,11 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
         defaults?.removeObject(forKey: storageKey)
     }
 
+    /// Whether the person has ever chosen (Settings → Home Screen Widget), or it's the default.
+    static var hasChosenContent: Bool {
+        defaults?.object(forKey: contentKey) != nil || defaults?.object(forKey: showMemoriesKey) != nil
+    }
+
     static var content: WidgetContent {
         get {
             if let raw = defaults?.string(forKey: contentKey), let content = WidgetContent(rawValue: raw) { return content }

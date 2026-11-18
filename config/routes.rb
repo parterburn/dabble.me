@@ -64,6 +64,7 @@ Rails.application.routes.draw do
       get 'reminders', to: 'reminders#show'
       get 'hashtags', to: 'hashtags#index'
       resource :email_schedule, only: %i[show update]
+      resource :app_settings, only: %i[show update]
       resources :dated_hashtags, only: %i[index create update destroy]
       resources :image_uploads, only: :create
     end
