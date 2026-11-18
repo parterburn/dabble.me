@@ -93,6 +93,14 @@ class PaymentsController < ApplicationController
   end
 
   def payment_notify
+    # Gumroad pings every product on this seller account. Only the Dabble Me
+    # subscription is a journal payment; other products are acknowledged and
+    # are not stored or reported.
+    if non_dabble_gumroad_ping?
+      head :ok, content_type: 'text/html'
+      return
+    end
+
     processed_params = if payhere? && valid_payhere_signature?
       process_payhere
     elsif gumroad?
@@ -188,12 +196,31 @@ class PaymentsController < ApplicationController
 
   private
 
+  # Short product id of the Dabble Me subscription. Gumroad's other products
+  # on this seller account are not journal payments.
+  DABBLE_GUMROAD_SHORT_PRODUCT_ID = 'sFmOD'.freeze
+
   def gumroad?
     params[:email].present? &&
       ENV['GUMROAD_SELLER_ID'].present? &&
       ENV['GUMROAD_PRODUCT_ID'].present? &&
       ActiveSupport::SecurityUtils.secure_compare(params[:seller_id].to_s, ENV['GUMROAD_SELLER_ID'].to_s) &&
       ActiveSupport::SecurityUtils.secure_compare(params[:product_id].to_s, ENV['GUMROAD_PRODUCT_ID'].to_s)
+  end
+
+  # A Gumroad sale, refund, or dispute for a product other than Dabble Me.
+  # Blank short ids stay on the existing product-id check. PayHere and PayPal
+  # notifications do not carry this field. The ping is not stored or reported.
+  def non_dabble_gumroad_ping?
+    short_id = params[:short_product_id].to_s
+    return false if short_id.blank? || short_id == DABBLE_GUMROAD_SHORT_PRODUCT_ID
+    return false if payhere? || paypal?
+
+    given = params[:seller_id].to_s
+    seller = ENV['GUMROAD_SELLER_ID'].to_s
+    return false if seller.blank? || given.bytesize != seller.bytesize
+
+    ActiveSupport::SecurityUtils.secure_compare(given, seller)
   end
 
   def paypal?
