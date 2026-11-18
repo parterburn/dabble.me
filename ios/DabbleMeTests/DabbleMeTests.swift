@@ -101,6 +101,15 @@ struct HashtagTypingTests {
         #expect(found?.range == NSRange(location: 3, length: 3))
     }
 
+    /// Finishing a hashtag keeps what was typed as it was typed, and adds the rest.
+    @Test func finishingKeepsTheWritersCapitals() {
+        #expect(RichTextEditorModel.completion(of: "l", with: "Leo") == "leo")
+        #expect(RichTextEditorModel.completion(of: "L", with: "leo") == "Leo")
+        #expect(RichTextEditorModel.completion(of: "HI", with: "hiking") == "HIking")
+        #expect(RichTextEditorModel.completion(of: "hik", with: "Hiking") == "hiking")
+        #expect(RichTextEditorModel.completion(of: "x", with: "Leo") == "Leo") // not its beginning: the tag as it is
+    }
+
     /// The writer's tags that start with it, the first of each spelling, without the one typed in full.
     @Test func offersTagsThatStartThatWay() {
         let tags = ["hiking", "Leo", "Hike", "leo", "home", "hi"]

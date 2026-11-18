@@ -136,8 +136,17 @@ final class RichTextEditorModel {
         if typed?.prefix != typedHashtag { typedHashtag = typed?.prefix }
     }
 
-    /// Finishes the hashtag being typed as `tag`, in the writer's own tag's capitals, with a
-    /// space after it (unless one's there), and the cursor past that.
+    /// What typing `typed` and choosing `tag` leaves written: the letters as the writer typed
+    /// them, capitals and all, then the rest of the tag ("l" and "Leo" give "leo"; "HI" and
+    /// "hiking" give "HIking"). The writer's capitals are theirs to choose, here as when a word
+    /// they've written is tagged where it stands.
+    static func completion(of typed: String, with tag: String) -> String {
+        guard tag.lowercased().hasPrefix(typed.lowercased()), tag.count >= typed.count else { return tag }
+        return typed + tag.dropFirst(typed.count)
+    }
+
+    /// Finishes the hashtag being typed as `tag`, keeping the letters already typed as they
+    /// were typed, with a space after it (unless one's there), and the cursor past that.
     func completeHashtag(_ tag: String) {
         guard let textView, let range = typedHashtagRange, NSMaxRange(range) <= textView.textStorage.length else { return }
         let storage = textView.textStorage
@@ -145,7 +154,8 @@ final class RichTextEditorModel {
         let attributes = storage.attributes(at: range.location, effectiveRange: nil)
         let end = NSMaxRange(range)
         let spaceFollows = end < string.length && UnicodeScalar(string.character(at: end)).map { CharacterSet.whitespacesAndNewlines.contains($0) } == true
-        let written = "#\(tag)" + (spaceFollows ? "" : " ")
+        let typed = string.substring(with: NSRange(location: range.location + 1, length: range.length - 1))
+        let written = "#" + Self.completion(of: typed, with: tag) + (spaceFollows ? "" : " ")
         storage.replaceCharacters(in: range, with: NSAttributedString(string: written, attributes: attributes))
         textView.selectedRange = NSRange(location: range.location + (written as NSString).length + (spaceFollows ? 1 : 0), length: 0)
         textDidChange()
