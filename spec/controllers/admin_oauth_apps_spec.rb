@@ -113,6 +113,15 @@ RSpec.describe AdminController, type: :controller do
       expect(Doorkeeper::AccessToken.where(application_id: claude_new.id)).to be_empty
     end
 
+    it "shows a client's name as text in the notice" do
+      named = register(%(<img src=x onerror="alert(1)">), 'https://evil.example/cb')
+      sign_in_admin admin
+      delete :destroy_oauth_app, params: { application_id: named.id }
+
+      expect(flash[:notice]).to include('Deleted &lt;img src=x onerror=&quot;alert(1)&quot;&gt;')
+      expect(flash[:notice]).not_to include('<img')
+    end
+
     it "refuses to delete the iOS app's client" do
       mobile = MobileApp.ensure_application!
       sign_in_admin admin

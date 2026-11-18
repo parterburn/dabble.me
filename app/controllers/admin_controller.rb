@@ -42,7 +42,9 @@ class AdminController < ApplicationController
 
     users = Doorkeeper::AccessToken.where(application_id: application.id, revoked_at: nil).distinct.count(:resource_owner_id)
     application.destroy
-    notice = "Deleted #{application.name} (registered #{application.created_at.strftime('%Y-%m-%d')})."
+    # The layout prints notices as HTML, and anyone can choose a client's name
+    # when registering it, so escape the name here.
+    notice = "Deleted #{ERB::Util.html_escape(application.name)} (registered #{application.created_at.strftime('%Y-%m-%d')})."
     notice += " #{helpers.pluralize(users, 'user')} disconnected." if users.positive?
     redirect_to admin_oauth_apps_path(name: params[:name].presence, email: params[:email].presence), notice: notice
   end
