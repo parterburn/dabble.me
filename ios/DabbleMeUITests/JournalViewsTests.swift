@@ -1179,7 +1179,8 @@ final class JournalViewsTests: XCTestCase {
         }
         tab(app, "Journal").tap()
         app.scrollTo(row)
-        XCTAssertGreaterThan(row.frame.width * row.frame.height, small * 1.3, "The timeline's text is larger")
+        // (Smallest to largest is 0.92× to 1.24×: the row takes up clearly more room.)
+        XCTAssertGreaterThan(row.frame.width * row.frame.height, small * 1.15, "The timeline's text is larger")
         snap("accessibility-timeline")
 
         accessibility { // back to the defaults for other runs

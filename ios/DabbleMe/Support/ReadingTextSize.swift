@@ -12,12 +12,12 @@ enum ReadingTextSize: Int, CaseIterable, Identifiable {
 
     var scale: CGFloat {
         switch self {
-        case .small: 0.88
+        // 8% of the default at a time, either way.
+        case .small: 0.92
         case .standard: 1
-        // Gentle steps up from the default: the first is only a little larger.
         case .large: 1.08
-        case .extraLarge: 1.2
-        case .largest: 1.35
+        case .extraLarge: 1.16
+        case .largest: 1.24
         }
     }
 

@@ -1,7 +1,7 @@
-Entry text size: the three larger sizes are a little smaller.
+Entry text size: each step is now 8%.
 
-- Settings, Theme, Entry Text Size. Large, Extra Large and Largest are now smaller steps up from Default (8%, 20% and 35% larger; they were 15%, 30% and 50%). Large should read as just slightly bigger than Default.
-- If you had one of those sizes chosen, your entries will look a little smaller than before. Check the Journal, an open entry, and the editor.
-- Small and Default are unchanged.
+- Settings, Theme, Entry Text Size. The five sizes are 8% smaller than Default, Default, then 8%, 16% and 24% larger. (They were 12% smaller, then 15%, 30% and 50% larger.) Large should read as just slightly bigger than Default.
+- If you had Large, Extra Large or Largest chosen, your entries will look smaller than before; on Small, very slightly larger. Check the Journal, an open entry, and the editor.
+- These sizes add to the iPhone's own text size (Settings, Display & Brightness, Text Size), so with that turned up, entries are larger still.
 
 This build also updates the App Store screenshots kept with the project; nothing to test there.
