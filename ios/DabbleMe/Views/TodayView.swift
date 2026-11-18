@@ -438,10 +438,10 @@ struct TodayView: View {
         return year
     }
 
-    /// Today's corner, which opens Stats: the last five days as dots (filled where written) for
-    /// someone who's written in them; otherwise how many entries the journal holds ("1,204
-    /// entries"), which is also what shows until the days are known. Around the new year,
-    /// "⏪ 2026 Rewind" until it's been tapped.
+    /// Today's corner, which opens Stats: the last five days as marks (filled where written, an
+    /// open ring where not) for someone who's written in them; otherwise how many entries the
+    /// journal holds ("1,204 entries"), which is also what shows until the days are known.
+    /// Around the new year, "⏪ 2026 Rewind" until it's been tapped.
     private func entryCountButton(_ count: Int) -> some View {
         let days = model.lastFiveDays
         let showsDots = days?.contains(true) == true
@@ -598,9 +598,10 @@ private extension View {
     }
 }
 
-/// The last five days as a row of dots, oldest first and today's last, each filled if it was
-/// written. Up to five and no further: nothing to lose that can't be had back within the week.
-/// The widget has the same row; Stats says what it means.
+/// The last five days as a row of marks, oldest first and today's last. A written day is
+/// filled; a day with no entry is an open ring in the same color. Up to five and no further:
+/// nothing to lose that can't be had back within the week. The widget draws the same row;
+/// Stats says what it means.
 struct LastFiveDays: View {
     let days: [Bool]
     var size: CGFloat = 8
@@ -608,9 +609,14 @@ struct LastFiveDays: View {
     var body: some View {
         HStack(spacing: size * 0.6) {
             ForEach(Array(days.enumerated()), id: \.offset) { _, written in
-                Circle()
-                    .fill(written ? AnyShapeStyle(.tint) : AnyShapeStyle(Color.primary.opacity(0.12)))
-                    .frame(width: size, height: size)
+                Group {
+                    if written {
+                        Circle().fill(.tint)
+                    } else {
+                        Circle().strokeBorder(.tint, lineWidth: 1.5)
+                    }
+                }
+                .frame(width: size, height: size)
             }
         }
         .accessibilityElement(children: .ignore)
