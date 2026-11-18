@@ -326,7 +326,7 @@ private final class AreaMenuDispatcher: NSObject, UIContextMenuInteractionDelega
     }
 }
 
-/// The preview shown on long-press: the date, the entry's text and its photo. Everything comes
+/// The preview shown on long-press: the date and how long ago it was, the entry's text and its photo. Everything comes
 /// with the timeline row (`preview_text`), because iOS sizes a preview once, when it opens: text
 /// loaded afterwards got squeezed into a few truncated lines. Long entries fade out at the bottom.
 struct EntryPreview: View {
@@ -351,9 +351,19 @@ struct EntryPreview: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(summary.day?.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year()) ?? summary.date)
-                .font(.headline)
-                .accessibilityIdentifier("EntryPreviewDate")
+            // The date, and beside it how long ago that was, as of today ("3 years, 2 months
+            // ago"); under it when the two don't fit on a line.
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    dateLine
+                    Spacer(minLength: 0)
+                    agoLine
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    dateLine
+                    agoLine
+                }
+            }
             // The whole entry when it fits; otherwise as much as fits, fading out. Never "…".
             ViewThatFits(in: .vertical) {
                 entryText
@@ -383,6 +393,28 @@ struct EntryPreview: View {
         }
         .padding()
         .frame(width: 340, alignment: .topLeading)
+    }
+
+    private var dateLine: some View {
+        Text(summary.day?.formatted(.dateTime.weekday(.wide).month(.abbreviated).day().year()) ?? summary.date)
+            .font(.headline)
+            .lineLimit(1)
+            .fixedSize()
+            .accessibilityIdentifier("EntryPreviewDate")
+    }
+
+    /// (By the phone's own today: a preview doesn't inherit the app's environment, so not the
+    /// journal's, which can differ for an hour or two either side of midnight.)
+    @ViewBuilder
+    private var agoLine: some View {
+        if let day = summary.day {
+            Text(day.ago(from: JournalDay(localDate: .now)))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .fixedSize()
+                .accessibilityIdentifier("EntryPreviewAgo")
+        }
     }
 
     private var entryText: some View {

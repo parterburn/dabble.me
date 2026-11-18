@@ -1,7 +1,5 @@
-A day you didn't write is an open ring, not a faint filled circle.
+The preview you get by touching and holding an entry now says how long ago it was.
 
-- Today: the corner that opens Stats shows the last five days when you've written at least one of them. A written day is a filled circle. A day with no entry is an open ring in the same color. Size and spacing are unchanged.
-- Stats: the same five marks sit beside the line that says how many of the last five days have entries. Written days are filled; days without an entry are open rings.
-- Home Screen widget: under today's date, the same five marks. A written day is filled; a day with no entry is an open ring. Settings, Home Screen Widget shows the same preview.
-
-If none of those five days has an entry, Today still shows your entry count instead of the marks.
+- In the Journal, Today, Search or On This Day, touch and hold an entry. Above its text, next to the date, it should say how long ago that was as of today: "36 days ago", "3 years, 2 months ago", or "Today" / "Yesterday".
+- On a long date the "ago" drops to its own line under the date. Check both look right, and that nothing is cut off.
+- It should match what the entry says under its title when you open it in full.
