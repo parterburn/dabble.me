@@ -1,22 +1,9 @@
-Your entry template and Home Screen widget choice are now saved to your Dabble Me account, so signing out, reinstalling or a new phone no longer loses them.
+Stats now counts again as soon as an entry is written, changed or deleted, wherever in the app that happens.
 
-FIRST LAUNCH
-- Open the app once and pull to refresh. Your current template, "Start New Entries with It", and Settings > Home Screen Widget's choice should be unchanged, and are now copied to your account.
+- Open Journal and switch to Stats. Leave it there.
+- Go to the Today tab and write an entry for a day that has none.
+- Go back to Journal: the totals, the streak and the day grid should already include it, without pulling down to refresh.
+- Rewind (PRO, during the Rewind season): with fewer than five entries this year, the card says how many more it takes. Write entries from Today until there are five, then come back to Stats: the card should have changed to the one that opens your Rewind.
+- Editing an entry's text should update the word count in Stats the same way.
 
-SIGNING OUT AND BACK IN
-- Settings > Sign Out, then sign in again with the same account.
-- After the journal loads, Settings > Entry Template should show your template again, with the same bold headings and blank lines, and the "Start New Entries with It" switch as you left it.
-- Settings > Home Screen Widget should show the same choice, and the widget should follow it.
-
-CHANGES
-- Edit the template, leave the screen, sign out and back in: the edit should be there.
-- Empty the template completely, sign out and back in: it should stay empty, not come back.
-- Change the widget choice, sign out and back in: the new choice should hold.
-- A widget set to its own choice (touch and hold it, Edit Widget) keeps that choice; only "Same as in the App" follows the account.
-
-OTHER PHONES AND ACCOUNTS
-- If you have a second device, a change made on one should show on the other after pulling to refresh.
-- Signing in with a different account should not show the first account's template.
-
-OFFLINE
-- In Airplane Mode, edit the template, then turn it off and pull to refresh: the edit should still be there after a later sign-out and sign-in.
+Nothing else changed in this build.

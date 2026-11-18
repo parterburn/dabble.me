@@ -439,6 +439,7 @@ final class AppModel {
         let envelope: EntryEnvelope = try await api.post("api/v1/entries",
                                                         NewEntryRequest(date: day.iso, document: document, uploadedImageKeys: imageKeys))
         upsert(envelope.entry.summary)
+        entriesChanged += 1
         if envelope.entry.imageProcessing { watchProcessing(id: envelope.entry.id) }
         await loadToday()
         // Today's writing reminder isn't needed once there's an entry.
@@ -468,6 +469,10 @@ final class AppModel {
         }
         return batch.uploads.map(\.uploadedImageKey)
     }
+
+    /// Counts the entries written, changed and deleted from the app: views that hold numbers
+    /// counted from the journal (Stats) count again when it moves.
+    private(set) var entriesChanged = 0
 
     /// Counts the photos that have finished processing while the app watched: views with their
     /// own lists (Photos) load again when it moves.
@@ -509,6 +514,7 @@ final class AppModel {
         // Merged into that day's entry: this one is gone from the timeline.
         if envelope.entry.id != id { for key in monthEntries.keys { monthEntries[key]?.removeAll { $0.id == id } } }
         upsert(envelope.entry.summary)
+        entriesChanged += 1
         if envelope.entry.imageProcessing { watchProcessing(id: envelope.entry.id) }
         if day != nil {
             // Moved to another day: its place in the timeline, the months' counts and Today
@@ -520,6 +526,7 @@ final class AppModel {
 
     func deleteEntry(id: Int) async throws {
         try await api.delete("api/v1/entries/\(id)")
+        entriesChanged += 1
         for (key, entries) in monthEntries where entries.contains(where: { $0.id == id }) {
             monthEntries[key] = entries.filter { $0.id != id }
             if let index = months.firstIndex(where: { $0.key == key }) {
