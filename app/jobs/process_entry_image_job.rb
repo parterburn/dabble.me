@@ -24,40 +24,18 @@ class ProcessEntryImageJob < ActiveJob::Base
       return unless s3_file # Exit if file doesn't exist
 
       jpeg_file = nil
-      temp_file = nil
-
-      # Convert HEIC to JPEG if needed
-      if File.extname(s3_file.key)&.downcase == ".heic"
-        require 'open-uri'
-        begin
-          # Download the file to a temporary file
-          temp_file = Tempfile.new(['heic_image', '.heic'])
-          temp_file.binmode
-          temp_file.write(URI.open(s3_file.public_url).read)
-          temp_file.rewind
-
-          tempfile = ImageConverter.new(tempfile: temp_file, width: 1200).call
-          jpeg_file = ActionDispatch::Http::UploadedFile.new(
-            {
-              filename: "#{s3_file.key.split('.').first}.jpg",
-              tempfile: tempfile,
-              type: 'image/jpg',
-              head: "Content-Disposition: form-data; name=\"property[images][]\"; filename=\"#{s3_file.key.split('.').first}.jpg\"\r\nContent-Type: image/jpg\r\n"
-            }
-          )
-
-          entry.image = jpeg_file
-        rescue => e
-          Rails.logger.error "Failed to convert HEIC to JPEG: #{e.message}"
-          # Fall back to using the original file
-          entry.remote_image_url = s3_file.public_url
-        ensure
-          # Clean up temp file if it exists
-          temp_file&.close
-          temp_file&.unlink
-        end
+      data = fog_bytes(s3_file)
+      if data.nil?
+        @error = "The image could not be read."
+      elsif File.extname(s3_file.key).to_s.downcase.in?(%w[.heic .heif])
+        jpeg_file = assign_converted_heic(entry, data, s3_file.key)
       else
-        entry.remote_image_url = s3_file.public_url
+        type = sniffed_image_type(data, s3_file.content_type)
+        if type
+          entry.image = uploaded_image(data, stored_filename(s3_file.key, type), type)
+        else
+          @error = "The file was not an image."
+        end
       end
 
       unless entry.save
@@ -106,6 +84,80 @@ class ProcessEntryImageJob < ActiveJob::Base
   end
 
   private
+
+  def fog_bytes(s3_file)
+    body = s3_file.body
+    data = body.respond_to?(:read) ? body.read : body
+    data.to_s.b
+  rescue StandardError => e
+    Rails.logger.error "Failed to read stored image: #{e.class}"
+    nil
+  end
+
+  def assign_converted_heic(entry, data, key)
+    temp_file = nil
+    temp_file = Tempfile.new(["heic_image", File.extname(key)])
+    temp_file.binmode
+    temp_file.write(data)
+    temp_file.rewind
+    converted = ImageConverter.new(tempfile: temp_file, width: 1200).call
+    uploaded = uploaded_image(converted, "#{File.basename(key, '.*')}.jpg", "image/jpeg")
+    entry.image = uploaded
+    uploaded
+  rescue StandardError => e
+    Rails.logger.error "Failed to convert HEIC to JPEG: #{e.class}"
+    type = sniffed_image_type(data, "image/heic")
+    return nil unless type
+
+    uploaded_image(data, stored_filename(key, type), type).tap { |file| entry.image = file }
+  ensure
+    temp_file&.close
+    temp_file&.unlink
+  end
+
+  def sniffed_image_type(data, declared)
+    fast = FastImage.type(StringIO.new(data.to_s))
+    mapped = {
+      jpeg: "image/jpeg",
+      png: "image/png",
+      gif: "image/gif",
+      webp: "image/webp",
+      heic: "image/heic",
+      heif: "image/heif"
+    }[fast]
+    return mapped if mapped && Entry::ALLOWED_IMAGE_TYPES.include?(mapped)
+
+    declared = declared.to_s.downcase.split(";").first.to_s.strip
+    return declared if Entry::ALLOWED_IMAGE_TYPES.include?(declared)
+
+    nil
+  end
+
+  def stored_filename(key, type)
+    ext = {
+      "image/jpeg" => ".jpg",
+      "image/jpg" => ".jpg",
+      "image/png" => ".png",
+      "image/gif" => ".gif",
+      "image/webp" => ".webp",
+      "image/heic" => ".heic",
+      "image/heif" => ".heif"
+    }[type]
+    "#{File.basename(key, '.*')}#{ext || File.extname(key)}"
+  end
+
+  def uploaded_image(io_or_bytes, filename, type)
+    tempfile = if io_or_bytes.respond_to?(:path) && io_or_bytes.respond_to?(:read)
+      io_or_bytes
+    else
+      file = Tempfile.new(["entry-image", File.extname(filename.to_s)])
+      file.binmode
+      file.write(io_or_bytes)
+      file.rewind
+      file
+    end
+    ActionDispatch::Http::UploadedFile.new(tempfile: tempfile, filename: filename, type: type)
+  end
 
   def clear_uploading_placeholder(entry_id)
     entry = Entry.find_by(id: entry_id)

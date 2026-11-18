@@ -24,7 +24,7 @@ class Entry < ActiveRecord::Base
   # read as a tag. Group 1 is the tag.
   HASHTAG_OR_URL_PATTERN = /#{TEXT_URL_PATTERN}|#{HASHTAG_PATTERN}/
 
-  ALLOWED_IMAGE_TYPES = %w[image/jpg image/jpeg image/png image/gif image/webp image/heic image/heif image/heic-sequence image/heif-sequence application/octet-stream]
+  ALLOWED_IMAGE_TYPES = %w[image/jpg image/jpeg image/png image/gif image/webp image/heic image/heif image/heic-sequence image/heif-sequence]
   # Characters of an entry shown before "Read more" (entries/_blurb).
   BLURB_LENGTH = 240
 

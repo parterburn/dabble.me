@@ -550,18 +550,20 @@ describe EmailProcessor do
         expect(processor).to have_received(:process_single_image).with(kind_of(Entry), logo)
       end
 
-      it "skips inline images by URL or by likeness" do
+      it "skips inline images by URL or by likeness without remote_image_url" do
         add_rule("filename", "cdn.example.com/signature/")
         allow(CollageGenerator).to receive(:fetch).and_return(stored_copy(logo_bytes))
         add_rule("image", "https://d10r8m94hrfowu.cloudfront.net/#{paid_user.image_key}/2026-09-20/sig.jpg")
         allow_any_instance_of(EmailProcessor).to receive(:safe_inline_image_url?).and_return(true)
-        allow(FastImage).to receive(:type).and_return(:png)
-        allow(FastImage).to receive(:size).and_return([300, 86])
-        allow(CollageGenerator).to receive(:fetch).with("https://mail.example.com/inline/abc123").and_return(logo_bytes)
+        allow(SafeRemoteFetch).to receive(:fetch).and_return(
+          SafeRemoteFetch::Result.new(body: logo_bytes, content_type: "image/png", final_url: "https://mail.example.com/inline/abc123")
+        )
+        expect_any_instance_of(Entry).not_to receive(:remote_image_url=)
 
         process(email_with(html: '<div>Today was good</div><img src="https://cdn.example.com/signature/logo.png"><img src="https://mail.example.com/inline/abc123">'))
 
-        expect(FastImage).to have_received(:type).twice
+        expect(SafeRemoteFetch).to have_received(:fetch).with("https://mail.example.com/inline/abc123", hash_including(:https_only))
+        expect(SafeRemoteFetch).not_to have_received(:fetch).with(a_string_including("signature"), anything)
         expect(paid_user.entries.reload.first.image.file).to be_blank
       end
     end
@@ -581,6 +583,32 @@ describe EmailProcessor do
 
       EmailProcessor.new(email).process
       expect(paid_user.entries.reload.first.image.file).to be_blank
+    end
+
+    it "rejects an inline image when a redirect leaves the public internet" do
+      paid_user.entries.destroy_all
+      allow(Resolv).to receive(:getaddresses).and_call_original
+      allow(Resolv).to receive(:getaddresses).with("images.example.com").and_return(["93.184.216.34"])
+      stub_request(:get, "https://images.example.com/photo.jpg").to_return(
+        status: 302,
+        headers: { "Location" => "http://169.254.169.254/latest/meta-data" }
+      )
+      expect_any_instance_of(Entry).not_to receive(:remote_image_url=)
+      expect(URI).not_to receive(:open)
+
+      email = FactoryBot.build(
+        :email,
+        to: [{ token: paid_user.user_key, host: ENV['SMTP_DOMAIN'], email: "#{paid_user.user_key}@#{ENV['SMTP_DOMAIN']}" }],
+        body: "Today was good",
+        vendor_specific: {
+          stripped_html: '<div>Today was good</div><img src="https://images.example.com/photo.jpg">'
+        }
+      )
+
+      EmailProcessor.new(email).process
+
+      expect(paid_user.entries.reload.first.image.file).to be_blank
+      expect(a_request(:get, %r{169\.254\.169\.254})).not_to have_been_made
     end
   end
 

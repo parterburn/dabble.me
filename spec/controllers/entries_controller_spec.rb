@@ -251,6 +251,29 @@ RSpec.describe EntriesController, type: :controller do
       expect(response).to redirect_to(root_path)
     end
 
+    it 'does not download remote_image_url posted by the browser' do
+      sign_in user
+      user.plan = 'PRO PayHere Monthly'
+      user.save
+      expect_any_instance_of(Entry).not_to receive(:remote_image_url=)
+      expect(SafeRemoteFetch).not_to receive(:fetch)
+
+      expect do
+        post :create, params: {
+          entry: {
+            entry: 'No remote fetch',
+            date: Date.new(2027, 4, 2),
+            remote_image_url: 'http://169.254.169.254/latest/meta-data'
+          }
+        }
+      end.to change { user.entries.count }.by(1)
+
+      created = user.entries.unscope(:order).order(id: :desc).first
+      expect(created.body).to include('No remote fetch')
+      expect(created[:image]).to be_blank
+      expect(a_request(:get, %r{169\.254\.169\.254})).not_to have_been_made
+    end
+
     it 'should let me create an entry if paid user' do
       sign_in user
       user.plan = 'PRO PayHere Monthly'

@@ -171,7 +171,7 @@ class EntriesController < ApplicationController
           ImageCollageJob.perform_later(@existing_entry.id, urls: image_urls)
         elsif params[:entry][:image].present?
           best_attachment = params[:entry][:image].first
-          if best_attachment.content_type.in?(Entry::ALLOWED_IMAGE_TYPES) && best_attachment.original_filename&.downcase&.ends_with?(*%w[.heic .heif .jpg .jpeg .gif .png .webp])
+          if acceptable_browser_image?(best_attachment)
             process_single_image(@existing_entry, best_attachment)
           else
             @existing_entry.uploading_image = false
@@ -193,7 +193,7 @@ class EntriesController < ApplicationController
       elsif params[:entry][:image].present?
         @entry.uploading_image = true
         best_attachment = params[:entry][:image].first
-        if best_attachment.content_type.in?(Entry::ALLOWED_IMAGE_TYPES) && best_attachment.original_filename&.downcase&.ends_with?(*%w[.heic .heif .jpg .jpeg .gif .png .webp])
+        if acceptable_browser_image?(best_attachment)
           process_single_image(@entry, best_attachment)
         else
           @entry.uploading_image = false
@@ -235,7 +235,7 @@ class EntriesController < ApplicationController
           ImageCollageJob.perform_later(@existing_entry.id, urls: image_urls)
         else
           best_attachment = params[:entry][:image].first
-          if best_attachment.content_type.in?(Entry::ALLOWED_IMAGE_TYPES) && best_attachment.original_filename&.downcase&.ends_with?(*%w[.heic .heif .jpg .jpeg .gif .png .webp])
+          if acceptable_browser_image?(best_attachment)
             process_single_image(@existing_entry, best_attachment)
           else
             @existing_entry.uploading_image = false
@@ -255,9 +255,8 @@ class EntriesController < ApplicationController
       redirect_to url_from(session.delete(:return_to)) || entries_path
     else
       # Do not re-download / re-assign the existing image on every edit. That
-      # old remote_image_url workaround wiped photos when the CDN fetch failed
-      # (CarrierWave validate_download is false). Date changes relocate the
-      # stored object via Entry#relocate_image_on_date_change instead.
+      # old remote_image_url workaround wiped photos when the CDN fetch failed.
+      # Date changes relocate the stored object via Entry#relocate_image_on_date_change instead.
       update_params = entry_params.permit(:entry, :date, :remove_image)
       if @entry.update(update_params)
         if params[:entry][:image].present? && params[:entry][:image].size > 1
@@ -267,7 +266,7 @@ class EntriesController < ApplicationController
         elsif params[:entry][:image].present?
           @entry.update(uploading_image: true)
           best_attachment = params[:entry][:image].first
-          if best_attachment.content_type.in?(Entry::ALLOWED_IMAGE_TYPES) && best_attachment.original_filename&.downcase&.ends_with?(*%w[.heic .heif .jpg .jpeg .gif .png .webp])
+          if acceptable_browser_image?(best_attachment)
             process_single_image(@entry, best_attachment)
           else
             @entry.update(uploading_image: false)
@@ -370,7 +369,9 @@ class EntriesController < ApplicationController
     # The create/update actions read `params[:entry][:image]` directly and
     # route the files to `collage_from_attachments` or `process_single_image`.
     # The resulting "Unpermitted parameter: :image" log line is expected.
-    params.require(:entry).permit(:date, :entry, :inspiration_id, :remove_image, :remote_image_url)
+    # remote_image_url is not permitted. CarrierWave would download whatever
+    # URL the browser sent. Images are uploaded files, or keys this app minted.
+    params.require(:entry).permit(:date, :entry, :inspiration_id, :remove_image)
   end
 
   def set_entry
@@ -437,6 +438,27 @@ class EntriesController < ApplicationController
     @spotify_entries ||= current_user.entries.only_spotify
   end
   helper_method :spotify_entries
+
+  BROWSER_IMAGE_EXTENSIONS = %w[.heic .heif .jpg .jpeg .gif .png .webp].freeze
+
+  # octet-stream is not an allowed stored type. A browser file with that
+  # label is kept only when the bytes themselves are an allowed image.
+  def acceptable_browser_image?(upload)
+    return false if upload.blank?
+
+    filename = upload.original_filename.to_s.downcase
+    return false unless BROWSER_IMAGE_EXTENSIONS.any? { |ext| filename.end_with?(ext) }
+
+    declared = upload.content_type.to_s.downcase.split(";").first.to_s.strip
+    return true if Entry::ALLOWED_IMAGE_TYPES.include?(declared)
+    return false unless declared.blank? || declared == "application/octet-stream"
+
+    sniffed = Marcel::MimeType.for(upload)
+    upload.rewind if upload.respond_to?(:rewind)
+    Entry::ALLOWED_IMAGE_TYPES.include?(sniffed.to_s.downcase)
+  rescue StandardError
+    false
+  end
 
   def collage_from_attachments(attachments, existing_image_url: nil)
     attachments = attachments.select do |att|

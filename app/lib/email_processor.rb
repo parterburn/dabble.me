@@ -77,38 +77,19 @@ class EmailProcessor
         end
       end
 
-      # If image came in as a URL, try saving that
-      # We do not support a mix of attachments and inline images
+      # If image came in as a URL, download it with SafeRemoteFetch and store
+      # the bytes. Email URLs are never passed to CarrierWave remote_image_url=
+      # or open-uri. We do not support a mix of attachments and inline images.
+      @inline_image_files = []
       if best_attachment_url.blank? && best_attachment.blank? && @stripped_html.present?
         email_reply_html = @stripped_html&.split(/reply to this email with your /i)&.first
         image_urls = email_reply_html&.scan(/<img\s.*?src=(?:'|")([^'">]+)(?:'|")/i)
         image_urls.flatten! if image_urls.present?
         if @user.is_pro? && image_urls.present? && image_urls.any?
-          valid_attachment_urls = []
           image_urls.each do |image_url|
-            next if ignored_attachment_domain?(image_url)
-            next unless safe_inline_image_url?(image_url)
-
-            image_type = FastImage.type(image_url)
-
-            if image_type.in?([:gif, :jpeg, :png])
-              image_width, image_height = FastImage.size(image_url)
-              next if image_height && image_width && image_height < 100 && image_width < 100
-
-              # skip signature images
-              next if image_url.downcase.include?("googleusercontent.com/mail-sig/")
-              next if image_url.downcase.include?("linkedin_icon_circle.svg.png")
-              next if image_url.downcase.include?("app.v1ce.co.uk") # digital business cards
-              next if ignored_images.ignore?(name: image_url) { ImageFingerprint.from_url(image_url) }
-
-              valid_attachment_urls << image_url
-            end
-          end
-
-          if valid_attachment_urls.size > 1
-            best_attachment_url = collage_from_urls(valid_attachment_urls.first(CollageGenerator::MAX_IMAGES))
-          elsif valid_attachment_urls.any?
-            best_attachment_url = valid_attachment_urls.first
+            file = download_inline_image(image_url)
+            @inline_image_files << file if file
+            break if @inline_image_files.size >= CollageGenerator::MAX_IMAGES
           end
         end
       end
@@ -141,8 +122,8 @@ class EmailProcessor
             process_single_image(existing_entry, best_attachment)
           elsif best_attachment_url.present? && best_attachment_url.starts_with?("mailgun_collage:")
             ImageCollageJob.perform_later_for_mailgun(existing_entry.id, message_id: best_attachment_url.gsub("mailgun_collage:", ""), recipient_key: collage_recipient_key)
-          elsif best_attachment_url.present?
-            existing_entry.remote_image_url = best_attachment_url
+          elsif @inline_image_files.present?
+            attach_inline_images(existing_entry, @inline_image_files)
           end
         elsif existing_entry.image_url_cdn.present?
           if best_attachment.present?
@@ -157,11 +138,10 @@ class EmailProcessor
             # marker into CollageGenerator as a URL, which blew up with
             # URI::InvalidURIError.
             ImageCollageJob.perform_later_for_mailgun(existing_entry.id, message_id: best_attachment_url.gsub("mailgun_collage:", ""), recipient_key: collage_recipient_key)
-          elsif best_attachment_url.present?
+          elsif @inline_image_files.present?
             existing_image = existing_entry.image_url_cdn(cloudflare: false) if existing_entry.image.present?
             existing_entry.update(uploading_image: true)
-            existing_entry.remote_image_url = collage_from_urls([best_attachment_url, existing_image])
-            existing_entry.uploading_image = false
+            attach_inline_images(existing_entry, @inline_image_files, existing_url: existing_image)
           end
         end
 
@@ -179,11 +159,8 @@ class EmailProcessor
             process_single_image(entry, best_attachment)
           elsif best_attachment_url.present? && best_attachment_url.starts_with?("mailgun_collage:")
             ImageCollageJob.perform_later_for_mailgun(entry.id, message_id: best_attachment_url.gsub("mailgun_collage:", ""), recipient_key: collage_recipient_key)
-          elsif best_attachment_url.present?
-            entry.update(uploading_image: true)
-            entry.remote_image_url = best_attachment_url
-            entry.uploading_image = false
-            entry.save
+          elsif @inline_image_files.present?
+            attach_inline_images(entry, @inline_image_files)
           end
         rescue ActiveRecord::RecordInvalid => error
           @error = error
@@ -579,9 +556,89 @@ class EmailProcessor
     return false unless uri.is_a?(URI::HTTPS) || (!Rails.env.production? && uri.is_a?(URI::HTTP))
     return false if uri.userinfo.present?
 
-    CollageGenerator.allocate.send(:safe_remote_uri?, uri)
+    SafeRemoteFetch.public_host?(uri)
   rescue URI::InvalidURIError
     false
+  end
+
+  INLINE_IMAGE_EXTENSIONS = { jpeg: ".jpg", png: ".png", gif: ".gif" }.freeze
+
+  def download_inline_image(image_url)
+    return if ignored_attachment_domain?(image_url)
+    return if skipped_signature_url?(image_url)
+    return if ignored_images.ignore?(name: image_url) { nil }
+    return unless safe_inline_image_url?(image_url)
+
+    fetched = SafeRemoteFetch.fetch(image_url, https_only: Rails.env.production?)
+    return unless fetched.ok?
+
+    io = StringIO.new(fetched.body)
+    image_type = FastImage.type(io)
+    return unless image_type.in?([:gif, :jpeg, :png])
+
+    io.rewind
+    image_width, image_height = FastImage.size(io)
+    return if image_height && image_width && image_height < 100 && image_width < 100
+    return if ignored_images.ignore?(name: image_url) { ImageFingerprint.from_bytes(fetched.body) }
+
+    file = Tempfile.new(["inline", INLINE_IMAGE_EXTENSIONS[image_type]])
+    file.binmode
+    file.write(fetched.body)
+    file.rewind
+    file
+  end
+
+  def skipped_signature_url?(image_url)
+    text = image_url.to_s.downcase
+    text.include?("googleusercontent.com/mail-sig/") ||
+      text.include?("linkedin_icon_circle.svg.png") ||
+      text.include?("app.v1ce.co.uk")
+  end
+
+  # files are local downloads. existing_url, when present, is this entry's
+  # own stored image, not a URL from the email.
+  def attach_inline_images(entry, files, existing_url: nil)
+    image_file = nil
+    extra = nil
+    image_file, content_type, extra = compose_inline_image(files, existing_url)
+    return if image_file.blank?
+
+    entry.uploading_image = false
+    entry.image = uploaded_image_file(image_file, content_type)
+    entry.save
+  ensure
+    close_tempfile(extra) if extra && extra != image_file
+    Array(files).each { |file| close_tempfile(file) }
+  end
+
+  def close_tempfile(file)
+    return if file.nil? || (file.respond_to?(:closed?) && file.closed?)
+
+    file.close
+  rescue StandardError
+    nil
+  end
+
+  def compose_inline_image(files, existing_url)
+    if files.size == 1 && existing_url.blank?
+      type = Marcel::MimeType.for(files.first)
+      files.first.rewind if files.first.respond_to?(:rewind)
+      type = "image/jpeg" unless Entry::ALLOWED_IMAGE_TYPES.include?(type.to_s)
+      return [files.first, type, nil]
+    end
+
+    sources = files.map(&:path)
+    sources << existing_url if existing_url.present?
+    collage = CollageGenerator.new(urls: sources, user: @user, allow_local_paths: true).tempfile
+    [collage, "image/jpeg", collage]
+  end
+
+  def uploaded_image_file(file, content_type)
+    ActionDispatch::Http::UploadedFile.new(
+      tempfile: file,
+      filename: File.basename(file.path),
+      type: content_type
+    )
   end
 
   HTML_BLOCK_ELEMENTS = %w[blockquote br div hr li ol p ul].freeze

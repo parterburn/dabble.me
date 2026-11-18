@@ -100,8 +100,7 @@ class ImageCollageJob < ActiveJob::Base
       collage_from_urls(urls + [@existing_url])
     end
 
-    # We still fetch the final image into a Tempfile before handing it to CarrierWave
-    # so we control timeouts explicitly (SsrfFilter's defaults can be short on some stacks).
+    # Fetch the finished collage ourselves so CarrierWave never downloads a URL.
     tempfile = nil
     5.times do |attempt|
       tempfile&.close
@@ -141,21 +140,19 @@ class ImageCollageJob < ActiveJob::Base
     entry.update(uploading_image: false) if entry.uploading_image?
   end
 
-  # Download the collage URL into a Tempfile with explicit timeouts.
+  # Download the collage URL into a Tempfile. The URL is one this app stored
+  # (or a public image already checked). SafeRemoteFetch pins the connection
+  # to the resolved address and refuses a redirect onto a private host.
   # Returns a Tempfile on success (caller must close/unlink after use), nil on failure.
   def fetch_collage_image(url)
     return nil if url.blank?
 
-    conn = Faraday.new do |f|
-      f.options.open_timeout = 15
-      f.options.timeout = 45
-    end
-    response = conn.get(url)
-    return nil unless response.success?
+    fetched = SafeRemoteFetch.fetch(url, open_timeout: 15, read_timeout: 45)
+    return nil unless fetched.ok?
 
     tempfile = Tempfile.new(['collage', '.jpg'])
     tempfile.binmode
-    tempfile.write(response.body)
+    tempfile.write(fetched.body)
     tempfile.rewind
     tempfile
   rescue URI::InvalidURIError, StandardError => e
@@ -181,42 +178,89 @@ class ImageCollageJob < ActiveJob::Base
       raise MailgunStoredEventNotFound.new(@message_id, lookup_log: @mailgun_event_lookup_log)
     end
 
-    message = nil
-    5.times do |attempt|
-      message_url = URI.parse(last_message["storage"]["url"])
-      msg_conn = Faraday.new("https://#{message_url.host}") do |f|
-        f.options.timeout = 120
-        f.options.open_timeout = 120
-        f.request :json
-        f.response :json
-        f.request :authorization, :basic, 'api', ENV['MAILGUN_API_KEY']
-      end
-      response = msg_conn.get(message_url.path)
-      message = response.body if response.success?
-      break if message.present?
-
-      sleep(10 * (2**attempt)) if attempt < 4
-    end
+    message = fetch_stored_mailgun_message(last_message.dig("storage", "url"))
     @error = "No message found" unless message.present?
     @error = "Message not from user" unless message.present? && message_from_user?(message)
     return unless message.present? && message_from_user?(message)
 
     # The same per-user skips EmailProcessor applied when it counted these.
     ignored_images = IgnoredEmailImage.matcher_for(@user)
-    attachment_urls = message["attachments"].map do |att|
-      next unless Entry::ALLOWED_IMAGE_TYPES.include?(att["content-type"]&.downcase)
-      next unless att["size"].to_i > 20_000 # ignore tiny attachments
+    owned_urls = message["attachments"].filter_map do |att|
+      next unless mailgun_image_attachment?(att)
+      next if ignored_images.ignore?(name: att["name"]) { nil }
 
-      url = "#{att["url"].gsub("://", "://api:#{ENV['MAILGUN_API_KEY']}@")}?#{att["name"]}"
-      next if ignored_images.ignore?(name: att["name"]) { ImageFingerprint.from_url(url) }
+      downloaded = MailgunStorageClient.get(att["url"])
+      next unless downloaded&.ok?
+      next if ignored_images.ignore?(name: att["name"]) { ImageFingerprint.from_bytes(downloaded.body) }
 
-      url
-    end.compact_blank
+      own_url_for_mailgun_attachment(att, downloaded.body)
+    end
 
-    @error = "No attachments found" unless attachment_urls.any?
-    return nil unless attachment_urls.any?
+    @error = "No attachments found" unless owned_urls.any?
+    return nil unless owned_urls.any?
 
-    collage_from_urls(attachment_urls + [@existing_url])
+    collage_from_urls(owned_urls + [@existing_url])
+  end
+
+  def fetch_stored_mailgun_message(storage_url)
+    return nil if storage_url.blank?
+
+    5.times do |attempt|
+      downloaded = MailgunStorageClient.get(storage_url)
+      if downloaded&.ok?
+        message = JSON.parse(downloaded.body)
+        return message if message.is_a?(Hash)
+      end
+      sleep(10 * (2**attempt)) if attempt < 4
+    rescue JSON::ParserError
+      sleep(10 * (2**attempt)) if attempt < 4
+    end
+    nil
+  end
+
+  def mailgun_image_attachment?(att)
+    return false unless att["size"].to_i > 20_000
+
+    type = att["content-type"].to_s.downcase.split(";").first.to_s.strip
+    name = att["name"].to_s.downcase
+    return true if Entry::ALLOWED_IMAGE_TYPES.include?(type)
+
+    type == "application/octet-stream" && name.match?(/\.(png|jpe?g|gif|webp|heic|heif)\z/)
+  end
+
+  # Publish bytes onto our bucket. HEIC is converted first. A body that is
+  # not an image is dropped so it is never stored on the public bucket.
+  def own_url_for_mailgun_attachment(att, body)
+    name = att["name"].to_s
+    tempfile = nil
+    if heic_attachment?(att, name)
+      ext = name.downcase.end_with?(".heif") ? ".heif" : ".heic"
+      tempfile = Tempfile.new(["attachment", ext])
+      tempfile.binmode
+      tempfile.write(body)
+      tempfile.rewind
+      ImageConverter.new(tempfile: tempfile, width: 1200, user: @user).tmp_s3_url
+    else
+      return nil unless FastImage.type(StringIO.new(body)).in?([:jpeg, :png, :gif, :webp])
+
+      publish_bytes(body, name)
+    end
+  ensure
+    tempfile&.close
+    tempfile&.unlink
+  end
+
+  def heic_attachment?(att, name)
+    type = att["content-type"].to_s.downcase
+    type.include?("heic") || type.include?("heif") || name.downcase.end_with?(".heic", ".heif")
+  end
+
+  def publish_bytes(body, filename)
+    ext = File.extname(filename.to_s)
+    ext = ".jpg" if ext.blank?
+    add_dev = "/development" unless Rails.env.production?
+    file_key = "uploads#{add_dev}/tmp/#{@user.id}/mailgun/#{Date.today.strftime('%Y-%m-%d')}/#{SecureRandom.uuid}#{ext}"
+    UploadToS3.new(file_key: file_key, body: body).call.public_url
   end
 
   def collage_from_urls(urls)
@@ -229,27 +273,18 @@ class ImageCollageJob < ActiveJob::Base
 
       if heic_like_url?(url)
         begin
-          if url.include?("@")
-            uri = URI.parse(url)
-            conn = Faraday.new(uri.scheme + "://" + uri.host) do |f|
-              f.options.timeout = 120
-              f.options.open_timeout = 120
-              f.request :authorization, :basic, "api", ENV['MAILGUN_API_KEY']
-            end
-            response = conn.get(uri.path)
-            ext = heic_temp_extension(url)
-            tempfile = Tempfile.new(['attachment', ext])
-            tempfile.binmode
-            tempfile.write(response.body)
-            tempfile.rewind
-            result = ImageConverter.new(tempfile: tempfile, width: 1200, user: @user).tmp_s3_url
-            tempfile.close
-            tempfile.unlink
-            result
-          else
-            file = URI.parse(url).open
-            ImageConverter.new(tempfile: file, width: 1200, user: @user).tmp_s3_url
-          end
+          fetched = SafeRemoteFetch.fetch(url, open_timeout: 120, read_timeout: 120)
+          next unless fetched.ok?
+
+          ext = heic_temp_extension(url)
+          tempfile = Tempfile.new(['attachment', ext])
+          tempfile.binmode
+          tempfile.write(fetched.body)
+          tempfile.rewind
+          result = ImageConverter.new(tempfile: tempfile, width: 1200, user: @user).tmp_s3_url
+          tempfile.close
+          tempfile.unlink
+          result
         rescue => e
           Sentry.capture_exception(e)
           nil
