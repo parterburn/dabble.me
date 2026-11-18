@@ -55,6 +55,31 @@ RSpec.describe UserMailer do
     end
   end
 
+  describe "#entry_not_saved" do
+    it "tells the person the entry was not saved, without a journal body" do
+      email = described_class.entry_not_saved(user)
+      body = email.html_part.body.decoded + email.text_part.body.decoded
+
+      expect(email.to).to eq([user.email])
+      expect(email[:from].value).to eq("Dabble Me Support <hello@#{ENV['MAIN_DOMAIN']}>")
+      expect(email.subject).to eq("Your Dabble Me entry was not saved")
+      expect(body).to include("Hey Ada,", "old posting address", "could not confirm it was sent from your account email", "the entry was not saved")
+      expect(body).to include("/settings/posting-address")
+      expect(body).not_to match(/spf|dkim/i)
+      expect(body).not_to include(user.user_key)
+    end
+  end
+
+  describe "#failed_entry" do
+    it "still goes to support and includes the save error and entry text" do
+      email = described_class.failed_entry(user, "Date has already been taken", "2026-11-15", "Today was a good day")
+
+      expect(email.to).to eq(["hello@#{ENV['MAIN_DOMAIN']}"])
+      expect(email.subject).to eq("Error saving entry for user #{user.id}")
+      expect(email.body.encoded).to include("Date has already been taken", "Today was a good day")
+    end
+  end
+
   describe "#passkey_added" do
     it "sends a security notice with the passkey nickname" do
       email = described_class.passkey_added(user, "Work laptop")
