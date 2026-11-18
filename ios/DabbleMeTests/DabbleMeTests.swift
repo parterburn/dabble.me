@@ -502,10 +502,10 @@ struct PhotoPreparerTests {
 }
 
 struct RichTextTests {
-    @Test func aPreviewShowsADividerAsDashesAndListLinesAsBullets() {
+    @Test func aPreviewShowsADividerAsTheFullEntryDoesAndListLinesAsBullets() {
         let text = "Proud dad.\n\n* * *\n\nDoes email still work?\n- eggs\n* plates\n---\n*starred* words\n- -"
         #expect(RichText.previewLines(text)
-            == "Proud dad.\n\n———\n\nDoes email still work?\n• eggs\n• plates\n———\n*starred* words\n• -")
+            == "Proud dad.\n\n⸻\n\nDoes email still work?\n• eggs\n• plates\n⸻\n*starred* words\n• -")
     }
 
     #if canImport(UIKit)

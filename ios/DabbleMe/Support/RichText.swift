@@ -67,17 +67,14 @@ enum RichText {
     static let maxListDepth = 5
     static let ruleMarker = "⸻"
     private static let ruleMarkers: Set<String> = [ruleMarker, "---", "___", "***"]
-    /// What a divider is in a preview's text, which has no drawn rule: a short line of dashes.
-    static let previewRule = "———"
-
     /// A preview's light Markdown, readied for showing: list lines ("- item") start with a
-    /// bullet, and a divider ("* * *", as between merged entries) is a short line of dashes,
-    /// not a bullet with two asterisks after it.
+    /// bullet, and a divider ("* * *", as between merged entries) is the same long dash the full
+    /// entry shows (`ruleMarker`), not a bullet with two asterisks after it.
     static func previewLines(_ text: String) -> String {
         text.split(separator: "\n", omittingEmptySubsequences: false)
             .map { line in
                 let marks = line.filter { $0 != " " }
-                if marks.count >= 3, let first = marks.first, "*-_".contains(first), marks.allSatisfy({ $0 == first }) { return previewRule }
+                if marks.count >= 3, let first = marks.first, "*-_".contains(first), marks.allSatisfy({ $0 == first }) { return ruleMarker }
                 for marker in ["- ", "* "] where line.hasPrefix(marker) { return bulletPrefix + line.dropFirst(2) }
                 return String(line)
             }

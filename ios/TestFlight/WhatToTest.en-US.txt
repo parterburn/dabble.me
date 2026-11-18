@@ -11,7 +11,7 @@ FORMAT BUTTONS
 
 DIVIDER IN PREVIEWS
 
-- Find an entry made of two merged together (the full entry shows a short line between them). In the Entries list, and in the preview when you hold an entry, the divider should be a short line of dashes, not a bullet followed by two asterisks.
+- Find an entry made of two merged together (the full entry shows a short line between them). In the Entries list, and in the preview when you hold an entry, the divider should be the same short line the full entry shows, not a bullet followed by two asterisks.
 
 WIDGET
 
