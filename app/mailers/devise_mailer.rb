@@ -1,5 +1,5 @@
-# Password reset and unlock come from support. Confirmation and the other
-# Devise messages keep Devise.mailer_sender ("Paul // Dabble Me").
+# Password reset and unlock. Confirmation uses the same address via
+# Devise.mailer_sender ("Dabble Me Support").
 class DeviseMailer < Devise::Mailer
   def reset_password_instructions(record, token, opts = {})
     super(record, token, with_support_sender(opts))

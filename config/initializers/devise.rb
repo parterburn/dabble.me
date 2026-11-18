@@ -7,10 +7,9 @@ Devise.setup do |config|
   config.secret_key = ENV["DEVISE_SECRET_KEY"]
 
   # ==> Mailer Configuration
-  # Confirmation and any other Devise message that does not set its own from
-  # use this address. Password reset and unlock set theirs in DeviseMailer
-  # ("Dabble Me Support") so this sender stays "Paul // Dabble Me".
-  config.mailer_sender = "Paul // Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>"
+  # Confirmation, password reset, unlock, and any other Devise message.
+  # Reset and unlock set the same address again in DeviseMailer.
+  config.mailer_sender = "Dabble Me Support <hello@#{ENV['MAIN_DOMAIN']}>"
 
   # Configure the class responsible to send e-mails.
   config.mailer = 'DeviseMailer'

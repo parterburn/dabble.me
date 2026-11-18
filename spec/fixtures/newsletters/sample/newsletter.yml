@@ -2,7 +2,7 @@ year: 2026
 audiences:
   pro: {}
   free:
-    from: "Paul <hello@updates.test>"
+    from: "Dabble Me Support <hello@updates.test>"
     reply_to: hello@test
     mailgun_domain: updates.test
     active_within_months: 18

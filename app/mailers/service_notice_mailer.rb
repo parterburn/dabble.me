@@ -4,8 +4,7 @@
 class ServiceNoticeMailer < ActionMailer::Base
   SUBJECT = "Export your Dabble Me journal"
 
-  # Not "Paul // Dabble Me": whoever sends a notice may not be Paul.
-  default from: "Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>"
+  default from: "Dabble Me Support <hello@#{ENV['MAIN_DOMAIN']}>"
 
   # `delivery` is the person's copy (ServiceNoticeDelivery). A preview has none.
   def export_reminder(user, message: nil, preview: false, delivery: nil)

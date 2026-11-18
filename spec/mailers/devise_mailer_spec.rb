@@ -66,11 +66,11 @@ RSpec.describe DeviseMailer do
   end
 
   describe '#confirmation_instructions' do
-    it 'keeps the shared Devise sender' do
+    it 'comes from Dabble Me Support' do
       email = described_class.confirmation_instructions(user, 'confirm-token')
 
-      expect(email[:from].value).to eq("Paul // Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>")
-      expect(email[:reply_to].value).to eq("Paul // Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>")
+      expect(email[:from].value).to eq(support_from)
+      expect(email[:reply_to].value).to eq(support_from)
       body = email.html_part&.body&.decoded || email.body.decoded
       expect(body).to include('confirmation_token=confirm-token')
     end

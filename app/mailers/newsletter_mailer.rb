@@ -1,6 +1,6 @@
 # Sends one letter of a newsletter (see app/lib/newsletter.rb) to one person.
 class NewsletterMailer < ActionMailer::Base
-  default from: "Paul // Dabble Me <hello@#{ENV['MAIN_DOMAIN']}>"
+  default from: "Dabble Me Support <hello@#{ENV['MAIN_DOMAIN']}>"
 
   def letter(user, newsletter_key, variant, preview: false)
     newsletter = Newsletter.find(newsletter_key)

@@ -60,6 +60,7 @@ RSpec.describe UserMailer do
       email = described_class.passkey_added(user, "Work laptop")
 
       expect(email.to).to eq([user.email])
+      expect(email[:from].value).to eq("Dabble Me Support <hello@#{ENV['MAIN_DOMAIN']}>")
       expect(email.subject).to include("Passkey added")
       expect(email.body.encoded).to include("Work laptop")
     end

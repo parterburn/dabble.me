@@ -7,7 +7,7 @@ RSpec.describe ServiceNoticeMailer do
     mail = described_class.export_reminder(user).deliver_now
 
     expect(mail.from).to eq(['hello@test'])
-    expect(mail[:from].value).to eq('Dabble Me <hello@test>')
+    expect(mail[:from].value).to eq('Dabble Me Support <hello@test>')
     expect(mail.to).to eq([user.email])
     expect(mail.subject).to eq('Export your Dabble Me journal')
     expect(mail.mailgun_options).to include(tag: 'Service notice', tracking: 'no')

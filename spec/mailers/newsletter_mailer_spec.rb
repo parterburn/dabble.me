@@ -9,6 +9,7 @@ RSpec.describe NewsletterMailer do
     mail = with_env('MAILING_ADDRESS' => '1 Main St, Denver, CO') { described_class.letter(user, 'sample', 'active').deliver_now }
 
     expect(mail.from).to eq(['hello@test'])
+    expect(mail[:from].value).to eq('Dabble Me Support <hello@test>')
     expect(mail.to).to eq([user.email])
     expect(mail.subject).to eq('Your 2026 in 0 entries')
     expect(mail.header['List-Unsubscribe'].value).to match(%r{\A<https?://[^>]+/updates/unsubscribe\?token=[^>]+>\z})
@@ -37,6 +38,7 @@ RSpec.describe NewsletterMailer do
     mail = described_class.letter(free, 'sample', 'free')
 
     expect(mail.from).to eq(['hello@updates.test'])
+    expect(mail[:from].value).to eq('Dabble Me Support <hello@updates.test>')
     expect(mail.reply_to).to eq(['hello@test'])
     expect(mail.delivery_method.settings[:domain]).to eq('updates.test')
     expect(mail.subject).to eq('What is new, free')
