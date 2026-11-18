@@ -93,6 +93,9 @@ struct ReminderPlan: Decodable, Sendable {
         let kind: String
         let count: Int
         let entry: Entry
+        /// Every entry the day has to look back on, `entry` first (nil from an older server):
+        /// the widget shows them in turn through the day.
+        var entries: [Entry]? = nil
 
         var isOnThisDay: Bool { kind == "on_this_day" }
     }

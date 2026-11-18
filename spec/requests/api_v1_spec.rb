@@ -714,6 +714,27 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       end
     end
 
+    it "lists every On This Day entry for a day, newest year first, without the left-out ones" do
+      zone = Time.find_zone(pro_user.send_timezone)
+      travel_to zone.local(2026, 6, 20, 12) do
+        four = create(:entry, user: pro_user, date: Time.zone.local(2022, 6, 20), body: "<p>Four years back</p>")
+        two = create(:entry, user: pro_user, date: Time.zone.local(2024, 6, 20), body: "<p>Two years back</p>")
+        create(:entry, user: pro_user, date: Time.zone.local(2023, 6, 20), body: "<p>The dentist</p>")
+        week_back = create(:entry, user: pro_user, date: Time.zone.local(2026, 6, 14), body: "<p>A week back</p>")
+        pro_user.update!(past_filter: "dentist")
+        get "/api/v1/reminders", params: { days: 2 }, headers: auth(pro_user)
+        today, tomorrow = json["days"]
+        expect(today).to include("kind" => "on_this_day", "count" => 2)
+        expect(today["entries"].map { |entry| entry["id"] }).to eq([two.id, four.id])
+        expect(today["entries"].first).to eq(today["entry"])
+        expect(today["entries"].first.keys).to match_array(%w[id date excerpt image_url])
+        # A Rewind is the one entry.
+        expect(tomorrow).to include("kind" => "rewind")
+        expect(tomorrow["entries"]).to eq([tomorrow["entry"]])
+        expect(tomorrow["entry"]["id"]).to eq(week_back.id)
+      end
+    end
+
     it "follows the account's past entries: on or off, its left-out words, and over a year old" do
       zone = Time.find_zone(pro_user.send_timezone)
       travel_to zone.local(2026, 6, 20, 12) do

@@ -1,26 +1,10 @@
-The bar over the keyboard has new formatting buttons.
+The widget now takes turns through a day's On This Day entries.
 
-- With nothing selected there's a Bold button left of the hashtag button. Tap it and type: the new words should be bold, and the button lit. Tap again to turn it off.
-- Select some words. The whole bar should change to four buttons, Bold, Italic, Underline and Link, with photos, hashtags and the lightbulb gone. Tap each: it should apply to the selection and light up; tap again to remove it.
-- Tap in the text so nothing's selected: the usual bar comes back.
-- The Bold, Italic and Underline icons are new drawings. Do they sit well beside the others?
-- Link on a free account isn't offered; the other three are.
+- This is for the medium widget set to Rewind with entry previews on, on a day when you have more than one entry from past years.
+- Through the day it should move from one to the next: they share 6 AM to midnight equally. With two, it changes at 3 PM; with three, at noon and 6 PM; with four, at 10:30, 3:00 and 7:30. Before 6 AM it shows the first.
+- Each one has its own label ("3 years ago · 2023"), text and photo.
+- Tap the entry on the widget: Today should open scrolled to the one that was showing.
+- Open the app in the morning so the widget has the day's entries, then look at it again after one of those times. iOS may be a few minutes late changing it.
+- A day with one past entry, or a widget set to a prompt or to Rewind without previews, is unchanged.
 
-Hashtags complete as you type them.
-
-- While writing, type "#" and a letter. A row of your own hashtags that start that way should appear above the keyboard, most recently used first, and narrow as you type more.
-- Tap one: it should finish the hashtag, add a space, and leave the cursor after it. The row should go. What you typed keeps its capitals: "#l" and the tag Leo gives "#leo"; "#L" gives "#Leo".
-- Type "#" and a number ("#1"), or a "#" in the middle of a word: no row.
-- Type a hashtag you've never used: no row, and nothing gets in the way.
-- With another row open (photos, the lightbulb), the completions should take its place while you're typing the hashtag and give it back after.
-
-Entry text size: Default is now the middle of five stops (Smallest, Smaller, Default, Larger, Largest), at 90, 95, 99, 105 and 110%.
-
-- A size you'd chosen before carries over to the nearest new one: Small becomes Smallest; Large, Extra Large and Largest all become Largest (smaller than the old two biggest).
-- Pinch an open entry to step through the five, and check the editor follows.
-
-An entry's preview and its Actions sheet now say how long ago it was.
-
-- In the Journal, Today, Search or On This Day, touch and hold an entry. At the top of the preview is the date in full ("Wednesday, November 12, 2025"), and on its own line under it, in a lighter color, how long ago that was as of today: "36 days ago", "3 years, 2 months ago", or "Today" / "Yesterday".
-- Swipe left on an entry for its Actions (or on the entry itself when it's open). The top of that sheet should read the same way: the full date, then how long ago under it in a lighter color. The buttons below shouldn't be cut off.
-- Both should match what the entry says under its title when you open it in full.
+Nothing else in the app changed in this build. (It also updates the App Store listing text kept with the project.)

@@ -21,12 +21,18 @@ module Api
     #
     #   { email_hour: 20, include_past_entries: true,
     #     days: [{ date: "2026-11-12", kind: "on_this_day" | "rewind", count: 2,
-    #              entry: { id:, date:, excerpt:, image_url: } }] }
+    #              entry: { id:, date:, excerpt:, image_url: },
+    #              entries: [{ id:, date:, excerpt:, image_url: }, ...] }] }
+    #
+    # `entries` is every entry the day has to look back on, the newest year first and `entry`
+    # among them, up to MAX_ENTRIES: all of On This Day's, or the one Rewind. The app's widget
+    # shows them in turn through the day. (An older app build reads `entry` alone.)
     #
     # The excerpt and photo are for a notification, which can show on a lock screen: the app only
     # uses them when the person has entry previews on.
     class RemindersController < BaseController
       MAX_DAYS = 30
+      MAX_ENTRIES = 8
 
       def show
         days = params[:days].to_s.match?(/\A\d+\z/) ? params[:days].to_i.clamp(1, MAX_DAYS) : 14
@@ -52,16 +58,21 @@ module Api
         entry = memories.first || Throwback.new(current_user, today: date).entry
         return nil unless entry
 
-        summary = EntrySerializer.summary(entry)
-        # A photo still uploading has a stand-in picture for an address: not for a widget or a
-        # notification, which keep what they're given.
-        summary[:image_url] = nil if summary[:image_processing]
         {
           date: date.iso8601,
           kind: memories.any? ? 'on_this_day' : 'rewind',
           count: [memories.size, 1].max,
-          entry: summary.slice(:id, :date, :excerpt, :image_url)
+          entry: look_back_json(entry),
+          entries: (memories.presence || [entry]).first(MAX_ENTRIES).map { |memory| look_back_json(memory) }
         }
+      end
+
+      def look_back_json(entry)
+        summary = EntrySerializer.summary(entry)
+        # A photo still uploading has a stand-in picture for an address: not for a widget or a
+        # notification, which keep what they're given.
+        summary[:image_url] = nil if summary[:image_processing]
+        summary.slice(:id, :date, :excerpt, :image_url)
       end
     end
   end
