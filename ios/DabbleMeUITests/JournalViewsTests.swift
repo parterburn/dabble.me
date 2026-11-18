@@ -267,6 +267,8 @@ final class JournalViewsTests: XCTestCase {
         snap("format-menu")
         app.buttons["Bold"].tap()
         XCTAssertTrue(app.keyboards.firstMatch.exists, "The keyboard stays up")
+        sleep(1)
+        snap("format-filled") // the icon's filled in: the selected word is bold now
         // The cursor put somewhere, with nothing selected: they go again.
         editor.typeText(" ")
         XCTAssertTrue(format.waitForNonExistence(timeout: 5))
