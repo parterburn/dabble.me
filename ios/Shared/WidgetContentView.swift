@@ -92,17 +92,23 @@ VStack(spacing: 0) {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
     }
 
-    /// Under the date: the last five days, each a small dot that's filled if it was written
-    /// (today's last). Quiet on purpose: what's been written lately, not a count or a streak.
+    /// Under the date: the last five days (today's last). A written day is a filled dot; a day
+    /// with no entry is an open ring in the same color. Quiet on purpose: what's been written
+    /// lately, not a count or a streak.
     /// (An older build's snapshot doesn't say: then whether today's written, in words.)
     @ViewBuilder
     private var status: some View {
         if let days = entry.lastFiveDays {
             HStack(spacing: 5) {
                 ForEach(Array(days.enumerated()), id: \.offset) { _, written in
-                    Circle()
-                        .fill(written ? AnyShapeStyle(Color.sage) : AnyShapeStyle(Color.primary.opacity(0.12)))
-                        .frame(width: 8, height: 8)
+                    Group {
+                        if written {
+                            Circle().fill(Color.sage)
+                        } else {
+                            Circle().strokeBorder(Color.sage, lineWidth: 1.5)
+                        }
+                    }
+                    .frame(width: 8, height: 8)
                 }
             }
             .accessibilityElement(children: .ignore)
