@@ -41,7 +41,11 @@ struct EntryTemplateView: View {
         .navigationBarTitleDisplayMode(.inline)
         .onAppear { editor.allowsLinks = false }
         .onChange(of: editor.revision) { save() }
-        .onDisappear { save() }
+        .onDisappear {
+            save()
+            // Sent to the account once, on the way out, not on every letter typed.
+            AccountSettings.sync(with: model)
+        }
         .onChange(of: addsToNewEntries) { AccountSettings.changed(.entryTemplateAuto, model: model) }
     }
 
@@ -59,6 +63,6 @@ struct EntryTemplateView: View {
         guard editor.isDirty else { return }
         EntryTemplate.runs = editor.isEmpty ? [] : editor.typedRuns
         // On the account too, so signing out or a new phone doesn't lose it.
-        AccountSettings.changed(.entryTemplate, model: model)
+        AccountSettings.markPending(.entryTemplate)
     }
 }

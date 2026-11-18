@@ -32,8 +32,13 @@ enum AccountSettings {
 
     /// A setting was changed on this phone: keep it on the account too.
     static func changed(_ field: Field, model: AppModel) {
-        pending.insert(field)
+        markPending(field)
         sync(with: model)
+    }
+
+    /// Changed here, to be sent with the next sync (the template, while it's being typed).
+    static func markPending(_ field: Field) {
+        pending.insert(field)
     }
 
     /// Brings the phone's copy and the account's into step (each refresh, and after a change).
