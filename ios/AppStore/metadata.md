@@ -12,13 +12,13 @@ The voice: a few lines a day, kept private, and handed back to you later. No str
 | Subtitle (30) | Private timeline of your life |
 | Primary category | Lifestyle |
 | Secondary category | Productivity |
-| Content rights | Contains, shows, or accesses third-party content, with the necessary rights: Journal > Playlist plays an entry's songs in Spotify's own embedded player. Everything else is the account holder's own writing and photos |
+| Content rights | Contains, shows, or accesses third-party content, with the necessary rights: Journal > Songs plays an entry's songs in Spotify's own embedded player. Everything else is the account holder's own writing and photos |
 | Age rating | 4+ (no objectionable content; entries are private and never shared with other users) |
 | Copyright | 2026 Dabble Dev LLC |
 
-## Version 1.1
+## Version 1.1.2
 
-The first version on the store (1.0 was submitted and never released).
+1.0 was submitted and never released. The copy below describes build 90.
 
 **Promotional text (170)**
 
@@ -32,35 +32,39 @@ The first version on the store (1.0 was submitted and never released).
 >
 > REWIND
 > • On This Day: what you wrote on today's date in past years, waiting for you on the Today screen
-> • Nothing from this date yet? Another of your past entries comes back instead
+> • Nothing from this date? Another past entry comes back instead
 > • Your year in review, from November to January: your biggest month, the people and places you wrote about most, your photos, your songs, and a line of the year in your own words
 > • Shake your phone, or keep pulling at the bottom of Today, for a random memory you'd forgotten
 >
 > A FEW LINES A DAY
-> • Bold, italic and underline, lists that start as you type "- " or "1.", and links (paste an address over a word to link it)
+> • Bold, italic and underline, lists that start as you type "- " or "1.", and links (paste a web address and it's a link)
 > • Add up to 8 photos. Several become a collage automatically
+> • Your own template: the headings or questions you answer each day
+> • Stuck? See a prompt and what was on your calendar that day, and tap one to write about it
+> • Auto Tag turns the words you've written into the #hashtags you already use
 > • Edit entries later: the words, the photos, even the date
-> • A writing prompt for today, written from your recent days (on devices with Apple Intelligence)
 > • Unfinished entries are saved as you type, even if the app closes
-> • Prefer email? Reply to Dabble Me's "How was your day?" email and it becomes an entry too. Choose its days, time and time zone, or switch it off, right in the app
+> • Prefer email? Reply to the "How was your day?" email and it becomes an entry. Choose its days and time in the app
 >
 > A NUDGE WHEN YOU WANT ONE
 > • One notification a day, at the time and on the days you choose, skipped once you've written. It can bring a past entry with it, photo and all
 > • Home Screen and Lock Screen widgets with today's date, a way straight into writing, and today's prompt or a past entry: your choice, with a live preview
+> • A New Entry button for Control Center, the Lock Screen or the Action button
 >
 > YOUR WHOLE JOURNAL, ONE SCROLL AWAY
-> • Every month in one timeline, with a scrubber: drag to jump years back, or pick a day from a calendar. Hold an empty day to write the entry it never got
+> • Every month in one timeline, with a scrubber: drag to jump years back, or pick a day from a calendar
 > • Photos: every day you captured, in one grid
-> • Playlist: the songs you saved with your entries, ready to play, and a player under any entry that has one
-> • Stats, a year at a time: your writing days at a glance (tap one to read it, hold one to preview it), your entries by month, and your most-used hashtags
+> • Songs: the ones you saved with your entries, ready to play, and a player under any entry that has one
+> • Stats, a year at a time: your writing days at a glance, your entries by month, and your most-used hashtags
 > • Search every word you've ever written, or tap your #hashtags
 > • Give a #hashtag a date (a birthday, an anniversary) and see how old your kids were, or how long it had been, in every entry
 > • Tap an entry to read it right in the timeline; swipe or touch and hold for a reflection, edit and more
+> • Share an entry's words and photo, or send it to Accessibility Reader to hear it
 > • Photos full screen with pinch to zoom; save them, or share one as a card that says how long ago it was
 > • Pinch to make entries easier to read
 >
 > APPLE INTELLIGENCE, ON YOUR DEVICE
-> On supported iPhones and iPads, Dabble Me responds to an entry with a warm, thoughtful reflection and a question to keep you writing (just pull down on it), then lets you answer and talk it through; the conversation is never saved. It also suggests which of your hashtags fit as you write, writes each day's prompt from your recent days, and adds a few lines of its own to your year in review. It all runs on your device; your journal isn't sent anywhere for it.
+> On supported iPhones and iPads, Dabble Me responds to an entry with a warm, thoughtful reflection and a question to keep you writing (just pull down on it), then lets you answer and talk it through; the conversation is never saved, unless you add what you said to the entry. It also suggests which of your hashtags fit as you write, writes each day's prompt from your recent days, and adds a few lines of its own to your year in review. It all runs on your device; your journal isn't sent anywhere for it.
 >
 > ASK AI ABOUT YOUR JOURNAL
 > Connect Claude or ChatGPT to your journal and ask things like "What made me happiest this year?" or "When did I last go camping?" You approve access, and you can remove it any time.
@@ -68,7 +72,6 @@ The first version on the store (1.0 was submitted and never released).
 > PRIVATE BY DESIGN
 > • Yours alone: no social feed, no ads, no tracking
 > • Lock the app with Face ID; your journal is hidden in the app switcher
-> • You choose whether reminders come with a past entry and whether the widget shows any of one
 > • Photo location data is removed before upload
 > • Sign in with a passkey, password, or two-factor code
 > • Export everything, any time
@@ -81,7 +84,15 @@ The first version on the store (1.0 was submitted and never released).
 diary,memories,on this day,rewind,reflection,gratitude,photo,writing,prompts,email,ai,one,line,year
 ```
 
-**What's New**: leave blank; a first version doesn't show one.
+**What's New (4,000)**: a first version doesn't show one, so leave it blank if nothing has been released yet. If an earlier version is live, use:
+
+> • Your own entry template, for the headings or questions you answer each day
+> • Writing ideas while you write: a prompt, and what was on your calendar that day
+> • Auto Tag: the words you've written become the hashtags you already use
+> • Share an entry's words and photo, or send it to Accessibility Reader to hear it
+> • A New Entry button for Control Center, the Lock Screen and the Action button
+> • A calmer editor, with text the same size as when you read it back
+> • Gentler steps between entry text sizes
 
 | Field | Value |
 |---|---|
@@ -100,7 +111,7 @@ Data used to track you: **none**. Data linked to you, all for **App Functionalit
 | User Content → Photos or Videos | Photos attached to entries |
 | Identifiers → User ID | Account identity |
 
-The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resources/PrivacyInfo.xcprivacy`. Not collected: Apple Intelligence features run on the device; reminders (with the past entries they'll show), the Face ID setting and drafts stay on the device; the widget reads whether today is written, the day's prompt and (only with Show Entry Previews on in Settings → Home Screen Widget) the start of one entry and a small copy of its photo, which the app stores in its App Group on the device.
+The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resources/PrivacyInfo.xcprivacy`. Not collected: Apple Intelligence features run on the device; the calendar's events are read on the device to list them while writing and are sent nowhere (only one the writer taps goes into their entry); reminders (with the past entries they'll show), the Face ID setting, the entry template and drafts stay on the device; Share hands an entry to iOS's share sheet only when the writer asks; the widget reads whether today is written, the day's prompt and (only with Show Entry Previews on in Settings → Home Screen Widget) the start of one entry and a small copy of its photo, which the app stores in its App Group on the device.
 
 ## App Review information
 
@@ -117,9 +128,9 @@ The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resour
 > Demo account (PRO, no two-factor): [email] / [password]
 > - Tap "I Already Have an Account". Sign-in happens on dabble.me in the system's secure sign-in sheet.
 > - Today: today's prompt, and a past entry to look back on.
-> - Write (the pencil): text, formatting, photos, hashtags.
-> - Journal: timeline, Photos, Playlist, Stats. Search: text and hashtags.
-> - Settings: reminders, email schedule, Face ID lock, widget.
+> - Write (the pencil): text, formatting, photos, hashtags. The lightbulb shows a prompt and the day's calendar events (calendar access is optional, and the events are only read on the device).
+> - Journal: timeline, Photos, Songs, Stats. Search: text and hashtags.
+> - Settings: reminders, email schedule, entry template, calendars, Face ID lock, widget.
 > New accounts: "Start Your Journal" on the first screen.
 > Account deletion: Settings → Delete Account → "Sign Out and Continue". The app signs out and opens the deletion page on dabble.me, where deletion is confirmed with the account password.
 >
@@ -137,7 +148,7 @@ The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resour
 > The app contains no analytics, advertising or tracking SDKs.
 >
 > 5. REGIONAL DIFFERENCES
-> The app works the same in every region, with two exceptions: the subscribe link appears only on the US storefront, and Apple Intelligence features appear only on devices and languages Apple supports.
+> The app works the same in every region, with two exceptions: the subscribe link appears only on the US storefront, and Apple Intelligence features appear only on devices, languages and regions Apple supports (none of them appear where Apple Intelligence is unavailable, such as China mainland).
 >
 > 6. REGULATED CONTENT
 > Not applicable. The app is not in a regulated industry, and all content is written by the account holder for their own use. There is no user-to-user content, so there is nothing to report or block.
@@ -150,10 +161,10 @@ In `ios/AppStore/Screenshots/` (`iPhone 6.3in`, `iPad 13in`, and the header and 
 
 1. Today: the date, a prompt, On This Day, and the last five days as dots
 2. Journal timeline with photos and month sections
-3. An entry in its card, with formatting, a list and a photo
+3. An entry, with formatting, a list and a photo
 4. A past entry with the same day in other years under it (On This Day)
 5. Writing an entry: the keyboard up, with its photos and the editor bar
-6. What to write about: the day's calendar events over a prompt (the "?" button)
+6. Writing ideas: a prompt over the day's calendar events (the lightbulb button)
 7. Journal > Photos
 8. Journal > Stats (the 2026 Rewind card shows in its season, November to January)
 9. Search: your hashtags this year
@@ -171,6 +182,6 @@ The calendar events in 6 are made up (`-DabbleDebugCalendar YES`), like the rest
 ## Decisions
 
 - **In-app purchase:** ship as a free companion app (guideline 3.1.3(f)) with no in-app purchasing. On the **US App Store only**, Settings → Plan links to dabble.me/subscribe (US storefront exception in guideline 3.1.1(a), May 2025), detected with StoreKit's `Storefront.current`; elsewhere the plan is plain text. If App Review objects, drop the link.
-- **Free vs PRO in the app:** (the editor's Photos button shows for free accounts and says photos come with PRO) free accounts read, write and delete text entries, use the on-device Apple Intelligence features (reflections, Today's prompt, hashtag suggestions), set the daily reminder (which can bring a past entry), and see the Photos view, the Playlist and the widget; photos, links, editing, search (and its hashtag cloud), Stats (and the year in review at the top of it), On This Day, choosing the email's days, and AI connections are PRO. Dictation is the keyboard's own (no in-app mic). Face ID lock and drafts are for everyone.
+- **Free vs PRO in the app:** (the editor's Photos button shows for free accounts and says photos come with PRO) free accounts read, write and delete text entries, use the on-device Apple Intelligence features (reflections, Today's prompt, hashtag suggestions), keep an entry template, see the day's calendar events while writing, share an entry, set the daily reminder (which can bring a past entry), and see the Photos view, the Playlist and the widget; photos, links, editing, search (and its hashtag cloud), Stats (and the year in review at the top of it), On This Day, choosing the email's days, and AI connections are PRO. Dictation is the keyboard's own (no in-app mic). Face ID lock and drafts are for everyone.
 - **Account deletion:** Settings → Delete Account signs the app out and opens dabble.me/settings/delete-account in the browser, where it's confirmed with the password (and can be undone for an hour by signing back in). No email step.
 - **iPad:** supported from the first version, so the submission needs the 13" iPad screenshot set too.
