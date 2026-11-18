@@ -1,30 +1,16 @@
-Writing: the text is the same size as in an open entry.
+Fixed: holding a link while writing left the entry stuck.
 
-- Write or edit an entry, then save and look at it. The words should be the same size and their lines the same distance apart in both places (the editor's text was slightly larger, with its lines closer together), so lines break in the same places. Check it at a couple of Entry Text Size settings (Settings, Theme).
+- While writing, link a word, then touch and hold it. iOS's web preview should no longer come up (it took the keyboard away and you couldn't type in the entry again). You get the ordinary Select / Paste menu, and can keep writing.
+- A tap on the link still opens its row to change or remove it.
 
-Hashtags row while writing.
+Entry text size: each step is now 8%.
 
-- "Insert" at the right is gone. When words in your entry match hashtags you already use, an "Auto Tag" button is the first thing in the row, with those hashtags right after it. It tags all of them where they're written. With nothing matched, there is no button.
-- The three dots (suggestions being looked for) now sit after the matched hashtags, and the suggestions appear there. The matched hashtags should not move when they arrive.
+- Settings, Theme, Entry Text Size. The five sizes are 8% smaller than Default, Default, then 8%, 16% and 24% larger. (They were 12% smaller, then 15%, 30% and 50% larger.) Large should read as just slightly bigger than Default.
+- If you had Large, Extra Large or Largest chosen, your entries will look smaller than before; on Small, very slightly larger. Check the Journal, an open entry, and the editor.
+- These sizes add to the iPhone's own text size (Settings, Display & Brightness, Text Size), so with that turned up, entries are larger still.
 
-Entry Template (Settings): the Format button is always there, not only while words are selected.
+Writing: the Format icon is filled in when the selected words are already bold, italic or underlined.
 
-Link: tapping back in your entry cancels it.
+- Select a plain word: the "A" is an outline. Make it bold: the "A" fills in. Select words that are partly bold: filled in. Back on plain words: an outline again.
 
-- While writing, select a word, tap the Link button and start typing an address. Then tap anywhere else in your entry. The address row should close, the word should not be linked, and the next time you open Link the address field should be empty.
-- Inserting a link, and tapping an existing link to change or remove it, should work as before.
-
-Share: Accessibility Reader should now read the entry.
-
-- Open an entry, swipe left for its Actions, and tap Share. The entry now comes up on a plain page of its own (its date, its words, its photo) with the share sheet over it.
-- Choose Accessibility Reader. It should show and read the entry's date and words. Before, it showed the date and the word "Delete": it reads what's on the screen under the share sheet, which was the Actions list.
-- Try an entry with a photo, one without, and a photo-only entry.
-- Other destinations (Messages, Notes, Copy, Print) should get the words and the photo as before.
-- When the share sheet closes, the plain page should go away and leave you where you were. After sending to something, it stays a moment longer before closing.
-- Sharing a photo from the photo viewer should work as before.
-
-Also in this build, from the last one if you missed it:
-
-- Touch and hold "Write Today's Entry" (or yesterday's) on Today to start from your template.
-- Holding an entry shows its preview with no "Open" in the menu: tap the preview to open it.
-- Reading a reflection aloud is removed.
+This build also updates the App Store screenshots kept with the project; nothing to test there.

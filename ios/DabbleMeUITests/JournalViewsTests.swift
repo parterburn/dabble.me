@@ -267,6 +267,8 @@ final class JournalViewsTests: XCTestCase {
         snap("format-menu")
         app.buttons["Bold"].tap()
         XCTAssertTrue(app.keyboards.firstMatch.exists, "The keyboard stays up")
+        sleep(1)
+        snap("format-filled") // the icon's filled in: the selected word is bold now
         // The cursor put somewhere, with nothing selected: they go again.
         editor.typeText(" ")
         XCTAssertTrue(format.waitForNonExistence(timeout: 5))
@@ -1179,7 +1181,8 @@ final class JournalViewsTests: XCTestCase {
         }
         tab(app, "Journal").tap()
         app.scrollTo(row)
-        XCTAssertGreaterThan(row.frame.width * row.frame.height, small * 1.3, "The timeline's text is larger")
+        // (Smallest to largest is 0.92× to 1.24×: the row takes up clearly more room.)
+        XCTAssertGreaterThan(row.frame.width * row.frame.height, small * 1.15, "The timeline's text is larger")
         snap("accessibility-timeline")
 
         accessibility { // back to the defaults for other runs
@@ -2138,6 +2141,33 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(address.waitForExistence(timeout: 5))
         XCTAssertNotEqual(address.value as? String, "example.com")
         XCTAssertFalse(app.buttons["Update"].exists, "The word wasn't linked")
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
+    }
+
+    /// A linked word held in the editor: no web preview of iOS's (it took the keyboard and the
+    /// entry couldn't be written in again). Writing carries on.
+    func testHoldingALinkLeavesTheEntryEditable() throws {
+        let app = launch()
+        let editor = openComposer(app)
+        editor.typeText("Read this now")
+        let word = editor.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 40, dy: 30))
+        word.doubleTap()
+        XCTAssertTrue(app.buttons["Link"].waitForExistence(timeout: 5))
+        app.buttons["Link"].tap()
+        XCTAssertTrue(app.textFields["Link address"].waitForExistence(timeout: 5))
+        sleep(1)
+        app.typeText("example.com")
+        app.buttons["Insert"].tap()
+        sleep(1)
+        word.press(forDuration: 1.6)
+        sleep(2)
+        XCTAssertFalse(app.buttons["Open Link"].exists, "No link preview and its menu")
+        XCTAssertTrue(app.keyboards.firstMatch.exists, "The keyboard stays")
+        // On with the entry.
+        editor.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 200, dy: 30)).tap()
+        app.typeText(" more")
+        XCTAssertEqual(editor.value as? String, "Read this now more")
         app.buttons["Cancel"].tap()
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }

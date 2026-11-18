@@ -35,6 +35,9 @@ final class RichTextEditorModel {
     private(set) var characterCount = 0
     /// Some of the text is selected.
     private(set) var hasSelection = false
+    /// The selected words (or, with none, what's typed next) are bold, italic or underlined, any
+    /// of them: the bar's Format icon is filled in then.
+    private(set) var isFormatted = false
 
     /// Set while the link row is open; `linkText` is what the user is typing.
     var isEditingLink = false
@@ -262,6 +265,25 @@ final class RichTextEditorModel {
         change(textView)
         // The entry changed only if words were restyled (the draft is saved, Save lights up).
         if hadSelection { textDidChange() }
+        updateFormatState()
+    }
+
+    private func updateFormatState() {
+        guard let textView else { return }
+        func isStyled(_ attributes: [NSAttributedString.Key: Any]) -> Bool {
+            let font = attributes[.font] as? UIFont
+            return font?.isBold == true || font?.isItalic == true || (attributes[.underlineStyle] as? Int ?? 0) != 0
+        }
+        let range = textView.selectedRange
+        var styled = false
+        if range.length > 0, NSMaxRange(range) <= textView.textStorage.length {
+            textView.textStorage.enumerateAttributes(in: range) { attributes, _, stop in
+                if isStyled(attributes) { styled = true; stop.pointee = true }
+            }
+        } else {
+            styled = isStyled(textView.typingAttributes)
+        }
+        if styled != isFormatted { isFormatted = styled }
     }
 
     // MARK: - Links
@@ -348,6 +370,7 @@ final class RichTextEditorModel {
         // Words are selected in the text being written (the bar offers Format and Link then).
         let selecting = textView.map { $0.isFirstResponder && $0.selectedRange.length > 0 } ?? false
         if selecting != hasSelection { hasSelection = selecting }
+        updateFormatState()
         guard let textView, textView.isFirstResponder else { return }
         let selection = textView.selectedRange
         let existing = link(touching: selection, in: textView.textStorage)
@@ -654,6 +677,15 @@ struct RichTextEditor: UIViewRepresentable {
             guard case .link = textItem.content else { return defaultAction }
             let range = textItem.range
             return UIAction { [model] _ in model.linkTapped(in: range) }
+        }
+
+        /// A link held in the editor has no menu of iOS's (its web preview, Open Link, Share…).
+        /// That preview took the keyboard and left the text view unable to take it back: the
+        /// entry couldn't be written in again. Here a link is something to edit, which a tap
+        /// does; holding it selects, as with any other word.
+        func textView(_ textView: UITextView, menuConfigurationFor textItem: UITextItem, defaultMenu: UIMenu) -> UITextItem.MenuConfiguration? {
+            if case .link = textItem.content { return nil }
+            return .init(menu: defaultMenu)
         }
 
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange, replacementText text: String) -> Bool {

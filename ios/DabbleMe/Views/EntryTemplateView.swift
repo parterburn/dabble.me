@@ -20,7 +20,7 @@ struct EntryTemplateView: View {
                 .padding(.vertical, 12)
             Divider()
             // (Format is always there: it's the bar's only button here.)
-            RichTextEditor(model: editor, trailing: AnyView(formatButton.foregroundStyle(.tint)))
+            RichTextEditor(model: editor, trailing: AnyView(formatButton.foregroundStyle(.tint)), barKey: "\(editor.isFormatted)")
                 .overlay(alignment: .topLeading) {
                     if editor.isEmpty {
                         Text("What went well today?")
@@ -50,7 +50,8 @@ struct EntryTemplateView: View {
             Button { editor.toggleItalic() } label: { Label("Italic", icon: "italic") }
             Button { editor.toggleUnderline() } label: { Label("Underline", icon: "underline") }
         } label: {
-            appIcon("slab-format")
+            // (Filled in while the words it's for are bold, italic or underlined.)
+            appIcon(editor.isFormatted ? "slab-format-full" : "slab-format")
                 .frame(width: 40, height: 36)
                 .contentShape(.rect)
         }

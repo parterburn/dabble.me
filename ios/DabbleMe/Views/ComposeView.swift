@@ -170,7 +170,7 @@ struct ComposeView: View {
                 RichTextEditor(model: editor,
                                leading: AnyView((model.me?.canAddPhotos == true ? AnyView(photosButton) : AnyView(proPhotosButton)).foregroundStyle(.tint)),
                                trailing: AnyView(tagAndLinkButtons.foregroundStyle(.tint)),
-                               barKey: "\(editor.hasSelection)|\(CameraPicker.isAvailable)|\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)",
+                               barKey: "\(editor.hasSelection)|\(editor.isFormatted)|\(CameraPicker.isAvailable)|\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)",
                                row: openRow)
                     // Low in the page, over the bar: clear of the entry's first lines.
                     .overlay(alignment: .bottom) {
@@ -472,7 +472,8 @@ struct ComposeView: View {
                     Button { editor.toggleItalic() } label: { Label("Italic", icon: "italic") }
                     Button { editor.toggleUnderline() } label: { Label("Underline", icon: "underline") }
                 } label: {
-                    appIcon("slab-format")
+                    // (Filled in while the words it's for are bold, italic or underlined.)
+                appIcon(editor.isFormatted ? "slab-format-full" : "slab-format")
                         .frame(width: 40, height: 36)
                         .contentShape(.rect)
                 }
