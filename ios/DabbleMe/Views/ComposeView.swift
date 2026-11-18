@@ -47,9 +47,6 @@ struct ComposeView: View {
     @State private var isSaving = false
     @State private var uploadedCount: Int?
     @State private var error: String?
-    @State private var confirmingDiscard = false
-    /// Save Draft or Discard was chosen: the composer is closing.
-    @State private var isLeaving = false
     /// Moving the entry onto a day that has one: the server's words for it, while asking to merge.
     @State private var mergeQuestion: String?
     /// An unsaved draft from an earlier session was put back in the editor.
@@ -217,17 +214,25 @@ struct ComposeView: View {
                 // The date is the title, which leaves more room to write.
                 ToolbarItem(placement: .principal) { dateTitle }
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") {
-                        if hasChanges {
-                            // The question's at the foot of the screen: the keyboard, and any row
-                            // open over it, go down so it can be seen.
-                            showsHashtagBar = false
-                            showsAskRow = false
-                            showsPhotoDrawer = false
-                            editor.endLink()
-                            editor.unfocus()
-                            confirmingDiscard = true
-                        } else {
+                    // With something to lose, Cancel drops down Save Draft and Discard, no
+                    // question around them: a tap outside it is Keep Writing.
+                    if hasChanges {
+                        Menu("Cancel") {
+                            // A draft is kept on this device and comes back the next time this is opened.
+                            if canSaveDraft {
+                                Button(photoItems.isEmpty && !removesExistingPhoto ? "Save Draft" : "Save Draft (Words Only)") {
+                                    draftSave?.cancel()
+                                    saveDraftNow()
+                                    dismiss()
+                                }
+                            }
+                            Button("Discard", role: .destructive) {
+                                discardDraft()
+                                dismiss()
+                            }
+                        }
+                    } else {
+                        Button("Cancel") {
                             discardDraft()
                             dismiss()
                         }
@@ -245,35 +250,6 @@ struct ComposeView: View {
                 }
             }
             .interactiveDismissDisabled(hasChanges || isSaving)
-            // The question put away without an answer (Keep Writing, or a tap outside it, which
-            // is all an iPhone offers): back to writing, with the keyboard.
-            .onChange(of: confirmingDiscard) { _, asking in
-                if !asking, !isLeaving { editor.focus() }
-            }
-            .confirmationDialog(isNew ? "Close this entry?" : "Close without saving your changes?",
-                                isPresented: $confirmingDiscard, titleVisibility: .visible) {
-                // A draft is kept on this device and comes back the next time this is opened.
-                if canSaveDraft {
-                    Button("Save Draft") {
-                        isLeaving = true
-                        draftSave?.cancel()
-                        saveDraftNow()
-                        dismiss()
-                    }
-                }
-                Button("Discard", role: .destructive) {
-                    isLeaving = true
-                    discardDraft()
-                    dismiss()
-                }
-                Button("Keep Writing", role: .cancel) {}
-            } message: {
-                if canSaveDraft {
-                    Text(photoItems.isEmpty && !removesExistingPhoto
-                        ? "A draft is kept on this device until you come back to it."
-                        : "A draft keeps your words on this device until you come back to it, but not changes to photos.")
-                }
-            }
             // An alert, for its Cancel button (a confirmation dialog shows none here): Cancel puts
             // the date back to the entry's own day.
             .alert(mergeQuestion ?? "", isPresented: .present($mergeQuestion)) {

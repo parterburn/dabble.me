@@ -1,4 +1,4 @@
-The editor's format bar: a way back out, the link buttons rearranged, and B, I, U in the template editor.
+The editor's format bar: a way back out, the link buttons rearranged, B, I, U in the template editor, and a simpler Cancel.
 
 GETTING BACK TO THE USUAL BAR
 
@@ -20,3 +20,11 @@ TEMPLATE EDITOR
 - Settings > Entry Template: the bar over the keyboard now always shows B, I and U, the same letters as the entry editor, instead of the Format menu.
 - Each should be lit while it's on: for selected words, or with nothing selected, for what you type next. Tap one and type to check.
 - Your saved template should be unchanged.
+
+CANCEL
+
+- Write something in a new entry, then tap Cancel: instead of the "Close this entry?" box, a small menu should drop down from Cancel with Save Draft and Discard (in red), and no other text.
+- Save Draft should close the entry and bring your words back next time; Discard should close it and drop them.
+- Tap outside the menu: it should close and leave you writing.
+- With a photo added or removed, the first option reads "Save Draft (Words Only)": a draft doesn't keep photo changes.
+- With nothing changed, Cancel should just close, as before.
