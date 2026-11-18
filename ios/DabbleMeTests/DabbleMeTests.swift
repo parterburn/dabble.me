@@ -930,24 +930,22 @@ struct ShareTextTests {
 }
 
 struct ReadingTextSizeTests {
-    /// Five stops, the default in the middle at 99%, 9 points of a hundred apart.
+    /// Five stops, the default in the middle at 99%, each larger than the one before.
     @Test func theDefaultIsTheMiddleStop() {
         let sizes = ReadingTextSize.allCases
         #expect(sizes.count == 5 && sizes[2] == .standard)
-        #expect(abs(ReadingTextSize.standard.scale - 0.99) < 0.0001)
-        for (smaller, larger) in zip(sizes, sizes.dropFirst()) {
-            #expect(abs(larger.scale - smaller.scale - 0.09) < 0.0001)
-        }
+        #expect(sizes.map(\.scale) == [0.90, 0.95, 0.99, 1.05, 1.10])
         #expect(sizes.map(\.label) == ["Smallest", "Smaller", "Default", "Larger", "Largest"])
     }
 
     /// A size chosen on the old scale lands on the nearest new stop, once.
     @Test func anOldChoiceIsCarriedOver() throws {
-        #expect(ReadingTextSize.migrated(fromLegacy: 0) == .smaller)   // Small, 92% → 90%
+        #expect(ReadingTextSize.migrated(fromLegacy: 0) == .smallest)  // Small, 92% → 90%
         #expect(ReadingTextSize.migrated(fromLegacy: 1) == .standard)  // Default, 100% → 99%
-        #expect(ReadingTextSize.migrated(fromLegacy: 2) == .larger)    // Large, 108% → 108%
-        #expect(ReadingTextSize.migrated(fromLegacy: 3) == .largest)   // Extra Large, 116% → 117%
-        #expect(ReadingTextSize.migrated(fromLegacy: 4) == .largest)   // Largest, 124% → 117%
+        #expect(ReadingTextSize.migrated(fromLegacy: 2) == .largest)   // Large, 108% → 110%
+        #expect(ReadingTextSize.migrated(fromLegacy: 3) == .largest)   // Extra Large, 116% → 110%
+        #expect(ReadingTextSize.migrated(fromLegacy: 4) == .largest)   // Largest, 124% → 110%
+        #expect(ReadingTextSize.migrated(fromLegacy: 9) == .standard)  // not a size at all
 
         let name = "ReadingTextSizeTests.\(UUID().uuidString)"
         let defaults = try #require(UserDefaults(suiteName: name))
@@ -957,7 +955,7 @@ struct ReadingTextSizeTests {
         #expect(defaults.object(forKey: ReadingTextSize.storageKey) == nil)
         defaults.set(2, forKey: ReadingTextSize.legacyStorageKey)
         ReadingTextSize.migrateStoredSize(in: defaults)
-        #expect(defaults.integer(forKey: ReadingTextSize.storageKey) == ReadingTextSize.larger.rawValue)
+        #expect(defaults.integer(forKey: ReadingTextSize.storageKey) == ReadingTextSize.largest.rawValue)
         // A choice made since isn't overwritten.
         defaults.set(ReadingTextSize.smallest.rawValue, forKey: ReadingTextSize.storageKey)
         ReadingTextSize.migrateStoredSize(in: defaults)

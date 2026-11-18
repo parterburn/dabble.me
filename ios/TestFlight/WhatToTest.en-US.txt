@@ -1,8 +1,8 @@
 Entry text size: the default is now the middle of five.
 
 - Settings, Theme: the Entry Text Size slider's stops are Smallest, Smaller, Default, Larger, Largest, with Default in the centre. Before, Default was second of five.
-- The default is very slightly smaller than it was (1%), and each stop is a slightly bigger step than before (9% of the body size, was 8%).
-- If you had chosen a size before this build, you should land on the nearest new one: Small becomes Smaller, Large becomes Larger, Extra Large and Largest both become Largest. Your entries shouldn't visibly jump in size, except from the old Largest, which comes down a little.
+- The sizes are closer together than before: 90%, 95%, 99%, 105% and 110% of the body size. The default is very slightly smaller than it was (1%).
+- If you had chosen a size before this build, you should land on the nearest new one: Small becomes Smallest; Large, Extra Large and Largest all become Largest. From the old Extra Large or Largest your entries will get noticeably smaller, since the new scale stops at 110%.
 - If you never changed it, you're on Default.
 - Pinch an open entry to step through the five sizes, and check the editor follows the same size.
 

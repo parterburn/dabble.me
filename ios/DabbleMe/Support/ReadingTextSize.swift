@@ -14,15 +14,15 @@ enum ReadingTextSize: Int, CaseIterable, Identifiable {
 
     var id: Int { rawValue }
 
-    /// The default is a touch under the body size (99%), and each stop is 9 points of a
-    /// hundred from the next: 81%, 90%, 99%, 108%, 117%.
+    /// The default is a touch under the body size, and the others are close around it: 90%,
+    /// 95%, 99%, 105%, 110%.
     var scale: CGFloat {
         switch self {
-        case .smallest: 0.81
-        case .smaller: 0.90
+        case .smallest: 0.90
+        case .smaller: 0.95
         case .standard: 0.99
-        case .larger: 1.08
-        case .largest: 1.17
+        case .larger: 1.05
+        case .largest: 1.10
         }
     }
 
@@ -36,11 +36,17 @@ enum ReadingTextSize: Int, CaseIterable, Identifiable {
         }
     }
 
-    /// The stop nearest in size to one chosen on the old scale (Small 92%, Default 100%, Large
-    /// 108%, Extra Large 116%, Largest 124%, numbered from 0): one stop along, since the default
-    /// moved from second to third, and the old two largest both become Largest.
+    /// The old scale's sizes, by the number each was stored as: Small, Default, Large, Extra
+    /// Large, Largest.
+    private static let legacyScales: [CGFloat] = [0.92, 1, 1.08, 1.16, 1.24]
+
+    /// The stop nearest in size to one chosen on the old scale: Small becomes Smallest, Default
+    /// stays Default, and the old three larger ones all become Largest (the new scale stops
+    /// at 110%).
     static func migrated(fromLegacy raw: Int) -> ReadingTextSize {
-        ReadingTextSize(rawValue: min(max(raw + 1, 0), allCases.count - 1)) ?? .standard
+        guard legacyScales.indices.contains(raw) else { return .standard }
+        let old = legacyScales[raw]
+        return allCases.min { abs($0.scale - old) < abs($1.scale - old) } ?? .standard
     }
 
     /// Once, at launch: a size chosen before the stops changed is carried over to the nearest
