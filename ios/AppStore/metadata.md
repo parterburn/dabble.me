@@ -16,7 +16,7 @@ The voice: a few lines a day, kept private, and handed back to you later. No str
 | Age rating | 4+ (no objectionable content; entries are private and never shared with other users) |
 | Copyright | 2026 Dabble Dev LLC |
 
-## Version 1.1.2
+## Version 1.1.3
 
 1.0 was submitted and never released. The copy below describes build 92.
 
