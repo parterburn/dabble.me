@@ -1,22 +1,30 @@
-Three things: the editor's format buttons, the divider in entry previews, and the widget taking turns through a day's On This Day entries.
+The editor's format bar: a way back out, the link buttons rearranged, B, I, U in the template editor, and a simpler Cancel. This is version 1.1.3.
 
-FORMAT BUTTONS
+GETTING BACK TO THE USUAL BAR
 
-- Bold, Italic and Underline are now plain letters (B, I, U) and Link is the standard link symbol, not the drawn icons.
-- Select some words: Link is now at the far left of the bar, and B, I, U are on the right.
-- Select a link (or tap one): "Visit" and the trash are beside Link at the bottom left, away from Update. Visit should open the address in the browser; the trash removes the link. The row above has only the address and Update.
-- Hold B with nothing selected: the bar should switch to Link and B, I, U. Tap I and type: it should come out in italics. The bar stays while you type, so you can turn it off again.
-- Then tap somewhere else in the entry: the bar should go back to photos, B, hashtags and prompts.
-- A quick tap on B should still just turn bold on or off, and lifting your finger after a hold should not toggle bold.
+- Hold B with nothing selected: the bar switches to Link and B, I, U, with an X on its own at the far right.
+- Tap the X: the bar should go back to photos, B, hashtags and prompts, and the cursor should stay where it was.
+- Select some words: the X is there too. Tapping it should let go of the selection, leaving the cursor at the end of those words, and bring back the usual bar.
+- Open the Link row and tap the X: the row should close and the keyboard go back to the entry.
+- Tapping somewhere else in the entry should still go back to the usual bar, as before.
 
-DIVIDER IN PREVIEWS
+LINKS
 
-- Find an entry made of two merged together (the full entry shows a short line between them). In the Entries list, and in the preview when you hold an entry, the divider should be the same short line the full entry shows, not a bullet followed by two asterisks.
+- Select a link (or tap one). Beside Link at the bottom left there's now an external-link symbol instead of the word "Visit". It should open the address in the browser.
+- The trash is now the plain system trash (red), at the far left of the row with the address, away from Update. It should remove the link and leave the words.
+- Check that the trash, the address and Update all fit on one line on a smaller phone.
+- A new link (Insert rather than Update) shows no trash.
 
-WIDGET
+TEMPLATE EDITOR
 
-- This is for the medium widget set to Rewind with entry previews on, on a day when you have more than one entry from past years.
-- Through the day it should move from one to the next: they share 6 AM to midnight equally. With two, it changes at 3 PM; with three, at noon and 6 PM; with four, at 10:30, 3:00 and 7:30. Before 6 AM it shows the first.
-- Each one has its own label ("3 years ago · 2023"), text and photo.
-- Tap the entry on the widget: Today should open scrolled to the one that was showing.
-- Open the app in the morning so the widget has the day's entries, then look at it again after one of those times. iOS may be a few minutes late changing it.
+- Settings > Entry Template: the bar over the keyboard now always shows B, I and U, the same letters as the entry editor, instead of the Format menu.
+- Each should be lit while it's on: for selected words, or with nothing selected, for what you type next. Tap one and type to check.
+- Your saved template should be unchanged.
+
+CANCEL
+
+- Write something in a new entry, then tap Cancel: instead of the "Close this entry?" box, a small menu should drop down from Cancel with Save Draft and Discard (in red), and no other text.
+- Save Draft should close the entry and bring your words back next time; Discard should close it and drop them.
+- Tap outside the menu: it should close and leave you writing.
+- With a photo added or removed, the first option reads "Save Draft (Words Only)": a draft doesn't keep photo changes.
+- With nothing changed, Cancel should just close, as before.

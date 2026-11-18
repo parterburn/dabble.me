@@ -535,6 +535,16 @@ final class RichTextEditorModel {
         return true
     }
 
+    /// Back from the format bar to the usual one: the link row closes, and a selection is let go,
+    /// with the cursor left at its end.
+    func leaveFormatting() {
+        endLink()
+        guard let textView else { return }
+        let selection = textView.selectedRange
+        if selection.length > 0 { textView.selectedRange = NSRange(location: NSMaxRange(selection), length: 0) }
+        selectionDidChange()
+    }
+
     func removeLink() {
         defer { endLink() }
         guard let textView, linkRange.length > 0, NSMaxRange(linkRange) <= textView.textStorage.length else { return }
@@ -658,6 +668,9 @@ struct RichTextEditor: UIViewRepresentable {
     /// and link on the right), and a key for what they show, so the bar is rebuilt when it changes.
     var leading: AnyView? = nil
     var trailing: AnyView? = nil
+    /// A last button past `trailing`, in a group of its own at the bar's far right (the format
+    /// bar's close).
+    var trailingEnd: AnyView? = nil
     var barKey = ""
     /// A row shown above the buttons (hashtags, a prompt, photos), part of the bar so it moves with
     /// the keyboard and is never covered by it.
@@ -825,6 +838,11 @@ struct RichTextEditor: UIViewRepresentable {
             if let leading = editor.leading { items.append(hosted(leading)) }
             items.append(.flexibleSpace())
             if let trailing = editor.trailing { items.append(hosted(trailing)) }
+            if let trailingEnd = editor.trailingEnd {
+                // A fixed space between items keeps them in separate glass groups.
+                items.append(.fixedSpace(8))
+                items.append(hosted(trailingEnd))
+            }
             toolbar.items = items
         }
     }
