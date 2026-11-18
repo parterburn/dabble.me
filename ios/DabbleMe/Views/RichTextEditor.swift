@@ -108,10 +108,11 @@ final class RichTextEditorModel {
     private(set) var typedHashtag: String?
     @ObservationIgnored private var typedHashtagRange: NSRange?
 
-    /// The "#" and the letters after it that end at `cursor`, when that's a hashtag being
-    /// typed: at least one character after the "#", the first of them not a number, nothing
-    /// but letters, numbers and "_" up to the cursor, and the "#" not in the middle of a word
-    /// ("C#m" isn't one).
+    /// The hashtag being typed at `cursor`: `prefix` is its letters up to the cursor, and `range`
+    /// is the whole of it, "#" and all, on past the cursor to where it ends (so finishing one
+    /// from its middle replaces it, and leaves no tail behind). It's one when there's at least
+    /// one character between the "#" and the cursor, the first of them not a number, nothing but
+    /// letters, numbers and "_" in it, and the "#" isn't in the middle of a word ("C#m").
     static func hashtagBeingTyped(in text: NSString, cursor: Int) -> (range: NSRange, prefix: String)? {
         guard cursor > 0, cursor <= text.length else { return nil }
         func isWordCharacter(_ unit: unichar) -> Bool {
@@ -128,7 +129,9 @@ final class RichTextEditorModel {
         }
         let prefix = text.substring(with: NSRange(location: start, length: cursor - start))
         guard let first = prefix.unicodeScalars.first, !CharacterSet.decimalDigits.contains(first) else { return nil }
-        return (NSRange(location: start - 1, length: cursor - start + 1), prefix)
+        var end = cursor
+        while end < text.length, isWordCharacter(text.character(at: end)) { end += 1 }
+        return (NSRange(location: start - 1, length: end - start + 1), prefix)
     }
 
     private func updateTypedHashtag() {
@@ -158,8 +161,9 @@ final class RichTextEditorModel {
         let attributes = storage.attributes(at: range.location, effectiveRange: nil)
         let end = NSMaxRange(range)
         let spaceFollows = end < string.length && UnicodeScalar(string.character(at: end)).map { CharacterSet.whitespacesAndNewlines.contains($0) } == true
-        let typed = string.substring(with: NSRange(location: range.location + 1, length: range.length - 1))
-        let written = "#" + Self.completion(of: typed, with: tag) + (spaceFollows ? "" : " ")
+        // (What's typed up to the cursor: the range may run on past it, through the rest of a
+        // hashtag the cursor's inside.)
+        let written = "#" + Self.completion(of: typedHashtag ?? "", with: tag) + (spaceFollows ? "" : " ")
         storage.replaceCharacters(in: range, with: NSAttributedString(string: written, attributes: attributes))
         textView.selectedRange = NSRange(location: range.location + (written as NSString).length + (spaceFollows ? 1 : 0), length: 0)
         textDidChange()

@@ -99,6 +99,10 @@ struct HashtagTypingTests {
         #expect(typed("no tag here") == nil)
         let found = RichTextEditorModel.hashtagBeingTyped(in: "Hi #Le" as NSString, cursor: 6)
         #expect(found?.range == NSRange(location: 3, length: 3))
+        // Inside one: the whole hashtag is what a choice replaces, not just up to the cursor.
+        let inside = RichTextEditorModel.hashtagBeingTyped(in: "#hiking is fun" as NSString, cursor: 4)
+        #expect(inside?.prefix == "hik")
+        #expect(inside?.range == NSRange(location: 0, length: 7))
     }
 
     /// Finishing a hashtag keeps what was typed as it was typed, and adds the rest.

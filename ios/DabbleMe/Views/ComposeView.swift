@@ -301,6 +301,7 @@ struct ComposeView: View {
             }
             #if DEBUG
             .task { await attachDebugPhotos() }
+            #endif
             // A hashtag's being typed: the writer's tags, to offer the ones that start that way
             // (fetched the first time, unless the hashtag row has brought them already).
             .onChange(of: editor.typedHashtag != nil) { _, typing in
@@ -308,7 +309,6 @@ struct ComposeView: View {
                 if recentTags.isEmpty { Task { recentTags = (try? await model.recentHashtags()) ?? [] } }
                 if allTags.isEmpty { Task { allTags = ((try? await model.allHashtags()) ?? []).map(\.tag) } }
             }
-            #endif
             .alert("Tip", isPresented: .present($tip)) {
                 Button("OK", role: .cancel) {}
             } message: {
