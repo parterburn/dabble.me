@@ -71,10 +71,9 @@ struct StatsView: View {
         }
         .refreshDots { await load() }
         .task { if stats == nil { await load() } }
-        // An entry written for a day picked in the grid: the numbers are counted again after it.
-        .onChange(of: model.composingDay == nil) { _, closed in
-            if closed { Task { await load() } }
-        }
+        // An entry written, changed or deleted anywhere in the app (Stats may be sitting open
+        // behind another tab): the numbers are counted again after it.
+        .onChange(of: model.entriesChanged) { Task { await load() } }
     }
 
     /// Something to ask Claude or ChatGPT with the Dabble Me connector on, about the year shown.

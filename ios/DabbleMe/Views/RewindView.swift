@@ -775,9 +775,10 @@ struct RewindCard: View {
                     if count >= RewindSeason.minimumEntries { ready(year) } else { soon(year, needs: RewindSeason.minimumEntries - count) }
                 }
             }
-            .task(id: year) {
-                guard String(year) != today.year, lastYearCount == nil else { return }
-                lastYearCount = (try? await model.writingDays(year: year))?.count
+            // (Counted again when the journal's total moves: an entry written for last year.)
+            .task(id: "\(year)|\(stats.totalEntries)") {
+                guard String(year) != today.year else { return }
+                if let count = (try? await model.writingDays(year: year))?.count { lastYearCount = count }
             }
             .fullScreenCover(isPresented: $showing) { RewindView(year: year) }
         }
