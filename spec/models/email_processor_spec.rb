@@ -69,6 +69,37 @@ describe EmailProcessor do
         expect(Sentry).to have_received(:capture_message).with("Inbound entry not associated to user", hash_including(level: :warning))
       end
 
+      describe "entry-not-saved notice limits" do
+        include ActiveSupport::Testing::TimeHelpers
+
+        let(:cache) { ActiveSupport::Cache::MemoryStore.new }
+        let(:notices) { -> { ActionMailer::Base.deliveries.count { |mail| mail.subject == "Your Dabble Me entry was not saved" } } }
+
+        before { allow(Rails).to receive(:cache).and_return(cache) }
+
+        def forged
+          email_to(old_key, from: user.email, spf: "Fail")
+        end
+
+        it "sends one notice per account per day however many forged emails arrive" do
+          expect { 3.times { EmailProcessor.new(forged).process } }.to change { notices.call }.by(1)
+
+          travel(EmailProcessor::ENTRY_NOT_SAVED_COOLDOWN + 1.minute) do
+            expect { EmailProcessor.new(forged).process }.to change { notices.call }.by(1)
+          end
+        end
+
+        it "does not mail an account whose address has bounced" do
+          user.update!(emails_bounced: 1)
+          expect { EmailProcessor.new(forged).process }.not_to change { notices.call }
+        end
+
+        it "does not mail an account pending deletion" do
+          user.update_column(:deleted_at, Time.current)
+          expect { EmailProcessor.new(forged).process }.not_to change { notices.call }
+        end
+      end
+
       it "does not email a stranger who writes to the old address" do
         expect { EmailProcessor.new(email_to(old_key, from: "stranger@example.com", body: "Unsolicited note")).process }
           .not_to change { [user.entries.reload.count, ActionMailer::Base.deliveries.size] }
