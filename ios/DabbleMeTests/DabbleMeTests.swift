@@ -1087,3 +1087,32 @@ struct ParagraphGapTests {
         #expect(TimelineEntryRow.paragraphGapFontSize(fontSize: 10, lineSpacing: 20) == 1)
     }
 }
+
+/// A draft keeps its photos: written once each, read back in order, pruned and cleared with it.
+struct DraftPhotoTests {
+    private func photo(_ byte: UInt8) -> PreparedPhoto {
+        PreparedPhoto(data: Data([byte, byte, byte]), contentType: "image/jpeg", filename: "photo.jpg", thumbnail: Data([byte]))
+    }
+
+    @Test func photosRoundTripInOrderAndArePrunedAndCleared() {
+        let key = "test-\(UUID().uuidString)"
+        defer { DraftStore.clear(key) }
+        DraftStore.savePhotos([("a", photo(1)), ("b", photo(2))], key: key)
+        let loaded = DraftStore.loadPhotos(["b", "a"], key: key)
+        #expect(loaded.map(\.name) == ["b", "a"])
+        #expect(loaded.map(\.photo) == [photo(2), photo(1)])
+
+        DraftStore.savePhotos([("b", photo(2))], key: key)
+        #expect(DraftStore.loadPhotos(["a", "b"], key: key).map(\.name) == ["b"])
+
+        DraftStore.clear(key)
+        #expect(DraftStore.loadPhotos(["b"], key: key).isEmpty)
+    }
+
+    @Test func draftsWithoutPhotosStillDecode() throws {
+        let old = #"{"blocks":[],"savedAt":0}"#
+        let draft = try JSONDecoder().decode(DraftStore.Draft.self, from: Data(old.utf8))
+        #expect(draft.photos == nil)
+        #expect(draft.removesPhoto == nil)
+    }
+}

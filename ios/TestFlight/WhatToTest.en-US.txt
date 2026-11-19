@@ -1,7 +1,11 @@
-Entries in the Journal list are now spaced like the full entry.
+Drafts now keep photos.
 
-- Find an entry with several paragraphs, or headings with text under them (a template entry is ideal).
-- Look at it in the Journal list, then open it. The gap between paragraphs should look the same in both: about half a line, not the bigger gap the list had before.
-- The space between lines inside a paragraph should also match.
-- Try it at the smallest and largest text sizes (Settings > Accessibility) and with the serif and sans fonts. The gaps should still match at each.
-- A collapsed entry may show a few more words before "Show more" than it used to, because it takes a little less room. Expanding it and Show more should still work as before.
+- Start a new entry, write a line, and add two photos (one from the library, one from the camera if you can).
+- Tap Cancel: the menu should say just "Save Draft" and "Discard" (no more "Words Only").
+- Tap Save Draft, then start a new entry again. The words and both photos should be back, in the same order, with "Restored your unsaved draft."
+- Save it: the entry should have both photos.
+- Edit an entry that has a photo. Remove the photo, add a different one, then Save Draft. Reopen the entry: the old photo should still be shown as removed and the new one there.
+- Start Over on a restored draft should drop the draft's photos and bring back the entry's own.
+- Add a photo, then swipe the app away without tapping Cancel. Reopen and start the entry again: the photo should be in the draft.
+- A draft with only photos and no words can be saved as a draft too.
+- Discard should still throw everything away, photos included.
