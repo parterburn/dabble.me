@@ -41,6 +41,7 @@ module Mcp
           )
 
           data = {
+            content_notice: Helpers::ENTRY_TEXT_NOTICE,
             total_entries: result[:total_matches],
             entries: result[:entries].map { |e| Helpers.normalize_entry_row(e) }
           }

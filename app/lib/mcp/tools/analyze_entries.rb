@@ -40,6 +40,7 @@ module Mcp
             entry_count_by_year: result[:entry_count_by_year],
             top_hashtags: result[:most_used_hashtags].map { |tag| { hashtag: tag[:tag], count: tag[:count] } },
             average_words_per_entry: result[:average_entry_length_words],
+            content_notice: Helpers::ENTRY_TEXT_NOTICE,
             sample_entries: result[:sample_highlights]
           }
 
