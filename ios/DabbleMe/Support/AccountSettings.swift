@@ -148,11 +148,24 @@ struct AppSettings: Decodable, Sendable {
     var widgetContent: String?
 }
 
-/// Only what's set is sent (an empty template is `[]`, not left out).
+/// Only what's set is sent (an empty template is `[]`, not left out). A nil optional is left
+/// out of the JSON: the synthesized encoder would send it as null, and the server would treat
+/// that as a value.
 struct AppSettingsUpdate: Encodable, Sendable {
     var entryTemplate: [DocumentRun]? = nil
     var entryTemplateAuto: Bool? = nil
     var widgetContent: String? = nil
 
     var isEmpty: Bool { entryTemplate == nil && entryTemplateAuto == nil && widgetContent == nil }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(entryTemplate, forKey: .entryTemplate)
+        try container.encodeIfPresent(entryTemplateAuto, forKey: .entryTemplateAuto)
+        try container.encodeIfPresent(widgetContent, forKey: .widgetContent)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case entryTemplate, entryTemplateAuto, widgetContent
+    }
 }

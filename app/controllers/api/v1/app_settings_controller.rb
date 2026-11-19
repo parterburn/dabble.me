@@ -35,14 +35,14 @@ module Api
       def apply_update(user)
         settings = user.app_settings_hash
 
-        if params.key?(:entry_template)
+        if provided?(:entry_template)
           runs = template_runs(params[:entry_template])
           return render_error(:unprocessable_content, 'invalid', 'That template could not be saved.') if runs.nil?
 
           settings['entry_template'] = runs
         end
-        settings['entry_template_auto'] = boolean(:entry_template_auto) if params.key?(:entry_template_auto)
-        if params.key?(:widget_content)
+        settings['entry_template_auto'] = boolean(:entry_template_auto) if provided?(:entry_template_auto)
+        if provided?(:widget_content)
           content = params[:widget_content].to_s
           return render_error(:unprocessable_content, 'invalid', 'Unknown widget choice.') unless WIDGET_CONTENTS.include?(content)
 
@@ -85,6 +85,13 @@ module Api
         return nil if runs.sum { |run| run['text'].length } > MAX_TEMPLATE_CHARACTERS
 
         runs
+      end
+
+      # JSON null is "not in this request". The iOS client encodes an unset optional as null,
+      # and an emptied template as []. Treating null as a value would clear the template, turn
+      # the switch off, or reject the save (a null widget choice is not one of the four).
+      def provided?(key)
+        params.key?(key) && !params[key].nil?
       end
 
       def boolean(key)

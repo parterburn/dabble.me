@@ -912,6 +912,27 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       expect(json["entry_template_auto"]).to be_nil
     end
 
+    # The iOS encoder used to send unset optionals as null. Null is not a clear and not a widget choice.
+    it "ignores nulls so one changed setting does not wipe or reject the others" do
+      patch "/api/v1/app_settings", params: { entry_template: template, entry_template_auto: true },
+                                    headers: auth(pro_user), as: :json
+      patch "/api/v1/app_settings",
+            params: { entry_template: nil, entry_template_auto: nil, widget_content: "memoryEntry" },
+            headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:ok)
+      expect(json["widget_content"]).to eq("memoryEntry")
+      expect(json["entry_template"].size).to eq(3)
+      expect(json["entry_template_auto"]).to be(true)
+
+      patch "/api/v1/app_settings",
+            params: { entry_template: template, entry_template_auto: nil, widget_content: nil },
+            headers: auth(pro_user), as: :json
+      expect(response).to have_http_status(:ok)
+      expect(json["entry_template"].size).to eq(3)
+      expect(json["entry_template_auto"]).to be(true)
+      expect(json["widget_content"]).to eq("memoryEntry")
+    end
+
     it "keeps an emptied template as empty, not as never set" do
       patch "/api/v1/app_settings", params: { entry_template: template }, headers: auth(pro_user), as: :json
       patch "/api/v1/app_settings", params: { entry_template: [] }, headers: auth(pro_user), as: :json
