@@ -47,10 +47,6 @@ module Encryption
     end
 
     def encrypt
-      unless StagedEncryptor.write_ciphertext?
-        raise VerificationFailed, "Set ACTIVE_RECORD_ENCRYPTION_WRITE=true on every process before encrypting existing rows."
-      end
-
       EncryptionCheck.verify!
       convert { |record| plaintext_attributes(record).any? && rewrite(record, :ciphertext) }
     end
@@ -117,7 +113,7 @@ module Encryption
     # Writes every encrypted column again in the given form. update_columns
     # skips callbacks, validations and updated_at.
     def rewrite(record, mode)
-      StagedEncryptor.forcing(mode) { record.update_columns(values_of(record)) }
+      Encryptor.forcing(mode) { record.update_columns(values_of(record)) }
       true
     end
 
@@ -139,7 +135,7 @@ module Encryption
       return if value.nil?
 
       type = record.class.type_for_attribute(attribute)
-      cipher = StagedEncryptor.forcing(:ciphertext) { type.serialize(value) }
+      cipher = Encryptor.forcing(:ciphertext) { type.serialize(value) }
       survived = ActiveRecord::Encryption.encryptor.encrypted?(cipher) && type.deserialize(cipher) == value
       return if survived
 

@@ -10,9 +10,10 @@ class EncryptionCheck < ActiveRecord::Base
   EXPECTED = "dabble-me-encryption-check".freeze
   KEY_SETTINGS = %i[primary_key deterministic_key key_derivation_salt].freeze
 
-  # Always encrypted, whatever stage the rollout is at. `value` proves the
-  # primary key and salt; `lookup` is deterministic, so it proves the
-  # deterministic key that posting and photo key lookups depend on.
+  # `value` proves the primary key and salt. `lookup` is deterministic, so it
+  # proves the deterministic key that posting and photo key lookups depend on.
+  # Rails' own encryptor, so `encryption:decrypt` cannot store this row as
+  # plaintext while it is writing other rows that way.
   encrypts :value, encryptor: ActiveRecord::Encryption::Encryptor.new
   encrypts :lookup, deterministic: true, encryptor: ActiveRecord::Encryption::Encryptor.new
 

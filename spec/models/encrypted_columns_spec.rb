@@ -39,6 +39,10 @@ RSpec.describe 'Encrypted columns' do
     expect(reloaded.user_key).to eq(user.user_key)
   end
 
+  it 'leaves the login email in plaintext' do
+    expect(stored_value(user, 'email')).to eq(user.email)
+  end
+
   it 'finds users by posting key and photo key' do
     expect(User.find_by(user_key: user.user_key)).to eq(user)
     expect(User.find_by(image_key: user.image_key)).to eq(user)
