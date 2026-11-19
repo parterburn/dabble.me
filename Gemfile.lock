@@ -694,7 +694,7 @@ DEPENDENCIES
   words_counted (~> 1.0, >= 1.0.3)
 
 RUBY VERSION
-  ruby 4.0.9
+  ruby 4.0.10
 
 BUNDLED WITH
   4.0.20
