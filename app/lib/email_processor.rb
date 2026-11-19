@@ -424,6 +424,7 @@ class EmailProcessor
     fragment = Nokogiri::HTML5.fragment(html)
     normalize_empty_html_blocks(fragment)
     normalize_html_text_nodes(fragment)
+    hoist_leading_breaks_after_inline(fragment)
     normalize_html_block_edge_breaks(fragment)
     trim_html_edge_breaks(fragment)
     remove_list_separator_breaks(fragment)
@@ -713,6 +714,8 @@ class EmailProcessor
   # Empty block elements are how clients such as Apple Mail represent a blank
   # line. Collapse an internal run to one <br>, and discard leading/trailing
   # runs so an email cannot acquire padding around its content.
+  # Gmail leaves the first paragraph as text in the wrapper. A <br> between
+  # that text and the next block collapses, so wrap the text first.
   def normalize_empty_html_blocks(fragment)
     blank_blocks = fragment.css(HTML_EMPTY_LINE_ELEMENTS.join(',')).select { |node| blank_html_block?(node) }
     preserve_as_break = blank_blocks.index_with do |node|
@@ -727,7 +730,8 @@ class EmailProcessor
       next unless node.parent
 
       if preserve_as_break[node]
-        node.replace(Nokogiri::XML::Node.new('br', node.document))
+        separate_unwrapped_paragraph(node)
+        node.replace(Nokogiri::XML::Node.new('br', node.document)) if node.parent
       else
         node.remove
       end
@@ -835,6 +839,116 @@ class EmailProcessor
 
     separator = Nokogiri::XML::Node.new('br', block.document)
     direction == :previous ? block.add_previous_sibling(separator) : block.add_next_sibling(separator)
+  end
+
+  # A <br> at the start of the next block is a blank line. Trim would delete it
+  # when the previous paragraph is unwrapped text, because that break is not
+  # between blocks yet. Wrap the text and keep one <br>, matching later gaps.
+  def hoist_leading_breaks_after_inline(fragment)
+    fragment.css('blockquote,div,p').to_a.each do |block|
+      next if block.parent.nil? || block.parent.name == 'p'
+      next unless first_content_child(block)&.name == 'br'
+      next if blank_html_block?(block)
+      run = paragraph_run_before(block)
+      next if run.none? { |member| meaningful_inline_text?(member) }
+
+      remove_preceding_break_run(block)
+      wrap_nodes(run)
+      strip_leading_breaks(block)
+      block.add_previous_sibling(Nokogiri::XML::Node.new('br', block.document))
+    end
+  end
+
+  # The empty block is about to become a <br>. When it separates unwrapped
+  # text from a later paragraph, that <br> would collapse; wrap the text so
+  # the break sits between blocks like the later ones.
+  def separate_unwrapped_paragraph(node)
+    return if node.parent.nil? || node.parent.name == 'p'
+
+    following = following_paragraph_block(node)
+    return unless following
+    run = paragraph_run_before(node)
+    return if run.none? { |member| meaningful_inline_text?(member) }
+
+    remove_preceding_break_run(node)
+    wrap_nodes(run)
+    remove_break_run_between(node, following)
+  end
+
+  def following_paragraph_block(node)
+    sibling = meaningful_sibling(node, :next)
+    sibling = meaningful_sibling(sibling, :next) while sibling&.element? && sibling.name == 'br'
+    sibling if structural_html_block?(sibling)
+  end
+
+  def remove_preceding_break_run(node)
+    sibling = node.previous_sibling
+    while sibling && break_or_whitespace?(sibling)
+      earlier = sibling.previous_sibling
+      sibling.remove
+      sibling = earlier
+    end
+  end
+
+  def remove_break_run_between(node, following)
+    sibling = node.next_sibling
+    while sibling && sibling != following
+      nxt = sibling.next_sibling
+      sibling.remove if break_or_whitespace?(sibling)
+      sibling = nxt
+    end
+  end
+
+  def strip_leading_breaks(block)
+    while (child = block.child) && break_or_whitespace?(child)
+      child.remove
+    end
+  end
+
+  # Inline content that ends at node, skipping a <br> run that sits against node.
+  def paragraph_run_before(node)
+    sibling = node.previous_sibling
+    sibling = sibling.previous_sibling while sibling && break_or_whitespace?(sibling)
+    nodes = []
+    while inline_run_member?(sibling)
+      nodes.unshift(sibling)
+      sibling = sibling.previous_sibling
+    end
+    nodes.shift while nodes.first && whitespace_html_text_node?(nodes.first)
+    nodes.pop while nodes.last && whitespace_html_text_node?(nodes.last)
+    nodes
+  end
+
+  def wrap_nodes(nodes)
+    wrapper = Nokogiri::XML::Node.new('div', nodes.first.document)
+    nodes.first.add_previous_sibling(wrapper)
+    nodes.each { |member| wrapper.add_child(member) }
+    wrapper
+  end
+
+  def inline_run_member?(node)
+    whitespace_html_text_node?(node) || inline_paragraph_node?(node)
+  end
+
+  def inline_paragraph_node?(node)
+    return false unless node
+    return false if whitespace_html_text_node?(node)
+    return true if node.text?
+    return false unless node.element?
+
+    node.name != 'br' && !structural_html_block?(node)
+  end
+
+  def meaningful_inline_text?(node)
+    node.text.to_s.delete("\u00A0").strip.present?
+  end
+
+  def break_or_whitespace?(node)
+    node&.name == 'br' || whitespace_html_text_node?(node)
+  end
+
+  def structural_html_block?(node)
+    node&.element? && %w[blockquote div hr li ol p ul].include?(node.name)
   end
 
   def trim_html_edge_breaks(fragment)

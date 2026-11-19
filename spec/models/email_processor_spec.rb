@@ -760,6 +760,17 @@ describe EmailProcessor do
         expect(clean('<div>First</div><div>Second</div>')).to eq('<div>First</div><div>Second</div>')
       end
 
+      it 'keeps the blank line after an unwrapped first paragraph' do
+        expected = '<div><div>Para 1</div><br><div>Para 2</div><br><div>Para 3</div></div>'
+        [
+          '<div>Para 1<div><br></div><div>Para 2</div><div><br></div><div>Para 3</div></div>',
+          '<div>Para 1<div><br>Para 2</div><div><br></div><div>Para 3</div></div>',
+          '<div>Para 1<br><div><br>Para 2</div><br><div>Para 3</div></div>'
+        ].each do |html|
+          expect(clean(html)).to eq(expected)
+        end
+      end
+
       it 'preserves a single authored line break within a paragraph' do
         expect(clean('<div>First line<br>Second line</div>')).to eq('<div>First line<br>Second line</div>')
       end
