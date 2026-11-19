@@ -1070,3 +1070,20 @@ struct WhatToTestNotesTests {
         #expect(!text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
     }
 }
+
+/// The Journal list's paragraph gap matches the entry page's: a blank line set in this size,
+/// plus the line spacing, is 0.6 of the text size.
+struct ParagraphGapTests {
+    @Test func gapLineAndSpacingMakeTheEntryPagesParagraphSpacing() {
+        for (size, spacing) in [(CGFloat(17), CGFloat(5)), (16.83, 4.95), (18.7, 5.5)] {
+            let gapSize = TimelineEntryRow.paragraphGapFontSize(fontSize: size, lineSpacing: spacing)
+            let base = UIFont.systemFont(ofSize: gapSize)
+            let font = base.fontDescriptor.withDesign(.serif).map { UIFont(descriptor: $0, size: gapSize) } ?? base
+            #expect(abs(font.lineHeight + spacing - (size * 0.6).rounded()) < 0.5)
+        }
+    }
+
+    @Test func neverBelowOnePoint() {
+        #expect(TimelineEntryRow.paragraphGapFontSize(fontSize: 10, lineSpacing: 20) == 1)
+    }
+}

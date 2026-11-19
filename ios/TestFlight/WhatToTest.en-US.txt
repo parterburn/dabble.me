@@ -1,9 +1,7 @@
-Stats now counts again as soon as an entry is written, changed or deleted, wherever in the app that happens.
+Entries in the Journal list are now spaced like the full entry.
 
-- Open Journal and switch to Stats. Leave it there.
-- Go to the Today tab and write an entry for a day that has none.
-- Go back to Journal: the totals, the streak and the day grid should already include it, without pulling down to refresh.
-- Rewind (PRO, during the Rewind season): with fewer than five entries this year, the card says how many more it takes. Write entries from Today until there are five, then come back to Stats: the card should have changed to the one that opens your Rewind.
-- Editing an entry's text should update the word count in Stats the same way.
-
-Nothing else changed in this build.
+- Find an entry with several paragraphs, or headings with text under them (a template entry is ideal).
+- Look at it in the Journal list, then open it. The gap between paragraphs should look the same in both: about half a line, not the bigger gap the list had before.
+- The space between lines inside a paragraph should also match.
+- Try it at the smallest and largest text sizes (Settings > Accessibility) and with the serif and sans fonts. The gaps should still match at each.
+- A collapsed entry may show a few more words before "Show more" than it used to, because it takes a little less room. Expanding it and Show more should still work as before.

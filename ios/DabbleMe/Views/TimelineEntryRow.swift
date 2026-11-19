@@ -30,6 +30,8 @@ struct TimelineEntryRow: View {
     private static let gutter: CGFloat = 14
 
     private var bodyFont: Font { .system(size: bodySize * textSize.scale, design: fontStyle.design) }
+    /// The room between a paragraph's lines: the entry page's (and the editor's).
+    private var lineSpacing: CGFloat { 5 * textSize.scale }
     private var previewText: String { entry.previewText ?? entry.excerpt }
 
     /// Collapsed and expanded are the same text, set the same way: expanding only lifts the line
@@ -47,25 +49,38 @@ struct TimelineEntryRow: View {
         }
         if source.isEmpty { return AttributedString("📷 Photo") }
         let text = Self.tighteningParagraphGaps(in: AttributedString.journal(RichText.previewLines(source)),
-                                                fontSize: bodySize * textSize.scale, design: fontStyle.design)
+                                                fontSize: bodySize * textSize.scale, lineSpacing: lineSpacing,
+                                                design: fontStyle.design, uiDesign: fontStyle.uiDesign)
         return RichText.linkingURLs(in: isExpanded ? RichText.linkingHashtags(in: text) : Self.tintingHashtags(in: text))
     }
 
     /// Paragraphs come with a blank line between them, a whole line tall; the entry page spaces
-    /// them less (paragraph spacing). Setting each blank line in a small font makes the gap here
-    /// match it, about 0.9 of the text size.
-    private static func tighteningParagraphGaps(in text: AttributedString, fontSize: CGFloat, design: Font.Design) -> AttributedString {
+    /// them with paragraph spacing instead (0.6 of the text size, `RichText.applyListIndents`).
+    /// Each blank line is set in a font small enough that it, with the line spacing under it,
+    /// comes to that same gap.
+    private static func tighteningParagraphGaps(in text: AttributedString, fontSize: CGFloat, lineSpacing: CGFloat,
+                                                design: Font.Design, uiDesign: UIFontDescriptor.SystemDesign) -> AttributedString {
+        let gapFont = Font.system(size: paragraphGapFontSize(fontSize: fontSize, lineSpacing: lineSpacing, design: uiDesign), design: design)
         var result = text
         let characters = Array(result.characters)
         var index = result.startIndex
         for offset in characters.indices {
             let next = result.index(afterCharacter: index)
             if offset > 0, characters[offset] == "\n", characters[offset - 1] == "\n" {
-                result[index..<next].font = .system(size: fontSize * 0.55, design: design)
+                result[index..<next].font = gapFont
             }
             index = next
         }
         return result
+    }
+
+    /// The size of font whose line, plus `lineSpacing`, is the entry page's paragraph spacing at
+    /// `fontSize`. (At least 1pt: a gap can't be less than no line at all.)
+    static func paragraphGapFontSize(fontSize: CGFloat, lineSpacing: CGFloat, design: UIFontDescriptor.SystemDesign = .serif) -> CGFloat {
+        let gap = (fontSize * 0.6).rounded() - lineSpacing
+        let base = UIFont.systemFont(ofSize: 100)
+        let font = base.fontDescriptor.withDesign(design).map { UIFont(descriptor: $0, size: 100) } ?? base
+        return max(gap / (font.lineHeight / 100), 1)
     }
 
     private static func tintingHashtags(in text: AttributedString) -> AttributedString {
@@ -152,7 +167,7 @@ struct TimelineEntryRow: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(styledText)
                 .font(bodyFont)
-                .lineSpacing(4)
+                .lineSpacing(lineSpacing)
                 .lineLimit(isExpanded ? nil : Self.previewLines)
                 // Its own height, whole or cut to the preview's lines, whatever the row offers: left
                 // to give way, a collapsed preview lost lines to the photo under it (which took the
@@ -165,7 +180,7 @@ struct TimelineEntryRow: View {
                     if !isExpanded {
                         Text(styledText)
                             .font(bodyFont)
-                            .lineSpacing(4)
+                            .lineSpacing(lineSpacing)
                             .fixedSize(horizontal: false, vertical: true)
                             .hidden()
                             .onGeometryChange(for: CGFloat.self, of: \.size.height) { fullPreviewHeight = $0 }
