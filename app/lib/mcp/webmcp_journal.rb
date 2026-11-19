@@ -63,6 +63,7 @@ module Mcp
         entry_count_by_year: result[:entry_count_by_year],
         top_hashtags: result[:most_used_hashtags].map { |tag| { hashtag: tag[:tag], count: tag[:count] } },
         average_words_per_entry: result[:average_entry_length_words],
+        content_notice: Tools::Helpers::ENTRY_TEXT_NOTICE,
         sample_entries: result[:sample_highlights].map { |row| row.merge(url: day_path(row[:date])) }
       }
     end
@@ -88,6 +89,7 @@ module Mcp
       {
         query: query,
         total_matches: result[:total_matches],
+        content_notice: Tools::Helpers::ENTRY_TEXT_NOTICE,
         entries: result[:entries].map do |entry|
           Tools::Helpers.normalize_entry_row(entry).merge(url: day_path(entry[:date]))
         end
