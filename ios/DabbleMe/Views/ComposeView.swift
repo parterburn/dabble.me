@@ -84,6 +84,15 @@ struct ComposeView: View {
     /// which the photo picker doesn't know, so the picker works on `libraryItems` instead.
     @State private var cameraItems: [PhotosPickerItem] = []
     @State private var removesExistingPhoto = false
+    /// Each added photo's name in the draft's photo folder (given when the draft first keeps it).
+    @State private var draftPhotoNames: [PhotosPickerItem: String] = [:]
+    /// The restored draft's photos are being put back, or have been (once: they're read from disk).
+    @State private var restoredDraftPhotos = false
+    /// They're back: until then the draft isn't saved over, which would leave them out.
+    @State private var draftPhotosLoaded = false
+    /// A draft of this has been kept, so a change back to nothing (a photo added, then taken
+    /// out) is kept too, rather than leaving the draft as it was.
+    @State private var keptDraft = false
     @Environment(\.scenePhase) private var scenePhase
     private let draftKey: String
     /// Opened for a day of its own, which today's date doesn't then replace.
@@ -125,6 +134,7 @@ struct ComposeView: View {
         originalBlocks = original
         _isUntouchedTemplate = State(initialValue: startsWithTemplate && draft == nil)
         _restoredDraft = State(initialValue: draft)
+        _removesExistingPhoto = State(initialValue: entry != nil && draft?.removesPhoto == true)
         if let date = day ?? draft?.date.flatMap(JournalDay.init) ?? entry?.day { _date = State(initialValue: date.localDate) }
         _editor = State(initialValue: draft == nil && startsWithTemplate ? RichTextEditorModel(typed: template)
             : draft?.typed.map { RichTextEditorModel(typed: $0, atFirstBlank: false) } ?? RichTextEditorModel(blocks: draft?.blocks ?? originalBlocks))
@@ -149,8 +159,11 @@ struct ComposeView: View {
             : (!editor.isEmpty && (editor.isDirty || restoredDraft != nil || !photos.isEmpty || removesExistingPhoto || movedTo != nil))
     }
 
-    /// There are words to keep as a draft (a draft doesn't hold photos).
-    private var canSaveDraft: Bool { !editor.isEmpty && (editor.isDirty || restoredDraft != nil) }
+    /// There's something to keep as a draft: words, photos, or a removed photo.
+    private var canSaveDraft: Bool {
+        (!editor.isEmpty || !photoItems.isEmpty || removesExistingPhoto)
+            && (editor.isDirty || restoredDraft != nil || !photoItems.isEmpty || removesExistingPhoto)
+    }
 
     /// Editing: the entry's photo (or collage) as it is now, unless removed. New photos join it in a collage.
     private var existingPhotoURL: URL? {
@@ -220,7 +233,7 @@ struct ComposeView: View {
                         Menu("Cancel") {
                             // A draft is kept on this device and comes back the next time this is opened.
                             if canSaveDraft {
-                                Button(photoItems.isEmpty && !removesExistingPhoto ? "Save Draft" : "Save Draft (Words Only)") {
+                                Button("Save Draft") {
                                     draftSave?.cancel()
                                     saveDraftNow()
                                     dismiss()
@@ -309,6 +322,8 @@ struct ComposeView: View {
                 scheduleDraftSave()
             }
             .onChange(of: date) { scheduleDraftSave() }
+            .onChange(of: removesExistingPhoto) { scheduleDraftSave() }
+            .task { await restoreDraftPhotos() }
             .onChange(of: scenePhase) { _, phase in
                 if phase != .active { saveDraftNow() }
             }
@@ -1169,6 +1184,9 @@ struct ComposeView: View {
         cameraItems.removeAll { !current.contains($0) }
         prepared = prepared.filter { current.contains($0.key) }
         previews = previews.filter { current.contains($0.key) }
+        draftPhotoNames = draftPhotoNames.filter { current.contains($0.key) }
+        // (A photo added or taken away is a change to the draft, as words are.)
+        defer { scheduleDraftSave() }
         let pending = photoItems.filter { prepared[$0] == nil }
         guard !pending.isEmpty else { return }
 
@@ -1220,6 +1238,9 @@ struct ComposeView: View {
             Spacer()
             Button("Start Over") {
                 if startsWithTemplate { editor.replace(withTyped: template) } else { editor.replace(with: originalBlocks) }
+                // The draft's photos go with it (ones added since stay), and a removed photo's back.
+                photoItems.removeAll { $0.itemIdentifier?.hasPrefix("draft-") == true }
+                removesExistingPhoto = false
                 DraftStore.clear(draftKey)
                 restoredDraft = nil
                 isUntouchedTemplate = startsWithTemplate
@@ -1248,13 +1269,49 @@ struct ComposeView: View {
     }
 
     private func saveDraftNow() {
-        guard !isSaving, !isDiscarded, editor.isDirty || restoredDraft != nil else { return }
+        guard !isSaving, !isDiscarded,
+              editor.isDirty || restoredDraft != nil || keptDraft || !photoItems.isEmpty || removesExistingPhoto,
+              restoredDraft?.photos?.isEmpty != false || draftPhotosLoaded else { return }
+        keptDraft = true
         let blocks = editor.blocks
-        if blocks.isEmpty {
+        // The photos ready so far (one still being prepared joins the draft once it is).
+        var named: [(name: String, photo: PreparedPhoto)] = []
+        for item in photoItems {
+            guard let photo = prepared[item] else { continue }
+            let name = draftPhotoNames[item] ?? UUID().uuidString
+            draftPhotoNames[item] = name
+            named.append((name, photo))
+        }
+        if blocks.isEmpty, named.isEmpty, !removesExistingPhoto {
             DraftStore.clear(draftKey)
         } else {
-            DraftStore.save(.init(blocks: blocks, typed: editor.typedRuns, date: isNew || movedTo != nil ? JournalDay(localDate: date).iso : nil, savedAt: Date()), key: draftKey)
+            DraftStore.savePhotos(named, key: draftKey)
+            DraftStore.save(.init(blocks: blocks, typed: editor.typedRuns, date: isNew || movedTo != nil ? JournalDay(localDate: date).iso : nil,
+                                  savedAt: Date(), photos: named.isEmpty ? nil : named.map(\.name),
+                                  removesPhoto: removesExistingPhoto ? true : nil), key: draftKey)
         }
+    }
+
+    /// A restored draft's photos, back in the stack as they were: read from disk once the
+    /// composer's open (not while it's being built), under made-up identifiers like the camera's.
+    private func restoreDraftPhotos() async {
+        guard !restoredDraftPhotos, let names = restoredDraft?.photos, !names.isEmpty else { return }
+        restoredDraftPhotos = true
+        let key = draftKey
+        let loaded = await Task.detached(priority: .userInitiated) { DraftStore.loadPhotos(names, key: key) }.value
+        defer { draftPhotosLoaded = true }
+        var items: [PhotosPickerItem] = []
+        for (name, photo) in loaded.prefix(photoLimit) {
+            let item = PhotosPickerItem(itemIdentifier: "draft-\(name)")
+            // Prepared before it joins the stack, so it's never sent to the photo library to load.
+            prepared[item] = photo
+            previews[item] = UIImage(data: photo.thumbnail).map(Image.init(uiImage:))
+            draftPhotoNames[item] = name
+            items.append(item)
+        }
+        guard !items.isEmpty else { return }
+        cameraItems.append(contentsOf: items)
+        photoItems = items + photoItems
     }
 
     private func save(merging: Bool = false) async {
