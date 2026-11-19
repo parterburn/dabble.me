@@ -19,7 +19,7 @@ Do **not** wait for confirmation. Commit, push, and open or update the PR immedi
 - Prepend `GIT_EDITOR=true` to git commands, especially ones that look at diffs.
 - If `git diff` or `git diff --cached` fails, stop and report a blocker. Do not infer changes from working memory.
 - If the working tree and the index are clean, skip the commit. That is the normal case after `/me_commit`. The change set to push is `git diff origin/main...HEAD`. If that is empty too, stop and say there is nothing to push.
-- If there are uncommitted changes, commit them only after that diff is verified.
+- If there are uncommitted changes, commit them only after `git diff` and `git diff --cached` show those changes. The pushed set is then `git diff origin/main...HEAD`.
 - If those commits are on local `main`, move them onto a feature branch before the push, using the rules below. Nobody pushes to `main`.
 
 **Branch before committing or pushing when the work is on `main`.** Every change reaches `main` through a PR.
