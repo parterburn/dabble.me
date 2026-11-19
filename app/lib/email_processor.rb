@@ -7,6 +7,8 @@ require 'fileutils'
 
 # Handle Emailed Entries
 class EmailProcessor
+  ENTRY_NOT_SAVED_COOLDOWN = 24.hours
+
   def initialize(email)
     @token = pick_meaningful_recipient(email.to, email.cc)
     @from = email.from[:email].downcase
@@ -208,11 +210,13 @@ class EmailProcessor
       if sender
         Sentry.set_user(id: @token, email: @from)
         Sentry.capture_message("Inbound entry not associated to user", level: :warning, extra: { subject: @subject, from: @from })
-        begin
-          # Journal text stays out of the job arguments.
-          UserMailer.entry_not_saved(sender).deliver_later
-        rescue StandardError => _e
-          Sentry.capture_message("Error sending email", level: :error, extra: { email_type: "Entry not saved" })
+        if send_entry_not_saved?(sender)
+          begin
+            # Journal text stays out of the job arguments.
+            UserMailer.entry_not_saved(sender).deliver_later
+          rescue StandardError => _e
+            Sentry.capture_message("Error sending email", level: :error, extra: { email_type: "Entry not saved" })
+          end
         end
       else
         Rails.logger.info("Inbound email matched no user (token: #{@token.inspect})")
@@ -223,6 +227,17 @@ class EmailProcessor
   private
 
   attr_reader :to, :cc, :bcc
+
+  # This branch runs when From failed SPF/DKIM, so anyone can forge an
+  # account's address and make us mail it. One notice per account per day,
+  # and none to an address that bounces or an account being deleted.
+  # unless_exist makes the write the lock: only the first writer gets true.
+  # If the cache is down the write returns false and the notice is skipped.
+  def send_entry_not_saved?(user)
+    return false if user.deletion_pending? || user.emails_bounced.to_i.positive?
+
+    Rails.cache.write("entry_not_saved_sent:#{user.id}", true, expires_in: ENTRY_NOT_SAVED_COOLDOWN, unless_exist: true)
+  end
 
   # Only when the email matched the user's posting address. A user found by
   # their verified From address may have sent to any token, and the collage
