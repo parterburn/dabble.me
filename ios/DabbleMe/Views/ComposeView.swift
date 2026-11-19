@@ -1239,6 +1239,9 @@ struct ComposeView: View {
             Button("Start Over") {
                 if startsWithTemplate { editor.replace(withTyped: template) } else { editor.replace(with: originalBlocks) }
                 // The draft's photos go with it (ones added since stay), and a removed photo's back.
+                // keptDraft stays true after the draft was written, and removing those photos
+                // schedules another save. Without clearing it, that save writes the draft again.
+                keptDraft = false
                 photoItems.removeAll { $0.itemIdentifier?.hasPrefix("draft-") == true }
                 removesExistingPhoto = false
                 DraftStore.clear(draftKey)
@@ -1304,6 +1307,8 @@ struct ComposeView: View {
         let key = draftKey
         let loaded = await Task.detached(priority: .userInitiated) { DraftStore.loadPhotos(names, key: key) }.value
         defer { draftPhotosLoaded = true }
+        // Start Over or Discard may have won while the files were being read.
+        guard !isDiscarded, restoredDraft != nil else { return }
         var items: [PhotosPickerItem] = []
         for (name, photo) in loaded.prefix(photoLimit) {
             let item = PhotosPickerItem(itemIdentifier: "draft-\(name)")

@@ -1,11 +1,13 @@
-Drafts now keep photos.
+Build 99 fixes two things from the last few builds.
 
-- Start a new entry, write a line, and add two photos (one from the library, one from the camera if you can).
-- Tap Cancel: the menu should say just "Save Draft" and "Discard" (no more "Words Only").
-- Tap Save Draft, then start a new entry again. The words and both photos should be back, in the same order, with "Restored your unsaved draft."
-- Save it: the entry should have both photos.
-- Edit an entry that has a photo. Remove the photo, add a different one, then Save Draft. Reopen the entry: the old photo should still be shown as removed and the new one there.
-- Start Over on a restored draft should drop the draft's photos and bring back the entry's own.
-- Add a photo, then swipe the app away without tapping Cancel. Reopen and start the entry again: the photo should be in the draft.
-- A draft with only photos and no words can be saved as a draft too.
-- Discard should still throw everything away, photos included.
+ACCOUNT SETTINGS
+- Set an entry template and turn on "Start New Entries with It". Leave the Home Screen widget on its default.
+- Pull to refresh, sign out, and sign back in. The template and the switch should both be back.
+- Change only the Home Screen widget choice, then sign out and back in. The template should still be there, and the widget choice should be the one you just picked.
+- Empty the template, sign out, and sign back in. It should stay empty.
+
+DRAFTS AND START OVER
+- Edit an entry, add a photo, and let it save a draft (swipe away, or tap Cancel then Save Draft).
+- Open that entry again so it says "Restored your unsaved draft."
+- Tap Start Over, then leave without writing anything else. Open the entry again: it should be the saved entry, with no restored-draft banner and without the photo you had added.
+- A photo you add after Start Over should still be kept if you leave before saving.
