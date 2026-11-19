@@ -43,6 +43,10 @@ STRIPE_API_KEY=sk_test_1234
 STRIPE_SIGNING_SECRET=whsec_1234
 ```
 
+### JavaScript packages
+
+Tailwind CSS is installed with npm. `package-lock.json` is the lockfile that belongs in git. Install with `npm install`. Continuous integration runs `npm ci`. Do not commit Yarn output: `yarn.lock`, `.pnp.cjs`, `.pnp.loader.mjs`, or `.yarn`.
+
 ### Things you may want to rip out
 
 You can opt to not use Turnstile: simply don't add an environment variables for `TURNSTILE_SITE_KEY`.

@@ -83,3 +83,12 @@ config/local_env.yml
 .1password/environments.toml
 __pycache__/
 *.pyc
+# Local MCP config. The published plugin manifest stays tracked.
+.cursor/mcp.json
+/.mcp.json
+/mcp.json
+# npm is the install path. Don't commit Yarn output.
+yarn.lock
+.pnp.cjs
+.pnp.loader.mjs
+.yarn/
