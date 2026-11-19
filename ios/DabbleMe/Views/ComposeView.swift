@@ -1297,6 +1297,10 @@ struct ComposeView: View {
     private func restoreDraftPhotos() async {
         guard !restoredDraftPhotos, let names = restoredDraft?.photos, !names.isEmpty else { return }
         restoredDraftPhotos = true
+        // (Save waits for them, as for a photo being prepared: saved without them, the entry would
+        // lose them, the draft going with the save.)
+        isLoadingPhotos = true
+        defer { isLoadingPhotos = false }
         let key = draftKey
         let loaded = await Task.detached(priority: .userInitiated) { DraftStore.loadPhotos(names, key: key) }.value
         defer { draftPhotosLoaded = true }
