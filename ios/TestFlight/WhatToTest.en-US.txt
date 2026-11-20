@@ -3,6 +3,6 @@ Build 103 renames the past entry switches in Settings so each says what it does,
 SETTINGS > REMINDERS
 - The rows should read Push, Home Screen Widget, Email, then Past Entry Filters.
 - Open Push (with it on). The switch should now read Show Entry Previews, like the widget's, with a note that the start of a past entry and its photo show in the notification.
-- Open Email. The switch should now read Include Past Entry, with a shorter note: the entry's full text stays in your inbox, and with it off the email only gives a count.
+- Open Email. The switch should now read Include Past Entry, with a shorter note: it adds a past entry to each email, and with it off the email only gives a count.
 - Turn Email's switch off and go back to Push. Push's Show Entry Previews should still be on (they're separate).
 - Open Home Screen Widget. Show Entry Previews should be unchanged.

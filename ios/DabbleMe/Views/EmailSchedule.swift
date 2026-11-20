@@ -274,7 +274,7 @@ struct EmailScheduleView: View {
                         store.save(with: model) { $0.includePastEntries = on }
                     }))
                 } footer: {
-                    Text("Adds one of your past entries to each email, so its full text stays in your inbox. With this off, the email only says how many entries you have from this day in past years.")
+                    Text("Adds one of your past entries to each email. With this off, the email only says how many entries you have from this day in past years.")
                 }
             }
         }
