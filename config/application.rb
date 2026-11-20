@@ -59,13 +59,9 @@ module Dabbleme
     config.active_record.encryption.deterministic_key = encryption_setting.call("DETERMINISTIC_KEY")
     config.active_record.encryption.key_derivation_salt = encryption_setting.call("KEY_DERIVATION_SALT")
     config.active_record.encryption.hash_digest_class = OpenSSL::Digest::SHA256
-    # While rows written before encryption still exist, read them as they are
-    # and let lookups on encrypted columns match either form. Set
-    # ACTIVE_RECORD_ENCRYPTION_ALLOW_PLAINTEXT=false once `encryption:status`
-    # reports no plaintext left; a plaintext row then raises instead of reading.
-    allow_plaintext = ENV["ACTIVE_RECORD_ENCRYPTION_ALLOW_PLAINTEXT"] != "false"
-    config.active_record.encryption.support_unencrypted_data = allow_plaintext
-    config.active_record.encryption.extend_queries = allow_plaintext
+    # support_unencrypted_data and extend_queries stay at Rails' defaults
+    # (both false). A plaintext value in an encrypted column raises.
+
     # dotenv-rails loads .env from the before_configuration hook registered
     # when the gem is required. `inherited` runs that hook before this class
     # body, so a mounted .env is visible here. The block is yielded the

@@ -14,7 +14,6 @@ describe User do
 
     before do
       FactoryBot.create(:user, first_name: nil, last_name: nil)
-      store_plaintext(legacy, :last_name, 'Quennell') # a row from before encryption
     end
 
     it 'matches every word of the query in the first and last name, ignoring case and order' do

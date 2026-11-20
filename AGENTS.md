@@ -98,9 +98,8 @@ Journal text and account secrets are encrypted with Active Record Encryption: `e
 | Variable | Purpose |
 |----------|---------|
 | `ACTIVE_RECORD_ENCRYPTION_PRIMARY_KEY`, `_DETERMINISTIC_KEY`, `_KEY_DERIVATION_SALT` | The keys. Losing them loses every encrypted row; changing them does the same. |
-| `ACTIVE_RECORD_ENCRYPTION_ALLOW_PLAINTEXT` | `false` makes a plaintext row raise instead of reading. Set it only after `rake encryption:status` reports none left. |
 
-Rake tasks (each takes `USER_ID=` for one account and `PAUSE=` seconds between batches): `encryption:status` counts plaintext rows, `encryption:rehearse` round-trips every value in memory without writing, `encryption:backfill` encrypts existing rows and verifies each one, `encryption:decrypt` (with `CONFIRM=decrypt`) is the way back.
+A plaintext value in an encrypted column raises. There is no setting or task that reads or writes one.
 
 ### Admin access
 
