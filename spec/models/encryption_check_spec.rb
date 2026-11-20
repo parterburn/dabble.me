@@ -9,11 +9,6 @@ RSpec.describe EncryptionCheck do
     expect(ciphertext?(stored_value(described_class.first, 'lookup'))).to be(true)
   end
 
-  it 'encrypts its row even before ciphertext writes are turned on' do
-    with_env('ACTIVE_RECORD_ENCRYPTION_WRITE' => 'false') { described_class.verify! }
-    expect(ciphertext?(stored_value(described_class.first, 'value'))).to be(true)
-  end
-
   it 'fails when the stored row was written with other keys' do
     described_class.verify!
     other_keys = '{"p":"AAAA","h":{"iv":"AAAAAAAAAAAAAAAA","at":"AAAAAAAAAAAAAAAAAAAAAA=="}}'

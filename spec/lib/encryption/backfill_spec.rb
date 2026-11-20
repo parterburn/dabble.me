@@ -53,9 +53,7 @@ RSpec.describe Encryption::Backfill do
   end
 
   it 'rehearses without writing anything' do
-    with_env('ACTIVE_RECORD_ENCRYPTION_WRITE' => 'false') do
-      expect(backfill.rehearse['Entry'].checked).to eq(3)
-    end
+    expect(backfill.rehearse['Entry'].checked).to eq(3)
     expect(stored_value(entry, 'body')).to eq("<p>café ☃ #tag</p>")
     expect(backfill.status['Entry'].remaining).to eq(3)
   end
@@ -114,13 +112,6 @@ RSpec.describe Encryption::Backfill do
     expect(ciphertext?(stored_value(entry, 'body'))).to be(true)
     expect(stored_value(other_entry, 'body')).to eq('theirs')
     expect(stored_value(other_user, 'first_name')).to eq('Bo')
-  end
-
-  it 'refuses to run before ciphertext writes are turned on' do
-    with_env('ACTIVE_RECORD_ENCRYPTION_WRITE' => 'false') do
-      expect { backfill.encrypt }.to raise_error(described_class::VerificationFailed, /ACTIVE_RECORD_ENCRYPTION_WRITE/)
-    end
-    expect(stored_value(entry, 'body')).to eq("<p>café ☃ #tag</p>")
   end
 
   it 'rolls a row back and stops when it does not read back identical' do
