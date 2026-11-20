@@ -5,10 +5,10 @@ subject:
   rewind_free: Your 2026 Rewind is waiting
   whats_new_free: What's new in Dabble Me
 preview:
-  rewind: Plus an iPhone app, a more private journal, and a new look.
-  whats_new: An iPhone app, a more private journal, and a new look.
-  rewind_free: Plus an iPhone app, a more private journal, and a new look.
-  whats_new_free: An iPhone app, a more private journal, and a new look.
+  rewind: Plus an iPhone app, AI assistance, and a new look.
+  whats_new: An iPhone app, AI assistance, and a new look.
+  rewind_free: Plus an iPhone app, AI assistance, and a new look.
+  whats_new_free: An iPhone app, AI assistance, and a new look.
 ---
 
 Hi {{first_name}},
@@ -47,12 +47,6 @@ You can now [connect your journal to an AI assistant like Claude or ChatGPT](htt
 
 If you connect yours, try this first: **"Make a private Spotify Wrapped of my 2026 journal; use lots of photos."**
 
-## 🔒 A more private journal
-
-You've probably seen the news lately: data breaches keep getting bigger and more frequent. A journal is about the last thing anyone wants caught up in one.
-
-I spent a good part of this year making Dabble Me more private and secure. I updated the systems it runs on, and your entries are now encrypted, which means they're stored in a scrambled form. If anyone ever stole a copy of the database, they couldn't read a word of it.
-
 ## 💾 Keep your own copy
 
 You can now [export your whole journal]({{export_url}}): every entry and photo in one download, as a page you can read, plain text, and data. I'd do it once a year as a backup. Your writing is yours, and it should live somewhere you control too.
@@ -63,6 +57,7 @@ You can now [export your whole journal]({{export_url}}): every entry and photo i
 - **Sign in without a password.** Use Face ID, Touch ID, or your device's own unlock.
 - **A new address for sending entries.** If the email address you send entries to ever gets out, you can swap it for a new one in Settings.
 - **Day One import.** Users can now bring their Day One journal over, photos included.
+- **Work behind the scenes.** I moved Dabble Me onto updated infrastructure and added new security measures to protect your entries.
 
 {{#rewind_free,whats_new_free}}
 ## 👉 Dabble Me PRO
