@@ -1,13 +1,8 @@
-Build 99 fixes two things from the last few builds.
+Build 100 lets the composer's Writing ideas row scroll through the whole day's calendar.
 
-ACCOUNT SETTINGS
-- Set an entry template and turn on "Start New Entries with It". Leave the Home Screen widget on its default.
-- Pull to refresh, sign out, and sign back in. The template and the switch should both be back.
-- Change only the Home Screen widget choice, then sign out and back in. The template should still be there, and the widget choice should be the one you just picked.
-- Empty the template, sign out, and sign back in. It should stay empty.
-
-DRAFTS AND START OVER
-- Edit an entry, add a photo, and let it save a draft (swipe away, or tap Cancel then Save Draft).
-- Open that entry again so it says "Restored your unsaved draft."
-- Tap Start Over, then leave without writing anything else. Open the entry again: it should be the saved entry, with no restored-draft banner and without the photo you had added.
-- A photo you add after Start Over should still be kept if you leave before saving.
+WRITING IDEAS AND YOUR CALENDAR
+- Pick a day with five or more events on your calendar (or set the entry's date to one).
+- Start an entry and tap the lightbulb. The row should show the prompt and the first few events, with the scroll bar flashing once the events are in.
+- Swipe up inside the row. It should scroll to the rest of the day's events, not stop at three.
+- Tap an event further down. It should go into the entry as a heading, and the row should close.
+- On a quiet day (one or two events), the row should be only as tall as what's in it, with nothing to scroll.

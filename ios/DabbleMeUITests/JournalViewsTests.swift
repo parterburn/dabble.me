@@ -1903,8 +1903,9 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
 
-    /// The composer's lightbulb (what to write about) has a question over a few of the events on
-    /// the phone's calendar that day; a tap on an event puts it in the entry as a heading to write under.
+    /// The composer's lightbulb (what to write about) has a question over the events on the
+    /// phone's calendar that day, scrolling for a busy one; a tap on an event puts it in the entry
+    /// as a heading to write under.
     func testCalendarRowAddsAnEventToTheEntry() throws {
         let app = launch(["-DabbleDebugCalendar", "YES"]) // a made-up day, not the simulator's calendar
         tab(app, "Journal").tap()
@@ -1920,18 +1921,22 @@ final class JournalViewsTests: XCTestCase {
         let lunch = app.buttons["Lunch with Sam, 12:30 PM"]
         XCTAssertTrue(lunch.waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["Leo's birthday, All day"].exists)
-        // Three of the day's five, not the whole day.
-        XCTAssertFalse(app.buttons["Pick up the cake, 3:15 PM"].exists)
-        XCTAssertFalse(app.buttons["Book club, 7:00 PM"].exists)
-        // The question's over the events; they stay where they are when it comes.
-        let lunchBefore = lunch.frame.maxY
+        // The whole day, not just the first few.
+        XCTAssertTrue(app.buttons["Pick up the cake, 3:15 PM"].exists)
+        XCTAssertTrue(app.buttons["Book club, 7:00 PM"].exists)
+        // The question's over the events. (A day that fits keeps its events where they are when
+        // the question comes, the row growing upward; this one's busier than the row is tall, so
+        // they move down under it.)
         XCTAssertTrue(app.staticTexts["AskMeQuestion"].waitForExistence(timeout: 60))
         XCTAssertLessThan(app.staticTexts["AskMeQuestion"].frame.maxY, app.buttons["Leo's birthday, All day"].frame.minY)
-        sleep(1)
-        XCTAssertEqual(lunch.frame.maxY, lunchBefore, accuracy: 2, "The events don't move when the question arrives")
         XCTAssertFalse(app.buttons["Insert"].exists, "The question's row is the button")
         sleep(1)
         snap("compose-calendar-row")
+        // The day's last event is past the row's foot until it's scrolled to.
+        let bookClub = app.buttons["Book club, 7:00 PM"]
+        lunch.swipeUp()
+        XCTAssertTrue(bookClub.isHittable, "The row scrolls to the rest of the day")
+        lunch.swipeDown()
         lunch.tap()
         XCTAssertTrue((editor.value as? String)?.contains("Lunch with Sam") == true)
         XCTAssertTrue(lunch.waitForNonExistence(timeout: 5), "The row closes once one's picked")
