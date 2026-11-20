@@ -56,6 +56,13 @@ class CollageGenerator
   # canvas and reintroduce cropping, which we never want.
   MAX_ROW_HEIGHT_RATIO = 1.0
 
+  # Largest source image we'll touch, by the width x height in its header.
+  # A tiny file can declare enormous dimensions (an 804-byte JPEG claiming
+  # 30000x30000 needs 2.7 GB to decode in full), so we check the header before
+  # decoding any pixels. 100 MP clears every phone's default output (48 MP
+  # iPhone, 50 MP Pixel) with room to spare.
+  MAX_SOURCE_PIXELS = 100_000_000
+
   # Downloads one image with the collage's safety checks: public hosts only,
   # bounded redirects. Returns the bytes, or nil.
   def self.fetch(url)
@@ -247,35 +254,45 @@ class CollageGenerator
   def load_image(url)
     data = fetch_bytes(url)
     return nil unless data
+    return nil if oversized?(data, url)
 
-    img = orient_image(decode_image(data))
-    # `new_from_buffer` can succeed lazily then fail mid-pipeline (truncated HEIC,
-    # seek errors). Materialize while we still know the URL for logging.
+    img = decode_image(data)
+    # `thumbnail_buffer` can succeed lazily then fail mid-pipeline (truncated
+    # HEIC, seek errors). Materialize while we still know the URL for logging.
+    # This is cheap now: the image is already no bigger than the canvas.
     img.copy_memory
   rescue Vips::Error => e
     Sentry.capture_exception(e, extra: { url: sanitize_url(url) })
     nil
   end
 
-  # Decode a JPEG/PNG/etc buffer with libvips, tolerating truncated or partly
-  # corrupt scans rather than blowing up the whole collage. A single bad tile
-  # in one source image was killing the entire pipeline in production — e.g.
-  #   (process:xxx): VIPS-WARNING **: error in tile 0 x 4448
-  # which happens when an S3 tmp upload hasn't fully propagated or a proxy cut
-  # the body short. With fail_on: :none, libvips returns the decoded portion;
-  # with the legacy `fail: false` kwarg for older libvips builds, same idea.
-  def decode_image(data)
-    Vips::Image.new_from_buffer(data, "", fail_on: :none)
-  rescue ArgumentError
-    Vips::Image.new_from_buffer(data, "", fail: false)
+  # Reads only the header (libvips opens lazily) and refuses images whose
+  # declared pixel count is over MAX_SOURCE_PIXELS.
+  def oversized?(data, url)
+    header = Vips::Image.new_from_buffer(data, "")
+    pixels = header.width.to_i * header.height.to_i
+    return false if pixels <= MAX_SOURCE_PIXELS
+
+    Rails.logger.warn("[CollageGenerator] skipping #{header.width}x#{header.height} source: #{sanitize_url(url)}")
+    true
   end
 
-  # Phone JPEGs/HEIC often store pixels on the side and rely on EXIF orientation.
-  # Browsers respect that tag; libvips does not unless we autorot explicitly.
-  def orient_image(image)
-    image.autorot
-  rescue Vips::Error
-    image
+  # Decode straight to canvas size. No tile is ever wider or taller than
+  # @size, so nothing is lost, and libvips shrinks on load (JPEG, WebP, HEIC)
+  # instead of materializing every source pixel. Up to eight full-resolution
+  # phone photos used to sit in memory at once here.
+  #
+  # `thumbnail` also applies EXIF orientation (phone photos often store pixels
+  # on their side), so the result is upright.
+  #
+  # fail_on=none tolerates truncated or partly corrupt scans rather than
+  # blowing up the whole collage. A single bad tile in one source image was
+  # killing the entire pipeline in production, e.g.
+  #   (process:xxx): VIPS-WARNING **: error in tile 0 x 4448
+  # which happens when an S3 tmp upload hasn't fully propagated or a proxy cut
+  # the body short. libvips returns the decoded portion instead.
+  def decode_image(data)
+    Vips::Image.thumbnail_buffer(data, @size, height: @size, size: :down, option_string: "fail_on=none")
   end
 
   # Local paths are Day One imports. Everything else goes through

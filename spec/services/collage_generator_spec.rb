@@ -31,25 +31,6 @@ RSpec.describe CollageGenerator do
       expect(ordered[2, 3]).to contain_exactly(land, port, port)
     end
 
-    it "applies EXIF orientation via autorot" do
-      gen = described_class.new(urls: [])
-      img = Vips::Image.black(100, 200, bands: 3)
-
-      oriented = gen.send(:orient_image, img)
-
-      expect(oriented).to be_a(Vips::Image)
-      expect(oriented.width).to eq(100)
-      expect(oriented.height).to eq(200)
-    end
-
-    it "returns the original image when autorot fails" do
-      gen = described_class.new(urls: [])
-      img = Vips::Image.black(10, 20, bands: 3)
-      allow(img).to receive(:autorot).and_raise(Vips::Error, "autorot failed")
-
-      expect(gen.send(:orient_image, img)).to eq(img)
-    end
-
     it "scales a tile to an exact height while preserving aspect ratio (no crop, no pad)" do
       gen = described_class.new(urls: [])
       # Wide 2:1 source scaled to height 100 → width must stay 2:1 (=> 200).
@@ -89,6 +70,75 @@ RSpec.describe CollageGenerator do
     ensure
       tmp&.close
       tmp&.unlink
+    end
+  end
+
+  describe "load_image" do
+    # A small JPEG whose SOF header is patched to claim width x height. The file
+    # stays under a kilobyte; decoding it in full would need width*height*3 bytes.
+    def forged_jpeg(width, height)
+      jpeg = Vips::Image.black(16, 16, bands: 3).write_to_buffer(".jpg").b
+      sof = jpeg.index("\xFF\xC0".b) || jpeg.index("\xFF\xC2".b)
+      jpeg[sof + 5, 2] = [height].pack("n")
+      jpeg[sof + 7, 2] = [width].pack("n")
+      jpeg
+    end
+
+    def load(gen, bytes)
+      allow(gen).to receive(:fetch_bytes).and_return(bytes)
+      gen.send(:load_image, "https://example.com/photo.jpg")
+    end
+
+    it "refuses a source whose header declares more than MAX_SOURCE_PIXELS" do
+      gen = described_class.new(urls: [])
+      bytes = forged_jpeg(30_000, 30_000)
+      expect(bytes.bytesize).to be < 2_000
+
+      expect(Vips::Image).not_to receive(:thumbnail_buffer)
+      expect(load(gen, bytes)).to be_nil
+    end
+
+    it "decodes an allowed source no larger than the canvas" do
+      gen = described_class.new(urls: [], size: 1200)
+      bytes = Vips::Image.black(4000, 3000, bands: 3).write_to_buffer(".jpg")
+
+      img = load(gen, bytes)
+
+      expect([img.width, img.height]).to eq([1200, 900])
+    end
+
+    it "decodes a large declared size within the cap without materializing it" do
+      gen = described_class.new(urls: [], size: 1200)
+      img = load(gen, forged_jpeg(9_000, 9_000))
+
+      expect([img.width, img.height]).to eq([1200, 1200])
+    end
+
+    it "leaves small sources at their own size" do
+      gen = described_class.new(urls: [], size: 1200)
+      img = load(gen, Vips::Image.black(300, 200, bands: 3).write_to_buffer(".png"))
+
+      expect([img.width, img.height]).to eq([300, 200])
+    end
+
+    it "applies EXIF orientation" do
+      gen = described_class.new(urls: [])
+      sideways = Vips::Image.black(400, 200, bands: 3).mutate do |m|
+        m.set_type!(GObject::GINT_TYPE, "orientation", 6)
+      end
+
+      img = load(gen, sideways.write_to_buffer(".jpg"))
+
+      expect([img.width, img.height]).to eq([200, 400])
+    end
+
+    it "still decodes a truncated JPEG" do
+      gen = described_class.new(urls: [])
+      full = Vips::Image.black(2000, 1500, bands: 3).linear(1, [40, 80, 120]).write_to_buffer(".jpg")
+
+      img = load(gen, full.byteslice(0, full.bytesize * 2 / 3))
+
+      expect([img.width, img.height]).to eq([1200, 900])
     end
   end
 end
