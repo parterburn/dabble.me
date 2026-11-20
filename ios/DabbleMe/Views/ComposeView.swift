@@ -867,8 +867,9 @@ struct ComposeView: View {
             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { askRowHeight = $0 }
         }
         .scrollBounceBehavior(.basedOnSize)
-        // (A busy day runs past the row's foot: its scroll bar shows for a moment, to say so.)
-        .scrollIndicatorsFlash(onAppear: true)
+        // (A busy day runs past the row's foot: its scroll bar shows for a moment, to say so. Once
+        // the events are in, not as the row opens: then there's nothing yet to scroll.)
+        .scrollIndicatorsFlash(trigger: calendarRowKey)
         .frame(height: min(max(askRowHeight, 1), max(Self.askRowMaxHeight - askHeadingHeight, 44)))
     }
 
@@ -1460,12 +1461,10 @@ private struct CalendarRow: View {
     /// The width of the events' time column.
     static let timeColumn: CGFloat = 72
 
-    /// As many of the day's events as are worth offering: a few to pick from, not the whole day.
-    static let eventLimit = 3
-
-    private func list(_ all: [DayEvent]) -> some View {
-        let events = Array(all.prefix(Self.eventLimit))
-        return VStack(spacing: 0) {
+    /// The whole day's events: the row shows the first few, up to its height, and scrolls to
+    /// the rest. (Three at most left nothing to scroll to, so a busy day looked cut off.)
+    private func list(_ events: [DayEvent]) -> some View {
+        VStack(spacing: 0) {
             // Under a question: a line between it and the first event.
             if hidesWhenEmpty { Divider() }
             ForEach(events) { event in
