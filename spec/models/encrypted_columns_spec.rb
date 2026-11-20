@@ -55,42 +55,14 @@ RSpec.describe 'Encrypted columns' do
     expect(other.errors[:user_key]).to be_present
   end
 
-  describe 'rows written before encryption' do
-    it 'reads plaintext entry text and finds it in search' do
-      entry = FactoryBot.create(:entry, user: user, body: 'placeholder')
-      store_plaintext(entry, 'body', '<p>an older hiking entry</p>')
+  it 'raises when an encrypted column holds plaintext, and does not find a posting key stored that way' do
+    entry = FactoryBot.create(:entry, user: user, body: 'placeholder')
+    store_plaintext(entry, 'body', 'older text')
+    store_plaintext(user, 'user_key', 'ulegacykey000000001')
 
-      expect(Entry.find(entry.id).body).to eq('<p>an older hiking entry</p>')
-      expect(Search.new(user: user, term: 'hiking').entries.to_a).to eq([entry])
-    end
-
-    it 'finds a user by a plaintext posting key and keeps it unique' do
-      store_plaintext(user, 'user_key', 'ulegacykey000000001')
-      store_plaintext(user, 'image_key', 'ulegacykey000000001')
-
-      expect(User.find_by(user_key: 'ulegacykey000000001')).to eq(user)
-      expect(User.find_by(image_key: 'ulegacykey000000001')).to eq(user)
-      expect(FactoryBot.build(:user, user_key: 'ulegacykey000000001')).not_to be_valid
-    end
-
-    it 'encrypts a plaintext row the next time it is saved' do
-      entry = FactoryBot.create(:entry, user: user, body: 'placeholder')
-      store_plaintext(entry, 'body', 'older text')
-
-      Entry.find(entry.id).update!(body: 'older text, edited')
-      expect(ciphertext?(stored_value(entry, 'body'))).to be(true)
-    end
-
-    it 'raises on plaintext once plaintext is no longer allowed' do
-      entry = FactoryBot.create(:entry, user: user, body: 'placeholder')
-      store_plaintext(entry, 'body', 'older text')
-      config = ActiveRecord::Encryption.config
-      config.support_unencrypted_data = false
-
-      expect { Entry.find(entry.id).body }.to raise_error(ActiveRecord::Encryption::Errors::Decryption)
-    ensure
-      config.support_unencrypted_data = true
-    end
+    expect { Entry.find(entry.id).body }.to raise_error(ActiveRecord::Encryption::Errors::Decryption)
+    expect { User.find(user.id).user_key }.to raise_error(ActiveRecord::Encryption::Errors::Decryption)
+    expect(User.find_by(user_key: 'ulegacykey000000001')).to be_nil
   end
 
   describe Hashtag do

@@ -7,7 +7,7 @@ module EncryptionHelpers
     )
   end
 
-  # Writes a value straight into the column, as a row from before encryption.
+  # Writes a value straight into the column, skipping encryption.
   def store_plaintext(record, column, value)
     connection = record.class.connection
     connection.execute(
