@@ -202,7 +202,6 @@ private extension SettingsView {
                 LabeledContent("Push", value: ReminderSettings.summary(enabled: dailyReminder, days: ReminderSettings.days(from: reminderDays),
                                                                        minutes: reminderTime >= 0 ? reminderTime : emailTime))
             }
-            EmailScheduleRow(store: emailSchedule)
             // The widget's a nudge to write too, and its look backs are the reminders' own.
             PaneLink {
                 WidgetSettingsView()
@@ -210,6 +209,7 @@ private extension SettingsView {
                 let _ = model.widgetChoiceChanges // redrawn when the choice changes
                 LabeledContent("Home Screen Widget", value: WidgetSnapshot.content.source.title)
             }
+            EmailScheduleRow(store: emailSchedule)
             PastEntriesRow(store: emailSchedule)
         } header: {
             Text("Reminders")

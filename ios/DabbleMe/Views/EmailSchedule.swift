@@ -266,7 +266,7 @@ struct EmailScheduleView: View {
                     }
                 }
                 Section {
-                    Toggle("Show Past Entry", isOn: Binding(get: { schedule.includePastEntries }, set: { on in
+                    Toggle("Include Past Entry", isOn: Binding(get: { schedule.includePastEntries }, set: { on in
                         // The push reminder keeps what it had, now as its own.
                         if ReminderSettings.includesPastEntry == nil {
                             UserDefaults.standard.set(schedule.includePastEntries, forKey: ReminderSettings.includesPastEntryKey)
@@ -274,7 +274,7 @@ struct EmailScheduleView: View {
                         store.save(with: model) { $0.includePastEntries = on }
                     }))
                 } footer: {
-                    Text("The email can include one of your past entries to look back on, which then stays in your inbox with it. With this off it only says how many there are from this day.")
+                    Text("Adds one of your past entries to each email, so its full text stays in your inbox. With this off, the email only says how many entries you have from this day in past years.")
                 }
             }
         }

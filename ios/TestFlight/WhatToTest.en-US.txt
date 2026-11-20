@@ -1,9 +1,8 @@
-Build 102 keeps the composer's Writing ideas row to two and a half calendar events, however long the prompt over them is.
+Build 103 renames the past entry switches in Settings so each says what it does, and moves Home Screen Widget above Email.
 
-WRITING IDEAS AND YOUR CALENDAR
-- Pick a day with four or more events on your calendar (or set the entry's date to one).
-- Start an entry and tap the lightbulb, with the keyboard up. Under the prompt you should see two events and the top half of a third.
-- Tap to generate a prompt. The row should grow upward for it, and the events should stay where they are.
-- Swipe up inside the row. It should scroll to the rest of the day's events.
-- Tap an event further down. It should go into the entry as a heading, and the row should close.
-- On a quiet day (one or two events), the row should be only as tall as what's in it.
+SETTINGS > REMINDERS
+- The rows should read Push, Home Screen Widget, Email, then Past Entry Filters.
+- Open Push (with it on). The switch should now read Show Entry Previews, like the widget's, with a note that the start of a past entry and its photo show in the notification.
+- Open Email. The switch should now read Include Past Entry, with a shorter note: the entry's full text stays in your inbox, and with it off the email only gives a count.
+- Turn Email's switch off and go back to Push. Push's Show Entry Previews should still be on (they're separate).
+- Open Home Screen Widget. Show Entry Previews should be unchanged.
