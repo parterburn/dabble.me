@@ -1918,28 +1918,29 @@ final class JournalViewsTests: XCTestCase {
         app.buttons["Prompt"].tap()
         // (Set in capitals, and read that way here.)
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ==[c] %@", "Writing ideas")).firstMatch.waitForExistence(timeout: 5))
-        let lunch = app.buttons["Lunch with Sam, 12:30 PM"]
-        XCTAssertTrue(lunch.waitForExistence(timeout: 5))
+        let dentist = app.buttons["Dentist, 9:00 AM"]
+        XCTAssertTrue(dentist.waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["Leo's birthday, All day"].exists)
-        // The whole day, not just the first few.
-        XCTAssertTrue(app.buttons["Pick up the cake, 3:15 PM"].exists)
+        // The whole day, not just the first few: two and a half of them show, the rest scroll.
+        XCTAssertTrue(app.buttons["Lunch with Sam, 12:30 PM"].exists)
         XCTAssertTrue(app.buttons["Book club, 7:00 PM"].exists)
-        // The question's over the events. (A day that fits keeps its events where they are when
-        // the question comes, the row growing upward; this one's busier than the row is tall, so
-        // they move down under it.)
+        // The question's over the events; they stay where they are when it comes (the row grows
+        // upward for it).
+        let dentistBefore = dentist.frame.maxY
         XCTAssertTrue(app.staticTexts["AskMeQuestion"].waitForExistence(timeout: 60))
         XCTAssertLessThan(app.staticTexts["AskMeQuestion"].frame.maxY, app.buttons["Leo's birthday, All day"].frame.minY)
-        XCTAssertFalse(app.buttons["Insert"].exists, "The question's row is the button")
         sleep(1)
+        XCTAssertEqual(dentist.frame.maxY, dentistBefore, accuracy: 2, "The events don't move when the question arrives")
+        XCTAssertFalse(app.buttons["Insert"].exists, "The question's row is the button")
         snap("compose-calendar-row")
         // The day's last event is past the row's foot until it's scrolled to.
         let bookClub = app.buttons["Book club, 7:00 PM"]
-        lunch.swipeUp()
+        XCTAssertFalse(bookClub.isHittable, "Two and a half events show, not the whole day")
+        dentist.swipeUp()
         XCTAssertTrue(bookClub.isHittable, "The row scrolls to the rest of the day")
-        lunch.swipeDown()
-        lunch.tap()
-        XCTAssertTrue((editor.value as? String)?.contains("Lunch with Sam") == true)
-        XCTAssertTrue(lunch.waitForNonExistence(timeout: 5), "The row closes once one's picked")
+        bookClub.tap()
+        XCTAssertTrue((editor.value as? String)?.contains("Book club") == true)
+        XCTAssertTrue(bookClub.waitForNonExistence(timeout: 5), "The row closes once one's picked")
         app.buttons["Cancel"].tap()
         if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }

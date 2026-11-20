@@ -25,9 +25,16 @@ struct ComposeView: View {
     @State private var askRowHeight: CGFloat = 0
     /// The row's heading, which stays put over what scrolls.
     @State private var askHeadingHeight: CGFloat = 30
-    /// About the prompt and three events, with a half of the next showing to say there's more:
-    /// any taller and a busy day takes too much of the page being written on.
+    /// The most the row ever takes, whatever's in it (a long prompt with no events under it).
     private static let askRowMaxHeight: CGFloat = 212
+    /// On a busy day: the prompt, two events and the top half of a third, which says there's more
+    /// to scroll to. Counted in events, not points, so a one-line prompt doesn't make room for a
+    /// fourth (any more and a busy day takes too much of the page being written on).
+    private static let visibleEvents: CGFloat = 2.5
+    /// Where the day's first event starts in the row's scrolling content, and how tall it is:
+    /// what `visibleEvents` is measured with. Nil while there are none.
+    @State private var firstEvent: CGRect?
+    private static let askRowSpace = "askRowContent"
     /// The entry's day has events on the calendar (they're listed under the prompt).
     @State private var hasAgenda = false
     /// Bumped when the calendar row's contents change, so the bar over the keyboard resizes.
@@ -610,6 +617,7 @@ struct ComposeView: View {
                 showsAskRow.toggle()
                 if showsAskRow {
                     askRowHeight = 0
+                    firstEvent = nil
                     hasAgenda = false
                     showsHashtagBar = false
                     showsPhotoDrawer = false
@@ -858,21 +866,32 @@ struct ComposeView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 if canAsk { askLine } else if offersTemplate { templateLine }
-                CalendarRow(day: date, hidesWhenEmpty: canAsk || offersTemplate, changed: { hasEvents in
+                CalendarRow(day: date, hidesWhenEmpty: canAsk || offersTemplate, space: Self.askRowSpace, changed: { hasEvents in
                     hasAgenda = hasEvents
+                    if !hasEvents { firstEvent = nil }
                     calendarRowKey += 1
-                }) { event in
+                }, measured: { firstEvent = $0 }) { event in
                     editor.addQuestion(event.title)
                     showsAskRow = false
                 }
             }
             .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { askRowHeight = $0 }
+            .coordinateSpace(.named(Self.askRowSpace))
         }
         .scrollBounceBehavior(.basedOnSize)
         // (A busy day runs past the row's foot: its scroll bar shows for a moment, to say so. Once
         // the events are in, not as the row opens: then there's nothing yet to scroll.)
         .scrollIndicatorsFlash(trigger: calendarRowKey)
-        .frame(height: min(max(askRowHeight, 1), max(Self.askRowMaxHeight - askHeadingHeight, 44)))
+        .frame(height: askRowScrollHeight)
+    }
+
+    /// As tall as what's in it, up to the prompt and `visibleEvents` of the day's events (the
+    /// prompt growing makes the row taller, so the events stay where they are), and never past
+    /// `askRowMaxHeight`.
+    private var askRowScrollHeight: CGFloat {
+        var most = max(Self.askRowMaxHeight - askHeadingHeight, 44)
+        if let firstEvent { most = min(most, firstEvent.minY + firstEvent.height * Self.visibleEvents) }
+        return min(max(askRowHeight, 1), most)
     }
 
     private func insertQuestion() {
@@ -1380,8 +1399,12 @@ private struct CalendarRow: View {
     let day: Date
     /// With a question over it, a day with nothing on it shows nothing here.
     var hidesWhenEmpty = false
+    /// The coordinate space of the row's scrolling content, which `measured` is given in.
+    let space: String
     /// The day's been read (the row's height may have changed): whether it has events to list.
     let changed: (Bool) -> Void
+    /// Where the first event sits in `space`, and its height: how much of the day the row shows.
+    let measured: (CGRect) -> Void
     let pick: (DayEvent) -> Void
     @State private var access = DayCalendar.access
     @State private var events: [DayEvent]?
@@ -1490,6 +1513,9 @@ private struct CalendarRow: View {
                     .contentShape(.rect)
                 }
                 .buttonStyle(.plain)
+                .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(space)) } action: { frame in
+                    if event.id == events.first?.id { measured(frame) }
+                }
                 .accessibilityLabel("\(event.title), \(event.time)")
                 .accessibilityHint("Adds it to your entry as a heading")
                 if event.id != events.last?.id { Divider() }
