@@ -5,10 +5,10 @@ subject:
   rewind_free: Your 2026 Rewind is waiting
   whats_new_free: What's new in Dabble Me
 preview:
-  rewind: Plus an iPhone app, a more private journal, and a new look.
-  whats_new: An iPhone app, a more private journal, and a new look.
-  rewind_free: Plus an iPhone app, a more private journal, and a new look.
-  whats_new_free: An iPhone app, a more private journal, and a new look.
+  rewind: Plus an iPhone app, AI assistance, and a new look.
+  whats_new: An iPhone app, AI assistance, and a new look.
+  rewind_free: Plus an iPhone app, AI assistance, and a new look.
+  whats_new_free: An iPhone app, AI assistance, and a new look.
 ---
 
 Hi {{first_name}},
@@ -46,12 +46,6 @@ You can also share a Timehop-style photo from a past entry with its date stamped
 You can now [connect your journal to an AI assistant like Claude or ChatGPT](https://dabble.me/mcp-server) and ask it things in plain words.
 
 If you connect yours, try this first: **"Make a private Spotify Wrapped of my 2026 journal; use lots of photos."**
-
-## 🔒 A more private journal
-
-You've probably seen the news lately: data breaches keep getting bigger and more frequent. A journal is about the last thing anyone wants caught up in one.
-
-I spent a good part of this year making Dabble Me more private and secure. I updated the systems it runs on, and your entries are now encrypted, which means they're stored in a scrambled form. If anyone ever stole a copy of the database, they couldn't read a word of it.
 
 ## 💾 Keep your own copy
 

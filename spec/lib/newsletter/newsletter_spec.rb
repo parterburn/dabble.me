@@ -206,6 +206,8 @@ RSpec.describe Newsletter do
       expect(letter.text).to include('export your whole journal (https://test/entries/export)', 'once a year as a backup')
       # No jargon in the words people read; a link's URL can say mcp.
       expect(letter.text.gsub(%r{https?://\S+}, '')).not_to match(/\bbeta\b|MCP|end-to-end/i)
+      # Encryption isn't pitched as a feature; most people already assume it.
+      expect(letter.text).not_to match(/encrypt/i)
       expect(letter.html).to include('<a href="https://dabble.me/mcp-server">')
       expect(letter.html).to include('<a href="https://testflight.apple.com/join/mYj4vrFZ">Get the app</a>')
       expect(letter.html).to include('Paul Arterburn<br>', 'founder/maker of dabble.me<br>', '<a href="https://x.com/parterburn">x.com/parterburn</a>')
