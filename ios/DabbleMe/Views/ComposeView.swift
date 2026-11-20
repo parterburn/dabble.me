@@ -25,7 +25,9 @@ struct ComposeView: View {
     @State private var askRowHeight: CGFloat = 0
     /// The row's heading, which stays put over what scrolls.
     @State private var askHeadingHeight: CGFloat = 30
-    private static let askRowMaxHeight: CGFloat = 236
+    /// About the prompt and three events, with a half of the next showing to say there's more:
+    /// any taller and a busy day takes too much of the page being written on.
+    private static let askRowMaxHeight: CGFloat = 212
     /// The entry's day has events on the calendar (they're listed under the prompt).
     @State private var hasAgenda = false
     /// Bumped when the calendar row's contents change, so the bar over the keyboard resizes.

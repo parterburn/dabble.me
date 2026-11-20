@@ -1,8 +1,8 @@
-Build 100 lets the composer's Writing ideas row scroll through the whole day's calendar.
+Build 101 makes the composer's Writing ideas row a little shorter, so a busy day leaves more room for the entry.
 
 WRITING IDEAS AND YOUR CALENDAR
 - Pick a day with five or more events on your calendar (or set the entry's date to one).
-- Start an entry and tap the lightbulb. The row should show the prompt and the first few events, with the scroll bar flashing once the events are in.
-- Swipe up inside the row. It should scroll to the rest of the day's events, not stop at three.
+- Start an entry and tap the lightbulb. The row should show the prompt, about three events, and the top half of the next one.
+- Swipe up inside the row. It should scroll to the rest of the day's events.
 - Tap an event further down. It should go into the entry as a heading, and the row should close.
 - On a quiet day (one or two events), the row should be only as tall as what's in it, with nothing to scroll.
