@@ -4,6 +4,7 @@ Use a Free account for these, not one that pays on dabble.me.
 
 BUY
 - Settings, Plan. You should see the Yearly and Monthly plans with their prices, Restore Purchases, and the Terms of Use and Privacy Policy links.
+- If a free trial is set up in App Store Connect, each plan should say "2 weeks free, then" its price (the first time this Apple Account sees it only).
 - Tap a plan and confirm. The plan should change to PRO within a few seconds, and Search and Stats should open.
 - You should get the "Thanks for subscribing" email.
 - Settings, Plan should now say when it renews, with Manage Subscription (Apple's own sheet).

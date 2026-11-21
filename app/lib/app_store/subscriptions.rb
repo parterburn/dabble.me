@@ -112,12 +112,15 @@ module AppStore
       subscription
     end
 
-    # A Payment per Apple transaction, once. Production only (sandbox purchases are free), and
+    # A Payment per Apple transaction that charged something, once. Production only (sandbox
+    # purchases are free; so is a free trial's first transaction), and
     # an amount only in US dollars, which is what the revenue numbers add up; other currencies
     # are noted in the comment with an amount of 0.
     def record_payments(user, snapshots)
       snapshots.uniq(&:transaction_id).each do |snapshot|
-        next if snapshot.environment != PRODUCTION || snapshot.price.nil? || snapshot.revoked_at || snapshot.transaction_id.blank?
+        next if snapshot.environment != PRODUCTION || snapshot.revoked_at || snapshot.transaction_id.blank?
+        # A free trial (an introductory offer set in App Store Connect) is no payment.
+        next if snapshot.price.nil? || snapshot.price <= 0
 
         usd = snapshot.currency == "USD"
         payment = Payment.create_or_find_by!(apple_transaction_id: snapshot.transaction_id) do |p|

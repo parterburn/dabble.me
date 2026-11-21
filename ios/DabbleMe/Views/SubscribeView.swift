@@ -41,7 +41,9 @@ struct SubscribeOptions: View {
                     Task { await store.restore() }
                 }
                 .font(.subheadline)
-                Text("PRO renews automatically until you cancel it. Cancel at least 24 hours before it renews in Settings → your name → Subscriptions.")
+                Text(store.freeTrials.isEmpty
+                     ? "PRO renews automatically until you cancel it. Cancel at least 24 hours before it renews in Settings → your name → Subscriptions."
+                     : "After a free trial, you're charged unless you cancel at least 24 hours before it ends. PRO then renews automatically until you cancel it in Settings → your name → Subscriptions.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -69,14 +71,19 @@ struct SubscribeOptions: View {
         } label: {
             VStack(spacing: 2) {
                 Text(product.displayName).font(.headline)
-                Text(product.pricePerPeriod).font(.subheadline)
+                if let trial = store.freeTrials[product.id] {
+                    // Apple asks for the price after the trial to be as clear as the trial (3.1.2).
+                    Text("\(trial), then \(product.pricePerPeriod)").font(.subheadline)
+                } else {
+                    Text(product.pricePerPeriod).font(.subheadline)
+                }
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 4)
         }
         .buttonStyle(.borderedProminent)
         .tint(yearly ? Color.accentColor : Color.secondary)
-        .accessibilityLabel("\(product.displayName), \(product.pricePerPeriod)")
+        .accessibilityLabel([product.displayName, store.freeTrials[product.id], product.pricePerPeriod].compactMap { $0 }.joined(separator: ", "))
     }
 }
 

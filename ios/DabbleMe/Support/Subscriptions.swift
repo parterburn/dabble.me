@@ -19,6 +19,9 @@ final class SubscriptionStore {
     /// Yearly first.
     private(set) var products: [Product] = []
     private(set) var productsFailed = false
+    /// "2 weeks free" for each plan with a free trial this Apple Account can still take. The
+    /// trial and its length are set in App Store Connect (an introductory offer), not here.
+    private(set) var freeTrials: [Product.ID: String] = [:]
     private(set) var isWorking = false
     /// What to tell the person: a purchase that's waiting for approval, a refusal, a failure.
     var message: String?
@@ -69,6 +72,15 @@ final class SubscriptionStore {
             let found = try await Product.products(for: Self.productIDs)
             products = found.sorted { ($0.id == Self.yearlyID ? 0 : 1) < ($1.id == Self.yearlyID ? 0 : 1) }
             productsFailed = products.isEmpty
+            var trials: [Product.ID: String] = [:]
+            for product in products {
+                guard let subscription = product.subscription,
+                      let offer = subscription.introductoryOffer, offer.paymentMode == .freeTrial,
+                      await subscription.isEligibleForIntroOffer,
+                      let length = offer.period.spelledOut else { continue }
+                trials[product.id] = "\(length) free"
+            }
+            freeTrials = trials
         } catch {
             productsFailed = true
         }
@@ -171,6 +183,21 @@ final class SubscriptionStore {
 
     private struct PlanStatus: Decodable, Sendable {
         let isPro: Bool
+    }
+}
+
+extension Product.SubscriptionPeriod {
+    /// "2 weeks", "1 month", "7 days".
+    var spelledOut: String? {
+        let unit: String
+        switch self.unit {
+        case .day: unit = "day"
+        case .week: unit = "week"
+        case .month: unit = "month"
+        case .year: unit = "year"
+        @unknown default: return nil
+        }
+        return "\(value) \(unit)\(value == 1 ? "" : "s")"
     }
 }
 

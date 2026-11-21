@@ -119,6 +119,28 @@ RSpec.describe "Apple in-app purchases from the app", type: :request do
       expect(payment).to have_attributes(apple_transaction_id: "2000000099", amount: 3.99, comments: "Apple Monthly")
     end
 
+    it "gives PRO during a free trial, with no payment until the first charge" do
+      allow(AppStore).to receive(:allowed_environments).and_return(%w[Production Sandbox])
+      trial = apple_transaction(user: user, environment: "Production", offerType: 1, offerDiscountType: "FREE_TRIAL",
+                                            price: 0, expiresDate: ms(2.weeks.from_now))
+      post_transaction(trial)
+      expect(user.reload.plan).to eq("PRO Monthly Apple")
+      expect(user.payments).to be_empty
+
+      # The trial converts: Apple charges the first month.
+      post_transaction(apple_transaction(user: user, environment: "Production", transactionId: "2000000500",
+                                         signedDate: ms(1.second.from_now), expiresDate: ms(6.weeks.from_now)))
+      expect(user.payments.sole).to have_attributes(apple_transaction_id: "2000000500", amount: 3.99)
+    end
+
+    it "ends PRO when a free trial ends without converting" do
+      post_transaction(apple_transaction(user: user, offerType: 1, price: 0, expiresDate: ms(2.weeks.from_now)))
+      expect(user.reload.plan).to eq("PRO Monthly Apple")
+      post_transaction(apple_transaction(user: user, offerType: 1, price: 0, expiresDate: ms(1.minute.ago),
+                                         signedDate: ms(1.second.from_now)))
+      expect(user.reload.plan).to eq("Free")
+    end
+
     it "records a payment in another currency with no dollar amount" do
       allow(AppStore).to receive(:allowed_environments).and_return(%w[Production Sandbox])
       post_transaction(apple_transaction(user: user, environment: "Production", price: 600_000, currency: "JPY"))
