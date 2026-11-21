@@ -30,6 +30,32 @@ RSpec.describe 'Rack::Attack', type: :request do
     expect(statuses.last).to eq(429)
   end
 
+  it "throttles the iOS app's native sign-in against the same email across IP addresses" do
+    statuses = Array.new(6) do |index|
+      post '/api/v1/session',
+        params: { email: 'app-target@example.com', password: 'wrong-password' }.to_json,
+        headers: { 'CONTENT_TYPE' => 'application/json' },
+        env: { 'REMOTE_ADDR' => "203.0.113.#{index + 140}" }
+      response.status
+    end
+
+    expect(statuses.first(5)).to all(eq(401))
+    expect(statuses.last).to eq(429)
+  end
+
+  it "throttles the iOS app's native sign-ups by IP" do
+    statuses = Array.new(6) do |index|
+      post '/api/v1/registration',
+        params: { email: "signup-#{index}@example.com", password: 'short' }.to_json,
+        headers: { 'CONTENT_TYPE' => 'application/json' },
+        env: { 'REMOTE_ADDR' => '203.0.113.160' }
+      response.status
+    end
+
+    expect(statuses.first(5)).to all(be < 429)
+    expect(statuses.last).to eq(429)
+  end
+
   it 'throttles password reset posts' do
     statuses = Array.new(6) do
       post '/users/password',

@@ -2614,11 +2614,10 @@ final class JournalViewsTests: XCTestCase {
         previews.switches.firstMatch.tap() // back to the default: no previews
     }
 
-    /// Settings → Delete Account: says what's about to happen, then signs the app out and opens
-    /// the deletion page in the browser (it's finished on dabble.me).
-    /// TEST_RUNNER_DABBLE_DELETION_TOKEN: a token of its own, since signing out spends it (the
-    /// free demo account's will do).
-    func testDeletingTheAccountSignsOutAndOpensTheBrowser() throws {
+    /// Settings → Delete Account: an in-app page with the entry count, an export, and the
+    /// password; a wrong password is refused, and nothing is deleted (the test stops before the
+    /// right one). TEST_RUNNER_DABBLE_DELETION_TOKEN: the free demo account's token will do.
+    func testDeletingTheAccountAsksForThePasswordInTheApp() throws {
         guard let spare = ProcessInfo.processInfo.environment["DABBLE_DELETION_TOKEN"] else { throw XCTSkip("Needs TEST_RUNNER_DABBLE_DELETION_TOKEN") }
         let app = XCUIApplication()
         app.launchArguments = ["-DabbleDebugAccessToken", spare, "-DabbleServerOverride", testServer]
@@ -2629,17 +2628,24 @@ final class JournalViewsTests: XCTestCase {
         for _ in 0..<6 where !(delete.exists && delete.isHittable) { app.swipeUp() }
         snap("delete-account-row")
         delete.tap()
-        let go = app.buttons["Sign Out and Continue"]
-        XCTAssertTrue(go.waitForExistence(timeout: 5))
-        XCTAssertFalse(app.buttons["Email Me a Deletion Link"].exists)
+        XCTAssertTrue(app.buttons["Export My Entries"].waitForExistence(timeout: 10), "The page offers an export first")
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS 'for good'")).firstMatch.exists)
+        let confirm = app.buttons["Delete Account"].firstMatch
+        XCTAssertFalse(confirm.isEnabled, "Nothing to confirm without the password")
+        snap("delete-account-page")
+
+        let password = app.secureTextFields["Password"]
+        password.tap()
+        password.typeText("not-the-password")
+        confirm.tap()
+        let last = app.sheets.buttons["Delete Account"].exists ? app.sheets.buttons["Delete Account"] : app.buttons.matching(identifier: "Delete Account").element(boundBy: 1)
+        XCTAssertTrue(last.waitForExistence(timeout: 5), "One last confirmation")
         snap("delete-account-confirm")
-        go.tap()
-        let safari = XCUIApplication(bundleIdentifier: "com.apple.mobilesafari")
-        XCTAssertTrue(safari.wait(for: .runningForeground, timeout: 15), "The deletion page opens in the browser")
-        sleep(2)
-        snap("delete-account-browser")
-        app.activate()
-        XCTAssertTrue(app.buttons["I Already Have an Account"].waitForExistence(timeout: 10), "Signed out, back at the first page")
+        last.tap()
+        XCTAssertTrue(app.staticTexts["Incorrect password."].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["Export My Entries"].exists, "Still on the page, still signed in")
+        app.buttons["Cancel"].firstMatch.tap()
+        XCTAssertTrue(delete.waitForExistence(timeout: 5))
     }
 
     /// A free account writes without photos or links, can delete but not edit, and has no Stats.

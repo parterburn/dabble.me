@@ -292,6 +292,19 @@ class User < ActiveRecord::Base
     end
   end
 
+  # A PRO plan's billing that deleting the account doesn't stop, so the person cancels it
+  # themselves: Gumroad and PayPal bill on their own, and a Stripe plan with no customer on
+  # file may have something left there (DeleteUserJob cancels the customer's subscriptions).
+  # Nil when there's nothing (PRO Forever, say, or Stripe with a customer). The web's delete
+  # page and the app's (Api::V1::AccountDeletionsController) both say so.
+  def separate_billing_to_cancel
+    provider = plan_type_unlinked
+    return if !is_pro? || provider.blank?
+    return if provider == "Stripe" && stripe_id.present?
+
+    { provider: provider, certain: provider != "Stripe" }
+  end
+
   def plan_type
     if plan && plan.match(/payhere/i)
       "<a href='/billing'>Stripe</a>"

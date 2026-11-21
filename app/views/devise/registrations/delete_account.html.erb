@@ -2,7 +2,7 @@
 <% content_for :tailwind, true %>
 <% entry_count = current_user.entries.count %>
 <%# A plan with no billing service behind it (PRO Forever, say) has nothing to cancel. %>
-<% pro_cancel_warning = current_user.is_pro? && current_user.plan_type.present? && (current_user.plan_type_unlinked != "Stripe" || current_user.stripe_id.blank?) %>
+<% pro_cancel_warning = current_user.separate_billing_to_cancel %>
 
 <div class="tw mx-auto max-w-2xl pt-4 pb-16 sm:pt-8">
   <header class="mb-8">

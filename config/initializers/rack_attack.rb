@@ -63,6 +63,40 @@ class Rack::Attack
     submitted_email(req) if auth_path(req) == '/users' && req.post?
   end
 
+  # The iOS app's native sign-in, sign-up and account deletion: the same limits as the
+  # web's forms. Each 2FA code tried is a sign-in attempt too, so these cover codes.
+  APP_SIGN_IN_PATH = '/api/v1/session'.freeze
+  APP_SIGN_UP_PATH = '/api/v1/registration'.freeze
+  APP_DELETION_PATH = '/api/v1/account_deletion'.freeze
+
+  throttle('app/logins/ip', limit: 5, period: 20.seconds) do |req|
+    req.ip if auth_path(req) == APP_SIGN_IN_PATH && req.post?
+  end
+
+  throttle('app/logins/ip/hour', limit: 20, period: 1.hour) do |req|
+    req.ip if auth_path(req) == APP_SIGN_IN_PATH && req.post?
+  end
+
+  throttle('app/logins/email', limit: 5, period: 20.seconds) do |req|
+    submitted_email(req) if auth_path(req) == APP_SIGN_IN_PATH && req.post?
+  end
+
+  throttle('app/logins/email/hour', limit: 20, period: 1.hour) do |req|
+    submitted_email(req) if auth_path(req) == APP_SIGN_IN_PATH && req.post?
+  end
+
+  throttle('app/signups/ip', limit: 5, period: 1.hour) do |req|
+    req.ip if auth_path(req) == APP_SIGN_UP_PATH && req.post?
+  end
+
+  throttle('app/signups/email', limit: 5, period: 1.hour) do |req|
+    submitted_email(req) if auth_path(req) == APP_SIGN_UP_PATH && req.post?
+  end
+
+  throttle('app/deletions/ip', limit: 5, period: 10.minutes) do |req|
+    req.ip if auth_path(req) == APP_DELETION_PATH && req.post?
+  end
+
   throttle('checkout/ip', limit: 10, period: 10.minutes) do |req|
     req.ip if auth_path(req) == '/checkout' && req.post?
   end

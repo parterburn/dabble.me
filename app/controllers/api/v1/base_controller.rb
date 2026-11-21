@@ -7,7 +7,7 @@ module Api
     class BaseController < ActionController::API
       include Doorkeeper::Rails::Helpers
 
-      before_action -> { doorkeeper_authorize! MobileApp::SCOPE }
+      before_action :authorize_app_token!
       before_action :ensure_account_active
 
       rescue_from ActiveRecord::RecordNotFound do
@@ -15,6 +15,11 @@ module Api
       end
 
       private
+
+      # Sign-in and sign-up skip this: they're how the app gets a token.
+      def authorize_app_token!
+        doorkeeper_authorize! MobileApp::SCOPE
+      end
 
       def current_user
         @current_user ||= User.find(doorkeeper_token.resource_owner_id).tap do |user|
@@ -27,7 +32,7 @@ module Api
         return unless current_user.deletion_pending?
 
         render_error(:forbidden, 'account_pending_deletion',
-                     'This account is scheduled for deletion. Sign in at dabble.me to keep it.')
+                     'This account is scheduled for deletion. Sign in again to keep it.')
       end
 
       # PRO-only features (see each controller for which). Free accounts read and write

@@ -1,9 +1,19 @@
-Build 102 keeps the composer's Writing ideas row to two and a half calendar events, however long the prompt over them is.
+Build 107 signs you in and creates accounts with the app's own forms, and deletes an account right in the app.
 
-WRITING IDEAS AND YOUR CALENDAR
-- Pick a day with four or more events on your calendar (or set the entry's date to one).
-- Start an entry and tap the lightbulb, with the keyboard up. Under the prompt you should see two events and the top half of a third.
-- Tap to generate a prompt. The row should grow upward for it, and the events should stay where they are.
-- Swipe up inside the row. It should scroll to the rest of the day's events.
-- Tap an event further down. It should go into the entry as a heading, and the row should close.
-- On a quiet day (one or two events), the row should be only as tall as what's in it.
+SIGN IN
+- Sign out (Settings, Sign Out). On the welcome screen, tap I Already Have an Account. A Sign In form should slide up, not a web page.
+- Enter your email and password and tap Sign In. Your journal should open. Password AutoFill should offer your saved dabble.me login.
+- Try a wrong password. You should see "Incorrect email or password." and stay on the form.
+- With two-factor on: after the password, a Code field should appear. Enter the code from your authenticator app (or a recovery code) and tap Sign In.
+- Forgot Password? should open dabble.me's reset page. Sign In with a Passkey should open dabble.me's sign-in page, as before.
+
+START YOUR JOURNAL
+- Signed out, tap Start Your Journal. Enter a first name (optional), a new email and a password of 6 or more characters, and tap Create Account. The new, empty journal should open.
+- An email that already has an account should say so, under the button.
+
+DELETE ACCOUNT (use an account you don't need)
+- Settings, Delete Account. A page should say how many entries go with it, offer Export My Entries, and ask for the password.
+- A PRO account billed by Gumroad or PayPal should be told to cancel there.
+- A wrong password should say "Incorrect password."
+- The right password, then Delete Account in the last confirmation, should sign you out. The welcome screen should say when the account will be deleted (an hour away).
+- Sign back in before then: the account should still be there, entries and all.

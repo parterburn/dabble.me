@@ -4,8 +4,10 @@ import SwiftUI
 /// sign-up front and center on Today. Everything shown here is made up; nothing is loaded.
 struct SignInView: View {
     @State private var selected = "Today"
+    @Environment(AppModel.self) private var model
 
     var body: some View {
+        @Bindable var model = model
         TabView(selection: $selected) {
             Tab("Today", image: icon("slab-calendar", "Today"), value: "Today") { WelcomeView().tabBarClearance() }
             Tab("Journal", image: icon("slab-book", "Journal"), value: "Journal") {
@@ -25,6 +27,11 @@ struct SignInView: View {
             Tab("Settings", image: icon("slab-gear", "Settings"), value: "Settings") { GuestSettings().tabBarClearance() }
         }
         .opensDabbleLinksInApp()
+        // Sign in and sign up are the app's own forms (passkeys go to dabble.me from there).
+        .sheet(item: $model.authForm) { mode in
+            AuthFormView(mode: mode)
+                .opensDabbleLinksInApp()
+        }
     }
 
     /// The selected tab shows the filled version of its icon.
@@ -152,7 +159,7 @@ private struct WelcomeView: View {
 
                 VStack(spacing: 12) {
                     Button {
-                        Task { await model.signIn(createAccount: true) }
+                        model.authForm = .signUp
                     } label: {
                         Text("Start Your Journal")
                             .frame(maxWidth: .infinity, minHeight: 30)
@@ -161,7 +168,7 @@ private struct WelcomeView: View {
                     .controlSize(.large)
 
                     Button {
-                        Task { await model.signIn() }
+                        model.authForm = .signIn
                     } label: {
                         Group {
                             if model.isSigningIn {
@@ -175,7 +182,12 @@ private struct WelcomeView: View {
                     .buttonStyle(.bordered)
                     .controlSize(.large)
 
-                    if let error = model.signInError {
+                    if let notice = model.signInNotice {
+                        Text(notice)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .multilineTextAlignment(.center)
+                    } else if let error = model.signInError {
                         Text(error)
                             .font(.footnote)
                             .foregroundStyle(Color.deleteRed)
@@ -292,9 +304,9 @@ private struct LockedGlimpse<Content: View>: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
-                Button("Start Your Journal") { Task { await model.signIn(createAccount: true) } }
+                Button("Start Your Journal") { model.authForm = .signUp }
                     .filledButtonStyle()
-                Button("Sign In") { Task { await model.signIn() } }
+                Button("Sign In") { model.authForm = .signIn }
                     .font(.subheadline)
             }
             .padding(24)
@@ -364,8 +376,8 @@ private struct GuestSettings: View {
         NavigationStack {
             List {
                 Section {
-                    Button { Task { await model.signIn(createAccount: true) } } label: { Label("Start Your Journal", icon: "slab-plus") }
-                    Button { Task { await model.signIn() } } label: { Label("Sign In", icon: "slab-arrow-right-to-bracket") }
+                    Button { model.authForm = .signUp } label: { Label("Start Your Journal", icon: "slab-plus") }
+                    Button { model.authForm = .signIn } label: { Label("Sign In", icon: "slab-arrow-right-to-bracket") }
                 }
                 .disabled(model.isSigningIn)
                 Section {

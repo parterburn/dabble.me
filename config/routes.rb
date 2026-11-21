@@ -45,6 +45,10 @@ Rails.application.routes.draw do
   # iOS app API (see MobileApp, Api::V1::BaseController).
   namespace :api, defaults: { format: :json } do
     namespace :v1 do
+      # Native sign-in and sign-up hand back tokens; no token needed to call them.
+      resource :session, only: :create
+      resource :registration, only: :create
+      resource :account_deletion, only: %i[show create]
       get 'me', to: 'me#show'
       get 'today', to: 'today#show'
       get 'prompts', to: 'prompts#index'

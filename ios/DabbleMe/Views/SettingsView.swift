@@ -7,7 +7,7 @@ struct SettingsView: View {
     @AppStorage(ShakeSetting.storageKey) private var shakeForRandomEntry = true
     @Environment(\.openURL) private var openURL
     @State private var confirmingSignOut = false
-    @State private var confirmingDeletion = false
+    @State private var deletingAccount = false
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.system
     @AppStorage(ReminderSettings.enabledKey) private var dailyReminder = false
     /// The time set for it, or `followsEmail` until one is: then it's the daily email's.
@@ -146,22 +146,12 @@ struct SettingsView: View {
                         .confirmationDialog("Sign out of Dabble Me?", isPresented: $confirmingSignOut, titleVisibility: .visible) {
                             Button("Sign Out", role: .destructive) { Task { await model.signOut() } }
                         }
-                    // Deleting finishes on dabble.me (signed in there, confirmed with the password, and
-                    // it can still be undone for an hour), so this says what's about to happen, signs
-                    // the app out and hands over to the browser.
-                    Button(role: .destructive) { confirmingDeletion = true } label: {
-                        HStack {
-                            Text("Delete Account…")
-                            Spacer()
-                            ExternalLinkIcon()
+                    // Deleting happens here: the password, then one last confirmation, in a sheet.
+                    Button("Delete Account…", role: .destructive) { deletingAccount = true }
+                        .sheet(isPresented: $deletingAccount) {
+                            DeleteAccountView()
+                                .opensDabbleLinksInApp()
                         }
-                    }
-                    .confirmationDialog("Delete your Dabble Me account?", isPresented: $confirmingDeletion, titleVisibility: .visible) {
-                        Button("Sign Out and Continue", role: .destructive) { Task { await continueDeletionInBrowser() } }
-                        Button("Cancel", role: .cancel) {}
-                    } message: {
-                        Text("You'll be signed out of the app, and your browser will open dabble.me, where you finish deleting your account with your password. You can export your entries there first.")
-                    }
                 } footer: {
                     // The app's name and version, centered at the foot: a tap goes to its page.
                     if let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String,
@@ -252,12 +242,6 @@ private extension SettingsView {
             Label("Require \(lock.methodName)", icon: "slab-lock")
         }
         .disabled(!lock.isAvailable)
-    }
-
-    /// The browser itself, not the page inside the app: that one's signed out along with the app.
-    func continueDeletionInBrowser() async {
-        await model.signOut()
-        await UIApplication.shared.open(AppConfig.webURL("settings/delete-account"))
     }
 }
 

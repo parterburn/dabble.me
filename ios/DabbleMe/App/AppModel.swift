@@ -142,7 +142,28 @@ final class AppModel {
 
     // MARK: - Auth
 
-    func signIn(createAccount: Bool = false) async {
+    /// The sign-in or sign-up form, when it's showing (the signed-out screens present it).
+    var authForm: AuthFormMode?
+    /// Said on the welcome screen after the account's deletion is set (not an error).
+    var signInNotice: String?
+
+    /// The app's own form: email and password, then the 2FA code if the server asks for one
+    /// (`NativeAuthError.needsCode`). Throws what the form should say.
+    func signIn(email: String, password: String, code: String?) async throws {
+        let session = try await NativeAuth.signIn(email: email, password: password, code: code)
+        // (session.deletionCancelled: the account was set to be deleted and this kept it, as
+        // the welcome screen's notice promised.)
+        await didSignIn(with: session.tokens)
+    }
+
+    func signUp(email: String, password: String, firstName: String?) async throws {
+        let session = try await NativeAuth.signUp(email: email, password: password, firstName: firstName)
+        await didSignIn(with: session.tokens)
+    }
+
+    /// Passkeys (and anything else only the website does): dabble.me's own sign-in page in
+    /// ASWebAuthenticationSession, then the OAuth code exchange.
+    func signInOnWeb() async {
         guard !isSigningIn else { return }
         isSigningIn = true
         signInError = nil
@@ -152,7 +173,7 @@ final class AppModel {
         let state = PKCE.randomURLSafeString(byteCount: 16)
         do {
             let callback = try await authenticator.authenticate(
-                url: OAuthEndpoints.authorizeURL(pkce: pkce, state: state, createAccount: createAccount),
+                url: OAuthEndpoints.authorizeURL(pkce: pkce, state: state),
                 ephemeral: UserDefaults.standard.bool(forKey: Self.signedOutKey))
             let items = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems ?? []
             let value = { (name: String) in items.first { $0.name == name }?.value }
@@ -163,15 +184,37 @@ final class AppModel {
             guard value("state") == state, let code = value("code") else {
                 throw WebAuthError.invalidCallback(nil)
             }
-            await tokens.signIn(with: try await OAuthEndpoints.exchange(code: code, pkce: pkce))
-            UserDefaults.standard.removeObject(forKey: Self.signedOutKey)
-            isSignedIn = true
-            await refresh()
+            await didSignIn(with: try await OAuthEndpoints.exchange(code: code, pkce: pkce))
         } catch WebAuthError.cancelled {
             // User closed the sheet; nothing to report.
         } catch {
             signInError = error.localizedDescription
         }
+    }
+
+    private func didSignIn(with fresh: OAuthTokens) async {
+        await tokens.signIn(with: fresh)
+        UserDefaults.standard.removeObject(forKey: Self.signedOutKey)
+        signInError = nil
+        signInNotice = nil
+        authForm = nil
+        isSignedIn = true
+        await refresh()
+    }
+
+    // MARK: - Account deletion
+
+    func accountDeletionInfo() async throws -> AccountDeletionInfo {
+        try await api.get("api/v1/account_deletion")
+    }
+
+    /// Confirmed with the password. The server deletes the account an hour later unless the
+    /// person signs back in, and has already ended this session; the app signs out here.
+    func deleteAccount(password: String) async throws {
+        let result: AccountDeletionResult = try await api.post("api/v1/account_deletion", AccountDeletionRequest(password: password))
+        await signOut()
+        let deletesAt = ISO8601DateFormatter().date(from: result.deletesAt) ?? Date().addingTimeInterval(3600)
+        signInNotice = "Your account will be deleted at \(deletesAt.formatted(date: .omitted, time: .shortened)). Sign back in before then to keep it."
     }
 
     /// Set by Sign Out until the next sign-in, which then asks for the password again rather than
