@@ -44,7 +44,11 @@ struct DeleteAccountView: View {
                     if let billing = info.separateBilling {
                         Section {
                             Label {
-                                Text("You \(billing.certain ? "will" : "may") need to cancel your PRO subscription at \(billing.provider) yourself if billing is active there.")
+                                if billing.provider == "Apple" {
+                                    Text("Apple keeps billing your PRO subscription until you cancel it. Cancel it in Settings → your name → Subscriptions.")
+                                } else {
+                                    Text("You \(billing.certain ? "will" : "may") need to cancel your PRO subscription at \(billing.provider) yourself if billing is active there.")
+                                }
                             } icon: {
                                 Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
                             }

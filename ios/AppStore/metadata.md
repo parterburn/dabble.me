@@ -138,13 +138,15 @@ The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resour
 > Account deletion: Settings → Delete Account. The page in the app shows what will be deleted, asks for the account password (or a passkey), and confirms once more; the app then signs out. The account is deleted an hour later unless the person signs back in.
 >
 > PAID FEATURES
-> The app has no in-app purchases and sells nothing. Dabble Me PRO is a subscription bought on the dabble.me website; subscribers sign in and their features are available. Free accounts can read, write and delete entries and set a reminder. Photos, editing, search, stats and On This Day are PRO. On the US storefront only, Settings shows a link to dabble.me/subscribe; elsewhere the plan is shown as plain text.
+> Dabble Me PRO is an auto-renewable subscription, sold in the app (Monthly and Yearly, one subscription group) and on the dabble.me website. Free accounts can read, write and delete entries and set a reminder. Photos, editing, search, stats and On This Day are PRO.
+> To buy: sign in with a Free account (or create one), then Settings → Plan, or tap any PRO feature (Search, Stats). Restore Purchases is on the same screen, with the Terms of Use and Privacy Policy. Purchases are verified on our server with the App Store Server API before PRO turns on. An account that already subscribes on the website sees no purchase buttons. On the US storefront only, Settings → Plan also links to dabble.me/subscribe.
+> Please use a Free account to test the purchase: the PRO demo account above already has PRO.
 >
 > 4. EXTERNAL SERVICES
 > - dabble.me: our own server, for accounts, sign-in (email and password, or a passkey, over HTTPS) and journal storage.
 > - Amazon S3 and CloudFront: photo storage and delivery.
 > - Mailgun: the daily email and account emails.
-> - Stripe: subscriptions on the website only, never in the app.
+> - Stripe: subscriptions on the website only, never in the app. In the app, PRO is sold with Apple's in-app purchase.
 > - Spotify: songs saved on an entry play in Spotify's own embedded player.
 > - Apple Intelligence (Foundation Models): reflections, prompts and hashtag suggestions run on the device. The app sends journal text to no AI service.
 > - Optional: a PRO user can connect Claude or ChatGPT to their journal on the website. The app only links to the guide.
@@ -184,8 +186,8 @@ The calendar events in 6 are made up (`-DabbleDebugCalendar YES`), like the rest
 
 ## Decisions
 
-- **In-app purchase:** ship as a free companion app (guideline 3.1.3(f)) with no in-app purchasing. On the **US App Store only**, Settings → Plan links to dabble.me/subscribe (US storefront exception in guideline 3.1.1(a), May 2025), detected with StoreKit's `Storefront.current`; elsewhere the plan is plain text. If App Review objects, drop the link.
+- **In-app purchase (from build 110):** PRO Monthly (`me.dabble.ios.pro.monthly`) and PRO Yearly (`me.dabble.ios.pro.yearly`), one subscription group, StoreKit 2 (`SubscriptionStore`, `SubscribeOptions`, `PlanView`). Each purchase carries the account's `appAccountToken`; the server verifies it with Apple before PRO turns on (`AppStore` in `app/lib`). The free-companion-app route (guideline 3.1.3(f)) no longer applies once the app sells something. On the **US App Store only**, Settings → Plan also links to dabble.me/subscribe (US storefront exception in guideline 3.1.1(a), May 2025), detected with StoreKit's `Storefront.current`. If App Review objects, drop the link. Family Sharing is off.
 - **Free vs PRO in the app:** (the editor's Photos button shows for free accounts and says photos come with PRO) free accounts read, write and delete text entries, use the on-device Apple Intelligence features (reflections, Today's prompt, hashtag suggestions), keep an entry template, see the day's calendar events while writing, share an entry, set the daily reminder (which can bring a past entry), and see the Photos view, Songs and the widget; photos, links, editing, search (and its hashtag cloud), Stats (and the year in review at the top of it), On This Day, choosing the email's days, and AI connections are PRO. Dictation is the keyboard's own (no in-app mic). Face ID lock and drafts are for everyone.
-- **Account deletion:** in the app (guideline 5.1.1(v)): Settings → Delete Account shows the entry count, an export link and any billing to cancel elsewhere (Gumroad, PayPal), asks for the password and confirms once more (`DeleteAccountView`, `/api/v1/account_deletion`). The app signs out; the account goes an hour later, as on the web, unless the person signs back in. A Stripe subscription is cancelled with it. No email step.
+- **Account deletion:** in the app (guideline 5.1.1(v)): Settings → Delete Account shows the entry count, an export link and any billing to cancel elsewhere (Gumroad, PayPal, or an App Store subscription, which only the person can cancel, in iOS Settings), asks for the password and confirms once more (`DeleteAccountView`, `/api/v1/account_deletion`). The app signs out; the account goes an hour later, as on the web, unless the person signs back in. A Stripe subscription is cancelled with it. No email step.
 - **Sign-in and sign-up:** the app's own forms (`AuthFormView`; `/api/v1/session`, `/api/v1/registration`), email and password plus the 2FA code when it's on, or a passkey (the site's own, via `webcredentials:dabble.me`). Sign in with Apple, if a third-party login is ever added, goes above the fields (guideline 4.8).
 - **iPad:** supported from the first version, so the submission needs the 13" iPad screenshot set too.

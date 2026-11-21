@@ -38,3 +38,8 @@ oauth_app_cleanup:
   cron: "0 4 * * 0"
   class: "OauthAppCleanupWorker"
   description: "Sundays at 4:00 AM UTC. Deletes self-registered OAuth clients unused for 30 days."
+
+apple_subscription_refresh:
+  cron: "45 0 * * *"
+  class: "AppleSubscriptionRefreshWorker"
+  description: "Daily at 12:45 AM UTC. Re-reads App Store subscriptions from Apple in case a notification was missed, and ends PRO whose paid period is over."

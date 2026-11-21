@@ -472,6 +472,32 @@ struct DecodingTests {
         #expect(me.canAddPhotos == false)
         #expect(me.today == "2026-11-07")
         #expect(me.aiConnectors?.requiresPro == true)
+        // An older server: no in-app purchase, so nothing is offered.
+        #expect(me.appleAccountToken == nil)
+        #expect(me.isProThroughApple == false)
+    }
+
+    /// What build 110's server adds for in-app purchase (Api::V1::AppleSubscriptionsController.status_json).
+    @Test func decodesMeWithAppleSubscription() throws {
+        let json = """
+        {"id":1,"email":"a@b.c","first_name":null,"plan":"pro","is_pro":true,"timezone":null,
+        "today":"2026-11-07","entry_count":3,"can_write":true,"can_add_photos":true,"can_edit":true,"can_search":true,
+        "settings_url":"https://dabble.me/settings","security_url":"https://dabble.me/security","ai_connectors":null,
+        "apple_account_token":"6f1c0c5e-3d5b-4b7a-9a43-2f0d1c3e9b11","pro_source":"apple",
+        "apple_subscription":{"product_id":"me.dabble.ios.pro.yearly","expires_at":"2027-11-07T20:00:00Z",
+        "will_renew":true,"in_grace_period":false,"sandbox":true}}
+        """
+        let me = try APIClient.decoder.decode(Me.self, from: Data(json.utf8))
+        #expect(UUID(uuidString: try #require(me.appleAccountToken)) != nil)
+        #expect(me.isProThroughApple)
+        #expect(!me.isProThroughWeb)
+        #expect(me.appleSubscription?.productId == SubscriptionStore.yearlyID)
+        #expect(me.appleSubscription?.willRenew == true)
+    }
+
+    /// The server only accepts these (AppStore::PRODUCT_IDS); App Store Connect must use them too.
+    @Test func sellsTheProductsTheServerAccepts() {
+        #expect(SubscriptionStore.productIDs == ["me.dabble.ios.pro.monthly", "me.dabble.ios.pro.yearly"])
     }
 }
 

@@ -19,8 +19,9 @@ struct SettingsView: View {
     @AppStorage(JournalIntelligence.enabledKey) private var onDeviceAI = true
     @AppStorage(DictationSettings.enabledKey) private var dictationEnabled = true
     @AppStorage(DictationSettings.styleKey) private var dictationStyle = DictationStyle.polished
-    /// The plan links to dabble.me/subscribe only on the US App Store, where Apple allows links to
-    /// buy outside the app (guideline 3.1.1(a), US storefront). Elsewhere it's plain text.
+    /// With an older server (no in-app purchase), the plan links to dabble.me/subscribe only on
+    /// the US App Store, where Apple allows links to buy outside the app (guideline 3.1.1(a), US
+    /// storefront). Otherwise the Plan row opens PlanView, which sells PRO in the app.
     @State private var canLinkToSubscribe = false
 
     var body: some View {
@@ -57,7 +58,15 @@ struct SettingsView: View {
                         }
                         .foregroundStyle(.primary)
                         .accessibilityHint("Opens Account Security on dabble.me")
-                        if canLinkToSubscribe {
+                        if me.appleAccountToken != nil {
+                            // The plan, and PRO bought here (or managed, when it was bought here).
+                            PaneLink {
+                                PlanView()
+                            } label: {
+                                LabeledContent("Plan", value: me.isPro ? "PRO" : "Free")
+                            }
+                        } else if canLinkToSubscribe {
+                            // An older server, which can't take an in-app purchase.
                             Link(destination: AppConfig.webURL("subscribe")) {
                                 LabeledContent("Plan") {
                                     HStack(spacing: 8) {
@@ -259,8 +268,8 @@ private extension SettingsView {
     }
 }
 
-/// Explains PRO-only features. No purchase links: plans are managed on the web, and
-/// App Store rules don't allow steering to outside purchases from inside the app.
+/// Explains PRO-only features, with the in-app purchase under it for a Free account
+/// (SubscribeOptions; nothing is linked to buy outside the app here).
 struct ProInfoView: View {
     enum Feature {
         case writing, search, stats
@@ -272,6 +281,7 @@ struct ProInfoView: View {
     /// everyone, and a free account should know there'd be one.
     var rewindYear: Int?
     @Environment(\.dismiss) private var dismiss
+    @Environment(AppModel.self) private var model
 
     var body: some View {
         NavigationStack {
@@ -279,6 +289,8 @@ struct ProInfoView: View {
                 Label(title, systemImage: feature == .writing ? "square.and.pencil" : feature == .stats ? "chart.bar" : "magnifyingglass")
             } description: {
                 Text(message)
+            } actions: {
+                SubscribeOptions()
             }
             .toolbar {
                 if showsDoneButton {
@@ -288,7 +300,8 @@ struct ProInfoView: View {
                 }
             }
         }
-        .presentationDetents([.medium])
+        // Tall enough for the plans and their terms when there's something to buy.
+        .presentationDetents(model.me?.isPro == false && model.me?.appleAccountToken != nil ? [.large] : [.medium])
     }
 
     private var title: String {

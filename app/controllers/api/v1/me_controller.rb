@@ -24,6 +24,10 @@ module Api
           can_add_links: user.is_pro?,
           can_search: user.is_pro?,
           can_see_stats: user.is_pro?,
+          # In-app purchase (from build 110): the appAccountToken to buy with, where PRO comes
+          # from ("apple", "web" or nil), and the App Store subscription that gives it.
+          apple_account_token: user.apple_account_token!,
+          **AppleSubscriptionsController.status_json(user).slice(:pro_source, :apple_subscription),
           settings_url: "#{ApplicationHelper.site_public_base_url}/settings",
           security_url: "#{ApplicationHelper.site_public_base_url}/security",
           # Connecting Claude/ChatGPT (MCP) needs PRO.

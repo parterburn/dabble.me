@@ -28,6 +28,25 @@ struct Me: Decodable, Sendable, Equatable {
     let settingsUrl: URL
     let securityUrl: URL
     let aiConnectors: AIConnectors?
+    /// The UUID to buy PRO in the app with (StoreKit's appAccountToken): Apple puts it in the
+    /// signed transaction, which is how the server knows which account bought it. Nil from an
+    /// older server, and then the app sells nothing.
+    var appleAccountToken: String? = nil
+    /// Where PRO comes from: "apple" (an App Store subscription), "web" (dabble.me), or nil.
+    var proSource: String? = nil
+    /// The App Store subscription that makes the account PRO, if one does.
+    var appleSubscription: AppleSubscriptionInfo? = nil
+
+    var isProThroughApple: Bool { isPro && proSource == "apple" }
+    var isProThroughWeb: Bool { isPro && proSource != "apple" }
+
+    struct AppleSubscriptionInfo: Decodable, Sendable, Equatable {
+        let productId: String
+        let expiresAt: String?
+        let willRenew: Bool?
+        let inGracePeriod: Bool?
+        let sandbox: Bool?
+    }
 
     /// Free accounts can write and delete; editing, photos, links, search and Stats are PRO.
     var mayDelete: Bool { canDelete ?? canEdit }
@@ -220,7 +239,7 @@ struct ImageUpload: Decodable, Sendable {
 /// GET /api/v1/account_deletion: what Delete Account's confirmation says.
 struct AccountDeletionInfo: Decodable, Sendable, Equatable {
     struct SeparateBilling: Decodable, Sendable, Equatable {
-        /// Gumroad, PayPal or Stripe.
+        /// Gumroad, PayPal, Stripe, or Apple (an App Store subscription, cancelled in iOS Settings).
         let provider: String
         /// False for Stripe with no customer on file: there may be nothing left to cancel.
         let certain: Bool

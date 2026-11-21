@@ -30,9 +30,14 @@
       <div class="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900" role="alert">
         <%# Gumroad and PayPal bill on their own, so the account must be cancelled there.
             A Stripe plan with no customer on file may have nothing left to cancel. %>
-        You <%= current_user.plan_type_unlinked == "Stripe" ? "may" : "will" %> need to cancel your paid subscription separately at
-        <strong class="font-semibold"><%= current_user.plan_type_unlinked %></strong>
-        if billing is active there.
+        <% if pro_cancel_warning[:provider] == "Apple" %>
+          Apple keeps billing your App Store subscription until you cancel it: on your iPhone, open
+          <strong class="font-semibold">Settings → your name → Subscriptions</strong>.
+        <% else %>
+          You <%= pro_cancel_warning[:certain] ? "will" : "may" %> need to cancel your paid subscription separately at
+          <strong class="font-semibold"><%= pro_cancel_warning[:provider] %></strong>
+          if billing is active there.
+        <% end %>
       </div>
     <% end %>
 

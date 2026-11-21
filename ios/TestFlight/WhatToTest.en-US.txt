@@ -1,25 +1,30 @@
-Build 109 signs you in (password or passkey) and creates accounts with the app's own forms, and deletes an account right in the app.
+Build 110 sells Dabble Me PRO in the app (Monthly and Yearly). TestFlight purchases use Apple's sandbox: nothing is charged. In TestFlight a subscription renews once a day, whichever plan, and stops on its own after 6 renewals.
 
-SIGN IN
-- Sign out (Settings, Sign Out). On the welcome screen, tap I Already Have an Account. A Sign In form should slide up, not a web page.
-- Enter your email and password and tap Sign In. Your journal should open. Password AutoFill should offer your saved dabble.me login.
-- Try a wrong password. You should see "Incorrect email or password." and stay on the form.
-- With two-factor on: after the password, a Code field should appear. Enter the code from your authenticator app (or a recovery code) and tap Sign In.
-- Forgot Password? should open dabble.me's reset page.
+Use a Free account for these, not one that pays on dabble.me.
 
-PASSKEYS
-- On the Sign In form, tap Sign In with a Passkey. The system's passkey sheet should offer the passkey you made on dabble.me. Confirm with Face ID and your journal should open, with no password or 2FA code.
-- Closing the passkey sheet should leave you on the form with nothing said.
-- No passkey yet? The sheet should offer one from another device, or close it and use your password.
+BUY
+- Settings, Plan. You should see the Yearly and Monthly plans with their prices, Restore Purchases, and the Terms of Use and Privacy Policy links.
+- Tap a plan and confirm. The plan should change to PRO within a few seconds, and Search and Stats should open.
+- You should get the "Thanks for subscribing" email.
+- Settings, Plan should now say when it renews, with Manage Subscription (Apple's own sheet).
+- Searching or opening Stats on a Free account shows the same plans under the PRO explanation.
 
-START YOUR JOURNAL
-- Signed out, tap Start Your Journal. Enter a first name (optional), a new email and a password of 6 or more characters, and tap Create Account. The new, empty journal should open.
-- An email that already has an account should say so, under the button.
+RENEW, CANCEL, EXPIRE
+- Come back the next day: it renews, and stays PRO.
+- In Manage Subscription, cancel. Plan should say Ends instead of Renews, and PRO stays until then.
+- After it ends (the next day), the account should go back to Free. Pull to refresh if it still says PRO.
 
-DELETE ACCOUNT (use an account you don't need)
-- Settings, Delete Account. A page should say how many entries go with it, offer Export My Entries, and ask for the password.
-- A PRO account billed by Gumroad or PayPal should be told to cancel there.
-- A wrong password should say "Incorrect password."
-- Confirm with a Passkey Instead (under the password) should ask once more, then open the passkey sheet; your passkey deletes it the same way. Closing the sheet should leave the account alone.
-- The right password, then Delete Account in the last confirmation, should sign you out. The welcome screen should say when the account will be deleted (an hour away).
-- Sign back in before then: the account should still be there, entries and all.
+UPGRADE
+- On Monthly, open Manage Subscription and switch to Yearly. The plan should become Yearly right away.
+
+RESTORE
+- Delete the app, reinstall, sign in to the same account, then Settings, Plan, Restore Purchases. It should stay or become PRO.
+
+ANOTHER ACCOUNT
+- With an active subscription, sign out and sign in to a different Free account. Settings, Plan should say this Apple Account already pays for PRO on a different Dabble Me account, with no purchase buttons. Restore Purchases should say the same.
+
+ACCOUNTS THAT PAY ON THE WEB
+- Sign in to an account that's PRO through dabble.me. Settings, Plan should say it's through dabble.me, with nothing to buy.
+
+DELETE ACCOUNT
+- With an active App Store subscription, Settings, Delete Account should tell you to cancel it in iOS Settings (deleting the account doesn't stop Apple's billing).

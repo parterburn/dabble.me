@@ -131,7 +131,10 @@ class PaymentsController < ApplicationController
 
   def checkout
     Stripe.api_key = ENV['STRIPE_API_KEY']
-    if current_user.stripe_id? && Stripe::Subscription.list(customer: current_user.stripe_id, status: 'active').data.any?
+    if AppStore::Entitlement.active_subscription(current_user)
+      # Already paying through the App Store: a second subscription here would bill twice.
+      redirect_to settings_path, notice: "You subscribe to PRO through the App Store. Manage it on your iPhone in Settings → your name → Subscriptions."
+    elsif current_user.stripe_id? && Stripe::Subscription.list(customer: current_user.stripe_id, status: 'active').data.any?
       redirect_to billing_path
     elsif current_user.email !~ User::VALID_EMAIL_REGEX
       redirect_to root_path, alert: "Your email address is not valid. Please update your email address in your account settings."
@@ -189,6 +192,8 @@ class PaymentsController < ApplicationController
       redirect_to "https://gumroad.com/login", allow_other_host: true
     elsif current_user && current_user.plan_type_unlinked == "PayPal"
       redirect_to "https://www.paypal.com/myaccount/autopay/", allow_other_host: true
+    elsif current_user && current_user.plan_type_unlinked == "Apple"
+      redirect_to "https://apps.apple.com/account/subscriptions", allow_other_host: true
     else
       redirect_to "https://dabble.me/subscribe", notice: "You are not subscribed to a plan that can be managed here."
     end
