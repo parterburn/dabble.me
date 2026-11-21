@@ -441,6 +441,50 @@ final class JournalViewsTests: XCTestCase {
         app.navigationBars.buttons.firstMatch.tap()
     }
 
+    /// The bar's microphone: recorded, then written in at the cursor once Done is tapped, with the
+    /// cleanup's ums and correction taken out. (A made-up recording here: the simulator has no
+    /// transcriber.)
+    func testSpeakingAnEntry() throws {
+        let app = launch(["-DabbleDebugDictation", "YES"])
+        if app.buttons["Write Today's Entry"].waitForExistence(timeout: 15) {
+            app.buttons["Write Today's Entry"].tap()
+        } else {
+            tab(app, "Journal").tap()
+            app.buttons["New Entry"].tap()
+        }
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        editor.tap()
+        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+        if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap() }
+        editor.typeText("A slow evening.")
+        app.buttons["Speak Your Entry"].tap()
+        // An X to drop it on the left, Done on the right.
+        XCTAssertTrue(app.buttons["Cancel Recording"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Done"].exists)
+        sleep(1)
+        snap("compose-dictation")
+        // Nothing goes in while it's said.
+        XCTAssertFalse((editor.value as? String ?? "").contains("river"))
+        app.buttons["Done"].tap()
+        // After what was typed, spaced as if typed, and without the "um".
+        let heard = NSPredicate(format: "value CONTAINS %@", "A slow evening. We walked along the river after")
+        wait(for: [expectation(for: heard, evaluatedWith: editor)], timeout: 15)
+        XCTAssertFalse((editor.value as? String ?? "").contains("um,"))
+        XCTAssertTrue(app.buttons["Speak Your Entry"].waitForExistence(timeout: 5))
+        snap("compose-dictation-done")
+        // The X drops a recording: nothing more goes in.
+        let before = editor.value as? String ?? ""
+        app.buttons["Speak Your Entry"].tap()
+        XCTAssertTrue(app.buttons["Cancel Recording"].waitForExistence(timeout: 5))
+        app.buttons["Cancel Recording"].tap()
+        XCTAssertTrue(app.buttons["Speak Your Entry"].waitForExistence(timeout: 5))
+        sleep(1)
+        XCTAssertEqual(editor.value as? String ?? "", before)
+        app.buttons["Cancel"].tap()
+        app.buttons["Discard"].tap()
+    }
+
     func testTodayPromptEntrySummaryAndSettings() throws {
         let app = launch()
         // With Apple Intelligence on, Today writes its own prompt (no button to ask for one).
@@ -963,7 +1007,8 @@ final class JournalViewsTests: XCTestCase {
         let pushRow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Push'")).firstMatch
         let widgetRow = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Home Screen Widget'")).firstMatch
         XCTAssertTrue(emailRow.waitForExistence(timeout: 10))
-        let show = app.switches["Show Past Entry"]
+        let show = app.switches["Include Past Entry"]
+        let pushShow = app.switches["Show Entry Previews"]
         func set(_ toggle: XCUIElement, _ on: Bool) {
             if (toggle.value as? String == "1") != on { toggle.switches.firstMatch.tap() }
         }
@@ -985,8 +1030,8 @@ final class JournalViewsTests: XCTestCase {
             let allow = XCUIApplication(bundleIdentifier: "com.apple.springboard").buttons["Allow"]
             if allow.waitForExistence(timeout: 3) { allow.tap() }
         }
-        if show.waitForExistence(timeout: 5) {
-            XCTAssertEqual(show.value as? String, "1", "The push reminder keeps its own")
+        if pushShow.waitForExistence(timeout: 5) {
+            XCTAssertEqual(pushShow.value as? String, "1", "The push reminder keeps its own")
             snap("push-show-past-entry")
         }
         if !pushWasOn, pushSwitch.value as? String == "1" { pushSwitch.switches.firstMatch.tap() }
@@ -1051,7 +1096,7 @@ final class JournalViewsTests: XCTestCase {
         snap("past-entries")
         XCTAssertEqual(words.value as? String, "waffles")
         // (Whether each shows the entry itself is on its own page, not here.)
-        XCTAssertFalse(app.switches["Show Past Entry"].exists)
+        XCTAssertFalse(app.switches["Include Past Entry"].exists)
 
         // Put the demo account back.
         words.tap()
@@ -1061,7 +1106,7 @@ final class JournalViewsTests: XCTestCase {
         app.navigationBars.buttons.element(boundBy: 0).tap()
         app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Email'")).firstMatch.tap()
         XCTAssertTrue(app.navigationBars["Email Notifications"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.switches["Show Past Entry"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.switches["Include Past Entry"].waitForExistence(timeout: 5))
     }
 
     /// Settings → Manage Hashtags: dated tags, adding one by name, and removing it.
@@ -2739,7 +2784,7 @@ final class JournalViewsTests: XCTestCase {
         row.tap()
         XCTAssertTrue(app.navigationBars["Email Notifications"].waitForExistence(timeout: 5))
         if app.switches["Email Notifications"].value as? String == "1" {
-            XCTAssertTrue(app.switches["Show Past Entry"].waitForExistence(timeout: 5))
+            XCTAssertTrue(app.switches["Include Past Entry"].waitForExistence(timeout: 5))
         }
         snap("email-schedule-free")
     }

@@ -67,6 +67,8 @@ struct ComposeView: View {
     /// Prompt (Apple Intelligence, the sparkles): a row with one question about the draft. Closing
     /// and opening it again asks a new one.
     @State private var showsAskRow = false
+    /// Speaking the entry (the bar's microphone): recorded, then written in where the cursor is.
+    @State private var dictation = Dictation()
 
     @State private var question: String?
     @State private var askedQuestions: [String] = []
@@ -161,7 +163,8 @@ struct ComposeView: View {
         let picked = JournalDay(localDate: date)
         return picked.iso == entry.date ? nil : picked
     }
-    private var hasChanges: Bool { editor.isDirty || !photoItems.isEmpty || restoredDraft != nil || removesExistingPhoto || movedTo != nil }
+    /// (Speech still being recorded or written counts: closing would drop it.)
+    private var hasChanges: Bool { dictation.isActive || editor.isDirty || !photoItems.isEmpty || restoredDraft != nil || removesExistingPhoto || movedTo != nil }
     private var canSave: Bool {
         guard !isSaving, !isLoadingPhotos else { return false }
         return isNew ? ((!editor.isEmpty && !isUntouchedTemplate) || !photos.isEmpty)
@@ -170,8 +173,9 @@ struct ComposeView: View {
 
     /// There's something to keep as a draft: words, photos, or a removed photo.
     private var canSaveDraft: Bool {
-        (!editor.isEmpty || !photoItems.isEmpty || removesExistingPhoto)
-            && (editor.isDirty || restoredDraft != nil || !photoItems.isEmpty || removesExistingPhoto)
+        dictation.isActive
+            || ((!editor.isEmpty || !photoItems.isEmpty || removesExistingPhoto)
+                && (editor.isDirty || restoredDraft != nil || !photoItems.isEmpty || removesExistingPhoto))
     }
 
     /// Editing: the entry's photo (or collage) as it is now, unless removed. New photos join it in a collage.
@@ -195,7 +199,7 @@ struct ComposeView: View {
                                    : AnyView((model.me?.canAddPhotos == true ? AnyView(photosButton) : AnyView(proPhotosButton)).foregroundStyle(.tint)),
                                trailing: AnyView((isFormattingSelection ? AnyView(selectionButtons) : AnyView(tagAndLinkButtons)).foregroundStyle(.tint)),
                                trailingEnd: isFormattingSelection ? AnyView(closeFormatsButton.foregroundStyle(.tint)) : nil,
-                               barKey: "\(isFormattingSelection)|\(showsFormatBar)|\(editor.isExistingLink)|\(visitURL != nil)|\(editor.hasSelection)|\(editor.isBold)|\(editor.isItalic)|\(editor.isUnderlined)|\(model.me?.mayAddLinks == true)|\(CameraPicker.isAvailable)|\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)",
+                               barKey: "\(isFormattingSelection)|\(showsFormatBar)|\(editor.isExistingLink)|\(visitURL != nil)|\(editor.hasSelection)|\(editor.isBold)|\(editor.isItalic)|\(editor.isUnderlined)|\(model.me?.mayAddLinks == true)|\(CameraPicker.isAvailable)|\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(dictation.state)|\(dictation.problem != nil)|\(editor.isEditingLink)",
                                row: openRow)
                     // Low in the page, over the bar: clear of the entry's first lines.
                     .overlay(alignment: .bottom) {
@@ -243,9 +247,13 @@ struct ComposeView: View {
                             // A draft is kept on this device and comes back the next time this is opened.
                             if canSaveDraft {
                                 Button("Save Draft") {
-                                    draftSave?.cancel()
-                                    saveDraftNow()
-                                    dismiss()
+                                    // What's still being said goes in first.
+                                    Task {
+                                        await dictation.finish()
+                                        draftSave?.cancel()
+                                        saveDraftNow()
+                                        dismiss()
+                                    }
                                 }
                             }
                             Button("Discard", role: .destructive) {
@@ -299,6 +307,21 @@ struct ComposeView: View {
                 // One row at a time (the link row also opens by selecting a link).
                 if editing { showsHashtagBar = false; showsAskRow = false; showsPhotoDrawer = false }
             }
+            // One row at a time: another one opening ends the recording (what was said is still
+            // written in), as does the keyboard (and the bar with it) going away, or the app.
+            .onChange(of: showsHashtagBar || showsAskRow || showsPhotoDrawer || editor.isEditingLink) { _, open in
+                if open { dictation.stop(); dictation.clearProblem() }
+            }
+            .onChange(of: editor.isFocused) { _, focused in
+                if !focused, dictation.state == .listening { dictation.stop() }
+            }
+            .onDisappear { dictation.cancel() }
+            // Why it couldn't listen is said for a while, then the row closes.
+            .task(id: dictation.problem) {
+                guard dictation.problem != nil else { return }
+                try? await Task.sleep(for: .seconds(8))
+                if !Task.isCancelled { dictation.clearProblem() }
+            }
             .photosPicker(isPresented: $pickingPhotos, selection: libraryItems, maxSelectionCount: photoLimit - cameraItems.count,
                           selectionBehavior: .ordered, matching: .images, preferredItemEncoding: .current)
             .onChange(of: photoItems) { old, new in
@@ -335,6 +358,14 @@ struct ComposeView: View {
             .task { await restoreDraftPhotos() }
             .onChange(of: scenePhase) { _, phase in
                 if phase != .active { saveDraftNow() }
+                // Leaving mid-recording: what was said is written in, then the draft saved again
+                // (if iOS suspends the app first, that finishes when it's back).
+                if phase == .background, dictation.isActive {
+                    Task {
+                        await dictation.finish()
+                        saveDraftNow()
+                    }
+                }
             }
             .onAppear {
                 editor.allowsLinks = model.me?.mayAddLinks == true
@@ -381,6 +412,8 @@ struct ComposeView: View {
     private var openRow: AnyView? {
         let row: AnyView? = if editor.isEditingLink {
             AnyView(LinkRow(editor: editor))
+        } else if dictation.isActive || dictation.problem != nil {
+            AnyView(DictationRow(dictation: dictation))
         } else if let typed = editor.typedHashtag, !hashtagCompletions(for: typed).isEmpty {
             // A hashtag being typed: the writer's tags that start that way, whatever row was open.
             AnyView(hashtagCompletionRow(hashtagCompletions(for: typed)))
@@ -566,8 +599,8 @@ struct ComposeView: View {
     /// held: the bar shows `linkButtons` and `selectionButtons`, and nothing else.
     private var isFormattingSelection: Bool { editor.hasSelection || editor.isEditingLink || showsFormatBar }
 
-    /// The bar's right, with nothing selected: Bold (for what's typed next), Tags (the hashtag row), then Prompt
-    /// (the lightbulb) at the far edge. Each row button is selected while its row is open; one row at a time.
+    /// The bar's right, with nothing selected: Bold (for what's typed next), Tags (the hashtag row), Prompt
+    /// (the lightbulb), then the microphone (speak the entry, iOS 26) at the far edge. Each row button is selected while its row is open; one row at a time.
     private var tagAndLinkButtons: some View {
         HStack(spacing: 6) {
             // Bold, always: for what's typed next (lit while that's bold; a tap turns it off).
@@ -646,7 +679,36 @@ struct ComposeView: View {
             .accessibilityActions {
                 if !template.isEmpty { Button("Use Template") { useTemplate() } }
             }
+            if Dictation.isSupported, DictationSettings.isEnabled { dictationButton }
         }
+    }
+
+    /// Speak the entry: starts the recording, and stops it to have it written in. Selected while on.
+    private var dictationButton: some View {
+        Button {
+            if dictation.isActive {
+                dictation.stop()
+            } else {
+                showsHashtagBar = false
+                showsAskRow = false
+                showsPhotoDrawer = false
+                editor.endLink()
+                // The writer's hashtags, as names to expect (asked for again once it's said).
+                if allTags.isEmpty { Task { allTags = ((try? await model.allHashtags()) ?? []).map(\.tag) } }
+                if recentTags.isEmpty { Task { recentTags = (try? await model.recentHashtags()) ?? [] } }
+                // Settings → Dictation's own words first, then the hashtags.
+                dictation.start(style: DictationSettings.style, hints: { DictationSettings.words + recentTags + allTags },
+                                canListen: { editor.isFocused }) { editor.insertDictated($0) }
+            }
+        } label: {
+            appIcon("slab-microphone")
+                .frame(width: 40, height: 36)
+                .background(dictation.isActive ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(dictation.isActive ? "Stop Listening" : "Speak Your Entry")
+        .accessibilityHint("Records what you say, then writes it into the entry, on your phone")
+        .accessibilityAddTraits(dictation.isActive ? .isSelected : [])
     }
 
     /// The attached photos as a little stack; tap to show or hide the photo row. Held, it goes
@@ -1350,6 +1412,8 @@ struct ComposeView: View {
         guard !isSaving else { return }
         isSaving = true
         defer { isSaving = false }
+        // What's still being said goes in first.
+        await dictation.finish()
         do {
             switch mode {
             case .new:
@@ -1733,5 +1797,131 @@ struct FormatButton: View {
         .buttonStyle(.plain)
         .accessibilityLabel(name)
         .accessibilityAddTraits(isOn ? .isSelected : [])
+    }
+}
+
+/// The row over the bar while speaking. Its own view, reading `Dictation` itself, so the waveform
+/// and clock update here without redrawing the whole composer.
+private struct DictationRow: View {
+    let dictation: Dictation
+    @Environment(\.openURL) private var openURL
+
+    /// While speaking: a title, then, while recording, an X on the left (drops it), the waveform
+    /// with the time so far, and Done on the right (writes it in). Nothing's written until Done:
+    /// it's heard in one go, then tidied.
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(dictationTitle)
+                .font(.caption.weight(.semibold))
+                .textCase(.uppercase)
+                .foregroundStyle(.tint)
+                .padding(.bottom, 4)
+                .accessibilityAddTraits(.isHeader)
+            HStack(alignment: .center, spacing: 12) {
+                if let problem = dictation.problem {
+                    Text(problem.message)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if problem == .microphoneDenied, let settings = URL(string: UIApplication.openSettingsURLString) {
+                        Button("Settings") { openURL(settings) }
+                            .font(.subheadline.weight(.semibold))
+                    }
+                } else if dictation.state == .listening {
+                    Button { dictation.cancel() } label: {
+                        appIcon("slab-close")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 14, height: 14)
+                            .frame(width: 36, height: 36)
+                            .background(.tint.opacity(0.12), in: .circle)
+                            .contentShape(.circle)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.tint)
+                    .accessibilityLabel("Cancel Recording")
+                    .accessibilityHint("Drops what you said")
+                    DictationWaveform(levels: dictation.levels)
+                        .frame(maxWidth: .infinity)
+                    if let since = dictation.listeningSince {
+                        TimelineView(.periodic(from: since, by: 1)) { context in
+                            Text(Duration.seconds(context.date.timeIntervalSince(since)).formatted(.time(pattern: .minuteSecond)))
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                        }
+                        .accessibilityIdentifier("DictationStatus")
+                    }
+                    Button { dictation.stop() } label: {
+                        Text("Done")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 16)
+                            .frame(height: 36)
+                            .background(Color.accentColor, in: .capsule)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Done")
+                    .accessibilityHint("Writes what you said into the entry")
+                } else {
+                    TypingDots(size: .small)
+                    dictationLine
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier("DictationStatus")
+                }
+            }
+            .font(.subheadline)
+            .frame(minHeight: 36)
+        }
+        .padding(.horizontal)
+        .padding(.top, 10)
+    }
+
+    private var dictationTitle: String {
+        if dictation.problem != nil { return "Speak your entry" }
+        return switch dictation.state {
+        case .idle, .preparing: "Getting ready"
+        case .listening: "Listening"
+        case .writing: "Writing it down"
+        }
+    }
+
+    @ViewBuilder private var dictationLine: some View {
+        if let progress = dictation.downloadProgress {
+            Text("Downloading what's needed to listen, just this once… \(Int(progress * 100))%")
+        } else {
+            Text(dictation.state == .writing ? "Turning what you said into words, on your phone…" : "One moment…")
+        }
+    }
+}
+
+/// How loud it's been while recording, newest on the right: bars that scroll left as you talk,
+/// so it's plain that it's hearing you.
+private struct DictationWaveform: View {
+    let levels: [Double]
+
+    var body: some View {
+        GeometryReader { geometry in
+            let spacing: CGFloat = 3
+            let width: CGFloat = 3
+            let count = max(1, Int((geometry.size.width + spacing) / (width + spacing)))
+            let shown = Array(levels.suffix(count))
+            HStack(alignment: .center, spacing: spacing) {
+                Spacer(minLength: 0)
+                // Quiet bars before the recording has filled the width.
+                ForEach(0..<max(0, count - shown.count), id: \.self) { _ in bar(0) }
+                ForEach(Array(shown.enumerated()), id: \.offset) { _, level in bar(level) }
+            }
+            .frame(width: geometry.size.width, height: geometry.size.height)
+        }
+        .frame(height: 28)
+        .accessibilityHidden(true)
+    }
+
+    private func bar(_ level: Double) -> some View {
+        Capsule()
+            .fill(.tint)
+            .frame(width: 3, height: 3 + 25 * min(1, max(0, level)))
     }
 }

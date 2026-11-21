@@ -1116,3 +1116,75 @@ struct DraftPhotoTests {
         #expect(draft.removesPhoto == nil)
     }
 }
+
+/// Speaking an entry: what's heard goes in at the cursor as if typed there.
+@MainActor
+struct DictationTests {
+    @Test func spokenWordsAreSpacedLikeTypedOnes() {
+        #expect(Dictation.insertion(of: "Today I walked.", before: "") == "Today I walked.")
+        #expect(Dictation.insertion(of: " It was quiet. ", before: "A long day.") == " It was quiet.")
+        #expect(Dictation.insertion(of: " It was quiet.", before: "A long day. ") == "It was quiet.")
+        #expect(Dictation.insertion(of: "  \n", before: "A long day.") == "")
+    }
+
+    /// Mid-sentence, a dictionary word starts in lowercase; "I", names and acronyms don't.
+    @Test func midSentenceWordsStartInLowercase() {
+        #expect(Dictation.insertion(of: "Then we left.", before: "We ate and") == " then we left.")
+        #expect(Dictation.insertion(of: "I left early.", before: "After dinner") == " I left early.")
+        #expect(Dictation.insertion(of: "NASA called.", before: "Then") == " NASA called.")
+        #expect(Dictation.insertion(of: "Then we left.", before: "We ate:") == " Then we left.")
+    }
+
+    @Test func hashtagsBecomeWordsToExpect() {
+        #expect(Dictation.hints(from: ["#Leo", "leo", "Kenji", " ", "#"]) == ["Leo", "Kenji"])
+        #expect(Dictation.hints(from: (1...150).map { "tag\($0)" }).count == Dictation.maxHints)
+    }
+}
+
+/// Hex's cleanup model, from the app's bundle: spoken corrections and ums go, the rest stays.
+struct CleanupTaggerTests {
+    @Test func spokenCorrectionsAndFillersGo() throws {
+        let tagger = CleanupTagger()
+        #expect(try tagger.clean("Let's ship it Tuesday, no wait, Thursday.") == "Let's ship it Thursday.")
+        #expect(try tagger.clean("Can you send it to John, I mean Mike?") == "Can you send it to Mike?")
+        #expect(try tagger.clean("Test one two three.") == "Test one two three.")
+        #expect(tagger.isLoaded)
+    }
+
+    @Test func aLateCleanupKeepsWhatWasSaid() async {
+        let tagger = CleanupTagger()
+        let spoken = "Can you send it to John, I mean Mike?"
+        #expect(await tagger.clean(spoken, within: 0) == spoken)
+        #expect(await tagger.clean(spoken, within: 5) == "Can you send it to Mike?")
+    }
+}
+
+/// Settings → Dictation's words to expect: each once, trimmed, removable.
+struct DictationSettingsTests {
+    @Test func wordsAreAddedOnceAndRemoved() {
+        var stored = DictationSettings.adding(" Kenji ", to: "")
+        stored = DictationSettings.adding("kenji", to: stored)
+        stored = DictationSettings.adding("Ouray", to: stored)
+        stored = DictationSettings.adding("  ", to: stored)
+        #expect(DictationSettings.words(from: stored) == ["Kenji", "Ouray"])
+        #expect(DictationSettings.words(from: DictationSettings.removing("Kenji", from: stored)) == ["Ouray"])
+    }
+
+    /// The cleanup model only knows English.
+    @Test func onlyEnglishIsCleanedUp() {
+        #expect(DictationSettings.cleansUp(Locale(identifier: "en-US")))
+        #expect(DictationSettings.cleansUp(Locale(identifier: "en-GB")))
+        #expect(!DictationSettings.cleansUp(Locale(identifier: "es-MX")))
+    }
+}
+
+/// Apple Intelligence's fixes are kept only when they still look like what was said.
+struct TranscriptCleanupGuardTests {
+    @Test func aFixedWordIsKeptARewriteIsNot() {
+        let said = "We went to the beach and I got sun bird on my shoulders."
+        #expect(TranscriptCleanupGuard.isAcceptable(original: said, cleaned: "We went to the beach and I got sunburnt on my shoulders."))
+        #expect(!TranscriptCleanupGuard.isAcceptable(original: said, cleaned: "We didn't go to the beach and I got sunburnt on my shoulders."))
+        #expect(!TranscriptCleanupGuard.isAcceptable(original: "We left at 6.", cleaned: "We left at 7."))
+        #expect(!TranscriptCleanupGuard.isAcceptable(original: said, cleaned: "A sunny beach day left my shoulders burnt, which taught me to bring sunscreen next time for sure."))
+    }
+}
