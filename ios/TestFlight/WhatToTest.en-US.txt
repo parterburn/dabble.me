@@ -5,3 +5,4 @@ Build 108 tidies up speaking an entry.
 - Tap the microphone and start talking within a few seconds. It should keep recording past 10 seconds as usual.
 - Try talking quietly, or in a noisy room. Does it ever stop on you while you're talking, or keep going when you're silent?
 - Settings → Dictation: the notes under each setting are shorter. Anything still unclear?
+- Settings → Dictation → Custom Vocabulary: type a word and press Return. It should appear under the field and the keyboard should stay up, ready for the next word, with nothing jumping around.

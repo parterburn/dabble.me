@@ -74,24 +74,31 @@ struct DictationSettingsView: View {
                 }
 
                 Section {
-                    ForEach(words, id: \.self) { word in
-                        Text(word)
-                    }
-                    .onDelete { offsets in
-                        for word in offsets.map({ words[$0] }) {
-                            storedWords = DictationSettings.removing(word, from: storedWords)
-                        }
-                    }
+                    // The field first, so a word added below it never moves it, and Return
+                    // adds the word and leaves the keyboard up for the next one. (A one-line
+                    // field's Return ends editing; this one takes the line break itself.)
                     HStack {
-                        TextField("Add a word or phrase", text: $newWord)
+                        TextField("Add a word or phrase", text: $newWord, axis: .vertical)
+                            .lineLimit(1)
                             .focused($addingWord)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
-                            .submitLabel(.done)
-                            .onSubmit(add)
-                        if !newWord.trimmingCharacters(in: .whitespaces).isEmpty {
+                            .onChange(of: newWord) { _, typed in
+                                if typed.contains(where: \.isNewline) { add() }
+                            }
+                        if !newWord.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                             Button("Add", action: add)
                                 .font(.subheadline.weight(.semibold))
+                        }
+                    }
+                    // The newest first, just under the field.
+                    ForEach(words.reversed(), id: \.self) { word in
+                        Text(word)
+                    }
+                    .onDelete { offsets in
+                        let shown = Array(words.reversed())
+                        for word in offsets.map({ shown[$0] }) {
+                            storedWords = DictationSettings.removing(word, from: storedWords)
                         }
                     }
                 } header: {
@@ -122,8 +129,7 @@ struct DictationSettingsView: View {
     }
 
     private func add() {
-        storedWords = DictationSettings.adding(newWord, to: storedWords)
+        storedWords = DictationSettings.adding(newWord.replacingOccurrences(of: "\n", with: " "), to: storedWords)
         newWord = ""
-        addingWord = true
     }
 }
