@@ -86,7 +86,6 @@ struct PromptGroundingTests {
 }
 
 @MainActor
-@MainActor
 struct HashtagTypingTests {
     /// A "#" and a letter at the cursor is a hashtag being typed; a number first, or a "#" inside a word, isn't.
     @Test func findsTheHashtagBeingTyped() {
@@ -132,6 +131,7 @@ struct HashtagTypingTests {
     }
 }
 
+@MainActor
 struct HashtagMatchingTests {
     /// The writer's tags that are words in the entry come first in the composer's row, without a model.
     @Test func tagsMatchWholeWordsWhateverTheCase() {
