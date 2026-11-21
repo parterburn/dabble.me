@@ -1177,3 +1177,14 @@ struct DictationSettingsTests {
         #expect(!DictationSettings.cleansUp(Locale(identifier: "es-MX")))
     }
 }
+
+/// Apple Intelligence's fixes are kept only when they still look like what was said.
+struct TranscriptCleanupGuardTests {
+    @Test func aFixedWordIsKeptARewriteIsNot() {
+        let said = "We went to the beach and I got sun bird on my shoulders."
+        #expect(TranscriptCleanupGuard.isAcceptable(original: said, cleaned: "We went to the beach and I got sunburnt on my shoulders."))
+        #expect(!TranscriptCleanupGuard.isAcceptable(original: said, cleaned: "We didn't go to the beach and I got sunburnt on my shoulders."))
+        #expect(!TranscriptCleanupGuard.isAcceptable(original: "We left at 6.", cleaned: "We left at 7."))
+        #expect(!TranscriptCleanupGuard.isAcceptable(original: said, cleaned: "A sunny beach day left my shoulders burnt, which taught me to bring sunscreen next time for sure."))
+    }
+}

@@ -113,8 +113,12 @@ final class Dictation {
                 } else {
                     throw Problem.unavailable
                 }
-                let cleaned = style == .verbatim || !cleansUp ? heard
-                    : await CleanupTagger.shared.clean(heard, within: Self.cleanupBudget, protectedTerms: Self.hints(from: hints()))
+                var cleaned = heard
+                if style == .polished, cleansUp {
+                    cleaned = await CleanupTagger.shared.clean(heard, within: Self.cleanupBudget, protectedTerms: Self.hints(from: hints()))
+                    // Settings → Dictation → Fix Misheard Words (Apple Intelligence), when it's on.
+                    cleaned = await AppleIntelligenceCleanup.clean(cleaned)
+                }
                 try Task.checkCancellation()
                 insert(cleaned)
             } catch is CancellationError {

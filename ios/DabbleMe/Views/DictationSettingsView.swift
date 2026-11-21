@@ -8,12 +8,14 @@ struct DictationSettingsView: View {
     @AppStorage(DictationSettings.styleKey) private var style = DictationStyle.polished
     @AppStorage(DictationSettings.wordsKey) private var storedWords = ""
     @AppStorage(DictationSettings.languageKey) private var language = ""
+    @AppStorage(AppleIntelligenceCleanup.enabledKey) private var fixesMisheardWords = false
     /// The languages the phone's transcriber has, by name.
     @State private var languages: [(id: String, name: String)] = []
     @State private var newWord = ""
     @FocusState private var addingWord: Bool
 
     private var words: [String] { DictationSettings.words(from: storedWords) }
+    private var cleansUp: Bool { DictationSettings.cleansUp(language.isEmpty ? .current : Locale(identifier: language)) }
 
     var body: some View {
         Form {
@@ -53,10 +55,21 @@ struct DictationSettingsView: View {
                 } header: {
                     Text("Style")
                 } footer: {
-                    if DictationSettings.cleansUp(language.isEmpty ? .current : Locale(identifier: language)) {
+                    if cleansUp {
                         Text(style.explanation)
                     } else {
                         Text("Polished tidies English only. In this language, what you say is written as heard either way.")
+                    }
+                }
+
+                // Apple Intelligence's pass, after Polished: only where it's on, and in English.
+                if style == .polished, cleansUp, AppleIntelligenceCleanup.isAvailable {
+                    Section {
+                        Toggle(isOn: $fixesMisheardWords) {
+                            Label("Fix Misheard Words", icon: "slab-sparkles")
+                        }
+                    } footer: {
+                        Text("Experimental. Apple Intelligence fixes words iOS clearly got wrong, from the sentence around them, on your phone. It's told never to reword anything, and an answer that changes a number, a \"not\" or your meaning is thrown out. Adds a second or two after Done; entries over \(AppleIntelligenceCleanup.maxWords) words are left as they are.")
                     }
                 }
 

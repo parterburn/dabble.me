@@ -17,3 +17,4 @@ SETTINGS → DICTATION
 - Style: Polished (the tidying above) or Verbatim (as heard, ums included). Try each on the same sentence.
 - Custom Vocabulary: add a name you say often that isn't a hashtag, then say it. It should be spelled your way. Your hashtags count already. Swipe a term to delete it.
 - Language: Automatic follows your iPhone. Pick another language and speak in it. The first time, it downloads that language once. Polished only tidies English; other languages come out as heard.
+- Fix Misheard Words (only with Apple Intelligence on, Polished, English): turn it on, then say a sentence the keyboard usually gets wrong. Is the result better, and is anything reworded that shouldn't be?
