@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Settings → Dictation: the composer's microphone on or off, how what's said is written down
-/// (Polished or Verbatim), and the writer's own words for it to expect, beside their hashtags.
+/// (Polished or Verbatim), and Custom Vocabulary: names and terms spelled the writer's way, beside their hashtags.
 struct DictationSettingsView: View {
     @AppStorage(DictationSettings.enabledKey) private var isEnabled = true
     @AppStorage(DictationSettings.styleKey) private var style = DictationStyle.polished
@@ -51,7 +51,7 @@ struct DictationSettingsView: View {
                         }
                     }
                     HStack {
-                        TextField("Add a name or word", text: $newWord)
+                        TextField("Add a word or phrase", text: $newWord)
                             .focused($addingWord)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
@@ -63,9 +63,9 @@ struct DictationSettingsView: View {
                         }
                     }
                 } header: {
-                    Text("Words to Expect")
+                    Text("Custom Vocabulary")
                 } footer: {
-                    Text("Names and words it should listen for and spell your way, like a friend's name or a place. Your hashtags are already included. Up to \(Dictation.maxHints).")
+                    Text("Spell names and terms your way, like a friend's name or a place. Your hashtags are already included. Up to \(Dictation.maxHints) terms.")
                 }
             }
         }

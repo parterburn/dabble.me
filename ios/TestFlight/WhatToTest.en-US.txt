@@ -15,4 +15,4 @@ SPEAKING AN ENTRY (iOS 26)
 SETTINGS → DICTATION
 - The switch turns the microphone off. It should disappear from the composer.
 - Style: Polished (the tidying above) or Verbatim (as heard, ums included). Try each on the same sentence.
-- Words to Expect: add a name you say often that isn't a hashtag, then say it. It should be spelled your way. Your hashtags count already. Swipe a word to delete it.
+- Custom Vocabulary: add a name you say often that isn't a hashtag, then say it. It should be spelled your way. Your hashtags count already. Swipe a term to delete it.
