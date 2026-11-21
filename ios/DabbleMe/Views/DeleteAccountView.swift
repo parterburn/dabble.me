@@ -8,7 +8,6 @@ import SwiftUI
 struct DeleteAccountView: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
 
     @State private var info: AccountDeletionInfo?
     @State private var loadError: String?
@@ -36,9 +35,9 @@ struct DeleteAccountView: View {
                     }
 
                     Section {
-                        Button("Export My Entries") { openURL(info.exportUrl) }
+                        ExportEntriesButton { Text("Email Me an Export") }
                     } footer: {
-                        Text("Download your export before you delete: exports are deleted along with everything else.")
+                        Text("We'll email you a link to your entries. Download it before you delete: exports are deleted along with everything else.")
                     }
 
                     if let billing = info.separateBilling {

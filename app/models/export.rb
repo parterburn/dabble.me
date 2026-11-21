@@ -78,6 +78,29 @@ class Export < ActiveRecord::Base
     token
   end
 
+  # Asks for an export of everything, one year or a search, as the Export page and the app
+  # do. Returns what happened: :preparing (one is already being made), :ready (one made
+  # within LIMIT_PERIOD can still be downloaded), :limited (HOURLY_LIMIT reached) or
+  # :started (ExportEntriesJob queued; it emails the link). The export comes second, or nil.
+  def self.request_for(user, year: nil, search_term: nil)
+    scope = scope_for(year: year, search_term: search_term)
+    # Locked on the person, so two requests at once (web and app, two devices) make one export.
+    result = user.with_lock do
+      recent = user.exports.within_limit.where(scope: scope).order(:created_at).last
+      if recent&.preparing?
+        [:preparing, recent]
+      elsif recent&.downloadable?
+        [:ready, recent]
+      elsif user.exports.where(created_at: 1.hour.ago..).count >= HOURLY_LIMIT
+        [:limited, nil]
+      else
+        [:started, user.exports.create!(scope: scope, search_term: search_term)]
+      end
+    end
+    ExportEntriesJob.perform_later(result.last.id) if result.first == :started
+    result
+  end
+
   def preparing?
     status == "preparing"
   end

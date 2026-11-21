@@ -15,6 +15,7 @@ module Api
           entry_count: current_user.entries.count,
           # Billing the deletion can't stop (Gumroad, PayPal, or Stripe with no customer on file).
           separate_billing: current_user.separate_billing_to_cancel,
+          # Read by builds before 110 only; newer ones email the export (POST /api/v1/exports).
           export_url: "#{ApplicationHelper.site_public_base_url}/entries/export"
         }
       end

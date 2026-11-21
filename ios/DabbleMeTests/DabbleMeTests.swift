@@ -477,7 +477,7 @@ struct DecodingTests {
         #expect(me.isProThroughApple == false)
     }
 
-    /// What build 110's server adds for in-app purchase (Api::V1::AppleSubscriptionsController.status_json).
+    /// What build 111's server adds for in-app purchase (Api::V1::AppleSubscriptionsController.status_json).
     @Test func decodesMeWithAppleSubscription() throws {
         let json = """
         {"id":1,"email":"a@b.c","first_name":null,"plan":"pro","is_pro":true,"timezone":null,
