@@ -1,6 +1,7 @@
 import Foundation
 import Observation
 import StoreKit
+import SwiftUI
 
 /// Dabble Me PRO bought in the app (StoreKit 2, auto-renewable, one subscription group).
 ///
@@ -45,7 +46,7 @@ final class SubscriptionStore {
     func start() {
         guard updates == nil else { return }
         updates = Task { [weak self] in
-            for await result in Transaction.updates {
+            for await result in StoreKit.Transaction.updates {
                 await self?.report(result)
             }
         }
@@ -61,7 +62,7 @@ final class SubscriptionStore {
     /// was signed in): reported now. Called after sign-in and whenever the account loads.
     func reportUnfinished() async {
         guard accountToken() != nil else { return }
-        for await result in Transaction.unfinished {
+        for await result in StoreKit.Transaction.unfinished {
             await report(result)
         }
     }
@@ -90,7 +91,7 @@ final class SubscriptionStore {
     func checkEntitlements() async {
         guard let mine = accountToken() else { return }
         var other = false
-        for await result in Transaction.currentEntitlements {
+        for await result in StoreKit.Transaction.currentEntitlements {
             guard case .verified(let transaction) = result, Self.productIDs.contains(transaction.productID),
                   transaction.revocationDate == nil else { continue }
             if let token = transaction.appAccountToken, token != mine {
@@ -138,7 +139,7 @@ final class SubscriptionStore {
             // Still worth looking at what StoreKit already has.
         }
         var found = false
-        for await result in Transaction.currentEntitlements {
+        for await result in StoreKit.Transaction.currentEntitlements {
             guard case .verified(let transaction) = result, Self.productIDs.contains(transaction.productID) else { continue }
             found = true
             await report(result)
@@ -151,7 +152,7 @@ final class SubscriptionStore {
 
     /// Posts a verified transaction to the server, and finishes it once the server has it (or
     /// has refused it for good: another account's, Family Sharing). Unverified ones are left.
-    private func report(_ result: VerificationResult<Transaction>) async {
+    private func report(_ result: VerificationResult<StoreKit.Transaction>) async {
         guard case .verified(let transaction) = result else {
             message = "The App Store couldn't verify that purchase."
             return

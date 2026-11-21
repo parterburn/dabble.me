@@ -7,10 +7,12 @@ RSpec.describe AppleSubscription do
 
   let(:user) { create(:user) }
 
+  # Signed a minute ago: Apple's signedDate is whole milliseconds, so a stored "now" could
+  # outrank an answer signed in the same millisecond, and the answer would be ignored.
   def subscription(**attrs)
     described_class.create!({ user: user, original_transaction_id: SecureRandom.hex(6), environment: "Sandbox",
                               product_id: AppStore::MONTHLY_PRODUCT_ID, status: 1, expires_at: 1.day.from_now,
-                              ownership_type: "PURCHASED", state_signed_at: Time.current }.merge(attrs))
+                              ownership_type: "PURCHASED", state_signed_at: 1.minute.ago }.merge(attrs))
   end
 
   describe "#entitles_pro?" do
