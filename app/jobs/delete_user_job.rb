@@ -23,6 +23,10 @@ class DeleteUserJob < ActiveJob::Base
     # Destroy entries in batches to avoid memory issues and trigger CarrierWave cleanup
     Entry.where(user_id: user_id).find_each(batch_size: 100, &:destroy)
 
+    # Exports' ZIPs too, now: `user.delete` below skips callbacks, and the database's cascade
+    # would leave the files in storage until the bucket's lifecycle rule.
+    user.exports.find_each(&:destroy)
+
     # Destroy remaining associations (including Doorkeeper OAuth rows) and the user atomically
     ActiveRecord::Base.transaction do
       Doorkeeper::AccessGrant.where(resource_owner_id: user_id).delete_all

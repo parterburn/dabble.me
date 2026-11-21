@@ -28,6 +28,25 @@ RSpec.describe DeleteUserJob, type: :job do
     end.to change(User, :count).by(-1)
   end
 
+  describe 'exports' do
+    include_context 'with export storage'
+
+    it "deletes the account's export files with it" do
+      user.update_column(:deleted_at, Time.current)
+      export = user.exports.create!
+      path = Pathname(Dir.mktmpdir).join('export.zip')
+      path.binwrite('zip bytes')
+      store = ExportStore.new
+      key = store.upload(ExportStore.key_for(export), path.to_s)
+      export.ready!(storage_key: key, byte_size: 9, entry_count: 1, image_count: 0, skipped_image_count: 0)
+
+      described_class.perform_now(user.id)
+
+      expect(store.exist?(key)).to be(false)
+      expect(Export.where(id: export.id)).to be_empty
+    end
+  end
+
   it 'deletes the user when deletion is still pending' do
     user.update_column(:deleted_at, Time.current)
 
