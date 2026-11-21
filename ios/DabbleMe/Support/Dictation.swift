@@ -51,9 +51,9 @@ final class Dictation {
     /// With no voice this long from the start, it stops and says it heard nothing, rather than
     /// seem to record when the microphone isn't getting anything.
     static let silenceLimit: TimeInterval = 10
-    /// A level (`Recorder.level`, 0...1 over -50...0 dB) above this is a voice: about -35 dB.
-    /// A quiet room sits well under it.
-    nonisolated static let voiceLevel = 0.3
+    /// A level (`Recorder.level`, 0...1 over -50...0 dB) above this is a voice: about -40 dB,
+    /// low so a soft voice counts. A quiet room sits under it.
+    nonisolated static let voiceLevel = 0.2
     /// How long the cleanup may take before the words go in as heard.
     static let cleanupBudget: TimeInterval = 1.5
     /// Hex's limit on words for the transcriber to expect.

@@ -28,7 +28,7 @@ struct DictationSettingsView: View {
                 if Dictation.isSupported {
                     Text("Tap the microphone while writing. It all stays on your phone.")
                 } else {
-                    Text("Needs iOS 26.")
+                    Text("Not available on this iPhone.")
                 }
             }
 
@@ -83,6 +83,8 @@ struct DictationSettingsView: View {
                             .focused($addingWord)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
+                            // (Should Return ever submit instead, it still adds the word.)
+                            .onSubmit(add)
                             .onChange(of: newWord) { _, typed in
                                 if typed.contains(where: \.isNewline) { add() }
                             }
@@ -129,7 +131,15 @@ struct DictationSettingsView: View {
     }
 
     private func add() {
-        storedWords = DictationSettings.adding(newWord.replacingOccurrences(of: "\n", with: " "), to: storedWords)
+        let word = newWord.replacingOccurrences(of: "\n", with: " ")
+        let added = DictationSettings.adding(word, to: storedWords)
+        // Kept in the field when it isn't added (the list is full), with the line break gone.
+        guard added != storedWords || word.trimmingCharacters(in: .whitespaces).isEmpty else {
+            newWord = word.trimmingCharacters(in: .whitespaces)
+            return
+        }
+        storedWords = added
         newWord = ""
+        addingWord = true
     }
 }
