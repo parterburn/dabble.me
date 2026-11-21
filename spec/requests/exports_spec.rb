@@ -294,6 +294,20 @@ RSpec.describe 'Exports', type: :request do
       expect(Export.count).to eq(1)
     end
 
+    it 're-sends a ready export only a few times an hour, across every token' do
+      export.update!(scope: 'all')
+      allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new)
+
+      Api::V1::ExportsController::RESEND_LIMIT.times do
+        post '/api/v1/exports', headers: headers, as: :json
+        expect(json['status']).to eq('sent')
+      end
+      other = { 'Authorization' => "Bearer #{MobileApp.issue_token!(user).plaintext_token}" }
+      expect { post '/api/v1/exports', headers: other, as: :json }.not_to have_enqueued_mail(UserMailer, :export_ready)
+      expect(response).to have_http_status(:too_many_requests)
+      expect(json['error']).to eq('export_limit')
+    end
+
     it 'stops at the hourly limit' do
       Export::HOURLY_LIMIT.times { |i| user.exports.create!(scope: "year:#{2000 + i}", status: 'failed') }
 
