@@ -30,6 +30,20 @@ enum DictationSettings {
     static let enabledKey = "dictation.enabled"
     static let styleKey = "dictation.style"
     static let wordsKey = "dictation.words"
+    /// A BCP 47 identifier, or empty for Automatic (the phone's language).
+    static let languageKey = "dictation.language"
+
+    /// The language chosen, or nil for Automatic.
+    static var language: Locale? {
+        let id = UserDefaults.standard.string(forKey: languageKey) ?? ""
+        return id.isEmpty ? nil : Locale(identifier: id)
+    }
+
+    /// The cleanup model only knows English (Hex found it dropped negations in Spanish), so other
+    /// languages are always written as heard.
+    static func cleansUp(_ locale: Locale) -> Bool {
+        locale.language.languageCode?.identifier == "en"
+    }
 
     /// On unless turned off.
     static var isEnabled: Bool {

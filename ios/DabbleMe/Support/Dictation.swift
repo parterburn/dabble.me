@@ -100,8 +100,9 @@ final class Dictation {
         problem = nil
         levels = []
         state = .preparing
-        // Loaded while it's said, so it's ready when the transcript is.
-        if style == .polished { CleanupTagger.shared.prepare() }
+        // Loaded while it's said, so it's ready when the transcript is. English only.
+        let cleansUp = DictationSettings.cleansUp(DictationSettings.language ?? .current)
+        if style == .polished, cleansUp { CleanupTagger.shared.prepare() }
         run = Task {
             do {
                 let heard: String
@@ -112,7 +113,7 @@ final class Dictation {
                 } else {
                     throw Problem.unavailable
                 }
-                let cleaned = style == .verbatim ? heard
+                let cleaned = style == .verbatim || !cleansUp ? heard
                     : await CleanupTagger.shared.clean(heard, within: Self.cleanupBudget, protectedTerms: Self.hints(from: hints()))
                 try Task.checkCancellation()
                 insert(cleaned)
@@ -175,7 +176,8 @@ final class Dictation {
     @available(iOS 26.0, *)
     private func listen(hints: @MainActor () -> [String], canListen: @MainActor () -> Bool) async throws -> String {
         guard await AVAudioApplication.requestRecordPermission() else { throw Problem.microphoneDenied }
-        guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: .current) else { throw Problem.language }
+        // Settings → Dictation's language, else the phone's.
+        guard let locale = await SpeechTranscriber.supportedLocale(equivalentTo: DictationSettings.language ?? .current) else { throw Problem.language }
         // `.transcription`: finished text only, no words-so-far, over the whole recording.
         let transcriber = SpeechTranscriber(locale: locale, preset: .transcription)
         try await install(transcriber)

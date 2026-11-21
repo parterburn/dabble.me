@@ -1,3 +1,4 @@
+import Speech
 import SwiftUI
 
 /// Settings → Dictation: the composer's microphone on or off, how what's said is written down
@@ -6,6 +7,9 @@ struct DictationSettingsView: View {
     @AppStorage(DictationSettings.enabledKey) private var isEnabled = true
     @AppStorage(DictationSettings.styleKey) private var style = DictationStyle.polished
     @AppStorage(DictationSettings.wordsKey) private var storedWords = ""
+    @AppStorage(DictationSettings.languageKey) private var language = ""
+    /// The languages the phone's transcriber has, by name.
+    @State private var languages: [(id: String, name: String)] = []
     @State private var newWord = ""
     @FocusState private var addingWord: Bool
 
@@ -28,6 +32,17 @@ struct DictationSettingsView: View {
 
             if isEnabled, Dictation.isSupported {
                 Section {
+                    Picker("Language", selection: $language) {
+                        Text("Automatic (\(Self.name(of: .current)))").tag("")
+                        ForEach(languages, id: \.id) { language in
+                            Text(language.name).tag(language.id)
+                        }
+                    }
+                } footer: {
+                    Text("Automatic follows your iPhone's language. A new language downloads once, the first time you speak in it.")
+                }
+
+                Section {
                     Picker("Style", selection: $style) {
                         ForEach(DictationStyle.allCases) { style in
                             Text(style.label).tag(style)
@@ -38,7 +53,11 @@ struct DictationSettingsView: View {
                 } header: {
                     Text("Style")
                 } footer: {
-                    Text(style.explanation)
+                    if DictationSettings.cleansUp(language.isEmpty ? .current : Locale(identifier: language)) {
+                        Text(style.explanation)
+                    } else {
+                        Text("Polished tidies English only. In this language, what you say is written as heard either way.")
+                    }
                 }
 
                 Section {
@@ -73,6 +92,20 @@ struct DictationSettingsView: View {
         .navigationTitle("Dictation")
         .navigationBarTitleDisplayMode(.inline)
         .sensoryFeedback(.selection, trigger: style)
+        .task { await loadLanguages() }
+    }
+
+    private func loadLanguages() async {
+        guard #available(iOS 26.0, *) else { return }
+        let locales = await SpeechTranscriber.supportedLocales
+        languages = locales
+            .map { (id: $0.identifier(.bcp47), name: Self.name(of: $0)) }
+            .sorted { $0.name.localizedStandardCompare($1.name) == .orderedAscending }
+    }
+
+    /// "English (United States)", in the phone's own language.
+    private static func name(of locale: Locale) -> String {
+        Locale.current.localizedString(forIdentifier: locale.identifier) ?? locale.identifier
     }
 
     private func add() {

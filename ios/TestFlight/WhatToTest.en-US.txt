@@ -16,3 +16,4 @@ SETTINGS → DICTATION
 - The switch turns the microphone off. It should disappear from the composer.
 - Style: Polished (the tidying above) or Verbatim (as heard, ums included). Try each on the same sentence.
 - Custom Vocabulary: add a name you say often that isn't a hashtag, then say it. It should be spelled your way. Your hashtags count already. Swipe a term to delete it.
+- Language: Automatic follows your iPhone. Pick another language and speak in it. The first time, it downloads that language once. Polished only tidies English; other languages come out as heard.

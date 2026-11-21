@@ -1169,4 +1169,11 @@ struct DictationSettingsTests {
         #expect(DictationSettings.words(from: stored) == ["Kenji", "Ouray"])
         #expect(DictationSettings.words(from: DictationSettings.removing("Kenji", from: stored)) == ["Ouray"])
     }
+
+    /// The cleanup model only knows English.
+    @Test func onlyEnglishIsCleanedUp() {
+        #expect(DictationSettings.cleansUp(Locale(identifier: "en-US")))
+        #expect(DictationSettings.cleansUp(Locale(identifier: "en-GB")))
+        #expect(!DictationSettings.cleansUp(Locale(identifier: "es-MX")))
+    }
 }
