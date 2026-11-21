@@ -1,8 +1,25 @@
-Build 108 tidies up speaking an entry.
+Build 109 signs you in (password or passkey) and creates accounts with the app's own forms, and deletes an account right in the app.
 
-- Tap the microphone and stay silent. After 10 seconds it should stop by itself and say it didn't hear anything.
-- That message now has an X on the left to close it. Tapping the microphone closes it too.
-- Tap the microphone and start talking within a few seconds. It should keep recording past 10 seconds as usual.
-- Try talking quietly, or in a noisy room. Does it ever stop on you while you're talking, or keep going when you're silent?
-- Settings → Dictation: the notes under each setting are shorter. Anything still unclear?
-- Settings → Dictation → Custom Vocabulary: type a word and press Return. It should appear under the field and the keyboard should stay up, ready for the next word, with nothing jumping around.
+SIGN IN
+- Sign out (Settings, Sign Out). On the welcome screen, tap I Already Have an Account. A Sign In form should slide up, not a web page.
+- Enter your email and password and tap Sign In. Your journal should open. Password AutoFill should offer your saved dabble.me login.
+- Try a wrong password. You should see "Incorrect email or password." and stay on the form.
+- With two-factor on: after the password, a Code field should appear. Enter the code from your authenticator app (or a recovery code) and tap Sign In.
+- Forgot Password? should open dabble.me's reset page.
+
+PASSKEYS
+- On the Sign In form, tap Sign In with a Passkey. The system's passkey sheet should offer the passkey you made on dabble.me. Confirm with Face ID and your journal should open, with no password or 2FA code.
+- Closing the passkey sheet should leave you on the form with nothing said.
+- No passkey yet? The sheet should offer one from another device, or close it and use your password.
+
+START YOUR JOURNAL
+- Signed out, tap Start Your Journal. Enter a first name (optional), a new email and a password of 6 or more characters, and tap Create Account. The new, empty journal should open.
+- An email that already has an account should say so, under the button.
+
+DELETE ACCOUNT (use an account you don't need)
+- Settings, Delete Account. A page should say how many entries go with it, offer Export My Entries, and ask for the password.
+- A PRO account billed by Gumroad or PayPal should be told to cancel there.
+- A wrong password should say "Incorrect password."
+- Confirm with a Passkey Instead (under the password) should ask once more, then open the passkey sheet; your passkey deletes it the same way. Closing the sheet should leave the account alone.
+- The right password, then Delete Account in the last confirmation, should sign you out. The welcome screen should say when the account will be deleted (an hour away).
+- Sign back in before then: the account should still be there, entries and all.

@@ -16,4 +16,9 @@ RSpec.describe "Universal links for the iOS app", type: :request do
     # Pages the app has no screen for stay on the web.
     expect(paths).not_to include("/entries/*", "/*", "/settings")
   end
+
+  it "lets the app use dabble.me's passkeys and saved passwords" do
+    get "/.well-known/apple-app-site-association"
+    expect(JSON.parse(response.body).dig("webcredentials", "apps")).to eq(["B79A4CAS56.me.dabble.ios"])
+  end
 end

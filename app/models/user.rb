@@ -292,6 +292,19 @@ class User < ActiveRecord::Base
     end
   end
 
+  # A PRO plan's billing that deleting the account doesn't stop, so the person cancels it
+  # themselves: Gumroad and PayPal bill on their own, and a Stripe plan with no customer on
+  # file may have something left there (DeleteUserJob cancels the customer's subscriptions).
+  # Nil when there's nothing (PRO Forever, say, or Stripe with a customer). The web's delete
+  # page and the app's (Api::V1::AccountDeletionsController) both say so.
+  def separate_billing_to_cancel
+    provider = plan_type_unlinked
+    return if !is_pro? || provider.blank?
+    return if provider == "Stripe" && stripe_id.present?
+
+    { provider: provider, certain: provider != "Stripe" }
+  end
+
   def plan_type
     if plan && plan.match(/payhere/i)
       "<a href='/billing'>Stripe</a>"
@@ -493,6 +506,22 @@ class User < ActiveRecord::Base
       end
     end
     valid
+  end
+
+  # The app's sign-in takes either kind of code in one field. The failure lockout covers both,
+  # and a recovery code that works clears the failures the TOTP check just counted.
+  def validate_otp_or_recovery_token(token)
+    return false if otp_locked_out?
+    return true if validate_otp_token(token)
+    return false if otp_locked_out?
+    return false unless validate_otp_recovery_token(token)
+
+    Rails.cache.delete("otp_user_failures:#{id}")
+    true
+  end
+
+  def otp_locked_out?
+    Rails.cache.read("otp_user_failures:#{id}").to_i >= OTP_MAX_USER_FAILURES
   end
 
   def validate_otp_recovery_token(token)

@@ -5,28 +5,36 @@ import Testing
 import UniformTypeIdentifiers
 @testable import DabbleMe
 
-struct PKCETests {
-    @Test func s256ChallengeMatchesKnownVector() {
-        let pkce = PKCE(verifier: "M25iVXpKU3puUjFaYWg3T1NDTDQtcW1ROUY5YXlwalNoc0hhakxifmZHag")
-        #expect(pkce.challenge == "qjrzSW9gMiUgpUvqgEPE4_-8swvyCtfOVvg55o5S_es")
+struct NativeAuthTests {
+    @Test func base64URLRoundTripsWithoutPadding() throws {
+        let bytes = Data([0xfb, 0xff, 0xfe, 0x00, 0x01])
+        let encoded = NativeAuth.base64URL(bytes)
+        #expect(encoded == "-__-AAE")
+        #expect(NativeAuth.data(base64URL: encoded) == bytes)
     }
 
-    @Test func generatedVerifierIsURLSafeAndLongEnough() {
-        let verifier = PKCE().verifier
-        #expect(verifier.count >= 43) // RFC 7636 minimum
-        #expect(verifier.allSatisfy { $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" })
+    @Test func passkeyConfirmationKeepsWebAuthnKeys() throws {
+        let assertion = PasskeyAssertion(credentialID: Data([1]), clientDataJSON: Data([2]), authenticatorData: Data([3]),
+                                         signature: Data([4]), userID: Data("7".utf8))
+        let challenge = try APIClient.decoder.decode(NativeAuth.PasskeyChallenge.self,
+                                                     from: Data(#"{"challenge_token":"t","challenge":"c","rp_id":"dabble.me"}"#.utf8))
+        let json = try JSONEncoder().encode(NativeAuth.PasskeyConfirmation(assertion: assertion, challenge: challenge))
+        let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
+        #expect(object["challenge_token"] as? String == "t")
+        let credential = try #require(object["credential"] as? [String: Any])
+        #expect(credential["rawId"] as? String == "AQ")
+        let response = try #require(credential["response"] as? [String: Any])
+        #expect(Set(response.keys) == ["clientDataJSON", "authenticatorData", "signature", "userHandle"])
+        #expect(response["userHandle"] as? String == "Nw")
     }
 
-    @Test func authorizeURLCarriesTheAppClient() throws {
-        let url = OAuthEndpoints.authorizeURL(pkce: PKCE(), state: "abc")
-        let items = try #require(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems)
-        let query = Dictionary(uniqueKeysWithValues: items.map { ($0.name, $0.value ?? "") })
-        #expect(url.path() == "/oauth/authorize")
-        #expect(query["client_id"] == "dabble-me-ios")
-        #expect(query["scope"] == "app:journal")
-        #expect(query["redirect_uri"] == "me.dabble.app:/oauth/callback")
-        #expect(query["code_challenge_method"] == "S256")
-        #expect(query["state"] == "abc")
+    @Test func otpRequiredAsksForTheCode() {
+        let body = Data(#"{"error":"otp_required","message":"Enter the code."}"#.utf8)
+        #expect(NativeAuth.failure(status: 401, data: body) == .needsCode)
+    }
+
+    @Test func throttledSaysToWait() {
+        #expect(NativeAuth.failure(status: 429, data: Data("Retry later".utf8)) == .message("Too many tries. Wait a few minutes, then try again."))
     }
 }
 

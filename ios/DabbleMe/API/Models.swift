@@ -217,6 +217,30 @@ struct ImageUpload: Decodable, Sendable {
     let maxBytes: Int
 }
 
+/// GET /api/v1/account_deletion: what Delete Account's confirmation says.
+struct AccountDeletionInfo: Decodable, Sendable, Equatable {
+    struct SeparateBilling: Decodable, Sendable, Equatable {
+        /// Gumroad, PayPal or Stripe.
+        let provider: String
+        /// False for Stripe with no customer on file: there may be nothing left to cancel.
+        let certain: Bool
+    }
+
+    let entryCount: Int
+    /// PRO billing that deleting the account doesn't stop; nil when there's none to cancel.
+    let separateBilling: SeparateBilling?
+    let exportUrl: URL
+}
+
+/// POST /api/v1/account_deletion.
+struct AccountDeletionResult: Decodable, Sendable {
+    let deletesAt: String
+}
+
+struct AccountDeletionRequest: Encodable, Sendable {
+    let password: String
+}
+
 struct APIErrorBody: Decodable, Sendable {
     let error: String
     let message: String?

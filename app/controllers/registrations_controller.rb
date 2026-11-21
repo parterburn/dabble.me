@@ -155,7 +155,7 @@ class RegistrationsController < Devise::RegistrationsController
 
   def schedule_user_deletion
     current_user.update_column(:deleted_at, Time.current)
-    DeleteUserJob.set(wait: 1.hour).perform_later(current_user.id)
+    DeleteUserJob.set(wait: 1.hour).perform_later(current_user.id, current_user.deleted_at.to_i)
   end
 
   def check_captcha

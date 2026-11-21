@@ -456,7 +456,7 @@ RSpec.describe RegistrationsController, type: :controller do
       sign_in user
       expect do
         delete :destroy, params: { user: { current_password: user.password } }
-      end.to have_enqueued_job(DeleteUserJob).with(user.id)
+      end.to have_enqueued_job(DeleteUserJob).with(user.id, kind_of(Integer))
       expect(user.reload.deleted_at).to be_present
       expect(response).to redirect_to(root_path)
       expect(flash[:notice]).to include('Sign back in before then to cancel deletion')

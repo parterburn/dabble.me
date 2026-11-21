@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
-# First-party Dabble Me iOS app. It signs in via OAuth (authorization code + PKCE)
-# through the normal web login, so passkeys / 2FA / password all keep working, and
-# then calls /api/v1 with a token scoped to SCOPE.
+# First-party Dabble Me iOS app. From build 109 it signs in natively: email, password and, with
+# 2FA on, the code (POST /api/v1/session), or a dabble.me passkey (/api/v1/session/passkey);
+# new accounts POST /api/v1/registration. Earlier builds sign in through the web login via
+# OAuth (authorization code + PKCE), which stays. Either way it then calls /api/v1 with a
+# token scoped to SCOPE.
 #
 # Unlike MCP clients it is open to free and PRO users alike, skips the consent
 # screen (it's our own app), and its tokens are kept when a user loses PRO —
@@ -42,6 +44,30 @@ module MobileApp
       app.scopes = SCOPE
       app.confidential = false
     end
+  end
+
+  # A token for the app, as /oauth/token would answer a code exchange: what native sign-in
+  # and sign-up (Api::V1::SessionsController, RegistrationsController) hand back. Its refresh
+  # token renews at /oauth/token like any other. Sign in with Apple would issue one the same way.
+  def issue_token!(user)
+    Doorkeeper::AccessToken.create_for(
+      application: application || ensure_application!,
+      resource_owner: user,
+      scopes: SCOPE,
+      expires_in: Doorkeeper.config.access_token_expires_in,
+      use_refresh_token: true
+    )
+  end
+
+  def token_response(token)
+    {
+      access_token: token.plaintext_token,
+      token_type: 'Bearer',
+      expires_in: token.expires_in,
+      refresh_token: token.plaintext_refresh_token,
+      scope: token.scopes.to_s,
+      created_at: token.created_at.to_i
+    }
   end
 
   def client?(application)

@@ -1,37 +1,12 @@
 import Foundation
 
-/// Doorkeeper token endpoints. The app is a public client: no secret, PKCE on the code grant.
+/// Doorkeeper's token endpoints, for refreshing and revoking the tokens the app's sign-in
+/// (`NativeAuth`) issued. The app is a public client: no secret.
 enum OAuthEndpoints {
     private struct TokenResponse: Decodable {
         let accessToken: String
         let refreshToken: String?
         let expiresIn: Double?
-    }
-
-    /// `createAccount` opens dabble.me's sign-up page (OIDC `prompt=create`); new users come
-    /// straight back to the app, signed in.
-    static func authorizeURL(pkce: PKCE, state: String, createAccount: Bool = false) -> URL {
-        var components = URLComponents(url: AppConfig.webURL("oauth/authorize"), resolvingAgainstBaseURL: false)!
-        components.queryItems = [
-            URLQueryItem(name: "response_type", value: "code"),
-            URLQueryItem(name: "client_id", value: AppConfig.clientID),
-            URLQueryItem(name: "redirect_uri", value: AppConfig.redirectURI),
-            URLQueryItem(name: "scope", value: AppConfig.scope),
-            URLQueryItem(name: "state", value: state),
-            URLQueryItem(name: "code_challenge", value: pkce.challenge),
-            URLQueryItem(name: "code_challenge_method", value: "S256"),
-        ] + (createAccount ? [URLQueryItem(name: "prompt", value: "create")] : [])
-        return components.url!
-    }
-
-    static func exchange(code: String, pkce: PKCE, session: URLSession = .shared) async throws -> OAuthTokens {
-        try await tokenRequest([
-            "grant_type": "authorization_code",
-            "code": code,
-            "client_id": AppConfig.clientID,
-            "redirect_uri": AppConfig.redirectURI,
-            "code_verifier": pkce.verifier,
-        ], session: session)
     }
 
     static func refresh(_ refreshToken: String, session: URLSession = .shared) async throws -> OAuthTokens {

@@ -1,10 +1,15 @@
 class DeleteUserJob < ActiveJob::Base
   queue_as :default
 
-  def perform(user_id)
+  # +requested_at+ is the deleted_at (epoch seconds) the deletion was scheduled with. A
+  # deletion cancelled by signing back in and asked for again gets a new deleted_at and a job
+  # of its own, so this older job must not cut the new hour short. Jobs queued before it was
+  # passed have none and keep the old check.
+  def perform(user_id, requested_at = nil)
     user = User.find_by(id: user_id)
     return unless user # Already deleted
     return unless user.deleted_at.present? # Deletion was cancelled
+    return if requested_at && user.deleted_at.to_i != requested_at # Cancelled, then asked for again
 
     # Capture user info before deletion for logging
     user_email = user.email
@@ -17,6 +22,10 @@ class DeleteUserJob < ActiveJob::Base
 
     # Destroy entries in batches to avoid memory issues and trigger CarrierWave cleanup
     Entry.where(user_id: user_id).find_each(batch_size: 100, &:destroy)
+
+    # Exports' ZIPs too, now: `user.delete` below skips callbacks, and the database's cascade
+    # would leave the files in storage until the bucket's lifecycle rule.
+    user.exports.find_each(&:destroy)
 
     # Destroy remaining associations (including Doorkeeper OAuth rows) and the user atomically
     ActiveRecord::Base.transaction do
