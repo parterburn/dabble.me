@@ -17,6 +17,8 @@ struct SettingsView: View {
     /// The account's email schedule and past-entry choices, shared by the Reminders rows.
     @State private var emailSchedule = EmailScheduleStore()
     @AppStorage(JournalIntelligence.enabledKey) private var onDeviceAI = true
+    @AppStorage(DictationSettings.enabledKey) private var dictationEnabled = true
+    @AppStorage(DictationSettings.styleKey) private var dictationStyle = DictationStyle.polished
     /// The plan links to dabble.me/subscribe only on the US App Store, where Apple allows links to
     /// buy outside the app (guideline 3.1.1(a), US storefront). Elsewhere it's plain text.
     @State private var canLinkToSubscribe = false
@@ -93,6 +95,18 @@ struct SettingsView: View {
                         EntryTemplateView()
                     } label: {
                         Label("Entry Template", icon: "slab-equals")
+                    }
+                    // The composer's microphone: on or off, Polished or Verbatim, and words to expect.
+                    if Dictation.isSupported {
+                        PaneLink {
+                            DictationSettingsView()
+                        } label: {
+                            LabeledContent {
+                                Text(dictationEnabled ? dictationStyle.label : "Off")
+                            } label: {
+                                Label("Dictation", icon: "slab-microphone")
+                            }
+                        }
                     }
                     PaneLink {
                         AccessibilitySettingsView()
@@ -192,7 +206,6 @@ private extension SettingsView {
                 LabeledContent("Push", value: ReminderSettings.summary(enabled: dailyReminder, days: ReminderSettings.days(from: reminderDays),
                                                                        minutes: reminderTime >= 0 ? reminderTime : emailTime))
             }
-            EmailScheduleRow(store: emailSchedule)
             // The widget's a nudge to write too, and its look backs are the reminders' own.
             PaneLink {
                 WidgetSettingsView()
@@ -200,6 +213,7 @@ private extension SettingsView {
                 let _ = model.widgetChoiceChanges // redrawn when the choice changes
                 LabeledContent("Home Screen Widget", value: WidgetSnapshot.content.source.title)
             }
+            EmailScheduleRow(store: emailSchedule)
             PastEntriesRow(store: emailSchedule)
         } header: {
             Text("Reminders")

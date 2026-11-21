@@ -119,10 +119,10 @@ final class HabitTests: XCTestCase {
         if (daily.value as? String) != "1" { daily.switches.firstMatch.tap() }
         let allow = springboard.buttons["Allow"]
         if allow.waitForExistence(timeout: 5) { allow.tap() }
-        // Its days, and nothing about past entries: whether it comes with one, and which, is on
-        // Past Entries, for every kind of reminder.
+        // Its days, and its own entry previews switch; which entries can show is on Past
+        // Entries, for every kind of reminder.
         XCTAssertTrue(app.buttons["Saturday"].waitForExistence(timeout: 5))
-        XCTAssertFalse(app.switches["Show Entry Previews"].exists)
+        XCTAssertTrue(app.switches["Show Entry Previews"].waitForExistence(timeout: 5))
         XCTAssertFalse(app.switches["Limit Entries to the Past Year"].exists)
 
         let scheduled = app.descendants(matching: .any).matching(NSPredicate(format: "label MATCHES %@", "[1-9][0-9]* reminders scheduled")).firstMatch

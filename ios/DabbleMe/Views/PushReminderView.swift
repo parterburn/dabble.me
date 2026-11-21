@@ -63,15 +63,15 @@ struct PushReminderView: View {
                     Text("Days")
                 }
                 Section {
-                    Toggle("Show Past Entry", isOn: Binding(get: { ReminderSettings.includesPastEntry ?? emailShowsPastEntry },
-                                                            set: { shows in
+                    Toggle("Show Entry Previews", isOn: Binding(get: { ReminderSettings.includesPastEntry ?? emailShowsPastEntry },
+                                                                set: { shows in
                         showsPastEntryStored = shows
                         // (Written even when it's the default: from here on it's this switch's own.)
                         UserDefaults.standard.set(shows, forKey: ReminderSettings.includesPastEntryKey)
                         pastEntrySets += 1
                     }))
                 } footer: {
-                    Text("The notification can show an entry to look back on: its first lines and its photo. With this off it only says how many there are.")
+                    Text("The start of a past entry, and its photo, in the notification. Notifications can show on your Lock Screen. With this off, it only says how many entries you have from this day.")
                 }
             }
         }

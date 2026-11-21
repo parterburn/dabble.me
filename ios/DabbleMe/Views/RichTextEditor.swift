@@ -61,6 +61,8 @@ final class RichTextEditorModel {
     private var linkRange = NSRange(location: 0, length: 0)
 
     @ObservationIgnored fileprivate weak var textView: UITextView?
+    /// The text has the keyboard.
+    fileprivate(set) var isFocused = false
     /// Links are PRO: without them, a pasted address stays plain text.
     @ObservationIgnored var allowsLinks = true
 
@@ -290,6 +292,26 @@ final class RichTextEditorModel {
         textView.scrollRangeToVisible(textView.selectedRange)
         textDidChange()
         focus()
+    }
+
+    /// Puts words that were spoken (`Dictation`) where the cursor is, as if typed there.
+    func insertDictated(_ heard: String) {
+        guard let textView else { return }
+        let storage = textView.textStorage
+        let range = textView.selectedRange
+        // The line so far, up to the cursor: a space before the words, and mid-sentence a
+        // lowercase first word.
+        let before = (storage.string as NSString).substring(to: range.location)
+        let lineSoFar = before.split(separator: "\n", omittingEmptySubsequences: false).last.map(String.init) ?? ""
+        let words = Dictation.insertion(of: heard, before: lineSoFar)
+        guard !words.isEmpty else { return }
+        var attributes = textView.typingAttributes
+        attributes[.link] = nil
+        attributes[.backgroundColor] = nil
+        storage.replaceCharacters(in: range, with: NSAttributedString(string: words, attributes: attributes))
+        textView.selectedRange = NSRange(location: range.location + (words as NSString).length, length: 0)
+        textView.scrollRangeToVisible(textView.selectedRange)
+        textDidChange()
     }
 
     /// `replace(with:)`, with text as typed (a template to start over from).
@@ -730,6 +752,7 @@ struct RichTextEditor: UIViewRepresentable {
         }
 
         func textViewDidBeginEditing(_ textView: UITextView) {
+            model.isFocused = true
             model.editingBegan()
             // (Words selected by the touch that brought the keyboard count from here.)
             model.selectionDidChange()
@@ -737,6 +760,7 @@ struct RichTextEditor: UIViewRepresentable {
         }
 
         func textViewDidEndEditing(_ textView: UITextView) {
+            model.isFocused = false
             model.selectionDidChange()
             // Once the keyboard (and the bar) has gone, or stayed for the link's address.
             DispatchQueue.main.async { [weak self] in self?.padBottomForBar() }
