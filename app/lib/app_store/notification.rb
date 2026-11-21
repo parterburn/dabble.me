@@ -24,10 +24,10 @@ module AppStore
       environment = data["environment"]
       uuid = payload["notificationUUID"].to_s
       raise VerificationError, "notification has no UUID" if uuid.blank?
-      raise VerificationError, "notification is for another app" unless data["bundleId"] == BUNDLE_ID
-      raise VerificationError, "#{environment.inspect} notifications are not accepted here" unless AppStore.allowed_environments.include?(environment)
+      raise Ignored, "notification is for another app" unless data["bundleId"] == BUNDLE_ID
+      raise Ignored, "#{environment.inspect} notifications are not accepted here" unless AppStore.allowed_environments.include?(environment)
       if environment == PRODUCTION && AppStore.app_apple_id && data["appAppleId"].to_i != AppStore.app_apple_id
-        raise VerificationError, "notification is for another app ID"
+        raise Ignored, "notification is for another app ID"
       end
 
       record = AppStoreNotification.create_or_find_by!(notification_uuid: uuid) do |n|
@@ -51,8 +51,15 @@ module AppStore
         transaction: SignedData.verify!(data["signedTransactionInfo"]),
         renewal: data["signedRenewalInfo"].present? ? SignedData.verify!(data["signedRenewalInfo"]) : nil,
         status: data["status"]
-      ).validate!
-      raise VerificationError, "transaction is from another environment" unless snapshot.environment == data["environment"]
+      )
+      # Signed by Apple, so a refusal from here on is about what it is, not who sent it.
+      begin
+        snapshot.validate!
+        raise VerificationError, "transaction is from another environment" unless snapshot.environment == data["environment"]
+      rescue VerificationError => e
+        record.update!(processed_at: Time.current)
+        raise Ignored, e.message
+      end
 
       record.update!(original_transaction_id: snapshot.original_transaction_id)
       Subscriptions.refresh!(

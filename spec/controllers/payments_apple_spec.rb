@@ -19,6 +19,13 @@ RSpec.describe PaymentsController, type: :controller do
     expect(flash[:notice]).to include("App Store")
   end
 
+  it "lets someone who cancelled in the App Store subscribe on the web" do
+    AppleSubscription.sole.update!(auto_renew: false)
+    allow(Stripe::Checkout::Session).to receive(:create).and_return(double(url: "https://checkout.stripe.com/x"))
+    get :checkout, params: { plan: "yearly" }
+    expect(response).to redirect_to("https://checkout.stripe.com/x")
+  end
+
   it "sends the billing link to Apple's subscription page" do
     get :billing
     expect(response).to redirect_to("https://apps.apple.com/account/subscriptions")

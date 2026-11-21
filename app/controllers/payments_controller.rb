@@ -131,8 +131,10 @@ class PaymentsController < ApplicationController
 
   def checkout
     Stripe.api_key = ENV['STRIPE_API_KEY']
-    if AppStore::Entitlement.active_subscription(current_user)
+    apple = AppStore::Entitlement.active_subscription(current_user)
+    if apple && apple.auto_renew != false
       # Already paying through the App Store: a second subscription here would bill twice.
+      # (Once it's cancelled there, with time left, switching to the web is allowed.)
       redirect_to settings_path, notice: "You subscribe to PRO through the App Store. Manage it on your iPhone in Settings → your name → Subscriptions."
     elsif current_user.stripe_id? && Stripe::Subscription.list(customer: current_user.stripe_id, status: 'active').data.any?
       redirect_to billing_path

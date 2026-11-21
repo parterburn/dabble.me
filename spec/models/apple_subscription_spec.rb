@@ -65,6 +65,12 @@ RSpec.describe AppleSubscription do
       expect(user.separate_billing_to_cancel).to be_nil
     end
 
+    it "says nothing to cancel on an App Store plan that's already cancelled" do
+      user.update!(plan: "PRO Monthly Apple")
+      subscription(auto_renew: false)
+      expect(user.separate_billing_to_cancel).to be_nil
+    end
+
     it "names Apple as the billing provider for an App Store plan" do
       user.update!(plan: "PRO Monthly Apple")
       expect(user.plan_type_unlinked).to eq("Apple")
@@ -104,6 +110,14 @@ RSpec.describe AppleSubscription do
       with_app_store_api { AppleSubscriptionRefreshWorker.new.perform }
       expect(record.reload.expires_at).to be_within(1.second).of(1.month.from_now)
       expect(user.reload.plan).to eq("PRO Monthly Apple")
+    end
+
+    it "still ends PRO on schedule when Apple's API is down" do
+      user.update!(plan: "PRO Monthly Apple")
+      subscription(expires_at: 1.hour.ago)
+      stub_request(:get, %r{/inApps/v1/subscriptions/}).to_return(status: 429)
+      with_app_store_api { AppleSubscriptionRefreshWorker.new.perform }
+      expect(user.reload.plan).to eq("Free")
     end
 
     it "carries on past a subscription Apple can't answer about" do

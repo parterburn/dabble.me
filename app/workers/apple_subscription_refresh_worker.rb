@@ -23,8 +23,14 @@ class AppleSubscriptionRefreshWorker
       AppStore::Subscriptions.refresh!(original_transaction_id: subscription.original_transaction_id,
                                        environment: subscription.environment)
     end
-    AppStore::Entitlement.sync!(subscription.reload.user)
   rescue AppStore::Error, ActiveRecord::ActiveRecordError => e
     Sentry.capture_exception(e, level: :warning, extra: { original_transaction_id: subscription.original_transaction_id })
+  ensure
+    # Even when Apple couldn't be asked: what's stored still says when the paid period ends.
+    begin
+      AppStore::Entitlement.sync!(subscription.reload.user)
+    rescue ActiveRecord::ActiveRecordError => e
+      Sentry.capture_exception(e, extra: { original_transaction_id: subscription.original_transaction_id })
+    end
   end
 end

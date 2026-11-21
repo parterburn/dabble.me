@@ -90,6 +90,21 @@ RSpec.describe "Apple in-app purchases from the app", type: :request do
       expect(user.reload.plan).to eq("PRO Monthly Apple")
     end
 
+    it "still gives PRO when Apple's own answer doesn't check out, rather than refusing a paid purchase" do
+      transaction = apple_transaction(user: user)
+      stub_apple_status(transaction, status: 9) # a status this server doesn't know
+      with_app_store_api { post_transaction(transaction) }
+      expect(response).to have_http_status(:ok)
+      expect(user.reload.plan).to eq("PRO Monthly Apple")
+    end
+
+    it "gives two requests at once the same appAccountToken" do
+      first = User.find(user.id)
+      second = User.find(user.id)
+      expect(first.apple_account_token!).to eq(second.apple_account_token!)
+      expect(user.reload.apple_account_token).to eq(first.apple_account_token)
+    end
+
     it "doesn't record payments for sandbox purchases" do
       post_transaction(apple_transaction(user: user))
       expect(Payment.count).to eq(0)

@@ -37,9 +37,11 @@ module AppStore
       named = snapshot.app_account_token && User.find_by(apple_account_token: snapshot.app_account_token)
       raise OtherAccount, named if named && named != user
 
+      # (A VerificationError from Apple's own answer is treated the same: the person paid, and
+      # what they sent is Apple-signed. Refusing it would make the app finish the transaction.)
       current = begin
         current_snapshot(snapshot.original_transaction_id, snapshot.environment)
-      rescue TransientError, ApiError => e
+      rescue TransientError, ApiError, VerificationError => e
         Sentry.capture_exception(e, level: :warning, extra: { original_transaction_id: snapshot.original_transaction_id })
         nil
       end
@@ -54,7 +56,7 @@ module AppStore
       failure = nil
       current = begin
         current_snapshot(original_transaction_id, environment)
-      rescue TransientError, ApiError => e
+      rescue TransientError, ApiError, VerificationError => e
         failure = e
         nil
       end

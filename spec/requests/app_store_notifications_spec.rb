@@ -177,6 +177,17 @@ RSpec.describe "App Store Server Notifications", type: :request do
   end
 
   describe "replays and ordering" do
+    it "falls back to the notification's own state when Apple's answer doesn't check out" do
+      # Apple's API answers for the wrong environment (a misrouted request, say).
+      stub_request(:get, %r{api\.storekit-sandbox\.itunes\.apple\.com}).to_return(
+        status: 200, headers: { "Content-Type" => "application/json" },
+        body: { environment: "Production", bundleId: AppStore::BUNDLE_ID, data: [] }.to_json
+      )
+      with_app_store_api { deliver("SUBSCRIBED", purchase, renewal: apple_renewal(purchase), status: 1) }
+      expect(response).to have_http_status(:ok)
+      expect(user.reload.plan).to eq("PRO Monthly Apple")
+    end
+
     it "does nothing with a notification it has already processed" do
       payload = apple_notification("SUBSCRIBED", purchase, status: 1)
       stub = stub_apple_status(purchase)
@@ -272,19 +283,29 @@ RSpec.describe "App Store Server Notifications", type: :request do
       with_env("APP_STORE_APP_APPLE_ID" => "999") do
         deliver("SUBSCRIBED", apple_transaction(user: user, environment: "Production"), status: 1)
       end
-      expect(response).to have_http_status(:bad_request)
+      # Genuinely Apple's, so 200 (no redelivery), but nothing is applied.
+      expect(response).to have_http_status(:ok)
       expect(user.reload.plan).to eq("Free")
     end
 
     it "refuses sandbox notifications when sandbox is switched off" do
       with_env("APP_STORE_ALLOW_SANDBOX" => "false") { deliver("SUBSCRIBED", purchase, status: 1) }
-      expect(response).to have_http_status(:bad_request)
+      expect(response).to have_http_status(:ok)
+      expect(AppleSubscription.count).to eq(0)
       expect(user.reload.plan).to eq("Free")
     end
 
     it "refuses production notifications outside production" do
       deliver("SUBSCRIBED", apple_transaction(user: user, environment: "Production"), status: 1)
-      expect(response).to have_http_status(:bad_request)
+      expect(response).to have_http_status(:ok)
+      expect(user.reload.plan).to eq("Free")
+    end
+
+    it "takes no PRO from a notification about a product it doesn't sell" do
+      deliver("SUBSCRIBED", apple_transaction(user: user, productId: "me.dabble.ios.other"), status: 1)
+      expect(response).to have_http_status(:ok)
+      expect(AppStoreNotification.sole.processed_at).to be_present
+      expect(user.reload.plan).to eq("Free")
     end
   end
 
@@ -318,7 +339,9 @@ RSpec.describe "App Store Server Notifications", type: :request do
       payload["data"]["bundleId"] = "com.example.other"
       post "/app_store/notifications", params: { signedPayload: apple_pki.sign(payload) }.to_json,
                                        headers: { "Content-Type" => "application/json" }
-      expect(response).to have_http_status(:bad_request)
+      expect(response).to have_http_status(:ok)
+      expect(AppStoreNotification.count).to eq(0)
+      expect(user.reload.plan).to eq("Free")
     end
 
     it "refuses junk" do

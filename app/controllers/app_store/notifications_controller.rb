@@ -21,6 +21,9 @@ module AppStore
 
       AppStore::Notification.process!(signed_payload)
       head :ok
+    rescue AppStore::Ignored => e
+      Sentry.capture_message("App Store notification ignored", level: :info, extra: { reason: e.message })
+      head :ok
     rescue AppStore::VerificationError => e
       Sentry.capture_message("App Store notification refused", level: :warning, extra: { reason: e.message })
       head :bad_request

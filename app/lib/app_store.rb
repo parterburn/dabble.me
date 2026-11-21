@@ -29,6 +29,9 @@ module AppStore
   class Error < StandardError; end
   # The signed data isn't Apple's, or isn't for this app.
   class VerificationError < Error; end
+  # Genuinely Apple's, but not something this server takes (another app, an environment that's
+  # switched off, a product it doesn't sell). Answered 200 so Apple stops redelivering it.
+  class Ignored < Error; end
   # Apple's API couldn't answer now; worth trying again later.
   class TransientError < Error; end
   # Apple's API refused the request (bad credentials, unknown transaction).

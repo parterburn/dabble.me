@@ -303,13 +303,18 @@ class User < ActiveRecord::Base
 
   # The UUID the iOS app buys with (StoreKit's appAccountToken), made the first time it's asked
   # for. Apple puts it in the signed transaction, which is how a purchase names its account.
+  # Two requests at once both get the one that was saved.
   def apple_account_token!
     return apple_account_token if apple_account_token.present?
 
-    update_column(:apple_account_token, SecureRandom.uuid)
+    begin
+      User.where(id: id, apple_account_token: nil).update_all(apple_account_token: SecureRandom.uuid)
+    rescue ActiveRecord::RecordNotUnique
+      retry
+    end
+    self.apple_account_token = User.where(id: id).pick(:apple_account_token)
+    clear_attribute_change(:apple_account_token)
     apple_account_token
-  rescue ActiveRecord::RecordNotUnique
-    retry
   end
 
   # A PRO plan's billing that deleting the account doesn't stop, so the person cancels it
@@ -325,6 +330,7 @@ class User < ActiveRecord::Base
     end
 
     provider = plan_type_unlinked
+    return if provider == "Apple" # Cancelled already (auto-renew off), or over.
     return if !is_pro? || provider.blank?
     return if provider == "Stripe" && stripe_id.present?
 
