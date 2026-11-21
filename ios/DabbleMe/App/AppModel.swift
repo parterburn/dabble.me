@@ -191,6 +191,23 @@ final class AppModel {
     /// person signs back in, and has already ended this session; the app signs out here.
     func deleteAccount(password: String) async throws {
         let result: AccountDeletionResult = try await api.post("api/v1/account_deletion", AccountDeletionRequest(password: password))
+        await finishDeletion(result)
+    }
+
+    /// The same, confirmed with one of the account's passkeys (for someone who signs in with a
+    /// passkey and may not know the password). Throws `CancellationError` if the sheet is closed.
+    func deleteAccountWithPasskey() async throws {
+        let challenge = try await NativeAuth.passkeyChallenge()
+        guard let bytes = NativeAuth.data(base64URL: challenge.challenge) else {
+            throw NativeAuthError.message(APIError.decoding.errorDescription ?? "Something went wrong.")
+        }
+        let assertion = try await passkeys.assert(relyingParty: challenge.rpId, challenge: bytes)
+        let body = try JSONEncoder().encode(NativeAuth.PasskeyConfirmation(assertion: assertion, challenge: challenge))
+        let result: AccountDeletionResult = try await api.post("api/v1/account_deletion", json: body)
+        await finishDeletion(result)
+    }
+
+    private func finishDeletion(_ result: AccountDeletionResult) async {
         await signOut()
         let deletesAt = ISO8601DateFormatter().date(from: result.deletesAt) ?? Date().addingTimeInterval(3600)
         signInNotice = "Your account will be deleted at \(deletesAt.formatted(date: .omitted, time: .shortened)). Sign back in before then to keep it."

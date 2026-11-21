@@ -20,5 +20,6 @@ DELETE ACCOUNT (use an account you don't need)
 - Settings, Delete Account. A page should say how many entries go with it, offer Export My Entries, and ask for the password.
 - A PRO account billed by Gumroad or PayPal should be told to cancel there.
 - A wrong password should say "Incorrect password."
+- Confirm with a Passkey Instead (under the password) should ask once more, then open the passkey sheet; your passkey deletes it the same way. Closing the sheet should leave the account alone.
 - The right password, then Delete Account in the last confirmation, should sign you out. The welcome screen should say when the account will be deleted (an hour away).
 - Sign back in before then: the account should still be there, entries and all.

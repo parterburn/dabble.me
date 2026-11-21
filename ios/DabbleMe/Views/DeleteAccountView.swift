@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// Settings → Delete Account, all in the app (App Store guideline 5.1.1(v)): what goes, an
-/// export first, billing to cancel elsewhere, the password, then one last confirmation. The
+/// export first, billing to cancel elsewhere, the password (or one of the account's passkeys),
+/// then one last confirmation. The
 /// server deletes the account an hour later (`DeleteUserJob`, which cancels a Stripe
 /// subscription), unless the person signs back in before then.
 struct DeleteAccountView: View {
@@ -13,6 +14,8 @@ struct DeleteAccountView: View {
     @State private var loadError: String?
     @State private var password = ""
     @State private var confirming = false
+    /// The last confirmation, before the passkey sheet (in place of the password).
+    @State private var confirmingWithPasskey = false
     @State private var isDeleting = false
     @State private var error: String?
     @FocusState private var passwordFocused: Bool
@@ -57,8 +60,20 @@ struct DeleteAccountView: View {
                     } header: {
                         Text("Confirm with Your Password")
                     } footer: {
-                        if let error {
-                            Text(error).foregroundStyle(Color.deleteRed)
+                        VStack(alignment: .leading, spacing: 6) {
+                            if let error {
+                                Text(error).foregroundStyle(Color.deleteRed)
+                            }
+                            // Someone who signs in with a passkey may not know the password.
+                            Button("Confirm with a Passkey Instead") { confirmingWithPasskey = true }
+                                .font(.footnote)
+                                .disabled(isDeleting)
+                                .confirmationDialog("Delete your account and \(entries)?", isPresented: $confirmingWithPasskey, titleVisibility: .visible) {
+                                    Button("Continue with Passkey", role: .destructive) { deleteWithPasskey() }
+                                    Button("Cancel", role: .cancel) {}
+                                } message: {
+                                    Text("Confirm with your passkey next. You'll be signed out. After an hour this can't be undone.")
+                                }
                         }
                     }
 
@@ -112,6 +127,21 @@ struct DeleteAccountView: View {
         } catch is CancellationError {
         } catch {
             loadError = error.localizedDescription
+        }
+    }
+
+    private func deleteWithPasskey() {
+        isDeleting = true
+        error = nil
+        Task {
+            defer { isDeleting = false }
+            do {
+                try await model.deleteAccountWithPasskey()
+            } catch is CancellationError {
+                // The passkey sheet was closed: nothing deleted, nothing to say.
+            } catch {
+                self.error = error.localizedDescription
+            }
         }
     }
 

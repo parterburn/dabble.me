@@ -264,6 +264,37 @@ RSpec.describe "iOS app native sign-in, sign-up and account deletion", type: :re
       expect(response).to have_http_status(:unauthorized)
     end
 
+    context "confirmed with a passkey" do
+      let!(:credential) { register_passkey(user) }
+
+      def passkey_confirmation(owner: user)
+        get "/api/v1/session/passkey", as: :json
+        options = JSON.parse(response.body)
+        { challenge_token: options["challenge_token"],
+          credential: passkey_assertion(challenge: options["challenge"], user_handle: owner.id.to_s) }
+      end
+
+      it "schedules the deletion with the account's own passkey" do
+        expect do
+          post "/api/v1/account_deletion", params: passkey_confirmation, headers: headers, as: :json
+        end.to have_enqueued_job(DeleteUserJob)
+        expect(response).to have_http_status(:ok)
+        expect(user.reload.deleted_at).to be_present
+      end
+
+      it "refuses another account's passkey" do
+        other = create(:user)
+        register_passkey(other, client: WebAuthn::FakeClient.new(WebAuthn.configuration.allowed_origins.first))
+        other_token = Doorkeeper::AccessToken.create!(application: mobile_app, resource_owner_id: other.id, scopes: MobileApp::SCOPE)
+
+        # The user's own passkey, sent with the other account's token.
+        post "/api/v1/account_deletion", params: passkey_confirmation, headers: bearer(other_token.plaintext_token), as: :json
+        expect(response).to have_http_status(:forbidden)
+        expect(json["error"]).to eq("passkey_failed")
+        expect(other.reload.deleted_at).to be_nil
+      end
+    end
+
     it "needs an app token" do
       post "/api/v1/account_deletion", params: { password: password }, as: :json
       expect(response).to have_http_status(:unauthorized)

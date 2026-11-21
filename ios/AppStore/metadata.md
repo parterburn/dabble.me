@@ -135,7 +135,7 @@ The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resour
 > - Journal: timeline, Photos, Songs, Stats. Search: text and hashtags.
 > - Settings: reminders, email schedule, entry template, calendars, Face ID lock, widget.
 > New accounts: "Start Your Journal" on the first screen opens the app's sign-up form (email and password).
-> Account deletion: Settings → Delete Account. The page in the app shows what will be deleted, asks for the account password, and confirms once more; the app then signs out. The account is deleted an hour later unless the person signs back in.
+> Account deletion: Settings → Delete Account. The page in the app shows what will be deleted, asks for the account password (or a passkey), and confirms once more; the app then signs out. The account is deleted an hour later unless the person signs back in.
 >
 > PAID FEATURES
 > The app has no in-app purchases and sells nothing. Dabble Me PRO is a subscription bought on the dabble.me website; subscribers sign in and their features are available. Free accounts can read, write and delete entries and set a reminder. Photos, editing, search, stats and On This Day are PRO. On the US storefront only, Settings shows a link to dabble.me/subscribe; elsewhere the plan is shown as plain text.

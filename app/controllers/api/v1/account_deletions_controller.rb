@@ -7,6 +7,8 @@ module Api
     # hour later (DeleteUserJob, which cancels a Stripe subscription), unless the person
     # signs back in before then.
     class AccountDeletionsController < BaseController
+      include PasskeyAssertion
+
       # GET /api/v1/account_deletion: what the confirmation says.
       def show
         render json: {
@@ -17,9 +19,15 @@ module Api
         }
       end
 
-      # POST /api/v1/account_deletion {password}
+      # POST /api/v1/account_deletion {password}, or {challenge_token, credential}: one of the
+      # account's own passkeys (challenge from GET /api/v1/session/passkey), for someone who
+      # signs in with a passkey and may not know the password.
       def create
-        unless current_user.valid_password?(params[:password].to_s)
+        if params[:credential].present?
+          unless passkey_user == current_user
+            return render_error(:forbidden, 'passkey_failed', "That passkey didn't confirm it. Try again, or use your password.")
+          end
+        elsif !current_user.valid_password?(params[:password].to_s)
           return render_error(:forbidden, 'incorrect_password', 'Incorrect password.')
         end
 

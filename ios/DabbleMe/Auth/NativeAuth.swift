@@ -58,20 +58,15 @@ enum NativeAuth {
     }
 
     static func signIn(with assertion: PasskeyAssertion, for challenge: PasskeyChallenge, session: URLSession = .shared) async throws -> Session {
-        let id = base64URL(assertion.credentialID)
-        let body = PasskeySignIn(challengeToken: challenge.challengeToken, credential: .init(
-            id: id, rawId: id, type: "public-key",
-            response: .init(clientDataJSON: base64URL(assertion.clientDataJSON),
-                            authenticatorData: base64URL(assertion.authenticatorData),
-                            signature: base64URL(assertion.signature),
-                            userHandle: base64URL(assertion.userID))))
-        return try await post("api/v1/session/passkey", body, session: session)
+        try await post("api/v1/session/passkey", PasskeyConfirmation(assertion: assertion, challenge: challenge), session: session)
     }
 
-    /// WebAuthn's JSON (the keys as the server's webauthn gem reads them, so no snake_case).
-    private struct PasskeySignIn: Encodable {
-        struct Credential: Encodable {
-            struct Response: Encodable {
+    /// A passkey assertion and its challenge token, as sign-in and Delete Account send them, in
+    /// WebAuthn's JSON (camelCase keys, as the server's webauthn gem reads them). Encode it with
+    /// a plain `JSONEncoder`, never `APIClient`'s snake_case one (`APIClient.post(_:json:)`).
+    struct PasskeyConfirmation: Encodable, Sendable {
+        struct Credential: Encodable, Sendable {
+            struct Response: Encodable, Sendable {
                 let clientDataJSON, authenticatorData, signature, userHandle: String
             }
             let id, rawId, type: String
@@ -82,6 +77,16 @@ enum NativeAuth {
 
         enum CodingKeys: String, CodingKey {
             case challengeToken = "challenge_token", credential
+        }
+
+        init(assertion: PasskeyAssertion, challenge: PasskeyChallenge) {
+            let id = NativeAuth.base64URL(assertion.credentialID)
+            challengeToken = challenge.challengeToken
+            credential = Credential(id: id, rawId: id, type: "public-key", response: .init(
+                clientDataJSON: NativeAuth.base64URL(assertion.clientDataJSON),
+                authenticatorData: NativeAuth.base64URL(assertion.authenticatorData),
+                signature: NativeAuth.base64URL(assertion.signature),
+                userHandle: NativeAuth.base64URL(assertion.userID)))
         }
     }
 

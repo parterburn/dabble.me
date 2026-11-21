@@ -35,6 +35,11 @@ struct APIClient: Sendable {
         try decode(await send("POST", path, body: try encode(body)))
     }
 
+    /// A body already encoded, for JSON whose keys must stay as they are (WebAuthn's).
+    func post<T: Decodable & Sendable>(_ path: String, json body: Data) async throws -> T {
+        try decode(await send("POST", path, body: body))
+    }
+
     func patch<T: Decodable & Sendable>(_ path: String, _ body: some Encodable & Sendable) async throws -> T {
         try decode(await send("PATCH", path, body: try encode(body)))
     }

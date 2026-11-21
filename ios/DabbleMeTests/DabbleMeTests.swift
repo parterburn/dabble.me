@@ -13,6 +13,21 @@ struct NativeAuthTests {
         #expect(NativeAuth.data(base64URL: encoded) == bytes)
     }
 
+    @Test func passkeyConfirmationKeepsWebAuthnKeys() throws {
+        let assertion = PasskeyAssertion(credentialID: Data([1]), clientDataJSON: Data([2]), authenticatorData: Data([3]),
+                                         signature: Data([4]), userID: Data("7".utf8))
+        let challenge = try APIClient.decoder.decode(NativeAuth.PasskeyChallenge.self,
+                                                     from: Data(#"{"challenge_token":"t","challenge":"c","rp_id":"dabble.me"}"#.utf8))
+        let json = try JSONEncoder().encode(NativeAuth.PasskeyConfirmation(assertion: assertion, challenge: challenge))
+        let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
+        #expect(object["challenge_token"] as? String == "t")
+        let credential = try #require(object["credential"] as? [String: Any])
+        #expect(credential["rawId"] as? String == "AQ")
+        let response = try #require(credential["response"] as? [String: Any])
+        #expect(Set(response.keys) == ["clientDataJSON", "authenticatorData", "signature", "userHandle"])
+        #expect(response["userHandle"] as? String == "Nw")
+    }
+
     @Test func otpRequiredAsksForTheCode() {
         let body = Data(#"{"error":"otp_required","message":"Enter the code."}"#.utf8)
         #expect(NativeAuth.failure(status: 401, data: body) == .needsCode)
