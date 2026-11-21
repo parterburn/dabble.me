@@ -77,6 +77,11 @@ struct SettingsView: View {
                             Label("Manage Hashtags", icon: "slab-tag")
                         }
                         .disabled(!me.isPro)
+                        // Emailed, as the web's Export page does, with no sign-in to the web first.
+                        ExportEntriesButton {
+                            Label("Export Entries", icon: "slab-arrow-up-from-line")
+                        }
+                        .foregroundStyle(.primary)
                     }
                 }
 
@@ -134,9 +139,6 @@ struct SettingsView: View {
                     }
                     Link(destination: model.me?.securityUrl ?? AppConfig.webURL("security")) {
                         ExternalLinkLabel("Account Security", icon: "slab-shield")
-                    }
-                    Link(destination: AppConfig.webURL("entries/export")) {
-                        ExternalLinkLabel("Export Entries", icon: "slab-arrow-up-from-line")
                     }
                 } header: {
                     Text("On dabble.me")

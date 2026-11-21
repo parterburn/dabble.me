@@ -181,6 +181,13 @@ final class AppModel {
         await refresh()
     }
 
+    // MARK: - Export
+
+    /// Starts the web's export of the whole journal; the server emails the link.
+    func requestExport() async throws -> ExportRequestResult {
+        try await api.post("api/v1/exports", EmptyBody())
+    }
+
     // MARK: - Account deletion
 
     func accountDeletionInfo() async throws -> AccountDeletionInfo {
