@@ -40,7 +40,7 @@ final class Dictation {
             case .microphoneDenied: "Allow the microphone for Dabble Me to speak your entry."
             case .language: "Speaking an entry isn't available in your language yet."
             case .download: "Couldn't download what's needed to listen. Check your connection and try again."
-            case .nothingHeard: "Didn't hear anything. Try again, a little closer to the phone."
+            case .nothingHeard: "Didn't hear anything. Try again."
             case .unavailable: "Couldn't start listening. Try again."
             }
         }
@@ -48,6 +48,12 @@ final class Dictation {
 
     /// Longest recording, in seconds: a long entry, said in one go.
     static let maxDuration: TimeInterval = 15 * 60
+    /// With no voice this long from the start, it stops and says it heard nothing, rather than
+    /// seem to record when the microphone isn't getting anything.
+    static let silenceLimit: TimeInterval = 10
+    /// A level (`Recorder.level`, 0...1 over -50...0 dB) above this is a voice: about -40 dB,
+    /// low so a soft voice counts. A quiet room sits under it.
+    nonisolated static let voiceLevel = 0.2
     /// How long the cleanup may take before the words go in as heard.
     static let cleanupBudget: TimeInterval = 1.5
     /// Hex's limit on words for the transcriber to expect.
@@ -201,20 +207,31 @@ final class Dictation {
 
         // Until Done (or the mic again, Save, the keyboard going, the app leaving), a phone
         // call, or the longest recording.
-        let stopped = AsyncStream<Bool>.makeStream()
-        endInput = { stopped.continuation.yield(true); stopped.continuation.finish() }
-        abandon = { stopped.continuation.yield(false); stopped.continuation.finish() }
+        let stopped = AsyncStream<Ending>.makeStream()
+        endInput = { stopped.continuation.yield(.keep); stopped.continuation.finish() }
+        abandon = { stopped.continuation.yield(.drop); stopped.continuation.finish() }
         let interruptions = Task { [weak self] in
             for await _ in NotificationCenter.default.notifications(named: AVAudioSession.interruptionNotification).map({ _ in () }) {
                 self?.stop()
             }
         }
         defer { interruptions.cancel() }
+        let started = Date.now
+        let silence = stopped.continuation
         let metering = Task { [weak self] in
+            var heardVoice = false
             while !Task.isCancelled {
                 guard let self else { return }
-                self.record(level: recorder.level)
+                let level = recorder.level
+                self.record(level: level)
+                if level > Self.voiceLevel { heardVoice = true }
                 if !recorder.isRecording, self.state == .listening { self.stop() }
+                // Nothing like a voice yet: stop and say so.
+                if !heardVoice, self.state == .listening, Date.now.timeIntervalSince(started) >= Self.silenceLimit {
+                    silence.yield(.silent)
+                    silence.finish()
+                    return
+                }
                 try? await Task.sleep(for: .milliseconds(80))
             }
         }
@@ -223,10 +240,15 @@ final class Dictation {
         state = .listening
         listeningSince = .now
         UIApplication.shared.isIdleTimerDisabled = true
-        var keeps = false
-        for await keep in stopped.stream { keeps = keep; break }
+        var ending = Ending.drop
+        for await end in stopped.stream { ending = end; break }
         recorder.stop()
-        guard keeps, !Task.isCancelled else { throw CancellationError() }
+        guard !Task.isCancelled else { throw CancellationError() }
+        switch ending {
+        case .keep: break
+        case .drop: throw CancellationError()
+        case .silent: throw Problem.nothingHeard
+        }
 
         let analyzer = SpeechAnalyzer(modules: [transcriber])
         // Each analyzer hears one recording and is let go, so the hints can't carry over.
@@ -246,6 +268,9 @@ final class Dictation {
         guard !text.isEmpty else { throw Problem.nothingHeard }
         return text
     }
+
+    /// How a recording ended: Done (transcribe it), dropped, or nothing heard in time.
+    private enum Ending: Sendable { case keep, drop, silent }
 
     /// The language's model, fetched the first time (and after iOS has cleared it away).
     @available(iOS 26.0, *)

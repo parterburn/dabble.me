@@ -1,28 +1,8 @@
-Build 106 brings back speaking an entry, done the way Hex does it, adds a Dictation pane in Settings, and renames the past entry switches so each says what it does. Nothing is written while you talk. Tap Done and the whole recording is turned into words in one go, on your phone, then tidied.
+Build 108 tidies up speaking an entry.
 
-SPEAKING AN ENTRY (iOS 26)
-- Start an entry. The microphone is at the far right of the bar over the keyboard, after the lightbulb.
-- Tap it. The first time, allow the microphone. It may download what it needs, once.
-- While you talk, the row shows an X on the left, a waveform that moves with your voice, the time so far, and an olive Done on the right.
-- Talk for a minute, then tap Done. "Writing it down" shows for a moment, then everything you said goes in at the cursor.
-- Say the same thing with the keyboard's dictation. Is this clearly better: punctuation, names, fewer mistakes?
-- Say "um" a few times, repeat a word ("I I went"), and correct yourself ("at 3, actually 4"). Those should be gone.
-- Start again and tap the X. Nothing should be added.
-- Type "We ate and", leave the cursor there, and speak. It should carry on the sentence in lowercase.
-- Type a few words, start talking, and tap Save without Done. What you said should be saved too.
-- Start talking, then tap Cancel. It should offer Save Draft; pick it, reopen, and what you said should be in the draft. Swiping the sheet down while recording should do nothing.
-- Talk for five minutes or more. How long does "Writing it down" take, and is anything missing?
-
-SETTINGS > DICTATION
-- The switch turns the microphone off. It should disappear from the composer.
-- Style: Polished (the tidying above) or Verbatim (as heard, ums included). Try each on the same sentence.
-- Custom Vocabulary: add a name you say often that isn't a hashtag, then say it. It should be spelled your way. Your hashtags count already. Swipe a term to delete it.
-- Language: Automatic follows your iPhone. Pick another language and speak in it. The first time, it downloads that language once. Polished only tidies English; other languages come out as heard.
-- Fix Misheard Words (only with Apple Intelligence on, Polished, English): turn it on, then say a sentence the keyboard usually gets wrong. Is the result better, and is anything reworded that shouldn't be?
-
-SETTINGS > REMINDERS
-- The rows should read Push, Home Screen Widget, Email, then Past Entry Filters.
-- Open Push (with it on). The switch should now read Show Entry Previews, like the widget's, with a note that the start of a past entry and its photo show in the notification.
-- Open Email. The switch should now read Include Past Entry, with a shorter note: it adds a past entry to each email, and with it off the email only gives a count.
-- Turn Email's switch off and go back to Push. Push's Show Entry Previews should still be on (they're separate).
-- Open Home Screen Widget. Show Entry Previews should be unchanged.
+- Tap the microphone and stay silent. After 10 seconds it should stop by itself and say it didn't hear anything.
+- That message now has an X on the left to close it. Tapping the microphone closes it too.
+- Tap the microphone and start talking within a few seconds. It should keep recording past 10 seconds as usual.
+- Try talking quietly, or in a noisy room. Does it ever stop on you while you're talking, or keep going when you're silent?
+- Settings → Dictation: the notes under each setting are shorter. Anything still unclear?
+- Settings → Dictation → Custom Vocabulary: type a word and press Return. It should appear under the field and the keyboard should stay up, ready for the next word, with nothing jumping around.

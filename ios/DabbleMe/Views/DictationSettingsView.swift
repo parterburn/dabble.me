@@ -26,9 +26,9 @@ struct DictationSettingsView: View {
                 .disabled(!Dictation.isSupported)
             } footer: {
                 if Dictation.isSupported {
-                    Text("A microphone at the far right of the bar over the keyboard. Talk, tap Done, and what you said is written in where the cursor is. It's all done on your phone: nothing you say is sent anywhere.")
+                    Text("Tap the microphone while writing. It all stays on your phone.")
                 } else {
-                    Text("Speaking an entry needs iOS 26 on an iPhone that can turn speech into words by itself.")
+                    Text("Not available on this iPhone.")
                 }
             }
 
@@ -41,7 +41,7 @@ struct DictationSettingsView: View {
                         }
                     }
                 } footer: {
-                    Text("Automatic follows your iPhone's language. A new language downloads once, the first time you speak in it.")
+                    Text("Automatic uses your iPhone's language.")
                 }
 
                 Section {
@@ -58,7 +58,7 @@ struct DictationSettingsView: View {
                     if cleansUp {
                         Text(style.explanation)
                     } else {
-                        Text("Polished tidies English only. In this language, what you say is written as heard either way.")
+                        Text("Polished only works in English.")
                     }
                 }
 
@@ -69,35 +69,44 @@ struct DictationSettingsView: View {
                             Label("Fix Misheard Words", icon: "slab-sparkles")
                         }
                     } footer: {
-                        Text("Experimental. Apple Intelligence fixes words iOS clearly got wrong, from the sentence around them, on your phone. It's told never to reword anything, and an answer that changes a number, a \"not\" or your meaning is thrown out. Adds a second or two after Done; entries over \(AppleIntelligenceCleanup.maxWords) words are left as they are.")
+                        Text("Experimental. Uses Apple Intelligence to fix words it got wrong.")
                     }
                 }
 
                 Section {
-                    ForEach(words, id: \.self) { word in
-                        Text(word)
-                    }
-                    .onDelete { offsets in
-                        for word in offsets.map({ words[$0] }) {
-                            storedWords = DictationSettings.removing(word, from: storedWords)
-                        }
-                    }
+                    // The field first, so a word added below it never moves it, and Return
+                    // adds the word and leaves the keyboard up for the next one. (A one-line
+                    // field's Return ends editing; this one takes the line break itself.)
                     HStack {
-                        TextField("Add a word or phrase", text: $newWord)
+                        TextField("Add a word or phrase", text: $newWord, axis: .vertical)
+                            .lineLimit(1)
                             .focused($addingWord)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
-                            .submitLabel(.done)
+                            // (Should Return ever submit instead, it still adds the word.)
                             .onSubmit(add)
-                        if !newWord.trimmingCharacters(in: .whitespaces).isEmpty {
+                            .onChange(of: newWord) { _, typed in
+                                if typed.contains(where: \.isNewline) { add() }
+                            }
+                        if !newWord.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                             Button("Add", action: add)
                                 .font(.subheadline.weight(.semibold))
+                        }
+                    }
+                    // The newest first, just under the field.
+                    ForEach(words.reversed(), id: \.self) { word in
+                        Text(word)
+                    }
+                    .onDelete { offsets in
+                        let shown = Array(words.reversed())
+                        for word in offsets.map({ shown[$0] }) {
+                            storedWords = DictationSettings.removing(word, from: storedWords)
                         }
                     }
                 } header: {
                     Text("Custom Vocabulary")
                 } footer: {
-                    Text("Spell names and terms your way, like a friend's name or a place. Your hashtags are already included. Up to \(Dictation.maxHints) terms.")
+                    Text("Spell names and terms your way. Your hashtags are included.")
                 }
             }
         }
@@ -122,7 +131,14 @@ struct DictationSettingsView: View {
     }
 
     private func add() {
-        storedWords = DictationSettings.adding(newWord, to: storedWords)
+        let word = newWord.replacingOccurrences(of: "\n", with: " ")
+        let added = DictationSettings.adding(word, to: storedWords)
+        // Kept in the field when it isn't added (the list is full), with the line break gone.
+        guard added != storedWords || word.trimmingCharacters(in: .whitespaces).isEmpty else {
+            newWord = word.trimmingCharacters(in: .whitespaces)
+            return
+        }
+        storedWords = added
         newWord = ""
         addingWord = true
     }
