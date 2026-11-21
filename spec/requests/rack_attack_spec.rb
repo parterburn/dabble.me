@@ -43,6 +43,19 @@ RSpec.describe 'Rack::Attack', type: :request do
     expect(statuses.last).to eq(429)
   end
 
+  it "counts the app's sign-in against the email it signs in, not a decoy user[email]" do
+    statuses = Array.new(6) do |index|
+      post '/api/v1/session',
+        params: { user: { email: "decoy-#{index}@example.com" }, email: 'app-victim@example.com', password: 'wrong-password' }.to_json,
+        headers: { 'CONTENT_TYPE' => 'application/json' },
+        env: { 'REMOTE_ADDR' => "203.0.113.#{index + 170}" }
+      response.status
+    end
+
+    expect(statuses.first(5)).to all(eq(401))
+    expect(statuses.last).to eq(429)
+  end
+
   it "throttles the iOS app's native sign-ups by IP" do
     statuses = Array.new(6) do |index|
       post '/api/v1/registration',

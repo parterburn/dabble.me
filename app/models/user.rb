@@ -508,6 +508,22 @@ class User < ActiveRecord::Base
     valid
   end
 
+  # The app's sign-in takes either kind of code in one field. The failure lockout covers both,
+  # and a recovery code that works clears the failures the TOTP check just counted.
+  def validate_otp_or_recovery_token(token)
+    return false if otp_locked_out?
+    return true if validate_otp_token(token)
+    return false if otp_locked_out?
+    return false unless validate_otp_recovery_token(token)
+
+    Rails.cache.delete("otp_user_failures:#{id}")
+    true
+  end
+
+  def otp_locked_out?
+    Rails.cache.read("otp_user_failures:#{id}").to_i >= OTP_MAX_USER_FAILURES
+  end
+
   def validate_otp_recovery_token(token)
     return false if token.blank?
 

@@ -78,11 +78,11 @@ class Rack::Attack
   end
 
   throttle('app/logins/email', limit: 5, period: 20.seconds) do |req|
-    submitted_email(req) if auth_path(req) == APP_SIGN_IN_PATH && req.post?
+    submitted_app_email(req) if auth_path(req) == APP_SIGN_IN_PATH && req.post?
   end
 
   throttle('app/logins/email/hour', limit: 20, period: 1.hour) do |req|
-    submitted_email(req) if auth_path(req) == APP_SIGN_IN_PATH && req.post?
+    submitted_app_email(req) if auth_path(req) == APP_SIGN_IN_PATH && req.post?
   end
 
   # The app's passkey sign-in: the same limits as the web's /passkeys/sessions.
@@ -99,11 +99,19 @@ class Rack::Attack
   end
 
   throttle('app/signups/email', limit: 5, period: 1.hour) do |req|
-    submitted_email(req) if auth_path(req) == APP_SIGN_UP_PATH && req.post?
+    submitted_app_email(req) if auth_path(req) == APP_SIGN_UP_PATH && req.post?
   end
 
   throttle('app/deletions/ip', limit: 5, period: 10.minutes) do |req|
     req.ip if auth_path(req) == APP_DELETION_PATH && req.post?
+  end
+
+  # Per token too, so a stolen token can't guess the password from many addresses.
+  throttle('app/deletions/token', limit: 5, period: 10.minutes) do |req|
+    next unless auth_path(req) == APP_DELETION_PATH && req.post?
+
+    token = req.env['HTTP_AUTHORIZATION'].to_s[/\ABearer\s+(\S+)/i, 1]
+    Digest::SHA256.hexdigest(token) if token
   end
 
   throttle('checkout/ip', limit: 10, period: 10.minutes) do |req|
@@ -164,6 +172,15 @@ class Rack::Attack
     user_params = params['user']
     email = user_params['email'] if user_params.is_a?(Hash)
     email = params['email'] unless email.is_a?(String)
+    return unless email.is_a?(String)
+
+    email.strip.downcase.presence
+  end
+
+  # The app's endpoints read only a top-level email, so count that one: a decoy user[email]
+  # must not let guesses at the real address go uncounted.
+  def self.submitted_app_email(req)
+    email = auth_params(req)['email']
     return unless email.is_a?(String)
 
     email.strip.downcase.presence

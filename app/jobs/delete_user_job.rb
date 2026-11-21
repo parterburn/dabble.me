@@ -1,10 +1,15 @@
 class DeleteUserJob < ActiveJob::Base
   queue_as :default
 
-  def perform(user_id)
+  # +requested_at+ is the deleted_at (epoch seconds) the deletion was scheduled with. A
+  # deletion cancelled by signing back in and asked for again gets a new deleted_at and a job
+  # of its own, so this older job must not cut the new hour short. Jobs queued before it was
+  # passed have none and keep the old check.
+  def perform(user_id, requested_at = nil)
     user = User.find_by(id: user_id)
     return unless user # Already deleted
     return unless user.deleted_at.present? # Deletion was cancelled
+    return if requested_at && user.deleted_at.to_i != requested_at # Cancelled, then asked for again
 
     # Capture user info before deletion for logging
     user_email = user.email

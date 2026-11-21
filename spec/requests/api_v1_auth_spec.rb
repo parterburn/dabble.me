@@ -81,6 +81,22 @@ RSpec.describe "iOS app native sign-in, sign-up and account deletion", type: :re
         expect(json["error"]).to eq("invalid_otp")
       end
 
+      it "takes a recovery code, and clears the failures it counted" do
+        allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new)
+        recovery = user.recovery_otp.at(user.otp_recovery_counter)
+        post "/api/v1/session", params: { email: user.email, password: password, otp_code: recovery }, as: :json
+        expect(response).to have_http_status(:ok)
+        expect(Rails.cache.read("otp_user_failures:#{user.id}")).to be_nil
+      end
+
+      it "takes no code at all once too many have failed" do
+        allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new)
+        Rails.cache.write("otp_user_failures:#{user.id}", User::OTP_MAX_USER_FAILURES)
+        code = ROTP::TOTP.new(user.otp_auth_secret).now
+        post "/api/v1/session", params: { email: user.email, password: password, otp_code: code }, as: :json
+        expect(json["error"]).to eq("invalid_otp")
+      end
+
       it "signs in with the password and a current code" do
         code = ROTP::TOTP.new(user.otp_auth_secret).now
         post "/api/v1/session", params: { email: user.email, password: password, otp_code: code }, as: :json
@@ -237,7 +253,7 @@ RSpec.describe "iOS app native sign-in, sign-up and account deletion", type: :re
       freeze_time do
         expect do
           post "/api/v1/account_deletion", params: { password: password }, headers: headers, as: :json
-        end.to have_enqueued_job(DeleteUserJob).with(user.id).at(1.hour.from_now)
+        end.to have_enqueued_job(DeleteUserJob).with(user.id, Time.current.to_i).at(1.hour.from_now)
 
         expect(response).to have_http_status(:ok)
         expect(json["deletes_at"]).to eq(1.hour.from_now.iso8601)

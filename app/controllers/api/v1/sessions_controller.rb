@@ -11,7 +11,9 @@ module Api
       # POST /api/v1/session {email, password, otp_code?}
       def create
         user = User.find_for_authentication(email: params[:email].to_s.strip.downcase)
-        # Same answer for an unknown email as for a wrong password (Devise's paranoid mode).
+        # Same answer for an unknown email as for a wrong password (Devise's paranoid mode),
+        # in about the same time: hash the password anyway when there's no account.
+        User.new(password: params[:password].to_s) unless user
         unless user&.valid_password?(params[:password].to_s) && user.active_for_authentication?
           return render_error(:unauthorized, 'invalid_credentials', 'Incorrect email or password.')
         end
@@ -21,7 +23,7 @@ module Api
           if code.blank?
             return render_error(:unauthorized, 'otp_required', 'Enter the 6-digit code from your authenticator app.')
           end
-          unless user.validate_otp_token(code) || user.validate_otp_recovery_token(code)
+          unless user.validate_otp_or_recovery_token(code)
             return render_error(:unauthorized, 'invalid_otp', "That code didn't work. Try the newest one, or a recovery code.")
           end
         end

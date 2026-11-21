@@ -11,6 +11,23 @@ RSpec.describe DeleteUserJob, type: :job do
     expect(user.reload).to be_persisted
   end
 
+  it 'leaves a deletion asked for again to its own job' do
+    first = 2.hours.ago
+    user.update_column(:deleted_at, 30.minutes.ago) # cancelled after `first`, then asked for again
+
+    expect do
+      described_class.perform_now(user.id, first.to_i)
+    end.not_to change(User, :count)
+  end
+
+  it 'deletes the user when the deletion it was scheduled for still stands' do
+    user.update_column(:deleted_at, 1.hour.ago)
+
+    expect do
+      described_class.perform_now(user.id, user.reload.deleted_at.to_i)
+    end.to change(User, :count).by(-1)
+  end
+
   it 'deletes the user when deletion is still pending' do
     user.update_column(:deleted_at, Time.current)
 

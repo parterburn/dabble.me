@@ -24,7 +24,7 @@ module Api
         end
 
         current_user.update_column(:deleted_at, Time.current)
-        DeleteUserJob.set(wait: 1.hour).perform_later(current_user.id)
+        DeleteUserJob.set(wait: 1.hour).perform_later(current_user.id, current_user.deleted_at.to_i)
         # Signed out, as the web signs out: this token and its refresh token stop working now.
         doorkeeper_token.revoke
         render json: { deletes_at: (current_user.deleted_at + 1.hour).iso8601 }
