@@ -10,7 +10,7 @@ settings:
   base:
     SWIFT_VERSION: "6.0"
     MARKETING_VERSION: "1.1.3"
-    CURRENT_PROJECT_VERSION: "102"
+    CURRENT_PROJECT_VERSION: "104"
     # Dabble Dev LLC. Change if you sign with a different Apple Developer team.
     DEVELOPMENT_TEAM: B79A4CAS56
     CODE_SIGN_STYLE: Automatic
@@ -94,6 +94,7 @@ targets:
         NSLocalNetworkUsageDescription: Connects to a Dabble Me development server on your network.
         NSPhotoLibraryAddUsageDescription: Save photos from your journal entries to your photo library.
         NSCameraUsageDescription: Take photos to add to your journal entries.
+        NSMicrophoneUsageDescription: "Speak a journal entry instead of typing it. What you say is turned into words on your phone."
         NSCalendarsFullAccessUsageDescription: "See what's on your calendar for the day you're writing about, as a reminder. It stays on your phone."
         NSFaceIDUsageDescription: Unlock your journal with Face ID.
   DabbleMeWidget:

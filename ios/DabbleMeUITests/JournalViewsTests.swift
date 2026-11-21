@@ -441,6 +441,41 @@ final class JournalViewsTests: XCTestCase {
         app.navigationBars.buttons.firstMatch.tap()
     }
 
+    /// The bar's microphone: recorded, then written in at the cursor once Done is tapped, with the
+    /// cleanup's ums and correction taken out. (A made-up recording here: the simulator has no
+    /// transcriber.)
+    func testSpeakingAnEntry() throws {
+        let app = launch(["-DabbleDebugDictation", "YES"])
+        if app.buttons["Write Today's Entry"].waitForExistence(timeout: 15) {
+            app.buttons["Write Today's Entry"].tap()
+        } else {
+            tab(app, "Journal").tap()
+            app.buttons["New Entry"].tap()
+        }
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        editor.tap()
+        if app.buttons["Continue"].waitForExistence(timeout: 2) { app.buttons["Continue"].tap() }
+        if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap() }
+        editor.typeText("A slow evening.")
+        app.buttons["Speak Your Entry"].tap()
+        XCTAssertTrue(app.staticTexts["DictationStatus"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 5))
+        sleep(1)
+        snap("compose-dictation")
+        // Nothing goes in while it's said.
+        XCTAssertFalse((editor.value as? String ?? "").contains("river"))
+        app.buttons["Done"].tap()
+        // After what was typed, spaced as if typed, and without the "um".
+        let heard = NSPredicate(format: "value CONTAINS %@", "A slow evening. We walked along the river after")
+        wait(for: [expectation(for: heard, evaluatedWith: editor)], timeout: 15)
+        XCTAssertFalse((editor.value as? String ?? "").contains("um,"))
+        XCTAssertTrue(app.buttons["Speak Your Entry"].waitForExistence(timeout: 5))
+        snap("compose-dictation-done")
+        app.buttons["Cancel"].tap()
+        app.buttons["Discard"].tap()
+    }
+
     func testTodayPromptEntrySummaryAndSettings() throws {
         let app = launch()
         // With Apple Intelligence on, Today writes its own prompt (no button to ask for one).

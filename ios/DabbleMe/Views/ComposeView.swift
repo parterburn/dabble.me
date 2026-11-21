@@ -67,6 +67,8 @@ struct ComposeView: View {
     /// Prompt (Apple Intelligence, the sparkles): a row with one question about the draft. Closing
     /// and opening it again asks a new one.
     @State private var showsAskRow = false
+    /// Speaking the entry (the bar's microphone): recorded, then written in where the cursor is.
+    @State private var dictation = Dictation()
 
     @State private var question: String?
     @State private var askedQuestions: [String] = []
@@ -103,6 +105,7 @@ struct ComposeView: View {
     /// out) is kept too, rather than leaving the draft as it was.
     @State private var keptDraft = false
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.openURL) private var openURL
     private let draftKey: String
     /// Opened for a day of its own, which today's date doesn't then replace.
     private let startsOnDay: Bool
@@ -195,7 +198,7 @@ struct ComposeView: View {
                                    : AnyView((model.me?.canAddPhotos == true ? AnyView(photosButton) : AnyView(proPhotosButton)).foregroundStyle(.tint)),
                                trailing: AnyView((isFormattingSelection ? AnyView(selectionButtons) : AnyView(tagAndLinkButtons)).foregroundStyle(.tint)),
                                trailingEnd: isFormattingSelection ? AnyView(closeFormatsButton.foregroundStyle(.tint)) : nil,
-                               barKey: "\(isFormattingSelection)|\(showsFormatBar)|\(editor.isExistingLink)|\(visitURL != nil)|\(editor.hasSelection)|\(editor.isBold)|\(editor.isItalic)|\(editor.isUnderlined)|\(model.me?.mayAddLinks == true)|\(CameraPicker.isAvailable)|\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(editor.isEditingLink)",
+                               barKey: "\(isFormattingSelection)|\(showsFormatBar)|\(editor.isExistingLink)|\(visitURL != nil)|\(editor.hasSelection)|\(editor.isBold)|\(editor.isItalic)|\(editor.isUnderlined)|\(model.me?.mayAddLinks == true)|\(CameraPicker.isAvailable)|\(calendarRowKey)|\(attachedPhotoCount)|\(showsPhotoDrawer)|\(previews.count)|\(existingPhotoURL?.absoluteString ?? "")|\(showsHashtagBar)|\(showsAskRow)|\(canAsk)|\(dictation.state)|\(dictation.problem != nil)|\(editor.isEditingLink)",
                                row: openRow)
                     // Low in the page, over the bar: clear of the entry's first lines.
                     .overlay(alignment: .bottom) {
@@ -299,6 +302,21 @@ struct ComposeView: View {
                 // One row at a time (the link row also opens by selecting a link).
                 if editing { showsHashtagBar = false; showsAskRow = false; showsPhotoDrawer = false }
             }
+            // One row at a time: another one opening ends the recording (what was said is still
+            // written in), as does the keyboard (and the bar with it) going away, or the app.
+            .onChange(of: showsHashtagBar || showsAskRow || showsPhotoDrawer || editor.isEditingLink) { _, open in
+                if open { dictation.stop(); dictation.clearProblem() }
+            }
+            .onChange(of: editor.isFocused) { _, focused in
+                if !focused, dictation.state == .listening { dictation.stop() }
+            }
+            .onDisappear { dictation.cancel() }
+            // Why it couldn't listen is said for a while, then the row closes.
+            .task(id: dictation.problem) {
+                guard dictation.problem != nil else { return }
+                try? await Task.sleep(for: .seconds(8))
+                if !Task.isCancelled { dictation.clearProblem() }
+            }
             .photosPicker(isPresented: $pickingPhotos, selection: libraryItems, maxSelectionCount: photoLimit - cameraItems.count,
                           selectionBehavior: .ordered, matching: .images, preferredItemEncoding: .current)
             .onChange(of: photoItems) { old, new in
@@ -334,6 +352,7 @@ struct ComposeView: View {
             .onChange(of: removesExistingPhoto) { scheduleDraftSave() }
             .task { await restoreDraftPhotos() }
             .onChange(of: scenePhase) { _, phase in
+                if phase == .background { dictation.stop() }
                 if phase != .active { saveDraftNow() }
             }
             .onAppear {
@@ -381,6 +400,8 @@ struct ComposeView: View {
     private var openRow: AnyView? {
         let row: AnyView? = if editor.isEditingLink {
             AnyView(LinkRow(editor: editor))
+        } else if dictation.isActive || dictation.problem != nil {
+            AnyView(dictationRow)
         } else if let typed = editor.typedHashtag, !hashtagCompletions(for: typed).isEmpty {
             // A hashtag being typed: the writer's tags that start that way, whatever row was open.
             AnyView(hashtagCompletionRow(hashtagCompletions(for: typed)))
@@ -566,8 +587,8 @@ struct ComposeView: View {
     /// held: the bar shows `linkButtons` and `selectionButtons`, and nothing else.
     private var isFormattingSelection: Bool { editor.hasSelection || editor.isEditingLink || showsFormatBar }
 
-    /// The bar's right, with nothing selected: Bold (for what's typed next), Tags (the hashtag row), then Prompt
-    /// (the lightbulb) at the far edge. Each row button is selected while its row is open; one row at a time.
+    /// The bar's right, with nothing selected: Bold (for what's typed next), Tags (the hashtag row), Prompt
+    /// (the lightbulb), then the microphone (speak the entry, iOS 26) at the far edge. Each row button is selected while its row is open; one row at a time.
     private var tagAndLinkButtons: some View {
         HStack(spacing: 6) {
             // Bold, always: for what's typed next (lit while that's bold; a tap turns it off).
@@ -646,6 +667,100 @@ struct ComposeView: View {
             .accessibilityActions {
                 if !template.isEmpty { Button("Use Template") { useTemplate() } }
             }
+            if Dictation.isSupported { dictationButton }
+        }
+    }
+
+    /// Speak the entry: starts the recording, and stops it to have it written in. Selected while on.
+    private var dictationButton: some View {
+        Button {
+            if dictation.isActive {
+                dictation.stop()
+            } else {
+                showsHashtagBar = false
+                showsAskRow = false
+                showsPhotoDrawer = false
+                editor.endLink()
+                // The writer's hashtags, as names to expect (asked for again once it's said).
+                if allTags.isEmpty { Task { allTags = ((try? await model.allHashtags()) ?? []).map(\.tag) } }
+                if recentTags.isEmpty { Task { recentTags = (try? await model.recentHashtags()) ?? [] } }
+                dictation.start(hints: { recentTags + allTags }, canListen: { editor.isFocused }) { editor.insertDictated($0) }
+            }
+        } label: {
+            appIcon("slab-microphone")
+                .frame(width: 40, height: 36)
+                .background(dictation.isActive ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(dictation.isActive ? "Stop Listening" : "Speak Your Entry")
+        .accessibilityHint("Records what you say, then writes it into the entry, on your phone")
+        .accessibilityAddTraits(dictation.isActive ? .isSelected : [])
+    }
+
+    /// While speaking: a title, a line saying what's happening (with the time so far while
+    /// recording), and Done. Nothing's written until it's done: it's heard in one go, then tidied.
+    private var dictationRow: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(dictationTitle)
+                .font(.caption.weight(.semibold))
+                .textCase(.uppercase)
+                .foregroundStyle(.tint)
+                .padding(.bottom, 4)
+                .accessibilityAddTraits(.isHeader)
+            HStack(alignment: .center, spacing: 12) {
+                if let problem = dictation.problem {
+                    Text(problem.message)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if problem == .microphoneDenied, let settings = URL(string: UIApplication.openSettingsURLString) {
+                        Button("Settings") { openURL(settings) }
+                            .font(.subheadline.weight(.semibold))
+                    }
+                } else {
+                    if dictation.state == .listening {
+                        DictationLevel(level: dictation.level)
+                    } else {
+                        TypingDots(size: .small)
+                    }
+                    dictationLine
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier("DictationStatus")
+                    if dictation.state == .listening {
+                        Button("Done") { dictation.stop() }
+                            .font(.subheadline.weight(.semibold))
+                    }
+                }
+            }
+            .font(.subheadline)
+            .frame(minHeight: 36)
+        }
+        .padding(.horizontal)
+        .padding(.top, 10)
+    }
+
+    private var dictationTitle: String {
+        if dictation.problem != nil { return "Speak your entry" }
+        return switch dictation.state {
+        case .idle, .preparing: "Getting ready"
+        case .listening: "Listening"
+        case .writing: "Writing it down"
+        }
+    }
+
+    @ViewBuilder private var dictationLine: some View {
+        if let progress = dictation.downloadProgress {
+            Text("Downloading what's needed to listen, just this once… \(Int(progress * 100))%")
+        } else if dictation.state == .listening, let since = dictation.listeningSince {
+            // The time so far, then a reminder that nothing shows until Done.
+            TimelineView(.periodic(from: since, by: 1)) { context in
+                Text("\(Duration.seconds(context.date.timeIntervalSince(since)).formatted(.time(pattern: .minuteSecond)))  ·  Tap Done and it's written in.")
+                    .monospacedDigit()
+            }
+        } else {
+            Text(dictation.state == .writing ? "Turning what you said into words, on your phone…" : "One moment…")
         }
     }
 
@@ -1350,6 +1465,8 @@ struct ComposeView: View {
         guard !isSaving else { return }
         isSaving = true
         defer { isSaving = false }
+        // What's still being said goes in first.
+        await dictation.finish()
         do {
             switch mode {
             case .new:
@@ -1733,5 +1850,23 @@ struct FormatButton: View {
         .buttonStyle(.plain)
         .accessibilityLabel(name)
         .accessibilityAddTraits(isOn ? .isSelected : [])
+    }
+}
+
+/// How loud it is while recording: three bars that rise with the voice, so it's clear it hears.
+private struct DictationLevel: View {
+    let level: Double
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 3) {
+            ForEach(0..<3, id: \.self) { bar in
+                Capsule()
+                    .fill(.tint)
+                    .frame(width: 4, height: 6 + 16 * level * (bar == 1 ? 1 : 0.65))
+            }
+        }
+        .frame(width: 22, height: 24)
+        .animation(.easeOut(duration: 0.08), value: level)
+        .accessibilityHidden(true)
     }
 }

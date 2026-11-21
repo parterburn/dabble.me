@@ -1,9 +1,16 @@
-Build 102 keeps the composer's Writing ideas row to two and a half calendar events, however long the prompt over them is.
+Build 104 brings back speaking an entry, done the way Hex does it. Nothing shows while you talk. Tap Done and the whole recording is turned into words in one go, on your phone, then tidied: ums, repeated words and spoken corrections are taken out.
 
-WRITING IDEAS AND YOUR CALENDAR
-- Pick a day with four or more events on your calendar (or set the entry's date to one).
-- Start an entry and tap the lightbulb, with the keyboard up. Under the prompt you should see two events and the top half of a third.
-- Tap to generate a prompt. The row should grow upward for it, and the events should stay where they are.
-- Swipe up inside the row. It should scroll to the rest of the day's events.
-- Tap an event further down. It should go into the entry as a heading, and the row should close.
-- On a quiet day (one or two events), the row should be only as tall as what's in it.
+SPEAKING AN ENTRY (iOS 26)
+- Start an entry. The microphone is at the far right of the bar over the keyboard, after the lightbulb.
+- Tap it. The first time, allow the microphone. It may then download what it needs, once.
+- A "Listening" row shows a clock and bars that move with your voice. Talk for a minute about your day.
+- Tap Done. The row should say "Writing it down" for a moment, then everything you said should go in at the cursor.
+- Compare it with the keyboard's dictation, saying the same thing. Is this clearly better: punctuation, names, fewer mistakes?
+- Say "um" and "uh" a few times, repeat a word ("I I went"), and correct yourself ("at 3, actually 4"). Those should be gone from the text.
+- Say the name of someone you tag often (like #Leo). It should come out spelled the way your tag is.
+- Type "We ate and", leave the cursor there, and speak a sentence. It should continue the sentence with a lowercase word and a space before it.
+- Start talking and tap Save without tapping Done. What you said should be saved with the entry.
+- While it's listening, open the hashtag or lightbulb row, or swipe the keyboard down. It should stop and still write in what you said.
+- Try it in airplane mode after the first use. It should still work.
+- Talk for five minutes or more. Say how long "Writing it down" takes and whether anything is missing.
+- Turn the microphone off for Dabble Me in Settings and tap the button. The row should say so and offer Settings.

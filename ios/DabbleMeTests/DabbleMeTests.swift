@@ -1116,3 +1116,45 @@ struct DraftPhotoTests {
         #expect(draft.removesPhoto == nil)
     }
 }
+
+/// Speaking an entry: what's heard goes in at the cursor as if typed there.
+@MainActor
+struct DictationTests {
+    @Test func spokenWordsAreSpacedLikeTypedOnes() {
+        #expect(Dictation.insertion(of: "Today I walked.", before: "") == "Today I walked.")
+        #expect(Dictation.insertion(of: " It was quiet. ", before: "A long day.") == " It was quiet.")
+        #expect(Dictation.insertion(of: " It was quiet.", before: "A long day. ") == "It was quiet.")
+        #expect(Dictation.insertion(of: "  \n", before: "A long day.") == "")
+    }
+
+    /// Mid-sentence, a dictionary word starts in lowercase; "I", names and acronyms don't.
+    @Test func midSentenceWordsStartInLowercase() {
+        #expect(Dictation.insertion(of: "Then we left.", before: "We ate and") == " then we left.")
+        #expect(Dictation.insertion(of: "I left early.", before: "After dinner") == " I left early.")
+        #expect(Dictation.insertion(of: "NASA called.", before: "Then") == " NASA called.")
+        #expect(Dictation.insertion(of: "Then we left.", before: "We ate:") == " Then we left.")
+    }
+
+    @Test func hashtagsBecomeWordsToExpect() {
+        #expect(Dictation.hints(from: ["#Leo", "leo", "Kenji", " ", "#"]) == ["Leo", "Kenji"])
+        #expect(Dictation.hints(from: (1...150).map { "tag\($0)" }).count == Dictation.maxHints)
+    }
+}
+
+/// Hex's cleanup model, from the app's bundle: spoken corrections and ums go, the rest stays.
+struct CleanupTaggerTests {
+    @Test func spokenCorrectionsAndFillersGo() throws {
+        let tagger = CleanupTagger()
+        #expect(try tagger.clean("Let's ship it Tuesday, no wait, Thursday.") == "Let's ship it Thursday.")
+        #expect(try tagger.clean("Can you send it to John, I mean Mike?") == "Can you send it to Mike?")
+        #expect(try tagger.clean("Test one two three.") == "Test one two three.")
+        #expect(tagger.isLoaded)
+    }
+
+    @Test func aLateCleanupKeepsWhatWasSaid() async {
+        let tagger = CleanupTagger()
+        let spoken = "Can you send it to John, I mean Mike?"
+        #expect(await tagger.clean(spoken, within: 0) == spoken)
+        #expect(await tagger.clean(spoken, within: 5) == "Can you send it to Mike?")
+    }
+}
