@@ -163,7 +163,8 @@ struct ComposeView: View {
         let picked = JournalDay(localDate: date)
         return picked.iso == entry.date ? nil : picked
     }
-    private var hasChanges: Bool { editor.isDirty || !photoItems.isEmpty || restoredDraft != nil || removesExistingPhoto || movedTo != nil }
+    /// (Speech still being recorded or written counts: closing would drop it.)
+    private var hasChanges: Bool { dictation.isActive || editor.isDirty || !photoItems.isEmpty || restoredDraft != nil || removesExistingPhoto || movedTo != nil }
     private var canSave: Bool {
         guard !isSaving, !isLoadingPhotos else { return false }
         return isNew ? ((!editor.isEmpty && !isUntouchedTemplate) || !photos.isEmpty)
@@ -172,8 +173,9 @@ struct ComposeView: View {
 
     /// There's something to keep as a draft: words, photos, or a removed photo.
     private var canSaveDraft: Bool {
-        (!editor.isEmpty || !photoItems.isEmpty || removesExistingPhoto)
-            && (editor.isDirty || restoredDraft != nil || !photoItems.isEmpty || removesExistingPhoto)
+        dictation.isActive
+            || ((!editor.isEmpty || !photoItems.isEmpty || removesExistingPhoto)
+                && (editor.isDirty || restoredDraft != nil || !photoItems.isEmpty || removesExistingPhoto))
     }
 
     /// Editing: the entry's photo (or collage) as it is now, unless removed. New photos join it in a collage.
@@ -245,9 +247,13 @@ struct ComposeView: View {
                             // A draft is kept on this device and comes back the next time this is opened.
                             if canSaveDraft {
                                 Button("Save Draft") {
-                                    draftSave?.cancel()
-                                    saveDraftNow()
-                                    dismiss()
+                                    // What's still being said goes in first.
+                                    Task {
+                                        await dictation.finish()
+                                        draftSave?.cancel()
+                                        saveDraftNow()
+                                        dismiss()
+                                    }
                                 }
                             }
                             Button("Discard", role: .destructive) {
@@ -351,8 +357,15 @@ struct ComposeView: View {
             .onChange(of: removesExistingPhoto) { scheduleDraftSave() }
             .task { await restoreDraftPhotos() }
             .onChange(of: scenePhase) { _, phase in
-                if phase == .background { dictation.stop() }
                 if phase != .active { saveDraftNow() }
+                // Leaving mid-recording: what was said is written in, then the draft saved again
+                // (if iOS suspends the app first, that finishes when it's back).
+                if phase == .background, dictation.isActive {
+                    Task {
+                        await dictation.finish()
+                        saveDraftNow()
+                    }
+                }
             }
             .onAppear {
                 editor.allowsLinks = model.me?.mayAddLinks == true

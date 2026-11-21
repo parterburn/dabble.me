@@ -9,7 +9,8 @@ SPEAKING AN ENTRY (iOS 26)
 - Say "um" a few times, repeat a word ("I I went"), and correct yourself ("at 3, actually 4"). Those should be gone.
 - Start again and tap the X. Nothing should be added.
 - Type "We ate and", leave the cursor there, and speak. It should carry on the sentence in lowercase.
-- Start talking and tap Save without Done. What you said should be saved too.
+- Type a few words, start talking, and tap Save without Done. What you said should be saved too.
+- Start talking, then tap Cancel. It should offer Save Draft; pick it, reopen, and what you said should be in the draft. Swiping the sheet down while recording should do nothing.
 - Talk for five minutes or more. How long does "Writing it down" take, and is anything missing?
 
 SETTINGS > DICTATION

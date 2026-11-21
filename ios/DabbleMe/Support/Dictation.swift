@@ -188,7 +188,13 @@ final class Dictation {
         try Task.checkCancellation()
         guard canListen() else { throw CancellationError() }
 
-        let url = FileManager.default.temporaryDirectory.appendingPathComponent("dictation-\(UUID().uuidString).wav")
+        // A recording left by a run the app didn't live to finish goes first: it's journal audio.
+        let temporary = FileManager.default.temporaryDirectory
+        for old in (try? FileManager.default.contentsOfDirectory(at: temporary, includingPropertiesForKeys: nil)) ?? []
+        where old.lastPathComponent.hasPrefix("dictation-") && old.pathExtension == "wav" {
+            try? FileManager.default.removeItem(at: old)
+        }
+        let url = temporary.appendingPathComponent("dictation-\(UUID().uuidString).wav")
         defer { try? FileManager.default.removeItem(at: url) }
         let recorder = try Recorder(url: url, maxDuration: Self.maxDuration)
         defer { recorder.stop() }
@@ -353,9 +359,12 @@ private final class Recorder {
     private static var retired: [AVAudioRecorder] = []
     private let recorder: AVAudioRecorder
     private var isStopped = false
+    /// The session's category before recording, put back after (`.record` silences playback).
+    private let previous: (category: AVAudioSession.Category, mode: AVAudioSession.Mode, options: AVAudioSession.CategoryOptions)
 
     init(url: URL, maxDuration: TimeInterval) throws {
         let session = AVAudioSession.sharedInstance()
+        previous = (session.category, session.mode, session.categoryOptions)
         do {
             // `.measurement`: the microphone as it is, without the voice-call processing.
             try session.setCategory(.record, mode: .measurement)
@@ -370,6 +379,7 @@ private final class Recorder {
             ])
         } catch {
             try? session.setActive(false, options: .notifyOthersOnDeactivation)
+            try? session.setCategory(previous.category, mode: previous.mode, options: previous.options)
             throw Dictation.Problem.unavailable
         }
         recorder.isMeteringEnabled = true
@@ -401,6 +411,8 @@ private final class Recorder {
             try? await Task.sleep(for: .seconds(5))
             if !Self.retired.isEmpty { Self.retired.removeFirst() }
         }
-        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        let session = AVAudioSession.sharedInstance()
+        try? session.setActive(false, options: .notifyOthersOnDeactivation)
+        try? session.setCategory(previous.category, mode: previous.mode, options: previous.options)
     }
 }
