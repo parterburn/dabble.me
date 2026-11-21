@@ -688,6 +688,9 @@ struct ComposeView: View {
         Button {
             if dictation.isActive {
                 dictation.stop()
+            } else if dictation.problem != nil {
+                // Its message showing: the microphone closes it.
+                dictation.clearProblem()
             } else {
                 showsHashtagBar = false
                 showsAskRow = false
@@ -1819,6 +1822,7 @@ private struct DictationRow: View {
                 .accessibilityAddTraits(.isHeader)
             HStack(alignment: .center, spacing: 12) {
                 if let problem = dictation.problem {
+                    closeButton("Close") { dictation.clearProblem() }
                     Text(problem.message)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -1828,19 +1832,8 @@ private struct DictationRow: View {
                             .font(.subheadline.weight(.semibold))
                     }
                 } else if dictation.state == .listening {
-                    Button { dictation.cancel() } label: {
-                        appIcon("slab-close")
-                            .resizable()
-                            .scaledToFit()
-                            .frame(width: 14, height: 14)
-                            .frame(width: 36, height: 36)
-                            .background(.tint.opacity(0.12), in: .circle)
-                            .contentShape(.circle)
-                    }
-                    .buttonStyle(.plain)
-                    .foregroundStyle(.tint)
-                    .accessibilityLabel("Cancel Recording")
-                    .accessibilityHint("Drops what you said")
+                    closeButton("Cancel Recording") { dictation.cancel() }
+                        .accessibilityHint("Drops what you said")
                     DictationWaveform(levels: dictation.levels)
                         .frame(maxWidth: .infinity)
                     if let since = dictation.listeningSince {
@@ -1876,6 +1869,22 @@ private struct DictationRow: View {
         }
         .padding(.horizontal)
         .padding(.top, 10)
+    }
+
+    /// The X on the row's left: drops a recording, or closes a message.
+    private func closeButton(_ label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            appIcon("slab-close")
+                .resizable()
+                .scaledToFit()
+                .frame(width: 14, height: 14)
+                .frame(width: 36, height: 36)
+                .background(.tint.opacity(0.12), in: .circle)
+                .contentShape(.circle)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(.tint)
+        .accessibilityLabel(label)
     }
 
     private var dictationTitle: String {

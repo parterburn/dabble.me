@@ -26,9 +26,9 @@ struct DictationSettingsView: View {
                 .disabled(!Dictation.isSupported)
             } footer: {
                 if Dictation.isSupported {
-                    Text("A microphone at the far right of the bar over the keyboard. Talk, tap Done, and what you said is written in where the cursor is. It's all done on your phone: nothing you say is sent anywhere.")
+                    Text("Tap the microphone while writing. It all stays on your phone.")
                 } else {
-                    Text("Speaking an entry needs iOS 26 on an iPhone that can turn speech into words by itself.")
+                    Text("Needs iOS 26.")
                 }
             }
 
@@ -41,7 +41,7 @@ struct DictationSettingsView: View {
                         }
                     }
                 } footer: {
-                    Text("Automatic follows your iPhone's language. A new language downloads once, the first time you speak in it.")
+                    Text("Automatic uses your iPhone's language.")
                 }
 
                 Section {
@@ -58,7 +58,7 @@ struct DictationSettingsView: View {
                     if cleansUp {
                         Text(style.explanation)
                     } else {
-                        Text("Polished tidies English only. In this language, what you say is written as heard either way.")
+                        Text("Polished only works in English.")
                     }
                 }
 
@@ -69,7 +69,7 @@ struct DictationSettingsView: View {
                             Label("Fix Misheard Words", icon: "slab-sparkles")
                         }
                     } footer: {
-                        Text("Experimental. Apple Intelligence fixes words iOS clearly got wrong, from the sentence around them, on your phone. It's told never to reword anything, and an answer that changes a number, a \"not\" or your meaning is thrown out. Adds a second or two after Done; entries over \(AppleIntelligenceCleanup.maxWords) words are left as they are.")
+                        Text("Experimental. Uses Apple Intelligence to fix words it got wrong.")
                     }
                 }
 
@@ -97,7 +97,7 @@ struct DictationSettingsView: View {
                 } header: {
                     Text("Custom Vocabulary")
                 } footer: {
-                    Text("Spell names and terms your way, like a friend's name or a place. Your hashtags are already included. Up to \(Dictation.maxHints) terms.")
+                    Text("Spell names and terms your way. Your hashtags are included.")
                 }
             }
         }

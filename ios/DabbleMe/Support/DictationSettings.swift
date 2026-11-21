@@ -18,8 +18,8 @@ enum DictationStyle: String, CaseIterable, Identifiable {
 
     var explanation: String {
         switch self {
-        case .polished: "Takes out ums, repeated words and the words you correct (\"at 3, actually 4\" becomes \"at 4\"). It only removes words, never changes or adds one."
-        case .verbatim: "Everything you say, as iOS heard it, ums included."
+        case .polished: "Removes ums, repeats and corrections."
+        case .verbatim: "Exactly what you said."
         }
     }
 }
