@@ -68,6 +68,7 @@ class Rack::Attack
   APP_SIGN_IN_PATH = '/api/v1/session'.freeze
   APP_SIGN_UP_PATH = '/api/v1/registration'.freeze
   APP_DELETION_PATH = '/api/v1/account_deletion'.freeze
+  APP_EXPORTS_PATH = '/api/v1/exports'.freeze
 
   throttle('app/logins/ip', limit: 5, period: 20.seconds) do |req|
     req.ip if auth_path(req) == APP_SIGN_IN_PATH && req.post?
@@ -109,6 +110,15 @@ class Rack::Attack
   # Per token too, so a stolen token can't guess the password from many addresses.
   throttle('app/deletions/token', limit: 5, period: 10.minutes) do |req|
     next unless auth_path(req) == APP_DELETION_PATH && req.post?
+
+    token = req.env['HTTP_AUTHORIZATION'].to_s[/\ABearer\s+(\S+)/i, 1]
+    Digest::SHA256.hexdigest(token) if token
+  end
+
+  # Asking again for an export that's ready emails its link again: a few a token, so a
+  # stuck button or a loop can't fill someone's inbox.
+  throttle('app/exports/token', limit: 5, period: 1.hour) do |req|
+    next unless auth_path(req) == APP_EXPORTS_PATH && req.post?
 
     token = req.env['HTTP_AUTHORIZATION'].to_s[/\ABearer\s+(\S+)/i, 1]
     Digest::SHA256.hexdigest(token) if token

@@ -229,7 +229,26 @@ struct AccountDeletionInfo: Decodable, Sendable, Equatable {
     let entryCount: Int
     /// PRO billing that deleting the account doesn't stop; nil when there's none to cancel.
     let separateBilling: SeparateBilling?
-    let exportUrl: URL
+}
+
+/// A POST with nothing to send (encodes as `{}`).
+struct EmptyBody: Encodable, Sendable {}
+
+/// POST /api/v1/exports: the export is on its way to `email`.
+struct ExportRequestResult: Decodable, Sendable {
+    /// "started" or "preparing" (emailed when it's ready), or "sent" (a recent one, emailed again).
+    let status: String
+    let email: String
+
+    var title: String { status == "sent" ? "Export Sent" : "Export Started" }
+
+    var message: String {
+        switch status {
+        case "sent": "We've emailed your latest export to \(email) again. The link works for 7 days."
+        case "preparing": "Your export is already being prepared. We'll email it to \(email) when it's ready."
+        default: "We'll email your export to \(email) when it's ready. The link works for 7 days."
+        }
+    }
 }
 
 /// POST /api/v1/account_deletion.

@@ -22,18 +22,16 @@ class ExportsController < ApplicationController
   def create
     return stream_markdown if params[:download] == "markdown"
 
-    scope = Export.scope_for(year: @year, search_term: @search_term)
     back = export_entries_path({ year: @year, search: (@search_term && { term: @search_term }) }.compact)
-    recent = current_user.exports.within_limit.where(scope: scope).order(:created_at).last
-    if recent&.preparing?
+    status, export = Export.request_for(current_user, year: @year, search_term: @search_term)
+    case status
+    when :preparing
       redirect_to back, notice: "Your export is already being prepared. We'll email you a link when it's ready."
-    elsif recent&.downloadable?
-      redirect_to download_export_path(recent)
-    elsif current_user.exports.where(created_at: 1.hour.ago..).count >= Export::HOURLY_LIMIT
+    when :ready
+      redirect_to download_export_path(export)
+    when :limited
       redirect_to back, alert: "You've requested a lot of exports in the last hour. Please try again later."
     else
-      export = current_user.exports.create!(scope: scope, search_term: @search_term)
-      ExportEntriesJob.perform_later(export.id)
       redirect_to back, notice: "Your export is being prepared. We'll email you a link to download it. The link works for 7 days."
     end
   end
