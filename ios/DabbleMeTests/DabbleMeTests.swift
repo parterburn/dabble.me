@@ -1158,3 +1158,15 @@ struct CleanupTaggerTests {
         #expect(await tagger.clean(spoken, within: 5) == "Can you send it to Mike?")
     }
 }
+
+/// Settings → Dictation's words to expect: each once, trimmed, removable.
+struct DictationSettingsTests {
+    @Test func wordsAreAddedOnceAndRemoved() {
+        var stored = DictationSettings.adding(" Kenji ", to: "")
+        stored = DictationSettings.adding("kenji", to: stored)
+        stored = DictationSettings.adding("Ouray", to: stored)
+        stored = DictationSettings.adding("  ", to: stored)
+        #expect(DictationSettings.words(from: stored) == ["Kenji", "Ouray"])
+        #expect(DictationSettings.words(from: DictationSettings.removing("Kenji", from: stored)) == ["Ouray"])
+    }
+}

@@ -105,7 +105,6 @@ struct ComposeView: View {
     /// out) is kept too, rather than leaving the draft as it was.
     @State private var keptDraft = false
     @Environment(\.scenePhase) private var scenePhase
-    @Environment(\.openURL) private var openURL
     private let draftKey: String
     /// Opened for a day of its own, which today's date doesn't then replace.
     private let startsOnDay: Bool
@@ -401,7 +400,7 @@ struct ComposeView: View {
         let row: AnyView? = if editor.isEditingLink {
             AnyView(LinkRow(editor: editor))
         } else if dictation.isActive || dictation.problem != nil {
-            AnyView(dictationRow)
+            AnyView(DictationRow(dictation: dictation))
         } else if let typed = editor.typedHashtag, !hashtagCompletions(for: typed).isEmpty {
             // A hashtag being typed: the writer's tags that start that way, whatever row was open.
             AnyView(hashtagCompletionRow(hashtagCompletions(for: typed)))
@@ -667,7 +666,7 @@ struct ComposeView: View {
             .accessibilityActions {
                 if !template.isEmpty { Button("Use Template") { useTemplate() } }
             }
-            if Dictation.isSupported { dictationButton }
+            if Dictation.isSupported, DictationSettings.isEnabled { dictationButton }
         }
     }
 
@@ -684,7 +683,9 @@ struct ComposeView: View {
                 // The writer's hashtags, as names to expect (asked for again once it's said).
                 if allTags.isEmpty { Task { allTags = ((try? await model.allHashtags()) ?? []).map(\.tag) } }
                 if recentTags.isEmpty { Task { recentTags = (try? await model.recentHashtags()) ?? [] } }
-                dictation.start(hints: { recentTags + allTags }, canListen: { editor.isFocused }) { editor.insertDictated($0) }
+                // Settings → Dictation's own words first, then the hashtags.
+                dictation.start(style: DictationSettings.style, hints: { DictationSettings.words + recentTags + allTags },
+                                canListen: { editor.isFocused }) { editor.insertDictated($0) }
             }
         } label: {
             appIcon("slab-microphone")
@@ -695,73 +696,6 @@ struct ComposeView: View {
         .accessibilityLabel(dictation.isActive ? "Stop Listening" : "Speak Your Entry")
         .accessibilityHint("Records what you say, then writes it into the entry, on your phone")
         .accessibilityAddTraits(dictation.isActive ? .isSelected : [])
-    }
-
-    /// While speaking: a title, a line saying what's happening (with the time so far while
-    /// recording), and Done. Nothing's written until it's done: it's heard in one go, then tidied.
-    private var dictationRow: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text(dictationTitle)
-                .font(.caption.weight(.semibold))
-                .textCase(.uppercase)
-                .foregroundStyle(.tint)
-                .padding(.bottom, 4)
-                .accessibilityAddTraits(.isHeader)
-            HStack(alignment: .center, spacing: 12) {
-                if let problem = dictation.problem {
-                    Text(problem.message)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    if problem == .microphoneDenied, let settings = URL(string: UIApplication.openSettingsURLString) {
-                        Button("Settings") { openURL(settings) }
-                            .font(.subheadline.weight(.semibold))
-                    }
-                } else {
-                    if dictation.state == .listening {
-                        DictationLevel(level: dictation.level)
-                    } else {
-                        TypingDots(size: .small)
-                    }
-                    dictationLine
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .accessibilityIdentifier("DictationStatus")
-                    if dictation.state == .listening {
-                        Button("Done") { dictation.stop() }
-                            .font(.subheadline.weight(.semibold))
-                    }
-                }
-            }
-            .font(.subheadline)
-            .frame(minHeight: 36)
-        }
-        .padding(.horizontal)
-        .padding(.top, 10)
-    }
-
-    private var dictationTitle: String {
-        if dictation.problem != nil { return "Speak your entry" }
-        return switch dictation.state {
-        case .idle, .preparing: "Getting ready"
-        case .listening: "Listening"
-        case .writing: "Writing it down"
-        }
-    }
-
-    @ViewBuilder private var dictationLine: some View {
-        if let progress = dictation.downloadProgress {
-            Text("Downloading what's needed to listen, just this once… \(Int(progress * 100))%")
-        } else if dictation.state == .listening, let since = dictation.listeningSince {
-            // The time so far, then a reminder that nothing shows until Done.
-            TimelineView(.periodic(from: since, by: 1)) { context in
-                Text("\(Duration.seconds(context.date.timeIntervalSince(since)).formatted(.time(pattern: .minuteSecond)))  ·  Tap Done and it's written in.")
-                    .monospacedDigit()
-            }
-        } else {
-            Text(dictation.state == .writing ? "Turning what you said into words, on your phone…" : "One moment…")
-        }
     }
 
     /// The attached photos as a little stack; tap to show or hide the photo row. Held, it goes
@@ -1853,20 +1787,128 @@ struct FormatButton: View {
     }
 }
 
-/// How loud it is while recording: three bars that rise with the voice, so it's clear it hears.
-private struct DictationLevel: View {
-    let level: Double
+/// The row over the bar while speaking. Its own view, reading `Dictation` itself, so the waveform
+/// and clock update here without redrawing the whole composer.
+private struct DictationRow: View {
+    let dictation: Dictation
+    @Environment(\.openURL) private var openURL
+
+    /// While speaking: a title, then, while recording, an X on the left (drops it), the waveform
+    /// with the time so far, and Done on the right (writes it in). Nothing's written until Done:
+    /// it's heard in one go, then tidied.
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Text(dictationTitle)
+                .font(.caption.weight(.semibold))
+                .textCase(.uppercase)
+                .foregroundStyle(.tint)
+                .padding(.bottom, 4)
+                .accessibilityAddTraits(.isHeader)
+            HStack(alignment: .center, spacing: 12) {
+                if let problem = dictation.problem {
+                    Text(problem.message)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    if problem == .microphoneDenied, let settings = URL(string: UIApplication.openSettingsURLString) {
+                        Button("Settings") { openURL(settings) }
+                            .font(.subheadline.weight(.semibold))
+                    }
+                } else if dictation.state == .listening {
+                    Button { dictation.cancel() } label: {
+                        appIcon("slab-close")
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 14, height: 14)
+                            .frame(width: 36, height: 36)
+                            .background(.tint.opacity(0.12), in: .circle)
+                            .contentShape(.circle)
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.tint)
+                    .accessibilityLabel("Cancel Recording")
+                    .accessibilityHint("Drops what you said")
+                    DictationWaveform(levels: dictation.levels)
+                        .frame(maxWidth: .infinity)
+                    if let since = dictation.listeningSince {
+                        TimelineView(.periodic(from: since, by: 1)) { context in
+                            Text(Duration.seconds(context.date.timeIntervalSince(since)).formatted(.time(pattern: .minuteSecond)))
+                                .monospacedDigit()
+                                .foregroundStyle(.secondary)
+                        }
+                        .accessibilityIdentifier("DictationStatus")
+                    }
+                    Button { dictation.stop() } label: {
+                        Text("Done")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 16)
+                            .frame(height: 36)
+                            .background(Color.accentColor, in: .capsule)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Done")
+                    .accessibilityHint("Writes what you said into the entry")
+                } else {
+                    TypingDots(size: .small)
+                    dictationLine
+                        .foregroundStyle(.secondary)
+                        .lineLimit(2)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .accessibilityIdentifier("DictationStatus")
+                }
+            }
+            .font(.subheadline)
+            .frame(minHeight: 36)
+        }
+        .padding(.horizontal)
+        .padding(.top, 10)
+    }
+
+    private var dictationTitle: String {
+        if dictation.problem != nil { return "Speak your entry" }
+        return switch dictation.state {
+        case .idle, .preparing: "Getting ready"
+        case .listening: "Listening"
+        case .writing: "Writing it down"
+        }
+    }
+
+    @ViewBuilder private var dictationLine: some View {
+        if let progress = dictation.downloadProgress {
+            Text("Downloading what's needed to listen, just this once… \(Int(progress * 100))%")
+        } else {
+            Text(dictation.state == .writing ? "Turning what you said into words, on your phone…" : "One moment…")
+        }
+    }
+}
+
+/// How loud it's been while recording, newest on the right: bars that scroll left as you talk,
+/// so it's plain that it's hearing you.
+private struct DictationWaveform: View {
+    let levels: [Double]
 
     var body: some View {
-        HStack(alignment: .center, spacing: 3) {
-            ForEach(0..<3, id: \.self) { bar in
-                Capsule()
-                    .fill(.tint)
-                    .frame(width: 4, height: 6 + 16 * level * (bar == 1 ? 1 : 0.65))
+        GeometryReader { geometry in
+            let spacing: CGFloat = 3
+            let width: CGFloat = 3
+            let count = max(1, Int((geometry.size.width + spacing) / (width + spacing)))
+            let shown = Array(levels.suffix(count))
+            HStack(alignment: .center, spacing: spacing) {
+                Spacer(minLength: 0)
+                // Quiet bars before the recording has filled the width.
+                ForEach(0..<max(0, count - shown.count), id: \.self) { _ in bar(0) }
+                ForEach(Array(shown.enumerated()), id: \.offset) { _, level in bar(level) }
             }
+            .frame(width: geometry.size.width, height: geometry.size.height)
         }
-        .frame(width: 22, height: 24)
-        .animation(.easeOut(duration: 0.08), value: level)
+        .frame(height: 28)
         .accessibilityHidden(true)
+    }
+
+    private func bar(_ level: Double) -> some View {
+        Capsule()
+            .fill(.tint)
+            .frame(width: 3, height: 3 + 25 * min(1, max(0, level)))
     }
 }

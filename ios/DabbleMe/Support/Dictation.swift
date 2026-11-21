@@ -59,8 +59,10 @@ final class Dictation {
     private(set) var downloadProgress: Double?
     /// When the recording started, for the row's clock.
     private(set) var listeningSince: Date?
-    /// How loud it is now, 0...1, while recording.
-    private(set) var level: Double = 0
+    /// How loud it's been, 0...1, newest last: the waveform while recording.
+    private(set) var levels: [Double] = []
+    /// How many of `levels` are kept (the waveform's width in bars).
+    static let levelCount = 48
 
     @ObservationIgnored private var run: Task<Void, Never>?
     /// Ends the recording; what was said is still transcribed and handed over.
@@ -91,13 +93,15 @@ final class Dictation {
     /// `hints` gives the writer's hashtags, asked for once the recording's done (they may still
     /// have been loading when it started). `canListen` is asked once the model is ready, in case
     /// the editor has lost the keyboard while it came down.
-    func start(hints: @escaping @MainActor () -> [String], canListen: @escaping @MainActor () -> Bool,
+    /// `style`: Polished runs the cleanup, Verbatim leaves it as heard.
+    func start(style: DictationStyle, hints: @escaping @MainActor () -> [String], canListen: @escaping @MainActor () -> Bool,
                insert: @escaping @MainActor (String) -> Void) {
         guard state == .idle else { return }
         problem = nil
+        levels = []
         state = .preparing
         // Loaded while it's said, so it's ready when the transcript is.
-        CleanupTagger.shared.prepare()
+        if style == .polished { CleanupTagger.shared.prepare() }
         run = Task {
             do {
                 let heard: String
@@ -108,8 +112,8 @@ final class Dictation {
                 } else {
                     throw Problem.unavailable
                 }
-                let cleaned = await CleanupTagger.shared.clean(heard, within: Self.cleanupBudget,
-                                                               protectedTerms: Self.hints(from: hints()))
+                let cleaned = style == .verbatim ? heard
+                    : await CleanupTagger.shared.clean(heard, within: Self.cleanupBudget, protectedTerms: Self.hints(from: hints()))
                 try Task.checkCancellation()
                 insert(cleaned)
             } catch is CancellationError {
@@ -122,7 +126,7 @@ final class Dictation {
             abandon = nil
             downloadProgress = nil
             listeningSince = nil
-            level = 0
+            levels = []
             state = .idle
             UIApplication.shared.isIdleTimerDisabled = false
         }
@@ -197,7 +201,7 @@ final class Dictation {
         let metering = Task { [weak self] in
             while !Task.isCancelled {
                 guard let self else { return }
-                self.level = recorder.level
+                self.record(level: recorder.level)
                 if !recorder.isRecording, self.state == .listening { self.stop() }
                 try? await Task.sleep(for: .milliseconds(80))
             }
@@ -210,7 +214,6 @@ final class Dictation {
         var keeps = false
         for await keep in stopped.stream { keeps = keep; break }
         recorder.stop()
-        level = 0
         guard keeps, !Task.isCancelled else { throw CancellationError() }
 
         let analyzer = SpeechAnalyzer(modules: [transcriber])
@@ -257,6 +260,11 @@ final class Dictation {
         }
     }
 
+    private func record(level: Double) {
+        levels.append(level)
+        if levels.count > Self.levelCount { levels.removeFirst(levels.count - Self.levelCount) }
+    }
+
     /// The made-up recording: listens until it's stopped, then "hears" a sentence.
     private func pretend() async throws -> String {
         let stopped = AsyncStream<Bool>.makeStream()
@@ -265,6 +273,16 @@ final class Dictation {
         try await Task.sleep(for: .milliseconds(400))
         state = .listening
         listeningSince = .now
+        // A voice-like wobble for the waveform.
+        let wobble = Task { [weak self] in
+            var tick = 0.0
+            while !Task.isCancelled {
+                tick += 1
+                self?.record(level: 0.35 + 0.3 * sin(tick / 3) * cos(tick / 7) + 0.2 * sin(tick * 1.7))
+                try? await Task.sleep(for: .milliseconds(80))
+            }
+        }
+        defer { wobble.cancel() }
         var keeps = false
         for await keep in stopped.stream { keeps = keep; break }
         guard keeps else { throw CancellationError() }

@@ -459,8 +459,9 @@ final class JournalViewsTests: XCTestCase {
         if app.buttons["Start Over"].exists { app.buttons["Start Over"].tap() }
         editor.typeText("A slow evening.")
         app.buttons["Speak Your Entry"].tap()
-        XCTAssertTrue(app.staticTexts["DictationStatus"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.buttons["Done"].waitForExistence(timeout: 5))
+        // An X to drop it on the left, Done on the right.
+        XCTAssertTrue(app.buttons["Cancel Recording"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Done"].exists)
         sleep(1)
         snap("compose-dictation")
         // Nothing goes in while it's said.
@@ -472,6 +473,14 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertFalse((editor.value as? String ?? "").contains("um,"))
         XCTAssertTrue(app.buttons["Speak Your Entry"].waitForExistence(timeout: 5))
         snap("compose-dictation-done")
+        // The X drops a recording: nothing more goes in.
+        let before = editor.value as? String ?? ""
+        app.buttons["Speak Your Entry"].tap()
+        XCTAssertTrue(app.buttons["Cancel Recording"].waitForExistence(timeout: 5))
+        app.buttons["Cancel Recording"].tap()
+        XCTAssertTrue(app.buttons["Speak Your Entry"].waitForExistence(timeout: 5))
+        sleep(1)
+        XCTAssertEqual(editor.value as? String ?? "", before)
         app.buttons["Cancel"].tap()
         app.buttons["Discard"].tap()
     }

@@ -1,16 +1,18 @@
-Build 104 brings back speaking an entry, done the way Hex does it. Nothing shows while you talk. Tap Done and the whole recording is turned into words in one go, on your phone, then tidied: ums, repeated words and spoken corrections are taken out.
+Build 105 brings back speaking an entry, done the way Hex does it. Nothing is written while you talk. Tap Done and the whole recording is turned into words in one go, on your phone, then tidied.
 
 SPEAKING AN ENTRY (iOS 26)
 - Start an entry. The microphone is at the far right of the bar over the keyboard, after the lightbulb.
-- Tap it. The first time, allow the microphone. It may then download what it needs, once.
-- A "Listening" row shows a clock and bars that move with your voice. Talk for a minute about your day.
-- Tap Done. The row should say "Writing it down" for a moment, then everything you said should go in at the cursor.
-- Compare it with the keyboard's dictation, saying the same thing. Is this clearly better: punctuation, names, fewer mistakes?
-- Say "um" and "uh" a few times, repeat a word ("I I went"), and correct yourself ("at 3, actually 4"). Those should be gone from the text.
-- Say the name of someone you tag often (like #Leo). It should come out spelled the way your tag is.
-- Type "We ate and", leave the cursor there, and speak a sentence. It should continue the sentence with a lowercase word and a space before it.
-- Start talking and tap Save without tapping Done. What you said should be saved with the entry.
-- While it's listening, open the hashtag or lightbulb row, or swipe the keyboard down. It should stop and still write in what you said.
-- Try it in airplane mode after the first use. It should still work.
-- Talk for five minutes or more. Say how long "Writing it down" takes and whether anything is missing.
-- Turn the microphone off for Dabble Me in Settings and tap the button. The row should say so and offer Settings.
+- Tap it. The first time, allow the microphone. It may download what it needs, once.
+- While you talk, the row shows an X on the left, a waveform that moves with your voice, the time so far, and an olive Done on the right.
+- Talk for a minute, then tap Done. "Writing it down" shows for a moment, then everything you said goes in at the cursor.
+- Say the same thing with the keyboard's dictation. Is this clearly better: punctuation, names, fewer mistakes?
+- Say "um" a few times, repeat a word ("I I went"), and correct yourself ("at 3, actually 4"). Those should be gone.
+- Start again and tap the X. Nothing should be added.
+- Type "We ate and", leave the cursor there, and speak. It should carry on the sentence in lowercase.
+- Start talking and tap Save without Done. What you said should be saved too.
+- Talk for five minutes or more. How long does "Writing it down" take, and is anything missing?
+
+SETTINGS → DICTATION
+- The switch turns the microphone off. It should disappear from the composer.
+- Style: Polished (the tidying above) or Verbatim (as heard, ums included). Try each on the same sentence.
+- Words to Expect: add a name you say often that isn't a hashtag, then say it. It should be spelled your way. Your hashtags count already. Swipe a word to delete it.
