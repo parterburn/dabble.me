@@ -2,7 +2,8 @@
 
 # GET /.well-known/apple-app-site-association: tells iOS which dabble.me links the app opens
 # (universal links). Apple fetches it without cookies, through its own CDN, when the app is
-# installed or updated.
+# installed or updated. `webcredentials` lets the app use dabble.me's passkeys (and offer its
+# saved passwords) in its own sign-in form.
 class AppLinksController < ApplicationController
   skip_forgery_protection
 
@@ -13,7 +14,8 @@ class AppLinksController < ApplicationController
         details: [
           { appIDs: [MobileApp::APP_ID], components: MobileApp::LINK_PATHS.map { |path| { '/' => path } } }
         ]
-      }
+      },
+      webcredentials: { apps: [MobileApp::APP_ID] }
     }
   end
 end

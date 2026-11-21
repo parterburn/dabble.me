@@ -170,14 +170,8 @@ private struct WelcomeView: View {
                     Button {
                         model.authForm = .signIn
                     } label: {
-                        Group {
-                            if model.isSigningIn {
-                                ProgressView()
-                            } else {
-                                Text("I Already Have an Account")
-                            }
-                        }
-                        .frame(maxWidth: .infinity, minHeight: 30)
+                        Text("I Already Have an Account")
+                            .frame(maxWidth: .infinity, minHeight: 30)
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.large)
@@ -198,7 +192,6 @@ private struct WelcomeView: View {
                         .font(.footnote)
                         .foregroundStyle(.secondary)
                 }
-                .disabled(model.isSigningIn)
                 .opacity(appeared ? 1 : 0)
                 .offset(y: appeared ? 0 : 20)
 
@@ -313,7 +306,6 @@ private struct LockedGlimpse<Content: View>: View {
             .frame(maxWidth: 360)
             .background(.regularMaterial, in: .rect(cornerRadius: 22))
             .padding()
-            .disabled(model.isSigningIn)
         }
         .background(Color("Paper").ignoresSafeArea())
     }
@@ -379,7 +371,6 @@ private struct GuestSettings: View {
                     Button { model.authForm = .signUp } label: { Label("Start Your Journal", icon: "slab-plus") }
                     Button { model.authForm = .signIn } label: { Label("Sign In", icon: "slab-arrow-right-to-bracket") }
                 }
-                .disabled(model.isSigningIn)
                 Section {
                     Link(destination: AppConfig.webURL("support")) { ExternalLinkLabel("Help & Support", icon: "slab-circle-question") }
                     Link(destination: AppConfig.webURL("privacy")) { ExternalLinkLabel("Privacy Policy", icon: "slab-hand") }

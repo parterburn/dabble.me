@@ -1,9 +1,10 @@
 # frozen_string_literal: true
 
-# First-party Dabble Me iOS app. It signs in with native forms (email, password and, with
-# 2FA on, the code: POST /api/v1/session; new accounts POST /api/v1/registration), or
-# through the web login via OAuth (authorization code + PKCE) for passkeys. Either way it
-# then calls /api/v1 with a token scoped to SCOPE.
+# First-party Dabble Me iOS app. From build 109 it signs in natively: email, password and, with
+# 2FA on, the code (POST /api/v1/session), or a dabble.me passkey (/api/v1/session/passkey);
+# new accounts POST /api/v1/registration. Earlier builds sign in through the web login via
+# OAuth (authorization code + PKCE), which stays. Either way it then calls /api/v1 with a
+# token scoped to SCOPE.
 #
 # Unlike MCP clients it is open to free and PRO users alike, skips the consent
 # screen (it's our own app), and its tokens are kept when a user loses PRO —

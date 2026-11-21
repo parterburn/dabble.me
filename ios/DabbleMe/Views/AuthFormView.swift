@@ -9,7 +9,8 @@ enum AuthFormMode: String, Identifiable {
 
 /// The app's own sign-in and sign-up forms, in a sheet over the welcome screens. Email and
 /// password (the App Review demo account signs in here), then the 2FA code when the account
-/// has it. Passkeys go to dabble.me's sign-in page (`AppModel.signInOnWeb`).
+/// has it. Sign In also offers the account's passkey, natively (`AppModel.signInWithPasskey`):
+/// a passkey stands in for both the password and the 2FA code.
 ///
 /// Sign in with Apple, when it's added, goes at the top of both forms, above the fields, with
 /// an "or" between: the fields and buttons below don't need to change for it.
@@ -117,6 +118,18 @@ struct AuthFormView: View {
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets())
 
+                    if !isSignUp {
+                        Button(action: signInWithPasskey) {
+                            Label("Sign In with a Passkey", systemImage: "person.badge.key")
+                                .frame(maxWidth: .infinity, minHeight: 30)
+                        }
+                        .buttonStyle(.bordered)
+                        .controlSize(.large)
+                        .disabled(isWorking)
+                        .listRowBackground(Color.clear)
+                        .listRowInsets(EdgeInsets(top: 10, leading: 0, bottom: 0, trailing: 0))
+                    }
+
                     if let error {
                         Text(error)
                             .font(.footnote)
@@ -138,10 +151,6 @@ struct AuthFormView: View {
                         Button("I Already Have an Account") { switchMode(to: .signIn) }
                     } else {
                         Button("Forgot Password?") { openURL(AppConfig.webURL("users/password/new")) }
-                        Button("Sign In with a Passkey") {
-                            dismiss()
-                            Task { await model.signInOnWeb() }
-                        }
                         Button("New to Dabble Me? Start Your Journal") { switchMode(to: .signUp) }
                     }
                 }
@@ -177,6 +186,21 @@ struct AuthFormView: View {
             needsCode = false
             code = ""
             error = nil
+        }
+    }
+
+    private func signInWithPasskey() {
+        isWorking = true
+        error = nil
+        Task {
+            defer { isWorking = false }
+            do {
+                try await model.signInWithPasskey()
+            } catch is CancellationError {
+                // The passkey sheet was closed: back to the form, nothing to say.
+            } catch {
+                self.error = error.localizedDescription
+            }
         }
     }
 

@@ -85,6 +85,15 @@ class Rack::Attack
     submitted_email(req) if auth_path(req) == APP_SIGN_IN_PATH && req.post?
   end
 
+  # The app's passkey sign-in: the same limits as the web's /passkeys/sessions.
+  throttle('app/passkeys/challenge/ip', limit: 30, period: 1.minute) do |req|
+    req.ip if auth_path(req) == "#{APP_SIGN_IN_PATH}/passkey" && req.get?
+  end
+
+  throttle('app/passkeys/sign-in/ip', limit: 10, period: 1.minute) do |req|
+    req.ip if auth_path(req) == "#{APP_SIGN_IN_PATH}/passkey" && req.post?
+  end
+
   throttle('app/signups/ip', limit: 5, period: 1.hour) do |req|
     req.ip if auth_path(req) == APP_SIGN_UP_PATH && req.post?
   end

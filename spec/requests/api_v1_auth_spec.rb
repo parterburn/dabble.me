@@ -99,6 +99,80 @@ RSpec.describe "iOS app native sign-in, sign-up and account deletion", type: :re
     end
   end
 
+  describe "passkey sign-in (/api/v1/session/passkey)" do
+    let!(:credential) { register_passkey(user) }
+
+    def start
+      get "/api/v1/session/passkey", as: :json
+      JSON.parse(response.body)
+    end
+
+    def finish(options, user_handle: user.id.to_s, user_verified: true, token: options["challenge_token"])
+      assertion = passkey_assertion(challenge: options["challenge"], user_handle: user_handle, user_verified: user_verified)
+      post "/api/v1/session/passkey", params: { challenge_token: token, credential: assertion }, as: :json
+    end
+
+    it "hands out a challenge for the site's relying party" do
+      options = start
+      expect(response).to have_http_status(:ok)
+      expect(options["rp_id"]).to eq(WebAuthn.configuration.rp_id)
+      expect(options["challenge"]).to be_present
+      expect(options["challenge_token"]).to be_present
+    end
+
+    it "signs in the passkey's owner with app tokens, even with 2FA on" do
+      user.generate_otp_secret
+      user.update!(otp_enabled: true, otp_enabled_on: Time.current)
+      finish(start)
+
+      expect(response).to have_http_status(:ok)
+      get "/api/v1/me", headers: bearer(json["access_token"])
+      expect(JSON.parse(response.body)["email"]).to eq(user.email)
+    end
+
+    it "keeps an account that was set to be deleted" do
+      user.update_column(:deleted_at, Time.current)
+      finish(start)
+      expect(json["deletion_cancelled"]).to be(true)
+      expect(user.reload.deleted_at).to be_nil
+    end
+
+    it "refuses a passkey that skipped user verification" do
+      finish(start, user_verified: false)
+      expect(response).to have_http_status(:unauthorized)
+      expect(json["error"]).to eq("passkey_failed")
+    end
+
+    it "refuses a passkey whose handle names another account" do
+      finish(start, user_handle: create(:user).id.to_s)
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it "refuses a challenge it didn't sign" do
+      finish(start, token: "forged")
+      expect(response).to have_http_status(:unauthorized)
+      expect(Doorkeeper::AccessToken.count).to eq(0)
+    end
+
+    it "spends a challenge once" do
+      allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new)
+      options = start
+      finish(options)
+      expect(response).to have_http_status(:ok)
+
+      finish(options)
+      expect(response).to have_http_status(:unauthorized)
+    end
+
+    it "refuses a challenge past its five minutes" do
+      options = start
+      travel 6.minutes do
+        finish(options)
+      end
+      expect(response).to have_http_status(:unauthorized)
+    end
+  end
+
   describe "POST /api/v1/registration" do
     it "creates the account and signs the app in" do
       expect do

@@ -47,6 +47,8 @@ Rails.application.routes.draw do
     namespace :v1 do
       # Native sign-in and sign-up hand back tokens; no token needed to call them.
       resource :session, only: :create
+      get 'session/passkey', to: 'passkey_sessions#new'
+      post 'session/passkey', to: 'passkey_sessions#create'
       resource :registration, only: :create
       resource :account_deletion, only: %i[show create]
       get 'me', to: 'me#show'

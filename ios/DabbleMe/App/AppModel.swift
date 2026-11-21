@@ -108,7 +108,6 @@ final class AppModel {
     }
 
     private(set) var isSignedIn: Bool
-    private(set) var isSigningIn = false
     var signInError: String?
 
     private(set) var me: Me?
@@ -129,7 +128,7 @@ final class AppModel {
     let api: APIClient
     private let tokens: TokenProvider
     private var processingWatches: Set<Int> = []
-    private let authenticator = WebAuthenticator()
+    private let passkeys = PasskeyAuthenticator()
 
     init(tokens: TokenProvider = TokenProvider()) {
         self.tokens = tokens
@@ -161,40 +160,20 @@ final class AppModel {
         await didSignIn(with: session.tokens)
     }
 
-    /// Passkeys (and anything else only the website does): dabble.me's own sign-in page in
-    /// ASWebAuthenticationSession, then the OAuth code exchange.
-    func signInOnWeb() async {
-        guard !isSigningIn else { return }
-        isSigningIn = true
-        signInError = nil
-        defer { isSigningIn = false }
-
-        let pkce = PKCE()
-        let state = PKCE.randomURLSafeString(byteCount: 16)
-        do {
-            let callback = try await authenticator.authenticate(
-                url: OAuthEndpoints.authorizeURL(pkce: pkce, state: state),
-                ephemeral: UserDefaults.standard.bool(forKey: Self.signedOutKey))
-            let items = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems ?? []
-            let value = { (name: String) in items.first { $0.name == name }?.value }
-
-            if let error = value("error") {
-                throw WebAuthError.invalidCallback(value("error_description") ?? "Sign-in was not completed (\(error)).")
-            }
-            guard value("state") == state, let code = value("code") else {
-                throw WebAuthError.invalidCallback(nil)
-            }
-            await didSignIn(with: try await OAuthEndpoints.exchange(code: code, pkce: pkce))
-        } catch WebAuthError.cancelled {
-            // User closed the sheet; nothing to report.
-        } catch {
-            signInError = error.localizedDescription
+    /// The system's passkey sheet, then the server checks the assertion. Throws
+    /// `CancellationError` when the sheet is closed, else what the form should say.
+    func signInWithPasskey() async throws {
+        let challenge = try await NativeAuth.passkeyChallenge()
+        guard let bytes = NativeAuth.data(base64URL: challenge.challenge) else {
+            throw NativeAuthError.message(APIError.decoding.errorDescription ?? "Sign-in failed.")
         }
+        let assertion = try await passkeys.assert(relyingParty: challenge.rpId, challenge: bytes)
+        let session = try await NativeAuth.signIn(with: assertion, for: challenge)
+        await didSignIn(with: session.tokens)
     }
 
     private func didSignIn(with fresh: OAuthTokens) async {
         await tokens.signIn(with: fresh)
-        UserDefaults.standard.removeObject(forKey: Self.signedOutKey)
         signInError = nil
         signInNotice = nil
         authForm = nil
@@ -217,15 +196,10 @@ final class AppModel {
         signInNotice = "Your account will be deleted at \(deletesAt.formatted(date: .omitted, time: .shortened)). Sign back in before then to keep it."
     }
 
-    /// Set by Sign Out until the next sign-in, which then asks for the password again rather than
-    /// riding on Safari's dabble.me session.
-    private static let signedOutKey = "auth.signedOut"
-
     func signOut() async {
         if let token = await tokens.clear() {
             Task.detached { await OAuthEndpoints.revoke(token) }
         }
-        UserDefaults.standard.set(true, forKey: Self.signedOutKey)
         await WebLinks.clearWebsiteData()
         DraftStore.clearAll()
         // (Kept on the account: they come back at the next sign-in.)

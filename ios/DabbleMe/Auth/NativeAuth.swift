@@ -14,10 +14,10 @@ enum NativeAuthError: LocalizedError, Equatable {
     }
 }
 
-/// The app's own sign-in and sign-up forms (`Api::V1::SessionsController`,
+/// The app's own sign-in and sign-up (`Api::V1::SessionsController`, `PasskeySessionsController`,
 /// `RegistrationsController`). They answer with tokens shaped like /oauth/token's, so the
-/// Keychain, refreshes and sign-out work as they do after the web sign-in. Sign in with Apple,
-/// when it comes, is one more call here that hands Apple's identity token to the server.
+/// Keychain, refreshes and sign-out work as they did after the old web sign-in. Sign in with
+/// Apple, when it comes, is one more call here that hands Apple's identity token to the server.
 enum NativeAuth {
     struct Session: Sendable {
         let tokens: OAuthTokens
@@ -37,6 +37,67 @@ enum NativeAuth {
         return try await post("api/v1/registration", body, session: session)
     }
 
+    /// GET /api/v1/session/passkey: the challenge (base64url) and its signed token, which goes
+    /// back with the assertion.
+    struct PasskeyChallenge: Decodable, Sendable {
+        let challengeToken: String
+        let challenge: String
+        let rpId: String
+    }
+
+    static func passkeyChallenge(session: URLSession = .shared) async throws -> PasskeyChallenge {
+        var request = URLRequest(url: AppConfig.webURL("api/v1/session/passkey"))
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.timeoutInterval = 30
+        let (data, status) = try await send(request, session: session)
+        guard (200..<300).contains(status) else { throw failure(status: status, data: data) }
+        guard let challenge = try? APIClient.decoder.decode(PasskeyChallenge.self, from: data) else {
+            throw NativeAuthError.message(APIError.decoding.errorDescription ?? "Sign-in failed.")
+        }
+        return challenge
+    }
+
+    static func signIn(with assertion: PasskeyAssertion, for challenge: PasskeyChallenge, session: URLSession = .shared) async throws -> Session {
+        let id = base64URL(assertion.credentialID)
+        let body = PasskeySignIn(challengeToken: challenge.challengeToken, credential: .init(
+            id: id, rawId: id, type: "public-key",
+            response: .init(clientDataJSON: base64URL(assertion.clientDataJSON),
+                            authenticatorData: base64URL(assertion.authenticatorData),
+                            signature: base64URL(assertion.signature),
+                            userHandle: base64URL(assertion.userID))))
+        return try await post("api/v1/session/passkey", body, session: session)
+    }
+
+    /// WebAuthn's JSON (the keys as the server's webauthn gem reads them, so no snake_case).
+    private struct PasskeySignIn: Encodable {
+        struct Credential: Encodable {
+            struct Response: Encodable {
+                let clientDataJSON, authenticatorData, signature, userHandle: String
+            }
+            let id, rawId, type: String
+            let response: Response
+        }
+        let challengeToken: String
+        let credential: Credential
+
+        enum CodingKeys: String, CodingKey {
+            case challengeToken = "challenge_token", credential
+        }
+    }
+
+    static func base64URL(_ data: Data) -> String {
+        data.base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
+
+    static func data(base64URL string: String) -> Data? {
+        var base64 = string.replacingOccurrences(of: "-", with: "+").replacingOccurrences(of: "_", with: "/")
+        base64 += String(repeating: "=", count: (4 - base64.count % 4) % 4)
+        return Data(base64Encoded: base64)
+    }
+
     private struct TokenResponse: Decodable {
         let accessToken: String
         let refreshToken: String?
@@ -44,7 +105,7 @@ enum NativeAuth {
         let deletionCancelled: Bool?
     }
 
-    private static func post(_ path: String, _ body: [String: String], session: URLSession) async throws -> Session {
+    private static func post(_ path: String, _ body: some Encodable, session: URLSession) async throws -> Session {
         var request = URLRequest(url: AppConfig.webURL(path))
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -52,15 +113,7 @@ enum NativeAuth {
         request.httpBody = try JSONEncoder().encode(body)
         request.timeoutInterval = 30
 
-        let data: Data
-        let response: URLResponse
-        do {
-            (data, response) = try await session.data(for: request)
-        } catch {
-            throw NativeAuthError.message("Couldn't reach Dabble Me. Check your connection and try again.")
-        }
-
-        let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+        let (data, status) = try await send(request, session: session)
         guard (200..<300).contains(status) else { throw failure(status: status, data: data) }
         guard let body = try? APIClient.decoder.decode(TokenResponse.self, from: data) else {
             throw NativeAuthError.message(APIError.decoding.errorDescription ?? "Sign-in failed.")
@@ -70,6 +123,15 @@ enum NativeAuth {
                                 expiresAt: body.expiresIn.map { Date().addingTimeInterval($0) }),
             deletionCancelled: body.deletionCancelled ?? false
         )
+    }
+
+    private static func send(_ request: URLRequest, session: URLSession) async throws -> (Data, Int) {
+        do {
+            let (data, response) = try await session.data(for: request)
+            return (data, (response as? HTTPURLResponse)?.statusCode ?? 0)
+        } catch {
+            throw NativeAuthError.message("Couldn't reach Dabble Me. Check your connection and try again.")
+        }
     }
 
     static func failure(status: Int, data: Data) -> NativeAuthError {
