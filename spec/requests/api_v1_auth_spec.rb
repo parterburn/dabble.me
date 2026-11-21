@@ -7,7 +7,7 @@ RSpec.describe "iOS app native sign-in, sign-up and account deletion", type: :re
 
   let!(:mobile_app) { MobileApp.ensure_application! }
   let(:password) { "correct-horse-battery" }
-  let(:user) { create(:user, email: "writer@example.com", password: password) }
+  let!(:user) { create(:user, email: "writer@example.com", password: password) }
 
   def json
     JSON.parse(response.body)
