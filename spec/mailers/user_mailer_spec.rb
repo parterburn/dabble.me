@@ -76,11 +76,16 @@ RSpec.describe UserMailer do
       expect(email.html_part.body.decoded + email.text_part.body.decoded).not_to include(ApplicationHelper.ios_testflight_url)
     end
 
-    it "gives a new PRO member the iOS beta, in both parts" do
+    it "gives a new PRO member the iOS beta, in both parts, and never an account that isn't PRO" do
+      user.update!(plan: "PRO Monthly PayHere")
       email = described_class.thanks_for_paying(user)
 
       expect(email.html_part.body.decoded).to include(%(href="#{ApplicationHelper.ios_testflight_url}"))
       expect(email.text_part.body.decoded).to include(ApplicationHelper.ios_testflight_url)
+
+      user.update!(plan: "Free")
+      email = described_class.thanks_for_paying(user)
+      expect(email.html_part.body.decoded + email.text_part.body.decoded).not_to include(ApplicationHelper.ios_testflight_url)
     end
   end
 
