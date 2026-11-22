@@ -444,13 +444,15 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
 <section class="pt-20 pb-4">
   <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
     <figure class="card p-6 sm:p-8 flex flex-col sm:flex-row gap-5 sm:gap-6 items-start">
-      <%= image_tag "paul-arterburn.jpg", alt: "Paul Arterburn, founder of Dabble Me", width: 64, height: 64, class: "w-16 h-16 rounded-full object-cover shrink-0" %>
+      <a href="https://x.com/parterburn" target="_blank" rel="noopener" class="shrink-0" aria-label="Paul Arterburn on X">
+        <%= image_tag "paul-arterburn.jpg", alt: "Paul Arterburn, founder of Dabble Me", width: 64, height: 64, class: "w-16 h-16 rounded-full object-cover" %>
+      </a>
       <div>
         <blockquote class="text-primary leading-relaxed">
           I built Dabble Me over <%= years_running %> years ago because I wanted the clarity of daily reflection without another complicated app to maintain. It’s not a venture-backed growth experiment or a rushed AI side project. It’s independently run, funded entirely by paying users, and private by design. No selling your data, no lock-in, just a simple habit that sticks.
         </blockquote>
         <figcaption class="mt-4 text-sm text-muted">
-          <span class="font-medium text-primary">Paul Arterburn</span>, Founder
+          <a href="https://x.com/parterburn" target="_blank" rel="noopener" class="font-medium text-primary no-underline">Paul Arterburn</a>, Founder
           · <a href="https://medium.com/startup-lesson-learned/increase-your-happiness-with-daily-journaling-8109b0700506" target="_blank" rel="noopener" class="text-accent hover:text-primary underline">Why I built it</a>
           · <a href="https://github.com/parterburn/dabble.me" target="_blank" rel="noopener" class="text-accent hover:text-primary underline">Open source on GitHub</a>
         </figcaption>
