@@ -1,9 +1,9 @@
-Settings cleanup: your account details now live on one Account page.
+Signed-out screens: sample entries with photos and dated hashtags, and bolder sign-up cards.
 
-- Settings starts with an Account row showing your email. Tap it: the Account page has Name (tap to change it), your Email, Add a Passkey (only while the account has none), Account Security (opens dabble.me), and Export Entries.
-- Add a Passkey has an olive icon like the other rows, with black words.
-- Add a Passkey from the Account page: the sheet still ends on "Passkey added", and the row goes away once you tap Done.
-- Export Entries from the Account page still asks Cancel/Export first, then emails the link.
-- Change your name from Account → Name and go Back: it saves, and the Account row's page shows the new name.
-- The "On dabble.me" heading is gone. The Claude/ChatGPT Connector row now sits right above Help & Support.
-- Plan and Manage Hashtags stay on the main Settings page, under the Account row.
+- Sign out. On the welcome screen, the example entries now have a small photo on the right (three of four do), with their #hashtags in olive.
+- The first example ("1 year ago", Bruges) shows a dated hashtag pill under it: #anniversary 9yrs, 2days.
+- Watch the cards flip for a few rounds: the front card slides away and the one behind moves forward. No text from the cards behind should show through the front card.
+- With Reduce Motion on, the stack sits still on the first example.
+- Journal tab (signed out): a solid olive card with the book icon, "The private timeline of your life", a cream Start Your Journal button and a Sign In link.
+- Search tab (signed out): the same olive card with the search icon.
+- Check both cards and the examples in dark mode too.
