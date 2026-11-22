@@ -300,6 +300,20 @@ class User < ActiveRecord::Base
     encrypted_password.present?
   end
 
+  # An account with no password never matches one, but it still spends a bcrypt hash on the
+  # attempt, so a password sign-in takes as long as for any other address and its timing
+  # doesn't show which addresses are email-code accounts.
+  def self.no_password_digest
+    @no_password_digest ||= Devise::Encryptor.digest(self, SecureRandom.hex(16))
+  end
+
+  def valid_password?(password)
+    return super if has_password?
+
+    Devise::Encryptor.compare(self.class, self.class.no_password_digest, password.to_s)
+    false
+  end
+
   # Devise ties sessions and "Stay logged in" cookies to the password hash's salt, so changing
   # the password signs other browsers out. An account with no password has no hash: it gets a
   # stand-in, which changes (signing those browsers out) once a password is set.

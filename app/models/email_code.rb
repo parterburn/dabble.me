@@ -55,19 +55,11 @@ class EmailCode < ActiveRecord::Base
 
     # The live code this matches, or nil (and the guess is counted). Doesn't use it up: call
     # #use! once everything else about the request has checked out (a 2FA code, say).
+    #
+    # The address's rows are locked while the guess is checked and counted, so guesses sent in
+    # parallel can't all read the same counts and get more than MAX_ATTEMPTS / DAILY_FAILURES.
     def match(email, code, purpose:, user: nil)
-      live = live_codes(email, purpose, user)
-      return if live.empty?
-
-      digits = code.to_s.gsub(/\D/, '')
-      if digits.length == LENGTH
-        wanted = code_digest(email, purpose, digits)
-        found = live.find { |c| ActiveSupport::SecurityUtils.secure_compare(c.code_digest, wanted) }
-        return found if found
-      end
-
-      where(id: live.map(&:id)).update_all('attempts = attempts + 1')
-      nil
+      transaction { locked_match(email, code, purpose, user) }
     end
 
     # match, then use!: true once for a right code.
@@ -100,13 +92,26 @@ class EmailCode < ActiveRecord::Base
 
     private
 
-    def live_codes(email, purpose, user)
+    def locked_match(email, code, purpose, user)
       scope = for_address(email, purpose)
       scope = scope.where(user_id: user.id) if user
-      return none if scope.where(created_at: 1.day.ago..).sum(:attempts) >= DAILY_FAILURES
+      today = scope.where(created_at: 1.day.ago..).order(:id).lock.to_a
+      return if today.sum(&:attempts) >= DAILY_FAILURES
 
-      scope.where(used_at: nil, expires_at: Time.current..).where(attempts: ...MAX_ATTEMPTS)
-           .order(created_at: :desc).limit(LIVE_CODES).to_a
+      now = Time.current
+      live = today.select { |c| c.used_at.nil? && c.expires_at > now && c.attempts < MAX_ATTEMPTS }
+                  .sort_by(&:created_at).last(LIVE_CODES)
+      return if live.empty?
+
+      digits = code.to_s.gsub(/\D/, '')
+      if digits.length == LENGTH
+        wanted = code_digest(email, purpose, digits)
+        found = live.find { |c| ActiveSupport::SecurityUtils.secure_compare(c.code_digest, wanted) }
+        return found if found
+      end
+
+      where(id: live.map(&:id)).update_all('attempts = attempts + 1')
+      nil
     end
 
     def code_digest(email, purpose, code)
@@ -118,9 +123,12 @@ class EmailCode < ActiveRecord::Base
     end
   end
 
-  # A wrong guess at something this code unlocks (the account's 2FA code after it).
-  def count_failed_attempt!
-    self.class.where(id: id).update_all('attempts = attempts + 1')
+  # Spends one of this code's guesses on something it unlocks (the account's 2FA code after it),
+  # before that guess is checked. False once the code has no guesses left, so parallel 2FA
+  # guesses on one emailed code stop at MAX_ATTEMPTS.
+  def reserve_attempt!
+    self.class.where(id: id, used_at: nil).where(attempts: ...MAX_ATTEMPTS)
+        .update_all('attempts = attempts + 1') == 1
   end
 
   # Marks this code used, and voids the address's other codes for the same purpose. False when

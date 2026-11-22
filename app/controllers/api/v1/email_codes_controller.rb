@@ -37,7 +37,7 @@ module Api
           return if otp_failed?(user, email_code)
         end
 
-        result = EmailSignIn.complete!(email_code, email) { |new_user| EmailSignIn.set_platform(new_user, 'ios_app') }
+        result = EmailSignIn.complete!(email_code, email) { |new_user| EmailSignIn.set_platform(new_user, app_signup_platform) }
         case result
         when nil then invalid_code
         when :signups_closed
@@ -50,6 +50,12 @@ module Api
       end
 
       private
+
+      # The app says which platform it is (Api::V1::RegistrationsController does the same).
+      def app_signup_platform
+        platform = params[:platform].to_s
+        User::APP_SIGNUP_PLATFORMS.include?(platform) ? platform : 'ios_app'
+      end
 
       def signed_in(result)
         user = result.user
@@ -73,8 +79,7 @@ module Api
         otp = params[:otp_code].to_s.gsub(/\s/, '')
         if otp.blank?
           render_error(:unauthorized, 'otp_required', 'Enter the 6-digit code from your authenticator app.')
-        elsif !user.validate_otp_or_recovery_token(otp)
-          email_code.count_failed_attempt!
+        elsif !email_code.reserve_attempt! || !user.validate_otp_or_recovery_token(otp)
           render_error(:unauthorized, 'invalid_otp', "That code didn't work. Try the newest one, or a recovery code.")
         else
           return false

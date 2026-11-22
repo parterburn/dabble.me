@@ -189,6 +189,12 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
       expect(JSON.parse(response.body)["has_password"]).to be(false)
     end
 
+    it "records the platform the app says it is" do
+      send_app_code("droid@example.com")
+      post "/api/v1/session/code/verify", params: { email: "droid@example.com", code: last_code, platform: "android_app" }, as: :json
+      expect(User.find_by!(email: "droid@example.com").signup_platform).to eq("android_app")
+    end
+
     it "leaves nothing behind for a mistyped address that never gets its code" do
       send_app_code("writer@gmial.com")
       expect(User.find_by(email: "writer@gmial.com")).to be_nil
@@ -278,6 +284,12 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
       passwordless
       post "/api/v1/session", params: { email: "nopass@example.com", password: "" }, as: :json
       expect(json["error"]).to eq("invalid_credentials")
+    end
+
+    it "still spends a password hash on a guess, so its timing doesn't stand out" do
+      passwordless
+      expect(Devise::Encryptor).to receive(:compare).and_call_original
+      expect(passwordless.valid_password?("guess")).to be(false)
     end
 
     it "deletes the account with an emailed code in place of the password" do
