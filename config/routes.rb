@@ -76,6 +76,8 @@ Rails.application.routes.draw do
       resources :image_uploads, only: :create
       # In-app purchases and restores (StoreKit 2), checked with Apple (AppStore::Subscriptions).
       resources :apple_subscriptions, only: :create
+      # The Plan page: the plan, and when a dabble.me (Stripe) plan renews.
+      resource :plan, only: :show
     end
   end
 

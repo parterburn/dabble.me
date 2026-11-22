@@ -93,6 +93,8 @@ struct PlanView: View {
     @State private var managing = false
     /// The US storefront may also link to dabble.me's own checkout (guideline 3.1.1(a)).
     @State private var canLinkToWeb = false
+    /// When a plan bought on dabble.me renews (GET /api/v1/plan); nil until it's loaded.
+    @State private var webSubscription: PlanDetails.WebSubscriptionInfo?
 
     var body: some View {
         List {
@@ -100,7 +102,7 @@ struct PlanView: View {
                 if me.isProThroughApple {
                     Section {
                         LabeledContent("Plan", value: "PRO")
-                        if let renewal = renewalText(me.appleSubscription) {
+                        if let renewal = renewalText(me.appleSubscription?.expiresAt, willRenew: me.appleSubscription?.willRenew) {
                             LabeledContent(renewal.label, value: renewal.date)
                         }
                         Button("Manage Subscription") { managing = true }
@@ -112,9 +114,13 @@ struct PlanView: View {
                 } else if me.isPro {
                     Section {
                         LabeledContent("Plan", value: "PRO")
+                        if let renewal = renewalText(webSubscription?.expiresAt, willRenew: webSubscription?.willRenew) {
+                            LabeledContent(renewal.label, value: renewal.date)
+                        }
                     } footer: {
                         Text("Your PRO subscription is through dabble.me, so there's nothing to buy here.")
                     }
+                    .task { await loadWebSubscription() }
                 } else {
                     Section {
                         VStack(spacing: 16) {
@@ -145,10 +151,15 @@ struct PlanView: View {
         .task { canLinkToWeb = await Storefront.current?.countryCode == "USA" }
     }
 
-    private func renewalText(_ subscription: Me.AppleSubscriptionInfo?) -> (label: String, date: String)? {
-        guard let subscription, let raw = subscription.expiresAt,
-              let date = ISO8601DateFormatter().date(from: raw) else { return nil }
+    private func loadWebSubscription() async {
+        // An older server has no /plan: the page shows the plan without a date.
+        let details: PlanDetails? = try? await model.api.get("api/v1/plan")
+        webSubscription = details?.webSubscription
+    }
+
+    private func renewalText(_ expiresAt: String?, willRenew: Bool?) -> (label: String, date: String)? {
+        guard let raw = expiresAt, let date = ISO8601DateFormatter().date(from: raw) else { return nil }
         let formatted = date.formatted(date: .abbreviated, time: .omitted)
-        return (subscription.willRenew == false ? "Ends" : "Renews", formatted)
+        return (willRenew == false ? "Ends" : "Renews", formatted)
     }
 }

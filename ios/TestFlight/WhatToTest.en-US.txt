@@ -25,7 +25,7 @@ ANOTHER ACCOUNT
 - With an active subscription, sign out and sign in to a different Free account. Settings, Plan should say this Apple Account already pays for PRO on a different Dabble Me account, with no purchase buttons. Restore Purchases should say the same.
 
 ACCOUNTS THAT PAY ON THE WEB
-- Sign in to an account that's PRO through dabble.me. Settings, Plan should say it's through dabble.me, with nothing to buy.
+- Sign in to an account that's PRO through dabble.me. Settings, Plan should say it's through dabble.me, with nothing to buy. With a card subscription (Stripe), it should also say when it renews, or Ends if it's been cancelled on the web (allow up to 6 hours after a change).
 
 DELETE ACCOUNT
 - With an active App Store subscription, Settings, Delete Account should tell you to cancel it in iOS Settings (deleting the account doesn't stop Apple's billing).

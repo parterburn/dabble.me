@@ -508,3 +508,15 @@ struct TagDateUpdate: Encodable, Sendable {
     var tag: String? = nil
     var date: String? = nil
 }
+
+/// GET /api/v1/plan (Settings → Plan): when a PRO plan bought on dabble.me renews or ends.
+/// Only Stripe plans have a date; nil for anything else, or when Stripe couldn't be asked.
+struct PlanDetails: Decodable, Sendable, Equatable {
+    var webSubscription: WebSubscriptionInfo? = nil
+
+    struct WebSubscriptionInfo: Decodable, Sendable, Equatable {
+        let provider: String?
+        let expiresAt: String?
+        let willRenew: Bool?
+    }
+}

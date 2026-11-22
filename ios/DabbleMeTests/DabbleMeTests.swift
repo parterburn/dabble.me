@@ -495,6 +495,19 @@ struct DecodingTests {
         #expect(me.appleSubscription?.willRenew == true)
     }
 
+    /// Settings → Plan for an account that pays on dabble.me (Api::V1::PlansController).
+    @Test func decodesPlanWithWebRenewal() throws {
+        let json = """
+        {"plan":"pro","is_pro":true,"pro_source":"web","apple_subscription":null,
+        "web_subscription":{"provider":"Stripe","expires_at":"2026-12-21T18:00:00Z","will_renew":false}}
+        """
+        let plan = try APIClient.decoder.decode(PlanDetails.self, from: Data(json.utf8))
+        #expect(plan.webSubscription?.expiresAt == "2026-12-21T18:00:00Z")
+        #expect(plan.webSubscription?.willRenew == false)
+        let none = try APIClient.decoder.decode(PlanDetails.self, from: Data(#"{"plan":"free","web_subscription":null}"#.utf8))
+        #expect(none.webSubscription == nil)
+    }
+
     /// The server only accepts these (AppStore::PRODUCT_IDS); App Store Connect must use them too.
     @Test func sellsTheProductsTheServerAccepts() {
         #expect(SubscriptionStore.productIDs == ["me.dabble.ios.pro.monthly", "me.dabble.ios.pro.yearly"])
