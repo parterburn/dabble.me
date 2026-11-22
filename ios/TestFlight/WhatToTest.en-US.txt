@@ -1,4 +1,4 @@
-Moments from your iPhone (Apple's Journaling Suggestions) is easier to find, and a reflection no longer adds its category to the entry.
+Moments from your iPhone (Apple's Journaling Suggestions) is easier to find, a reflection no longer adds its category to the entry, and Calendars moved above Theme in Settings.
 
 Use an iPhone. Moments isn't on iPad.
 
@@ -17,3 +17,7 @@ ADDING ANY OTHER MOMENT
 - Pick a place, workout, photo or song moment. Its title should still go in bold, with a line for each thing under it, as before.
 
 If Apple's sheet is empty, turn on Settings, Privacy & Security, Journaling Suggestions and its categories.
+
+SETTINGS ORDER
+- Open Settings. The App section should read: Entry Template, Dictation, Calendars, Theme, Shake for Random Entry, Require Face ID (or Touch ID or Passcode).
+- Tap Calendars: it should still open the list of your phone's calendars, each with a switch.
