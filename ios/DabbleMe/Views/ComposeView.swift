@@ -704,6 +704,8 @@ struct ComposeView: View {
                     pickingMoment = true
                 }
             })
+            // Moments opened mid-hold can cancel the tap that would clear the flag.
+            .onChange(of: pickingMoment) { _, picking in if !picking { heldAskIcon = false } }
             .accessibilityLabel("Prompt")
             .accessibilityHint("Shows what was on your calendar that day and a question to write about")
             .accessibilityAddTraits(showsAskRow ? .isSelected : [])
@@ -1045,6 +1047,9 @@ struct ComposeView: View {
         showsAskRow = false
         // From another day than the entry's: asked which day it goes on. (Same day: no question.)
         if let day = moment.day(otherThan: date) {
+            // After Apple's sheet has gone: a dialog asked for while it's still closing is dropped.
+            try? await Task.sleep(for: .milliseconds(450))
+            guard !isDiscarded else { return }
             momentFromAnotherDay = (moment, day)
         } else {
             insertMoment(moment)
