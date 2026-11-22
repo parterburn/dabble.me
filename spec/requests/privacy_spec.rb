@@ -6,6 +6,6 @@ RSpec.describe 'Privacy policy', type: :request do
 
     expect(response).to have_http_status(:ok)
     expect(response.body).to include('Your journal entries are encrypted in the database, and the keys are kept separately from the database.')
-    expect(response.body).to include('This is not end-to-end encryption.')
+    expect(response.body).to include('This is not end-to-end encryption: our servers need to read your entries')
   end
 end
