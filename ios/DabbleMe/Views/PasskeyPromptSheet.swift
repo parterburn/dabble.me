@@ -17,6 +17,8 @@ struct PasskeyPromptSheet: View {
     @FocusState private var passwordFocused: Bool
 
     var body: some View {
+        // Scrolls (and can grow to full height) at the larger text sizes.
+        ScrollView {
         VStack(spacing: 18) {
             Image(systemName: added ? "checkmark.circle.fill" : "person.badge.key.fill")
                 .font(.system(size: 48))
@@ -81,7 +83,9 @@ struct PasskeyPromptSheet: View {
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 12)
-        .presentationDetents([.medium])
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .interactiveDismissDisabled(adding)
     }
