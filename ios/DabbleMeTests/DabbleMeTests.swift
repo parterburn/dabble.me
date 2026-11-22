@@ -1350,6 +1350,25 @@ struct MomentTextTests {
         #expect(moment.lines().isEmpty)
     }
 
+    @Test func aMomentFromAnotherDayIsAskedAbout() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(identifier: "America/Denver"))
+        func at(_ day: Int, _ hour: Int) throws -> Date {
+            try #require(calendar.date(from: DateComponents(year: 2026, month: 11, day: day, hour: hour)))
+        }
+        var moment = Moment(title: "Walk")
+        // No date: nothing to ask.
+        #expect(moment.day(otherThan: try at(22, 9), calendar: calendar) == nil)
+        // An afternoon on the 18th, written about on the 18th and on the 22nd.
+        moment.when = DateInterval(start: try at(18, 14), end: try at(18, 15))
+        #expect(moment.day(otherThan: try at(18, 21), calendar: calendar) == nil)
+        #expect(moment.day(otherThan: try at(22, 9), calendar: calendar) == calendar.startOfDay(for: try at(18, 0)))
+        // A trip from the 18th to the 20th, ending at midnight: any of those days, not the 21st.
+        moment.when = DateInterval(start: try at(18, 8), end: try at(21, 0))
+        #expect(moment.day(otherThan: try at(20, 12), calendar: calendar) == nil)
+        #expect(moment.day(otherThan: try at(21, 12), calendar: calendar) == calendar.startOfDay(for: try at(18, 0)))
+    }
+
     @Test func nothingToSayAddsNothing() {
         #expect(Moment(title: "").lines().isEmpty)
     }
