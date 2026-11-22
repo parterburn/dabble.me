@@ -5,7 +5,7 @@ describe 'Pages' do
 
   it 'has correct title for Root page' do
     visit root_path
-    expect(page).to have_title 'Dabble me. Private email journaling & daily reflection.'
+    expect(page).to have_title 'Dabble Me — Simple, Private Daily Journal'
   end
 
   it 'groups Support beneath Pricing in the footer' do
@@ -47,7 +47,8 @@ describe 'Pages' do
 
   it 'has correct content for Subscribe page (redirects to homepage for non-logged-in users)' do
     visit subscribe_path
-    expect(page).to have_content 'You\'ll have access to every premium feature.'
+    expect(page).to have_content 'Simple pricing for a calmer daily habit.'
+    expect(page).to have_content '30-day refund on web purchases'
   end
 
   it 'publishes a plain-language AI Connector guide' do
@@ -256,7 +257,7 @@ describe 'Pages' do
       visit subscribe_path
 
       expect(json_ld_nodes.map { |node| node['@type'] }).to contain_exactly('Organization', 'WebApplication')
-      expect(meta_description).to include('$4/month or $40/year')
+      expect(meta_description).to include('$4/mo or $40/yr')
       expect(meta_description).not_to start_with(DEFAULT_DESCRIPTION)
     end
 

@@ -7,7 +7,7 @@ RSpec.describe WelcomeController, type: :controller do
     it 'should show the welcome page to non-logged in users' do
       get :index
       expect(response.status).to eq 200
-      expect(response.body).to have_content("Your life, written down and remembered.")
+      expect(response.body).to have_content("Daily reflection, without the overwhelm.")
     end
 
     it 'calls past entries Rewind, with the Slab backward icon and a sample heading like the real email' do
@@ -35,7 +35,7 @@ RSpec.describe WelcomeController, type: :controller do
     it 'calls the yearly stats page Writing Stats by Year, not Year in Review' do
       get :subscribe
 
-      expect(response.body).to have_css('h3', text: 'Writing Stats by Year')
+      expect(response.body).to have_css('h3', text: 'Yearly writing stats')
       expect(response.body).not_to match(/Year in Review/i)
     end
   end

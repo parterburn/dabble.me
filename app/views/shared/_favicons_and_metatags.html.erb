@@ -1,6 +1,6 @@
 <% default_description = "The simple, private journal that helps you actually write. Reply to a daily email, rediscover memories, and connect your journal to AI with MCP." %>
 <% page_description = content_for?(:description) ? content_for(:description) : default_description %>
-<% page_title = content_for?(:social_title) ? content_for(:social_title) : (content_for?(:title) ? "#{content_for(:title)} — Dabble me." : "Dabble me. Private email journaling & daily reflection.") %>
+<% page_title = content_for?(:social_title) ? content_for(:social_title) : content_for?(:full_title) ? content_for(:full_title) : (content_for?(:title) ? "#{content_for(:title)} — Dabble me." : "Dabble me. Private email journaling & daily reflection.") %>
 <% page_keywords = content_for?(:keywords) ? content_for(:keywords) : "dabble me,journal,diary,journaling,online diary,private journal" %>
 <% canonical_url = content_for?(:canonical_url) ? content_for(:canonical_url) : "#{request.base_url}#{request.path}" %>
 <% social_image = "#{request.base_url}/dabble_logo_ogimage.jpg" %>

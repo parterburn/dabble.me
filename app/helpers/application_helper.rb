@@ -188,6 +188,30 @@ module ApplicationHelper
     year.to_i == ref_date.year ? ref_date.yday : Date.new(year.to_i, 12, 31).yday
   end
 
+  # The short list on the homepage. /support keeps the full answers.
+  def self.home_faqs
+    routes = Rails.application.routes.url_helpers
+    link = "text-accent hover:text-primary underline"
+    [
+      {
+        q: "Are my entries really private?",
+        a: "Yes, by design. There’s no social layer, no public sharing, and no search-engine indexing. Your entries are never used to train AI models, and the optional Claude and ChatGPT connectors stay completely off unless you turn them on yourself. <a href='#{routes.privacy_path}' class='#{link}'>Read the privacy policy</a>."
+      },
+      {
+        q: "How do I write entries?",
+        a: "Use whatever feels easiest that day. Reply to your prompt email or open the <a href='#{routes.journal_app_path}' class='#{link}'>iPhone &amp; iPad app</a>. With PRO, you can also write directly on the web, or journal by text and voice through <a href='#{routes.mcp_server_docs_path}' class='#{link}'>Claude or ChatGPT</a>."
+      },
+      {
+        q: "Is this really free?",
+        a: "Yes, forever. The free plan includes prompts every other Sunday, the iOS app, online reading, Rewind memories in your prompts, and full data export. <a href='#{routes.subscribe_path}' class='#{link}'>Upgrade to PRO</a> anytime ($4/month or $40/year) for custom schedules, photos, web editing, and search."
+      },
+      {
+        q: "What should I write about?",
+        a: "Whatever is on your mind. Clearing your head for two minutes is enough. If you like a simple anchor, try writing 1 win, 1 thing on your mind, and 1 moment of gratitude. <a href='#{routes.how_to_start_journaling_path(anchor: "journaling-frameworks")}' class='#{link}'>See 5 simple reflection frameworks →</a>"
+      }
+    ]
+  end
+
   def self.faqs
     main_domain = ENV.fetch(primary_domain_env_key, "")
     routes = Rails.application.routes.url_helpers
@@ -226,7 +250,7 @@ module ApplicationHelper
         questions: [
           {
             q: "How do I add photos to my entry?",
-            a: "When you reply to your Dabble Me email, just attach photos to the email and they'll be saved with your entry. You can also add photos on the website when you edit an entry. You can add up to #{CollageGenerator::MAX_IMAGES} photos per entry (they will create a collage). Dabble Me supports JPEG, GIF, PNG, and HEIC/HEIF (mobile) formats."
+            a: "When you reply to your Dabble Me email, just attach photos to the email and they'll be saved with your entry. You can also add photos on the website when you edit an entry. You can add up to #{CollageGenerator::MAX_IMAGES} photos per entry (they will create a collage). Dabble Me supports JPEG, GIF, PNG, and HEIC/HEIF (mobile) formats. Photos are part of <a href='#{Rails.application.routes.url_helpers.subscribe_path}' class='text-accent hover:text-primary underline'>PRO</a>."
           },
           {
             q: "How do I edit or delete an entry?",
@@ -234,7 +258,7 @@ module ApplicationHelper
           },
           {
             q: "Can I write entries on the website?",
-            a: "Yes! PRO members can write entries on the website for any date. Simply click \"WRITE\" at the top of the page when logged in."
+            a: "Yes! <a href='#{Rails.application.routes.url_helpers.subscribe_path}' class='text-accent hover:text-primary underline'>PRO members</a> can write entries on the website for any date. Simply click \"WRITE\" at the top of the page when logged in."
           },
           {
             html_id: "mcp",
@@ -247,15 +271,15 @@ module ApplicationHelper
           },
           {
             q: "Can I import from OhLife or other services?",
-            a: "Yes! PRO members can visit <a href='#{Rails.application.routes.url_helpers.import_path}' class='text-accent hover:text-primary underline'>Import Entries</a> to bring in entries from Day One, OhLife, Ahhlife, and Trailmix.life."
+            a: "Yes! PRO members can visit <a href='#{Rails.application.routes.url_helpers.import_path}' class='text-accent hover:text-primary underline'>Import Entries</a> to bring in entries from Day One, OhLife, Ahhlife, and Trailmix.life. Coming from one of those? See how Dabble Me compares as an <a href='#{Rails.application.routes.url_helpers.ohlife_alternative_path}' class='text-accent hover:text-primary underline'>OhLife alternative</a> or a <a href='#{Rails.application.routes.url_helpers.day_one_alternative_path}' class='text-accent hover:text-primary underline'>Day One alternative</a>."
           },
           {
             q: "How do I export my entries?",
-            a: "Visit <a href='#{Rails.application.routes.url_helpers.export_entries_path}' class='text-accent hover:text-primary underline'>Export Entries</a>, under your account menu. You can export everything or one year, as a ZIP with your journal as a web page, Markdown and JSON plus your photos, or as a single Markdown file. Exporting is free on every plan."
+            a: "Visit <a href='#{Rails.application.routes.url_helpers.export_entries_path}' class='text-accent hover:text-primary underline'>Export Entries</a>, under your account menu. Export everything or one year as a ZIP: a full backup of your entries and photos that you can browse offline. Or export a single Markdown file, easy to bring into other apps and AI assistants. Exporting is free on every plan."
           },
           {
             q: "Can I get a refund?",
-            a: "If something doesn’t feel right, email us at #{ActionController::Base.helpers.mail_to("hello@#{main_domain}", "hello@#{main_domain}", subject: "Refund Request", encode: "hex", class: "text-accent hover:text-primary underline")} within 30 days of the charge and we’ll take care of it. Refunds are handled case by case, and we always follow applicable laws."
+            a: "If something doesn’t feel right, email us at #{ActionController::Base.helpers.mail_to("hello@#{main_domain}", "hello@#{main_domain}", subject: "Refund Request", encode: "hex", class: "text-accent hover:text-primary underline")} within 30 days of a charge made on dabble.me and we’ll take care of it. Refunds are handled case by case, and we always follow applicable laws.<div class='mt-2'>If you subscribed in the iPhone app, Apple handles the billing, so refunds go through Apple: <a href='https://reportaproblem.apple.com' class='text-accent hover:text-primary underline' target='_blank' rel='noopener noreferrer'>reportaproblem.apple.com</a>.</div>"
           },
           {
             q: "What happens to my data if I cancel my subscription?",
@@ -277,7 +301,7 @@ module ApplicationHelper
           },
           {
             q: "Is this really free?",
-            a: "<span class='font-semibold'>Yes. The core experience is free, forever.</span> You'll receive an email prompt every other Sunday and can reply by email to keep your journal. When you want daily prompts, photos, search, and other tools, you can upgrade to PRO for $4/month or $40/year."
+            a: "<span class='font-semibold'>Yes. The core experience is free, forever.</span> You'll receive an email prompt every other Sunday and can reply by email to keep your journal. When you want daily prompts, photos, search, and other tools, you can <a href='#{Rails.application.routes.url_helpers.subscribe_path}' class='text-accent hover:text-primary underline'>upgrade to PRO</a> for $4/month or $40/year."
           },
           {
             id: "ideas-for-writing",
@@ -303,15 +327,16 @@ module ApplicationHelper
               <span class='font-semibold!'>Gratitude Before Bed</span>
               — end each day with one thing you're thankful for and tag it with #Gratitude. Over time, you'll build a searchable database of hundreds of small joys. When a tough day hits, scroll back through your gratitude entries and remember: your life is fuller than it feels right now.
             </li>
-          </ul>"
+          </ul>
+          <div class='mt-3'>New to journaling? <a href='#{Rails.application.routes.url_helpers.how_to_start_journaling_path}' class='text-accent hover:text-primary underline'>Here's how to start</a>.</div>"
           },
           {
             q: "Does this service use AI to read or analyze my entries?",
-            a: "No, not by default. Dabble Me does not use AI to read or analyze your entries unless you explicitly turn on an optional feature yourself.<div class='mt-2'>If you prefer not to use AI at all, you can always export your journal and analyze it locally or in a tool you control.</div>"
+            a: "No, not by default. Dabble Me does not use AI to read or analyze your entries unless you explicitly turn on an optional feature yourself, like the <a href='#{Rails.application.routes.url_helpers.mcp_server_docs_path}' class='text-accent hover:text-primary underline'>Claude and ChatGPT connector</a>.<div class='mt-2'>If you prefer not to use AI at all, you can always export your journal and analyze it locally or in a tool you control.</div>"
           },
           {
             q: "How do I save a copy of my entries?",
-            a: "You can download a copy of your entries at any time from the bottom of the <a href='#{Rails.application.routes.url_helpers.settings_path}' class='text-accent hover:text-primary underline'>settings page</a>. Export as plain text (TXT) or JSON (with rich formatting)."
+            a: "Visit <a href='#{Rails.application.routes.url_helpers.export_entries_path}' class='text-accent hover:text-primary underline'>Export Entries</a>, under your account menu. Export everything or one year as a ZIP: a full backup of your entries and photos that you can browse offline. Or export a single Markdown file, easy to bring into other apps and AI assistants. Exporting is free on every plan."
           },
           {
             q: "What happens to my data if I delete my account?",
