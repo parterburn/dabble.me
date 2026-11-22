@@ -173,6 +173,8 @@ struct TodayView: View {
                         composing = true
                     }
                 }
+                // The template changed (Settings, or the account): the widget shows it as Today does.
+                .onChange(of: todayTemplate) { WidgetSync.update(from: model) }
                 // Once written, the new entry opens in full under the closing composer.
                 .sheet(isPresented: $composing) { ComposeView(mode: .new) { path.append(EntryRoute(id: $0.id)) } }
                 // Now and then (every tenth tap on the Today tab), not every time.

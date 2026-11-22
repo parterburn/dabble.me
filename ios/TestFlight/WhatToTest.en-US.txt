@@ -1,4 +1,4 @@
-Build 115 shows your template on Today when every new entry starts with it.
+Build 115 shows your template on Today and in the widget when every new entry starts with it.
 
 TEMPLATE ON TODAY
 - Settings, Entry Template. Write a template and turn on Start New Entries with It.
@@ -6,5 +6,9 @@ TEMPLATE ON TODAY
 - Tap the template. The composer should open with the template already in it.
 - Write Today's Entry should do the same.
 
+WIDGET
+- With the medium widget set to A Prompt for You, it should say Your Template and show your template instead of the prompt, until today's written.
+- Change the template or the setting in the app, then go to the Home Screen. The widget should follow.
+
 PROMPT COMES BACK
-- Turn off Start New Entries with It, or clear the template. Today should show the day's prompt again.
+- Turn off Start New Entries with It, or clear the template. Today and the widget should show the day's prompt again.
