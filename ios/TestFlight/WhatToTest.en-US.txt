@@ -1,12 +1,9 @@
-Build 118 makes the five dots in Stats tappable.
+Build 121 asks before exporting your entries.
 
-STATS
-- Open Journal → Stats. Under the Rewind card, at the right, are the five dots with their sentence (for example "4 of the last 5 days").
-- Tap the dots (or the sentence beside them). Stats scrolls down to this year's grid of days, the squares grow to their biggest, and the grid slides so today's week sits at its right edge, with the last five days in view.
-- If another year was picked in the year menu, tapping the dots turns it back to this year first.
-- The bigger squares are kept, like a pinch. Pinch the grid to make them smaller again; after a pinch, the grid goes back to resting a few weeks past today.
+EXPORT
+- Open Settings and tap Export Entries. An alert asks "Export Entries?" and says the email address the link to a ZIP of all your entries goes to.
+- Tap Cancel. Nothing is sent: no spinner, no "Export Started" alert, and no email arrives.
+- Tap Export Entries again, then Export. The spinner shows, then the usual Export Started (or Export Sent) alert, and the email arrives as before.
 
 CHECK
-- The other tiles (Entries, Photos, Streak, Words) still go where they did.
-- Holding a day in the grid still previews it, and tapping a written day still opens it.
-- In the first days of January, the last five days can reach back into last year: only this year's part of them is in the grid.
+- On the Delete Account page, Email Me an Export asks the same question first, and after Export its alert still says to download the export before deleting.
