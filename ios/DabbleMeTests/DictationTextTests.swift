@@ -31,6 +31,8 @@ struct VocabularySpellingTests {
         #expect(VocabularySpelling.apply(["Claude"], to: "'claude'") == "'Claude'")
         #expect(VocabularySpelling.apply(["Claude"], to: "‘claude’") == "‘Claude’")
         #expect(VocabularySpelling.apply(["Dabble Me"], to: "i wrote in dabble me today") == "i wrote in Dabble Me today")
+        #expect(VocabularySpelling.apply(["Dabble Me"], to: "Wrote in #DabbleMe today.") == "Wrote in #DabbleMe today.")
+        #expect(VocabularySpelling.apply(["Leo"], to: "#leo and leo") == "#leo and Leo")
     }
 }
 
