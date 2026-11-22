@@ -1,10 +1,9 @@
 <% content_for :title, "Dabble Me Journal App for iPhone and iPad" %>
 <% content_for :social_title, "Dabble Me for iPhone and iPad: a private journal app" %>
-<% content_for :description, "A private journal app for iPhone and iPad. Write a few lines a day, add photos, and see what you wrote on this day in past years. Free to try in beta." %>
+<% content_for :description, "A private journal app for iPhone and iPad. Write a few lines a day, add photos, and see what you wrote on this day in past years. Coming soon to the App Store." %>
 <% content_for :keywords, "journal app,journal app for iPhone,private journal app,diary app iPhone,daily journal app,iPad journal app,photo journal app,Dabble Me iOS" %>
 
 <%
-testflight_url = ApplicationHelper.ios_testflight_url
 # What each screen is for, beside a picture of it (the App Store's screenshots, from a demo journal).
 screens = [
   {
@@ -53,11 +52,11 @@ screens = [
 faq_items = [
   {
     question: "Is the Dabble Me app free?",
-    answer: "Yes. The app is free to download, with no purchases inside it. On a free account you can read your journal, write and delete entries, set a daily reminder and use the Home Screen widget. Photos, editing, search, Stats and On This Day are part of Dabble Me PRO, which is $4 a month or $40 a year."
+    answer: "Yes. The app is free to download. On a free account you can read your journal, write and delete entries, set a daily reminder and use the Home Screen widget. Photos, editing, search, Stats and On This Day are part of Dabble Me PRO, which is $4 a month or $40 a year."
   },
   {
     question: "Is it in the App Store?",
-    answer: "Not yet. The app is in public beta through TestFlight, Apple's own app for trying new apps. Install TestFlight from the App Store, open the invitation link, and Dabble Me installs like any other app."
+    answer: "Not yet, but it's coming soon. Until then, Dabble Me PRO members can try the beta: sign in, and a Get the iOS app button appears at the top of this page."
   },
   {
     question: "Do I have to use the app to keep a Dabble Me journal?",
@@ -95,7 +94,6 @@ structured_data = [
     applicationCategory: "LifestyleApplication",
     description: content_for(:description),
     url: "#{structured_data_base_url}#{journal_app_path}",
-    installUrl: testflight_url,
     offers: { "@type": "Offer", price: "0.00", priceCurrency: "USD" }
   },
   {
@@ -115,7 +113,7 @@ structured_data = [
   <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
     <header class="grid lg:grid-cols-2 gap-10 items-center">
       <div class="text-center lg:text-left">
-        <p class="text-sm font-semibold tracking-wide text-accent uppercase">iPhone &amp; iPad · Public beta</p>
+        <p class="text-sm font-semibold tracking-wide text-accent uppercase">iPhone &amp; iPad · Coming soon</p>
         <h1 class="mt-4 font-serif text-4xl sm:text-5xl tracking-tight">
           A daily journal app for iPhone and iPad
         </h1>
@@ -124,10 +122,18 @@ structured_data = [
           rewind to any of it later. The app is the quickest way to do all three.
         </p>
         <div class="mt-8 flex flex-col sm:flex-row justify-center lg:justify-start gap-3">
-          <a href="<%= testflight_url %>" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Get the iOS app (beta)</a>
-          <a href="<%= new_user_registration_path %>" class="btn btn-secondary">Create a free account</a>
+          <%# The TestFlight beta is for PRO members only: a purchase made in it is free. %>
+          <% if current_user&.is_pro? %>
+            <a href="<%= ApplicationHelper.ios_testflight_url %>" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Get the iOS app (beta)</a>
+          <% else %>
+            <a href="<%= new_user_registration_path %>" class="btn btn-primary">Create a free account</a>
+          <% end %>
         </div>
-        <p class="mt-4 text-sm text-subtle">Free to download. Installs through Apple's TestFlight.</p>
+        <% if current_user&.is_pro? %>
+          <p class="mt-4 text-sm text-subtle">Coming soon to the App Store. As a PRO member, you can use the beta now; it installs through Apple's TestFlight.</p>
+        <% else %>
+          <p class="mt-4 text-sm text-subtle">Coming soon to the App Store. Start your journal by email today, and it'll be waiting in the app.</p>
+        <% end %>
       </div>
       <%# The page's main picture: loaded first, with its size given so nothing shifts. %>
       <div class="flex justify-center">
@@ -240,10 +246,9 @@ structured_data = [
 
     <section class="mt-16 card p-8 text-center">
       <h2 class="font-serif text-3xl text-primary">Start with today</h2>
-      <p class="mt-3 text-muted">Get the app, write a few lines tonight, and let it bring them back to you next year.</p>
+      <p class="mt-3 text-muted">Write a few lines tonight by email, and the app will bring them back to you when it arrives in the App Store.</p>
       <div class="mt-6 flex flex-col sm:flex-row justify-center gap-3">
-        <a href="<%= testflight_url %>" class="btn btn-primary" target="_blank" rel="noopener noreferrer">Get the iOS app (beta)</a>
-        <a href="<%= new_user_registration_path %>" class="btn btn-secondary">Create a free account</a>
+        <a href="<%= new_user_registration_path %>" class="btn btn-primary">Create a free account</a>
       </div>
     </section>
   </div>

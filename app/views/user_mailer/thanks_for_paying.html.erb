@@ -39,6 +39,14 @@
     </li>
   </ul>
 </p>
+<%# The TestFlight beta is for PRO only (a purchase in it is free): checked here too, whoever sends this. %>
+<% if @user.is_pro? %>
+<p style="padding: 14px 18px; border-radius: 12px; background-color: #F3F2EC;">
+  <b>On an iPhone or iPad?</b>
+  As a PRO member, you can use the Dabble Me app before it's in the App Store:
+  <%= link_to "get the iOS app (beta)", ApplicationHelper.ios_testflight_url, style: "font-weight: bold;" %>.
+</p>
+<% end %>
 <p>
   <br>
   Thanks,

@@ -20,7 +20,7 @@
 </p>
 
 <p align="center">
-  Featured in <a href="https://www.nytimes.com/wirecutter/reviews/best-journaling-apps/">Wirecutter: The Best Journaling Apps</a> · Open source (MIT) · No ads, no tracking, no social feed
+  Featured in <a href="https://www.nytimes.com/wirecutter/reviews/best-journaling-apps/">Wirecutter: The Best Journaling Apps</a> · Open source (AGPL-3.0) · No ads, no tracking, no social feed
 </p>
 
 ---
@@ -84,8 +84,7 @@ That's the whole habit. No streaks to protect and no app you have to remember to
     </td>
     <td width="33%" valign="top">
       <h3>📱 iPhone &amp; iPad</h3>
-      Today's prompt, On This Day, photos, a widget and a Face ID lock. The app is in public beta on TestFlight.<br><br>
-      <a href="https://testflight.apple.com/join/mYj4vrFZ"><strong>Join the beta →</strong></a><br>
+      Today's prompt, On This Day, photos, a widget and a Face ID lock. Coming soon to the App Store.<br><br>
       <a href="https://dabble.me/journal-app?utm_source=github&utm_medium=readme&utm_campaign=cta_cards">See the app tour</a>
     </td>
     <td width="33%" valign="top">
@@ -132,7 +131,9 @@ Subscribe on [dabble.me/subscribe](https://dabble.me/subscribe?utm_source=github
 
 ## Self-hosting and development
 
-Dabble Me is open source under the [MIT license](LICENSE). The hosted version at [dabble.me](https://dabble.me) is the easiest way to use it. If you'd rather run your own, everything below is for you.
+Dabble Me is open source under the [GNU AGPL-3.0](LICENSE). The hosted version at [dabble.me](https://dabble.me) is the easiest way to use it. If you'd rather run your own, everything below is for you.
+
+You can run it for yourself, your family or your team, and change anything you like. If you run a modified version that other people use over the internet, the AGPL asks you to offer those users your modified source code. The simplest way is to keep the GitHub link in the site footer pointed at your fork. Versions released before the switch to the AGPL were under the MIT License, and they stay that way. [`NOTICE`](NOTICE) has the license history.
 
 It's a Rails 8.1 app (Ruby 4.0, PostgreSQL, Redis, Sidekiq, Puma). [`AGENTS.md`](AGENTS.md) has step-by-step setup for a fresh machine, and [`ios/README.md`](ios/README.md) covers the iPhone and iPad app.
 

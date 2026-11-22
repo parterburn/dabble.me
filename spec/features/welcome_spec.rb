@@ -21,11 +21,12 @@ describe 'Pages' do
     expect(page).to have_title 'Support and FAQs — Dabble me.'
   end
 
-  it 'points to the iOS beta and to connecting Claude or ChatGPT, in plain words' do
+  it 'points to the iOS app page and to connecting Claude or ChatGPT, in plain words' do
     visit support_path
 
     expect(page).to have_content 'Is there a mobile app?'
-    expect(page).to have_link('join the beta to install it', href: ApplicationHelper.ios_testflight_url, visible: :all)
+    expect(page).to have_link('See what the app does', href: journal_app_path, visible: :all)
+    expect(page).not_to have_link(href: ApplicationHelper.ios_testflight_url, visible: :all)
     expect(page).to have_link('connect Dabble Me to Claude or ChatGPT', href: mcp_server_docs_path, visible: :all)
 
     expect(page).to have_content 'How do I connect Dabble Me to Claude or ChatGPT?'
@@ -183,12 +184,13 @@ describe 'Pages' do
     expect(page.html).to include('"@type":"FAQPage"')
   end
 
-  it 'describes the iOS app with its screenshots and a way to get it' do
+  it 'describes the iOS app with its screenshots, coming soon, with no public beta link' do
     visit journal_app_path
 
     expect(page).to have_title 'Dabble Me Journal App for iPhone and iPad — Dabble me.'
     expect(page).to have_css 'h1', text: 'A daily journal app for iPhone and iPad'
-    expect(page).to have_link('Get the iOS app (beta)', href: ApplicationHelper.ios_testflight_url)
+    expect(page).to have_content 'Coming soon to the App Store'
+    expect(page).not_to have_link(href: ApplicationHelper.ios_testflight_url)
     # Seven screens, each with a description for people who can't see it and its size (no layout shift).
     shots = page.all('main img')
     expect(shots.size).to eq 7
@@ -201,6 +203,17 @@ describe 'Pages' do
     expect(page.html).to include('"@type":"MobileApplication"', '"@type":"FAQPage"')
   end
 
+
+  it 'gives a signed-in PRO member the iOS beta at the top of the app page, and nobody else' do
+    sign_in FactoryBot.create(:user, plan: 'PRO Monthly PayHere')
+    visit journal_app_path
+    expect(page).to have_link('Get the iOS app (beta)', href: ApplicationHelper.ios_testflight_url)
+
+    sign_in FactoryBot.create(:user, plan: 'Free')
+    visit journal_app_path
+    expect(page).not_to have_link(href: ApplicationHelper.ios_testflight_url)
+    expect(page).to have_link('Create a free account')
+  end
   it 'publishes a guide to starting a journal, with the prompts its title promises' do
     visit how_to_start_journaling_path
 
