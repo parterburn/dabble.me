@@ -195,19 +195,19 @@ module ApplicationHelper
     [
       {
         q: "Are my entries really private?",
-        a: "Yes, by design. There’s no social layer, no public sharing, and no search-engine indexing. Your entries are never used to train AI models, and the optional Claude and ChatGPT connectors stay completely off unless you turn them on yourself. <a href='#{routes.privacy_path}' class='#{link}'>Read the privacy policy</a>."
+        a: "Yes, by design. There’s no social feed, no ads, no data selling, and no search-engine indexing, and your entries are never used to train AI. The iPhone app supports Face ID, hides your journal in the app switcher, and strips location data from photos before upload. On-device Apple Intelligence never sends your journal anywhere, and the optional Claude and ChatGPT connections stay off unless you approve them. <a href='#{routes.privacy_path}' class='#{link}'>Read the privacy policy</a>."
       },
       {
         q: "How do I write entries?",
-        a: "Use whatever feels easiest that day. Reply to your prompt email or open the <a href='#{routes.journal_app_path}' class='#{link}'>iPhone &amp; iPad app</a>. With PRO, you can also write directly on the web, or journal by text and voice through <a href='#{routes.mcp_server_docs_path}' class='#{link}'>Claude or ChatGPT</a>."
+        a: "However feels easiest that day. Open the <a href='#{routes.journal_app_path}' class='#{link}'>iPhone &amp; iPad app</a> (or tap a Lock Screen widget), or reply to a prompt email from any device. With PRO, you can also write on the web, or talk out an entry through <a href='#{routes.mcp_server_docs_path}' class='#{link}'>Claude or ChatGPT</a>."
       },
       {
         q: "Is this really free?",
-        a: "Yes, forever. The free plan includes prompts every other Sunday, the iOS app, online reading, Rewind memories in your prompts, and full data export. <a href='#{routes.subscribe_path}' class='#{link}'>Upgrade to PRO</a> anytime ($4/month or $40/year) for custom schedules, photos, web editing, and search."
+        a: "Yes, forever. Free accounts can read and write entries, get a daily reminder in the iPhone app, on-device Apple Intelligence reflections and prompts, an email prompt every other Sunday, and full data export. <a href='#{routes.subscribe_path}' class='#{link}'>Upgrade to PRO</a> ($4/month or $40/year) for custom email schedules, photos, editing, search, stats, On This Day, Year in Review, and AI connectors."
       },
       {
         q: "What should I write about?",
-        a: "Whatever is on your mind. Clearing your head for two minutes is enough. If you like a simple anchor, try writing 1 win, 1 thing on your mind, and 1 moment of gratitude. <a href='#{routes.how_to_start_journaling_path(anchor: "journaling-frameworks")}' class='#{link}'>See 5 simple reflection frameworks →</a>"
+        a: "A few lines about your day is plenty. If you’re stuck, the app can show a gentle prompt or what was on your calendar that day. Or try 1 win, 1 thing on your mind, and 1 moment of gratitude. <a href='#{routes.how_to_start_journaling_path(anchor: "journaling-frameworks")}' class='#{link}'>See 5 simple journaling frameworks →</a>"
       }
     ]
   end
@@ -293,15 +293,15 @@ module ApplicationHelper
         questions: [
           {
             q: "Are my entries private?",
-            a: "<span class='font-semibold'>Yes, by design.</span> Your entries can’t be shared, posted, fed into AI models, or made public in any way...and they're never at risk of being indexed by search engines. There's no social layer and no audience — just your journal, kept private and secure. If you want the details, our <a href='#{Rails.application.routes.url_helpers.privacy_path}' class='text-accent hover:text-primary underline'>Privacy Policy</a> spells this out clearly."
+            a: "<span class='font-semibold'>Yes, by design.</span> Your entries can’t be shared, posted, or made public in any way, they’re never used to train AI models, and they're never at risk of being indexed by search engines. There's no social feed, no ads, and no data selling. You can sign in with a passkey, a password or a two-factor code, and the iPhone app supports Face ID, hides your journal in the app switcher, and strips location data from photos before upload. Our <a href='#{Rails.application.routes.url_helpers.privacy_path}' class='text-accent hover:text-primary underline'>Privacy Policy</a> spells out the details, including the site analytics we use."
           },
           {
             q: "Is there a mobile app?",
-            a: "<span class='font-semibold'>Yes, for iPhone and iPad, in beta.</span> Dabble Me for iOS is available now through Apple's TestFlight: <a href='#{ios_testflight_url}' class='text-accent hover:text-primary underline' target='_blank' rel='noopener noreferrer'>join the beta to install it</a>. Read your journal, write new entries, and get a daily reminder; photos, editing, search and On This Day are part of PRO.<div class='mt-2'>There's no Android app yet. On any phone you can still write by replying to the daily email from your mail app, and the website works well on a small screen. PRO members can also <a href='#{routes.mcp_server_docs_path}' class='text-accent hover:text-primary underline'>connect Dabble Me to Claude or ChatGPT</a> and journal from those apps, by voice if you like.</div>"
+            a: "<span class='font-semibold'>Yes, for iPhone and iPad, in beta.</span> Dabble Me for iOS is available now through Apple's TestFlight: <a href='#{ios_testflight_url}' class='text-accent hover:text-primary underline' target='_blank' rel='noopener noreferrer'>join the beta to install it</a>. Write with your own daily template, Home Screen and Lock Screen widgets, prompts from your calendar, and a daily nudge that skips itself once you've written. Photos, editing, search and On This Day are part of PRO.<div class='mt-2'>There's no Android app yet. On any phone you can still write by replying to the daily email from your mail app, and the website works well on a small screen. PRO members can also <a href='#{routes.mcp_server_docs_path}' class='text-accent hover:text-primary underline'>connect Dabble Me to Claude or ChatGPT</a> and journal from those apps, by voice if you like.</div>"
           },
           {
             q: "Is this really free?",
-            a: "<span class='font-semibold'>Yes. The core experience is free, forever.</span> You'll receive an email prompt every other Sunday and can reply by email to keep your journal. When you want daily prompts, photos, search, and other tools, you can <a href='#{Rails.application.routes.url_helpers.subscribe_path}' class='text-accent hover:text-primary underline'>upgrade to PRO</a> for $4/month or $40/year."
+            a: "<span class='font-semibold'>Yes. The core experience is free, forever.</span> Free accounts can read, write and delete entries, set a daily reminder in the iPhone app (skipped once you've written), get on-device Apple Intelligence reflections, prompts and hashtag suggestions, receive an email prompt every other Sunday, and export their data anytime. When you want custom email schedules, photos, links, editing, search, stats, On This Day, Year in Review, imports, or Claude and ChatGPT connections, you can <a href='#{Rails.application.routes.url_helpers.subscribe_path}' class='text-accent hover:text-primary underline'>upgrade to PRO</a> for $4/month or $40/year."
           },
           {
             id: "ideas-for-writing",
@@ -332,7 +332,7 @@ module ApplicationHelper
           },
           {
             q: "Does this service use AI to read or analyze my entries?",
-            a: "No, not by default. Dabble Me does not use AI to read or analyze your entries unless you explicitly turn on an optional feature yourself, like the <a href='#{Rails.application.routes.url_helpers.mcp_server_docs_path}' class='text-accent hover:text-primary underline'>Claude and ChatGPT connector</a>.<div class='mt-2'>If you prefer not to use AI at all, you can always export your journal and analyze it locally or in a tool you control.</div>"
+            a: "<span class='font-semibold'>Your entries are never used to train AI models.</span><ul class='list-disc pl-5 space-y-1.5 mt-2'><li><span class='font-medium text-primary'>Apple Intelligence (free, on your device):</span> on supported iPhones and iPads, the app offers reflections, daily prompts from your recent days, and hashtag suggestions. It all runs on the device, so your journal isn't sent anywhere for it, and a reflection chat is never saved unless you add it to your entry.</li><li><span class='font-medium text-primary'>Claude and ChatGPT (optional, PRO):</span> nothing connects unless you approve it, and you can <a href='#{Rails.application.routes.url_helpers.mcp_server_docs_path}' class='text-accent hover:text-primary underline'>remove access</a> any time.</li></ul><div class='mt-2'>If you prefer no AI at all, ignore these features, or export your journal and analyze it locally in a tool you control.</div>"
           },
           {
             q: "How do I save a copy of my entries?",

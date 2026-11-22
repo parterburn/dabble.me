@@ -1,6 +1,6 @@
 <% content_for :title, "Pricing" %>
 <% content_for :full_title, "Pricing — Dabble Me Private Journal" %>
-<% content_for :description, "Start journaling free forever, or upgrade to Dabble Me PRO ($4/mo or $40/yr) for custom schedules, photos, search, web editing, and easy imports." %>
+<% content_for :description, "Start journaling free forever, or upgrade to Dabble Me PRO ($4/mo or $40/yr) for photos, editing, search, On This Day, Year in Review, custom schedules, and imports." %>
 <% content_for :head do %>
   <%= json_ld_script_tag organization_json_ld, web_application_json_ld %>
 <% end %>
@@ -8,16 +8,18 @@
 check_icon = '<svg class="h-5 w-5 text-accent shrink-0 mt-0.5 inline-block" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-label="Included"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>'.html_safe
 none = '<span class="text-subtle" aria-label="Not included">—</span>'.html_safe
 plan_rows = [
-  ["Prompt schedule", "Every other Sunday", "Custom (daily, weekly, any days)"],
-  ["Ways to write", "Email reply, iOS app", "Email reply, iOS app, web editor, AI connector"],
-  ["Rewind past memories", "In prompt emails", "In prompt emails + On This Day view"],
-  ["On-device reflections in the iPhone app", check_icon, check_icon],
-  ["Edit entries after writing", none, "On the web and in the app"],
-  ["Photo attachments", none, "Up to #{CollageGenerator::MAX_IMAGES} photos per entry"],
-  ["Calendar view, #tags & search", none, check_icon],
-  ["Imports (Day One, OhLife & more)", none, check_icon],
-  ["Spotify embeds & yearly stats", none, check_icon],
-  ["Privacy & full data export", "Always included", "Always included, with photos"]
+  ["Read, write & delete entries", check_icon, check_icon],
+  ["Ways to write", "iOS app, widgets, email reply", "iOS app, widgets, email reply, web editor, Claude/ChatGPT"],
+  ["Reminders & email schedule", "Daily iOS reminder + email every other Sunday", "Daily iOS reminder + custom email schedule"],
+  ["Past entries in your prompt emails", check_icon, check_icon],
+  ["On-device Apple Intelligence (prompts, reflections, tag suggestions)", check_icon, "Included, plus lines in your Year in Review"],
+  ["Photos (up to #{CollageGenerator::MAX_IMAGES}) & web links", none, check_icon],
+  ["Edit entries (text, photos, dates)", none, check_icon],
+  ["On This Day & Year in Review", none, check_icon],
+  ["Search, calendar, stats & #hashtag dates", none, check_icon],
+  ["Imports (Day One, OhLife & more) & Spotify", none, check_icon],
+  ["Optional Claude & ChatGPT connector", none, check_icon],
+  ["Privacy & full export", "Always included", "Always included, with photos"]
 ]
 trust_line = "Cancel anytime · Keep all your entries · 30-day refund on web purchases"
 %>
@@ -25,9 +27,9 @@ trust_line = "Cancel anytime · Keep all your entries · 30-day refund on web pu
   <section class="py-20 lg:py-28">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
       <div class="text-center mb-12">
-        <h1 class="font-serif text-4xl sm:text-5xl text-primary">Simple pricing for a calmer daily habit.</h1>
+        <h1 class="font-serif text-4xl sm:text-5xl text-primary">Simple pricing for a journal you’ll actually keep.</h1>
         <p class="mt-4 text-muted text-lg max-w-2xl mx-auto">
-          Start free forever, or unlock PRO to set your own rhythm, add photos, search past entries, and write your way.
+          Start free forever, or unlock PRO for photos, editing, full search, On This Day, Year in Review, and custom schedules.
         </p>
       </div>
 

@@ -9,25 +9,11 @@
     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
       <div class="card p-6 border-accent/30">
         <div class="w-10 h-10 rounded-lg bg-surface-elevated flex items-center justify-center mb-4">
-          <svg class="h-5 w-5 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
-          </svg>
+          <span class="slab-icon slab-icon--backward h-5 w-5 text-accent" aria-hidden="true"></span>
         </div>
-        <h3 class="font-semibold text-base text-primary font-sans">Custom schedule</h3>
+        <h3 class="font-semibold text-base text-primary font-sans">On This Day &amp; Year in Review</h3>
         <p class="mt-2 text-muted text-sm">
-          Choose the exact days and times reminders arrive: daily, weekdays, or weekly.
-        </p>
-      </div>
-
-      <div class="card p-6 border-accent/30">
-        <div class="w-10 h-10 rounded-lg bg-surface-elevated flex items-center justify-center mb-4">
-          <svg class="h-5 w-5 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-          </svg>
-        </div>
-        <h3 class="font-semibold text-base text-primary font-sans">Write your way</h3>
-        <p class="mt-2 text-muted text-sm">
-          Reply by email, open the iOS app, write and edit with rich text on the web, or <%= link_to "connect Claude or ChatGPT", mcp_server_docs_path, class: "text-accent hover:text-primary underline" %> to journal by text or voice.
+          Go back to what you wrote on today’s date in past years, and revisit your biggest moments, people, photos and songs every winter.
         </p>
       </div>
 
@@ -37,19 +23,33 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 19.5h16.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v10.5a2.25 2.25 0 002.25 2.25z" />
           </svg>
         </div>
-        <h3 class="font-semibold text-base text-primary font-sans">Photo attachments</h3>
+        <h3 class="font-semibold text-base text-primary font-sans">Photos &amp; links</h3>
         <p class="mt-2 text-muted text-sm">
-          Add up to <%= CollageGenerator::MAX_IMAGES %> photos per entry so your timeline captures what words miss.
+          Add up to <%= CollageGenerator::MAX_IMAGES %> photos per entry (several become a collage), plus links that open right from your entry.
         </p>
       </div>
 
       <div class="card p-6 border-accent/30">
         <div class="w-10 h-10 rounded-lg bg-surface-elevated flex items-center justify-center mb-4">
-          <span class="slab-icon slab-icon--backward h-5 w-5 text-accent" aria-hidden="true"></span>
+          <svg class="h-5 w-5 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+          </svg>
         </div>
-        <h3 class="font-semibold text-base text-primary font-sans">On This Day &amp; Rewind</h3>
+        <h3 class="font-semibold text-base text-primary font-sans">Edit anything, anytime</h3>
         <p class="mt-2 text-muted text-sm">
-          Resurface memories in your prompts and browse past years on any date.
+          Change your words, photos or an entry’s date in the iPhone app or the rich-text web editor, and write on the web for any day.
+        </p>
+      </div>
+
+      <div class="card p-6 border-accent/30">
+        <div class="w-10 h-10 rounded-lg bg-surface-elevated flex items-center justify-center mb-4">
+          <svg class="h-5 w-5 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+          </svg>
+        </div>
+        <h3 class="font-semibold text-base text-primary font-sans">Custom email schedule</h3>
+        <p class="mt-2 text-muted text-sm">
+          Pick the exact days and times your “How was your day?” email arrives, or skip email and stick to the app and its widgets.
         </p>
       </div>
 
@@ -59,9 +59,21 @@
             <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
           </svg>
         </div>
-        <h3 class="font-semibold text-base text-primary font-sans">Calendar view &amp; search</h3>
+        <h3 class="font-semibold text-base text-primary font-sans">Timeline, search &amp; #hashtags</h3>
         <p class="mt-2 text-muted text-sm">
-          Jump to any day, organize with #hashtags, and search your entire history instantly.
+          Scrub through years in one timeline, search every word you’ve written, and give a #hashtag a birthday or anniversary to see ages and milestones.
+        </p>
+      </div>
+
+      <div class="card p-6 border-accent/30">
+        <div class="w-10 h-10 rounded-lg bg-surface-elevated flex items-center justify-center mb-4">
+          <svg class="h-5 w-5 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
+          </svg>
+        </div>
+        <h3 class="font-semibold text-base text-primary font-sans">Yearly stats &amp; Spotify</h3>
+        <p class="mt-2 text-muted text-sm">
+          See your writing rhythm by year and month, and play the Spotify songs you saved right inside your entries.
         </p>
       </div>
 
@@ -73,31 +85,19 @@
         </div>
         <h3 class="font-semibold text-base text-primary font-sans">Easy imports</h3>
         <p class="mt-2 text-muted text-sm">
-          Bring your past journal over from Day One, OhLife, Ahhlife, or Trailmix.life.
+          Bring your existing journal over from Day One, OhLife, Ahhlife, or Trailmix.life.
         </p>
       </div>
 
       <div class="card p-6 border-accent/30">
         <div class="w-10 h-10 rounded-lg bg-surface-elevated flex items-center justify-center mb-4">
-          <svg class="h-5 w-5 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 9l10.5-3m0 6.553v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 11-.99-3.467l2.31-.66a2.25 2.25 0 001.632-2.163zm0 0V2.25L9 5.25v10.303m0 0v3.75a2.25 2.25 0 01-1.632 2.163l-1.32.377a1.803 1.803 0 01-.99-3.467l2.31-.66A2.25 2.25 0 009 15.553z" />
+          <svg class="h-5 w-5 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
           </svg>
         </div>
-        <h3 class="font-semibold text-base text-primary font-sans">Spotify embeds</h3>
+        <h3 class="font-semibold text-base text-primary font-sans">Ask Claude or ChatGPT</h3>
         <p class="mt-2 text-muted text-sm">
-          Paste Spotify links to save the soundtrack of your days right inside your entries.
-        </p>
-      </div>
-
-      <div class="card p-6 border-accent/30">
-        <div class="w-10 h-10 rounded-lg bg-surface-elevated flex items-center justify-center mb-4">
-          <svg class="h-5 w-5 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z" />
-          </svg>
-        </div>
-        <h3 class="font-semibold text-base text-primary font-sans">Yearly writing stats</h3>
-        <p class="mt-2 text-muted text-sm">
-          See your reflection rhythm, streaks, and patterns across the year.
+          Optionally <%= link_to "connect your AI assistant", mcp_server_docs_path, class: "text-accent hover:text-primary underline" %> to ask “What made me happiest this year?” or save entries by voice. Disconnect anytime.
         </p>
       </div>
 

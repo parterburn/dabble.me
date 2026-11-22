@@ -5,7 +5,7 @@ describe 'Pages' do
 
   it 'has correct title for Root page' do
     visit root_path
-    expect(page).to have_title 'Dabble Me — Simple, Private Daily Journal'
+    expect(page).to have_title 'Dabble Me — Your Private Daily Journal & Life Timeline'
   end
 
   it 'groups Support beneath Pricing in the footer' do
@@ -47,7 +47,7 @@ describe 'Pages' do
 
   it 'has correct content for Subscribe page (redirects to homepage for non-logged-in users)' do
     visit subscribe_path
-    expect(page).to have_content 'Simple pricing for a calmer daily habit.'
+    expect(page).to have_content 'Simple pricing for a journal you’ll actually keep.'
     expect(page).to have_content '30-day refund on web purchases'
   end
 

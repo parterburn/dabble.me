@@ -1,5 +1,5 @@
-<% content_for :full_title, "Dabble Me — Simple, Private Daily Journal" %>
-<% content_for :description, "Daily reflection, without the overwhelm. Simple to start, easy to keep going: a private timeline of your life, and Rewind brings past days back. Free forever." %>
+<% content_for :full_title, "Dabble Me — Your Private Daily Journal & Life Timeline" %>
+<% content_for :description, "Your life, written down and remembered. Write a few lines a day by app, email, or web, add photos, and Rewind past memories. Free forever." %>
 <% content_for :head do %>
   <%= json_ld_script_tag organization_json_ld, website_json_ld, web_application_json_ld %>
 <% end %>
@@ -47,11 +47,11 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
             </a>
 
             <h1 class="font-serif text-3xl sm:text-4xl lg:text-5xl tracking-tight text-hero">
-              Daily reflection, without the overwhelm.
+              Your life, written down and remembered.
             </h1>
             
             <p class="mt-6 text-lg text-hero-muted max-w-xl mx-auto lg:mx-0">
-              Simple to start. Easy to keep going. Build a private timeline of your life your way, and let Rewind bring past days back to you.
+              A private timeline of your life. Simple to start, easy to keep going: write a few lines your way, add some photos, and Rewind past days back to you.
             </p>
 
             <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
@@ -72,7 +72,7 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
                 </svg>
               </a>
             </div>
-            <p class="mt-4 text-sm text-hero-muted">Free forever · Always private · Write by email or the iOS app</p>
+            <p class="mt-4 text-sm text-hero-muted">Free forever · Always private · iPhone, iPad, email, and web</p>
 
             <!-- Quick value props -->
             <p class="mt-10 text-sm font-medium text-hero">A few lines today. A memory years from now.</p>
@@ -81,17 +81,17 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
                 <svg class="h-5 w-5 text-hero-accent shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
                 </svg>
-                <div class="grow">Write your way</div>
+                <div class="grow">Write a few lines a day</div>
               </div>
               <div class="flex items-center gap-2">
                 <svg class="h-5 w-5 text-hero-accent shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                 </svg>
-                <div class="grow">Add photos anytime</div>
+                <div class="grow">Add up to <%= CollageGenerator::MAX_IMAGES %> photos</div>
               </div>
               <div class="flex items-center gap-2">
                 <span class="slab-icon slab-icon--backward h-5 w-5 text-hero-accent shrink-0" aria-hidden="true"></span>
-                <div class="grow">Rewind past days</div>
+                <div class="grow">Rewind years back</div>
               </div>
             </div>
           </div>
@@ -195,10 +195,10 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
   <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
     <div class="max-w-3xl">
       <h2 class="font-serif text-4xl lg:text-5xl text-primary leading-tight">
-        A reflection habit that actually fits your day.
+        Simple to start. Easy to keep going.
       </h2>
       <p class="mt-6 text-lg text-muted max-w-2xl">
-        You already know taking a moment to reflect helps. We just removed everything that gets in the way.
+        You don’t need a new routine or a complicated app, just a few quiet lines that fit into the day you already have.
       </p>
     </div>
 
@@ -207,21 +207,21 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
         <p class="font-serif text-3xl text-accent">1</p>
         <h3 class="mt-2 font-semibold text-base text-primary font-sans">Simple to start</h3>
         <p class="mt-2 text-muted">
-          No folders to organize, no templates to pick, no blank-page pressure. Write two lines in two minutes and you’re done.
+          Write two lines or two pages. Stuck? Tap a prompt or something from your calendar, or use your own daily template.
         </p>
       </li>
       <li>
         <p class="font-serif text-3xl text-accent">2</p>
         <h3 class="mt-2 font-semibold text-base text-primary font-sans">Easy to keep going</h3>
         <p class="mt-2 text-muted">
-          Choose whatever feels lightest that day: reply to a gentle prompt or open the iOS app. With PRO, write on the web or talk it out through Claude or ChatGPT.
+          Get one gentle nudge when you want it, skipped once you’ve written. Open the iPhone app, tap a Lock Screen widget, or reply to an email. With PRO, write on the web too.
         </p>
       </li>
       <li>
         <p class="font-serif text-3xl text-accent">3</p>
         <h3 class="mt-2 font-semibold text-base text-primary font-sans">Rewind your days</h3>
         <p class="mt-2 text-muted">
-          Past entries resurface automatically from weeks or years ago, helping you notice how far you’ve come and remember the moments that mattered.
+          Your memories come back a year or five years later. Past entries show up in your prompts, and shaking your phone pulls up a random memory. PRO adds On This Day and your Year in Review.
         </p>
       </li>
     </ol>
@@ -251,21 +251,20 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
         Everything you need. Nothing in the way.
       </h2>
       <p class="mt-4 text-lg text-muted">
-        Simple, private, and built to drop into your routine.
+        Quiet, private, and built to stay out of your way.
       </p>
     </div>
 
     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-      <!-- Free features -->
       <div class="card p-6">
         <div class="w-12 h-12 rounded-lg bg-surface-elevated flex items-center justify-center mb-4">
-          <svg class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-          </svg>
+            <svg class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+            </svg>
         </div>
         <h3 class="font-semibold text-base text-primary font-sans">Write your way</h3>
         <p class="mt-2 text-muted">
-          Reply to a scheduled email or use the iPhone &amp; iPad app. With PRO, write on the web or connect Claude or ChatGPT. Switch whenever you like.
+          Use the iPhone &amp; iPad app or its Lock Screen widgets, or simply reply to a “How was your day?” email. With PRO, write on the web too. Switch anytime.
         </p>
         <p class="mt-3">
           <%= link_to "Get the iOS app (beta)", ApplicationHelper.ios_testflight_url, class: "text-accent hover:text-primary underline font-medium", target: "_blank", rel: "noopener noreferrer" %>
@@ -274,54 +273,53 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
 
       <div class="card p-6">
         <div class="w-12 h-12 rounded-lg bg-surface-elevated flex items-center justify-center mb-4">
-          <span class="slab-icon slab-icon--backward h-6 w-6 text-accent" aria-hidden="true"></span>
+            <svg class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
         </div>
-        <h3 class="font-semibold text-base text-primary font-sans">Rewind</h3>
+        <h3 class="font-semibold text-base text-primary font-sans">Private by design</h3>
         <p class="mt-2 text-muted">
-          Your timeline doesn’t sit in a drawer. Past entries come back to you automatically, from this day years ago or just a few weeks back, so you can relive them.
+          No social feed, no ads, no data selling, and your entries are never used to train AI. Face ID lock and photo location stripping in the app, passkeys, and full export anytime.
         </p>
       </div>
 
       <div class="card p-6">
         <div class="w-12 h-12 rounded-lg bg-surface-elevated flex items-center justify-center mb-4">
-          <svg class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-          </svg>
-        </div>
-        <h3 class="font-semibold text-base text-primary font-sans">Always private</h3>
-        <p class="mt-2 text-muted">
-          No social feed. No ads. No algorithms. Optional <%= link_to "Claude and ChatGPT connectors", mcp_server_docs_path, class: "text-accent hover:text-primary underline" %> stay off unless you explicitly turn them on.
-        </p>
-      </div>
-
-      <!-- PRO features -->
-      <div class="card p-6 border-accent/30">
-        <div class="flex items-center gap-2 mb-4">
-          <div class="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
-            <svg class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+            <svg class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
             </svg>
-          </div>
-          <span class="badge badge-accent dark:text-olive-800 text-xs">PRO</span>
         </div>
-        <h3 class="font-semibold text-base text-primary font-sans">Custom schedule</h3>
+        <h3 class="font-semibold text-base text-primary font-sans">AI strictly on your terms</h3>
         <p class="mt-2 text-muted">
-          Daily, weekdays, weekly, or your own rhythm. You decide when reminders arrive.
+          Warm, on-device Apple Intelligence reflections and prompts that never leave your iPhone or iPad. With PRO, you can <%= link_to "connect Claude or ChatGPT", mcp_server_docs_path, class: "text-accent hover:text-primary underline" %> to ask about your journal, and disconnect anytime.
         </p>
       </div>
 
       <div class="card p-6 border-accent/30">
         <div class="flex items-center gap-2 mb-4">
           <div class="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
-            <svg class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 19.5h16.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v10.5a2.25 2.25 0 002.25 2.25z" />
+            <span class="slab-icon slab-icon--backward h-6 w-6 text-accent" aria-hidden="true"></span>
+          </div>
+          <span class="badge badge-accent dark:text-olive-800 text-xs">PRO</span>
+        </div>
+        <h3 class="font-semibold text-base text-primary font-sans">On This Day &amp; Year in Review</h3>
+        <p class="mt-2 text-muted">
+          See what you wrote on today’s date in past years, and look back at your biggest moments, people and photos every winter.
+        </p>
+      </div>
+
+      <div class="card p-6 border-accent/30">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
+            <svg class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
             </svg>
           </div>
           <span class="badge badge-accent dark:text-olive-800 text-xs">PRO</span>
         </div>
-        <h3 class="font-semibold text-base text-primary font-sans">Photo memories</h3>
+        <h3 class="font-semibold text-base text-primary font-sans">Photos &amp; songs</h3>
         <p class="mt-2 text-muted">
-          Attach up to <%= CollageGenerator::MAX_IMAGES %> photos to any entry to capture moments words can’t.
+          Attach up to <%= CollageGenerator::MAX_IMAGES %> photos (several become a collage) and embed Spotify tracks to remember the soundtrack of your days.
         </p>
       </div>
 
@@ -333,9 +331,9 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
           </div>
           <span class="badge badge-accent dark:text-olive-800 text-xs">PRO</span>
         </div>
-        <h3 class="font-semibold text-base text-primary font-sans">Calendar &amp; search</h3>
+        <h3 class="font-semibold text-base text-primary font-sans">#Hashtags &amp; search</h3>
         <p class="mt-2 text-muted">
-          Jump to any date, filter by #hashtags, or search your entire timeline in seconds.
+          Search every word you’ve ever written. Give a #hashtag a birthday or anniversary to see how old your kids were, or how long it had been, in every entry.
         </p>
       </div>
     </div>
@@ -464,22 +462,24 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
 
 <%
 free_features = [
-  "Prompt every other Sunday",
-  "Reply by email to journal",
-  link_to("iPhone & iPad app", journal_app_path, class: "text-accent hover:text-primary underline") + " (read & write)",
+  "Read, write & delete entries",
+  link_to("iPhone & iPad app", journal_app_path, class: "text-accent hover:text-primary underline") + " with a daily reminder",
+  "Email prompt every other Sunday (reply to journal)",
+  "Past entries in your prompt emails",
+  "On-device Apple Intelligence reflections, prompts & hashtag suggestions",
   "Read your entries online",
-  "Rewind past entries in prompts",
   "Export your data anytime"
 ]
 pro_features = [
-  "Custom schedule (daily, weekly, or any days)",
-  "Write & edit on the web with rich text",
-  "Photo attachments (up to #{CollageGenerator::MAX_IMAGES} per entry)",
-  "Calendar view, #hashtags & full search",
-  "On This Day browsing & yearly stats",
+  "Custom email schedule (daily, weekly, or any days)",
+  "Photo attachments (up to #{CollageGenerator::MAX_IMAGES} per entry) & web links",
+  "Edit entries anytime (words, photos, or dates) on web & iOS",
+  "Write on the web with rich text",
+  "On This Day, Rewind & Year in Review",
+  "Calendar timeline, #hashtags with milestone dates & full search",
+  "Yearly stats & Spotify song embeds",
   "Import from Day One, OhLife & more",
-  "Spotify song embeds",
-  link_to("Optional AI connector", mcp_server_docs_path, class: "text-accent hover:text-primary underline") + " (Claude & ChatGPT)",
+  link_to("Optional Claude & ChatGPT connector", mcp_server_docs_path, class: "text-accent hover:text-primary underline"),
   "Export everything anytime, including photos"
 ]
 %>
