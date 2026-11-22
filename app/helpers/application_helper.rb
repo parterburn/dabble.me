@@ -1,4 +1,17 @@
 module ApplicationHelper
+  LAUNCH_DATE = Date.new(2014, 9, 29)
+
+  # Whole years since Dabble Me launched (Sept 29, 2014), e.g. 12 until Sept 29, 2027.
+  def self.years_running(today = Date.current)
+    years = today.year - LAUNCH_DATE.year
+    years -= 1 if today < LAUNCH_DATE.next_year(years)
+    years
+  end
+
+  def years_running
+    ApplicationHelper.years_running
+  end
+
   def self.claude_plugin_directory_url
     "https://claude.ai/customize/plugins/id/6b2f67b8-6341-42d1-a2f1-d63df3107efe%40anthropic-plugin-directory"
   end
@@ -301,7 +314,7 @@ module ApplicationHelper
           },
           {
             q: "How is Dabble Me different from Apple's Journal app?",
-            a: "<span class='font-semibold'>Apple's Journal reminds you to open an app. Dabble Me puts the prompt in your inbox.</span> Each one comes with one of your past entries, and you write by hitting reply. Your journal also lives on the web and works by email, so it isn't tied to one phone or your Apple ID. You can <a href='#{Rails.application.routes.url_helpers.mcp_server_docs_path}' class='text-accent hover:text-primary underline'>connect it to Claude or ChatGPT</a> to ask about your past entries, export everything as a ZIP or Markdown, and it's been running independently for 12 years.<div class='mt-2'>To be fair to Apple: Journal is free, built into your iPhone, and end-to-end encrypted. Dabble Me encrypts your entries on our servers with keys kept separately, but it isn't end-to-end encrypted. See the <a href='#{Rails.application.routes.url_helpers.privacy_path}' class='text-accent hover:text-primary underline'>Privacy Policy</a> for details.</div>"
+            a: "<span class='font-semibold'>Apple's Journal reminds you to open an app. Dabble Me puts the prompt in your inbox.</span> Each one comes with one of your past entries, and you write by hitting reply. Your journal also lives on the web and works by email, so it isn't tied to one phone or your Apple ID. You can <a href='#{Rails.application.routes.url_helpers.mcp_server_docs_path}' class='text-accent hover:text-primary underline'>connect it to Claude or ChatGPT</a> to ask about your past entries, export everything as a ZIP or Markdown, and it's been running independently for #{years_running} years.<div class='mt-2'>To be fair to Apple: Journal is free, built into your iPhone, and end-to-end encrypted. Dabble Me encrypts your entries on our servers with keys kept separately, but it isn't end-to-end encrypted. See the <a href='#{Rails.application.routes.url_helpers.privacy_path}' class='text-accent hover:text-primary underline'>Privacy Policy</a> for details.</div>"
           },
           {
             q: "Is this really free?",
@@ -364,7 +377,7 @@ module ApplicationHelper
           },
           {
             q: "Who built Dabble Me?",
-            a: "👋 Hi! I'm <a href='https://paularterburn.com/' class='text-accent hover:text-primary underline' target='_blank'>Paul Arterburn</a>. I built and maintain Dabble Me, and I'm also the CTO at <a href='https://unreasonablegroup.com/' class='text-accent hover:text-primary underline' target='_blank'>Unreasonable Group</a> helping entrepreneurs bend history in the right direction. Previously, I was the technical co-founder of Brandfolder, a digital asset management platform powering some of the biggest brands in the world.<div class='mt-2'>I created Dabble Me primarily for myself as a way to remember and reflect on the days in a format that would actually trigger me to write — over email. Read about why and how I built Dabble Me in a blog post: <a href='https://medium.com/startup-lesson-learned/increase-your-happiness-with-daily-journaling-8109b0700506' class='text-accent hover:text-primary underline' target='_blank'>Increase Your Happiness with Daily Journaling</a>.</div><div class='mt-2'>I built Dabble Me as an experienced developer with privacy and security in mind from the start. It's not a rushed AI side project or a growth experiment. It's independently run with a proper contingency plan in place, funded by its users for over #{Date.today.year - Date.new(2014, 9, 29).year} years, and designed to keep your journal private. No investors. No selling your data. Just a simple, secure place to write. The code is also open-sourced on <a href='https://github.com/parterburn/dabble.me' class='text-accent hover:text-primary underline' target='_blank'>GitHub</a>.</div>" # pragma: allowlist secret
+            a: "👋 Hi! I'm <a href='https://paularterburn.com/' class='text-accent hover:text-primary underline' target='_blank'>Paul Arterburn</a>. I built and maintain Dabble Me, and I'm also the CTO at <a href='https://unreasonablegroup.com/' class='text-accent hover:text-primary underline' target='_blank'>Unreasonable Group</a> helping entrepreneurs bend history in the right direction. Previously, I was the technical co-founder of Brandfolder, a digital asset management platform powering some of the biggest brands in the world.<div class='mt-2'>I created Dabble Me primarily for myself as a way to remember and reflect on the days in a format that would actually trigger me to write — over email. Read about why and how I built Dabble Me in a blog post: <a href='https://medium.com/startup-lesson-learned/increase-your-happiness-with-daily-journaling-8109b0700506' class='text-accent hover:text-primary underline' target='_blank'>Increase Your Happiness with Daily Journaling</a>.</div><div class='mt-2'>I built Dabble Me as an experienced developer with privacy and security in mind from the start. It's not a rushed AI side project or a growth experiment. It's independently run with a proper contingency plan in place, funded by its users for over #{years_running} years, and designed to keep your journal private. No investors. No selling your data. Just a simple, secure place to write. The code is also open-sourced on <a href='https://github.com/parterburn/dabble.me' class='text-accent hover:text-primary underline' target='_blank'>GitHub</a>.</div>" # pragma: allowlist secret
           }
         ]
       }

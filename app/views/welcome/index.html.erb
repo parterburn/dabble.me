@@ -237,7 +237,7 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
       </div>
       <div class="flex flex-col">
         <dt class="text-muted text-sm">Independent and member-funded</dt>
-        <dd class="order-first font-serif text-4xl text-primary">12+ years</dd>
+        <dd class="order-first font-serif text-4xl text-primary"><%= years_running %>+ years</dd>
       </div>
     </dl>
   </div>
@@ -447,7 +447,7 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
       <%= image_tag "paul-arterburn.jpg", alt: "Paul Arterburn, founder of Dabble Me", width: 64, height: 64, class: "w-16 h-16 rounded-full object-cover shrink-0" %>
       <div>
         <blockquote class="text-primary leading-relaxed">
-          I built Dabble Me over 12 years ago because I wanted the clarity of daily reflection without another complicated app to maintain. It’s not a venture-backed growth experiment or a rushed AI side project. It’s independently run, funded by members, and private by design. No selling your data, no lock-in, just a simple habit that sticks.
+          I built Dabble Me over <%= years_running %> years ago because I wanted the clarity of daily reflection without another complicated app to maintain. It’s not a venture-backed growth experiment or a rushed AI side project. It’s independently run, funded by members, and private by design. No selling your data, no lock-in, just a simple habit that sticks.
         </blockquote>
         <figcaption class="mt-4 text-sm text-muted">
           <span class="font-medium text-primary">Paul Arterburn</span>, Founder
