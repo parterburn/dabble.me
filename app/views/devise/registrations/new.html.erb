@@ -56,7 +56,6 @@
         <% if ENV['CI'] != "true" && ENV['TURNSTILE_SITE_KEY'].present? %>
           <div class="flex justify-center">
             <%= captcha_tags action: "sign-up", data: {
-              theme: "light",
               callback: "dabbleCaptchaSolved",
               "expired-callback": "dabbleCaptchaExpired",
               "error-callback": "dabbleCaptchaError"
