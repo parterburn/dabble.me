@@ -29,6 +29,8 @@ struct Me: Decodable, Sendable, Equatable {
     let canSeeStats: Bool?
     let settingsUrl: URL
     let securityUrl: URL
+    /// Whether the account has a passkey (nil from an older server: then the app doesn't ask).
+    var hasPasskey: Bool? = nil
     let aiConnectors: AIConnectors?
     /// The UUID to buy PRO in the app with (StoreKit's appAccountToken): Apple puts it in the
     /// signed transaction, which is how the server knows which account bought it. Nil from an
@@ -259,6 +261,11 @@ struct AccountDeletionInfo: Decodable, Sendable, Equatable {
 
 /// A POST with nothing to send (encodes as `{}`).
 struct EmptyBody: Encodable, Sendable {}
+
+/// POST /api/v1/passkeys answers with the passkey's name.
+struct PasskeyAdded: Decodable, Sendable {
+    let nickname: String?
+}
 
 /// POST /api/v1/exports: the export is on its way to `email`.
 struct ExportRequestResult: Decodable, Sendable {

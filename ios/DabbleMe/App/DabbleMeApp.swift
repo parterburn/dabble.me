@@ -266,6 +266,23 @@ struct MainTabs: View {
         }
         // A day picked there: its sheet, or the composer, once the calendar has closed.
         .sheet(isPresented: $model.showsDayPicker, onDismiss: { model.finishDayPicker() }) { DayPickerSheet() }
+        // Add a passkey (PasskeyPrompt says when): after the splash, and never over anything else.
+        .sheet(isPresented: $model.showsPasskeyPrompt, onDismiss: { model.passkeyPromptClosed() }) { PasskeyPromptSheet() }
+        .task(id: model.passkeyPromptPending) {
+            guard model.passkeyPromptPending else { return }
+            for _ in 0..<30 {
+                try? await Task.sleep(for: .seconds(1.5))
+                guard !Task.isCancelled, model.passkeyPromptPending else { return }
+                let busy = model.lock.isLocked || UIWindow.isShowingSomethingOverApp || model.composeRequest
+                if !busy {
+                    model.passkeyPromptPending = false
+                    model.showsPasskeyPrompt = true
+                    return
+                }
+            }
+            // Busy the whole time: not this launch.
+            model.passkeyPromptPending = false
+        }
         .onReceive(NotificationCenter.default.publisher(for: .deviceDidShake)) { _ in
             // The open sheet picks another itself; otherwise show one. Not while locked, and not
             // over anything else that's up (a reflection, writing or editing, any sheet).

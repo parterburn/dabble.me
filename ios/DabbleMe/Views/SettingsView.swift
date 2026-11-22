@@ -8,6 +8,7 @@ struct SettingsView: View {
     @Environment(\.openURL) private var openURL
     @State private var confirmingSignOut = false
     @State private var deletingAccount = false
+    @State private var addingPasskey = false
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.system
     @AppStorage(ReminderSettings.enabledKey) private var dailyReminder = false
     /// The time set for it, or `followsEmail` until one is: then it's the daily email's.
@@ -52,6 +53,16 @@ struct SettingsView: View {
                         }
                         .foregroundStyle(.primary)
                         .accessibilityHint("Opens Account Security on dabble.me")
+                        // Until the account has one (managed, and removed, on Account Security).
+                        if me.hasPasskey == false {
+                            Button {
+                                addingPasskey = true
+                            } label: {
+                                Label("Add a Passkey", icon: "slab-lock")
+                            }
+                            .foregroundStyle(.primary)
+                            .sheet(isPresented: $addingPasskey) { PasskeyPromptSheet(fromSettings: true) }
+                        }
                         if me.appleAccountToken != nil {
                             // The plan, and PRO bought here (or managed, when it was bought here).
                             PaneLink {

@@ -27,7 +27,7 @@ module Api
         end
 
         user.update_tracked_fields!(request)
-        render json: MobileApp.token_response(MobileApp.issue_token!(user)), status: :created
+        render json: MobileApp.token_response(MobileApp.issue_token!(user)).merge(MobileApp.passkey_setup(user)), status: :created
       end
     end
   end

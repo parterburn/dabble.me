@@ -88,6 +88,7 @@ class Rack::Attack
   APP_SIGN_IN_PATH = '/api/v1/session'.freeze
   APP_SIGN_UP_PATH = '/api/v1/registration'.freeze
   APP_DELETION_PATH = '/api/v1/account_deletion'.freeze
+  APP_PASSKEYS_PATH = '/api/v1/passkeys'.freeze
 
   throttle('app/logins/ip', limit: 5, period: 20.seconds) do |req|
     req.ip if auth_path(req) == APP_SIGN_IN_PATH && req.post?
@@ -112,6 +113,18 @@ class Rack::Attack
 
   throttle('app/passkeys/sign-in/ip', limit: 10, period: 1.minute) do |req|
     req.ip if auth_path(req) == "#{APP_SIGN_IN_PATH}/passkey" && req.post?
+  end
+
+  # Adding a passkey from the app can take the password: as many guesses as Delete Account.
+  throttle('app/passkeys/add/ip', limit: 5, period: 10.minutes) do |req|
+    req.ip if auth_path(req) == APP_PASSKEYS_PATH && req.post?
+  end
+
+  throttle('app/passkeys/add/token', limit: 5, period: 10.minutes) do |req|
+    next unless auth_path(req) == APP_PASSKEYS_PATH && req.post?
+
+    token = req.env['HTTP_AUTHORIZATION'].to_s[/\ABearer\s+(\S+)/i, 1]
+    Digest::SHA256.hexdigest(token) if token
   end
 
   throttle('app/signups/ip', limit: 5, period: 1.hour) do |req|

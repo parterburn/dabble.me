@@ -70,6 +70,15 @@ module MobileApp
     }
   end
 
+  # With a password sign-in or sign-up, for an account with no passkey yet: a token that lets
+  # the app add one in the next few minutes without asking for the password again
+  # (Api::V1::PasskeysController). Passkey sign-in has no need of it.
+  def passkey_setup(user)
+    return {} if user.webauthn_credentials.exists?
+
+    { passkey_setup_token: Api::V1::PasskeysController.setup_token_for(user) }
+  end
+
   def client?(application)
     application.present? && application.uid == CLIENT_ID
   end
