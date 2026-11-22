@@ -1,7 +1,7 @@
 <% content_for :title, "How to Start Journaling (and Keep Going) + 70 Journal Prompts" %>
 <% content_for :social_title, "How to start journaling, and keep going" %>
-<% content_for :description, "A simple way to start a journal and stick with it: write one line a day, tie it to a habit you already have, and use these 70 journal prompts when you're stuck." %>
-<% content_for :keywords, "how to start journaling,journaling for beginners,journal prompts,daily journal prompts,what to write in a journal,gratitude journal prompts,how to keep a journal,journaling tips" %>
+<% content_for :description, "Start a journal and stick with it: one line a day, tied to a habit you already have, plus five journaling frameworks and 70 prompts for when you're stuck." %>
+<% content_for :keywords, "how to start journaling,journaling for beginners,journal prompts,daily journal prompts,what to write in a journal,gratitude journal prompts,how to keep a journal,journaling tips,journaling frameworks,1-1-1 journaling method,travel journal,work journal" %>
 
 <%
 first_week = [
@@ -127,6 +127,76 @@ prompt_groups = [
   }
 ]
 prompt_count = prompt_groups.sum { |group| group[:prompts].size }
+# Five ways to give a journal a shape. Each gets its own heading, a sample reply to the
+# daily email and a sign-up button. The sample's subject is a real one: EntryMailer sends
+# "It's Tuesday, Nov 17. How was your day?"
+frameworks = [
+  {
+    id: "one-framework", title: "The One Framework: a win, a worry and a thanks",
+    intro: [
+      "If journaling feels like too much, start here. Every evening, write three things: one win from the day, one point of tension or stress, and one bit of gratitude. That's the entry. It takes five minutes, and after a few weeks you start to see what lifts you up and what keeps weighing you down.",
+      %(Sahil Bloom popularized it as the <a href="https://www.sahilbloom.com/newsletter/the-1-1-1-method-forecasts-for-the-future-more" target="_blank" rel="noopener" class="text-accent hover:text-primary underline">1-1-1 method</a>. It sticks because it has a finish line: three lines and you're done.)
+    ],
+    day: Date.new(2026, 11, 17),
+    reply: [
+      "Win: finally sent the proposal I'd been sitting on for two weeks.",
+      "Tension: snapped at Jamie over the dishes. It wasn't about the dishes.",
+      "Gratitude: Mom called just to say she'd read the article I sent her."
+    ]
+  },
+  {
+    id: "travel-log", title: "Travel Log",
+    intro: [
+      "Write down the places you go while you're still there: the name of the tiny restaurant, the street musician who stopped you in your tracks, the wrong turn that led to the best view of the trip. Those are the details that are gone a month after you get home.",
+      "Add a tag like #Lisbon or #RoadTrip2026 to group a trip together. Three years later, when the daily email brings back a random Tuesday in Tokyo, you're back on that train platform."
+    ],
+    day: Date.new(2026, 10, 8),
+    reply: [
+      "Lunch at a place with no sign, two doors up from the tram stop. Grilled sardines, nine euros. #Lisbon",
+      "A man played fado on the steps outside and nobody walked past without stopping.",
+      "Took the 28 the wrong way and ended up at the best viewpoint of the trip."
+    ]
+  },
+  {
+    id: "relationship-time-capsule", title: "Relationship Time Capsule",
+    intro: [
+      "Write about the people you love while the moments are fresh. The thing your partner said that made you laugh, the inside joke your best friend started, the look on your mom's face when you surprised her. You think you'll remember these. Mostly you won't.",
+      "Tag entries with a name, like #Sarah or #Dad, and over the years you build an archive of the people who matter most, one you'll be very glad to have."
+    ],
+    day: Date.new(2026, 11, 15),
+    reply: [
+      "Leo asked if the moon follows our car \"because it likes us.\" #Leo",
+      "Sarah did her airport-announcement voice at dinner and I laughed until I cried. #Sarah",
+      "Dad fixed the back gate without being asked and acted like it was nothing. #Dad"
+    ]
+  },
+  {
+    id: "career-wins-and-lessons", title: "Career Wins & Lessons",
+    intro: [
+      "By the time a performance review comes around, most of what you did that year is gone. Jot down the projects you shipped, the feedback you got and the hard conversations you got through, a line or two at a time.",
+      "Tag them #Work or #Promotion. When you need to update your resume or ask for a raise, you'll have receipts."
+    ],
+    day: Date.new(2026, 11, 11),
+    reply: [
+      "Shipped the billing migration with no downtime. Priya called it the cleanest cutover she's seen. #Work",
+      "Lesson: I should have raised the timeline risk on Monday, not Thursday.",
+      "The scope talk with Sam went better than I feared. Asking first what he needed helped."
+    ]
+  },
+  {
+    id: "gratitude-before-bed", title: "Gratitude Before Bed",
+    intro: [
+      "End each day with one thing you're thankful for, and tag it #Gratitude. Make it specific: one real thing from today, not a list of virtues.",
+      "Over time you build a collection of hundreds of small good things. When a hard day hits, read back through them. Your life is fuller than it feels right now."
+    ],
+    day: Date.new(2026, 11, 13),
+    reply: [
+      "The neighbor brought our bins in while we were away, without being asked.",
+      "I didn't know anyone on the street had noticed we were gone.",
+      "#Gratitude"
+    ]
+  }
+]
 faq_items = [
   {
     question: "How do I start journaling if I've never done it?",
@@ -166,8 +236,8 @@ structured_data = [
     headline: "How to Start Journaling (and Keep Going)",
     path: how_to_start_journaling_path,
     published: "2026-11-14",
-    modified: "2026-11-14",
-    about: ["Journaling", "Journal prompts", "Journaling for beginners"]
+    modified: "2026-11-22",
+    about: ["Journaling", "Journal prompts", "Journaling frameworks", "Journaling for beginners"]
   ),
   {
     "@type": "FAQPage",
@@ -191,7 +261,8 @@ structured_data = [
       </h1>
       <p class="mt-5 text-lg leading-relaxed text-muted">
         A lot of journals are abandoned within a few weeks, and it is rarely for lack of things to say. The plan was
-        too big. Here is a smaller one, and <a href="#journal-prompts" class="text-accent hover:text-primary underline"><%= prompt_count %> journal prompts</a>
+        too big. Here is a smaller one, <a href="#journaling-frameworks" class="text-accent hover:text-primary underline">five frameworks</a>
+        if you like a structure, and <a href="#journal-prompts" class="text-accent hover:text-primary underline"><%= prompt_count %> journal prompts</a>
         for the days you don't know what to write.
       </p>
     </header>
@@ -204,6 +275,7 @@ structured_data = [
         <li><a href="#first-week" class="underline hover:text-primary">A first week, one line a day</a></li>
         <li><a href="#nothing-happened" class="underline hover:text-primary">What to write when nothing happened</a></li>
         <li><a href="#missed-a-day" class="underline hover:text-primary">If you miss a day</a></li>
+        <li><a href="#journaling-frameworks" class="underline hover:text-primary">5 journaling frameworks</a></li>
         <li><a href="#paper-or-app" class="underline hover:text-primary">Paper, an app or email</a></li>
         <li><a href="#journal-prompts" class="underline hover:text-primary"><%= prompt_count %> journal prompts</a></li>
         <li><a href="#faq" class="underline hover:text-primary">Common questions</a></li>
@@ -278,6 +350,39 @@ structured_data = [
         alone. Yesterday is close enough to fill in the next morning. Anything older, let it go.
       </p>
     </section>
+
+    <section class="mt-14" id="journaling-frameworks">
+      <p class="text-sm font-semibold tracking-wide text-accent uppercase">5 journaling frameworks</p>
+      <p class="mt-3 text-muted leading-relaxed">
+        Some people write better with a shape to fill. If “how was your day?” leaves you blank, pick one of these and
+        use it every time for a few weeks. Each comes with a sample reply to the Dabble Me email, three lines long.
+      </p>
+      <p class="mt-3 text-sm text-subtle leading-relaxed">
+        Free accounts get a prompt every other Sunday and can write by email or on the web any day. PRO, at $4 a month
+        or $40 a year, sends one every day and lets you search your entries by tag.
+      </p>
+    </section>
+
+    <% frameworks.each do |framework| %>
+      <section class="mt-14" id="<%= framework[:id] %>">
+        <h2 class="font-serif text-3xl text-primary"><%= framework[:title] %></h2>
+        <% framework[:intro].each do |paragraph| %>
+          <p class="mt-4 text-muted leading-relaxed"><%= paragraph.html_safe %></p>
+        <% end %>
+        <figure class="mt-6 card p-5">
+          <figcaption class="text-sm text-subtle">Re: It's <%= framework[:day].strftime('%A, %b %-d') %>. How was your day?</figcaption>
+          <div class="mt-3 border-t border-subtle pt-4 space-y-1 text-primary leading-relaxed">
+            <% framework[:reply].each do |line| %>
+              <p><%= line %></p>
+            <% end %>
+          </div>
+        </figure>
+        <div class="mt-5 flex flex-col sm:flex-row sm:items-center gap-3">
+          <a href="<%= new_user_registration_path %>" class="btn btn-primary">Try this tonight</a>
+          <span class="text-sm text-subtle">Free. Your first prompt arrives the minute you sign up.</span>
+        </div>
+      </section>
+    <% end %>
 
     <section class="mt-14" id="paper-or-app">
       <h2 class="font-serif text-3xl text-primary">Paper, an app or email</h2>

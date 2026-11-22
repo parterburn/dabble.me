@@ -261,6 +261,12 @@ struct ExportRequestResult: Decodable, Sendable {
 
     var title: String { status == "sent" ? "Export Sent" : "Export Started" }
 
+    /// Asked for on the Delete Account page: the export goes with the account.
+    func message(beforeDeleting: Bool) -> String {
+        guard beforeDeleting else { return message }
+        return message + "\n\nDownload it before you delete your account: deleting it deletes the export too."
+    }
+
     var message: String {
         switch status {
         case "sent": "We've emailed your latest export to \(email) again. The link works for 7 days."
