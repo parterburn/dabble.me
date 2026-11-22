@@ -274,7 +274,7 @@ private extension SettingsView {
 /// (SubscribeOptions; nothing is linked to buy outside the app here).
 struct ProInfoView: View {
     enum Feature {
-        case writing, search, stats
+        case writing, search, stats, photos
     }
 
     let feature: Feature
@@ -288,7 +288,7 @@ struct ProInfoView: View {
     var body: some View {
         NavigationStack {
             ContentUnavailableView {
-                Label(title, systemImage: feature == .writing ? "square.and.pencil" : feature == .stats ? "chart.bar" : "magnifyingglass")
+                Label(title, systemImage: icon)
             } description: {
                 Text(message)
             } actions: {
@@ -306,8 +306,18 @@ struct ProInfoView: View {
         .presentationDetents(model.me?.isPro == false && model.me?.sellsInApp == true ? [.large] : [.medium])
     }
 
+    private var icon: String {
+        switch feature {
+        case .writing: "square.and.pencil"
+        case .search: "magnifyingglass"
+        case .stats: "chart.bar"
+        case .photos: "photo.on.rectangle"
+        }
+    }
+
     private var title: String {
         switch feature {
+        case .photos: "Photos are a PRO feature"
         case .writing: "Writing in the app is a PRO feature"
         case .search: "Search is a PRO feature"
         case .stats: rewindYear.map { "\(String($0)) Rewind and Stats are PRO features" } ?? "Stats are a PRO feature"
@@ -316,6 +326,8 @@ struct ProInfoView: View {
 
     private var message: String {
         switch feature {
+        case .photos:
+            "With Dabble Me PRO you can add up to \(AppModel.maxPhotos) photos to an entry."
         case .writing:
             "You can always write for free by replying to your Dabble Me email. Your reply shows up here as an entry."
         case .search:

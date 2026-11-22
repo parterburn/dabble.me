@@ -1252,3 +1252,44 @@ struct TranscriptCleanupGuardTests {
         #expect(!TranscriptCleanupGuard.isAcceptable(original: said, cleaned: "A sunny beach day left my shoulders burnt, which taught me to bring sunscreen next time for sure."))
     }
 }
+
+/// "Moments from your iPhone" (Journaling Suggestions): what a picked moment adds to an entry.
+struct MomentTextTests {
+    private let us = Locale(identifier: "en_US")
+
+    @Test func aLineForEachThingInTheOrderADayIsRemembered() {
+        var moment = Moment(title: "Morning in Golden Gate Park")
+        moment.places = [.init(place: "Golden Gate Park", city: "San Francisco")]
+        moment.workouts = [.init(name: "Outdoor Walk", meters: 5_230, seconds: 3_720)]
+        moment.steps = 8_214
+        moment.people = ["Sam", "Alex"]
+        moment.songs = [.init(title: "Bloom", by: "The Paper Kites")]
+        moment.podcasts = [.init(title: "Episode 12", by: nil)]
+        moment.feelings = ["Pleasant"]
+        #expect(moment.heading == "Morning in Golden Gate Park")
+        #expect(moment.lines(locale: us) == [
+            "📍 Golden Gate Park, San Francisco",
+            "🏃 Outdoor Walk · 3.2 mi · 1 hr, 2 min",
+            "👣 8,214 steps",
+            "👥 With Sam and Alex",
+            "🎶 The Paper Kites – Bloom",
+            "🎧 Episode 12",
+            "💭 Felt pleasant"
+        ])
+    }
+
+    @Test func repeatsAndBlanksGoInOnce() {
+        var moment = Moment(title: "  ")
+        // A place offered both on its own and in a group, a city that's also the place's name,
+        // a workout with nothing to say but that it happened.
+        moment.places = [.init(place: "Home", city: "Denver"), .init(place: "Home", city: "Denver"), .init(place: "Denver", city: "Denver"), .init(place: " ", city: nil)]
+        moment.workouts = [.init(name: nil, meters: 0, seconds: 30)]
+        moment.songs = [.init(title: "", by: " ")]
+        #expect(moment.heading == nil)
+        #expect(moment.lines(locale: us) == ["📍 Home, Denver", "📍 Denver", "🏃 Workout"])
+    }
+
+    @Test func nothingToSayAddsNothing() {
+        #expect(Moment(title: "").lines().isEmpty)
+    }
+}

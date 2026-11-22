@@ -2753,9 +2753,10 @@ final class JournalViewsTests: XCTestCase {
         editor.tap()
         XCTAssertTrue(app.buttons["Add Photos"].waitForExistence(timeout: 5))
         app.buttons["Add Photos"].tap()
-        XCTAssertTrue(app.alerts["Photos are a PRO feature"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["Photos are a PRO feature"].waitForExistence(timeout: 5))
         snap("free-photos-pro")
-        app.alerts.buttons["OK"].tap()
+        app.buttons["Done"].tap()
+        XCTAssertTrue(app.buttons["Add Photos"].waitForExistence(timeout: 5))
         snap("free-compose-bar")
         app.buttons["Cancel"].tap()
         if app.buttons["Discard Changes"].waitForExistence(timeout: 2) { app.buttons["Discard Changes"].tap() }

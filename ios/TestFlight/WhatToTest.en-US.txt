@@ -1,33 +1,17 @@
-Build 116 sells Dabble Me PRO in the app (Monthly and Yearly). TestFlight purchases use Apple's sandbox: nothing is charged. In TestFlight a subscription renews once a day, whichever plan, and stops on its own after 6 renewals.
+Build 117 adds Moments from your iPhone: Apple's Journaling Suggestions, inside the composer's lightbulb. iPhone only (not iPad), and only on a real device.
 
-Use a Free account for these, not one that pays on dabble.me.
+MOMENTS
+- Start an entry and tap the lightbulb. Under Writing ideas you should see "Moments from your iPhone".
+- Tap it. Apple's suggestions sheet opens: photos, places, workouts, music, people. The first time, iOS may ask to allow Journaling Suggestions (Settings → Privacy & Security → Journaling Suggestions).
+- Pick a moment. Its title goes into the entry in bold, with a line for each thing in it, for example "📍 Golden Gate Park, San Francisco", "🏃 Outdoor Walk · 3.2 mi · 1 hr, 2 min", "🎶 Artist – Song".
+- A moment that's a question from Apple (a Reflection) goes in as a bold question, like the lightbulb's own prompts.
+- Before iOS 26, workouts say "Workout" instead of their name.
 
-BUY
-- Settings, Plan. You should see the Yearly and Monthly plans with their prices, Restore Purchases, and the Terms of Use and Privacy Policy links.
-- If a free trial is set up in App Store Connect, each plan should say "2 weeks free, then" its price (the first time this Apple Account sees it only).
-- Tap a plan and confirm. The plan should change to PRO within a few seconds, and Search and Stats should open.
-- You should get the "Thanks for subscribing" email.
-- Settings, Plan should now say when it renews, with Manage Subscription (Apple's own sheet).
-- Searching or opening Stats on a Free account shows the same plans under the PRO explanation.
+PHOTOS
+- On a PRO account, a moment's photos join the entry's photos (up to 8 in all). Videos aren't added. If they don't all fit, a message says how many were left out.
+- On a Free account, the moment's words go in, and then a sheet says photos are a PRO feature, with the plans to subscribe.
+- On a Free account, tapping the Photos button in the composer now shows that same sheet with the plans (it used to be an alert).
 
-RENEW, CANCEL, EXPIRE
-- Come back the next day: it renews, and stays PRO.
-- In Manage Subscription, cancel. Plan should say Ends instead of Renews, and PRO stays until then.
-- After it ends (the next day), the account should go back to Free. Pull to refresh if it still says PRO.
-- If a renewal fails (a sandbox card problem), Plan should ask you to update your payment details, with no Renews date, and PRO stays during the grace period.
-
-UPGRADE
-- On Monthly, open Manage Subscription and switch to Yearly. The plan should become Yearly right away.
-
-RESTORE
-- Delete the app, reinstall, sign in to the same account, then Settings, Plan, Restore Purchases. It should stay or become PRO.
-
-ANOTHER ACCOUNT
-- With an active subscription, sign out and sign in to a different Free account. Settings, Plan should say this Apple Account already pays for PRO on a different Dabble Me account, with no purchase buttons. Restore Purchases should say the same.
-
-ACCOUNTS THAT PAY ON THE WEB
-- Sign in to an account that's PRO through dabble.me. Settings, Plan should say it's through dabble.me, with nothing to buy. With a card subscription (Stripe), it should also say when it renews, or Ends if it's been cancelled on the web (allow up to 6 hours after a change).
-- If that account's Apple Account is also paying for PRO, Plan should offer Manage App Store Subscription so the second subscription can be cancelled.
-
-DELETE ACCOUNT
-- With an active App Store subscription, Settings, Delete Account should tell you to cancel it in iOS Settings (deleting the account doesn't stop Apple's billing).
+CHECK
+- Nothing changes on iPad: no Moments row.
+- The calendar events and the question still show in the lightbulb as before.

@@ -7,6 +7,10 @@
 		<string>applinks:dabble.me</string>
 		<string>webcredentials:dabble.me</string>
 	</array>
+	<key>com.apple.developer.journal.allow</key>
+	<array>
+		<string>suggestions</string>
+	</array>
 	<key>com.apple.security.application-groups</key>
 	<array>
 		<string>group.me.dabble.ios</string>
