@@ -1,5 +1,9 @@
-Passkey sheet spacing: Not Now no longer sits right against the Add a Passkey button.
+Settings cleanup: your account details now live on one Account page.
 
-- Sign out, then sign in with your email and password on an account with no passkey. In the "Add a passkey" sheet that comes up, Not Now should sit clearly below Add a Passkey, with a visible gap between them.
-- Settings → Add a Passkey: the same sheet's Cancel button has the same gap below Add a Passkey.
-- Try it at a large text size too: both buttons stay tappable and the sheet still scrolls.
+- Settings starts with an Account row showing your email. Tap it: the Account page has Name (tap to change it), your Email, Add a Passkey (only while the account has none), Account Security (opens dabble.me), and Export Entries.
+- Add a Passkey has an olive icon like the other rows, with black words.
+- Add a Passkey from the Account page: the sheet still ends on "Passkey added", and the row goes away once you tap Done.
+- Export Entries from the Account page still asks Cancel/Export first, then emails the link.
+- Change your name from Account → Name and go Back: it saves, and the Account row's page shows the new name.
+- The "On dabble.me" heading is gone. The Claude/ChatGPT Connector row now sits right above Help & Support.
+- Plan and Manage Hashtags stay on the main Settings page, under the Account row.

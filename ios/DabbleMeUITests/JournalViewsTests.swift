@@ -559,7 +559,7 @@ final class JournalViewsTests: XCTestCase {
         close.tap()
 
         tab(app, "Settings").tap()
-        XCTAssertTrue(app.staticTexts["Email"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Account'")).firstMatch.waitForExistence(timeout: 5))
         snap("settings-top")
         app.swipeUp()
         snap("settings-privacy")
@@ -742,8 +742,8 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertTrue(editor.waitForNonExistence(timeout: 10))
 
         tab(app, "Settings").tap()
-        if !app.staticTexts["Email"].waitForExistence(timeout: 5) { tab(app, "Settings").tap() }
-        XCTAssertTrue(app.staticTexts["Email"].waitForExistence(timeout: 10))
+        if !app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Account'")).firstMatch.waitForExistence(timeout: 5) { tab(app, "Settings").tap() }
+        XCTAssertTrue(app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Account'")).firstMatch.waitForExistence(timeout: 10))
         print("PLAN_LINK=\(app.links.matching(NSPredicate(format: "label CONTAINS 'Plan'")).firstMatch.exists)")
         snap("settings-plan")
     }

@@ -8,7 +8,6 @@ struct SettingsView: View {
     @Environment(\.openURL) private var openURL
     @State private var confirmingSignOut = false
     @State private var deletingAccount = false
-    @State private var addingPasskey = false
     @AppStorage(AppTheme.storageKey) private var theme = AppTheme.system
     @AppStorage(ReminderSettings.enabledKey) private var dailyReminder = false
     /// The time set for it, or `followsEmail` until one is: then it's the daily email's.
@@ -35,32 +34,12 @@ struct SettingsView: View {
                     .listRowBackground(Color.clear)
                     .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 0))
                 if let me = model.me {
-                    Section("Account") {
-                        // Your name, changed here and saved to the account.
+                    Section {
+                        // Name, email, passkey, Account Security and Export Entries, on a page of their own.
                         PaneLink {
-                            NameSettingsView()
+                            AccountSettingsView()
                         } label: {
-                            LabeledContent("Name", value: me.name ?? me.firstName ?? "Add your name")
-                        }
-                        // Your email opens Account Security on dabble.me (password, passkeys, 2FA).
-                        Link(destination: me.securityUrl) {
-                            LabeledContent("Email") {
-                                HStack(spacing: 8) {
-                                    Text(me.email)
-                                    ExternalLinkIcon()
-                                }
-                            }
-                        }
-                        .foregroundStyle(.primary)
-                        .accessibilityHint("Opens Account Security on dabble.me")
-                        // Until the account has one (managed, and removed, on Account Security).
-                        if me.hasPasskey == false {
-                            Button {
-                                addingPasskey = true
-                            } label: {
-                                Label("Add a Passkey", icon: "slab-lock")
-                            }
-                            .foregroundStyle(.primary)
+                            LabeledContent("Account", value: me.email)
                         }
                         if me.appleAccountToken != nil {
                             // The plan, and PRO bought here (or managed, when it was bought here).
@@ -90,16 +69,6 @@ struct SettingsView: View {
                             Label("Manage Hashtags", icon: "slab-tag")
                         }
                         .disabled(!me.isPro)
-                        // Emailed, as the web's Export page does, with no sign-in to the web first.
-                        // Black words like the rows around it, and an olive icon like theirs
-                        // (a button would tint both; .primary on the whole row greyed the icon).
-                        ExportEntriesButton {
-                            Label {
-                                Text("Export Entries").foregroundStyle(.primary)
-                            } icon: {
-                                appIcon("slab-arrow-up-from-line").foregroundStyle(.tint)
-                            }
-                        }
                     }
                 }
 
@@ -155,14 +124,6 @@ struct SettingsView: View {
                             ExternalLinkLabel("Claude/ChatGPT Connector", icon: "slab-claude")
                         }
                     }
-                    Link(destination: model.me?.securityUrl ?? AppConfig.webURL("security")) {
-                        ExternalLinkLabel("Account Security", icon: "slab-shield")
-                    }
-                } header: {
-                    Text("On dabble.me")
-                }
-
-                Section {
                     Link(destination: AppConfig.webURL("support")) {
                         ExternalLinkLabel("Help & Support", icon: "slab-circle-question")
                     }
@@ -209,9 +170,6 @@ struct SettingsView: View {
             .toolbar(removing: .title) // the heading in the list is the title
             .toolbarVisibility(.hidden, for: .navigationBar) // like Today: no empty bar above it
             .task { canLinkToSubscribe = await Storefront.current?.countryCode == "USA" }
-            // On the list, not the row: the row goes once the passkey is added, and would take
-            // the sheet (and its "Passkey added") with it.
-            .sheet(isPresented: $addingPasskey) { PasskeyPromptSheet(fromSettings: true) }
         }
         // A name save that failed, from the Name page (on Done or on going Back). On the stack,
         // so it shows over the Name page too.
