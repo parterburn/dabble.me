@@ -18,7 +18,21 @@ describe 'Pages' do
 
   it 'has correct title for FAQs page' do
     visit support_path
-    expect(page).to have_title 'Support and FAQs — Dabble me.'
+    expect(page).to have_title 'Support & FAQs — Dabble Me Private Journal'
+  end
+
+  it 'lists every visible support question in the FAQPage structured data, once' do
+    visit support_path
+
+    graph = all('script[type="application/ld+json"]', visible: false).map { |tag| JSON.parse(tag.text(:all)) }
+    faq = graph.find { |node| node['@type'] == 'FAQPage' }
+    names = faq['mainEntity'].map { |question| question['name'] }
+    visible = ApplicationHelper.faqs.values.flat_map { |section| section[:questions].map { |qa| qa[:q] } }
+
+    expect(names).to eq visible
+    expect(names).to include("How do On This Day, Year in Review and #hashtag dates work?")
+    expect(names.grep(/export/i).size).to eq 1
+    expect(faq['mainEntity'].map { |q| q.dig('acceptedAnswer', 'text') }).to all(satisfy { |text| text.present? && !text.match?(/<|&#39;|&quot;/) })
   end
 
   it 'points to the iOS app page and to connecting Claude or ChatGPT, in plain words' do
