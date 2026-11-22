@@ -20,6 +20,12 @@ module Admin
       "wrote_72h" => "First entry within 72 hours",
       "upgraded" => "Currently PRO"
     }.freeze
+    SIGNUP_PLATFORM_LABELS = {
+      "web" => "Web",
+      "ios_app" => "iOS app",
+      "android_app" => "Android app",
+      nil => "Unknown (before tracking)"
+    }.freeze
 
     attr_reader :now, :as_of, :revenue
 
@@ -198,6 +204,35 @@ module Admin
       @sources ||= begin
         rows = live_source_rows
         rows.sort_by { |row| [-row[:upgrades_30d], -row[:mrr_cents], -row[:signups_30d]] }.first(20)
+      end
+    end
+
+    # Where accounts were made (users.signup_platform): the last 30 days, with how many wrote a
+    # first entry and went PRO, and all time. Accounts from before it was recorded are Unknown.
+    def signup_platforms
+      @signup_platforms ||= begin
+        users = User.not_deleted
+        users_30d = users.where(created_at: (as_of - 30.days)..as_of)
+        all_time = users.group(:signup_platform).count
+        signups = users_30d.group(:signup_platform).count
+        firsts = users_30d.where(id: Entry.unscoped.where(user_id: users_30d.select(:id)).select(:user_id))
+                          .group(:signup_platform).count
+        upgrades = users_30d.paid_pro.group(:signup_platform).count
+
+        SIGNUP_PLATFORM_LABELS.filter_map do |platform, label|
+          next if all_time[platform].to_i.zero? && platform == "android_app"
+
+          signups_count = signups[platform].to_i
+          {
+            platform: label,
+            signups_30d: signups_count,
+            share_30d: percent(signups_count, signups.values.sum),
+            first_entries_30d: firsts[platform].to_i,
+            upgrades_30d: upgrades[platform].to_i,
+            activation_rate: rate(firsts[platform].to_i, signups_count),
+            all_time: all_time[platform].to_i
+          }
+        end
       end
     end
 

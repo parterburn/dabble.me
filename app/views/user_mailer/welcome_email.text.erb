@@ -1,6 +1,12 @@
+<% if @user.signed_up_in_app? -%>
+Welcome to Dabble Me - the simple & private journal that you'll actually use! You're all set up in the app, so that's the easiest place to write your first entry.
+
+How's your day going? Open the Dabble Me app and write a sentence or two about it. That's your first entry.
+<% else -%>
 Welcome to Dabble Me - the simple & private journal that you'll actually use! Since you're new here, we're going to make it easy for you to write your first entry.
 
 How's your day going? Just reply to this email with your answer, and it's instantly saved in your Dabble Me account at https://<%= ENV['MAIN_DOMAIN'] %>/entries. Try it!
+<% end -%>
 
 Helpful tips:
 
@@ -9,16 +15,33 @@ Helpful tips:
 2. There's no wrong way to do this. This is your private timeline.
 
 3. Tag your entries with #hashtags to make it easy to find related posts.
-<% if @user.is_free? %>
+<% tip = 3 -%>
+<% if @user.signed_up_in_app? -%>
 
-4. As a free user, you'll receive an email every other week on Sunday.
+<%= tip += 1 %>. Turn on a daily reminder in the app's Settings → Reminders, and it'll nudge you to write.
+<% end -%>
+<% if @user.is_free? -%>
 
-5. Unlock premium features like changing email frequency, editing entries, and attaching photos to your reply by subscribing to Dabble Me PRO: https://dabble.me/subscribe
-<% end %>
+<% if @user.signed_up_in_app? -%>
+<%= tip += 1 %>. As a free user, you'll also get an email every other week on Sunday. Reply to it and your answer is saved as an entry too.
+<% else -%>
+<%= tip += 1 %>. As a free user, you'll receive an email every other week on Sunday.
+<% end -%>
+
+<% if @user.signed_up_in_app? -%>
+<%= tip += 1 %>. Unlock premium features like photos, editing entries, search, and On This Day with Dabble Me PRO, in the app's Settings or on the web: https://dabble.me/subscribe
+<% else -%>
+<%= tip += 1 %>. Unlock premium features like changing email frequency, editing entries, and attaching photos to your reply by subscribing to Dabble Me PRO: https://dabble.me/subscribe
+<% end -%>
+<% end -%>
 
 ----------------------------
 
+<% if @user.signed_up_in_app? -%>
+Prefer email? Reply to this one, or email <%= @user.user_key %>@<%= ENV['SMTP_DOMAIN'] %> any time, and it's saved as an entry (hint: add this to your contacts).
+<% else -%>
 You can always email <%= @user.user_key %>@<%= ENV['SMTP_DOMAIN'] %> to post new entries (hint: add this to your contacts).
+<% end -%>
 
 For reference, your username is: <%= @user.email %>
 
