@@ -3,7 +3,7 @@
 module Api
   module V1
     class MeController < BaseController
-      # Names longer than this aren't names (the web form has no cap; the app asks for one).
+      # A cap on each name sent here (the web form has none).
       MAX_NAME_LENGTH = 100
 
       def show

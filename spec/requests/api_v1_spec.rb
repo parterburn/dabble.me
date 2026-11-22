@@ -95,6 +95,7 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
 
   describe "PATCH /api/v1/me" do
     it "sets the first name and returns the account" do
+      free_user.update!(first_name: nil, last_name: nil)
       patch "/api/v1/me", params: { first_name: "  Sam " }, headers: auth(free_user), as: :json
       expect(response).to have_http_status(:ok)
       expect(json).to include("first_name" => "Sam", "last_name" => nil, "name" => "Sam", "email" => free_user.email)
@@ -112,9 +113,10 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
     end
 
     it "refuses a name that's too long" do
+      free_user.update!(first_name: "Sam")
       patch "/api/v1/me", params: { first_name: "a" * 101 }, headers: auth(free_user), as: :json
       expect(response).to have_http_status(:unprocessable_content)
-      expect(free_user.reload.first_name).to be_nil
+      expect(free_user.reload.first_name).to eq("Sam")
     end
 
     it "needs a token" do

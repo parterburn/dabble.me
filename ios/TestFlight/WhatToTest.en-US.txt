@@ -1,4 +1,4 @@
-Build 120 lets you change your name in the app.
+Build 122 lets you change your name in the app.
 
 NAME
 - Open Settings. The Name row (at the top, under Account) now opens a Name page in the app instead of dabble.me.
