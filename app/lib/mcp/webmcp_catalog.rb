@@ -528,7 +528,7 @@ module Mcp
         { title: 'Dabble Me vs. Day One for AI journaling', url: "#{@base_url}/dabble-me-vs-day-one-ai-journaling", description: 'Remote-vs-local MCP comparison.' },
         { title: 'Day One alternative', url: "#{@base_url}/day-one-alternative", description: 'Import Day One and journal by email.' },
         { title: 'Dabble Me journal app for iPhone and iPad', url: "#{@base_url}/journal-app", description: 'What the iOS app does, with screenshots.' },
-        { title: 'How to start journaling', url: "#{@base_url}/how-to-start-journaling", description: "A beginner's guide to keeping a journal, with journal prompts." },
+        { title: 'How to start journaling', url: "#{@base_url}/how-to-start-journaling", description: "A beginner's guide to keeping a journal, with journaling frameworks and journal prompts." },
         { title: 'Best journaling apps for ChatGPT and Claude', url: "#{@base_url}/best-journaling-apps-with-mcp", description: 'A plain-language guide: what to look for, example prompts, and the journals that connect today.' },
         { title: 'Privacy policy', url: "#{@base_url}/privacy", description: 'How journal data and connected apps are handled.' },
         { title: 'Support', url: "#{@base_url}/support", description: 'Product FAQs.' }

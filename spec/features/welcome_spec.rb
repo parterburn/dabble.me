@@ -208,6 +208,12 @@ describe 'Pages' do
     expect(page).to have_css 'h2', text: '70 journal prompts'
     expect(page.all('#journal-prompts ol li').size).to eq 70
     expect(page).to have_css 'h3', text: 'Gratitude journal prompts'
+    expect(page).to have_css 'h1', count: 1
+    ['The One Framework', 'Travel Log', 'Relationship Time Capsule', 'Career Wins & Lessons', 'Gratitude Before Bed'].each do |name|
+      expect(page).to have_css 'h2', text: name
+    end
+    expect(page.all('#journaling-frameworks ~ section figure').size).to eq 5
+    expect(page).to have_link('Try this tonight', href: new_user_registration_path, count: 5)
     expect(page).to have_link('app for iPhone and iPad', href: journal_app_path)
     expect(page.find('main').text.split.size).to be >= 1200
     expect(page.html).to include('"@type":"FAQPage"')
