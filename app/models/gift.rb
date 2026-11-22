@@ -56,13 +56,20 @@ class Gift
   def redeem!(user)
     return false unless redeemable_by?(user)
 
+    redeemed = false
     User.transaction do
+      # Two sign-ups racing for a capped code's last place: take turns, then check again.
+      if limit
+        User.connection.execute(User.sanitize_sql(["SELECT pg_advisory_xact_lock(hashtext(?))", "gift:#{code}"]))
+        raise ActiveRecord::Rollback unless available?
+      end
       GiftRedemption.create!(user: user, code: code, expires_at: LENGTH.from_now)
       user.update!(plan: PLAN)
       # Same as a paid upgrade: put back the email days the Free plan cut to Sunday.
       user.update!(frequency: user.previous_frequency) if Array(user.previous_frequency).any?
+      redeemed = true
     end
-    true
+    redeemed
   rescue ActiveRecord::RecordNotUnique
     false
   end

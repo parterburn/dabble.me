@@ -87,6 +87,16 @@ RSpec.describe 'Gift links', type: :request do
       expect(User.find_by(email: 'three@example.com')).to be_is_free
     end
 
+    it 'rechecks the cap when redeeming, for a code used up after it was looked up' do
+      gift = Gift.find('friends')
+      2.times { GiftRedemption.create!(user: FactoryBot.create(:user), code: 'friends', expires_at: 1.year.from_now) }
+      user = FactoryBot.create(:user)
+
+      expect(gift.redeem!(user)).to be(false)
+      expect(user.reload).to be_is_free
+      expect(GiftRedemption.where(code: 'friends').count).to eq(2)
+    end
+
     it 'keeps the gift page when the form has an error' do
       post user_registration_path, params: {
         gift_code: 'family2026',
