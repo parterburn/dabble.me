@@ -1,19 +1,19 @@
-Restore Purchases is clearer: it says what happened, and asks for your Apple Account password only when it has to.
+Moments from your iPhone (Apple's Journaling Suggestions) is easier to find, and a reflection no longer adds its category to the entry.
 
-Use a Free account. TestFlight purchases use Apple's sandbox: nothing is charged.
+Use an iPhone. Moments isn't on iPad.
 
-RESTORE WITH A SUBSCRIPTION ON THIS DEVICE
-- Buy PRO (Settings, Plan), then on another Free account, or after deleting and reinstalling the app, sign in to the account that bought it.
-- Settings, Plan, Restore Purchases. It should turn PRO without asking for a password, and the Plan page should then show PRO.
+FINDING IT
+- Start a new entry and tap the lightbulb.
+- Under the prompt and the day's events there should be a line, then MOMENTS FROM YOUR IPHONE in small olive capitals with an arrow, like the WRITING IDEAS heading.
+- It should stay at the bottom of the panel while a busy calendar day scrolls above it.
+- Edit an entry with no prompt, no template and nothing on the calendar: Moments should show without a line over it.
+- Tap it: Apple's sheet opens.
 
-RESTORE WITH NOTHING TO RESTORE
-- On an Apple Account that has never bought Dabble Me PRO, tap Restore Purchases.
-- Apple may ask for your Apple Account password. That prompt is Apple's own; the line under the button says so.
-- After you sign in, it should say "No active Dabble Me PRO subscription was found for this Apple Account."
-- Cancel the password prompt instead: nothing should be shown, and you can tap Restore Purchases again.
+ADDING A REFLECTION
+- In Apple's sheet, pick a reflection (for example a Creativity Reflection).
+- Its question should go in bold, the way a prompt does, with no "Creativity Reflection" line above it.
 
-ANOTHER ACCOUNT
-- With a subscription bought for a different Dabble Me account, Restore Purchases should say this Apple Account already pays for PRO on another account.
+ADDING ANY OTHER MOMENT
+- Pick a place, workout, photo or song moment. Its title should still go in bold, with a line for each thing under it, as before.
 
-OFFLINE
-- With Airplane Mode on, Restore Purchases should say the App Store couldn't be reached, or that Dabble Me couldn't be reached.
+If Apple's sheet is empty, turn on Settings, Privacy & Security, Journaling Suggestions and its categories.
