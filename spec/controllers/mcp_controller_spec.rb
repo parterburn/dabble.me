@@ -21,11 +21,57 @@ RSpec.describe McpController, type: :controller do
   end
 
   describe "invoke" do
-    context "without a valid OAuth token" do
-      it "returns unauthorized" do
-        post :invoke, params: { jsonrpc: "2.0", id: 1, method: "initialize" }, as: :json
+    context "without a token" do
+      let(:resource_metadata) { %(resource_metadata="http://test.host/.well-known/oauth-protected-resource/mcp") }
+
+      it "answers initialize, tools/list and prompts/list so directories can read the server" do
+        post :invoke, params: { jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-11-25" } }, as: :json
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body).dig("result", "serverInfo", "name")).to eq("dabble-me")
+
+        post :invoke, params: { jsonrpc: "2.0", id: 2, method: "tools/list", params: {} }, as: :json
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body).dig("result", "tools").map { |tool| tool["name"] })
+          .to contain_exactly("search_entries", "list_entries", "analyze_entries", "get_image_upload_url", "create_entry")
+
+        post :invoke, params: { jsonrpc: "2.0", id: 3, method: "prompts/list", params: {} }, as: :json
+        expect(response).to have_http_status(:ok)
+        expect(JSON.parse(response.body).dig("result", "prompts", 0, "name")).to eq("journal_wrapped")
+      end
+
+      it "refuses tools/call with a 401 that sends Claude and ChatGPT to sign in" do
+        expect {
+          post :invoke, params: { jsonrpc: "2.0", id: 4, method: "tools/call", params: { name: "search_entries", arguments: { query: "x" } } }, as: :json
+        }.not_to change(McpToolInvocation, :count)
 
         expect(response).to have_http_status(:unauthorized)
+        expect(response.headers["WWW-Authenticate"]).to start_with("Bearer").and include(resource_metadata).and include('scope="mcp:access"')
+        expect(response.body).not_to include("result")
+      end
+
+      it "refuses a batch that mixes discovery with a tool call" do
+        post :invoke, body: [
+          { jsonrpc: "2.0", id: 1, method: "tools/list" },
+          { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "list_entries", arguments: {} } }
+        ].to_json, as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(response.headers["WWW-Authenticate"]).to include(resource_metadata)
+      end
+
+      it "refuses any method outside the discovery list" do
+        post :invoke, params: { jsonrpc: "2.0", id: 5, method: "resources/list", params: {} }, as: :json
+        expect(response).to have_http_status(:unauthorized)
+      end
+    end
+
+    context "with an expired or revoked token" do
+      it "returns 401 even for initialize, so the client refreshes or signs in again" do
+        request.env["HTTP_AUTHORIZATION"] = "Bearer not-a-real-token"
+        post :invoke, params: { jsonrpc: "2.0", id: 1, method: "initialize", params: {} }, as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+        expect(response.headers["WWW-Authenticate"]).to include("resource_metadata=").and include('error="invalid_token"')
       end
     end
 
@@ -93,6 +139,7 @@ RSpec.describe McpController, type: :controller do
           "create_entry"
         )
         tools.each_value do |tool|
+          expect(tool.dig("_meta", "securitySchemes")).to eq([{ "type" => "oauth2", "scopes" => ["mcp:access"] }])
           expect(tool.dig("annotations", "title")).to eq(tool.fetch("title"))
           expect(tool.dig("annotations", "title")).to be_present
         end

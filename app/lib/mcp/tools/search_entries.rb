@@ -3,6 +3,8 @@
 module Mcp
   module Tools
     class SearchEntries < MCP::Tool
+      meta Helpers::OAUTH_REQUIRED_META
+
       tool_name 'search_entries'
       title 'Search journal entries'
       description 'Find text in the signed-in user’s private Dabble Me journal. Use for requests such as “find every time I mentioned burnout,” searching a quoted phrase, or finding a topic within an inclusive date range. Returns matching entry dates, excerpts, hashtags, and each photo’s image_url (a direct https link). Spotify songs saved on an entry are appended after its excerpt, one per line as “🎶 [Artist - Title](https://open.spotify.com/track/…)”. Dated tags are appended at the end, one per line, as “#Leo (9 years, 2 days)”. Never searches another user’s journal.'

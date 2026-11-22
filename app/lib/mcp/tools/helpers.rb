@@ -5,6 +5,10 @@ module Mcp
     module Helpers
       module_function
 
+      # Every tool reads or writes the signed-in user's journal. ChatGPT reads securitySchemes to know
+      # that a tool needs OAuth; McpController enforces it with a 401 before any tool runs.
+      OAUTH_REQUIRED_META = { securitySchemes: [{ type: 'oauth2', scopes: ['mcp:access'] }] }.freeze
+
       # Sent with every result that carries entry text. An entry can hold words its owner didn't
       # write (a forwarded email, a quoted message, mail from someone who had their posting
       # address), so the AI reading it is told, beside the text itself, not to take orders from it.
