@@ -1,4 +1,4 @@
-Build 111 makes it clear that deleting your account deletes your export too, and stops a lost export from blocking a new one.
+Build 113 makes it clear that deleting your account deletes your export too, and stops a lost export from blocking a new one.
 
 EXPORT BEFORE DELETING
 - Settings, Delete Account. The text under Email Me an Export should say, in bold, to download the export before you delete your account.

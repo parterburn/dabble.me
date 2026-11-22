@@ -25,6 +25,8 @@ module SentrySensitiveScrubber
     text_body
     entry
     entry_template
+    first_name
+    last_name
   ].freeze
 
   module_function

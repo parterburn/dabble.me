@@ -20,7 +20,6 @@ struct AuthFormView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.openURL) private var openURL
 
-    @State private var firstName = ""
     @State private var email = ""
     @State private var password = ""
     @State private var code = ""
@@ -31,7 +30,7 @@ struct AuthFormView: View {
     @FocusState private var focus: Field?
 
     private enum Field: Hashable {
-        case firstName, email, password, code
+        case email, password, code
     }
 
     private var isSignUp: Bool { mode == .signUp }
@@ -57,13 +56,6 @@ struct AuthFormView: View {
                 }
 
                 Section {
-                    if isSignUp {
-                        TextField("First Name (optional)", text: $firstName)
-                            .textContentType(.givenName)
-                            .submitLabel(.next)
-                            .focused($focus, equals: .firstName)
-                            .onSubmit { focus = .email }
-                    }
                     TextField("Email", text: $email)
                         .textContentType(.username)
                         .keyboardType(.emailAddress)
@@ -167,7 +159,7 @@ struct AuthFormView: View {
                 }
             }
             .interactiveDismissDisabled(isWorking)
-            .onAppear { focus = isSignUp ? .firstName : .email }
+            .onAppear { focus = .email }
         }
     }
 
@@ -209,12 +201,12 @@ struct AuthFormView: View {
         isWorking = true
         error = nil
         let email = email.trimmingCharacters(in: .whitespacesAndNewlines)
-        let firstName = firstName.trimmingCharacters(in: .whitespacesAndNewlines)
         Task {
             defer { isWorking = false }
             do {
                 if isSignUp {
-                    try await model.signUp(email: email, password: password, firstName: firstName)
+                    // No name: the email is the account. A name, if wanted, is added in Settings.
+                    try await model.signUp(email: email, password: password, firstName: nil)
                 } else {
                     try await model.signIn(email: email, password: password, code: needsCode ? code : nil)
                 }
