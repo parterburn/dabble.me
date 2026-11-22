@@ -111,6 +111,16 @@ RSpec.describe 'Gift links', type: :request do
       expect(user.reload).to be_gifted_pro
     end
 
+    it 'offers a gifted account the checkout buttons on the subscribe page' do
+      user = FactoryBot.create(:user, plan: Gift::PLAN)
+      GiftRedemption.create!(user: user, code: 'family2026', expires_at: 1.month.from_now)
+      sign_in user
+
+      get subscribe_path
+
+      expect(response.body).to include(checkout_path(plan: 'yearly'))
+    end
+
     it "doesn't touch an account that already pays for PRO" do
       user = FactoryBot.create(:user, plan: 'PRO Yearly PayHere')
       sign_in user
