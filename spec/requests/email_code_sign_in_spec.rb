@@ -243,6 +243,18 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
         expect(response).to have_http_status(:ok)
         expect(json["access_token"]).to be_present
       end
+
+      it "lets one emailed code buy only a few authenticator guesses" do
+        send_app_code(user.email)
+        code = last_code
+        EmailCode::MAX_ATTEMPTS.times do
+          verify_app_code(user.email, code, otp_code: "000000")
+          expect(json["error"]).to eq("invalid_otp")
+        end
+
+        verify_app_code(user.email, code, otp_code: ROTP::TOTP.new(user.reload.otp_auth_secret).now)
+        expect(json["error"]).to eq("invalid_code")
+      end
     end
 
     it "keeps an account set to be deleted, as a password sign-in does" do

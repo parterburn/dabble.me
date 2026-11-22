@@ -118,6 +118,11 @@ class EmailCode < ActiveRecord::Base
     end
   end
 
+  # A wrong guess at something this code unlocks (the account's 2FA code after it).
+  def count_failed_attempt!
+    self.class.where(id: id).update_all('attempts = attempts + 1')
+  end
+
   # Marks this code used, and voids the address's other codes for the same purpose. False when
   # another request used it first.
   def use!

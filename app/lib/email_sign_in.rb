@@ -71,10 +71,9 @@ module EmailSignIn
     Completed.new(user: user, created: created)
   end
 
-  # Where the account was made (users.signup_platform, for the welcome email), when the app
-  # has that column.
+  # Where the account was made (users.signup_platform, for the welcome email and Admin Stats).
   def set_platform(user, platform)
-    user.signup_platform = platform if user.respond_to?(:signup_platform=)
+    user.signup_platform = platform
   end
 
   # Two requests with the same code can't both get here (EmailCode#use!), but a sign-up by

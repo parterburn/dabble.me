@@ -34,7 +34,7 @@ module Api
         user = EmailSignIn.account_for(email)
         if user
           return render_error(:unauthorized, 'invalid_code', invalid_code_message) unless user.active_for_authentication?
-          return if otp_failed?(user)
+          return if otp_failed?(user, email_code)
         end
 
         result = EmailSignIn.complete!(email_code, email) { |new_user| EmailSignIn.set_platform(new_user, 'ios_app') }
@@ -64,14 +64,17 @@ module Api
       end
 
       # Renders the answer and returns true when the account has 2FA and its code is missing or
-      # wrong. The emailed code isn't used up, so the app sends it again with the 2FA code.
-      def otp_failed?(user)
+      # wrong. The emailed code isn't used up, so the app sends it again with the 2FA code. A wrong
+      # 2FA code counts as a wrong guess on the emailed code, so one emailed code buys at most
+      # EmailCode::MAX_ATTEMPTS 2FA guesses whatever the IP (Rack::Attack limits only by IP here).
+      def otp_failed?(user, email_code)
         return false unless user.otp_enabled?
 
         otp = params[:otp_code].to_s.gsub(/\s/, '')
         if otp.blank?
           render_error(:unauthorized, 'otp_required', 'Enter the 6-digit code from your authenticator app.')
         elsif !user.validate_otp_or_recovery_token(otp)
+          email_code.count_failed_attempt!
           render_error(:unauthorized, 'invalid_otp', "That code didn't work. Try the newest one, or a recovery code.")
         else
           return false
