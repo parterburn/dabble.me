@@ -230,14 +230,18 @@ struct ComposeView: View {
                     }
                     .overlay(alignment: .topLeading) {
                         if editor.isEmpty {
-                            // About the day being written: today, yesterday, or another by name.
-                            Text(JournalDay(localDate: date).writingQuestion(today: model.today?.day ?? JournalDay(localDate: .now)))
-                                .font(Font(RichText.Style.journal.baseFont))
-                                .foregroundStyle(.tertiary)
-                                .padding(.top, 16)
-                                .padding(.leading, 17)
-                                .allowsHitTesting(false)
-                                .accessibilityHidden(true)
+                            VStack(alignment: .leading, spacing: 12) {
+                                // About the day being written: today, yesterday, or another by name.
+                                Text(JournalDay(localDate: date).writingQuestion(today: model.today?.day ?? JournalDay(localDate: .now)))
+                                    .font(Font(RichText.Style.journal.baseFont))
+                                    .foregroundStyle(.tertiary)
+                                    .allowsHitTesting(false)
+                                    .accessibilityHidden(true)
+                                // With a template, the empty page offers it: a tap here, or a swipe right.
+                                if !template.isEmpty { templateHint }
+                            }
+                            .padding(.top, 16)
+                            .padding(.leading, 17)
                         }
                     }
             }
@@ -394,6 +398,14 @@ struct ComposeView: View {
             }
             .onAppear {
                 editor.allowsLinks = model.me?.mayAddLinks == true
+                // A swipe right across the empty page puts the template in.
+                if !template.isEmpty {
+                    editor.onSwipeRightWhenEmpty = { [editor, template] in
+                        HoldHaptic.play()
+                        editor.addTemplate(template)
+                        editor.focus()
+                    }
+                }
                 // Today's date in the journal's time zone, preferring the freshest source.
                 if isNew, !startsOnDay, restoredDraft?.date == nil, let today = model.today?.day ?? model.me.flatMap({ JournalDay($0.today) }) {
                     date = today.localDate
@@ -682,8 +694,7 @@ struct ComposeView: View {
                     editor.endLink()
                     question = nil
                     askError = nil
-                    // With a template to offer, a prompt is written when it's asked for.
-                    if canAsk, !offersTemplate { Task { await ask() } }
+                    if canAsk { Task { await ask() } }
                 }
             } label: {
                 appIcon("slab-lightbulb")
@@ -691,18 +702,13 @@ struct ComposeView: View {
                     .background(showsAskRow ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
             }
             .buttonStyle(.plain)
-            // Held: the template goes straight in. Without one, Apple's moments open (iPhone).
+            // Held: Apple's moments open straight away (iPhone). (The template is on the empty page.)
             .simultaneousGesture(LongPressGesture(minimumDuration: 0.45).onEnded { _ in
-                if !template.isEmpty {
-                    heldAskIcon = true
-                    HoldHaptic.play()
-                    useTemplate()
-                } else if Moment.isAvailable {
-                    heldAskIcon = true
-                    HoldHaptic.play()
-                    showsAskRow = false
-                    pickingMoment = true
-                }
+                guard Moment.isAvailable else { return }
+                heldAskIcon = true
+                HoldHaptic.play()
+                showsAskRow = false
+                pickingMoment = true
             })
             // Moments opened mid-hold can cancel the tap that would clear the flag.
             .onChange(of: pickingMoment) { _, picking in if !picking { heldAskIcon = false } }
@@ -710,8 +716,7 @@ struct ComposeView: View {
             .accessibilityHint("Shows what was on your calendar that day and a question to write about")
             .accessibilityAddTraits(showsAskRow ? .isSelected : [])
             .accessibilityActions {
-                if !template.isEmpty { Button("Use Template") { useTemplate() } }
-                if Moment.isAvailable { Button("Moments from Your iPhone") { pickingMoment = true } }
+                if Moment.isAvailable { Button("Add a Moment from Your iPhone") { pickingMoment = true } }
             }
             if Dictation.isSupported, DictationSettings.isEnabled { dictationButton }
         }
@@ -958,8 +963,8 @@ struct ComposeView: View {
                 .accessibilityAddTraits(.isHeader)
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { askHeadingHeight = $0 }
             askRowContent
-            // Apart from the prompt and the day's events, so it's seen: a line over it, and set
-            // like the heading. (No line when there's nothing over it to set it apart from.)
+            // The last row, set like the events over it, and kept in view under them when a busy
+            // day scrolls. (No line when there's nothing over it.)
             if Moment.isAvailable {
                 VStack(spacing: 0) {
                     if askRowHeight > 1 { Divider().padding(.horizontal) }
@@ -973,8 +978,8 @@ struct ComposeView: View {
     private var askRowContent: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
-                if canAsk { askLine } else if offersTemplate { templateLine }
-                CalendarRow(day: date, hidesWhenEmpty: canAsk || offersTemplate || Moment.isAvailable, space: Self.askRowSpace, changed: { hasEvents in
+                if canAsk { askLine }
+                CalendarRow(day: date, hidesWhenEmpty: canAsk || Moment.isAvailable, space: Self.askRowSpace, changed: { hasEvents in
                     hasAgenda = hasEvents
                     if !hasEvents { firstEvent = nil }
                     calendarRowKey += 1
@@ -1009,27 +1014,40 @@ struct ComposeView: View {
         showsAskRow = false
     }
 
-    /// "Moments from your iPhone": Apple's Journaling Suggestions sheet (photos, places, workouts,
-    /// music, people), which hands over only the one moment picked. Its words go in on every plan;
-    /// its photos with PRO.
+    /// "Add a moment from your iPhone": Apple's Journaling Suggestions sheet (photos, places,
+    /// workouts, music, people), which hands over only the one moment picked. Its words go in on
+    /// every plan; its photos with PRO. A row like the prompt's and the events', with an icon, so
+    /// it reads as something to tap and not as a heading.
     private var momentsLine: some View {
         Button {
             pickingMoment = true
         } label: {
-            HStack(spacing: 8) {
-                Text("Moments from your iPhone")
-                    .textCase(.uppercase)
+            HStack(spacing: 12) {
+                ideaIcon("photo.stack")
+                Text("Add a moment from your iPhone")
+                    .font(.system(.subheadline, design: .serif))
+                    .lineLimit(1)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.secondary)
             }
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.tint)
             .padding(.horizontal)
-            .padding(.vertical, 12)
+            .padding(.vertical, 11)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("Add a Moment from Your iPhone")
         .accessibilityHint("Opens your iPhone's suggestions: photos, places, workouts and music to write about")
+    }
+
+    /// The icon at the start of a row in Writing ideas (the prompt, a moment), in a column of its own.
+    private func ideaIcon(_ name: String) -> some View {
+        Image(systemName: name)
+            .font(.subheadline)
+            .foregroundStyle(.tint)
+            .frame(width: 22)
+            .accessibilityHidden(true)
     }
 
     #if canImport(JournalingSuggestions)
@@ -1085,39 +1103,40 @@ struct ComposeView: View {
         }
     }
 
-    /// The template alone, where there's no prompt to be had (an entry being edited, without
-    /// Apple Intelligence).
-    private var templateLine: some View {
-        HStack(spacing: 12) {
-            Text("Your template")
-                .font(.subheadline)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            useTemplateButton
+    /// Under the empty page's question, with a template to offer (Settings → Entry Template):
+    /// "Use template" and a "Swipe →" badge, the way the swipe is learned. A tap does it too. Gone
+    /// once anything's written.
+    private var templateHint: some View {
+        Button {
+            editor.addTemplate(template)
+            editor.focus()
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "doc.text")
+                    .imageScale(.small)
+                Text("Use template")
+                HStack(spacing: 3) {
+                    Text("Swipe")
+                    Image(systemName: "arrow.right")
+                }
+                .font(.caption.weight(.medium))
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(Color.secondary.opacity(0.1), in: .rect(cornerRadius: 4))
+                .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color.secondary.opacity(0.3)))
+            }
+            .font(.subheadline)
+            .foregroundStyle(.tint)
+            .padding(.vertical, 4)
+            .contentShape(.rect)
         }
-        .padding(.horizontal)
-        .padding(.top, 2)
-        .padding(.bottom, 10)
+        .buttonStyle(.plain)
+        .accessibilityLabel("Use Template")
+        .accessibilityHint("Adds your entry template. You can also swipe right on the empty page.")
     }
 
-    /// The lightbulb row offers the template (there is one, and this entry didn't start with
-    /// it): a prompt is then written only when it's asked for.
-    private var offersTemplate: Bool { !template.isEmpty && !startsWithTemplate }
-
-    private func useTemplate() {
-        editor.addTemplate(template)
-        showsAskRow = false
-    }
-
-    /// "Use Template", at the right of the lightbulb row until a prompt's been asked for. The
-    /// first time it's used, a word about the quicker way.
-    private var useTemplateButton: some View {
-        rowButton("Use Template") {
-            useTemplate()
-            showTipOnce("lightbulb", "Next time, touch and hold the lightbulb button to add your template straight away.")
-        }
-    }
-
-    /// A small filled button at the right of a row over the keyboard ("Use Template", "Insert").
+    /// A small filled button at the right of a row over the keyboard ("Auto Tag").
     private func rowButton(_ title: String, action: @escaping () -> Void) -> some View {
         Button(title, action: action)
             .font(.footnote.weight(.semibold))
@@ -1141,6 +1160,7 @@ struct ComposeView: View {
     private var askLine: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center, spacing: 12) {
+                if isAsking || question != nil { ideaIcon("sparkles") }
                 if isAsking {
                     TypingDots(size: .small)
                     Text("Generating prompt…")
@@ -1160,14 +1180,6 @@ struct ComposeView: View {
                         .frame(width: 12, height: 12)
                         .foregroundStyle(.secondary)
                         .accessibilityHidden(true)
-                } else if offersTemplate, askError == nil {
-                    // (A tap on it, VoiceOver's too, is the row's.)
-                    Text(JournalIntelligence.isEnabled(for: model.me) ? "Tap to generate prompt" : "Tap for today's prompt")
-                        .fontWeight(.medium)
-                        .foregroundStyle(.tint)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .accessibilityAddTraits(.isButton)
-                    useTemplateButton
                 } else {
                     Text(askError ?? "")
                         .foregroundStyle(.secondary)
@@ -1180,11 +1192,7 @@ struct ComposeView: View {
             // the events under it stay where they are.
             .contentShape(.rect)
             .onTapGesture {
-                if question != nil {
-                    insertQuestion()
-                } else if offersTemplate, !isAsking {
-                    Task { await ask() }
-                }
+                if question != nil { insertQuestion() }
             }
         }
         .padding(.horizontal)

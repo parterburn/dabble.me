@@ -15,7 +15,7 @@
 module WebSessions
   SESSION_KEY = 'user_session_token'
   DEVICE_COOKIE = :_dabbleme_device
-  TRACKING_STARTED_AT = Time.utc(2026, 11, 23)
+  TRACKING_STARTED_AT = Time.utc(2026, 11, 24)
   # Browsers keep session cookies for as long as they stay open, so this is generous.
   LEGACY_SESSION_GRACE = 30.days
 

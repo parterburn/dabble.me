@@ -38,6 +38,7 @@
 @source "../../views/devise/otp_credentials/*.html.erb";
 @source "../../views/devise/otp_tokens/*.html.erb";
 @source "../../views/devise/shared/_error_messages.html.erb";
+@source "../../views/devise/shared/_password_or_code.html.erb";
 @source "../../views/email_updates/*.html.erb";
 @source "../../views/notice_stops/*.html.erb";
 @source "../../views/exports/*.html.erb";

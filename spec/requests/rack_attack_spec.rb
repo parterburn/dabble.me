@@ -69,6 +69,32 @@ RSpec.describe 'Rack::Attack', type: :request do
     expect(statuses.last).to eq(429)
   end
 
+  it "throttles emailed sign-in codes from one IP, whatever the address" do
+    statuses = Array.new(4) do |index|
+      post '/api/v1/session/code',
+        params: { email: "code-#{index}@example.com" }.to_json,
+        headers: { 'CONTENT_TYPE' => 'application/json' },
+        env: { 'REMOTE_ADDR' => '203.0.113.200' }
+      response.status
+    end
+
+    expect(statuses.first(3)).to all(eq(202))
+    expect(statuses.last).to eq(429)
+  end
+
+  it "throttles guesses at emailed codes from one IP" do
+    statuses = Array.new(21) do |index|
+      post '/api/v1/session/code/verify',
+        params: { email: "guess-#{index}@example.com", code: '123456' }.to_json,
+        headers: { 'CONTENT_TYPE' => 'application/json' },
+        env: { 'REMOTE_ADDR' => '203.0.113.201' }
+      response.status
+    end
+
+    expect(statuses.first(20)).to all(eq(401))
+    expect(statuses.last).to eq(429)
+  end
+
   it 'throttles password reset posts' do
     statuses = Array.new(6) do
       post '/users/password',

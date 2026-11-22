@@ -65,6 +65,9 @@ final class RichTextEditorModel {
     fileprivate(set) var isFocused = false
     /// Links are PRO: without them, a pasted address stays plain text.
     @ObservationIgnored var allowsLinks = true
+    /// A swipe to the right across the empty page (the composer's template). Only while there's
+    /// nothing written and nothing selected, so it never gets in the way of the text's own gestures.
+    @ObservationIgnored var onSwipeRightWhenEmpty: (@MainActor () -> Void)?
 
     init(blocks: [DocumentBlock] = []) {
         initialBlocks = blocks
@@ -733,6 +736,13 @@ struct RichTextEditor: UIViewRepresentable {
         textView.inputAccessoryView = context.coordinator.makeBar(for: self)
         context.coordinator.keepTextClear(of: textView)
         textView.accessibilityLabel = "Entry"
+        // Right across the empty page: the composer's template (`onSwipeRightWhenEmpty`). The text
+        // view's own gestures go on as ever beside it, and it never begins over written text.
+        let swipe = UISwipeGestureRecognizer(target: context.coordinator, action: #selector(Coordinator.swipedRight))
+        swipe.direction = .right
+        swipe.delaysTouchesEnded = false
+        swipe.delegate = context.coordinator
+        textView.addGestureRecognizer(swipe)
         model.attach(textView)
         return textView
     }
@@ -749,11 +759,25 @@ struct RichTextEditor: UIViewRepresentable {
     }
 
     @MainActor
-    final class Coordinator: NSObject, UITextViewDelegate {
+    final class Coordinator: NSObject, UITextViewDelegate, UIGestureRecognizerDelegate {
         let model: RichTextEditorModel
 
         init(model: RichTextEditorModel) {
             self.model = model
+        }
+
+        @objc func swipedRight() {
+            model.onSwipeRightWhenEmpty?()
+        }
+
+        func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+            guard gestureRecognizer is UISwipeGestureRecognizer else { return true }
+            return model.onSwipeRightWhenEmpty != nil && model.isEmpty && !model.hasSelection
+        }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                               shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+            gestureRecognizer is UISwipeGestureRecognizer
         }
 
         func textViewDidChange(_ textView: UITextView) {

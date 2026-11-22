@@ -15,11 +15,19 @@ module Api
     class PasskeysController < BaseController
       SETUP_WINDOW = 15.minutes
 
-      # POST /api/v1/passkeys/options {setup_token | current_password}: what the app's registration
+      # POST /api/v1/passkeys/options {setup_token | current_password | email_code}: what the app's registration
       # request needs. The proof is checked here, before the system's sheet saves a passkey on the
       # phone, so a wrong password can't leave one there that the server never keeps.
       def options
-        return incorrect_password unless proof_valid?
+        # An emailed code works once, so it buys a setup token here for the create call after.
+        if params[:email_code].present?
+          unless EmailCode.confirm(current_user, params[:email_code])
+            return render_error(:forbidden, 'invalid_code', "That code didn't work. Check the newest email, or send a new code.")
+          end
+          setup_token = self.class.setup_token_for(current_user, doorkeeper_token)
+        elsif !proof_valid?
+          return incorrect_password
+        end
 
         existing = current_user.webauthn_credentials.pluck(:external_id)
         # The user handle is the account's id, as the web's passkeys have it (and sign-in checks).
@@ -38,8 +46,9 @@ module Api
           rp_id: WebAuthn.configuration.rp_id,
           user_id: user_handle,
           user_name: current_user.email,
-          exclude_credentials: existing
-        }
+          exclude_credentials: existing,
+          setup_token: setup_token
+        }.compact
       end
 
       # POST /api/v1/passkeys {challenge_token, credential (WebAuthn's JSON), setup_token | current_password}

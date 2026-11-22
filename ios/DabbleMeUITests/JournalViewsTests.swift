@@ -330,41 +330,34 @@ final class JournalViewsTests: XCTestCase {
         app.buttons["Discard"].tap()
     }
 
-    /// With a template (Settings → Entry Template), the lightbulb row offers it beside a prompt that's
-    /// written only when asked for, and holding the lightbulb puts it straight in.
-    func testTheTemplateIsOfferedInThePromptRow() throws {
-        let app = launch(["-DabbleDebugTemplate", "What went well today?", "-template.auto", "NO", "-tips.shown.lightbulb", "NO"])
+    /// With a template (Settings → Entry Template), the empty page offers it under its question
+    /// ("Use template", Swipe →): a tap or a swipe right puts it in, and the offer goes once
+    /// there's writing. The lightbulb row no longer offers it.
+    func testTheTemplateIsOfferedOnTheEmptyPage() throws {
+        let app = launch(["-DabbleDebugTemplate", "What went well today?", "-template.auto", "NO"])
         let editor = openComposer(app)
-        editor.typeText("Morning.")
-        app.buttons["Prompt"].tap()
         let use = app.buttons["Use Template"]
         XCTAssertTrue(use.waitForExistence(timeout: 5))
-        XCTAssertFalse(app.staticTexts["AskMeQuestion"].exists, "No prompt until it's asked for")
-        snap("template-offer")
+        snap("template-hint")
         use.tap()
-        // The first time, a word about the quicker way.
-        let tip = app.staticTexts.matching(NSPredicate(format: "label CONTAINS %@", "touch and hold the lightbulb")).firstMatch
-        XCTAssertTrue(tip.waitForExistence(timeout: 5))
-        snap("template-tip")
-        app.buttons["OK"].tap()
-        XCTAssertEqual(editor.value as? String, "Morning.\nWhat went well today?")
-        XCTAssertFalse(use.exists, "The row closes")
+        XCTAssertEqual(editor.value as? String, "What went well today?")
+        XCTAssertTrue(use.waitForNonExistence(timeout: 2), "Gone once there's writing")
 
-        // Held, the lightbulb button adds it without opening the row.
-        app.buttons["Prompt"].press(forDuration: 0.9)
-        XCTAssertEqual(editor.value as? String, "Morning.\nWhat went well today?\nWhat went well today?")
-        XCTAssertFalse(use.exists)
-
-        // Asked for, the prompt takes the row and the template's button goes.
+        // Not in the lightbulb row.
         app.buttons["Prompt"].tap()
-        let ask = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Tap '")).firstMatch
-        XCTAssertTrue(ask.waitForExistence(timeout: 5))
-        ask.tap()
-        XCTAssertTrue(app.staticTexts["AskMeQuestion"].waitForExistence(timeout: 60))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ==[c] %@", "Writing ideas")).firstMatch.waitForExistence(timeout: 5))
         XCTAssertFalse(use.exists)
-        snap("template-prompt-asked")
+        app.buttons["Prompt"].tap()
+
+        // Emptied again, a swipe right across the page puts it in.
         app.buttons["Cancel"].tap()
         app.buttons["Discard"].tap()
+        let again = openComposer(app)
+        XCTAssertTrue(use.waitForExistence(timeout: 5))
+        again.swipeRight()
+        XCTAssertEqual(again.value as? String, "What went well today?")
+        app.buttons["Cancel"].tap()
+        if app.buttons["Discard"].waitForExistence(timeout: 2) { app.buttons["Discard"].tap() }
     }
 
     /// Today's Write button held, with a template: the entry starts from it, whatever the
@@ -380,7 +373,7 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertEqual(editor.value as? String, "What went well today?")
         XCTAssertFalse(app.buttons["Save"].isEnabled, "Nothing of the writer's own to save yet")
         snap("today-held-write")
-        // It's in already: the lightbulb row doesn't offer it again.
+        // It's in already: nothing offers it again.
         app.buttons["Prompt"].tap()
         XCTAssertTrue(app.staticTexts["AskMeQuestion"].waitForExistence(timeout: 60))
         XCTAssertFalse(app.buttons["Use Template"].exists)
@@ -424,7 +417,7 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertEqual(editor.value as? String, "What went well today?")
         XCTAssertFalse(app.buttons["Save"].isEnabled)
         snap("template-auto")
-        // The lightbulb row is as it is without a template: a prompt, and no button for the template.
+        // Nothing offers it again: the page isn't empty, and the lightbulb row never does.
         app.buttons["Prompt"].tap()
         XCTAssertTrue(app.staticTexts["AskMeQuestion"].waitForExistence(timeout: 60))
         XCTAssertFalse(app.buttons["Use Template"].exists)

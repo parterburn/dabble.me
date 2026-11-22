@@ -104,6 +104,11 @@ module Mcp
         'repository' => REPOSITORY,
         'icons' => [
           {
+            'src' => "#{@base_url}/android-chrome-512x512.png",
+            'mimeType' => 'image/png',
+            'sizes' => ['512x512']
+          },
+          {
             'src' => "#{@base_url}/favicon-96x96.png",
             'mimeType' => 'image/png',
             'sizes' => ['96x96']

@@ -1,10 +1,10 @@
 import SwiftUI
 
 /// "Add a passkey": one tap to the system's passkey sheet, which saves a passkey for dabble.me
-/// (iCloud Keychain, or the password manager picked). Shown after a password sign-in
-/// (`PasskeyPrompt`), and from Settings → Add a Passkey.
-/// Within a few minutes of a password sign-in it needs nothing more; otherwise it asks for the
-/// password first, as the web does.
+/// (iCloud Keychain, or the password manager picked). Shown after a password or email-code
+/// sign-in (`PasskeyPrompt`), and from Settings → Add a Passkey.
+/// Within a few minutes of signing in it needs nothing more; otherwise it asks for the password
+/// first, as the web does (or an emailed code, on an account with no password).
 struct PasskeyPromptSheet: View {
     @Environment(AppModel.self) private var model
     @Environment(\.dismiss) private var dismiss
@@ -40,13 +40,21 @@ struct PasskeyPromptSheet: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             if !added && model.addingPasskeyNeedsPassword {
-                SecureField("Your Dabble Me password", text: $password)
-                    .textContentType(.password)
-                    .submitLabel(.go)
-                    .focused($passwordFocused)
-                    .onSubmit(add)
-                    .padding(12)
-                    .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 10))
+                if model.confirmsWithEmailCode {
+                    // No password on this account (made by email code): an emailed code instead.
+                    EmailCodeConfirmField(code: $password, focused: $passwordFocused, onSubmit: add)
+                        .padding(12)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 10))
+                } else {
+                    SecureField("Your Dabble Me password", text: $password)
+                        .textContentType(.password)
+                        .submitLabel(.go)
+                        .focused($passwordFocused)
+                        .onSubmit(add)
+                        .padding(12)
+                        .background(.quaternary.opacity(0.5), in: .rect(cornerRadius: 10))
+                }
             }
 
             if let error {

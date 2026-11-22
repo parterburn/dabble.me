@@ -46,8 +46,7 @@
 
       <%= form_for(current_user, as: :user, url: user_registration_path, html: { method: :delete, class: "mt-5 space-y-5" }) do |f| %>
         <div>
-          <%= f.label :current_password, "Type your current password to confirm", class: "field-label" %>
-          <%= f.password_field :current_password, autocomplete: "current-password", class: "field-input", required: true %>
+          <%= render "devise/shared/password_or_code", f: f, label: "Type your current password to confirm" %>
         </div>
 
         <label class="flex cursor-pointer items-start gap-3">

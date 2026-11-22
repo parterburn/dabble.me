@@ -1,0 +1,10 @@
+<%= @new_account ? "Here's the code to create your Dabble Me account:" : "Here's your code to sign in to Dabble Me:" %>
+
+<%= @code %>
+
+Enter it where you asked for it. It works once, for the next <%= EmailCode::LIFETIME.in_minutes.to_i %> minutes.
+
+If you didn't ask for this, you can ignore this email. Nobody can <%= @new_account ? "make an account with this address" : "get into your account" %> without the code.
+
+Thanks,
+Dabble Me

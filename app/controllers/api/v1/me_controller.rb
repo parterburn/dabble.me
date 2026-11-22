@@ -68,6 +68,9 @@ module Api
           security_url: "#{ApplicationHelper.site_public_base_url}/security",
           # The app offers to add a passkey until there is one (Api::V1::PasskeysController).
           has_passkey: user.webauthn_credentials.exists?,
+          # An account made by email code may have no password: the app confirms Delete Account
+          # and adding a passkey with an emailed code instead (Api::V1::ConfirmationCodesController).
+          has_password: user.has_password?,
           # Connecting Claude/ChatGPT (MCP) needs PRO.
           ai_connectors: {
             claude_url: ApplicationHelper.claude_plugin_directory_url,

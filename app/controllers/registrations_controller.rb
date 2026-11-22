@@ -79,7 +79,18 @@ class RegistrationsController < Devise::RegistrationsController
         params[:user].parse_time_select! :send_time
       end
 
-      successfully_updated = if needs_password?
+      successfully_updated = if needs_password? && !user.has_password?
+        # No password yet (made by email code): an emailed code confirms the change instead,
+        # and may set the first password.
+        if EmailCode.confirm(user, params[:user][:email_code])
+          changes = devise_parameter_sanitizer.sanitize(:account_update).except(:current_password)
+          changes = changes.except(:password, :password_confirmation) if changes[:password].blank?
+          user.update(changes)
+        else
+          user.errors.add(:base, "That code didn't work. Send a new one and try again.")
+          false
+        end
+      elsif needs_password?
         user.update_with_password(devise_parameter_sanitizer.sanitize(:account_update))
       else
         params[:user].delete(:current_password)
@@ -111,12 +122,12 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   def destroy
-    if current_user.valid_password?(params[:user][:current_password])
+    if current_password_or_code_valid?(params[:user][:current_password], params[:user][:email_code])
       schedule_user_deletion
       sign_out current_user
       redirect_to root_path, notice: "Your account will be permanently deleted in 1 hour. Sign back in before then to cancel deletion."
     else
-      flash[:alert] = "Incorrect current password."
+      flash[:alert] = current_user.has_password? ? "Incorrect current password." : "That code didn't work. Send a new one and try again."
       redirect_to delete_account_path
     end
   end

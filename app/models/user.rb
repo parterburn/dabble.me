@@ -267,6 +267,19 @@ class User < ActiveRecord::Base
     grants.update_all(revoked_at: now)
   end
 
+  # The first emailed-code sign-in to an unclaimed account (EmailSignIn.unclaimed?): whoever set
+  # its password, passkeys, 2FA or sign-ins may not own the address, so all of them go. Clearing
+  # the password changes the salt, which ends its web sessions and "Stay logged in" cookies.
+  def clear_credentials_for_email_claim!
+    transaction do
+      webauthn_credentials.destroy_all
+      disable_otp! if otp_enabled?
+      revoke_doorkeeper_access_tokens!
+      update_columns(encrypted_password: '', remember_created_at: nil, reset_password_token: nil,
+                     reset_password_sent_at: nil)
+    end
+  end
+
   def deletion_pending?
     deleted_at.present?
   end
@@ -289,6 +302,40 @@ class User < ActiveRecord::Base
 
   def is_free?
     !is_pro?
+  end
+
+  # Set on an account made by entering an emailed code (EmailSignIn): it starts with no
+  # password. One can be set later (Account Security, or Forgot password).
+  attr_accessor :passwordless_signup
+
+  # False for an account made by email code that hasn't set a password. Its sign-in is the
+  # emailed code or a passkey, and an EmailCode stands in where the password is asked for.
+  def has_password?
+    encrypted_password.present?
+  end
+
+  # An account with no password never matches one, but it still spends a bcrypt hash on the
+  # attempt, so a password sign-in takes as long as for any other address and its timing
+  # doesn't show which addresses are email-code accounts.
+  def self.no_password_digest
+    @no_password_digest ||= Devise::Encryptor.digest(self, SecureRandom.hex(16))
+  end
+
+  def valid_password?(password)
+    return super if has_password?
+
+    Devise::Encryptor.compare(self.class, self.class.no_password_digest, password.to_s)
+    false
+  end
+
+  # Devise ties sessions and "Stay logged in" cookies to the password hash's salt, so changing
+  # the password signs other browsers out. An account with no password has no hash: it gets a
+  # stand-in, which changes (signing those browsers out) once a password is set.
+  def authenticatable_salt
+    return super if has_password?
+
+    OpenSSL::HMAC.hexdigest('SHA256', Rails.application.key_generator.generate_key('passwordless_salt', 32),
+                            "#{id}:#{created_at.to_i}").first(29)
   end
 
   # Set on a gift sign-up (Gift): the gift goes on just after the account is created, and the
@@ -506,6 +553,14 @@ class User < ActiveRecord::Base
 
   def resume_apple_subscription
     AppStore::Entitlement.sync!(self) if apple_subscriptions.any?(&:entitles_pro?)
+  end
+
+  # Devise's validatable asks for a password on every new account; a passwordless sign-up has
+  # none. Setting one later is validated as usual.
+  def password_required?
+    return false if passwordless_signup && password.nil? && password_confirmation.nil?
+
+    super
   end
 
   def send_welcome_email

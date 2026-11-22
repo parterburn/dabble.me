@@ -20,7 +20,7 @@
           <% end %>
         </div>
         <div>
-          <%= f.label :password, "New password", class: "field-label" %>
+          <%= f.label :password, current_user.has_password? ? "New password" : "Set a password (optional)", class: "field-label" %>
           <%= f.password_field :password, autocomplete: "new-password", class: "field-input" %>
         </div>
         <div>
@@ -35,7 +35,7 @@
       <p class="mt-1 text-sm text-muted">More ways to keep your journal safe when you log in.</p>
 
       <div class="mt-5 flex flex-wrap gap-3">
-        <button class="button-secondary" id="add-passkey" type="button">Add Passkey</button>
+        <button class="button-secondary" id="add-passkey" type="button" data-proof-needed="<%= passkey_proof_needed? %>">Add Passkey</button>
         <%= link_to user_otp_token_path, id: "add-two-factor", class: "button-secondary" do %>
           <% if current_user.otp_enabled? %>
             <span class="slab-icon slab-icon--check text-green-700" aria-hidden="true"></span>
@@ -62,9 +62,8 @@
     </section>
 
     <section class="card p-6 sm:p-8">
-      <%= f.label :current_password, class: "field-label" %>
-      <%= f.password_field :current_password, autocomplete: "current-password", class: "field-input" %>
-      <p class="field-help">Needed to change your email or password, or to add a passkey.</p>
+      <%= render "devise/shared/password_or_code", f: f, label: "Current password",
+                 help: (current_user.has_password? ? "Needed to change your email or password, or to add a passkey." : "Needed to change your email, set a password, or add a passkey.") %>
       <%= f.submit "Save Security Changes", class: "button-primary mt-5 w-full sm:w-auto j-edit-security", name: "submit_method", type: :submit %>
     </section>
 

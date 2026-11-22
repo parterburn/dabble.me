@@ -14,8 +14,8 @@ enum NativeAuthError: LocalizedError, Equatable {
     }
 }
 
-/// The app's own sign-in and sign-up (`Api::V1::SessionsController`, `PasskeySessionsController`,
-/// `RegistrationsController`). They answer with tokens shaped like /oauth/token's, so the
+/// The app's own sign-in and sign-up (`Api::V1::EmailCodesController`, `SessionsController`,
+/// `PasskeySessionsController`, and `RegistrationsController` for older builds). They answer with tokens shaped like /oauth/token's, so the
 /// Keychain, refreshes and sign-out work as they did after the old web sign-in. Sign in with
 /// Apple, when it comes, is one more call here that hands Apple's identity token to the server.
 enum NativeAuth {
@@ -23,9 +23,44 @@ enum NativeAuth {
         let tokens: OAuthTokens
         /// The account was set to be deleted, and signing in kept it.
         let deletionCancelled: Bool
-        /// After a password sign-in or sign-up, for an account with no passkey: lets the app add
-        /// one in the next few minutes without asking for the password again.
+        /// After a password or email-code sign-in or sign-up, for an account with no passkey:
+        /// lets the app add one in the next few minutes without asking for the password again.
         var passkeySetupToken: String? = nil
+        /// An email-code sign-in that made the account (a sign-up, so no passkey prompt).
+        var created = false
+    }
+
+    /// POST /api/v1/session/code's answer. The same for every address, with an account or
+    /// without (the server never says which), so the code screen always follows.
+    struct CodeSent: Decodable, Sendable {
+        let email: String
+        let expiresIn: Int?
+        let resendAfter: Int?
+    }
+
+    /// Emails a six-digit code to `email`: the passwordless way in, for an account or a new one.
+    static func sendCode(email: String, session: URLSession = .shared) async throws -> CodeSent {
+        var request = URLRequest(url: AppConfig.webURL("api/v1/session/code"))
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.httpBody = try JSONEncoder().encode(["email": email])
+        request.timeoutInterval = 30
+        let (data, status) = try await send(request, session: session)
+        guard (200..<300).contains(status) else { throw failure(status: status, data: data) }
+        guard let sent = try? APIClient.decoder.decode(CodeSent.self, from: data) else {
+            throw NativeAuthError.message(APIError.decoding.errorDescription ?? "Couldn't send a code.")
+        }
+        return sent
+    }
+
+    /// The emailed code: signs in, or makes the account when the address had none. With 2FA on,
+    /// the server asks for the authenticator code (`.needsCode`) and the same emailed code goes
+    /// again with it.
+    static func signIn(email: String, emailCode: String, otpCode: String?, session: URLSession = .shared) async throws -> Session {
+        var body = ["email": email, "code": emailCode]
+        if let otpCode, !otpCode.isEmpty { body["otp_code"] = otpCode }
+        return try await post("api/v1/session/code/verify", body, session: session)
     }
 
     static func signIn(email: String, password: String, code: String?, session: URLSession = .shared) async throws -> Session {
@@ -99,9 +134,12 @@ enum NativeAuth {
     struct PasskeyProof: Encodable, Sendable {
         let setupToken: String?
         let currentPassword: String?
+        /// For an account with no password: a code from POST /api/v1/confirmation_code. It works
+        /// once, so the options answer carries a setup token for the call after.
+        var emailCode: String? = nil
 
         enum CodingKeys: String, CodingKey {
-            case setupToken = "setup_token", currentPassword = "current_password"
+            case setupToken = "setup_token", currentPassword = "current_password", emailCode = "email_code"
         }
     }
 
@@ -114,6 +152,8 @@ enum NativeAuth {
         let userId: String
         let userName: String
         let excludeCredentials: [String]?
+        /// Sent back when an emailed code was the proof: it stands in for the code with the passkey.
+        let setupToken: String?
     }
 
     /// The new passkey, for POST /api/v1/passkeys, with the password or the sign-in's setup
@@ -168,6 +208,7 @@ enum NativeAuth {
         let expiresIn: Double?
         let deletionCancelled: Bool?
         let passkeySetupToken: String?
+        let created: Bool?
     }
 
     private static func post(_ path: String, _ body: some Encodable, session: URLSession) async throws -> Session {
@@ -187,7 +228,8 @@ enum NativeAuth {
             tokens: OAuthTokens(accessToken: body.accessToken, refreshToken: body.refreshToken,
                                 expiresAt: body.expiresIn.map { Date().addingTimeInterval($0) }),
             deletionCancelled: body.deletionCancelled ?? false,
-            passkeySetupToken: body.passkeySetupToken
+            passkeySetupToken: body.passkeySetupToken,
+            created: body.created ?? false
         )
     }
 
@@ -201,9 +243,9 @@ enum NativeAuth {
     }
 
     static func failure(status: Int, data: Data) -> NativeAuthError {
-        // Rack::Attack's answer is plain text, not the API's JSON.
-        if status == 429 { return .message("Too many tries. Wait a few minutes, then try again.") }
         let body = try? APIClient.decoder.decode(APIErrorBody.self, from: data)
+        // Rack::Attack's answer is plain text, not the API's JSON (a code sent moments ago is JSON).
+        if status == 429 { return .message(body?.message ?? "Too many tries. Wait a few minutes, then try again.") }
         if body?.error == "otp_required" { return .needsCode }
         return .message(body?.details?.joined(separator: "\n") ?? body?.message ?? "Something went wrong (\(status)). Please try again.")
     }
