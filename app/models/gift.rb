@@ -26,11 +26,20 @@ class Gift
 
   def self.all
     ENV.fetch("GIFT_CODES", "").split(",").filter_map do |entry|
-      code, limit = entry.split(":", 2)
+      code, cap = entry.split(":", 2)
       code = normalize(code)
       next if code.blank?
 
-      new(code, limit.to_s.strip.presence&.to_i)
+      limit = nil
+      unless cap.nil?
+        limit = Integer(cap.strip, exception: false)
+        # A typo in the cap must not quietly make the code unlimited: skip it.
+        if limit.nil? || limit <= 0
+          Rails.logger.warn("GIFT_CODES: skipping a code whose cap isn't a positive whole number")
+          next
+        end
+      end
+      new(code, limit)
     end
   end
 
@@ -70,7 +79,8 @@ class Gift
       redeemed = true
     end
     redeemed
-  rescue ActiveRecord::RecordNotUnique
+  rescue ActiveRecord::RecordNotUnique, ActiveRecord::RecordInvalid
+    user.reload if user.persisted?
     false
   end
 end

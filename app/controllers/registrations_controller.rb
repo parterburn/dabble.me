@@ -13,9 +13,6 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   def create
-    # The gift page stores itself for "Log in to add the gift to it"; signing up
-    # instead shouldn't land there afterwards.
-    stored_location_for(:user) if current_gift
     gift_redeemed = false
     super do
       resource.referrer = request.env['affiliate.tag']
@@ -25,7 +22,7 @@ class RegistrationsController < Devise::RegistrationsController
     return unless resource.persisted?
 
     if gift_redeemed
-      flash[:notice] = "Welcome to Dabble Me! Your gift of PRO runs until #{resource.gift_expires_at.strftime("%B %-d, %Y")}."
+      flash[:notice] = "Welcome to Dabble Me! Your gift of PRO runs until #{resource.gift_expires_on}."
     elsif params[:gift_code].present?
       flash[:alert] = "That gift code is no longer valid, so your account is on the Free plan."
     end
@@ -37,9 +34,11 @@ class RegistrationsController < Devise::RegistrationsController
     if user_signed_in?
       return unless gift_redeemable_by_current_user
       render 'devise/registrations/redeem_gift'
-    else
-      # "Log in to add the gift to it" comes back here.
+    elsif params[:login].present?
+      # "Log in to add the gift to it": come back here after signing in.
       store_location_for(:user, gift_path(current_gift.code))
+      redirect_to new_user_session_path
+    else
       build_resource
       render :new
     end
@@ -54,7 +53,7 @@ class RegistrationsController < Devise::RegistrationsController
 
     if current_gift.redeem!(current_user)
       redirect_to edit_user_registration_path,
-                  notice: "Enjoy! Your gift of PRO runs until #{current_user.gift_expires_at.strftime("%B %-d, %Y")}."
+                  notice: "Enjoy! Your gift of PRO runs until #{current_user.gift_expires_on}."
     else
       redirect_to root_path, alert: "This account can't take this gift."
     end

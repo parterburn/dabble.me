@@ -101,7 +101,7 @@
     <div class="mt-8 text-center space-y-4">
       <p class="text-muted">
         Already have an account?
-        <%= link_to current_gift ? "Log in to add the gift to it" : "Log in", new_user_session_path, class: "text-accent underline hover:text-primary font-medium transition-colors" %>
+        <%= link_to current_gift ? "Log in to add the gift to it" : "Log in", current_gift ? gift_path(current_gift.code, login: 1) : new_user_session_path, class: "text-accent underline hover:text-primary font-medium transition-colors" %>
       </p>
     </div>
   </div>

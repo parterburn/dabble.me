@@ -18,6 +18,7 @@ Rails.application.config.filter_parameters += [
   :original_email,
   :text_body,
   :entry_template,
+  :gift_code, # a gift link's code (Gift) works for anyone who has it
   :first_name,
   :last_name,
   /\Aentry\z/i

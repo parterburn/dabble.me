@@ -1,7 +1,11 @@
 <p>Hey <%= @user.first_name_or_fallback %>,</p>
 
 <p>
-  Your Dabble Me account at <%= @user.email %> has been downgraded to Free since your subscription has ended. With this downgrade, your email frequency has been changed to at max once per week.
+  <% if @gift %>
+    Your gifted year of Dabble Me PRO has ended, so your account at <%= @user.email %> is now on the Free plan. Your entries are all still here. With
+  <% else %>
+    Your Dabble Me account at <%= @user.email %> has been downgraded to Free since your subscription has ended. With
+  <% end %> this downgrade, your email frequency has been changed to at max once per week.
 </p>
 
 <p>

@@ -72,6 +72,9 @@ class User < ActiveRecord::Base
   scope :without_entries, -> { includes(:entries).where("entries.id IS null").references(:entries) }
   scope :free_only, -> { where("plan ILIKE '%free%' OR plan IS null") }
   scope :pro_only, -> { where("plan ILIKE '%pro%'") }
+  # PRO that someone pays for: everything but a gifted year (Gift). Business metrics count these.
+  scope :gifted, -> { where("plan ILIKE '%gift%'") }
+  scope :paid_pro, -> { pro_only.where("plan NOT ILIKE '%gift%'") }
   scope :monthly, -> { where("plan ILIKE '%monthly%'") }
   scope :yearly, -> { where("plan ILIKE '%yearly%'") }
   scope :forever, -> { where("plan ILIKE '%forever%'") }
@@ -275,6 +278,11 @@ class User < ActiveRecord::Base
 
   def gift_expires_at
     gift_redemption&.expires_at if gifted_pro?
+  end
+
+  # The gift's last day as the person sees it, e.g. "November 22, 2027".
+  def gift_expires_on
+    gift_expires_at&.in_time_zone(send_timezone.presence || "UTC")&.strftime("%B %-d, %Y")
   end
 
   def plan_name

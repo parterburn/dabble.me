@@ -108,6 +108,25 @@ RSpec.describe 'Gift links', type: :request do
     end
   end
 
+  describe 'logging in to add the gift' do
+    it 'remembers the gift page only when the person asks to log in' do
+      get gift_path('family2026')
+      expect(session['user_return_to']).to be_nil
+
+      get gift_path('family2026', login: 1)
+      expect(response).to redirect_to(new_user_session_path)
+      expect(session['user_return_to']).to eq(gift_path('family2026'))
+    end
+  end
+
+  describe 'GIFT_CODES' do
+    it 'skips a code whose cap is mistyped rather than leaving it uncapped' do
+      ENV['GIFT_CODES'] = 'open, typo:, words:abc, zero:0, ok:3'
+
+      expect(Gift.all.map { |g| [g.code, g.limit] }).to eq([['open', nil], ['ok', 3]])
+    end
+  end
+
   describe 'when signed in' do
     it 'lets a Free account add the gift' do
       user = FactoryBot.create(:user)
@@ -168,14 +187,17 @@ RSpec.describe 'Gift links', type: :request do
       UserDowngradeExpiredWorker.new.perform
 
       expect(lapsed.reload.plan).to eq('Free')
+      expect(ActionMailer::Base.deliveries.map(&:subject)).to include('Your gift year of Dabble Me PRO has ended')
       expect(running.reload.plan).to eq(Gift::PLAN)
       expect(subscribed.reload.plan).to eq('PRO Yearly PayHere')
     end
 
-    it 'keeps gifted accounts out of revenue' do
+    it 'keeps gifted accounts out of revenue and the paid PRO counts' do
       FactoryBot.create(:user, plan: Gift::PLAN)
 
       expect(RevenueMetrics.current.subscribers).to be_empty
+      expect(User.paid_pro).to be_empty
+      expect(User.gifted.pro_only.count).to eq(1)
     end
   end
 end
