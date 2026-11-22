@@ -46,7 +46,7 @@ That's the whole habit. No streaks to protect and no app you have to remember to
 
 ## Screenshots
 
-### On the web
+### By email and on the web
 
 <p align="center">
   <img src="docs/readme/web-email.jpg" alt="The daily Dabble Me email: How was your day? with a past entry from this day underneath" width="49%">
