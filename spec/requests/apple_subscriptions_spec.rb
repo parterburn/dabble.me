@@ -162,11 +162,37 @@ RSpec.describe "Apple in-app purchases from the app", type: :request do
     it "keeps its web plan, and Paul hears about the double charge" do
       allow(AppStore).to receive(:allowed_environments).and_return(%w[Production Sandbox])
       user.update!(plan: "PRO Yearly PayHere", stripe_id: "cus_123")
+      allow_any_instance_of(User).to receive(:has_active_stripe_subscription?).and_return(true)
       expect do
         post_transaction(apple_transaction(user: user, environment: "Production"))
       end.to have_enqueued_mail(UserMailer, :apple_double_billing)
       expect(user.reload.plan).to eq("PRO Yearly PayHere")
       expect(json["pro_source"]).to eq("web")
+    end
+
+    it "moves to Apple right away when its Stripe subscription has already ended, with no refund email" do
+      allow(AppStore).to receive(:allowed_environments).and_return(%w[Production Sandbox])
+      user.update!(plan: "PRO Monthly PayHere", stripe_id: "cus_123")
+      allow_any_instance_of(User).to receive(:has_active_stripe_subscription?).and_return(false)
+      expect do
+        post_transaction(apple_transaction(user: user, environment: "Production"))
+      end.not_to have_enqueued_mail(UserMailer, :apple_double_billing)
+      expect(user.reload.plan).to eq("PRO Monthly Apple")
+      expect(user.payments.where.not(apple_transaction_id: nil).count).to eq(1)
+    end
+
+    it "keeps the web plan when Stripe can't be asked" do
+      user.update!(plan: "PRO Monthly PayHere", stripe_id: "cus_123")
+      allow_any_instance_of(User).to receive(:has_active_stripe_subscription?).and_raise(Stripe::APIConnectionError.new("down"))
+      post_transaction(apple_transaction(user: user))
+      expect(user.reload.plan).to eq("PRO Monthly PayHere")
+    end
+
+    it "doesn't ask Stripe about a Gumroad or PayPal plan" do
+      user.update!(plan: "PRO Monthly Gumroad", stripe_id: "cus_123")
+      expect_any_instance_of(User).not_to receive(:has_active_stripe_subscription?)
+      post_transaction(apple_transaction(user: user))
+      expect(user.reload.plan).to eq("PRO Monthly Gumroad")
     end
 
     it "is never downgraded by its Apple subscription ending" do

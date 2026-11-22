@@ -65,9 +65,9 @@ module StructuredDataHelper
       "@id": "#{base_url}/#webapplication",
       name: BRAND_NAME,
       url: "#{base_url}/",
-      description: "A private journal that lives in your email inbox. Reply to a daily prompt to write an entry, and rediscover past entries automatically.",
+      description: "A simple, private daily journal. Write by email, the iPhone app, or the web, and Rewind brings past entries back to you.",
       applicationCategory: "LifestyleApplication",
-      operatingSystem: "Web",
+      operatingSystem: "Web, iOS",
       publisher: { "@id": "#{base_url}/#organization" },
       offers: [
         offer_json_ld("Dabble Me Free", "0.00"),

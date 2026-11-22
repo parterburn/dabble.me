@@ -75,13 +75,11 @@ class SendHourlyEntriesWorker
 
   # Stop emailing free users who have 6+ emails sent and no entries (to reduce spam reports).
   def disable_free_user?(user)
-    user.is_free? && user.emails_sent > 6 && user.entries.count == 0 && ENV['FREE_WEEK'] != 'true'
+    user.is_free? && user.emails_sent > 6 && user.entries.count == 0
   end
 
-  # Pro users get emails every eligible hour; free users only on even-numbered ISO weeks (or FREE_WEEK).
+  # Pro users get emails every eligible hour; free users only on even-numbered weeks.
   def eligible_to_send?(user)
-    user.is_pro? ||
-      (user.is_free? && Time.now.strftime("%U").to_i.even?) ||
-      ENV['FREE_WEEK'] == 'true'
+    user.is_pro? || (user.is_free? && Time.now.strftime("%U").to_i.even?)
   end
 end

@@ -110,9 +110,11 @@ module AppStore
         end
       end
 
-      record_payments(owner, payment_snapshots) if owner
       Entitlement.sync!(previous_owner) if previous_owner && previous_owner != owner
       Entitlement.sync!(owner) if owner
+      # After the plan is settled, so a lapsed web plan that Apple just took over isn't taken
+      # for a double charge.
+      record_payments(owner, payment_snapshots) if owner
       raise OtherAccount, owner if claimant && owner && owner != claimant
 
       subscription

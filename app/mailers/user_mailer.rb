@@ -32,10 +32,13 @@ class UserMailer < ActionMailer::Base
     email.mailgun_options = {tag: 'Thanks'}
   end
 
-  def downgraded(user)
+  # gift: true when the year of PRO that ended was a gift (Gift), not a subscription.
+  def downgraded(user, gift: false)
     @user = user
+    @gift = gift
     @user.increment!(:emails_sent)
-    email = mail(to: user.cleaned_to_address, subject: '[ACTION REQUIRED] Account Downgraded')
+    subject = gift ? 'Your gift year of Dabble Me PRO has ended' : '[ACTION REQUIRED] Account Downgraded'
+    email = mail(to: user.cleaned_to_address, subject: subject)
     email.mailgun_options = {tag: 'Downgraded'}
   end
 

@@ -1,4 +1,4 @@
-Build 115 adds Moments from your iPhone: Apple's Journaling Suggestions, inside the composer's lightbulb. iPhone only (not iPad), and only on a real device.
+Build 117 adds Moments from your iPhone: Apple's Journaling Suggestions, inside the composer's lightbulb. iPhone only (not iPad), and only on a real device.
 
 MOMENTS
 - Start an entry and tap the lightbulb. Under Writing ideas you should see "Moments from your iPhone".

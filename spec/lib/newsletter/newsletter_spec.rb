@@ -209,7 +209,13 @@ RSpec.describe Newsletter do
       # Encryption isn't pitched as a feature; most people already assume it.
       expect(letter.text).not_to match(/encrypt/i)
       expect(letter.html).to include('<a href="https://dabble.me/mcp-server">')
-      expect(letter.html).to include('<a href="https://testflight.apple.com/join/mYj4vrFZ">Get the app</a>')
+      # The TestFlight beta is for PRO only: a purchase made in it is free.
+      if [writer, quiet].include?(letter)
+        expect(letter.html).to include('<a href="https://testflight.apple.com/join/mYj4vrFZ">Get the app</a>')
+      else
+        expect(letter.text).to include('coming soon to the App Store')
+        expect(letter.html).not_to include('testflight')
+      end
       expect(letter.html).to include('Paul Arterburn<br>', 'founder/maker of dabble.me<br>', '<a href="https://x.com/parterburn">x.com/parterburn</a>')
       expect(letter.text).to end_with("Paul Arterburn\nfounder/maker of dabble.me\nx.com/parterburn (https://x.com/parterburn)")
     end

@@ -477,7 +477,7 @@ struct DecodingTests {
         #expect(me.isProThroughApple == false)
     }
 
-    /// What build 114's server adds for in-app purchase (Api::V1::AppleSubscriptionsController.status_json).
+    /// What build 116's server adds for in-app purchase (Api::V1::AppleSubscriptionsController.status_json).
     @Test func decodesMeWithAppleSubscription() throws {
         let json = """
         {"id":1,"email":"a@b.c","first_name":null,"plan":"pro","is_pro":true,"timezone":null,
@@ -1048,6 +1048,19 @@ struct EntryTemplateTests {
         #expect(RichText.firstBlank(in: "No room here") == nil)
         EntryTemplate.runs = []
         #expect(UserDefaults.standard.data(forKey: EntryTemplate.runsKey) == nil)
+    }
+
+    /// Today's preview of the template keeps its words and formatting, but not the blank lines
+    /// and empty items left for writing.
+    @Test func todaysPreviewSkipsTheRoomToWrite() {
+        let template = [DocumentRun("One Win", bold: true), DocumentRun("\n\n• \n"), DocumentRun("One Point of Tension", bold: true), DocumentRun("\n1. \n\n"), DocumentRun("Grateful for "), DocumentRun("one thing", italic: true)]
+        let preview = EntryTemplate.preview(template)
+        #expect(String(preview.characters) == "One Win\nOne Point of Tension\nGrateful for one thing")
+        let win = preview.runs.first { String(preview[$0.range].characters) == "One Win" }
+        #expect(win?.inlinePresentationIntent == .stronglyEmphasized)
+        #expect(EntryTemplate.preview([DocumentRun("\n• \n\n")]).characters.isEmpty)
+        // Figures of the writer's own are words, not a list's marker.
+        #expect(String(EntryTemplate.preview([DocumentRun("Mood 1-10\n2025\n12. \n")]).characters) == "Mood 1-10\n2025")
     }
 
     /// A draft is kept as typed too: a link in it keeps where it goes.

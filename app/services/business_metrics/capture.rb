@@ -126,7 +126,7 @@ module BusinessMetrics
               WHERE first_entries.first_at IS NOT NULL
                 AND first_entries.first_at <= users.created_at + INTERVAL '72 hours'
             )::bigint AS wrote_72h,
-            COUNT(*) FILTER (WHERE users.plan ILIKE '%pro%')::bigint AS upgraded
+            COUNT(*) FILTER (WHERE users.plan ILIKE '%pro%' AND users.plan NOT ILIKE '%gift%')::bigint AS upgraded
           FROM users
           LEFT JOIN LATERAL (
             SELECT MIN(created_at) AS first_at
@@ -224,7 +224,7 @@ module BusinessMetrics
         active_user_count(since: as_of_date - days.days, plan: plan)
       end
 
-      pro_count = User.not_deleted.pro_only.count
+      pro_count = User.not_deleted.paid_pro.count
       counts.merge(
         paid_inactive_30d: [pro_count - counts[:active_pro_30d], 0].max,
         paid_inactive_90d: [pro_count - counts[:active_pro_90d], 0].max
@@ -232,7 +232,7 @@ module BusinessMetrics
     end
 
     def active_user_count(since:, plan:)
-      plan_clause = plan == :pro ? "users.plan ILIKE '%pro%'" : "(users.plan ILIKE '%free%' OR users.plan IS NULL)"
+      plan_clause = plan == :pro ? "users.plan ILIKE '%pro%' AND users.plan NOT ILIKE '%gift%'" : "(users.plan ILIKE '%free%' OR users.plan IS NULL)"
       sql = ActiveRecord::Base.sanitize_sql_array([
         <<~SQL.squish,
           SELECT COUNT(*)::bigint
@@ -271,7 +271,7 @@ module BusinessMetrics
       users_30d = User.not_deleted.where(created_at: (as_of - 30.days)..as_of)
       first_entry_user_ids = Entry.unscoped.where(user_id: users_30d.select(:id)).distinct.pluck(:user_id)
       signups_by_source = users_30d.group("COALESCE(NULLIF(referrer, ''), 'direct')").count
-      upgrades_by_source = users_30d.pro_only.group("COALESCE(NULLIF(referrer, ''), 'direct')").count
+      upgrades_by_source = users_30d.paid_pro.group("COALESCE(NULLIF(referrer, ''), 'direct')").count
       first_entries_by_source = users_30d.where(id: first_entry_user_ids).group("COALESCE(NULLIF(referrer, ''), 'direct')").count
 
       mrr_by_source = Hash.new(0)

@@ -16,6 +16,7 @@
 //= link five-types-of-wealth.jpg
 //= link pg.jpg
 //= link cassidoo.jpg
+//= link paul-arterburn.jpg
 
 //= link oauth/anthropic.png
 //= link oauth/notion.png

@@ -142,6 +142,9 @@ Rails.application.routes.draw do
     # posting address in the path; those keep working until the user resets it.
     get 'settings/(:user_key)'     => 'registrations#settings', as: 'settings'
     get 'security'                 => 'registrations#security', as: 'security'
+    # A gifted year of PRO (Gift). Signed out, the page is a sign-up form; signed in, a redeem button.
+    get 'gift/:code'               => 'registrations#gift', as: 'gift', constraints: { code: %r{[^/]+} }, format: false
+    post 'gift/:code'              => 'registrations#redeem_gift', as: 'redeem_gift', constraints: { code: %r{[^/]+} }, format: false
     match 'unsubscribe(/:user_key)' => 'registrations#unsubscribe', as: 'unsubscribe', via: [:put]
   end
 
