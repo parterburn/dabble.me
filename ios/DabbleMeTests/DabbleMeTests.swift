@@ -477,6 +477,23 @@ struct DecodingTests {
         #expect(me.isProThroughApple == false)
     }
 
+    /// Settings → Name sends only the names it changed (PATCH /api/v1/me), and an emptied one as "".
+    @Test func encodesNameUpdate() throws {
+        let encoder = JSONEncoder()
+        encoder.keyEncodingStrategy = .convertToSnakeCase
+        let first = try JSONSerialization.jsonObject(with: encoder.encode(NameUpdate(firstName: "Sam"))) as? [String: String]
+        #expect(first == ["first_name": "Sam"])
+        let cleared = try JSONSerialization.jsonObject(with: encoder.encode(NameUpdate(lastName: ""))) as? [String: String]
+        #expect(cleared == ["last_name": ""])
+
+        let json = """
+        {"id":1,"email":"a@b.c","first_name":"Sam","last_name":"Rivera","name":"Sam Rivera","plan":"free","is_pro":false,
+        "timezone":null,"today":"2026-11-07","entry_count":3,"can_write":true,"can_add_photos":false,"can_edit":false,
+        "can_search":false,"settings_url":"https://dabble.me/settings","security_url":"https://dabble.me/security","ai_connectors":null}
+        """
+        #expect(try APIClient.decoder.decode(Me.self, from: Data(json.utf8)).lastName == "Rivera")
+    }
+
     /// What build 116's server adds for in-app purchase (Api::V1::AppleSubscriptionsController.status_json).
     @Test func decodesMeWithAppleSubscription() throws {
         let json = """

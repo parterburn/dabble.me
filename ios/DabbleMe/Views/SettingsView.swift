@@ -35,18 +35,12 @@ struct SettingsView: View {
                     .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 0))
                 if let me = model.me {
                     Section("Account") {
-                        // Your name opens Settings on dabble.me, where it's changed.
-                        Link(destination: me.settingsUrl) {
-                            LabeledContent("Name") {
-                                HStack(spacing: 8) {
-                                    Text(me.name ?? me.firstName ?? "Add your name")
-                                        .foregroundStyle((me.name ?? me.firstName) == nil ? .secondary : .primary)
-                                    ExternalLinkIcon()
-                                }
-                            }
+                        // Your name, changed here and saved to the account.
+                        PaneLink {
+                            NameSettingsView()
+                        } label: {
+                            LabeledContent("Name", value: me.name ?? me.firstName ?? "Add your name")
                         }
-                        .foregroundStyle(.primary)
-                        .accessibilityHint("Opens your settings on dabble.me")
                         // Your email opens Account Security on dabble.me (password, passkeys, 2FA).
                         Link(destination: me.securityUrl) {
                             LabeledContent("Email") {

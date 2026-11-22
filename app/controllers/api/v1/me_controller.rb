@@ -3,12 +3,43 @@
 module Api
   module V1
     class MeController < BaseController
+      # Names longer than this aren't names (the web form has no cap; the app asks for one).
+      MAX_NAME_LENGTH = 100
+
       def show
+        render json: me_json(current_user)
+      end
+
+      # PATCH /api/v1/me { first_name: "Ann", last_name: "Lee" } (either one). A blank value clears
+      # it; a missing one is left as it is. Returns the account as GET does.
+      def update
         user = current_user
-        render json: {
+        %i[first_name last_name].each do |key|
+          next unless params.key?(key)
+
+          value = params[key].to_s.strip
+          if value.length > MAX_NAME_LENGTH
+            return render_error(:unprocessable_content, 'invalid', "That name is too long (#{MAX_NAME_LENGTH} characters at most).")
+          end
+
+          user.public_send("#{key}=", value.presence)
+        end
+
+        if user.save
+          render json: me_json(user)
+        else
+          render_error(:unprocessable_content, 'invalid', 'Could not save your name.', details: user.errors.full_messages)
+        end
+      end
+
+      private
+
+      def me_json(user)
+        {
           id: user.id,
           email: user.email,
           first_name: user.first_name,
+          last_name: user.last_name,
           name: user.full_name&.strip.presence,
           plan: user.is_pro? ? 'pro' : 'free',
           is_pro: user.is_pro?,

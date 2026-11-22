@@ -6,6 +6,8 @@ struct Me: Decodable, Sendable, Equatable {
     let id: Int
     let email: String
     let firstName: String?
+    /// Only older accounts have one: sign-up stopped asking for it (nil from an older server).
+    var lastName: String? = nil
     /// First and last name, as set on dabble.me (nil from an older server, or when not set).
     var name: String? = nil
     let plan: String
@@ -284,6 +286,22 @@ struct ExportRequestResult: Decodable, Sendable {
 /// POST /api/v1/account_deletion.
 struct AccountDeletionResult: Decodable, Sendable {
     let deletesAt: String
+}
+
+/// PATCH /api/v1/me: an empty name clears it; a nil one is left out, so it stays as it is.
+struct NameUpdate: Encodable, Sendable {
+    var firstName: String?
+    var lastName: String?
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(firstName, forKey: .firstName)
+        try container.encodeIfPresent(lastName, forKey: .lastName)
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case firstName, lastName
+    }
 }
 
 struct AccountDeletionRequest: Encodable, Sendable {

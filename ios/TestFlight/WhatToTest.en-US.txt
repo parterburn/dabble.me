@@ -1,12 +1,13 @@
-Build 118 makes the five dots in Stats tappable.
+Build 120 lets you change your name in the app.
 
-STATS
-- Open Journal → Stats. Under the Rewind card, at the right, are the five dots with their sentence (for example "4 of the last 5 days").
-- Tap the dots (or the sentence beside them). Stats scrolls down to this year's grid of days, the squares grow to their biggest, and the grid slides so today's week sits at its right edge, with the last five days in view.
-- If another year was picked in the year menu, tapping the dots turns it back to this year first.
-- The bigger squares are kept, like a pinch. Pinch the grid to make them smaller again; after a pinch, the grid goes back to resting a few weeks past today.
+NAME
+- Open Settings. The Name row (at the top, under Account) now opens a Name page in the app instead of dabble.me.
+- With no name set, the row says "Add your name" and the page opens with the keyboard up on First Name.
+- Type a first name and tap Done, or go Back. Settings shows the new name, and it's saved to your account: dabble.me's Settings page shows it too.
+- Clear the first name and go Back: the name is removed and the row says "Add your name" again.
+- An account that has a last name also gets a Last Name field (Return on First Name moves to it). Accounts without one don't see it.
 
 CHECK
-- The other tiles (Entries, Photos, Streak, Words) still go where they did.
-- Holding a day in the grid still previews it, and tapping a written day still opens it.
-- In the first days of January, the last five days can reach back into last year: only this year's part of them is in the grid.
+- Going Back without changing anything saves nothing.
+- With no connection, tapping Done shows "Couldn't save your name" and Settings keeps the old name.
+- The Email row still opens Account Security on dabble.me.

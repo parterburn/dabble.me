@@ -191,6 +191,14 @@ final class AppModel {
         await refresh()
     }
 
+    // MARK: - Name
+
+    /// Saves your name to the account (as the web settings do); the server hands back the account.
+    func saveName(_ update: NameUpdate) async throws {
+        let me: Me = try await api.patch("api/v1/me", update)
+        self.me = me
+    }
+
     // MARK: - Export
 
     /// Starts the web's export of the whole journal; the server emails the link.
