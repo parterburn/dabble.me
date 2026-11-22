@@ -17,7 +17,7 @@
         <div class="sm:col-span-2">
           <%= f.label :first_name, "What should we call you? (optional)", class: "field-label" %>
           <%= f.text_field :first_name, class: "field-input", autocomplete: "given-name" %>
-          <p class="field-help">Only used to greet you in emails and so journal features don't mistake you for someone else in your own entries. Leave it blank and emails say "Hey there".</p>
+          <p class="field-help">Only used to greet you in emails and so journal features don't mistake you for someone else in your own entries.</p>
         </div>
         <%# Sign-up no longer asks for a last name. Older accounts that have one see it here, so they can clear it. %>
         <% if user.last_name.present? %>
