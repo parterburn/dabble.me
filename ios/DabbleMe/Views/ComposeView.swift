@@ -1,6 +1,9 @@
 import AVFoundation
 import PhotosUI
 import SwiftUI
+#if canImport(JournalingSuggestions)
+import JournalingSuggestions
+#endif
 
 struct ComposeView: View {
     enum Mode {
@@ -88,6 +91,8 @@ struct ComposeView: View {
     @State private var pickingPhotos = false
     /// A free account tapped Photos: a note that they're part of PRO.
     @State private var explainingProPhotos = false
+    /// Apple's Journaling Suggestions sheet is open ("Moments from your iPhone", iPhone only).
+    @State private var pickingMoment = false
     /// A one-time tip about a touch-and-hold shortcut (`showTipOnce`).
     @State private var tip: String?
     @State private var takingPhoto = false
@@ -344,11 +349,13 @@ struct ComposeView: View {
             } message: {
                 Text(tip ?? "")
             }
-            .alert("Photos are a PRO feature", isPresented: $explainingProPhotos) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text("With Dabble Me PRO you can add up to \(photoLimit) photos to an entry.")
+            // Photos are PRO: what PRO adds, with the plans to subscribe right there.
+            .sheet(isPresented: $explainingProPhotos) { ProInfoView(feature: .photos) }
+            #if canImport(JournalingSuggestions)
+            .journalingSuggestionsPicker(isPresented: $pickingMoment) { suggestion in
+                await addMoment(suggestion)
             }
+            #endif
             .onChange(of: editor.revision) {
                 isUntouchedTemplate = false
                 scheduleDraftSave()
@@ -931,7 +938,8 @@ struct ComposeView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 0) {
                 if canAsk { askLine } else if offersTemplate { templateLine }
-                CalendarRow(day: date, hidesWhenEmpty: canAsk || offersTemplate, space: Self.askRowSpace, changed: { hasEvents in
+                if Moment.isAvailable { momentsLine }
+                CalendarRow(day: date, hidesWhenEmpty: canAsk || offersTemplate || Moment.isAvailable, space: Self.askRowSpace, changed: { hasEvents in
                     hasAgenda = hasEvents
                     if !hasEvents { firstEvent = nil }
                     calendarRowKey += 1
@@ -965,6 +973,45 @@ struct ComposeView: View {
         self.question = nil
         showsAskRow = false
     }
+
+    /// "Moments from your iPhone": Apple's Journaling Suggestions sheet (photos, places, workouts,
+    /// music, people), which hands over only the one moment picked. Its words go in on every plan;
+    /// its photos with PRO.
+    private var momentsLine: some View {
+        Button {
+            pickingMoment = true
+        } label: {
+            HStack(spacing: 8) {
+                Text("Moments from your iPhone")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Image(systemName: "chevron.right")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.tertiary)
+            }
+            .font(.subheadline)
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal)
+        .padding(.top, 2)
+        .padding(.bottom, 10)
+        .accessibilityHint("Opens your iPhone's suggestions: photos, places, workouts and music to write about")
+    }
+
+    #if canImport(JournalingSuggestions)
+    /// The picked moment: its words where the cursor is, its photos with the others (PRO), or a
+    /// word about PRO when a free account picked one with photos.
+    private func addMoment(_ suggestion: JournalingSuggestion) async {
+        let canAddPhotos = model.me?.canAddPhotos == true
+        let room = canAddPhotos ? max(photoLimit - photoItems.count, 0) : 0
+        let moment = await Moment.from(suggestion, photoLimit: room)
+        showsAskRow = false
+        editor.addMoment(heading: moment.heading, lines: moment.lines())
+        for reflection in moment.reflections { editor.addQuestion(reflection) }
+        for data in moment.photos { await addPhotoData(data) }
+        if moment.photoCount > 0, !canAddPhotos { explainingProPhotos = true }
+    }
+    #endif
 
     /// The template alone, where there's no prompt to be had (an entry being edited, without
     /// Apple Intelligence).
@@ -1258,7 +1305,22 @@ struct ComposeView: View {
             image.jpegData(compressionQuality: 0.95).flatMap { try? PhotoPreparer.prepare($0) }
         }.value
         guard let photo else { error = "The photo couldn't be added."; return }
-        let item = PhotosPickerItem(itemIdentifier: "camera-\(UUID().uuidString)")
+        attachPrepared(photo)
+    }
+
+    /// A photo from a moment (Journaling Suggestions) joins the others, prepared the same way.
+    private func addPhotoData(_ data: Data) async {
+        guard photoItems.count < photoLimit else { return }
+        isLoadingPhotos = true
+        defer { isLoadingPhotos = false }
+        let photo = await Task.detached(priority: .userInitiated) { try? PhotoPreparer.prepare(data) }.value
+        guard let photo else { error = "A photo from that moment couldn't be added."; return }
+        attachPrepared(photo)
+    }
+
+    /// Outside the photo picker (camera, moments): under a made-up identifier it doesn't know.
+    private func attachPrepared(_ photo: PreparedPhoto) {
+        let item = PhotosPickerItem(itemIdentifier: "added-\(UUID().uuidString)")
         prepared[item] = photo
         previews[item] = UIImage(data: photo.thumbnail).map(Image.init(uiImage:))
         cameraItems.append(item)

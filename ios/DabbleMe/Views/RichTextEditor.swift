@@ -244,6 +244,19 @@ final class RichTextEditorModel {
         addLines(added)
     }
 
+    /// A moment from Journaling Suggestions: its title in bold, as a question is, then a plain line
+    /// for each place, workout, song and so on, on lines of their own with the cursor after them.
+    func addMoment(heading: String?, lines: [String]) {
+        guard heading != nil || !lines.isEmpty else { return }
+        let style = RichText.Style.journal
+        var bold = style.baseAttributes
+        bold[.font] = style.baseFont.with(bold: true, italic: false)
+        let added = NSMutableAttributedString()
+        if let heading { added.append(NSAttributedString(string: heading + "\n", attributes: bold)) }
+        for line in lines { added.append(NSAttributedString(string: line + "\n", attributes: style.baseAttributes)) }
+        addLines(added)
+    }
+
     /// Adds the writer's template (Settings → Entry Template) as a prompt goes in: at the
     /// cursor, on lines of its own, with the cursor after it.
     func addTemplate(_ typed: [DocumentRun]) {
