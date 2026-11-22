@@ -1947,12 +1947,14 @@ private struct DictationRow: View {
     /// it's heard in one go, then tidied.
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(dictationTitle)
+            // One title throughout, matching Settings → Dictation; the row below shows the state.
+            Text("Dictation")
                 .font(.caption.weight(.semibold))
                 .textCase(.uppercase)
                 .foregroundStyle(.tint)
                 .padding(.bottom, 4)
                 .accessibilityAddTraits(.isHeader)
+                .accessibilityValue(dictationState)
             HStack(alignment: .center, spacing: 12) {
                 if let problem = dictation.problem {
                     closeButton("Close") { dictation.clearProblem() }
@@ -2020,8 +2022,9 @@ private struct DictationRow: View {
         .accessibilityLabel(label)
     }
 
-    private var dictationTitle: String {
-        if dictation.problem != nil { return "Speak your entry" }
+    /// Read out with the title, since the title itself no longer changes.
+    private var dictationState: String {
+        if dictation.problem != nil { return "" }
         return switch dictation.state {
         case .idle, .preparing: "Getting ready"
         case .listening: "Listening"
