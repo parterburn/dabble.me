@@ -58,8 +58,8 @@ You can now [export your whole journal]({{export_url}}): every entry and photo i
 
 ## ➕ Other updates
 
+- **Sign in with a passkey.** Use Face ID, Touch ID, or your device's own unlock instead of a password. There's nothing to guess, phish, or leak, so it's the safest way into your journal. **[Add a passkey]({{security_url}})**; it takes a minute.
 - **A fresh look.** A new logo, a cleaner design, and a site that's easier to find your way around.
-- **Sign in without a password.** Use Face ID, Touch ID, or your device's own unlock.
 - **A new address for sending entries.** If the email address you send entries to ever gets out, you can swap it for a new one in Settings.
 - **Day One import.** Users can now bring their Day One journal over, photos included.
 - **Work behind the scenes.** I moved Dabble Me onto updated infrastructure and added new security measures to protect your entries.
