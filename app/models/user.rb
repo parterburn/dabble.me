@@ -278,6 +278,26 @@ class User < ActiveRecord::Base
     !is_pro?
   end
 
+  # Set on an account made by entering an emailed code (EmailSignIn): it starts with no
+  # password. One can be set later (Account Security, or Forgot password).
+  attr_accessor :passwordless_signup
+
+  # False for an account made by email code that hasn't set a password. Its sign-in is the
+  # emailed code or a passkey, and an EmailCode stands in where the password is asked for.
+  def has_password?
+    encrypted_password.present?
+  end
+
+  # Devise ties sessions and "Stay logged in" cookies to the password hash's salt, so changing
+  # the password signs other browsers out. An account with no password has no hash: it gets a
+  # stand-in, which changes (signing those browsers out) once a password is set.
+  def authenticatable_salt
+    return super if has_password?
+
+    OpenSSL::HMAC.hexdigest('SHA256', Rails.application.key_generator.generate_key('passwordless_salt', 32),
+                            "#{id}:#{created_at.to_i}").first(29)
+  end
+
   # Set on a gift sign-up (Gift): the gift goes on just after the account is created, and the
   # welcome email's copy depends on the plan, so RegistrationsController sends it after that.
   attr_accessor :welcome_email_after_gift
@@ -493,6 +513,14 @@ class User < ActiveRecord::Base
 
   def resume_apple_subscription
     AppStore::Entitlement.sync!(self) if apple_subscriptions.any?(&:entitles_pro?)
+  end
+
+  # Devise's validatable asks for a password on every new account; a passwordless sign-up has
+  # none. Setting one later is validated as usual.
+  def password_required?
+    return false if passwordless_signup && password.nil? && password_confirmation.nil?
+
+    super
   end
 
   def send_welcome_email

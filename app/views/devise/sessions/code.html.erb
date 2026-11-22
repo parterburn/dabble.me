@@ -1,0 +1,84 @@
+<%# The code page (EmailCodesController#show): enter the code emailed to the address on the
+    previous page. Shows where it went, so a mistyped address is easy to see and change. %>
+<% content_for :title, "Check your email" %>
+<% content_for :robots, "noindex, nofollow" %>
+<% change_path = if pending["gift_code"].present?
+                   gift_path(pending["gift_code"], email: pending["email"])
+                 elsif pending["intent"] == "sign_up"
+                   new_user_registration_path(email: pending["email"])
+                 else
+                   new_user_session_path(email: pending["email"])
+                 end %>
+
+<section class="py-12 lg:py-20">
+  <div class="mx-auto max-w-lg px-4 sm:px-6">
+    <div class="text-center mb-8">
+      <h1 class="font-serif text-3xl sm:text-4xl tracking-tight text-primary">Check your email</h1>
+      <p class="mt-3 text-muted">
+        We sent a 6-digit code to
+        <strong class="text-primary break-all"><%= pending["email"] %></strong>.
+      </p>
+      <p class="mt-1 text-sm text-muted">
+        Wrong email? <%= link_to "Change it", change_path, class: "text-accent underline hover:text-primary" %>
+      </p>
+    </div>
+
+    <div class="card p-6 sm:p-8 space-y-5">
+      <%= form_tag verify_email_code_path, class: "space-y-5", id: "email-code-form" do %>
+        <div>
+          <%= label_tag :code, "Code", class: "block text-sm font-medium text-primary mb-1.5" %>
+          <%= text_field_tag :code, nil,
+              autofocus: true,
+              required: true,
+              autocomplete: "one-time-code",
+              inputmode: "numeric",
+              pattern: "[0-9 ]{6,7}",
+              maxlength: 7,
+              placeholder: "123456",
+              class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted text-center text-2xl tracking-[0.4em] font-mono focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
+          <p class="mt-1.5 text-xs text-muted">It works for <%= EmailCode::LIFETIME.in_minutes.to_i %> minutes. Not there? Check spam, or send a new one.</p>
+        </div>
+        <%= submit_tag "Continue", class: "w-full px-6 py-3 text-sm font-medium rounded-lg bg-olive-900 text-white hover:bg-olive-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-olive-500 cursor-pointer transition-colors" %>
+      <% end %>
+
+      <%= button_to "Send a new code", resend_email_code_path, class: "w-full text-sm text-accent underline hover:text-primary cursor-pointer", form_class: "text-center" %>
+
+      <details class="border-t border-subtle pt-5" <%= "open" if params[:password] %>>
+        <summary class="cursor-pointer text-center text-sm text-muted hover:text-primary">Use password instead</summary>
+        <%= form_tag user_session_path, class: "mt-4 space-y-4" do %>
+          <%= hidden_field_tag "user[email]", pending["email"], autocomplete: "username" %>
+          <%= hidden_field_tag "user[remember_me]", pending["remember_me"] ? "1" : "0" %>
+          <%# Sends a failed attempt back here, not to the email page (CodeAwareFailureApp). %>
+          <%= hidden_field_tag :from_code, "1" %>
+          <div>
+            <%= label_tag "user_password", "Password", class: "block text-sm font-medium text-primary mb-1.5" %>
+            <%= password_field_tag "user[password]", nil, id: "user_password", autocomplete: "current-password", required: true,
+                class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
+          </div>
+          <%= submit_tag "Log in with password", class: "w-full px-6 py-3 text-sm font-medium rounded-lg border border-subtle bg-surface text-primary hover:bg-surface-elevated cursor-pointer transition-colors" %>
+          <p class="text-center text-sm">
+            <%= link_to "Forgot password?", new_user_password_path, class: "text-accent hover:text-primary" %>
+          </p>
+        <% end %>
+      </details>
+    </div>
+  </div>
+</section>
+
+<% content_for :scripts do %>
+  <script>
+    // Submit as soon as six digits are in (typed, pasted or autofilled).
+    (function () {
+      var field = document.getElementById("code");
+      var form = document.getElementById("email-code-form");
+      if (!field || !form) return;
+      var sent = false;
+      field.addEventListener("input", function () {
+        if (!sent && field.value.replace(/\D/g, "").length === 6) {
+          sent = true;
+          form.requestSubmit ? form.requestSubmit() : form.submit();
+        }
+      });
+    })();
+  </script>
+<% end %>

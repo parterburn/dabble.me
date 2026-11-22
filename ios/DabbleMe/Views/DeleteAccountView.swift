@@ -1,7 +1,8 @@
 import SwiftUI
 
 /// Settings → Delete Account, all in the app (App Store guideline 5.1.1(v)): what goes, an
-/// export first, billing to cancel elsewhere, the password (or one of the account's passkeys),
+/// export first, billing to cancel elsewhere, the password (or one of the account's passkeys, or
+/// an emailed code on an account with no password),
 /// then one last confirmation. The
 /// server deletes the account an hour later (`DeleteUserJob`, which cancels a Stripe
 /// subscription), unless the person signs back in before then.
@@ -55,28 +56,37 @@ struct DeleteAccountView: View {
                     }
 
                     Section {
-                        SecureField("Password", text: $password)
-                            .textContentType(.password)
-                            .focused($passwordFocused)
-                            .submitLabel(.done)
-                            .onSubmit { if !password.isEmpty { confirming = true } }
+                        if model.confirmsWithEmailCode {
+                            // No password on this account (made by email code): an emailed code instead.
+                            EmailCodeConfirmField(code: $password, focused: $passwordFocused) {
+                                if !password.isEmpty { confirming = true }
+                            }
+                        } else {
+                            SecureField("Password", text: $password)
+                                .textContentType(.password)
+                                .focused($passwordFocused)
+                                .submitLabel(.done)
+                                .onSubmit { if !password.isEmpty { confirming = true } }
+                        }
                     } header: {
-                        Text("Confirm with Your Password")
+                        Text(model.confirmsWithEmailCode ? "Confirm with a Code from Your Email" : "Confirm with Your Password")
                     } footer: {
                         VStack(alignment: .leading, spacing: 6) {
                             if let error {
                                 Text(error).foregroundStyle(Color.deleteRed)
                             }
                             // Someone who signs in with a passkey may not know the password.
-                            Button("Confirm with a Passkey Instead") { confirmingWithPasskey = true }
-                                .font(.footnote)
-                                .disabled(isDeleting)
-                                .confirmationDialog("Delete your account and \(entries)?", isPresented: $confirmingWithPasskey, titleVisibility: .visible) {
-                                    Button("Continue with Passkey", role: .destructive) { deleteWithPasskey() }
-                                    Button("Cancel", role: .cancel) {}
-                                } message: {
-                                    Text("Confirm with your passkey next. You'll be signed out. After an hour this can't be undone.")
-                                }
+                            if model.me?.hasPasskey != false {
+                                Button("Confirm with a Passkey Instead") { confirmingWithPasskey = true }
+                                    .font(.footnote)
+                                    .disabled(isDeleting)
+                                    .confirmationDialog("Delete your account and \(entries)?", isPresented: $confirmingWithPasskey, titleVisibility: .visible) {
+                                        Button("Continue with Passkey", role: .destructive) { deleteWithPasskey() }
+                                        Button("Cancel", role: .cancel) {}
+                                    } message: {
+                                        Text("Confirm with your passkey next. You'll be signed out. After an hour this can't be undone.")
+                                    }
+                            }
                         }
                     }
 
@@ -155,7 +165,11 @@ struct DeleteAccountView: View {
             defer { isDeleting = false }
             do {
                 // Signs the app out: the welcome screen (this sheet goes with Settings) says when.
-                try await model.deleteAccount(password: password)
+                if model.confirmsWithEmailCode {
+                    try await model.deleteAccount(emailCode: password)
+                } else {
+                    try await model.deleteAccount(password: password)
+                }
             } catch {
                 self.error = error.localizedDescription
                 password = ""

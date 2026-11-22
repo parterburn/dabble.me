@@ -113,6 +113,14 @@ Admin pages (`/admin/*` and `/sidekiq`) have two extra gates on top of `users.ad
 | `CLOUDFLARE_ACCESS_TEAM_DOMAIN` | e.g. `dabble.cloudflareaccess.com` |
 | `CLOUDFLARE_ACCESS_AUD` | The Access application's Application Audience (AUD) tag |
 
+### Sign-in by emailed code
+
+Log in and Sign up ask only for an email (web: `EmailCodesController`; app: `Api::V1::EmailCodesController`; both through `EmailSignIn`). The email field also offers saved passkeys. Continue always emails a six-digit code and shows the code page, with or without an account at that address, so nothing on screen says which emails have accounts. An unknown address gets an account only once its code is entered, and the code also confirms the address (`users.email_verified_at`). The code page has "Use password instead" (Devise's own sign-in; `CodeAwareFailureApp` sends a failure back to the code page), and an account with 2FA still needs its authenticator code after the emailed one.
+
+- `EmailCode` holds keyed digests only, never the code or the address. Codes last 10 minutes and work once; the three newest stay live so a resend doesn't break the one before. Limits: 5 wrong guesses per code, 20 per address per day, 5 sends per address per hour, one per 30 seconds, plus Rack::Attack per IP. `EmailCodeCleanupWorker` deletes rows after two days.
+- An account made this way has no password (`User#has_password?`). Wherever the password is asked for (Account Security, the delete page, adding a passkey, the app's Delete Account and Add a Passkey) it gets "Email me a code" instead: an `EmailCode` with purpose `confirm`, tied to the account. Setting a password later works as usual, and so does Forgot password.
+- Accounts with a password keep it. Nothing forces anyone off passwords.
+
 ### Exports
 
 The Export page is `/entries/export` (`ExportsController#new`, linked from the account menu); with `.md` it streams the journal as Markdown on the spot (`ExportMarkdown`). Its form posts back to the same path (`#create`): `download=markdown` streams the Markdown, anything else starts an `Export`, for everything or for one year or search. `ExportEntriesJob` builds a ZIP with `ExportArchive` (`journal.html` from `ExportHtml`, `journal.md`, `entries.json`, `images/`), `ExportStore` uploads it privately, and `UserMailer.export_ready` emails a link. Asking for the same thing again within `Export::LIMIT_PERIOD` (12 hours) downloads the last export; `exports.scope` says what an export holds (`all`, `year:2021`, or `search:` with a keyed digest). The search words are kept in `exports.search_term`, encrypted, only to name the file and title its documents. A person can start `Export::HOURLY_LIMIT` (10) exports an hour.

@@ -1,9 +1,12 @@
-Settings cleanup: your account details now live on one Account page.
+Passwordless sign-in: sign in or sign up with just your email and a code we email you.
 
-- Settings starts with an Account row showing your email. Tap it: the Account page has Name (tap to change it), your Email, Add a Passkey (only while the account has none), Account Security (opens dabble.me), and Export Entries.
-- Add a Passkey has an olive icon like the other rows, with black words.
-- Add a Passkey from the Account page: the sheet still ends on "Passkey added", and the row goes away once you tap Done.
-- Export Entries from the Account page still asks Cancel/Export first, then emails the link.
-- Change your name from Account → Name and go Back: it saves, and the Account row's page shows the new name.
-- The "On dabble.me" heading is gone. The Claude/ChatGPT Connector row now sits right above Help & Support.
-- Plan and Manage Hashtags stay on the main Settings page, under the Account row.
+- Sign out, then Sign In: the form asks only for your email. Tap the Email field: your dabble.me passkey shows above the keyboard. Pick it and you're in.
+- Type your email and tap Continue: the next screen says "Check your email" and shows the address. Within a minute you get a 6-digit code. Tap the code above the keyboard (or paste it): it signs in as soon as six digits are in.
+- On the code screen, "Wrong email? Change It" goes back with the address ready to fix. "Send a New Code" sends another; the first one still works for a few minutes.
+- "Use Password Instead" shows the password field and signs in the old way. Passwords keep working.
+- Type a wrong code: it says so and clears the field. Codes stop working after 10 minutes, and after a few wrong tries.
+- Type you@gmial.com and tap Continue: it asks "Did you mean you@gmail.com?" first. Tap it to fix, or tap Continue again to send anyway.
+- Start Your Journal with a new email: same two steps, no password, no name. The account is only made once the code is entered, so a typo leaves nothing behind.
+- After signing in with a code, the Add a Passkey sheet comes up (as after a password sign-in). After signing up, it doesn't.
+- With two-factor on, the code screen asks for your authenticator code after the emailed one.
+- On an account made this way (no password): Delete Account and Add a Passkey (from Settings, later on) say "Email Me a Code" in place of the password.

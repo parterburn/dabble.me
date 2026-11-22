@@ -1,0 +1,73 @@
+<%# The email-first form on Log in and Sign up (EmailCodesController#create). Continue always
+    emails a code, so the form looks the same whether or not the address has an account. On
+    Log in the field also offers saved passkeys (autocomplete "webauthn"). locals: intent
+    ("sign_in" or "sign_up"), submit_label. %>
+<%= form_tag email_codes_path, class: "space-y-5", toolname: (intent == "sign_up" ? "create_account" : "log_in"), tooldescription: "Fill in the email for the Dabble Me account. Leave the form for the user to review and submit. Do not submit automatically." do %>
+  <%= hidden_field_tag :intent, intent %>
+  <%= hidden_field_tag :gift_code, current_gift.code if intent == "sign_up" && current_gift %>
+
+  <div>
+    <%= label_tag "user_email", "Email", class: "block text-sm font-medium text-primary mb-1.5" %>
+    <%= email_field_tag "user[email]", params[:email].presence || params.dig(:user, :email),
+        id: "user_email",
+        autofocus: true,
+        required: true,
+        autocomplete: "username webauthn",
+        autocapitalize: "off",
+        spellcheck: false,
+        placeholder: "you@example.com",
+        toolparamdescription: (intent == "sign_up" ? "Email address that will receive journal prompts." : "Email address for the existing Dabble Me account."),
+        class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
+    <p id="email-typo-hint" class="mt-1.5 text-sm text-muted" aria-live="polite" hidden></p>
+  </div>
+
+  <label class="flex items-center gap-2 cursor-pointer">
+    <% remember = params.dig(:user, :remember_me).nil? || ActiveModel::Type::Boolean.new.cast(params.dig(:user, :remember_me)) %>
+    <%= hidden_field_tag "user[remember_me]", "0", id: nil %>
+    <%= check_box_tag "user[remember_me]", "1", remember, id: "user_remember_me", class: "w-4 h-4 rounded border-subtle text-accent focus:ring-accent cursor-pointer" %>
+    <span class="text-sm text-muted">Stay logged in</span>
+  </label>
+
+  <div>
+    <%= submit_tag submit_label, class: "w-full px-6 py-3 text-sm font-medium rounded-lg bg-olive-900 text-white hover:bg-olive-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-olive-500 cursor-pointer transition-colors" %>
+    <p class="mt-2 text-center text-xs text-muted">We'll email you a 6-digit code. No password needed.</p>
+  </div>
+
+  <!-- Divider -->
+  <div class="relative">
+    <div class="absolute inset-0 flex items-center">
+      <div class="w-full border-t border-subtle"></div>
+    </div>
+    <div class="relative flex justify-center text-sm">
+      <span class="px-4 bg-surface text-muted">or</span>
+    </div>
+  </div>
+
+  <button type="button" id="login-passkey" class="w-full px-6 py-3 text-sm font-medium rounded-lg border border-subtle bg-surface text-primary hover:bg-surface-elevated focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-accent cursor-pointer transition-colors flex items-center justify-center gap-2">
+    <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M7.864 4.243A7.5 7.5 0 0119.5 10.5c0 2.92-.556 5.709-1.568 8.268M5.742 6.364A7.465 7.465 0 004.5 10.5a7.464 7.464 0 01-1.15 3.993m1.989 3.559A11.209 11.209 0 008.25 10.5a3.75 3.75 0 117.5 0c0 .527-.021 1.049-.064 1.565M12 10.5a14.94 14.94 0 01-3.6 9.75m6.633-4.596a18.666 18.666 0 01-2.485 5.33" />
+    </svg>
+    Log in with Passkey
+  </button>
+
+  <p class="text-center text-xs text-muted">
+    By continuing you agree to the
+    <%= link_to "terms of service", terms_path, class: "text-accent hover:text-primary underline" %>.
+  </p>
+<% end %>
+
+<% content_for :scripts do %>
+  <%= javascript_include_tag "webauthn" %>
+  <%= javascript_include_tag "email_typo" %>
+  <script>
+    DABBLE.emailTypo.watch(document.getElementById("user_email"), document.getElementById("email-typo-hint"));
+    DABBLE.webauthn.setupSignIn({
+      buttonId: "login-passkey",
+      autofill: true,
+      rememberMe: function() {
+        var box = document.getElementById("user_remember_me");
+        return !!(box && box.checked);
+      }
+    });
+  </script>
+<% end %>

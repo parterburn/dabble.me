@@ -104,6 +104,24 @@ class UserMailer < ActionMailer::Base
     email.mailgun_options = { tag: "Security" }
   end
 
+  # The code for passwordless sign-in or sign-up (EmailSignIn). Sent to the address as typed,
+  # which may have no account yet. The code leads the subject so it shows in the notification
+  # and iOS can offer it above the keyboard.
+  def sign_in_code(email, code, new_account:)
+    @code = code
+    @new_account = new_account
+    email = mail(to: email, subject: "#{code} is your Dabble Me code")
+    email.mailgun_options = { tag: "Security" }
+  end
+
+  # Confirms an account change on an account with no password (EmailCode purpose "confirm").
+  def confirmation_code(user, code)
+    @user = user
+    @code = code
+    email = mail(to: user.cleaned_to_address, subject: "#{code} is your Dabble Me confirmation code")
+    email.mailgun_options = { tag: "Security" }
+  end
+
   def passkey_added(user, nickname)
     @user = user
     @nickname = nickname
