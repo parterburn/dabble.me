@@ -1,4 +1,4 @@
-Build 113 sells Dabble Me PRO in the app (Monthly and Yearly). TestFlight purchases use Apple's sandbox: nothing is charged. In TestFlight a subscription renews once a day, whichever plan, and stops on its own after 6 renewals.
+Build 114 sells Dabble Me PRO in the app (Monthly and Yearly). TestFlight purchases use Apple's sandbox: nothing is charged. In TestFlight a subscription renews once a day, whichever plan, and stops on its own after 6 renewals.
 
 Use a Free account for these, not one that pays on dabble.me.
 

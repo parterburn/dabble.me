@@ -24,7 +24,7 @@ module Api
           can_add_links: user.is_pro?,
           can_search: user.is_pro?,
           can_see_stats: user.is_pro?,
-          # In-app purchase (from build 111): the appAccountToken to buy with, where PRO comes
+          # In-app purchase (from build 114): the appAccountToken to buy with, where PRO comes
           # from ("apple", "web" or nil), and the App Store subscription that gives it.
           apple_account_token: user.apple_account_token!,
           **AppleSubscriptionsController.status_json(user).slice(:pro_source, :apple_subscription),
