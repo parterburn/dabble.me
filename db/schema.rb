@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_22_170000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_180000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -101,6 +101,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_170000) do
     t.integer "mcp_tool_calls", default: 0, null: false
     t.jsonb "mcp_tool_breakdown", default: {}, null: false
     t.index ["captured_on"], name: "index_business_metric_snapshots_on_captured_on", unique: true
+  end
+
+  create_table "email_codes", force: :cascade do |t|
+    t.string "purpose", null: false
+    t.string "email_digest", null: false
+    t.bigint "user_id"
+    t.string "code_digest", null: false
+    t.integer "attempts", default: 0, null: false
+    t.datetime "expires_at", null: false
+    t.datetime "used_at"
+    t.datetime "created_at", null: false
+    t.index ["email_digest", "purpose", "created_at"], name: "index_email_codes_on_email_digest_and_purpose_and_created_at"
+    t.index ["expires_at"], name: "index_email_codes_on_expires_at"
+    t.index ["user_id"], name: "index_email_codes_on_user_id"
   end
 
   create_table "encryption_checks", force: :cascade do |t|
@@ -358,6 +372,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_170000) do
     t.text "app_settings"
     t.uuid "apple_account_token"
     t.string "signup_platform"
+    t.datetime "email_verified_at"
+    t.datetime "email_changed_at"
     t.index ["apple_account_token"], name: "index_users_on_apple_account_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["image_key"], name: "index_users_on_image_key", unique: true
@@ -382,6 +398,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_170000) do
 
   add_foreign_key "ai_usages", "users", on_delete: :cascade
   add_foreign_key "apple_subscriptions", "users", on_delete: :nullify
+  add_foreign_key "email_codes", "users", on_delete: :cascade
   add_foreign_key "exports", "users", on_delete: :cascade
   add_foreign_key "gift_redemptions", "users", on_delete: :cascade
   add_foreign_key "ignored_email_images", "users", on_delete: :cascade

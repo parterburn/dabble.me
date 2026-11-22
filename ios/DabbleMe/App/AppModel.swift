@@ -131,6 +131,8 @@ final class AppModel {
     private let tokens: TokenProvider
     private var processingWatches: Set<Int> = []
     private let passkeys = PasskeyAuthenticator()
+    /// The email field's passkey autofill, apart from `passkeys` (one request each at a time).
+    private let autoFillPasskeys = PasskeyAuthenticator()
 
     init(tokens: TokenProvider = TokenProvider()) {
         self.tokens = tokens
@@ -156,8 +158,37 @@ final class AppModel {
     /// Said on the welcome screen after the account's deletion is set (not an error).
     var signInNotice: String?
 
-    /// The app's own form: email and password, then the 2FA code if the server asks for one
-    /// (`NativeAuthError.needsCode`). Throws what the form should say.
+    /// Emails a sign-in code (`AuthFormView`'s Continue). The answer is the same for every
+    /// address, so the code screen always follows.
+    func sendSignInCode(email: String) async throws -> NativeAuth.CodeSent {
+        try await NativeAuth.sendCode(email: email)
+    }
+
+    /// The emailed code: signs in, or makes the account. Then the 2FA code if the server asks for
+    /// one (`NativeAuthError.needsCode`). A sign-in (not a sign-up) asks to add a passkey after.
+    func signIn(email: String, emailCode: String, otpCode: String?) async throws {
+        let session = try await NativeAuth.signIn(email: email, emailCode: emailCode, otpCode: otpCode)
+        await didSignIn(with: session.tokens, passkeySetupToken: session.passkeySetupToken, asksForPasskey: !session.created)
+    }
+
+    /// Passkeys above the keyboard while the email field is focused. Waits until one is picked
+    /// (then signs in) or `stopPasskeyAutoFill()`, which throws `CancellationError`.
+    func passkeyAutoFill() async throws {
+        autoFillPasskeys.prepareAutoFill()
+        // Quiet when the challenge can't be had: nobody asked for anything yet.
+        guard let challenge = try? await NativeAuth.passkeyChallenge(),
+              let bytes = NativeAuth.data(base64URL: challenge.challenge) else { return }
+        let assertion = try await autoFillPasskeys.autoFillAssertion(relyingParty: challenge.rpId, challenge: bytes)
+        let session = try await NativeAuth.signIn(with: assertion, for: challenge)
+        await didSignIn(with: session.tokens)
+    }
+
+    func stopPasskeyAutoFill() {
+        autoFillPasskeys.cancel()
+    }
+
+    /// "Use Password Instead" on the code screen: email and password, then the 2FA code if the
+    /// server asks for one (`NativeAuthError.needsCode`). Throws what the form should say.
     func signIn(email: String, password: String, code: String?) async throws {
         let session = try await NativeAuth.signIn(email: email, password: password, code: code)
         // (session.deletionCancelled: the account was set to be deleted and this kept it, as
@@ -182,7 +213,7 @@ final class AppModel {
         await didSignIn(with: session.tokens)
     }
 
-    /// `asksForPasskey`: a password sign-in (not sign-up), after which the passkey prompt comes
+    /// `asksForPasskey`: a password or email-code sign-in (not sign-up), after which the passkey prompt comes
     /// up once the journal has loaded. Adding one needs no password for the next few minutes
     /// (the server's PasskeysController::SETUP_WINDOW), from the prompt or Settings.
     private func didSignIn(with fresh: OAuthTokens, passkeySetupToken: String? = nil, asksForPasskey: Bool = false) async {
@@ -203,12 +234,22 @@ final class AppModel {
     /// is up. Settings' Add a Passkey opens the same sheet.
     var passkeyPromptPending = false
     var showsPasskeyPrompt = false
-    /// Checked once per password sign-in.
+    /// Checked once per password or email-code sign-in.
     private var passkeyPromptChecked = false
     private var justSignedIn = false
     private var passkeySetup: (token: String, expires: Date)?
 
-    /// The sheet needs the password: there's been no password sign-in in the last few minutes.
+    /// The account has no password (made by email code): confirmations use an emailed code.
+    var confirmsWithEmailCode: Bool { me?.hasPassword == false }
+
+    /// Emails a code to the signed-in account, for `confirmsWithEmailCode` (adding a passkey,
+    /// Delete Account).
+    func sendConfirmationCode() async throws -> ConfirmationCodeSent {
+        try await api.post("api/v1/confirmation_code", EmptyBody())
+    }
+
+    /// The sheet needs the password (or an emailed code): there's been no sign-in in the last
+    /// few minutes.
     var addingPasskeyNeedsPassword: Bool {
         guard let passkeySetup else { return true }
         return passkeySetup.expires < Date()
@@ -230,10 +271,13 @@ final class AppModel {
 
     /// The system's sheet makes a passkey for dabble.me (iCloud Keychain, or the password manager
     /// picked), then the server keeps it. Throws `CancellationError` when the sheet is closed.
+    /// `password` is the password, or the emailed code when `confirmsWithEmailCode`.
     func addPasskey(password: String?) async throws {
         // Chosen once, before the system's sheet: the setup token can run out while it's up.
         let token = addingPasskeyNeedsPassword ? nil : passkeySetup?.token
-        let proof = NativeAuth.PasskeyProof(setupToken: token, currentPassword: token == nil ? password : nil)
+        let byCode = token == nil && confirmsWithEmailCode
+        let proof = NativeAuth.PasskeyProof(setupToken: token, currentPassword: token == nil && !byCode ? password : nil,
+                                            emailCode: byCode ? password : nil)
         let creation: NativeAuth.PasskeyCreation = try await api.post("api/v1/passkeys/options",
                                                                       json: try JSONEncoder().encode(proof))
         guard let challenge = NativeAuth.data(base64URL: creation.challenge),
@@ -243,9 +287,10 @@ final class AppModel {
         let excluded = (creation.excludeCredentials ?? []).compactMap { NativeAuth.data(base64URL: $0) }
         let registration = try await passkeys.register(relyingParty: creation.rpId, challenge: challenge,
                                                        userName: creation.userName, userID: userID, excluding: excluded)
+        // An emailed code works once: the options answer's setup token goes with the passkey.
         let body = try JSONEncoder().encode(NativeAuth.NewPasskey(
             registration: registration, creation: creation, nickname: PasskeyPrompt.nickname,
-            setupToken: proof.setupToken, password: proof.currentPassword))
+            setupToken: creation.setupToken ?? proof.setupToken, password: proof.currentPassword))
         let _: PasskeyAdded = try await api.post("api/v1/passkeys", json: body)
         passkeySetup = nil
         // Known now, even if the refresh below doesn't get through (Done shouldn't count as Not Now).
@@ -292,6 +337,12 @@ final class AppModel {
     /// person signs back in, and has already ended this session; the app signs out here.
     func deleteAccount(password: String) async throws {
         let result: AccountDeletionResult = try await api.post("api/v1/account_deletion", AccountDeletionRequest(password: password))
+        await finishDeletion(result)
+    }
+
+    /// The same, confirmed with a code emailed to an account with no password (`sendConfirmationCode`).
+    func deleteAccount(emailCode: String) async throws {
+        let result: AccountDeletionResult = try await api.post("api/v1/account_deletion", AccountDeletionRequest(emailCode: emailCode))
         await finishDeletion(result)
     }
 

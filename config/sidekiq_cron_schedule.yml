@@ -43,3 +43,8 @@ apple_subscription_refresh:
   cron: "45 0 * * *"
   class: "AppleSubscriptionRefreshWorker"
   description: "Daily at 12:45 AM UTC. Re-reads App Store subscriptions from Apple in case a notification was missed, and ends PRO whose paid period is over."
+
+email_code_cleanup:
+  cron: "40 4 * * *"
+  class: "EmailCodeCleanupWorker"
+  description: "Daily at 4:40 AM UTC. Deletes emailed sign-in codes older than two days."

@@ -46,6 +46,43 @@ final class PasskeyAuthenticator: NSObject, ASAuthorizationControllerDelegate, A
         return assertion
     }
 
+    /// The account's passkeys offered above the keyboard while the email field is focused (the
+    /// QuickType bar), the app's version of the web's passkey autofill. Waits until one is picked;
+    /// `cancel()` ends the wait with `CancellationError`. Use its own authenticator, apart from
+    /// the one the passkey button uses: each handles one request at a time.
+    func autoFillAssertion(relyingParty: String, challenge: Data) async throws -> PasskeyAssertion {
+        // Cancelled while the challenge was on its way: don't start.
+        if cancelRequested {
+            cancelRequested = false
+            throw CancellationError()
+        }
+        defer { controller = nil }
+        let provider = ASAuthorizationPlatformPublicKeyCredentialProvider(relyingPartyIdentifier: relyingParty)
+        let request = provider.createCredentialAssertionRequest(challenge: challenge)
+        request.userVerificationPreference = .required
+        guard case .assertion(let assertion) = try await perform(request, registering: false, autoFill: true) else {
+            throw NativeAuthError.message("That passkey didn't work. Try again, or use your email.")
+        }
+        return assertion
+    }
+
+    /// Ends a waiting request (autofill, when the form goes away or the passkey button is used),
+    /// or the next one, when it hasn't started yet (`prepareAutoFill` clears that).
+    func cancel() {
+        if let controller {
+            controller.cancel()
+        } else {
+            cancelRequested = true
+        }
+    }
+
+    /// Before fetching an autofill request's challenge: forget a cancel meant for an earlier one.
+    func prepareAutoFill() {
+        cancelRequested = false
+    }
+
+    private var cancelRequested = false
+
     /// Makes a passkey for the signed-in account (saved to iCloud Keychain, or the password
     /// manager the person picks). `userID` is the account's user handle, as the server gives it.
     /// Throws `CancellationError` when the person closes the sheet.
@@ -61,7 +98,7 @@ final class PasskeyAuthenticator: NSObject, ASAuthorizationControllerDelegate, A
         return registration
     }
 
-    private func perform(_ request: ASAuthorizationRequest, registering: Bool) async throws -> Outcome {
+    private func perform(_ request: ASAuthorizationRequest, registering: Bool, autoFill: Bool = false) async throws -> Outcome {
         self.registering = registering
         let controller = ASAuthorizationController(authorizationRequests: [request])
         controller.delegate = self
@@ -69,7 +106,11 @@ final class PasskeyAuthenticator: NSObject, ASAuthorizationControllerDelegate, A
         self.controller = controller
         return try await withCheckedThrowingContinuation { continuation in
             self.continuation = continuation
-            controller.performRequests()
+            if autoFill {
+                controller.performAutoFillAssistedRequests()
+            } else {
+                controller.performRequests()
+            }
         }
     }
 
