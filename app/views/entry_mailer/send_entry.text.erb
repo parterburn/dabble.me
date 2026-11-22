@@ -49,9 +49,7 @@ All entries: <%= entries_url %>
 
 =======================================
 
-<% if @user.is_free? && ENV['FREE_WEEK'] == 'true' %>
-This email is part of Dabble Me FREE WEEK. You'll receive emails this week only on Sun, Wed, and Fri. Like the new frequency? Subscribe to PRO: <%= subscribe_url %>
-<% elsif @user.is_free? && @user.emails_sent % 2 == 0 %>
+<% if @user.is_free? && @user.emails_sent % 2 == 0 %>
 Change the frequency of these emails &amp; unlock premium features, subscribe to PRO: <%= subscribe_url %>
 <% elsif @random_inspiration.present? && @user.days_since_last_post.to_i <= 14 %>
 <%= strip_tags(@random_inspiration.body.html_safe) %>

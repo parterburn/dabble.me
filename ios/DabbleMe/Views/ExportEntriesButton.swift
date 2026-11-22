@@ -6,6 +6,8 @@ import SwiftUI
 /// dabble.me, which asks for a sign-in before the download.
 struct ExportEntriesButton<Content: View>: View {
     @Environment(AppModel.self) private var model
+    /// On the Delete Account page: the alert says to download it before deleting.
+    var beforeDeleting = false
     @ViewBuilder let label: () -> Content
 
     @State private var isWorking = false
@@ -44,7 +46,7 @@ struct ExportEntriesButton<Content: View>: View {
             defer { isWorking = false }
             do {
                 let result = try await model.requestExport()
-                outcome = Outcome(title: result.title, message: result.message)
+                outcome = Outcome(title: result.title, message: result.message(beforeDeleting: beforeDeleting))
             } catch is CancellationError {
             } catch {
                 outcome = Outcome(title: "Couldn't Start the Export", message: error.localizedDescription)

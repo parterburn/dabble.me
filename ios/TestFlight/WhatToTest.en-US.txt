@@ -1,14 +1,14 @@
-Build 112 stops asking for your name when you sign up.
+Build 115 shows your template on Today and in the widget when every new entry starts with it.
 
-SIGN UP
-- Sign out, then tap Start Your Journal. The form should ask only for Email and Password, with no First Name field.
-- The Email field should have the cursor when the form opens.
-- Create an account with an address you don't need. It should sign in to the journal as before.
-- Emails to that account should start "Hey there".
+TEMPLATE ON TODAY
+- Settings, Entry Template. Write a template and turn on Start New Entries with It.
+- Go to Today on a day you haven't written yet. The card should say Your Template and show the template's first two lines (blank lines skipped), ending in "..." if there's more.
+- Tap the template. The composer should open with the template already in it.
+- Write Today's Entry should do the same.
 
-ADDING A NAME LATER
-- Settings, tap the name row at the top ("Add your name"). It opens Settings on dabble.me, where "What should we call you?" is optional.
-- Add a first name there and save. Back in the app, pull to refresh Settings: the name should show at the top.
+WIDGET
+- With the medium widget set to A Prompt for You, it should say Your Template and show your template instead of the prompt, until today's written.
+- Change the template or the setting in the app, then go to the Home Screen. The widget should follow.
 
-NOTHING ELSE SHOULD CHANGE
-- Sign In, Forgot Password and passkey sign-in work as before.
+PROMPT COMES BACK
+- Turn off Start New Entries with It, or clear the template. Today and the widget should show the day's prompt again.
