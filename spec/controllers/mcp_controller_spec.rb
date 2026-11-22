@@ -58,6 +58,28 @@ RSpec.describe McpController, type: :controller do
         expect(instructions).to include("/entries/YYYY/M/D").and include("/write")
       end
 
+      it "publishes the server icon and docs link to clients on the current protocol" do
+        post :invoke, params: { jsonrpc: "2.0", id: 1, method: "initialize", params: { protocolVersion: "2025-11-25" } }, as: :json
+
+        info = JSON.parse(response.body).dig("result", "serverInfo")
+        expect(info["websiteUrl"]).to end_with("/mcp-server")
+        expect(info["icons"]).to include(a_hash_including("src" => end_with("/android-chrome-512x512.png"), "sizes" => ["512x512"]))
+      end
+
+      it "lists the Wrapped prompt first among the suggested prompts" do
+        post :invoke, params: { jsonrpc: "2.0", id: 3, method: "prompts/list", params: {} }, as: :json
+
+        prompts = JSON.parse(response.body).dig("result", "prompts")
+        expect(prompts.map { |prompt| prompt["name"] }).to eq(%w[journal_wrapped reflect_on_last_month write_an_entry])
+        expect(prompts.first["title"]).to eq("Spotify Wrapped of my journal")
+
+        post :invoke, params: { jsonrpc: "2.0", id: 4, method: "prompts/get", params: { name: "journal_wrapped" } }, as: :json
+
+        message = JSON.parse(response.body).dig("result", "messages", 0)
+        expect(message["role"]).to eq("user")
+        expect(message.dig("content", "text")).to eq("Make a private Spotify Wrapped of my journal; use lots of photos.")
+      end
+
       it "publishes specific tool metadata for client discovery" do
         post :invoke, params: { jsonrpc: "2.0", id: 2, method: "tools/list", params: {} }, as: :json
 

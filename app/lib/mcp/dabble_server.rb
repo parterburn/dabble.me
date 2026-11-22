@@ -16,6 +16,11 @@ module Mcp
         name: 'dabble-me',
         title: 'Dabble Me Journal',
         version: '1.0.0',
+        website_url: "#{site}/mcp-server",
+        icons: [
+          MCP::Icon.new(src: "#{site}/android-chrome-512x512.png", mime_type: 'image/png', sizes: ['512x512']),
+          MCP::Icon.new(src: "#{site}/favicon-96x96.png", mime_type: 'image/png', sizes: ['96x96'])
+        ],
         instructions: 'Dabble Me is a private personal journal MCP server. Use these tools only when the user clearly ' \
                       'intends to read, search, reflect on, analyze, or write their own Dabble Me journal after OAuth. ' \
                       'Users may call it their journal, diary, daily log, reflections, memories, notes, or entries. ' \
@@ -48,6 +53,7 @@ module Mcp
                       "When linking to a day in the web app, use #{site}/entries/YYYY/M/D with unpadded month and day " \
                       "(example: #{site}/entries/2026/4/21). The compose page for new entries is #{site}/write .",
         tools: TOOLS,
+        prompts: SuggestedPrompts::ALL,
         server_context: { user_id: user.id, oauth_application_id: oauth_application_id }
       )
     end
