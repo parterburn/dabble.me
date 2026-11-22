@@ -18,5 +18,7 @@ Rails.application.config.filter_parameters += [
   :original_email,
   :text_body,
   :entry_template,
+  :first_name,
+  :last_name,
   /\Aentry\z/i
 ]

@@ -48,4 +48,31 @@ RSpec.describe 'Signing up without a name', type: :request do
       expect(response.body).to include('user[last_name]')
     end
   end
+
+  describe 'names on the account' do
+    it 'stores a cleared name as nil and builds full names without stray spaces' do
+      user = FactoryBot.create(:user, first_name: 'Ada', last_name: 'Lovelace')
+
+      user.update!(first_name: '  ', last_name: '')
+      expect(user.reload.first_name).to be_nil
+      expect(user.last_name).to be_nil
+      expect(user.full_name).to be_nil
+      expect(user.cleaned_to_address).to eq(user.email)
+
+      user.update!(first_name: ' Ada ')
+      expect(user.reload.first_name).to eq('Ada')
+      expect(user.full_name).to eq('Ada')
+      expect(user.full_name_or_email).to eq('Ada')
+      expect(user.cleaned_to_address).to eq("Ada <#{user.email}>")
+    end
+
+    it "can't be changed from an email settings link" do
+      user = FactoryBot.create(:user, first_name: 'Ada', last_name: 'Lovelace')
+
+      put unsubscribe_path(token: user.email_settings_token), params: { user: { first_name: 'Mallory', last_name: 'X' } }
+
+      expect(user.reload.first_name).to eq('Ada')
+      expect(user.last_name).to eq('Lovelace')
+    end
+  end
 end
