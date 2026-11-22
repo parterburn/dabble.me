@@ -50,11 +50,11 @@ That's the whole habit. No streaks to protect and no app you have to remember to
 
 <p align="center">
   <img src="docs/readme/web-email.jpg" alt="The daily Dabble Me email: How was your day? with a past entry from this day underneath" width="49%">
-  <img src="docs/readme/web-timeline.jpg" alt="The Dabble Me web journal: a month of entries with photos and hashtags" width="49%">
+  <img src="docs/readme/web-timeline.jpg" alt="The Dabble Me web journal: an entry with a list, hashtags and a photo" width="49%">
 </p>
 <p align="center">
-  <img src="docs/readme/web-today.jpg" alt="Today on the web: a link to write, your year so far, and what you wrote on this day last year" width="49%">
-  <img src="docs/readme/web-stats.jpg" alt="Writing stats for the year on the Dabble Me website" width="49%">
+  <img src="docs/readme/web-photos.jpg" alt="Every photo in the journal, in one grid on the Dabble Me website" width="49%">
+  <img src="docs/readme/web-stats.jpg" alt="Rewind on the Dabble Me website: the days you wrote this year" width="49%">
 </p>
 
 ### On iPhone and iPad
