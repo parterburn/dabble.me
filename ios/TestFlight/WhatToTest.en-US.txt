@@ -1,4 +1,4 @@
-Moments from your iPhone now checks the day. If you pick a moment from another day than the entry's, it asks which day it goes on.
+Moments from your iPhone now checks the day. If you pick a moment from another day than the entry's, it asks which day it goes on. And with no template, holding the lightbulb opens Moments.
 
 Use an iPhone. Moments isn't on iPad.
 
@@ -20,3 +20,7 @@ EDITING AN OLDER ENTRY
 - Open last week's entry and pick a moment from today. Add to Nov 22 should move that entry to today, the same as changing its date by hand. If today already has an entry, Save asks before merging the two, as it always has.
 
 A moment from a year other than this one shows its year too (Nov 18, 2025).
+
+HOLD THE LIGHTBULB
+- With no Entry Template (Settings), touch and hold the lightbulb: Apple's moments sheet should open straight away.
+- With a template, holding it still adds the template, as before.

@@ -691,18 +691,25 @@ struct ComposeView: View {
                     .background(showsAskRow ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
             }
             .buttonStyle(.plain)
-            // Held: the template goes straight in.
+            // Held: the template goes straight in. Without one, Apple's moments open (iPhone).
             .simultaneousGesture(LongPressGesture(minimumDuration: 0.45).onEnded { _ in
-                guard !template.isEmpty else { return }
-                heldAskIcon = true
-                HoldHaptic.play()
-                useTemplate()
+                if !template.isEmpty {
+                    heldAskIcon = true
+                    HoldHaptic.play()
+                    useTemplate()
+                } else if Moment.isAvailable {
+                    heldAskIcon = true
+                    HoldHaptic.play()
+                    showsAskRow = false
+                    pickingMoment = true
+                }
             })
             .accessibilityLabel("Prompt")
             .accessibilityHint("Shows what was on your calendar that day and a question to write about")
             .accessibilityAddTraits(showsAskRow ? .isSelected : [])
             .accessibilityActions {
                 if !template.isEmpty { Button("Use Template") { useTemplate() } }
+                if Moment.isAvailable { Button("Moments from Your iPhone") { pickingMoment = true } }
             }
             if Dictation.isSupported, DictationSettings.isEnabled { dictationButton }
         }
