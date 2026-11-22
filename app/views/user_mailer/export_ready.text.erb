@@ -4,6 +4,10 @@ Your Dabble Me export is ready: <%= pluralize(@export.entry_count, "entry") %><%
 
 Download your export: <%= raw @export_url %>
 
-You'll be asked to sign in first, so this email alone can't be used to get your journal. The link works until <%= @export.expires_at.strftime("%B %-d, %Y") %>. After that the file is deleted.
+<% if @user.deletion_pending? -%>
+Your account is being deleted, and this export goes with it. Signing in to download it keeps your account. If you don't, the link stops working when the account is deleted.
+<% else -%>
+You'll be asked to sign in first, so this email alone can't be used to get your journal. The link works until <%= @export.expires_at.strftime("%B %-d, %Y") %>. After that the file is deleted. If you delete your account, the export is deleted with it, so download it first.
+<% end -%>
 
 If you didn't ask for this, reply to this email and change your password.

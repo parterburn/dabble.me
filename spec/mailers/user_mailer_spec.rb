@@ -3,6 +3,29 @@ require "rails_helper"
 RSpec.describe UserMailer do
   let(:user) { create(:user, email: "mcp-test@example.com", first_name: "Ada") }
 
+  describe "#export_ready" do
+    let(:export) do
+      user.exports.create!.tap do |export|
+        export.update_columns(status: "ready", storage_key: "exports/x.zip", entry_count: 3, image_count: 0,
+                              expires_at: 7.days.from_now)
+      end
+    end
+
+    it "says to download it before deleting the account" do
+      body = described_class.export_ready(export).text_part.body.decoded
+
+      expect(body).to include("If you delete your account, the export is deleted with it")
+    end
+
+    it "says the export goes with an account that's being deleted" do
+      user.update_column(:deleted_at, Time.current)
+      email = described_class.export_ready(export)
+
+      expect(email.text_part.body.decoded).to include("Your account is being deleted, and this export goes with it.")
+      expect(email.html_part.body.decoded).to include("Your account is being deleted, and this export goes with it.")
+    end
+  end
+
   describe "#posting_address_changed" do
     it "comes from the new posting address and shows it" do
       email = described_class.posting_address_changed(user)

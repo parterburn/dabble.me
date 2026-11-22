@@ -1,14 +1,16 @@
-Build 112 stops asking for your name when you sign up.
+Build 113 makes it clear that deleting your account deletes your export too, and stops a lost export from blocking a new one.
 
-SIGN UP
-- Sign out, then tap Start Your Journal. The form should ask only for Email and Password, with no First Name field.
-- The Email field should have the cursor when the form opens.
-- Create an account with an address you don't need. It should sign in to the journal as before.
-- Emails to that account should start "Hey there".
+EXPORT BEFORE DELETING
+- Settings, Delete Account. The text under Email Me an Export should say, in bold, to download the export before you delete your account.
+- Tap Email Me an Export. The alert should say where it's going and that deleting your account deletes the export too.
+- Tap Cancel to keep the account.
 
-ADDING A NAME LATER
-- Settings, tap the name row at the top ("Add your name"). It opens Settings on dabble.me, where "What should we call you?" is optional.
-- Add a first name there and save. Back in the app, pull to refresh Settings: the name should show at the top.
+EXPORT FROM SETTINGS
+- Settings, Export Entries. The alert should say where it's going, with no note about deleting.
 
-NOTHING ELSE SHOULD CHANGE
-- Sign In, Forgot Password and passkey sign-in work as before.
+THE EMAIL
+- The export email should say that deleting your account deletes the export, so download it first.
+- Use an account you don't need: export, then delete the account right away. When the email arrives, it should say the account is being deleted and the export goes with it.
+
+STUCK EXPORTS
+- Nothing to tap here. If an export never arrives, asking again after an hour should start a new one instead of saying it's still being prepared.

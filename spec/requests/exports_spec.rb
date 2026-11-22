@@ -285,6 +285,16 @@ RSpec.describe 'Exports', type: :request do
       expect(json['status']).to eq('preparing')
     end
 
+    it 'starts over when the one being prepared was lost with its worker' do
+      lost = user.exports.create!(scope: 'all')
+      lost.update_columns(created_at: (Export::PREPARING_TIMEOUT + 1.minute).ago)
+
+      expect { post '/api/v1/exports', headers: headers, as: :json }
+        .to have_enqueued_job(ExportEntriesJob).with(kind_of(Integer))
+      expect(json['status']).to eq('started')
+      expect(lost.reload.status).to eq('failed')
+    end
+
     it 'emails the link again for one that is ready' do
       export.update!(scope: 'all')
 
