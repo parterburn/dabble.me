@@ -1,14 +1,19 @@
-Build 125 lets you change your name in the app.
+Build 126 makes Restore Purchases clearer: it says what happened, and asks for your Apple Account password only when it has to.
 
-NAME
-- Open Settings. The Name row (at the top, under Account) now opens a Name page in the app instead of dabble.me.
-- With no name set, the row says "Add your name" and the page opens with the keyboard up on First Name.
-- Type a first name and tap Done, or go Back. Settings shows the new name, and it's saved to your account: dabble.me's Settings page shows it too.
-- Clear the first name and go Back: the name is removed and the row says "Add your name" again.
-- An account that has a last name also gets a Last Name field (Return on First Name moves to it). Accounts without one don't see it.
+Use a Free account. TestFlight purchases use Apple's sandbox: nothing is charged.
 
-CHECK
-- Going Back without changing anything saves nothing.
-- With no connection, tapping Done, or changing the name and going Back, shows "Couldn't save your name" and Settings keeps the old name.
-- Tap Done, change the name again, and go Back right away: Settings ends on the newer name.
-- The Email row still opens Account Security on dabble.me.
+RESTORE WITH A SUBSCRIPTION ON THIS DEVICE
+- Buy PRO (Settings, Plan), then on another Free account, or after deleting and reinstalling the app, sign in to the account that bought it.
+- Settings, Plan, Restore Purchases. It should turn PRO without asking for a password, and the Plan page should then show PRO.
+
+RESTORE WITH NOTHING TO RESTORE
+- On an Apple Account that has never bought Dabble Me PRO, tap Restore Purchases.
+- Apple may ask for your Apple Account password. That prompt is Apple's own; the line under the button says so.
+- After you sign in, it should say "No active Dabble Me PRO subscription was found for this Apple Account."
+- Cancel the password prompt instead: nothing should be shown, and you can tap Restore Purchases again.
+
+ANOTHER ACCOUNT
+- With a subscription bought for a different Dabble Me account, Restore Purchases should say this Apple Account already pays for PRO on another account.
+
+OFFLINE
+- With Airplane Mode on, Restore Purchases should say the App Store couldn't be reached, or that Dabble Me couldn't be reached.
