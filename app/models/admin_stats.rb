@@ -4,7 +4,7 @@ class AdminStats
   def active_users_breakdown(since: 1.year.ago)
     {
       all: active_counts_for_scope(User.not_deleted, since: since),
-      pro: active_counts_for_scope(User.not_deleted.pro_only, since: since),
+      pro: active_counts_for_scope(User.not_deleted.paid_pro, since: since),
       free: active_counts_for_scope(User.not_deleted.free_only, since: since)
     }
   end

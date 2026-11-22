@@ -6,6 +6,7 @@ class UserDowngradeExpiredWorker
   def perform
     downgrade_yearly
     downgrade_monthly
+    downgrade_gifts
   end
 
   private
@@ -26,7 +27,14 @@ class UserDowngradeExpiredWorker
         .each { |user| downgrade(user, skip_ids: [16094, 10763]) }
   end
 
-  def downgrade(user, skip_ids: [])
+  # A gifted year (Gift) has no payments; it ends at the redemption's expires_at.
+  def downgrade_gifts
+    User.gifted.pro_only.joins(:gift_redemption)
+        .where("gift_redemptions.expires_at < ?", Time.current)
+        .find_each { |user| downgrade(user, gift: true) }
+  end
+
+  def downgrade(user, gift: false, skip_ids: [])
     if user.has_active_stripe_subscription?
       unless user.id.in?(skip_ids)
         Sentry.set_user(id: user.id, email: user.email)
@@ -36,10 +44,10 @@ class UserDowngradeExpiredWorker
       return
     end
 
-    user.update(plan: "Free")
+    return unless user.update(plan: "Free")
 
     begin
-      UserMailer.downgraded(user).deliver_now
+      UserMailer.downgraded(user, gift: gift).deliver_now
     rescue StandardError => e
       Sentry.set_user(id: user.id, email: user.email)
       Sentry.set_tags(plan: user.plan)

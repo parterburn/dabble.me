@@ -253,7 +253,7 @@ module Admin
     def inventory
       @inventory ||= begin
         users = User.not_deleted
-        pro = users.pro_only
+        pro = users.paid_pro
         {
           entries: Entry.unscoped.count,
           photos: Entry.unscoped.only_images.count,
@@ -265,7 +265,8 @@ module Admin
           forever: pro.forever.count,
           stripe: pro.payhere_only.count,
           gumroad: pro.gumroad_only.count,
-          paypal: pro.paypal_only.count
+          paypal: pro.paypal_only.count,
+          gifted: users.gifted.pro_only.count
         }
       end
     end
@@ -398,7 +399,7 @@ module Admin
               WHERE first_entries.first_at IS NOT NULL
                 AND first_entries.first_at <= users.created_at + INTERVAL '72 hours'
             )::bigint AS wrote_72h,
-            COUNT(*) FILTER (WHERE users.plan ILIKE '%pro%')::bigint AS upgraded
+            COUNT(*) FILTER (WHERE users.plan ILIKE '%pro%' AND users.plan NOT ILIKE '%gift%')::bigint AS upgraded
           FROM users
           LEFT JOIN LATERAL (
             SELECT MIN(created_at) AS first_at
@@ -473,7 +474,7 @@ module Admin
     end
 
     def live_active_count(days, plan)
-      plan_clause = plan == :pro ? "users.plan ILIKE '%pro%'" : "(users.plan ILIKE '%free%' OR users.plan IS NULL)"
+      plan_clause = plan == :pro ? "users.plan ILIKE '%pro%' AND users.plan NOT ILIKE '%gift%'" : "(users.plan ILIKE '%free%' OR users.plan IS NULL)"
       sql = ActiveRecord::Base.sanitize_sql_array([
         <<~SQL.squish,
           SELECT COUNT(*)::bigint
@@ -496,7 +497,7 @@ module Admin
       users_30d = User.not_deleted.where(created_at: (as_of - 30.days)..as_of)
       first_entry_user_ids = Entry.unscoped.where(user_id: users_30d.select(:id)).distinct.pluck(:user_id)
       signups = users_30d.group("COALESCE(NULLIF(referrer, ''), 'direct')").count
-      upgrades = users_30d.pro_only.group("COALESCE(NULLIF(referrer, ''), 'direct')").count
+      upgrades = users_30d.paid_pro.group("COALESCE(NULLIF(referrer, ''), 'direct')").count
       firsts = users_30d.where(id: first_entry_user_ids).group("COALESCE(NULLIF(referrer, ''), 'direct')").count
       mrr_by_source = Hash.new(0)
       revenue.recurring.each do |subscriber|
