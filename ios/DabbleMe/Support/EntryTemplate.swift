@@ -2,15 +2,16 @@ import Foundation
 import SwiftUI // (AttributedString's underline, in the preview)
 
 /// The writer's template (Settings → Entry Template): headings or questions an entry can start
-/// from. Kept on this device and on the account (`AccountSettings`), formatted as an entry is. It
-/// goes into an entry from the composer's lightbulb row, by holding the lightbulb button, or by
-/// itself at the start of every new entry.
+/// from. Kept on this device and on the account (`AccountSettings`), formatted as an entry is. A
+/// new entry's empty page shows it, and a swipe right there puts it in; a held Write button on
+/// Today starts an entry with it.
 enum EntryTemplate {
     static let runsKey = "template.runs"
     /// Where builds before 87 kept it, without its blank lines.
     static let blocksKey = "template.blocks"
-    /// Every new entry starts with it.
-    static let autoKey = "template.auto"
+    /// Where builds before this one kept "Start New Entries with It", now gone: the empty page
+    /// shows the template instead, a swipe away. Only ever cleared.
+    static let legacyAutoKey = "template.auto"
 
     /// The template as it was typed (`RichText.typedRuns`): its blank lines and empty list items
     /// are where the writing goes, so they're kept.
@@ -45,11 +46,9 @@ enum EntryTemplate {
         return []
     }
 
-    static var addsToNewEntries: Bool { UserDefaults.standard.bool(forKey: autoKey) }
-
-    /// The template as Today shows it in place of the day's prompt (when every new entry starts
-    /// with it): its words and formatting, without the blank lines and empty list items left for
-    /// writing, so a couple of lines show as much of it as they can.
+    /// The template as a new entry's empty page shows it: its words and formatting, without the
+    /// blank lines and empty list items left for writing, so a few lines show as much of it as
+    /// they can.
     static func preview(_ runs: [DocumentRun]) -> AttributedString {
         // Each line as its pieces of formatted text.
         var lines: [[DocumentRun]] = [[]]
@@ -95,6 +94,6 @@ enum EntryTemplate {
     static func clear() {
         UserDefaults.standard.removeObject(forKey: runsKey)
         UserDefaults.standard.removeObject(forKey: blocksKey)
-        UserDefaults.standard.removeObject(forKey: autoKey)
+        UserDefaults.standard.removeObject(forKey: legacyAutoKey)
     }
 }

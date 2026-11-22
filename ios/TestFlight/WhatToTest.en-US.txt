@@ -1,4 +1,4 @@
-Sign Out of All Devices with a Sessions list on dabble.me, and your hashtags shown in Dictation's Custom Vocabulary.
+Sign Out of All Devices with a Sessions list on dabble.me, your hashtags in Dictation's Custom Vocabulary, and your entry template shown on a new entry's empty page.
 
 Sign Out of All Devices
 - Settings → Sign Out now asks: Sign Out (this device only, as before) or Sign Out of All Devices.
@@ -15,3 +15,10 @@ Dictation: Custom Vocabulary shows your hashtags
 - Add a word that's also one of your hashtags (say "Leo" when you use #Leo): it moves up into Custom Vocabulary and leaves the hashtag list.
 - With no connection, the hashtag list doesn't show. Everything else on the page works.
 - Dictate an entry that names a Custom Vocabulary word and a hashtag: both come out spelled your way. Your own words are always sent first, so a long hashtag list never crowds them out.
+
+Entry template on the empty page
+- With a template (Settings → Entry Template), a new entry's empty page now shows it, faint, under "Start writing or [Swipe →] to use template:".
+- Swipe right across the page, or tap the Swipe badge: the template goes in. Just start typing to write without it.
+- A long template shows its first lines and fades out at the bottom.
+- The "Start New Entries with It" switch is gone from Settings → Entry Template. If you had it on, new entries now open empty with the template showing, one swipe away, and Today shows the day's prompt again instead of your template (the widget too).
+- Holding a Write button on Today still opens an entry with the template already in.

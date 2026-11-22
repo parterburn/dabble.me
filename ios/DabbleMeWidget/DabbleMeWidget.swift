@@ -64,7 +64,6 @@ struct Provider: AppIntentTimelineProvider {
             let shown = content == .memoryEntry ? day?.shown(at: date) : nil
             return WidgetEntry(date: date, signedIn: true, wroteToday: state.wroteToday, yearCount: state.yearCount, lastFiveDays: snapshot.lastFiveDays(on: date),
                                memories: day?.memories, prompt: isToday ? snapshot.prompt : nil,
-                               promptIsTemplate: isToday && snapshot.promptIsTemplate == true,
                                memoryNote: content == .memoryCount ? day?.memoryNote : nil,
                                entryTitle: shown?.title, entryText: shown?.text, entryID: shown?.id,
                                photo: shown?.photo.flatMap(Self.photo(named:)))
@@ -73,7 +72,6 @@ struct Provider: AppIntentTimelineProvider {
         return WidgetEntry(date: date, signedIn: true, wroteToday: state.wroteToday, yearCount: state.yearCount, lastFiveDays: snapshot.lastFiveDays(on: date),
                            memories: content.source == .rewind ? state.memories : nil,
                            prompt: isToday ? snapshot.prompt : nil,
-                               promptIsTemplate: isToday && snapshot.promptIsTemplate == true,
                            memoryNote: isToday && content == .memoryCount ? snapshot.memoryNote : nil,
                            entryTitle: shown?.title, entryText: shown?.text, entryID: shown?.id,
                            photo: shown?.photo.flatMap(Self.photo(named:)))

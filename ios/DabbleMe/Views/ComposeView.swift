@@ -121,16 +121,18 @@ struct ComposeView: View {
     private let originalBlocks: [DocumentBlock]
     /// The writer's template (Settings → Entry Template), as it was when this opened.
     private let template: [DocumentRun]
-    /// A new entry set to start with the template.
+    /// The template as the empty page shows it: its words, without the blank lines left for writing.
+    private let templatePreview: AttributedString
+    /// A new entry started from the template (a held Write button).
     private let startsWithTemplate: Bool
-    /// The editor holds the template and nothing else yet (a new entry set to start with it):
+    /// The editor holds the template and nothing else yet (a new entry started from it):
     /// there's nothing to save until something's written.
     @State private var isUntouchedTemplate: Bool
     /// The lightbulb button was held (so the tap that ends the hold doesn't also open its row).
     @State private var heldAskIcon = false
 
     /// `day`: a new entry for that day (Stats' grid), not today. `withTemplate`: a new entry
-    /// that starts from the writer's template whatever the setting says (a held Write button).
+    /// that starts from the writer's template (a held Write button).
     init(mode: Mode, day: JournalDay? = nil, withTemplate: Bool = false, onSaved: @escaping (EntryDetail) -> Void = { _ in }) {
         self.mode = mode
         self.onSaved = onSaved
@@ -146,11 +148,12 @@ struct ComposeView: View {
             DraftStore.clear(key)
         }
         draftKey = key
-        // A new entry set to start with the template has it from the outset, and again after
-        // Start Over. A draft, as ever, comes first.
+        // A new entry started from the template (a held Write button) has it from the outset,
+        // and again after Start Over. A draft, as ever, comes first.
         let template = EntryTemplate.runs
         self.template = template
-        let startsWithTemplate = entry == nil && !template.isEmpty && (EntryTemplate.addsToNewEntries || withTemplate)
+        templatePreview = EntryTemplate.preview(template)
+        let startsWithTemplate = entry == nil && !template.isEmpty && withTemplate
         self.startsWithTemplate = startsWithTemplate
         originalBlocks = original
         _isUntouchedTemplate = State(initialValue: startsWithTemplate && draft == nil)
@@ -230,18 +233,23 @@ struct ComposeView: View {
                     }
                     .overlay(alignment: .topLeading) {
                         if editor.isEmpty {
-                            VStack(alignment: .leading, spacing: 12) {
-                                // About the day being written: today, yesterday, or another by name.
-                                Text(JournalDay(localDate: date).writingQuestion(today: model.today?.day ?? JournalDay(localDate: .now)))
-                                    .font(Font(RichText.Style.journal.baseFont))
-                                    .foregroundStyle(.tertiary)
-                                    .allowsHitTesting(false)
-                                    .accessibilityHidden(true)
-                                // With a template, the empty page offers it: a tap here, or a swipe right.
-                                if !template.isEmpty { templateHint }
+                            Group {
+                                // With a template, the empty page is the template itself, under a
+                                // line that says how to use it. Without, a question about the day
+                                // being written: today, yesterday, or another by name.
+                                if !templatePreview.characters.isEmpty {
+                                    templatePlaceholder
+                                } else {
+                                    Text(JournalDay(localDate: date).writingQuestion(today: model.today?.day ?? JournalDay(localDate: .now)))
+                                        .font(Font(RichText.Style.journal.baseFont))
+                                        .foregroundStyle(.tertiary)
+                                        .allowsHitTesting(false)
+                                        .accessibilityHidden(true)
+                                }
                             }
                             .padding(.top, 16)
                             .padding(.leading, 17)
+                            .padding(.trailing, 17)
                         }
                     }
             }
@@ -576,7 +584,7 @@ struct ComposeView: View {
                 Image(systemName: "link")
                     .font(.system(size: 17, weight: .medium))
                     .frame(width: 40, height: 36)
-                    .background(editor.isEditingLink ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+                    .background(editor.isEditingLink ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
                     .contentShape(.rect)
             }
             .buttonStyle(.plain)
@@ -667,7 +675,7 @@ struct ComposeView: View {
             } label: {
                 appIcon("slab-tag")
                     .frame(width: 40, height: 36)
-                    .background(showsHashtagBar ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+                    .background(showsHashtagBar ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
             }
             .buttonStyle(.plain)
             // Held: tags the entry's own words with the hashtags they match, in one go.
@@ -699,7 +707,7 @@ struct ComposeView: View {
             } label: {
                 appIcon("slab-lightbulb")
                     .frame(width: 40, height: 36)
-                    .background(showsAskRow ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+                    .background(showsAskRow ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
             }
             .buttonStyle(.plain)
             // Held: Apple's moments open straight away (iPhone). (The template is on the empty page.)
@@ -746,7 +754,7 @@ struct ComposeView: View {
         } label: {
             appIcon("slab-microphone")
                 .frame(width: 40, height: 36)
-                .background(dictation.isActive ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+                .background(dictation.isActive ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(dictation.isActive ? "Stop Listening" : "Speak Your Entry")
@@ -785,7 +793,7 @@ struct ComposeView: View {
             }
             .padding(.horizontal, 8)
             .padding(.vertical, 1)
-            .background(showsPhotoDrawer ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+            .background(showsPhotoDrawer ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
@@ -1104,37 +1112,73 @@ struct ComposeView: View {
         }
     }
 
-    /// Under the empty page's question, with a template to offer (Settings → Entry Template):
-    /// "Use template" and a "Swipe →" badge, the way the swipe is learned. A tap does it too. Gone
-    /// once anything's written.
-    private var templateHint: some View {
+    /// The empty page, with a template (Settings → Entry Template): "Start writing or [Swipe →] to
+    /// use template:", and the template under it, faint, the way a placeholder is. A swipe right
+    /// across the page puts it in, as does a tap on the Swipe badge; a tap anywhere else is just
+    /// a tap into the page. A long template shows its first lines and fades out. Gone once
+    /// anything's written.
+    private var templatePlaceholder: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            // On one line, or (large text) the badge on a line of its own.
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 6) {
+                    Text("Start writing or").allowsHitTesting(false)
+                    templateBadge
+                    Text("to use template:").allowsHitTesting(false)
+                }
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Start writing or").allowsHitTesting(false)
+                    HStack(spacing: 6) {
+                        templateBadge
+                        Text("to use template:").allowsHitTesting(false)
+                    }
+                }
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            Text(templatePreview)
+                .font(Font(RichText.Style.journal.baseFont))
+                .foregroundStyle(.tertiary)
+                .lineLimit(8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .mask {
+                    // A long one fades out at the foot, so it reads as more to come.
+                    LinearGradient(stops: [.init(color: .black, location: templateIsLong ? 0.6 : 1),
+                                           .init(color: .black.opacity(templateIsLong ? 0.15 : 1), location: 1)],
+                                   startPoint: .top, endPoint: .bottom)
+                }
+                .allowsHitTesting(false)
+                .accessibilityHidden(true)
+        }
+    }
+
+    /// "Swipe →", the way the swipe is learned: a tap on it puts the template in too.
+    private var templateBadge: some View {
         Button {
             editor.addTemplate(template)
             editor.focus()
         } label: {
-            HStack(spacing: 8) {
-                Image(systemName: "doc.text")
-                    .imageScale(.small)
-                Text("Use template")
-                HStack(spacing: 3) {
-                    Text("Swipe")
-                    Image(systemName: "arrow.right")
-                }
-                .font(.caption.weight(.medium))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(Color.secondary.opacity(0.1), in: .rect(cornerRadius: 4))
-                .overlay(RoundedRectangle(cornerRadius: 4).strokeBorder(Color.secondary.opacity(0.3)))
+            HStack(spacing: 3) {
+                Text("Swipe")
+                Image(systemName: "arrow.right")
             }
-            .font(.subheadline)
+            .font(.caption.weight(.semibold))
             .foregroundStyle(.tint)
-            .padding(.vertical, 4)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 3)
+            .background(Color("AccentColor").opacity(0.1), in: .rect(cornerRadius: 5))
+            .overlay(RoundedRectangle(cornerRadius: 5).strokeBorder(Color("AccentColor").opacity(0.35)))
             .contentShape(.rect)
         }
         .buttonStyle(.plain)
         .accessibilityLabel("Use Template")
         .accessibilityHint("Adds your entry template. You can also swipe right on the empty page.")
+    }
+
+    /// More than the placeholder's eight lines, or near enough once long lines wrap.
+    private var templateIsLong: Bool {
+        let text = String(templatePreview.characters)
+        return text.split(separator: "\n", omittingEmptySubsequences: false).count > 8 || text.count > 320
     }
 
     /// A small filled button at the right of a row over the keyboard ("Auto Tag").
@@ -1927,7 +1971,7 @@ struct FormatButton: View {
         Button(action: toggle) {
             letter.label
                 .frame(width: 40, height: 36)
-                .background(isOn ? Color.accentColor.opacity(0.22) : .clear, in: .capsule)
+                .background(isOn ? Color("AccentColor").opacity(0.22) : .clear, in: .capsule)
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)

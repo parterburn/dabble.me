@@ -24,9 +24,6 @@ struct WidgetSnapshot: Codable, Equatable, Sendable {
     /// ("You have a memory from 36 days ago."), for Rewind without previews.
     var memoryNote: String? = nil
     var prompt: String?
-    /// `prompt` is the writer's template (every new entry starts with it), not a prompt.
-    /// Optional: snapshots saved by older builds don't have it.
-    var promptIsTemplate: Bool? = nil
     /// Today's own entry once it's written, and the entry to look back on (On This Day's first,
     /// or else the day's Rewind), for a widget with previews on.
     var todayEntry: Shown? = nil

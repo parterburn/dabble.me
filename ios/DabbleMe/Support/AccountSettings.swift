@@ -2,7 +2,7 @@ import Foundation
 
 /// Settings that belong to the account rather than the phone, kept on dabble.me as well
 /// (GET/PATCH /api/v1/app_settings), so signing out, reinstalling or a new phone doesn't lose
-/// them: the entry template, whether new entries start with it, and what the Home Screen widget
+/// them: the entry template, and what the Home Screen widget
 /// shows next to today's date (Settings → Home Screen Widget; a widget's own Edit Widget choice
 /// is the phone's alone).
 ///
@@ -20,7 +20,7 @@ import Foundation
 @MainActor
 enum AccountSettings {
     enum Field: String, CaseIterable {
-        case entryTemplate, entryTemplateAuto, widgetContent
+        case entryTemplate, widgetContent
     }
 
     static let pendingKey = "accountSettings.pending"
@@ -97,13 +97,9 @@ enum AccountSettings {
             EntryTemplate.runs = runs
         }
 
-        // Whether new entries start with it.
-        let localAuto = defaults.object(forKey: EntryTemplate.autoKey) as? Bool
-        if pending.contains(.entryTemplateAuto) || (server.entryTemplateAuto == nil && localAuto != nil) {
-            update.entryTemplateAuto = localAuto ?? false
-        } else if let auto = server.entryTemplateAuto, auto != localAuto {
-            defaults.set(auto, forKey: EntryTemplate.autoKey)
-        }
+        // (The account's entry_template_auto, from builds with "Start New Entries with It", is
+        // left as it is for those builds, and not read here: that setting's gone.)
+        defaults.removeObject(forKey: EntryTemplate.legacyAutoKey)
 
         // What the widget shows.
         let localContent = WidgetSnapshot.hasChosenContent ? WidgetSnapshot.content : nil
@@ -122,9 +118,6 @@ enum AccountSettings {
         // Saved: no longer pending, unless it was changed again while it was on its way.
         var stillPending = self.pending
         if let sent = update.entryTemplate, sent == EntryTemplate.storedRuns { stillPending.remove(.entryTemplate) }
-        if let sent = update.entryTemplateAuto, sent == (defaults.object(forKey: EntryTemplate.autoKey) as? Bool ?? false) {
-            stillPending.remove(.entryTemplateAuto)
-        }
         if let sent = update.widgetContent, sent == WidgetSnapshot.content.rawValue { stillPending.remove(.widgetContent) }
         self.pending = stillPending
     }
@@ -144,7 +137,6 @@ enum AccountSettings {
 /// GET/PATCH /api/v1/app_settings. Each is nil when the account has never had it set.
 struct AppSettings: Decodable, Sendable {
     var entryTemplate: [DocumentRun]?
-    var entryTemplateAuto: Bool?
     var widgetContent: String?
 }
 
@@ -153,19 +145,17 @@ struct AppSettings: Decodable, Sendable {
 /// that as a value.
 struct AppSettingsUpdate: Encodable, Sendable {
     var entryTemplate: [DocumentRun]? = nil
-    var entryTemplateAuto: Bool? = nil
     var widgetContent: String? = nil
 
-    var isEmpty: Bool { entryTemplate == nil && entryTemplateAuto == nil && widgetContent == nil }
+    var isEmpty: Bool { entryTemplate == nil && widgetContent == nil }
 
     func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encodeIfPresent(entryTemplate, forKey: .entryTemplate)
-        try container.encodeIfPresent(entryTemplateAuto, forKey: .entryTemplateAuto)
         try container.encodeIfPresent(widgetContent, forKey: .widgetContent)
     }
 
     private enum CodingKeys: String, CodingKey {
-        case entryTemplate, entryTemplateAuto, widgetContent
+        case entryTemplate, widgetContent
     }
 }

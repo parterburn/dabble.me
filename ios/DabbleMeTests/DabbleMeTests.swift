@@ -1083,7 +1083,7 @@ struct EntryTemplateTests {
         #expect(UserDefaults.standard.data(forKey: EntryTemplate.runsKey) == nil)
     }
 
-    /// Today's preview of the template keeps its words and formatting, but not the blank lines
+    /// The empty page's preview of the template keeps its words and formatting, but not the blank lines
     /// and empty items left for writing.
     @Test func todaysPreviewSkipsTheRoomToWrite() {
         let template = [DocumentRun("One Win", bold: true), DocumentRun("\n\n• \n"), DocumentRun("One Point of Tension", bold: true), DocumentRun("\n1. \n\n"), DocumentRun("Grateful for "), DocumentRun("one thing", italic: true)]
