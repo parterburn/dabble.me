@@ -226,6 +226,18 @@ module ApplicationHelper
     ]
   end
 
+  # An FAQ answer as plain text, for the "Copy these FAQs" text and the FAQPage structured data:
+  # block tags become spaces so list items don't run together, and entities are decoded.
+  def self.faq_plain_text(html)
+    spaced = html.to_s.gsub(%r{<(?:/?(?:li|ul|ol|div|p)|br)\b[^>]*>}i, " ")
+    CGI.unescapeHTML(ActionController::Base.helpers.strip_tags(spaced)).squish
+  end
+
+  # One FAQ by its id, from whichever section holds it.
+  def self.faq(id)
+    faqs.values.flat_map { |section| section[:questions] }.find { |qa| qa[:id] == id }
+  end
+
   def self.faqs
     main_domain = ENV.fetch(primary_domain_env_key, "")
     routes = Rails.application.routes.url_helpers
@@ -258,68 +270,22 @@ module ApplicationHelper
     HTML
 
     {
-      pro_features: {
-        title: "Paid Features",
-        badge: "PRO",
-        questions: [
-          {
-            q: "How do I add photos to my entry?",
-            a: "When you reply to your Dabble Me email, just attach photos to the email and they'll be saved with your entry. You can also add photos on the website when you edit an entry. You can add up to #{CollageGenerator::MAX_IMAGES} photos per entry (they will create a collage). Dabble Me supports JPEG, GIF, PNG, and HEIC/HEIF (mobile) formats. Photos are part of <a href='#{Rails.application.routes.url_helpers.subscribe_path}' class='text-accent hover:text-primary underline'>PRO</a>."
-          },
-          {
-            q: "How do I edit or delete an entry?",
-            a: "When viewing the entries page, you'll see a pencil icon in the top right of each entry. Clicking that icon takes you to the edit page. There's a delete button (trash icon) on the edit page in case you'd like to delete your entry."
-          },
-          {
-            q: "Can I write entries on the website?",
-            a: "Yes! <a href='#{Rails.application.routes.url_helpers.subscribe_path}' class='text-accent hover:text-primary underline'>PRO members</a> can write entries on the website for any date. Simply click \"WRITE\" at the top of the page when logged in."
-          },
-          {
-            html_id: "mcp",
-            q: "How do I connect Dabble Me to Claude or ChatGPT?",
-            a: mcp_connect_answer
-          },
-          {
-            q: "How do I embed songs from Spotify?",
-            a: "Use the \"Copy Link\" feature in Spotify and paste those links (either dropping in the full URL or as a hyperlink) to your entry and you'll see them embedded right on the web, ready to listen to. Dabble Me will also pull out the artist & song title and send those alongside your entries in your reminder emails."
-          },
-          {
-            q: "Can I import from OhLife or other services?",
-            a: "Yes! PRO members can visit <a href='#{Rails.application.routes.url_helpers.import_path}' class='text-accent hover:text-primary underline'>Import Entries</a> to bring in entries from Day One, OhLife, Ahhlife, and Trailmix.life. Coming from one of those? See how Dabble Me compares as an <a href='#{Rails.application.routes.url_helpers.ohlife_alternative_path}' class='text-accent hover:text-primary underline'>OhLife alternative</a> or a <a href='#{Rails.application.routes.url_helpers.day_one_alternative_path}' class='text-accent hover:text-primary underline'>Day One alternative</a>."
-          },
-          {
-            q: "How do I export my entries?",
-            a: "Visit <a href='#{Rails.application.routes.url_helpers.export_entries_path}' class='text-accent hover:text-primary underline'>Export Entries</a>, under your account menu. Export everything or one year as a ZIP: a full backup of your entries and photos that you can browse offline. Or export a single Markdown file, easy to bring into other apps and AI assistants. Exporting is free on every plan."
-          },
-          {
-            q: "Can I get a refund?",
-            a: "If something doesn’t feel right, email us at #{ActionController::Base.helpers.mail_to("hello@#{main_domain}", "hello@#{main_domain}", subject: "Refund Request", encode: "hex", class: "text-accent hover:text-primary underline")} within 30 days of a charge made on dabble.me and we’ll take care of it. Refunds are handled case by case, and we always follow applicable laws.<div class='mt-2'>If you subscribed in the iPhone app, Apple handles the billing, so refunds go through Apple: <a href='https://reportaproblem.apple.com' class='text-accent hover:text-primary underline' target='_blank' rel='noopener noreferrer'>reportaproblem.apple.com</a>.</div>"
-          },
-          {
-            q: "What happens to my data if I cancel my subscription?",
-            a: "If you downgrade to a free account, your existing entries will remain private and accessible only to you, but you will lose access to the premium features."
-          }
-        ]
-      },
-      general: {
-        title: "General Questions",
+      getting_started: {
+        title: "Getting Started & Ways to Write",
         badge: nil,
+        html_id: "getting-started",
         questions: [
           {
-            q: "Are my entries private?",
-            a: "<span class='font-semibold'>Yes, by design.</span> Your entries can’t be shared, posted, or made public in any way, they’re never used to train AI models, and they're never at risk of being indexed by search engines. There's no social feed, no ads, and no data selling. You can sign in with a passkey, a password or a two-factor code, and the iPhone app supports Face ID, hides your journal in the app switcher, and strips location data from photos before upload. Our <a href='#{Rails.application.routes.url_helpers.privacy_path}' class='text-accent hover:text-primary underline'>Privacy Policy</a> spells out the details, including the site analytics we use."
+            q: "Is this really free?",
+            a: "<span class='font-semibold'>Yes. The core experience is free, forever.</span> Free accounts can read, write and delete entries, set a daily reminder in the iPhone app (skipped once you've written), get on-device Apple Intelligence reflections, prompts and hashtag suggestions, receive an email prompt every other Sunday, and export their data anytime. When you want custom email schedules, photos, links, editing, search, stats, On This Day, Year in Review, imports, or Claude and ChatGPT connections, you can <a href='#{routes.subscribe_path}' class='#{link}'>upgrade to PRO</a> for $4/month or $40/year."
           },
           {
             q: "Is there a mobile app?",
-            a: "<span class='font-semibold'>For iPhone and iPad, coming soon to the App Store.</span> <a href='#{routes.journal_app_path}' class='text-accent hover:text-primary underline'>See what the app does</a>. PRO members can try the beta now. Write with your own daily template, Home Screen and Lock Screen widgets, prompts from your calendar, and a daily nudge that skips itself once you've written. Photos, editing, search and On This Day are part of PRO.<div class='mt-2'>There's no Android app yet. On any phone you can still write by replying to the daily email from your mail app, and the website works well on a small screen. PRO members can also <a href='#{routes.mcp_server_docs_path}' class='text-accent hover:text-primary underline'>connect Dabble Me to Claude or ChatGPT</a> and journal from those apps, by voice if you like.</div>"
+            a: "<span class='font-semibold'>For iPhone and iPad, coming soon to the App Store.</span> <a href='#{routes.journal_app_path}' class='#{link}'>See what the app does</a>. PRO members can try the beta now. Write with your own daily template, Home Screen and Lock Screen widgets, prompts from your calendar, and a daily nudge that skips itself once you've written. Photos, editing, search and On This Day are part of PRO.<div class='mt-2'>There's no Android app yet. On any phone you can still write by replying to the daily email from your mail app, and the website works well on a small screen. PRO members can also <a href='#{routes.mcp_server_docs_path}' class='#{link}'>connect Dabble Me to Claude or ChatGPT</a> and journal from those apps, by voice if you like.</div>"
           },
           {
             q: "How is Dabble Me different from Apple's Journal app?",
-            a: "<span class='font-semibold'>Apple's Journal reminds you to open an app. Dabble Me puts the prompt in your inbox.</span> Each one comes with one of your past entries, and you write by hitting reply. Your journal also lives on the web and works by email, so it isn't tied to one phone or your Apple ID. You can <a href='#{Rails.application.routes.url_helpers.mcp_server_docs_path}' class='text-accent hover:text-primary underline'>connect it to Claude or ChatGPT</a> to ask about your past entries, export everything as a ZIP or Markdown, and it's been running independently for #{years_running} years.<div class='mt-2'>To be fair to Apple: Journal is free, built into your iPhone, and end-to-end encrypted. Dabble Me encrypts your entries on our servers with keys kept separately, but it isn't end-to-end encrypted. See the <a href='#{Rails.application.routes.url_helpers.privacy_path}' class='text-accent hover:text-primary underline'>Privacy Policy</a> for details.</div>"
-          },
-          {
-            q: "Is this really free?",
-            a: "<span class='font-semibold'>Yes. The core experience is free, forever.</span> Free accounts can read, write and delete entries, set a daily reminder in the iPhone app (skipped once you've written), get on-device Apple Intelligence reflections, prompts and hashtag suggestions, receive an email prompt every other Sunday, and export their data anytime. When you want custom email schedules, photos, links, editing, search, stats, On This Day, Year in Review, imports, or Claude and ChatGPT connections, you can <a href='#{Rails.application.routes.url_helpers.subscribe_path}' class='text-accent hover:text-primary underline'>upgrade to PRO</a> for $4/month or $40/year."
+            a: "<span class='font-semibold'>Apple's Journal reminds you to open an app. Dabble Me puts the prompt in your inbox.</span> Each one comes with one of your past entries, and you write by hitting reply. Your journal also lives on the web and works by email, so it isn't tied to one phone or your Apple ID. You can <a href='#{routes.mcp_server_docs_path}' class='#{link}'>connect it to Claude or ChatGPT</a> to ask about your past entries, export everything as a ZIP or Markdown, and it's been running independently for #{years_running} years.<div class='mt-2'>To be fair to Apple: Journal is free, built into your iPhone, and end-to-end encrypted. Dabble Me encrypts your entries on our servers with keys kept separately, but it isn't end-to-end encrypted. See the <a href='#{routes.privacy_path}' class='#{link}'>Privacy Policy</a> for details.</div>"
           },
           {
             id: "ideas-for-writing",
@@ -346,39 +312,89 @@ module ApplicationHelper
               — end each day with one thing you're thankful for and tag it with #Gratitude. Over time, you'll build a searchable database of hundreds of small joys. When a tough day hits, scroll back through your gratitude entries and remember: your life is fuller than it feels right now.
             </li>
           </ul>
-          <div class='mt-3'>New to journaling? <a href='#{Rails.application.routes.url_helpers.how_to_start_journaling_path}' class='text-accent hover:text-primary underline'>Here's how to start</a>.</div>"
-          },
-          {
-            q: "Does this service use AI to read or analyze my entries?",
-            a: "<span class='font-semibold'>Your entries are never used to train AI models.</span><ul class='list-disc pl-5 space-y-1.5 mt-2'><li><span class='font-medium text-primary'>Apple Intelligence (free, on your device):</span> on supported iPhones and iPads, the app offers reflections, daily prompts from your recent days, and hashtag suggestions. It all runs on the device, so your journal isn't sent anywhere for it, and a reflection chat is never saved unless you add it to your entry.</li><li><span class='font-medium text-primary'>Claude and ChatGPT (optional, PRO):</span> nothing connects unless you approve it, and you can <a href='#{Rails.application.routes.url_helpers.mcp_server_docs_path}' class='text-accent hover:text-primary underline'>remove access</a> any time.</li></ul><div class='mt-2'>If you prefer no AI at all, ignore these features, or export your journal and analyze it locally in a tool you control.</div>"
-          },
-          {
-            q: "How do I save a copy of my entries?",
-            a: "Visit <a href='#{Rails.application.routes.url_helpers.export_entries_path}' class='text-accent hover:text-primary underline'>Export Entries</a>, under your account menu. Export everything or one year as a ZIP: a full backup of your entries and photos that you can browse offline. Or export a single Markdown file, easy to bring into other apps and AI assistants. Exporting is free on every plan."
-          },
-          {
-            q: "What happens to my data if I delete my account?",
-            a: "<div class='mt-2'>If you <em>delete</em> your account, all of your entries and your account data will be permanently deleted from active systems within a reasonable period, subject to backup retention and legal requirements.</div><div class='mt-2'>Delete your account <a href='#{Rails.application.routes.url_helpers.delete_account_path}' class='text-accent hover:text-primary underline'>here</a>.</div><div class='mt-2'>You can export your data at any time from the <a href='#{Rails.application.routes.url_helpers.export_entries_path}' class='text-accent hover:text-primary underline'>Export Entries</a> page.</div>"
+          <div class='mt-3'>New to journaling? <a href='#{routes.how_to_start_journaling_path}' class='#{link}'>Here's how to start</a>, or try one of <a href='#{routes.how_to_start_journaling_path(anchor: "journaling-frameworks")}' class='#{link}'>5 simple journaling frameworks</a>.</div>"
           },
           {
             q: "I'm new and didn't get my scheduled email. How come?",
-            a: "Things work differently on your first day. Instead of sending the email at your scheduled time, we send your first email right when you sign up. After your first day, you'll always get your email according to <a href='#{Rails.application.routes.url_helpers.settings_path}' class='text-accent hover:text-primary underline'>your settings</a>."
+            a: "Your first day works a little differently. Instead of waiting for your scheduled time, we send your first prompt right when you sign up, so you can start right away. After that, emails arrive on the schedule in <a href='#{routes.settings_path}' class='#{link}'>your settings</a>."
           },
           {
             q: "Can I reply to an email more than once?",
-            a: "Yes! Each reply just gets added to that day's entry. Write throughout the day if you'd like."
+            a: "Yes. Every reply is added to that day's entry, so you can jot things down throughout the day."
           },
           {
             q: "How can I set the date of an entry I email in?",
-            a: "If you leave the subject line blank, the date will be today's date. If you want to adjust the date, you can add a subject line with the date in the format of <code class='text-red-500 text-sm select-all'>January 2, 2024</code> and Dabble Me will use that date instead. Another acceptable format is <code class='text-red-500 text-sm select-all'>2024-12-22</code> (YYYY-MM-DD)."
+            a: "Leave the subject line blank to save it under today's date. To file it under a different day, put the date in the subject line, as <code class='text-red-500 text-sm select-all'>January 2, 2024</code> or <code class='text-red-500 text-sm select-all'>2024-12-22</code> (YYYY-MM-DD)."
           },
           {
             q: "What are \"Inspirations\"?",
-            a: "Ignore them if you want; they're just little quotes or questions that might inspire you to write. Entries inspired by these prompts will be tagged with a lightbulb icon that you can hover over to see the inspiration."
+            a: "Little quotes or questions in your prompt emails, there to spark an idea when you're not sure what to write. Ignore them anytime. An entry written in reply to one gets a lightbulb icon you can hover over to see what inspired it."
+          }
+        ]
+      },
+      privacy: {
+        title: "Privacy, AI & Your Data",
+        badge: nil,
+        html_id: "privacy",
+        questions: [
+          {
+            q: "Are my entries private?",
+            a: "<span class='font-semibold'>Yes, by design.</span> Your entries are encrypted on our servers, and they can’t be shared, posted, or made public in any way. They’re never used to train AI models, and they're never at risk of being indexed by search engines. There's no social feed, no ads, and no data selling. You can sign in with a passkey, a password or a two-factor code, and the iPhone app supports Face ID, hides your journal in the app switcher, and strips location data from photos before upload. Our <a href='#{routes.privacy_path}' class='#{link}'>Privacy Policy</a> spells out the details, including the site analytics we use."
+          },
+          {
+            q: "Does this service use AI to read or analyze my entries?",
+            a: "<span class='font-semibold'>Your entries are never used to train AI models.</span><ul class='list-disc pl-5 space-y-1.5 mt-2'><li><span class='font-medium text-primary'>Apple Intelligence (free, on your device):</span> on supported iPhones and iPads, the app offers reflections, daily prompts from your recent days, and hashtag suggestions. It all runs on the device, so your journal isn't sent anywhere for it, and a reflection chat is never saved unless you add it to your entry.</li><li><span class='font-medium text-primary'>Claude and ChatGPT (optional, PRO):</span> nothing connects unless you approve it, and you can <a href='#{routes.mcp_server_docs_path}' class='#{link}'>remove access</a> any time.</li></ul><div class='mt-2'>If you prefer no AI at all, ignore these features, or export your journal and analyze it locally in a tool you control.</div>"
+          },
+          {
+            q: "How do I export my entries?",
+            a: "Visit <a href='#{routes.export_entries_path}' class='#{link}'>Export Entries</a>, under your account menu. Export everything or one year as a ZIP: a full backup of your entries and photos that you can browse offline. Or export a single Markdown file, easy to bring into other apps and AI assistants. Exporting is free on every plan."
+          },
+          {
+            q: "What happens to my data if I cancel PRO?",
+            a: "Your account moves to the free plan. All of your entries stay private and readable, and you can still export everything anytime. You just lose the PRO features."
+          },
+          {
+            q: "What happens to my data if I delete my account?",
+            a: "Deleting your account permanently removes all of your entries and account data from active systems within a reasonable period, subject to backup retention and legal requirements. If you want a copy, <a href='#{routes.export_entries_path}' class='#{link}'>export your entries</a> first.<div class='mt-2'><a href='#{routes.delete_account_path}' class='#{link}'>Delete your account</a></div>"
           },
           {
             q: "Who built Dabble Me?",
-            a: "👋 Hi! I'm <a href='https://paularterburn.com/' class='text-accent hover:text-primary underline' target='_blank' rel='noopener noreferrer'>Paul Arterburn</a>. I built and maintain Dabble Me, and I'm also the CTO at <a href='https://unreasonablegroup.com/' class='text-accent hover:text-primary underline' target='_blank' rel='noopener noreferrer'>Unreasonable Group</a> helping entrepreneurs bend history in the right direction. Previously, I was the technical co-founder of Brandfolder, a digital asset management platform powering some of the biggest brands in the world.<div class='mt-2'>I created Dabble Me primarily for myself as a way to remember and reflect on the days in a format that would actually trigger me to write — over email. Read about why and how I built Dabble Me in a blog post: <a href='https://medium.com/startup-lesson-learned/increase-your-happiness-with-daily-journaling-8109b0700506' class='text-accent hover:text-primary underline' target='_blank' rel='noopener noreferrer'>Increase Your Happiness with Daily Journaling</a>.</div><div class='mt-2'>I built Dabble Me as an experienced developer with privacy and security in mind from the start. It's not a rushed AI side project or a growth experiment. It's independently run with a proper contingency plan in place, funded by its users for over #{years_running} years, and designed to keep your journal private. No investors. No selling your data. Just a simple, secure place to write. The code is also open-sourced on <a href='https://github.com/parterburn/dabble.me' class='text-accent hover:text-primary underline' target='_blank' rel='noopener noreferrer'>GitHub</a>.</div>" # pragma: allowlist secret
+            a: "👋 Hi! I'm <a href='https://paularterburn.com/' class='#{link}' target='_blank' rel='noopener noreferrer'>Paul Arterburn</a>. I built and maintain Dabble Me, and I'm also the CTO at <a href='https://unreasonablegroup.com/' class='#{link}' target='_blank' rel='noopener noreferrer'>Unreasonable Group</a> helping entrepreneurs bend history in the right direction. Previously, I was the technical co-founder of Brandfolder, a digital asset management platform powering some of the biggest brands in the world.<div class='mt-2'>I created Dabble Me over #{years_running} years ago, for myself: I wanted the clarity of daily reflection in a format that would actually get me to write, over email, without another complicated app to maintain. Read more in <a href='https://medium.com/startup-lesson-learned/increase-your-happiness-with-daily-journaling-8109b0700506' class='#{link}' target='_blank' rel='noopener noreferrer'>Increase Your Happiness with Daily Journaling</a>.</div><div class='mt-2'>Dabble Me isn't a venture-backed growth experiment or a rushed AI side project. It's independently run with a contingency plan in place, funded entirely by paying users, and built with privacy and security from day one. No investors. No selling your data. The code is also open source on <a href='https://github.com/parterburn/dabble.me' class='#{link}' target='_blank' rel='noopener noreferrer'>GitHub</a>.</div>" # pragma: allowlist secret
+          }
+        ]
+      },
+      pro_features: {
+        title: "PRO Features & Billing",
+        badge: "PRO",
+        questions: [
+          {
+            q: "How do I add photos to my entry?",
+            a: "Add up to #{CollageGenerator::MAX_IMAGES} photos per entry (several become a collage). Attach them to your reply to a Dabble Me email, add them in the iPhone app, or upload them when you edit an entry on the web. JPEG, GIF, PNG and HEIC/HEIF all work, and the iPhone app strips location data before upload. Photos are part of <a href='#{routes.subscribe_path}' class='#{link}'>PRO</a>."
+          },
+          {
+            q: "How do I write or edit entries on the web?",
+            a: "<a href='#{routes.subscribe_path}' class='#{link}'>PRO members</a> can write an entry for any date by clicking \"WRITE\" at the top of the page when signed in, with rich text and clickable links. To edit an entry, click the pencil icon at its top right; the delete button (trash icon) is on the edit page. In the iPhone app, touch and hold an entry to edit its words, photos, or date."
+          },
+          {
+            q: "How do On This Day, Year in Review and #hashtag dates work?",
+            a: "<ul class='list-disc pl-5 space-y-1.5'><li><span class='font-medium text-primary'>On This Day:</span> see what you wrote on today's date in past years, on the web and on the app's Today screen.</li><li><span class='font-medium text-primary'>Year in Review:</span> from November through January, the app's Stats look back on your year: your biggest month, the people and places you wrote about, your photos and your songs.</li><li><span class='font-medium text-primary'>#hashtag dates:</span> in <a href='#{routes.settings_path}' class='#{link}'>your settings</a>, give a #hashtag a date, like a birthday or anniversary, and every matching entry shows how old someone was or how long it had been.</li></ul><div class='mt-2'>On every plan, your prompt emails bring back a past entry, and in the app you can shake your phone for a random memory.</div>"
+          },
+          {
+            html_id: "mcp",
+            q: "How do I connect Dabble Me to Claude or ChatGPT?",
+            a: mcp_connect_answer
+          },
+          {
+            q: "How do I embed songs from Spotify?",
+            a: "Copy a track link in Spotify and paste it into your entry, as the full URL or as a link. Dabble Me embeds the track so you can play it right on the web, and includes the artist and song title when that entry comes back in your reminder emails."
+          },
+          {
+            q: "Can I import from Day One, OhLife or other services?",
+            a: "Yes! PRO members can visit <a href='#{routes.import_path}' class='#{link}'>Import Entries</a> to bring in entries from Day One, OhLife, Ahhlife, and Trailmix.life. Coming from one of those? See how Dabble Me compares as an <a href='#{routes.ohlife_alternative_path}' class='#{link}'>OhLife alternative</a> or a <a href='#{routes.day_one_alternative_path}' class='#{link}'>Day One alternative</a>."
+          },
+          {
+            q: "Can I get a refund?",
+            a: "If something doesn’t feel right, email us at #{ActionController::Base.helpers.mail_to("hello@#{main_domain}", "hello@#{main_domain}", subject: "Refund Request", encode: "hex", class: link)} within 30 days of a charge made on dabble.me and we’ll take care of it. Refunds are handled case by case, and we always follow applicable laws.<div class='mt-2'>If you subscribed in the iPhone app, Apple handles the billing, so refunds go through Apple: <a href='https://reportaproblem.apple.com' class='#{link}' target='_blank' rel='noopener noreferrer'>reportaproblem.apple.com</a>.</div>"
           }
         ]
       }

@@ -77,6 +77,22 @@ module StructuredDataHelper
     }
   end
 
+  # FAQPage node built from the same sections that render the page, so the two can't drift.
+  # Answers are plain text (ApplicationHelper.faq_plain_text).
+  def faq_page_json_ld(sections)
+    {
+      "@type": "FAQPage",
+      "@id": "#{structured_data_base_url}#{support_path}#faq",
+      mainEntity: sections.values.flat_map { |section| section[:questions] }.map do |qa|
+        {
+          "@type": "Question",
+          name: qa[:q],
+          acceptedAnswer: { "@type": "Answer", text: ApplicationHelper.faq_plain_text(qa[:a]) }
+        }
+      end
+    }
+  end
+
   # Article/TechArticle node for a marketing page. Reads the page description from content_for(:description).
   def article_json_ld(headline:, path:, published:, modified:, type: "Article", about: nil)
     base_url = structured_data_base_url
