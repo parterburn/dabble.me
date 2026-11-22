@@ -11,6 +11,9 @@ class Export < ActiveRecord::Base
   LIMIT_PERIOD = 12.hours
   # However varied the requests, this many per person an hour and no more.
   HOURLY_LIMIT = 10
+  # An export still "preparing" after this long was lost with its worker: asking again
+  # starts a new one instead of waiting on it.
+  PREPARING_TIMEOUT = 1.hour
 
   belongs_to :user
 
@@ -86,6 +89,7 @@ class Export < ActiveRecord::Base
     scope = scope_for(year: year, search_term: search_term)
     # Locked on the person, so two requests at once (web and app, two devices) make one export.
     result = user.with_lock do
+      user.exports.preparing.where(scope: scope, created_at: ..PREPARING_TIMEOUT.ago).update_all(status: "failed")
       recent = user.exports.within_limit.where(scope: scope).order(:created_at).last
       if recent&.preparing?
         [:preparing, recent]

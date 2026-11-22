@@ -51,7 +51,8 @@ class ApplicationController < ActionController::Base
   protected
 
   def configure_permitted_parameters
-    added_attrs = [:first_name, :last_name, :email, :password, :password_confirmation]
+    # Sign-up asks for no name: the email is the account. A name, if any, is added in Settings.
+    added_attrs = [:email, :password, :password_confirmation]
     preference_attrs = [:first_name, :last_name, { frequency: [] }, :way_back_past_entries, :send_past_entry, :send_updates, :send_time, :send_timezone, :past_filter, hashtags_attributes: [:tag, :date]]
     devise_parameter_sanitizer.permit :sign_up, keys: added_attrs
     devise_parameter_sanitizer.permit :account_update, keys: [:email, :password, :password_confirmation]

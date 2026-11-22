@@ -1,13 +1,16 @@
-Build 110 exports your entries from the app, by email, without signing in to the website first.
-
-EXPORT FROM SETTINGS
-- Settings, Export Entries (under Manage Hashtags). No web page should open. An alert should say we'll email your export to your account's address.
-- The email should arrive like the one the website sends, with a link to download. The link opens dabble.me and asks you to sign in there before the download.
-- Tap Export Entries again while it's still being made. The alert should say it's already being prepared, and no second email should come.
-- Once the first email has arrived, tap it again. The alert should say we've emailed your latest export again, and the same link should arrive.
+Build 113 makes it clear that deleting your account deletes your export too, and stops a lost export from blocking a new one.
 
 EXPORT BEFORE DELETING
-- Settings, Delete Account. Email Me an Export should do the same, without leaving the page. Tap Cancel to keep the account.
+- Settings, Delete Account. The text under Email Me an Export should say, in bold, to download the export before you delete your account.
+- Tap Email Me an Export. The alert should say where it's going and that deleting your account deletes the export too.
+- Tap Cancel to keep the account.
 
-OFFLINE
-- With airplane mode on, Export Entries should say it couldn't start, and nothing should be emailed.
+EXPORT FROM SETTINGS
+- Settings, Export Entries. The alert should say where it's going, with no note about deleting.
+
+THE EMAIL
+- The export email should say that deleting your account deletes the export, so download it first.
+- Use an account you don't need: export, then delete the account right away. When the email arrives, it should say the account is being deleted and the export goes with it.
+
+STUCK EXPORTS
+- Nothing to tap here. If an export never arrives, asking again after an hour should start a new one instead of saying it's still being prepared.

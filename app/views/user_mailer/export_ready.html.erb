@@ -7,9 +7,17 @@
 
 <p><strong><%= link_to "Download your export", @export_url %></strong></p>
 
+<% if @user.deletion_pending? %>
+<p>
+  <strong>Your account is being deleted, and this export goes with it.</strong>
+  Signing in to download it keeps your account. If you don't, the link stops working when the account is deleted.
+</p>
+<% else %>
 <p>
   You'll be asked to sign in first, so this email alone can't be used to get your journal.
   The link works until <%= @export.expires_at.strftime("%B %-d, %Y") %>. After that the file is deleted.
+  If you delete your account, the export is deleted with it, so download it first.
 </p>
+<% end %>
 
 <p>If you didn't ask for this, reply to this email and change your password.</p>

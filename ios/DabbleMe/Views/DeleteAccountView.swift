@@ -35,9 +35,9 @@ struct DeleteAccountView: View {
                     }
 
                     Section {
-                        ExportEntriesButton { Text("Email Me an Export") }
+                        ExportEntriesButton(beforeDeleting: true) { Text("Email Me an Export") }
                     } footer: {
-                        Text("We'll email you a link to your entries. Download it before you delete: exports are deleted along with everything else.")
+                        Text("We'll email you a link. **Download the export before you delete your account**: deleting it deletes the export too, and the link stops working.")
                     }
 
                     if let billing = info.separateBilling {
