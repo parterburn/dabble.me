@@ -4,7 +4,7 @@
 <div class="tw mx-auto max-w-2xl pt-4 pb-16 sm:pt-8">
   <header class="mb-8">
     <h1 class="font-serif text-4xl tracking-tight text-primary sm:text-5xl">Account security</h1>
-    <p class="mt-2 text-muted">Your email, password, passkeys, two-factor authentication, and connected apps.</p>
+    <p class="mt-2 text-muted">Your email, password, passkeys, two-factor authentication, where you're signed in, and connected apps.</p>
   </header>
 
   <%= form_for(user, url: registration_path(user), html: { method: :put, class: "space-y-6" }) do |f| %>
@@ -67,6 +67,7 @@
       <%= f.submit "Save Security Changes", class: "button-primary mt-5 w-full sm:w-auto j-edit-security", name: "submit_method", type: :submit %>
     </section>
 
+    <%= render "signed_in_devices" %>
     <%= render "oauth_connected_apps" %>
   <% end %>
 

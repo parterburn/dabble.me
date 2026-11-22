@@ -32,6 +32,7 @@
 @source "../../views/devise/registrations/_user_settings.html.erb";
 @source "../../views/devise/registrations/security.html.erb";
 @source "../../views/devise/registrations/_oauth_connected_apps.html.erb";
+@source "../../views/devise/registrations/_signed_in_devices.html.erb";
 @source "../../views/devise/registrations/delete_account.html.erb";
 @source "../../views/devise/registrations/posting_address.html.erb";
 @source "../../views/devise/otp_credentials/*.html.erb";

@@ -71,4 +71,11 @@ Doorkeeper.configure do
   grant_flows %w[authorization_code]
 
   realm 'OAuth'
+
+  # A refreshed iOS app token stays on its device's row in the Sessions list (AppSessions).
+  after_successful_strategy_response do |request, _response|
+    if request.is_a?(Doorkeeper::OAuth::RefreshTokenRequest)
+      AppSessions.carry_over(request.refresh_token, request.access_token)
+    end
+  end
 end

@@ -48,3 +48,8 @@ email_code_cleanup:
   cron: "40 4 * * *"
   class: "EmailCodeCleanupWorker"
   description: "Daily at 4:40 AM UTC. Deletes emailed sign-in codes older than two days."
+
+user_session_cleanup:
+  cron: "50 4 * * *"
+  class: "UserSessionCleanupWorker"
+  description: "Daily at 4:50 AM UTC. Deletes Sessions-list rows that can no longer sign in (UserSession)."

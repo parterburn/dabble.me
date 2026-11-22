@@ -365,6 +365,23 @@ final class AppModel {
         signInNotice = "Your account will be deleted at \(deletesAt.formatted(date: .omitted, time: .shortened)). Sign back in before then to keep it."
     }
 
+    /// Set when Sign Out of All Devices couldn't reach dabble.me; Settings shows it. The app
+    /// stays signed in then, so it never looks like other devices were signed out when they weren't.
+    var signOutEverywhereError: String?
+
+    /// Signs out every browser and app on the account (connected apps like Claude keep their
+    /// access), then this app. dabble.me revokes this app's token along with the rest.
+    func signOutEverywhere() async {
+        do {
+            try await api.delete("api/v1/device_sessions")
+        } catch {
+            signOutEverywhereError = (error as? LocalizedError)?.errorDescription
+                ?? "Couldn't reach Dabble Me. Check your connection and try again."
+            return
+        }
+        await signOut()
+    }
+
     func signOut() async {
         if let token = await tokens.clear() {
             Task.detached { await OAuthEndpoints.revoke(token) }
