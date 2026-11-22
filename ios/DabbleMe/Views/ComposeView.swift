@@ -228,6 +228,16 @@ struct ComposeView: View {
                                 .accessibilityAddTraits(.updatesFrequently)
                         }
                     }
+                    // Why dictation couldn't listen: a toast over the bar, not in the row.
+                    .overlay(alignment: .bottom) {
+                        if let problem = dictation.problem {
+                            DictationProblemToast(problem: problem) { dictation.clearProblem() }
+                                .padding(.bottom, 68)
+                                .padding(.horizontal, 24)
+                                .transition(.opacity)
+                        }
+                    }
+                    .animation(.easeOut(duration: 0.2), value: dictation.problem)
                     .overlay(alignment: .topLeading) {
                         if editor.isEmpty {
                             VStack(alignment: .leading, spacing: 12) {
@@ -449,7 +459,7 @@ struct ComposeView: View {
     private var openRow: AnyView? {
         let row: AnyView? = if editor.isEditingLink {
             AnyView(LinkRow(editor: editor))
-        } else if dictation.isActive || dictation.problem != nil {
+        } else if dictation.isActive {
             AnyView(DictationRow(dictation: dictation))
         } else if let typed = editor.typedHashtag, !hashtagCompletions(for: typed).isEmpty {
             // A hashtag being typed: the writer's tags that start that way, whatever row was open.
@@ -727,9 +737,6 @@ struct ComposeView: View {
         Button {
             if dictation.isActive {
                 dictation.stop()
-            } else if dictation.problem != nil {
-                // Its message showing: the microphone closes it.
-                dictation.clearProblem()
             } else {
                 showsHashtagBar = false
                 showsAskRow = false
@@ -1940,7 +1947,6 @@ struct FormatButton: View {
 /// and clock update here without redrawing the whole composer.
 private struct DictationRow: View {
     let dictation: Dictation
-    @Environment(\.openURL) private var openURL
 
     /// While speaking: a title, then, while recording, an X on the left (drops it), the waveform
     /// with the time so far, and Done on the right (writes it in). Nothing's written until Done:
@@ -1956,17 +1962,7 @@ private struct DictationRow: View {
                 .accessibilityAddTraits(.isHeader)
                 .accessibilityValue(dictationState)
             HStack(alignment: .center, spacing: 12) {
-                if let problem = dictation.problem {
-                    closeButton("Close") { dictation.clearProblem() }
-                    Text(problem.message)
-                        .foregroundStyle(.secondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                    if problem == .microphoneDenied, let settings = URL(string: UIApplication.openSettingsURLString) {
-                        Button("Settings") { openURL(settings) }
-                            .font(.subheadline.weight(.semibold))
-                    }
-                } else if dictation.state == .listening {
+                if dictation.state == .listening {
                     closeButton("Cancel Recording") { dictation.cancel() }
                         .accessibilityHint("Drops what you said")
                     DictationWaveform(levels: dictation.levels)
@@ -1991,12 +1987,15 @@ private struct DictationRow: View {
                     .accessibilityLabel("Done")
                     .accessibilityHint("Writes what you said into the entry")
                 } else {
+                    // Getting ready or writing it down: just the dots (and, the first time, how
+                    // much of the download is in).
                     TypingDots(size: .small)
-                    dictationLine
-                        .foregroundStyle(.secondary)
-                        .lineLimit(2)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .accessibilityIdentifier("DictationStatus")
+                    if let progress = dictation.downloadProgress {
+                        Text("Downloading \(Int(progress * 100))%")
+                            .monospacedDigit()
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer(minLength: 0)
                 }
             }
             .font(.subheadline)
@@ -2006,7 +2005,7 @@ private struct DictationRow: View {
         .padding(.top, 10)
     }
 
-    /// The X on the row's left: drops a recording, or closes a message.
+    /// The X on the row's left: drops the recording.
     private func closeButton(_ label: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             appIcon("slab-close")
@@ -2024,20 +2023,42 @@ private struct DictationRow: View {
 
     /// Read out with the title, since the title itself no longer changes.
     private var dictationState: String {
-        if dictation.problem != nil { return "" }
-        return switch dictation.state {
+        switch dictation.state {
         case .idle, .preparing: "Getting ready"
         case .listening: "Listening"
         case .writing: "Writing it down"
         }
     }
 
-    @ViewBuilder private var dictationLine: some View {
-        if let progress = dictation.downloadProgress {
-            Text("Downloading what's needed to listen, just this once… \(Int(progress * 100))%")
-        } else {
-            Text(dictation.state == .writing ? "Turning what you said into words, on your phone…" : "One moment…")
+}
+
+/// Why dictation couldn't listen, as a toast over the bar. Tap to close; it also closes itself.
+/// Microphone turned off: a Settings button to turn it on.
+private struct DictationProblemToast: View {
+    let problem: Dictation.Problem
+    let close: () -> Void
+    @Environment(\.openURL) private var openURL
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text(problem.message)
+                .font(.subheadline.weight(.medium))
+                .lineLimit(3)
+                .fixedSize(horizontal: false, vertical: true)
+            if problem == .microphoneDenied, let settings = URL(string: UIApplication.openSettingsURLString) {
+                Button("Settings") { openURL(settings); close() }
+                    .font(.subheadline.weight(.semibold))
+            }
         }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(.regularMaterial, in: .capsule)
+        .contentShape(.capsule)
+        .onTapGesture(perform: close)
+        .accessibilityElement(children: .combine)
+        .accessibilityAction(named: "Close", close)
+        .accessibilityIdentifier("DictationProblem")
+        .onAppear { AccessibilityNotification.Announcement(problem.message).post() }
     }
 }
 

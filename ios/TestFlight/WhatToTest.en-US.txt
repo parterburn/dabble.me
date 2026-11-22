@@ -1,7 +1,13 @@
-Dictation in the composer keeps one title.
+Dictation in the composer: one title, less text, errors as a toast.
 
-Dictation title
-- Tap the mic in the composer. The small olive title above the row says "Dictation" the whole time: while it gets ready, while you're recording, while it writes your words down, and on any error message.
-- The row under the title still shows what's happening: dots and "One moment…" while it gets ready, the waveform and timer while recording, "Turning what you said into words…" after Done.
+Dictation row
+- Tap the mic in the composer. The small olive title above the row says "Dictation" the whole time.
+- While it gets ready, and again after Done while it writes your words down, the row shows only the moving dots. No more "One moment…" or "Turning what you said into words…".
+- The first time, while it downloads what it needs, the dots have "Downloading 42%" next to them.
+- Recording looks the same as before: X on the left, waveform and timer, Done on the right.
 - With VoiceOver on, the title reads as "Dictation" plus the current step (Getting ready, Listening, Writing it down).
-- The title matches the Dictation page in Settings.
+
+Errors as a toast
+- Problems now show as a toast over the bar instead of filling the dictation row. Try: stay quiet for 10 seconds after tapping the mic ("Didn't hear anything"), or turn the microphone off for Dabble Me in iOS Settings.
+- With the microphone off, the toast has a Settings button that opens iOS Settings.
+- Tap the toast to close it, or wait: it closes on its own after a few seconds. Tapping the mic while it shows starts a new recording.
