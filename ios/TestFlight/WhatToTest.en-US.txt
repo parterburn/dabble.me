@@ -1,10 +1,17 @@
-Simpler Writing ideas: your template moves to the empty page, moments get a real row.
+Sign Out of All Devices with a Sessions list on dabble.me, and your hashtags shown in Dictation's Custom Vocabulary.
 
-- Set a template in Settings → Entry Template (and leave "start new entries with it" off). Open a new entry: under "How has today been?" you should see "Use template" with a small "Swipe →" badge.
-- Swipe right across the empty page: the template goes in, cursor at its first blank line. Try tapping "Use template" instead on another empty entry.
-- Type a letter: the hint goes away. Delete it: the hint comes back.
-- Check that tapping to place the cursor, selecting text and scrolling a long entry all work as before.
-- Tap the lightbulb: no template button now. The prompt shows straight away, then today's calendar events, then "Add a moment from your iPhone" as a row with a photo icon.
-- Touch and hold the lightbulb: iPhone moments open, with or without a template.
-- Pick a moment from another day: you're still asked which day it goes on.
-- Check it all in dark mode too.
+Sign Out of All Devices
+- Settings → Sign Out now asks: Sign Out (this device only, as before) or Sign Out of All Devices.
+- Sign Out of All Devices signs out this app, every other copy of the app, and every browser signed in to dabble.me. Claude/ChatGPT connectors stay connected.
+- Try it with the app on two devices, or the app plus a browser: the other one should land on the sign-in page within a request or two.
+- With no connection, Sign Out of All Devices shows "Couldn't sign out of all devices" and leaves you signed in.
+- On dabble.me, Account Security now has a Sessions section above Connected apps. The app shows up there as "Dabble Me app on iPhone" (or iPad) with a rough location and when it was last used.
+- Sign the app out from that list on the web: the app should drop to the sign-in page on its next refresh.
+- Plain Sign Out still leaves your other devices signed in.
+
+Dictation: Custom Vocabulary shows your hashtags
+- Settings → Dictation: under Custom Vocabulary, a new "From Your Hashtags" list shows the hashtags dictation listens for, as #Tag in gray. They can't be edited or deleted there.
+- Your own words stay at the top, newest first, and still swipe to delete.
+- Add a word that's also one of your hashtags (say "Leo" when you use #Leo): it moves up into Custom Vocabulary and leaves the hashtag list.
+- With no connection, the hashtag list doesn't show. Everything else on the page works.
+- Dictate an entry that names a Custom Vocabulary word and a hashtag: both come out spelled your way. Your own words are always sent first, so a long hashtag list never crowds them out.
