@@ -7,7 +7,12 @@
         <p class="muted float-left">
           <%= link_to "Features", root_path(s: 0, anchor: "features"), title: "Features", style: "font-size: 15px;" %>
           &nbsp;&middot;&nbsp;
-          <%= link_to "iOS App", ApplicationHelper.ios_testflight_url, title: "Dabble Me for iPhone and iPad (beta)", style: "font-size: 15px;", target: "_blank", rel: "noopener noreferrer" %>
+          <% if current_user&.is_pro? %>
+            <%# The TestFlight beta is for PRO members only (ApplicationHelper.ios_testflight_url). %>
+            <%= link_to "iOS App", ApplicationHelper.ios_testflight_url, title: "Dabble Me for iPhone and iPad (beta)", style: "font-size: 15px;", target: "_blank", rel: "noopener noreferrer" %>
+          <% else %>
+            <%= link_to "iOS App", journal_app_path, title: "Dabble Me for iPhone and iPad (coming soon)", style: "font-size: 15px;" %>
+          <% end %>
           &nbsp;&middot;&nbsp;
           <%= link_to "Support", support_path, title: "Support & FAQs", style: "font-size: 15px;" %>
           <% if user_signed_in? %>

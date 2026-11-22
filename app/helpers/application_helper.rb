@@ -3,7 +3,8 @@ module ApplicationHelper
     "https://claude.ai/customize/plugins/id/6b2f67b8-6341-42d1-a2f1-d63df3107efe%40anthropic-plugin-directory"
   end
 
-  # The iOS app's public beta (TestFlight), until it's in the App Store.
+  # The iOS app's beta (TestFlight), until it's in the App Store. Only PRO members are sent it
+  # (the web footer, the empty journal, the thank-you email): a TestFlight purchase is free.
   def self.ios_testflight_url
     "https://testflight.apple.com/join/mYj4vrFZ"
   end
@@ -273,7 +274,7 @@ module ApplicationHelper
           },
           {
             q: "Is there a mobile app?",
-            a: "<span class='font-semibold'>Yes, for iPhone and iPad, in beta.</span> Dabble Me for iOS is available now through Apple's TestFlight: <a href='#{ios_testflight_url}' class='text-accent hover:text-primary underline' target='_blank' rel='noopener noreferrer'>join the beta to install it</a>. Read your journal, write new entries, and get a daily reminder; photos, editing, search and On This Day are part of PRO.<div class='mt-2'>There's no Android app yet. On any phone you can still write by replying to the daily email from your mail app, and the website works well on a small screen. PRO members can also <a href='#{routes.mcp_server_docs_path}' class='text-accent hover:text-primary underline'>connect Dabble Me to Claude or ChatGPT</a> and journal from those apps, by voice if you like.</div>"
+            a: "<span class='font-semibold'>For iPhone and iPad, coming soon to the App Store.</span> <a href='#{routes.journal_app_path}' class='text-accent hover:text-primary underline'>See what the app does</a>. PRO members can try the beta now. Read your journal, write new entries, and get a daily reminder; photos, editing, search and On This Day are part of PRO.<div class='mt-2'>There's no Android app yet. On any phone you can still write by replying to the daily email from your mail app, and the website works well on a small screen. PRO members can also <a href='#{routes.mcp_server_docs_path}' class='text-accent hover:text-primary underline'>connect Dabble Me to Claude or ChatGPT</a> and journal from those apps, by voice if you like.</div>"
           },
           {
             q: "Is this really free?",

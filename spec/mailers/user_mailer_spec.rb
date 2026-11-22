@@ -70,8 +70,14 @@ RSpec.describe UserMailer do
       expect(body).not_to include("/settings/#{user.user_key}")
     end
 
-    it "points to the iOS app's beta, in both parts" do
+    it "doesn't send a new (free) account the iOS beta: a TestFlight purchase is free" do
       email = described_class.welcome_email(user)
+
+      expect(email.html_part.body.decoded + email.text_part.body.decoded).not_to include(ApplicationHelper.ios_testflight_url)
+    end
+
+    it "gives a new PRO member the iOS beta, in both parts" do
+      email = described_class.thanks_for_paying(user)
 
       expect(email.html_part.body.decoded).to include(%(href="#{ApplicationHelper.ios_testflight_url}"))
       expect(email.text_part.body.decoded).to include(ApplicationHelper.ios_testflight_url)
