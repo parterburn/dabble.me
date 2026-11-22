@@ -2,7 +2,7 @@
 
 Connects to the existing Dabble Me Streamable HTTP server at https://dabble.me/mcp using host-managed OAuth (PKCE S256, scope mcp:access). No API keys or server deployment are needed. Requires a Dabble Me PRO account.
 
-Includes four skills: find-memories, reflect-on-your-journal, year-in-review, and write-journal-entry. Uses the existing Dabble Me icon.
+Includes four skills: find-memories, reflect-on-your-journal, year-in-review, and write-journal-entry. Uses the existing Dabble Me icon, bundled at `assets/logo.png` (512×512).
 
 Public server-card and OAuth metadata were verified on 2026-10-08. Tool contracts and limitations were inspected in app/lib/mcp and app/services/mcp. Authenticated tools/list and account actions require installation and user OAuth connection; they have not been exercised by this package build. No journal entries were read or created.
 
@@ -14,7 +14,7 @@ The Claude directory accepts only Markdown, text, JSON, YAML, and PNG, JPEG, GIF
 
 ## Claude directory submission
 
-Use repository `https://github.com/parterburn/dabble.me` and plugin path `plugins/dabble-me`. Track `main` after the compatibility changes merge. Claude reads `.claude-plugin/plugin.json` and `.mcp.json`; portable clients read the root `plugin.json` and `mcp.json`. Both use the same existing OAuth server and skills. Claude uses the transport name `http` for Streamable HTTP.
+Use repository `https://github.com/parterburn/dabble.me` and plugin path `plugins/dabble-me`. Track `main` after the compatibility changes merge. Claude reads `.claude-plugin/plugin.json` and `.mcp.json`; its `icon` must be a path to an image inside this folder (`./assets/logo.png`), because the directory listing doesn't load a remote URL; portable clients read the root `plugin.json` and `mcp.json`. Both use the same existing OAuth server and skills. Claude uses the transport name `http` for Streamable HTTP.
 
 Validate locally with `claude plugin validate ./plugins/dabble-me`. Keep the identity, version, descriptions, and connection synchronized across formats when releasing updates.
 

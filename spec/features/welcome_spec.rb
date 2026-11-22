@@ -91,6 +91,7 @@ describe 'Pages' do
     canonical = page.find('link[rel="canonical"]', visible: false)['href']
     expect(description).to include('ChatGPT or Claude')
     expect(canonical).to end_with('/mcp-server')
+    expect(page.first('#examples blockquote')).to have_text('Make a private Spotify Wrapped of my journal; use lots of photos.')
     expect(page).to have_css('link[rel="webmcp"]', visible: false)
     expect(page).to have_css('script#dabble-webmcp-config', visible: false)
   end

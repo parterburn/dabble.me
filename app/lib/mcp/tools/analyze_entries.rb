@@ -3,6 +3,8 @@
 module Mcp
   module Tools
     class AnalyzeEntries < MCP::Tool
+      meta Helpers::OAUTH_REQUIRED_META
+
       tool_name 'analyze_entries'
       title 'Analyze journal patterns'
       description 'Summarize patterns in the signed-in user’s private Dabble Me journal over an optional inclusive date range. Returns entry counts, year coverage, top hashtags, average words per entry, and sample highlights for reflection requests such as “summarize my journaling habits this year.” Highlight excerpts append any Spotify songs saved on the entry, one per line as “🎶 [Artist - Title](https://open.spotify.com/track/…)”, and dated tags at the end, one per line, as “#Leo (9 years, 2 days)”.'
