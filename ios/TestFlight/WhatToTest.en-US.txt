@@ -1,9 +1,10 @@
-Signed-out screens: sample entries with photos and dated hashtags, and bolder sign-up cards.
+Simpler Writing ideas: your template moves to the empty page, moments get a real row.
 
-- Sign out. On the welcome screen, the example entries now have a small photo on the right (three of four do), with their #hashtags in olive.
-- The first example ("1 year ago", Bruges) shows a dated hashtag pill under it: #anniversary 9yrs, 2days.
-- Watch the cards flip for a few rounds: the front card slides away and the one behind moves forward. No text from the cards behind should show through the front card.
-- With Reduce Motion on, the stack sits still on the first example.
-- Journal tab (signed out): a solid olive card with the book icon, "The private timeline of your life", a cream Start Your Journal button and a Sign In link.
-- Search tab (signed out): the same olive card with the search icon.
-- Check both cards and the examples in dark mode too.
+- Set a template in Settings → Entry Template (and leave "start new entries with it" off). Open a new entry: under "How has today been?" you should see "Use template" with a small "Swipe →" badge.
+- Swipe right across the empty page: the template goes in, cursor at its first blank line. Try tapping "Use template" instead on another empty entry.
+- Type a letter: the hint goes away. Delete it: the hint comes back.
+- Check that tapping to place the cursor, selecting text and scrolling a long entry all work as before.
+- Tap the lightbulb: no template button now. The prompt shows straight away, then today's calendar events, then "Add a moment from your iPhone" as a row with a photo icon.
+- Touch and hold the lightbulb: iPhone moments open, with or without a template.
+- Pick a moment from another day: you're still asked which day it goes on.
+- Check it all in dark mode too.
