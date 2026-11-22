@@ -1,8 +1,9 @@
-Add a passkey: after you sign in with your password, the app offers to make a passkey, so next time you can sign in with Face ID or Touch ID.
+Settings cleanup: your account details now live on one Account page.
 
-- Sign out, then sign in with your email and password (on an account with no passkey). Once the journal loads, an "Add a passkey" sheet should come up. Tap Add a Passkey: iOS's own passkey sheet appears, and after Face ID the sheet says "Passkey added". No password needed, since you just typed it. You should also get a "passkey added" email.
-- Sign out and use Sign In with a Passkey: the new passkey should work. It also shows on dabble.me/security, named "Added in the iOS app", and signs in on dabble.me.
-- Not Now: signing out and back in with your password within 30 days shouldn't ask again. After three Not Nows it stops asking.
-- Creating a new account, or just opening the app while signed in, should not show the sheet.
-- Settings → Account shows Add a Passkey while the account has none. More than 15 minutes after signing in, it asks for your password first. A wrong password says "Incorrect password." before iOS's passkey sheet opens, and no passkey is saved to your passwords. Adding one from Settings stays on "Passkey added" until you tap Done.
-- Signing in with a passkey never shows the prompt.
+- Settings starts with an Account row showing your email. Tap it: the Account page has Name (tap to change it), your Email, Add a Passkey (only while the account has none), Account Security (opens dabble.me), and Export Entries.
+- Add a Passkey has an olive icon like the other rows, with black words.
+- Add a Passkey from the Account page: the sheet still ends on "Passkey added", and the row goes away once you tap Done.
+- Export Entries from the Account page still asks Cancel/Export first, then emails the link.
+- Change your name from Account → Name and go Back: it saves, and the Account row's page shows the new name.
+- The "On dabble.me" heading is gone. The Claude/ChatGPT Connector row now sits right above Help & Support.
+- Plan and Manage Hashtags stay on the main Settings page, under the Account row.
