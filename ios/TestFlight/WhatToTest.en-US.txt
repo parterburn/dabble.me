@@ -1,16 +1,14 @@
-Build 113 makes it clear that deleting your account deletes your export too, and stops a lost export from blocking a new one.
+Build 115 shows your template on Today and in the widget when every new entry starts with it.
 
-EXPORT BEFORE DELETING
-- Settings, Delete Account. The text under Email Me an Export should say, in bold, to download the export before you delete your account.
-- Tap Email Me an Export. The alert should say where it's going and that deleting your account deletes the export too.
-- Tap Cancel to keep the account.
+TEMPLATE ON TODAY
+- Settings, Entry Template. Write a template and turn on Start New Entries with It.
+- Go to Today on a day you haven't written yet. The card should say Your Template and show the template's first two lines (blank lines skipped), ending in "..." if there's more.
+- Tap the template. The composer should open with the template already in it.
+- Write Today's Entry should do the same.
 
-EXPORT FROM SETTINGS
-- Settings, Export Entries. The alert should say where it's going, with no note about deleting.
+WIDGET
+- With the medium widget set to A Prompt for You, it should say Your Template and show your template instead of the prompt, until today's written.
+- Change the template or the setting in the app, then go to the Home Screen. The widget should follow.
 
-THE EMAIL
-- The export email should say that deleting your account deletes the export, so download it first.
-- Use an account you don't need: export, then delete the account right away. When the email arrives, it should say the account is being deleted and the export goes with it.
-
-STUCK EXPORTS
-- Nothing to tap here. If an export never arrives, asking again after an hour should start a new one instead of saying it's still being prepared.
+PROMPT COMES BACK
+- Turn off Start New Entries with It, or clear the template. Today and the widget should show the day's prompt again.

@@ -24,7 +24,7 @@ enum WidgetSync {
             memories: memories.count,
             memoriesFirstYear: memories.compactMap { $0.day.flatMap { Int($0.year) } }.min(),
             memoryNote: memoryNote(today),
-            prompt: personalPrompt(for: today.date, model: model) ?? today.prompt,
+            prompt: shownPrompt(for: today, model: model),
             todayEntry: written.map { .init(title: $0.title, text: $0.text, id: $0.id, photo: photo(for: $0.entry, model: model)) },
             rewindEntry: lookBack.map { .init(title: $0.title, text: $0.text, id: $0.id, photo: photo(for: $0.entry, model: model)) },
             // Today and the days ahead as last worked out, until they're worked out again (below).
@@ -35,6 +35,7 @@ enum WidgetSync {
             // (A plan worked out on an earlier day still holds for the days it reached.)
             plannedThrough: saved?.plannedThrough.flatMap { $0 >= today.date ? $0 : nil }
         )
+        snapshot.promptIsTemplate = template(model: model) != nil ? true : nil
         snapshot.writtenDays = writtenDays(saved?.writtenDays, today: today)
         if snapshot != saved {
             snapshot.save()
@@ -303,7 +304,8 @@ enum WidgetSync {
             let shown = content == .memoryEntry ? day?.shown(at: .now) : nil
             return WidgetEntry(date: .now, signedIn: true, wroteToday: today.entry != nil,
                                yearCount: model.entriesThisYear ?? 0, lastFiveDays: WidgetSnapshot.load()?.lastFiveDays(on: .now), memories: day?.memories,
-                               prompt: personalPrompt(for: today.date, model: model) ?? today.prompt,
+                               prompt: shownPrompt(for: today, model: model),
+                               promptIsTemplate: template(model: model) != nil,
                                memoryNote: content == .memoryCount ? day?.memoryNote : nil,
                                entryTitle: shown?.title, entryText: shown?.text, entryID: shown?.id,
                                photo: shown?.photo.flatMap(WidgetSnapshot.photoURL(named:)).flatMap { UIImage(contentsOfFile: $0.path) })
@@ -312,11 +314,26 @@ enum WidgetSync {
         return WidgetEntry(date: .now, signedIn: true, wroteToday: today.entry != nil,
                            yearCount: model.entriesThisYear ?? 0, lastFiveDays: WidgetSnapshot.load()?.lastFiveDays(on: .now),
                            memories: content.source == .rewind && !today.onThisDay.isEmpty ? today.onThisDay.count : nil,
-                           prompt: personalPrompt(for: today.date, model: model) ?? today.prompt,
+                           prompt: shownPrompt(for: today, model: model),
+                           promptIsTemplate: template(model: model) != nil,
                            memoryNote: content == .memoryCount ? memoryNote(today) : nil,
                            entryTitle: shown?.title, entryText: shown?.text, entryID: shown?.id,
                            photo: photo(for: shown?.entry, model: model, fetches: false)
                                .flatMap(WidgetSnapshot.photoURL(named:)).flatMap { UIImage(contentsOfFile: $0.path) })
+    }
+
+    /// What the widget shows in the prompt's place: the writer's template when every new entry
+    /// starts with it (as Today shows it), else the day's prompt.
+    private static func shownPrompt(for today: TodaySummary, model: AppModel) -> String? {
+        template(model: model) ?? personalPrompt(for: today.date, model: model) ?? today.prompt
+    }
+
+    /// The template as Today's card shows it (blank lines and empty items left out), when every
+    /// new entry starts with it and today's can be written in the app.
+    static func template(model: AppModel) -> String? {
+        guard EntryTemplate.addsToNewEntries, model.me?.canWrite != false else { return nil }
+        let preview = String(EntryTemplate.preview(EntryTemplate.runs).characters)
+        return preview.isEmpty ? nil : preview
     }
 
     static func clear() {

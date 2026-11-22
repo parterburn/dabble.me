@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI // (AttributedString's underline, in the preview)
 
 /// The writer's template (Settings → Entry Template): headings or questions an entry can start
 /// from. Kept on this device and on the account (`AccountSettings`), formatted as an entry is. It
@@ -45,6 +46,50 @@ enum EntryTemplate {
     }
 
     static var addsToNewEntries: Bool { UserDefaults.standard.bool(forKey: autoKey) }
+
+    /// The template as Today shows it in place of the day's prompt (when every new entry starts
+    /// with it): its words and formatting, without the blank lines and empty list items left for
+    /// writing, so a couple of lines show as much of it as they can.
+    static func preview(_ runs: [DocumentRun]) -> AttributedString {
+        // Each line as its pieces of formatted text.
+        var lines: [[DocumentRun]] = [[]]
+        for run in runs {
+            for (index, piece) in run.text.components(separatedBy: "\n").enumerated() {
+                if index > 0 { lines.append([]) }
+                if !piece.isEmpty {
+                    var part = run
+                    part.text = piece
+                    lines[lines.count - 1].append(part)
+                }
+            }
+        }
+        // A line with no words of its own (blank, or a bare "•" or "1.") is room to write.
+        let kept = lines.filter { !isRoomToWrite($0.map(\.text).joined()) }
+        var preview = AttributedString()
+        for (index, line) in kept.enumerated() {
+            if index > 0 { preview.append(AttributedString("\n")) }
+            for run in line {
+                var part = AttributedString(run.text)
+                var intent: InlinePresentationIntent = []
+                if run.isBold { intent.insert(.stronglyEmphasized) }
+                if run.isItalic { intent.insert(.emphasized) }
+                if !intent.isEmpty { part.inlinePresentationIntent = intent }
+                if run.isUnderlined { part.underlineStyle = .single }
+                preview.append(part)
+            }
+        }
+        return preview
+    }
+
+    /// A line with nothing of its own: blank, or only a list's marker ("•", "-", "*", "1.", "2)").
+    /// A line of other figures or symbols ("1-10", "2025") is words.
+    private static func isRoomToWrite(_ line: String) -> Bool {
+        let trimmed = line.trimmingCharacters(in: .whitespaces)
+        if trimmed.isEmpty || ["•", "-", "*"].contains(trimmed) { return true }
+        guard let last = trimmed.last, last == "." || last == ")" else { return false }
+        let number = trimmed.dropLast()
+        return !number.isEmpty && number.allSatisfy(\.isASCII) && number.allSatisfy(\.isNumber)
+    }
 
     /// Signing out: the next account doesn't inherit it (this one's comes back from the account).
     static func clear() {
