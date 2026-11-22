@@ -1343,6 +1343,13 @@ struct MomentTextTests {
         #expect(moment.lines(locale: us) == ["📍 Home, Denver", "📍 Denver", "🏃 Workout"])
     }
 
+    @Test func aReflectionGoesInWithoutItsKind() {
+        var moment = Moment(title: "Creativity Reflection")
+        moment.reflections = ["What did you make this week that you're proud of?"]
+        #expect(moment.heading == nil)
+        #expect(moment.lines().isEmpty)
+    }
+
     @Test func nothingToSayAddsNothing() {
         #expect(Moment(title: "").lines().isEmpty)
     }
