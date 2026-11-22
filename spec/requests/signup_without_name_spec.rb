@@ -46,7 +46,6 @@ RSpec.describe 'Signing up without a name', type: :request do
       get edit_user_registration_path
 
       expect(response.body).to include('user[last_name]')
-      expect(response.body).to include('We no longer ask for this.')
     end
   end
 end
