@@ -2,6 +2,7 @@ Add a passkey: after you sign in with your password, the app offers to make a pa
 
 - Sign out, then sign in with your email and password (on an account with no passkey). Once the journal loads, an "Add a passkey" sheet should come up. Tap Add a Passkey: iOS's own passkey sheet appears, and after Face ID the sheet says "Passkey added". No password needed, since you just typed it. You should also get a "passkey added" email.
 - Sign out and use Sign In with a Passkey: the new passkey should work. It also shows on dabble.me/security, named "Added in the iOS app", and signs in on dabble.me.
+- Not Now (Cancel from Settings) now sits clearly below the Add a Passkey button instead of touching it.
 - Not Now: signing out and back in with your password within 30 days shouldn't ask again. After three Not Nows it stops asking.
 - Creating a new account, or just opening the app while signed in, should not show the sheet.
 - Settings → Account shows Add a Passkey while the account has none. More than 15 minutes after signing in, it asks for your password first. A wrong password says "Incorrect password." before iOS's passkey sheet opens, and no passkey is saved to your passwords. Adding one from Settings stays on "Passkey added" until you tap Done.

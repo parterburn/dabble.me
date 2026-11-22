@@ -64,7 +64,7 @@ struct PasskeyPromptSheet: View {
                     .controlSize(.large)
                     .frame(maxWidth: .infinity)
             } else {
-                VStack(spacing: 6) {
+                VStack(spacing: 16) {
                     Button(action: add) {
                         Group {
                             if adding { ProgressView() } else { Text("Add a Passkey") }
