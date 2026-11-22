@@ -19,6 +19,11 @@ class McpController < ApplicationController
     prompts/get
   ].freeze
 
+  # The tokenless path answers one small JSON-RPC message at a time. A batch (dropped from MCP in
+  # 2025-06-18) or a large body would let anyone make the server build a response many times its
+  # size, so either one goes through the normal token check and gets the 401.
+  PUBLIC_MAX_BODY_BYTES = 16.kilobytes
+
   before_action :ensure_mcp_post_only
   before_action -> { doorkeeper_authorize! 'mcp:access' }, unless: :public_discovery_request?
 
@@ -71,8 +76,10 @@ class McpController < ApplicationController
   end
 
   def public_methods_only?
-    messages = Array.wrap(JSON.parse(mcp_payload))
-    messages.any? && messages.all? { |message| message.is_a?(Hash) && PUBLIC_METHODS.include?(message['method']) }
+    return false if mcp_payload.blank? || mcp_payload.bytesize > PUBLIC_MAX_BODY_BYTES
+
+    message = JSON.parse(mcp_payload)
+    message.is_a?(Hash) && PUBLIC_METHODS.include?(message['method'])
   rescue JSON::ParserError
     false
   end

@@ -59,6 +59,18 @@ RSpec.describe McpController, type: :controller do
         expect(response.headers["WWW-Authenticate"]).to include(resource_metadata)
       end
 
+      it "refuses a batch even when every message is a discovery method" do
+        post :invoke, body: Array.new(3) { |i| { jsonrpc: "2.0", id: i, method: "tools/list" } }.to_json, as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+
+      it "refuses a discovery request whose body is over the size cap" do
+        post :invoke, body: { jsonrpc: "2.0", id: 1, method: "ping", params: { pad: "x" * 20_000 } }.to_json, as: :json
+
+        expect(response).to have_http_status(:unauthorized)
+      end
+
       it "refuses any method outside the discovery list" do
         post :invoke, params: { jsonrpc: "2.0", id: 5, method: "resources/list", params: {} }, as: :json
         expect(response).to have_http_status(:unauthorized)
