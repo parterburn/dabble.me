@@ -14,6 +14,7 @@ RENEW, CANCEL, EXPIRE
 - Come back the next day: it renews, and stays PRO.
 - In Manage Subscription, cancel. Plan should say Ends instead of Renews, and PRO stays until then.
 - After it ends (the next day), the account should go back to Free. Pull to refresh if it still says PRO.
+- If a renewal fails (a sandbox card problem), Plan should ask you to update your payment details, with no Renews date, and PRO stays during the grace period.
 
 UPGRADE
 - On Monthly, open Manage Subscription and switch to Yearly. The plan should become Yearly right away.
@@ -26,6 +27,7 @@ ANOTHER ACCOUNT
 
 ACCOUNTS THAT PAY ON THE WEB
 - Sign in to an account that's PRO through dabble.me. Settings, Plan should say it's through dabble.me, with nothing to buy. With a card subscription (Stripe), it should also say when it renews, or Ends if it's been cancelled on the web (allow up to 6 hours after a change).
+- If that account's Apple Account is also paying for PRO, Plan should offer Manage App Store Subscription so the second subscription can be cancelled.
 
 DELETE ACCOUNT
 - With an active App Store subscription, Settings, Delete Account should tell you to cancel it in iOS Settings (deleting the account doesn't stop Apple's billing).

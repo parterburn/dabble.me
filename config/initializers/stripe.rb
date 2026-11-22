@@ -129,7 +129,8 @@ StripeEvent.configure do |events|
       if user.present? && !user.has_active_stripe_subscription?
         if subscription.cancellation_details&.reason == "payment_failed"
           user.update(plan: "Free")
-          UserMailer.downgraded(user).deliver_now
+          # An App Store subscription still paid for takes over (User#resume_apple_subscription).
+          UserMailer.downgraded(user).deliver_now if user.reload.is_free?
         end
 
         Sentry.set_user(id: user.id, email: user.email)

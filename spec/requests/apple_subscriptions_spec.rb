@@ -33,6 +33,16 @@ RSpec.describe "Apple in-app purchases from the app", type: :request do
       expect(json["apple_account_token"]).to eq(token)
     end
 
+    it "stops offering the in-app purchase once a closing is announced" do
+      get "/api/v1/me", headers: auth(user)
+      expect(json["can_buy_in_app"]).to be(true)
+
+      allow(SiteClosure).to receive(:current).and_return(double("closure", closed?: false))
+      get "/api/v1/me", headers: auth(user)
+      expect(json["can_buy_in_app"]).to be(false)
+      expect(json["apple_account_token"]).to be_present # Purchases already made are still reported.
+    end
+
     it "says a web subscriber's PRO comes from the web" do
       user.update!(plan: "PRO Yearly PayHere")
       get "/api/v1/me", headers: auth(user)

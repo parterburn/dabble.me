@@ -13,6 +13,12 @@ class Rack::Attack
     req.ip unless req.path.starts_with?('/assets') || auth_path(req) == APP_STORE_NOTIFICATIONS_PATH
   end
 
+  # The notifications' own limit, high enough for Apple's bursts: each one costs a signature
+  # check, and it's the one unauthenticated POST.
+  throttle('app_store_notifications/ip', limit: 300, period: 1.minute) do |req|
+    req.ip if req.post? && auth_path(req) == APP_STORE_NOTIFICATIONS_PATH
+  end
+
   # Purchases and restores from the app: a handful at once is normal (a restore sends each
   # transaction), hundreds is not.
   throttle('apple_subscriptions/ip', limit: 30, period: 1.minute) do |req|

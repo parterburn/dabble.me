@@ -92,8 +92,17 @@ RSpec.describe AppleSubscription do
       user.update!(plan: "PRO Monthly PayHere")
       subscription
       user.payments.create!(amount: 4, date: 3.months.ago)
+      expect(UserMailer).not_to receive(:downgraded) # Still PRO: no "you're on Free" email.
       UserDowngradeExpiredWorker.new.perform
       expect(user.reload.plan).to eq("PRO Monthly Apple")
+    end
+
+    it "still emails an expired web plan with no App Store subscription" do
+      user.update!(plan: "PRO Monthly PayHere")
+      user.payments.create!(amount: 4, date: 3.months.ago)
+      expect(UserMailer).to receive(:downgraded).with(user).and_call_original
+      UserDowngradeExpiredWorker.new.perform
+      expect(user.reload.plan).to eq("Free")
     end
   end
 

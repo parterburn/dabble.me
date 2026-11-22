@@ -20,5 +20,10 @@ Rails.application.config.filter_parameters += [
   :entry_template,
   :first_name,
   :last_name,
+  # Apple-signed transactions and notifications (they carry the account's appAccountToken).
+  :signed_transaction,
+  :signedPayload,
+  :signedTransactionInfo,
+  :signedRenewalInfo,
   /\Aentry\z/i
 ]

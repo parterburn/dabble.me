@@ -71,7 +71,13 @@ module AppStore
     def current_snapshot(original_transaction_id, environment)
       return nil unless AppStore.api_configured?
 
-      ServerApi.subscription_status(original_transaction_id, environment: environment).validate!
+      snapshot = ServerApi.subscription_status(original_transaction_id, environment: environment).validate!
+      # Apple's answer is found by an unsigned id: the signed transaction must agree.
+      unless snapshot.original_transaction_id == original_transaction_id.to_s
+        raise VerificationError, "status is for another subscription"
+      end
+
+      snapshot
     end
 
     # Returns the AppleSubscription. Raises OtherAccount (after saving Apple's state) when the

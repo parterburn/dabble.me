@@ -37,6 +37,8 @@ class UserDowngradeExpiredWorker
     end
 
     user.update(plan: "Free")
+    # An App Store subscription still paid for takes over (User#resume_apple_subscription).
+    return unless user.reload.is_free?
 
     begin
       UserMailer.downgraded(user).deliver_now

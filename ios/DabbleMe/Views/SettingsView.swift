@@ -303,7 +303,7 @@ struct ProInfoView: View {
             }
         }
         // Tall enough for the plans and their terms when there's something to buy.
-        .presentationDetents(model.me?.isPro == false && model.me?.appleAccountToken != nil ? [.large] : [.medium])
+        .presentationDetents(model.me?.isPro == false && model.me?.sellsInApp == true ? [.large] : [.medium])
     }
 
     private var title: String {

@@ -12,7 +12,7 @@ struct SubscribeOptions: View {
 
     var body: some View {
         let store = model.subscriptions
-        if let me = model.me, !me.isPro, me.appleAccountToken != nil {
+        if let me = model.me, !me.isPro, me.sellsInApp {
             VStack(spacing: 12) {
                 if store.belongsToOtherAccount {
                     Text("This Apple Account already pays for Dabble Me PRO on a different Dabble Me account. Sign in to that account to use it.")
@@ -102,7 +102,9 @@ struct PlanView: View {
                 if me.isProThroughApple {
                     Section {
                         LabeledContent("Plan", value: "PRO")
-                        if let renewal = renewalText(me.appleSubscription?.expiresAt, willRenew: me.appleSubscription?.willRenew) {
+                        // In a grace period the paid-to date has passed: the footer says what to do.
+                        if me.appleSubscription?.inGracePeriod != true,
+                           let renewal = renewalText(me.appleSubscription?.expiresAt, willRenew: me.appleSubscription?.willRenew) {
                             LabeledContent(renewal.label, value: renewal.date)
                         }
                         Button("Manage Subscription") { managing = true }
@@ -117,10 +119,22 @@ struct PlanView: View {
                         if let renewal = renewalText(webSubscription?.expiresAt, willRenew: webSubscription?.willRenew) {
                             LabeledContent(renewal.label, value: renewal.date)
                         }
+                        // PRO on dabble.me and an App Store subscription too: that one can be cancelled here.
+                        if me.appleSubscription != nil {
+                            Button("Manage App Store Subscription") { managing = true }
+                        }
                     } footer: {
-                        Text("Your PRO subscription is through dabble.me, so there's nothing to buy here.")
+                        Text(me.appleSubscription != nil
+                             ? "Your PRO subscription is through dabble.me. This Apple Account is also paying for PRO: cancel it in Manage App Store Subscription."
+                             : "Your PRO subscription is through dabble.me, so there's nothing to buy here.")
                     }
                     .task { await loadWebSubscription() }
+                } else if !me.sellsInApp {
+                    Section {
+                        LabeledContent("Plan", value: "Free")
+                    } footer: {
+                        Text("Dabble Me is closing, so PRO is no longer sold.")
+                    }
                 } else {
                     Section {
                         VStack(spacing: 16) {

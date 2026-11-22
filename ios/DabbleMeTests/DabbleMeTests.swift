@@ -493,6 +493,10 @@ struct DecodingTests {
         #expect(!me.isProThroughWeb)
         #expect(me.appleSubscription?.productId == SubscriptionStore.yearlyID)
         #expect(me.appleSubscription?.willRenew == true)
+        #expect(me.sellsInApp) // No can_buy_in_app (build 114's first servers): selling is on.
+
+        let closing = json.replacingOccurrences(of: #""pro_source":"apple","#, with: #""pro_source":"apple","can_buy_in_app":false,"#)
+        #expect(try !APIClient.decoder.decode(Me.self, from: Data(closing.utf8)).sellsInApp)
     }
 
     /// Settings → Plan for an account that pays on dabble.me (Api::V1::PlansController).

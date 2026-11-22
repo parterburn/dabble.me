@@ -4,6 +4,8 @@ require "rails_helper"
 
 # GET /api/v1/plan: the iOS app's Plan page.
 RSpec.describe "The app's Plan page", type: :request do
+  include ActiveSupport::Testing::TimeHelpers
+
   let(:user) { create(:user) }
   let(:mobile_app) { MobileApp.ensure_application! }
 
@@ -58,6 +60,19 @@ RSpec.describe "The app's Plan page", type: :request do
       allow(Stripe::Subscription).to receive(:list).and_return(stripe_subscriptions(stripe_subscription(period_end: renews)))
       2.times { get "/api/v1/plan", headers: auth(user) }
       expect(Stripe::Subscription).to have_received(:list).once
+      expect(json["web_subscription"]["expires_at"]).to eq(renews.iso8601)
+    end
+
+    it "doesn't ask Stripe again on every visit when it found nothing or failed" do
+      allow(Rails).to receive(:cache).and_return(ActiveSupport::Cache::MemoryStore.new)
+      allow(Stripe::Subscription).to receive(:list).and_raise(Stripe::APIConnectionError.new("down"))
+      2.times { get "/api/v1/plan", headers: auth(user) }
+      expect(Stripe::Subscription).to have_received(:list).once
+      expect(json["web_subscription"]).to be_nil
+
+      travel WebSubscription::MISS_CACHE_FOR + 1.minute
+      allow(Stripe::Subscription).to receive(:list).and_return(stripe_subscriptions(stripe_subscription(period_end: renews)))
+      get "/api/v1/plan", headers: auth(user)
       expect(json["web_subscription"]["expires_at"]).to eq(renews.iso8601)
     end
   end

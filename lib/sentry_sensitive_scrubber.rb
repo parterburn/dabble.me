@@ -12,6 +12,10 @@ module SentrySensitiveScrubber
     password_confirmation
     otp_attempt
     otp_code
+    signed_transaction
+    signedpayload
+    signedtransactioninfo
+    signedrenewalinfo
   ].freeze
 
   # Journal entry text / inbound email payloads — never send to Sentry.

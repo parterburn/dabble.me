@@ -32,6 +32,11 @@ struct Me: Decodable, Sendable, Equatable {
     /// signed transaction, which is how the server knows which account bought it. Nil from an
     /// older server, and then the app sells nothing.
     var appleAccountToken: String? = nil
+    /// False once Dabble Me's closing is announced: nothing new is sold (purchases already made
+    /// are still reported). Missing from older servers.
+    var canBuyInApp: Bool? = nil
+    /// The app may offer the in-app purchase.
+    var sellsInApp: Bool { appleAccountToken != nil && canBuyInApp != false }
     /// Where PRO comes from: "apple" (an App Store subscription), "web" (dabble.me), or nil.
     var proSource: String? = nil
     /// The App Store subscription that makes the account PRO, if one does.

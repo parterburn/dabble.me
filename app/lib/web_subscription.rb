@@ -6,6 +6,8 @@
 # change made in Stripe's billing portal shows up once it runs out.
 module WebSubscription
   CACHE_FOR = 6.hours
+  # No subscription found, or Stripe couldn't be asked: not asked again on every visit.
+  MISS_CACHE_FOR = 10.minutes
 
   module_function
 
@@ -13,9 +15,13 @@ module WebSubscription
   def for(user)
     return nil unless user.is_pro? && user.plan_type_unlinked == "Stripe" && user.stripe_id.present?
 
-    Rails.cache.fetch(["web_subscription", user.id, user.stripe_id, user.plan], expires_in: CACHE_FOR, skip_nil: true) do
-      from_stripe(user.stripe_id)
-    end
+    key = ["web_subscription", user.id, user.stripe_id, user.plan]
+    cached = Rails.cache.read(key)
+    return cached.presence if cached
+
+    found = from_stripe(user.stripe_id)
+    Rails.cache.write(key, found || {}, expires_in: found ? CACHE_FOR : MISS_CACHE_FOR)
+    found
   end
 
   def from_stripe(customer_id)
