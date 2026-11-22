@@ -204,6 +204,7 @@ class RegistrationsController < Devise::RegistrationsController
   # A gift sign-up holds the welcome email until the gift is on the account (see create).
   def build_resource(hash = {})
     super
+    resource.signup_platform ||= 'web'
     resource.welcome_email_after_gift = true if current_gift
   end
 

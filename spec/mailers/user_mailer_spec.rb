@@ -62,6 +62,34 @@ RSpec.describe UserMailer do
   end
 
   describe "#welcome_email" do
+    def welcome_text(user)
+      email = described_class.welcome_email(user)
+      [email.html_part.body.decoded, email.text_part.body.decoded]
+    end
+
+    it "asks a web sign-up to reply with their first entry" do
+      user.update!(signup_platform: "web")
+
+      welcome_text(user).each do |body|
+        expect(body).to include("Just reply to this email with your answer")
+        expect(body).not_to include("Open the Dabble Me app")
+      end
+    end
+
+    it "leads an app sign-up to the app, with replying by email as the aside" do
+      user.update!(signup_platform: "ios_app")
+
+      welcome_text(user).each do |body|
+        expect(body).to include("Open the Dabble Me app and write a sentence or two")
+        expect(body).to include("Settings → Reminders")
+        expect(body).to include("Prefer email? Reply to this one")
+        expect(body).not_to include("Just reply to this email with your answer")
+      end
+      text = described_class.welcome_email(user).text_part.body.decoded
+      expect(text).to match(/^4\. Turn on a daily reminder/)
+      expect(text).to match(/^6\. Unlock premium features/)
+    end
+
     it "links to settings with a token instead of the posting address" do
       email = described_class.welcome_email(user)
       body = email.html_part.body.decoded + email.text_part.body.decoded
