@@ -81,10 +81,15 @@ struct SettingsView: View {
                         }
                         .disabled(!me.isPro)
                         // Emailed, as the web's Export page does, with no sign-in to the web first.
+                        // Black words like the rows around it, and an olive icon like theirs
+                        // (a button would tint both; .primary on the whole row greyed the icon).
                         ExportEntriesButton {
-                            Label("Export Entries", icon: "slab-arrow-up-from-line")
+                            Label {
+                                Text("Export Entries").foregroundStyle(.primary)
+                            } icon: {
+                                appIcon("slab-arrow-up-from-line").foregroundStyle(.tint)
+                            }
                         }
-                        .foregroundStyle(.primary)
                     }
                 }
 

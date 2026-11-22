@@ -1,19 +1,9 @@
-Build 126 makes Restore Purchases clearer: it says what happened, and asks for your Apple Account password only when it has to.
+Build 127 colors the Export Entries icon in Settings olive, like the other row icons.
 
-Use a Free account. TestFlight purchases use Apple's sandbox: nothing is charged.
+SETTINGS
+- Open Settings. In the account section, the Export Entries icon is olive, matching Manage Hashtags above it. The words stay black (white in dark mode).
+- Tap Export Entries. The Cancel/Export alert still comes first, and Export still emails the link.
 
-RESTORE WITH A SUBSCRIPTION ON THIS DEVICE
-- Buy PRO (Settings, Plan), then on another Free account, or after deleting and reinstalling the app, sign in to the account that bought it.
-- Settings, Plan, Restore Purchases. It should turn PRO without asking for a password, and the Plan page should then show PRO.
-
-RESTORE WITH NOTHING TO RESTORE
-- On an Apple Account that has never bought Dabble Me PRO, tap Restore Purchases.
-- Apple may ask for your Apple Account password. That prompt is Apple's own; the line under the button says so.
-- After you sign in, it should say "No active Dabble Me PRO subscription was found for this Apple Account."
-- Cancel the password prompt instead: nothing should be shown, and you can tap Restore Purchases again.
-
-ANOTHER ACCOUNT
-- With a subscription bought for a different Dabble Me account, Restore Purchases should say this Apple Account already pays for PRO on another account.
-
-OFFLINE
-- With Airplane Mode on, Restore Purchases should say the App Store couldn't be reached, or that Dabble Me couldn't be reached.
+CHECK
+- In dark mode, the icon is still olive and the words are white.
+- On the Delete Account page, Email Me an Export looks as it did.
