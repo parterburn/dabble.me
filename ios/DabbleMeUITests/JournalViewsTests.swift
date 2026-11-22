@@ -2554,9 +2554,17 @@ final class JournalViewsTests: XCTestCase {
         XCTAssertFalse(app.staticTexts.matching(NSPredicate(format: "label ENDSWITH 'entries'")).firstMatch.exists, "Dots, not the number")
         snap("today-corner-count")
         count.tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label ENDSWITH %@", "of the last 5 days have entries.")).firstMatch.waitForExistence(timeout: 15),
-                      "Stats spells the dots out")
+        let dots = app.buttons["StatsLastFiveDays"]
+        XCTAssertTrue(dots.waitForExistence(timeout: 15))
+        XCTAssertTrue(dots.label.hasSuffix("of the last 5 days have entries."), "Stats spells the dots out: \(dots.label)")
         snap("stats-last-five-days")
+        // Tapped: this year's grid, zoomed in on the last five days.
+        dots.tap()
+        let grid = app.otherElements["Writing days in \(year)"]
+        XCTAssertTrue(grid.waitForExistence(timeout: 10))
+        sleep(1) // the scroll and zoom settle
+        XCTAssertTrue(grid.isHittable, "Scrolled to this year's grid")
+        snap("stats-last-five-days-zoomed")
         app.terminate()
 
         app = launch(["-DabbleDebugRewindYear", String(year), "-DabbleDebugForgetRewindTap", "YES"])
