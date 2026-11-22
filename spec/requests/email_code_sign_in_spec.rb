@@ -282,7 +282,7 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
       Doorkeeper::Application.create!(name: "RSpec MCP", uid: "rspec-claim-mcp", redirect_uri: "http://127.0.0.1/cb",
                                       scopes: "mcp:access", confidential: false)
     end
-    let!(:squatter_token) do
+    let(:squatter_token) do
       Doorkeeper::AccessToken.create!(resource_owner_id: user.id, application_id: mcp_app.id, scopes: "mcp:access", expires_in: 2.hours)
     end
 
@@ -292,6 +292,7 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
                                         nickname: "Squatter's laptop", sign_count: 0)
       user.generate_otp_secret
       user.update!(otp_enabled: true, otp_enabled_on: Time.current, remember_created_at: Time.current)
+      squatter_token # after the 2FA change, which revokes tokens on its own
     end
 
     it "wipes its password, passkeys, 2FA and sign-ins on the first code sign-in in the app" do
