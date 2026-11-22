@@ -57,6 +57,7 @@ class User < ActiveRecord::Base
   has_many :exports, dependent: :destroy
   has_many :payments
   has_many :apple_subscriptions, dependent: :nullify
+  has_one :gift_redemption, dependent: :delete
   has_many :webauthn_credentials, dependent: :destroy
   has_many :mcp_tool_invocations, dependent: :delete_all
   has_many :ignored_email_images, dependent: :delete_all
@@ -72,6 +73,9 @@ class User < ActiveRecord::Base
   scope :without_entries, -> { includes(:entries).where("entries.id IS null").references(:entries) }
   scope :free_only, -> { where("plan ILIKE '%free%' OR plan IS null") }
   scope :pro_only, -> { where("plan ILIKE '%pro%'") }
+  # PRO that someone pays for: everything but a gifted year (Gift). Business metrics count these.
+  scope :gifted, -> { where("plan ILIKE '%gift%'") }
+  scope :paid_pro, -> { pro_only.where("plan NOT ILIKE '%gift%'") }
   scope :monthly, -> { where("plan ILIKE '%monthly%'") }
   scope :yearly, -> { where("plan ILIKE '%yearly%'") }
   scope :forever, -> { where("plan ILIKE '%forever%'") }
@@ -274,6 +278,24 @@ class User < ActiveRecord::Base
     !is_pro?
   end
 
+  # Set on a gift sign-up (Gift): the gift goes on just after the account is created, and the
+  # welcome email's copy depends on the plan, so RegistrationsController sends it after that.
+  attr_accessor :welcome_email_after_gift
+
+  # On a gifted year of PRO (Gift), as opposed to a paid plan.
+  def gifted_pro?
+    is_pro? && plan.to_s.match?(/gift/i)
+  end
+
+  def gift_expires_at
+    gift_redemption&.expires_at if gifted_pro?
+  end
+
+  # The gift's last day as the person sees it, e.g. "November 22, 2027".
+  def gift_expires_on
+    gift_expires_at&.in_time_zone(send_timezone.presence || "UTC")&.strftime("%B %-d, %Y")
+  end
+
   def plan_name
     if plan && plan.match(/pro/i)
       'Dabble Me PRO'
@@ -474,6 +496,8 @@ class User < ActiveRecord::Base
   end
 
   def send_welcome_email
+    return if welcome_email_after_gift
+
     UserMailer.welcome_email(self).deliver_later
   rescue StandardError => e
     Sentry.set_user(id: self.id, email: self.email)

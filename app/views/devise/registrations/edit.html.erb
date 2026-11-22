@@ -11,9 +11,14 @@
     <% if current_user.is_pro? %>
       <section class="card p-6 sm:p-8">
         <p class="text-primary">
-          Thanks for subscribing to
+          <%= current_user.gifted_pro? ? "Enjoy your gift of" : "Thanks for subscribing to" %>
           <%= link_to "PRO", subscribe_path, class: "mx-0.5 inline-flex items-center rounded-full bg-accent px-3 py-1 align-middle text-xs font-medium text-cream-100 no-underline hover:opacity-90" %>
         </p>
+        <% if current_user.gifted_pro? && current_user.gift_expires_on %>
+          <p class="mt-2 text-sm text-muted">
+            Your gift of PRO runs until <%= current_user.gift_expires_on %>. To keep PRO after that, <%= link_to "subscribe", subscribe_path, class: "text-link" %> any time.
+          </p>
+        <% end %>
         <% if current_user.plan_type_unlinked.present? %>
           <p class="mt-2 text-sm text-muted">
             Manage your subscription and payment history at <%= link_to current_user.plan_type_unlinked, billing_path, target: :_blank, class: "text-link" %>.
