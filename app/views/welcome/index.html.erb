@@ -445,7 +445,7 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
   <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
     <figure class="card p-6 sm:p-8 flex flex-col sm:flex-row gap-5 sm:gap-6 items-start">
       <a href="https://x.com/parterburn" target="_blank" rel="noopener" class="shrink-0" aria-label="Paul Arterburn on X">
-        <%= image_tag "paul-arterburn.jpg", alt: "Paul Arterburn, founder of Dabble Me", width: 64, height: 64, class: "w-16 h-16 rounded-full object-cover" %>
+        <%= image_tag "paul-arterburn.jpg", alt: "Paul Arterburn, founder of Dabble Me", width: 64, height: 64, loading: "lazy", decoding: "async", class: "w-16 h-16 rounded-full object-cover" %>
       </a>
       <div>
         <blockquote class="text-primary leading-relaxed">
