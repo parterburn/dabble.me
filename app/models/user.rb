@@ -36,6 +36,8 @@ class User < ActiveRecord::Base
   # the other columns) by substring in SQL.
   encrypts :user_key, :image_key, deterministic: true
   encrypts :first_name, :last_name, :past_filter, :otp_auth_secret, :otp_recovery_secret, :app_settings
+  # Names are optional: a cleared field is stored as nil, never "".
+  normalizes :first_name, :last_name, with: ->(name) { name.strip.presence }
 
   validates :user_key, uniqueness: true
   validates :image_key, uniqueness: true, allow_nil: true
@@ -131,19 +133,20 @@ class User < ActiveRecord::Base
   end
 
   def full_name
-    "#{first_name} #{last_name}" if first_name.present? || last_name.present?
+    [first_name, last_name].filter_map(&:presence).join(' ').presence
   end
 
   def abbreviated_name
-    "#{first_name} #{last_name.first&.upcase}"
+    "#{first_name} #{last_name&.first&.upcase}".strip
   end
 
   def cleaned_to_address
-    "#{full_name.gsub(/[^\w\s-]/i, '') if full_name.present?} <#{email}>"
+    name = full_name.to_s.gsub(/[^\w\s-]/i, '').squish
+    name.present? ? "#{name} <#{email}>" : email
   end
 
   def full_name_or_email
-    first_name.present? ? "#{first_name} #{last_name}" : email
+    first_name.present? ? full_name : email
   end
 
   def email_domain_not_blocked

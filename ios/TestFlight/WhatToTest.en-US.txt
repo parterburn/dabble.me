@@ -1,13 +1,14 @@
-Build 110 exports your entries from the app, by email, without signing in to the website first.
+Build 112 stops asking for your name when you sign up.
 
-EXPORT FROM SETTINGS
-- Settings, Export Entries (under Manage Hashtags). No web page should open. An alert should say we'll email your export to your account's address.
-- The email should arrive like the one the website sends, with a link to download. The link opens dabble.me and asks you to sign in there before the download.
-- Tap Export Entries again while it's still being made. The alert should say it's already being prepared, and no second email should come.
-- Once the first email has arrived, tap it again. The alert should say we've emailed your latest export again, and the same link should arrive.
+SIGN UP
+- Sign out, then tap Start Your Journal. The form should ask only for Email and Password, with no First Name field.
+- The Email field should have the cursor when the form opens.
+- Create an account with an address you don't need. It should sign in to the journal as before.
+- Emails to that account should start "Hey there".
 
-EXPORT BEFORE DELETING
-- Settings, Delete Account. Email Me an Export should do the same, without leaving the page. Tap Cancel to keep the account.
+ADDING A NAME LATER
+- Settings, tap the name row at the top ("Add your name"). It opens Settings on dabble.me, where "What should we call you?" is optional.
+- Add a first name there and save. Back in the app, pull to refresh Settings: the name should show at the top.
 
-OFFLINE
-- With airplane mode on, Export Entries should say it couldn't start, and nothing should be emailed.
+NOTHING ELSE SHOULD CHANGE
+- Sign In, Forgot Password and passkey sign-in work as before.

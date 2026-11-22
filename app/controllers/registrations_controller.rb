@@ -128,7 +128,8 @@ class RegistrationsController < Devise::RegistrationsController
       params[:user].parse_time_select! :send_time
     end
 
-    prefs = devise_parameter_sanitizer.sanitize(:preferences).except(:email, :password, :password_confirmation, :current_password)
+    # The email-link page shows no profile fields, so it can't change the name either.
+    prefs = devise_parameter_sanitizer.sanitize(:preferences).except(:first_name, :last_name, :email, :password, :password_confirmation, :current_password)
     prefs = prefs.except(:send_updates) if params[:unsub_all].present?
     if user.update_without_password(prefs)
       if user.frequency.present?
