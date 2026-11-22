@@ -36,6 +36,11 @@ final class SubscriptionStore {
     /// After the server took a purchase: the account (and its plan) is loaded again.
     @ObservationIgnored var didChangePlan: @MainActor () async -> Void = {}
     @ObservationIgnored private var updates: Task<Void, Never>?
+    /// A purchase here arrives twice: on `Transaction.updates` while StoreKit's "You're all set"
+    /// is showing, and as the purchase's result once it's dismissed. Each is posted once: these
+    /// are the transactions being posted now, and those the server answered this session.
+    @ObservationIgnored private var reporting: Set<UInt64> = []
+    @ObservationIgnored private var reported: Set<UInt64> = []
 
     init(api: APIClient) {
         self.api = api
@@ -55,6 +60,7 @@ final class SubscriptionStore {
     /// Signed out: nothing said to the last account carries over.
     func reset() {
         message = nil
+        reported.removeAll()
         belongsToOtherAccount = false
     }
 
@@ -142,7 +148,7 @@ final class SubscriptionStore {
         for await result in StoreKit.Transaction.currentEntitlements {
             guard case .verified(let transaction) = result, Self.productIDs.contains(transaction.productID) else { continue }
             found = true
-            await report(result)
+            await report(result, again: true)
         }
         if !found {
             message = "No Dabble Me PRO subscription was found for this Apple Account."
@@ -152,7 +158,8 @@ final class SubscriptionStore {
 
     /// Posts a verified transaction to the server, and finishes it once the server has it (or
     /// has refused it for good: another account's, Family Sharing). Unverified ones are left.
-    private func report(_ result: VerificationResult<StoreKit.Transaction>) async {
+    /// `again`: Restore Purchases posts what the server already answered about, on purpose.
+    private func report(_ result: VerificationResult<StoreKit.Transaction>, again: Bool = false) async {
         guard case .verified(let transaction) = result else {
             message = "The App Store couldn't verify that purchase."
             return
@@ -162,12 +169,16 @@ final class SubscriptionStore {
             return
         }
         guard accountToken() != nil else { return } // Signed out: reported after sign-in.
+        guard again || !reported.contains(transaction.id), reporting.insert(transaction.id).inserted else { return }
+        defer { reporting.remove(transaction.id) }
         do {
             let _: PlanStatus = try await api.post("api/v1/apple_subscriptions",
                                                    SignedTransaction(signedTransaction: result.jwsRepresentation))
+            reported.insert(transaction.id)
             await transaction.finish()
             await didChangePlan()
         } catch let APIError.server(status, code, text) where status == 409 || status == 422 {
+            reported.insert(transaction.id)
             await transaction.finish()
             if code == "subscription_belongs_to_other_account" { belongsToOtherAccount = true }
             message = text
