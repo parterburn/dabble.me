@@ -53,6 +53,7 @@ Rails.application.routes.draw do
       resource :account_deletion, only: %i[show create]
       resources :exports, only: :create
       get 'me', to: 'me#show'
+      patch 'me', to: 'me#update'
       get 'today', to: 'today#show'
       get 'prompts', to: 'prompts#index'
       resources :entries, only: %i[index show create update destroy] do
