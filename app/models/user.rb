@@ -271,6 +271,10 @@ class User < ActiveRecord::Base
     !is_pro?
   end
 
+  # Set on a gift sign-up (Gift): the gift goes on just after the account is created, and the
+  # welcome email's copy depends on the plan, so RegistrationsController sends it after that.
+  attr_accessor :welcome_email_after_gift
+
   # On a gifted year of PRO (Gift), as opposed to a paid plan.
   def gifted_pro?
     is_pro? && plan.to_s.match?(/gift/i)
@@ -454,6 +458,8 @@ class User < ActiveRecord::Base
   end
 
   def send_welcome_email
+    return if welcome_email_after_gift
+
     UserMailer.welcome_email(self).deliver_later
   rescue StandardError => e
     Sentry.set_user(id: self.id, email: self.email)

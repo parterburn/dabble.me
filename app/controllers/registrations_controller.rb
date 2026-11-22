@@ -17,7 +17,10 @@ class RegistrationsController < Devise::RegistrationsController
     super do
       resource.referrer = request.env['affiliate.tag']
       resource.save
-      gift_redeemed = current_gift.redeem!(resource) if current_gift && resource.persisted?
+      if resource.persisted? && resource.welcome_email_after_gift
+        gift_redeemed = current_gift.redeem!(resource)
+        UserMailer.welcome_email(resource).deliver_later
+      end
     end
     return unless resource.persisted?
 
@@ -186,6 +189,12 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   private
+
+  # A gift sign-up holds the welcome email until the gift is on the account (see create).
+  def build_resource(hash = {})
+    super
+    resource.welcome_email_after_gift = true if current_gift
+  end
 
   # The gift on this page: from the link's code, or the code the gift sign-up form posts.
   def current_gift

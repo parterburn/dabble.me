@@ -64,6 +64,19 @@ RSpec.describe 'Gift links', type: :request do
       expect(flash[:notice]).to include('Your gift of PRO runs until')
     end
 
+    it 'sends the welcome email once the gift is on the account, so it reads as PRO' do
+      enqueued_plan = nil
+      allow(UserMailer).to receive(:welcome_email).and_wrap_original do |original, user|
+        enqueued_plan = user.reload.plan
+        original.call(user)
+      end
+
+      sign_up('welcome@example.com', gift_code: 'family2026')
+
+      expect(UserMailer).to have_received(:welcome_email).once
+      expect(enqueued_plan).to eq(Gift::PLAN)
+    end
+
     it 'still creates a Free account when the code stopped working before the form was sent' do
       sign_up('late@example.com', gift_code: 'retired')
 
