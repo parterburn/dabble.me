@@ -39,6 +39,13 @@ class User < ActiveRecord::Base
   # Names are optional: a cleared field is stored as nil, never "".
   normalizes :first_name, :last_name, with: ->(name) { name.strip.presence }
 
+  # Where the account was made (the signup_platform column). NULL for accounts from before it
+  # was recorded. Set by whichever sign-up created the account: RegistrationsController (web)
+  # and Api::V1::RegistrationsController (the app).
+  SIGNUP_PLATFORMS = %w[web ios_app android_app].freeze
+  APP_SIGNUP_PLATFORMS = %w[ios_app android_app].freeze
+  validates :signup_platform, inclusion: { in: SIGNUP_PLATFORMS }, allow_nil: true
+
   validates :user_key, uniqueness: true
   validates :image_key, uniqueness: true, allow_nil: true
   before_create :assign_keys
@@ -272,6 +279,11 @@ class User < ActiveRecord::Base
 
   def is_pro?
     plan_name == 'Dabble Me PRO'
+  end
+
+  # Signed up in one of the apps rather than on the web, so the welcome email leads with the app.
+  def signed_up_in_app?
+    APP_SIGNUP_PLATFORMS.include?(signup_platform)
   end
 
   def is_free?

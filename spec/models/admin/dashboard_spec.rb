@@ -9,6 +9,21 @@ RSpec.describe Admin::Dashboard do
     user
   end
 
+  it "breaks sign-ups down by platform, with accounts from before tracking as unknown" do
+    create(:user, signup_platform: "web")
+    app_user = create(:user, signup_platform: "ios_app")
+    create(:entry, user: app_user)
+    create(:user, signup_platform: nil)
+    create(:user, signup_platform: "web", created_at: 90.days.ago)
+
+    rows = described_class.new.signup_platforms.index_by { |row| row[:platform] }
+
+    expect(rows.keys).to eq(["Web", "iOS app", "Unknown (before tracking)"])
+    expect(rows["Web"]).to include(signups_30d: 1, all_time: 2)
+    expect(rows["iOS app"]).to include(signups_30d: 1, first_entries_30d: 1, activation_rate: 1.0, share_30d: (1 / 3.0).round(4))
+    expect(rows["Unknown (before tracking)"]).to include(signups_30d: 1, all_time: 1)
+  end
+
   it "puts overdue renewals ahead of the standing $20k ARR gap" do
     travel_to Time.zone.parse("2026-09-02 12:00:00") do
       create_pro(plan: "PRO Monthly PayHere", amount: 4, created_at: 60.days.ago)

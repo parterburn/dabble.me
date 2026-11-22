@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_11_22_010000) do
+ActiveRecord::Schema[8.1].define(version: 2026_11_22_170000) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -357,6 +357,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_010000) do
     t.boolean "send_updates", default: true, null: false
     t.text "app_settings"
     t.uuid "apple_account_token"
+    t.string "signup_platform"
     t.index ["apple_account_token"], name: "index_users_on_apple_account_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["image_key"], name: "index_users_on_image_key", unique: true
