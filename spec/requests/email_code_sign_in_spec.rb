@@ -336,6 +336,28 @@ RSpec.describe "Email-code sign-in and sign-up", type: :request do
       expect(user.reload.valid_password?("a-new-password-1")).to be(true)
     end
 
+    it "rotates the posting address, so entries mailed to the old one stop landing" do
+      old_key = user.user_key
+      send_app_code(user.email)
+      verify_app_code(user.email, last_code)
+      expect(user.reload.user_key).not_to eq(old_key)
+    end
+
+    it "treats an older account moved onto a new address as unclaimed until that address is proven" do
+      stub_const("EmailSignIn::UNCLAIMED_FROM", 1.year.from_now)
+      user.update_column(:email_verified_at, Time.current)
+      user.update!(email: "someone-else@example.com")
+      expect(user.reload.email_verified_at).to be_nil
+
+      send_app_code("someone-else@example.com")
+      verify_app_code("someone-else@example.com", last_code(to: "someone-else@example.com"))
+      expect(response).to have_http_status(:ok)
+      user.reload
+      expect(user.has_password?).to be(false)
+      expect(user.webauthn_credentials).to be_empty
+      expect(user.email_verified_at).to be_present
+    end
+
     it "leaves an account from before the cut-off alone" do
       stub_const("EmailSignIn::UNCLAIMED_FROM", 1.year.from_now)
       send_app_code(user.email)

@@ -1236,6 +1236,20 @@ struct DictationTests {
         #expect(Dictation.hints(from: ["#Leo", "leo", "Kenji", " ", "#"]) == ["Leo", "Kenji"])
         #expect(Dictation.hints(from: (1...150).map { "tag\($0)" }).count == Dictation.maxHints)
     }
+
+    /// Custom Vocabulary comes first, so a long list of hashtags never pushes a word out, and
+    /// Settings lists only the hashtags that fit, without the writer's own words.
+    @Test func customVocabularyComesBeforeHashtags() {
+        let words = ["Ouray", "Dabble Me"]
+        let all = ["#ouray"] + (1...150).map { "tag\($0)" }
+        let expected = Dictation.expected(words: words, recentTags: ["Leo"], allTags: all)
+        #expect(Array(expected.prefix(3)) == ["Ouray", "Dabble Me", "Leo"])
+        #expect(expected.count == Dictation.maxHints)
+        let terms = Dictation.hashtagTerms(words: words, recentTags: ["Leo"], allTags: all)
+        #expect(terms.first == "Leo")
+        #expect(!terms.contains { $0.lowercased() == "ouray" })
+        #expect(terms.count == Dictation.maxHints - words.count)
+    }
 }
 
 /// Hex's cleanup model, from the app's bundle: spoken corrections and ums go, the rest stays.

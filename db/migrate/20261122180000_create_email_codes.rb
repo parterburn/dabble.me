@@ -2,6 +2,7 @@
 # changes on an account with no password (EmailCode). The address is kept only as a keyed
 # digest, so the table never holds the email of someone who typed it and never signed up.
 # users.email_verified_at: when a code sent to the account's address was last entered.
+# users.email_changed_at: when the address last changed (which clears email_verified_at).
 class CreateEmailCodes < ActiveRecord::Migration[8.1]
   def change
     create_table :email_codes do |t|
@@ -18,5 +19,6 @@ class CreateEmailCodes < ActiveRecord::Migration[8.1]
     add_index :email_codes, :expires_at
 
     add_column :users, :email_verified_at, :datetime
+    add_column :users, :email_changed_at, :datetime
   end
 end

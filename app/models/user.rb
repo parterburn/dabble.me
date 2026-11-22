@@ -116,6 +116,7 @@ class User < ActiveRecord::Base
   after_commit :notify_stripe
   after_update :revoke_doorkeeper_oauth_if_downgraded_from_pro
   after_update :revoke_doorkeeper_oauth_if_credentials_changed
+  before_update :unverify_changed_email, if: :will_save_change_to_email?
 
   EMAIL_DAYS = %w[Sun Mon Tue Wed Thu Fri Sat].freeze
 
@@ -277,7 +278,18 @@ class User < ActiveRecord::Base
       revoke_doorkeeper_access_tokens!
       update_columns(encrypted_password: '', remember_created_at: nil, reset_password_token: nil,
                      reset_password_sent_at: nil)
+      # Its old posting address may be known to whoever made the account: entries mailed there
+      # would still land in this journal.
+      rotate_user_key!
     end
+  end
+
+  # A new address hasn't been proven yet: its first code sign-in treats the account as unclaimed
+  # (EmailSignIn.unclaimed?), so nobody can move an account onto someone else's address and
+  # keep it once they sign in.
+  def unverify_changed_email
+    self.email_verified_at = nil
+    self.email_changed_at = Time.current
   end
 
   def deletion_pending?

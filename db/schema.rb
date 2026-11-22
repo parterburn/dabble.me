@@ -392,6 +392,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_190000) do
     t.uuid "apple_account_token"
     t.string "signup_platform"
     t.datetime "email_verified_at"
+    t.datetime "email_changed_at"
     t.string "session_salt"
     t.index ["apple_account_token"], name: "index_users_on_apple_account_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
