@@ -95,6 +95,9 @@ struct ComposeView: View {
     @State private var explainingProPhotos = false
     /// Apple's Journaling Suggestions sheet is open ("Moments from your iPhone", iPhone only).
     @State private var pickingMoment = false
+    /// A moment picked from another day than the entry's, with that day: which one it goes on
+    /// is asked first.
+    @State private var momentFromAnotherDay: (moment: Moment, day: Date)?
     /// A one-time tip about a touch-and-hold shortcut (`showTipOnce`).
     @State private var tip: String?
     @State private var takingPhoto = false
@@ -358,6 +361,19 @@ struct ComposeView: View {
                 await addMoment(suggestion)
             }
             #endif
+            .confirmationDialog(momentFromAnotherDay.map { "This moment is from \(Self.momentDayName($0.day, weekday: true))." } ?? "",
+                                isPresented: .present($momentFromAnotherDay), titleVisibility: .visible) {
+                if let pending = momentFromAnotherDay {
+                    Button("Add to \(Self.momentDayName(pending.day))") {
+                        date = pending.day
+                        insertMoment(pending.moment)
+                    }
+                    Button("Add Here") { insertMoment(pending.moment) }
+                    Button("Cancel", role: .cancel) {}
+                }
+            } message: {
+                Text("Adding it to that day moves this entry there.")
+            }
             .onChange(of: editor.revision) {
                 isUntouchedTemplate = false
                 scheduleDraftSave()
@@ -1020,6 +1036,26 @@ struct ComposeView: View {
         let moment = await Moment.from(suggestion, photoLimit: room)
         guard !isDiscarded else { return }
         showsAskRow = false
+        // From another day than the entry's: asked which day it goes on. (Same day: no question.)
+        if let day = moment.day(otherThan: date) {
+            momentFromAnotherDay = (moment, day)
+        } else {
+            insertMoment(moment)
+        }
+    }
+    #endif
+
+    /// "Tue, Nov 18" (`weekday`) or "Nov 18", with the year when it isn't this one.
+    private static func momentDayName(_ day: Date, weekday: Bool = false) -> String {
+        var style = Date.FormatStyle().month(.abbreviated).day()
+        if weekday { style = style.weekday(.abbreviated) }
+        if !Calendar.current.isDate(day, equalTo: .now, toGranularity: .year) { style = style.year() }
+        return day.formatted(style)
+    }
+
+    /// The moment's words where the cursor is, its photos with the others (PRO).
+    private func insertMoment(_ moment: Moment) {
+        let canAddPhotos = model.me?.canAddPhotos == true
         editor.addMoment(heading: moment.heading, lines: moment.lines())
         for reflection in moment.reflections { editor.addQuestion(reflection) }
         var added = 0
@@ -1036,7 +1072,6 @@ struct ComposeView: View {
                 : "\(left) photos from that moment weren't added (an entry holds \(photoLimit))."
         }
     }
-    #endif
 
     /// The template alone, where there's no prompt to be had (an entry being edited, without
     /// Apple Intelligence).

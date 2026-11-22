@@ -15,6 +15,7 @@ extension Moment {
         // `content(forType:)` call would otherwise count as sharing it.
         nonisolated(unsafe) let suggestion = picked
         var moment = Moment(title: suggestion.title)
+        moment.when = suggestion.date
 
         for location in await suggestion.content(forType: JournalingSuggestion.Location.self) {
             moment.places.append(Place(place: location.place, city: location.city))

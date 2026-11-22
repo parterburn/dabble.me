@@ -1,23 +1,22 @@
-Moments from your iPhone (Apple's Journaling Suggestions) is easier to find, a reflection no longer adds its category to the entry, and Calendars moved above Theme in Settings.
+Moments from your iPhone now checks the day. If you pick a moment from another day than the entry's, it asks which day it goes on.
 
 Use an iPhone. Moments isn't on iPad.
 
-FINDING IT
-- Start a new entry and tap the lightbulb.
-- Under the prompt and the day's events there should be a line, then MOMENTS FROM YOUR IPHONE in small olive capitals with an arrow, like the WRITING IDEAS heading.
-- It should stay at the bottom of the panel while a busy calendar day scrolls above it.
-- Edit an entry with no prompt, no template and nothing on the calendar: Moments should show without a line over it.
-- Tap it: Apple's sheet opens.
+A MOMENT FROM ANOTHER DAY
+- Start a new entry for today, tap the lightbulb, then Moments from your iPhone.
+- Pick a moment from an earlier day (say last Tuesday).
+- It should ask "This moment is from Tue, Nov 18." with Add to Nov 18, Add Here and Cancel.
+- Add to Nov 18: the entry's date at the top changes to Nov 18 and the moment goes in.
+- Add Here: the date stays and the moment goes in.
+- Cancel: nothing is added.
 
-ADDING A REFLECTION
-- In Apple's sheet, pick a reflection (for example a Creativity Reflection).
-- Its question should go in bold, the way a prompt does, with no "Creativity Reflection" line above it.
+A MOMENT FROM THE SAME DAY
+- Pick a moment from the entry's own day. It should go straight in, with no question.
 
-ADDING ANY OTHER MOMENT
-- Pick a place, workout, photo or song moment. Its title should still go in bold, with a line for each thing under it, as before.
+A MOMENT OVER SEVERAL DAYS
+- A trip that ran from Nov 18 to Nov 20 shouldn't ask anything when the entry is on any of those days. On another day it offers Nov 18.
 
-If Apple's sheet is empty, turn on Settings, Privacy & Security, Journaling Suggestions and its categories.
+EDITING AN OLDER ENTRY
+- Open last week's entry and pick a moment from today. Add to Nov 22 should move that entry to today, the same as changing its date by hand. If today already has an entry, Save asks before merging the two, as it always has.
 
-SETTINGS ORDER
-- Open Settings. The App section should read: Entry Template, Dictation, Calendars, Theme, Shake for Random Entry, Require Face ID (or Touch ID or Passcode).
-- Tap Calendars: it should still open the list of your phone's calendars, each with a switch.
+A moment from a year other than this one shows its year too (Nov 18, 2025).
