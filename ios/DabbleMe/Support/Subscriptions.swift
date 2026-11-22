@@ -169,7 +169,9 @@ final class SubscriptionStore {
             return
         }
         guard accountToken() != nil else { return } // Signed out: reported after sign-in.
-        guard again || !reported.contains(transaction.id), reporting.insert(transaction.id).inserted else { return }
+        // A refund comes back with the same id (now with a revocation date): always posted.
+        let repeatable = again || transaction.revocationDate != nil
+        guard repeatable || !reported.contains(transaction.id), reporting.insert(transaction.id).inserted else { return }
         defer { reporting.remove(transaction.id) }
         do {
             let _: PlanStatus = try await api.post("api/v1/apple_subscriptions",
