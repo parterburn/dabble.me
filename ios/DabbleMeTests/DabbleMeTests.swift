@@ -1251,6 +1251,27 @@ struct TranscriptCleanupGuardTests {
         #expect(!TranscriptCleanupGuard.isAcceptable(original: "We left at 6.", cleaned: "We left at 7."))
         #expect(!TranscriptCleanupGuard.isAcceptable(original: said, cleaned: "A sunny beach day left my shoulders burnt, which taught me to bring sunscreen next time for sure."))
     }
+
+    /// A question in an entry stays the question; the model never answers it or adds a preamble.
+    @Test func neverAnAnswerOrAPreamble() {
+        #expect(!TranscriptCleanupGuard.isAcceptable(original: "should I call my sister tonight or wait until sunday",
+                                                     cleaned: "Yes, you should call your sister tonight."))
+        #expect(!TranscriptCleanupGuard.isAcceptable(original: "would you say", cleaned: "Yes, I would say."))
+        #expect(!TranscriptCleanupGuard.isAcceptable(original: "the report needs a short summary before the meeting on monday",
+                                                     cleaned: "Sure, I can help with that. Here's the cleaned transcript: The report needs a short summary before the meeting on Monday."))
+        #expect(!TranscriptCleanupGuard.isAcceptable(original: "bring these to the meeting", cleaned: "Bring these: notes."))
+        #expect(!TranscriptCleanupGuard.isAcceptable(original: "i will call you tomorrow", cleaned: "I will definitely call you tomorrow."))
+    }
+
+    @Test func aSelfCorrectionOrStutterMayShortenIt() {
+        #expect(TranscriptCleanupGuard.isAcceptable(original: "i'll send it tomorrow, i mean, i'll send it today", cleaned: "I'll send it today."))
+        #expect(TranscriptCleanupGuard.isAcceptable(original: "send it on tuesday actually wednesday", cleaned: "Send it on Wednesday."))
+        #expect(TranscriptCleanupGuard.isAcceptable(original: "i i think we should go", cleaned: "I think we should go."))
+        #expect(TranscriptCleanupGuard.isAcceptable(original: "i am going home", cleaned: "I'm going home."))
+        // Without a correction, cutting most of it off is refused.
+        #expect(!TranscriptCleanupGuard.isAcceptable(original: "we drove to the coast and walked on the beach until the sun went down",
+                                                     cleaned: "We drove to the coast."))
+    }
 }
 
 /// "Moments from your iPhone" (Journaling Suggestions): what a picked moment adds to an entry.
