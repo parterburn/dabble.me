@@ -66,8 +66,8 @@ final class WelcomeTests: XCTestCase {
         let start = app.buttons["Start Your Journal"].firstMatch
         XCTAssertTrue(start.waitForExistence(timeout: 10))
         start.tap()
-        XCTAssertTrue(app.textFields["First Name (optional)"].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.textFields["Email"].exists)
+        XCTAssertTrue(app.textFields["Email"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.textFields["First Name (optional)"].exists, "Sign-up asks for no name")
         XCTAssertTrue(app.secureTextFields["Password"].exists)
         XCTAssertFalse(app.buttons["Create Account"].isEnabled, "Nothing to create until it's filled in")
         snap("sign-up-form")

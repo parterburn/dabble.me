@@ -16,29 +16,10 @@
       <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { class: "space-y-5", toolname: "create_account", tooldescription: "Create a free Dabble Me journal account. Fill the form and leave it for the user to review and submit. Do not submit automatically." }) do |f| %>
         <%= render "devise/shared/error_messages", resource: resource %>
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <%= f.label :first_name, class: "block text-sm font-medium text-primary mb-1.5" %>
-            <%= f.text_field :first_name, 
-                autofocus: true, 
-                required: true,
-                value: params[:user].try(:[], "first_name"),
-                toolparamdescription: "First name for the new journal account.",
-                class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
-          </div>
-          <div>
-            <%= f.label :last_name, class: "block text-sm font-medium text-primary mb-1.5" %>
-            <%= f.text_field :last_name, 
-                required: true,
-                value: params[:user].try(:[], "last_name"),
-                toolparamdescription: "Last name for the new journal account.",
-                class: "w-full px-4 py-2.5 rounded-lg border border-subtle bg-surface text-primary placeholder-muted focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition-colors" %>
-          </div>
-        </div>
-
         <div>
           <%= f.label :email, class: "block text-sm font-medium text-primary mb-1.5" %>
           <%= f.email_field :email, 
+              autofocus: true,
               required: true,
               placeholder: "you@example.com",
               toolparamdescription: "Email address that will receive journal prompts.",
