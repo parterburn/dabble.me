@@ -3,6 +3,7 @@
 // Dabble Me runs it on English entries in Polished, with no setting (`Dictation`).
 
 import Foundation
+import NaturalLanguage
 
 /// Punctuation said by name written as the mark, with string rules and no model, in English,
 /// Spanish, French, German, Italian and Portuguese; other languages are left as they are. Runs
@@ -52,6 +53,15 @@ nonisolated enum SpokenPunctuation {
         /// Lowercased, accents folded, curly apostrophes straight: "D’Interrogation" reads
         /// "d'interrogation".
         let folded: String
+    }
+
+    /// Whether the English dictionary reads `word` on its own as an adjective ("stressful").
+    fileprivate static func isAdjective(_ word: String) -> Bool {
+        let tagger = NLTagger(tagSchemes: [.lexicalClass])
+        tagger.string = word
+        tagger.setLanguage(.english, range: word.startIndex..<word.endIndex)
+        let (tag, _) = tagger.tag(at: word.startIndex, unit: .word, scheme: .lexicalClass)
+        return tag == .adjective
     }
 
     fileprivate static func fold(_ text: String) -> String {
@@ -323,7 +333,18 @@ nonisolated enum SpokenPunctuation {
                tokens[index - 3].text.allSatisfy({ $0 == " " }), table.blockers.contains(tokens[index - 4].folded) {
                 return true
             }
+            // English: "a stressful period", "my worst period", "a real question mark" (Dabble Me).
+            if table.tagsAdjectives, [.period, .question, .exclamation, .smiley].contains(family),
+               previous.text.first?.isLowercase == true, index >= 4,
+               tokens[index - 3].text.allSatisfy({ $0 == " " }), determiners.contains(tokens[index - 4].folded),
+               SpokenPunctuation.isAdjective(previous.text) {
+                return true
+            }
             return false
+        }
+
+        private var determiners: Set<String> {
+            ["a", "an", "the", "my", "your", "his", "her", "its", "our", "their", "no", "every", "another"]
         }
 
         /// Writes the command's mark and returns where reading goes on.
@@ -478,6 +499,9 @@ nonisolated enum SpokenPunctuation {
         /// Whether a capital starts a sentence (not German, where every noun has one).
         let capitalizesSentences: Bool
         let adjectivesBeforeNouns: Bool
+        /// English "a stressful period": an article, then an adjective, makes the name a noun.
+        /// Checked with `NLTagger`, so "the store period" still ends the sentence.
+        let tagsAdjectives: Bool
         /// English "Sarah's colon".
         let possessives: Bool
 
@@ -496,6 +520,7 @@ nonisolated enum SpokenPunctuation {
             quotes: (open: Character, close: Character),
             capitalizesSentences: Bool = true,
             adjectivesBeforeNouns: Bool = false,
+            tagsAdjectives: Bool = false,
             possessives: Bool = false
         ) {
             let fold = SpokenPunctuation.fold
@@ -523,6 +548,7 @@ nonisolated enum SpokenPunctuation {
             self.quotes = quotes
             self.capitalizesSentences = capitalizesSentences
             self.adjectivesBeforeNouns = adjectivesBeforeNouns
+            self.tagsAdjectives = tagsAdjectives
             self.possessives = possessives
         }
 
@@ -661,6 +687,7 @@ nonisolated enum SpokenPunctuation {
             "not", "great", "cool", "talk", "speak", "bye", "goodbye", "kind", "warm",
         ],
         quotes: ("“", "”"),
+        tagsAdjectives: true,
         possessives: true
     )
 

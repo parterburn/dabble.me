@@ -31,6 +31,8 @@ struct VocabularySpellingTests {
         #expect(VocabularySpelling.apply(["Claude"], to: "'claude'") == "'Claude'")
         #expect(VocabularySpelling.apply(["Claude"], to: "‘claude’") == "‘Claude’")
         #expect(VocabularySpelling.apply(["Dabble Me"], to: "i wrote in dabble me today") == "i wrote in Dabble Me today")
+        #expect(VocabularySpelling.apply(["Dabble Me"], to: "Wrote in #DabbleMe today.") == "Wrote in #DabbleMe today.")
+        #expect(VocabularySpelling.apply(["Leo"], to: "#leo and leo") == "#leo and Leo")
     }
 }
 
@@ -79,6 +81,8 @@ struct SpokenPunctuationTests {
         #expect(punctuated("Love you smiley face") == "Love you :-)")
         #expect(punctuated("Okay comma sounds good period") == "Okay, sounds good.")
         #expect(punctuated("Thanks exclamation point exclamation point") == "Thanks!")
+        #expect(punctuated("I went to the store period") == "I went to the store.")
+        #expect(punctuated("We had a blast period") == "We had a blast.")
     }
 
     @Test func quotesAndBracketsPair() {
@@ -103,6 +107,9 @@ struct SpokenPunctuationTests {
     @Test func proseStaysAsSaid() {
         let english = [
             "It was a long period of time.",
+            "It was a stressful period.",
+            "It was a stressful period, but we got through it.",
+            "It's a real question mark.",
             "The comma is optional here.",
             "She put a dash of salt in the soup.",
             "He has a question mark tattoo on his arm.",
@@ -205,6 +212,8 @@ struct DictationHashtagTests {
         #expect(Dictation.knownHashtags(in: "Back in #nyc!", tags: tags) == "Back in #NYC!")
         #expect(Dictation.knownHashtags(in: "Feeling great #blessed.", tags: tags) == "Feeling great #blessed.")
         #expect(Dictation.knownHashtags(in: "No tags here", tags: tags) == "No tags here")
+        // A Custom Vocabulary term with a space is no tag to write.
+        #expect(Dictation.knownHashtags(in: "Wrote in #dabble me", tags: ["Dabble Me"]) == "Wrote in #dabble me")
     }
 
     @MainActor @Test func onlyNameLikeHashtagsAreSpellings() {

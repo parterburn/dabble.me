@@ -66,6 +66,12 @@ nonisolated enum VocabularySpelling {
         var index = 0
 
         while index < tokens.count {
+            // A hashtag keeps its own spelling: "#DabbleMe" never becomes "#Dabble Me" (Dabble Me).
+            let start = tokens[index].range.lowerBound
+            if start > text.startIndex, text[text.index(before: start)] == "#" {
+                index += 1
+                continue
+            }
             guard let matched = match(
                 startingAt: index,
                 words: tokens,
