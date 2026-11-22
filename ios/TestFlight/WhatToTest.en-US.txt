@@ -1,4 +1,4 @@
-Build 119 makes dictation smarter, with no new settings.
+Build 123 makes dictation smarter, with no new settings.
 
 YOUR SPELLINGS
 - Add a name or term to Settings → Dictation → Custom Vocabulary (for example "Dabble Me"). Dictate a sentence with it said in lowercase. It goes in spelled your way.
