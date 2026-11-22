@@ -10,8 +10,11 @@ class UserDowngradeExpiredWorker
 
   private
 
+  # Only web payments count: App Store charges (apple_transaction_id) would otherwise keep a
+  # cancelled web plan alive forever, and Apple's own state decides those (AppStore::Entitlement).
   def downgrade_yearly
     User.pro_only.yearly.not_forever.not_apple.joins(:payments)
+        .where(payments: { apple_transaction_id: nil })
         .where("payments.amount > ?", 7.00)
         .having("MAX(payments.date) < ?", 375.days.ago)
         .group("users.id")
@@ -20,6 +23,7 @@ class UserDowngradeExpiredWorker
 
   def downgrade_monthly
     User.pro_only.monthly.not_forever.not_apple.joins(:payments)
+        .where(payments: { apple_transaction_id: nil })
         .where("payments.amount > ?", 1.00)
         .having("MAX(payments.date) < ?", 40.days.ago)
         .group("users.id")

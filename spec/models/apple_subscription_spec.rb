@@ -97,6 +97,15 @@ RSpec.describe AppleSubscription do
       expect(user.reload.plan).to eq("PRO Monthly Apple")
     end
 
+    it "doesn't let App Store charges keep a cancelled web plan alive" do
+      user.update!(plan: "PRO Monthly PayHere")
+      subscription
+      user.payments.create!(amount: 4, date: 3.months.ago)
+      user.payments.create!(amount: 3.99, date: 2.days.ago, apple_transaction_id: "2")
+      UserDowngradeExpiredWorker.new.perform
+      expect(user.reload.plan).to eq("PRO Monthly Apple")
+    end
+
     it "still emails an expired web plan with no App Store subscription" do
       user.update!(plan: "PRO Monthly PayHere")
       user.payments.create!(amount: 4, date: 3.months.ago)
