@@ -1007,6 +1007,17 @@ struct EntryTemplateTests {
         #expect(UserDefaults.standard.data(forKey: EntryTemplate.runsKey) == nil)
     }
 
+    /// Today's preview of the template keeps its words and formatting, but not the blank lines
+    /// and empty items left for writing.
+    @Test func todaysPreviewSkipsTheRoomToWrite() {
+        let template = [DocumentRun("One Win", bold: true), DocumentRun("\n\n• \n"), DocumentRun("One Point of Tension", bold: true), DocumentRun("\n1. \n\n"), DocumentRun("Grateful for "), DocumentRun("one thing", italic: true)]
+        let preview = EntryTemplate.preview(template)
+        #expect(String(preview.characters) == "One Win\nOne Point of Tension\nGrateful for one thing")
+        let win = preview.runs.first { String(preview[$0.range].characters) == "One Win" }
+        #expect(win?.inlinePresentationIntent == .stronglyEmphasized)
+        #expect(EntryTemplate.preview([DocumentRun("\n• \n\n")]).characters.isEmpty)
+    }
+
     /// A draft is kept as typed too: a link in it keeps where it goes.
     @Test func typedTextKeepsItsLinks() {
         let typed = [DocumentRun("See "), DocumentRun("the trail", link: "https://example.com/trail"), DocumentRun(" soon")]

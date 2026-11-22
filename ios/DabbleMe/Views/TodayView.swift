@@ -26,6 +26,10 @@ struct TodayView: View {
     @AppStorage("ai.prompt.day") private var aiPromptDay = ""
     @AppStorage("ai.prompt.text") private var aiPromptText = ""
     @State private var isWritingPrompt = false
+    /// The template, and whether every new entry starts with it: watched so Today's card follows
+    /// Settings (and the account) as they change.
+    @AppStorage(EntryTemplate.runsKey) private var templateData: Data?
+    @AppStorage(EntryTemplate.autoKey) private var templateStartsEntries = false
     @State private var promptError: String?
     @State private var expanded: Set<Int> = []
     @State private var actions = EntryActions()
@@ -262,7 +266,29 @@ struct TodayView: View {
             VStack(alignment: .leading, spacing: 14) {
                 let usesAI = JournalIntelligence.isEnabled(for: model.me)
                 let personal = usesAI && aiPromptDay == today.date && !aiPromptText.isEmpty ? aiPromptText : nil
-                if usesAI, personal == nil, isWritingPrompt {
+                if let template = todayTemplate {
+                    // Every new entry starts with the template, so it's what today's entry will
+                    // start from: shown instead of a prompt, and a tap starts writing on it.
+                    Button {
+                        composing = true
+                    } label: {
+                        VStack(alignment: .leading, spacing: 14) {
+                            Text("Your template")
+                                .font(.caption.weight(.semibold))
+                                .textCase(.uppercase)
+                                .foregroundStyle(.tint)
+                            Text(template)
+                                .font(.system(.title2, design: .serif))
+                                .lineLimit(2)
+                                .multilineTextAlignment(.leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .contentShape(.rect)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityHint("Starts today's entry from your template")
+                    .accessibilityIdentifier("TodayTemplate")
+                } else if usesAI, personal == nil, isWritingPrompt {
                     // Writing today's prompt; the general one would just flash and change.
                     Text("A prompt for you")
                         .font(.caption.weight(.semibold))
@@ -323,11 +349,21 @@ struct TodayView: View {
             .overlay(RoundedRectangle(cornerRadius: 16).strokeBorder(.quaternary))
             .padding(.vertical, 8)
             .plainRow()
-            .task(id: "\(today.date)|\(JournalIntelligence.isEnabled(for: model.me))") {
-                guard JournalIntelligence.isEnabled(for: model.me), aiPromptDay != today.date else { return }
+            .task(id: "\(today.date)|\(JournalIntelligence.isEnabled(for: model.me))|\(todayTemplate == nil)") {
+                // No prompt to write while the template stands in for it.
+                guard JournalIntelligence.isEnabled(for: model.me), aiPromptDay != today.date, todayTemplate == nil else { return }
                 await writePrompt(for: today, quietly: true)
             }
         }
+    }
+
+    /// The template as Today's card shows it, when every new entry starts with it and today's
+    /// can be written here. Otherwise nil, and the card shows the day's prompt.
+    private var todayTemplate: AttributedString? {
+        _ = templateData // (read so a change to the template redraws the card)
+        guard templateStartsEntries, model.me?.canWrite != false else { return nil }
+        let preview = EntryTemplate.preview(EntryTemplate.runs)
+        return preview.characters.isEmpty ? nil : preview
     }
 
     /// The main call to action, and under it, while yesterday has no entry, a quieter way to

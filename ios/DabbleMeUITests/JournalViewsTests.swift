@@ -394,6 +394,27 @@ final class JournalViewsTests: XCTestCase {
         app.buttons["Cancel"].tap()
     }
 
+    /// Set to start new entries, Today shows the template where the day's prompt would be, and a
+    /// tap on it starts today's entry from it. Off, the prompt's back.
+    func testTodayShowsTheTemplateThatStartsNewEntries() throws {
+        let app = launch(["-DabbleDebugTemplate", "What went well today?", "-template.auto", "YES"])
+        let card = app.buttons["TodayTemplate"]
+        XCTAssertTrue(card.waitForExistence(timeout: 15))
+        XCTAssertFalse(app.staticTexts["TodayPrompt"].exists, "The template stands in for the prompt")
+        snap("today-template")
+        card.tap()
+        let editor = app.textViews["Entry"]
+        XCTAssertTrue(editor.waitForExistence(timeout: 5))
+        if app.buttons["Start Over"].waitForExistence(timeout: 2) { app.buttons["Start Over"].tap() }
+        XCTAssertEqual(editor.value as? String, "What went well today?")
+        app.buttons["Cancel"].tap()
+        app.terminate()
+
+        let off = launch(["-DabbleDebugTemplate", "What went well today?", "-template.auto", "NO"])
+        XCTAssertTrue(off.buttons["Write Today's Entry"].waitForExistence(timeout: 15))
+        XCTAssertFalse(off.buttons["TodayTemplate"].exists)
+    }
+
     /// Set to start new entries, the template is there when the composer opens, and there's
     /// nothing to save until something's written.
     func testNewEntriesStartWithTheTemplate() throws {
