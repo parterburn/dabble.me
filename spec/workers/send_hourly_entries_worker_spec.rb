@@ -14,4 +14,29 @@ RSpec.describe SendHourlyEntriesWorker do
 
     described_class.new.perform
   end
+
+  describe 'free accounts' do
+    let(:worker) { described_class.new }
+    let(:free_user) { double('user', is_pro?: false, is_free?: true, emails_sent: 7, entries: double(count: 0)) }
+
+    # FREE_WEEK used to lift these limits; it's gone, so a stray env var changes nothing.
+    around do |example|
+      ENV['FREE_WEEK'] = 'true'
+      example.run
+    ensure
+      ENV.delete('FREE_WEEK')
+    end
+
+    it 'sends only on even-numbered weeks' do
+      allow(Time).to receive(:now).and_return(Time.utc(2026, 1, 4, 12)) # week 01
+      expect(worker.send(:eligible_to_send?, free_user)).to be(false)
+
+      allow(Time).to receive(:now).and_return(Time.utc(2026, 1, 11, 12)) # week 02
+      expect(worker.send(:eligible_to_send?, free_user)).to be(true)
+    end
+
+    it 'stops emailing after 6 emails with no entries' do
+      expect(worker.send(:disable_free_user?, free_user)).to be(true)
+    end
+  end
 end
