@@ -1,4 +1,6 @@
-Passwordless sign-in: sign in or sign up with just your email and a code we email you.
+Passwordless sign-in, Sign Out of All Devices, and your hashtags in Dictation's Custom Vocabulary.
+
+Passwordless sign-in (email and a code we email you)
 
 - Sign out, then Sign In: the form asks only for your email. Tap the Email field: your dabble.me passkey shows above the keyboard. Pick it and you're in.
 - Type your email and tap Continue: the next screen says "Check your email" and shows the address. Within a minute you get a 6-digit code. Tap the code above the keyboard (or paste it): it signs in as soon as six digits are in.
@@ -10,3 +12,19 @@ Passwordless sign-in: sign in or sign up with just your email and a code we emai
 - After signing in with a code, the Add a Passkey sheet comes up (as after a password sign-in). After signing up, it doesn't.
 - With two-factor on, the code screen asks for your authenticator code after the emailed one.
 - On an account made this way (no password): Delete Account and Add a Passkey (from Settings, later on) say "Email Me a Code" in place of the password.
+
+Sign Out of All Devices
+- Settings → Sign Out now asks: Sign Out (this device only, as before) or Sign Out of All Devices.
+- Sign Out of All Devices signs out this app, every other copy of the app, and every browser signed in to dabble.me. Claude/ChatGPT connectors stay connected.
+- Try it with the app on two devices, or the app plus a browser: the other one should land on the sign-in page within a request or two.
+- With no connection, Sign Out of All Devices shows "Couldn't sign out of all devices" and leaves you signed in.
+- On dabble.me, Account Security now has a Sessions section above Connected apps. The app shows up there as "Dabble Me app on iPhone" (or iPad) with a rough location and when it was last used.
+- Sign the app out from that list on the web: the app should drop to the sign-in page on its next refresh.
+- Plain Sign Out still leaves your other devices signed in.
+
+Dictation: Custom Vocabulary shows your hashtags
+- Settings → Dictation: under Custom Vocabulary, a new "From Your Hashtags" list shows the hashtags dictation listens for, as #Tag in gray. They can't be edited or deleted there.
+- Your own words stay at the top, newest first, and still swipe to delete.
+- Add a word that's also one of your hashtags (say "Leo" when you use #Leo): it moves up into Custom Vocabulary and leaves the hashtag list.
+- With no connection, the hashtag list doesn't show. Everything else on the page works.
+- Dictate an entry that names a Custom Vocabulary word and a hashtag: both come out spelled your way. Your own words are always sent first, so a long hashtag list never crowds them out.
