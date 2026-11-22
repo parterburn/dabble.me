@@ -87,6 +87,18 @@ RSpec.describe UserMailer do
       email = described_class.thanks_for_paying(user)
       expect(email.html_part.body.decoded + email.text_part.body.decoded).not_to include(ApplicationHelper.ios_testflight_url)
     end
+
+    it "skips the iPhone app pitch for an Apple plan, which was bought in the app" do
+      ["PRO Monthly Apple", "PRO Yearly Apple"].each do |plan|
+        user.update!(plan: plan)
+        email = described_class.thanks_for_paying(user)
+        body = email.html_part.body.decoded + email.text_part.body.decoded
+
+        expect(body).to include("Thanks for subscribing to")
+        expect(body).not_to include(ApplicationHelper.ios_testflight_url)
+        expect(body).not_to include("On an iPhone or iPad?")
+      end
+    end
   end
 
   describe "#entry_not_saved" do
