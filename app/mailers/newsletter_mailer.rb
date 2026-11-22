@@ -17,8 +17,8 @@ class NewsletterMailer < ActionMailer::Base
 
     subject = preview ? "[Preview: #{variant}] #{@rendered.subject}" : @rendered.subject
     email = mail({ to: user.cleaned_to_address, subject: subject }.merge(sender_options(newsletter, variant)))
-    # The one kind of email that keeps Mailgun's click and open tracking (see MailgunTracking).
-    email.mailgun_options = { tag: "Newsletter #{newsletter_key}", tracking: "yes" }
+    # No click or open tracking, like every other email (MailgunTracking turns it off).
+    email.mailgun_options = { tag: "Newsletter #{newsletter_key}" }
     email
   end
 

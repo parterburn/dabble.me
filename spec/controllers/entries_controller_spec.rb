@@ -440,6 +440,14 @@ RSpec.describe EntriesController, type: :controller do
       expect(Nokogiri::HTML(response.body).at_css(%(a[href="#{ApplicationHelper.ios_testflight_url}"])).text).to eq 'Get the iOS app'
     end
 
+    it "doesn't give a free account the iOS beta (a TestFlight purchase is free)" do
+      free = FactoryBot.create(:user, plan: 'Free')
+      sign_in free
+      get :today
+
+      expect(response.body).not_to include(ApplicationHelper.ios_testflight_url)
+    end
+
     it "shows today's entry labelled TODAY, without a greeting, search or the latest entry" do
       sign_in pro
       write(pro, 'Something from last week', today - 6)

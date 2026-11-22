@@ -33,7 +33,12 @@ See it for yourself: **[write a line about today]({{write_url}})**. One sentence
 {{/whats_new,whats_new_free}}
 ## 📱 iPhone app
 
-Dabble Me now has an app for iPhone and iPad. **[Get the app](https://testflight.apple.com/join/mYj4vrFZ)**
+{{#rewind,whats_new}}
+Dabble Me now has an app for iPhone and iPad, and as a PRO member you can use it before it reaches the App Store. **[Get the app](https://testflight.apple.com/join/mYj4vrFZ)**
+{{/rewind,whats_new}}
+{{#rewind_free,whats_new_free}}
+Dabble Me is getting an app for iPhone and iPad, coming soon to the App Store. PRO members can use it now.
+{{/rewind_free,whats_new_free}}
 
 I write far more now. I often speak my entries instead of typing, and photos take a couple of taps.
 
