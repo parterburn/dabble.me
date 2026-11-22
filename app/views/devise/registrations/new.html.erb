@@ -3,6 +3,9 @@
 
 <section class="py-12 lg:py-20">
   <div class="mx-auto max-w-xl px-4 sm:px-6">
+    <% if current_gift %>
+      <%= render "devise/registrations/gift_header" %>
+    <% else %>
     <!-- Header -->
     <div class="text-center mb-8">
       <h1 class="font-serif text-3xl sm:text-4xl tracking-tight text-primary">Create your free account</h1>
@@ -10,11 +13,13 @@
         Start your journaling habit with day one.
       </p>
     </div>
+    <% end %>
 
     <!-- Sign up form -->
     <div class="card p-6 sm:p-8">
       <%= form_for(resource, as: resource_name, url: registration_path(resource_name), html: { class: "space-y-5", toolname: "create_account", tooldescription: "Create a free Dabble Me journal account. Fill the form and leave it for the user to review and submit. Do not submit automatically." }) do |f| %>
         <%= render "devise/shared/error_messages", resource: resource %>
+        <%= hidden_field_tag :gift_code, current_gift.code if current_gift %>
 
         <div>
           <%= f.label :email, class: "block text-sm font-medium text-primary mb-1.5" %>
@@ -82,7 +87,7 @@
         <% end %>
 
         <div>
-          <%= f.submit "Create account", class: "w-full px-6 py-3 text-sm font-medium rounded-lg bg-olive-900 text-white hover:bg-olive-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-olive-500 cursor-pointer transition-colors" %>
+          <%= f.submit current_gift ? "Claim my year of PRO" : "Create account", class: "w-full px-6 py-3 text-sm font-medium rounded-lg bg-olive-900 text-white hover:bg-olive-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-olive-500 cursor-pointer transition-colors" %>
         </div>
 
         <p class="text-center text-xs text-muted">
@@ -96,7 +101,7 @@
     <div class="mt-8 text-center space-y-4">
       <p class="text-muted">
         Already have an account?
-        <%= link_to "Log in", new_user_session_path, class: "text-accent underline hover:text-primary font-medium transition-colors" %>
+        <%= link_to current_gift ? "Log in to add the gift to it" : "Log in", new_user_session_path, class: "text-accent underline hover:text-primary font-medium transition-colors" %>
       </p>
     </div>
   </div>

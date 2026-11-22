@@ -4,7 +4,8 @@ class RegistrationsController < Devise::RegistrationsController
   before_action :require_user, only: [:security, :delete_account, :update, :edit, :posting_address, :reset_posting_address]
   prepend_before_action :check_captcha, only: [:create]
   # No new accounts once a closing is announced. Prepended last, so it runs first.
-  prepend_before_action :refuse_when_closing, only: [:new, :create]
+  prepend_before_action :refuse_when_closing, only: [:new, :create, :gift, :redeem_gift]
+  before_action :require_gift, only: [:gift, :redeem_gift]
 
   def edit
     cookies.permanent[:viewed_settings] = true
@@ -12,9 +13,50 @@ class RegistrationsController < Devise::RegistrationsController
   end
 
   def create
+    # The gift page stores itself for "Log in to add the gift to it"; signing up
+    # instead shouldn't land there afterwards.
+    stored_location_for(:user) if current_gift
+    gift_redeemed = false
     super do
       resource.referrer = request.env['affiliate.tag']
       resource.save
+      gift_redeemed = current_gift.redeem!(resource) if current_gift && resource.persisted?
+    end
+    return unless resource.persisted?
+
+    if gift_redeemed
+      flash[:notice] = "Welcome to Dabble Me! Your gift of PRO runs until #{resource.gift_expires_at.strftime("%B %-d, %Y")}."
+    elsif params[:gift_code].present?
+      flash[:alert] = "That gift code is no longer valid, so your account is on the Free plan."
+    end
+  end
+
+  # dabble.me/gift/<code>. Signed out: the sign-up form, dressed as a gift.
+  # Signed in: a button that puts this account on the gift, if it can take one.
+  def gift
+    if user_signed_in?
+      return unless gift_redeemable_by_current_user
+      render 'devise/registrations/redeem_gift'
+    else
+      # "Log in to add the gift to it" comes back here.
+      store_location_for(:user, gift_path(current_gift.code))
+      build_resource
+      render :new
+    end
+  end
+
+  def redeem_gift
+    unless user_signed_in?
+      redirect_to gift_path(params[:code])
+      return
+    end
+    return unless gift_redeemable_by_current_user
+
+    if current_gift.redeem!(current_user)
+      redirect_to edit_user_registration_path,
+                  notice: "Enjoy! Your gift of PRO runs until #{current_user.gift_expires_at.strftime("%B %-d, %Y")}."
+    else
+      redirect_to root_path, alert: "This account can't take this gift."
     end
   end
 
@@ -146,8 +188,37 @@ class RegistrationsController < Devise::RegistrationsController
 
   private
 
+  # The gift on this page: from the link's code, or the code the gift sign-up form posts.
+  def current_gift
+    return @current_gift if defined?(@current_gift)
+
+    @current_gift = Gift.find(params[:code].presence || params[:gift_code])
+  end
+  helper_method :current_gift
+
+  def require_gift
+    return if current_gift
+
+    if user_signed_in?
+      redirect_to root_path, alert: 'That gift code is no longer valid.'
+    else
+      redirect_to new_user_registration_path, alert: 'That gift code is no longer valid.'
+    end
+  end
+
+  def gift_redeemable_by_current_user
+    return true if current_gift.redeemable_by?(current_user)
+
+    if current_user.is_pro?
+      redirect_to root_path, notice: 'You already have Dabble Me PRO, so this gift is for someone else.'
+    else
+      redirect_to root_path, alert: 'This account has already used a gift of PRO.'
+    end
+    false
+  end
+
   def choose_layout
-    if action_name == 'new' || action_name == 'create'
+    if %w[new create gift redeem_gift].include?(action_name)
       'marketing'
     else
       'application'

@@ -6,6 +6,7 @@ class UserDowngradeExpiredWorker
   def perform
     downgrade_yearly
     downgrade_monthly
+    downgrade_gifts
   end
 
   private
@@ -24,6 +25,13 @@ class UserDowngradeExpiredWorker
         .having("MAX(payments.date) < ?", 40.days.ago)
         .group("users.id")
         .each { |user| downgrade(user, skip_ids: [16094, 10763]) }
+  end
+
+  # A gifted year (Gift) has no payments; it ends at the redemption's expires_at.
+  def downgrade_gifts
+    User.pro_only.where("plan ILIKE '%gift%'").joins(:gift_redemption)
+        .where("gift_redemptions.expires_at < ?", Time.current)
+        .each { |user| downgrade(user) }
   end
 
   def downgrade(user, skip_ids: [])

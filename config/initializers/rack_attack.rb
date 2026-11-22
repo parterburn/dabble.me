@@ -63,6 +63,11 @@ class Rack::Attack
     submitted_email(req) if auth_path(req) == '/users' && req.post?
   end
 
+  # Gift links (/gift/<code>): enough for someone retyping a code, too few to guess one.
+  throttle('gifts/ip', limit: 20, period: 1.hour) do |req|
+    req.ip if auth_path(req).start_with?('/gift/')
+  end
+
   # The iOS app's native sign-in, sign-up and account deletion: the same limits as the
   # web's forms. Each 2FA code tried is a sign-in attempt too, so these cover codes.
   APP_SIGN_IN_PATH = '/api/v1/session'.freeze

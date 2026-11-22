@@ -56,6 +56,7 @@ class User < ActiveRecord::Base
   has_many :hashtags, dependent: :destroy
   has_many :exports, dependent: :destroy
   has_many :payments
+  has_one :gift_redemption, dependent: :delete
   has_many :webauthn_credentials, dependent: :destroy
   has_many :mcp_tool_invocations, dependent: :delete_all
   has_many :ignored_email_images, dependent: :delete_all
@@ -265,6 +266,15 @@ class User < ActiveRecord::Base
 
   def is_free?
     !is_pro?
+  end
+
+  # On a gifted year of PRO (Gift), as opposed to a paid plan.
+  def gifted_pro?
+    is_pro? && plan.to_s.match?(/gift/i)
+  end
+
+  def gift_expires_at
+    gift_redemption&.expires_at if gifted_pro?
   end
 
   def plan_name

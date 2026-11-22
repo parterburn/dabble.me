@@ -170,7 +170,8 @@ class RevenueMetrics
   private
 
   def load_subscribers
-    pro_users = User.not_deleted.pro_only.select(:id, :plan, :referrer, :created_at).to_a
+    # Gifted years (Gift) bring in no revenue, so they aren't subscribers here.
+    pro_users = User.not_deleted.pro_only.where.not("users.plan ILIKE '%gift%'").select(:id, :plan, :referrer, :created_at).to_a
     return [] if pro_users.empty?
 
     latest_by_user_id = latest_payments_by_user_id(pro_users.map(&:id))
