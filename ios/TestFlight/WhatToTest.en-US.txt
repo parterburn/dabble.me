@@ -1,26 +1,8 @@
-Moments from your iPhone now checks the day. If you pick a moment from another day than the entry's, it asks which day it goes on. And with no template, holding the lightbulb opens Moments.
+Add a passkey: after you sign in with your password, the app offers to make a passkey, so next time you can sign in with Face ID or Touch ID.
 
-Use an iPhone. Moments isn't on iPad.
-
-A MOMENT FROM ANOTHER DAY
-- Start a new entry for today, tap the lightbulb, then Moments from your iPhone.
-- Pick a moment from an earlier day (say last Tuesday).
-- It should ask "This moment is from Tue, Nov 18." with Add to Nov 18, Add Here and Cancel.
-- Add to Nov 18: the entry's date at the top changes to Nov 18 and the moment goes in.
-- Add Here: the date stays and the moment goes in.
-- Cancel: nothing is added.
-
-A MOMENT FROM THE SAME DAY
-- Pick a moment from the entry's own day. It should go straight in, with no question.
-
-A MOMENT OVER SEVERAL DAYS
-- A trip that ran from Nov 18 to Nov 20 shouldn't ask anything when the entry is on any of those days. On another day it offers Nov 18.
-
-EDITING AN OLDER ENTRY
-- Open last week's entry and pick a moment from today. Add to Nov 22 should move that entry to today, the same as changing its date by hand. If today already has an entry, Save asks before merging the two, as it always has.
-
-A moment from a year other than this one shows its year too (Nov 18, 2025).
-
-HOLD THE LIGHTBULB
-- With no Entry Template (Settings), touch and hold the lightbulb: Apple's moments sheet should open straight away.
-- With a template, holding it still adds the template, as before.
+- Sign out, then sign in with your email and password (on an account with no passkey). Once the journal loads, an "Add a passkey" sheet should come up. Tap Add a Passkey: iOS's own passkey sheet appears, and after Face ID the sheet says "Passkey added". No password needed, since you just typed it. You should also get a "passkey added" email.
+- Sign out and use Sign In with a Passkey: the new passkey should work. It also shows on dabble.me/security, named "Added in the iOS app", and signs in on dabble.me.
+- Not Now: signing out and back in with your password within 30 days shouldn't ask again. After three Not Nows it stops asking.
+- Creating a new account, or just opening the app while signed in, should not show the sheet.
+- Settings → Account shows Add a Passkey while the account has none. More than 15 minutes after signing in, it asks for your password first. A wrong password says "Incorrect password." before iOS's passkey sheet opens, and no passkey is saved to your passwords. Adding one from Settings stays on "Passkey added" until you tap Done.
+- Signing in with a passkey never shows the prompt.

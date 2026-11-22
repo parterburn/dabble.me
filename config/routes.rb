@@ -51,6 +51,9 @@ Rails.application.routes.draw do
       post 'session/passkey', to: 'passkey_sessions#create'
       resource :registration, only: :create
       resource :account_deletion, only: %i[show create]
+      # Adding a passkey from the app (offered after a password sign-in, and in Settings).
+      resources :passkeys, only: :create
+      post 'passkeys/options', to: 'passkeys#options'
       resources :exports, only: :create
       get 'me', to: 'me#show'
       patch 'me', to: 'me#update'

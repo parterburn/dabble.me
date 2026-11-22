@@ -31,7 +31,9 @@ module Api
         # Signing back in keeps an account that was set to be deleted, as on the web.
         deletion_cancelled = user.cancel_pending_deletion!
         user.update_tracked_fields!(request)
-        render json: MobileApp.token_response(MobileApp.issue_token!(user)).merge(deletion_cancelled: deletion_cancelled)
+        token = MobileApp.issue_token!(user)
+        render json: MobileApp.token_response(token)
+                               .merge(deletion_cancelled: deletion_cancelled, **MobileApp.passkey_setup(user, token))
       end
     end
   end

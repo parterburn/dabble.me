@@ -28,6 +28,22 @@ struct NativeAuthTests {
         #expect(response["userHandle"] as? String == "Nw")
     }
 
+    @Test func newPasskeyKeepsWebAuthnKeys() throws {
+        let registration = PasskeyRegistration(credentialID: Data([1]), clientDataJSON: Data([2]), attestationObject: Data([3]))
+        let creation = try APIClient.decoder.decode(NativeAuth.PasskeyCreation.self, from: Data(
+            #"{"challenge_token":"t","challenge":"c","rp_id":"dabble.me","user_id":"Nw","user_name":"a@b.c","exclude_credentials":[]}"#.utf8))
+        #expect(NativeAuth.data(base64URL: creation.userId) == Data("7".utf8))
+        let json = try JSONEncoder().encode(NativeAuth.NewPasskey(registration: registration, creation: creation,
+                                                                   nickname: "n", setupToken: "s", password: nil))
+        let object = try #require(try JSONSerialization.jsonObject(with: json) as? [String: Any])
+        #expect(object["challenge_token"] as? String == "t")
+        #expect(object["setup_token"] as? String == "s")
+        #expect(object["current_password"] == nil)
+        let credential = try #require(object["credential"] as? [String: Any])
+        let response = try #require(credential["response"] as? [String: Any])
+        #expect(Set(response.keys) == ["clientDataJSON", "attestationObject"])
+    }
+
     @Test func otpRequiredAsksForTheCode() {
         let body = Data(#"{"error":"otp_required","message":"Enter the code."}"#.utf8)
         #expect(NativeAuth.failure(status: 401, data: body) == .needsCode)
@@ -1355,5 +1371,40 @@ struct MomentTextTests {
 
     @Test func nothingToSayAddsNothing() {
         #expect(Moment(title: "").lines().isEmpty)
+    }
+}
+
+struct PasskeyPromptTests {
+    private func defaults() -> UserDefaults {
+        let name = "PasskeyPromptTests.\(UUID().uuidString)"
+        return UserDefaults(suiteName: name)!
+    }
+
+    @Test func asksOnlyAfterASignInToAnAccountWithoutAPasskey() {
+        let store = defaults()
+        #expect(PasskeyPrompt.shouldAsk(hasPasskey: false, justSignedIn: true, defaults: store))
+        // Not on launch, and not once there's a passkey.
+        #expect(!PasskeyPrompt.shouldAsk(hasPasskey: false, justSignedIn: false, defaults: store))
+        #expect(!PasskeyPrompt.shouldAsk(hasPasskey: true, justSignedIn: true, defaults: store))
+        // An older server doesn't say: don't ask.
+        #expect(!PasskeyPrompt.shouldAsk(hasPasskey: nil, justSignedIn: true, defaults: store))
+    }
+
+    @Test func notNowPutsItOffForThirtyDays() {
+        let store = defaults()
+        let now = Date()
+        PasskeyPrompt.dismiss(now: now, defaults: store)
+        #expect(!PasskeyPrompt.shouldAsk(hasPasskey: false, justSignedIn: true, now: now.addingTimeInterval(86_400), defaults: store))
+        let later = now.addingTimeInterval(TimeInterval(PasskeyPrompt.snoozeDays + 1) * 86_400)
+        #expect(PasskeyPrompt.shouldAsk(hasPasskey: false, justSignedIn: true, now: later, defaults: store))
+    }
+
+    @Test func stopsAfterTheLastNotNow() {
+        let store = defaults()
+        let now = Date()
+        for _ in 0..<PasskeyPrompt.maxAsks { PasskeyPrompt.dismiss(now: now, defaults: store) }
+        let later = now.addingTimeInterval(365 * 86_400)
+        #expect(!PasskeyPrompt.shouldAsk(hasPasskey: false, justSignedIn: false, now: later, defaults: store))
+        #expect(!PasskeyPrompt.shouldAsk(hasPasskey: false, justSignedIn: true, now: later, defaults: store))
     }
 }

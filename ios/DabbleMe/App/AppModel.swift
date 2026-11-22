@@ -162,12 +162,12 @@ final class AppModel {
         let session = try await NativeAuth.signIn(email: email, password: password, code: code)
         // (session.deletionCancelled: the account was set to be deleted and this kept it, as
         // the welcome screen's notice promised.)
-        await didSignIn(with: session.tokens)
+        await didSignIn(with: session.tokens, passkeySetupToken: session.passkeySetupToken, asksForPasskey: true)
     }
 
     func signUp(email: String, password: String, firstName: String?) async throws {
         let session = try await NativeAuth.signUp(email: email, password: password, firstName: firstName)
-        await didSignIn(with: session.tokens)
+        await didSignIn(with: session.tokens, passkeySetupToken: session.passkeySetupToken)
     }
 
     /// The system's passkey sheet, then the server checks the assertion. Throws
@@ -182,13 +182,75 @@ final class AppModel {
         await didSignIn(with: session.tokens)
     }
 
-    private func didSignIn(with fresh: OAuthTokens) async {
+    /// `asksForPasskey`: a password sign-in (not sign-up), after which the passkey prompt comes
+    /// up once the journal has loaded. Adding one needs no password for the next few minutes
+    /// (the server's PasskeysController::SETUP_WINDOW), from the prompt or Settings.
+    private func didSignIn(with fresh: OAuthTokens, passkeySetupToken: String? = nil, asksForPasskey: Bool = false) async {
+        passkeySetup = passkeySetupToken.map { ($0, Date().addingTimeInterval(14 * 60)) }
+        passkeyPromptChecked = false
+        justSignedIn = asksForPasskey && passkeySetupToken != nil
         await tokens.signIn(with: fresh)
         signInError = nil
         signInNotice = nil
         authForm = nil
         isSignedIn = true
         await refresh()
+    }
+
+    // MARK: - Passkey
+
+    /// Ask to add a passkey (`PasskeyPrompt` says when): MainTabs presents it when nothing else
+    /// is up. Settings' Add a Passkey opens the same sheet.
+    var passkeyPromptPending = false
+    var showsPasskeyPrompt = false
+    /// Checked once per password sign-in.
+    private var passkeyPromptChecked = false
+    private var justSignedIn = false
+    private var passkeySetup: (token: String, expires: Date)?
+
+    /// The sheet needs the password: there's been no password sign-in in the last few minutes.
+    var addingPasskeyNeedsPassword: Bool {
+        guard let passkeySetup else { return true }
+        return passkeySetup.expires < Date()
+    }
+
+    /// The prompt closed without a passkey (Not Now, or swiped away): put off, and counted.
+    func passkeyPromptClosed() {
+        if me?.hasPasskey == false { PasskeyPrompt.dismiss() }
+    }
+
+    private func considerPasskeyPrompt() {
+        guard !passkeyPromptChecked, let me else { return }
+        passkeyPromptChecked = true
+        if PasskeyPrompt.shouldAsk(hasPasskey: me.hasPasskey, justSignedIn: justSignedIn) {
+            passkeyPromptPending = true
+        }
+        justSignedIn = false
+    }
+
+    /// The system's sheet makes a passkey for dabble.me (iCloud Keychain, or the password manager
+    /// picked), then the server keeps it. Throws `CancellationError` when the sheet is closed.
+    func addPasskey(password: String?) async throws {
+        // Chosen once, before the system's sheet: the setup token can run out while it's up.
+        let token = addingPasskeyNeedsPassword ? nil : passkeySetup?.token
+        let proof = NativeAuth.PasskeyProof(setupToken: token, currentPassword: token == nil ? password : nil)
+        let creation: NativeAuth.PasskeyCreation = try await api.post("api/v1/passkeys/options",
+                                                                      json: try JSONEncoder().encode(proof))
+        guard let challenge = NativeAuth.data(base64URL: creation.challenge),
+              let userID = NativeAuth.data(base64URL: creation.userId) else {
+            throw NativeAuthError.message(APIError.decoding.errorDescription ?? "Something went wrong.")
+        }
+        let excluded = (creation.excludeCredentials ?? []).compactMap { NativeAuth.data(base64URL: $0) }
+        let registration = try await passkeys.register(relyingParty: creation.rpId, challenge: challenge,
+                                                       userName: creation.userName, userID: userID, excluding: excluded)
+        let body = try JSONEncoder().encode(NativeAuth.NewPasskey(
+            registration: registration, creation: creation, nickname: PasskeyPrompt.nickname,
+            setupToken: proof.setupToken, password: proof.currentPassword))
+        let _: PasskeyAdded = try await api.post("api/v1/passkeys", json: body)
+        passkeySetup = nil
+        // Known now, even if the refresh below doesn't get through (Done shouldn't count as Not Now).
+        me?.hasPasskey = true
+        if let me: Me = try? await api.get("api/v1/me") { self.me = me }
     }
 
     // MARK: - Name
@@ -290,6 +352,9 @@ final class AppModel {
     private func resetSession() {
         isSignedIn = false
         me = nil
+        passkeySetup = nil
+        passkeyPromptPending = false
+        showsPasskeyPrompt = false
         subscriptions.reset()
         today = nil
         recentWrittenDays = nil
@@ -324,6 +389,7 @@ final class AppModel {
             staleMonths = Set(monthEntries.keys)
             timelineError = nil
             hasLoaded = true
+            considerPasskeyPrompt()
             WidgetSync.update(from: self)
             // The template and widget choice as the account has them (another phone may have
             // changed them), or sent up if they were changed here.

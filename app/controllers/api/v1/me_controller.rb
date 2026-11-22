@@ -66,6 +66,8 @@ module Api
           **AppleSubscriptionsController.status_json(user).slice(:pro_source, :apple_subscription),
           settings_url: "#{ApplicationHelper.site_public_base_url}/settings",
           security_url: "#{ApplicationHelper.site_public_base_url}/security",
+          # The app offers to add a passkey until there is one (Api::V1::PasskeysController).
+          has_passkey: user.webauthn_credentials.exists?,
           # Connecting Claude/ChatGPT (MCP) needs PRO.
           ai_connectors: {
             claude_url: ApplicationHelper.claude_plugin_directory_url,

@@ -23,6 +23,9 @@ enum NativeAuth {
         let tokens: OAuthTokens
         /// The account was set to be deleted, and signing in kept it.
         let deletionCancelled: Bool
+        /// After a password sign-in or sign-up, for an account with no passkey: lets the app add
+        /// one in the next few minutes without asking for the password again.
+        var passkeySetupToken: String? = nil
     }
 
     static func signIn(email: String, password: String, code: String?, session: URLSession = .shared) async throws -> Session {
@@ -90,6 +93,62 @@ enum NativeAuth {
         }
     }
 
+    /// The password, or the sign-in's setup token, that adding a passkey needs: sent for the
+    /// options (so a wrong one is caught before the system's sheet saves a passkey on the phone)
+    /// and again with the passkey.
+    struct PasskeyProof: Encodable, Sendable {
+        let setupToken: String?
+        let currentPassword: String?
+
+        enum CodingKeys: String, CodingKey {
+            case setupToken = "setup_token", currentPassword = "current_password"
+        }
+    }
+
+    /// POST /api/v1/passkeys/options: what the system needs to make a passkey for the signed-in
+    /// account. `userId` and the excluded IDs are base64url, as WebAuthn's JSON has them.
+    struct PasskeyCreation: Decodable, Sendable {
+        let challengeToken: String
+        let challenge: String
+        let rpId: String
+        let userId: String
+        let userName: String
+        let excludeCredentials: [String]?
+    }
+
+    /// The new passkey, for POST /api/v1/passkeys, with the password or the sign-in's setup
+    /// token. Encode it with a plain `JSONEncoder` (WebAuthn's camelCase keys), as above.
+    struct NewPasskey: Encodable, Sendable {
+        struct Credential: Encodable, Sendable {
+            struct Response: Encodable, Sendable {
+                let clientDataJSON, attestationObject: String
+            }
+            let id, rawId, type: String
+            let response: Response
+        }
+        let challengeToken: String
+        let credential: Credential
+        let nickname: String
+        let setupToken: String?
+        let currentPassword: String?
+
+        enum CodingKeys: String, CodingKey {
+            case challengeToken = "challenge_token", credential, nickname
+            case setupToken = "setup_token", currentPassword = "current_password"
+        }
+
+        init(registration: PasskeyRegistration, creation: PasskeyCreation, nickname: String, setupToken: String?, password: String?) {
+            let id = NativeAuth.base64URL(registration.credentialID)
+            challengeToken = creation.challengeToken
+            credential = Credential(id: id, rawId: id, type: "public-key", response: .init(
+                clientDataJSON: NativeAuth.base64URL(registration.clientDataJSON),
+                attestationObject: NativeAuth.base64URL(registration.attestationObject)))
+            self.nickname = nickname
+            self.setupToken = setupToken
+            currentPassword = password
+        }
+    }
+
     static func base64URL(_ data: Data) -> String {
         data.base64EncodedString()
             .replacingOccurrences(of: "+", with: "-")
@@ -108,6 +167,7 @@ enum NativeAuth {
         let refreshToken: String?
         let expiresIn: Double?
         let deletionCancelled: Bool?
+        let passkeySetupToken: String?
     }
 
     private static func post(_ path: String, _ body: some Encodable, session: URLSession) async throws -> Session {
@@ -126,7 +186,8 @@ enum NativeAuth {
         return Session(
             tokens: OAuthTokens(accessToken: body.accessToken, refreshToken: body.refreshToken,
                                 expiresAt: body.expiresIn.map { Date().addingTimeInterval($0) }),
-            deletionCancelled: body.deletionCancelled ?? false
+            deletionCancelled: body.deletionCancelled ?? false,
+            passkeySetupToken: body.passkeySetupToken
         )
     }
 
