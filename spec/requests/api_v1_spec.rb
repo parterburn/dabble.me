@@ -112,6 +112,21 @@ RSpec.describe "iOS app API (/api/v1)", type: :request do
       expect(free_user.first_name).to eq("Sam")
     end
 
+    it "leaves a name sent as null alone" do
+      free_user.update!(first_name: "Sam", last_name: "Rivera")
+      patch "/api/v1/me", params: { first_name: nil, last_name: "Lee" }, headers: auth(free_user), as: :json
+      expect(response).to have_http_status(:ok)
+      expect(free_user.reload.first_name).to eq("Sam")
+      expect(free_user.last_name).to eq("Lee")
+    end
+
+    it "refuses a name that isn't text" do
+      free_user.update!(first_name: "Sam")
+      patch "/api/v1/me", params: { first_name: ["a"] }, headers: auth(free_user), as: :json
+      expect(response).to have_http_status(:unprocessable_content)
+      expect(free_user.reload.first_name).to eq("Sam")
+    end
+
     it "refuses a name that's too long" do
       free_user.update!(first_name: "Sam")
       patch "/api/v1/me", params: { first_name: "a" * 101 }, headers: auth(free_user), as: :json

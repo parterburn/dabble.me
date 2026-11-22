@@ -15,9 +15,11 @@ module Api
       def update
         user = current_user
         %i[first_name last_name].each do |key|
-          next unless params.key?(key)
+          # JSON null means "not sent" (see .cursor/BUGBOT.md); only a string is a name.
+          next unless params.key?(key) && !params[key].nil?
+          return render_error(:unprocessable_content, 'invalid', 'A name must be text.') unless params[key].is_a?(String)
 
-          value = params[key].to_s.strip
+          value = params[key].strip
           if value.length > MAX_NAME_LENGTH
             return render_error(:unprocessable_content, 'invalid', "That name is too long (#{MAX_NAME_LENGTH} characters at most).")
           end
