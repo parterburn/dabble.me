@@ -1,4 +1,4 @@
-Build 122 lets you change your name in the app.
+Build 125 lets you change your name in the app.
 
 NAME
 - Open Settings. The Name row (at the top, under Account) now opens a Name page in the app instead of dabble.me.
@@ -9,5 +9,6 @@ NAME
 
 CHECK
 - Going Back without changing anything saves nothing.
-- With no connection, tapping Done shows "Couldn't save your name" and Settings keeps the old name.
+- With no connection, tapping Done, or changing the name and going Back, shows "Couldn't save your name" and Settings keeps the old name.
+- Tap Done, change the name again, and go Back right away: Settings ends on the newer name.
 - The Email row still opens Account Security on dabble.me.

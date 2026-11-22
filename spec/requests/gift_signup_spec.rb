@@ -29,6 +29,14 @@ RSpec.describe 'Gift links', type: :request do
       expect(response.body).to include('Claim my year of PRO')
     end
 
+    it 'describes the gift in the link preview tags' do
+      get gift_path('family2026')
+
+      expect(response.body).to include(%(<meta content="You&#39;ve been given a year of Dabble Me PRO" property="og:title">))
+      expect(response.body).to include('A free year of Dabble Me PRO, a $40 value. No card needed.')
+      expect(response.body).to include('property="og:image"')
+    end
+
     it 'sends an unknown code to the regular sign-up, saying the code is no longer valid' do
       get gift_path('nope')
 

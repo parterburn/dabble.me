@@ -1,4 +1,11 @@
-<% content_for :title, "Sign up" %>
+<% if current_gift %>
+  <%# What a shared gift link previews as (iMessage, Slack and others read these tags). %>
+  <% content_for :title, "A gift for you" %>
+  <% content_for :social_title, "You've been given a year of Dabble Me PRO" %>
+  <% content_for :description, "A free year of Dabble Me PRO, a #{Gift::VALUE} value. No card needed. Dabble Me is a private journal you keep by replying to an email." %>
+<% else %>
+  <% content_for :title, "Sign up" %>
+<% end %>
 <% content_for :robots, "noindex, follow" %>
 
 <section class="py-12 lg:py-20">
