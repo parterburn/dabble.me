@@ -35,18 +35,12 @@ struct SettingsView: View {
                     .listRowInsets(EdgeInsets(top: 0, leading: 4, bottom: 0, trailing: 0))
                 if let me = model.me {
                     Section("Account") {
-                        // Your name opens Settings on dabble.me, where it's changed.
-                        Link(destination: me.settingsUrl) {
-                            LabeledContent("Name") {
-                                HStack(spacing: 8) {
-                                    Text(me.name ?? me.firstName ?? "Add your name")
-                                        .foregroundStyle((me.name ?? me.firstName) == nil ? .secondary : .primary)
-                                    ExternalLinkIcon()
-                                }
-                            }
+                        // Your name, changed here and saved to the account.
+                        PaneLink {
+                            NameSettingsView()
+                        } label: {
+                            LabeledContent("Name", value: me.name ?? me.firstName ?? "Add your name")
                         }
-                        .foregroundStyle(.primary)
-                        .accessibilityHint("Opens your settings on dabble.me")
                         // Your email opens Account Security on dabble.me (password, passkeys, 2FA).
                         Link(destination: me.securityUrl) {
                             LabeledContent("Email") {
@@ -200,6 +194,16 @@ struct SettingsView: View {
             .toolbar(removing: .title) // the heading in the list is the title
             .toolbarVisibility(.hidden, for: .navigationBar) // like Today: no empty bar above it
             .task { canLinkToSubscribe = await Storefront.current?.countryCode == "USA" }
+        }
+        // A name save that failed, from the Name page (on Done or on going Back). On the stack,
+        // so it shows over the Name page too.
+        .alert("Couldn't save your name", isPresented: Binding(
+            get: { model.nameSaveError != nil },
+            set: { if !$0 { model.nameSaveError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(model.nameSaveError ?? "")
         }
     }
 }
