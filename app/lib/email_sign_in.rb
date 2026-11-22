@@ -50,11 +50,11 @@ module EmailSignIn
     User.find_for_authentication(email: normalize(email))
   end
 
-  # An account someone made with this address by password, before its owner ever proved they
-  # read the inbox. Whoever made it may not own the address, so the first code sign-in wipes its
+  # An account someone made with this address by password, or moved onto it by changing its
+  # email, before its owner ever proved they read the inbox. Whoever made it may not own the address, so the first code sign-in wipes its
   # credentials (User#clear_credentials_for_email_claim!) and needs no 2FA code.
   def unclaimed?(user)
-    user.email_verified_at.nil? && user.created_at >= UNCLAIMED_FROM
+    user.email_verified_at.nil? && (user.created_at >= UNCLAIMED_FROM || user.email_changed_at.present?)
   end
 
   # The live code this matches, or nil. Check 2FA (when the account has it) before #complete!.
