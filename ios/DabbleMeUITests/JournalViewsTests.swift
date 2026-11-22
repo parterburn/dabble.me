@@ -2567,7 +2567,8 @@ final class JournalViewsTests: XCTestCase {
         snap("stats-last-five-days-zoomed")
         app.terminate()
 
-        app = launch(["-DabbleDebugRewindYear", String(year), "-DabbleDebugForgetRewindTap", "YES"])
+        // (The tap above kept the biggest squares; this launch shows the grid at its own size.)
+        app = launch(["-DabbleDebugRewindYear", String(year), "-DabbleDebugForgetRewindTap", "YES", "-stats.heatmapCell", "13"])
         let rewind = app.buttons["\(year) Rewind"]
         XCTAssertTrue(rewind.waitForExistence(timeout: 15))
         XCTAssertFalse(app.buttons.matching(NSPredicate(format: "label ENDSWITH 'entries'")).firstMatch.exists)
