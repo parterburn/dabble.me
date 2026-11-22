@@ -1,3 +1,5 @@
+<% content_for :full_title, "Dabble Me — Your Private Daily Journal & Life Timeline" %>
+<% content_for :description, "Your life, written down and remembered. Write a few lines a day by app, email, or web, add photos, and Rewind past memories. Free forever." %>
 <% content_for :head do %>
   <%= json_ld_script_tag organization_json_ld, website_json_ld, web_application_json_ld %>
 <% end %>
@@ -49,14 +51,14 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
             </h1>
             
             <p class="mt-6 text-lg text-hero-muted max-w-xl mx-auto lg:mx-0">
-              Dabble Me is like a private timeline of your life. Journal a few lines about your day, add some photos, and rewind back to them.
+              A private timeline of your life. Simple to start, easy to keep going: write a few lines your way, add some photos, and Rewind past days back to you.
             </p>
 
             <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <a href="<%= new_user_registration_path %>" class="inline-flex items-center justify-center px-6 py-3 font-medium rounded-full transition-colors duration-200 bg-white text-olive-800 hover:bg-cream-100">
-                Get today's prompt
+                Start free
               </a>
-              <a href="#features" class="hidden sm:inline-flex items-center justify-center px-6 py-3 font-medium rounded-full transition-colors duration-200 border border-white/30 text-hero hover:bg-white/10">
+              <a href="#how-it-works" class="hidden sm:inline-flex items-center justify-center px-6 py-3 font-medium rounded-full transition-colors duration-200 border border-white/30 text-hero hover:bg-white/10">
                 See how it works
                 <svg class="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
@@ -68,32 +70,28 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
                 <svg class="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
                 </svg>
-              </a>          
+              </a>
             </div>
+            <p class="mt-4 text-sm text-hero-muted">Free forever · Always private · iPhone, iPad, email, and web</p>
 
             <!-- Quick value props -->
-            <div class="pl-3 sm:pl-0 mt-10 grid grid-cols-2 gap-4 text-sm text-hero-muted" id="email-preview">
+            <p class="mt-10 text-sm font-medium text-hero">A few lines today. A memory years from now.</p>
+            <div class="pl-3 sm:pl-0 mt-4 grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm text-hero-muted" id="email-preview">
               <div class="flex items-center gap-2">
-                <svg class="h-5 w-5 text-hero-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                <svg class="h-5 w-5 text-hero-accent shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
                 </svg>
-                <div class="grow">Write by email or app</div>
+                <div class="grow">Write a few lines a day</div>
               </div>
               <div class="flex items-center gap-2">
-                <svg class="h-5 w-5 text-hero-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                <svg class="h-5 w-5 text-hero-accent shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
                 </svg>
-                <div class="grow">Attach photos</div>
-              </div>          
-              <div class="flex items-center gap-2">
-                <span class="slab-icon slab-icon--backward h-5 w-5 text-hero-accent" aria-hidden="true"></span>
-                <div class="grow">Rewind past entries</div>
+                <div class="grow">Add up to <%= CollageGenerator::MAX_IMAGES %> photos</div>
               </div>
               <div class="flex items-center gap-2">
-                <svg class="h-5 w-5 text-hero-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-                </svg>
-                <div class="grow">Daily inspirations</div>
+                <span class="slab-icon slab-icon--backward h-5 w-5 text-hero-accent shrink-0" aria-hidden="true"></span>
+                <div class="grow">Rewind years back</div>
               </div>
             </div>
           </div>
@@ -192,72 +190,56 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
       </div>
     </section>
 
-<!-- Stats Section with Graph -->
-<section class="py-16 lg:py-20 bg-surface">
+<!-- How It Works -->
+<section id="how-it-works" class="py-16 lg:py-20 bg-surface">
   <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-    <!-- Top: Text content -->
     <div class="max-w-3xl">
-      <h2 class="mt-4 font-serif text-4xl sm:text-4xl lg:text-5xl text-primary leading-tight">
-        Most people don’t stop journaling because they don’t care. They stop because life gets busy.
+      <h2 class="font-serif text-4xl lg:text-5xl text-primary leading-tight">
+        Simple to start. Easy to keep going.
       </h2>
       <p class="mt-6 text-lg text-muted max-w-2xl">
-        Dabble Me is built for that reality. Instead of asking you to make time, it fits into the day you already have — with a simple email and gentle reminders of moments you’d otherwise lose.
+        You don’t need a new routine or a complicated app, just a few quiet lines that fit into the day you already have.
       </p>
     </div>
 
-    <!-- Stats + Graph layout -->
-    <div class="mt-10 grid grid-cols-1 lg:grid-cols-[220px_1fr] gap-6 lg:gap-0 items-start">
-      <!-- Stats with left border -->
-      <div class="flex">
-        <div class="pl-5">
-          <p class="font-serif text-4xl lg:text-5xl text-primary"><%= format_number(@stats[:emails_sent] + @stats[:emails_received]) %></p>
-          <p class="mt-1 text-muted text-sm">
-            Total emails processed
-          </p>
-        </div>
-      </div>
+    <ol class="mt-12 grid md:grid-cols-3 gap-8">
+      <li>
+        <p class="font-serif text-3xl text-accent">1</p>
+        <h3 class="mt-2 font-semibold text-base text-primary font-sans">Simple to start</h3>
+        <p class="mt-2 text-muted">
+          Write two lines or two pages. Stuck? Tap a prompt or something from your calendar, or use your own daily template.
+        </p>
+      </li>
+      <li>
+        <p class="font-serif text-3xl text-accent">2</p>
+        <h3 class="mt-2 font-semibold text-base text-primary font-sans">Easy to keep going</h3>
+        <p class="mt-2 text-muted">
+          Get one gentle nudge when you want it, skipped once you’ve written. Open the iPhone app, tap a Lock Screen widget, or reply to an email. With PRO, write on the web too.
+        </p>
+      </li>
+      <li>
+        <p class="font-serif text-3xl text-accent">3</p>
+        <h3 class="mt-2 font-semibold text-base text-primary font-sans">Rewind your days</h3>
+        <p class="mt-2 text-muted">
+          Your memories come back a year or five years later. Past entries show up in your prompts, and shaking your phone pulls up a random memory. PRO adds On This Day and your Year in Review.
+        </p>
+      </li>
+    </ol>
 
-      <!-- Graph visualization -->
-      <div class="relative h-52 lg:h-64">
-        <svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 1000 300" shape-rendering="geometricPrecision">
-          <!-- Gradient fill definition -->
-          <defs>
-            <linearGradient id="chartGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-              <stop offset="0%" stop-color="rgb(87, 99, 68)" stop-opacity="0.15" />
-              <stop offset="100%" stop-color="rgb(87, 99, 68)" stop-opacity="0" />
-            </linearGradient>
-          </defs>
-          
-          <!-- Vertical dashed lines (from bottom to curve) -->
-          <line x1="0" y1="300" x2="0" y2="295" stroke="rgb(156, 163, 143)" stroke-width="1" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
-          <line x1="111" y1="300" x2="111" y2="288" stroke="rgb(156, 163, 143)" stroke-width="1" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
-          <line x1="222" y1="300" x2="222" y2="275" stroke="rgb(156, 163, 143)" stroke-width="1" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
-          <line x1="333" y1="300" x2="333" y2="258" stroke="rgb(156, 163, 143)" stroke-width="1" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
-          <line x1="444" y1="300" x2="444" y2="232" stroke="rgb(156, 163, 143)" stroke-width="1" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
-          <line x1="555" y1="300" x2="555" y2="192" stroke="rgb(156, 163, 143)" stroke-width="1" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
-          <line x1="666" y1="300" x2="666" y2="132" stroke="rgb(156, 163, 143)" stroke-width="1" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
-          <line x1="777" y1="300" x2="777" y2="68" stroke="rgb(156, 163, 143)" stroke-width="1" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
-          <line x1="888" y1="300" x2="888" y2="22" stroke="rgb(156, 163, 143)" stroke-width="1" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
-          <line x1="1000" y1="300" x2="1000" y2="5" stroke="rgb(156, 163, 143)" stroke-width="1" stroke-dasharray="4,4" vector-effect="non-scaling-stroke" />
-
-          <!-- Gradient fill under curve -->
-          <path 
-            d="M 0 295 C 150 290, 250 280, 350 260 C 450 235, 500 210, 600 160 C 700 105, 800 50, 900 20 C 950 8, 1000 5, 1000 5 L 1000 300 L 0 300 Z" 
-            fill="url(#chartGradient)"
-          />
-          
-          <!-- Growth curve line -->
-          <path 
-            d="M 0 295 C 150 290, 250 280, 350 260 C 450 235, 500 210, 600 160 C 700 105, 800 50, 900 20 C 950 8, 1000 5, 1000 5" 
-            fill="none" 
-            stroke="rgb(87, 99, 68)" 
-            stroke-width="2"
-            stroke-linecap="round"
-            vector-effect="non-scaling-stroke"
-          />
-        </svg>
+    <dl class="mt-14 pt-10 border-t border-subtle grid grid-cols-1 sm:grid-cols-3 gap-8">
+      <div class="flex flex-col">
+        <dt class="text-muted text-sm">Entries written</dt>
+        <dd class="order-first font-serif text-4xl text-primary"><%= format_number(@stats[:total_entries]) %></dd>
       </div>
-    </div>
+      <div class="flex flex-col">
+        <dt class="text-muted text-sm">Emails processed</dt>
+        <dd class="order-first font-serif text-4xl text-primary"><%= format_number(@stats[:emails_sent] + @stats[:emails_received]) %></dd>
+      </div>
+      <div class="flex flex-col">
+        <dt class="text-muted text-sm">Independent, funded by paying users</dt>
+        <dd class="order-first font-serif text-4xl text-primary"><%= years_running %>+ years</dd>
+      </div>
+    </dl>
   </div>
 </section>
 
@@ -266,24 +248,23 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
   <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
     <div class="text-center max-w-3xl mx-auto mb-16">
       <h2 class="section-heading">
-        Everything you need to keep journaling.
+        Everything you need. Nothing in the way.
       </h2>
       <p class="mt-4 text-lg text-muted">
-        Simple, private, and designed to fit into real life.
+        Quiet, private, and built to stay out of your way.
       </p>
     </div>
 
     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-      <!-- Free features -->
       <div class="card p-6">
         <div class="w-12 h-12 rounded-lg bg-surface-elevated flex items-center justify-center mb-4">
-          <svg class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-          </svg>
+            <svg class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+            </svg>
         </div>
-        <h3 class="font-semibold text-base text-primary font-sans">Email or App</h3>
+        <h3 class="font-semibold text-base text-primary font-sans">Write your way</h3>
         <p class="mt-2 text-muted">
-          Hit reply on a daily email, or open the iPhone app. Write a few lines. Done.
+          Use the iPhone &amp; iPad app or its Lock Screen widgets, or simply reply to a “How was your day?” email. With PRO, write on the web too. Switch anytime.
         </p>
         <p class="mt-3">
           <%= link_to "iOS app coming soon", journal_app_path, class: "text-accent hover:text-primary underline font-medium" %>
@@ -292,54 +273,53 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
 
       <div class="card p-6">
         <div class="w-12 h-12 rounded-lg bg-surface-elevated flex items-center justify-center mb-4">
-          <span class="slab-icon slab-icon--backward h-6 w-6 text-accent" aria-hidden="true"></span>
+            <svg class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+            </svg>
         </div>
-        <h3 class="font-semibold text-base text-primary font-sans">Rewind</h3>
+        <h3 class="font-semibold text-base text-primary font-sans">Private by design</h3>
         <p class="mt-2 text-muted">
-          Your emails bring back past entries, from this day years ago or just a few weeks back. Rediscover moments you didn’t realize you’d forgotten.
+          Your entries are encrypted on our servers and never used to train AI. No social feed, no ads, no tracking, no data selling. Face ID lock and photo location stripping in the app, passkeys, and full export anytime.
         </p>
       </div>
 
       <div class="card p-6">
         <div class="w-12 h-12 rounded-lg bg-surface-elevated flex items-center justify-center mb-4">
-          <svg class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-          </svg>
-        </div>
-        <h3 class="font-semibold text-base text-primary font-sans">Always Private</h3>
-        <p class="mt-2 text-muted">
-          No social features. No sharing. No algorithms. Optional <%= link_to "AI connector", mcp_server_docs_path, class: "text-accent hover:text-primary underline" %> for ChatGPT and Claude — you approve access, and nothing runs until you connect. Your journal stays yours.
-        </p>
-      </div>
-
-      <!-- PRO features -->
-      <div class="card p-6 border-accent/30">
-        <div class="flex items-center gap-2 mb-4">
-          <div class="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
-            <svg class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 6h9.75M10.5 6a1.5 1.5 0 11-3 0m3 0a1.5 1.5 0 10-3 0M3.75 6H7.5m3 12h9.75m-9.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-3.75 0H7.5m9-6h3.75m-3.75 0a1.5 1.5 0 01-3 0m3 0a1.5 1.5 0 00-3 0m-9.75 0h9.75" />
+            <svg class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
             </svg>
-          </div>
-          <span class="badge badge-accent dark:text-olive-800 text-xs">PRO</span>
         </div>
-        <h3 class="font-semibold text-base text-primary font-sans">Custom Schedule</h3>
+        <h3 class="font-semibold text-base text-primary font-sans">AI strictly on your terms</h3>
         <p class="mt-2 text-muted">
-          Choose when prompts arrive. Daily, weekly, or anywhere in between.
+          Warm, on-device Apple Intelligence reflections and prompts that never leave your iPhone or iPad. With PRO, you can <%= link_to "connect Claude or ChatGPT", mcp_server_docs_path, class: "text-accent hover:text-primary underline" %> to ask about your journal, and disconnect anytime.
         </p>
       </div>
 
       <div class="card p-6 border-accent/30">
         <div class="flex items-center gap-2 mb-4">
           <div class="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
-            <svg class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 19.5h16.5a2.25 2.25 0 002.25-2.25V6.75a2.25 2.25 0 00-2.25-2.25H3.75a2.25 2.25 0 00-2.25 2.25v10.5a2.25 2.25 0 002.25 2.25z" />
+            <span class="slab-icon slab-icon--backward h-6 w-6 text-accent" aria-hidden="true"></span>
+          </div>
+          <span class="badge badge-accent dark:text-olive-800 text-xs">PRO</span>
+        </div>
+        <h3 class="font-semibold text-base text-primary font-sans">On This Day &amp; Year in Review</h3>
+        <p class="mt-2 text-muted">
+          See what you wrote on today’s date in past years, and look back at your biggest moments, people and photos every winter.
+        </p>
+      </div>
+
+      <div class="card p-6 border-accent/30">
+        <div class="flex items-center gap-2 mb-4">
+          <div class="w-12 h-12 rounded-lg bg-accent/10 flex items-center justify-center">
+            <svg class="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
             </svg>
           </div>
           <span class="badge badge-accent dark:text-olive-800 text-xs">PRO</span>
         </div>
-        <h3 class="font-semibold text-base text-primary font-sans">Photo Attachments</h3>
+        <h3 class="font-semibold text-base text-primary font-sans">Photos &amp; songs</h3>
         <p class="mt-2 text-muted">
-          Attach up to <%= CollageGenerator::MAX_IMAGES %> photos to any entry. Small moments, captured visually.
+          Attach up to <%= CollageGenerator::MAX_IMAGES %> photos (several become a collage) and embed Spotify tracks to remember the soundtrack of your days.
         </p>
       </div>
 
@@ -351,9 +331,9 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
           </div>
           <span class="badge badge-accent dark:text-olive-800 text-xs">PRO</span>
         </div>
-        <h3 class="font-semibold text-base text-primary font-sans">Calendar & Search</h3>
+        <h3 class="font-semibold text-base text-primary font-sans">#Hashtags &amp; search</h3>
         <p class="mt-2 text-muted">
-          Browse entries by date, #hashtags, or search. Find what you’re looking for when it matters.
+          Search every word you’ve ever written. Give a #hashtag a birthday or anniversary to see how old your kids were, or how long it had been, in every entry.
         </p>
       </div>
     </div>
@@ -366,9 +346,9 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
     <div data-testimonial-carousel class="relative">
       <!-- Testimonial 1: Paul Graham -->
       <div data-testimonial-slide class="text-center">
-        <a href="https://twitter.com/paulg/status/1746341562286539118?ref_src=twsrc%5Etfw" target="_blank" rel="noopener" class="hover:scale-105 transition-transform duration-300 block">
+        <a href="https://x.com/paulg/status/1746341562286539118" target="_blank" rel="noopener" class="hover:scale-105 transition-transform duration-300 block">
           <blockquote class="font-serif text-2xl sm:text-3xl lg:text-4xl text-primary leading-relaxed">
-            "The pro version of Dabble Me is ~$3 a month, and it is worth so much more than that."
+            “The pro version of Dabble.Me costs $3 a month, and it is worth so much more than that.”
           </blockquote>
 
           <div class="mt-10 flex flex-col items-center">
@@ -385,7 +365,7 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
       <div data-testimonial-slide class="hidden text-center">
         <a href="https://cassidoo.co/post/producivity-apps-2024/" target="_blank" rel="noopener" class="hover:scale-105 transition-transform duration-300 block">
           <blockquote class="font-serif text-2xl sm:text-3xl lg:text-4xl text-primary leading-relaxed">
-            "Dabble Me is my favorite app, bar none. It's a treasure trove of memories at this point."
+            “Dabble Me is my favorite app, bar none. It's a treasure trove of memories at this point.”
           </blockquote>
 
           <div class="mt-10 flex flex-col items-center">
@@ -460,8 +440,52 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
   });
 </script>
 
+<!-- Founder Note -->
+<section class="pt-20 pb-4">
+  <div class="mx-auto max-w-3xl px-4 sm:px-6 lg:px-8">
+    <figure class="card p-6 sm:p-8 flex flex-col sm:flex-row gap-5 sm:gap-6 items-start">
+      <a href="https://x.com/parterburn" target="_blank" rel="noopener" class="shrink-0" aria-label="Paul Arterburn on X">
+        <%= image_tag "paul-arterburn.jpg", alt: "Paul Arterburn, founder of Dabble Me", width: 64, height: 64, loading: "lazy", decoding: "async", class: "w-16 h-16 rounded-full object-cover" %>
+      </a>
+      <div>
+        <blockquote class="text-primary leading-relaxed">
+          I built Dabble Me over <%= years_running %> years ago because I wanted the clarity of daily reflection without another complicated app to maintain. It’s not a venture-backed growth experiment or a rushed AI side project. It’s independently run, funded entirely by paying users, and private by design. No selling your data, no lock-in, just a simple habit that sticks.
+        </blockquote>
+        <figcaption class="mt-4 text-sm text-muted">
+          <a href="https://x.com/parterburn" target="_blank" rel="noopener" class="font-medium text-primary no-underline">Paul Arterburn</a>, Founder
+          · <a href="https://medium.com/startup-lesson-learned/increase-your-happiness-with-daily-journaling-8109b0700506" target="_blank" rel="noopener" class="text-accent hover:text-primary underline">Why I built it</a>
+          · <a href="https://github.com/parterburn/dabble.me" target="_blank" rel="noopener" class="text-accent hover:text-primary underline">Open source on GitHub</a>
+        </figcaption>
+      </div>
+    </figure>
+  </div>
+</section>
+
+<%
+free_features = [
+  "Read, write & delete entries",
+  link_to("iPhone & iPad app", journal_app_path, class: "text-accent hover:text-primary underline") + " with a daily reminder",
+  "Email prompt every other Sunday (reply to journal)",
+  "Past entries in your prompt emails",
+  "On-device Apple Intelligence reflections, prompts & hashtag suggestions",
+  "Read your entries online",
+  "Export your data anytime"
+]
+pro_features = [
+  "Custom email schedule (daily, weekly, or any days)",
+  "Photo attachments (up to #{CollageGenerator::MAX_IMAGES} per entry) & web links",
+  "Edit entries anytime (words, photos, or dates) on web & iOS",
+  "Write on the web with rich text",
+  "On This Day, Rewind & Year in Review",
+  "Calendar timeline, #hashtags with milestone dates & full search",
+  "Yearly stats & Spotify song embeds",
+  "Import from Day One, OhLife & more",
+  link_to("Optional Claude & ChatGPT connector", mcp_server_docs_path, class: "text-accent hover:text-primary underline"),
+  "Export everything anytime, including photos"
+]
+%>
 <!-- Pricing Section -->
-<section id="pricing" class="py-20 border-y border-subtle">
+<section id="pricing" class="pt-12 pb-20 border-b border-subtle">
   <div class="mx-auto max-w-5xl px-4 sm:px-6 lg:px-8">
     <div class="text-center mb-10">
       <h2 class="section-heading">Start free. Upgrade when it feels right.</h2>
@@ -474,51 +498,22 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
           <span class="font-serif text-4xl text-primary">$0</span>
           <span class="text-muted">/forever</span>
         </p>
-        <p class="text-sm text-subtle">Designed to help you get started.</p>
+        <p class="text-sm text-subtle">Simple to start.</p>
 
         <ul class="mt-8 space-y-3 grow">
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            <span class="text-muted">Email prompts every other Sunday</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            <span class="text-muted">Reply by email to journal</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            <span class="text-muted"><%= link_to "iPhone & iPad app", journal_app_path, class: "text-accent hover:text-primary underline" %></span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            <span class="text-muted">Read your entries online</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            <span class="text-muted">Rewind to past entries</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            <span class="text-muted">Export your data anytime</span>
-          </li>
+          <% free_features.each do |feature| %>
+            <li class="flex items-start gap-3">
+              <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+              <span class="text-muted"><%= feature %></span>
+            </li>
+          <% end %>
         </ul>
 
         <a href="<%= new_user_registration_path %>" class="btn btn-secondary w-full mt-8 self-end">
-          Start journaling
+          Start free
         </a>
-
       </div>
 
       <!-- PRO Plan -->
@@ -526,80 +521,22 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
         <div class="absolute -top-3 left-1/2 -translate-x-1/2">
           <span class="badge badge-accent dark:text-olive-800">Habit-forming</span>
         </div>
-        
+
         <p>
           <span class="font-serif text-4xl text-primary">$4</span>
           <span class="text-muted">/month or $40/year</span>
         </p>
-        <p class="text-sm text-subtle">Designed to help you <em>stay</em> journaling.</p>
+        <p class="text-sm text-subtle">Easy to keep going. Yearly gets you 2 months free.</p>
 
         <ul class="mt-6 space-y-3">
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            <span class="text-muted">Custom email schedule</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            <span class="text-muted">Edit and organize entries</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            <span class="text-muted">Photo attachments (up to <%= CollageGenerator::MAX_IMAGES %>)</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            <span class="text-muted">Calendar view & search</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            <span class="text-muted"><%= link_to "iPhone & iPad app", journal_app_path, class: "text-accent hover:text-primary underline" %></span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            <span class="text-muted"><%= link_to "AI connector", mcp_server_docs_path, class: "text-accent hover:text-primary underline" %></span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            <span class="text-muted">Tag your entries</span>
-          </li>          
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            <span class="text-muted">Rich text formatting</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            <span class="text-muted">Insights & Analytics</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            <span class="text-muted">On This Day</span>
-          </li>
-          <li class="flex items-start gap-3">
-            <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-            </svg>
-            <span class="text-muted">Export your data anytime</span>
-          </li>          
+          <% pro_features.each do |feature| %>
+            <li class="flex items-start gap-3">
+              <svg class="h-5 w-5 text-accent shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+              <span class="text-muted"><%= feature %></span>
+            </li>
+          <% end %>
         </ul>
 
         <a href="<%= subscribe_path %>" class="btn btn-primary w-full mt-8">
@@ -614,10 +551,10 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
 <section class="py-20 bg-surface">
   <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
     <div class="text-center mb-12">
-      <h2 class="section-heading">Questions & Answers</h2>
+      <h2 class="section-heading">Common questions</h2>
     </div>
 
-    <% faqs = ApplicationHelper.faqs[:general][:questions].first(4) %>
+    <% faqs = ApplicationHelper.home_faqs %>
 
     <div data-accordion-group>
       <% faqs.each do |faq| %>
@@ -640,7 +577,7 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
 
     <div class="mt-8 text-center">
       <a href="<%= support_path %>" class="text-accent hover:text-primary transition-colors font-medium">
-        View all questions →
+        Read all FAQs &amp; support →
       </a>
     </div>
   </div>
@@ -653,14 +590,11 @@ sample_entry_heading = Entry.new(date: sample_entry[:date]).look_back_label(emai
       Start remembering the days you’d otherwise lose.
     </h2>
     <p class="mt-4 text-lg text-muted">
-      Join thousands of people who’ve been writing with Dabble Me for years.
-    </p>
-    <p class="mt-4 text-lg text-muted">
-      <%= format_number(@stats[:total_entries]) %> entries and counting.
+      Simple to start. Easy to keep going. Yours forever.
     </p>
     <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
       <a href="<%= new_user_registration_path %>" class="btn btn-primary">
-        Get today's prompt
+        Start free
       </a>
       <a href="<%= support_path %>" class="btn btn-secondary">
         Questions? Get in touch

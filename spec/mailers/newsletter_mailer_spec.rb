@@ -14,9 +14,9 @@ RSpec.describe NewsletterMailer do
     expect(mail.subject).to eq('Your 2026 in 0 entries')
     expect(mail.header['List-Unsubscribe'].value).to match(%r{\A<https?://[^>]+/updates/unsubscribe\?token=[^>]+>\z})
     expect(mail.header['List-Unsubscribe-Post'].value).to eq('List-Unsubscribe=One-Click')
-    # Newsletters keep Mailgun's click and open tracking; nothing else does (MailgunTracking).
-    expect(mail.mailgun_options).to include(tracking: 'yes')
-    expect(mail.mailgun_options).not_to include(:'tracking-clicks')
+    # Newsletters aren't tracked either: MailgunTracking turns clicks and opens off as they're sent.
+    MailgunTracking.delivering_email(mail)
+    expect(mail.mailgun_options).to include(tracking: 'no', 'tracking-clicks': 'no', 'tracking-opens': 'no')
 
     html = mail.html_part.body.to_s
     text = mail.text_part.body.to_s
