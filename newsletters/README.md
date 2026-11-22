@@ -67,7 +67,7 @@ Here is what's new.
 
 - **Subject and preview** are one line for everyone, or one line per variant.
 - **A block** between `{{#rewind}}` and `{{/rewind}}`, each on a line of its own, appears only in the `rewind` variant. `{{#rewind,rewind_free}}` appears in either.
-- **Placeholders** are filled in per person: `{{first_name}}`, `{{year}}`, `{{entry_count}}`, `{{rewind_url}}`, `{{write_url}}`, `{{subscribe_url}}`, `{{settings_url}}`.
+- **Placeholders** are filled in per person: `{{first_name}}`, `{{year}}`, `{{entry_count}}`, `{{rewind_url}}`, `{{write_url}}`, `{{subscribe_url}}`, `{{export_url}}`, `{{security_url}}`, `{{settings_url}}`.
 
 A placeholder nothing fills, a block naming no variant, or a subject missing a variant stops the letter loading, and a spec loads every letter. The word `TODO` anywhere in a letter stops the send, so use it for anything still to fill in.
 

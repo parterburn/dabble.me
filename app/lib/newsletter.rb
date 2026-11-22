@@ -127,6 +127,7 @@ class Newsletter
       "write_url" => "https://#{host}/write",
       "subscribe_url" => "https://#{host}/subscribe",
       "export_url" => "https://#{host}/entries/export",
+      "security_url" => "https://#{host}/security",
       "settings_url" => "https://#{host}/settings?token=#{CGI.escape(user.email_settings_token)}"
     }
   end
