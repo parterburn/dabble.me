@@ -21,9 +21,9 @@ struct Moment: Equatable, Sendable {
     var events: [String] = []
     /// Apple's own questions to write about: added like the composer's prompts.
     var reflections: [String] = []
-    /// The photos, already read (Apple's files only last as long as the picker's answer). Only
-    /// filled when the account can add photos.
-    var photos: [Data] = []
+    /// The photos, already read and prepared (Apple's files only last as long as the picker's
+    /// answer). Only filled when the account can add photos.
+    var photos: [PreparedPhoto] = []
     /// How many photos the moment had, kept or not: a free account is told photos are PRO.
     var photoCount = 0
 
@@ -44,7 +44,7 @@ struct Moment: Equatable, Sendable {
     }
 
     /// Journaling Suggestions is iPhone-only, and the simulator has no framework for it.
-    static var isAvailable: Bool {
+    @MainActor static var isAvailable: Bool {
         #if canImport(JournalingSuggestions)
         return UIDevice.current.userInterfaceIdiom == .phone
         #else

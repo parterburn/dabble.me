@@ -52,7 +52,16 @@ extension Moment {
         let photoFiles = await suggestion.content(forType: JournalingSuggestion.Photo.self).map(\.photo)
             + suggestion.content(forType: JournalingSuggestion.LivePhoto.self).map(\.image)
         moment.photoCount = photoFiles.count
-        moment.photos = photoFiles.prefix(max(photoLimit, 0)).compactMap { try? Data(contentsOf: $0) }
+        // Off the main actor, one original at a time: each is read and prepared (at most 2400px,
+        // no metadata) before the next, so only the prepared copies are held.
+        let wanted = Array(photoFiles.prefix(max(photoLimit, 0)))
+        if !wanted.isEmpty {
+            moment.photos = await Task.detached(priority: .userInitiated) {
+                wanted.compactMap { url in
+                    autoreleasepool { (try? Data(contentsOf: url)).flatMap { try? PhotoPreparer.prepare($0) } }
+                }
+            }.value
+        }
         return moment
     }
 

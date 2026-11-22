@@ -1002,14 +1002,30 @@ struct ComposeView: View {
     /// The picked moment: its words where the cursor is, its photos with the others (PRO), or a
     /// word about PRO when a free account picked one with photos.
     private func addMoment(_ suggestion: JournalingSuggestion) async {
+        guard !isDiscarded else { return }
         let canAddPhotos = model.me?.canAddPhotos == true
         let room = canAddPhotos ? max(photoLimit - photoItems.count, 0) : 0
+        // Save waits for the moment's photos, from the first read to the last attached.
+        isLoadingPhotos = true
+        defer { isLoadingPhotos = false }
         let moment = await Moment.from(suggestion, photoLimit: room)
+        guard !isDiscarded else { return }
         showsAskRow = false
         editor.addMoment(heading: moment.heading, lines: moment.lines())
         for reflection in moment.reflections { editor.addQuestion(reflection) }
-        for data in moment.photos { await addPhotoData(data) }
-        if moment.photoCount > 0, !canAddPhotos { explainingProPhotos = true }
+        var added = 0
+        for photo in moment.photos where photoItems.count < photoLimit {
+            attachPrepared(photo)
+            added += 1
+        }
+        if !canAddPhotos {
+            // (Not while the account is still loading: it may well be PRO.)
+            if moment.photoCount > 0, model.me != nil { explainingProPhotos = true }
+        } else if moment.photoCount > added {
+            let left = moment.photoCount - added
+            error = left == 1 ? "1 photo from that moment wasn't added (an entry holds \(photoLimit))."
+                : "\(left) photos from that moment weren't added (an entry holds \(photoLimit))."
+        }
     }
     #endif
 
@@ -1305,16 +1321,6 @@ struct ComposeView: View {
             image.jpegData(compressionQuality: 0.95).flatMap { try? PhotoPreparer.prepare($0) }
         }.value
         guard let photo else { error = "The photo couldn't be added."; return }
-        attachPrepared(photo)
-    }
-
-    /// A photo from a moment (Journaling Suggestions) joins the others, prepared the same way.
-    private func addPhotoData(_ data: Data) async {
-        guard photoItems.count < photoLimit else { return }
-        isLoadingPhotos = true
-        defer { isLoadingPhotos = false }
-        let photo = await Task.detached(priority: .userInitiated) { try? PhotoPreparer.prepare(data) }.value
-        guard let photo else { error = "A photo from that moment couldn't be added."; return }
         attachPrepared(photo)
     }
 

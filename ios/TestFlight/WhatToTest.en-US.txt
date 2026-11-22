@@ -8,7 +8,7 @@ MOMENTS
 - Before iOS 26, workouts say "Workout" instead of their name.
 
 PHOTOS
-- On a PRO account, a moment's photos join the entry's photos (up to 8 in all). Videos aren't added.
+- On a PRO account, a moment's photos join the entry's photos (up to 8 in all). Videos aren't added. If they don't all fit, a message says how many were left out.
 - On a Free account, the moment's words go in, and then a sheet says photos are a PRO feature, with the plans to subscribe.
 - On a Free account, tapping the Photos button in the composer now shows that same sheet with the plans (it used to be an alert).
 
