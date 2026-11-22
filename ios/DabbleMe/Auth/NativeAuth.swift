@@ -93,7 +93,19 @@ enum NativeAuth {
         }
     }
 
-    /// GET /api/v1/passkeys/new: what the system needs to make a passkey for the signed-in
+    /// The password, or the sign-in's setup token, that adding a passkey needs: sent for the
+    /// options (so a wrong one is caught before the system's sheet saves a passkey on the phone)
+    /// and again with the passkey.
+    struct PasskeyProof: Encodable, Sendable {
+        let setupToken: String?
+        let currentPassword: String?
+
+        enum CodingKeys: String, CodingKey {
+            case setupToken = "setup_token", currentPassword = "current_password"
+        }
+    }
+
+    /// POST /api/v1/passkeys/options: what the system needs to make a passkey for the signed-in
     /// account. `userId` and the excluded IDs are base64url, as WebAuthn's JSON has them.
     struct PasskeyCreation: Decodable, Sendable {
         let challengeToken: String

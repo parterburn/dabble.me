@@ -116,12 +116,15 @@ class Rack::Attack
   end
 
   # Adding a passkey from the app can take the password: as many guesses as Delete Account.
-  throttle('app/passkeys/add/ip', limit: 5, period: 10.minutes) do |req|
-    req.ip if auth_path(req) == APP_PASSKEYS_PATH && req.post?
+  # Each add is two calls (options, then the passkey), each checking the password.
+  APP_PASSKEY_PATHS = [APP_PASSKEYS_PATH, "#{APP_PASSKEYS_PATH}/options"].freeze
+
+  throttle('app/passkeys/add/ip', limit: 10, period: 10.minutes) do |req|
+    req.ip if APP_PASSKEY_PATHS.include?(auth_path(req)) && req.post?
   end
 
-  throttle('app/passkeys/add/token', limit: 5, period: 10.minutes) do |req|
-    next unless auth_path(req) == APP_PASSKEYS_PATH && req.post?
+  throttle('app/passkeys/add/token', limit: 10, period: 10.minutes) do |req|
+    next unless APP_PASSKEY_PATHS.include?(auth_path(req)) && req.post?
 
     token = req.env['HTTP_AUTHORIZATION'].to_s[/\ABearer\s+(\S+)/i, 1]
     Digest::SHA256.hexdigest(token) if token

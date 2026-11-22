@@ -61,7 +61,6 @@ struct SettingsView: View {
                                 Label("Add a Passkey", icon: "slab-lock")
                             }
                             .foregroundStyle(.primary)
-                            .sheet(isPresented: $addingPasskey) { PasskeyPromptSheet(fromSettings: true) }
                         }
                         if me.appleAccountToken != nil {
                             // The plan, and PRO bought here (or managed, when it was bought here).
@@ -205,6 +204,9 @@ struct SettingsView: View {
             .toolbar(removing: .title) // the heading in the list is the title
             .toolbarVisibility(.hidden, for: .navigationBar) // like Today: no empty bar above it
             .task { canLinkToSubscribe = await Storefront.current?.countryCode == "USA" }
+            // On the list, not the row: the row goes once the passkey is added, and would take
+            // the sheet (and its "Passkey added") with it.
+            .sheet(isPresented: $addingPasskey) { PasskeyPromptSheet(fromSettings: true) }
         }
         // A name save that failed, from the Name page (on Done or on going Back). On the stack,
         // so it shows over the Name page too.

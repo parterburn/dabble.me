@@ -15,8 +15,12 @@ module Api
     class PasskeysController < BaseController
       SETUP_WINDOW = 15.minutes
 
-      # GET /api/v1/passkeys/new: what the app's registration request needs.
-      def new
+      # POST /api/v1/passkeys/options {setup_token | current_password}: what the app's registration
+      # request needs. The proof is checked here, before the system's sheet saves a passkey on the
+      # phone, so a wrong password can't leave one there that the server never keeps.
+      def options
+        return incorrect_password unless proof_valid?
+
         existing = current_user.webauthn_credentials.pluck(:external_id)
         # The user handle is the account's id, as the web's passkeys have it (and sign-in checks).
         user_handle = Base64.urlsafe_encode64(current_user.id.to_s, padding: false)
@@ -39,16 +43,18 @@ module Api
       end
 
       # POST /api/v1/passkeys {challenge_token, credential (WebAuthn's JSON), setup_token | current_password}
+      # (the same proof again: a challenge alone isn't enough)
       def create
-        unless setup_token_valid? || current_user.valid_password?(params[:current_password].to_s)
-          return render_error(:forbidden, 'incorrect_password', 'Incorrect password.')
-        end
+        return incorrect_password unless proof_valid?
 
         payload = self.class.challenge_verifier.verified(params[:challenge_token].to_s)
         challenge = payload.is_a?(Hash) && payload['user_id'] == current_user.id ? payload['challenge'] : nil
         return failed if challenge.blank? || !spend_challenge(challenge)
 
-        created = ::WebAuthn::Credential.from_create(params.require(:credential))
+        credential_params = params.require(:credential)
+        return failed unless credential_params.is_a?(ActionController::Parameters)
+
+        created = ::WebAuthn::Credential.from_create(credential_params)
         created.verify(challenge, user_verification: true)
         credential = current_user.webauthn_credentials.build(
           external_id: created.id,
@@ -79,6 +85,14 @@ module Api
       end
 
       private
+
+      def proof_valid?
+        setup_token_valid? || current_user.valid_password?(params[:current_password].to_s)
+      end
+
+      def incorrect_password
+        render_error(:forbidden, 'incorrect_password', 'Incorrect password.')
+      end
 
       def setup_token_valid?
         token = params[:setup_token].to_s

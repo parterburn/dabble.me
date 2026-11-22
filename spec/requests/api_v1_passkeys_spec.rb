@@ -15,8 +15,10 @@ RSpec.describe "iOS app: adding a passkey (/api/v1/passkeys)", type: :request do
     JSON.parse(response.body)
   end
 
-  def start
-    get "/api/v1/passkeys/new", headers: headers, as: :json
+  # The options, with the proof the add needs (the password, unless another is given).
+  def start(**auth)
+    auth = { current_password: password } if auth.empty?
+    post "/api/v1/passkeys/options", params: auth, headers: headers, as: :json
     JSON.parse(response.body)
   end
 
@@ -66,7 +68,7 @@ RSpec.describe "iOS app: adding a passkey (/api/v1/passkeys)", type: :request do
   it "adds the passkey with the sign-in's setup token, emails about it, and the passkey signs in" do
     setup = Api::V1::PasskeysController.setup_token_for(user, token)
 
-    expect { add(start, setup_token: setup, nickname: "iPhone") }
+    expect { add(start(setup_token: setup), setup_token: setup, nickname: "iPhone") }
       .to change { user.webauthn_credentials.count }.by(1)
       .and have_enqueued_mail(UserMailer, :passkey_added)
     expect(response).to have_http_status(:created)
@@ -83,15 +85,34 @@ RSpec.describe "iOS app: adding a passkey (/api/v1/passkeys)", type: :request do
     expect { add(start, current_password: password) }.to change { user.webauthn_credentials.count }.by(1)
   end
 
-  it "refuses without the password or a setup token" do
+  it "won't hand out options without the password or a setup token, so no passkey is made on the phone" do
+    post "/api/v1/passkeys/options", headers: headers, as: :json
+    expect(response).to have_http_status(:forbidden)
+    expect(json["error"]).to eq("incorrect_password")
+    expect(json).not_to have_key("challenge")
+  end
+
+  it "won't hand out options for a wrong password" do
+    start(current_password: "nope-nope")
+    expect(response).to have_http_status(:forbidden)
+  end
+
+  it "refuses to keep a passkey without the password or a setup token" do
     expect { add(start) }.not_to change(WebauthnCredential, :count)
     expect(response).to have_http_status(:forbidden)
     expect(json["error"]).to eq("incorrect_password")
   end
 
-  it "refuses a wrong password" do
+  it "refuses to keep a passkey with a wrong password" do
     expect { add(start, current_password: "nope-nope") }.not_to change(WebauthnCredential, :count)
     expect(response).to have_http_status(:forbidden)
+  end
+
+  it "refuses a credential that isn't WebAuthn's JSON" do
+    options = start
+    post "/api/v1/passkeys", params: { challenge_token: options["challenge_token"], credential: "x", current_password: password },
+                             headers: headers, as: :json
+    expect(response).to have_http_status(:unprocessable_content)
   end
 
   it "refuses an expired setup token" do
@@ -123,9 +144,9 @@ RSpec.describe "iOS app: adding a passkey (/api/v1/passkeys)", type: :request do
   end
 
   it "refuses a challenge handed to another account" do
-    other = create(:user)
+    other = create(:user, password: "other-password")
     other_headers = { "Authorization" => "Bearer #{MobileApp.issue_token!(other).plaintext_token}" }
-    get "/api/v1/passkeys/new", headers: other_headers, as: :json
+    post "/api/v1/passkeys/options", params: { current_password: "other-password" }, headers: other_headers, as: :json
     expect { add(json, current_password: password) }.not_to change(WebauthnCredential, :count)
     expect(response).to have_http_status(:unprocessable_content)
   end
@@ -144,7 +165,7 @@ RSpec.describe "iOS app: adding a passkey (/api/v1/passkeys)", type: :request do
   end
 
   it "needs an app token" do
-    get "/api/v1/passkeys/new", as: :json
+    post "/api/v1/passkeys/options", params: { current_password: password }, as: :json
     expect(response).to have_http_status(:unauthorized)
   end
 end

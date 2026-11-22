@@ -231,7 +231,11 @@ final class AppModel {
     /// The system's sheet makes a passkey for dabble.me (iCloud Keychain, or the password manager
     /// picked), then the server keeps it. Throws `CancellationError` when the sheet is closed.
     func addPasskey(password: String?) async throws {
-        let creation: NativeAuth.PasskeyCreation = try await api.get("api/v1/passkeys/new")
+        // Chosen once, before the system's sheet: the setup token can run out while it's up.
+        let token = addingPasskeyNeedsPassword ? nil : passkeySetup?.token
+        let proof = NativeAuth.PasskeyProof(setupToken: token, currentPassword: token == nil ? password : nil)
+        let creation: NativeAuth.PasskeyCreation = try await api.post("api/v1/passkeys/options",
+                                                                      json: try JSONEncoder().encode(proof))
         guard let challenge = NativeAuth.data(base64URL: creation.challenge),
               let userID = NativeAuth.data(base64URL: creation.userId) else {
             throw NativeAuthError.message(APIError.decoding.errorDescription ?? "Something went wrong.")
@@ -239,12 +243,13 @@ final class AppModel {
         let excluded = (creation.excludeCredentials ?? []).compactMap { NativeAuth.data(base64URL: $0) }
         let registration = try await passkeys.register(relyingParty: creation.rpId, challenge: challenge,
                                                        userName: creation.userName, userID: userID, excluding: excluded)
-        let token = addingPasskeyNeedsPassword ? nil : passkeySetup?.token
         let body = try JSONEncoder().encode(NativeAuth.NewPasskey(
             registration: registration, creation: creation, nickname: PasskeyPrompt.nickname,
-            setupToken: token, password: token == nil ? password : nil))
+            setupToken: proof.setupToken, password: proof.currentPassword))
         let _: PasskeyAdded = try await api.post("api/v1/passkeys", json: body)
         passkeySetup = nil
+        // Known now, even if the refresh below doesn't get through (Done shouldn't count as Not Now).
+        me?.hasPasskey = true
         if let me: Me = try? await api.get("api/v1/me") { self.me = me }
     }
 
