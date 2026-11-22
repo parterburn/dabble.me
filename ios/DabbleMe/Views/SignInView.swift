@@ -215,7 +215,7 @@ private struct WelcomeView: View {
 
 /// A small stack of made-up memories that deals itself in and gently cycles, like flipping back
 /// through old entries: the feeling of On This Day, before you have any. They show off what an
-/// entry can hold: a photo, #hashtags, and a dated hashtag's age (#Leo, as the entry pill shows it).
+/// entry can hold: a photo, #hashtags, and a dated hashtag's age (#anniversary, as the entry pill shows it).
 /// The photos are bundled CC0 samples (Flickr: "World's cutest snowman" by Lottie's pets & stuff,
 /// "Bruges" by Daquella manera, "White coffee on the table" by freestocks.org), not anyone's journal.
 private struct MemoryDeck: View {
@@ -228,10 +228,10 @@ private struct MemoryDeck: View {
     }
 
     private static let memories: [Memory] = [
-        Memory(caption: "3 years ago", text: "First snow! #Leo built a lopsided snowman, then cocoa by the window.",
-               photo: "SampleSnowman", datedTag: ("Leo", "4 years, 2 months")),
-        Memory(caption: "1 year ago", text: "Bruges! Wandered the canals all afternoon and ate an unreasonable number of waffles. #travel",
-               photo: "SampleBruges"),
+        Memory(caption: "1 year ago", text: "Bruges for our #anniversary! Wandered the canals all afternoon and ate too many waffles.",
+               photo: "SampleBruges", datedTag: ("anniversary", "9 years, 2 days")),
+        Memory(caption: "3 years ago", text: "First snow of the year. Built a lopsided snowman, then cocoa by the window. #winter",
+               photo: "SampleSnowman"),
         Memory(caption: "5 years ago", text: "Moved into the new apartment. No curtains yet, pizza on the floor. Already feels like #home."),
         Memory(caption: "Yesterday", text: "Made pour-over and read on the porch until noon. Grateful for quiet mornings. #gratitude",
                photo: "SampleCoffee"),

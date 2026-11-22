@@ -1,7 +1,7 @@
 Signed-out screens: sample entries with photos and dated hashtags, and bolder sign-up cards.
 
 - Sign out. On the welcome screen, the example entries now have a small photo on the right (three of four do), with their #hashtags in olive.
-- The first example ("3 years ago", the snowman) shows a dated hashtag pill under it: #Leo 4yrs, 2mos.
+- The first example ("1 year ago", Bruges) shows a dated hashtag pill under it: #anniversary 9yrs, 2days.
 - Watch the cards flip for a few rounds: the front card slides away and the one behind moves forward. No text from the cards behind should show through the front card.
 - With Reduce Motion on, the stack sits still on the first example.
 - Journal tab (signed out): a solid olive card with the book icon, "The private timeline of your life", a cream Start Your Journal button and a Sign In link.
