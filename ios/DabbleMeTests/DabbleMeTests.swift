@@ -86,7 +86,6 @@ struct PromptGroundingTests {
 }
 
 @MainActor
-@MainActor
 struct HashtagTypingTests {
     /// A "#" and a letter at the cursor is a hashtag being typed; a number first, or a "#" inside a word, isn't.
     @Test func findsTheHashtagBeingTyped() {
@@ -132,6 +131,7 @@ struct HashtagTypingTests {
     }
 }
 
+@MainActor
 struct HashtagMatchingTests {
     /// The writer's tags that are words in the entry come first in the composer's row, without a model.
     @Test func tagsMatchWholeWordsWhateverTheCase() {
@@ -472,6 +472,49 @@ struct DecodingTests {
         #expect(me.canAddPhotos == false)
         #expect(me.today == "2026-11-07")
         #expect(me.aiConnectors?.requiresPro == true)
+        // An older server: no in-app purchase, so nothing is offered.
+        #expect(me.appleAccountToken == nil)
+        #expect(me.isProThroughApple == false)
+    }
+
+    /// What build 116's server adds for in-app purchase (Api::V1::AppleSubscriptionsController.status_json).
+    @Test func decodesMeWithAppleSubscription() throws {
+        let json = """
+        {"id":1,"email":"a@b.c","first_name":null,"plan":"pro","is_pro":true,"timezone":null,
+        "today":"2026-11-07","entry_count":3,"can_write":true,"can_add_photos":true,"can_edit":true,"can_search":true,
+        "settings_url":"https://dabble.me/settings","security_url":"https://dabble.me/security","ai_connectors":null,
+        "apple_account_token":"6f1c0c5e-3d5b-4b7a-9a43-2f0d1c3e9b11","pro_source":"apple",
+        "apple_subscription":{"product_id":"me.dabble.ios.pro.yearly","expires_at":"2027-11-07T20:00:00Z",
+        "will_renew":true,"in_grace_period":false,"sandbox":true}}
+        """
+        let me = try APIClient.decoder.decode(Me.self, from: Data(json.utf8))
+        #expect(UUID(uuidString: try #require(me.appleAccountToken)) != nil)
+        #expect(me.isProThroughApple)
+        #expect(!me.isProThroughWeb)
+        #expect(me.appleSubscription?.productId == SubscriptionStore.yearlyID)
+        #expect(me.appleSubscription?.willRenew == true)
+        #expect(me.sellsInApp) // No can_buy_in_app (build 114's first servers): selling is on.
+
+        let closing = json.replacingOccurrences(of: #""pro_source":"apple","#, with: #""pro_source":"apple","can_buy_in_app":false,"#)
+        #expect(try !APIClient.decoder.decode(Me.self, from: Data(closing.utf8)).sellsInApp)
+    }
+
+    /// Settings → Plan for an account that pays on dabble.me (Api::V1::PlansController).
+    @Test func decodesPlanWithWebRenewal() throws {
+        let json = """
+        {"plan":"pro","is_pro":true,"pro_source":"web","apple_subscription":null,
+        "web_subscription":{"provider":"Stripe","expires_at":"2026-12-21T18:00:00Z","will_renew":false}}
+        """
+        let plan = try APIClient.decoder.decode(PlanDetails.self, from: Data(json.utf8))
+        #expect(plan.webSubscription?.expiresAt == "2026-12-21T18:00:00Z")
+        #expect(plan.webSubscription?.willRenew == false)
+        let none = try APIClient.decoder.decode(PlanDetails.self, from: Data(#"{"plan":"free","web_subscription":null}"#.utf8))
+        #expect(none.webSubscription == nil)
+    }
+
+    /// The server only accepts these (AppStore::PRODUCT_IDS); App Store Connect must use them too.
+    @Test func sellsTheProductsTheServerAccepts() {
+        #expect(SubscriptionStore.productIDs == ["me.dabble.ios.pro.monthly", "me.dabble.ios.pro.yearly"])
     }
 }
 

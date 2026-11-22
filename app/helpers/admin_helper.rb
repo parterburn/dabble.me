@@ -36,6 +36,7 @@ module AdminHelper
     when /\AGumroad /i then ["Gumroad", "https://app.gumroad.com/customers"]
     when /\APayHere /i then ["PayHere", "https://app.payhere.co"]
     when /\APaypal /i then ["PayPal", "https://www.paypal.com/myaccount/activities"]
+    when /\AApple /i then ["App Store", "https://appstoreconnect.apple.com/trends/insights"]
     else stripe_customer
     end
   end

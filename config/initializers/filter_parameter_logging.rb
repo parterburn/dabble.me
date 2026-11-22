@@ -21,5 +21,10 @@ Rails.application.config.filter_parameters += [
   :gift_code, # a gift link's code (Gift) works for anyone who has it
   :first_name,
   :last_name,
+  # Apple-signed transactions and notifications (they carry the account's appAccountToken).
+  :signed_transaction,
+  :signedPayload,
+  :signedTransactionInfo,
+  :signedRenewalInfo,
   /\Aentry\z/i
 ]

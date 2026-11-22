@@ -52,6 +52,14 @@ class UserMailer < ActionMailer::Base
     mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: '[REFUND REQUIRED] Payment Without a User')
   end
 
+  # Apple charged an account that's already PRO through the web (Stripe, Gumroad, PayPal or
+  # Forever). AppStore::Subscriptions sends it once per Apple charge.
+  def apple_double_billing(user, transaction_id)
+    @user = user
+    @transaction_id = transaction_id
+    mail(to: "hello@#{ENV['MAIN_DOMAIN']}", subject: '[REFUND REQUIRED] Apple charged a web subscriber')
+  end
+
   def failed_entry(user, errors, date, body)
     @user = user
     @errors = errors

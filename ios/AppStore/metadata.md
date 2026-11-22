@@ -16,7 +16,7 @@ The voice: a few lines a day, kept private, and handed back to you later. No str
 | Age rating | 4+ (no objectionable content; entries are private and never shared with other users) |
 | Copyright | 2026 Dabble Dev LLC |
 
-## Version 1.1.3
+## Version 1.2
 
 1.0 was submitted and never released. The copy below describes build 92.
 
@@ -43,7 +43,6 @@ The voice: a few lines a day, kept private, and handed back to you later. No str
 > • Stuck? See a prompt and what was on your calendar that day, and tap one to write about it
 > • Your #hashtags finish as you type, and Auto Tag tags words you've already written
 > • Edit entries later: the words, the photos, even the date
-> • Unfinished entries are saved as you type, even if the app closes
 > • Prefer email? Reply to the "How was your day?" email and it becomes an entry. Choose its days and time in the app
 >
 > A NUDGE WHEN YOU WANT ONE
@@ -58,10 +57,8 @@ The voice: a few lines a day, kept private, and handed back to you later. No str
 > • Stats, a year at a time: your writing days at a glance, your entries by month, and your most-used hashtags
 > • Search every word you've ever written, or tap your #hashtags
 > • Give a #hashtag a date (a birthday, an anniversary) and see how old your kids were, or how long it had been, in every entry
-> • Tap an entry to read it right in the timeline; swipe or touch and hold for a reflection, edit and more
 > • Share an entry's words and photo, or send it to Accessibility Reader to hear it
 > • Photos full screen with pinch to zoom; save them, or share one as a card that says how long ago it was
-> • Pinch to make entries easier to read
 >
 > APPLE INTELLIGENCE, ON YOUR DEVICE
 > On supported iPhones and iPads, Dabble Me responds to an entry with a warm, thoughtful reflection and a question to keep you writing (just pull down on it), then lets you answer and talk it through; the conversation is never saved, unless you add what you said to the entry. It also suggests which of your hashtags fit as you write, writes each day's prompt from your recent days, and adds a few lines of its own to your year in review. It all runs on your device; your journal isn't sent anywhere for it.
@@ -76,7 +73,10 @@ The voice: a few lines a day, kept private, and handed back to you later. No str
 > • Sign in with a passkey, password, or two-factor code
 > • Export everything, any time
 >
-> Free accounts can read their journal, write and delete entries, get Apple Intelligence reflections, prompts and hashtag suggestions, and set a daily reminder. Photos, links, editing, search, stats, On This Day, the year in review, and AI connections are part of Dabble Me PRO.
+> Free: read, write and delete entries, Apple Intelligence reflections, prompts and hashtag suggestions, and a daily reminder. Dabble Me PRO adds photos, links, editing, search, stats, On This Day, the year in review and AI connections. PRO is a monthly or yearly auto-renewing subscription, with a free trial for new subscribers; cancel any time in Settings. Subscribed on dabble.me? Just sign in.
+>
+> Terms of Use: https://dabble.me/terms
+> Privacy Policy: https://dabble.me/privacy
 
 **Keywords (100)**: these don't repeat words already in the name or subtitle, which Apple indexes anyway, and use no third-party trademarks (guideline 2.3.7).
 
@@ -84,7 +84,9 @@ The voice: a few lines a day, kept private, and handed back to you later. No str
 diary,memories,on this day,rewind,reflection,gratitude,photo,writing,prompts,email,ai,one,line,year
 ```
 
-**What's New (4,000)**: a first version doesn't show one, so leave it blank if nothing has been released yet. If an earlier version is live, use:
+**What's New (4,000)**: a first version doesn't show one, so leave it blank if nothing has been released yet. If an earlier version is live, use the lines below. For the version that first sells PRO in the app (build 116 or later), put this line first:
+
+> • Get Dabble Me PRO right in the app, monthly or yearly, with a free trial for new subscribers
 
 > • Your own entry template, for the headings or questions you answer each day
 > • Writing ideas while you write: a prompt, and what was on your calendar that day
@@ -116,16 +118,31 @@ Data used to track you: **none**. Data linked to you, all for **App Functionalit
 
 The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resources/PrivacyInfo.xcprivacy`. Not collected: Apple Intelligence features run on the device; the calendar's events are read on the device to list them while writing and are sent nowhere (only one the writer taps goes into their entry); reminders (with the past entries they'll show), the Face ID setting, the entry template and drafts stay on the device; Share hands an entry to iOS's share sheet only when the writer asks; the widget reads whether today is written, the day's prompt and (only with Show Entry Previews on in Settings → Home Screen Widget) the start of one entry and a small copy of its photo, which the app stores in its App Group on the device.
 
+## In-app purchase (App Store Connect → Subscriptions)
+
+Subscription group **Dabble Me PRO**. Display names and descriptions are what the purchase sheet and Settings → Subscriptions show.
+
+| Product ID | Level | Display name (35) | Description (55) | Price |
+|---|---|---|---|---|
+| `me.dabble.ios.pro.yearly` | 1 | PRO Yearly | Search, Stats, Rewind, photos and editing, all year | $39.99 |
+| `me.dabble.ios.pro.monthly` | 2 | PRO Monthly | Search, Stats, Rewind, photos and editing | $3.99 |
+
+- Group display name: Dabble Me PRO.
+- Introductory offer on each: Free, 2 weeks, all territories, new subscribers.
+- **Review screenshot (required for each subscription, not shown on the store):** Settings → Plan on a Free account, from TestFlight or the simulator, with both plans, the trial line, Restore Purchases and the Terms/Privacy links in view. One iPhone screenshot can serve both products.
+- **Review notes for each subscription:** "Unlocks Dabble Me PRO for the signed-in account: photos, links, editing, search, Stats, On This Day, the year in review and AI connections. Buy in Settings → Plan with a Free account; the PRO demo account already has PRO."
+- Family Sharing: off.
+
 ## App Review information
 
 - **Sign-in required:** yes. Create a production demo account (for example `appreview@dabble.me`) on **PRO**, with a few entries that include photos and hashtags, and with password sign-in (no 2FA) so the reviewer can get in.
 - **Notes for the reviewer** (the six answers App Review asked for under guideline 2.1; fill in the bracketed lines):
 
 > 1. SCREEN RECORDING
-> [link to the recording, or "attached below"]. Recorded on an iPhone running iOS [version]. It shows launch, creating an account, signing in, writing an entry, the PRO features, and account deletion.
+> [link to the recording, or "attached below"]. Recorded on an iPhone running iOS [version]. It shows launch, creating an account, signing in, writing an entry, buying PRO in Settings → Plan (sandbox), the PRO features, Restore Purchases, and account deletion.
 >
 > 2. PURPOSE AND AUDIENCE
-> Dabble Me is a private journal for adults who want an easy daily writing habit. It asks "How was your day?" once a day, by notification or email, and shows past entries back to you (On This Day). There is no social feed and nothing is shared: each person sees only their own journal. The app is a free companion to the dabble.me web service.
+> Dabble Me is a private journal for adults who want an easy daily writing habit. It asks "How was your day?" once a day, by notification or email, and shows past entries back to you (On This Day). There is no social feed and nothing is shared: each person sees only their own journal. The app is free to download. Dabble Me PRO is an auto-renewable subscription sold in the app with Apple's in-app purchase (see Paid Features below), and also on the dabble.me website.
 >
 > 3. ACCESS AND SETUP
 > Demo account (PRO, no two-factor): [email] / [password]
@@ -138,13 +155,15 @@ The app has no analytics or crash SDKs, and these answers match `DabbleMe/Resour
 > Account deletion: Settings → Delete Account. The page in the app shows what will be deleted, asks for the account password (or a passkey), and confirms once more; the app then signs out. The account is deleted an hour later unless the person signs back in.
 >
 > PAID FEATURES
-> The app has no in-app purchases and sells nothing. Dabble Me PRO is a subscription bought on the dabble.me website; subscribers sign in and their features are available. Free accounts can read, write and delete entries and set a reminder. Photos, editing, search, stats and On This Day are PRO. On the US storefront only, Settings shows a link to dabble.me/subscribe; elsewhere the plan is shown as plain text.
+> Dabble Me PRO is an auto-renewable subscription, sold in the app (Monthly and Yearly, one subscription group) and on the dabble.me website. Free accounts can read, write and delete entries and set a reminder. Photos, editing, search, stats and On This Day are PRO.
+> To buy: sign in with a Free account (or create one), then Settings → Plan, or tap any PRO feature (Search, Stats). Restore Purchases is on the same screen, with the Terms of Use and Privacy Policy. Purchases are verified on our server with the App Store Server API before PRO turns on. An account that already subscribes on the website sees no purchase buttons. On the US storefront only, Settings → Plan also links to dabble.me/subscribe.
+> Please use a Free account to test the purchase: the PRO demo account above already has PRO.
 >
 > 4. EXTERNAL SERVICES
 > - dabble.me: our own server, for accounts, sign-in (email and password, or a passkey, over HTTPS) and journal storage.
 > - Amazon S3 and CloudFront: photo storage and delivery.
 > - Mailgun: the daily email and account emails.
-> - Stripe: subscriptions on the website only, never in the app.
+> - Stripe: subscriptions on the website only, never in the app. In the app, PRO is sold with Apple's in-app purchase.
 > - Spotify: songs saved on an entry play in Spotify's own embedded player.
 > - Apple Intelligence (Foundation Models): reflections, prompts and hashtag suggestions run on the device. The app sends journal text to no AI service.
 > - Optional: a PRO user can connect Claude or ChatGPT to their journal on the website. The app only links to the guide.
@@ -184,8 +203,8 @@ The calendar events in 6 are made up (`-DabbleDebugCalendar YES`), like the rest
 
 ## Decisions
 
-- **In-app purchase:** ship as a free companion app (guideline 3.1.3(f)) with no in-app purchasing. On the **US App Store only**, Settings → Plan links to dabble.me/subscribe (US storefront exception in guideline 3.1.1(a), May 2025), detected with StoreKit's `Storefront.current`; elsewhere the plan is plain text. If App Review objects, drop the link.
+- **In-app purchase (from build 116):** PRO Monthly (`me.dabble.ios.pro.monthly`) and PRO Yearly (`me.dabble.ios.pro.yearly`), one subscription group, StoreKit 2 (`SubscriptionStore`, `SubscribeOptions`, `PlanView`). Each purchase carries the account's `appAccountToken`; the server verifies it with Apple before PRO turns on (`AppStore` in `app/lib`). The free-companion-app route (guideline 3.1.3(f)) no longer applies once the app sells something. On the **US App Store only**, Settings → Plan also links to dabble.me/subscribe (US storefront exception in guideline 3.1.1(a), May 2025), detected with StoreKit's `Storefront.current`. If App Review objects, drop the link. Family Sharing is off. A free trial is an introductory offer set in App Store Connect (2 weeks suggested); the app shows it only to Apple Accounts still eligible, and records no payment for it.
 - **Free vs PRO in the app:** (the editor's Photos button shows for free accounts and says photos come with PRO) free accounts read, write and delete text entries, use the on-device Apple Intelligence features (reflections, Today's prompt, hashtag suggestions), keep an entry template, see the day's calendar events while writing, share an entry, set the daily reminder (which can bring a past entry), and see the Photos view, Songs and the widget; photos, links, editing, search (and its hashtag cloud), Stats (and the year in review at the top of it), On This Day, choosing the email's days, and AI connections are PRO. Dictation is the keyboard's own (no in-app mic). Face ID lock and drafts are for everyone.
-- **Account deletion:** in the app (guideline 5.1.1(v)): Settings → Delete Account shows the entry count, an export link and any billing to cancel elsewhere (Gumroad, PayPal), asks for the password and confirms once more (`DeleteAccountView`, `/api/v1/account_deletion`). The app signs out; the account goes an hour later, as on the web, unless the person signs back in. A Stripe subscription is cancelled with it. No email step.
+- **Account deletion:** in the app (guideline 5.1.1(v)): Settings → Delete Account shows the entry count, an export link and any billing to cancel elsewhere (Gumroad, PayPal, or an App Store subscription, which only the person can cancel, in iOS Settings), asks for the password and confirms once more (`DeleteAccountView`, `/api/v1/account_deletion`). The app signs out; the account goes an hour later, as on the web, unless the person signs back in. A Stripe subscription is cancelled with it. No email step.
 - **Sign-in and sign-up:** the app's own forms (`AuthFormView`; `/api/v1/session`, `/api/v1/registration`), email and password plus the 2FA code when it's on, or a passkey (the site's own, via `webcredentials:dabble.me`). Sign in with Apple, if a third-party login is ever added, goes above the fields (guideline 4.8).
 - **iPad:** supported from the first version, so the submission needs the 13" iPad screenshot set too.

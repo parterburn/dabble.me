@@ -266,6 +266,7 @@ module Admin
           stripe: pro.payhere_only.count,
           gumroad: pro.gumroad_only.count,
           paypal: pro.paypal_only.count,
+          apple: pro.apple_only.count,
           gifted: users.gifted.pro_only.count
         }
       end

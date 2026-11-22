@@ -56,6 +56,7 @@ class User < ActiveRecord::Base
   has_many :hashtags, dependent: :destroy
   has_many :exports, dependent: :destroy
   has_many :payments
+  has_many :apple_subscriptions, dependent: :nullify
   has_one :gift_redemption, dependent: :delete
   has_many :webauthn_credentials, dependent: :destroy
   has_many :mcp_tool_invocations, dependent: :delete_all
@@ -82,6 +83,9 @@ class User < ActiveRecord::Base
   scope :gumroad_only, -> { where("plan ILIKE '%gumroad%'") }
   scope :paypal_only, -> { where("plan ILIKE '%paypal%'") }
   scope :not_forever, -> { where("plan NOT ILIKE '%forever%'") }
+  scope :apple_only, -> { where("plan ILIKE '%apple%'") }
+  # App Store plans end when Apple says (AppStore::Entitlement), not by payment dates.
+  scope :not_apple, -> { where("plan NOT ILIKE '%apple%'") }
   scope :referrals, -> { where("referrer IS NOT null") }
 
   # Users whose "first last" name holds every word of the query, ignoring case and order
@@ -117,6 +121,9 @@ class User < ActiveRecord::Base
   after_commit on: :update do
     restrict_free_frequency
   end
+  # Back to Free some other way (a web plan ended, an admin's change) while an App Store
+  # subscription is still paid for: that subscription makes it PRO again.
+  after_commit :resume_apple_subscription, on: :update, if: -> { saved_change_to_plan? && is_free? }
   after_commit :send_welcome_email, on: :create
 
   def self.blocked_email_domain?(domain)
@@ -314,7 +321,25 @@ class User < ActiveRecord::Base
       "Gumroad"
     elsif plan && plan.match(/paypal/i)
       'PayPal'
+    elsif plan && plan.match(/apple/i)
+      'Apple'
     end
+  end
+
+  # The UUID the iOS app buys with (StoreKit's appAccountToken), made the first time it's asked
+  # for. Apple puts it in the signed transaction, which is how a purchase names its account.
+  # Two requests at once both get the one that was saved.
+  def apple_account_token!
+    return apple_account_token if apple_account_token.present?
+
+    begin
+      User.where(id: id, apple_account_token: nil).update_all(apple_account_token: SecureRandom.uuid)
+    rescue ActiveRecord::RecordNotUnique
+      retry
+    end
+    self.apple_account_token = User.where(id: id).pick(:apple_account_token)
+    clear_attribute_change(:apple_account_token)
+    apple_account_token
   end
 
   # A PRO plan's billing that deleting the account doesn't stop, so the person cancels it
@@ -323,7 +348,14 @@ class User < ActiveRecord::Base
   # Nil when there's nothing (PRO Forever, say, or Stripe with a customer). The web's delete
   # page and the app's (Api::V1::AccountDeletionsController) both say so.
   def separate_billing_to_cancel
+    # An App Store subscription keeps billing until it's cancelled in iOS Settings, whatever
+    # the plan says (it may be a second subscription alongside a web one).
+    if apple_subscriptions.any? { |s| s.entitles_pro? && s.auto_renew != false }
+      return { provider: "Apple", certain: true }
+    end
+
     provider = plan_type_unlinked
+    return if provider == "Apple" # Cancelled already (auto-renew off), or over.
     return if !is_pro? || provider.blank?
     return if provider == "Stripe" && stripe_id.present?
 
@@ -337,6 +369,8 @@ class User < ActiveRecord::Base
       "<a href='https://gumroad.com/login' target='_blank'>Gumroad</a>"
     elsif plan && plan.match(/paypal/i)
       'PayPal'
+    elsif plan && plan.match(/apple/i)
+      "<a href='https://apps.apple.com/account/subscriptions' target='_blank'>the App Store</a>"
     end
   end
 
@@ -455,6 +489,10 @@ class User < ActiveRecord::Base
     if self.is_free? && self.frequency.present?
       self.update_columns(frequency: ["Sun"], previous_frequency: frequency)
     end
+  end
+
+  def resume_apple_subscription
+    AppStore::Entitlement.sync!(self) if apple_subscriptions.any?(&:entitles_pro?)
   end
 
   def send_welcome_email

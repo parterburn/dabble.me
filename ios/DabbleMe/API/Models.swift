@@ -28,6 +28,30 @@ struct Me: Decodable, Sendable, Equatable {
     let settingsUrl: URL
     let securityUrl: URL
     let aiConnectors: AIConnectors?
+    /// The UUID to buy PRO in the app with (StoreKit's appAccountToken): Apple puts it in the
+    /// signed transaction, which is how the server knows which account bought it. Nil from an
+    /// older server, and then the app sells nothing.
+    var appleAccountToken: String? = nil
+    /// False once Dabble Me's closing is announced: nothing new is sold (purchases already made
+    /// are still reported). Missing from older servers.
+    var canBuyInApp: Bool? = nil
+    /// The app may offer the in-app purchase.
+    var sellsInApp: Bool { appleAccountToken != nil && canBuyInApp != false }
+    /// Where PRO comes from: "apple" (an App Store subscription), "web" (dabble.me), or nil.
+    var proSource: String? = nil
+    /// The App Store subscription that makes the account PRO, if one does.
+    var appleSubscription: AppleSubscriptionInfo? = nil
+
+    var isProThroughApple: Bool { isPro && proSource == "apple" }
+    var isProThroughWeb: Bool { isPro && proSource != "apple" }
+
+    struct AppleSubscriptionInfo: Decodable, Sendable, Equatable {
+        let productId: String
+        let expiresAt: String?
+        let willRenew: Bool?
+        let inGracePeriod: Bool?
+        let sandbox: Bool?
+    }
 
     /// Free accounts can write and delete; editing, photos, links, search and Stats are PRO.
     var mayDelete: Bool { canDelete ?? canEdit }
@@ -220,7 +244,7 @@ struct ImageUpload: Decodable, Sendable {
 /// GET /api/v1/account_deletion: what Delete Account's confirmation says.
 struct AccountDeletionInfo: Decodable, Sendable, Equatable {
     struct SeparateBilling: Decodable, Sendable, Equatable {
-        /// Gumroad, PayPal or Stripe.
+        /// Gumroad, PayPal, Stripe, or Apple (an App Store subscription, cancelled in iOS Settings).
         let provider: String
         /// False for Stripe with no customer on file: there may be nothing left to cancel.
         let certain: Bool
@@ -494,4 +518,16 @@ struct TagDateList: Decodable, Sendable {
 struct TagDateUpdate: Encodable, Sendable {
     var tag: String? = nil
     var date: String? = nil
+}
+
+/// GET /api/v1/plan (Settings → Plan): when a PRO plan bought on dabble.me renews or ends.
+/// Only Stripe plans have a date; nil for anything else, or when Stripe couldn't be asked.
+struct PlanDetails: Decodable, Sendable, Equatable {
+    var webSubscription: WebSubscriptionInfo? = nil
+
+    struct WebSubscriptionInfo: Decodable, Sendable, Equatable {
+        let provider: String?
+        let expiresAt: String?
+        let willRenew: Bool?
+    }
 }

@@ -6,8 +6,23 @@ class Rack::Attack
   PROBE_BAN_TIME = 1.hour
 
   # Throttle high volumes of requests by IP address
+  # App Store notifications can come in bursts from one Apple address; each is verified by its
+  # signature, and one that's throttled is only redelivered hours later.
+  APP_STORE_NOTIFICATIONS_PATH = '/app_store/notifications'.freeze
   throttle('req/ip', limit: 20, period: 20.seconds) do |req|
-    req.ip unless req.path.starts_with?('/assets')
+    req.ip unless req.path.starts_with?('/assets') || auth_path(req) == APP_STORE_NOTIFICATIONS_PATH
+  end
+
+  # The notifications' own limit, high enough for Apple's bursts: each one costs a signature
+  # check, and it's the one unauthenticated POST.
+  throttle('app_store_notifications/ip', limit: 300, period: 1.minute) do |req|
+    req.ip if req.post? && auth_path(req) == APP_STORE_NOTIFICATIONS_PATH
+  end
+
+  # Purchases and restores from the app: a handful at once is normal (a restore sends each
+  # transaction), hundreds is not.
+  throttle('apple_subscriptions/ip', limit: 30, period: 1.minute) do |req|
+    req.ip if req.post? && auth_path(req) == '/api/v1/apple_subscriptions'
   end
 
   # Throttle OTP second-factor challenge attempts per challenge token and per IP

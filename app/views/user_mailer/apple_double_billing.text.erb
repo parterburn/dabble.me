@@ -1,0 +1,6 @@
+Apple charged <%= @user.email %> (user <%= @user.id %>) for Dabble Me PRO in the iOS app, but the account is already PRO on the <%= @user.plan %> plan.
+
+Apple transaction: <%= @transaction_id %>
+<%= admin_users_url(email: @user.email) %>
+
+What to do: ask them which one to keep. Apple refunds are requested by the customer at reportaproblem.apple.com; a web plan is cancelled from its billing page. The account keeps its web plan until that plan ends, then the Apple subscription takes over.

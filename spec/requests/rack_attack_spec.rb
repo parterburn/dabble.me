@@ -157,6 +157,16 @@ RSpec.describe 'Rack::Attack', type: :request do
     expect(statuses.last).to eq(429)
   end
 
+  it "throttles App Store notifications from one IP past Apple's bursts" do
+    statuses = Array.new(301) do
+      post '/app_store/notifications', params: { signedPayload: 'x.y.z' }, as: :json, env: { 'REMOTE_ADDR' => '203.0.113.41' }
+      response.status
+    end
+
+    expect(statuses.first(300)).to all(be < 429)
+    expect(statuses.last).to eq(429)
+  end
+
   it 'throttles OTP challenge guesses per challenge across rotating IPs' do
     challenge = SecureRandom.hex(16)
 

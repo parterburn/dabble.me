@@ -24,6 +24,41 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_010000) do
     t.index ["user_id", "created_at"], name: "index_ai_usages_on_user_id_and_created_at"
   end
 
+  create_table "app_store_notifications", force: :cascade do |t|
+    t.string "notification_uuid", null: false
+    t.string "notification_type", null: false
+    t.string "subtype"
+    t.string "environment"
+    t.string "original_transaction_id"
+    t.datetime "signed_at"
+    t.datetime "processed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["notification_uuid"], name: "index_app_store_notifications_on_notification_uuid", unique: true
+    t.index ["original_transaction_id"], name: "index_app_store_notifications_on_original_transaction_id"
+  end
+
+  create_table "apple_subscriptions", force: :cascade do |t|
+    t.bigint "user_id"
+    t.string "original_transaction_id", null: false
+    t.string "environment", null: false
+    t.string "product_id", null: false
+    t.string "last_transaction_id"
+    t.uuid "app_account_token"
+    t.string "ownership_type"
+    t.integer "status"
+    t.datetime "expires_at"
+    t.datetime "grace_period_expires_at"
+    t.datetime "revoked_at"
+    t.boolean "auto_renew"
+    t.string "auto_renew_product_id"
+    t.datetime "state_signed_at", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["original_transaction_id"], name: "index_apple_subscriptions_on_original_transaction_id", unique: true
+    t.index ["user_id"], name: "index_apple_subscriptions_on_user_id"
+  end
+
   create_table "business_metric_snapshots", force: :cascade do |t|
     t.date "captured_on", null: false
     t.integer "mrr_cents", default: 0, null: false
@@ -236,6 +271,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_010000) do
     t.datetime "created_at", precision: nil
     t.datetime "updated_at", precision: nil
     t.string "stripe_invoice_id"
+    t.string "apple_transaction_id"
+    t.index ["apple_transaction_id"], name: "index_payments_on_apple_transaction_id", unique: true, where: "(apple_transaction_id IS NOT NULL)"
     t.index ["stripe_invoice_id"], name: "index_payments_on_stripe_invoice_id", unique: true, where: "(stripe_invoice_id IS NOT NULL)"
     t.index ["user_id"], name: "index_payments_on_user_id"
   end
@@ -319,6 +356,8 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_010000) do
     t.string "image_key", null: false
     t.boolean "send_updates", default: true, null: false
     t.text "app_settings"
+    t.uuid "apple_account_token"
+    t.index ["apple_account_token"], name: "index_users_on_apple_account_token", unique: true
     t.index ["email"], name: "index_users_on_email", unique: true
     t.index ["image_key"], name: "index_users_on_image_key", unique: true
     t.index ["otp_challenge_expires"], name: "index_users_on_otp_challenge_expires"
@@ -341,6 +380,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_11_22_010000) do
   end
 
   add_foreign_key "ai_usages", "users", on_delete: :cascade
+  add_foreign_key "apple_subscriptions", "users", on_delete: :nullify
   add_foreign_key "exports", "users", on_delete: :cascade
   add_foreign_key "gift_redemptions", "users", on_delete: :cascade
   add_foreign_key "ignored_email_images", "users", on_delete: :cascade

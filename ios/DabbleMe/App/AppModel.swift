@@ -126,6 +126,8 @@ final class AppModel {
     var timelineError: String?
 
     let api: APIClient
+    /// PRO bought in the app (StoreKit), reported to the server for the signed-in account.
+    let subscriptions: SubscriptionStore
     private let tokens: TokenProvider
     private var processingWatches: Set<Int> = []
     private let passkeys = PasskeyAuthenticator()
@@ -133,10 +135,18 @@ final class AppModel {
     init(tokens: TokenProvider = TokenProvider()) {
         self.tokens = tokens
         api = APIClient(tokens: tokens)
+        subscriptions = SubscriptionStore(api: api)
         isSignedIn = KeychainStore.load() != nil
         Task { [weak self] in
             await tokens.setSignedOutHandler { self?.didLoseSession() }
         }
+        // Purchases are for the account that's loaded: none while signed out or still loading.
+        subscriptions.accountToken = { [weak self] in
+            guard let self, isSignedIn else { return nil }
+            return me?.appleAccountToken.flatMap(UUID.init(uuidString:))
+        }
+        subscriptions.didChangePlan = { [weak self] in await self?.refresh() }
+        subscriptions.start()
     }
 
     // MARK: - Auth
@@ -258,6 +268,7 @@ final class AppModel {
     private func resetSession() {
         isSignedIn = false
         me = nil
+        subscriptions.reset()
         today = nil
         recentWrittenDays = nil
         months = []
@@ -282,6 +293,8 @@ final class AppModel {
             let (me, monthList, today) = try await (meRequest, monthsRequest, todayRequest)
             self.me = me
             self.today = today
+            // A purchase the server hasn't heard about yet (offline, or made while signed out).
+            Task { await subscriptions.reportUnfinished() }
             months = monthList.months
             // Entries can change by email or on the web: keep cached months on screen, reload the
             // visible ones (and the newest) now, and the rest when they scroll back into view.

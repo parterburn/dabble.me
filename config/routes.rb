@@ -74,6 +74,10 @@ Rails.application.routes.draw do
       resource :app_settings, only: %i[show update]
       resources :dated_hashtags, only: %i[index create update destroy]
       resources :image_uploads, only: :create
+      # In-app purchases and restores (StoreKit 2), checked with Apple (AppStore::Subscriptions).
+      resources :apple_subscriptions, only: :create
+      # The Plan page: the plan, and when a dabble.me (Stripe) plan renews.
+      resource :plan, only: :show
     end
   end
 
@@ -207,6 +211,8 @@ Rails.application.routes.draw do
   get "success", to: "payments#success"
   get "billing", to: "payments#billing", as: "billing"
   mount StripeEvent::Engine, at: "/stripe_events"
+  # App Store Server Notifications V2 (AppStore::Notification).
+  post 'app_store/notifications', to: 'app_store/notifications#create', as: 'app_store_notifications'
   get '/health_check', to: proc { [200, {}, ['success']] }
 
   root 'welcome#index'
