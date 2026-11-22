@@ -26,7 +26,7 @@ Input, in order: a PR URL or number, a branch name, otherwise the current branch
 Local checks only count when the repo-pinned toolchain is ready: Ruby matches `.ruby-version` and the `ruby` line of `.tool-versions` (load asdf with `. "$HOME/.asdf/asdf.sh"`), Node matches the `nodejs` line of `.tool-versions`, `bundle check` passes, and `npm` dependencies are installed from `package-lock.json`. Do not substitute a different version. If a check cannot run, record it as `local verification unavailable (<reason>)` in the PR's **Flags for human review** and the report, never as passed, and let CI verify.
 
 - If a restyled view or `app/frontend/stylesheets/app.tailwind.css` changed, run `npm run build:css:app` and commit `public/app-tailwind.css`. Marketing style changes: `npm run build:css` and commit `public/marketing.css`.
-- An `ios/` change rewrites `ios/TestFlight/WhatToTest.en-US.txt` for this build (replace the notes; don't append; under 4,000 characters) and bumps `CURRENT_PROJECT_VERSION` in `ios/project.yml`. Don't try to compile the iOS app.
+- An `ios/` change rewrites `ios/TestFlight/WhatToTest.en-US.txt` for this build (replace the notes; don't append; under 4,000 characters; no build number in them). Don't bump `CURRENT_PROJECT_VERSION`: Xcode Cloud sets its own build number. Don't try to compile the iOS app.
 - This repo has no Standard, ERB lint, ESLint, Brakeman, or annotaterb step. Don't run them.
 
 ## 3. Specs

@@ -1,4 +1,4 @@
-Build 126 makes Restore Purchases clearer: it says what happened, and asks for your Apple Account password only when it has to.
+Restore Purchases is clearer: it says what happened, and asks for your Apple Account password only when it has to.
 
 Use a Free account. TestFlight purchases use Apple's sandbox: nothing is charged.
 
